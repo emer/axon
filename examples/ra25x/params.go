@@ -101,9 +101,9 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":       "0.1", // .1 def
-					"Prjn.SWt.Adapt.LRate":        "0.1", // .1 >= .2,
-					"Prjn.SWt.Adapt.SubMean":      "1",   // key for stability
-					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWts.Adapt.LRate":       "0.1", // .1 >= .2,
+					"Prjn.SWts.Adapt.SubMean":     "1",   // key for stability
+					"Prjn.SWts.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
 					"Prjn.Learn.Trace.SubMean":    "1",   // 1 > 0 for long-term stability
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",  // 12 def -- produces reasonable ~1ish max vals
@@ -114,7 +114,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Hidden2ToOutput", Desc: "",
 				Params: params.Params{
 					// "Prjn.Learn.LRate.Base":  "0.1", // 0.1 is default
-					"Prjn.SWt.Adapt.SigGain": "6", // 1 does not work
+					"Prjn.SWts.Adapt.SigGain": "6", // 1 does not work
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

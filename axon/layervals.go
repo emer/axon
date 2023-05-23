@@ -64,7 +64,7 @@ func (lv *LaySpecialVals) Init() {
 type LayerVals struct {
 	LayIdx    uint32 `view:"-" desc:"layer index for these vals"`
 	DataIdx   uint32 `view:"-" desc:"data index for these vals"`
-	pad, pad2 uint32
+	pad, pad1 uint32
 
 	// note: ActAvg vals are shared across data parallel
 	ActAvg   ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition"`

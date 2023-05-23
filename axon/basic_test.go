@@ -38,7 +38,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "for reproducibility, identical weights",
 				Params: params.Params{
-					"Prjn.SWt.Init.Var": "0",
+					"Prjn.SWts.Init.Var": "0",
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -869,14 +869,14 @@ func TestSWtInit(t *testing.T) {
 	mean := float32(0.5)
 	vr := float32(0.25)
 	spct := float32(0.5)
-	pj.SWt.Init.Var = vr
+	pj.SWts.Init.Var = vr
 
 	nt := NewNetwork("test")
 	nt.SetRndSeed(1)
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(ctx, &nt.Rand, sy, mean, spct)
+		pj.SWts.InitWtsSyn(ctx, &nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -907,11 +907,11 @@ func TestSWtInit(t *testing.T) {
 	mean = float32(0.5)
 	vr = float32(0.25)
 	spct = float32(1.0)
-	pj.SWt.Init.Var = vr
+	pj.SWts.Init.Var = vr
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -937,11 +937,11 @@ func TestSWtInit(t *testing.T) {
 	mean = float32(0.5)
 	vr = float32(0.25)
 	spct = float32(0.0)
-	pj.SWt.Init.Var = vr
+	pj.SWts.Init.Var = vr
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -967,11 +967,11 @@ func TestSWtInit(t *testing.T) {
 	mean = float32(0.1)
 	vr = float32(0.05)
 	spct = float32(0.0)
-	pj.SWt.Init.Var = vr
+	pj.SWts.Init.Var = vr
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -994,11 +994,11 @@ func TestSWtInit(t *testing.T) {
 	mean = float32(0.8)
 	vr = float32(0.05)
 	spct = float32(0.5)
-	pj.SWt.Init.Var = vr
+	pj.SWts.Init.Var = vr
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -1031,16 +1031,16 @@ func TestSWtLinLearn(t *testing.T) {
 	vr := float32(0.05)
 	spct := float32(0.0)
 	dwt := float32(0.1)
-	pj.SWt.Init.Var = vr
-	pj.SWt.Adapt.SigGain = 1
+	pj.SWts.Init.Var = vr
+	pj.SWts.Adapt.SigGain = 1
 	nlrn := 10
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 
-	pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
+	pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
 	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	for i := 0; i < nlrn; i++ {
 		sy.DWt = dwt
-		pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+		pj.SWts.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 		// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	}
 	if sy.Wt != 1 {

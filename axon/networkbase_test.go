@@ -52,7 +52,7 @@ func TestDefaults(t *testing.T) {
 		assert.Equal(t, uint32(4), lyr.NNeurons)
 		for lni := uint32(0); lni < lyr.NNeurons; lni++ {
 			ni := lyr.NeurStIdx + lni
-			li := NrnI(ctx, ni, NrnIdxLayIdx)
+			li := NrnI(ctx, ni, NrnLayIdx)
 			assert.Equal(t, uint32(lyr.Index()), li)
 		}
 	}

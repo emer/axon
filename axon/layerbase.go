@@ -232,7 +232,7 @@ func (ly *LayerBase) Pool(pi, di uint32) *Pool {
 
 // SubPool returns subpool for given neuron, at data index
 func (ly *LayerBase) SubPool(ctx *Context, ni, di uint32) *Pool {
-	pi := NrnI(ctx, ni, NrnIdxSubPool)
+	pi := NrnI(ctx, ni, NrnSubPool)
 	return ly.Pool(pi, di)
 }
 
@@ -422,7 +422,7 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 			pl := ly.Pool(pi, 0)
 			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 				ni := ly.NeurStIdx + lni
-				SetNrnI(ctx, ni, NrnIdxSubPool, uint32(pi))
+				SetNrnI(ctx, ni, NrnSubPool, uint32(pi))
 			}
 			pi++
 		}
@@ -471,8 +471,8 @@ func (ly *LayerBase) Build() error {
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
-		SetNrnI(ctx, ni, NrnIdxNeurIdx, ni)
-		SetNrnI(ctx, ni, NrnIdxLayIdx, uint32(ly.Idx))
+		SetNrnI(ctx, ni, NrnNeurIdx, ni)
+		SetNrnI(ctx, ni, NrnLayIdx, uint32(ly.Idx))
 	}
 	err := ly.BuildPools(ctx, nn)
 	if err != nil {

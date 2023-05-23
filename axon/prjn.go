@@ -60,7 +60,7 @@ func (pj *Prjn) Defaults() {
 	pj.Params.Defaults()
 	switch pj.PrjnType() {
 	case InhibPrjn:
-		pj.Params.SWt.Adapt.On.SetBool(false)
+		pj.Params.SWts.Adapt.On.SetBool(false)
 	case BackPrjn:
 		pj.Params.PrjnScale.Rel = 0.1
 	case RWPrjn, TDPredPrjn:
@@ -122,7 +122,7 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 		if SynV(ctx, syni, SWt) == 0 {
 			SetSynV(ctx, syni, SWt, wt)
 		}
-		SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(wt, SynV(ctx, syni, SWt)))
+		SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(wt, SynV(ctx, syni, SWt)))
 	}
 	return nil
 }
@@ -282,9 +282,9 @@ func (pj *Prjn) SetSWtsRPool(ctx *Context, swts etensor.Tensor) {
 						syni := pj.SynStIdx + syi
 						swt := float32(swts.FloatVal1D((scst + ci) % wsz))
 						SetSynV(ctx, syni, SWt, float32(swt))
-						wt := pj.Params.SWt.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWt.Init.Mean))
+						wt := pj.Params.SWts.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWts.Init.Mean))
 						SetSynV(ctx, syni, Wt, wt)
-						SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(wt, swt))
+						SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(wt, swt))
 					}
 				}
 			}
@@ -327,9 +327,9 @@ func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *et
 			si := int(pj.Params.SynSendLayIdx(ctx, syni))
 			swt := swtFun(si, ri, ssh, rsh)
 			SetSynV(ctx, syni, SWt, swt)
-			wt := pj.Params.SWt.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWt.Init.Mean))
+			wt := pj.Params.SWts.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWts.Init.Mean))
 			SetSynV(ctx, syni, Wt, wt)
-			SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(wt, swt))
+			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(wt, swt))
 		}
 	}
 }
@@ -338,7 +338,7 @@ func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *et
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
 func (pj *Prjn) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
-	pj.Params.SWt.InitWtsSyn(ctx, syni, rnd, mean, spct)
+	pj.Params.SWts.InitWtsSyn(ctx, syni, rnd, mean, spct)
 }
 
 // InitSynCa initializes synaptic calcium variables
@@ -355,12 +355,12 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 	pj.Params.Learn.LRate.Init()
 	pj.InitGBuffs()
 	rlay := pj.Recv
-	spct := pj.Params.SWt.Init.SPct
+	spct := pj.Params.SWts.Init.SPct
 	if rlay.Params.IsTarget() {
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWts.Init.SPct = 0
 		spct = 0
 	}
-	smn := pj.Params.SWt.Init.Mean
+	smn := pj.Params.SWts.Init.Mean
 	// todo: why is this recv based?  prob important to keep for consistency
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIdx + lni
@@ -376,7 +376,7 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 			}
 		}
 	}
-	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
+	if pj.Params.SWts.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
 		pj.SWtRescale(ctx)
 	}
 }
@@ -385,7 +385,7 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 // using subtractive normalization.
 func (pj *Prjn) SWtRescale(ctx *Context) {
 	rlay := pj.Recv
-	smn := pj.Params.SWt.Init.Mean
+	smn := pj.Params.SWts.Init.Mean
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIdx + lni
 		if NrnIsOff(ctx, ni) {
@@ -402,9 +402,9 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 			syni := pj.SynStIdx + syi
 			swt := SynV(ctx, syni, SWt)
 			sum += swt
-			if swt <= pj.Params.SWt.Limit.Min {
+			if swt <= pj.Params.SWts.Limit.Min {
 				nmin++
-			} else if swt >= pj.Params.SWt.Limit.Max {
+			} else if swt >= pj.Params.SWts.Limit.Max {
 				nmax++
 			}
 		}
@@ -420,10 +420,10 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 			}
 			for _, syi := range syIdxs {
 				syni := pj.SynStIdx + syi
-				if SynV(ctx, syni, SWt) <= pj.Params.SWt.Limit.Max {
-					swt := pj.Params.SWt.ClipSWt(SynV(ctx, syni, SWt) + mdf)
+				if SynV(ctx, syni, SWt) <= pj.Params.SWts.Limit.Max {
+					swt := pj.Params.SWts.ClipSWt(SynV(ctx, syni, SWt) + mdf)
 					SetSynV(ctx, syni, SWt, swt)
-					SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
+					SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 				}
 			}
 		} else {
@@ -433,10 +433,10 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 			}
 			for _, syi := range syIdxs {
 				syni := pj.SynStIdx + syi
-				if SynV(ctx, syni, SWt) >= pj.Params.SWt.Limit.Min {
-					swt := pj.Params.SWt.ClipSWt(SynV(ctx, syni, SWt) + mdf)
+				if SynV(ctx, syni, SWt) >= pj.Params.SWts.Limit.Min {
+					swt := pj.Params.SWts.ClipSWt(SynV(ctx, syni, SWt) + mdf)
 					SetSynV(ctx, syni, SWt, swt)
-					SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
+					SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 				}
 			}
 		}

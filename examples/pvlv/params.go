@@ -337,12 +337,12 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.SWt.Adapt.On":         "false",
-					"Prjn.SWt.Adapt.SigGain":    "6", // 1 not better
-					"Prjn.SWt.Init.Sym":         "false",
-					"Prjn.SWt.Init.SPct":        "0",
-					"Prjn.SWt.Init.Mean":        "0.5",
-					"Prjn.SWt.Init.Var":         "0.4",  // more variance
+					"Prjn.SWts.Adapt.On":        "false",
+					"Prjn.SWts.Adapt.SigGain":   "6", // 1 not better
+					"Prjn.SWts.Init.Sym":        "false",
+					"Prjn.SWts.Init.SPct":       "0",
+					"Prjn.SWts.Init.Mean":       "0.5",
+					"Prjn.SWts.Init.Var":        "0.4",  // more variance
 					"Prjn.Learn.LRate.Base":     "0.02", // slower fine
 					"Prjn.Learn.Trace.LearnThr": "0.75",
 					"Prjn.Matrix.NoGateLRate":   "0.0", // 0.01 default, 0 needed b/c no actual contingency in pavlovian
@@ -350,12 +350,12 @@ var ParamSetsDefs = params.Sets{
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":        "2",
-					"Prjn.SWt.Adapt.On":         "false",
-					"Prjn.SWt.Adapt.SigGain":    "1",
-					"Prjn.SWt.Init.SPct":        "0",
-					"Prjn.SWt.Init.Mean":        "0.1",
-					"Prjn.SWt.Init.Var":         "0.05",
-					"Prjn.SWt.Init.Sym":         "false",
+					"Prjn.SWts.Adapt.On":        "false",
+					"Prjn.SWts.Adapt.SigGain":   "1",
+					"Prjn.SWts.Init.SPct":       "0",
+					"Prjn.SWts.Init.Mean":       "0.1",
+					"Prjn.SWts.Init.Var":        "0.05",
+					"Prjn.SWts.Init.Sym":        "false",
 					"Prjn.Learn.Trace.Tau":      "1",
 					"Prjn.Learn.Trace.LearnThr": "0.3",
 					"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
@@ -363,45 +363,45 @@ var ParamSetsDefs = params.Sets{
 			{Sel: ".USToBLAAcq", Desc: "starts strong, learns slow",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel":     "0.5",
-					"Prjn.SWt.Init.SPct":     "0",
-					"Prjn.SWt.Init.Mean":     "0.75",
-					"Prjn.SWt.Init.Var":      "0.25",
+					"Prjn.SWts.Init.SPct":    "0",
+					"Prjn.SWts.Init.Mean":    "0.75",
+					"Prjn.SWts.Init.Var":     "0.25",
 					"Prjn.Learn.LRate.Base":  "0.001", // could be 0
 					"Prjn.Learn.Trace.Tau":   "1",     // increase for second order conditioning
 					"Prjn.BLA.NegDeltaLRate": "0.01",  // slow for acq -- could be 0
 				}},
 			{Sel: ".USToBLAExtInhib", Desc: "actual US inhibits exinction -- must be strong enough to block ACh enh Ge",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.75",
-					"Prjn.SWt.Init.Var":  "0.25",
-					"Prjn.SWt.Adapt.On":  "false",
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs":  "2",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Init.Mean": "0.75",
+					"Prjn.SWts.Init.Var":  "0.25",
+					"Prjn.SWts.Adapt.On":  "false",
+					"Prjn.Learn.Learn":    "false",
 				}},
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.SWt.Adapt.On":      "false",
-					"Prjn.SWt.Adapt.SigGain": "1",
-					"Prjn.SWt.Init.SPct":     "0",
-					"Prjn.SWt.Init.Mean":     "0.1",
-					"Prjn.SWt.Init.Var":      "0.05",
-					"Prjn.SWt.Init.Sym":      "false",
-					"Prjn.Learn.Trace.Tau":   "1", // increase for second order conditioning
-					"Prjn.Learn.LRate.Base":  "0.02",
-					"Prjn.BLA.NegDeltaLRate": "0.01", // slow -- could be 0
+					"Prjn.SWts.Adapt.On":      "false",
+					"Prjn.SWts.Adapt.SigGain": "1",
+					"Prjn.SWts.Init.SPct":     "0",
+					"Prjn.SWts.Init.Mean":     "0.1",
+					"Prjn.SWts.Init.Var":      "0.05",
+					"Prjn.SWts.Init.Sym":      "false",
+					"Prjn.Learn.Trace.Tau":    "1", // increase for second order conditioning
+					"Prjn.Learn.LRate.Base":   "0.02",
+					"Prjn.BLA.NegDeltaLRate":  "0.01", // slow -- could be 0
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.SWt.Adapt.On":      "false",
-					"Prjn.SWt.Adapt.SigGain": "1",
-					"Prjn.SWt.Init.SPct":     "0",
-					"Prjn.SWt.Init.Mean":     "0.1",
-					"Prjn.SWt.Init.Var":      "0.05",
-					"Prjn.SWt.Init.Sym":      "false",
-					"Prjn.Learn.Trace.Tau":   "1", // increase for second order conditioning
-					"Prjn.Learn.LRate.Base":  "0.02",
-					"Prjn.BLA.NegDeltaLRate": "1.0",
+					"Prjn.SWts.Adapt.On":      "false",
+					"Prjn.SWts.Adapt.SigGain": "1",
+					"Prjn.SWts.Init.SPct":     "0",
+					"Prjn.SWts.Init.Mean":     "0.1",
+					"Prjn.SWts.Init.Var":      "0.05",
+					"Prjn.SWts.Init.Sym":      "false",
+					"Prjn.Learn.Trace.Tau":    "1", // increase for second order conditioning
+					"Prjn.Learn.LRate.Base":   "0.02",
+					"Prjn.BLA.NegDeltaLRate":  "1.0",
 				}},
 			{Sel: "#USposToVsMtxGo", Desc: "",
 				Params: params.Params{
@@ -410,9 +410,9 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: "#USposToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "6.0", // if weaker, e.g., 2, other pools get active
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.4",
+					"Prjn.PrjnScale.Abs":  "6.0", // if weaker, e.g., 2, other pools get active
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.4",
 				}},
 			{Sel: ".CSToBLAPos", Desc: "stronger by default",
 				Params: params.Params{
@@ -438,46 +438,46 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".BLAFromNovel", Desc: "dilutes everyone else, so make it weaker Rel, compensate with Abs",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Rel": "0.1",
-					"Prjn.PrjnScale.Abs": "5",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Adapt.On":  "false",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.4",
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.PrjnScale.Rel":  "0.1",
+					"Prjn.PrjnScale.Abs":  "5",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Adapt.On":  "false",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.4",
 				}},
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "strong, high variance",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "6", // key param for OFC focusing on current cs
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.4",
+					"Prjn.PrjnScale.Abs":  "6", // key param for OFC focusing on current cs
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.4",
 				}},
 			{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 				Params: params.Params{
-					"Prjn.Com.GType":     "ModulatoryG",
-					"Prjn.PrjnScale.Abs": "0.5",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.4",
+					"Prjn.Com.GType":      "ModulatoryG",
+					"Prjn.PrjnScale.Abs":  "0.5",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.4",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Abs": "2",
-					"Prjn.PrjnScale.Rel": "1",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.Com.GType":     "ModulatoryG",
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.PrjnScale.Abs":  "2",
+					"Prjn.PrjnScale.Rel":  "1",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0.0",
+					"Prjn.Com.GType":      "ModulatoryG",
 				}},
 			{Sel: ".DrivesToVSPatch", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Abs": "2",
-					"Prjn.PrjnScale.Rel": "1",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.Com.GType":     "ModulatoryG",
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.PrjnScale.Abs":  "2",
+					"Prjn.PrjnScale.Rel":  "1",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0.0",
+					"Prjn.Com.GType":      "ModulatoryG",
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
@@ -485,41 +485,41 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // key param for driving gating -- if too strong, premature gating
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Adapt.On":  "false",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.PrjnScale.Rel":  "1.0",
+					"Prjn.PrjnScale.Abs":  "2.0", // key param for driving gating -- if too strong, premature gating
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Adapt.On":  "false",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0.0",
 				}},
 			{Sel: ".ThalToPT", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.Com.GType":     "ModulatoryG", // modulatory -- control with extra ModGain factor
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Adapt.On":  "false",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.PrjnScale.Rel":  "1.0",
+					"Prjn.Com.GType":      "ModulatoryG", // modulatory -- control with extra ModGain factor
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Adapt.On":  "false",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0.0",
 				}},
 			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1",    // keep this constant -- only self vs. this -- thal is modulatory
-					"Prjn.PrjnScale.Abs": "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Adapt.On":  "false",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.PrjnScale.Rel":  "1",    // keep this constant -- only self vs. this -- thal is modulatory
+					"Prjn.PrjnScale.Abs":  "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Adapt.On":  "false",
+					"Prjn.SWts.Init.SPct": "0",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0.0",
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
 					"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
 					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
-					"Prjn.SWt.Init.Mean":    "0.5",
-					"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+					"Prjn.SWts.Init.Mean":   "0.5",
+					"Prjn.SWts.Init.Var":    "0.5", // high variance so not just spreading out over time
 				}},
 			{Sel: "#OFCusCTToOFCusPTp", Desc: "",
 				Params: params.Params{

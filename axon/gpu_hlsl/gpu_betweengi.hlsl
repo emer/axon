@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// note: all must be visible always because accessor methods refer to them
+// computes BetweenLayer GI on layer pools, after poolgemax has been called.
 
+// note: all must be visible always because accessor methods refer to them
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
@@ -14,8 +15,6 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// computes BetweenLayer GI on layer pools, after poolgemax has been called.
-
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
@@ -25,40 +24,40 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
 
-// Set 3: external inputs
 
-float BetweenLayerGiMax(float maxGi, int layIdx) {
+float BetweenLayerGiMax(int layIdx, uint di, float maxGi) {
 	if (layIdx < 0) {
 		return maxGi;
 	}
-	float ogi = Pools[Layers[layIdx].Idxs.PoolSt].Inhib.Gi;
+	float ogi = Pools[Layers[layIdx].Idxs.PoolIdx(0, di)].Inhib.Gi;
 	if (ogi > maxGi) {
 		maxGi = ogi;
 	}
 	return maxGi;
 }
 
-void BetweenGi2(in Context ctx, in LayerParams ly, inout Pool lpl) {
+void BetweenGi2(in Context ctx, in LayerParams ly, uint di, inout Pool lpl) {
 	float maxGi = lpl.Inhib.Gi;
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx1);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx2);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx3);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx4);
+	maxGi = BetweenLayerGiMax(ly.LayInhib.Idx1, di, maxGi);
+	maxGi = BetweenLayerGiMax(ly.LayInhib.Idx2, di, maxGi);
+	maxGi = BetweenLayerGiMax(ly.LayInhib.Idx3, di, maxGi);
+	maxGi = BetweenLayerGiMax(ly.LayInhib.Idx4, di, maxGi);
 	lpl.Inhib.Gi = maxGi; // our inhib is max of us and everyone in the layer pool
 }
 
-void BetweenGi(in Context ctx, uint li, in LayerParams ly) {
-	BetweenGi2(ctx, ly, Pools[ly.Idxs.PoolSt]);
+void BetweenGi(in Context ctx, uint li, uint di, in LayerParams ly) {
+	BetweenGi2(ctx, ly, di, Pools[ly.Idxs.PoolIdx(0, di)]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Layers
-	if (idx.x < Ctx[0].NLayers) {
-		BetweenGi(Ctx[0], idx.x, Layers[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Layers * Data
+	uint li = Ctx[0].NetIdxs.ItemIdx(idx.x);
+	if (!Ctx[0].NetIdxs.LayerIdxIsValid(li)) {
+		return;
 	}
+	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	BetweenGi(Ctx[0], li, di, Layers[li]);
 }
 

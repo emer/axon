@@ -287,17 +287,17 @@ func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
 type NeuronIdxs int32
 
 const (
-	// NrnIdxNeurIdx is the index of this neuron within its owning layer
-	NrnIdxNeurIdx NeuronIdxs = iota
+	// NrnNeurIdx is the index of this neuron within its owning layer
+	NrnNeurIdx NeuronIdxs = iota
 
-	// NrnIdxLayIdx is the index of the layer that this neuron belongs to,
+	// NrnLayIdx is the index of the layer that this neuron belongs to,
 	// needed for neuron-level parallel code.
-	NrnIdxLayIdx
+	NrnLayIdx
 
-	// NrnIdxSubPool is the index of the sub-level inhibitory pool for this neuron
+	// NrnSubPool is the index of the sub-level inhibitory pool for this neuron
 	// (only for 4D shapes, the pool (unit-group / hypercolumn) structure level).
 	// Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
-	NrnIdxSubPool
+	NrnSubPool
 
 	NeuronIdxsN
 )
@@ -308,7 +308,7 @@ type NeuronIdxStrides struct {
 	Neuron uint32 `desc:"neuron level"`
 	Index  uint32 `desc:"index value level"`
 
-	pad, pad2 uint32
+	pad, pad1 uint32
 }
 
 // Idx returns the index into network uint32 array for given neuron, index value

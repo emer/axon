@@ -84,7 +84,7 @@ type PrjnParams struct {
 
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
-	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
+	SWts      SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
 	GScale    GScaleVals      `view:"inline" desc:"conductance scaling values"`
 
@@ -102,7 +102,7 @@ type PrjnParams struct {
 
 func (pj *PrjnParams) Defaults() {
 	pj.Com.Defaults()
-	pj.SWt.Defaults()
+	pj.SWts.Defaults()
 	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
 	pj.RLPred.Defaults()
@@ -113,7 +113,7 @@ func (pj *PrjnParams) Defaults() {
 func (pj *PrjnParams) Update() {
 	pj.Com.Update()
 	pj.PrjnScale.Update()
-	pj.SWt.Update()
+	pj.SWts.Update()
 	pj.Learn.Update()
 	pj.RLPred.Update()
 	pj.Matrix.Update()
@@ -130,7 +130,7 @@ func (pj *PrjnParams) AllParams() string {
 	str += "Com: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.PrjnScale, "", " ")
 	str += "PrjnScale: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
+	b, _ = json.MarshalIndent(&pj.SWts, "", " ")
 	str += "SWt: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
 	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
@@ -160,13 +160,13 @@ func (pj *PrjnParams) IsExcitatory() bool {
 // SetFixedWts sets parameters for fixed, non-learning weights
 // with a default of Mean = 0.8, Var = 0 strength
 func (pj *PrjnParams) SetFixedWts() {
-	pj.SWt.Init.SPct = 0
+	pj.SWts.Init.SPct = 0
 	pj.Learn.Learn.SetBool(false)
-	pj.SWt.Adapt.On.SetBool(false)
-	pj.SWt.Adapt.SigGain = 1
-	pj.SWt.Init.Mean = 0.8
-	pj.SWt.Init.Var = 0.0
-	pj.SWt.Init.Sym.SetBool(false)
+	pj.SWts.Adapt.On.SetBool(false)
+	pj.SWts.Adapt.SigGain = 1
+	pj.SWts.Init.Mean = 0.8
+	pj.SWts.Init.Var = 0.0
+	pj.SWts.Init.Sym.SetBool(false)
 }
 
 // SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
@@ -354,7 +354,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, ri, NrnIdxNeurIdx) == 0 {
+	if NrnI(ctx, ri, NrnNeurIdx) == 0 {
 		if NrnV(ctx, ri, di, Ge) > NrnV(ctx, ri, di, Act) && da > 0 { // clipped at top, saturate up
 			da = 0
 		}
@@ -389,7 +389,7 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, ri, NrnIdxNeurIdx) == 0 {
+	if NrnI(ctx, ri, NrnNeurIdx) == 0 {
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
 		}
@@ -477,7 +477,7 @@ func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, syni uint32) {
 	wt := SynV(ctx, syni, Wt)
 	lwt := SynV(ctx, syni, LWt)
 
-	pj.SWt.WtFmDWt(&dwt, &wt, &lwt, SynV(ctx, syni, SWt))
+	pj.SWts.WtFmDWt(&dwt, &wt, &lwt, SynV(ctx, syni, SWt))
 	SetSynV(ctx, syni, DWt, dwt)
 	SetSynV(ctx, syni, Wt, wt)
 	SetSynV(ctx, syni, LWt, lwt)

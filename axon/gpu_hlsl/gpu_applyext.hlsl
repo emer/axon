@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// note: all must be visible always because accessor methods refer to them
+// calls ApplyExt on neurons
 
+// note: all must be visible always because accessor methods refer to them
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
@@ -13,8 +14,6 @@
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
-
-// calls ApplyExt on neurons
 
 // note: binding is var, set
 
@@ -36,12 +35,12 @@ void ApplyExt2(in Context ctx, in LayerParams ly, uint ni, uint di) {
 }
 
 void ApplyExt(in Context ctx, uint ni, uint di) {
-	ApplyExt2(ctx, Layers[NrnI(ctx, ni, NrnIdxLayIdx)], ni, di);
+	ApplyExt2(ctx, Layers[NrnI(ctx, ni, NrnLayIdx)], ni, di);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Neurons x Data
-	uint ni = Ctx[0].NetIdxs.NeurIdx(idx.x);
+	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
 	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
 		return;
 	}

@@ -75,9 +75,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
 					"Prjn.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
-					"Prjn.SWt.Adapt.LRate":     "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
-					"Prjn.SWt.Adapt.DreamVar":  "0.0",    // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":       "1.0",    // 1 works fine here -- .5 also ok
+					"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
+					"Prjn.SWts.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
+					"Prjn.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)
 				}},
@@ -94,9 +94,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "true", // learning > fixed 1to1
-					"Prjn.SWt.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
-					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.Learn.Learn":    "true", // learning > fixed 1to1
+					"Prjn.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
+					"Prjn.SWts.Init.Var":  "0.25",
 				}},
 			{Sel: ".FmPulv", Desc: "defaults to .Back but generally weaker is better",
 				Params: params.Params{
@@ -106,13 +106,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
 					"Prjn.Com.PFail":     "0.0",  // never useful for random gen
-					"Prjn.SWt.Init.Sym":  "true", // true > false
+					"Prjn.SWts.Init.Sym": "true", // true > false
 				}},
 			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5", // 0.2 > lower, higher
 					"Prjn.Com.GType":     "MaintG",
-					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+					"Prjn.SWts.Init.Sym": "true", // no effect?  not sure why
 				}},
 			{Sel: "#HiddenCTToInputP", Desc: "differential contributions",
 				Params: params.Params{

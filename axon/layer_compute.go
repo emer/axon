@@ -58,7 +58,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		subPool := NrnI(ctx, ni, NrnIdxSubPool)
+		subPool := NrnI(ctx, ni, NrnSubPool)
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			pl := ly.Pool(subPool, di)
 			pl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))

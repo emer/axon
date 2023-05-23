@@ -32,8 +32,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.005", // 0.005 is lvis default
 					"Prjn.Learn.Trace.SubMean": "0",     // 1 is very slow on AMD64 -- good to keep testing
-					"Prjn.SWt.Adapt.LRate":     "0.1",   // .1 >= .2,
-					"Prjn.SWt.Init.SPct":       "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWts.Adapt.LRate":    "0.1",   // .1 >= .2,
+					"Prjn.SWts.Init.SPct":      "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{

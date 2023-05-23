@@ -27,18 +27,34 @@ import (
 
 // LayerIdxs contains index access into network global arrays for GPU.
 type LayerIdxs struct {
-	PoolSt uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
-	NeurSt uint32 `inactive:"+" desc:"start of neurons for this layer in global array (same as Layer.NeurStIdx)"`
-	NeurN  uint32 `inactive:"+" desc:"number of neurons in layer"`
-	RecvSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
-	RecvN  uint32 `inactive:"+" desc:"number of recv projections"`
-	SendSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
-	SendN  uint32 `inactive:"+" desc:"number of recv projections"`
-	ExtsSt uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
-	ShpPlY int32  `inactive:"+" desc:"layer shape Pools Y dimension -- 1 for 2D"`
-	ShpPlX int32  `inactive:"+" desc:"layer shape Pools X dimension -- 1 for 2D"`
-	ShpUnY int32  `inactive:"+" desc:"layer shape Units Y dimension"`
-	ShpUnX int32  `inactive:"+" desc:"layer shape Units X dimension"`
+	LayIdx  uint32 `inactive:"+" desc:"layer index"`
+	MaxData uint32 `inactive:"+" desc:"maximum number of data parallel elements"`
+	PoolSt  uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
+	NeurSt  uint32 `inactive:"+" desc:"start of neurons for this layer in global array (same as Layer.NeurStIdx)"`
+	NeurN   uint32 `inactive:"+" desc:"number of neurons in layer"`
+	RecvSt  uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
+	RecvN   uint32 `inactive:"+" desc:"number of recv projections"`
+	SendSt  uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
+	SendN   uint32 `inactive:"+" desc:"number of recv projections"`
+	ExtsSt  uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
+	ShpPlY  int32  `inactive:"+" desc:"layer shape Pools Y dimension -- 1 for 2D"`
+	ShpPlX  int32  `inactive:"+" desc:"layer shape Pools X dimension -- 1 for 2D"`
+	ShpUnY  int32  `inactive:"+" desc:"layer shape Units Y dimension"`
+	ShpUnX  int32  `inactive:"+" desc:"layer shape Units X dimension"`
+
+	pad, pad1 uint32
+}
+
+// PoolIdx returns the global network index for pool with given
+// pool (0 = layer pool, 1+ = subpools) and data parallel indexes
+func (lx *LayerIdxs) PoolIdx(pi, di uint32) uint32 {
+	return lx.PoolSt + pi*lx.MaxData + di
+}
+
+// ValsIdx returns the global network index for LayerVals with given
+// data parallel index.
+func (lx *LayerIdxs) ValsIdx(di uint32) uint32 {
+	return lx.LayIdx*lx.MaxData + di
 }
 
 // LayerInhibIdxs contains indexes of layers for between-layer inhibition
@@ -357,9 +373,9 @@ func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals, drvGe float32, nonDrvPct float32) float32 {
-	saveVal := float32(0)                  // sometimes we need to use a value computed here, for the post Gs step
-	pi := NrnI(ctx, ni, NrnIdxSubPool) - 1 // 0-n pool index
-	pni := NrnI(ctx, ni, NrnIdxNeurIdx) - pl.StIdx
+	saveVal := float32(0)               // sometimes we need to use a value computed here, for the post Gs step
+	pi := NrnI(ctx, ni, NrnSubPool) - 1 // 0-n pool index
+	pni := NrnI(ctx, ni, NrnNeurIdx) - pl.StIdx
 	nrnCtxtGe := NrnV(ctx, ni, di, CtxtGe)
 	nrnGeRaw := NrnV(ctx, ni, di, GeRaw)
 	switch ly.LayType {
@@ -593,8 +609,8 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni, di uint32) {
 // warning: if more than 1 layer writes to vals, gpu will fail!
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerVals) {
 	SetNrnV(ctx, ni, di, Burst, NrnV(ctx, ni, di, CaSpkP))
-	pi := NrnI(ctx, ni, NrnIdxSubPool) - 1 // 0-n pool index
-	pni := NrnI(ctx, ni, NrnIdxNeurIdx) - pl.StIdx
+	pi := NrnI(ctx, ni, NrnSubPool) - 1 // 0-n pool index
+	pni := NrnI(ctx, ni, NrnNeurIdx) - pl.StIdx
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {

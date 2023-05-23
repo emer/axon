@@ -171,16 +171,16 @@ func (pj *Prjn) SlowAdapt(ctx *Context) {
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
 func (pj *Prjn) SWtFmWt(ctx *Context) {
-	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWt.Adapt.On.IsFalse() {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWts.Adapt.On.IsFalse() {
 		return
 	}
 	rlay := pj.Recv
 	if rlay.Params.IsTarget() {
 		return
 	}
-	max := pj.Params.SWt.Limit.Max
-	min := pj.Params.SWt.Limit.Min
-	lr := pj.Params.SWt.Adapt.LRate
+	max := pj.Params.SWts.Limit.Max
+	min := pj.Params.SWts.Limit.Min
+	lr := pj.Params.SWts.Adapt.LRate
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		syIdxs := pj.RecvSynIdxs(lni)
 		nCons := len(syIdxs)
@@ -199,18 +199,18 @@ func (pj *Prjn) SWtFmWt(ctx *Context) {
 			avgDWt += SynV(ctx, syni, DSWt)
 		}
 		avgDWt /= float32(nCons)
-		avgDWt *= pj.Params.SWt.Adapt.SubMean
+		avgDWt *= pj.Params.SWts.Adapt.SubMean
 		for _, syi := range syIdxs {
 			syni := pj.SynStIdx + syi
 			AddSynV(ctx, syni, SWt, lr*(SynV(ctx, syni, DSWt)-avgDWt))
 			swt := SynV(ctx, syni, SWt)
 			SetSynV(ctx, syni, DSWt, 0)
 			if SynV(ctx, syni, Wt) == 0 { // restore failed wts
-				wt := pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt))
+				wt := pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt))
 				SetSynV(ctx, syni, Wt, wt)
 			}
-			SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWt.Adapt.RndVar()
-			SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
+			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWts.Adapt.RndVar()
+			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 		}
 	}
 }
@@ -243,7 +243,7 @@ func (pj *Prjn) SynScale(ctx *Context) {
 			} else {
 				AddSynV(ctx, syni, LWt, lwt*adif*swt)
 			}
-			SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
+			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 		}
 	}
 }
@@ -258,7 +258,7 @@ func (pj *Prjn) SynFail(ctx *Context) {
 			syni := pj.SynStIdx + syi
 			swt := SynV(ctx, syni, SWt)
 			if SynV(ctx, syni, Wt) == 0 { // restore failed wts
-				SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
+				SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 			}
 			pj.Params.Com.Fail(ctx, syni, swt)
 		}

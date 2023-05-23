@@ -68,8 +68,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
 					"Prjn.Learn.Trace.SubMean": "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-					"Prjn.SWt.Adapt.LRate":     "0.0001", // 0.005 == .1 == .01
-					"Prjn.SWt.Init.SPct":       "1",      // 1 >= lower (trace-v11)
+					"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.005 == .1 == .01
+					"Prjn.SWts.Init.SPct":      "1",      // 1 >= lower (trace-v11)
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 				Params: params.Params{

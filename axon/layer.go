@@ -382,7 +382,7 @@ func (ly *Layer) InitWtSym(ctx *Context) {
 		if pj.IsOff() {
 			continue
 		}
-		if pj.Params.SWt.Init.Sym.IsFalse() {
+		if pj.Params.SWts.Init.Sym.IsFalse() {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -393,7 +393,7 @@ func (ly *Layer) InitWtSym(ctx *Context) {
 		if !has {
 			continue
 		}
-		if rpj.Params.SWt.Init.Sym.IsFalse() {
+		if rpj.Params.SWts.Init.Sym.IsFalse() {
 			continue
 		}
 		pj.InitWtSym(ctx, rpj)

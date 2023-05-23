@@ -83,9 +83,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
 					"Prjn.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
-					"Prjn.SWt.Adapt.LRate":     "0.01", // 0.01 or 0.0001 music
-					"Prjn.SWt.Adapt.DreamVar":  "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":       "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
+					"Prjn.SWts.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
+					"Prjn.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 still 1.7.19
 				}},
@@ -101,25 +101,25 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTFmSuper", Desc: "full > 1to1",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "true",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.Learn.Learn":    "true",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.25",
 				}},
 			{Sel: ".CTSelfCtxt", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
-					"Prjn.SWt.Init.Sym":  "true", // true > false
+					"Prjn.SWts.Init.Sym": "true", // true > false
 				}},
 			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 0.4, 0.3 > 0.8 (very bad)
 					"Prjn.Com.GType":     "MaintG",
-					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+					"Prjn.SWts.Init.Sym": "true", // no effect?  not sure why
 				}},
 			// {Sel: ".CTSelfMaint", Desc: "",
 			// 	Params: params.Params{
 			// 		"Prjn.PrjnScale.Rel": "0.1",
-			// 		"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+			// 		"Prjn.SWts.Init.Sym":  "true", // no effect?  not sure why
 			// 	}},
 			{Sel: ".FmPulv", Desc: "",
 				Params: params.Params{
@@ -128,7 +128,7 @@ var ParamSets = params.Sets{
 			// {Sel: ".CTToPulv", Desc: "",
 			// 	Params: params.Params{
 			// 		// "Prjn.Learn.LRate.Base":  "0.1",
-			// 		// "Prjn.SWt.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
+			// 		// "Prjn.SWts.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
 			// 	}},
 		},
 	}},

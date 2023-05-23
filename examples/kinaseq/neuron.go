@@ -56,9 +56,9 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":         "0.1",         // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.LRate":          "0.08",        // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":            "0.5",         // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.SWt.Init.Var":             "0",           // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWts.Adapt.LRate":         "0.08",        // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWts.Init.SPct":           "0.5",         // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWts.Init.Var":            "0",           // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.KinaseCa.SpikeG":    "12",          // keep at 12 standard, adjust other things
 					"Prjn.Learn.KinaseCa.NMDAG":     "40",          // just to match SynSpk..
 					"Prjn.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",

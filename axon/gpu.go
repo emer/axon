@@ -141,7 +141,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Ctx = ctx
 	gp.NThreads = 64
 
-	ctx.NLayers = int32(gp.Net.NLayers())
 	gp.DidBind = make(map[string]bool)
 
 	if TheGPU == nil {

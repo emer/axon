@@ -140,7 +140,7 @@ type SynapseIdxStrides struct {
 	Synapse uint32 `desc:"synapse level"`
 	Index   uint32 `desc:"index value level"`
 
-	pad, pad2 uint32
+	pad, pad1 uint32
 }
 
 // Idx returns the index into network uint32 array for given synapse, index value

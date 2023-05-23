@@ -47,8 +47,8 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
-					"Prjn.SWt.Adapt.LRate":     "0.1", // .1 >= .2,
-					"Prjn.SWt.Init.SPct":       "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWts.Adapt.LRate":    "0.1", // .1 >= .2,
+					"Prjn.SWts.Init.SPct":      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.SubMean": "0",   // 1 > 0 for long run stability
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",

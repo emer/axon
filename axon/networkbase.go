@@ -629,6 +629,8 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 		npd := np * maxData
 		ly.NPools = uint32(np)
 		ly.Pools = nt.Pools[poolIdx : poolIdx+npd]
+		ly.Params.Idxs.LayIdx = uint32(li)
+		ly.Params.Idxs.MaxData = nt.MaxData
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
@@ -776,6 +778,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 		}
 	}
 
+	ctx.NetIdxs.NLayers = uint32(nLayers)
 	ctx.NetIdxs.NNeurons = nt.NNeurons
 	ctx.NetIdxs.NSyns = nt.NSyns
 

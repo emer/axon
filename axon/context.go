@@ -196,13 +196,27 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 type NetIdxs struct {
 	NData    uint32 `min:"1" desc:"number of data parallel items to process currently"`
 	NetIdx   uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	NLayers  uint32 `view:"-" desc:"number of layers in the network"`
 	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
 	NSyns    uint32 `inactive:"+" desc:"total number of synapses"`
+
+	pad, pad1, pad2 uint32
 }
 
-// NeurIdx returns the neuron index from an overall index over NNeurons * NData
-func (ctx *NetIdxs) NeurIdx(idx uint32) uint32 {
+// ItemIdx returns the main item index from an overall index over NItems * NData
+// (items = layers, neurons, synapeses)
+func (ctx *NetIdxs) ItemIdx(idx uint32) uint32 {
 	return idx / ctx.NData
+}
+
+// DataIdx returns the data index from an overall index over N * NData
+func (ctx *NetIdxs) DataIdx(idx uint32) uint32 {
+	return idx % ctx.NData
+}
+
+// LayerIdxIsValid returns true if the layer index is valid (< NLayers)
+func (ctx *NetIdxs) LayerIdxIsValid(li uint32) bool {
+	return (li < ctx.NLayers)
 }
 
 // NeurIdxIsValid returns true if the neuron index is valid (< NNeurons)
@@ -210,9 +224,9 @@ func (ctx *NetIdxs) NeurIdxIsValid(ni uint32) bool {
 	return (ni < ctx.NNeurons)
 }
 
-// DataIdx returns the data index from an overall index over NNeurons * NData
-func (ctx *NetIdxs) DataIdx(idx uint32) uint32 {
-	return idx % ctx.NData
+// SynIdxIsValid returns true if the synapse index is valid (< NSyns)
+func (ctx *NetIdxs) SynIdxIsValid(si uint32) bool {
+	return (si < ctx.NSyns)
 }
 
 // Context contains all of the global context state info
@@ -234,7 +248,8 @@ type Context struct {
 	TrialsTotal  int32       `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
 	Testing      slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-	NLayers      int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
+
+	pad float32
 
 	NetIdxs       NetIdxs             `view:"inline" desc:"indexes and sizes of current network"`
 	NeuronVars    NeuronVarStrides    `desc:"stride offsets for accessing neuron variables"`
@@ -412,6 +427,14 @@ func (ctx *Context) PVLVDA() float32 {
 // // MulSynCaV is the GPU version of the synapse variable multor
 // void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 //  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val;
+// }
+// // SynCaUpT is the GPU version of the CaUpT synapse variable accessor
+// int32 SynCaUpT(in Context ctx, uint syni, uint di) {
+// 	return int32(asuint(SynCaV(ctx, syni, di, CaUpT)));
+// }
+// // SetSynCaUpT is the GPU version of the CaUpT synapse variable settor
+// void SetSynCaUpT(in Context ctx, uint syni, uint di, int val) {
+// 	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint32(val)));
 // }
 
 // // SynapseIdxs

@@ -140,7 +140,7 @@ func (nt *NetworkBase) NeuronMapPar(ctx *Context, fun func(ly *Layer, ni uint32)
 		nt.FunTimerStart(funame)
 		ParallelRun(func(st, ed uint32) {
 			for ni := st; ni < ed; ni++ {
-				li := NrnI(ctx, ni, NrnIdxLayIdx)
+				li := NrnI(ctx, ni, NrnLayIdx)
 				ly := nt.Layers[li]
 				fun(ly, ni)
 			}

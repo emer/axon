@@ -208,12 +208,12 @@ func (ly *Layer) MatrixDefaults() {
 	// drivers vs. modulators
 
 	for _, pj := range ly.RcvPrjns {
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWts.Init.SPct = 0
 		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
 			pj.Params.SetFixedWts()
 			pj.Params.PrjnScale.Abs = 1
-			pj.Params.SWt.Init.Mean = 0.75
-			pj.Params.SWt.Init.Var = 0.0
+			pj.Params.SWts.Init.Mean = 0.75
+			pj.Params.SWts.Init.Var = 0.0
 			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
 				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
 			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
@@ -265,8 +265,8 @@ func (ly *Layer) GPDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
-		pj.Params.SWt.Init.Var = 0.25  // 0.25
+		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
+		pj.Params.SWts.Init.Var = 0.25  // 0.25
 		if pj.Send.LayerType() == MatrixLayer {
 			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 slightly better gating
 		} else if pj.Send.LayerType() == STNLayer {
@@ -304,8 +304,8 @@ func (ly *Layer) GPiDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75          // 0.75  see above
-		pj.Params.SWt.Init.Var = 0.25           // 0.25
+		pj.Params.SWts.Init.Mean = 0.75         // 0.75  see above
+		pj.Params.SWts.Init.Var = 0.25          // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			pj.Params.PrjnScale.Abs = 1 // 0.8 orig; 1 is fine
 		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
@@ -365,8 +365,8 @@ func (ly *Layer) STNDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWts.Init.Mean = 0.75
+		pj.Params.SWts.Init.Var = 0.25
 		if strings.HasSuffix(ly.Nm, "STNp") {
 			if pj.Send.LayerType() == GPLayer { // GPeInToSTNp
 				pj.Params.PrjnScale.Abs = 0.1
@@ -402,8 +402,8 @@ func (ly *Layer) BGThalDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.0
+		pj.Params.SWts.Init.Mean = 0.75
+		pj.Params.SWts.Init.Var = 0.0
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
 			pj.Params.PrjnScale.Abs = 5 // can now be much stronger with PTMaint mod and maint dynamics
 			pj.SetClass("GPiToBGThal")

@@ -80,10 +80,10 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0",
-					"Prjn.SWt.Init.Sym":  "false", // for lesions, just in case
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0",
+					"Prjn.SWts.Init.Sym":  "false", // for lesions, just in case
 				}},
 			{Sel: "Layer", Desc: "pool etc",
 				Params: params.Params{

@@ -61,10 +61,10 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "false",
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-					"Prjn.Com.Delay":     "2",
+					// "Prjn.SWts.Init.Dist": "Uniform",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.25",
+					"Prjn.Com.Delay":      "2",
 				}},
 			{Sel: ".BackPrjn", Desc: "feedback excitatory",
 				Params: params.Params{
@@ -72,12 +72,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".InhibPrjn", Desc: "inhibitory projections",
 				Params: params.Params{
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0",
-					"Prjn.SWt.Init.Sym":  "false",
-					"Prjn.Com.Delay":     "0",
-					"Prjn.PrjnScale.Abs": "0",
+					// "Prjn.SWts.Init.Dist": "Uniform",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0",
+					"Prjn.SWts.Init.Sym":  "false",
+					"Prjn.Com.Delay":      "0",
+					"Prjn.PrjnScale.Abs":  "0",
 				}},
 			{Sel: ".ToInhib", Desc: "to inhibitory projections",
 				Params: params.Params{
@@ -88,8 +88,8 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.001", //
 					// "Prjn.Learn.Learn":      "false",
 					"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
-					"Prjn.SWt.Adapt.On":  "false", // seems better
-					// "Prjn.SWt.Init.Var":  "0.05",
+					"Prjn.SWts.Adapt.On": "false", // seems better
+					// "Prjn.SWts.Init.Var":  "0.05",
 				}},
 		},
 	}},
@@ -97,9 +97,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
+					// "Prjn.SWts.Init.Dist": "Uniform",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.25",
 				}},
 		},
 	}},
@@ -107,9 +107,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
-					// "Prjn.SWt.Init.Dist": "Gaussian",
-					"Prjn.SWt.Init.Mean": "0.4",
-					"Prjn.SWt.Init.Var":  "0.8",
+					// "Prjn.SWts.Init.Dist": "Gaussian",
+					"Prjn.SWts.Init.Mean": "0.4",
+					"Prjn.SWts.Init.Var":  "0.8",
 				}},
 		},
 	}},
