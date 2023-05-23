@@ -29,58 +29,69 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-// [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
-[[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+// [[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 
-// Set 3: external inputs
+[[vk::binding(3, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(4, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
-void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, inout Neuron nrn) {
-	uint bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(ni, ctx.CyclesTotal, pj.Idxs.RecvNeurN);
+
+void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, uint di, uint lni) {
+	uint bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(lni, di, ctx.CyclesTotal, pj.Idxs.RecvNeurN, ly.Idxs.MaxData);
 	float gRaw = pj.Com.FloatFromGBuf(GBuf[bi]);
 	GBuf[bi] = 0;
-	float gSyn = GSyns[pj.Idxs.GSynSt + ni];
-	pj.GatherSpikes(ctx, ly, ni, nrn, gRaw, gSyn); // integrates into G*Raw; gSyn modified in fun
-	GSyns[pj.Idxs.GSynSt + ni] = gSyn;	
+	uint gsi = lni*ly.Idxs.MaxData + di;
+	float gSyn = GSyns[pj.Idxs.GSynSt + gsi];
+	pj.GatherSpikes(ctx, ly, ni, di, gRaw, gSyn); // integrates into G*Raw; gSyn modified in fun
+	GSyns[pj.Idxs.GSynSt + gsi] = gSyn;	
 }
 
-void NeuronAvgMax(in Context ctx, in LayerParams ly, uint ni, in Neuron nrn) {
-	AtomicInhibRawIncr(Pools[nrn.SubPoolN].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
-	AtomicUpdatePoolAvgMax(Pools[nrn.SubPoolN].AvgMax, nrn);
-	if (Pools[nrn.SubPoolN].IsLayPool == 0) { // also update layer pool if I am a subpool
-		AtomicInhibRawIncr(Pools[ly.Idxs.PoolSt].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
-		AtomicUpdatePoolAvgMax(Pools[ly.Idxs.PoolSt].AvgMax, nrn);
+// Note: Interlocked* methods can ONLY operate directly on the
+// RWStructuredBuffer items, not on arg variables.  Furthermore,
+// if you pass the pools as inout arg values, it dutifully
+// writes over any changes with the unchanged args on output!
+
+void NeuronAvgMax2(in Context ctx, in LayerParams ly, uint pi, uint lpi, uint ni, uint di) {
+	float nrnSpike = NrnV(ctx, ni, di, Spike);
+	float nrnGeRaw = NrnV(ctx, ni, di, GeRaw);
+	float nrnGeExt = NrnV(ctx, ni, di, GeExt);
+	AtomicInhibRawIncr(Pools[pi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt);
+	AtomicUpdatePoolAvgMax(Pools[pi].AvgMax, ctx, ni, di);
+	if (Pools[pi].IsLayPool == 0) { // also update layer pool if I am a subpool
+		AtomicInhibRawIncr(Pools[lpi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt);
+		AtomicUpdatePoolAvgMax(Pools[lpi].AvgMax, ctx, ni, di);
 	}
 }
 
-void GatherSpikes2(in Context ctx, LayerParams ly, uint nin, inout Neuron nrn) {
-	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
+void NeuronAvgMax(in Context ctx, in LayerParams ly, uint ni, uint di) {
+	uint pi = NrnI(ctx, ni, NrnSubPool);
+	NeuronAvgMax2(ctx, ly, ly.Idxs.PoolIdx(pi, di), ly.Idxs.PoolIdx(0, di), ni, di);
+}
 
-	ly.GatherSpikesInit(nrn);
+void GatherSpikes2(in Context ctx, LayerParams ly, uint ni, uint di) {
+	uint lni = ni - ly.Idxs.NeurSt; // layer-based
+
+	ly.GatherSpikesInit(ctx, ni, di);
 	
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		GatherSpikesPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ni, nrn);
+		GatherSpikesPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ni, di, lni);
 	}
 	
-	// Note: Interlocked* methods can ONLY operate directly on the
-	// RWStructuredBuffer items, not on arg variables.  Furthermore,
-	// if you pass the pools as inout arg values, it dutifully
-	// writes over any changes with the unchanged args on output!
-	NeuronAvgMax(ctx, ly, ni, nrn);
+	NeuronAvgMax(ctx, ly, ni, di);
 }
 
-void GatherSpikes(in Context ctx, uint nin, inout Neuron nrn) {
-	GatherSpikes2(ctx, Layers[nrn.LayIdx], nin, nrn);
+void GatherSpikes(in Context ctx, uint ni, uint di) {
+	uint li = NrnI(ctx, ni, NrnLayIdx);
+	GatherSpikes2(ctx, Layers[li], ni, di);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
-	uint ns;
-	uint st;
-	Neurons.GetDimensions(ns, st);
-	if (idx.x < ns) {
-		GatherSpikes(Ctx[0], idx.x, Neurons[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons * Data
+	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
+	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
+		return;
 	}
+	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	GatherSpikes(Ctx[0], ni, di);
 }
 

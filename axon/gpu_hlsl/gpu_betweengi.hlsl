@@ -47,7 +47,7 @@ void BetweenGi2(in Context ctx, in LayerParams ly, uint di, inout Pool lpl) {
 	lpl.Inhib.Gi = maxGi; // our inhib is max of us and everyone in the layer pool
 }
 
-void BetweenGi(in Context ctx, uint li, uint di, in LayerParams ly) {
+void BetweenGi(in Context ctx, in LayerParams ly, uint li, uint di) {
 	BetweenGi2(ctx, ly, di, Pools[ly.Idxs.PoolIdx(0, di)]);
 }
 
@@ -58,6 +58,6 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Layers * Data
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	BetweenGi(Ctx[0], li, di, Layers[li]);
+	BetweenGi(Ctx[0], Layers[li], li, di);
 }
 

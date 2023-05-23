@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// note: all must be visible always because accessor methods refer to them
+// does NewState Update on each Pool
 
+// note: all must be visible always because accessor methods refer to them
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
@@ -15,8 +16,6 @@
 #include "layerparams.hlsl"
 #include "prjnparams.hlsl"
 
-// does NewState Update on each Pool
-
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
@@ -27,53 +26,56 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
-[[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 
+[[vk::binding(3, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(4, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
-void InitPrjnGBuffs(in PrjnParams pj) {
+void InitPrjnGBuffs(in Context ctx, in PrjnParams pj) {
 	uint dlen = pj.Com.DelLen;
+	uint maxData = ctx.NetIdxs.MaxData;
 	for (uint i = 0; i < pj.Idxs.RecvNeurN; i++) {
-	GSyns[pj.Idxs.GSynSt + i] = 0;
-		for (uint di = 0; di < dlen; di++) {
-			GBuf[pj.Idxs.GBufSt + i*dlen + di] = 0;
+		for (uint di = 0; di < maxData; di++) {
+			GSyns[pj.Idxs.GSynSt + i*maxData + di] = 0;
+			for (uint dl = 0; dl < dlen; dl++) {
+				GBuf[pj.Idxs.GBufSt + i*dlen*maxData + dl*maxData + di] = 0;
+			}
 		}
 	}
 }
 
-void NewStateNeuron(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in LayerVals vals) {
-	ly.NewStateNeuron(ctx, ni, nrn, vals);
+void NewStateNeuron(in Context ctx, in LayerParams ly, uint ni, uint di, in LayerVals vals) {
+	ly.NewStateNeuron(ctx, ni, di, vals);
 }
 
-void NewState2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, inout LayerVals vals) {
+void NewState2(in Context ctx, in LayerParams ly, uint pi, uint di, inout Pool pl, inout LayerVals vals) {
 	ly.NewStatePool(ctx, pl);
 	if (pl.IsLayPool == 0) {
 		return;
 	}
 	ly.NewStateLayer(ctx, pl, vals);
-	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
-		NewStateNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], vals);
+	for (uint lni = pl.StIdx; lni < pl.EdIdx; lni++) {
+		NewStateNeuron(ctx, ly, lni + ly.Idxs.NeurSt, di, vals);
 	}
 	// if (ly.Act.Decay.Glong != 0) { // clear pipeline of incoming spikes, assuming time has passed
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		InitPrjnGBuffs(Prjns[ly.Idxs.RecvSt + pi]);
+		InitPrjnGBuffs(ctx, Prjns[ly.Idxs.RecvSt + pi]);
 	}
 	// }
 }
 
-void NewState(in Context ctx, uint pi, inout Pool pl) {
-	NewState2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx]);
+void NewState(in Context ctx, uint pi, uint di, inout Pool pl) {
+	NewState2(ctx, Layers[pl.LayIdx], pi, di, pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Pools
-	uint ns;
-	uint st;
-	Pools.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		NewState(Ctx[0], idx.x, Pools[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Pools * Data (all pools)
+	uint pi = idx.x;
+	if (!Ctx[0].NetIdxs.PoolDataIdxIsValid(pi)) {
+		return;
 	}
+	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	NewState(Ctx[0], pi, di, Pools[pi]);
 }
 

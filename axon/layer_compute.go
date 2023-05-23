@@ -255,13 +255,13 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		vals := ly.LayerVals(di)
 		switch ly.LayerType() {
 		case PTNotMaintLayer:
-			ly.Params.CyclePostPTNotMaintLayer(ctx, ly.Pool(0, di), di)
+			ly.Params.CyclePostPTNotMaintLayer(ctx, di, ly.Pool(0, di))
 		case CeMLayer:
-			ly.Params.CyclePostCeMLayer(ctx, ly.Pool(0, di), di)
+			ly.Params.CyclePostCeMLayer(ctx, di, ly.Pool(0, di))
 		case VSPatchLayer:
 			for pi := uint32(1); pi < ly.NPools; pi++ {
 				pl := ly.Pool(pi, di)
-				ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl, di)
+				ly.Params.CyclePostVSPatchLayer(ctx, di, int32(pi), pl)
 			}
 		case LDTLayer:
 			srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx, di)
@@ -273,15 +273,15 @@ func (ly *Layer) CyclePost(ctx *Context) {
 			ly.Params.CyclePostVTALayer(ctx, di)
 		case RWDaLayer:
 			pvals := net.LayerVals(uint32(ly.Params.RWDa.RWPredLayIdx), di)
-			ly.Params.CyclePostRWDaLayer(ctx, vals, pvals, di)
+			ly.Params.CyclePostRWDaLayer(ctx, di, vals, pvals)
 		case TDPredLayer:
-			ly.Params.CyclePostTDPredLayer(ctx, vals, di)
+			ly.Params.CyclePostTDPredLayer(ctx, di, vals)
 		case TDIntegLayer:
 			pvals := net.LayerVals(uint32(ly.Params.TDInteg.TDPredLayIdx), di)
-			ly.Params.CyclePostTDIntegLayer(ctx, vals, pvals, di)
+			ly.Params.CyclePostTDIntegLayer(ctx, di, vals, pvals)
 		case TDDaLayer:
 			ivals := net.LayerVals(uint32(ly.Params.TDDa.TDIntegLayIdx), di)
-			ly.Params.CyclePostTDDaLayer(ctx, vals, ivals, di)
+			ly.Params.CyclePostTDDaLayer(ctx, di, vals, ivals)
 		}
 	}
 }

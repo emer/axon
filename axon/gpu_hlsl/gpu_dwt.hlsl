@@ -27,32 +27,36 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-// [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+// [[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 
 
-void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint ci, inout Synapse sy, in Neuron sn, in Neuron rn) {
+void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint syni, uint di, uint si, uint ri) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
-	bool isTarget = (rlay.Act.Clamp.IsTarget == 1);
+	bool isTarget = (rlay.Acts.Clamp.IsTarget == 1);
+	uint pi = NrnI(ctx, ri, NrnSubPool);
 
-	pj.DWtSyn(ctx, sy, sn, rn, Pools[rlay.Idxs.PoolSt], Pools[rn.SubPoolN], isTarget);
+	pj.DWtSyn(ctx, syni, si, ri, di, Pools[rlay.Idxs.PoolIdx(0, di)], Pools[rlay.Idxs.PoolIdx(pi, di)], isTarget);
 }
 
-void DWtSyn(in Context ctx, uint ci, inout Synapse sy) {
-	DWtSyn2(ctx, Layers[Prjns[sy.PrjnIdx].Idxs.RecvLay], Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
+void DWtSyn(in Context ctx, uint syni, uint di) {
+	uint pi = SynI(ctx, syni, SynPrjnIdx);
+	uint si = SynI(ctx, syni, SynSendIdx);
+	uint ri = SynI(ctx, syni, SynRecvIdx);
+	DWtSyn2(ctx, Layers[Prjns[pi].Idxs.RecvLay], Prjns[pi], syni, di, si, ri);
 }
 
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Synapses
-	uint ns;
-	uint st;
-	Synapses.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		DWtSyn(Ctx[0], idx.x, Synapses[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Synapses * Data
+	uint syni = Ctx[0].NetIdxs.ItemIdx(idx.x);
+	if (!Ctx[0].NetIdxs.SynIdxIsValid(syni)) {
+		return;
 	}
+	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	DWtSyn(Ctx[0], syni, di);
 }
 
 

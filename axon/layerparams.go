@@ -749,7 +749,7 @@ func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, vals *LayerVal
 	ctx.NeuroMod.ACh = vals.NeuroMod.ACh
 }
 
-func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *LayerVals, di uint32) {
+func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, di uint32, vals *LayerVals, pvals *LayerVals) {
 	pred := pvals.Special.V1 - pvals.Special.V2
 	ctx.NeuroMod.RewPred = pred // record
 	da := float32(0)
@@ -760,14 +760,14 @@ func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *
 	vals.NeuroMod.DA = da
 }
 
-func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, vals *LayerVals, di uint32) {
+func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, di uint32, vals *LayerVals) {
 	if ctx.PlusPhase.IsTrue() {
 		pred := vals.Special.V1 - vals.Special.V2
 		ctx.NeuroMod.PrevPred = pred
 	}
 }
 
-func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, vals *LayerVals, pvals *LayerVals, di uint32) {
+func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, di uint32, vals *LayerVals, pvals *LayerVals) {
 	rew := float32(0)
 	if ctx.NeuroMod.HasRew.IsTrue() {
 		rew = ctx.NeuroMod.Rew
@@ -784,7 +784,7 @@ func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, vals *LayerVals, pval
 	ctx.NeuroMod.RewPred = rpval // global value will be copied to layers next cycle
 }
 
-func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *LayerVals, di uint32) {
+func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32, vals *LayerVals, ivals *LayerVals) {
 	da := ivals.Special.V2 - ivals.Special.V1
 	if ctx.PlusPhase.IsFalse() {
 		da = 0
@@ -793,7 +793,7 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *
 	vals.NeuroMod.DA = da
 }
 
-func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpl *Pool, di uint32) {
+func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, di uint32, lpl *Pool) {
 	if ly.Learn.NeuroMod.Valence == Positive {
 		ctx.PVLV.VTA.Raw.CeMpos = lpl.AvgMax.CaSpkD.Cycle.Max
 	} else {
@@ -801,7 +801,7 @@ func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpl *Pool, di uint32) {
 	}
 }
 
-func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, lpl *Pool, di uint32) {
+func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, di uint32, lpl *Pool) {
 	ctx.NeuroMod.NotMaint = lpl.AvgMax.CaSpkD.Cycle.Max
 }
 
@@ -810,7 +810,7 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 }
 
 // note: needs to iterate over sub-pools in layer!
-func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi int32, pl *Pool, di uint32) {
+func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool) {
 	val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
 	ctx.PVLV.VSPatch.Set(pi-1, val)
 }

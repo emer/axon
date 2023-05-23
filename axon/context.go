@@ -196,11 +196,19 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 type NetIdxs struct {
 	NData    uint32 `min:"1" desc:"number of data parallel items to process currently"`
 	NetIdx   uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	NLayers  uint32 `view:"-" desc:"number of layers in the network"`
+	MaxData  uint32 `inactive:"+" desc:"maximum amount of data parallel"`
+	NLayers  uint32 `inactive:"+" desc:"number of layers in the network"`
 	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
+	NPools   uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
 	NSyns    uint32 `inactive:"+" desc:"total number of synapses"`
 
-	pad, pad1, pad2 uint32
+	pad uint32
+}
+
+// ValsIdx returns the global network index for LayerVals
+// with given layer index and data parallel index.
+func (ctx *NetIdxs) ValsIdx(li, di uint32) uint32 {
+	return li*ctx.MaxData + di
 }
 
 // ItemIdx returns the main item index from an overall index over NItems * NData
@@ -222,6 +230,16 @@ func (ctx *NetIdxs) LayerIdxIsValid(li uint32) bool {
 // NeurIdxIsValid returns true if the neuron index is valid (< NNeurons)
 func (ctx *NetIdxs) NeurIdxIsValid(ni uint32) bool {
 	return (ni < ctx.NNeurons)
+}
+
+// PoolIdxIsValid returns true if the pool index is valid (< NPools)
+func (ctx *NetIdxs) PoolIdxIsValid(pi uint32) bool {
+	return (pi < ctx.NPools)
+}
+
+// PoolDataIdxIsValid returns true if the pool*data index is valid (< NPools*MaxData)
+func (ctx *NetIdxs) PoolDataIdxIsValid(pi uint32) bool {
+	return (pi < ctx.NPools*ctx.MaxData)
 }
 
 // SynIdxIsValid returns true if the synapse index is valid (< NSyns)

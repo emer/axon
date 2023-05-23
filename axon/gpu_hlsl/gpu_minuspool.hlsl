@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// note: all must be visible always because accessor methods refer to them
+// does MinusPhase Update on each Pool
 
+// note: all must be visible always because accessor methods refer to them
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
@@ -14,8 +15,6 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// does MinusPhase Update on each Pool
-
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
@@ -25,8 +24,8 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 
 
 void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVals vals) {
@@ -36,17 +35,17 @@ void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVal
 	}
 }
 
-void MinusPool(in Context ctx, uint pi, inout Pool pl) {
-	MinusPool2(ctx, Layers[pl.LayIdx], pl, LayVals[pl.LayIdx]);
+void MinusPool(in Context ctx, uint pi, uint di, inout Pool pl) {
+	MinusPool2(ctx, Layers[pl.LayIdx], pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Pools
-	uint ns;
-	uint st;
-	Pools.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		MinusPool(Ctx[0], idx.x, Pools[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Pools * Data (all pools)
+	uint pi = idx.x;
+	if (!Ctx[0].NetIdxs.PoolDataIdxIsValid(pi)) {
+		return;
 	}
+	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	MinusPool(Ctx[0], pi, di, Pools[pi]);
 }
 

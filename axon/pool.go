@@ -146,14 +146,14 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
-#define AtomicUpdatePoolAvgMax(am, nrn) \
-	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, NrnV(ctx, ni, di, CaSpkP); \
-	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, NrnV(ctx, ni, di, CaSpkD); \
-	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, NrnV(ctx, ni, di, SpkMax); \
-	AtomicUpdateAvgMaxI32(am.Act.Cycle, NrnV(ctx, ni, di, Act); \
-	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NrnV(ctx, ni, di, GeInt); \
-	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, NrnV(ctx, ni, di, GeIntMax); \
-	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NrnV(ctx, ni, di, GiInt)
+#define AtomicUpdatePoolAvgMax(am, ctx, ni, di) \
+	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, NrnV(ctx, ni, di, CaSpkP)); \
+	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, NrnV(ctx, ni, di, CaSpkD)); \
+	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, NrnV(ctx, ni, di, SpkMax)); \
+	AtomicUpdateAvgMaxI32(am.Act.Cycle, NrnV(ctx, ni, di, Act)); \
+	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NrnV(ctx, ni, di, GeInt)); \
+	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, NrnV(ctx, ni, di, GeIntMax)); \
+	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NrnV(ctx, ni, di, GiInt))
 */
 //gosl: end pool
 

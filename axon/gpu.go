@@ -14,7 +14,7 @@ import (
 	vk "github.com/goki/vulkan"
 )
 
-// go:embed shaders/*.spv
+//go:embed shaders/*.spv
 var content embed.FS
 
 //go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx rand.go avgmax.go neuromod.go pvlv.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_hlsl
@@ -465,11 +465,11 @@ func (gp *GPU) CopySynapsesToStaging() {
 	if !gp.On {
 		return
 	}
-	_, synv, _ := gp.Structs.ValByIdxTry("Synapses", 0)
+	_, synv, _ := gp.Syns.ValByIdxTry("Synapses", 0)
 	synv.CopyFromBytes(unsafe.Pointer(&gp.Net.Synapses[0]))
-	_, syncv, _ := gp.Structs.ValByIdxTry("SynapseCas", 0)
+	_, syncv, _ := gp.Syns.ValByIdxTry("SynapseCas", 0)
 	syncv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseCas[0]))
-	_, syniv, _ := gp.Structs.ValByIdxTry("SynapseIxs", 0)
+	_, syniv, _ := gp.Syns.ValByIdxTry("SynapseIxs", 0)
 	syniv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseIxs[0]))
 }
 
@@ -492,9 +492,9 @@ func (gp *GPU) SyncGBufToGPU() {
 	if !gp.On {
 		return
 	}
-	_, gbv, _ := gp.Structs.ValByIdxTry("GBuf", 0)
+	_, gbv, _ := gp.Syns.ValByIdxTry("GBuf", 0)
 	gbv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGBuf[0]))
-	_, gsv, _ := gp.Structs.ValByIdxTry("GSyns", 0)
+	_, gsv, _ := gp.Syns.ValByIdxTry("GSyns", 0)
 	gsv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGSyns[0]))
 	gp.SyncMemToGPU()
 }
@@ -507,6 +507,15 @@ func (gp *GPU) SyncGBufToGPU() {
 // SyncRegionStruct returns the SyncRegion with error panic
 func (gp *GPU) SyncRegionStruct(vnm string) vgpu.MemReg {
 	r, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, vnm, 0)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+// SyncRegionSyns returns the SyncRegion with error panic
+func (gp *GPU) SyncRegionSyns(vnm string) vgpu.MemReg {
+	r, err := gp.Sys.Mem.SyncRegionValIdx(gp.Syns.Set, vnm, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -609,9 +618,9 @@ func (gp *GPU) CopySynapsesFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, synv, _ := gp.Structs.ValByIdxTry("Synapses", 0)
+	_, synv, _ := gp.Syns.ValByIdxTry("Synapses", 0)
 	synv.CopyToBytes(unsafe.Pointer(&gp.Net.Synapses[0]))
-	_, syncv, _ := gp.Structs.ValByIdxTry("SynapseCas", 0)
+	_, syncv, _ := gp.Syns.ValByIdxTry("SynapseCas", 0)
 	syncv.CopyToBytes(unsafe.Pointer(&gp.Net.SynapseCas[0]))
 }
 
@@ -621,8 +630,8 @@ func (gp *GPU) SyncSynapsesFmGPU() {
 	if !gp.On {
 		return
 	}
-	syr := gp.SyncRegionStruct("Synapses")
-	sycr := gp.SyncRegionStruct("SynapseCas")
+	syr := gp.SyncRegionSyns("Synapses")
+	sycr := gp.SyncRegionSyns("SynapseCas")
 	gp.Sys.Mem.SyncStorageRegionsFmGPU(syr, sycr)
 	gp.CopySynapsesFmStaging()
 }
@@ -663,7 +672,8 @@ func (gp *GPU) SyncStateFmGPU() {
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, lvr, plr, nrr)
+	nrar := gp.SyncRegionStruct("NeuronAvgs")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, lvr, plr, nrr, nrar)
 	gp.CopyStateFmStaging()
 }
 
@@ -676,8 +686,10 @@ func (gp *GPU) SyncAllFmGPU() {
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
-	syr := gp.SyncRegionStruct("Synapses")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvr, plr, nrr, syr)
+	nrar := gp.SyncRegionStruct("NeuronAvgs")
+	syr := gp.SyncRegionSyns("Synapses")
+	sycr := gp.SyncRegionSyns("SynapseCas")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvr, plr, nrr, nrar, syr, sycr)
 	gp.CopyLayerValsFmStaging()
 	gp.CopyPoolsFmStaging()
 	gp.CopyNeuronsFmStaging()
@@ -780,6 +792,8 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 	}
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+
 	exr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Exts", 0)
 	if err != nil {
 		log.Println(err)
@@ -789,7 +803,7 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, exr)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "ApplyExts", len(gp.Net.Neurons), "MemCopyTo", "")
+	gp.RunPipelineCmd(cmd, "ApplyExts", neurDataN, "MemCopyTo", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -846,24 +860,28 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 
+	layDataN := gp.Net.NLayers() * int(gp.Net.MaxData)
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	poolDataN := len(gp.Net.Pools)
+
 	gp.StartRunCmd(cmd)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "GatherSpikes", len(gp.Net.Neurons), "MemCopyTo", "GatherSpikes")
+	gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "MemCopyTo", "GatherSpikes")
 
-	gp.RunPipelineCmd(cmd, "LayGi", len(gp.Net.Layers), "GatherSpikes", "LayGi")
-	gp.RunPipelineCmd(cmd, "BetweenGi", len(gp.Net.Layers), "LayGi", "BetweenGi")
-	gp.RunPipelineCmd(cmd, "PoolGi", len(gp.Net.Pools), "BetweenGi", "PoolGi")
+	gp.RunPipelineCmd(cmd, "LayGi", layDataN, "GatherSpikes", "LayGi")
+	gp.RunPipelineCmd(cmd, "BetweenGi", layDataN, "LayGi", "BetweenGi")
+	gp.RunPipelineCmd(cmd, "PoolGi", poolDataN, "BetweenGi", "PoolGi")
 
-	gp.RunPipelineCmd(cmd, "Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
+	gp.RunPipelineCmd(cmd, "Cycle", neurDataN, "PoolGi", "Cycle")
 
 	// todo: do over SendCon instead
-	gp.RunPipelineCmd(cmd, "SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
+	gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
 	if gp.Ctx.Testing.IsTrue() {
 		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
 	} else {
 		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
-		gp.RunPipelineCmd(cmd, "SynCa", len(gp.Net.Neurons), "CyclePost", "CycleEnd")
+		gp.RunPipelineCmd(cmd, "SynCa", neurDataN, "CyclePost", "CycleEnd")
 	}
 
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
@@ -904,28 +922,32 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 
+	layDataN := gp.Net.NLayers() * int(gp.Net.MaxData)
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	poolDataN := len(gp.Net.Pools)
+
 	gp.StartRunCmd(cmd)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "GatherSpikes", len(gp.Net.Neurons), "MemCopyTo", "GatherSpikes")
+	gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "MemCopyTo", "GatherSpikes")
 
 	for ci := 0; ci < CyclesN; ci++ {
 		if ci > 0 {
-			gp.RunPipelineCmd(cmd, "GatherSpikes", len(gp.Net.Neurons), "CycleInc", "GatherSpikes")
+			gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "CycleInc", "GatherSpikes")
 		}
 
-		gp.RunPipelineCmd(cmd, "LayGi", len(gp.Net.Layers), "GatherSpikes", "LayGi")
-		gp.RunPipelineCmd(cmd, "BetweenGi", len(gp.Net.Layers), "LayGi", "BetweenGi")
-		gp.RunPipelineCmd(cmd, "PoolGi", len(gp.Net.Pools), "BetweenGi", "PoolGi")
+		gp.RunPipelineCmd(cmd, "LayGi", layDataN, "GatherSpikes", "LayGi")
+		gp.RunPipelineCmd(cmd, "BetweenGi", layDataN, "LayGi", "BetweenGi")
+		gp.RunPipelineCmd(cmd, "PoolGi", poolDataN, "BetweenGi", "PoolGi")
 
-		gp.RunPipelineCmd(cmd, "Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
+		gp.RunPipelineCmd(cmd, "Cycle", neurDataN, "PoolGi", "Cycle")
 
-		gp.RunPipelineCmd(cmd, "SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
+		gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
 		if gp.Ctx.Testing.IsTrue() {
 			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
 		} else {
 			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
-			gp.RunPipelineCmd(cmd, "SynCa", len(gp.Net.Neurons), "CyclePost", "CycleEnd")
+			gp.RunPipelineCmd(cmd, "SynCa", neurDataN, "CyclePost", "CycleEnd")
 		}
 		if ci < CyclesN-1 {
 			gp.RunPipelineCmd(cmd, "CycleInc", 1, "CycleEnd", "CycleInc") // we do
@@ -1001,11 +1023,14 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	poolDataN := len(gp.Net.Pools)
+
 	gp.StartRunCmd(cmd)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "MinusPool", len(gp.Net.Pools), "MemCopyTo", "PoolGi")
-	gp.RunPipelineCmd(cmd, "MinusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
+	gp.RunPipelineCmd(cmd, "MinusPool", poolDataN, "MemCopyTo", "PoolGi")
+	gp.RunPipelineCmd(cmd, "MinusNeuron", neurDataN, "PoolGi", "MemCopyFm")
 	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
 	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr, nrr)
 	gp.Sys.ComputeCmdEndCmd(cmd)
@@ -1050,11 +1075,14 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	poolDataN := len(gp.Net.Pools)
+
 	gp.StartRunCmd(cmd)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "PlusPool", len(gp.Net.Pools), "MemCopyTo", "PoolGi")
-	gp.RunPipelineCmd(cmd, "PlusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
+	gp.RunPipelineCmd(cmd, "PlusPool", poolDataN, "MemCopyTo", "PoolGi")
+	gp.RunPipelineCmd(cmd, "PlusNeuron", neurDataN, "PoolGi", "MemCopyFm")
 
 	// note: could use atomic add to accumulate CorSim stat values in LayVals tmp vars for Cosv, ssm and ssp
 	// from which the overall val is computed
@@ -1071,7 +1099,8 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 // RunDWt runs the DWt shader to compute weight changes.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunDWt() {
-	gp.RunPipelineWait("DWt", len(gp.Net.Synapses))
+	synDataN := int(gp.Net.NSyns) * int(gp.Net.MaxData)
+	gp.RunPipelineWait("DWt", synDataN)
 }
 
 // RunWtFmDWt runs the WtFmDWt shader to update weights from weigh changes.
@@ -1099,10 +1128,13 @@ func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 
 	nrr := gp.SyncRegionStruct("Neurons")
 
+	synN := int(gp.Net.NSyns)
+	neurN := int(gp.Net.NNeurons)
+
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr)                                 // staging -> GPU
-	gp.RunPipelineCmd(cmd, "DWtSubMean", len(gp.Net.Neurons), "", "PoolGi") // using poolgi for kicks
-	gp.RunPipelineCmd(cmd, "WtFmDWt", len(gp.Net.Synapses), "PoolGi", "")
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr)                   // staging -> GPU
+	gp.RunPipelineCmd(cmd, "DWtSubMean", neurN, "", "PoolGi") // using poolgi for kicks
+	gp.RunPipelineCmd(cmd, "WtFmDWt", synN, "PoolGi", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }

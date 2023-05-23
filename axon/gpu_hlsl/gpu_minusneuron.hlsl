@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// note: all must be visible always because accessor methods refer to them
+// does MinusPhase Update on each Neuron
 
+// note: all must be visible always because accessor methods refer to them
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
@@ -14,8 +15,6 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// does MinusPhase Update on each Neuron
-
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
@@ -25,26 +24,27 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 
 
-void MinusPhaseNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, in Pool pl) {
-	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
-	ly.MinusPhaseNeuron(ctx, ni, nrn, pl, Pools[ly.Idxs.PoolSt], LayVals[pl.LayIdx]);
+void MinusPhaseNeuron2(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl) {
+	ly.MinusPhaseNeuron(ctx, ni, di, pl, Pools[ly.Idxs.PoolIdx(0, di)], LayVals[ly.Idxs.ValsIdx(di)]);
 }
 
-void MinusPhaseNeuron(in Context ctx, uint nin, inout Neuron nrn) {
-	MinusPhaseNeuron2(ctx, Layers[nrn.LayIdx], nin, nrn, Pools[nrn.SubPoolN]);
+void MinusPhaseNeuron(in Context ctx, uint ni, uint di) {
+	uint li = NrnI(ctx, ni, NrnLayIdx);
+	uint pi = NrnI(ctx, ni, NrnSubPool);
+	MinusPhaseNeuron2(ctx, Layers[li], ni, di, Pools[Layers[li].Idxs.PoolIdx(pi, di)]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
-	uint ns;
-	uint st;
-	Neurons.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		MinusPhaseNeuron(Ctx[0], idx.x, Neurons[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons * Data
+	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
+	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
+		return;
 	}
+	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	MinusPhaseNeuron(Ctx[0], ni, di);
 }
 

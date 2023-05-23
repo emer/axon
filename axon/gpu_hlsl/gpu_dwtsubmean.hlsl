@@ -33,20 +33,20 @@
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 
 
-void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, in Neuron rn) {
+void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ri, uint lni) {
 	float sm = pj.Learn.Trace.SubMean;
 	if (sm == 0) {
 		return;
 	}
-	float rnCaSyn = pj.Learn.KinaseCa.SpikeG * rn.CaSyn;
-	uint cni = pj.Idxs.RecvConSt + ni;
+	uint cni = pj.Idxs.RecvConSt + lni;
 	uint synst = pj.Idxs.RecvSynSt + RecvCon[cni].Start;
 	uint synn = RecvCon[cni].N;
 
 	float sumDWt = 0;
 	int nnz = 0;
 	for (uint ci = 0; ci < synn; ci++) {
-		float dw = Synapses[RecvSynIdxs[synst + ci]].DWt;
+		uint syni = RecvSynIdxs[synst + ci];
+		float dw = SynV(ctx, syni, DWt);
 		if (dw != 0) {
 			sumDWt += dw;
 			nnz++;
@@ -57,36 +57,33 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni
 	}
 	sumDWt /= float(nnz);
 	for (uint ci = 0; ci < synn; ci++) {
-		float dw = Synapses[RecvSynIdxs[synst + ci]].DWt;
+		uint syni = RecvSynIdxs[synst + ci];
+		float dw = SynV(ctx, syni, DWt);
 		if (dw != 0) {
-			Synapses[RecvSynIdxs[synst + ci]].DWt -= sm * sumDWt;
+			SetSynV(ctx, syni, DWt, -sm * sumDWt);
 		}
 	}	
 }
 
-void DWtSubMean2(in Context ctx, in LayerParams ly, uint nin, in Neuron rn) {
-	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
-	
+void DWtSubMean2(in Context ctx, in LayerParams ly, uint ri) {
+	uint lni = ri - ly.Idxs.NeurSt; // layer-based as in Go
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		DWtSubMeanPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ni, rn);
+		DWtSubMeanPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ri, lni);
 	}
 }
 
-void DWtSubMean(in Context ctx, uint nin, in Neuron rn) {
-	if (rn.Spike == 0) {
-		return;
-	}
-	DWtSubMean2(ctx, Layers[rn.LayIdx], nin, rn);
+void DWtSubMean(in Context ctx, uint ri) {
+	uint li = NrnI(ctx, ri, NrnLayIdx);
+	DWtSubMean2(ctx, Layers[li], ri);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
-	uint ns;
-	uint st;
-	Neurons.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		DWtSubMean(Ctx[0], idx.x, Neurons[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons -- NOT Data
+	uint ri = idx.x;
+	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ri)) {
+		return;
 	}
+	DWtSubMean(Ctx[0], ri);
 }
 
 
