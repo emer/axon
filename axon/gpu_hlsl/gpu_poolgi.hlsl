@@ -47,6 +47,9 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Pools * Data (all pools)
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+		return;
+	}
 	PoolGi(Ctx[0], di, Pools[npi]);
 }
 

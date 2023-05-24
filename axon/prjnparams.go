@@ -230,17 +230,17 @@ func (pj *PrjnParams) SynCaSyn(ctx *Context, syni uint32, ni, di uint32, otherCa
 	if NrnV(ctx, ni, di, CaSpkP) < updtThr && NrnV(ctx, ni, di, CaSpkD) < updtThr {
 		return
 	}
-	caUpT := SynCaUpT(ctx, syni, di)
+	caUpT := SynCaV(ctx, syni, di, CaUpT)
 	syCaM := SynCaV(ctx, syni, di, CaM)
 	syCaP := SynCaV(ctx, syni, di, CaP)
 	syCaD := SynCaV(ctx, syni, di, CaD)
-	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, caUpT, &syCaM, &syCaP, &syCaD)
+	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr-1, caUpT, &syCaM, &syCaP, &syCaD)
 	ca := NrnV(ctx, ni, di, CaSyn) * otherCaSyn
 	pj.Learn.KinaseCa.FmCa(ca, &syCaM, &syCaP, &syCaD)
 	SetSynCaV(ctx, syni, di, CaM, syCaM)
 	SetSynCaV(ctx, syni, di, CaP, syCaP)
 	SetSynCaV(ctx, syni, di, CaD, syCaD)
-	SetSynCaUpT(ctx, syni, di, ctx.CyclesTotal)
+	SetSynCaV(ctx, syni, di, CaUpT, ctx.SynCaCtr)
 }
 
 ///////////////////////////////////////////////////
@@ -272,12 +272,12 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 // Uses synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
-	caUpT := SynCaUpT(ctx, syni, di)
+	caUpT := SynCaV(ctx, syni, di, CaUpT)
 	syCaM := SynCaV(ctx, syni, di, CaM)
 	syCaP := SynCaV(ctx, syni, di, CaP)
 	syCaD := SynCaV(ctx, syni, di, CaD)
-	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal, caUpT, &syCaM, &syCaP, &syCaD) // always update
-	dtr := syCaD                                                            // caD reflects entire window
+	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update
+	dtr := syCaD                                                         // caD reflects entire window
 	if pj.PrjnType == CTCtxtPrjn {
 		dtr = NrnV(ctx, si, di, BurstPrv)
 	}

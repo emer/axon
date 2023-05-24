@@ -24,7 +24,7 @@
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
 [[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns]
 [[vk::binding(5, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
 [[vk::binding(6, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
@@ -49,6 +49,9 @@ void SynCaSendPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni,
 	if (pj.Learn.Learn == 0) {
 		return;
 	}
+	if (!pj.DoSynCa()) {
+		return;
+	}
 	
 	float snCaSyn = pj.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn);
 	uint cni = pj.Idxs.SendConSt + lni;
@@ -62,6 +65,9 @@ void SynCaSendPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni,
 
 void SynCaRecvPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, uint lni, uint di, float updtThr) {
 	if (pj.Learn.Learn == 0) {
+		return;
+	}
+	if (!pj.DoSynCa()) {
 		return;
 	}
 	
@@ -106,6 +112,9 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Neurons * Data
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+		return;
+	}
 	SynCa(Ctx[0], ni, di);
 }
 

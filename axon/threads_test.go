@@ -52,10 +52,10 @@ func TestCollectAndSetDWts(t *testing.T) {
 
 	rand.Seed(1337)
 	netA := buildNet(ctxA, t, shape, 1)
-	netA.SlowInterval = 1
+	ctxA.SlowInterval = 1
 	rand.Seed(1337)
 	netB := buildNet(ctxB, t, shape, 1)
-	netB.SlowInterval = 1
+	ctxB.SlowInterval = 1
 
 	runCycle := func(net *Network, ctx *Context, pats *etable.Table) {
 		inPats := pats.ColByName("Input").(*etensor.Float32).SubSpace([]int{0})

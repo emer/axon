@@ -55,6 +55,9 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Synapses * Data
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+		return;
+	}
 	DWtSyn(Ctx[0], syni, di);
 }
 

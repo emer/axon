@@ -79,6 +79,7 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 	}
 	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
 	syIdxs := pj.RecvSynIdxs(ni - pj.Recv.NeurStIdx)
+
 	for _, syi := range syIdxs {
 		syni := pj.SynStIdx + syi
 		si := SynI(ctx, syni, SynSendIdx)
@@ -163,6 +164,7 @@ func (pj *Prjn) WtFmDWt(ctx *Context, ni uint32) {
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
 func (pj *Prjn) SlowAdapt(ctx *Context) {
+	pj.SynCaReset(ctx)
 	pj.SWtFmWt(ctx)
 	pj.SynScale(ctx)
 }
@@ -244,6 +246,20 @@ func (pj *Prjn) SynScale(ctx *Context) {
 				AddSynV(ctx, syni, LWt, lwt*adif*swt)
 			}
 			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
+		}
+	}
+}
+
+// SynCaReset resets SynCa values -- called during SlowAdapt
+func (pj *Prjn) SynCaReset(ctx *Context) {
+	slay := pj.Send
+	for lni := uint32(0); lni < slay.NNeurons; lni++ {
+		scon := pj.SendCon[lni]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			syni := pj.SynStIdx + syi
+			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+				InitSynCa(ctx, syni, di)
+			}
 		}
 	}
 }

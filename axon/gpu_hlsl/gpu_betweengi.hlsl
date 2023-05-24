@@ -58,6 +58,9 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Layers * Data
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+		return;
+	}
 	BetweenGi(Ctx[0], Layers[li], li, di);
 }
 

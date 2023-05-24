@@ -43,6 +43,9 @@ void main(uint3 idx : SV_DispatchThreadID) { // over all Pools
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+		return;
+	}
 	PlusPool(Ctx[0], di, Pools[npi]);
 }
 

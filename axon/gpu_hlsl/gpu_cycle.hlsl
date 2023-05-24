@@ -83,6 +83,9 @@ void main(uint3 idx : SV_DispatchThreadID) {  // over Neurons * Data
 		return;
 	}
 	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
+	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+		return;
+	}
 	CycleNeuron(Ctx[0], ni, di);
 }
 

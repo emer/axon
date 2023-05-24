@@ -51,4 +51,3 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Synapses NOT * Data
 }
 
 
-

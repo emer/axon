@@ -143,16 +143,6 @@ func MulSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
 	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val
 }
 
-// SynCaUpT is the CPU version of the CaUpT synapse variable accessor
-func SynCaUpT(ctx *Context, syni, di uint32) int32 {
-	return int32(math.Float32bits(SynCaV(ctx, syni, di, CaUpT)))
-}
-
-// SetSynCaUpT is the CPU version of the CaUpT synapse variable settor
-func SetSynCaUpT(ctx *Context, syni, di uint32, val int32) {
-	SetSynCaV(ctx, syni, di, CaUpT, math.Float32frombits(uint32(val)))
-}
-
 // SynapseIdxs
 
 // SynI is the CPU version of the synapse idx accessor
@@ -211,15 +201,20 @@ func (ctx *NetIdxs) ValsIdx(li, di uint32) uint32 {
 	return li*ctx.MaxData + di
 }
 
-// ItemIdx returns the main item index from an overall index over NItems * NData
+// ItemIdx returns the main item index from an overall index over NItems * MaxData
 // (items = layers, neurons, synapeses)
 func (ctx *NetIdxs) ItemIdx(idx uint32) uint32 {
-	return idx / ctx.NData
+	return idx / ctx.MaxData
 }
 
-// DataIdx returns the data index from an overall index over N * NData
+// DataIdx returns the data index from an overall index over N * MaxData
 func (ctx *NetIdxs) DataIdx(idx uint32) uint32 {
-	return idx % ctx.NData
+	return idx % ctx.MaxData
+}
+
+// DataIdxIsValid returns true if the data index is valid (< NData)
+func (ctx *NetIdxs) DataIdxIsValid(li uint32) bool {
+	return (li < ctx.NData)
 }
 
 // LayerIdxIsValid returns true if the layer index is valid (< NLayers)
@@ -256,6 +251,7 @@ func (ctx *NetIdxs) SynIdxIsValid(si uint32) bool {
 // global neuromodulation, etc.
 type Context struct {
 	Mode         etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
+	Testing      slbool.Bool `inactive:"+" desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train"`
 	Phase        int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
 	PlusPhase    slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
 	PhaseCycle   int32       `desc:"cycle within current phase -- minus or plus"`
@@ -264,18 +260,20 @@ type Context struct {
 	CyclesTotal  int32       `desc:"total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
 	Time         float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	TrialsTotal  int32       `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
-	Testing      slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
+	SlowInterval int32       `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models."`
+	SlowCtr      int32       `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
+	SynCaCtr     float32     `inactive:"+" desc:"synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset."`
 
-	pad float32
+	pad, pad1 float32
 
 	NetIdxs       NetIdxs             `view:"inline" desc:"indexes and sizes of current network"`
-	NeuronVars    NeuronVarStrides    `desc:"stride offsets for accessing neuron variables"`
-	NeuronAvgVars NeuronAvgVarStrides `desc:"stride offsets for accessing neuron average variables"`
-	NeuronIdxs    NeuronIdxStrides    `desc:"stride offsets for accessing neuron indexes"`
-	SynapseVars   SynapseVarStrides   `desc:"stride offsets for accessing synapse variables"`
-	SynapseCaVars SynapseCaStrides    `desc:"stride offsets for accessing synapse Ca variables"`
-	SynapseIdxs   SynapseIdxStrides   `desc:"stride offsets for accessing synapse indexes"`
+	NeuronVars    NeuronVarStrides    `view:"-" desc:"stride offsets for accessing neuron variables"`
+	NeuronAvgVars NeuronAvgVarStrides `view:"-" desc:"stride offsets for accessing neuron average variables"`
+	NeuronIdxs    NeuronIdxStrides    `view:"-" desc:"stride offsets for accessing neuron indexes"`
+	SynapseVars   SynapseVarStrides   `view:"-" desc:"stride offsets for accessing synapse variables"`
+	SynapseCaVars SynapseCaStrides    `view:"-" desc:"stride offsets for accessing synapse Ca variables"`
+	SynapseIdxs   SynapseIdxStrides   `view:"-" desc:"stride offsets for accessing synapse indexes"`
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
@@ -287,6 +285,7 @@ func (ctx *Context) Defaults() {
 	ctx.NetIdxs.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
+	ctx.SlowInterval = 100
 	ctx.Mode = etime.Train
 	ctx.PVLV.Defaults()
 }
@@ -320,7 +319,20 @@ func (ctx *Context) CycleInc() {
 	ctx.Cycle++
 	ctx.CyclesTotal++
 	ctx.Time += ctx.TimePerCycle
+	ctx.SynCaCtr += 1
 	ctx.RandCtr.Add(uint32(RandFunIdxN))
+}
+
+// SlowInc increments the Slow counter and returns true if time
+// to perform SlowAdapt functions (associated with sleep).
+func (ctx *Context) SlowInc() bool {
+	ctx.SlowCtr++
+	if ctx.SlowCtr < ctx.SlowInterval {
+		return false
+	}
+	ctx.SlowCtr = 0
+	ctx.SynCaCtr = 0
+	return true
 }
 
 // PVLVDA computes the updated dopamine for PVLV algorithm from all the current state,
@@ -443,14 +455,6 @@ func (ctx *Context) PVLVDA() float32 {
 // void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 //  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val;
 // }
-// // SynCaUpT is the GPU version of the CaUpT synapse variable accessor
-// int32 SynCaUpT(in Context ctx, uint syni, uint di) {
-// 	return int32(asuint(SynCaV(ctx, syni, di, CaUpT)));
-// }
-// // SetSynCaUpT is the GPU version of the CaUpT synapse variable settor
-// void SetSynCaUpT(in Context ctx, uint syni, uint di, int val) {
-// 	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint32(val)));
-// }
 
 // // SynapseIdxs
 //
@@ -529,6 +533,8 @@ func (ctx *Context) Reset() {
 	ctx.CyclesTotal = 0
 	ctx.Time = 0
 	ctx.TrialsTotal = 0
+	ctx.SlowCtr = 0
+	ctx.SynCaCtr = 0
 	ctx.Testing.SetBool(false)
 	if ctx.TimePerCycle == 0 {
 		ctx.Defaults()

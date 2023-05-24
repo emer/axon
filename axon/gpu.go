@@ -33,7 +33,7 @@ var content embed.FS
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns]
 [[vk::binding(5, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
 [[vk::binding(6, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
@@ -57,7 +57,7 @@ var content embed.FS
 Set: 0
     Role: Uniform
         Var: 0:	Layers	Struct[4]	(size: 1520)	Vals: 1
-Set: 1
+Set: 1	Idxs
     Role: Storage
         Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Vals: 1
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Vals: 1
@@ -66,7 +66,7 @@ Set: 1
         Var: 4:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
         Var: 5:	RecvCon	Struct[281]	(size: 16)	Vals: 1
         Var: 6:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
-Set: 2
+Set: 2	Structs
     Role: Storage
         Var: 0:	Ctx	Struct	(size: 864)	Vals: 1
         Var: 1:	Neurons	Float32[14596]	(size: 4)	Vals: 1
@@ -74,7 +74,7 @@ Set: 2
         Var: 3:	Pools	Struct[4]	(size: 1040)	Vals: 1
         Var: 4:	LayVals	Struct[4]	(size: 128)	Vals: 1
         Var: 5:	Exts	Float32[50]	(size: 4)	Vals: 1
-Set: 3
+Set: 3	Syns
     Role: Storage
         Var: 0:	Synapses	Float32[64960]	(size: 4)	Vals: 1
         Var: 1:	SynapseCas	Float32[77952]	(size: 4)	Vals: 1
@@ -970,21 +970,25 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 func (gp *GPU) RunCycleSeparateFuns() {
 	gp.SyncContextToGPU()
 
-	gp.RunPipelineWait("GatherSpikes", len(gp.Net.Neurons))
+	layDataN := gp.Net.NLayers() * int(gp.Net.MaxData)
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	poolDataN := len(gp.Net.Pools)
 
-	gp.RunPipelineWait("LayGi", len(gp.Net.Layers))
-	gp.RunPipelineWait("BetweenGi", len(gp.Net.Layers))
-	gp.RunPipelineWait("PoolGi", len(gp.Net.Pools))
+	gp.RunPipelineWait("GatherSpikes", neurDataN)
 
-	gp.RunPipelineWait("Cycle", len(gp.Net.Neurons))
+	gp.RunPipelineWait("LayGi", layDataN)
+	gp.RunPipelineWait("BetweenGi", layDataN)
+	gp.RunPipelineWait("PoolGi", poolDataN)
+
+	gp.RunPipelineWait("Cycle", neurDataN)
 
 	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipelineWait("SendSpike", len(gp.Net.Neurons))
+		gp.RunPipelineWait("SendSpike", neurDataN)
 		gp.RunPipelineWait("CyclePost", 1)
 	} else {
-		gp.RunPipelineWait("SendSpike", len(gp.Net.Neurons))
+		gp.RunPipelineWait("SendSpike", neurDataN)
 		gp.RunPipelineWait("CyclePost", 1)
-		gp.RunPipelineWait("SynCa", len(gp.Net.Neurons))
+		gp.RunPipelineWait("SynCa", neurDataN)
 	}
 	gp.SyncLayerStateFmGPU()
 }
@@ -993,7 +997,8 @@ func (gp *GPU) RunCycleSeparateFuns() {
 // ThetaCycle trial.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunNewState() {
-	gp.RunPipelineWait("NewState", len(gp.Net.Pools))
+	poolDataN := len(gp.Net.Pools)
+	gp.RunPipelineWait("NewState", poolDataN)
 }
 
 // RunMinusPhase runs the MinusPhase shader to update snapshot variables
@@ -1047,7 +1052,8 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 // does updating at the start of the plus phase:
 // applies Target inputs as External inputs.
 func (gp *GPU) RunPlusPhaseStart() {
-	gp.RunPipelineWait("PlusStart", len(gp.Net.Neurons))
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	gp.RunPipelineWait("PlusStart", neurDataN)
 }
 
 // RunPlusPhase runs the PlusPhase shader to update snapshot variables

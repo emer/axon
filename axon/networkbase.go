@@ -551,7 +551,7 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 // Configures the given Context object used in the simulation with the memory
 // access strides for this network -- must be set properly -- see SetCtxStrides.
 func (nt *NetworkBase) Build(simCtx *Context) error {
-	nt.UseGPUOrder = true // todo: set externally
+	nt.UseGPUOrder = false // todo: set externally
 	ctx := &nt.Ctx
 	ctx.Defaults()
 	ctx.NetIdxs.NetIdx = nt.NetIdx
@@ -762,6 +762,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 			nt.RecvPrjnIdxs[rprjnIdx] = pj.Params.Idxs.PrjnIdx
 			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
 			pj.Params.Idxs.RecvSynSt = uint32(syIdx)
+			synSt := pj.Params.Idxs.SynapseSt
 			for rni := uint32(0); rni < ly.NNeurons; rni++ {
 				if len(pj.RecvCon) <= int(rni) {
 					continue
@@ -771,7 +772,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 				recvConIdx++
 				syIdxs := pj.RecvSynIdxs(rni)
 				for _, ssi := range syIdxs {
-					nt.RecvSynIdxs[syIdx] = ssi
+					nt.RecvSynIdxs[syIdx] = ssi + synSt
 					syIdx++
 				}
 			}

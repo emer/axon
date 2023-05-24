@@ -16,11 +16,11 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// axon.Network has parameters for running a basic rate-coded Axon network
+// axon.Network implements the Axon spiking model,
+// building on the algorithm-independent NetworkBase that manages
+// all the infrastructure.
 type Network struct {
 	NetworkBase
-	SlowInterval int `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation -- in SlowAdapt method-- long enough for meaningful changes"`
-	SlowCtr      int `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -60,8 +60,6 @@ func (nt *Network) NewPrjn() emer.Prjn {
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
 	nt.SetNThreads(0) // default
-	nt.SlowInterval = 100
-	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
 		ly.Defaults()
 	}
@@ -250,7 +248,7 @@ func (nt *Network) DWt(ctx *Context) {
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
-// Also calls SlowAdapt every Interval times
+// Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 func (nt *Network) WtFmDWt(ctx *Context) {
 	nt.LayerMapSeq(func(ly *Layer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // lightweight
 	if nt.GPU.On {
@@ -259,18 +257,14 @@ func (nt *Network) WtFmDWt(ctx *Context) {
 		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
 		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFmDWt(ctx, ni) }, "WtFmDWt")
 	}
-	nt.SlowAdapt(ctx)
+	if ctx.SlowInc() {
+		nt.SlowAdapt(ctx)
+	}
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // and adapting inhibition
 func (nt *Network) SlowAdapt(ctx *Context) {
-	nt.SlowCtr++
-	if nt.SlowCtr < nt.SlowInterval {
-		return
-	}
-	nt.SlowCtr = 0
-
 	// note: for now doing all this slow stuff CPU-side
 	// These Sync calls always check if GPU is On
 	nt.GPU.SyncAllFmGPU()
@@ -288,7 +282,8 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts(ctx *Context) {
 	nt.BuildPrjnGBuf()
-	nt.SlowCtr = 0
+	ctx.SlowCtr = 0
+	ctx.SynCaCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
