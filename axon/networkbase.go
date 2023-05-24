@@ -551,7 +551,7 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 // Configures the given Context object used in the simulation with the memory
 // access strides for this network -- must be set properly -- see SetCtxStrides.
 func (nt *NetworkBase) Build(simCtx *Context) error {
-	nt.UseGPUOrder = false // todo: set externally
+	nt.UseGPUOrder = true // todo: set externally
 	ctx := &nt.Ctx
 	ctx.Defaults()
 	ctx.NetIdxs.NetIdx = nt.NetIdx
