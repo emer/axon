@@ -22,7 +22,7 @@
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+[[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]

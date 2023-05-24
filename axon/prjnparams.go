@@ -82,6 +82,7 @@ type PrjnParams struct {
 
 	pad, pad1, pad2 int32
 
+	Idxs      PrjnIdxs        `view:"-" desc:"recv and send neuron-level projection index array access info"`
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
 	SWts      SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
@@ -96,8 +97,6 @@ type PrjnParams struct {
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
 	BLA    BLAPrjnParams    `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
-
-	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
 
 func (pj *PrjnParams) Defaults() {
