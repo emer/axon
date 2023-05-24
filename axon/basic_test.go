@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"sort"
 	"testing"
 
 	"github.com/emer/emergent/etime"
@@ -16,6 +17,7 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/mat32"
+	"golang.org/x/exp/maps"
 )
 
 func init() {
@@ -62,6 +64,8 @@ var ParamSets = params.Sets{
 func newTestNet(ctx *Context) *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
+	testNet.SetRndSeed(42) // critical for ActAvg values
+
 	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
 	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
 	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
@@ -202,8 +206,9 @@ func TestGPUAct(t *testing.T) {
 	NetActTest(t, true)
 }
 
-// Note: use NetActDebug for debugging -- this is "only a test"
-
+// NetActTest runs an activation test on the network and checks
+// for key values relative to known standards.
+// Note: use NetActDebug for printf debugging of all values -- "this is only a test"
 func NetActTest(t *testing.T, gpu bool) {
 	ctx := NewContext()
 	testNet := newTestNet(ctx)
@@ -276,7 +281,6 @@ func NetActTest(t *testing.T, gpu bool) {
 				if gpu {
 					testNet.GPU.SyncNeuronsFmGPU()
 				}
-
 			}
 			if qtr == 2 {
 				testNet.MinusPhase(ctx)
@@ -331,21 +335,58 @@ func NetActTest(t *testing.T, gpu bool) {
 	testNet.GPU.Destroy()
 }
 
-func TestActDebug(t *testing.T) {
-	// t.Skip("skipped in regular testing")
-	NetActDebug(t, false)
+func TestGPUDiffs(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	nonGPUVals := NetDebugAct(t, false, false)
+	gpuVals := NetDebugAct(t, false, true)
+	ReportValDiffs(nonGPUVals, gpuVals, "CPU", "GPU")
 }
 
-func TestGPUActDebug(t *testing.T) {
-	// t.Skip("skipped in regular testing")
-	NetActDebug(t, true)
+func TestDebugAct(t *testing.T) {
+	t.Skip("skipped in regular testing")
+	NetDebugAct(t, true, false)
 }
 
-func NetActDebug(t *testing.T, gpu bool) {
+func TestDebugGPUAct(t *testing.T) {
+	t.Skip("skipped in regular testing")
+	NetDebugAct(t, true, true)
+}
+
+// ReportValDiffs
+func ReportValDiffs(va, vb map[string]float32, aLabel, bLabel string) {
+	const TOLERANCE = float32(1.0e-4) // GPU Nmda has genuine diffs beyond e-5
+	keys := maps.Keys(va)
+	sort.Strings(keys)
+	nerrs := 0
+	for _, k := range keys {
+		av := va[k]
+		bv := vb[k]
+		dif := mat32.Abs(av - bv)
+		if dif > TOLERANCE { // allow for small numerical diffs
+			if nerrs == 0 {
+				fmt.Printf("Diffs found between two runs (10 max): A = %s  B = %s\n", aLabel, bLabel)
+			}
+			fmt.Printf("%s\tA: %g\tB: %g\tDiff: %g\n", k, av, bv, dif)
+			nerrs++
+			if nerrs > 10 {
+				break
+			}
+		}
+	}
+}
+
+// NetDebugAct prints selected values (if printVals),
+// and also returns a map of all values and variables that can be used for a more
+// fine-grained diff test, e.g., see the GPU version.
+func NetDebugAct(t *testing.T, printVals bool, gpu bool) map[string]float32 {
 	ctx := NewContext()
 	testNet := newTestNet(ctx)
 	testNet.InitExt(ctx)
 	inPats := newInPats()
+
+	valMap := make(map[string]float32)
 
 	inLay := testNet.AxonLayerByName("Input")
 	// hidLay := testNet.AxonLayerByName("Hidden")
@@ -356,24 +397,26 @@ func NetActDebug(t *testing.T, gpu bool) {
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
-		testNet.GPU.CycleByCycle = true // key for printing results
+		testNet.GPU.CycleByCycle = true // key for printing results cycle-by-cycle
 	}
 
+	// these control what is printed.
+	// the whole thing is run and returned in the valMap
 	valsPerRow := 8
-	nQtrs := 1
-	cycPerQtr := 5
-	nPats := 1 // max 4
-	stLayer := 0
-	edLayer := 1
-	nNeurs := 1 // max 4 -- number of neuron values to print
+	nQtrs := 1     // max 4
+	cycPerQtr := 5 // max 50
+	nPats := 1     // max 4
+	stLayer := 1   // max 2
+	edLayer := 2   // max 3
+	nNeurs := 1    // max 4 -- number of neuron values to print
 
-	for pi := 0; pi < nPats; pi++ {
+	for pi := 0; pi < 4; pi++ {
 		inpat, err := inPats.SubSpaceTry([]int{pi})
 		if err != nil {
 			t.Fatal(err)
 		}
 		_ = inpat
-		testNet.NewState(ctx)
+		// testNet.NewState(ctx)
 		ctx.NewState(etime.Train)
 
 		testNet.InitExt(ctx)
@@ -381,28 +424,36 @@ func NetActDebug(t *testing.T, gpu bool) {
 		outLay.ApplyExt(ctx, 0, inpat)
 		testNet.ApplyExts(ctx) // key now for GPU
 
-		for qtr := 0; qtr < nQtrs; qtr++ {
-			for cyc := 0; cyc < cycPerQtr; cyc++ {
+		for qtr := 0; qtr < 4; qtr++ {
+			for cyc := 0; cyc < 50; cyc++ {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
 				if gpu {
 					testNet.GPU.SyncNeuronsFmGPU()
 				}
 
-				fmt.Printf("\npat: %d\tqtr: %d\tcyc: %d\n", pi, qtr, cyc)
-				for ni := 0; ni < nNeurs; ni++ {
-					for li := stLayer; li < edLayer; li++ {
+				for ni := 0; ni < 4; ni++ {
+					for li := 0; li < 3; li++ {
 						ly := testNet.Layers[li]
-						fmt.Printf("Layer: %s\tUnit: %d\n", ly.Nm, ni)
-
+						key := fmt.Sprintf("\npat: %d\tqtr: %d\tcyc: %d\tLayer: %s\tUnit: %d", pi, qtr, cyc, ly.Nm, ni)
+						doPrint := (printVals && pi < nPats && qtr < nQtrs && cyc < cycPerQtr && ni < nNeurs && li >= stLayer && li < edLayer)
+						if doPrint {
+							fmt.Println(key)
+						}
 						for nvi, vnm := range NeuronVarNames {
 							ly.UnitVals(&vals, vnm)
-							fmt.Printf("\t%-10s%7.4f", vnm, vals[ni])
-							if (int(nvi)+1)%valsPerRow == 0 {
-								fmt.Printf("\n")
+							vkey := key + fmt.Sprintf("\t%s", vnm)
+							valMap[vkey] = vals[ni]
+							if doPrint {
+								fmt.Printf("\t%-10s%7.4f", vnm, vals[ni])
+								if (int(nvi)+1)%valsPerRow == 0 {
+									fmt.Printf("\n")
+								}
 							}
 						}
-						fmt.Printf("\n")
+						if doPrint {
+							fmt.Printf("\n")
+						}
 					}
 				}
 			}
@@ -414,11 +465,10 @@ func NetActDebug(t *testing.T, gpu bool) {
 		}
 
 		testNet.PlusPhase(ctx)
-
-		fmt.Printf("=============================\n")
 	}
 
 	testNet.GPU.Destroy()
+	return valMap
 }
 
 func TestNetLearn(t *testing.T) {
@@ -772,6 +822,7 @@ func TestInhibAct(t *testing.T) {
 	inPats := newInPats()
 	var InhibNet Network
 	InhibNet.InitName(&InhibNet, "InhibNet")
+	InhibNet.SetRndSeed(42) // critical for ActAvg values
 
 	inLay := InhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
 	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
