@@ -38,7 +38,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -318,19 +318,20 @@ func (ss *Sim) ConfigLoops() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
+	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()]
-	net.InitExt(&ss.Context) // clear any existing inputs -- not strictly necessary if always
+	ev := ss.Envs[ctx.Mode.String()]
+	net.InitExt(ctx) // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
-			ly.ApplyExt(&ss.Context, 0, pats)
+			ly.ApplyExt(ctx, 0, pats)
 		}
 	}
-	net.ApplyExts(&ss.Context) // now required for GPU mode
+	net.ApplyExts(ctx) // now required for GPU mode
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter

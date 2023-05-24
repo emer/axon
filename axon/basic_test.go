@@ -202,6 +202,8 @@ func TestGPUAct(t *testing.T) {
 	NetActTest(t, true)
 }
 
+// Note: use NetActDebug for debugging -- this is "only a test"
+
 func NetActTest(t *testing.T, gpu bool) {
 	ctx := NewContext()
 	testNet := newTestNet(ctx)
@@ -215,9 +217,6 @@ func NetActTest(t *testing.T, gpu bool) {
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
 	}
-
-	printCycs := false
-	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
 	qtr0HidGes := []float32{0.35385746, 0, 0, 0}
@@ -278,25 +277,11 @@ func NetActTest(t *testing.T, gpu bool) {
 					testNet.GPU.SyncNeuronsFmGPU()
 				}
 
-				if printCycs {
-					inLay.UnitVals(&inActs, "Act")
-					hidLay.UnitVals(&hidGes, "Ge")
-					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidActs, "Act")
-					outLay.UnitVals(&outGes, "Ge")
-					outLay.UnitVals(&outGis, "Gi")
-					outLay.UnitVals(&outActs, "Act")
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
-				}
 			}
 			if qtr == 2 {
 				testNet.MinusPhase(ctx)
 				ctx.NewPhase(false)
 				testNet.PlusPhaseStart(ctx)
-			}
-
-			if printCycs && printQtrs {
-				fmt.Printf("=============================\n")
 			}
 
 			inLay.UnitVals(&inActs, "Act")
@@ -306,14 +291,6 @@ func NetActTest(t *testing.T, gpu bool) {
 			outLay.UnitVals(&outActs, "Act")
 			outLay.UnitVals(&outGes, "Ge")
 			outLay.UnitVals(&outGis, "Gi")
-
-			if printQtrs {
-				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctx.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
-			}
-
-			if printCycs && printQtrs {
-				fmt.Printf("=============================\n")
-			}
 
 			if pi == 0 && qtr == 0 {
 				cmprFloats(hidActs, qtr0HidActs, "qtr0HidActs", t)
@@ -349,10 +326,96 @@ func NetActTest(t *testing.T, gpu bool) {
 			}
 		}
 		testNet.PlusPhase(ctx)
+	}
 
-		if printQtrs {
-			fmt.Printf("=============================\n")
+	testNet.GPU.Destroy()
+}
+
+func TestActDebug(t *testing.T) {
+	// t.Skip("skipped in regular testing")
+	NetActDebug(t, false)
+}
+
+func TestGPUActDebug(t *testing.T) {
+	// t.Skip("skipped in regular testing")
+	NetActDebug(t, true)
+}
+
+func NetActDebug(t *testing.T, gpu bool) {
+	ctx := NewContext()
+	testNet := newTestNet(ctx)
+	testNet.InitExt(ctx)
+	inPats := newInPats()
+
+	inLay := testNet.AxonLayerByName("Input")
+	// hidLay := testNet.AxonLayerByName("Hidden")
+	outLay := testNet.AxonLayerByName("Output")
+	_, _ = inLay, outLay
+
+	var vals []float32
+
+	if gpu {
+		testNet.ConfigGPUnoGUI(ctx)
+		testNet.GPU.CycleByCycle = true // key for printing results
+	}
+
+	valsPerRow := 8
+	nQtrs := 1
+	cycPerQtr := 5
+	nPats := 1 // max 4
+	stLayer := 0
+	edLayer := 1
+	nNeurs := 1 // max 4 -- number of neuron values to print
+
+	for pi := 0; pi < nPats; pi++ {
+		inpat, err := inPats.SubSpaceTry([]int{pi})
+		if err != nil {
+			t.Fatal(err)
 		}
+		_ = inpat
+		testNet.NewState(ctx)
+		ctx.NewState(etime.Train)
+
+		testNet.InitExt(ctx)
+		inLay.ApplyExt(ctx, 0, inpat)
+		outLay.ApplyExt(ctx, 0, inpat)
+		testNet.ApplyExts(ctx) // key now for GPU
+
+		for qtr := 0; qtr < nQtrs; qtr++ {
+			for cyc := 0; cyc < cycPerQtr; cyc++ {
+				testNet.Cycle(ctx)
+				ctx.CycleInc()
+				if gpu {
+					testNet.GPU.SyncNeuronsFmGPU()
+				}
+
+				fmt.Printf("\npat: %d\tqtr: %d\tcyc: %d\n", pi, qtr, cyc)
+				for ni := 0; ni < nNeurs; ni++ {
+					for li := stLayer; li < edLayer; li++ {
+						ly := testNet.Layers[li]
+						fmt.Printf("Layer: %s\tUnit: %d\n", ly.Nm, ni)
+
+						for nvi, vnm := range NeuronVarNames {
+							ly.UnitVals(&vals, vnm)
+							fmt.Printf("\t%-10s%7.4f", vnm, vals[ni])
+							if (int(nvi)+1)%valsPerRow == 0 {
+								fmt.Printf("\n")
+							}
+						}
+						fmt.Printf("\n")
+					}
+				}
+			}
+			if qtr == 2 {
+				testNet.MinusPhase(ctx)
+				ctx.NewPhase(false)
+				testNet.PlusPhaseStart(ctx)
+			}
+		}
+
+		testNet.PlusPhase(ctx)
+
+		fmt.Printf("=============================\n")
 	}
 
 	testNet.GPU.Destroy()

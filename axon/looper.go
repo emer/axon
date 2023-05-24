@@ -45,7 +45,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[trl].OnStart.Add("ResetState", func() {
+		stack.Loops[trl].OnStart.Add("NewState", func() {
 			net.NewState(ctx)
 			ctx.NewState(mode)
 		})
@@ -89,7 +89,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 	for m, loops := range man.Stacks {
 		curMode := m // For closures.
 		for _, loop := range loops.Loops {
-			loop.OnStart.Add("SetTimeVal", func() {
+			loop.OnStart.Add("SetCtxMode", func() {
 				ctx.Mode = curMode
 			})
 		}
