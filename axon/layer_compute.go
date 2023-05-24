@@ -457,6 +457,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
+	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.GiveUp.IsTrue() {
@@ -466,6 +467,26 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	switch ly.LayerType() {
 	case MatrixLayer:
 		ly.MatrixGated(ctx)
+	}
+}
+
+// PlusPhaseActAvg updates ActAvg and DTrgAvg at the plus phase
+// Note: could be done on GPU but not worth it at this point..
+func (ly *Layer) PlusPhaseActAvg(ctx *Context) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
+			continue
+		}
+		dTrgSum := float32(0)
+		avgSum := float32(0)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			dTrgSum += ly.Params.LearnTrgAvgErrLRate() * (NrnV(ctx, ni, di, CaSpkP) - NrnV(ctx, ni, di, CaSpkD))
+			avgSum += ly.Params.Acts.Dt.LongAvgDt * (NrnV(ctx, ni, di, ActM) - NrnAvgV(ctx, ni, ActAvg))
+		}
+		AddNrnAvgV(ctx, ni, DTrgAvg, dTrgSum)
+		AddNrnAvgV(ctx, ni, ActAvg, avgSum)
 	}
 }
 

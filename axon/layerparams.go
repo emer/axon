@@ -924,9 +924,6 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	ly.Acts.Sahp.NinfTauFmCa(NrnV(ctx, ni, di, SahpCa), &nrnSahpN, &tau)
 	SetNrnV(ctx, ni, di, SahpN, nrnSahpN)
 	SetNrnV(ctx, ni, di, SahpCa, ly.Acts.Sahp.CaInt(NrnV(ctx, ni, di, SahpCa), nrnCaSpkD))
-	// todo: this requires atomic protection on GPU -- need to do separately!
-	AddNrnAvgV(ctx, ni, DTrgAvg, ly.LearnTrgAvgErrLRate()*(nrnCaSpkP-nrnCaSpkD))
-	AddNrnAvgV(ctx, ni, ActAvg, ly.Acts.Dt.LongAvgDt*(NrnV(ctx, ni, di, ActM)-NrnAvgV(ctx, ni, ActAvg)))
 }
 
 //gosl: end layerparams

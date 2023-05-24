@@ -341,7 +341,7 @@ func TestGPUDiffs(t *testing.T) {
 	}
 	nonGPUVals := NetDebugAct(t, false, false)
 	gpuVals := NetDebugAct(t, false, true)
-	ReportValDiffs(nonGPUVals, gpuVals, "CPU", "GPU")
+	ReportValDiffs(t, nonGPUVals, gpuVals, "CPU", "GPU")
 }
 
 func TestDebugAct(t *testing.T) {
@@ -355,8 +355,8 @@ func TestDebugGPUAct(t *testing.T) {
 }
 
 // ReportValDiffs
-func ReportValDiffs(va, vb map[string]float32, aLabel, bLabel string) {
-	const TOLERANCE = float32(1.0e-4) // GPU Nmda has genuine diffs beyond e-5
+func ReportValDiffs(t *testing.T, va, vb map[string]float32, aLabel, bLabel string) {
+	const TOLERANCE = float32(1.0e-3) // GPU Nmda has genuine diffs beyond e-5, accumulate over time..
 	keys := maps.Keys(va)
 	sort.Strings(keys)
 	nerrs := 0
@@ -366,9 +366,9 @@ func ReportValDiffs(va, vb map[string]float32, aLabel, bLabel string) {
 		dif := mat32.Abs(av - bv)
 		if dif > TOLERANCE { // allow for small numerical diffs
 			if nerrs == 0 {
-				fmt.Printf("Diffs found between two runs (10 max): A = %s  B = %s\n", aLabel, bLabel)
+				t.Errorf("Diffs found between two runs (10 max): A = %s  B = %s\n", aLabel, bLabel)
 			}
-			fmt.Printf("%s\tA: %g\tB: %g\tDiff: %g\n", k, av, bv, dif)
+			t.Errorf("%s\tA: %g\tB: %g\tDiff: %g\n", k, av, bv, dif)
 			nerrs++
 			if nerrs > 10 {
 				break
@@ -416,7 +416,7 @@ func NetDebugAct(t *testing.T, printVals bool, gpu bool) map[string]float32 {
 			t.Fatal(err)
 		}
 		_ = inpat
-		// testNet.NewState(ctx)
+		testNet.NewState(ctx)
 		ctx.NewState(etime.Train)
 
 		testNet.InitExt(ctx)
@@ -435,7 +435,7 @@ func NetDebugAct(t *testing.T, printVals bool, gpu bool) map[string]float32 {
 				for ni := 0; ni < 4; ni++ {
 					for li := 0; li < 3; li++ {
 						ly := testNet.Layers[li]
-						key := fmt.Sprintf("\npat: %d\tqtr: %d\tcyc: %d\tLayer: %s\tUnit: %d", pi, qtr, cyc, ly.Nm, ni)
+						key := fmt.Sprintf("\npat: %d\tqtr: %d\tcyc: %02d\tLayer: %s\tUnit: %d", pi, qtr, cyc, ly.Nm, ni)
 						doPrint := (printVals && pi < nPats && qtr < nQtrs && cyc < cycPerQtr && ni < nNeurs && li >= stLayer && li < edLayer)
 						if doPrint {
 							fmt.Println(key)

@@ -63,6 +63,7 @@ func main() {
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
 	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	DataPar      int              `desc;"number of data-parallel items to process at once"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats     `desc:"contains computed statistic values"`
@@ -91,6 +92,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 5
 	ss.PCAInterval = 5
+	ss.DataPar = 1
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
@@ -150,6 +152,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.Params.SetObject("NetSize")
 
 	net.InitName(net, "RA25")
+	net.MaxData = uint32(ss.DataPar)
+	ss.Context.NetIdxs.NData = uint32(ss.DataPar)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
 	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
@@ -226,10 +230,10 @@ func (ss *Sim) ConfigLoops() {
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
-			// note: OnStart for env.Env, others may happen OnEnd
-			ss.Envs[mode.String()].Step()
-		})
+		// stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
+		// 	// note: OnStart for env.Env, others may happen OnEnd
+		// 	ss.Envs[mode.String()].Step()
+		// })
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Context.Mode])
@@ -321,14 +325,17 @@ func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
 	ev := ss.Envs[ctx.Mode.String()]
-	net.InitExt(ctx) // clear any existing inputs -- not strictly necessary if always
-	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	for _, lnm := range lays {
-		ly := ss.Net.AxonLayerByName(lnm)
-		pats := ev.State(ly.Nm)
-		if pats != nil {
-			ly.ApplyExt(ctx, 0, pats)
+	net.InitExt(ctx) // clear any existing inputs -- not strictly necessary if always
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		ev.Step()
+		// going to the same layers, but good practice and cheap anyway
+		for _, lnm := range lays {
+			ly := ss.Net.AxonLayerByName(lnm)
+			pats := ev.State(ly.Nm)
+			if pats != nil {
+				ly.ApplyExt(ctx, di, pats)
+			}
 		}
 	}
 	net.ApplyExts(ctx) // now required for GPU mode

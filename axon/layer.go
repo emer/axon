@@ -411,11 +411,12 @@ func (ly *Layer) InitExt(ctx *Context) {
 	}
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
-		if NrnIsOff(ctx, lni) {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			ly.Params.InitExt(ctx, lni, di)
+			ly.Params.InitExt(ctx, ni, di)
 			ei := ly.Params.Idxs.ExtIdx(lni, di)
 			ly.Exts[ei] = -1 // missing by default
 		}
