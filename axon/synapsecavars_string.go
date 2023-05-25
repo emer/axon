@@ -19,12 +19,13 @@ func _() {
 	_ = x[CaUpT-3]
 	_ = x[Tr-4]
 	_ = x[DTr-5]
-	_ = x[SynapseCaVarsN-6]
+	_ = x[DiDWt-6]
+	_ = x[SynapseCaVarsN-7]
 }
 
-const _SynapseCaVars_name = "CaMCaPCaDCaUpTTrDTrSynapseCaVarsN"
+const _SynapseCaVars_name = "CaMCaPCaDCaUpTTrDTrDiDWtSynapseCaVarsN"
 
-var _SynapseCaVars_index = [...]uint8{0, 3, 6, 9, 14, 16, 19, 33}
+var _SynapseCaVars_index = [...]uint8{0, 3, 6, 9, 14, 16, 19, 24, 38}
 
 func (i SynapseCaVars) String() string {
 	if i < 0 || i >= SynapseCaVars(len(_SynapseCaVars_index)-1) {

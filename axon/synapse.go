@@ -87,6 +87,7 @@ const (
 	CaUpT                      // time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
 	Tr                         // trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
 	DTr                        // delta (change in) Tr trace of synaptic activity over time
+	DiDWt                      // delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values
 
 	SynapseCaVarsN
 )
@@ -178,6 +179,7 @@ var SynapseVarProps = map[string]string{
 	"CaD":  `auto-scale:"+" desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`,
 	"Tr":   `auto-scale:"+" desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`,
 	"DTr":  `auto-scale:"+" desc:"delta (change in) Tr trace of synaptic activity over time"`,
+	"DDWt": `auto-scale:"+" desc:"delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values"`,
 }
 
 var (

@@ -59,9 +59,9 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(b *testing.B, ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim,
-	threads int, verbose bool) {
+func ConfigNet(b *testing.B, ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
+	net.MaxData = uint32(maxData)
 
 	/*
 	 * v1m6 ---> v2m16 <--> v4f16 <--> output
@@ -207,18 +207,22 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *etable.Table, 
 		cntErr := 0
 		sse := 0.0
 		for pi := 0; pi < np; pi++ {
-			ppi := porder[pi]
-			inp := inPats.SubSpace([]int{ppi})
-			outp := outPats.SubSpace([]int{ppi})
-
-			for pi := 0; pi < pathways; pi++ {
-				v1[pi].ApplyExt(ctx, 0, inp)
-			}
-			outLay.ApplyExt(ctx, 0, outp)
-			net.ApplyExts(ctx)
-
 			net.NewState(ctx)
 			ctx.NewState(etime.Train)
+
+			for di := uint32(0); di < net.MaxData; di++ {
+				epi := (pi + int(di)) % np
+				ppi := porder[epi]
+				inp := inPats.SubSpace([]int{ppi})
+				outp := outPats.SubSpace([]int{ppi})
+
+				for pi := 0; pi < pathways; pi++ {
+					v1[pi].ApplyExt(ctx, di, inp)
+				}
+				outLay.ApplyExt(ctx, di, outp)
+				net.ApplyExts(ctx)
+			}
+
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					net.Cycle(ctx)

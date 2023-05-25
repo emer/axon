@@ -380,7 +380,7 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIdx, dataIdx in
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		vl := ly.UnitVal1D(vidx, int(ni))
+		vl := ly.UnitVal1D(vidx, int(ni), dataIdx)
 		am.UpdateVal(vl, int32(ni))
 	}
 	am.CalcAvg()
@@ -606,9 +606,7 @@ func (ly *Layer) DWt(ctx *Context, si uint32) {
 		if pj.IsOff() {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			pj.DWt(ctx, si, di)
-		}
+		pj.DWt(ctx, si)
 	}
 }
 

@@ -96,19 +96,26 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 // DWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) DWt(ctx *Context, si, di uint32) {
+func (pj *Prjn) DWt(ctx *Context, si uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	rlay := pj.Recv
-	layPool := &rlay.Pools[0]
-	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
 	scon := pj.SendCon[si-pj.Send.NeurStIdx]
+	rlay := pj.Recv
+	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIdx + syi
 		ri := SynI(ctx, syni, SynRecvIdx)
-		subPool := rlay.SubPool(ctx, ri, di)
-		pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			layPool := rlay.Pool(0, di)
+			subPool := rlay.SubPool(ctx, ri, di)
+			pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+		}
+	}
+	// note: on GPU, this must be a separate kernel, but can be combined here
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		pj.Params.DWtFmDiDWtSyn(ctx, syni)
 	}
 }
 

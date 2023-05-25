@@ -208,6 +208,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("PlusPool", content, "shaders/gpu_pluspool.spv")
 	gp.Sys.NewComputePipelineEmbed("PlusNeuron", content, "shaders/gpu_plusneuron.spv")
 	gp.Sys.NewComputePipelineEmbed("DWt", content, "shaders/gpu_dwt.spv")
+	gp.Sys.NewComputePipelineEmbed("DWtFmDi", content, "shaders/gpu_dwtfmdi.spv")
 	gp.Sys.NewComputePipelineEmbed("WtFmDWt", content, "shaders/gpu_wtfmdwt.spv")
 	gp.Sys.NewComputePipelineEmbed("DWtSubMean", content, "shaders/gpu_dwtsubmean.spv")
 	gp.Sys.NewComputePipelineEmbed("ApplyExts", content, "shaders/gpu_applyext.spv")
@@ -1111,8 +1112,32 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 // RunDWt runs the DWt shader to compute weight changes.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunDWt() {
+	cmd := gp.RunDWtCmd()
+	gnm := "GPU:DWt"
+	gp.Net.FunTimerStart(gnm)
+	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Net.FunTimerStop(gnm)
+}
+
+// RunDWtCmd returns the commands to run the DWt shader
+// to compute weight changes.
+func (gp *GPU) RunDWtCmd() vk.CommandBuffer {
+	cnm := "RunDWt"
+	cmd, err := gp.Sys.CmdBuffByNameTry(cnm)
+	if err == nil {
+		return cmd
+	}
+	cmd = gp.Sys.NewCmdBuff(cnm)
+
+	// note: not * MaxData
+	synN := int(gp.Net.NSyns)
 	synDataN := int(gp.Net.NSyns) * int(gp.Net.MaxData)
-	gp.RunPipelineWait("DWt", synDataN)
+
+	gp.StartRunCmd(cmd)
+	gp.RunPipelineCmd(cmd, "DWt", synDataN, "", "LayGi")
+	gp.RunPipelineCmd(cmd, "DWtFmDi", synN, "LayGi", "")
+	gp.Sys.ComputeCmdEndCmd(cmd)
+	return cmd
 }
 
 // RunWtFmDWt runs the WtFmDWt shader to update weights from weigh changes.

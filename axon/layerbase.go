@@ -505,11 +505,14 @@ func (ly *LayerBase) UnitVarNum() int {
 // returns NaN on invalid index.
 // This is the core unit var access method used by other methods,
 // so it is the only one that needs to be updated for derived layer types.
-func (ly *LayerBase) UnitVal1D(varIdx int, idx int) float32 {
+func (ly *LayerBase) UnitVal1D(varIdx int, idx, di int) float32 {
 	if idx < 0 || idx >= int(ly.NNeurons) {
 		return mat32.NaN()
 	}
 	if varIdx < 0 || varIdx >= ly.UnitVarNum() {
+		return mat32.NaN()
+	}
+	if di < 0 || di >= int(ly.MaxData) {
 		return mat32.NaN()
 	}
 	ni := ly.NeurStIdx + uint32(idx)
@@ -527,13 +530,13 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx int) float32 {
 		case 3:
 			return ly.Vals[0].NeuroMod.Ser
 		case 4:
-			pl := ly.SubPool(ctx, uint32(idx), 0) // display uses data 0
+			pl := ly.SubPool(ctx, uint32(idx), uint32(di))
 			return float32(pl.Gated)
 		}
 	} else if varIdx >= int(NeuronVarsN) {
 		return NrnAvgV(ctx, ni, NeuronAvgVars(varIdx-int(NeuronVarsN)))
 	} else {
-		return NrnV(ctx, ni, 0, NeuronVars(varIdx))
+		return NrnV(ctx, ni, uint32(di), NeuronVars(varIdx))
 	}
 	return mat32.NaN()
 }
@@ -541,7 +544,7 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx int) float32 {
 // UnitVals fills in values of given variable name on unit,
 // for each unit in the layer, into given float32 slice (only resized if not big enough).
 // Returns error on invalid var name.
-func (ly *LayerBase) UnitVals(vals *[]float32, varNm string) error {
+func (ly *LayerBase) UnitVals(vals *[]float32, varNm string, di int) error {
 	nn := ly.NNeurons
 	if *vals == nil || cap(*vals) < int(nn) {
 		*vals = make([]float32, nn)
@@ -557,14 +560,14 @@ func (ly *LayerBase) UnitVals(vals *[]float32, varNm string) error {
 		return err
 	}
 	for lni := uint32(0); lni < nn; lni++ {
-		(*vals)[lni] = ly.UnitVal1D(vidx, int(lni))
+		(*vals)[lni] = ly.UnitVal1D(vidx, int(lni), di)
 	}
 	return nil
 }
 
 // UnitValsTensor returns values of given variable name on unit
 // for each unit in the layer, as a float32 tensor in same shape as layer units.
-func (ly *LayerBase) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
+func (ly *LayerBase) UnitValsTensor(tsr etensor.Tensor, varNm string, di int) error {
 	if tsr == nil {
 		err := fmt.Errorf("axon.UnitValsTensor: Tensor is nil")
 		log.Println(err)
@@ -581,7 +584,7 @@ func (ly *LayerBase) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 		return err
 	}
 	for lni := 0; lni < nn; lni++ {
-		v := ly.UnitVal1D(vidx, lni)
+		v := ly.UnitVal1D(vidx, lni, di)
 		if mat32.IsNaN(v) {
 			tsr.SetFloat1D(lni, math.NaN())
 		} else {
@@ -601,10 +604,10 @@ func (ly *LayerBase) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 // set to RepShape to hold all the values if subset is defined,
 // otherwise it calls UnitValsTensor and is identical to that.
 // Returns error on invalid var name.
-func (ly *LayerBase) UnitValsRepTensor(tsr etensor.Tensor, varNm string) error {
+func (ly *LayerBase) UnitValsRepTensor(tsr etensor.Tensor, varNm string, di int) error {
 	nu := len(ly.RepIxs)
 	if nu == 0 {
-		return ly.UnitValsTensor(tsr, varNm)
+		return ly.UnitValsTensor(tsr, varNm, di)
 	}
 	if tsr == nil {
 		err := fmt.Errorf("axon.UnitValsRepTensor: Tensor is nil")
@@ -624,7 +627,7 @@ func (ly *LayerBase) UnitValsRepTensor(tsr etensor.Tensor, varNm string) error {
 		return err
 	}
 	for i, ui := range ly.RepIxs {
-		v := ly.UnitVal1D(vidx, ui)
+		v := ly.UnitVal1D(vidx, ui, di)
 		if mat32.IsNaN(v) {
 			tsr.SetFloat1D(i, math.NaN())
 		} else {
@@ -636,13 +639,13 @@ func (ly *LayerBase) UnitValsRepTensor(tsr etensor.Tensor, varNm string) error {
 
 // UnitVal returns value of given variable name on given unit,
 // using shape-based dimensional index
-func (ly *LayerBase) UnitVal(varNm string, idx []int) float32 {
+func (ly *LayerBase) UnitVal(varNm string, idx []int, di int) float32 {
 	vidx, err := ly.UnitVarIdx(varNm)
 	if err != nil {
 		return mat32.NaN()
 	}
 	fidx := ly.Shp.Offset(idx)
-	return ly.UnitVal1D(vidx, fidx)
+	return ly.UnitVal1D(vidx, fidx, di)
 }
 
 // RecvPrjnVals fills in values of given synapse variable name,
