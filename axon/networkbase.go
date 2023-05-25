@@ -553,7 +553,7 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 func (nt *NetworkBase) Build(simCtx *Context) error {
 	nt.UseGPUOrder = true // todo: set externally
 	ctx := &nt.Ctx
-	ctx.Defaults()
+	*ctx = *simCtx
 	ctx.NetIdxs.NetIdx = nt.NetIdx
 	nt.FunTimes = make(map[string]*timer.Time)
 	nt.LayClassMap = make(map[string][]string)
