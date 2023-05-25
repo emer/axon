@@ -288,13 +288,13 @@ func NetActTest(t *testing.T, gpu bool) {
 				testNet.PlusPhaseStart(ctx)
 			}
 
-			inLay.UnitVals(&inActs, "Act")
-			hidLay.UnitVals(&hidActs, "Act")
-			hidLay.UnitVals(&hidGes, "Ge")
-			hidLay.UnitVals(&hidGis, "Gi")
-			outLay.UnitVals(&outActs, "Act")
-			outLay.UnitVals(&outGes, "Ge")
-			outLay.UnitVals(&outGis, "Gi")
+			inLay.UnitVals(&inActs, "Act", 0)
+			hidLay.UnitVals(&hidActs, "Act", 0)
+			hidLay.UnitVals(&hidGes, "Ge", 0)
+			hidLay.UnitVals(&hidGis, "Gi", 0)
+			outLay.UnitVals(&outActs, "Act", 0)
+			outLay.UnitVals(&outGes, "Ge", 0)
+			outLay.UnitVals(&outGis, "Gi", 0)
 
 			if pi == 0 && qtr == 0 {
 				cmprFloats(hidActs, qtr0HidActs, "qtr0HidActs", t)
@@ -441,7 +441,7 @@ func NetDebugAct(t *testing.T, printVals bool, gpu bool) map[string]float32 {
 							fmt.Println(key)
 						}
 						for nvi, vnm := range NeuronVarNames {
-							ly.UnitVals(&vals, vnm)
+							ly.UnitVals(&vals, vnm, 0)
 							vkey := key + fmt.Sprintf("\t%s", vnm)
 							valMap[vkey] = vals[ni]
 							if doPrint {
@@ -562,15 +562,15 @@ func NetTestLearn(t *testing.T, gpu bool) {
 						testNet.GPU.SyncNeuronsFmGPU()
 					}
 
-					hidLay.UnitVals(&hidAct, "Act")
-					hidLay.UnitVals(&hidGes, "Ge")
-					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidCaM, "NrnCaM")
-					hidLay.UnitVals(&hidCaP, "NrnCaP")
-					hidLay.UnitVals(&hidCaD, "NrnCaD")
+					hidLay.UnitVals(&hidAct, "Act", 0)
+					hidLay.UnitVals(&hidGes, "Ge", 0)
+					hidLay.UnitVals(&hidGis, "Gi", 0)
+					hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
+					hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
+					hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
 
-					outLay.UnitVals(&outCaP, "NrnCaP")
-					outLay.UnitVals(&outCaD, "NrnCaD")
+					outLay.UnitVals(&outCaP, "NrnCaP", 0)
+					outLay.UnitVals(&outCaD, "NrnCaD", 0)
 
 					if printCycs {
 						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -582,11 +582,11 @@ func NetTestLearn(t *testing.T, gpu bool) {
 					testNet.PlusPhaseStart(ctx)
 				}
 
-				hidLay.UnitVals(&hidCaP, "NrnCaP")
-				hidLay.UnitVals(&hidCaD, "NrnCaD")
+				hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
+				hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
 
-				outLay.UnitVals(&outCaP, "NrnCaP")
-				outLay.UnitVals(&outCaD, "NrnCaD")
+				outLay.UnitVals(&outCaP, "NrnCaP", 0)
+				outLay.UnitVals(&outCaD, "NrnCaD", 0)
 
 				if qtr == 3 {
 					didx := ti*4 + pi
@@ -731,15 +731,15 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 					ctx.CycleInc()
 					testNet.GPU.SyncNeuronsFmGPU()
 
-					hidLay.UnitVals(&hidAct, "Act")
-					hidLay.UnitVals(&hidGes, "Ge")
-					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidCaM, "NrnCaM")
-					hidLay.UnitVals(&hidCaP, "NrnCaP")
-					hidLay.UnitVals(&hidCaD, "NrnCaD")
+					hidLay.UnitVals(&hidAct, "Act", 0)
+					hidLay.UnitVals(&hidGes, "Ge", 0)
+					hidLay.UnitVals(&hidGis, "Gi", 0)
+					hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
+					hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
+					hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
 
-					outLay.UnitVals(&outCaP, "NrnCaP")
-					outLay.UnitVals(&outCaD, "NrnCaD")
+					outLay.UnitVals(&outCaP, "NrnCaP", 0)
+					outLay.UnitVals(&outCaD, "NrnCaD", 0)
 
 					if printCycs {
 						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -751,11 +751,11 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 					testNet.PlusPhaseStart(ctx)
 				}
 
-				hidLay.UnitVals(&hidCaP, "NrnCaP")
-				hidLay.UnitVals(&hidCaD, "NrnCaD")
+				hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
+				hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
 
-				outLay.UnitVals(&outCaP, "NrnCaP")
-				outLay.UnitVals(&outCaD, "NrnCaD")
+				outLay.UnitVals(&outCaP, "NrnCaP", 0)
+				outLay.UnitVals(&outCaD, "NrnCaD", 0)
 
 				if qtr == 3 {
 					didx := ti*4 + pi
@@ -778,7 +778,7 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 				fmt.Printf("=============================\n")
 			}
 
-			hidLay.UnitVals(&hidRLRate, "RLRate")
+			hidLay.UnitVals(&hidRLRate, "RLRate", 0)
 			ridx := ti*4*4 + pi*4
 			copy(hidrlrs[ridx:ridx+4], hidRLRate)
 
@@ -890,13 +890,13 @@ func TestInhibAct(t *testing.T) {
 				ctx.CycleInc()
 
 				if printCycs {
-					inLay.UnitVals(&inActs, "Act")
-					hidLay.UnitVals(&hidActs, "Act")
-					hidLay.UnitVals(&hidGes, "Ge")
-					hidLay.UnitVals(&hidGis, "Gi")
-					outLay.UnitVals(&outActs, "Act")
-					outLay.UnitVals(&outGes, "Ge")
-					outLay.UnitVals(&outGis, "Gi")
+					inLay.UnitVals(&inActs, "Act", 0)
+					hidLay.UnitVals(&hidActs, "Act", 0)
+					hidLay.UnitVals(&hidGes, "Ge", 0)
+					hidLay.UnitVals(&hidGis, "Gi", 0)
+					outLay.UnitVals(&outActs, "Act", 0)
+					outLay.UnitVals(&outGes, "Ge", 0)
+					outLay.UnitVals(&outGis, "Gi", 0)
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 				}
 			}
@@ -910,13 +910,13 @@ func TestInhibAct(t *testing.T) {
 				fmt.Printf("=============================\n")
 			}
 
-			inLay.UnitVals(&inActs, "Act")
-			hidLay.UnitVals(&hidActs, "Act")
-			hidLay.UnitVals(&hidGes, "Ge")
-			hidLay.UnitVals(&hidGis, "Gi")
-			outLay.UnitVals(&outActs, "Act")
-			outLay.UnitVals(&outGes, "Ge")
-			outLay.UnitVals(&outGis, "Gi")
+			inLay.UnitVals(&inActs, "Act", 0)
+			hidLay.UnitVals(&hidActs, "Act", 0)
+			hidLay.UnitVals(&hidGes, "Ge", 0)
+			hidLay.UnitVals(&hidGis, "Gi", 0)
+			outLay.UnitVals(&outActs, "Act", 0)
+			outLay.UnitVals(&outGes, "Ge", 0)
+			outLay.UnitVals(&outGis, "Gi", 0)
 
 			if printQtrs {
 				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctx.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)

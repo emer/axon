@@ -19,14 +19,14 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-[[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
+[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-[[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
-[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns]
-[[vk::binding(5, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(6, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns]
+[[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
@@ -89,11 +89,11 @@ void SynCa2(in Context ctx, in LayerParams ly, uint ni, uint di) {
 	}
 	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
 	
-	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
-		SynCaSendPrjn(ctx, Prjns[ly.Idxs.SendSt + pi], ly, ni, lni, di, updtThr);
+	for (uint spi = 0; spi < ly.Idxs.SendN; spi++) {
+		SynCaSendPrjn(ctx, Prjns[ly.Idxs.SendSt + spi], ly, ni, lni, di, updtThr);
 	}
-	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		SynCaRecvPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ni, lni, di, updtThr);
+	for (uint rpi = 0; rpi < ly.Idxs.RecvN; rpi++) {
+		SynCaRecvPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + rpi]], ly, ni, lni, di, updtThr);
 	}
 }
 

@@ -19,10 +19,10 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-[[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
+[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-[[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]

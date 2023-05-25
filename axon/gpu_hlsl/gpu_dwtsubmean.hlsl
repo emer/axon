@@ -19,14 +19,14 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-[[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
+[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-[[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
-// [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(5, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(6, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
+// [[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
@@ -55,8 +55,8 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ri
 		return;
 	}
 	sumDWt /= float(nnz);
-	for (uint ci = 0; ci < synn; ci++) {
-		uint syni = RecvSynIdxs[synst + ci];
+	for (uint sci = 0; sci < synn; sci++) {
+		uint syni = RecvSynIdxs[synst + sci];
 		float dw = SynV(ctx, syni, DWt);
 		if (dw != 0) {
 			SetSynV(ctx, syni, DWt, -sm * sumDWt);

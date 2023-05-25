@@ -30,7 +30,7 @@ func TestLayer(t *testing.T) {
 
 	// query the 'Spike' variable for all neurons of the layer
 	tensor := etensor.NewFloat32([]int{2}, nil, nil)
-	assert.Nil(t, hiddenLayer.UnitValsTensor(tensor, "Spike"))
+	assert.Nil(t, hiddenLayer.UnitValsTensor(tensor, "Spike", 0))
 	for i := 0; i < 4; i++ {
 		// can't have spiked as we haven't run the network yet
 		assert.Equal(t, float32(0.0), tensor.Values[i])
@@ -155,10 +155,10 @@ func TestLayerToJson(t *testing.T) {
 	actavgs := []float32{}
 	trgavgsC := []float32{}
 	actavgsC := []float32{}
-	hiddenLayer.UnitVals(&trgavgs, "TrgAvg")
-	hiddenLayer.UnitVals(&actavgs, "ActAvg")
-	hiddenLayerC.UnitVals(&trgavgsC, "TrgAvg")
-	hiddenLayerC.UnitVals(&actavgsC, "ActAvg")
+	hiddenLayer.UnitVals(&trgavgs, "TrgAvg", 0)
+	hiddenLayer.UnitVals(&actavgs, "ActAvg", 0)
+	hiddenLayerC.UnitVals(&trgavgsC, "TrgAvg", 0)
+	hiddenLayerC.UnitVals(&actavgsC, "ActAvg", 0)
 
 	for i := range trgavgs {
 		assert.Equal(t, trgavgs[i], trgavgsC[i])

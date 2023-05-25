@@ -19,11 +19,11 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-[[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
+[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-[[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
-[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
@@ -67,10 +67,10 @@ void PostSpike(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, 
 }
 
 void SendSpike2(in Context ctx, LayerParams ly, uint ni, uint di) {
-	uint pi = NrnI(ctx, ni, NrnSubPool);
+	uint spi = NrnI(ctx, ni, NrnSubPool);
 	uint lni = ni - ly.Idxs.NeurSt;
 	
-	PostSpike(ctx, ly, ni, di, Pools[ly.Idxs.PoolIdx(pi, di)], Pools[ly.Idxs.PoolIdx(0, di)], LayVals[ly.Idxs.ValsIdx(di)]);
+	PostSpike(ctx, ly, ni, di, Pools[ly.Idxs.PoolIdx(spi, di)], Pools[ly.Idxs.PoolIdx(0, di)], LayVals[ly.Idxs.ValsIdx(di)]);
 	
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
 		SendSpikePrjn(ctx, Prjns[ly.Idxs.SendSt + pi], ni, lni, di);

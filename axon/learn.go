@@ -63,7 +63,7 @@ func (np *CaLrnParams) Update() {
 
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
 // and performs time-integration of VgccCa
-func (np *CaLrnParams) VgccCa(ctx *Context, ni, di uint32) {
+func (np *CaLrnParams) VgccCaFmSpike(ctx *Context, ni, di uint32) {
 	if np.SpkVGCC.IsTrue() {
 		SetNrnV(ctx, ni, di, VgccCa, np.SpkVgccCa*NrnV(ctx, ni, di, Spike))
 	}
@@ -71,11 +71,11 @@ func (np *CaLrnParams) VgccCa(ctx *Context, ni, di uint32) {
 	// Dt only affects decay, not rise time
 }
 
-// CaLrn updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
+// CaLrns updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
 // it first calls VgccCa to update the spike-driven version of that variable, and
 // perform its time-integration.
-func (np *CaLrnParams) CaLrn(ctx *Context, ni, di uint32) {
-	np.VgccCa(ctx, ni, di)
+func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
+	np.VgccCaFmSpike(ctx, ni, di)
 	SetNrnV(ctx, ni, di, CaLrn, np.NormInv*(NrnV(ctx, ni, di, NmdaCa)+NrnV(ctx, ni, di, VgccCaInt)))
 	AddNrnV(ctx, ni, di, NrnCaM, np.Dt.MDt*(NrnV(ctx, ni, di, CaLrn)-NrnV(ctx, ni, di, NrnCaM)))
 	AddNrnV(ctx, ni, di, NrnCaP, np.Dt.PDt*(NrnV(ctx, ni, di, NrnCaM)-NrnV(ctx, ni, di, NrnCaP)))
@@ -207,13 +207,13 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	if rl.On.IsFalse() || rl.Diff.IsFalse() {
 		return 1.0
 	}
-	max := mat32.Max(scap, scad)
-	if max > rl.SpkThr { // avoid div by 0
+	smax := mat32.Max(scap, scad)
+	if smax > rl.SpkThr { // avoid div by 0
 		dif := mat32.Abs(scap - scad)
 		if dif < rl.DiffThr {
 			return rl.Min
 		}
-		return (dif / max)
+		return (dif / smax)
 	}
 	return rl.Min
 }
@@ -290,7 +290,7 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFmSpike(ctx *Context, ni, di uint32) {
 	ln.CaSpk.CaFmSpike(ctx, ni, di)
-	ln.CaLearn.CaLrn(ctx, ni, di)
+	ln.CaLearn.CaLrns(ctx, ni, di)
 }
 
 //gosl: end learn_neur

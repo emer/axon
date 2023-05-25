@@ -6,6 +6,8 @@ all:
 
 # note: gosl automatically compiles the hlsl files using this command:
 %.spv : %.hlsl
-	glslc -fshader-stage=compute -O --target-env=vulkan1.1 -o $@ $<
+	dxc -spirv -O3 -T cs_6_0 -E main -Fo $@ $<
+
+# glslc -fshader-stage=compute -O --target-env=vulkan1.1 -o $@ $<
 
 

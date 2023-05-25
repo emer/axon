@@ -888,11 +888,11 @@ func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) 
 	if NrnV(ctx, ni, di, Ge) < 0.0 {
 		SetNrnV(ctx, ni, di, Ge, 0)
 	}
-	ac.GeNoise(ctx, ni, di)
+	ac.AddGeNoise(ctx, ni, di)
 }
 
-// GeNoise updates nrn.GeNoise if active
-func (ac *ActParams) GeNoise(ctx *Context, ni, di uint32) {
+// AddGeNoise updates nrn.GeNoise if active
+func (ac *ActParams) AddGeNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
@@ -903,8 +903,8 @@ func (ac *ActParams) GeNoise(ctx *Context, ni, di uint32) {
 	AddNrnV(ctx, ni, di, Ge, NrnV(ctx, ni, di, GeNoise))
 }
 
-// GiNoise updates nrn.GiNoise if active
-func (ac *ActParams) GiNoise(ctx *Context, ni, di uint32) {
+// AddGiNoise updates nrn.GiNoise if active
+func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
@@ -917,7 +917,7 @@ func (ac *ActParams) GiNoise(ctx *Context, ni, di uint32) {
 // GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
-	ac.GiNoise(ctx, ni, di)
+	ac.AddGiNoise(ctx, ni, di)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
 		giSyn = 0
 	}

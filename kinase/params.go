@@ -168,7 +168,7 @@ func (kp *CaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 	for i := int32(0); i < isi4; i++ {
 		kp.FmCa4(0, caM, caP, caD) // just decay to 0
 	}
-	for i := int32(0); i < rm; i++ {
+	for j := int32(0); j < rm; j++ {
 		kp.FmCa(0, caM, caP, caD) // just decay to 0
 	}
 	return

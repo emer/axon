@@ -17,7 +17,7 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-// [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+// [[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
 

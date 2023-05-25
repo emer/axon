@@ -18,7 +18,7 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-[[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
 
@@ -49,36 +49,45 @@ void CyclePostLDT(inout Context ctx, uint di, in LayerParams ly, inout LayerVals
 
 void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
 	switch (ly.LayType) {
-	case PTNotMaintLayer:
+	case PTNotMaintLayer: {
 		ly.CyclePostPTNotMaintLayer(ctx, di, lpl);
 		break;
-	case CeMLayer:
+	}
+	case CeMLayer: {
 		ly.CyclePostCeMLayer(ctx, di, lpl);
 		break;
-	case VSPatchLayer:
+	}
+	case VSPatchLayer: {
 		int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
 		for (int pi = 0; pi < npl; pi++) {
 			CyclePostVSPatch(ctx, ly, li, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)]);
 		}
 		break;
-	case LDTLayer:
+	}
+	case LDTLayer: {
 		CyclePostLDT(ctx, di, ly, vals);
 		break;
-	case VTALayer:
+	}
+	case VTALayer: {
 		ly.CyclePostVTALayer(ctx, di);
 		break;
-	case RWDaLayer:
+	}
+	case RWDaLayer: {
 		ly.CyclePostRWDaLayer(ctx, di, vals, LayVals[ctx.NetIdxs.ValsIdx(ly.RWDa.RWPredLayIdx, di)]);
 		break;
-	case TDPredLayer:
+	}
+	case TDPredLayer: {
 		ly.CyclePostTDPredLayer(ctx, di, vals);
 		break;
-	case TDIntegLayer:
+	}
+	case TDIntegLayer: {
 		ly.CyclePostTDIntegLayer(ctx, di, vals, LayVals[ctx.NetIdxs.ValsIdx(ly.TDInteg.TDPredLayIdx, di)]);
 		break;
-	case TDDaLayer:
+	}
+	case TDDaLayer: {
 		ly.CyclePostTDDaLayer(ctx, di, vals, LayVals[ctx.NetIdxs.ValsIdx(ly.TDDa.TDIntegLayIdx, di)]);
 		break;
+	}
 	}
 }
 
