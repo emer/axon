@@ -224,15 +224,15 @@ func (ly *Layer) AllParams() string {
 func (ly *Layer) InitWts(ctx *Context, nt *Network) {
 	ly.UpdateParams()
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ly.MaxData; di++ {
 		vals := &ly.Vals[di]
 		vals.Init()
 		vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
 		vals.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
-		ly.InitActAvg(ctx)
-		ly.InitActs(ctx)
-		ly.InitGScale(ctx)
 	}
+	ly.InitActAvg(ctx)
+	ly.InitActs(ctx)
+	ly.InitGScale(ctx)
 	for _, pj := range ly.SndPrjns {
 		if pj.IsOff() {
 			continue
@@ -257,7 +257,7 @@ func (ly *Layer) InitActAvg(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Params.Learn.InitNeurCa(ctx, ni, di)
 		}
 	}
@@ -298,6 +298,8 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		SetNrnAvgV(ctx, ni, ActAvg, ly.Params.Inhib.ActAvg.Nominal*trg)
 		SetNrnAvgV(ctx, ni, AvgDif, 0)
 		SetNrnAvgV(ctx, ni, DTrgAvg, 0)
+		SetNrnAvgV(ctx, ni, GeBase, ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand))
+		SetNrnAvgV(ctx, ni, GiBase, ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand))
 	}
 }
 
@@ -323,7 +325,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
 			erand.PermuteInts(porder, &ly.Network.Rand)
 		}
-		pl := ly.Pool(pi, 0)
+		pl := ly.Pool(pi, 0) // only using for idxs
 		for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 			ni := ly.NeurStIdx + lni
 			if NrnIsOff(ctx, ni) {
@@ -336,6 +338,8 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			SetNrnAvgV(ctx, ni, ActAvg, ly.Params.Inhib.ActAvg.Nominal*trg)
 			SetNrnAvgV(ctx, ni, AvgDif, 0)
 			SetNrnAvgV(ctx, ni, DTrgAvg, 0)
+			SetNrnAvgV(ctx, ni, GeBase, ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand))
+			SetNrnAvgV(ctx, ni, GiBase, ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand))
 		}
 	}
 }
@@ -350,8 +354,8 @@ func (ly *Layer) InitActs(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			ly.Params.Acts.InitActs(ctx, ni, di, &ly.Network.Rand)
+		for di := uint32(0); di < ly.MaxData; di++ {
+			ly.Params.Acts.InitActs(ctx, ni, di)
 		}
 	}
 	for pi := range ly.Pools {
@@ -415,7 +419,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Params.InitExt(ctx, ni, di)
 			ei := ly.Params.Idxs.ExtIdx(lni, di)
 			ly.Exts[ei] = -1 // missing by default
@@ -435,16 +439,16 @@ func (ly *Layer) InitExt(ctx *Context) {
 // otherwise it goes in Ext.
 // Also sets the Exts values on layer, which are used for the GPU version,
 // which requires calling the network ApplyExts() method -- is a no-op for CPU.
-func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt(ctx *Context, di int, ext etensor.Tensor) {
 	switch {
 	case ext.NumDims() == 2 && ly.Shp.NumDims() == 4: // special case
-		ly.ApplyExt2Dto4D(ctx, di, ext)
+		ly.ApplyExt2Dto4D(ctx, uint32(di), ext)
 	case ext.NumDims() != ly.Shp.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
-		ly.ApplyExt1DTsr(ctx, di, ext)
+		ly.ApplyExt1DTsr(ctx, uint32(di), ext)
 	case ext.NumDims() == 2:
-		ly.ApplyExt2D(ctx, di, ext)
+		ly.ApplyExt2D(ctx, uint32(di), ext)
 	case ext.NumDims() == 4:
-		ly.ApplyExt4D(ctx, di, ext)
+		ly.ApplyExt4D(ctx, uint32(di), ext)
 	}
 }
 
@@ -821,7 +825,7 @@ func (ly *Layer) UnLesionNeurons(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
 			NrnClearFlag(ctx, ni, di, NeuronOff)
 		}
 	}
@@ -848,7 +852,7 @@ func (ly *Layer) LesionNeurons(ctx *Context, prop float32) int {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
 			NrnSetFlag(ctx, ni, di, NeuronOff)
 		}
 	}

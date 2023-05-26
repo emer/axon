@@ -368,8 +368,8 @@ func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, GModSyn, 0)
 	SetNrnV(ctx, ni, di, GMaintRaw, 0)
 	SetNrnV(ctx, ni, di, CtxtGeRaw, 0)
-	SetNrnV(ctx, ni, di, GeSyn, NrnV(ctx, ni, di, GeBase))
-	SetNrnV(ctx, ni, di, GiSyn, NrnV(ctx, ni, di, GiBase))
+	SetNrnV(ctx, ni, di, GeSyn, NrnAvgV(ctx, ni, GeBase))
+	SetNrnV(ctx, ni, di, GiSyn, NrnAvgV(ctx, ni, GiBase))
 }
 
 ////////////////////////

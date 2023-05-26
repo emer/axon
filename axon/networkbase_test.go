@@ -31,8 +31,8 @@ func TestDefaults(t *testing.T) {
 	net.Defaults()
 	net.InitWts(ctx)
 
-	assert.Equal(t, 100, ctx.SlowInterval)
-	assert.Equal(t, 0, ctx.SlowCtr)
+	assert.Equal(t, 100, int(ctx.SlowInterval))
+	assert.Equal(t, 0, int(ctx.SlowCtr))
 	assert.Equal(t, uint32(12), net.NNeurons)
 
 	// test layer access

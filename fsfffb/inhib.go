@@ -55,6 +55,7 @@ func (fi *Inhib) InitRaw() {
 func (fi *Inhib) Zero() {
 	fi.FFs = 0
 	fi.FBs = 0
+	fi.GeExts = 0
 	fi.FSi = 0
 	fi.SSi = 0
 	fi.SSf = 0
@@ -65,6 +66,7 @@ func (fi *Inhib) Zero() {
 	fi.FFAvgPrv = 0
 	fi.GiOrig = 0
 	fi.LayGi = 0
+	fi.Clamped.SetBool(false)
 }
 
 // Decay reduces inhibition values by given decay proportion

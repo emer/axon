@@ -290,7 +290,6 @@ func (ly *Layer) CyclePost(ctx *Context) {
 //  Phase-level
 
 // NewState handles all initialization at start of new input pattern.
-// Should already have presented the external input to the network at this point.
 // Does NOT call InitGScale()
 func (ly *Layer) NewState(ctx *Context) {
 	nn := ly.NNeurons

@@ -113,7 +113,7 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 	if vidx < int(SynapseVarsN) {
 		SetSynV(ctx, syni, SynapseVars(vidx), val)
 	} else {
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < pj.Recv.MaxData; di++ {
 			SetSynCaV(ctx, syni, di, SynapseCaVars(vidx-int(SynapseVarsN)), val)
 		}
 	}
@@ -371,7 +371,7 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 		for _, syi := range syIdxs {
 			syni := pj.SynStIdx + syi
 			pj.InitWtsSyn(ctx, syni, &nt.Rand, smn, spct)
-			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			for di := uint32(0); di < rlay.MaxData; di++ {
 				pj.InitSynCa(ctx, syni, di)
 			}
 		}

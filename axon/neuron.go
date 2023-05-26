@@ -121,10 +121,8 @@ const (
 	GeExt     // extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc
 	GeRaw     // raw excitatory conductance (net input) received from senders = current raw spiking drive
 	GeSyn     // time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E
-	GeBase    // baseline level of Ge, added to GeRaw, for intrinsic excitability
 	GiRaw     // raw inhibitory conductance (net input) received from senders  = current raw spiking drive
 	GiSyn     // time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi
-	GiBase    // baseline level of Gi, added to GiRaw, for intrinsic excitability
 	GeInt     // integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive
 	GeIntMax  // maximum GeInt value across one theta cycle time window.
 	GiInt     // integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive
@@ -245,6 +243,8 @@ const (
 	TrgAvg                       // neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
 	DTrgAvg                      // change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
 	AvgDif                       // AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
+	GeBase                       // baseline level of Ge, added to GeRaw, for intrinsic excitability
+	GiBase                       // baseline level of Gi, added to GiRaw, for intrinsic excitability
 
 	NeuronAvgVarsN
 )

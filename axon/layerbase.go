@@ -409,7 +409,7 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 		for px := 0; px < spx; px++ {
 			soff := uint32(ly.Shp.Offset([]int{py, px, 0, 0}))
 			eoff := uint32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
-			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			for di := uint32(0); di < ly.MaxData; di++ {
 				pl := ly.Pool(pi, di)
 				pl.StIdx = soff
 				pl.EdIdx = eoff
@@ -427,7 +427,7 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 // BuildPools builds the inhibitory pools structures -- nu = number of units in layer
 func (ly *LayerBase) BuildPools(ctx *Context, nn uint32) error {
 	np := 1 + ly.NSubPools()
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ly.MaxData; di++ {
 		lpl := ly.Pool(0, di)
 		lpl.StIdx = 0
 		lpl.EdIdx = nn
@@ -879,7 +879,7 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 	}
 	ctx := &ly.Network.Ctx
 	if lw.MetaData != nil {
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
 			vals := &ly.Vals[di]
 			if am, ok := lw.MetaData["ActMAvg"]; ok {
 				pv, _ := strconv.ParseFloat(am, 32)

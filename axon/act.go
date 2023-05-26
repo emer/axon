@@ -637,9 +637,9 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 		SetNrnV(ctx, ni, di, Spike, 0)
 		AddNrnV(ctx, ni, di, Act, -decay*(NrnV(ctx, ni, di, Act)-ac.Init.Act))
 		AddNrnV(ctx, ni, di, ActInt, -decay*(NrnV(ctx, ni, di, ActInt)-ac.Init.Act))
-		AddNrnV(ctx, ni, di, GeSyn, -decay*(NrnV(ctx, ni, di, GeSyn)-NrnV(ctx, ni, di, GeBase)))
-		AddNrnV(ctx, ni, di, Ge, -decay*(NrnV(ctx, ni, di, Ge)-NrnV(ctx, ni, di, GeBase)))
-		AddNrnV(ctx, ni, di, Gi, -decay*(NrnV(ctx, ni, di, Gi)-NrnV(ctx, ni, di, GiBase)))
+		AddNrnV(ctx, ni, di, GeSyn, -decay*(NrnV(ctx, ni, di, GeSyn)-NrnAvgV(ctx, ni, GeBase)))
+		AddNrnV(ctx, ni, di, Ge, -decay*(NrnV(ctx, ni, di, Ge)-NrnAvgV(ctx, ni, GeBase)))
+		AddNrnV(ctx, ni, di, Gi, -decay*(NrnV(ctx, ni, di, Gi)-NrnAvgV(ctx, ni, GiBase)))
 		AddNrnV(ctx, ni, di, Gk, -decay*NrnV(ctx, ni, di, Gk))
 
 		AddNrnV(ctx, ni, di, Vm, -decay*(NrnV(ctx, ni, di, Vm)-ac.Init.Vm))
@@ -693,18 +693,16 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
 // automatically called (DecayState is used instead)
-func (ac *ActParams) InitActs(ctx *Context, ni, di uint32, rnd erand.Rand) {
+func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, Spike, 0)
 	SetNrnV(ctx, ni, di, Spiked, 0)
 	SetNrnV(ctx, ni, di, ISI, -1)
 	SetNrnV(ctx, ni, di, ISIAvg, -1)
 	SetNrnV(ctx, ni, di, Act, ac.Init.Act)
 	SetNrnV(ctx, ni, di, ActInt, ac.Init.Act)
-	SetNrnV(ctx, ni, di, GeBase, ac.Init.GetGeBase(rnd))
-	SetNrnV(ctx, ni, di, GiBase, ac.Init.GetGiBase(rnd))
-	SetNrnV(ctx, ni, di, GeSyn, NrnV(ctx, ni, di, GeBase))
-	SetNrnV(ctx, ni, di, Ge, NrnV(ctx, ni, di, GeBase))
-	SetNrnV(ctx, ni, di, Gi, NrnV(ctx, ni, di, GiBase))
+	SetNrnV(ctx, ni, di, GeSyn, NrnAvgV(ctx, ni, GeBase))
+	SetNrnV(ctx, ni, di, Ge, NrnAvgV(ctx, ni, GeBase))
+	SetNrnV(ctx, ni, di, Gi, NrnAvgV(ctx, ni, GiBase))
 	SetNrnV(ctx, ni, di, Gk, 0)
 	SetNrnV(ctx, ni, di, Inet, 0)
 	SetNrnV(ctx, ni, di, Vm, ac.Init.Vm)
@@ -785,6 +783,7 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, ActP, 0)
 	SetNrnV(ctx, ni, di, GeInt, 0)
 	SetNrnV(ctx, ni, di, GiInt, 0)
+	SetNrnV(ctx, ni, di, GeIntMax, 0)
 }
 
 //gosl: start act
