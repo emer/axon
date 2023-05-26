@@ -822,15 +822,15 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 // The caller must check the On flag before running this, to use CPU vs. GPU.
 func (gp *GPU) RunCycle() {
 	if gp.RecFunTimes { // must use Wait calls here.
-		gp.RunCycleSeparateFuns()
+		gp.RunCycleSeparateFuns() // todo: NVIDIA diff results here
 		return
 	}
 	if gp.CycleByCycle {
-		gp.RunCycleOne()
+		gp.RunCycleOne() // only case where NVIDIA matches CPU
 		return
 	}
 	if gp.Ctx.Cycle%CyclesN == 0 {
-		gp.RunCycles()
+		gp.RunCycles() // todo: NVIDIA diff results here
 	}
 }
 
@@ -961,8 +961,6 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 	}
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
 	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr)
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyFm")
-	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
