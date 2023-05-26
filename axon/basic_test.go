@@ -221,6 +221,8 @@ func NetActTest(t *testing.T, gpu bool) {
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
+		// testNet.GPU.RecFunTimes = true // NVIDIA doesn't work with this or nothing
+		// testNet.GPU.CycleByCycle = true // always works with this
 	}
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
@@ -262,6 +264,9 @@ func NetActTest(t *testing.T, gpu bool) {
 	cycPerQtr := 50
 
 	for pi := 0; pi < 4; pi++ {
+		testNet.NewState(ctx)
+		ctx.NewState(etime.Train)
+
 		inpat, err := inPats.SubSpaceTry([]int{pi})
 		if err != nil {
 			t.Fatal(err)
@@ -270,9 +275,6 @@ func NetActTest(t *testing.T, gpu bool) {
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
 		testNet.ApplyExts(ctx) // key now for GPU
-
-		testNet.NewState(ctx)
-		ctx.NewState(etime.Train)
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
@@ -411,14 +413,14 @@ func NetDebugAct(t *testing.T, printVals bool, gpu bool) map[string]float32 {
 	nNeurs := 1    // max 4 -- number of neuron values to print
 
 	for pi := 0; pi < 4; pi++ {
+		testNet.NewState(ctx)
+		ctx.NewState(etime.Train)
+
 		inpat, err := inPats.SubSpaceTry([]int{pi})
 		if err != nil {
 			t.Fatal(err)
 		}
 		_ = inpat
-		testNet.NewState(ctx)
-		ctx.NewState(etime.Train)
-
 		testNet.InitExt(ctx)
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
@@ -543,6 +545,9 @@ func NetTestLearn(t *testing.T, gpu bool) {
 		}
 
 		for pi := 0; pi < 4; pi++ {
+			ctx.NewState(etime.Train)
+			testNet.NewState(ctx)
+
 			inpat, err := inPats.SubSpaceTry([]int{pi})
 			if err != nil {
 				t.Error(err)
@@ -552,14 +557,14 @@ func NetTestLearn(t *testing.T, gpu bool) {
 			outLay.ApplyExt(ctx, 0, inpat)
 			testNet.ApplyExts(ctx) // key now for GPU
 
-			ctx.NewState(etime.Train)
-			testNet.NewState(ctx)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					testNet.Cycle(ctx)
 					ctx.CycleInc()
 					if gpu {
 						testNet.GPU.SyncNeuronsFmGPU()
+						// testNet.GPU.RecFunTimes = true // doesn't work with this or nothing
+						// testNet.GPU.CycleByCycle = true // always works with this
 					}
 
 					hidLay.UnitVals(&hidAct, "Act", 0)

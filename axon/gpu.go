@@ -54,32 +54,32 @@ var content embed.FS
 [[vk::binding(3, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons][Data]
 
 
-Set: 0
-    Role: Uniform
+Set: 0	Params
+    Role: Storage
         Var: 0:	Layers	Struct[4]	(size: 1520)	Vals: 1
+        Var: 1:	Prjns	Struct[5]	(size: 352)	Vals: 1
 Set: 1	Idxs
     Role: Storage
         Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Vals: 1
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Vals: 1
-        Var: 2:	Prjns	Struct[5]	(size: 352)	Vals: 1
-        Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
-        Var: 4:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
-        Var: 5:	RecvCon	Struct[281]	(size: 16)	Vals: 1
-        Var: 6:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+        Var: 2:	SendCon	Struct[242]	(size: 16)	Vals: 1
+        Var: 3:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
+        Var: 4:	RecvCon	Struct[281]	(size: 16)	Vals: 1
+        Var: 5:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
 Set: 2	Structs
     Role: Storage
-        Var: 0:	Ctx	Struct	(size: 864)	Vals: 1
-        Var: 1:	Neurons	Float32[14596]	(size: 4)	Vals: 1
+        Var: 0:	Ctx	Struct	(size: 880)	Vals: 1
+        Var: 1:	Neurons	Float32[233536]	(size: 4)	Vals: 1
         Var: 2:	NeuronAvgs	Float32[890]	(size: 4)	Vals: 1
-        Var: 3:	Pools	Struct[4]	(size: 1040)	Vals: 1
-        Var: 4:	LayVals	Struct[4]	(size: 128)	Vals: 1
-        Var: 5:	Exts	Float32[50]	(size: 4)	Vals: 1
+        Var: 3:	Pools	Struct[64]	(size: 1040)	Vals: 1
+        Var: 4:	LayVals	Struct[64]	(size: 128)	Vals: 1
+        Var: 5:	Exts	Float32[800]	(size: 4)	Vals: 1
 Set: 3	Syns
     Role: Storage
         Var: 0:	Synapses	Float32[64960]	(size: 4)	Vals: 1
-        Var: 1:	SynapseCas	Float32[77952]	(size: 4)	Vals: 1
-        Var: 2:	GBuf	Int32[843]	(size: 4)	Vals: 1
-        Var: 3:	GSyns	Float32[281]	(size: 4)	Vals: 1
+        Var: 1:	SynapseCas	Float32[1455104]	(size: 4)	Vals: 1
+        Var: 2:	GBuf	Int32[13488]	(size: 4)	Vals: 1
+        Var: 3:	GSyns	Float32[4496]	(size: 4)	Vals: 1
 */
 
 // TheGPU is the gpu device, shared across all networks
@@ -882,7 +882,6 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 
 	gp.RunPipelineCmd(cmd, "Cycle", neurDataN, "PoolGi", "Cycle")
 
-	// todo: do over SendCon instead
 	gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
 	if gp.Ctx.Testing.IsTrue() {
 		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
@@ -962,6 +961,8 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 	}
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
 	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr)
+	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyFm")
+	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -983,11 +984,9 @@ func (gp *GPU) RunCycleSeparateFuns() {
 
 	gp.RunPipelineWait("Cycle", neurDataN)
 
-	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipelineWait("SendSpike", neurDataN)
-		gp.RunPipelineWait("CyclePost", 1)
-	} else {
-		gp.RunPipelineWait("SendSpike", neurDataN)
+	gp.RunPipelineWait("SendSpike", neurDataN)
+	gp.RunPipelineWait("CyclePost", 1)
+	if !gp.Ctx.Testing.IsTrue() {
 		gp.RunPipelineWait("CyclePost", 1)
 		gp.RunPipelineWait("SynCa", neurDataN)
 	}
