@@ -61,138 +61,278 @@ const (
 	/////////////////////////////////////////
 	// Spiking, Activation
 
-	Spike  NeuronVars = iota // whether neuron has spiked or not on this cycle (0 or 1)
-	Spiked                   // 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.
-	Act                      // rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations.
-	ActInt                   // integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations.
-	ActM                     // ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.
-	ActP                     // ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations.
-	Ext                      // external input: drives activation of unit from outside influences (e.g., sensory input)
-	Target                   // target value: drives learning to produce this activation value
+	// Spike is whether neuron has spiked or not on this cycle (0 or 1)
+	Spike NeuronVars = iota
+
+	// Spiked is 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.
+	Spiked
+
+	// Act is rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations.
+	Act
+
+	// ActInt is integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations.
+	ActInt
+
+	// ActM is ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.
+	ActM
+
+	// ActP is ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations.
+	ActP
+
+	// Ext is external input: drives activation of unit from outside influences (e.g., sensory input)
+	Ext
+
+	// Target is the target value: drives learning to produce this activation value
+	Target
 
 	/////////////////////////////////////////
 	// Major conductances, Vm
 
-	Ge     // total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E
-	Gi     // total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I
-	Gk     // total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K
-	Inet   // net current produced by all channels -- drives update of Vm
-	Vm     // membrane potential -- integrates Inet current over time
-	VmDend // dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking
-	ISI    // current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized.
-	ISIAvg // average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.
+	// Ge is total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E
+	Ge
+
+	// Gi is total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I
+	Gi
+
+	// Gk is total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K
+	Gk
+
+	// Inet is net current produced by all channels -- drives update of Vm
+	Inet
+
+	// Vm is membrane potential -- integrates Inet current over time
+	Vm
+
+	// VmDend is dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking
+	VmDend
+
+	// ISI is current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized.
+	ISI
+
+	// ISIAvg is average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.
+	ISIAvg
 
 	/////////////////////////////////////////
 	// Calcium for learning
 
-	CaSyn   // spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
-	CaSpkM  // spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level.
-	CaSpkP  // continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.
-	CaSpkD  // continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.
-	CaSpkPM // minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.
-	CaLrn   // recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component).  This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales.
-	NrnCaM  // integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.
-	NrnCaP  // cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.
-	NrnCaD  // cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
-	CaDiff  // difference between CaP - CaD -- this is the error signal that drives error-driven learning.
-	RLRate  // recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).
-	Attn    // Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge
+	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
+	CaSyn
+
+	// CaSpkM is spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level.
+	CaSpkM
+
+	// CaSpkP is continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.
+	CaSpkP
+
+	// CaSpkD is continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.
+	CaSpkD
+
+	// CaSpkPM is minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.
+	CaSpkPM
+
+	// CaLrn is recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component).  This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales.
+	CaLrn
+
+	// NrnCaM is integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.
+	NrnCaM
+
+	// NrnCaP is cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.
+	NrnCaP
+
+	// NrnCaD is cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
+	NrnCaD
+
+	// CaDiff is difference between CaP - CaD -- this is the error signal that drives error-driven learning.
+	CaDiff
+
+	// RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).
+	RLRate
+
+	// Attn is Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge
+	Attn
 
 	/////////////////////////////////////////
 	// Stats, aggregate values
 
-	SpkMaxCa // Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover.  This is the input to SpkMax
-	SpkMax   // maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons.
-	SpkPrv   // final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
-	SpkSt1   // the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning
-	SpkSt2   // the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning
+	// SpkMaxCa is Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover.  This is the input to SpkMax
+	SpkMaxCa
+
+	// SpkMax is maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons.
+	SpkMax
+
+	// SpkPrv is final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
+	SpkPrv
+
+	// SpkSt1 is the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning
+	SpkSt1
+
+	// SpkSt2 is the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning
+	SpkSt2
 
 	/////////////////////////////////////////
 	// Noise
 
-	GeNoiseP // accumulating poisson probability factor for driving excitatory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda.
-	GeNoise  // integrated noise excitatory conductance, added into Ge
-	GiNoiseP // accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda.
-	GiNoise  // integrated noise inhibotyr conductance, added into Gi
+	// GeNoiseP is accumulating poisson probability factor for driving excitatory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda.
+	GeNoiseP
+
+	// GeNoise is integrated noise excitatory conductance, added into Ge
+	GeNoise
+
+	// GiNoiseP is accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda.
+	GiNoiseP
+
+	// GiNoise is integrated noise inhibotyr conductance, added into Gi
+	GiNoise
 
 	/////////////////////////////////////////
 	// Ge, Gi integration
 
-	GeExt     // extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc
-	GeRaw     // raw excitatory conductance (net input) received from senders = current raw spiking drive
-	GeSyn     // time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E
-	GiRaw     // raw inhibitory conductance (net input) received from senders  = current raw spiking drive
-	GiSyn     // time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi
-	GeInt     // integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive
-	GeIntMax  // maximum GeInt value across one theta cycle time window.
-	GiInt     // integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive
-	GModRaw   // raw modulatory conductance, received from GType = ModulatoryG projections
-	GModSyn   // syn integrated modulatory conductance, received from GType = ModulatoryG projections
-	GMaintRaw // raw maintenance conductance, received from GType = MaintG projections
-	GMaintSyn // syn integrated maintenance conductance, integrated using MaintNMDA params.
+	// GeExt is extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc
+	GeExt
+
+	// GeRaw is raw excitatory conductance (net input) received from senders = current raw spiking drive
+	GeRaw
+
+	// GeSyn is time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E
+	GeSyn
+
+	// GiRaw is raw inhibitory conductance (net input) received from senders  = current raw spiking drive
+	GiRaw
+
+	// GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi
+	GiSyn
+
+	// GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive
+	GeInt
+
+	// GeIntMax is maximum GeInt value across one theta cycle time window.
+	GeIntMax
+
+	// GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive
+	GiInt
+
+	// GModRaw is raw modulatory conductance, received from GType = ModulatoryG projections
+	GModRaw
+
+	// GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG projections
+	GModSyn
+
+	// GMaintRaw is raw maintenance conductance, received from GType = MaintG projections
+	GMaintRaw
+
+	// GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.
+	GMaintSyn
 
 	/////////////////////////////////////////
 	// SST somatostatin inhibition factors
 
-	SSGi     // SST+ somatostatin positive slow spiking inhibition
-	SSGiDend // amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)
-	Gak      // conductance of A-type K potassium channels
+	// SSGi is SST+ somatostatin positive slow spiking inhibition
+	SSGi
+
+	// SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)
+	SSGiDend
+
+	// Gak is conductance of A-type K potassium channels
+	Gak
 
 	/////////////////////////////////////////
 	// AHP channels: Mahp, Sahp, Gkna
 
-	MahpN    // accumulating voltage-gated gating value for the medium time scale AHP
-	SahpCa   // slowly accumulating calcium value that drives the slow AHP
-	SahpN    // sAHP gating value
-	GknaMed  // conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing
-	GknaSlow // conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing
+	// MahpN is accumulating voltage-gated gating value for the medium time scale AHP
+	MahpN
+
+	// SahpCa is slowly accumulating calcium value that drives the slow AHP
+	SahpCa
+
+	// SahpN is sAHP gating value
+	SahpN
+
+	// GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing
+	GknaMed
+
+	// GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing
+	GknaSlow
 
 	/////////////////////////////////////////
 	// NMDA channels
 
-	// integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant
+	// GnmdaSyn is integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant
 	GnmdaSyn
-	// net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential
+
+	// Gnmda is net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential
 	Gnmda
-	// net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential
+
+	// GnmdaMaint is net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential
 	GnmdaMaint
-	// learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning
+
+	// GnmdaLrn is learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning
 	GnmdaLrn
-	// NMDA calcium computed from GnmdaLrn, drives learning via CaM
+
+	// NmdaCa is NMDA calcium computed from GnmdaLrn, drives learning via CaM
 	NmdaCa
 
 	/////////////////////////////////////////
 	// GABA channels
 
-	GgabaB // net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.
-	GABAB  // GABA-B / GIRK activation -- time-integrated value with rise and decay time constants
-	GABABx // GABA-B / GIRK internal drive variable -- gets the raw activation and decays
+	// GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.
+	GgabaB
+
+	// GABAB is GABA-B / GIRK activation -- time-integrated value with rise and decay time constants
+	GABAB
+
+	// GABABx is GABA-B / GIRK internal drive variable -- gets the raw activation and decays
+	GABABx
 
 	/////////////////////////////////////////
 	//  VGCC voltage gated calcium channels
 
-	Gvgcc     // conductance (via Ca) for VGCC voltage gated calcium channels
-	VgccM     // activation gate of VGCC channels
-	VgccH     // inactivation gate of VGCC channels
-	VgccCa    // instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc
-	VgccCaInt // time-integrated VGCC calcium flux -- this is actually what drives learning
+	// Gvgcc is conductance (via Ca) for VGCC voltage gated calcium channels
+	Gvgcc
+
+	// VgccM is activation gate of VGCC channels
+	VgccM
+
+	// VgccH inactivation gate of VGCC channels
+	VgccH
+
+	// VgccCa is instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc
+	VgccCa
+
+	// VgccCaInt time-integrated VGCC calcium flux -- this is actually what drives learning
+	VgccCaInt
 
 	/////////////////////////////////////////
 	//  SKCa small conductance calcium-gated potassium channels
 
-	SKCaIn // intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold
-	SKCaR  // released amount of intracellular calcium, from SKCaIn, as a function of spiking events.  this can bind to SKCa channels and drive K currents.
-	SKCaM  // Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.
-	Gsk    // Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.
+	// SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold
+	SKCaIn
+
+	// SKCaR released amount of intracellular calcium, from SKCaIn, as a function of spiking events.  this can bind to SKCa channels and drive K currents.
+	SKCaR
+
+	// SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.
+	SKCaM
+
+	// Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.
+	Gsk
 
 	/////////////////////////////////////////
 	//  Special Layer Vars
 
-	Burst      // 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers
-	BurstPrv   // previous Burst bursting activation from prior time step -- used for context-based learning
-	CtxtGe     // context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.
-	CtxtGeRaw  // raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.
-	CtxtGeOrig // original CtxtGe value prior to any decay factor -- updates at end of plus phase.
+	// Burst is 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers
+	Burst
+
+	// BurstPrv is previous Burst bursting activation from prior time step -- used for context-based learning
+	BurstPrv
+
+	// CtxtGe is context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.
+	CtxtGe
+
+	// CtxtGeRaw is raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.
+	CtxtGeRaw
+
+	// CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.
+	CtxtGeOrig
 
 	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
 	// These need to be in Vars because they can be differential per data (for ext inputs)
@@ -233,18 +373,32 @@ func (ns *NeuronVarStrides) SetVarOuter(nneur, ndata int) {
 ////////////////////////////////////////////////
 // 	NeuronAvgVars
 
-// NeuronAvgVars are neuron variables involved in longer-term average activity
-// which is aggregated over time and not specific to each input data state.
+// NeuronAvgVars are mostly neuron variables involved in longer-term average activity
+// which is aggregated over time and not specific to each input data state,
+// along with any other state that is not input data specific.
 type NeuronAvgVars int32
 
 const (
-	ActAvg  NeuronAvgVars = iota // average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
-	AvgPct                       // ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
-	TrgAvg                       // neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
-	DTrgAvg                      // change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
-	AvgDif                       // AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
-	GeBase                       // baseline level of Ge, added to GeRaw, for intrinsic excitability
-	GiBase                       // baseline level of Gi, added to GiRaw, for intrinsic excitability
+	// ActAvg is average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
+	ActAvg NeuronAvgVars = iota
+
+	// AvgPct is ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
+	AvgPct
+
+	// TrgAvg is neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
+	TrgAvg
+
+	// DTrgAvg is change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
+	DTrgAvg
+
+	// AvgDif is AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
+	AvgDif
+
+	// GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability
+	GeBase
+
+	// GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability
+	GiBase
 
 	NeuronAvgVarsN
 )
@@ -374,6 +528,7 @@ var NeuronVarProps = map[string]string{
 	"NrnCaD":  `desc:"cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule."`,
 	"CaDiff":  `desc:"difference between CaP - CaD -- this is the error signal that drives error-driven learning."`,
 	"RLRate":  `auto-scale:"+" desc:"recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD)."`,
+	"Attn":    `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`,
 
 	/////////////////////////////////////////
 	// Stats, aggregate values
@@ -384,16 +539,6 @@ var NeuronVarProps = map[string]string{
 	"SpkSt1":   `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`,
 	"SpkSt2":   `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`,
 	"DASign":   `desc:"sign of dopamine-based learning effects for this neuron -- 1 = D1, -1 = D2"`,
-
-	/////////////////////////////////////////
-	// Long-term average activation, set point for synaptic scaling
-
-	"ActAvg":  `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`,
-	"AvgPct":  `range:"2" desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`,
-	"TrgAvg":  `range:"2" desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`,
-	"DTrgAvg": `auto-scale:"+" desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`,
-	"AvgDif":  `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`,
-	"Attn":    `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`,
 
 	/////////////////////////////////////////
 	// Noise
@@ -409,10 +554,8 @@ var NeuronVarProps = map[string]string{
 	"GeExt":     `desc:"extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc"`,
 	"GeRaw":     `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`,
 	"GeSyn":     `range:"2" desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`,
-	"GeBase":    `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`,
 	"GiRaw":     `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`,
 	"GiSyn":     `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`,
-	"GiBase":    `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`,
 	"GeInt":     `range:"2" desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`,
 	"GeIntMax":  `range:"2" desc:"maximum GeInt value across one theta cycle time window."`,
 	"GiInt":     `range:"2" desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`,
@@ -480,6 +623,17 @@ var NeuronVarProps = map[string]string{
 	"CtxtGeOrig": `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`,
 
 	"NrnFlags": `view:"-" desc:"bit flags for external input and other neuron status state"`,
+
+	/////////////////////////////////////////
+	// Long-term average activation, set point for synaptic scaling
+
+	"ActAvg":  `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`,
+	"AvgPct":  `range:"2" desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`,
+	"TrgAvg":  `range:"2" desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`,
+	"DTrgAvg": `auto-scale:"+" desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`,
+	"AvgDif":  `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`,
+	"GeBase":  `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`,
+	"GiBase":  `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`,
 }
 
 var (

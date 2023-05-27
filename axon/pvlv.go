@@ -205,8 +205,6 @@ type Effort struct {
 	MaxNovel   float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
 	MaxPostDip float32 `desc:"if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever.."`
 	MaxVar     float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
-	Raw        float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
-	Disc       float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
 }
 
 func (ef *Effort) Defaults() {
@@ -223,10 +221,10 @@ func (ef *Effort) Update() {
 }
 
 // Reset resets the raw effort back to zero -- at start of new gating event
-func (ef *Effort) Reset() {
-	ef.Raw = 0
-	ef.CurMax = ef.Max
-	ef.Disc = 1
+func (ef *Effort) Reset(ctx *Context, di uint32) {
+	SetGlobalV(ctx, di, GvEffortRaw, 0)
+	ef.CurMax = ef.Max // todo: put in global
+	SetGlobalV(ctx, di, GvEffortDisc, 1)
 }
 
 // DiscFun is the effort discount function: 1 / (1 + ef.Gain * effort)
@@ -235,20 +233,22 @@ func (ef *Effort) DiscFun(effort float32) float32 {
 }
 
 // DiscFmEffort computes Disc from Raw effort
-func (ef *Effort) DiscFmEffort() float32 {
-	ef.Disc = ef.DiscFun(ef.Raw)
-	return ef.Disc
+func (ef *Effort) DiscFmEffort(ctx *Context, di uint32) float32 {
+	disc := ef.DiscFun(GlobalV(ctx, di, GvEffortRaw))
+	SetGlobalV(ctx, di, GvEffortDisc, disc)
+	return disc
 }
 
 // AddEffort adds an increment of effort and updates the Disc discount factor
-func (ef *Effort) AddEffort(inc float32) {
-	ef.Raw += inc
-	ef.DiscFmEffort()
+func (ef *Effort) AddEffort(ctx *Context, di uint32, inc float32) {
+	AddGlobalV(ctx, di, GvEffortRaw, inc)
+	ef.DiscFmEffort(ctx, di)
 }
 
 // GiveUp returns true if maximum effort has been exceeded
-func (ef *Effort) GiveUp() bool {
-	if ef.CurMax > 0 && ef.Raw > ef.CurMax {
+func (ef *Effort) GiveUp(ctx *Context, di uint32) bool {
+	raw := GlobalV(ctx, di, GvEffortRaw)
+	if ef.CurMax > 0 && raw > ef.CurMax {
 		return true
 	}
 	return false
@@ -266,18 +266,14 @@ type Urgency struct {
 	U50   float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
 	Power int32   `def:"4" desc:"exponent on the urge factor -- valid numbers are 1,2,4,6"`
 	Thr   float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
-	Raw   float32 `desc:"raw effort for urgency -- increments linearly upward in effort units"`
-	Urge  float32 `inactive:"-" desc:"urgency activity level"`
 
-	pad, pad1, pad2 float32
+	pad float32
 }
 
 func (ur *Urgency) Defaults() {
 	ur.U50 = 20
 	ur.Power = 4
 	ur.Thr = 0.2
-	ur.Raw = 0
-	ur.Urge = 0
 }
 
 func (ur *Urgency) Update() {
@@ -285,9 +281,9 @@ func (ur *Urgency) Update() {
 }
 
 // Reset resets the raw urgency back to zero -- at start of new gating event
-func (ur *Urgency) Reset() {
-	ur.Raw = 0
-	ur.Urge = 0
+func (ur *Urgency) Reset(ctx *Context, di uint32) {
+	SetGlobalV(ctx, di, GvUrgencyRaw, 0)
+	SetGlobalV(ctx, di, GvUrgency, 0)
 }
 
 // UrgeFun is the urgency function: urgency / (urgency + 1) where
@@ -306,18 +302,19 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 }
 
 // UrgeFmUrgency computes Urge from Raw
-func (ur *Urgency) UrgeFmUrgency() float32 {
-	ur.Urge = ur.UrgeFun(ur.Raw)
-	if ur.Urge < ur.Thr {
-		ur.Urge = 0
+func (ur *Urgency) UrgeFmUrgency(ctx *Context, di uint32) float32 {
+	urge := ur.UrgeFun(GlobalV(ctx, di, GvUrgencyRaw))
+	if urge < ur.Thr {
+		urge = 0
 	}
-	return ur.Urge
+	SetGlobalV(ctx, di, GvUrgency, urge)
+	return urge
 }
 
 // AddEffort adds an effort increment of urgency and updates the Urge factor
-func (ur *Urgency) AddEffort(inc float32) {
-	ur.Raw += inc
-	ur.UrgeFmUrgency()
+func (ur *Urgency) AddEffort(ctx *Context, di uint32, inc float32) {
+	AddGlobalV(ctx, di, GvUrgencyRaw, inc)
+	ur.UrgeFmUrgency(ctx, di)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -335,15 +332,6 @@ type LHb struct {
 	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
 	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
 
-	Dip       float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
-	Burst     float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
-	DipSumCur float32     `inactive:"+" desc:"current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
-	DipSum    float32     `inactive:"+"copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials"`
-	GiveUp    slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
-
-	Pos float32 `inactive:"+" desc:"computed PosGain * (VSPatchPos - PVpos)"`
-	Neg float32 `inactive:"+" desc:"computed NegGain * PVneg"`
-
 	pad float32
 }
 
@@ -358,40 +346,47 @@ func (lh *LHb) Defaults() {
 func (lh *LHb) Update() {
 }
 
-func (lh *LHb) Reset() {
-	lh.Dip = 0
-	lh.Burst = 0
-	lh.DipSumCur = 0
-	lh.DipSum = 0
-	lh.GiveUp.SetBool(false)
+func (lh *LHb) Reset(ctx *Context, di uint32) {
+	SetGlobalV(ctx, di, GvLHbDip, 0)
+	SetGlobalV(ctx, di, GvLHbBurst, 0)
+	SetGlobalV(ctx, di, GvLHbDipSumCur, 0)
+	SetGlobalV(ctx, di, GvLHbDipSum, 0)
+	SetGlobalV(ctx, di, GvLHbGiveUp, 0)
 }
 
 // LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
 // and VSPatch inputs.
-func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
-	lh.Pos = lh.PosGain * (vsPatchPos - pvPos)
-	lh.Neg = lh.NegGain * pvNeg
-	netLHb := lh.Pos + lh.Neg
+func (lh *LHb) LHbFmPVVS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
+	pos := lh.PosGain * (vsPatchPos - pvPos)
+	neg := lh.NegGain * pvNeg
+	SetGlobalV(ctx, di, GvLHbPos, pos)
+	SetGlobalV(ctx, di, GvLHbNeg, neg)
+	netLHb := pos + neg
 
 	if netLHb > 0 {
-		lh.Dip = netLHb
-		lh.Burst = 0
+		SetGlobalV(ctx, di, GvLHbDip, netLHb)
+		SetGlobalV(ctx, di, GvLHbBurst, 0)
 	} else {
-		lh.Burst = -netLHb
-		lh.Dip = 0
+		SetGlobalV(ctx, di, GvLHbBurst, -netLHb)
+		SetGlobalV(ctx, di, GvLHbDip, 0)
 	}
 }
 
 // ShouldGiveUp increments DipSum and checks if should give up if above threshold
-func (lh *LHb) ShouldGiveUp() bool {
-	lh.DipSumCur += lh.Dip
-	lh.DipSum = lh.DipSumCur
-	lh.GiveUp.SetBool(false)
-	if lh.DipSumCur > lh.GiveUpThr {
-		lh.GiveUp.SetBool(true)
-		lh.DipSumCur = 0
+func (lh *LHb) ShouldGiveUp(ctx *Context, di uint32) bool {
+	dip := GlobalV(ctx, di, GvLHbDip)
+	AddGlobalV(ctx, di, GvLHbDipSumCur, dip)
+	cur := GlobalV(ctx, di, GvLHbDipSumCur)
+	SetGlobalV(ctx, di, GvLHbDipSum, cur)
+	SetGlobalV(ctx, di, GvLHbGiveUp, 0)
+	giveUp := false
+	if cur > lh.GiveUpThr {
+		giveUp = true
+		SetGlobalV(ctx, di, GvLHbGiveUp, 1)
+		SetGlobalV(ctx, di, GvLHbGiveUp, 1)
+		SetGlobalV(ctx, di, GvLHbDipSumCur, 0)
 	}
-	return lh.GiveUp.IsTrue()
+	return giveUp
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -454,9 +449,9 @@ type VTA struct {
 	pad, pad1, pad2 float32
 
 	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
-	Raw  VTAVals `view:"inline" inactive:"+" desc:"raw current values -- inputs to the computation"`
-	Vals VTAVals `view:"inline" inactive:"+" desc:"computed current values"`
-	Prev VTAVals `view:"inline" inactive:"+" desc:"previous computed  values -- to avoid a data race"`
+	// Raw  VTAVals `view:"inline" inactive:"+" desc:"raw current values -- inputs to the computation"`
+	// Vals VTAVals `view:"inline" inactive:"+" desc:"computed current values"`
+	// Prev VTAVals `view:"inline" inactive:"+" desc:"previous computed  values -- to avoid a data race"`
 }
 
 func (vt *VTA) Defaults() {
@@ -641,12 +636,12 @@ func (pp *PVLV) SetDrive(dr int32, val float32) {
 
 // USStimVal returns stimulus value for US at given index
 // and valence.  If US > 0.01, a full 1 US activation is returned.
-func (pp *PVLV) USStimVal(usIdx int32, valence ValenceTypes) float32 {
+func (pp *PVLV) USStimVal(usIdx uint32, valence ValenceTypes) float32 {
 	us := float32(0)
 	if valence == Positive {
-		us = pp.USpos.Get(usIdx)
+		us = GlobalDriveV(ctx, di, usIdx, GvUSpos)
 	} else {
-		us = pp.USneg.Get(usIdx)
+		us = GlobalUSneg(ctx, di, usIdx)
 	}
 	if us > 0.01 { // threshold for presentation to net
 		us = 1 // https://github.com/emer/axon/issues/194

@@ -361,7 +361,9 @@ func (nt *Network) DecayState(ctx *Context, decay, glong, ahp float32) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.DecayState(ctx, decay, glong, ahp)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.DecayState(ctx, di, decay, glong, ahp)
+		}
 	}
 	nt.GPU.SyncStateToGPU()
 }
@@ -393,7 +395,9 @@ func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, lay
 		if ly.IsOff() {
 			continue
 		}
-		ly.DecayState(ctx, decay, glong, ahp)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.DecayState(ctx, di, decay, glong, ahp)
+		}
 	}
 	nt.GPU.SyncStateToGPU()
 }

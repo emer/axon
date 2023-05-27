@@ -36,11 +36,20 @@ func (ev *SynapseIdxs) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJ
 type SynapseVars int32
 
 const (
-	Wt   SynapseVars = iota // effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
-	LWt                     // rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
-	SWt                     // slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
-	DWt                     // delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
-	DSWt                    // change in SWt slow synaptic weight -- accumulates DWt
+	// Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
+	Wt SynapseVars = iota
+
+	// LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
+	LWt
+
+	// SWt is slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
+	SWt
+
+	// DWt is delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
+	DWt
+
+	// DSWt is change in SWt slow synaptic weight -- accumulates DWt
+	DSWt
 
 	SynapseVarsN
 )
@@ -81,13 +90,26 @@ func (ns *SynapseVarStrides) SetVarOuter(nsyn int) {
 type SynapseCaVars int32
 
 const (
-	CaM   SynapseCaVars = iota // first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
-	CaP                        // shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
-	CaD                        // longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
-	CaUpT                      // time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
-	Tr                         // trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
-	DTr                        // delta (change in) Tr trace of synaptic activity over time
-	DiDWt                      // delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values
+	// CaM is first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
+	CaM SynapseCaVars = iota
+
+	// CaP is shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
+	CaP
+
+	// CaD is longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
+	CaD
+
+	// CaUpT is time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
+	CaUpT
+
+	// Tr is trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
+	Tr
+
+	// DTr is delta (change in) Tr trace of synaptic activity over time
+	DTr
+
+	// DiDWt is delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values
+	DiDWt
 
 	SynapseCaVarsN
 )
@@ -128,9 +150,14 @@ func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
 type SynapseIdxs int32
 
 const (
-	SynRecvIdx SynapseIdxs = iota // receiving neuron index in network's global list of neurons
-	SynSendIdx                    // sending neuron index in network's global list of neurons
-	SynPrjnIdx                    // projection index in global list of projections organized as [Layers][RecvPrjns]
+	// SynRecvIdx is receiving neuron index in network's global list of neurons
+	SynRecvIdx SynapseIdxs = iota
+
+	// SynSendIdx is sending neuron index in network's global list of neurons
+	SynSendIdx
+
+	// SynPrjnIdx is projection index in global list of projections organized as [Layers][RecvPrjns]
+	SynPrjnIdx
 
 	SynapseIdxsN
 )
@@ -169,17 +196,17 @@ func (ns *SynapseIdxStrides) SetIdxOuter(nsyn int) {
 
 // SynapseVarProps has all of the display properties for synapse variables, including desc tooltips
 var SynapseVarProps = map[string]string{
-	"Wt ":  `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`,
-	"LWt":  `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`,
-	"SWt":  `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`,
-	"DWt":  `auto-scale:"+" desc:"delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt."`,
-	"DSWt": `auto-scale:"+" desc:"change in SWt slow synaptic weight -- accumulates DWt"`,
-	"CaM":  `auto-scale:"+" desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`,
-	"CaP":  `auto-scale:"+"desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`,
-	"CaD":  `auto-scale:"+" desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`,
-	"Tr":   `auto-scale:"+" desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`,
-	"DTr":  `auto-scale:"+" desc:"delta (change in) Tr trace of synaptic activity over time"`,
-	"DDWt": `auto-scale:"+" desc:"delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values"`,
+	"Wt ":   `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`,
+	"LWt":   `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`,
+	"SWt":   `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`,
+	"DWt":   `auto-scale:"+" desc:"delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt."`,
+	"DSWt":  `auto-scale:"+" desc:"change in SWt slow synaptic weight -- accumulates DWt"`,
+	"CaM":   `auto-scale:"+" desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`,
+	"CaP":   `auto-scale:"+"desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`,
+	"CaD":   `auto-scale:"+" desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`,
+	"Tr":    `auto-scale:"+" desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`,
+	"DTr":   `auto-scale:"+" desc:"delta (change in) Tr trace of synaptic activity over time"`,
+	"DiDWt": `auto-scale:"+" desc:"delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values"`,
 }
 
 var (

@@ -51,6 +51,7 @@ type NetworkBase struct {
 	MaxData      uint32        `inactive:"+" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
 	NNeurons     uint32        `inactive:"+" desc:"total number of neurons"`
 	NSyns        uint32        `inactive:"+" desc:"total number of synapses"`
+	Globals      []float32     `view:"-" desc:"storage for global vars"`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`

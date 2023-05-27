@@ -427,7 +427,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNeuronExtPosNeg(ctx, ni, di, ctx.NeuroMod.RewPred)
 
 	case VTALayer:
-		geRaw := ly.RWDa.GeFmDA(ctx.PVLV.VTA.Vals.DA)
+		geRaw := ly.RWDa.GeFmDA(GlobalVTA(ctx, di, GvVtaVals, GvVtaDA))
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
 	case BLALayer:
@@ -442,9 +442,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	case LHbLayer:
 		geRaw := float32(0)
 		if ni == 0 {
-			geRaw = 0.2 * mat32.Abs(ctx.PVLV.LHb.Dip)
+			geRaw = 0.2 * mat32.Abs(GlobalV(ctx, di, GvLHbDip))
 		} else {
-			geRaw = 0.2 * mat32.Abs(ctx.PVLV.LHb.Burst)
+			geRaw = 0.2 * mat32.Abs(GlobalV(ctx, di, GvLHbBurst))
 		}
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
@@ -457,7 +457,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNrnV(ctx, ni, di, GeRaw, dpc)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(dpc))
 	case EffortLayer:
-		dr := ctx.PVLV.Effort.Disc
+		dr := GlobalV(ctx, di, GvEffortDisc)
 		dpc := dr
 		if dr > 0 {
 			dpc = ly.Acts.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
@@ -465,7 +465,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNrnV(ctx, ni, di, GeRaw, dpc)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(dpc))
 	case UrgencyLayer:
-		ur := ctx.PVLV.Urgency.Urge
+		ur := GlobalV(ctx, di, GvUrgency)
 		upc := ur
 		if ur > 0 {
 			upc = ly.Acts.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), ur)
@@ -473,7 +473,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNrnV(ctx, ni, di, GeRaw, upc)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(upc))
 	case USLayer:
-		us := ctx.PVLV.USStimVal(int32(pi), ly.Learn.NeuroMod.Valence)
+		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		geRaw := 0.1 * mat32.Abs(us)
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
@@ -481,9 +481,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
 			// undiscounted by effort..
-			pv = ctx.PVLV.VTA.Prev.USpos // could be PVpos
+			pv = GlobalVTA(ctx, di, GvVtaPrev, GvVtaUSpos) // could be PVpos
 		} else {
-			pv = ctx.PVLV.VTA.Prev.PVneg
+			pv = GlobalVTA(ctx, di, GvVtaPrev, GvVtaPVneg)
 		}
 		pc := ly.Acts.PopCode.EncodeGe(ni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, GeRaw, pc)
@@ -676,44 +676,44 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		SetNrnV(ctx, ni, di, Act, ctx.NeuroMod.DA) // I set this in CyclePost
 
 	case VTALayer:
-		SetNrnV(ctx, ni, di, Act, ctx.PVLV.VTA.Vals.DA) // I set this in CyclePost
+		SetNrnV(ctx, ni, di, Act, GlobalVTA(ctx, di, GvVtaVals, GvVtaDA)) // I set this in CyclePost
 	case LHbLayer:
 		if ni == 0 {
-			SetNrnV(ctx, ni, di, Act, ctx.PVLV.LHb.Dip)
+			SetNrnV(ctx, ni, di, Act, GlobalV(ctx, di, GvLHbDip))
 		} else {
-			SetNrnV(ctx, ni, di, Act, ctx.PVLV.LHb.Burst)
+			SetNrnV(ctx, ni, di, Act, GlobalV(ctx, di, GvLHbBurst))
 		}
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(NrnV(ctx, ni, di, GeRaw)))
 	case DrivesLayer:
-		dr := ctx.PVLV.Drive.Drives.Get(int32(pi))
+		dr := GlobalDriveV(ctx, di, uint32(pi), GvDrives)
 		dpc := dr
 		if dr > 0 {
 			dpc = ly.Acts.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
 		SetNrnV(ctx, ni, di, Act, dpc)
 	case EffortLayer:
-		dr := ctx.PVLV.Effort.Disc
+		dr := GlobalV(ctx, di, GvEffortDisc)
 		dpc := dr
 		if dr > 0 {
 			dpc = ly.Acts.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
 		SetNrnV(ctx, ni, di, Act, dpc)
 	case UrgencyLayer:
-		ur := ctx.PVLV.Urgency.Urge
+		ur := GlobalV(ctx, di, GvUrgency)
 		upc := ur
 		if ur > 0 {
 			upc = ly.Acts.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), ur)
 		}
 		SetNrnV(ctx, ni, di, Act, upc)
 	case USLayer:
-		us := ctx.PVLV.USStimVal(int32(pi), ly.Learn.NeuroMod.Valence)
+		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		SetNrnV(ctx, ni, di, Act, us)
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = ctx.PVLV.VTA.Vals.PVpos
+			pv = GlobalVTA(ctx, di, GvVtaVals, GvVtaPVpos)
 		} else {
-			pv = ctx.PVLV.VTA.Vals.PVneg
+			pv = GlobalVTA(ctx, di, GvVtaVals, GvVtaPVneg)
 		}
 		pc := ly.Acts.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, Act, pc)
@@ -801,9 +801,9 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32, vals *LayerVa
 
 func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, di uint32, lpl *Pool) {
 	if ly.Learn.NeuroMod.Valence == Positive {
-		ctx.PVLV.VTA.Raw.CeMpos = lpl.AvgMax.CaSpkD.Cycle.Max
+		SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaCeMpos, lpl.AvgMax.CaSpkD.Cycle.Max)
 	} else {
-		ctx.PVLV.VTA.Raw.CeMneg = lpl.AvgMax.CaSpkD.Cycle.Max
+		SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaCeMneg, lpl.AvgMax.CaSpkD.Cycle.Max)
 	}
 }
 
@@ -812,7 +812,7 @@ func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, di uint32, lpl *Po
 }
 
 func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
-	ctx.PVLVDA()
+	ctx.PVLVDA(di)
 }
 
 // note: needs to iterate over sub-pools in layer!

@@ -155,6 +155,59 @@ func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
 	Networks[ctx.NetIdxs.NetIdx].SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
 }
 
+/////////////////////////////////
+//  Global Vars
+
+// GlobalV is the CPU version of the global variable accessor
+func GlobalV(ctx *Context, di uint32, gvar GlobalVars) float32 {
+	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalIdx(di, gvar)]
+}
+
+// SetGlobalV is the CPU version of the global variable settor
+func SetGlobalV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalIdx(di, gvar)] = val
+}
+
+// AddGlobalV is the CPU version of the global variable addor
+func AddGlobalV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalIdx(di, gvar)] += val
+}
+
+// GlobalVTA is the CPU version of the global VTA variable accessor
+func GlobalVTA(ctx *Context, di uint32, vtaType GlobalVTAType, gvar GlobalVars) float32 {
+	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)]
+}
+
+// SetGlobalVTA is the CPU version of the global VTA variable settor
+func SetGlobalVTA(ctx *Context, di uint32, vtaType GlobalVTAType, gvar GlobalVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val
+}
+
+// GlobalUSneg is the CPU version of the global USneg variable accessor
+func GlobalUSneg(ctx *Context, negIdx uint32, di uint32) float32 {
+	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalUSnegIdx(negIdx, di)]
+}
+
+// SetGlobalUSneg is the CPU version of the global USneg variable settor
+func SetGlobalUSneg(ctx *Context, negIdx uint32, di uint32, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalUSnegIdx(negIdx, di)] = val
+}
+
+// GlobalDriveV is the CPU version of the global Drive, USpos variable accessor
+func GlobalDriveV(ctx *Context, drIdx uint32, di uint32, gvar GlobalVars) float32 {
+	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(drIdx, di, gvar)]
+}
+
+// SetGlobalDriveV is the CPU version of the global Drive, USpos variable settor
+func SetGlobalDriveV(ctx *Context, drIdx uint32, di uint32, gvar GlobalVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(drIdx, di, gvar)] = val
+}
+
+// AddGlobalDriveV is the CPU version of the global Drive, USpos variable adder
+func AddGlobalDriveV(ctx *Context, drIdx uint32, di uint32, gvar GlobalVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(drIdx, di, gvar)] += val
+}
+
 // CopyNetStridesFrom copies strides and NetIdxs for accessing
 // variables on a Network -- these must be set properly for
 // the Network in question (from its Ctx field) before calling
@@ -184,15 +237,20 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 
 // NetIdxs are indexes and sizes for processing network
 type NetIdxs struct {
-	NData    uint32 `min:"1" desc:"number of data parallel items to process currently"`
-	NetIdx   uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	MaxData  uint32 `inactive:"+" desc:"maximum amount of data parallel"`
-	NLayers  uint32 `inactive:"+" desc:"number of layers in the network"`
-	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
-	NPools   uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
-	NSyns    uint32 `inactive:"+" desc:"total number of synapses"`
+	NData         uint32 `min:"1" desc:"number of data parallel items to process currently"`
+	NetIdx        uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	MaxData       uint32 `inactive:"+" desc:"maximum amount of data parallel"`
+	NLayers       uint32 `inactive:"+" desc:"number of layers in the network"`
+	NNeurons      uint32 `inactive:"+" desc:"total number of neurons"`
+	NPools        uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
+	NSyns         uint32 `inactive:"+" desc:"total number of synapses"`
+	GvVTAOff      uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
+	GvVTAStride   uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
+	GvUSnegOff    uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
+	GvDriveOff    uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
+	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
 
-	pad uint32
+	// pad uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -339,15 +397,53 @@ func (ctx *Context) SlowInc() bool {
 // including pptg and vsPatchPos (from RewPred) via Context.
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
-func (ctx *Context) PVLVDA() float32 {
+func (ctx *Context) PVLVDA(di uint32) float32 {
 	ctx.PVLV.DA(ctx.NeuroMod.ACh, ctx.NeuroMod.HasRew.IsTrue())
-	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
-	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
-	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
-	if ctx.PVLV.HasPosUS() {
-		ctx.NeuroMod.SetRew(ctx.PVLV.NetPV(), true)
+	da := GlobalVTA(ctx, di, GvVtaVals, GvVtaDA)
+	SetGlobalV(ctx, di, GvDA, da)
+	SetGlobalV(ctx, di, GvRewPred, GlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos))
+	for vv := GvVtaDA; vv <= GvVtaVSPatchPos; vv++ {
+		SetGlobalVTA(ctx, di, GvVtaPrev, vv, GlobalVTA(ctx, di, GvVtaVals, vv)) // avoid race
 	}
-	return ctx.PVLV.VTA.Vals.DA
+	if ctx.PVLV.HasPosUS(di) {
+		ctx.NeuroMod.SetRew(ctx.PVLV.NetPV(di), true)
+	}
+	return da
+}
+
+// SetGlobalStrides sets global variable access offsets and strides
+func (ctx *Context) SetGlobalStrides() {
+	ctx.NetIdxs.GvVTAOff = ctx.GlobalIdx(0, GvVtaDA)
+	ctx.NetIdxs.GvVTAStride = uint32((GvVtaVSPatchPos+1)-GvVtaDA) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvUSnegOff = ctx.GlobalVTAIdx(0, GvVtaRaw, GvUSneg)
+	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(ctx.NetIdxs.MaxData-1, uint32(ctx.PVLV.Drive.NNegUSs)-1)
+	ctx.NetIdxs.GvDriveStride = uint32(ctx.PVLV.Drive.NActive) * ctx.NetIdxs.MaxData
+}
+
+// GlobalIdx returns index into main global variables,
+// before GvVtaDA
+func (ctx *Context) GlobalIdx(di uint32, gvar GlobalVars) uint32 {
+	return ctx.NetIdxs.MaxData*uint32(gvar) + di
+}
+
+// GlobalVTAIdx returns index into VTA global variables
+func (ctx *Context) GlobalVTAIdx(di uint32, vtaType GlobalVTAType, gvar GlobalVars) uint32 {
+	return ctx.NetIdxs.GvVTAOff + uint32(vtaType)*ctx.NetIdxs.GvVTAStride + ctx.NetIdxs.MaxData*uint32(gvar-GvVtaDA) + di
+}
+
+// GlobalUSnegIdx returns index into USneg global variables
+func (ctx *Context) GlobalUSnegIdx(negIdx uint32, di uint32) uint32 {
+	return ctx.NetIdxs.GvVTAOff + negIdx*ctx.NetIdxs.MaxData + di
+}
+
+// GlobalDriveIdx returns index into Drive and USpos, VSPatch global variables
+func (ctx *Context) GlobalDriveIdx(drIdx uint32, di uint32, gvar GlobalVars) uint32 {
+	return ctx.NetIdxs.GvDriveOff + uint32(gvar-GvDrives)*ctx.NetIdxs.GvDriveStride + drIdx*ctx.NetIdxs.MaxData + di
+}
+
+// GlobalVNFloats number of floats to allocate for Globals
+func (ctx *Context) GlobalVNFloats() uint32 {
+	return ctx.GlobalDriveIdx(0, 0, GlobalVarsN)
 }
 
 //gosl: end context

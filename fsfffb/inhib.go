@@ -75,6 +75,7 @@ func (fi *Inhib) Decay(decay float32) {
 
 	fi.FFs -= decay * fi.FFs
 	fi.FBs -= decay * fi.FBs
+	fi.GeExts -= decay * fi.GeExts
 	fi.FSi -= decay * fi.FSi
 	fi.SSi -= decay * fi.SSi
 	fi.SSf -= decay * fi.SSf

@@ -320,29 +320,28 @@ func (ly *Layer) NewState(ctx *Context) {
 
 // DecayState decays activation state by given proportion
 // (default decay values are ly.Params.Acts.Decay.Act, Glong)
-func (ly *Layer) DecayState(ctx *Context, decay, glong, ahp float32) {
+func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
-			// Note: synapse-level Ca decay happens in DWt
-		}
+		ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
+		// Note: synapse-level Ca decay happens in DWt
 	}
-	ly.DecayStateLayer(ctx, decay, glong, ahp)
+	ly.DecayStateLayer(ctx, di, decay, glong, ahp)
 }
 
 // DecayStateLayer does layer-level decay, but not neuron level
-func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong, ahp float32) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
+func (ly *Layer) DecayStateLayer(ctx *Context, di uint32, decay, glong, ahp float32) {
+	np := ly.NPools
+	for pi := uint32(0); pi < np; pi++ {
+		pl := ly.Pool(pi, di)
 		pl.Inhib.Decay(decay)
 	}
 	if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
-		ly.InitPrjnGBuffs(ctx)
+		ly.InitPrjnGBuffs(ctx, di)
 	}
 }
 
@@ -459,8 +458,12 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
-		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.GiveUp.IsTrue() {
-			ly.DecayState(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			hasRew := (GlobalV(ctx, di, GvHasRew) > 0)
+			giveUp := (GlobalV(ctx, di, GvLHbGiveUp) > 0)
+			if hasRew || giveUp {
+				ly.DecayState(ctx, di, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+			}
 		}
 	}
 	switch ly.LayerType() {
