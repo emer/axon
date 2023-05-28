@@ -11,6 +11,7 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/gosl/slrand"
+	"github.com/goki/ki/bools"
 )
 
 // Networks is a global list of networks, needed for GPU shader kernel
@@ -333,9 +334,8 @@ type Context struct {
 	SynapseCaVars SynapseCaStrides    `view:"-" desc:"stride offsets for accessing synapse Ca variables"`
 	SynapseIdxs   SynapseIdxStrides   `view:"-" desc:"stride offsets for accessing synapse indexes"`
 
-	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
-	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+	RandCtr slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	PVLV    PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -352,7 +352,9 @@ func (ctx *Context) Defaults() {
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
-	ctx.PVLV.NewState(ctx.NeuroMod.HasRew.IsTrue())
+	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
+		ctx.PVLV.NewState(ctx, di, bools.FromFloat32(GlobalV(ctx, di, GvHasRew)))
+	}
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -398,15 +400,15 @@ func (ctx *Context) SlowInc() bool {
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) PVLVDA(di uint32) float32 {
-	ctx.PVLV.DA(ctx.NeuroMod.ACh, ctx.NeuroMod.HasRew.IsTrue())
+	ctx.PVLV.DA(ctx, di, ctx.NeuroMod.ACh, ctx.NeuroMod.HasRew.IsTrue())
 	da := GlobalVTA(ctx, di, GvVtaVals, GvVtaDA)
 	SetGlobalV(ctx, di, GvDA, da)
 	SetGlobalV(ctx, di, GvRewPred, GlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos))
 	for vv := GvVtaDA; vv <= GvVtaVSPatchPos; vv++ {
 		SetGlobalVTA(ctx, di, GvVtaPrev, vv, GlobalVTA(ctx, di, GvVtaVals, vv)) // avoid race
 	}
-	if ctx.PVLV.HasPosUS(di) {
-		ctx.NeuroMod.SetRew(ctx.PVLV.NetPV(di), true)
+	if ctx.PVLV.HasPosUS(ctx, di) {
+		ctx.SetRew(di, ctx.PVLV.NetPV(ctx, di), true)
 	}
 	return da
 }
@@ -582,10 +584,10 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 //gosl: end context
 
 // PVLVInitUS initializes the US state -- call this before calling PVLVSetUS.
-func (ctx *Context) PVLVInitUS() {
-	ctx.PVLV.InitUS()
-	ctx.NeuroMod.HasRew.SetBool(false)
-	ctx.NeuroMod.Rew = 0
+func (ctx *Context) PVLVInitUS(di uint32) {
+	ctx.PVLV.InitUS(ctx, di)
+	SetGlobalV(ctx, di, GvHasRew, 0)
+	SetGlobalV(ctx, di, GvRew, 0)
 }
 
 // PVLVSetUS sets the given unconditioned stimulus (US) state for PVLV algorithm.
@@ -598,12 +600,12 @@ func (ctx *Context) PVLVInitUS() {
 // which is the trigger for a full-blown US learning event. Set this yourself
 // if the negative US is more of a discrete outcome vs. something that happens
 // in the course of goal engaged approach.
-func (ctx *Context) PVLVSetUS(valence ValenceTypes, usIdx int, magnitude float32) {
+func (ctx *Context) PVLVSetUS(di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
 	if valence == Positive {
-		ctx.NeuroMod.HasRew.SetBool(true)            // only for positive USs
-		ctx.PVLV.SetPosUS(int32(usIdx)+1, magnitude) // +1 for curiosity
+		SetGlobalV(ctx, di, GvHasRew, 1)                       // only for positive USs
+		ctx.PVLV.SetPosUS(ctx, di, uint32(usIdx)+1, magnitude) // +1 for curiosity
 	} else {
-		ctx.PVLV.SetNegUS(int32(usIdx), magnitude)
+		ctx.PVLV.SetNegUS(ctx, di, uint32(usIdx), magnitude)
 	}
 }
 
@@ -611,11 +613,11 @@ func (ctx *Context) PVLVSetUS(valence ValenceTypes, usIdx int, magnitude float32
 // and sets the first curiosity drive to given level.
 // Drive indexes are 0 based, so 1 is added automatically to accommodate
 // the first curiosity drive.
-func (ctx *Context) PVLVSetDrives(curiosity, magnitude float32, drives ...int) {
-	ctx.PVLV.InitDrives()
-	ctx.PVLV.SetDrive(0, curiosity)
-	for _, di := range drives {
-		ctx.PVLV.SetDrive(int32(1+di), magnitude)
+func (ctx *Context) PVLVSetDrives(di uint32, curiosity, magnitude float32, drives ...int) {
+	ctx.PVLV.InitDrives(ctx, di)
+	ctx.PVLV.SetDrive(ctx, di, 0, curiosity)
+	for _, i := range drives {
+		ctx.PVLV.SetDrive(ctx, di, uint32(1+i), magnitude)
 	}
 }
 
@@ -623,17 +625,27 @@ func (ctx *Context) PVLVSetDrives(curiosity, magnitude float32, drives ...int) {
 // of behavior when using the PVLV framework, after applying USs,
 // Drives, and updating Effort (e.g., as last step in ApplyPVLV method).
 // Calls PVLVGiveUp (and potentially other things).
-func (ctx *Context) PVLVStepStart(rnd erand.Rand) {
-	ctx.PVLVShouldGiveUp(rnd)
+func (ctx *Context) PVLVStepStart(di uint32, rnd erand.Rand) {
+	ctx.PVLVShouldGiveUp(di, rnd)
 }
 
 // PVLVShouldGiveUp tests whether it is time to give up on the current goal,
 // based on sum of LHb Dip (missed expected rewards) and maximum effort.
 // called in PVLVStepStart.
-func (ctx *Context) PVLVShouldGiveUp(rnd erand.Rand) {
-	giveUp := ctx.PVLV.ShouldGiveUp(rnd, ctx.NeuroMod.HasRew.IsTrue())
+func (ctx *Context) PVLVShouldGiveUp(di uint32, rnd erand.Rand) {
+	giveUp := ctx.PVLV.ShouldGiveUp(ctx, di, rnd, GlobalV(ctx, di, GvHasRew) > 0)
 	if giveUp {
-		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
+		ctx.SetRew(di, 0, true) // sets HasRew -- drives maint reset, ACh
+	}
+}
+
+// SetRew is a convenience function for setting the external reward
+func (ctx *Context) SetRew(di uint32, rew float32, hasRew bool) {
+	SetGlobalV(ctx, di, GvHasRew, bools.ToFloat32(hasRew))
+	if hasRew {
+		SetGlobalV(ctx, di, GvRew, rew)
+	} else {
+		SetGlobalV(ctx, di, GvRew, 0)
 	}
 }
 
@@ -654,7 +666,9 @@ func (ctx *Context) Reset() {
 	}
 	ctx.RandCtr.Reset()
 	ctx.NeuroMod.Init()
-	ctx.PVLV.Reset()
+	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
+		ctx.PVLV.Reset(ctx, di)
+	}
 }
 
 // NewContext returns a new Time struct with default parameters

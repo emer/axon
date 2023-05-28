@@ -67,16 +67,14 @@ type LayerVals struct {
 	pad, pad1 uint32
 
 	// note: ActAvg vals are shared across data parallel
-	ActAvg   ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition"`
-	CorSim   CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
-	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory values: global to the layer, copied from Context"`
-	Special  LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
+	ActAvg  ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition"`
+	CorSim  CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
+	Special LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
 }
 
 func (lv *LayerVals) Init() {
 	lv.ActAvg.Init()
 	lv.CorSim.Init()
-	lv.NeuroMod.Init()
 	lv.Special.Init()
 }
 

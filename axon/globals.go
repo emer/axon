@@ -63,6 +63,9 @@ const (
 	// GvEffortDisc is effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier
 	GvEffortDisc
 
+	// GvEffortCurMax is current maximum raw effort level -- above this point, any current goal will be terminated during the GiveUp function, which also looks for accumulated disappointment.  See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered
+	GvEffortCurMax
+
 	// GvUrgency is the overall urgency activity level (normalized 0-1), computed from logistic function of GvUrgencyRaw
 	GvUrgency
 

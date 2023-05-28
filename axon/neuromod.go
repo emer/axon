@@ -18,6 +18,8 @@ var KiT_ValenceTypes = kit.Enums.AddEnum(ValenceTypesN, kit.NotBitFlag, nil)
 
 //gosl: start neuromod
 
+/*
+
 // NeuroModVals neuromodulatory values -- they are global to the layer and
 // affect learning rate and other neural activity parameters of neurons.
 type NeuroModVals struct {
@@ -36,41 +38,12 @@ type NeuroModVals struct {
 	pad, pad1 float32
 }
 
-func (nm *NeuroModVals) Init() {
-	nm.Rew = 0
-	nm.HasRew.SetBool(false)
-	nm.RewPred = 0
-	nm.DA = 0
-	nm.ACh = 0
-	nm.NE = 0
-	nm.Ser = 0
-	nm.AChRaw = 0
-	nm.NotMaint = 0
-}
-
-// SetRew is a convenience function for setting the external reward
-func (nm *NeuroModVals) SetRew(rew float32, hasRew bool) {
-	nm.HasRew.SetBool(hasRew)
-	if hasRew {
-		nm.Rew = rew
-	} else {
-		nm.Rew = 0
-	}
-}
-
 // NewState is called by Context.NewState at start of new trial
 func (nm *NeuroModVals) NewState() {
 	nm.Init()
 }
 
-// AChFmRaw updates ACh from AChRaw using given decay time constant.
-func (nm *NeuroModVals) AChFmRaw(dt float32) {
-	if nm.AChRaw > nm.ACh { // instant up
-		nm.ACh = nm.AChRaw
-	} else {
-		nm.ACh += dt * (nm.AChRaw - nm.ACh)
-	}
-}
+*/
 
 // DAModTypes are types of dopamine modulation of neural activity.
 type DAModTypes int32

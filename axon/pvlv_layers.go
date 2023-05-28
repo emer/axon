@@ -70,7 +70,7 @@ func (lp *LDTParams) MaintFmNotMaint(notMaint float32) float32 {
 
 // ACh returns the computed ACh salience value based on given
 // source layer activations and key values from the ctx Context.
-func (lp *LDTParams) ACh(ctx *Context, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) float32 {
+func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) float32 {
 	maxSrcAct := float32(0)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay1Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay2Act)
@@ -82,12 +82,12 @@ func (lp *LDTParams) ACh(ctx *Context, srcLay1Act, srcLay2Act, srcLay3Act, srcLa
 
 	ach := maxSrcAct
 
-	if lp.Rew.IsTrue() {
-		if ctx.NeuroMod.HasRew.IsTrue() {
+	if GlobalV(ctx, di, GvRew) > 0 {
+		if GlobalV(ctx, di, GvHasRew) > 0 {
 			ach = 1
 		}
 	} else {
-		ach = mat32.Max(ach, ctx.PVLV.Urgency.Urge)
+		ach = mat32.Max(ach, GlobalV(ctx, di, GvUrgency))
 	}
 	return ach
 }

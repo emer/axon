@@ -7,6 +7,7 @@ package axon
 import (
 	"github.com/emer/emergent/erand"
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/ki/bools"
 	"github.com/goki/mat32"
 )
 
@@ -42,7 +43,7 @@ func (ds *DriveVals) Zero() {
 	ds.SetAll(0)
 }
 
-func (ds *DriveVals) Set(drv int32, val float32) {
+func (ds *DriveVals) Set(drv uint32, val float32) {
 	switch drv {
 	case 0:
 		ds.D0 = val
@@ -63,7 +64,7 @@ func (ds *DriveVals) Set(drv int32, val float32) {
 	}
 }
 
-func (ds *DriveVals) Get(drv int32) float32 {
+func (ds *DriveVals) Get(drv uint32) float32 {
 	val := float32(0)
 	switch drv {
 	case 0:
@@ -86,56 +87,11 @@ func (ds *DriveVals) Get(drv int32) float32 {
 	return val
 }
 
-// Add increments drive by given amount, subject to 0-1 range clamping.
-// Returns new val.
-func (ds *DriveVals) Add(drv int32, delta float32) float32 {
-	dv := ds.Get(drv) + delta
-	if dv > 1 {
-		dv = 1
-	} else if dv < 0 {
-		dv = 0
-	}
-	ds.Set(drv, dv)
-	return dv
-}
-
-// SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
-// if delta is positive, multiply by 1-val, else val.  Returns new val.
-func (ds *DriveVals) SoftAdd(drv int32, delta float32) float32 {
-	dv := ds.Get(drv)
-	if delta > 0 {
-		dv += (1 - dv) * delta
-	} else {
-		dv += dv * delta
-	}
-	if dv > 1 {
-		dv = 1
-	} else if dv < 0 {
-		dv = 0
-	}
-	ds.Set(drv, dv)
-	return dv
-}
-
-// ExpStep updates drive with an exponential step with given dt value
-// toward given baseline value.
-func (ds *DriveVals) ExpStep(drv int32, dt, base float32) float32 {
-	dv := ds.Get(drv)
-	dv += dt * (base - dv)
-	if dv > 1 {
-		dv = 1
-	} else if dv < 0 {
-		dv = 0
-	}
-	ds.Set(drv, dv)
-	return dv
-}
-
 // Drives manages the drive parameters for updating drive state,
 // and drive state.
 type Drives struct {
-	NActive  int32   `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8"`
-	NNegUSs  int32   `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
+	NActive  uint32  `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8"`
+	NNegUSs  uint32  `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
 	DriveMin float32 `desc:"minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline."`
 
 	pad int32
@@ -167,7 +123,7 @@ func (dp *Drives) ToZero() {
 }
 
 func (dp *Drives) Update() {
-	for i := int32(0); i < 8; i++ {
+	for i := uint32(0); i < 8; i++ {
 		tau := dp.Tau.Get(i)
 		if tau <= 0 {
 			dp.Dt.Set(i, 0)
@@ -177,21 +133,73 @@ func (dp *Drives) Update() {
 	}
 }
 
-// ExpStep updates given drives with an exponential step using dt values
+// Zero sets all NActive values of given drive vars to 0
+func (dp *Drives) Zero(ctx *Context, di uint32, gvar GlobalVars) {
+	for i := uint32(0); i < dp.NActive; i++ {
+		SetGlobalDriveV(ctx, di, i, gvar, 0)
+	}
+}
+
+// AddTo increments drive by given amount, subject to 0-1 range clamping.
+// Returns new val.
+func (dp *Drives) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
+	dv := GlobalDriveV(ctx, di, drv, GvDrives) + delta
+	if dv > 1 {
+		dv = 1
+	} else if dv < 0 {
+		dv = 0
+	}
+	SetGlobalDriveV(ctx, di, drv, GvDrives, dv)
+	return dv
+}
+
+// SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
+// if delta is positive, multiply by 1-val, else val.  Returns new val.
+func (ds *Drives) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
+	dv := GlobalDriveV(ctx, di, drv, GvDrives)
+	if delta > 0 {
+		dv += (1 - dv) * delta
+	} else {
+		dv += dv * delta
+	}
+	if dv > 1 {
+		dv = 1
+	} else if dv < 0 {
+		dv = 0
+	}
+	SetGlobalDriveV(ctx, di, drv, GvDrives, dv)
+	return dv
+}
+
+// ExpStep updates drive with an exponential step with given dt value
+// toward given baseline value.
+func (ds *Drives) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
+	dv := GlobalDriveV(ctx, di, drv, GvDrives)
+	dv += dt * (base - dv)
+	if dv > 1 {
+		dv = 1
+	} else if dv < 0 {
+		dv = 0
+	}
+	SetGlobalDriveV(ctx, di, drv, GvDrives, dv)
+	return dv
+}
+
+// ExpStepAll updates given drives with an exponential step using dt values
 // toward baseline values.
-func (dp *Drives) ExpStep() {
-	for i := int32(0); i < 8; i++ {
-		dp.Drives.ExpStep(i, dp.Dt.Get(i), dp.Base.Get(i))
+func (dp *Drives) ExpStepAll(ctx *Context, di uint32) {
+	for i := uint32(0); i < dp.NActive; i++ {
+		dp.ExpStep(ctx, di, i, dp.Dt.Get(i), dp.Base.Get(i))
 	}
 }
 
 // EffectiveDrive returns the Max of Drives at given index and DriveMin.
 // note that index 0 is the novelty / curiosity drive.
-func (dp *Drives) EffectiveDrive(i int32) float32 {
+func (dp *Drives) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 	if i == 0 {
-		return dp.Drives.Get(0)
+		return GlobalDriveV(ctx, di, uint32(0), GvDrives)
 	}
-	return mat32.Max(dp.Drives.Get(i), dp.DriveMin)
+	return mat32.Max(GlobalDriveV(ctx, di, i, GvDrives), dp.DriveMin)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -209,7 +217,6 @@ type Effort struct {
 
 func (ef *Effort) Defaults() {
 	ef.Gain = 0.1
-	ef.CurMax = 100
 	ef.Max = 100
 	ef.MaxNovel = 8
 	ef.MaxPostDip = 4
@@ -223,7 +230,7 @@ func (ef *Effort) Update() {
 // Reset resets the raw effort back to zero -- at start of new gating event
 func (ef *Effort) Reset(ctx *Context, di uint32) {
 	SetGlobalV(ctx, di, GvEffortRaw, 0)
-	ef.CurMax = ef.Max // todo: put in global
+	SetGlobalV(ctx, di, GvEffortCurMax, ef.Max)
 	SetGlobalV(ctx, di, GvEffortDisc, 1)
 }
 
@@ -248,7 +255,8 @@ func (ef *Effort) AddEffort(ctx *Context, di uint32, inc float32) {
 // GiveUp returns true if maximum effort has been exceeded
 func (ef *Effort) GiveUp(ctx *Context, di uint32) bool {
 	raw := GlobalV(ctx, di, GvEffortRaw)
-	if ef.CurMax > 0 && raw > ef.CurMax {
+	curMax := GlobalV(ctx, di, GvEffortCurMax)
+	if curMax > 0 && raw > curMax {
 		return true
 	}
 	return false
@@ -340,7 +348,6 @@ func (lh *LHb) Defaults() {
 	lh.NegGain = 1
 	lh.GiveUpThr = 0.2
 	lh.DipLowThr = 0.05
-	lh.Reset()
 }
 
 func (lh *LHb) Update() {
@@ -462,30 +469,35 @@ func (vt *VTA) Defaults() {
 func (vt *VTA) Update() {
 }
 
-func (vt *VTA) Reset() {
-	vt.Raw.Zero()
-	vt.Vals.Zero()
-	vt.Prev.Zero()
+func (vt *VTA) ZeroVals(ctx *Context, di uint32, vtaType GlobalVTAType) {
+	for vv := GvVtaDA; vv <= GvVtaVSPatchPos; vv++ {
+		SetGlobalVTA(ctx, di, vtaType, vv, 0)
+	}
+}
+
+func (vt *VTA) Reset(ctx *Context, di uint32) {
+	vt.ZeroVals(ctx, di, GvVtaRaw)
+	vt.ZeroVals(ctx, di, GvVtaVals)
+	vt.ZeroVals(ctx, di, GvVtaPrev)
 }
 
 // DAFmRaw computes the intermediate Vals and final DA value from
 // Raw values that have been set prior to calling.
 // ACh value from LDT is passed as a parameter.
-func (vt *VTA) DAFmRaw(ach float32, hasRew bool) {
-	vt.Vals.PVpos = vt.Gain.PVpos * vt.Raw.PVpos
-	vt.Vals.PVneg = vt.Gain.PVneg * vt.Raw.PVneg
-	vt.Vals.CeMpos = vt.Gain.CeMpos * vt.Raw.CeMpos
-	vt.Vals.CeMneg = vt.Gain.CeMneg * vt.Raw.CeMneg
-	vt.Vals.LHbDip = vt.Gain.LHbDip * vt.Raw.LHbDip
-	vt.Vals.LHbBurst = vt.Gain.LHbBurst * vt.Raw.LHbBurst
-	vt.Vals.VSPatchPos = vt.Gain.VSPatchPos * vt.Raw.VSPatchPos
+func (vt *VTA) DAFmRaw(ctx *Context, di uint32, ach float32, hasRew bool) {
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaPVpos, vt.Gain.PVpos*GlobalVTA(ctx, di, GvVtaRaw, GvVtaPVpos))
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaCeMpos, vt.Gain.CeMpos*GlobalVTA(ctx, di, GvVtaRaw, GvVtaCeMpos))
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaCeMneg, vt.Gain.CeMneg*GlobalVTA(ctx, di, GvVtaRaw, GvVtaCeMneg))
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaLHbDip, vt.Gain.LHbDip*GlobalVTA(ctx, di, GvVtaRaw, GvVtaLHbDip))
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaLHbBurst, vt.Gain.LHbBurst*GlobalVTA(ctx, di, GvVtaRaw, GvVtaLHbBurst))
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos, vt.Gain.VSPatchPos*GlobalVTA(ctx, di, GvVtaRaw, GvVtaVSPatchPos))
 
-	if vt.Vals.VSPatchPos < 0 {
-		vt.Vals.VSPatchPos = 0
+	if GlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos) < 0 {
+		SetGlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos, 0)
 	}
-	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos - vt.Vals.PVneg - vt.Vals.LHbDip
-	csNet := vt.Vals.CeMpos - vt.Vals.CeMneg                        // todo: is this sensible?  max next with 0 so positive..
-	csDA := ach*mat32.Max(csNet, vt.Vals.LHbBurst) - vt.Vals.LHbDip // restore LHbDip contribution
+	pvDA := GlobalVTA(ctx, di, GvVtaVals, GvVtaPVpos) - GlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos) - GlobalVTA(ctx, di, GvVtaVals, GvVtaPVneg) - GlobalVTA(ctx, di, GvVtaVals, GvVtaLHbDip)
+	csNet := GlobalVTA(ctx, di, GvVtaVals, GvVtaCeMpos) - GlobalVTA(ctx, di, GvVtaVals, GvVtaCeMneg)
+	csDA := ach*mat32.Max(csNet, GlobalVTA(ctx, di, GvVtaVals, GvVtaLHbBurst)) - GlobalVTA(ctx, di, GvVtaVals, GvVtaLHbDip) // restore LHbDip contribution
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)
 	if hasRew {
@@ -493,47 +505,19 @@ func (vt *VTA) DAFmRaw(ach float32, hasRew bool) {
 	} else {
 		netDA = csDA
 	}
-	vt.Vals.DA = vt.Gain.DA * netDA
+	SetGlobalVTA(ctx, di, GvVtaVals, GvVtaDA, vt.Gain.DA*netDA)
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//  VSMatrix
-
-// VSMatrix has parameters and values for computing VSMatrix gating status.
-// VS = ventral striatum, aka VP = ventral pallidum = output part of VS
-type VSMatrix struct {
-	JustGated slbool.Bool `inactive:"+" desc:"VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US"`
-	HasGated  slbool.Bool `inactive:"+" desc:"VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received)"`
-
-	pad, pad1 float32
-}
-
-func (vt *VSMatrix) Defaults() {
-}
-
-func (vt *VSMatrix) Update() {
-}
-
-func (vt *VSMatrix) Reset() {
-	vt.JustGated.SetBool(false)
-	vt.HasGated.SetBool(false)
-}
-
-// NewState is called at start of new trial
-func (vt *VSMatrix) NewState(hasRew bool) {
-	if hasRew {
-		vt.HasGated.SetBool(false)
-	} else if vt.JustGated.IsTrue() {
-		vt.HasGated.SetBool(true)
-	}
-	vt.JustGated.SetBool(false)
-}
-
-// VSGated updates JustGated as function of VS gating
-// at end of the plus phase.
-func (vt *VSMatrix) VSGated(gated bool) {
-	vt.JustGated.SetBool(gated)
-}
+// func (vt *VSMatrix) Reset() {
+// 	vt.JustGated.SetBool(false)
+// 	vt.HasGated.SetBool(false)
+// }
+//
+// // VSGated updates JustGated as function of VS gating
+// // at end of the plus phase.
+// func (vt *VSMatrix) VSGated(gated bool) {
+// 	vt.JustGated.SetBool(gated)
+// }
 
 ///////////////////////////////////////////////////////////////////////////////
 //  PVLV
@@ -548,15 +532,14 @@ func (vt *VSMatrix) VSGated(gated bool) {
 // (LDTLayer driven by BLA, CeM layers, VSPatchLayer).
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
 type PVLV struct {
-	Drive    Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
-	Effort   Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
-	Urgency  Urgency   `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
-	VTA      VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
-	LHb      LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
-	USpos    DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
-	USneg    DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals.  Number of active ones is Drive.NNegUSs -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
-	VSPatch  DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
-	VSMatrix VSMatrix  `view:"inline" desc:"VSMatrix has parameters and values for computing VSMatrix gating status. VS = ventral striatum, aka VP = ventral pallidum = output part of VS"`
+	Drive   Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+	Effort  Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+	Urgency Urgency   `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
+	VTA     VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
+	LHb     LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+	USpos   DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
+	USneg   DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals.  Number of active ones is Drive.NNegUSs -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
+	VSPatch DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
 
 	HasRewPrev   slbool.Bool `inactive:"+" desc:"HasRew state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial"`
 	HasPosUSPrev slbool.Bool `inactive:"+" desc:"HasPosUS state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial"`
@@ -572,7 +555,6 @@ func (pp *PVLV) Defaults() {
 	pp.USpos.Zero()
 	pp.USneg.Zero()
 	pp.VSPatch.Zero()
-	pp.VSMatrix.Reset()
 }
 
 func (pp *PVLV) Update() {
@@ -581,62 +563,69 @@ func (pp *PVLV) Update() {
 	pp.Urgency.Update()
 	pp.VTA.Update()
 	pp.LHb.Update()
-	pp.VSMatrix.Update()
 }
 
-func (pp *PVLV) Reset() {
+func (pp *PVLV) Reset(ctx *Context, di uint32) {
 	pp.Drive.ToZero()
-	pp.Effort.Reset()
-	pp.Urgency.Reset()
-	pp.LHb.Reset()
-	pp.VTA.Reset()
+	pp.Effort.Reset(ctx, di)
+	pp.Urgency.Reset(ctx, di)
+	pp.LHb.Reset(ctx, di)
+	pp.VTA.Reset(ctx, di)
 	pp.USpos.Zero()
 	pp.USneg.Zero()
 	pp.VSPatch.Zero()
-	pp.VSMatrix.Reset()
-	pp.HasRewPrev.SetBool(false)
-	pp.HasPosUSPrev.SetBool(false)
+	SetGlobalV(ctx, di, GvVSMatrixJustGated, 0)
+	SetGlobalV(ctx, di, GvVSMatrixHasGated, 0)
+	SetGlobalV(ctx, di, GvHasRewPrev, 0)
+	SetGlobalV(ctx, di, GvHasPosUS, 0)
+	// pp.HasPosUSPrev.SetBool(false)
 }
 
 // NewState is called at start of new state (trial) of processing.
 // hadRew indicates if there was a reward state the previous trial.
 // It calls LHGiveUpFmSum to trigger a "give up" state on this trial
 // if previous expectation of reward exceeds critical sum.
-func (pp *PVLV) NewState(hadRew bool) {
-	pp.HasRewPrev.SetBool(hadRew)
-	pp.HasPosUSPrev.SetBool(pp.HasPosUS())
-	pp.VSMatrix.NewState(hadRew)
+func (pp *PVLV) NewState(ctx *Context, di uint32, hadRew bool) {
+	SetGlobalV(ctx, di, GvHasRewPrev, bools.ToFloat32(hadRew))
+	pp.HasPosUSPrev.SetBool(pp.HasPosUS(ctx, di))
+
+	if hadRew {
+		SetGlobalV(ctx, di, GvVSMatrixHasGated, 0)
+	} else if GlobalV(ctx, di, GvVSMatrixJustGated) > 0 {
+		SetGlobalV(ctx, di, GvVSMatrixHasGated, 1)
+	}
+	SetGlobalV(ctx, di, GvVSMatrixJustGated, 0)
 }
 
 // InitUS initializes all the USs to zero
-func (pp *PVLV) InitUS() {
-	pp.USpos.Zero()
-	pp.USneg.Zero()
+func (pp *PVLV) InitUS(ctx *Context, di uint32) {
+	pp.Drive.Zero(ctx, di, GvUSpos)
+	pp.Drive.Zero(ctx, di, GvUSneg)
 }
 
 // SetPosUS sets given positive US (associated with same-indexed Drive) to given value
-func (pp *PVLV) SetPosUS(usn int32, val float32) {
-	pp.USpos.Set(usn, val)
+func (pp *PVLV) SetPosUS(ctx *Context, di uint32, usn uint32, val float32) {
+	SetGlobalDriveV(ctx, di, usn, GvUSpos, val)
 }
 
 // SetNegUS sets given negative US to given value
-func (pp *PVLV) SetNegUS(usn int32, val float32) {
-	pp.USneg.Set(usn, val)
+func (pp *PVLV) SetNegUS(ctx *Context, di uint32, usn uint32, val float32) {
+	SetGlobalDriveV(ctx, di, usn, GvUSneg, val)
 }
 
 // InitDrives initializes all the Drives to zero
-func (pp *PVLV) InitDrives() {
-	pp.Drive.Drives.Zero()
+func (pp *PVLV) InitDrives(ctx *Context, di uint32) {
+	pp.Drive.Zero(ctx, di, GvDrives)
 }
 
 // SetDrive sets given Drive to given value
-func (pp *PVLV) SetDrive(dr int32, val float32) {
-	pp.Drive.Drives.Set(dr, val)
+func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
+	SetGlobalDriveV(ctx, di, dr, GvDrives, val)
 }
 
 // USStimVal returns stimulus value for US at given index
 // and valence.  If US > 0.01, a full 1 US activation is returned.
-func (pp *PVLV) USStimVal(usIdx uint32, valence ValenceTypes) float32 {
+func (pp *PVLV) USStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) float32 {
 	us := float32(0)
 	if valence == Positive {
 		us = GlobalDriveV(ctx, di, usIdx, GvUSpos)
@@ -650,28 +639,28 @@ func (pp *PVLV) USStimVal(usIdx uint32, valence ValenceTypes) float32 {
 }
 
 // PosPV returns the reward for current positive US state relative to current drives
-func (pp *PVLV) PosPV() float32 {
+func (pp *PVLV) PosPV(ctx *Context, di uint32) float32 {
 	rew := float32(0)
-	for i := int32(0); i < pp.Drive.NActive; i++ {
-		rew += pp.USpos.Get(i) * pp.Drive.EffectiveDrive(i)
+	for i := uint32(0); i < pp.Drive.NActive; i++ {
+		rew += GlobalDriveV(ctx, di, i, GvUSpos) * pp.Drive.EffectiveDrive(ctx, di, i)
 	}
 	return rew
 }
 
 // NegPV returns the reward for current negative US state -- just a sum of USneg
-func (pp *PVLV) NegPV() float32 {
+func (pp *PVLV) NegPV(ctx *Context, di uint32) float32 {
 	rew := float32(0)
-	for i := int32(0); i < pp.Drive.NNegUSs; i++ {
-		rew += pp.USneg.Get(i)
+	for i := uint32(0); i < pp.Drive.NNegUSs; i++ {
+		rew += GlobalDriveV(ctx, di, i, GvUSneg)
 	}
 	return rew
 }
 
 // VSPatchMax returns the max VSPatch value across drives
-func (pp *PVLV) VSPatchMax() float32 {
+func (pp *PVLV) VSPatchMax(ctx *Context, di uint32) float32 {
 	max := float32(0)
-	for i := int32(0); i < pp.Drive.NActive; i++ {
-		vs := pp.VSPatch.Get(i)
+	for i := uint32(0); i < pp.Drive.NActive; i++ {
+		vs := GlobalDriveV(ctx, di, i, GvVSPatch)
 		if vs > max {
 			max = vs
 		}
@@ -680,9 +669,9 @@ func (pp *PVLV) VSPatchMax() float32 {
 }
 
 // HasPosUS returns true if there is at least one non-zero positive US
-func (pp *PVLV) HasPosUS() bool {
-	for i := int32(0); i < pp.Drive.NActive; i++ {
-		if pp.USpos.Get(i) > 0 {
+func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
+	for i := uint32(0); i < pp.Drive.NActive; i++ {
+		if GlobalDriveV(ctx, di, i, GvUSpos) > 0 {
 			return true
 		}
 	}
@@ -690,9 +679,9 @@ func (pp *PVLV) HasPosUS() bool {
 }
 
 // HasNegUS returns true if there is at least one non-zero negative US
-func (pp *PVLV) HasNegUS() bool {
-	for i := int32(0); i < pp.Drive.NActive; i++ {
-		if pp.USpos.Get(i) > 0 {
+func (pp *PVLV) HasNegUS(ctx *Context, di uint32) bool {
+	for i := uint32(0); i < pp.Drive.NActive; i++ {
+		if GlobalDriveV(ctx, di, i, GvUSpos) > 0 {
 			return true
 		}
 	}
@@ -700,8 +689,8 @@ func (pp *PVLV) HasNegUS() bool {
 }
 
 // NetPV returns VTA.Vals.PVpos - VTA.Vals.PVneg
-func (pp *PVLV) NetPV() float32 {
-	return pp.VTA.Vals.PVpos - pp.VTA.Vals.PVneg
+func (pp *PVLV) NetPV(ctx *Context, di uint32) float32 {
+	return GlobalVTA(ctx, di, GvVtaVals, GvVtaPVpos) - GlobalVTA(ctx, di, GvVtaVals, GvVtaPVneg)
 }
 
 // PosPVFmDriveEffort returns the net primary value ("reward") based on
@@ -717,28 +706,37 @@ func (pp *PVLV) PosPVFmDriveEffort(usValue, drive, effort float32) float32 {
 // Call after setting USs, Effort, Drives, VSPatch vals etc.
 // Resulting DA is in VTA.Vals.DA, and is returned
 // (to be set to Context.NeuroMod.DA)
-func (pp *PVLV) DA(ach float32, hasRew bool) float32 {
-	usPos := pp.PosPV()
-	pvNeg := pp.NegPV()
-	if pp.LHb.GiveUp.IsTrue() {
-		pvNeg += 1.0 - pp.Effort.Disc // pay effort cost here..
+func (pp *PVLV) DA(ctx *Context, di uint32, ach float32, hasRew bool) float32 {
+	usPos := pp.PosPV(ctx, di)
+	pvNeg := pp.NegPV(ctx, di)
+	giveUp := GlobalV(ctx, di, GvLHbGiveUp)
+	effDisc := GlobalV(ctx, di, GvEffortDisc)
+	if giveUp > 0 {
+		pvNeg += 1.0 - effDisc // pay effort cost here..
 	}
-	pvPos := usPos * pp.Effort.Disc
-	vsPatchPos := pp.VSPatchMax()
-	pp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
-	pp.VTA.Raw.Set(usPos, pvPos, pvNeg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
-	pp.VTA.DAFmRaw(ach, hasRew)
-	return pp.VTA.Vals.DA
+	pvPos := usPos * effDisc
+	vsPatchPos := pp.VSPatchMax(ctx, di)
+	pp.LHb.LHbFmPVVS(ctx, di, pvPos, pvNeg, vsPatchPos)
+
+	SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaUSpos, usPos)
+	SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaPVpos, pvPos)
+	SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaPVneg, pvNeg)
+	SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaLHbDip, GlobalV(ctx, di, GvLHbDip))
+	SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaLHbBurst, GlobalV(ctx, di, GvLHbBurst))
+	SetGlobalVTA(ctx, di, GvVtaRaw, GvVtaVSPatchPos, vsPatchPos)
+
+	pp.VTA.DAFmRaw(ctx, di, ach, hasRew)
+	return GlobalVTA(ctx, di, GvVtaVals, GvVtaDA)
 }
 
 // DriveUpdt updates the drives based on the current USs,
 // subtracting USDec * US from current Drive,
 // and calling ExpStep with the Dt and Base params.
-func (pp *PVLV) DriveUpdt() {
-	pp.Drive.ExpStep()
-	for i := int32(0); i < pp.Drive.NActive; i++ {
-		us := pp.USpos.Get(i)
-		pp.Drive.Drives.Add(i, -us*pp.Drive.USDec.Get(i))
+func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
+	pp.Drive.ExpStepAll(ctx, di)
+	for i := uint32(0); i < pp.Drive.NActive; i++ {
+		us := GlobalDriveV(ctx, di, i, GvUSpos)
+		AddGlobalDriveV(ctx, di, i, GvDrives, -us*pp.Drive.USDec.Get(i))
 	}
 }
 
@@ -746,11 +744,11 @@ func (pp *PVLV) DriveUpdt() {
 // resetting instead if HasRewPrev and HasPosUSPrev is true indicating receipt
 // of an actual positive US.
 // Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) UrgencyUpdt(effort float32) {
-	if pp.HasRewPrev.IsTrue() && pp.HasPosUSPrev.IsTrue() {
-		pp.Urgency.Reset()
+func (pp *PVLV) UrgencyUpdt(ctx *Context, di uint32, effort float32) {
+	if (GlobalV(ctx, di, GvHasRewPrev) > 0) && (GlobalV(ctx, di, GvHasPosUS) > 0) {
+		pp.Urgency.Reset(ctx, di)
 	} else {
-		pp.Urgency.AddEffort(effort)
+		pp.Urgency.AddEffort(ctx, di, effort)
 	}
 }
 
@@ -766,42 +764,42 @@ func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
 
 // ReStart restarts restarts the raw effort back to zero
 // and sets the Max with random additional variance.
-func (ef *Effort) ReStart(rnd erand.Rand) {
-	ef.Raw = 0
-	ef.CurMax = ef.PlusVar(rnd, ef.Max)
-	ef.Disc = 1
+func (ef *Effort) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
+	SetGlobalV(ctx, di, GvEffortRaw, 0)
+	SetGlobalV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.Max))
+	SetGlobalV(ctx, di, GvEffortDisc, 1)
 }
 
 // VSGated updates JustGated and HasGated as function of VS
 // (ventral striatum / ventral pallidum) gating at end of the plus phase.
 // Also resets effort and LHb.DipSumCur counters -- starting fresh at start
 // of a new goal engaged state.
-func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
+func (pp *PVLV) VSGated(ctx *Context, di uint32, rnd erand.Rand, gated, hasRew bool, poolIdx int) {
 	if !hasRew && gated {
-		pp.Effort.ReStart(rnd)
-		pp.LHb.DipSumCur = 0
+		pp.Effort.ReStart(ctx, di, rnd)
+		SetGlobalV(ctx, di, GvLHbDipSumCur, 0)
 		if poolIdx == 0 { // novelty / curiosity pool
-			pp.Effort.CurMax = pp.Effort.MaxNovel
+			SetGlobalV(ctx, di, GvEffortCurMax, pp.Effort.MaxNovel)
 		}
 	}
-	pp.VSMatrix.VSGated(gated)
+	SetGlobalV(ctx, di, GvVSMatrixJustGated, bools.ToFloat32(gated))
 }
 
 // ShouldGiveUp tests whether it is time to give up on the current goal,
 // based on sum of LHb Dip (missed expected rewards) and maximum effort.
-func (pp *PVLV) ShouldGiveUp(rnd erand.Rand, hasRew bool) bool {
-	pp.LHb.GiveUp.SetBool(false)
+func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand, hasRew bool) bool {
+	SetGlobalV(ctx, di, GvLHbGiveUp, 0)
 	if hasRew { // can't give up if got something now
-		pp.LHb.DipSumCur = 0
+		SetGlobalV(ctx, di, GvLHbDipSumCur, 0)
 		return false
 	}
-	prevSum := pp.LHb.DipSumCur
-	giveUp := pp.LHb.ShouldGiveUp()
-	if prevSum < pp.LHb.DipLowThr && pp.LHb.DipSumCur >= pp.LHb.DipLowThr {
-		pp.Effort.CurMax = pp.Effort.PlusVar(rnd, pp.Effort.Raw+pp.Effort.MaxPostDip)
+	prevSum := GlobalV(ctx, di, GvLHbDipSumCur)
+	giveUp := pp.LHb.ShouldGiveUp(ctx, di)
+	if prevSum < pp.LHb.DipLowThr && GlobalV(ctx, di, GvLHbDipSumCur) >= pp.LHb.DipLowThr {
+		SetGlobalV(ctx, di, GvEffortCurMax, pp.Effort.PlusVar(rnd, GlobalV(ctx, di, GvEffortRaw)+pp.Effort.MaxPostDip))
 	}
-	if pp.Effort.GiveUp() {
-		pp.LHb.GiveUp.SetBool(true)
+	if pp.Effort.GiveUp(ctx, di) {
+		SetGlobalV(ctx, di, GvLHbGiveUp, 1)
 		giveUp = true
 	}
 	return giveUp
@@ -810,18 +808,18 @@ func (pp *PVLV) ShouldGiveUp(rnd erand.Rand, hasRew bool) bool {
 // EffortUpdt updates the effort based on given effort increment,
 // resetting instead if HasRewPrev flag is true.
 // Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) EffortUpdt(rnd erand.Rand, effort float32) {
-	if pp.HasRewPrev.IsTrue() {
-		pp.Effort.ReStart(rnd)
+func (pp *PVLV) EffortUpdt(ctx *Context, di uint32, rnd erand.Rand, effort float32) {
+	if GlobalV(ctx, di, GvHasRewPrev) > 0 {
+		pp.Effort.ReStart(ctx, di, rnd)
 	} else {
-		pp.Effort.AddEffort(effort)
+		pp.Effort.AddEffort(ctx, di, effort)
 	}
 }
 
 // EffortUrgencyUpdt updates the Effort & Urgency based on
 // given effort increment, resetting instead if HasRewPrev flag is true.
 // Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) EffortUrgencyUpdt(rnd erand.Rand, effort float32) {
-	pp.EffortUpdt(rnd, effort)
-	pp.UrgencyUpdt(effort)
+func (pp *PVLV) EffortUrgencyUpdt(ctx *Context, di uint32, rnd erand.Rand, effort float32) {
+	pp.EffortUpdt(ctx, di, rnd, effort)
+	pp.UrgencyUpdt(ctx, di, effort)
 }

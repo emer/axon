@@ -142,9 +142,8 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 				pl.Gated.SetBool(false)
 			}
 		}
-		// todo: requires di!
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-			ctx.PVLV.VSGated(&ly.Network.Rand, mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
+			ctx.PVLV.VSGated(ctx, di, &ly.Network.Rand, mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
 		}
 	}
 }
