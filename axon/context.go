@@ -348,12 +348,19 @@ func (ctx *Context) Defaults() {
 	ctx.PVLV.Defaults()
 }
 
+func (ctx *Context) NeuroModInit(di uint32) {
+	for ns := GvRew; ns <= GvNotMaint; ns++ {
+		SetGlobalV(ctx, di, ns, 0)
+	}
+}
+
 // NewState resets counters at start of new state (trial) of processing.
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
 	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
 		ctx.PVLV.NewState(ctx, di, bools.FromFloat32(GlobalV(ctx, di, GvHasRew)))
+		ctx.NeuroModInit(di)
 	}
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
@@ -361,7 +368,6 @@ func (ctx *Context) NewState(mode etime.Modes) {
 	ctx.Cycle = 0
 	ctx.Mode = mode
 	ctx.Testing.SetBool(mode != etime.Train)
-	ctx.NeuroMod.NewState()
 	if mode == etime.Train {
 		ctx.TrialsTotal++
 	}
@@ -400,7 +406,7 @@ func (ctx *Context) SlowInc() bool {
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) PVLVDA(di uint32) float32 {
-	ctx.PVLV.DA(ctx, di, ctx.NeuroMod.ACh, ctx.NeuroMod.HasRew.IsTrue())
+	ctx.PVLV.DA(ctx, di, GlobalV(ctx, di, GvACh), (GlobalV(ctx, di, GvHasRew) > 0))
 	da := GlobalVTA(ctx, di, GvVtaVals, GvVtaDA)
 	SetGlobalV(ctx, di, GvDA, da)
 	SetGlobalV(ctx, di, GvRewPred, GlobalVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos))
@@ -665,9 +671,9 @@ func (ctx *Context) Reset() {
 		ctx.Defaults()
 	}
 	ctx.RandCtr.Reset()
-	ctx.NeuroMod.Init()
 	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
 		ctx.PVLV.Reset(ctx, di)
+		ctx.NeuroModInit(di)
 	}
 }
 

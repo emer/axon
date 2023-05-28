@@ -18,33 +18,6 @@ var KiT_ValenceTypes = kit.Enums.AddEnum(ValenceTypesN, kit.NotBitFlag, nil)
 
 //gosl: start neuromod
 
-/*
-
-// NeuroModVals neuromodulatory values -- they are global to the layer and
-// affect learning rate and other neural activity parameters of neurons.
-type NeuroModVals struct {
-	Rew      float32     `inactive:"+" desc:"reward value -- this is set here in the Context struct, and the RL Rew layer grabs it from there -- must also set HasRew flag when rew is set -- otherwise is ignored."`
-	HasRew   slbool.Bool `inactive:"+" desc:"must be set to true when a reward is present -- otherwise Rew is ignored.  Also set during extinction by PVLV.  This drives ACh release in the PVLV model."`
-	RewPred  float32     `inactive:"+" desc:"reward prediction -- computed by a special reward prediction layer"`
-	PrevPred float32     `inactive:"+" desc:"previous time step reward prediction -- e.g., for TDPredLayer"`
-	DA       float32     `inactive:"+" desc:"dopamine -- represents reward prediction error, signaled as phasic increases or decreases in activity relative to a tonic baseline, which is represented by a value of 0.  Released by the VTA -- ventral tegmental area, or SNc -- substantia nigra pars compacta."`
-	ACh      float32     `inactive:"+" desc:"acetylcholine -- activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS).  Driven by BLA -> PPtg that detects changes in BLA activity, via LDTLayer type"`
-	NE       float32     `inactive:"+" desc:"norepinepherine -- not yet in use"`
-	Ser      float32     `inactive:"+" desc:"serotonin -- not yet in use"`
-
-	AChRaw   float32 `inactive:"+" desc:"raw ACh value used in updating global ACh value by LDTLayer"`
-	NotMaint float32 `inactive:"+" desc:"activity of the PTNotMaintLayer -- drives top-down inhibition of LDT layer / ACh activity."`
-
-	pad, pad1 float32
-}
-
-// NewState is called by Context.NewState at start of new trial
-func (nm *NeuroModVals) NewState() {
-	nm.Init()
-}
-
-*/
-
 // DAModTypes are types of dopamine modulation of neural activity.
 type DAModTypes int32
 

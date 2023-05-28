@@ -77,7 +77,7 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay3Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
 
-	maint := lp.MaintFmNotMaint(ctx.NeuroMod.NotMaint)
+	maint := lp.MaintFmNotMaint(GlobalV(ctx, di, GvNotMaint))
 	maxSrcAct *= (1.0 - maint*lp.MaintInhib) // todo: should this affect everything, not just src?
 
 	ach := maxSrcAct

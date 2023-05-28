@@ -143,7 +143,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 			}
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-			ctx.PVLV.VSGated(ctx, di, &ly.Network.Rand, mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
+			ctx.PVLV.VSGated(ctx, di, &ly.Network.Rand, mtxGated, GlobalV(ctx, di, GvHasRew) > 0, poolIdx)
 		}
 	}
 }

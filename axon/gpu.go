@@ -901,13 +901,9 @@ func (gp *GPU) RunCycles() {
 	cmd := gp.RunCyclesCmd()
 	gnm := "GPU:Cycles"
 	gp.Net.FunTimerStart(gnm)
-	stCtx := *gp.Ctx // save starting state to restore below
 	gp.CopyContextToStaging()
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.CopyLayerStateFmStaging()
-	stCtx.NeuroMod = gp.Ctx.NeuroMod // only state that is updated separately -- counters are full ncyc ahead
-	stCtx.PVLV = gp.Ctx.PVLV
-	*gp.Ctx = stCtx
 	gp.Net.FunTimerStop(gnm)
 }
 
