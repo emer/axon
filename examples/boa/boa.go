@@ -164,7 +164,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Context.PVLV
-	pv.Drive.NActive = int32(trn.NDrives) + 1
+	pv.Drive.NActive = uint32(trn.NDrives) + 1
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
 	pv.Effort.Gain = 0.1    // faster effort
 	pv.Effort.Max = 20
@@ -176,6 +176,7 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs["Train"].(*Approach)
 	net.InitName(net, "Boa")
+	ctx := &ss.Context
 
 	nUSs := ev.NDrives + 1 // first US / drive is novelty / curiosity
 	nuBgY := 5
@@ -309,7 +310,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	notMaint.PlaceRightOf(alm, space)
 
-	err := net.Build()
+	err := net.Build(ctx)
 	if err != nil {
 		log.Println(err)
 		return
@@ -321,7 +322,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 // InitWts configures initial weights according to structure
 func (ss *Sim) InitWts(net *axon.Network) {
-	net.InitWts()
+	net.InitWts(&ss.Context)
 	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
 }
 
@@ -488,6 +489,8 @@ func (ss *Sim) ConfigLoops() {
 	ss.Loops = man
 }
 
+// todo: this needs to be contextualized by di/ env
+
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 // Called at end of minus phase. However, it can still gate sometimes
@@ -497,7 +500,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ctx.Mode.String()].(*Approach)
 	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
 	justGated := mtxLy.AnyGated() // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
-	hasGated := ctx.PVLV.VSMatrix.HasGated.IsTrue()
+	hasGated := GlobalV(ctx, di, GvVSMatrixHasGated) > 0
 	ev.InstinctAct(justGated, hasGated)
 	csGated := (justGated && !ctx.PVLV.HasPosUS())
 	threshold := float32(0.1)

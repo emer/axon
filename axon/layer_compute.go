@@ -312,10 +312,10 @@ func (ly *Layer) NewState(ctx *Context) {
 			// note: this calls the basic neuron-level DecayState
 			ly.Params.NewStateNeuron(ctx, ni, di, vals)
 		}
-		// clear pipeline of incoming spikes, assuming time has passed
-		// always safer to do this rather than not -- sometimes layer has specifically cleared
-		ly.InitPrjnGBuffs(ctx)
 	}
+	// clear pipeline of incoming spikes, assuming time has passed
+	// always safer to do this rather than not -- sometimes layer has specifically cleared
+	ly.InitPrjnGBuffs(ctx)
 }
 
 // DecayState decays activation state by given proportion
@@ -340,9 +340,11 @@ func (ly *Layer) DecayStateLayer(ctx *Context, di uint32, decay, glong, ahp floa
 		pl := ly.Pool(pi, di)
 		pl.Inhib.Decay(decay)
 	}
-	if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
-		ly.InitPrjnGBuffs(ctx, di)
-	}
+	// note: this was being called redundantly most likely in NewState
+	// would be somewhat more expensive to only clear the di specific subset
+	// if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
+	// 	ly.InitPrjnGBuffs(ctx, di)
+	// }
 }
 
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)

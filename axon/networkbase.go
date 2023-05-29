@@ -788,6 +788,8 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx.NetIdxs.NSyns = nt.NSyns
 
 	nt.SetCtxStrides(simCtx)
+	simCtx.SetGlobalStrides()
+	nt.BuildGlobals(simCtx)
 
 	nt.Layout()
 	if emsg != "" {
@@ -842,11 +844,34 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	}
 }
 
+// BuildGlobals builds Globals vars, using params set in given context
+func (nt *NetworkBase) BuildGlobals(ctx *Context) {
+	nt.Globals = make([]float32, ctx.GlobalVNFloats())
+}
+
 // DeleteAll deletes all layers, prepares network for re-configuring and building
 func (nt *NetworkBase) DeleteAll() {
 	nt.Layers = nil
 	nt.LayMap = nil
 	nt.FunTimes = nil
+	nt.Globals = nil
+	nt.LayParams = nil
+	nt.LayVals = nil
+	nt.Pools = nil
+	nt.Neurons = nil
+	nt.NeuronAvgs = nil
+	nt.NeuronIxs = nil
+	nt.Prjns = nil
+	nt.PrjnParams = nil
+	nt.Synapses = nil
+	nt.SynapseCas = nil
+	nt.SynapseIxs = nil
+	nt.PrjnSendCon = nil
+	nt.PrjnRecvCon = nil
+	nt.PrjnGBuf = nil
+	nt.PrjnGSyns = nil
+	nt.RecvPrjnIdxs = nil
+	nt.Exts = nil
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
