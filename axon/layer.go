@@ -439,16 +439,16 @@ func (ly *Layer) InitExt(ctx *Context) {
 // otherwise it goes in Ext.
 // Also sets the Exts values on layer, which are used for the GPU version,
 // which requires calling the network ApplyExts() method -- is a no-op for CPU.
-func (ly *Layer) ApplyExt(ctx *Context, di int, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext etensor.Tensor) {
 	switch {
 	case ext.NumDims() == 2 && ly.Shp.NumDims() == 4: // special case
-		ly.ApplyExt2Dto4D(ctx, uint32(di), ext)
+		ly.ApplyExt2Dto4D(ctx, di, ext)
 	case ext.NumDims() != ly.Shp.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
-		ly.ApplyExt1DTsr(ctx, uint32(di), ext)
+		ly.ApplyExt1DTsr(ctx, di, ext)
 	case ext.NumDims() == 2:
-		ly.ApplyExt2D(ctx, uint32(di), ext)
+		ly.ApplyExt2D(ctx, di, ext)
 	case ext.NumDims() == 4:
-		ly.ApplyExt4D(ctx, uint32(di), ext)
+		ly.ApplyExt4D(ctx, di, ext)
 	}
 }
 

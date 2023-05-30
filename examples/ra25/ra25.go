@@ -38,7 +38,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -220,10 +220,9 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	trls := int(mat32.Ceil(25 / float32(ss.NData)))
-	// todo: need to somehow collect data from each Di
+	trls := int(mat32.IntMultipleGE(25, float32(ss.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTime(etime.Trial, trls).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, trls).AddTime(etime.Cycle, 200)
 
@@ -239,10 +238,8 @@ func (ss *Sim) ConfigLoops() {
 		// })
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
-			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Context.Mode])
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
-		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -332,7 +329,6 @@ func (ss *Sim) ApplyInputs() {
 	net.InitExt(ctx) // clear any existing inputs -- not strictly necessary if always
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev.Step()
-		// going to the same layers, but good practice and cheap anyway
 		for _, lnm := range lays {
 			ly := ss.Net.AxonLayerByName(lnm)
 			pats := ev.State(ly.Nm)
@@ -422,12 +418,11 @@ func (ss *Sim) StatCounters() {
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
-func (ss *Sim) TrialStats() {
+func (ss *Sim) TrialStats(di int) {
 	out := ss.Net.AxonLayerByName("Output")
 
-	// todo:
-	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals[0].CorSim.Cor))
-	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(&ss.Context)[0])
+	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals[di].CorSim.Cor))
+	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(&ss.Context)[di])
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {
 		ss.Stats.SetFloat("TrlErr", 1)
@@ -461,7 +456,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", 0, etime.Test, etime.Trial, "InputLayer", "TargetLayer")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
@@ -476,8 +471,9 @@ func (ss *Sim) ConfigLogs() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
+	ctx := &ss.Context
 	if mode != etime.Analyze {
-		ss.Context.Mode = mode // Also set specifically in a Loop callback.
+		ctx.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
@@ -490,7 +486,14 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
+		trl := ss.Stats.Int("Trial")
+		row = trl
+		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+			ss.Stats.SetInt("Trial", trl+di)
+			ss.TrialStats(di)
+			ss.Logs.LogRowDi(mode, time, row, di)
+		}
+		return // don't do reg
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -507,7 +510,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
-	nv.Params.MaxData = int(ss.Net.MaxData)
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt

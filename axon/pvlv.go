@@ -106,7 +106,12 @@ type Drives struct {
 }
 
 func (dp *Drives) Defaults() {
-	dp.NNegUSs = 1
+	if dp.NActive <= 0 {
+		dp.NActive = 1
+	}
+	if dp.NNegUSs <= 0 {
+		dp.NNegUSs = 1
+	}
 	dp.DriveMin = 0.5
 	dp.Update()
 	dp.USDec.SetAll(1)

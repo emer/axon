@@ -113,7 +113,8 @@ const (
 
 	/////////////////////////////////////////
 	// VTA ventral tegmental area dopamine release
-	// we store both raw and computed values so 2x of each of these values
+	// we store raw, computed vals, and prev vals, so 3x of each of these values
+	// [var][type][ndata]
 
 	// GvVtaDA is overall dopamine value reflecting all of the different inputs
 	GvVtaDA

@@ -486,8 +486,8 @@ func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, syni uint32) {
 	wt := SynV(ctx, syni, Wt)
 	lwt := SynV(ctx, syni, LWt)
 
-	pj.SWts.WtFmDWt(&dwt, &wt, &lwt, SynV(ctx, syni, SWt))
-	SetSynV(ctx, syni, DWt, dwt)
+	pj.SWts.WtFmDWt(&wt, &lwt, dwt, SynV(ctx, syni, SWt))
+	SetSynV(ctx, syni, DWt, 0)
 	SetSynV(ctx, syni, Wt, wt)
 	SetSynV(ctx, syni, LWt, lwt)
 	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
@@ -495,15 +495,16 @@ func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, syni uint32) {
 
 // WtFmDWtSynNoLimits -- weight update without limits
 func (pj *PrjnParams) WtFmDWtSynNoLimits(ctx *Context, syni uint32) {
-	if SynV(ctx, syni, DWt) == 0 {
+	dwt := SynV(ctx, syni, DWt)
+	if dwt == 0 {
 		return
 	}
-	AddSynV(ctx, syni, Wt, SynV(ctx, syni, DWt))
+	AddSynV(ctx, syni, Wt, dwt)
 	if SynV(ctx, syni, Wt) < 0 {
-		SetSynV(ctx, syni, Wt, 0.0)
+		SetSynV(ctx, syni, Wt, 0)
 	}
 	SetSynV(ctx, syni, LWt, SynV(ctx, syni, Wt))
-	SetSynV(ctx, syni, DWt, 0.0)
+	SetSynV(ctx, syni, DWt, 0)
 }
 
 //gosl: end prjnparams

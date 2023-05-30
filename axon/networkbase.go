@@ -48,7 +48,8 @@ type NetworkBase struct {
 	// Implementation level code below:
 	NetIdx       uint32        `view:"-" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
 	MaxDelay     uint32        `inactive:"+" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
-	MaxData      uint32        `inactive:"+" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
+	MaxData      uint32        `inactive:"+" desc:"maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
+	NData        uint32        `inactive:"+" desc:"current number of data inputs processed in parallel in one pass of the network."`
 	NNeurons     uint32        `inactive:"+" desc:"total number of neurons"`
 	NSyns        uint32        `inactive:"+" desc:"total number of synapses"`
 	Globals      []float32     `view:"-" desc:"storage for global vars"`
@@ -87,6 +88,8 @@ func (nt *NetworkBase) Label() string                 { return nt.Nm }
 func (nt *NetworkBase) NLayers() int                  { return len(nt.Layers) }
 func (nt *NetworkBase) Layer(idx int) emer.Layer      { return nt.Layers[idx] }
 func (nt *NetworkBase) Bounds() (min, max mat32.Vec3) { min = nt.MinPos; max = nt.MaxPos; return }
+func (nt *NetworkBase) MaxParallelData() int          { return int(nt.MaxData) }
+func (nt *NetworkBase) NParallelData() int            { return int(nt.NData) }
 
 // LayByName returns a layer by looking it up by name in the layer map (nil if not found).
 // Will create the layer map if it is nil or a different size than layers slice,
@@ -553,6 +556,9 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 // access strides for this network -- must be set properly -- see SetCtxStrides.
 func (nt *NetworkBase) Build(simCtx *Context) error {
 	nt.UseGPUOrder = true // todo: set externally
+	if simCtx.PVLV.Drive.NActive <= 0 {
+		simCtx.PVLV.Defaults()
+	}
 	ctx := &nt.Ctx
 	*ctx = *simCtx
 	ctx.NetIdxs.NetIdx = nt.NetIdx
@@ -786,9 +792,9 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx.NetIdxs.NNeurons = nt.NNeurons
 	ctx.NetIdxs.NPools = uint32(totPools)
 	ctx.NetIdxs.NSyns = nt.NSyns
+	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)
-	simCtx.SetGlobalStrides()
 	nt.BuildGlobals(simCtx)
 
 	nt.Layout()

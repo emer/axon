@@ -19,6 +19,8 @@ See [python README](python/README.md) and [Python Wiki](https://github.com/emer/
 
 # Current Status / News
 
+* June 2023: **v1.8.0** Neuron and Synapse memory now accessed via methods with arbitrary strides so GPU and CPU can each have optimal memory ordering -- NVIDIA A100 performance now comparable to Mac M1, which also improved by 25%.  Includes data parallel processing (multiple input patterns processed in parallel using shared weights) which makes GPU faster than CPU even with small networks (e.g., ra25).  See [GPU](GPU.md) and [data parallel](#data_parallel) section.
+
 * Feb 2023: **v1.7.9** completed first pass on [GPU](GPU.md) implementation based on [gosl](https://github.com/goki/gosl) conversion from the Go source to Vulkan HLSL shaders running under the [vgpu](https://github.com/goki/vgpu) framework.
 
 * Dec 2022: **v1.6.12** represents the start of an anticipated stable plateau in development, with this README fully updated to describe the current algorithm, and well-tested and biologically-based implementations of all the major elements of the core algorithm, and initial steps on specialized PFC / BG / RL algorithms as integrated in the `examples/boa` model.
@@ -83,12 +85,50 @@ func (nt *Network) InitActs() {
 
 * The `emer` interfaces are designed to support generic access to network state, e.g., for the 3D network viewer, but specifically avoid anything algorithmic.  Thus, they allow viewing of any kind of network, including PyTorch backprop nets.
 
-* The `axon.AxonLayer` and `axon.AxonPrjn` interfaces, defined in [axon.go](axon/axon.go), extend the `emer` interfaces to virtualize the Axon-specific algorithm functions at the basic level.  These interfaces are used in the base axon code, so that any more specialized version that embeds the basic axon types will be called instead.
-  This mechanism is incompatible with our GPU implementation, but we're keeping it for easy CPU-only experimentation in the future.
-
 * Layers have a `Shape` property, using the `etensor.Shape` type, which specifies their n-dimensional (tensor) shape.  Standard layers are expected to use a 2D Y*X shape (note: dimension order is now outer-to-inner or *row-major* now), and a 4D shape then enables `Pools` as hypercolumn-like structures within a layer that can have their own local level of inihbition, and are also used extensively for organizing patterns of connectivity.
 
-# Pseudocode as a LaTeX doc for Paper Appendix
+# Data Parallel
+
+The key elements of _data parallel_ processing of multiple input patterns in parallel using the same weights are as follows:
+
+* `Network.MaxData` must be set to the maximum number of data parallel streams prior to `Build()` -- determines allocation of `Neurons`, `Synapses`, etc.
+
+* `Context.NetIdxs.NData` must be updated with the actual number (<= MaxData) to process each step, prior to calling `Network.NewState`.
+
+* All compute methods take a `di` arg = data index.
+
+* Iterate over `NData` in `ApplyInputs` method, stepping the env (`ev`) and applying the external inputs to layers, passing the `di`:
+
+```Go
+net.InitExt(ctx) // clear any existing inputs
+for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	ev.Step()
+	for _, lnm := range lays {
+		ly := ss.Net.AxonLayerByName(lnm)
+		pats := ev.State(ly.Nm)
+		if pats != nil {
+			ly.ApplyExt(ctx, di, pats)
+		}
+	}
+}
+net.ApplyExts(ctx) // now required for GPU mode
+```
+
+* Configure `looper` with a counter increment equal to the number of parallel data items and a max that is an integer multiple of NData:
+
+```Go
+	trls := int(mat32.IntMultipleGE(25, float32(ss.NData))) // 25 nominal trials per epoch
+
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
+```
+
+* 
+
+# Overview of the Axon Algorithm
+
+Axon is the spiking version of [Leabra](https://github.com/emer/leabra), which uses rate-code neurons instead of spiking.  Like Leabra, Axon is intended to capture a middle ground between neuroscience, computation, and cognition, providing a computationally effective framework based directly on the biology, to understand how cognitive function emerges from the brain.  See [Computational Cognitive Neuroscience](https://CompCogNeuro.org) for a full textbook on the principles and many implemented models.
+
+## Pseudocode as a LaTeX doc for Paper Appendix
 
 You can copy the markdown source of this README into a file, and run [pandoc](https://pandoc.org/) on it to convert to LaTeX (or other formats) for inclusion in a paper.  As this page is always kept updated, it is best to regenerate from this source -- very easy:
 
@@ -98,12 +138,6 @@ pandoc appendix.md -f gfm -t latex -o appendix.tex
 ```
 
 You can then edit the resulting .tex file to only include the parts you want, etc.
-
-# Overview of the Axon Algorithm
-
-Axon is the spiking version of [Leabra](https://github.com/emer/leabra), which uses rate-code neurons instead of spiking.  Like Leabra, Axon is intended to capture a middle ground between neuroscience, computation, and cognition, providing a computationally effective framework based directly on the biology, to understand how cognitive function emerges from the brain.  See [Computational Cognitive Neuroscience](https://CompCogNeuro.org) for a full textbook on the principles and many implemented models.
-
-First we present a brief narrative overview of axon, followed by a detailed list of all the equations and associated parameters.
 
 ## Functional Advantages of Spikes
 

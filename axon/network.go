@@ -81,9 +81,11 @@ func (nt *Network) UpdateParams() {
 // to compute one complete algorithmic alpha cycle update.
 
 // NewState handles all initialization at start of new input pattern.
-// Should already have presented the external input to the network at this point.
-// Does NOT call InitGScale()
+// This is called *before* applying external input data and operates across
+// all data parallel values.  The current Context.NData should be set
+// properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
+	nt.NData = ctx.NetIdxs.NData
 	if nt.GPU.On {
 		nt.GPU.RunNewState()
 		return
@@ -244,7 +246,6 @@ func (nt *Network) DWt(ctx *Context) {
 		return
 	}
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
-	// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
 }
 
 // WtFmDWt updates the weights from delta-weight changes.

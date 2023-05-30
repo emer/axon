@@ -195,17 +195,17 @@ func SetGlobalUSneg(ctx *Context, negIdx uint32, di uint32, val float32) {
 }
 
 // GlobalDriveV is the CPU version of the global Drive, USpos variable accessor
-func GlobalDriveV(ctx *Context, drIdx uint32, di uint32, gvar GlobalVars) float32 {
+func GlobalDriveV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars) float32 {
 	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(drIdx, di, gvar)]
 }
 
 // SetGlobalDriveV is the CPU version of the global Drive, USpos variable settor
-func SetGlobalDriveV(ctx *Context, drIdx uint32, di uint32, gvar GlobalVars, val float32) {
+func SetGlobalDriveV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
 	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(drIdx, di, gvar)] = val
 }
 
 // AddGlobalDriveV is the CPU version of the global Drive, USpos variable adder
-func AddGlobalDriveV(ctx *Context, drIdx uint32, di uint32, gvar GlobalVars, val float32) {
+func AddGlobalDriveV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
 	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(drIdx, di, gvar)] += val
 }
 
@@ -392,7 +392,7 @@ func (ctx *Context) CycleInc() {
 // SlowInc increments the Slow counter and returns true if time
 // to perform SlowAdapt functions (associated with sleep).
 func (ctx *Context) SlowInc() bool {
-	ctx.SlowCtr++
+	ctx.SlowCtr += int32(ctx.NetIdxs.NData)
 	if ctx.SlowCtr < ctx.SlowInterval {
 		return false
 	}
@@ -422,9 +422,9 @@ func (ctx *Context) PVLVDA(di uint32) float32 {
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
 	ctx.NetIdxs.GvVTAOff = ctx.GlobalIdx(0, GvVtaDA)
-	ctx.NetIdxs.GvVTAStride = uint32((GvVtaVSPatchPos+1)-GvVtaDA) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvVTAStride = uint32(GlobalVTATypeN) * ctx.NetIdxs.MaxData
 	ctx.NetIdxs.GvUSnegOff = ctx.GlobalVTAIdx(0, GvVtaRaw, GvUSneg)
-	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(ctx.NetIdxs.MaxData-1, uint32(ctx.PVLV.Drive.NNegUSs)-1)
+	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(ctx.PVLV.Drive.NNegUSs, 0)
 	ctx.NetIdxs.GvDriveStride = uint32(ctx.PVLV.Drive.NActive) * ctx.NetIdxs.MaxData
 }
 
@@ -436,12 +436,12 @@ func (ctx *Context) GlobalIdx(di uint32, gvar GlobalVars) uint32 {
 
 // GlobalVTAIdx returns index into VTA global variables
 func (ctx *Context) GlobalVTAIdx(di uint32, vtaType GlobalVTAType, gvar GlobalVars) uint32 {
-	return ctx.NetIdxs.GvVTAOff + uint32(vtaType)*ctx.NetIdxs.GvVTAStride + ctx.NetIdxs.MaxData*uint32(gvar-GvVtaDA) + di
+	return ctx.NetIdxs.GvVTAOff + uint32(gvar-GvVtaDA)*ctx.NetIdxs.GvVTAStride + uint32(vtaType)*ctx.NetIdxs.MaxData + di
 }
 
 // GlobalUSnegIdx returns index into USneg global variables
 func (ctx *Context) GlobalUSnegIdx(negIdx uint32, di uint32) uint32 {
-	return ctx.NetIdxs.GvVTAOff + negIdx*ctx.NetIdxs.MaxData + di
+	return ctx.NetIdxs.GvUSnegOff + negIdx*ctx.NetIdxs.MaxData + di
 }
 
 // GlobalDriveIdx returns index into Drive and USpos, VSPatch global variables

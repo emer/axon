@@ -493,26 +493,23 @@ func (sp *SWtParams) LWtFmWts(wt, swt float32) float32 {
 	return sp.LinFmSigWt(rwt)
 }
 
-// todo: change below to not use pointers
-
 // WtFmDWt updates the synaptic weights from accumulated weight changes.
 // wt is the sigmoidal contrast-enhanced weight and lwt is the linear weight value.
-func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
-	if *dwt == 0 {
+func (sp *SWtParams) WtFmDWt(wt, lwt *float32, dwt, swt float32) {
+	if dwt == 0 {
 		if *wt == 0 { // restore failed wts
 			*wt = sp.WtVal(swt, *lwt)
 		}
 		return
 	}
 	// note: softbound happened at dwt stage
-	*lwt += *dwt
+	*lwt += dwt
 	if *lwt < 0 {
 		*lwt = 0
 	} else if *lwt > 1 {
 		*lwt = 1
 	}
 	*wt = sp.WtVal(swt, *lwt)
-	*dwt = 0
 }
 
 // InitSynCa initializes synaptic calcium state, including CaUpT

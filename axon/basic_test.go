@@ -279,8 +279,8 @@ func TestInitWts(t *testing.T) {
 			}
 			testNet.InitExt(ctx)
 			for di := 0; di < nData; di++ {
-				inLay.ApplyExt(ctx, di, inpat)
-				outLay.ApplyExt(ctx, di, inpat)
+				inLay.ApplyExt(ctx, uint32(di), inpat)
+				outLay.ApplyExt(ctx, uint32(di), inpat)
 			}
 			testNet.ApplyExts(ctx) // key now for GPU
 
@@ -569,8 +569,8 @@ func NetDebugAct(t *testing.T, printVals bool, gpu bool, nData int, initWts bool
 				t.Fatal(err)
 			}
 			_ = inpat
-			inLay.ApplyExt(ctx, di, inpat)
-			outLay.ApplyExt(ctx, di, inpat)
+			inLay.ApplyExt(ctx, uint32(di), inpat)
+			outLay.ApplyExt(ctx, uint32(di), inpat)
 		}
 
 		testNet.ApplyExts(ctx) // key now for GPU
@@ -1129,6 +1129,54 @@ func saveToFile(net *Network, t *testing.T) {
 		t.Error(err)
 	}
 	fp.Write(wb)
+}
+
+func TestGlobalIdxs(t *testing.T) {
+	ctx := NewContext()
+	nData := uint32(5)
+	ctx.PVLV.Drive.NActive = 4
+	ctx.PVLV.Drive.NNegUSs = 3
+	net := newTestNet(ctx, int(nData))
+	val := float32(0)
+
+	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: GvVTAOff: %d  Stride: %d  USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.Drive.NActive, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvVTAOff, ctx.NetIdxs.GvVTAStride, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
+
+	for vv := GvRew; vv < GvVtaDA; vv++ {
+		for di := uint32(0); di < nData; di++ {
+			SetGlobalV(ctx, di, vv, val)
+			val += 1
+		}
+	}
+	for vv := GvVtaDA; vv < GvUSneg; vv++ {
+		for vt := GvVtaRaw; vt < GlobalVTATypeN; vt++ {
+			for di := uint32(0); di < nData; di++ {
+				SetGlobalVTA(ctx, di, vt, vv, val)
+				val += 1
+			}
+		}
+	}
+	for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+		for di := uint32(0); di < nData; di++ {
+			SetGlobalUSneg(ctx, ui, di, val)
+			val += 1
+		}
+	}
+	for vv := GvDrives; vv < GlobalVarsN; vv++ {
+		for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+			for di := uint32(0); di < nData; di++ {
+				SetGlobalDriveV(ctx, di, ui, vv, val)
+				val += 1
+			}
+		}
+	}
+	if int(val) != len(net.Globals) {
+		t.Errorf("Globals len: %d != val count: %d\n", len(net.Globals), int(val))
+	}
+	for i, gv := range net.Globals {
+		if gv != float32(i) {
+			t.Errorf("Global at index: %d != index val: %g\n", i, gv)
+		}
+	}
 }
 
 /* todo: fixme
