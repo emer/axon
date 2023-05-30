@@ -466,7 +466,7 @@ func (ly *LayerBase) Build() error {
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
-		SetNrnI(ctx, ni, NrnNeurIdx, ni)
+		SetNrnI(ctx, ni, NrnNeurIdx, lni)
 		SetNrnI(ctx, ni, NrnLayIdx, uint32(ly.Idx))
 	}
 	err := ly.BuildPools(ctx, nn)

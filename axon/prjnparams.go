@@ -389,7 +389,8 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, ri, NrnNeurIdx) == 0 {
+	ni := NrnI(ctx, ri, NrnNeurIdx)
+	if ni == 0 {
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
 		}

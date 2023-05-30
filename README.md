@@ -91,9 +91,13 @@ func (nt *Network) InitActs() {
 
 The key elements of _data parallel_ processing of multiple input patterns in parallel using the same weights are as follows:
 
-* `Network.MaxData` must be set to the maximum number of data parallel streams prior to `Build()` -- determines allocation of `Neurons`, `Synapses`, etc.
+* `Network.MaxData` must be set to the maximum number of data parallel streams prior to `Build()` -- determines allocation of `Neurons`, `Synapses`, etc:
 
-* `Context.NetIdxs.NData` must be updated with the actual number (<= MaxData) to process each step, prior to calling `Network.NewState`.
+```Go
+	net.SetMaxData(&ss.Context, ss.NData)
+```
+
+* `Context.NetIdxs.NData` must be updated with the actual number (<= MaxData) to process each step, prior to calling `Network.NewState` -- above method does both.
 
 * All compute methods take a `di` arg = data index.
 
@@ -122,7 +126,19 @@ net.ApplyExts(ctx) // now required for GPU mode
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
 ```
 
-* 
+* In sim `Log()` method, iterate over `di` data parallel to record stats for each item, calling the `TrialStats` method with the di index to compute relevant stats:
+
+```Go
+	case time == etime.Trial:
+		trl := ss.Stats.Int("Trial")
+		row = trl
+		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+			ss.Stats.SetInt("Trial", trl+di)
+			ss.TrialStats(di)
+			ss.Logs.LogRowDi(mode, time, row, di)
+		}
+		return // don't do reg
+```
 
 # Overview of the Axon Algorithm
 

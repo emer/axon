@@ -339,7 +339,6 @@ func (ly *LayerParams) LearnTrgAvgErrLRate() float32 {
 func (ly *LayerParams) LayPoolGiFmSpikes(ctx *Context, lpl *Pool, vals *LayerVals) {
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, vals.ActAvg.GiMult)
-	// fmt.Printf("plly: %d  plpl: %d  gi: %g\n", lpl.LayIdx, lpl.PoolIdx, lpl.Inhib.Gi)
 }
 
 // SubPoolGiFmSpikes computes inhibition Gi from Spikes within a sub-pool
@@ -563,9 +562,6 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni, di uint32) {
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) {
 	gi := vals.ActAvg.GiMult*pl.Inhib.Gi + NrnV(ctx, ni, di, GiSyn) + NrnV(ctx, ni, di, GiNoise) + ly.Learn.NeuroMod.GiFmACh(GlobalV(ctx, di, GvACh))
-	// if ni == ly.Idxs.NeurSt {
-	// 	fmt.Printf("plly: %d  plpl: %d  gi: %g\n", pl.LayIdx, pl.PoolIdx, pl.Inhib.Gi)
-	// }
 	SetNrnV(ctx, ni, di, Gi, gi)
 	SetNrnV(ctx, ni, di, SSGi, pl.Inhib.SSGi)
 	SetNrnV(ctx, ni, di, SSGiDend, 0)
@@ -655,7 +651,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		SetNrnV(ctx, ni, di, Act, GlobalV(ctx, di, GvAChRaw)) // I set this in CyclePost
 	case RWPredLayer:
 		SetNrnV(ctx, ni, di, Act, ly.RWPred.PredRange.ClipVal(NrnV(ctx, ni, di, Ge))) // clipped linear
-		if ni == 0 {
+		if pni == 0 {
 			vals.Special.V1 = NrnV(ctx, ni, di, ActInt) // warning: if more than 1 layer writes to vals, gpu will fail!
 		} else {
 			vals.Special.V2 = NrnV(ctx, ni, di, ActInt)
@@ -664,7 +660,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		SetNrnV(ctx, ni, di, Act, GlobalV(ctx, di, GvDA)) // I set this in CyclePost
 	case TDPredLayer:
 		SetNrnV(ctx, ni, di, Act, NrnV(ctx, ni, di, Ge)) // linear
-		if ni == 0 {
+		if pni == 0 {
 			vals.Special.V1 = NrnV(ctx, ni, di, ActInt) // warning: if more than 1 layer writes to vals, gpu will fail!
 		} else {
 			vals.Special.V2 = NrnV(ctx, ni, di, ActInt)
@@ -677,7 +673,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	case VTALayer:
 		SetNrnV(ctx, ni, di, Act, GlobalVTA(ctx, di, GvVtaVals, GvVtaDA)) // I set this in CyclePost
 	case LHbLayer:
-		if ni == 0 {
+		if pni == 0 {
 			SetNrnV(ctx, ni, di, Act, GlobalV(ctx, di, GvLHbDip))
 		} else {
 			SetNrnV(ctx, ni, di, Act, GlobalV(ctx, di, GvLHbBurst))

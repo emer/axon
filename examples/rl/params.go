@@ -22,10 +22,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "0.2",
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
-			{Sel: ".LDTLayer", Desc: "",
-				Params: params.Params{
-					"Layer.LDT.RewPred": "true",
-				}},
 		},
 	}},
 	{Name: "RW", Desc: "RW params", Sheets: params.Sheets{

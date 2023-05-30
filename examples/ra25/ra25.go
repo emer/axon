@@ -152,8 +152,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.Params.SetObject("NetSize")
 
 	net.InitName(net, "RA25")
-	net.MaxData = uint32(ss.NData)
-	ss.Context.NetIdxs.NData = uint32(ss.NData)
+	net.SetMaxData(&ss.Context, ss.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
 	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)

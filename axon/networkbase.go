@@ -549,6 +549,13 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 	simCtx.CopyNetStridesFrom(&nt.Ctx)
 }
 
+// SetMaxData sets the MaxData and current NData for both the Network and the Context
+func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
+	nt.MaxData = uint32(maxData)
+	simCtx.NetIdxs.NData = uint32(maxData)
+	simCtx.NetIdxs.MaxData = uint32(maxData)
+}
+
 // Build constructs the layer and projection state based on the layer shapes
 // and patterns of interconnectivity. Configures threading using heuristics based
 // on final network size.  Must set UseGPUOrder properly prior to calling.

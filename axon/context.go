@@ -350,7 +350,9 @@ func (ctx *Context) Defaults() {
 
 func (ctx *Context) NeuroModInit(di uint32) {
 	for ns := GvRew; ns <= GvNotMaint; ns++ {
-		SetGlobalV(ctx, di, ns, 0)
+		if ns != GvPrevPred {
+			SetGlobalV(ctx, di, ns, 0)
+		}
 	}
 }
 
