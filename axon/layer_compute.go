@@ -206,7 +206,7 @@ func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 // Called directly by Network, iterates over data.
 func (ly *Layer) SynCa(ctx *Context, ni uint32) {
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		if NrnV(ctx, ni, di, Spike) == 0 {
+		if NrnV(ctx, ni, di, Spike) == 0 { // di has to be outer loop b/c of this test
 			continue
 		}
 		updtThr := ly.Params.Learn.CaLearn.UpdtThr

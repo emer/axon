@@ -403,3 +403,36 @@ func (pj *PrjnBase) SynVal(varNm string, sidx, ridx int) float32 {
 	syi := pj.SynIdx(sidx, ridx)
 	return pj.AxonPrj.SynVal1D(vidx, syi)
 }
+
+// SynVal1DDi returns value of given variable index (from SynVarIdx) on given SynIdx.
+// Returns NaN on invalid index.
+// This is the core synapse var access method used by other methods.
+// Includes Di data parallel index for data-parallel synaptic values.
+func (pj *PrjnBase) SynVal1DDi(varIdx int, synIdx int, di int) float32 {
+	if synIdx < 0 || synIdx >= int(pj.NSyns) {
+		return mat32.NaN()
+	}
+	if varIdx < 0 || varIdx >= pj.SynVarNum() {
+		return mat32.NaN()
+	}
+	ctx := &pj.Recv.Network.Ctx
+	syni := pj.SynStIdx + uint32(synIdx)
+	if varIdx < int(SynapseVarsN) {
+		return SynV(ctx, syni, SynapseVars(varIdx))
+	} else {
+		return SynCaV(ctx, syni, uint32(di), SynapseCaVars(varIdx-int(SynapseVarsN)))
+	}
+}
+
+// SynValDi returns value of given variable name on the synapse
+// between given send, recv unit indexes (1D, flat indexes).
+// Returns mat32.NaN() for access errors (see SynValTry for error message)
+// Includes Di data parallel index for data-parallel synaptic values.
+func (pj *PrjnBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
+	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
+	if err != nil {
+		return mat32.NaN()
+	}
+	syi := pj.SynIdx(sidx, ridx)
+	return pj.SynVal1DDi(vidx, syi, di)
+}

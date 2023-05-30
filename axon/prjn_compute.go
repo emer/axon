@@ -4,7 +4,9 @@
 
 package axon
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 // prjn_compute.go has the core computational methods, for the CPU.
 // On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
@@ -106,16 +108,15 @@ func (pj *Prjn) DWt(ctx *Context, si uint32) {
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIdx + syi
 		ri := SynI(ctx, syni, SynRecvIdx)
+		dwt := float32(0)
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			layPool := rlay.Pool(0, di)
 			subPool := rlay.SubPool(ctx, ri, di)
 			pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+			dwt += SynCaV(ctx, syni, di, DiDWt)
 		}
-	}
-	// note: on GPU, this must be a separate kernel, but can be combined here
-	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-		syni := pj.SynStIdx + syi
-		pj.Params.DWtFmDiDWtSyn(ctx, syni)
+		// note: on GPU, this must be a separate kernel, but can be combined here
+		AddSynV(ctx, syni, DWt, dwt)
 	}
 }
 

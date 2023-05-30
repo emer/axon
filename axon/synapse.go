@@ -125,7 +125,7 @@ type SynapseCaStrides struct {
 
 // Idx returns the index into network float32 array for given synapse, data, and variable
 func (ns *SynapseCaStrides) Idx(synIdx, dataIdx uint32, nvar SynapseCaVars) uint64 {
-	return uint64(synIdx)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var)
+	return uint64(synIdx)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var) + uint64(dataIdx)
 }
 
 // SetSynapseOuter sets strides with synapses as outer loop:

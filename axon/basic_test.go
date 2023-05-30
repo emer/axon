@@ -983,6 +983,135 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 	testNet.GPU.Destroy()
 }
 
+// NetDebugLearn prints selected values (if printVals),
+// and also returns a map of all values and variables that can be used for a more
+// fine-grained diff test, e.g., see the GPU version.
+func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts bool) map[string]float32 {
+	ctx := NewContext()
+	testNet := newTestNet(ctx, nData)
+
+	testNet.ApplyParams(ParamSets.SetByName("FullDecay").Sheets["Network"], false)
+
+	testNet.InitExt(ctx)
+	ctx.NetIdxs.NData = uint32(nData)
+
+	valMap := make(map[string]float32)
+
+	inPats := newInPats()
+	inLay := testNet.AxonLayerByName("Input")
+	// hidLay := testNet.AxonLayerByName("Hidden")
+	outLay := testNet.AxonLayerByName("Output")
+	_, _ = inLay, outLay
+
+	if gpu {
+		testNet.ConfigGPUnoGUI(ctx)
+		testNet.GPU.RecFunTimes = true
+		// testNet.GPU.CycleByCycle = true // key for printing results cycle-by-cycle
+	}
+
+	// these control what is printed.
+	// the whole thing is run and returned in the valMap
+	valsPerRow := 8
+	nPats := 4   // max 4
+	stLayer := 1 // max 2
+	edLayer := 2 // max 3
+	nNeurs := 4  // max 4 -- number of neuron values to print
+
+	for pi := 0; pi < 4; pi++ {
+		if initWts {
+			testNet.SetRndSeed(42) // critical for ActAvg values
+			testNet.InitWts(ctx)
+		} else {
+			testNet.NewState(ctx)
+		}
+		ctx.NewState(etime.Train)
+
+		testNet.InitExt(ctx)
+		for di := 0; di < nData; di++ {
+			ppi := (pi + di) % 4
+			inpat, err := inPats.SubSpaceTry([]int{ppi})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_ = inpat
+			inLay.ApplyExt(ctx, uint32(di), inpat)
+			outLay.ApplyExt(ctx, uint32(di), inpat)
+		}
+
+		testNet.ApplyExts(ctx) // key now for GPU
+
+		for qtr := 0; qtr < 4; qtr++ {
+			for cyc := 0; cyc < 50; cyc++ {
+				testNet.Cycle(ctx)
+				ctx.CycleInc()
+				if gpu {
+					testNet.GPU.SyncNeuronsFmGPU()
+				}
+			}
+			if qtr == 2 {
+				testNet.MinusPhase(ctx)
+				ctx.NewPhase(false)
+				testNet.PlusPhaseStart(ctx)
+			}
+		}
+
+		testNet.PlusPhase(ctx)
+		testNet.DWt(ctx)
+		if gpu {
+			testNet.GPU.SyncSynapsesFmGPU()
+		}
+
+		for ni := 0; ni < 4; ni++ {
+			for li := 1; li < 3; li++ {
+				ly := testNet.Layers[li]
+				for di := 0; di < nData; di++ {
+					ppi := (pi + di) % 4
+					key := fmt.Sprintf("pat: %d\tLayer: %s\tUnit: %d", ppi, ly.Nm, ni)
+					doPrint := (printVals && pi < nPats && ni < nNeurs && li >= stLayer && li < edLayer)
+					if doPrint {
+						fmt.Println(key + fmt.Sprintf("  di: %d", di))
+					}
+					for svi, snm := range SynapseVarNames {
+						val := ly.RcvPrjns[0].SynValDi(snm, ni, ni, di)
+						vkey := key + fmt.Sprintf("\t%s", snm)
+						valMap[vkey] = val
+						if doPrint {
+							fmt.Printf("\t%-10s%7.4f", snm, val)
+							if (int(svi)+1)%valsPerRow == 0 {
+								fmt.Printf("\n")
+							}
+						}
+					}
+					if doPrint {
+						fmt.Printf("\n")
+					}
+				}
+			}
+		}
+
+		testNet.WtFmDWt(ctx)
+		if gpu {
+			testNet.GPU.SyncSynapsesFmGPU()
+		}
+
+		pi += nData - 1
+	}
+
+	testNet.GPU.Destroy()
+	return valMap
+}
+
+func TestDebugLearn(t *testing.T) {
+	t.Skip("skipped in regular testing")
+	NetDebugLearn(t, true, false, 2, true)
+}
+
+func TestNDataLearn(t *testing.T) {
+	nd1Vals := NetDebugLearn(t, false, false, 1, true)
+	nd4Vals := NetDebugLearn(t, false, false, 4, true)
+	ReportValDiffs(t, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt"})
+}
+
 func TestInhibAct(t *testing.T) {
 	// t.Skip("Skipping TestInhibAct for now until stable")
 	inPats := newInPats()
