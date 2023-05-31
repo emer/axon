@@ -530,7 +530,7 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx, di int) float32 {
 		case 3:
 			return GlobalV(ctx, uint32(di), GvSer)
 		case 4:
-			pl := ly.SubPool(ctx, uint32(idx), uint32(di))
+			pl := ly.SubPool(ctx, ni, uint32(di))
 			return float32(pl.Gated)
 		}
 	} else if varIdx >= int(NeuronVarsN) {

@@ -148,11 +148,12 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
+	ctx := &ss.Context
 	ss.Params.AddLayers([]string{"Hidden1", "Hidden2"}, "Hidden")
 	ss.Params.SetObject("NetSize")
 
 	net.InitName(net, "RA25")
-	net.SetMaxData(&ss.Context, ss.NData)
+	net.SetMaxData(ctx, ss.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
 	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
@@ -177,7 +178,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	err := net.Build(&ss.Context)
+	err := net.Build(ctx)
 	if err != nil {
 		log.Println(err)
 		return
@@ -185,7 +186,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(1)
 	ss.Params.SetObject("Network")
-	net.InitWts(&ss.Context)
+	net.InitWts(ctx)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

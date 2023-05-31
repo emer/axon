@@ -24,7 +24,7 @@ type Approach struct {
 	CSPerDrive  int                         `desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
 	Locations   int                         `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
 	DistMax     int                         `desc:"maximum distance in time steps to reach the US"`
-	TimeMax     int                         `desc:"maximum number of time steps before resetting"`
+	TimeMax     int                         `desc:"maximum number of time steps represented in Time layer"`
 	AlwaysLeft  bool                        `desc:"always turn left -- zoolander style"`
 	NewStateInt int                         `desc:"interval in trials for generating a new state, only if > 0"`
 	CSTot       int                         `desc:"total number of CS's = NDrives * CSPerDrive"`

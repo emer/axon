@@ -366,21 +366,21 @@ func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float3
 // AvgMaxVarByPool returns the average and maximum value of given variable
 // for given pool index (0 = entire layer, 1.. are subpools for 4D only).
 // Uses fast index-based variable access.
-func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIdx, dataIdx int) minmax.AvgMax32 {
+func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIdx, di int) minmax.AvgMax32 {
 	var am minmax.AvgMax32
 	vidx, err := ly.UnitVarIdx(varNm)
 	if err != nil {
 		log.Printf("axon.Layer.AvgMaxVar: %s\n", err)
 		return am
 	}
-	pl := ly.Pool(uint32(poolIdx), uint32(dataIdx))
+	pl := ly.Pool(uint32(poolIdx), uint32(di))
 	am.Init()
 	for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 		ni := ly.NeurStIdx + lni
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		vl := ly.UnitVal1D(vidx, int(ni), dataIdx)
+		vl := ly.UnitVal1D(vidx, int(ni), di)
 		am.UpdateVal(vl, int32(ni))
 	}
 	am.CalcAvg()

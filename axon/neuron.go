@@ -352,8 +352,8 @@ type NeuronVarStrides struct {
 }
 
 // Idx returns the index into network float32 array for given neuron, data, and variable
-func (ns *NeuronVarStrides) Idx(neurIdx, dataIdx uint32, nvar NeuronVars) uint32 {
-	return neurIdx*ns.Neuron + uint32(nvar)*ns.Var + dataIdx
+func (ns *NeuronVarStrides) Idx(neurIdx, di uint32, nvar NeuronVars) uint32 {
+	return neurIdx*ns.Neuron + uint32(nvar)*ns.Var + di
 }
 
 // SetNeuronOuter sets strides with neurons as outer loop:
