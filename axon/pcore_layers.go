@@ -137,7 +137,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		// that this will make sense and not doing yet..
 
 		if !mtxGated { // nobody did if thal didn't
-			for pi := range ly.Pools {
+			for pi := uint32(0); pi < ly.NPools; pi++ {
 				pl := ly.Pool(uint32(pi), di)
 				pl.Gated.SetBool(false)
 			}
@@ -179,8 +179,8 @@ func (ly *Layer) GatedFmSpkMax(di uint32, thr float32) (bool, int) {
 
 // AnyGated returns true if the layer-level pool Gated flag is true,
 // which indicates if any of the layers gated.
-func (ly *Layer) AnyGated() bool {
-	return ly.Pools[0].Gated.IsTrue()
+func (ly *Layer) AnyGated(di uint32) bool {
+	return ly.Pool(0, di).Gated.IsTrue()
 }
 
 func (ly *Layer) MatrixDefaults() {

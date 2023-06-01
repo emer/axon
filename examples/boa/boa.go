@@ -40,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	GPU = true
 )
 
 func main() {
@@ -61,6 +61,7 @@ func main() {
 // SimParams has all the custom params for this sim
 type SimParams struct {
 	NData             int     `desc;"number of data-parallel items to process at once"`
+	EnvSameSeed       bool    `desc:"for testing, force each env to use same seed"`
 	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
 	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
@@ -72,7 +73,8 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 1
+	ss.NData = 8
+	ss.EnvSameSeed = false
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 5
 	ss.PctCortexNEpc = 5
@@ -149,6 +151,10 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Defaults()
+		trn.RndSeed = 77
+		if !ss.Sim.EnvSameSeed {
+			trn.RndSeed += int64(di) * 77
+		}
 		trn.Config()
 		trn.Validate()
 
@@ -378,7 +384,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
 	trgTrls := 64
-	trls := int(mat32.IntMultipleGE(float32(trgTrls), float32(ss.Sim.NData))) // 25 nominal trials per epoch
+	trls := int(mat32.IntMultipleGE(float32(trgTrls), float32(ss.Sim.NData)))
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
@@ -496,7 +502,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	for di := 0; di < ss.Sim.NData; di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*Approach)
-		justGated := mtxLy.AnyGated() // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
+		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
 		hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 		ev.InstinctAct(justGated, hasGated)
 		csGated := (justGated && !axon.PVLVHasPosUS(ctx, diu))
@@ -823,14 +829,14 @@ func (ss *Sim) MaintStats(di int) {
 		ptly := net.AxonLayerByName(lnm)
 		var mact float32
 		if ptly.Is4D() {
-			for pi := 1; pi < len(ptly.Pools); pi++ {
-				avg := ptly.Pools[pi].AvgMax.Act.Plus.Avg
+			for pi := uint32(1); pi < ptly.NPools; pi++ {
+				avg := ptly.Pool(pi, uint32(di)).AvgMax.Act.Plus.Avg
 				if avg > mact {
 					mact = avg
 				}
 			}
 		} else {
-			mact = ptly.Pools[0].AvgMax.Act.Plus.Avg
+			mact = ptly.Pool(0, uint32(di)).AvgMax.Act.Plus.Avg
 		}
 		overThr := mact > actThr
 		if overThr {

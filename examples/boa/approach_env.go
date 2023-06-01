@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/erand"
@@ -18,37 +17,40 @@ import (
 // Approach implements CS-guided approach to desired outcomes.
 // Each location contains a US which satisfies a different drive.
 type Approach struct {
-	Nm          string                      `desc:"name of environment -- Train or Test"`
-	TimeCost    float32                     `desc:"cost per unit time, subtracted from reward"`
-	NDrives     int                         `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
-	CSPerDrive  int                         `desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
-	Locations   int                         `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
-	DistMax     int                         `desc:"maximum distance in time steps to reach the US"`
-	TimeMax     int                         `desc:"maximum number of time steps represented in Time layer"`
-	AlwaysLeft  bool                        `desc:"always turn left -- zoolander style"`
-	NewStateInt int                         `desc:"interval in trials for generating a new state, only if > 0"`
-	CSTot       int                         `desc:"total number of CS's = NDrives * CSPerDrive"`
-	NYReps      int                         `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
-	PatSize     evec.Vec2i                  `desc:"size of CS patterns"`
-	Acts        []string                    `desc:"list of actions"`
-	ActMap      map[string]int              `desc:"action map of action names to indexes"`
-	NActs       int                         `desc:"number of actual represented actions -- the last action on Acts list is None -- not rendered"`
-	States      map[string]*etensor.Float32 `desc:"named states -- e.g., USs, CSs, etc"`
-	TrgPos      int                         `desc:"target position where Drive US is"`
-	Drive       int                         `desc:"current drive state"`
-	Dist        int                         `desc:"current distance"`
-	Time        int                         `desc:"current time, counting up until starting over"`
-	Pos         int                         `desc:"current position being looked at"`
-	Rew         float32                     `desc:"reward"`
-	US          int                         `desc:"US is -1 unless consumed at Dist = 0"`
-	LastUS      int                         `desc:"previous US state"`
-	StateCtr    int                         `desc:"count up for generating a new state"`
-	LastAct     int                         `desc:"last action taken"`
-	CS          int                         `desc:"current CS"`
-	LastCS      int                         `desc:"last CS -- previous trial"`
-	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
-	JustGated   bool                        `desc:"just gated on this trial"`
-	HasGated    bool                        `desc:"has gated at some point during sequence"`
+	Nm          string        `desc:"name of environment -- Train or Test"`
+	TimeCost    float32       `desc:"cost per unit time, subtracted from reward"`
+	NDrives     int           `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
+	CSPerDrive  int           `desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
+	Locations   int           `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
+	DistMax     int           `desc:"maximum distance in time steps to reach the US"`
+	TimeMax     int           `desc:"maximum number of time steps represented in Time layer"`
+	AlwaysLeft  bool          `desc:"always turn left -- zoolander style"`
+	NewStateInt int           `desc:"interval in trials for generating a new state, only if > 0"`
+	CSTot       int           `desc:"total number of CS's = NDrives * CSPerDrive"`
+	NYReps      int           `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
+	PatSize     evec.Vec2i    `desc:"size of CS patterns"`
+	Rand        erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	RndSeed     int64         `inactive:"+" desc:"random seed"`
+
+	Acts       []string                    `inactive:"+" desc:"list of actions"`
+	ActMap     map[string]int              `inactive:"+" desc:"action map of action names to indexes"`
+	NActs      int                         `view:"-" desc:"number of actual represented actions -- the last action on Acts list is None -- not rendered"`
+	States     map[string]*etensor.Float32 `view:"-" desc:"named states -- e.g., USs, CSs, etc"`
+	TrgPos     int                         `inactive:"+" desc:"target position where Drive US is"`
+	Drive      int                         `inactive:"+" desc:"current drive state"`
+	Dist       int                         `inactive:"+" desc:"current distance"`
+	Time       int                         `inactive:"+" desc:"current time, counting up until starting over"`
+	Pos        int                         `inactive:"+" desc:"current position being looked at"`
+	Rew        float32                     `inactive:"+" desc:"reward"`
+	US         int                         `inactive:"+" desc:"US is -1 unless consumed at Dist = 0"`
+	LastUS     int                         `inactive:"+" desc:"previous US state"`
+	StateCtr   int                         `inactive:"+" desc:"count up for generating a new state"`
+	LastAct    int                         `inactive:"+" desc:"last action taken"`
+	CS         int                         `inactive:"+" desc:"current CS"`
+	LastCS     int                         `inactive:"+" desc:"last CS -- previous trial"`
+	ShouldGate bool                        `inactive:"+" desc:"true if looking at correct CS for first time"`
+	JustGated  bool                        `inactive:"+" desc:"just gated on this trial"`
+	HasGated   bool                        `inactive:"+" desc:"has gated at some point during sequence"`
 }
 
 func (ev *Approach) Name() string {
@@ -79,6 +81,7 @@ func (ev *Approach) Defaults() {
 
 // Config configures the world
 func (ev *Approach) Config() {
+	ev.Rand.NewRand(ev.RndSeed)
 	ev.CSTot = ev.NDrives * ev.CSPerDrive
 	ev.ActMap = make(map[string]int)
 	for i, act := range ev.Acts {
@@ -130,10 +133,10 @@ func (ev *Approach) State(el string) etensor.Tensor {
 func (ev *Approach) NewState() {
 	uss := ev.States["USs"]
 	css := ev.States["CSs"]
-	drives := rand.Perm(ev.NDrives)
+	drives := ev.Rand.Perm(ev.NDrives, -1)
 	for l := 0; l < ev.Locations; l++ {
 		us := drives[l%ev.NDrives]
-		cs := rand.Intn(ev.CSPerDrive)
+		cs := ev.Rand.Intn(ev.CSPerDrive, -1)
 		pat := us*ev.CSPerDrive + cs
 		uss.Values[l] = float32(us)
 		css.Values[l] = float32(pat)
@@ -157,11 +160,11 @@ func (ev *Approach) NewStart() {
 	// ev.Dist = 1 + rand.Intn(ev.DistMax-1)
 	ev.Dist = ev.DistMax - 1
 	ev.Time = 0
-	ev.TrgPos = rand.Intn(ev.Locations)
+	ev.TrgPos = ev.Rand.Intn(ev.Locations, -1)
 	uss := ev.States["USs"]
 	ev.Drive = int(uss.Values[ev.TrgPos])
 	for {
-		ev.Pos = rand.Intn(ev.Locations)
+		ev.Pos = ev.Rand.Intn(ev.Locations, -1)
 		if ev.Pos != ev.TrgPos { // do not start facing target b/c clearing zaps everything
 			break
 		}
@@ -351,7 +354,7 @@ func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
 	if ev.LastAct == lt || ev.LastAct == rt {
 		return ev.LastAct
 	}
-	if ev.AlwaysLeft || erand.BoolP(.5, -1) {
+	if ev.AlwaysLeft || erand.BoolP(.5, -1, &ev.Rand) {
 		return lt
 	}
 	return rt

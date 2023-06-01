@@ -554,7 +554,7 @@ func (gp *GPU) SyncContextFmGPU() {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
-	glr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr)
 	gp.CopyContextFmStaging()
 }
@@ -665,9 +665,10 @@ func (gp *GPU) SyncLayerStateFmGPU() {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, lvr, plr)
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr, lvr, plr)
 	gp.CopyLayerStateFmStaging()
 }
 
@@ -684,11 +685,12 @@ func (gp *GPU) SyncStateFmGPU() {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 	nrar := gp.SyncRegionStruct("NeuronAvgs")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, lvr, plr, nrr, nrar)
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr, lvr, plr, nrr, nrar)
 	gp.CopyStateFmStaging()
 }
 
@@ -871,16 +873,18 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 
-	layDataN := gp.Net.NLayers() * int(gp.Net.MaxData)
-	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	maxData := int(gp.Net.MaxData)
+	layDataN := gp.Net.NLayers() * maxData
+	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
 	gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "MemCopyTo", "GatherSpikes")
 
@@ -892,14 +896,14 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 
 	gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
 	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
+		gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CycleEnd")
 	} else {
-		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
+		gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CyclePost")
 		gp.RunPipelineCmd(cmd, "SynCa", neurDataN, "CyclePost", "CycleEnd")
 	}
 
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr, nrr)
+	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr)
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -929,15 +933,17 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 
-	layDataN := gp.Net.NLayers() * int(gp.Net.MaxData)
-	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	maxData := int(gp.Net.MaxData)
+	layDataN := gp.Net.NLayers() * maxData
+	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
 	gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "MemCopyTo", "GatherSpikes")
 
@@ -954,9 +960,9 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 
 		gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
 		if gp.Ctx.Testing.IsTrue() {
-			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
+			gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CycleEnd")
 		} else {
-			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
+			gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CyclePost")
 			gp.RunPipelineCmd(cmd, "SynCa", neurDataN, "CyclePost", "CycleEnd")
 		}
 		if ci < CyclesN-1 {
@@ -964,7 +970,7 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 		}
 	}
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr)
+	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr)
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -974,8 +980,9 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 func (gp *GPU) RunCycleSeparateFuns() {
 	gp.SyncContextToGPU()
 
-	layDataN := gp.Net.NLayers() * int(gp.Net.MaxData)
-	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
+	maxData := int(gp.Net.MaxData)
+	layDataN := gp.Net.NLayers() * maxData
+	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
 	gp.RunPipelineWait("GatherSpikes", neurDataN)
@@ -987,9 +994,9 @@ func (gp *GPU) RunCycleSeparateFuns() {
 	gp.RunPipelineWait("Cycle", neurDataN)
 
 	gp.RunPipelineWait("SendSpike", neurDataN)
-	gp.RunPipelineWait("CyclePost", 1)
+	gp.RunPipelineWait("CyclePost", maxData)
 	if !gp.Ctx.Testing.IsTrue() {
-		gp.RunPipelineWait("CyclePost", 1)
+		gp.RunPipelineWait("CyclePost", maxData)
 		gp.RunPipelineWait("SynCa", neurDataN)
 	}
 	gp.SyncLayerStateFmGPU()
@@ -1032,6 +1039,7 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
@@ -1040,12 +1048,12 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 	poolDataN := len(gp.Net.Pools)
 
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
 	gp.RunPipelineCmd(cmd, "MinusPool", poolDataN, "MemCopyTo", "PoolGi")
 	gp.RunPipelineCmd(cmd, "MinusNeuron", neurDataN, "PoolGi", "MemCopyFm")
 	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr, nrr)
+	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr)
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -1085,6 +1093,7 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
@@ -1093,7 +1102,7 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	poolDataN := len(gp.Net.Pools)
 
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
 	gp.RunPipelineCmd(cmd, "PlusPool", poolDataN, "MemCopyTo", "PoolGi")
 	gp.RunPipelineCmd(cmd, "PlusNeuron", neurDataN, "PoolGi", "MemCopyFm")
@@ -1105,7 +1114,7 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	// this would put all standard computation on the GPU for entire ThetaCycle
 
 	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr, nrr)
+	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr)
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
