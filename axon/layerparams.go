@@ -814,7 +814,7 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 // note: needs to iterate over sub-pools in layer!
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool) {
 	val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
-	ctx.PVLV.VSPatch.Set(uint32(pi-1), val)
+	SetGlbDrvV(ctx, di, uint32(pi-1), GvVSPatch, val)
 }
 
 /////////////////////////////////////////////////////////////////////////
