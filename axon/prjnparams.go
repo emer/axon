@@ -314,7 +314,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 // (temporal difference), which limits learning.
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	dwt := float32(0)
-	if GlobalV(ctx, di, GvHasRew) > 0 { // reset
+	if GlbV(ctx, di, GvHasRew) > 0 { // reset
 		ract := NrnV(ctx, ri, di, GeIntMax)
 		lmax := layPool.AvgMax.GeIntMax.Plus.Max
 		if lmax > 0 {
@@ -329,9 +329,9 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		}
 		dwt = SynCaV(ctx, syni, di, Tr) * delta * ract
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
-	} else if GlobalV(ctx, di, GvACh) > 0.1 {
+	} else if GlbV(ctx, di, GvACh) > 0.1 {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
-		SetSynCaV(ctx, syni, di, DTr, GlobalV(ctx, di, GvACh)*NrnV(ctx, si, di, Burst))
+		SetSynCaV(ctx, syni, di, DTr, GlbV(ctx, di, GvACh)*NrnV(ctx, si, di, Burst))
 		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), SynCaV(ctx, syni, di, DTr))
 		SetSynCaV(ctx, syni, di, Tr, tr)
 	} else {
@@ -350,7 +350,7 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 // for the RWPredPrjn type
 func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
-	lda := GlobalV(ctx, di, GvDA)
+	lda := GlbV(ctx, di, GvDA)
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
@@ -385,7 +385,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 // for the TDRewPredPrjn type
 func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
-	lda := GlobalV(ctx, di, GvDA)
+	lda := GlbV(ctx, di, GvDA)
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
@@ -419,8 +419,8 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPoo
 		ract = 0
 	}
 
-	ach := GlobalV(ctx, di, GvACh)
-	if GlobalV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
+	ach := GlbV(ctx, di, GvACh)
+	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
 		dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * SynCaV(ctx, syni, di, Tr) * ract
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)
 		SetSynCaV(ctx, syni, di, Tr, 0.0)

@@ -686,7 +686,7 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	SetNrnV(ctx, ni, di, SSGiDend, 0)
 	SetNrnV(ctx, ni, di, GeExt, 0)
 
-	SetNrnV(ctx, ni, di, CtxtGeOrig, -glong*NrnV(ctx, ni, di, CtxtGeOrig))
+	AddNrnV(ctx, ni, di, CtxtGeOrig, -glong*NrnV(ctx, ni, di, CtxtGeOrig))
 }
 
 //gosl: end act

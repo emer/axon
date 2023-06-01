@@ -735,6 +735,11 @@ var NetworkProps = ki.Props{
 				}},
 			},
 		}},
+		{"AllGlobals", ki.Props{
+			"icon":        "file-sheet",
+			"desc":        "Shows the values of all network Global variables, for debugging purposes",
+			"show-return": true,
+		}},
 		{"AllPrjnScales", ki.Props{
 			"icon":        "file-sheet",
 			"desc":        "AllPrjnScales returns a listing of all PrjnScale parameters in the Network in all Layers, Recv projections.  These are among the most important and numerous of parameters (in larger networks) -- this helps keep track of what they all are set to.",

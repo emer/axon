@@ -131,11 +131,11 @@ func (ly *Layer) BetweenLayerGiMax(net *Network, di uint32, maxGi float32, layId
 	return maxGi
 }
 
-func (ly *Layer) PulvinarDriver(ctx *Context, ni, di uint32) (drvGe, nonDrvPct float32) {
+func (ly *Layer) PulvinarDriver(ctx *Context, lni, di uint32) (drvGe, nonDrvPct float32) {
 	dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
 	drvMax := dly.Pool(0, di).AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-	burst := NrnV(ctx, uint32(dly.NeurStIdx)+ni, di, Burst)
+	burst := NrnV(ctx, uint32(dly.NeurStIdx)+lni, di, Burst)
 	drvGe = ly.Params.Pulv.DriveGe(burst)
 	return
 }
@@ -146,7 +146,7 @@ func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) 
 	drvGe := float32(0)
 	nonDrvPct := float32(0)
 	if ly.LayerType() == PulvinarLayer {
-		drvGe, nonDrvPct = ly.PulvinarDriver(ctx, ni, di)
+		drvGe, nonDrvPct = ly.PulvinarDriver(ctx, ni-ly.NeurStIdx, di)
 	}
 
 	saveVal := ly.Params.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrvPct)
@@ -461,10 +461,11 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			hasRew := (GlobalV(ctx, di, GvHasRew) > 0)
-			giveUp := (GlobalV(ctx, di, GvLHbGiveUp) > 0)
+			hasRew := (GlbV(ctx, di, GvHasRew) > 0)
+			giveUp := (GlbV(ctx, di, GvLHbGiveUp) > 0)
 			if hasRew || giveUp {
 				ly.DecayState(ctx, di, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+				ly.InitPrjnGBuffs(ctx)
 			}
 		}
 	}

@@ -11,6 +11,7 @@
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
+[[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
 [[vk::binding(0, 3)]] RWStructuredBuffer<SynMemBlock> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 3)]] RWStructuredBuffer<SynMemBlock> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 
@@ -26,7 +27,7 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(5, 2)]] StructuredBuffer<float> Exts;  // [In / Out Layers][Neurons][Data]
+[[vk::binding(6, 2)]] StructuredBuffer<float> Exts;  // [In / Out Layers][Neurons][Data]
 
 
 void ApplyExt2(in Context ctx, in LayerParams ly, uint ni, uint di) {

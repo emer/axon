@@ -29,18 +29,18 @@ func _() {
 	_ = x[VmDend-13]
 	_ = x[ISI-14]
 	_ = x[ISIAvg-15]
-	_ = x[CaSyn-16]
-	_ = x[CaSpkM-17]
-	_ = x[CaSpkP-18]
-	_ = x[CaSpkD-19]
+	_ = x[CaSpkP-16]
+	_ = x[CaSpkD-17]
+	_ = x[CaSyn-18]
+	_ = x[CaSpkM-19]
 	_ = x[CaSpkPM-20]
 	_ = x[CaLrn-21]
 	_ = x[NrnCaM-22]
 	_ = x[NrnCaP-23]
 	_ = x[NrnCaD-24]
 	_ = x[CaDiff-25]
-	_ = x[RLRate-26]
-	_ = x[Attn-27]
+	_ = x[Attn-26]
+	_ = x[RLRate-27]
 	_ = x[SpkMaxCa-28]
 	_ = x[SpkMax-29]
 	_ = x[SpkPrv-30]
@@ -96,9 +96,9 @@ func _() {
 	_ = x[NeuronVarsN-80]
 }
 
-const _NeuronVars_name = "SpikeSpikedActActIntActMActPExtTargetGeGiGkInetVmVmDendISIISIAvgCaSynCaSpkMCaSpkPCaSpkDCaSpkPMCaLrnNrnCaMNrnCaPNrnCaDCaDiffRLRateAttnSpkMaxCaSpkMaxSpkPrvSpkSt1SpkSt2GeNoisePGeNoiseGiNoisePGiNoiseGeExtGeRawGeSynGiRawGiSynGeIntGeIntMaxGiIntGModRawGModSynGMaintRawGMaintSynSSGiSSGiDendGakMahpNSahpCaSahpNGknaMedGknaSlowGnmdaSynGnmdaGnmdaMaintGnmdaLrnNmdaCaGgabaBGABABGABABxGvgccVgccMVgccHVgccCaVgccCaIntSKCaInSKCaRSKCaMGskBurstBurstPrvCtxtGeCtxtGeRawCtxtGeOrigNrnFlagsNeuronVarsN"
+const _NeuronVars_name = "SpikeSpikedActActIntActMActPExtTargetGeGiGkInetVmVmDendISIISIAvgCaSpkPCaSpkDCaSynCaSpkMCaSpkPMCaLrnNrnCaMNrnCaPNrnCaDCaDiffAttnRLRateSpkMaxCaSpkMaxSpkPrvSpkSt1SpkSt2GeNoisePGeNoiseGiNoisePGiNoiseGeExtGeRawGeSynGiRawGiSynGeIntGeIntMaxGiIntGModRawGModSynGMaintRawGMaintSynSSGiSSGiDendGakMahpNSahpCaSahpNGknaMedGknaSlowGnmdaSynGnmdaGnmdaMaintGnmdaLrnNmdaCaGgabaBGABABGABABxGvgccVgccMVgccHVgccCaVgccCaIntSKCaInSKCaRSKCaMGskBurstBurstPrvCtxtGeCtxtGeRawCtxtGeOrigNrnFlagsNeuronVarsN"
 
-var _NeuronVars_index = [...]uint16{0, 5, 11, 14, 20, 24, 28, 31, 37, 39, 41, 43, 47, 49, 55, 58, 64, 69, 75, 81, 87, 94, 99, 105, 111, 117, 123, 129, 133, 141, 147, 153, 159, 165, 173, 180, 188, 195, 200, 205, 210, 215, 220, 225, 233, 238, 245, 252, 261, 270, 274, 282, 285, 290, 296, 301, 308, 316, 324, 329, 339, 347, 353, 359, 364, 370, 375, 380, 385, 391, 400, 406, 411, 416, 419, 424, 432, 438, 447, 457, 465, 476}
+var _NeuronVars_index = [...]uint16{0, 5, 11, 14, 20, 24, 28, 31, 37, 39, 41, 43, 47, 49, 55, 58, 64, 70, 76, 81, 87, 94, 99, 105, 111, 117, 123, 127, 133, 141, 147, 153, 159, 165, 173, 180, 188, 195, 200, 205, 210, 215, 220, 225, 233, 238, 245, 252, 261, 270, 274, 282, 285, 290, 296, 301, 308, 316, 324, 329, 339, 347, 353, 359, 364, 370, 375, 380, 385, 391, 400, 406, 411, 416, 419, 424, 432, 438, 447, 457, 465, 476}
 
 func (i NeuronVars) String() string {
 	if i < 0 || i >= NeuronVars(len(_NeuronVars_index)-1) {

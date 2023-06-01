@@ -331,7 +331,7 @@ func NetActTest(t *testing.T, gpu bool) {
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
 		// testNet.GPU.RecFunTimes = true // NVIDIA doesn't work with this or nothing
-		// testNet.GPU.CycleByCycle = true // always works with this
+		testNet.GPU.CycleByCycle = true // always works with this -- now mac is failing without this!
 	}
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
@@ -538,8 +538,8 @@ func NetDebugAct(t *testing.T, printVals bool, gpu bool, nData int, initWts bool
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
-		testNet.GPU.RecFunTimes = true
-		// testNet.GPU.CycleByCycle = true // key for printing results cycle-by-cycle
+		// testNet.GPU.RecFunTimes = true
+		testNet.GPU.CycleByCycle = true // key for printing results cycle-by-cycle
 	}
 
 	// these control what is printed.
@@ -1272,28 +1272,28 @@ func TestGlobalIdxs(t *testing.T) {
 
 	for vv := GvRew; vv < GvVtaDA; vv++ {
 		for di := uint32(0); di < nData; di++ {
-			SetGlobalV(ctx, di, vv, val)
+			SetGlbV(ctx, di, vv, val)
 			val += 1
 		}
 	}
 	for vv := GvVtaDA; vv < GvUSneg; vv++ {
 		for vt := GvVtaRaw; vt < GlobalVTATypeN; vt++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlobalVTA(ctx, di, vt, vv, val)
+				SetGlbVTA(ctx, di, vt, vv, val)
 				val += 1
 			}
 		}
 	}
 	for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
 		for di := uint32(0); di < nData; di++ {
-			SetGlobalUSneg(ctx, ui, di, val)
+			SetGlbUSneg(ctx, di, ui, val)
 			val += 1
 		}
 	}
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {
 		for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlobalDriveV(ctx, di, ui, vv, val)
+				SetGlbDrvV(ctx, di, ui, vv, val)
 				val += 1
 			}
 		}

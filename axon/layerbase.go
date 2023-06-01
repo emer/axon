@@ -522,13 +522,13 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx, di int) float32 {
 		lvi := varIdx - (ly.UnitVarNum() - NNeuronLayerVars)
 		switch lvi {
 		case 0:
-			return GlobalV(ctx, uint32(di), GvDA)
+			return GlbV(ctx, uint32(di), GvDA)
 		case 1:
-			return GlobalV(ctx, uint32(di), GvACh)
+			return GlbV(ctx, uint32(di), GvACh)
 		case 2:
-			return GlobalV(ctx, uint32(di), GvNE)
+			return GlbV(ctx, uint32(di), GvNE)
 		case 3:
-			return GlobalV(ctx, uint32(di), GvSer)
+			return GlbV(ctx, uint32(di), GvSer)
 		case 4:
 			pl := ly.SubPool(ctx, ni, uint32(di))
 			return float32(pl.Gated)

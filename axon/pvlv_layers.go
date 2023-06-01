@@ -77,17 +77,17 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay3Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
 
-	maint := lp.MaintFmNotMaint(GlobalV(ctx, di, GvNotMaint))
+	maint := lp.MaintFmNotMaint(GlbV(ctx, di, GvNotMaint))
 	maxSrcAct *= (1.0 - maint*lp.MaintInhib) // todo: should this affect everything, not just src?
 
 	ach := maxSrcAct
 
-	if GlobalV(ctx, di, GvRew) > 0 {
-		if GlobalV(ctx, di, GvHasRew) > 0 {
+	if GlbV(ctx, di, GvRew) > 0 {
+		if GlbV(ctx, di, GvHasRew) > 0 {
 			ach = 1
 		}
 	} else {
-		ach = mat32.Max(ach, GlobalV(ctx, di, GvUrgency))
+		ach = mat32.Max(ach, GlbV(ctx, di, GvUrgency))
 	}
 	return ach
 }

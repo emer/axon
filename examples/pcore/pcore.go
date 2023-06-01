@@ -503,6 +503,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 
 // ApplyPVLV applies PVLV reward inputs
 func (ss *Sim) ApplyPVLV(trial int) {
+	ctx := &ss.Context
 	ss.Context.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	if ss.Context.Mode == etime.Test {
 		ss.Context.PVLV.Urgency.Reset()
@@ -510,13 +511,13 @@ func (ss *Sim) ApplyPVLV(trial int) {
 
 	switch trial {
 	case 0:
-		ss.Context.NeuroMod.SetRew(0, false) // no rew
-		ss.Context.NeuroMod.ACh = 0
+		axon.NeuroModSetRew(ctx, 0, false) // no rew
+		axon.SetGlbV(ctx, di, axon.GvACh, 0)
 	case 1:
-		ss.Context.NeuroMod.SetRew(0, false) // no rew
-		ss.Context.NeuroMod.ACh = 1
+		axon.NeuroModSetRew(ctx, 0, false) // no rew
+		axon.SetGlbV(ctx, di, axon.GvACh, 1)
 	case 2:
-		ss.Context.NeuroMod.ACh = 1
+		axon.SetGlbV(ctx, di, axon.GvACh, 1)
 		ss.GatedRew()
 	}
 }

@@ -17,7 +17,7 @@ import (
 //go:embed shaders/*.spv
 var content embed.FS
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx rand.go avgmax.go neuromod.go pvlv.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_hlsl
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx rand.go avgmax.go neuromod.go pvlv.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_hlsl
 
 // Full vars code -- each gpu_*.hlsl uses a subset
 
@@ -43,7 +43,8 @@ var content embed.FS
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
 [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
-[[vk::binding(5, 2)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons][Data]
+[[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
+[[vk::binding(6, 2)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons][Data]
 
 // There might be a limit of 8 buffers per set -- can't remember..
 
@@ -178,6 +179,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	gp.Structs.AddStruct("Pools", int(unsafe.Sizeof(Pool{})), len(gp.Net.Pools), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.AddStruct("LayVals", int(unsafe.Sizeof(LayerVals{})), len(gp.Net.LayVals), vgpu.Storage, vgpu.ComputeShader)
+	gp.Structs.Add("Globals", vgpu.Float32, len(gp.Net.Globals), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("Exts", vgpu.Float32, len(gp.Net.Exts), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Syns.Add("Synapses", vgpu.Float32, len(gp.Net.Synapses), vgpu.Storage, vgpu.ComputeShader)
@@ -252,6 +254,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	vars.BindDynValIdx(2, "NeuronAvgs", 0)
 	vars.BindDynValIdx(2, "Pools", 0)
 	vars.BindDynValIdx(2, "LayVals", 0)
+	vars.BindDynValIdx(2, "Globals", 0)
 	vars.BindDynValIdx(2, "Exts", 0)
 
 	vars.BindDynValIdx(3, "Synapses", 0)
@@ -343,7 +346,9 @@ func (gp *GPU) CopyContextToStaging() {
 		return
 	}
 	_, ctxv, _ := gp.Structs.ValByIdxTry("Ctx", 0)
+	_, glbv, _ := gp.Structs.ValByIdxTry("Globals", 0)
 	ctxv.CopyFromBytes(unsafe.Pointer(gp.Ctx))
+	glbv.CopyFromBytes(unsafe.Pointer(&gp.Net.Globals[0]))
 }
 
 // SyncContextToGPU copies current context to GPU from CPU.
@@ -534,8 +539,10 @@ func (gp *GPU) CopyContextFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, cxv, _ := gp.Structs.ValByIdxTry("Ctx", 0)
-	cxv.CopyToBytes(unsafe.Pointer(gp.Ctx))
+	_, ctxv, _ := gp.Structs.ValByIdxTry("Ctx", 0)
+	_, glbv, _ := gp.Structs.ValByIdxTry("Globals", 0)
+	ctxv.CopyToBytes(unsafe.Pointer(gp.Ctx))
+	glbv.CopyToBytes(unsafe.Pointer(&gp.Net.Globals[0]))
 }
 
 // SyncContextFmGPU copies Context from GPU to CPU.
@@ -547,7 +554,8 @@ func (gp *GPU) SyncContextFmGPU() {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr)
+	glr := gp.SyncRegionStruct("Ctx")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr)
 	gp.CopyContextFmStaging()
 }
 

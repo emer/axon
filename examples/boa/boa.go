@@ -374,13 +374,13 @@ func (ss *Sim) InitRndSeed() {
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
-	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
+	// ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
-	trgTrls := ev.TimeMax * 10                                                // 10 sequences, 5 extra time steps per sequence
+	trgTrls := 64
 	trls := int(mat32.IntMultipleGE(float32(trgTrls), float32(ss.Sim.NData))) // 25 nominal trials per epoch
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTimeInc(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	// note: not using Test mode at this point, so just commenting all this out
 	// in case there is a future need for it.
@@ -497,10 +497,10 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*Approach)
 		justGated := mtxLy.AnyGated() // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
-		hasGated := axon.GlobalV(ctx, diu, axon.GvVSMatrixHasGated) > 0
+		hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 		ev.InstinctAct(justGated, hasGated)
-		csGated := (justGated && !ctx.PVLV.HasPosUS(ctx, diu))
-		deciding := !csGated && !hasGated && (axon.GlobalV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
+		csGated := (justGated && !axon.PVLVHasPosUS(ctx, diu))
+		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
 		ss.Stats.SetFloat32Di("Deciding", di, bools.ToFloat32(deciding))
 		if csGated || deciding {
 			act := "CSGated"
@@ -577,6 +577,7 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < uint32(ss.Sim.NData); di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*Approach)
+		ev.Step()
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
 			itsr := ev.State(lnm)
@@ -686,7 +687,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetFloat32("Drive", float32(ev.Drive))
 	ss.Stats.SetFloat32("CS", float32(ev.CS))
 	ss.Stats.SetFloat32("US", float32(ev.US))
-	ss.Stats.SetFloat32("HasRew", axon.GlobalV(ctx, uint32(di), axon.GvHasRew))
+	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, uint32(di), axon.GvHasRew))
 	ss.Stats.SetString("TrialName", "trl")
 	if di == 0 {
 		ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
@@ -702,25 +703,25 @@ func (ss *Sim) TrialStats(di int) {
 	diu := uint32(di)
 	ctx := &ss.Context
 	nan := math.NaN()
-	if ctx.PVLV.HasPosUS(ctx, diu) {
-		ss.Stats.SetFloat32("DA", axon.GlobalV(ctx, diu, axon.GvDA))
-		ss.Stats.SetFloat32("RewPred", axon.GlobalV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
+	if axon.PVLVHasPosUS(ctx, diu) {
+		ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
+		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat("DA_NR", nan)
 		ss.Stats.SetFloat("RewPred_NR", nan)
-		ss.Stats.SetFloat32("Rew", axon.GlobalV(ctx, diu, axon.GvRew))
+		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
 	} else {
-		ss.Stats.SetFloat32("DA_NR", axon.GlobalV(ctx, diu, axon.GvDA))
-		ss.Stats.SetFloat32("RewPred_NR", axon.GlobalV(ctx, diu, axon.GvRewPred))
+		ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
+		ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
 		ss.Stats.SetFloat("DA", nan)
 		ss.Stats.SetFloat("RewPred", nan)
 		ss.Stats.SetFloat("Rew", nan)
 	}
 
-	ss.Stats.SetFloat32("DipSum", axon.GlobalV(ctx, diu, axon.GvLHbDipSum))
-	ss.Stats.SetFloat32("GiveUp", axon.GlobalV(ctx, diu, axon.GvLHbGiveUp))
-	ss.Stats.SetFloat32("Urge", axon.GlobalV(ctx, diu, axon.GvUrgency))
-	ss.Stats.SetFloat32("ACh", axon.GlobalV(ctx, diu, axon.GvACh))
-	ss.Stats.SetFloat32("AChRaw", axon.GlobalV(ctx, diu, axon.GvAChRaw))
+	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
+	ss.Stats.SetFloat32("Urge", axon.GlbV(ctx, diu, axon.GvUrgency))
+	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
+	ss.Stats.SetFloat32("AChRaw", axon.GlbV(ctx, diu, axon.GvAChRaw))
 
 	var allGood float64
 	agN := 0
@@ -752,11 +753,6 @@ func (ss *Sim) TrialStats(di int) {
 		allGood /= float64(agN)
 	}
 	ss.Stats.SetFloat("AllGood", allGood)
-
-	if ctx.PVLV.HasPosUS(ctx, diu) { // got an outcome -- skip to next Sequence
-		trl := ss.Loops.GetLoop(ctx.Mode, etime.Trial)
-		trl.SkipToMax()
-	}
 }
 
 // GatedStats updates the gated states
@@ -764,11 +760,11 @@ func (ss *Sim) GatedStats(di int) {
 	ctx := &ss.Context
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*Approach)
-	justGated := axon.GlobalV(ctx, diu, axon.GvVSMatrixJustGated) > 0
-	hasGated := axon.GlobalV(ctx, diu, axon.GvVSMatrixHasGated) > 0
+	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
+	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 	nan := mat32.NaN()
 	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
-	ss.Stats.SetString("ActAction", ss.Stats.StringDi("ActAction", di))
+	ss.Stats.SetString("NetAction", ss.Stats.StringDi("NetAction", di))
 	ss.Stats.SetString("Instinct", ss.Stats.StringDi("Instinct", di))
 	ss.Stats.SetFloat("ActMatch", ss.Stats.FloatDi("ActMatch", di))
 	ss.Stats.SetString("ActAction", ss.Stats.StringDi("ActAction", di))
@@ -784,7 +780,7 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("WrongCSGate", nan)
 	ss.Stats.SetFloat32("AChShould", nan)
 	ss.Stats.SetFloat32("AChShouldnt", nan)
-	hasPos := ctx.PVLV.HasPosUS(ctx, diu)
+	hasPos := axon.PVLVHasPosUS(ctx, diu)
 	if justGated {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(!ev.PosHasDriveUS()))
 	}
@@ -803,9 +799,9 @@ func (ss *Sim) GatedStats(di int) {
 	}
 	// We get get ACh when new CS or Rew
 	if hasPos || ev.LastCS != ev.CS {
-		ss.Stats.SetFloat32("AChShould", axon.GlobalV(ctx, diu, axon.GvACh))
+		ss.Stats.SetFloat32("AChShould", axon.GlbV(ctx, diu, axon.GvACh))
 	} else {
-		ss.Stats.SetFloat32("AChShouldnt", axon.GlobalV(ctx, diu, axon.GvACh))
+		ss.Stats.SetFloat32("AChShouldnt", axon.GlbV(ctx, diu, axon.GvACh))
 	}
 }
 
@@ -1004,10 +1000,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 			for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 				diu := uint32(di)
 				ss.Stats.SetInt("Trial", trl+di)
-				ss.StatCounters(di)
 				ss.TrialStats(di)
+				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
-				if mode == etime.Train && !ctx.PVLV.HasPosUS(ctx, diu) && axon.GlobalV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
+				if mode == etime.Train && !axon.PVLVHasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
 				ss.Logs.Log(etime.Debug, etime.Trial)

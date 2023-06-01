@@ -7,11 +7,19 @@ package axon
 import "github.com/goki/ki/kit"
 
 //go:generate stringer -type=GlobalVars
+//go:generate stringer -type=GlobalVTAType
 
 var KiT_GlobalVars = kit.Enums.AddEnum(GlobalVarsN, kit.NotBitFlag, nil)
 
 func (ev GlobalVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
 func (ev *GlobalVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+var KiT_GlobalVTAType = kit.Enums.AddEnum(GlobalVTATypeN, kit.NotBitFlag, nil)
+
+func (ev GlobalVTAType) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *GlobalVTAType) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+//gosl: start globals
 
 // GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc
 // including the state for the PVLV phasic dopamine model.
@@ -83,6 +91,9 @@ const (
 
 	// HasRewPrev is state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial
 	GvHasRewPrev
+
+	// HasPosUSPrev is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial
+	GvHasPosUSPrev
 
 	// HasPosUS is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial
 	GvHasPosUS
@@ -194,3 +205,5 @@ const (
 
 	GlobalVTATypeN
 )
+
+//gosl: end globals
