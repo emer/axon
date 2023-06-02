@@ -913,9 +913,11 @@ func (gp *GPU) RunCycles() {
 	cmd := gp.RunCyclesCmd()
 	gnm := "GPU:Cycles"
 	gp.Net.FunTimerStart(gnm)
+	stCtx := *gp.Ctx
 	gp.CopyContextToStaging()
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.CopyLayerStateFmStaging()
+	*gp.Ctx = stCtx
 	gp.Net.FunTimerStop(gnm)
 }
 
