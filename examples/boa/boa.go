@@ -74,9 +74,9 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NData = 1
-	ss.EnvSameSeed = false
+	ss.EnvSameSeed = false // set to true to test ndata
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 5
+	ss.PctCortexStEpc = 10
 	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
 	ss.PCAInterval = 10
@@ -329,6 +329,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
+	net.SetNThreads(4)
 	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
@@ -480,6 +481,14 @@ func (ss *Sim) ConfigLoops() {
 	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
+		for _, m := range man.Stacks {
+			m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
+				ss.NetViewCounters()
+			})
+			m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
+				ss.NetViewCounters()
+			})
+		}
 	}
 
 	if Debug {
@@ -693,10 +702,16 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetFloat32("CS", float32(ev.CS))
 	ss.Stats.SetFloat32("US", float32(ev.US))
 	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, uint32(di), axon.GvHasRew))
-	ss.Stats.SetString("TrialName", "trl")
-	if di == 0 {
-		ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
+	ss.Stats.SetString("TrialName", "trl") // todo: could have dist, US etc
+}
+
+func (ss *Sim) NetViewCounters() {
+	if ss.GUI.ViewUpdt.View == nil {
+		return
 	}
+	di := ss.GUI.ViewUpdt.View.Di
+	ss.StatCounters(di)
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -997,7 +1012,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 	switch {
 	case time == etime.Cycle:
-		row = ss.Stats.Int("Cycle")
+		return /// not doing cycle-level logging -- too slow for gpu in general
+		// row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
 		if mode == etime.Train {
 			trl := ss.Loops.GetLoop(mode, etime.Trial).Counter.Cur

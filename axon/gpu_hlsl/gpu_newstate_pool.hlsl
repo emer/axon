@@ -49,24 +49,15 @@ void InitPrjnGBuffs(in Context ctx, in PrjnParams pj) {
 	}
 }
 
-void NewStateNeuron(in Context ctx, in LayerParams ly, uint ni, uint di, in LayerVals vals) {
-	ly.NewStateNeuron(ctx, ni, di, vals);
-}
-
 void NewState2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout LayerVals vals) {
 	ly.NewStatePool(ctx, pl);
 	if (pl.IsLayPool == 0) {
 		return;
 	}
 	ly.NewStateLayer(ctx, pl, vals);
-	for (uint lni = pl.StIdx; lni < pl.EdIdx; lni++) {
-		NewStateNeuron(ctx, ly, lni + ly.Idxs.NeurSt, di, vals);
-	}
-	// if (ly.Act.Decay.Glong != 0) { // clear pipeline of incoming spikes, assuming time has passed
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
 		InitPrjnGBuffs(ctx, Prjns[ly.Idxs.RecvSt + pi]);
 	}
-	// }
 }
 
 void NewState(in Context ctx, uint di, inout Pool pl) {

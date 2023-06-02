@@ -98,8 +98,8 @@ void CyclePost(inout Context ctx, in LayerParams ly, int li, uint di) {
 	CyclePost2(ctx, ly, uint(li), di, LayVals[ly.Idxs.ValsIdx(di)], Pools[ly.Idxs.PoolIdx(0, di)]);
 }
 
-[numthreads(1, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // todo: iterate over global Data parallel
+[numthreads(64, 1, 1)]
+void main(uint3 idx : SV_DispatchThreadID) {
 	if (idx.x >= Ctx[0].NetIdxs.NData) {
 		return;
 	}

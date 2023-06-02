@@ -318,6 +318,19 @@ func (ly *Layer) NewState(ctx *Context) {
 	ly.InitPrjnGBuffs(ctx)
 }
 
+// NewStateNeurons only calls the neurons part of new state -- for misbehaving GPU
+func (ly *Layer) NewStateNeurons(ctx *Context) {
+	nn := ly.NNeurons
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		vals := ly.LayerVals(di)
+		for lni := uint32(0); lni < nn; lni++ {
+			ni := ly.NeurStIdx + lni
+			// note: this calls the basic neuron-level DecayState
+			ly.Params.NewStateNeuron(ctx, ni, di, vals)
+		}
+	}
+}
+
 // DecayState decays activation state by given proportion
 // (default decay values are ly.Params.Acts.Decay.Act, Glong)
 func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) {

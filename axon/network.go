@@ -86,15 +86,18 @@ func (nt *Network) UpdateParams() {
 // properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
 	nt.NData = ctx.NetIdxs.NData
-	if nt.GPU.On {
-		nt.GPU.RunNewState()
-		return
-	}
+	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
+	// 	nt.GPU.RunNewState()
+	// 	return
+	// }
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
 		ly.NewState(ctx)
+	}
+	if nt.GPU.On {
+		nt.GPU.SyncStateGBufToGPU()
 	}
 }
 

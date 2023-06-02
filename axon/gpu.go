@@ -203,7 +203,8 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
 	gp.Sys.NewComputePipelineEmbed("CyclePost", content, "shaders/gpu_cyclepost.spv")
 
-	gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
+	gp.Sys.NewComputePipelineEmbed("NewStatePool", content, "shaders/gpu_newstate_pool.spv")
+	gp.Sys.NewComputePipelineEmbed("NewStateNeuron", content, "shaders/gpu_newstate_neuron.spv")
 	gp.Sys.NewComputePipelineEmbed("MinusPool", content, "shaders/gpu_minuspool.spv")
 	gp.Sys.NewComputePipelineEmbed("MinusNeuron", content, "shaders/gpu_minusneuron.spv")
 	gp.Sys.NewComputePipelineEmbed("PlusStart", content, "shaders/gpu_plusstart.spv")
@@ -216,6 +217,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("ApplyExts", content, "shaders/gpu_applyext.spv")
 
 	gp.Sys.NewEvent("MemCopyTo")
+	gp.Sys.NewEvent("MemCopyTo2")
 	gp.Sys.NewEvent("MemCopyFm")
 	gp.Sys.NewEvent("CycleEnd")
 	gp.Sys.NewEvent("CycleInc")
@@ -460,6 +462,19 @@ func (gp *GPU) SyncStateToGPU() {
 	gp.SyncMemToGPU()
 }
 
+// SyncStateGBufToGPU copies LayVals, Pools, Neurons, GBuf state to GPU
+// this is typically sufficient for most syncing --
+// only missing the Synapses which must be copied separately.
+// Calls SyncMemToGPU -- use when this is the only copy taking place.
+func (gp *GPU) SyncStateGBufToGPU() {
+	if !gp.On {
+		return
+	}
+	gp.CopyStateToStaging()
+	gp.CopyGBufToStaging()
+	gp.SyncMemToGPU()
+}
+
 // SyncAllToGPU copies LayerVals, Pools, Neurons, Synapses to GPU.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
 func (gp *GPU) SyncAllToGPU() {
@@ -497,10 +512,8 @@ func (gp *GPU) SyncSynapsesToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// SyncGBufToGPU copies the GBuf and GSyns memory to the GPU.
-// This is a temporary measure to be replaced with a simple kernel to init gbuf,
-// needed for InitActs.
-func (gp *GPU) SyncGBufToGPU() {
+// CopyGBufToStaging copies the GBuf and GSyns memory to staging.
+func (gp *GPU) CopyGBufToStaging() {
 	if !gp.On {
 		return
 	}
@@ -508,6 +521,14 @@ func (gp *GPU) SyncGBufToGPU() {
 	gbv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGBuf[0]))
 	_, gsv, _ := gp.Syns.ValByIdxTry("GSyns", 0)
 	gsv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGSyns[0]))
+}
+
+// SyncGBufToGPU copies the GBuf and GSyns memory to the GPU.
+func (gp *GPU) SyncGBufToGPU() {
+	if !gp.On {
+		return
+	}
+	gp.CopyGBufToStaging()
 	gp.SyncMemToGPU()
 }
 
@@ -816,8 +837,8 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 	glr := gp.SyncRegionStruct("Globals")
 	gp.StartRunCmd(cmd)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, exr, cxr, glr)
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "ApplyExts", neurDataN, "MemCopyTo", "")
+	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo2")
+	gp.RunPipelineCmd(cmd, "ApplyExts", neurDataN, "MemCopyTo2", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -1005,8 +1026,33 @@ func (gp *GPU) RunCycleSeparateFuns() {
 // ThetaCycle trial.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunNewState() {
+	// todo: we're not actually calling this now, due to bug in NewStateNeuron
+	cmd := gp.RunNewStateCmd()
+	gnm := "GPU:NewState"
+	gp.Net.FunTimerStart(gnm)
+	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Net.FunTimerStop(gnm)
+}
+
+// RunNewStateCmd returns the commands to
+// run the NewState shader to update variables
+// at the start of a new trial.
+func (gp *GPU) RunNewStateCmd() vk.CommandBuffer {
+	cnm := "RunNewState"
+	cmd, err := gp.Sys.CmdBuffByNameTry(cnm)
+	if err == nil {
+		return cmd
+	}
+	cmd = gp.Sys.NewCmdBuff(cnm)
+
+	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
 	poolDataN := len(gp.Net.Pools)
-	gp.RunPipelineWait("NewState", poolDataN)
+
+	gp.StartRunCmd(cmd)
+	gp.RunPipelineCmd(cmd, "NewStatePool", poolDataN, "", "PoolGi")
+	gp.RunPipelineCmd(cmd, "NewStateNeuron", neurDataN, "PoolGi", "") // todo: this has NrnV read = 0 bug
+	gp.Sys.ComputeCmdEndCmd(cmd)
+	return cmd
 }
 
 // RunMinusPhase runs the MinusPhase shader to update snapshot variables
