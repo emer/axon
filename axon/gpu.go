@@ -6,7 +6,6 @@ package axon
 
 import (
 	"embed"
-	"log"
 	"unsafe"
 
 	"github.com/goki/gi/oswin"
@@ -55,11 +54,11 @@ var content embed.FS
 [[vk::binding(3, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons][Data]
 
 
-Set: 0	Params
+Set: 0
     Role: Storage
         Var: 0:	Layers	Struct[4]	(size: 1520)	Vals: 1
         Var: 1:	Prjns	Struct[5]	(size: 352)	Vals: 1
-Set: 1	Idxs
+Set: 1
     Role: Storage
         Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Vals: 1
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Vals: 1
@@ -67,15 +66,16 @@ Set: 1	Idxs
         Var: 3:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
         Var: 4:	RecvCon	Struct[281]	(size: 16)	Vals: 1
         Var: 5:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
-Set: 2	Structs
+Set: 2
     Role: Storage
-        Var: 0:	Ctx	Struct	(size: 880)	Vals: 1
-        Var: 1:	Neurons	Float32[233536]	(size: 4)	Vals: 1
-        Var: 2:	NeuronAvgs	Float32[890]	(size: 4)	Vals: 1
+        Var: 0:	Ctx	Struct	(size: 496)	Vals: 1
+        Var: 1:	Neurons	Float32[227840]	(size: 4)	Vals: 1
+        Var: 2:	NeuronAvgs	Float32[1246]	(size: 4)	Vals: 1
         Var: 3:	Pools	Struct[64]	(size: 1040)	Vals: 1
-        Var: 4:	LayVals	Struct[64]	(size: 128)	Vals: 1
-        Var: 5:	Exts	Float32[800]	(size: 4)	Vals: 1
-Set: 3	Syns
+        Var: 4:	LayVals	Struct[64]	(size: 80)	Vals: 1
+        Var: 5:	Globals	Float32[976]	(size: 4)	Vals: 1
+        Var: 6:	Exts	Float32[800]	(size: 4)	Vals: 1
+Set: 3
     Role: Storage
         Var: 0:	Synapses	Float32[64960]	(size: 4)	Vals: 1
         Var: 1:	SynapseCas	Float32[1455104]	(size: 4)	Vals: 1
@@ -811,10 +811,7 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 
 	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
 
-	exr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Exts", 0)
-	if err != nil {
-		log.Println(err)
-	}
+	exr := gp.SyncRegionStruct("Exts")
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
 	gp.StartRunCmd(cmd)

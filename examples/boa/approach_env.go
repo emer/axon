@@ -35,7 +35,7 @@ type Approach struct {
 	Acts       []string                    `inactive:"+" desc:"list of actions"`
 	ActMap     map[string]int              `inactive:"+" desc:"action map of action names to indexes"`
 	NActs      int                         `view:"-" desc:"number of actual represented actions -- the last action on Acts list is None -- not rendered"`
-	States     map[string]*etensor.Float32 `view:"-" desc:"named states -- e.g., USs, CSs, etc"`
+	States     map[string]*etensor.Float32 `desc:"named states -- e.g., USs, CSs, etc"`
 	TrgPos     int                         `inactive:"+" desc:"target position where Drive US is"`
 	Drive      int                         `inactive:"+" desc:"current drive state"`
 	Dist       int                         `inactive:"+" desc:"current distance"`

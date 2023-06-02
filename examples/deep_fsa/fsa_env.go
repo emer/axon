@@ -18,6 +18,8 @@ import (
 type FSAEnv struct {
 	Nm         string          `desc:"name of this environment"`
 	Dsc        string          `desc:"description of this environment"`
+	Rand       erand.SysRand   `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	RndSeed    int64           `inactive:"+" desc:"random seed"`
 	TMat       etensor.Float64 `view:"no-inline" desc:"transition matrix, which is a square NxN tensor with outer dim being current state and inner dim having probability of transitioning to that state"`
 	Labels     etensor.String  `desc:"transition labels, one for each transition cell in TMat matrix"`
 	AState     env.CurPrvInt   `desc:"automaton state within FSA that we're in"`
@@ -117,6 +119,7 @@ func (ev *FSAEnv) String() string {
 }
 
 func (ev *FSAEnv) Init(run int) {
+	ev.Rand.NewRand(ev.RndSeed)
 	ev.Run.Scale = env.Run
 	ev.Epoch.Scale = env.Epoch
 	ev.Tick.Scale = env.Tick
@@ -141,7 +144,7 @@ func (ev *FSAEnv) NextState() {
 	ri := ev.AState.Cur * nst
 	ps := ev.TMat.Values[ri : ri+nst]
 	ls := ev.Labels.Values[ri : ri+nst]
-	nxt := erand.PChoose64(ps, -1) // next state chosen at random
+	nxt := erand.PChoose64(ps, -1, &ev.Rand) // next state chosen at random
 	ev.NextStates.Set1D(0, nxt)
 	ev.NextLabels.Set1D(0, ls[nxt])
 	idx := 1

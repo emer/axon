@@ -123,7 +123,7 @@ type LayerParams struct {
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
-	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
+	Idxs LayerIdxs `desc:"recv and send projection array access info"`
 }
 
 func (ly *LayerParams) Update() {

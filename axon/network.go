@@ -511,7 +511,7 @@ func (nt *Network) UnLesionNeurons(ctx *Context) {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.UnLesionNeurons(ctx)
+		ly.UnLesionNeurons()
 	}
 }
 

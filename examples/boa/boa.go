@@ -60,7 +60,7 @@ func main() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	NData             int     `desc;"number of data-parallel items to process at once"`
+	NData             int     `desc:"number of data-parallel items to process at once"`
 	EnvSameSeed       bool    `desc:"for testing, force each env to use same seed"`
 	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
@@ -73,7 +73,7 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 8
+	ss.NData = 1
 	ss.EnvSameSeed = false
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 5
@@ -547,7 +547,6 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	}
 	ss.Net.ApplyExts(ctx)
 	ss.Net.GPU.SyncPoolsToGPU()
-	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
 // DecodeAct decodes the VL ActM state to find closest action pattern

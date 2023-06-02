@@ -71,7 +71,7 @@ type NetworkBase struct {
 	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxData] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 	RecvPrjnIdxs []uint32      `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
 	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
-	Exts         []float32     `view:"-" desc:"[In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
+	Exts         []float32     `desc:"[In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
 	Ctx         Context                `view:"-" desc:"context used only for accessing neurons for display"`
 	Rand        erand.SysRand          `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`

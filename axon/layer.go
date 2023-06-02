@@ -821,7 +821,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIdx, plusIdx []in
 //  Lesion
 
 // UnLesionNeurons unlesions (clears the Off flag) for all neurons in the layer
-func (ly *Layer) UnLesionNeurons(ctx *Context) {
+func (ly *Layer) UnLesionNeurons() {
+	ctx := &ly.Network.Ctx
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
@@ -834,8 +835,9 @@ func (ly *Layer) UnLesionNeurons(ctx *Context) {
 // LesionNeurons lesions (sets the Off flag) for given proportion (0-1) of neurons in layer
 // returns number of neurons lesioned.  Emits error if prop > 1 as indication that percent
 // might have been passed
-func (ly *Layer) LesionNeurons(ctx *Context, prop float32) int {
-	ly.UnLesionNeurons(ctx)
+func (ly *Layer) LesionNeurons(prop float32) int {
+	ctx := &ly.Network.Ctx
+	ly.UnLesionNeurons()
 	if prop > 1 {
 		log.Printf("LesionNeurons got a proportion > 1 -- must be 0-1 as *proportion* (not percent) of neurons to lesion: %v\n", prop)
 		return 0

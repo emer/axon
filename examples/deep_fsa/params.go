@@ -84,7 +84,6 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
 					"Prjn.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
 					"Prjn.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
-					"Prjn.SWts.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
 					"Prjn.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 still 1.7.19

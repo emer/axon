@@ -68,6 +68,8 @@ var InputNameMap map[string]int
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
 	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	NData        int              `desc:"number of data-parallel items to process at once"`
+	EnvSameSeed  bool             `desc:"for testing, force each env to use same seed"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats     `desc:"contains computed statistic values"`
@@ -87,6 +89,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
+	ss.NData = 1
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
@@ -119,37 +122,51 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var trn, tst *FSAEnv
-	if len(ss.Envs) == 0 {
-		trn = &FSAEnv{}
-		tst = &FSAEnv{}
-	} else {
-		trn = ss.Envs.ByMode(etime.Train).(*FSAEnv)
-		tst = ss.Envs.ByMode(etime.Test).(*FSAEnv)
+	newEnv := (len(ss.Envs) == 0)
+
+	for di := 0; di < ss.NData; di++ {
+		var trn, tst *FSAEnv
+		if newEnv {
+			trn = &FSAEnv{}
+			tst = &FSAEnv{}
+		} else {
+			trn = ss.Envs.ByModeDi(etime.Train, di).(*FSAEnv)
+			tst = ss.Envs.ByModeDi(etime.Test, di).(*FSAEnv)
+		}
+
+		// note: names must be standard here!
+		trn.Nm = env.ModeDi(etime.Train, di)
+		trn.Dsc = "training params and state"
+		trn.Seq.Max = 25 // 25 sequences per epoch training
+		trn.RndSeed = 77
+		if !ss.EnvSameSeed {
+			trn.RndSeed += int64(di) * 77
+		}
+		trn.TMatReber()
+		trn.Validate()
+
+		tst.Nm = env.ModeDi(etime.Test, di)
+		tst.Dsc = "testing params and state"
+		tst.Seq.Max = 10
+		tst.RndSeed = 177
+		if !ss.EnvSameSeed {
+			tst.RndSeed += int64(di) * 177
+		}
+		tst.TMatReber() // todo: random
+		tst.Validate()
+
+		trn.Init(0)
+		tst.Init(0)
+
+		// note: names must be in place when adding
+		ss.Envs.Add(trn, tst)
 	}
-
-	// note: names must be standard here!
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
-	trn.Seq.Max = 25 // 25 sequences per epoch training
-	trn.TMatReber()
-	trn.Validate()
-
-	tst.Nm = etime.Test.String()
-	tst.Dsc = "testing params and state"
-	tst.Seq.Max = 10
-	tst.TMatReber() // todo: random
-	tst.Validate()
-
-	trn.Init(0)
-	tst.Init(0)
-
-	// note: names must be in place when adding
-	ss.Envs.Add(trn, tst)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
+	ctx := &ss.Context
 	net.InitName(net, "DeepFSA")
+	net.SetMaxData(ctx, ss.NData)
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
@@ -184,14 +201,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(1)) // just use 1
 
-	err := net.Build()
+	err := net.Build(ctx)
 	net.Defaults()
 	ss.Params.SetObject("Network")
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	net.InitWts()
+	net.InitWts(ctx)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,10 +242,12 @@ func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
 	avgPerTrl := 8
+	trgTrls := 25 * avgPerTrl
+	trls := int(mat32.IntMultipleGE(float32(trgTrls), float32(ss.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -236,15 +255,9 @@ func (ss *Sim) ConfigLoops() {
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
-			// note: OnStart for env.Env, others may happen OnEnd
-			ss.Envs[mode.String()].Step()
-		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
-		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
-		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -329,50 +342,47 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	fsenv := ss.Envs[ss.Context.Mode.String()].(*FSAEnv)
-	net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	// going to the same layers, but good practice and cheap anyway
+	ctx := &ss.Context
 
-	// just using direct access to state here
 	in := net.AxonLayerByName("Input")
 	trg := net.AxonLayerByName("Targets")
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
-	ns := fsenv.NNext.Values[0]
-	net.InitExt()
-	for ni := range in.Neurons {
-		inr := &in.Neurons[ni]
-		inr.ClearFlag(clrmsk)
-		inr.SetFlag(setmsk)
-	}
-	for i := 0; i < ns; i++ {
-		lbl := fsenv.NextLabels.Values[i]
-		li, ok := InputNameMap[lbl]
-		if !ok {
-			log.Printf("Input label: %v not found in InputNames list of labels\n", lbl)
-			continue
-		}
-		if i == 0 {
-			for yi := 0; yi < ss.UnitsPer; yi++ {
-				idx := li*ss.UnitsPer + yi
-				inr := &in.Neurons[idx]
-				in.ApplyExtVal(idx, inr, 1, clrmsk, setmsk, false)
+
+	net.InitExt(ctx)
+	for di := uint32(0); di < uint32(ss.NData); di++ {
+		fsenv := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*FSAEnv)
+		ns := fsenv.NNext.Values[0]
+		for i := 0; i < ns; i++ {
+			lbl := fsenv.NextLabels.Values[i]
+			li, ok := InputNameMap[lbl]
+			if !ok {
+				log.Printf("Input label: %v not found in InputNames list of labels\n", lbl)
+				continue
 			}
+			if i == 0 {
+				for yi := 0; yi < ss.UnitsPer; yi++ {
+					idx := li*ss.UnitsPer + yi
+					in.ApplyExtVal(ctx, uint32(idx), di, 1, clrmsk, setmsk, false)
+				}
+			}
+			trg.ApplyExtVal(ctx, uint32(li), di, 1, clrmsk, setmsk, false)
 		}
-		inr := &trg.Neurons[li]
-		trg.ApplyExtVal(li, inr, 1, clrmsk, setmsk, false)
 	}
-	ss.Net.ApplyExts(&ss.Context)
+	ss.Net.ApplyExts(ctx)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
 // for the new run value
 func (ss *Sim) NewRun() {
+	ctx := &ss.Context
 	ss.InitRndSeed()
-	ss.Envs.ByMode(etime.Train).Init(0)
-	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Context.Reset()
-	ss.Context.Mode = etime.Train
-	ss.Net.InitWts()
+	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+		ss.Envs.ByModeDi(etime.Train, di).Init(0)
+		ss.Envs.ByModeDi(etime.Test, di).Init(0)
+	}
+	ctx.Reset()
+	ctx.Mode = etime.Train
+	ss.Net.InitWts(ctx)
 	ss.InitStats()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -405,26 +415,28 @@ func (ss *Sim) StatCounters() {
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ev := ss.Envs[ss.Context.Mode.String()]
-	ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
+	// ev := ss.Envs[ss.Context.Mode.String()]
+	// ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "Output", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
-func (ss *Sim) TrialStats() {
+func (ss *Sim) TrialStats(di int) {
+	ctx := &ss.Context
 	inp := ss.Net.AxonLayerByName("InputP")
 	trg := ss.Net.AxonLayerByName("Targets")
-	ss.Stats.SetFloat("TrlCorSim", float64(inp.Vals.CorSim.Cor))
-	err, minusIdx, _ := inp.LocalistErr4D()
-	tgn := &trg.Neurons[minusIdx]
-	if tgn.Ext > 0.5 {
+
+	ss.Stats.SetFloat("TrlCorSim", float64(inp.Vals[di].CorSim.Cor))
+	_, minusIdxs, _ := inp.LocalistErr4D(ctx)
+	minusIdx := minusIdxs[di]
+	trgExt := axon.NrnV(ctx, trg.NeurStIdx+uint32(minusIdx), uint32(di), axon.Ext)
+	err := true
+	if trgExt > 0.5 {
 		err = false
-	} else {
-		err = true
 	}
 	ss.Stats.SetInt("Output", minusIdx)
-	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())
+	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr(ctx)[di])
 	if err {
 		ss.Stats.SetFloat("TrlErr", 1)
 	} else {
@@ -544,7 +556,13 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
+		trl := ss.Stats.Int("Trial")
+		for di := 0; di < ss.NData; di++ {
+			ss.Stats.SetInt("Trial", trl+di)
+			ss.TrialStats(di)
+			ss.Logs.LogRowDi(mode, time, row, di)
+		}
+		return // don't do reg
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
