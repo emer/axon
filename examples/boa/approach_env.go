@@ -81,7 +81,7 @@ func (ev *Approach) Defaults() {
 
 // Config configures the world
 func (ev *Approach) Config() {
-	ev.Rand.NewRand(ev.RndSeed)
+	// ev.Rand.NewRand(ev.RndSeed)
 	ev.CSTot = ev.NDrives * ev.CSPerDrive
 	ev.ActMap = make(map[string]int)
 	for i, act := range ev.Acts {

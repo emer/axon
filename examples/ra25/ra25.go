@@ -92,7 +92,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 0   // was 5
 	ss.PCAInterval = 5
-	ss.NData = 1
+	ss.NData = 16
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()

@@ -40,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -73,7 +73,7 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 8
+	ss.NData = 1
 	ss.EnvSameSeed = false
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 5

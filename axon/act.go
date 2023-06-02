@@ -845,7 +845,7 @@ func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
 	}
 }
 
-// KNaNewState does TrialSlow version of KNa during NewState if option is seta
+// KNaNewState does TrialSlow version of KNa during NewState if option is set
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
 		AddNrnV(ctx, ni, di, GknaSlow, ac.KNa.Slow.Max*NrnV(ctx, ni, di, SpkPrv))

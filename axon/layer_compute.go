@@ -313,8 +313,8 @@ func (ly *Layer) NewState(ctx *Context) {
 			ly.Params.NewStateNeuron(ctx, ni, di, vals)
 		}
 	}
-	// clear pipeline of incoming spikes, assuming time has passed
-	// always safer to do this rather than not -- sometimes layer has specifically cleared
+	// note: would be somewhat more expensive to only clear the di specific subset
+	// but all di are decayed every trial anyway so no big deal
 	ly.InitPrjnGBuffs(ctx)
 }
 
@@ -331,6 +331,9 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	ly.DecayStateLayer(ctx, di, decay, glong, ahp)
+	// note: would be somewhat more expensive to only clear the di specific subset
+	// but all di are decayed every trial anyway so no big deal
+	ly.InitPrjnGBuffs(ctx)
 }
 
 // DecayStateLayer does layer-level decay, but not neuron level
@@ -340,11 +343,6 @@ func (ly *Layer) DecayStateLayer(ctx *Context, di uint32, decay, glong, ahp floa
 		pl := ly.Pool(pi, di)
 		pl.Inhib.Decay(decay)
 	}
-	// note: this was being called redundantly most likely in NewState
-	// would be somewhat more expensive to only clear the di specific subset
-	// if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
-	// 	ly.InitPrjnGBuffs(ctx, di)
-	// }
 }
 
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
@@ -465,7 +463,6 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 			giveUp := (GlbV(ctx, di, GvLHbGiveUp) > 0)
 			if hasRew || giveUp {
 				ly.DecayState(ctx, di, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
-				ly.InitPrjnGBuffs(ctx)
 			}
 		}
 	}

@@ -816,9 +816,9 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 		log.Println(err)
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
+	glr := gp.SyncRegionStruct("Globals")
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, exr)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, exr, cxr, glr)
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
 	gp.RunPipelineCmd(cmd, "ApplyExts", neurDataN, "MemCopyTo", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)
