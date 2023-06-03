@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/emer/etable/minmax"
@@ -72,6 +73,11 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	}
 	for pi := uint32(0); pi < ly.NPools; pi++ {
 		for di := uint32(0); di < ly.MaxData; di++ {
+			ppi := pi
+			ddi := di
+			AvgMaxFloatFromIntErr = func() {
+				fmt.Printf("GiFmSpikes: Layer: %s  pool: %d  di: %d\n", ly.Nm, ppi, ddi)
+			}
 			pl := ly.Pool(pi, di)
 			pl.AvgMax.Calc(int32(ly.Idx))
 		}
@@ -776,6 +782,9 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			continue
 		}
 		plavg /= float32(nn)
+		if plavg < 0.0001 { // gets unstable below here
+			continue
+		}
 		pl.AvgDif.Init()
 		for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 			ni := ly.NeurStIdx + lni
@@ -787,6 +796,10 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			SetNrnAvgV(ctx, ni, AvgPct, apct)
 			SetNrnAvgV(ctx, ni, AvgDif, adif)
 			pl.AvgDif.UpdateVal(mat32.Abs(adif))
+		}
+		ppi := pi
+		AvgMaxFloatFromIntErr = func() {
+			fmt.Printf("AvgDifFmTrgAvg Pool Layer: %s  pool: %d\n", ly.Nm, ppi)
 		}
 		pl.AvgDif.Calc(int32(ly.Idx))                       // ref in case of crash
 		for di := uint32(1); di < ctx.NetIdxs.NData; di++ { // copy to other datas
@@ -803,6 +816,9 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 				continue
 			}
 			lpl.AvgDif.UpdateVal(mat32.Abs(NrnAvgV(ctx, ni, AvgDif)))
+		}
+		AvgMaxFloatFromIntErr = func() {
+			fmt.Printf("AvgDifFmTrgAvg LayPool Layer: %s  pool: %d\n", ly.Nm)
 		}
 		lpl.AvgDif.Calc(int32(ly.Idx))
 

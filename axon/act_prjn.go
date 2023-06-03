@@ -5,6 +5,8 @@
 package axon
 
 import (
+	"log"
+
 	"github.com/emer/emergent/erand"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/ints"
@@ -164,7 +166,8 @@ func (sc *SynComParams) FloatToGBuf(val float32) int32 {
 func (sc *SynComParams) FloatFromGBuf(ival int32) float32 {
 	//gosl: end act_prjn
 	if ival < 0 {
-		panic("axon.SynComParams: FloatFromGBuf is negative, there was an overflow error")
+		log.Printf("axon.SynComParams: FloatFromGBuf is negative, there was an overflow error\n")
+		return 1
 	}
 	//gosl: start act_prjn
 	return float32(ival) / sc.FloatToIntFactor()

@@ -6,7 +6,8 @@ package axon
 
 import (
 	"fmt"
-	"strconv"
+	"log"
+	"runtime/debug"
 )
 
 //gosl: start avgmaxi
@@ -71,13 +72,21 @@ func (am *AvgMaxI32) FloatToIntSum(val float32) int32 {
 	return int32(val * (am.FloatToIntFactor() / float32(am.N)))
 }
 
+// AvgMaxFloatFromIntErr is called when there is an overflow error in AvgMaxI32 FloatFromInt
+var AvgMaxFloatFromIntErr func()
+
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)
 func (am *AvgMaxI32) FloatFromInt(ival, refIdx int32) float32 {
 	//gosl: end avgmaxi
 	// note: this is not GPU-portable..
 	if ival < 0 {
-		panic("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIdx: " + strconv.Itoa(int(refIdx)))
+		log.Printf("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIdx: %d\n", refIdx)
+		fmt.Println(string(debug.Stack()))
+		if AvgMaxFloatFromIntErr != nil {
+			AvgMaxFloatFromIntErr()
+		}
+		return 1
 	}
 	//gosl: start avgmaxi
 	return float32(ival) * am.FloatFmIntFactor()

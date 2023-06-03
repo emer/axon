@@ -5,6 +5,8 @@
 package fsfffb
 
 import (
+	"log"
+
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/mat32"
 )
@@ -152,7 +154,8 @@ func (fi *Inhib) FloatFromInt(ival int32) float32 {
 	//gosl: end fsfffb
 	// note: this is not GPU-portable..
 	if ival < 0 {
-		panic("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error")
+		log.Printf("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error\n")
+		return 1
 	}
 	//gosl: start fsfffb
 	return float32(ival) * fi.FloatFmIntFactor()
