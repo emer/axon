@@ -10,6 +10,9 @@ import (
 	"runtime/debug"
 )
 
+// AvgMaxFloatFromIntErr is called when there is an overflow error in AvgMaxI32 FloatFromInt
+var AvgMaxFloatFromIntErr func()
+
 //gosl: start avgmaxi
 
 // AvgMaxI32 holds average and max statistics for float32,
@@ -71,9 +74,6 @@ func (am *AvgMaxI32) FloatToInt(val float32) int32 {
 func (am *AvgMaxI32) FloatToIntSum(val float32) int32 {
 	return int32(val * (am.FloatToIntFactor() / float32(am.N)))
 }
-
-// AvgMaxFloatFromIntErr is called when there is an overflow error in AvgMaxI32 FloatFromInt
-var AvgMaxFloatFromIntErr func()
 
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)

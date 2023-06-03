@@ -17,7 +17,7 @@ require (
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.15
-	github.com/goki/vgpu v1.0.24
+	github.com/goki/vgpu v1.0.25
 	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29

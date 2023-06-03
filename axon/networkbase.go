@@ -434,6 +434,32 @@ func (nt *NetworkBase) AllGlobals() string {
 	return str
 }
 
+// AllGlobalVals adds to map of all Global variables and values.
+// ctrKey is a key of counters to contextualize values.
+func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
+	ctx := &nt.Ctx
+	for di := uint32(0); di < nt.MaxData; di++ {
+		for vv := GvRew; vv < GvVtaDA; vv++ {
+			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
+			vals[key] = GlbV(ctx, di, vv)
+		}
+		for vv := GvVtaDA; vv < GvUSneg; vv++ {
+			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
+			vals[key] = GlbVTA(ctx, di, GvVtaVals, vv)
+		}
+		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+			key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USneg", ui)
+			vals[key] = GlbUSneg(ctx, di, ui)
+		}
+		for vv := GvDrives; vv < GlobalVarsN; vv++ {
+			for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
+				vals[key] = GlbDrvV(ctx, di, ui, vv)
+			}
+		}
+	}
+}
+
 // AddLayerInit is implementation routine that takes a given layer and
 // adds it to the network, and initializes and configures it properly.
 func (nt *NetworkBase) AddLayerInit(ly *Layer, name string, shape []int, typ LayerTypes) {

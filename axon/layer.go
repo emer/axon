@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -815,6 +816,18 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIdx, plusIdx []in
 		plusIdx[di] = pIdx
 	}
 	return
+}
+
+// TestVals returns a map of key vals for testing
+// ctrKey is a key of counters to contextualize values.
+func (ly *Layer) TestVals(ctrKey string, vals map[string]float32) {
+	for pi := uint32(0); pi < ly.NPools; pi++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
+			pl := ly.Pool(pi, di)
+			key := fmt.Sprintf("%s  Lay: %s\tPool: %d\tDi: %d", ctrKey, ly.Nm, pi, di)
+			pl.TestVals(key, vals)
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -101,9 +101,10 @@ type Sim struct {
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 
-	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
-	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+	GUI      egui.GUI           `view:"-" desc:"manages all the gui elements"`
+	Args     ecmd.Args          `view:"no-inline" desc:"command line args"`
+	RndSeeds erand.Seeds        `view:"-" desc:"a list of random seeds to use for each run"`
+	TestData map[string]float32 `view:"-" desc:"testing data, from -test arg"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -453,6 +454,12 @@ func (ss *Sim) ConfigLoops() {
 		}
 	})
 
+	if ss.Args.Bool("test") {
+		man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("RecordTestData", func() {
+			ss.RecordTestData()
+		})
+	}
+
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
@@ -686,7 +693,6 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
@@ -1134,11 +1140,27 @@ func (ss *Sim) RunGUI() {
 	win.StartEventLoop()
 }
 
+// RecordTestData returns key testing data from the network
+func (ss *Sim) RecordTestData() {
+	net := ss.Net
+	lays := net.LayersByType(axon.PTMaintLayer, axon.PTNotMaintLayer, axon.MatrixLayer, axon.STNLayer, axon.BLALayer, axon.CeMLayer, axon.VSPatchLayer, axon.LHbLayer, axon.LDTLayer, axon.VTALayer)
+
+	key := ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di"})
+
+	net.AllGlobalVals(key, ss.TestData)
+	for _, lnm := range lays {
+		ly := net.AxonLayerByName(lnm)
+		ly.TestVals(key, ss.TestData)
+	}
+}
+
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.SetInt("epochs", 200)
+	ss.Args.SetInt("epochs", 50)
 	ss.Args.SetInt("runs", 10)
+	ss.Args.AddBool("test", false, "records testing data in TestData")
+	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
 }
 
@@ -1147,6 +1169,10 @@ func (ss *Sim) RunNoGUI() {
 	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+
+	if ss.Args.Bool("test") {
+		ss.TestData = make(map[string]float32)
+	}
 
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
