@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/emer/etable/minmax"
@@ -73,11 +72,11 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	}
 	for pi := uint32(0); pi < ly.NPools; pi++ {
 		for di := uint32(0); di < ly.MaxData; di++ {
-			ppi := pi
-			ddi := di
-			AvgMaxFloatFromIntErr = func() {
-				fmt.Printf("GiFmSpikes: Layer: %s  pool: %d  di: %d\n", ly.Nm, ppi, ddi)
-			}
+			// ppi := pi
+			// ddi := di
+			// AvgMaxFloatFromIntErr = func() {
+			// 	fmt.Printf("GiFmSpikes: Layer: %s  pool: %d  di: %d\n", ly.Nm, ppi, ddi)
+			// }
 			pl := ly.Pool(pi, di)
 			pl.AvgMax.Calc(int32(ly.Idx))
 		}
@@ -348,6 +347,14 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		}
 		ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		// Note: synapse-level Ca decay happens in DWt
+		if ahp == 1 {
+			lt := ly.LayerType()
+			if lt == PTNotMaintLayer || lt == PTMaintLayer {
+				SetNrnV(ctx, ni, di, CtxtGe, 0)
+				SetNrnV(ctx, ni, di, CtxtGeRaw, 0)
+				SetNrnV(ctx, ni, di, CtxtGeOrig, 0)
+			}
+		}
 	}
 	ly.DecayStateLayer(ctx, di, decay, glong, ahp)
 	// note: would be somewhat more expensive to only clear the di specific subset
@@ -797,10 +804,10 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			SetNrnAvgV(ctx, ni, AvgDif, adif)
 			pl.AvgDif.UpdateVal(mat32.Abs(adif))
 		}
-		ppi := pi
-		AvgMaxFloatFromIntErr = func() {
-			fmt.Printf("AvgDifFmTrgAvg Pool Layer: %s  pool: %d\n", ly.Nm, ppi)
-		}
+		// ppi := pi
+		// AvgMaxFloatFromIntErr = func() {
+		// 	fmt.Printf("AvgDifFmTrgAvg Pool Layer: %s  pool: %d\n", ly.Nm, ppi)
+		// }
 		pl.AvgDif.Calc(int32(ly.Idx))                       // ref in case of crash
 		for di := uint32(1); di < ctx.NetIdxs.NData; di++ { // copy to other datas
 			pld := ly.Pool(pi, di)
@@ -817,9 +824,9 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			}
 			lpl.AvgDif.UpdateVal(mat32.Abs(NrnAvgV(ctx, ni, AvgDif)))
 		}
-		AvgMaxFloatFromIntErr = func() {
-			fmt.Printf("AvgDifFmTrgAvg LayPool Layer: %s  pool: %d\n", ly.Nm)
-		}
+		// AvgMaxFloatFromIntErr = func() {
+		// 	fmt.Printf("AvgDifFmTrgAvg LayPool Layer: %s  pool: %d\n", ly.Nm)
+		// }
 		lpl.AvgDif.Calc(int32(ly.Idx))
 
 		for di := uint32(1); di < ctx.NetIdxs.NData; di++ { // copy to other datas

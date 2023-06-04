@@ -8,6 +8,7 @@ boa: This project tests BG, OFC & ACC learning in a CS-driven approach task.
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -24,6 +25,7 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
+	"github.com/emer/emergent/timer"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
@@ -39,7 +41,7 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	// GPU runs with the GPU in gui mode
 	GPU = true
 )
 
@@ -61,25 +63,29 @@ func main() {
 // SimParams has all the custom params for this sim
 type SimParams struct {
 	NData             int     `desc:"number of data-parallel items to process at once"`
+	NTrials           int     `desc:"number of trials per epoch"`
 	EnvSameSeed       bool    `desc:"for testing, force each env to use same seed"`
+	TestInterval      int     `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
 	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
 	PctCortexNEpc     int     `desc:"number of epochs over which PctCortexMax is reached"`
 	PctCortexInterval int     `desc:"how often to update PctCortex"`
-	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
-	CortexDriving     bool    `desc:"true if cortex is driving this behavioral approach sequence"`
+	CortexDriving     bool    `inactive:"+" desc:"true if cortex is driving this behavioral approach sequence"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NData = 16
+	ss.NTrials = 64
 	ss.EnvSameSeed = false // set to true to test ndata
+	ss.TestInterval = 500
+	ss.PCAInterval = 10
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 10
 	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
-	ss.PCAInterval = 10
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -88,18 +94,17 @@ func (ss *SimParams) Defaults() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Sim          SimParams        `view:"no-inline" desc:"sim params"`
-	StopOnErr    bool             `desc:"if true, stop running when an error programmed into the code occurs"`
-	Params       emer.Params      `view:"inline" desc:"all parameter management"`
-	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats        estats.Stats     `desc:"contains computed statistic values"`
-	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
-	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Context      axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
-	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	Net       *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Sim       SimParams        `view:"no-inline" desc:"sim params"`
+	StopOnErr bool             `desc:"if true, stop running when an error programmed into the code occurs"`
+	Params    emer.Params      `view:"inline" desc:"all parameter management"`
+	Loops     *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
+	Stats     estats.Stats     `desc:"contains computed statistic values"`
+	Logs      elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
+	Pats      *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
+	Envs      env.Envs         `view:"no-inline" desc:"Environments"`
+	Context   axon.Context     `desc:"axon timing parameters and state"`
+	ViewUpdt  netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI           `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args          `view:"no-inline" desc:"command line args"`
@@ -119,7 +124,6 @@ func (ss *Sim) New() {
 	ss.Pats = &etable.Table{}
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.TestInterval = 500
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
@@ -385,8 +389,7 @@ func (ss *Sim) ConfigLoops() {
 	// ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
-	trgTrls := 64
-	trls := int(mat32.IntMultipleGE(float32(trgTrls), float32(ss.Sim.NData)))
+	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(ss.Sim.NData)))
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
@@ -653,6 +656,7 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
+	ss.Stats.SetInt("Di", 0)
 	ss.Stats.SetFloat("PctCortex", 0)
 	ss.Stats.SetFloat("Dist", 0)
 	ss.Stats.SetFloat("Drive", 0)
@@ -696,6 +700,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
+	ss.ActionStatsDi(di)
 	ev := ss.Envs.ByModeDi(mode, di).(*Approach)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
@@ -782,6 +787,18 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("AllGood", allGood)
 }
 
+// ActionStatsDi copies the action info from given data parallel index
+// into the global action stats
+func (ss *Sim) ActionStatsDi(di int) {
+	if _, has := ss.Stats.Strings[estats.DiName("NetAction", di)]; !has {
+		return
+	}
+	ss.Stats.SetString("NetAction", ss.Stats.StringDi("NetAction", di))
+	ss.Stats.SetString("Instinct", ss.Stats.StringDi("Instinct", di))
+	ss.Stats.SetFloat("ActMatch", ss.Stats.FloatDi("ActMatch", di))
+	ss.Stats.SetString("ActAction", ss.Stats.StringDi("ActAction", di))
+}
+
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats(di int) {
 	ctx := &ss.Context
@@ -791,10 +808,7 @@ func (ss *Sim) GatedStats(di int) {
 	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 	nan := mat32.NaN()
 	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
-	ss.Stats.SetString("NetAction", ss.Stats.StringDi("NetAction", di))
-	ss.Stats.SetString("Instinct", ss.Stats.StringDi("Instinct", di))
-	ss.Stats.SetFloat("ActMatch", ss.Stats.FloatDi("ActMatch", di))
-	ss.Stats.SetString("ActAction", ss.Stats.StringDi("ActAction", di))
+	ss.ActionStatsDi(di)
 
 	ss.Stats.SetFloat32("JustGated", bools.ToFloat32(justGated))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
@@ -1161,6 +1175,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("runs", 10)
 	ss.Args.AddBool("test", false, "records testing data in TestData")
 	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
+	ss.Args.AddBool("bench", false, "run benchmarking")
 	ss.Args.Parse() // always parse
 }
 
@@ -1194,7 +1209,20 @@ func (ss *Sim) RunNoGUI() {
 	}
 
 	ss.NewRun()
+
+	tmr := timer.Time{}
+	if ss.Args.Bool("bench") {
+		// ss.Net.RecFunTimes = true
+		tmr.Start()
+	}
+
 	ss.Loops.Run(etime.Train)
+
+	if ss.Args.Bool("bench") {
+		tmr.Stop()
+		fmt.Printf("Total Time: %6.3g\n", tmr.TotalSecs())
+		ss.Net.TimerReport()
+	}
 
 	ss.Logs.CloseLogFiles()
 
