@@ -1,14 +1,14 @@
 
 # v1.18.0
 
-## MacBook Pro M1
-
 Main conclusions:
 * need NData >= 4 to see performance advantage on GPU.
-* NData enables threading to improve GPU performance too.
+* NData enables threading to improve CPU performance too.
 * But GPU is significantly more effective with NData - GPU is ~8x with 16 vs. 4.7x on CPU.
 * Data is a tight inner loop with contiguous memory on both CPU and GPU.
+* Similar qualitative results on Mac M1 and V100.
 
+## MacBook Pro M1
 
 ```
 GPU:
