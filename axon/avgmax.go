@@ -8,10 +8,20 @@ import (
 	"fmt"
 	"log"
 	"runtime/debug"
+	"sync"
 )
 
 // AvgMaxFloatFromIntErr is called when there is an overflow error in AvgMaxI32 FloatFromInt
-var AvgMaxFloatFromIntErr func()
+var (
+	AvgMaxFloatFromIntErr   func()
+	AvgMaxFloatFromIntErrMu sync.Mutex
+)
+
+func SetAvgMaxFloatFromIntErr(fun func()) {
+	AvgMaxFloatFromIntErrMu.Lock()
+	AvgMaxFloatFromIntErr = fun
+	AvgMaxFloatFromIntErrMu.Unlock()
+}
 
 //gosl: start avgmaxi
 

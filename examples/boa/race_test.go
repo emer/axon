@@ -15,7 +15,7 @@ func TestRace(t *testing.T) {
 
 	sim.Config()
 
-	sim.Net.SetNThreads(16)
+	sim.Net.SetNThreads(8)
 
 	sim.Args.SetInt("runs", 1)
 	sim.Args.SetInt("epochs", 1)
