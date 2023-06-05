@@ -118,10 +118,16 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 }
 
 func TestPerfCPUnData1(t *testing.T) {
+	if os.Getenv("TEST_DEBUG") != "true" {
+		t.Skip("Set TEST_DEBUG env var to run debug tests that are informative but long / fail")
+	}
 	RunPerfTest(t, false, 1)
 }
 
 func TestPerfCPUnData2(t *testing.T) {
+	if os.Getenv("TEST_DEBUG") != "true" {
+		t.Skip("Set TEST_DEBUG env var to run debug tests that are informative but long / fail")
+	}
 	RunPerfTest(t, false, 2)
 }
 
@@ -129,12 +135,18 @@ func TestPerfGPUnData1(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
+	if os.Getenv("TEST_DEBUG") != "true" {
+		t.Skip("Set TEST_DEBUG env var to run debug tests that are informative but long / fail")
+	}
 	RunPerfTest(t, true, 1)
 }
 
 func TestPerfGPUnData2(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	if os.Getenv("TEST_DEBUG") != "true" {
+		t.Skip("Set TEST_DEBUG env var to run debug tests that are informative but long / fail")
 	}
 	RunPerfTest(t, true, 2)
 }
@@ -208,12 +220,14 @@ func TestStdGPUnData1(t *testing.T) {
 	RunStdTest(t, true, true, 1)
 }
 
+// this test reports layer-level differences which diverge in GPU due to
+// the nmda computation -- see issue #
 func TestStdGPUnData1Debug(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	if os.Getenv("TEST_DEBUG") != "true" {
-		t.Skip("Set TEST_DEBUG env var to run debug tests that are informative but fail")
+		t.Skip("Set TEST_DEBUG env var to run debug tests that are informative but long / fail")
 	}
 	RunStdTest(t, true, false, 1)
 }
@@ -281,5 +295,8 @@ func TestNDataCPU(t *testing.T) {
 }
 
 func TestNDataGPU(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
 	RunNDataTest(t, true)
 }

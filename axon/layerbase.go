@@ -786,7 +786,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
 	depth++
-	w.Write(indent.TabBytes(depth))
+	w.Write(indent.TabBytes(depth)) // note: ActAvg all sync'd so using first one is fine
 	w.Write([]byte(fmt.Sprintf("\"ActMAvg\": \"%g\",\n", ly.Vals[0].ActAvg.ActMAvg)))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.Vals[0].ActAvg.ActPAvg)))

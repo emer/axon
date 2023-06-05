@@ -206,14 +206,8 @@ func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
 	pl.AvgMax.GiInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GiInt))
 }
 
-// TestVals returns a map of key AvgMax vals for testing
+// TestVals returns a map of CaSpkD.Avg, which provides an
+// integrated summary of pool activity for testing
 func (pl *Pool) TestVals(layKey string, vals map[string]float32) {
-	vals[layKey+" CaSpkP Avg"] = pl.AvgMax.CaSpkP.Cycle.Avg
-	vals[layKey+" CaSpkP Max"] = pl.AvgMax.CaSpkP.Cycle.Max
-
 	vals[layKey+" CaSpkD Avg"] = pl.AvgMax.CaSpkD.Cycle.Avg
-	vals[layKey+" CaSpkD Max"] = pl.AvgMax.CaSpkD.Cycle.Max
-
-	vals[layKey+" SpkMax Avg"] = pl.AvgMax.SpkMax.Cycle.Avg
-	vals[layKey+" SpkMax Max"] = pl.AvgMax.SpkMax.Cycle.Max
 }

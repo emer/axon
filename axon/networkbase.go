@@ -1117,28 +1117,23 @@ func (nt *NetworkBase) ReadWtsCpp(r io.Reader) error {
 	return err
 }
 
-// WtsSlice sets all the weights in recv order in given slice, resizing as needed
-func (nt *Network) WtsSlice(wts *[]float32) {
+// SynsSlice returns a slice of synaptic values, in natural sending order,
+// using given synaptic variable, resizing as needed.
+func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 	ctx := &nt.Ctx
-	numSyns := 0
-	for _, ly := range nt.Layers {
-		for _, pj := range ly.RcvPrjns {
-			numSyns += int(pj.NSyns)
-		}
-	}
-	if cap(*wts) >= numSyns {
-		*wts = (*wts)[:numSyns]
+	if cap(*vals) >= int(nt.NSyns) {
+		*vals = (*vals)[:nt.NSyns]
 	} else {
-		*wts = make([]float32, numSyns)
+		*vals = make([]float32, nt.NSyns)
 	}
 	i := 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.RcvPrjns {
-			for ni := uint32(0); ni < ly.NNeurons; ni++ {
-				syIdxs := pj.RecvSynIdxs(uint32(ni))
-				for _, syi := range syIdxs {
+		for _, pj := range ly.SndPrjns {
+			for lni := range pj.SendCon {
+				scon := pj.SendCon[lni]
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIdx + syi
-					(*wts)[i] = SynV(ctx, syni, Wt)
+					(*vals)[i] = SynV(ctx, syni, synvar)
 					i++
 				}
 			}
@@ -1146,11 +1141,29 @@ func (nt *Network) WtsSlice(wts *[]float32) {
 	}
 }
 
+// NeuronsSlice returns a slice of neuron values
+// using given neuron variable, resizing as needed.
+func (nt *Network) NeuronsSlice(vals *[]float32, nrnVar string, di int) {
+	if cap(*vals) >= int(nt.NNeurons) {
+		*vals = (*vals)[:nt.NNeurons]
+	} else {
+		*vals = make([]float32, nt.NNeurons)
+	}
+	i := 0
+	for _, ly := range nt.Layers {
+		varIdx, _ := ly.UnitVarIdx(nrnVar)
+		nn := int(ly.NNeurons)
+		for lni := 0; lni < nn; lni++ {
+			(*vals)[i] = ly.UnitVal1D(varIdx, lni, di)
+			i++
+		}
+	}
+}
+
 // WtsHash returns a hash code of all weight values
 func (nt *Network) WtsHash() string {
 	var wts []float32
-	nt.WtsSlice(&wts)
-	fmt.Printf("wts: %v\n", wts)
+	nt.SynsSlice(&wts, Wt)
 	return HashEncodeSlice(wts)
 }
 

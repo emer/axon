@@ -34,7 +34,13 @@
 void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVals vals) {
 	ly.MinusPhasePool(ctx, pl);
 	if (pl.IsLayPool != 0) {
-		ly.AvgGeM(ctx, pl, vals);
+		float geIntMinusMax = 0;
+		float giIntMinusMax = 0;
+		for (uint di = 0; di < ctx.NetIdxs.NData; di++) {
+			geIntMinusMax = max(geIntMinusMax, Pools[ly.Idxs.PoolIdx(0, di)].AvgMax.GeInt.Cycle.Max);
+			giIntMinusMax = max(giIntMinusMax, Pools[ly.Idxs.PoolIdx(0, di)].AvgMax.GiInt.Cycle.Max);
+		}
+		ly.AvgGeM(ctx, vals, geIntMinusMax, giIntMinusMax);
 	}
 }
 

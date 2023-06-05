@@ -8,6 +8,7 @@ package axon
 
 // ActAvgVals are long-running-average activation levels stored in the LayerVals,
 // for monitoring and adapting inhibition and possibly scaling parameters.
+// All of these integrate over NData within a network, so are the same across them.
 type ActAvgVals struct {
 	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
 	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`

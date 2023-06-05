@@ -245,8 +245,6 @@ func (pj *PrjnParams) SynCaSyn(ctx *Context, syni uint32, ni, di uint32, otherCa
 ///////////////////////////////////////////////////
 // DWt
 
-// TODO: DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
-
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on projection type.
 // rpl is the receiving layer SubPool

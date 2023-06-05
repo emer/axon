@@ -54,6 +54,9 @@ void NewState2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout 
 	if (pl.IsLayPool == 0) {
 		return;
 	}
+	// todo: important -- see layer_compute.go Layer::NewState method for updates 
+	// calling NewStateLayerActAvg with aggregated actMinusAvg and actPlusAvg
+	// need to impl that here!
 	ly.NewStateLayer(ctx, pl, vals);
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
 		InitPrjnGBuffs(ctx, Prjns[ly.Idxs.RecvSt + pi]);

@@ -299,9 +299,17 @@ func (ly *Layer) CyclePost(ctx *Context) {
 func (ly *Layer) NewState(ctx *Context) {
 	nn := ly.NNeurons
 	np := ly.NPools
+
+	actMinusAvg := float32(0)
+	actPlusAvg := float32(0)
+
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		lpl := ly.Pool(0, di)
 		vals := ly.LayerVals(di)
+
+		actMinusAvg += lpl.AvgMax.Act.Minus.Avg
+		actPlusAvg += lpl.AvgMax.Act.Plus.Avg
+
 		ly.Params.NewStateLayer(ctx, lpl, vals)
 
 		for pi := uint32(0); pi < np; pi++ {
@@ -318,6 +326,17 @@ func (ly *Layer) NewState(ctx *Context) {
 			ly.Params.NewStateNeuron(ctx, ni, di, vals)
 		}
 	}
+
+	// note: long-running averages must be based on aggregate data, drive adaptation
+	// of Gi layer inhibition.
+	davg := 1 / float32(ctx.NetIdxs.NData)
+	actMinusAvg *= davg
+	actPlusAvg *= davg
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		vals := ly.LayerVals(di)
+		ly.Params.NewStateLayerActAvg(ctx, vals, actMinusAvg, actPlusAvg)
+	}
+
 	// note: would be somewhat more expensive to only clear the di specific subset
 	// but all di are decayed every trial anyway so no big deal
 	ly.InitPrjnGBuffs(ctx)
@@ -415,12 +434,16 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIdx, di int) mi
 func (ly *Layer) MinusPhase(ctx *Context) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		ly.Params.MinusPhasePool(ctx, pl)
+		ly.Params.MinusPhasePool(ctx, pl) // grabs AvgMax.Minus from Cycle
 	}
 	nn := ly.NNeurons
+	geIntMinusMax := float32(0)
+	giIntMinusMax := float32(0)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := ly.LayerVals(di)
 		lpl := ly.Pool(0, di)
+		geIntMinusMax = mat32.Max(geIntMinusMax, lpl.AvgMax.GeInt.Minus.Max)
+		giIntMinusMax = mat32.Max(giIntMinusMax, lpl.AvgMax.GiInt.Minus.Max)
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
 			if NrnIsOff(ctx, ni) {
@@ -429,7 +452,10 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 			pl := ly.SubPool(ctx, ni, di)
 			ly.Params.MinusPhaseNeuron(ctx, ni, di, pl, lpl, vals)
 		}
-		ly.Params.AvgGeM(ctx, lpl, vals)
+	}
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		vals := ly.LayerVals(di)
+		ly.Params.AvgGeM(ctx, vals, geIntMinusMax, giIntMinusMax)
 	}
 }
 

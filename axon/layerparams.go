@@ -820,14 +820,14 @@ func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, 
 /////////////////////////////////////////////////////////////////////////
 //  Phase timescale
 
-// ActAvgFmAct computes the LayerVals ActAvg from act values -- at start of new state
-func (ly *LayerParams) ActAvgFmAct(ctx *Context, lpl *Pool, vals *LayerVals) {
-	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActMAvg, lpl.AvgMax.Act.Minus.Avg, ly.Acts.Dt.LongAvgDt)
-	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActPAvg, lpl.AvgMax.Act.Plus.Avg, ly.Acts.Dt.LongAvgDt)
+// NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
+// that have been averaged across NData already.
+func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, vals *LayerVals, actMinusAvg, actPlusAvg float32) {
+	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActMAvg, actMinusAvg, ly.Acts.Dt.LongAvgDt)
+	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActPAvg, actPlusAvg, ly.Acts.Dt.LongAvgDt)
 }
 
 func (ly *LayerParams) NewStateLayer(ctx *Context, lpl *Pool, vals *LayerVals) {
-	ly.ActAvgFmAct(ctx, lpl, vals)
 	ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
 	ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
 }
@@ -862,10 +862,11 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pl *Pool) {
 }
 
 // AvgGeM computes the average and max GeInt, GiInt in minus phase
-// (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase
-func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
-	vals.ActAvg.AvgMaxGeM += ly.Acts.Dt.LongAvgDt * (lpl.AvgMax.GeInt.Minus.Max - vals.ActAvg.AvgMaxGeM)
-	vals.ActAvg.AvgMaxGiM += ly.Acts.Dt.LongAvgDt * (lpl.AvgMax.GiInt.Minus.Max - vals.ActAvg.AvgMaxGiM)
+// (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase,
+// using values that already max across NData.
+func (ly *LayerParams) AvgGeM(ctx *Context, vals *LayerVals, geIntMinusMax, giIntMinusMax float32) {
+	vals.ActAvg.AvgMaxGeM += ly.Acts.Dt.LongAvgDt * (geIntMinusMax - vals.ActAvg.AvgMaxGeM)
+	vals.ActAvg.AvgMaxGiM += ly.Acts.Dt.LongAvgDt * (giIntMinusMax - vals.ActAvg.AvgMaxGiM)
 }
 
 // MinusPhaseNeuron does neuron level minus-phase updating

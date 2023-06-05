@@ -10,6 +10,7 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
+	"github.com/goki/ki/ints"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,6 +36,7 @@ func TestMultithreading(t *testing.T) {
 	assertNeuronsSynsEqual(t, netS, netP)
 	// sanity check
 	assert.True(t, neuronsSynsAreEqual(netS, netP))
+
 	runFunEpochs(ctxA, pats, netS, fun, 1)
 	assert.False(t, neuronsSynsAreEqual(netS, netP))
 }
@@ -52,10 +54,10 @@ func TestCollectAndSetDWts(t *testing.T) {
 
 	rand.Seed(1337)
 	netA := buildNet(ctxA, t, shape, 1)
-	ctxA.SlowInterval = 1
+	ctxA.SlowInterval = 10000
 	rand.Seed(1337)
 	netB := buildNet(ctxB, t, shape, 1)
-	ctxB.SlowInterval = 1
+	ctxB.SlowInterval = 10000
 
 	runCycle := func(net *Network, ctx *Context, pats *etable.Table) {
 		inPats := pats.ColByName("Input").(*etensor.Float32).SubSpace([]int{0})
@@ -66,13 +68,14 @@ func TestCollectAndSetDWts(t *testing.T) {
 		input := inPats.SubSpace([]int{0})
 		output := outPats.SubSpace([]int{0})
 
-		inputLayer.ApplyExt(ctx, 0, input)
-		outputLayer.ApplyExt(ctx, 0, output)
-
 		net.NewState(ctx)
 		ctx.NewState(etime.Train)
+		inputLayer.ApplyExt(ctx, 0, input)
+		outputLayer.ApplyExt(ctx, 0, output)
+		net.ApplyExts(ctx)
+
 		for qtr := 0; qtr < 4; qtr++ {
-			for cyc := 0; cyc < 25; cyc++ {
+			for cyc := 0; cyc < 50; cyc++ {
 				net.Cycle(ctx)
 				ctx.CycleInc()
 			}
@@ -83,6 +86,9 @@ func TestCollectAndSetDWts(t *testing.T) {
 			}
 		}
 		net.PlusPhase(ctx)
+		// for _, ly := range net.Layers {
+		// 	fmt.Printf("ly: %s  actm: %g  actp: %g\n", ly.Nm, ly.Pool(0, 0).AvgMax.CaSpkD.Minus.Max, ly.Pool(0, 0).AvgMax.CaSpkD.Plus.Max)
+		// }
 		net.DWt(ctx)
 	}
 
@@ -94,20 +100,32 @@ func TestCollectAndSetDWts(t *testing.T) {
 
 	// No DWt applied, hence networks still equal
 	assert.Equal(t, netA.WtsHash(), netB.WtsHash())
-
 	var dwts []float32
-	netA.CollectDWts(ctxA, &dwts) // important to collect DWt before applying it
-	fmt.Printf("dwts: %v\n", dwts)
-	netA.WtFmDWt(ctxA)
-	// netA.SlowAdapt(ctxA)
-	// assert.False(t, netA.WtsHash() == netB.WtsHash())
 
+	// for debugging
+	netA.CollectDWts(ctxA, &dwts) // important to collect DWt before applying it
 	netB.SetDWts(ctxB, dwts, 1)
+	// if CompareWtsAll(netA, netB) {
+	// 	t.Errorf("CollectDWts -> SetDWts failed\n")
+	// }
+	// if CompareNeursAll(netA, netB) {
+	// 	t.Errorf("CollectDWts -> SetDWts failed\n")
+	// }
+
+	netA.WtFmDWt(ctxA)
+	assert.False(t, netA.WtsHash() == netB.WtsHash())
+
 	netB.WtFmDWt(ctxB)
-	// netB.SlowAdapt(ctxB)
+	// if CompareWtsAll(netA, netB) {
+	// 	t.Errorf("WtFmDWt failed\n")
+	// }
 	assert.True(t, netA.WtsHash() == netB.WtsHash())
 
-	return
+	netA.SlowAdapt(ctxA)
+	netB.SlowAdapt(ctxB)
+	// if CompareWtsAll(netA, netB) {
+	// 	t.Errorf("SlowAdapt failed\n")
+	// }
 
 	// And again (as a sanity check), but without syncing DWt -> Models should diverge
 	runCycle(netA, ctxA, patsA)
@@ -119,6 +137,58 @@ func TestCollectAndSetDWts(t *testing.T) {
 	netB.WtFmDWt(ctxB)
 	netB.SlowAdapt(ctxB)
 	assert.False(t, netA.WtsHash() == netB.WtsHash())
+}
+
+// returns true if a diff
+func CompareWtsAll(netA, netB *Network) bool {
+	fmt.Printf("SWt:\n")
+	diff := CompareWts(netA, netB, SWt)
+	fmt.Printf("DWt:\n")
+	diff = CompareWts(netA, netB, DWt) || diff
+	fmt.Printf("DSWt:\n")
+	diff = CompareWts(netA, netB, DSWt) || diff
+	fmt.Printf("LWt:\n")
+	diff = CompareWts(netA, netB, LWt) || diff
+	fmt.Printf("Wt:\n")
+	diff = CompareWts(netA, netB, Wt) || diff
+	return diff
+}
+
+func CompareWts(netA, netB *Network, synvar SynapseVars) bool {
+	var valsA, valsB []float32
+	netA.SynsSlice(&valsA, synvar)
+	netB.SynsSlice(&valsB, synvar)
+	diff := false
+	for i := range valsA {
+		if valsA[i] != valsB[i] {
+			fmt.Printf("%d  %g != %g\n", i, valsA[i], valsB[i])
+			diff = true
+		}
+	}
+	return diff
+}
+
+// returns true if a diff
+func CompareNeursAll(netA, netB *Network) bool {
+	fmt.Printf("ActAvg:\n")
+	diff := CompareNeurs(netA, netB, "ActAvg")
+	fmt.Printf("ActAvg:\n")
+	diff = CompareNeurs(netA, netB, "DTrgAvg") || diff
+	return diff
+}
+
+func CompareNeurs(netA, netB *Network, nrnVar string) bool {
+	var valsA, valsB []float32
+	netA.NeuronsSlice(&valsA, nrnVar, 0)
+	netB.NeuronsSlice(&valsB, nrnVar, 0)
+	diff := false
+	for i := range valsA {
+		if valsA[i] != valsB[i] {
+			fmt.Printf("%d  %g != %g\n", i, valsA[i], valsB[i])
+			diff = true
+		}
+	}
+	return diff
 }
 
 // Make sure that training is deterministic, as long as the network is the same
@@ -138,7 +208,7 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	runFunEpochs(ctxB, pats, netB, fun, 1)
 	runFunEpochs(ctxB, pats, netB, fun, 2)
 	runFunEpochs(ctxA, pats, netA, fun, 5)
-	runFunEpochs(ctxA, pats, netB, fun, 2)
+	runFunEpochs(ctxB, pats, netB, fun, 2)
 
 	// compare the resulting networks
 	assertNeuronsSynsEqual(t, netA, netB)
@@ -245,9 +315,10 @@ func generateRandomPatterns(nPats int, seed int64) *etable.Table {
 		{Name: "Input", Type: etensor.FLOAT32, CellShape: shape, DimNames: []string{"Y", "X"}},
 		{Name: "Output", Type: etensor.FLOAT32, CellShape: shape, DimNames: []string{"Y", "X"}},
 	}, nPats)
-	numOn := shape[0] * shape[1] / 8
+	numOn := ints.MaxInt((shape[0]*shape[1])/4, 1) // ensure min at least 1
 	patgen.PermutedBinaryRows(pats.Cols[1], numOn, 1, 0)
 	patgen.PermutedBinaryRows(pats.Cols[2], numOn, 1, 0)
+	// fmt.Printf("%v\n", pats.Cols[1].(*etensor.Float32).Values)
 	return pats
 }
 
@@ -358,11 +429,10 @@ func runFunEpochs(ctx *Context, pats *etable.Table, net *Network, fun func(*Netw
 			input := inPats.SubSpace([]int{pi})
 			output := outPats.SubSpace([]int{pi})
 
-			inputLayer.ApplyExt(ctx, 0, input)
-			outputLayer.ApplyExt(ctx, 0, output)
-
 			net.NewState(ctx)
 			ctx.NewState(etime.Train)
+			inputLayer.ApplyExt(ctx, 0, input)
+			outputLayer.ApplyExt(ctx, 0, output)
 			for cycle := 0; cycle < nCycles; cycle++ {
 				fun(net, ctx)
 			}

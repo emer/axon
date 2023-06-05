@@ -554,13 +554,13 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
-			(*dwts)[idx+int(ni)] = NrnAvgV(ctx, ni, ActAvg)
+			(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, ActAvg)
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIdx + lni
-				(*dwts)[idx+int(ni)] = NrnAvgV(ctx, ni, DTrgAvg)
+				(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, DTrgAvg)
 			}
 			idx += int(nn)
 		}
@@ -570,6 +570,9 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIdx + syi
 					(*dwts)[idx+int(syi)] = SynV(ctx, syni, DWt)
+					// if syni < 100 {
+					// 	fmt.Printf("%d: %d = %g\n", syni, syi, (*dwts)[idx+int(syi)])
+					// }
 				}
 			}
 			idx += int(pj.NSyns)
@@ -594,13 +597,13 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
-			SetNrnAvgV(ctx, ni, ActAvg, davg*dwts[idx+int(ni)])
+			SetNrnAvgV(ctx, ni, ActAvg, davg*dwts[idx+int(lni)])
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIdx + lni
-				SetNrnAvgV(ctx, ni, DTrgAvg, dwts[idx+int(ni)])
+				SetNrnAvgV(ctx, ni, DTrgAvg, dwts[idx+int(lni)])
 			}
 			idx += int(nn)
 		}
@@ -610,6 +613,9 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIdx + syi
 					SetSynV(ctx, syni, DWt, dwts[idx+int(syi)])
+					// if syni < 100 {
+					// 	fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], SynV(ctx, syni, DWt))
+					// }
 				}
 			}
 			idx += int(pj.NSyns)
