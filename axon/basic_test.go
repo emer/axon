@@ -330,8 +330,8 @@ func NetActTest(t *testing.T, gpu bool) {
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
-		// testNet.GPU.RecFunTimes = true // NVIDIA doesn't work with this or nothing
-		testNet.GPU.CycleByCycle = true // always works with this -- now mac is failing without this!
+		// testNet.GPU.RecFunTimes = true // alt modes
+		// testNet.GPU.CycleByCycle = true // alt modes
 	}
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
@@ -703,6 +703,8 @@ func NetTestLearn(t *testing.T, gpu bool) {
 
 		if gpu {
 			testNet.ConfigGPUnoGUI(ctx)
+			// testNet.GPU.RecFunTimes = true // alt forms
+			// testNet.GPU.CycleByCycle = true //
 		}
 
 		for pi := 0; pi < 4; pi++ {
@@ -724,8 +726,6 @@ func NetTestLearn(t *testing.T, gpu bool) {
 					ctx.CycleInc()
 					if gpu {
 						testNet.GPU.SyncNeuronsFmGPU()
-						// testNet.GPU.RecFunTimes = true // doesn't work with this or nothing
-						// testNet.GPU.CycleByCycle = true // always works with this
 					}
 
 					hidLay.UnitVals(&hidAct, "Act", 0)
