@@ -52,23 +52,38 @@ func main() {
 
 // see params.go for params
 
+// SimParams has all the custom params for this sim
+type SimParams struct {
+	NData        int `desc:"number of data-parallel items to process at once"`
+	NTrials      int `desc:"number of trials per epoch"`
+	TestInterval int `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	PCAInterval  int `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+}
+
+// Defaults sets default params
+func (ss *SimParams) Defaults() {
+	ss.NData = 16
+	ss.NTrials = 32
+	ss.TestInterval = 5
+	ss.PCAInterval = 5
+}
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Params       emer.Params      `view:"inline" desc:"all parameter management"`
-	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats        estats.Stats     `desc:"contains computed statistic values"`
-	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
-	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Context      axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
-	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Sim      SimParams        `desc:"misc params specific to this simulation"`
+	Params   emer.Params      `view:"inline" desc:"all parameter management"`
+	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
+	Stats    estats.Stats     `desc:"contains computed statistic values"`
+	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
+	Pats     *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
+	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
+	Context  axon.Context     `desc:"axon timing parameters and state"`
+	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
@@ -83,6 +98,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	ss.Sim.Defaults()
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
@@ -91,8 +107,6 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.TestInterval = 5
-	ss.PCAInterval = 5
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }

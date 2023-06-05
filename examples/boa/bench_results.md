@@ -1,5 +1,5 @@
 
-# v1.18.0
+# v1.8.0
 
 Main conclusions:
 * need NData >= 4 to see performance advantage on GPU.

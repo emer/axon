@@ -65,49 +65,28 @@ func main() {
 
 // see params.go for params
 
-// Sim encapsulates the entire simulation model, and we define all the
-// functionality as methods on this struct.  This structure keeps all relevant
-// state information organized and available without having to pass everything around
-// as arguments to methods, and provides the core GUI interface (note the view tags
-// for the fields which provide hints to how things should be displayed).
-type Sim struct {
-	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Params       emer.Params      `view:"inline" desc:"all parameter management"`
-	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats        estats.Stats     `desc:"contains computed statistic values"`
-	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Context      axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
-	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
-	V1V4Prjn     *prjn.PoolTile   `view:"projection from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
-	NOutPer      int              `desc:"number of units per localist output unit"`
-
-	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
-	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+// SimParams has all the custom params for this sim
+type SimParams struct {
+	NData        int            `desc:"number of data-parallel items to process at once"`
+	NTrials      int            `desc:"number of trials per epoch"`
+	TestInterval int            `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	PCAInterval  int            `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	V1V4Prjn     *prjn.PoolTile `view:"projection from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
+	NOutPer      int            `desc:"number of units per localist output unit"`
 }
 
-// New creates new blank elements and initializes defaults
-func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSets
-	ss.Params.AddNetwork(ss.Net)
-	ss.Params.AddSim(ss)
-	ss.Params.AddNetSize()
-	ss.Stats.Init()
-	ss.RndSeeds.Init(100) // max 100 runs
-	ss.NOutPer = 5
+// Defaults sets default params
+func (ss *SimParams) Defaults() {
+	ss.NData = 16
+	ss.NTrials = 128
 	ss.TestInterval = -1 // 10
 	ss.PCAInterval = 5
-	ss.Context.Defaults()
-	ss.ConfigArgs() // do this first, has key defaults
+	ss.NOutPer = 5
 	ss.NewPrjns()
 }
 
 // New creates new blank elements and initializes defaults
-func (ss *Sim) NewPrjns() {
+func (ss *SimParams) NewPrjns() {
 	ss.V1V4Prjn = prjn.NewPoolTile()
 	ss.V1V4Prjn.Size.Set(4, 4)
 	ss.V1V4Prjn.Skip.Set(2, 2)
@@ -117,6 +96,41 @@ func (ss *Sim) NewPrjns() {
 	// weights are systematicaly smaller.
 	// ss.V1V4Prjn.GaussFull.DefNoWrap()
 	// ss.V1V4Prjn.GaussInPool.DefNoWrap()
+}
+
+// Sim encapsulates the entire simulation model, and we define all the
+// functionality as methods on this struct.  This structure keeps all relevant
+// state information organized and available without having to pass everything around
+// as arguments to methods, and provides the core GUI interface (note the view tags
+// for the fields which provide hints to how things should be displayed).
+type Sim struct {
+	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Sim      SimParams        `desc:"misc params specific to this simulation"`
+	Params   emer.Params      `view:"inline" desc:"all parameter management"`
+	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
+	Stats    estats.Stats     `desc:"contains computed statistic values"`
+	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
+	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
+	Context  axon.Context     `desc:"axon timing parameters and state"`
+	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+
+	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
+	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
+	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+}
+
+// New creates new blank elements and initializes defaults
+func (ss *Sim) New() {
+	ss.Sim.Defaults()
+	ss.Net = &axon.Network{}
+	ss.Params.Params = ParamSets
+	ss.Params.AddNetwork(ss.Net)
+	ss.Params.AddSim(ss)
+	ss.Params.AddNetSize()
+	ss.Stats.Init()
+	ss.RndSeeds.Init(100) // max 100 runs
+	ss.Context.Defaults()
+	ss.ConfigArgs() // do this first, has key defaults
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,7 +207,11 @@ func (ss *Sim) ConfigEnv() error {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) error {
+	ctx := &ss.Context
 	net.InitName(net, "Objrec")
+	net.SetMaxData(ctx, ss.Sim.NData)
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
+
 	v1 := net.AddLayer4D("V1", 10, 10, 5, 4, axon.InputLayer)
 	v4 := net.AddLayer4D("V4", 5, 5, 10, 10, axon.SuperLayer) // 10x10 == 16x16 > 7x7 (orig)
 	it := net.AddLayer2D("IT", 16, 16, axon.SuperLayer)       // 16x16 == 20x20 > 10x10 (orig)
@@ -215,9 +233,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) error {
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
 
-	// net.LateralConnectLayerPrjn(v4, pool1to1, &axon.HebbPrjn{}).SetType(emer.Inhib)
-	// net.LateralConnectLayerPrjn(it, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
-
 	it.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "V4", YAlign: relpos.Front, Space: 2})
 	out.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "IT", YAlign: relpos.Front, Space: 2})
 
@@ -227,14 +242,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) error {
 
 	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
 
-	if err := net.Build(); err != nil {
+	if err := net.Build(ctx); err != nil {
 		return err
 	}
 	net.Defaults()
 	if err := ss.Params.SetObject("Network"); err != nil {
 		return err
 	}
-	net.InitWts()
+	net.InitWts(ctx)
 
 	return nil
 }
@@ -245,6 +260,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) error {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	if !ss.Args.Bool("nogui") {
+		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
+	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed()
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
@@ -268,9 +286,11 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 200).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
+	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(ss.Sim.NData)))
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -278,15 +298,10 @@ func (ss *Sim) ConfigLoops() {
 	for mode := range man.Stacks {
 		mode := mode // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
-			// note: OnStart for env.Env, others may happen OnEnd
-			ss.Envs[mode.String()].Step()
-		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
-		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -399,6 +414,14 @@ func (ss *Sim) ConfigLoops() {
 
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
+		for _, m := range man.Stacks {
+			m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
+				ss.NetViewCounters()
+			})
+			m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
+				ss.NetViewCounters()
+			})
+		}
 	}
 
 	if Debug {
@@ -475,7 +498,7 @@ func (ss *Sim) InitStats() {
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
-func (ss *Sim) StatCounters() {
+func (ss *Sim) StatCounters(di int) {
 	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
@@ -485,19 +508,27 @@ func (ss *Sim) StatCounters() {
 	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
 	ss.Stats.SetString("TrialName", ev.String())
 	ss.Stats.SetString("Cat", fmt.Sprintf("%d", ev.CurLED))
+}
+
+func (ss *Sim) NetViewCounters() {
+	if ss.GUI.ViewUpdt.View == nil {
+		return
+	}
+	di := ss.GUI.ViewUpdt.View.Di
+	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cat", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
-func (ss *Sim) TrialStats() {
+func (ss *Sim) TrialStats(di int) {
 	out := ss.Net.AxonLayerByName("Output")
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
 
 	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
-	ovt := ss.Stats.SetLayerTensor(ss.Net, "Output", "ActM")
+	ovt := ss.Stats.SetLayerTensor(ss.Net, "Output", "ActM", di)
 	rsp, trlErr, trlErr2 := ev.OutErr(ovt)
 	ss.Stats.SetFloat("TrlErr", trlErr)
 	ss.Stats.SetFloat("TrlErr2", trlErr2)
@@ -652,15 +683,22 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
-	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
 	row := dt.Rows
 
 	switch {
 	case time == etime.Cycle:
-		row = ss.Stats.Int("Cycle")
+		return
 	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
+		trl := ss.Stats.Int("Trial")
+		row = trl
+		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+			ss.Stats.SetInt("Trial", trl+di)
+			ss.TrialStats(di)
+			ss.StatCounters(di)
+			ss.Logs.LogRowDi(mode, time, row, di)
+		}
+		return // don't do reg below
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc

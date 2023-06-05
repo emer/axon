@@ -89,7 +89,7 @@ func (nt *Network) InitActs() {
 
 # Data Parallel
 
-The key elements of _data parallel_ processing of multiple input patterns in parallel using the same weights are as follows:
+As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel using the same weights is supported, as detailed below.  For models with simple "one step" independent inputs (i.e., no context required across trials -- _iid_), a single copy of the existing environment can be used, simply stepping through it in a `for` loop for each `di` data parallel index.  For models with temporal context (e.g., all deep predictive models, rl, pvlv, pcore, boa), `NData` copies of the environment must be created and used in turn for each `di`.  See the `deep_*` models and `boa` for examples.  There is support in the `emergent/env` code for managing these environments.
 
 * `Network.MaxData` must be set to the maximum number of data parallel streams prior to `Build()` -- determines allocation of `Neurons`, `Synapses`, etc:
 
@@ -118,7 +118,7 @@ for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 net.ApplyExts(ctx) // now required for GPU mode
 ```
 
-* Configure `looper` with a counter increment equal to the number of parallel data items and a max that is an integer multiple of NData:
+* Configure `looper` with a counter increment equal to the number of parallel data items and a max that is an integer multiple of NData, and use the `AddTimeIncr` method to increment trials by NData each step:
 
 ```Go
 	trls := int(mat32.IntMultipleGE(25, float32(ss.NData))) // 25 nominal trials per epoch
@@ -126,19 +126,53 @@ net.ApplyExts(ctx) // now required for GPU mode
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
 ```
 
-* In sim `Log()` method, iterate over `di` data parallel to record stats for each item, calling the `TrialStats` method with the di index to compute relevant stats:
+* `StatCounters` and `TrialStats` should take a `di` arg and are not called directly in Looper config -- instead called during logging.  Updating the counter & stats displayed at the bottom of the NetView should be done using a separate `NetViewCounters` method, called only in GUI mode in the else case of the "nogui" looper config:
 
 ```Go
+	for _, m := range man.Stacks {
+		m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
+			ss.NetViewCounters()
+		})
+		m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
+			ss.NetViewCounters()
+		})
+	}
+```
+
+This ensures that the current data index counters are displayed:
+
+```Go
+func (ss *Sim) NetViewCounters() {
+	if ss.GUI.ViewUpdt.View == nil {
+		return
+	}
+	di := ss.GUI.ViewUpdt.View.Di
+	ss.StatCounters(di)
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
+    // note: replace above with relevant counters -- from prior StatCounters
+}
+```
+
+* In sim `Log()` method, iterate over `di` data parallel to record stats for each item, calling the `TrialStats` and `StatCounters` methods with the di index to compute relevant stats.  Also, cycle-level logging should not in general be used unless essential, and then only in test mode -- GPU runs 10 cycles in a chunk and doesn't sync network state back until minus & plus phase end.
+
+```Go
+	case time == etime.Cycle:
+		return
 	case time == etime.Trial:
 		trl := ss.Stats.Int("Trial")
 		row = trl
 		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
+			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
 		}
 		return // don't do reg
 ```
+
+* Custom Log items can use the `ctx.Di` data index as needed to grab the relevant state from the network -- the `di` arg has been added to methods as needed, so you'll see those during build. 
+    + Use `ly.LayerVals(ctx.Di)` instead of `ly.Vals`
+    + `ly.Pool(pi, ctx.Di)` instead of `ly.Pool[pi+1]` etc, where `pi` is the pool index.
 
 # Overview of the Axon Algorithm
 
