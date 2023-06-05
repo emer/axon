@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build notyet
+
 // ra25x runs a simple random-associator four-layer axon network
 // that uses the standard supervised learning paradigm to learn
 // mappings between 25 random input / output patterns

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build notyet
+
 // deep_move runs a DeepAxon network predicting the effects of movement
 // on visual inputs.
 package main

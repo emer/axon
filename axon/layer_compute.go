@@ -852,7 +852,7 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			lpl.AvgDif.UpdateVal(mat32.Abs(NrnAvgV(ctx, ni, AvgDif)))
 		}
 		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFmTrgAvg LayPool Layer: %s  pool: %d\n", ly.Nm)
+			fmt.Printf("AvgDifFmTrgAvg LayPool Layer: %s\n", ly.Nm)
 		})
 		lpl.AvgDif.Calc(int32(ly.Idx))
 

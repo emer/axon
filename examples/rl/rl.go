@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build notyet
+
 /*
 rl_cond explores the temporal differences (TD) and Rescorla-Wagner reinforcement learning algorithms under some basic Pavlovian conditioning environments.
 */

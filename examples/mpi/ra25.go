@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build notyet
+
 // mpi is a version of ra25 that runs under MPI to learn in parallel
 // across multiple nodes, sharing DWt changes via MPI.
 package main

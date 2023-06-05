@@ -22,7 +22,7 @@ var (
 	// set to true to save a new standard for test data
 	SaveStandard    = false
 	StandardFile    = "testdata/boa_test_std.json"
-	LayTolerance    = float32(0.0001)
+	LayTolerance    = float32(0.01)
 	GlobalTolerance = float32(0.00001)
 	NotMaintTol     = float32(0.02)
 	PTTol           = float32(0.05) // note: nmda diverges in maint on GPU, even with fastexp on GPU

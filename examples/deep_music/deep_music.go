@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build notyet
+
 // deep_music runs a DeepAxon network on predicting the next note
 // in a musical sequence of notes.
 package main
