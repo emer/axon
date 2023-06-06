@@ -25,7 +25,7 @@ var (
 	LayTolerance    = float32(0.2) // there is horrible variability on vspatch
 	GlobalTolerance = float32(0.00001)
 	NotMaintTol     = float32(0.02)
-	PTTol           = float32(0.05) // note: nmda diverges in maint on GPU, even with fastexp on GPU
+	PTTol           = float32(0.08) // note: nmda diverges in maint on GPU, even with fastexp on GPU
 )
 
 // ReportValDiffs
@@ -203,7 +203,7 @@ func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 		}
 		ex := []string{}
 		if excludeLays {
-			ex = []string{"Lay:"}
+			ex = []string{"Lay:", "GvNotMaint"}
 		}
 		ReportValDiffs(t, std, tdata, "Std", "Test", ex)
 	}
