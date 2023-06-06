@@ -62,7 +62,7 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ri
 		uint syni = RecvSynIdxs[synst + sci];
 		float dw = SynV(ctx, syni, DWt);
 		if (dw != 0) {
-			SetSynV(ctx, syni, DWt, -sm * sumDWt);
+			AddSynV(ctx, syni, DWt, -sm * sumDWt);
 		}
 	}	
 }

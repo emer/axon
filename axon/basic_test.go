@@ -7,6 +7,7 @@ package axon
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"os"
 	"reflect"
 	"runtime"
@@ -72,6 +73,14 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
+	{Name: "SubMean", Desc: "submean on Prjn dwt", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Prjn", Desc: "submean used in some models but not by default",
+				Params: params.Params{
+					"Prjn.Learn.Trace.SubMean": "1",
+				}},
+		},
+	}},
 }
 
 func newTestNet(ctx *Context, nData int) *Network {
@@ -88,6 +97,32 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
+
+	testNet.Build(ctx)
+	ctx.NetIdxs.NData = uint32(nData)
+	testNet.Defaults()
+	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
+	testNet.InitWts(ctx)                                       // get GScale here
+	testNet.NewState(ctx)
+	return &testNet
+}
+
+// full connectivity
+func newTestNetFull(ctx *Context, nData int) *Network {
+	var testNet Network
+	testNet.InitName(&testNet, "testNet")
+	testNet.SetRndSeed(42) // critical for ActAvg values
+	testNet.MaxData = uint32(nData)
+
+	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
+	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
+	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
+
+	_ = inLay
+	full := prjn.NewFull()
+	testNet.ConnectLayers(inLay, hidLay, full, ForwardPrjn)
+	testNet.ConnectLayers(hidLay, outLay, full, ForwardPrjn)
+	testNet.ConnectLayers(outLay, hidLay, full, BackPrjn)
 
 	testNet.Build(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
@@ -482,7 +517,7 @@ func TestGPUNDataDiffs(t *testing.T) {
 
 // ReportValDiffs
 func ReportValDiffs(t *testing.T, va, vb map[string]float32, aLabel, bLabel string, exclude []string) {
-	const TOLERANCE = float32(1.0e-3) // GPU Nmda has genuine diffs beyond e-5, accumulate over time..
+	const TOLERANCE = float32(1.0e-5) // GPU Nmda has genuine diffs beyond e-5, accumulate over time..
 	keys := maps.Keys(va)
 	sort.Strings(keys)
 	nerrs := 0
@@ -986,11 +1021,24 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 // NetDebugLearn prints selected values (if printVals),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts bool) map[string]float32 {
+func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, submean bool) map[string]float32 {
 	ctx := NewContext()
-	testNet := newTestNet(ctx, nData)
+	var testNet *Network
+	rand.Seed(1337)
+
+	if submean {
+		testNet = newTestNetFull(ctx, nData) // otherwise no effect
+	} else {
+		testNet = newTestNet(ctx, nData)
+	}
+
+	testNet.SetRndSeed(42) // critical for ActAvg values
 
 	testNet.ApplyParams(ParamSets.SetByName("FullDecay").Sheets["Network"], false)
+
+	if submean {
+		testNet.ApplyParams(ParamSets.SetByName("SubMean").Sheets["Network"], false)
+	}
 
 	testNet.InitExt(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
@@ -1005,8 +1053,7 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts bo
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
-		testNet.GPU.RecFunTimes = true
-		// testNet.GPU.CycleByCycle = true // key for printing results cycle-by-cycle
+		testNet.GPU.CycleByCycle = true // key for printing results cycle-by-cycle
 	}
 
 	// these control what is printed.
@@ -1044,9 +1091,6 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts bo
 			for cyc := 0; cyc < 50; cyc++ {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
-				if gpu {
-					testNet.GPU.SyncNeuronsFmGPU()
-				}
 			}
 			if qtr == 2 {
 				testNet.MinusPhase(ctx)
@@ -1103,13 +1147,24 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts bo
 
 func TestDebugLearn(t *testing.T) {
 	t.Skip("skipped in regular testing")
-	NetDebugLearn(t, true, false, 2, true)
+	NetDebugLearn(t, true, false, 2, true, false)
 }
 
 func TestNDataLearn(t *testing.T) {
-	nd1Vals := NetDebugLearn(t, false, false, 1, true)
-	nd4Vals := NetDebugLearn(t, false, false, 4, true)
+	nd1Vals := NetDebugLearn(t, false, false, 1, true, false)
+	nd4Vals := NetDebugLearn(t, false, false, 4, true, false)
 	ReportValDiffs(t, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt"})
+}
+
+func TestGPUSubMeanLearn(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	// fmt.Printf("\n#############\nCPU\n")
+	cpuVals := NetDebugLearn(t, false, false, 1, false, true)
+	// fmt.Printf("\n#############\nGPU\n")
+	gpuVals := NetDebugLearn(t, false, true, 1, false, true)
+	ReportValDiffs(t, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
 
 func TestInhibAct(t *testing.T) {

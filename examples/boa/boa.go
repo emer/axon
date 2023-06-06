@@ -1174,7 +1174,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("epochs", 50)
 	ss.Args.SetInt("runs", 10)
 	ss.Args.AddBool("test", false, "records testing data in TestData")
-	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
+	ss.Args.AddInt("ndata", 8, "number of data items to run in parallel")
 	ss.Args.AddBool("bench", false, "run benchmarking")
 	ss.Args.Parse() // always parse
 }
@@ -1184,6 +1184,7 @@ func (ss *Sim) RunNoGUI() {
 	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+	ss.Sim.NData = ss.Args.Int("ndata")
 
 	if ss.Args.Bool("test") {
 		ss.TestData = make(map[string]float32)

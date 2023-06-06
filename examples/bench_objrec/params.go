@@ -1,5 +1,3 @@
-//go:build notyet
-
 package main
 
 import "github.com/emer/emergent/params"

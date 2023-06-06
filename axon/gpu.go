@@ -125,8 +125,10 @@ func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
 // Configures the GPU -- call after Network is Built, initialized, params are set,
 // and everything is ready to run.
 func (nt *Network) ConfigGPUnoGUI(ctx *Context) {
-	if err := vgpu.InitNoDisplay(); err != nil {
-		panic(err)
+	if TheGPU == nil {
+		if err := vgpu.InitNoDisplay(); err != nil {
+			panic(err)
+		}
 	}
 	nt.GPU.Config(ctx, nt)
 }

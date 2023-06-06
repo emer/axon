@@ -89,7 +89,7 @@ func (nt *Network) InitActs() {
 
 # Data Parallel
 
-As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel using the same weights is supported, as detailed below.  For models with simple "one step" independent inputs (i.e., no context required across trials -- _iid_), a single copy of the existing environment can be used, simply stepping through it in a `for` loop for each `di` data parallel index.  For models with temporal context (e.g., all deep predictive models, rl, pvlv, pcore, boa), `NData` copies of the environment must be created and used in turn for each `di`.  See the `deep_*` models and `boa` for examples.  There is support in the `emergent/env` code for managing these environments.
+As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel using the same weights is supported, as detailed below.  For models with simple "one step" independent inputs (i.e., no context required across trials -- _iid_), a single copy of the existing environment can be used, simply stepping through it in a `for` loop for each `di` data parallel index.  For models with temporal context (e.g., all deep predictive models, rl, pvlv, pcore, boa), `NData` copies of the environment must be created and used in turn for each `di`.  See the `deep_*` models and `boa` for examples.  There is support in the `emergent/env` code for managing these environments.  As usual, see `examples/ra25` or other examples as relevant for specific implementation.
 
 * `Network.MaxData` must be set to the maximum number of data parallel streams prior to `Build()` -- determines allocation of `Neurons`, `Synapses`, etc:
 
