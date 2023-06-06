@@ -89,7 +89,7 @@ type Sim struct {
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
 	Context  axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt netview.ViewUpdt `desc:"netview update parameters"`
+	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
@@ -279,7 +279,7 @@ func (ss *Sim) ConfigLoops() {
 
 	trls := int(mat32.IntMultipleGE(float32(ntrls), float32(ss.Sim.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 

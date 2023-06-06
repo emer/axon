@@ -45,7 +45,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
-					"Layer.Inhib.Layer.Gi":       "2.8",  // 2.2 >= 2.4 > 2.8
+					"Layer.Inhib.Layer.Gi":       "2.2",  // 2.2 >= 2.4 > 2.8
 					"Layer.CT.GeGain":            "1.0",  // 1.0 >= 1.5 > 2.0 (very bad)
 					"Layer.CT.DecayTau":          "50",   // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
@@ -109,7 +109,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.5", // 0.2 > lower, higher
+					"Prjn.PrjnScale.Abs": "0.2", // 0.2 > lower, higher
 					"Prjn.Com.GType":     "MaintG",
 					"Prjn.SWts.Init.Sym": "true", // no effect?  not sure why
 				}},

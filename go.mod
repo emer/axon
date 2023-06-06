@@ -20,6 +20,7 @@ require (
 	github.com/goki/vgpu v1.0.26
 	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.0
+	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 )
 
