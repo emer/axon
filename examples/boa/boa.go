@@ -195,6 +195,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 	net.InitName(net, "Boa")
 	net.SetMaxData(ctx, ss.Sim.NData)
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	nUSs := ev.NDrives + 1 // first US / drive is novelty / curiosity
 	nuBgY := 5

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 /*
 neuron: This simulation illustrates the basic properties of neural spiking and
 rate-code activation, reflecting a balance of excitatory and inhibitory
@@ -161,10 +159,12 @@ func (ss *Sim) Config() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
+	ctx := &ss.Context
+
 	net.InitName(net, "Neuron")
 	net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
 
-	err := net.Build()
+	err := net.Build(ctx)
 	if err != nil {
 		log.Println(err)
 		return
@@ -176,7 +176,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 // InitWts loads the saved weights
 func (ss *Sim) InitWts(net *axon.Network) {
-	net.InitWts()
+	net.InitWts(&ss.Context)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -214,10 +214,11 @@ func (ss *Sim) UpdateView() {
 
 // RunCycles updates neuron over specified number of cycles
 func (ss *Sim) RunCycles() {
+	ctx := &ss.Context
 	ss.Init()
 	ss.StopNow = false
-	ss.Net.InitActs()
-	ss.Context.NewState(etime.Train)
+	ss.Net.InitActs(ctx)
+	ctx.NewState(etime.Train)
 	ss.SetParams("", false)
 	// ly := ss.Net.AxonLayerByName("Neuron")
 	// nrn := &(ly.Neurons[0])
@@ -245,35 +246,36 @@ func (ss *Sim) RunCycles() {
 // NeuronUpdt updates the neuron
 // this just calls the relevant code directly, bypassing most other stuff.
 func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
+	ctx := &ss.Context
 	ly := ss.Net.AxonLayerByName("Neuron")
-	ac := &ly.Params.Act
-	nrn := &(ly.Neurons[0])
+	ac := &ly.Params.Acts
+	// nrn := &(ly.Neurons[0])
 	nex := &ss.NeuronEx
 	// nrn.Noise = float32(ly.Params.Act.Noise.Gen(-1))
 	// nrn.Ge += nrn.Noise // GeNoise
 	// nrn.Gi = 0
 	if inputOn {
 		if ss.GeClamp {
-			nrn.GeRaw = ss.Ge
-			nrn.GeSyn = ac.Dt.GeSynFmRawSteady(nrn.GeRaw)
+			axon.SetNrnV(ctx, 0, 0, axon.GeRaw, ss.Ge)
+			axon.SetNrnV(ctx, 0, 0, axon.GeSyn, ac.Dt.GeSynFmRawSteady(axon.NrnV(ctx, 0, 0, axon.GeRaw)))
 		} else {
 			nex.InISI += 1
 			if nex.InISI > 1000/ss.SpikeHz {
-				nrn.GeRaw = ss.Ge
+				axon.SetNrnV(ctx, 0, 0, axon.GeRaw, ss.Ge)
 				nex.InISI = 0
 			} else {
-				nrn.GeRaw = 0
+				axon.SetNrnV(ctx, 0, 0, axon.GeRaw, 0)
 			}
-			nrn.GeSyn = ac.Dt.GeSynFmRaw(nrn.GeSyn, nrn.GeRaw)
+			axon.SetNrnV(ctx, 0, 0, axon.GeSyn, ac.Dt.GeSynFmRaw(axon.NrnV(ctx, 0, 0, axon.GeSyn), axon.NrnV(ctx, 0, 0, axon.GeRaw)))
 		}
 	} else {
-		nrn.GeRaw = 0
-		nrn.GeSyn = 0
+		axon.SetNrnV(ctx, 0, 0, axon.GeRaw, 0)
+		axon.SetNrnV(ctx, 0, 0, axon.GeSyn, 0)
 	}
-	nrn.GiRaw = ss.Gi
-	nrn.GiSyn = ac.Dt.GiSynFmRawSteady(nrn.GiRaw)
-	ly.GInteg(&ss.Context, 0, nrn, &ly.Pools[0], ly.Vals)
-	ly.SpikeFmG(&ss.Context, 0, nrn)
+	axon.SetNrnV(ctx, 0, 0, axon.GiRaw, ss.Gi)
+	axon.SetNrnV(ctx, 0, 0, axon.GiSyn, ac.Dt.GiSynFmRawSteady(axon.NrnV(ctx, 0, 0, axon.GiRaw)))
+	ly.GInteg(ctx, 0, 0, ly.Pool(0, 0), ly.LayerVals(0))
+	ly.SpikeFmG(ctx, 0, 0)
 }
 
 // Stop tells the sim to stop running
@@ -295,18 +297,19 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	}
 	err := ss.SetParamsSet("Base", sheet, setMsg)
 	ly := ss.Net.AxonLayerByName("Neuron")
-	ly.Params.Act.Gbar.E = 1
-	ly.Params.Act.Gbar.L = 0.2
-	ly.Params.Act.Erev.E = float32(ss.ErevE)
-	ly.Params.Act.Erev.I = float32(ss.ErevI)
-	// ly.Params.Act.Noise.Var = float64(ss.Noise)
-	ly.Params.Act.KNa.On.SetBool(ss.KNaAdapt)
-	ly.Params.Act.Mahp.Gbar = ss.MahpGbar
-	ly.Params.Act.NMDA.Gbar = ss.NMDAGbar
-	ly.Params.Act.GABAB.Gbar = ss.GABABGbar
-	ly.Params.Act.VGCC.Gbar = ss.VGCCGbar
-	ly.Params.Act.AK.Gbar = ss.AKGbar
-	ly.Params.Act.Update()
+	lyp := ly.Params
+	lyp.Acts.Gbar.E = 1
+	lyp.Acts.Gbar.L = 0.2
+	lyp.Acts.Erev.E = float32(ss.ErevE)
+	lyp.Acts.Erev.I = float32(ss.ErevI)
+	// lyp.Acts.Noise.Var = float64(ss.Noise)
+	lyp.Acts.KNa.On.SetBool(ss.KNaAdapt)
+	lyp.Acts.Mahp.Gbar = ss.MahpGbar
+	lyp.Acts.NMDA.Gbar = ss.NMDAGbar
+	lyp.Acts.GabaB.Gbar = ss.GABABGbar
+	lyp.Acts.VGCC.Gbar = ss.VGCCGbar
+	lyp.Acts.AK.Gbar = ss.AKGbar
+	lyp.Acts.Update()
 	return err
 }
 
@@ -349,7 +352,6 @@ func (ss *Sim) ConfigLogs() {
 
 func (ss *Sim) ConfigLogItems() {
 	ly := ss.Net.AxonLayerByName("Neuron")
-	nrn := &(ly.Neurons[0])
 	// nex := &ss.NeuronEx
 	lg := &ss.Logs
 
@@ -374,7 +376,7 @@ func (ss *Sim) ConfigLogItems() {
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					vl, _ := nrn.VarByName(cvnm)
+					vl := ly.UnitVal(cvnm, []int{0, 0}, 0)
 					ctx.SetFloat32(vl)
 				}}})
 	}

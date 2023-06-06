@@ -107,7 +107,6 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
-	// ss.Defaults()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

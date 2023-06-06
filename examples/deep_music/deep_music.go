@@ -135,7 +135,7 @@ func (ss *Sim) ConfigEnv() {
 	song := "bach_goldberg.mid"
 	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// have to push it to 60 to get an effect of Tau=4 vs. 1
-	maxRows := 30
+	maxRows := 32
 	if ss.Sim.Hid2 {
 		ss.Params.ExtraSets = "Hid2 "
 	} else {
@@ -181,6 +181,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.InitName(net, "DeepMusic")
 	net.SetMaxData(ctx, ss.Sim.NData)
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
@@ -521,6 +522,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.AllTimes, "Time")

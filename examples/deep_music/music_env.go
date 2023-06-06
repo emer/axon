@@ -221,6 +221,9 @@ func (ev *MusicEnv) Config(fname string, track, maxRows, unitsper int) {
 
 func (ev *MusicEnv) ConfigNData(ndata int) {
 	ev.DiOffset = ev.Song.Rows / (ndata + 1)
+	if ev.DiOffset < 2 {
+		ev.DiOffset = 2
+	}
 }
 
 func (ev *MusicEnv) Init(run int) {
