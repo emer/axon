@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 /*
 rl_cond explores the temporal differences (TD) and Rescorla-Wagner reinforcement learning algorithms under some basic Pavlovian conditioning environments.
 */
@@ -37,7 +35,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -206,7 +204,6 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
-		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -268,7 +265,7 @@ func (ss *Sim) NewRun() {
 	ss.Context.Mode = etime.Train
 	ss.Net.InitWts(&ss.Context)
 	ss.InitStats()
-	ss.StatCounters()
+	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Trial)
 }
 
@@ -282,15 +279,27 @@ func (ss *Sim) InitStats() {
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
-func (ss *Sim) StatCounters() {
-	mode := ss.Context.Mode
+func (ss *Sim) StatCounters(di int) {
+	ctx := &ss.Context
+	mode := ctx.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
+	trl := ss.Stats.Int("Trial")
+	ss.Stats.SetInt("Trial", trl+di)
+	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ev := ss.Envs[ss.Context.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*CondEnv).String())
+}
+
+func (ss *Sim) NetViewCounters() {
+	if ss.GUI.ViewUpdt.View == nil {
+		return
+	}
+	di := ss.GUI.ViewUpdt.View.Di
+	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle"})
 }
 
@@ -338,7 +347,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode != etime.Analyze {
 		ctx.Mode = mode // Also set specifically in a Loop callback.
 	}
-	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
 	if dt == nil {
 		return
@@ -347,14 +355,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 	switch {
 	case time == etime.Cycle:
-		row = ss.Stats.Int("Cycle")
-		// case time == etime.Trial:
-		// 	row = ss.Stats.Int("Trial")
+		return
 	case time == etime.Trial:
-		trl := ss.Stats.Int("Trial")
 		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
-			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
+			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, dt.Rows, di)
 		}
 		return // don't do reg
@@ -375,7 +380,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	// nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
@@ -431,7 +436,12 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.SetInt("epochs", 30)
 	ss.Args.SetInt("runs", 1)
+	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.NData = ss.Args.Int("ndata")
+	}
 }
 
 func (ss *Sim) RunNoGUI() {

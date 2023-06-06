@@ -843,7 +843,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
 	// nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
 	// nv.Scene().Camera.LookAt(mat32.Vec3{0.00030842167, 0.045156803, -0.039506555}, mat32.Vec3{0, 1, 0})
@@ -942,7 +942,12 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.SetInt("epochs", 200)
 	ss.Args.SetInt("runs", 10)
+	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+	}
 }
 
 func (ss *Sim) RunNoGUI() {

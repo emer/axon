@@ -149,20 +149,14 @@ func (ss *Sim) ConfigEnv() {
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Dsc = "training params and state"
 		trn.Seq.Max = 25 // 25 sequences per epoch training
-		trn.RndSeed = 77
-		// if !ss.EnvSameSeed {
-		trn.RndSeed += int64(di) * 77
-		// }
+		trn.RndSeed = 73 + int64(di)*73
 		trn.TMatReber()
 		trn.Validate()
 
 		tst.Nm = env.ModeDi(etime.Test, di)
 		tst.Dsc = "testing params and state"
 		tst.Seq.Max = 10
-		tst.RndSeed = 177
-		// if !ss.EnvSameSeed {
-		tst.RndSeed += int64(di) * 177
-		// }
+		tst.RndSeed = 181 + int64(di)*181
 		tst.TMatReber() // todo: random
 		tst.Validate()
 
@@ -315,18 +309,18 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
-	// lrate schedule
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LRateSched", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		switch trnEpc {
-		case 40:
-			// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			// ss.Net.LRateSched(0.2) // 0.2
-		case 60:
-			// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			// ss.Net.LRateSched(0.1) // 0.1
-		}
-	})
+	// // lrate schedule
+	// man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LRateSched", func() {
+	// 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	// 	switch trnEpc {
+	// 	case 40:
+	// 		// mpi.Printf("learning rate drop at: %d\n", trnEpc)
+	// 		// ss.Net.LRateSched(0.2) // 0.2
+	// 	case 60:
+	// 		// mpi.Printf("learning rate drop at: %d\n", trnEpc)
+	// 		// ss.Net.LRateSched(0.1) // 0.1
+	// 	}
+	// })
 
 	////////////////////////////////////////////
 	// GUI
@@ -428,15 +422,18 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters(di int) {
+	ctx := &ss.Context
 	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
+	trl := ss.Stats.Int("Trial")
+	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
-	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	// ev := ss.Envs[ss.Context.Mode.String()]
-	// ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
+	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
+	ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*FSAEnv)
+	ss.Stats.SetString("TrialName", ev.String())
 }
 
 func (ss *Sim) NetViewCounters() {
@@ -445,7 +442,7 @@ func (ss *Sim) NetViewCounters() {
 	}
 	di := ss.GUI.ViewUpdt.View.Di
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "Output", "TrlErr", "TrlCorSim"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "Output", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -479,8 +476,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
-	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
 	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
@@ -583,9 +581,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		trl := ss.Stats.Int("Trial")
 		for di := 0; di < ss.Sim.NData; di++ {
-			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
@@ -626,7 +622,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 	ss.ConfigNetView(nv)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
@@ -693,7 +689,12 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 1)
+	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+	}
 }
 
 func (ss *Sim) RunNoGUI() {

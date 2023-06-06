@@ -18,8 +18,6 @@ import (
 type FSAEnv struct {
 	Nm         string          `desc:"name of this environment"`
 	Dsc        string          `desc:"description of this environment"`
-	Rand       erand.SysRand   `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
-	RndSeed    int64           `inactive:"+" desc:"random seed"`
 	TMat       etensor.Float64 `view:"no-inline" desc:"transition matrix, which is a square NxN tensor with outer dim being current state and inner dim having probability of transitioning to that state"`
 	Labels     etensor.String  `desc:"transition labels, one for each transition cell in TMat matrix"`
 	AState     env.CurPrvInt   `desc:"automaton state within FSA that we're in"`
@@ -31,6 +29,8 @@ type FSAEnv struct {
 	Seq        env.Ctr         `view:"inline" desc:"sequence counter within epoch"`
 	Tick       env.Ctr         `view:"inline" desc:"tick counter within sequence"`
 	Trial      env.Ctr         `view:"inline" desc:"trial is the step counter within sequence - how many steps taken within current sequence -- it resets to 0 at start of each sequence"`
+	Rand       erand.SysRand   `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	RndSeed    int64           `inactive:"+" desc:"random seed"`
 }
 
 func (ev *FSAEnv) Name() string { return ev.Nm }

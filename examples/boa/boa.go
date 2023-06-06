@@ -156,9 +156,9 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Defaults()
-		trn.RndSeed = 77
+		trn.RndSeed = 73
 		if !ss.Sim.EnvSameSeed {
-			trn.RndSeed += int64(di) * 77
+			trn.RndSeed += int64(di) * 73
 		}
 		trn.Config()
 		trn.Validate()
@@ -1038,11 +1038,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		// row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
 		if mode == etime.Train {
-			trl := ss.Loops.GetLoop(mode, etime.Trial).Counter.Cur
-			// trnEpc := ss.Loops.GetLoop(mode, etime.Epoch).Counter.Cur
 			for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 				diu := uint32(di)
-				ss.Stats.SetInt("Trial", trl+di)
 				ss.TrialStats(di)
 				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
@@ -1085,7 +1082,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.GammaCycle, etime.AlphaCycle)
+	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
 	nv.Scene().Camera.Pose.Pos.Set(0, 1.4, 2.6)
 	nv.Scene().Camera.LookAt(mat32.Vec3{X: 0, Y: 0, Z: 0}, mat32.Vec3{X: 0, Y: 1, Z: 0})
@@ -1174,9 +1171,13 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("epochs", 50)
 	ss.Args.SetInt("runs", 10)
 	ss.Args.AddBool("test", false, "records testing data in TestData")
-	ss.Args.AddInt("ndata", 8, "number of data items to run in parallel")
+	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.AddBool("bench", false, "run benchmarking")
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+	}
 }
 
 func (ss *Sim) RunNoGUI() {

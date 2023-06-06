@@ -407,9 +407,12 @@ func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float3
 	}
 }
 
-// DecayStateAll decays activation state by given proportion
-// (default decay values are ly.Params.Acts.Decay.Act, Glong)
-func (ly *Layer) DecayStateAll(ctx *Context, decay, glong, ahp float32) {
+// DecayStateNeuronsAll decays neural activation state by given proportion
+// (default decay values are ly.Params.Acts.Decay.Act, Glong, AHP)
+// for all data parallel indexes. Does not decay pool or layer state.
+// This is used for minus phase of Pulvinar layers to clear state in prep
+// for driver plus phase.
+func (ly *Layer) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp float32) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
@@ -420,7 +423,6 @@ func (ly *Layer) DecayStateAll(ctx *Context, decay, glong, ahp float32) {
 			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		}
 	}
-	ly.InitPrjnGBuffs(ctx)
 }
 
 // AvgMaxVarByPool returns the average and maximum value of given variable
@@ -447,7 +449,7 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIdx, di int) mi
 	return am
 }
 
-// aMinusPhase does updating at end of the minus phase
+// MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ctx *Context) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -482,7 +484,7 @@ func (ly *Layer) MinusPhasePost(ctx *Context) {
 	case MatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
 	case PulvinarLayer:
-		ly.DecayStateAll(ctx, 1, 1, 1)
+		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
 	}
 }
 

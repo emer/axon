@@ -156,7 +156,7 @@ func (nt *Network) MinusPhase(ctx *Context) {
 		ly.MinusPhasePost(ctx)
 	}
 	if nt.GPU.On {
-		nt.GPU.SyncStateGBufToGPU()
+		nt.GPU.SyncStateToGPU()
 	}
 }
 

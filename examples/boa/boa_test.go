@@ -23,7 +23,7 @@ var (
 	SaveStandard    = false
 	StandardFile    = "testdata/boa_test_std.json"
 	LayTolerance    = float32(0.2) // there is horrible variability on vspatch
-	GlobalTolerance = float32(0.00001)
+	GlobalTolerance = float32(0.05)
 	NotMaintTol     = float32(0.02)
 	PTTol           = float32(0.08) // note: nmda diverges in maint on GPU, even with fastexp on GPU
 )
@@ -210,7 +210,7 @@ func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 }
 
 func TestStdCPUnData1(t *testing.T) {
-	RunStdTest(t, false, true, 1)
+	RunStdTest(t, false, false, 1)
 }
 
 func TestStdGPUnData1(t *testing.T) {

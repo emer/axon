@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 package main
 
 import "github.com/emer/emergent/params"
@@ -36,8 +34,8 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Burst.ThrRel":         "0.1", // no diffs here -- music makes a diff
-					"Layer.Burst.ThrAbs":         "0.1",
+					"Layer.Bursts.ThrRel":        "0.1", // no diffs here -- music makes a diff
+					"Layer.Bursts.ThrAbs":        "0.1",
 				}},
 			{Sel: ".DepthIn", Desc: "",
 				Params: params.Params{
@@ -96,7 +94,6 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base":    "0.005", // 0.005 > 0.002 > 0.01
 					"Prjn.Learn.Trace.SubMean": "0",     // 0 > 1 even with CTCtxt = 0
 					"Prjn.SWts.Adapt.LRate":    "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
-					"Prjn.SWts.Adapt.DreamVar": "0.0",   // 0.01 is just tolerable
 					"Prjn.SWts.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 4 == 2 > 1

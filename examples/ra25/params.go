@@ -20,13 +20,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "1.05",  // 1.05 > 1.1 for short-term; 1.1 better long-run stability
-					"Layer.Inhib.Layer.FB":       "0.5",   // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
-					"Layer.Inhib.ActAvg.Nominal": "0.06",  // 0.6 > 0.5
-					"Layer.Acts.NMDA.MgC":        "1.4",   // 1.2 > 1.4 for SynSpkTheta
-					"Layer.Acts.NMDA.Gbar":       "0.006", // 0.006 def
-					"Layer.Learn.LrnNMDA.Gbar":   "0.006",
-					"Layer.Acts.GabaB.Gbar":      "0.015", // 0.015 > lower -- learns faster, lasts longer
+					"Layer.Inhib.Layer.Gi":       "1.05", // 1.05 > 1.1 for short-term; 1.1 better long-run stability
+					"Layer.Inhib.Layer.FB":       "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
+					"Layer.Inhib.ActAvg.Nominal": "0.06", // 0.6 > 0.5
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},

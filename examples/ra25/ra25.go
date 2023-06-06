@@ -422,14 +422,17 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters(di int) {
-	mode := ss.Context.Mode
+	ctx := &ss.Context
+	mode := ctx.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
+	trl := ss.Stats.Int("Trial")
+	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
-	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ev := ss.Envs[ss.Context.Mode.String()]
+	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
+	ev := ss.Envs[ctx.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
 }
 
@@ -512,10 +515,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		trl := ss.Stats.Int("Trial")
-		row = trl
 		for di := 0; di < ss.Sim.NData; di++ {
-			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
@@ -538,7 +538,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Trial, etime.Trial)
+	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
@@ -607,10 +607,14 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
-	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
+	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+	}
 }
 
 func (ss *Sim) RunNoGUI() {

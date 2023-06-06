@@ -479,6 +479,8 @@ func (ss *Sim) StatCounters(di int) {
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
+	trl := ss.Stats.Int("Trial")
+	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
@@ -668,10 +670,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		trl := ss.Stats.Int("Trial")
-		row = trl
 		for di := 0; di < ss.Sim.NData; di++ {
-			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
@@ -791,11 +790,14 @@ func (ss *Sim) RunGUI() {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 1)
-	ss.Args.AddInt("ndata", 8, "number of data items to run in parallel")
+	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+	}
 }
 
 func (ss *Sim) RunNoGUI() {
