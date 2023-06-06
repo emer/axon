@@ -407,11 +407,12 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()]
+	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev.Step()
+		ss.Stats.SetIntDi("Target", int(di), ev.CurLED)
 		for _, lnm := range lays {
 			ly := ss.Net.AxonLayerByName(lnm)
 			pats := ev.State(ly.Nm)
@@ -504,7 +505,8 @@ func (ss *Sim) TrialStats(di int) {
 
 	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
 	ovt := ss.Stats.SetLayerTensor(ss.Net, "Output", "ActM", di)
-	rsp, trlErr, trlErr2 := ev.OutErr(ovt)
+	targ := ss.Stats.IntDi("Target", di)
+	rsp, trlErr, trlErr2 := ev.OutErr(ovt, targ)
 	ss.Stats.SetFloat("TrlErr", trlErr)
 	ss.Stats.SetFloat("TrlErr2", trlErr2)
 	ss.Stats.SetString("TrlOut", fmt.Sprintf("%d", rsp))

@@ -517,7 +517,7 @@ func TestGPUNDataDiffs(t *testing.T) {
 
 // ReportValDiffs
 func ReportValDiffs(t *testing.T, va, vb map[string]float32, aLabel, bLabel string, exclude []string) {
-	const TOLERANCE = float32(1.0e-5) // GPU Nmda has genuine diffs beyond e-5, accumulate over time..
+	const TOLERANCE = float32(1.0e-4) // GPU Nmda has genuine diffs beyond e-5, accumulate over time..
 	keys := maps.Keys(va)
 	sort.Strings(keys)
 	nerrs := 0
