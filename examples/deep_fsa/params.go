@@ -41,8 +41,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
-					"Layer.Burst.ThrRel": "0.1", // 0.1, 0.1 best
-					"Layer.Burst.ThrAbs": "0.1",
+					"Layer.Bursts.ThrRel": "0.1", // 0.1, 0.1 best
+					"Layer.Bursts.ThrAbs": "0.1",
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{

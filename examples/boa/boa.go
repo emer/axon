@@ -1184,7 +1184,6 @@ func (ss *Sim) RunNoGUI() {
 	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
-	ss.Sim.NData = ss.Args.Int("ndata")
 
 	if ss.Args.Bool("test") {
 		ss.TestData = make(map[string]float32)

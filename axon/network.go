@@ -155,6 +155,9 @@ func (nt *Network) MinusPhase(ctx *Context) {
 		}
 		ly.MinusPhasePost(ctx)
 	}
+	if nt.GPU.On {
+		nt.GPU.SyncStateGBufToGPU()
+	}
 }
 
 // PlusPhaseStart does updating at the start of the plus phase:
