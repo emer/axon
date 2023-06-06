@@ -41,7 +41,7 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU in gui mode
+	// GPU runs GUI with the GPU -- faster with NData = 16
 	GPU = true
 )
 

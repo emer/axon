@@ -45,8 +45,8 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	// GPU runs GUI with the GPU -- faster with NData = 16
+	GPU = true
 )
 
 func main() {
@@ -394,7 +394,7 @@ func (ss *Sim) ConfigLoops() {
 		stack := man.Stacks[mode]
 		// stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
 		// 	// note: OnStart for env.Env, others may happen OnEnd
-		// 	ss.Envs[mode.String()].Step()
+		// 	ss.Envs.ByMode(mode).Step()
 		// })
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur

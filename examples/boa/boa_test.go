@@ -210,7 +210,7 @@ func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 }
 
 func TestStdCPUnData1(t *testing.T) {
-	RunStdTest(t, false, false, 1)
+	RunStdTest(t, false, true, 1)
 }
 
 func TestStdGPUnData1(t *testing.T) {

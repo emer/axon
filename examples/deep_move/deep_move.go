@@ -36,7 +36,7 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	// GPU runs GUI with the GPU -- faster with NData = 16
 	GPU = true
 )
 
@@ -56,7 +56,6 @@ func main() {
 // SimParams has all the custom params for this sim
 type SimParams struct {
 	Hid2         bool `desc:"use Hidden2"`
-	PlayTarg     bool `desc:"during testing, play the target note instead of the actual network output"`
 	NData        int  `desc:"number of data-parallel items to process at once"`
 	NTrials      int  `desc:"number of trials per epoch"`
 	TestInterval int  `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
@@ -400,7 +399,7 @@ func (ss *Sim) ApplyInputs() {
 			}
 		}
 	}
-	ss.Net.ApplyExts(ctx)
+	net.ApplyExts(ctx)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -441,7 +440,6 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode

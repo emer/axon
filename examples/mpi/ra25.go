@@ -265,11 +265,10 @@ func (ss *Sim) ConfigLoops() {
 		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
 			// note: OnStart for env.Env, others may happen OnEnd
-			ss.Envs[mode.String()].Step()
+			ss.Envs.ByMode(mode).Step()
 		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
-			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Context.Mode])
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -365,7 +364,7 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()]
+	ev := ss.Envs.ByMode(ctx.Mode)
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
@@ -450,7 +449,7 @@ func (ss *Sim) StatCounters() {
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ev := ss.Envs[ss.Context.Mode.String()]
+	ev := ss.Envs.ByMode(ctx.Mode)
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
 }

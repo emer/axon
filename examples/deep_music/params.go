@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 package main
 
 import "github.com/emer/emergent/params"
@@ -36,8 +34,8 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Burst.ThrRel":         "0.1", // 0.1 > 0.2 > 0
-					"Layer.Burst.ThrAbs":         "0.1",
+					"Layer.Bursts.ThrRel":        "0.1", // 0.1 > 0.2 > 0
+					"Layer.Bursts.ThrAbs":        "0.1",
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
@@ -78,7 +76,6 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base":    "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
 					"Prjn.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
 					"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
-					"Prjn.SWts.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
 					"Prjn.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)

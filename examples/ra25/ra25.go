@@ -37,7 +37,7 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	// GPU runs GUI with the GPU -- faster with NData = 16
 	GPU = true
 )
 
@@ -340,7 +340,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs[ctx.Mode.String()]
+	ev := ss.Envs.ByMode(ctx.Mode)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt(ctx) // clear any existing inputs -- not strictly necessary if always
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
@@ -432,7 +432,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ev := ss.Envs[ctx.Mode.String()]
+	ev := ss.Envs.ByMode(ctx.Mode)
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
 }
 

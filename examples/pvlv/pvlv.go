@@ -40,8 +40,8 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	// GPU runs GUI with the GPU -- faster with NData = 16
+	GPU = true
 )
 
 func main() {
@@ -140,7 +140,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "PVLV")
-	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	ny := ev.NYReps
 	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
 
@@ -258,15 +258,9 @@ func (ss *Sim) ConfigLoops() {
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
-			// note: OnStart for env.Env, others may happen OnEnd
-			ss.Envs[mode.String()].Step()
-		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
-		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
-		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -306,7 +300,7 @@ func (ss *Sim) ConfigLoops() {
 
 // UpdateLoopMax gets the latest loop counter Max values from env
 func (ss *Sim) UpdateLoopMax() {
-	ev := ss.Envs[etime.Train.String()].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	trn := ss.Loops.Stacks[etime.Train]
 	trn.Loops[etime.Condition].Counter.Max = ev.Condition.Max
 	trn.Loops[etime.Block].Counter.Max = ev.Block.Max
@@ -319,8 +313,9 @@ func (ss *Sim) UpdateLoopMax() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
+	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.UpdateLoopMax()
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
@@ -336,8 +331,8 @@ func (ss *Sim) ApplyInputs() {
 			ly.Pools[0].Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
 		}
 	}
-	ss.ApplyPVLV(&ss.Context, &ev.CurTrial)
-	net.ApplyExts(&ss.Context) // now required for GPU mode
+	ss.ApplyPVLV(ctx, &ev.CurTrial)
+	net.ApplyExts(ctx) // now required for GPU mode
 }
 
 // ApplyPVLV applies current PVLV values to Context.PVLV,
@@ -359,7 +354,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 // InitEnvRun intializes a new environment run, as when the RunName is changed
 // or at NewRun()
 func (ss *Sim) InitEnvRun() {
-	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	ev.RunName = ss.RunName
 	ev.Init(0)
 	ss.LoadCondWeights(ev.CurRun.Weights) // only if nonempty
@@ -370,7 +365,7 @@ func (ss *Sim) InitEnvRun() {
 
 // LoadRunWeights loads weights specified in current run, if any
 func (ss *Sim) LoadRunWeights() {
-	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	ss.LoadCondWeights(ev.CurRun.Weights) // only if nonempty
 }
 
@@ -388,7 +383,7 @@ func (ss *Sim) LoadCondWeights(cond string) {
 
 // SaveCondWeights saves weights based on current condition, in wts/cond.wts.gz
 func (ss *Sim) SaveCondWeights() {
-	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	cnm, _ := ev.CurRun.Cond(ev.Condition.Cur)
 	if cnm == "" {
 		return
@@ -433,7 +428,7 @@ func (ss *Sim) StatCounters() {
 	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ev := ss.Envs[ss.Context.Mode.String()].(*cond.CondEnv)
+	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle"})

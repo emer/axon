@@ -44,7 +44,7 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	// GPU runs GUI with the GPU -- faster with NData = 16
 	GPU = true
 )
 
@@ -407,7 +407,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
+	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
@@ -474,7 +474,8 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters(di int) {
-	mode := ss.Context.Mode
+	ctx := &ss.Context
+	mode := ctx.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
@@ -482,8 +483,8 @@ func (ss *Sim) StatCounters(di int) {
 	trl := ss.Stats.Int("Trial")
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
-	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
+	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
+	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
 	ss.Stats.SetString("TrialName", ev.String())
 	ss.Stats.SetString("Cat", fmt.Sprintf("%d", ev.CurLED))
 }
@@ -500,12 +501,13 @@ func (ss *Sim) NetViewCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
+	ctx := &ss.Context
 	out := ss.Net.AxonLayerByName("Output")
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals[di].CorSim.Cor))
-	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(&ss.Context)[di])
+	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(ctx)[di])
 
-	ev := ss.Envs[ss.Context.Mode.String()].(*LEDEnv)
+	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
 	ovt := ss.Stats.SetLayerTensor(ss.Net, "Output", "ActM", di)
 	targ := ss.Stats.IntDi("Target", di)
 	rsp, trlErr, trlErr2 := ev.OutErr(ovt, targ)
@@ -683,7 +685,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigActRFs
 func (ss *Sim) ConfigActRFs() {
-	ss.Stats.SetF32Tensor("Image", &ss.Envs[etime.Test.String()].(*LEDEnv).Vis.ImgTsr) // image used for actrfs, must be there first
+	ss.Stats.SetF32Tensor("Image", &ss.Envs.ByMode(etime.Test).(*LEDEnv).Vis.ImgTsr) // image used for actrfs, must be there first
 	ss.Stats.InitActRFs(ss.Net, []string{"V4:Image", "V4:Output", "IT:Image", "IT:Output"}, "ActM", 0)
 }
 
@@ -713,7 +715,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	tg := ss.GUI.TabView.AddNewTab(etview.KiT_TensorGrid, "Image").(*etview.TensorGrid)
 	tg.SetStretchMax()
 	ss.GUI.SetGrid("Image", tg)
-	tg.SetTensor(&ss.Envs[etime.Train.String()].(*LEDEnv).Vis.ImgTsr)
+	tg.SetTensor(&ss.Envs.ByMode(etime.Train).(*LEDEnv).Vis.ImgTsr)
 
 	ss.GUI.AddActRFGridTabs(&ss.Stats.ActRFs)
 
