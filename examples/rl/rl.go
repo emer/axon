@@ -437,10 +437,6 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("runs", 1)
 	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
-	if len(os.Args) > 1 {
-		ss.Args.SetBool("nogui", true) // by definition if here
-		ss.NData = ss.Args.Int("ndata")
-	}
 }
 
 func (ss *Sim) RunNoGUI() {
