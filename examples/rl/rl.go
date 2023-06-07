@@ -28,7 +28,6 @@ import (
 	"github.com/emer/etable/etable"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
-	"github.com/goki/mat32"
 )
 
 var (
@@ -59,7 +58,6 @@ func main() {
 type Sim struct {
 	RW       bool             `desc:"if true, use Rescorla-Wagner -- set in code or rebuild network"`
 	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	NData    int              `desc;"number of data-parallel items to process at once"`
 	Params   emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
@@ -90,7 +88,6 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.NData = 1          // note: there are actual sequential dependencies here: cannot parallelize trial-wise
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
@@ -130,7 +127,7 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	net.InitName(net, "RLCond")
-	net.SetMaxData(ctx, ss.NData)
+	net.SetMaxData(ctx, 1)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	space := float32(4)
@@ -192,9 +189,9 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	trls := int(mat32.IntMultipleGE(20, float32(ss.NData)))
+	trls := 20
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 300).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 300).AddTime(etime.Trial, trls).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code

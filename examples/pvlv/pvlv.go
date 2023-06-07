@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 package main
 
 import (
@@ -40,7 +38,7 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs GUI with the GPU -- faster with NData = 16
+	// GPU for testing only -- is slower than CPU here -- can't do NData
 	GPU = true
 )
 
@@ -130,7 +128,7 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
-	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs + 1)
+	ss.Context.PVLV.Drive.NActive = uint32(cond.NUSs + 1)
 	ss.Context.PVLV.Drive.NNegUSs = 1
 	ss.Context.PVLV.Urgency.U50 = 50 // no pressure during regular trials
 
@@ -139,7 +137,10 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
+	ctx := &ss.Context
 	net.InitName(net, "PVLV")
+	net.SetMaxData(ctx, 1)
+
 	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	ny := ev.NYReps
 	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
@@ -210,14 +211,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
 
-	err := net.Build()
+	err := net.Build(ctx)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	net.Defaults()
 	ss.Params.SetObject("Network")
-	net.InitWts()
+	net.InitWts(ctx)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -317,18 +318,17 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.UpdateLoopMax()
-	net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	// going to the same layers, but good practice and cheap anyway
+	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if !kit.IfaceIsNil(pats) {
-			ly.ApplyExt(pats)
+			ly.ApplyExt(ctx, 0, pats)
 		}
 		switch lnm {
 		case "CS":
-			ly.Pools[0].Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
+			ly.Pool(0, 0).Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
 		}
 	}
 	ss.ApplyPVLV(ctx, &ev.CurTrial)
@@ -338,17 +338,17 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
-	ctx.PVLVInitUS()
+	ctx.PVLV.EffortUrgencyUpdt(ctx, 0, &ss.Net.Rand, 1)
+	ctx.PVLVInitUS(0)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			ctx.PVLVSetUS(axon.Positive, trl.US, trl.USMag)
+			ctx.PVLVSetUS(0, axon.Positive, trl.US, trl.USMag)
 		} else {
-			ctx.PVLVSetUS(axon.Negative, trl.US, trl.USMag)
+			ctx.PVLVSetUS(0, axon.Negative, trl.US, trl.USMag)
 		}
 	}
-	ctx.PVLVSetDrives(1, 1, trl.US)
-	ctx.PVLVStepStart(&ss.Net.Rand)
+	ctx.PVLVSetDrives(0, 1, 1, trl.US)
+	ctx.PVLVStepStart(0, &ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -400,11 +400,12 @@ func (ss *Sim) SaveCondWeights() {
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
 // for the new run value
 func (ss *Sim) NewRun() {
+	ctx := &ss.Context
 	ss.InitRndSeed()
 	ss.InitEnvRun()
-	ss.Context.Reset()
-	ss.Context.Mode = etime.Train
-	ss.Net.InitWts()
+	ctx.Reset()
+	ctx.Mode = etime.Train
+	ss.Net.InitWts(ctx)
 	ss.LoadRunWeights()
 	ss.InitStats()
 	ss.StatCounters()
@@ -425,9 +426,10 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	mode := ss.Context.Mode
+	ctx := &ss.Context
+	mode := ctx.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
-	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
@@ -438,17 +440,20 @@ func (ss *Sim) StatCounters() {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
-	pv := &ctx.PVLV
-	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
-	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
-	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)
-	ss.Stats.SetFloat32("LHbDip", pv.VTA.Vals.LHbDip)
-	ss.Stats.SetFloat32("DipSum", pv.LHb.DipSum)
-	ss.Stats.SetFloat32("GiveUp", float32(pv.LHb.GiveUp))
-	ss.Stats.SetFloat32("LHbBurst", pv.VTA.Vals.LHbBurst)
-	ss.Stats.SetFloat32("PVpos", pv.VTA.Vals.PVpos)
-	ss.Stats.SetFloat32("PVneg", pv.VTA.Vals.PVneg)
-	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pools[0].AvgMax.CaSpkD.Cycle.Max)
+	diu := uint32(0)
+	ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
+	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
+	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
+
+	ss.Stats.SetFloat32("LHbDip", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaLHbDip))
+
+	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
+
+	ss.Stats.SetFloat32("LHbBurst", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVpos))
+	ss.Stats.SetFloat32("PVpos", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVpos))
+	ss.Stats.SetFloat32("PVneg", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVneg))
+	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -458,7 +463,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial, etime.Cycle)
-	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialType")
@@ -526,8 +530,9 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 	switch {
 	case time == etime.Cycle:
-		row = ss.Stats.Int("Cycle")
+		return
 	case mode == etime.Train && time == etime.Trial:
+		ss.TrialStats()
 		ss.Logs.Log(etime.Debug, etime.Trial)
 		if !ss.Args.Bool("nogui") {
 			ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
@@ -698,10 +703,6 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("runs", 5)
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.Parse() // always parse
-	if len(os.Args) > 1 {
-		ss.Args.SetBool("nogui", true) // by definition if here
-		ss.Sim.NData = ss.Args.Int("ndata")
-	}
 }
 
 func (ss *Sim) RunNoGUI() {
