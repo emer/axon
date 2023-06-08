@@ -69,7 +69,6 @@ type Sim struct {
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Pats     *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
 	Context  axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
@@ -88,7 +87,6 @@ func (ss *Sim) New() {
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
-	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
 	ss.Context.PVLV.Effort.Gain = 0.01    // don't discount as much

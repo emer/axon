@@ -10,7 +10,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 
 	"github.com/emer/axon/axon"
@@ -18,18 +17,17 @@ import (
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/popcode"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -42,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs GUI with the GPU -- faster with NData = 16
-	GPU = false
+	GPU = true
 )
 
 func main() {
@@ -62,48 +60,18 @@ func main() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	NPools     int          `view:"-" desc:"number of pools"`
-	NUnitsY    int          `view:"-" desc:"number of units within each pool, Y"`
-	NUnitsX    int          `view:"-" desc:"number of units within each pool, X"`
-	NUnits     int          `view:"-" desc:"total number of units within each pool"`
-	NoInc      bool         `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
-	ZeroTest   bool         `desc:"test with no ACC activity at all -- params need to prevent gating in this situation too"`
-	ACCPos     float32      `desc:"activation of ACC positive valence -- drives go"`
-	ACCNeg     float32      `desc:"activation of ACC neg valence -- drives nogo"`
-	ACCPosInc  float32      `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
-	ACCNegInc  float32      `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
-	PosNegThr  float32      `desc:"threshold on diff between ACCPos - ACCNeg for counting as a Go trial"`
-	SNc        float32      `desc:"dopamine level - computed for learning"`
-	NData      int          `desc:"number of data-parallel items to process at once"`
-	NTrials    int          `desc:"number of trials per epoch"`
-	TestInc    float32      `desc:"increment in testing activation for test all"`
-	TestReps   int          `desc:"number of repetitions per testing level"`
-	InitMtxWts bool         `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
-	InN        int          `desc:"number of different values to learn in input layer"`
-	InCtr      int          `inactive:"+" desc:"input counter -- gives PFC network something to do"`
-	PopCode    popcode.OneD `desc:"pop code the values in ACCPos and Neg"`
+	ZeroTest bool `desc:"test with no ACC activity at all -- params need to prevent gating in this situation too"`
+	NPools   int  `view:"-" desc:"number of pools"`
+	NData    int  `desc:"number of data-parallel items to process at once"`
+	NTrials  int  `desc:"number of trials per epoch"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NoInc = false
 	ss.ZeroTest = false
 	ss.NPools = 1
-	ss.NUnitsY = 5
-	ss.NUnitsX = 5
-	ss.NUnits = ss.NUnitsY * ss.NUnitsX
-	ss.ACCPos = 1
-	ss.ACCNeg = .2
-	ss.ACCPosInc = 1 // 0.8
-	ss.ACCNegInc = 1
-	ss.PosNegThr = 0
-	ss.NData = 1
+	ss.NData = 16
 	ss.NTrials = 128
-	ss.TestInc = 0.1
-	ss.TestReps = 16
-	ss.InN = 5
-	ss.PopCode.Defaults()
-	ss.PopCode.SetRange(-0.2, 1.2, 0.1)
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -118,7 +86,7 @@ type Sim struct {
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Pats     *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
+	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
 	Context  axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
@@ -149,20 +117,70 @@ func (ss *Sim) New() {
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
+	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
 	ss.ConfigLoops()
 }
 
+func (ss *Sim) ConfigEnv() {
+	// Can be called multiple times -- don't re-create
+	newEnv := (len(ss.Envs) == 0)
+
+	for di := 0; di < ss.Sim.NData; di++ {
+		var trn, tst *GoNoEnv
+		if newEnv {
+			trn = &GoNoEnv{}
+			tst = &GoNoEnv{}
+		} else {
+			trn = ss.Envs.ByModeDi(etime.Train, di).(*GoNoEnv)
+			tst = ss.Envs.ByModeDi(etime.Test, di).(*GoNoEnv)
+		}
+
+		// note: names must be standard here!
+		trn.Nm = env.ModeDi(etime.Train, di)
+		trn.Defaults()
+		trn.Config(etime.Train, ss.Sim.NPools, 73+int64(di)*73)
+		trn.Validate()
+
+		tst.Nm = env.ModeDi(etime.Test, di)
+		tst.Defaults()
+		tst.Config(etime.Test, ss.Sim.NPools, 181+int64(di)*181)
+		tst.Validate()
+
+		trn.Init(0)
+		tst.Init(0)
+
+		// note: names must be in place when adding
+		ss.Envs.Add(trn, tst)
+		if di == 0 {
+			ss.ConfigPVLV(trn)
+		}
+	}
+}
+
+func (ss *Sim) ConfigPVLV(trn *GoNoEnv) {
+	pv := &ss.Context.PVLV
+	pv.Drive.NActive = 2
+	pv.Drive.NNegUSs = 1
+	pv.Effort.Gain = 0.05 // not using but anyway
+	pv.Effort.Max = 20
+	pv.Effort.MaxNovel = 8
+	pv.Effort.MaxPostDip = 4
+	pv.Urgency.U50 = 20 // 20 def
+}
+
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*GoNoEnv)
+
 	net.InitName(net, "PCore")
 	net.SetMaxData(ctx, ss.Sim.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	np := ss.Sim.NPools
-	nuY := ss.Sim.NUnitsY
-	nuX := ss.Sim.NUnitsX
+	np := ev.NPools
+	nuY := ev.NUnitsY
+	nuX := ev.NUnitsX
 	space := float32(2)
 
 	pone2one := prjn.NewPoolOneToOne()
@@ -273,12 +291,13 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*GoNoEnv)
 	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(ss.Sim.NData)))
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 30).AddTimeIncr(etime.Sequence, trls, ss.Sim.NData).AddTime(etime.Trial, 3).AddTime(etime.Cycle, 200)
 
-	nTestInc := int(1.0/ss.Sim.TestInc) + 1
-	totTstTrls := ss.Sim.TestReps * nTestInc * nTestInc
+	nTestInc := int(1.0/ev.TestInc) + 1
+	totTstTrls := ev.TestReps * nTestInc * nTestInc
 
 	testTrls := int(mat32.IntMultipleGE(float32(totTstTrls), float32(ss.Sim.NData)))
 
@@ -298,10 +317,10 @@ func (ss *Sim) ConfigLoops() {
 			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur
 			ss.ApplyInputs(mode, seq, trial)
 		})
-		stack.Loops[etime.Trial].OnEnd.Add("GatedStats", func() {
+		stack.Loops[etime.Trial].OnEnd.Add("GatedAction", func() {
 			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur
-			if trial == 2 {
-				ss.GatedStats()
+			if trial == 1 {
+				ss.GatedAction()
 			}
 		})
 	}
@@ -346,35 +365,6 @@ func (ss *Sim) ConfigLoops() {
 	ss.Loops = man
 }
 
-// SetACC sets the ACC values, either random (training)
-// or for testing, based on incrementing index
-func (ss *Sim) SetACC(mode etime.Modes, idx, di int) {
-	nTestInc := int(1.0/ss.Sim.TestInc) + 1
-	if !ss.Sim.NoInc {
-		if mode == etime.Test {
-			repn := idx / ss.Sim.TestReps
-			pos := repn / nTestInc
-			neg := repn % nTestInc
-			ss.Sim.ACCPos = float32(pos) * ss.Sim.TestInc
-			ss.Sim.ACCNeg = float32(neg) * ss.Sim.TestInc
-			// fmt.Printf("idx: %d  di: %d  repn: %d  pos: %d  neg: %d\n", idx, di, repn, pos, neg)
-		} else {
-			ss.Sim.ACCPos = rand.Float32()
-			ss.Sim.ACCNeg = rand.Float32()
-		}
-	}
-	ss.Sim.SNc = ss.Sim.ACCPos - ss.Sim.ACCNeg
-	ss.Stats.SetFloat32Di("ACCPos", di, ss.Sim.ACCPos)
-	ss.Stats.SetFloat32Di("ACCNeg", di, ss.Sim.ACCNeg)
-}
-
-// GetACC gets the previously stored ACC values
-func (ss *Sim) GetACC(di int) {
-	ss.Sim.ACCPos = ss.Stats.Float32Di("ACCPos", di)
-	ss.Sim.ACCNeg = ss.Stats.Float32Di("ACCNeg", di)
-	ss.Sim.SNc = ss.Sim.ACCPos - ss.Sim.ACCNeg
-}
-
 // ApplyInputs applies input patterns from given environment.
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
@@ -384,55 +374,30 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 	net := ss.Net
 	ss.Net.InitExt(ctx)
 
-	np := ss.Sim.NPools
-	nu := ss.Sim.NUnits
-	itsr := etensor.Float32{}
-	itsr.SetShape([]int{np * nu}, nil, nil)
-
-	lays := []string{"ACCPos", "ACCNeg", "In"}
+	lays := []string{"ACCPos", "ACCNeg", "In"} // , "SNc"}
 	if ss.Sim.ZeroTest {
 		lays = []string{"In"}
 	}
 
 	for di := 0; di < ss.Sim.NData; di++ {
-		idx := seq + di
+		idx := seq + di // sequence increments by NData automatically
+		ev := ss.Envs.ByModeDi(mode, di).(*GoNoEnv)
+		ev.Trial.Set(idx)
 		if trial == 0 {
-			ss.SetACC(mode, idx, di)
-		} else {
-			ss.GetACC(di)
+			ev.Step()
 		}
-		vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
-		for li, lnm := range lays {
+		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
-			for j := 0; j < np; j++ {
-				// np = different pools have changing increments
-				// such that first pool is best choice
-				io := j * nu
-				var poolVal float32
-				switch lnm {
-				case "ACCPos":
-					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
-				case "ACCNeg":
-					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
-				default:
-					poolVal = float32(ss.Sim.InCtr) / float32(ss.Sim.InN)
-				}
-				sv := itsr.Values[io : io+nu]
-				ss.Sim.PopCode.Encode(&sv, poolVal, nu, false)
-			}
-			ly.ApplyExt(ctx, uint32(di), &itsr)
+			itsr := ev.State(lnm)
+			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
-		ss.ApplyPVLV(trial, uint32(di))
-		ss.Sim.InCtr++
-		if ss.Sim.InCtr > ss.Sim.InN {
-			ss.Sim.InCtr = 0
-		}
+		ss.ApplyPVLV(ev, trial, uint32(di))
 	}
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
 // ApplyPVLV applies PVLV reward inputs
-func (ss *Sim) ApplyPVLV(trial int, di uint32) {
+func (ss *Sim) ApplyPVLV(ev *GoNoEnv, trial int, di uint32) {
 	ctx := &ss.Context
 	ctx.PVLV.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
 	if ctx.Mode == etime.Test {
@@ -448,20 +413,19 @@ func (ss *Sim) ApplyPVLV(trial int, di uint32) {
 		axon.SetGlbV(ctx, di, axon.GvACh, 1)
 	case 2:
 		axon.SetGlbV(ctx, di, axon.GvACh, 1)
-		ss.GatedRew(di)
+		ss.GatedRew(ev, di)
 	}
 }
 
 // GatedRew applies reward input based on gating action and input
-func (ss *Sim) GatedRew(di uint32) {
-	rew := ss.Stats.Float32Di("Rew", int(di))
+func (ss *Sim) GatedRew(ev *GoNoEnv, di uint32) {
+	rew := ev.Rew
 	ss.SetRew(rew, di)
 }
 
 func (ss *Sim) SetRew(rew float32, di uint32) {
 	ctx := &ss.Context
 	ctx.PVLVInitUS(di)
-	net := ss.Net
 	axon.NeuroModSetRew(ctx, di, rew, true)
 	axon.SetGlbV(ctx, di, axon.GvDA, rew) // no reward prediction error
 	if rew > 0 {
@@ -469,12 +433,23 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 	} else if rew < 0 {
 		ctx.PVLVSetUS(di, axon.Negative, 0, 1)
 	}
+}
 
-	itsr := etensor.Float32{}
-	itsr.SetShape([]int{1}, nil, nil)
-	itsr.Values[0] = rew
-	sncly := net.AxonLayerByName("SNc")
-	sncly.ApplyExt(ctx, di, &itsr)
+// GatedAction records gating action and generates reward
+// this happens at the end of Trial == 1 (2nd trial)
+// so that the reward is present during the final trial when learning occurs.
+func (ss *Sim) GatedAction() {
+	ctx := &ss.Context
+	mtxly := ss.Net.AxonLayerByName("MtxGo")
+	for di := 0; di < ss.Sim.NData; di++ {
+		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
+		didGate := mtxly.AnyGated(uint32(di))
+		action := "Gated"
+		if !didGate {
+			action = "NoGate"
+		}
+		ev.Action(action, nil)
+	}
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -482,7 +457,10 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRndSeed()
-	ss.Sim.InCtr = 0
+	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+		ss.Envs.ByModeDi(etime.Train, di).Init(0)
+		ss.Envs.ByModeDi(etime.Test, di).Init(0)
+	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
 	ss.Net.InitWts(ctx)
@@ -490,14 +468,6 @@ func (ss *Sim) NewRun() {
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	ss.Logs.ResetLog(etime.Test, etime.Epoch)
-}
-
-// TestAll runs through the full set of testing items
-func (ss *Sim) TestAll() {
-	// ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Sim.NoInc = false
-	ss.Loops.ResetAndRun(etime.Test)
-	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -523,8 +493,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ss.GetACC(di)
-	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
+	trlnm := fmt.Sprintf("%4f_%4f", ss.Stats.Float32("ACCPos"), ss.Stats.Float32("ACCNeg"))
 	ss.Stats.SetString("TrialName", trlnm)
 }
 
@@ -533,20 +502,22 @@ func (ss *Sim) NetViewCounters() {
 		return
 	}
 	di := ss.GUI.ViewUpdt.View.Di
-	ss.StatCounters(di)
 	ss.TrialStats(di)
+	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Gated", "Should", "Match", "Rew"})
 }
 
-// TrialStats records the trial-level statistics -- all saved in GatedStats
+// TrialStats records the trial-level statistics
 func (ss *Sim) TrialStats(di int) {
-	ss.Stats.SetFloat32("ACCPos", ss.Stats.Float32Di("ACCPos", di))
-	ss.Stats.SetFloat32("ACCNeg", ss.Stats.Float32Di("ACCNeg", di))
-	ss.Stats.SetFloat32("Gated", ss.Stats.Float32Di("Gated", di))
-	ss.Stats.SetFloat32("Should", ss.Stats.Float32Di("Should", di))
-	ss.Stats.SetFloat32("Match", ss.Stats.Float32Di("Match", di))
-	ss.Stats.SetFloat32("Rew", ss.Stats.Float32Di("Rew", di))
-	ss.Stats.SetFloat32("PFCVM_RT", ss.Stats.Float32Di("PFCM_RT", di))
+	ctx := &ss.Context
+	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
+	ss.Stats.SetFloat32("ACCPos", ev.ACCPos)
+	ss.Stats.SetFloat32("ACCNeg", ev.ACCNeg)
+	ss.Stats.SetFloat32("Gated", bools.ToFloat32(ev.Gated))
+	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.Should))
+	ss.Stats.SetFloat32("Match", bools.ToFloat32(ev.Match))
+	ss.Stats.SetFloat32("Rew", ev.Rew)
+	// ss.Stats.SetFloat32("PFCVM_RT",)
 }
 
 func (ss *Sim) RTStat(di int) {
@@ -570,41 +541,6 @@ func (ss *Sim) RTStat(di int) {
 		}
 	}
 	ss.Stats.SetFloat("PFCVM_RT", float64(spkCyc)/200)
-}
-
-// GatedStats records gating stats, during presentation
-func (ss *Sim) GatedStats() {
-	for di := 0; di < ss.Sim.NData; di++ {
-		ss.GetACC(di)
-		ss.GatedStatsDi(di)
-	}
-}
-
-func (ss *Sim) GatedStatsDi(di int) {
-	pndiff := (ss.Sim.ACCPos - ss.Sim.ACCNeg) - ss.Sim.PosNegThr
-	shouldGate := pndiff > 0
-	mtxly := ss.Net.AxonLayerByName("MtxGo")
-	didGate := mtxly.AnyGated(uint32(di))
-	match := false
-	var rew float32
-	switch {
-	case shouldGate && didGate:
-		rew = 1
-		match = true
-	case shouldGate && !didGate:
-		rew = -1
-	case !shouldGate && didGate:
-		rew = -1
-	case !shouldGate && !didGate:
-		rew = 1
-		match = true
-	}
-
-	ss.Stats.SetFloat32Di("Should", di, bools.ToFloat32(shouldGate))
-	ss.Stats.SetFloat32Di("Gated", di, bools.ToFloat32(didGate))
-	ss.Stats.SetFloat32Di("Match", di, bools.ToFloat32(match))
-	ss.Stats.SetFloat32Di("Rew", di, rew)
-	ss.Stats.SetFloat32Di("PFCVM_RT", di, .1)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -751,18 +687,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Active:  egui.ActiveStopped,
 		Func: func() {
 			ss.Loops.ResetCountersByMode(etime.Test)
-			ss.GUI.UpdateWindow()
-		},
-	})
-
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test1", Icon: "play",
-		Tooltip: "run one test trial with current ACCPos, ACCNeg params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Loops.ResetCountersByMode(etime.Test)
-			ss.Sim.NoInc = true
-			ss.Loops.Step(etime.Train, 1, etime.Trial)
-			ss.Sim.NoInc = false
 			ss.GUI.UpdateWindow()
 		},
 	})
