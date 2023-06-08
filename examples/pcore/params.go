@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 package main
 
 import "github.com/emer/emergent/params"
@@ -33,7 +31,8 @@ var ParamSets = params.Sets{
 			// Prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Matrix.NoGateLRate": "1", // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
+					"Prjn.Matrix.NoGateLRate": "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
+					"Prjn.Learn.LRate.Base":   "0.02", // .02 default
 				}},
 			{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 				Params: params.Params{

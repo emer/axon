@@ -29,7 +29,7 @@ type Approach struct {
 	CSTot       int           `desc:"total number of CS's = NDrives * CSPerDrive"`
 	NYReps      int           `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
 	PatSize     evec.Vec2i    `desc:"size of CS patterns"`
-	Rand        erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	Rand        erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
 	RndSeed     int64         `inactive:"+" desc:"random seed"`
 
 	Acts       []string                    `inactive:"+" desc:"list of actions"`

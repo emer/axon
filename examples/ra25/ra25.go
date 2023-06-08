@@ -216,6 +216,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
+	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -341,7 +342,7 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs.ByMode(ctx.Mode)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	net.InitExt(ctx) // clear any existing inputs -- not strictly necessary if always
+	net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev.Step()
 		for _, lnm := range lays {
@@ -607,12 +608,14 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
 	ss.Args.Parse() // always parse
 	if len(os.Args) > 1 {
 		ss.Args.SetBool("nogui", true) // by definition if here
 		ss.Sim.NData = ss.Args.Int("ndata")
+		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
 	}
 }
 
@@ -640,6 +643,8 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Args.Bool("gpu") {
 		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 	}
+	ss.Net.SetNThreads(ss.Args.Int("threads"))
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.NewRun()
 	ss.Loops.Run(etime.Train)

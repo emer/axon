@@ -236,6 +236,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
+	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -702,6 +703,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.Parse() // always parse
 }
 
@@ -725,11 +727,13 @@ func (ss *Sim) RunNoGUI() {
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
-
-	ss.NewRun()
 	if ss.Args.Bool("gpu") {
 		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 	}
+	ss.Net.SetNThreads(ss.Args.Int("threads"))
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
+
+	ss.NewRun()
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()

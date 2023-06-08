@@ -76,7 +76,7 @@ func (nt *NetworkBase) SetNThreads(nthr int) {
 	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 	if nthr <= 0 {
 		nneur := len(nt.Neurons)
-		nthr = int(math.Ceil(float64(nneur) / float64(10000)))
+		nthr = int(math.Ceil(float64(nneur) / (float64(10000) / float64(nt.MaxData))))
 		if nthr < 1 { // shouldn't happen but justin..
 			nthr = 1
 		}

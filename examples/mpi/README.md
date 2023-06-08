@@ -48,20 +48,13 @@ Here are the main diffs that transform the ra25.go example into this mpi version
 
 * Most of the changes are the bottom of the file.
 
-## main() Config() call
+## ConfigArgs
 
-At the top of the file, it can be important to configure `TheSim` *after* mpi has been initialized, if there are things that are done differently there -- thus, you should move the `TheSim.Config()` call into `CmdArgs`:
+For args that have major early impact on configuring things, like mpi, process them right away in the `ConfigArgs` method, which is called in `Sim.New()` before any other configuration takes place.  These lines do the mpi init:
 
 ```go
-func main() {
-	TheSim.New() // note: not running Config here -- done in CmdArgs for mpi / nogui
-	if len(os.Args) > 1 {
-		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
-	} else {
-		TheSim.Config()      // for GUI case, config then run..
-		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-			guirun()
-		})
+	if ss.Args.Bool("mpi") {
+		ss.MPIInit()
 	}
 }
 ```
@@ -88,24 +81,43 @@ In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to diffe
 	}
 ```
 
+In other sims with more complex or interactive environments, it is best to give each environment its own random seed using the `erand.SysRand` which implements the `erand.Rand` interface, and can be passed to any of the `erand` methods (which wrap and extend the go standard `rand` package functions).  See the `boa` model for example.
+
+```go
+	Rand        erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
+	RndSeed     int64         `inactive:"+" desc:"random seed"`
+```
+
+The built-in data parallel processing in v1.8 requires coordinating the allocation of inputs across both.  In this example project, there are 24 input patterns, and mpi takes the first cut by allocating subsets of the patterns that each node processes.  Then, the remaining patterns can be learned using data parallel within each node.  It may be important to ensure that these divide the total equally, for example:
+
+* `mpi -np 2` leaves 12 patterns for within-node data parallel, so -ndata=4, 6, or 12 work there.
+* `mpi -np 4` only leaves 6 patterns, so -ndata=2, 3, 6 are options.
+
+In this particular case, it would just use more trials per epoch and the environment wraps around, so it isn't that big of a deal, but it might matter for other sims.
+
 ## Logging
 
-The `elog` system has support for gathering all of the rows of Trial-level logs from each of the different processors into a combined table, which is then used for aggregating stats at the Epoch level.  To enable all the standard infrastructure to work in the same way as in the non-MPI case, the aggregated table is set as the Trial log.  This means that after we do the aggregation of the Trial data (at the Epoch level), we need to reset the number of rows back to the original number present per each processor, otherwise the table grows exponentially!  If the Trial data is always accumulated by adding rows and resetting back to 0 at the end of the epoch, then you would just do that as usual.
+The `elog` system has support for gathering all of the rows of Trial-level logs from each of the different processors into a combined table, which is then used for aggregating stats at the Epoch level.  To enable all the standard infrastructure to work in the same way as in the non-MPI case, the aggregated table is set as the Trial log. 
+
+In most cases, the trial log is reset at the start of the new epoch, so the aggregated data will be reset.  However, if the logging logic uses the trial number, you need to reset the number of rows back to the original number present per each processor, otherwise the table grows exponentially!
 
 Here's the relevant code in the `Log()` method:
 
 ```go
-	var saveRow int
 	if ss.Args.Bool("mpi") && time == etime.Epoch { // gather data for trial level at epoch
-		saveRow = ss.Logs.Table(mode, etime.Trial).Rows
 		ss.Logs.MPIGatherTableRows(mode, etime.Trial, ss.Comm)
 	}
-    ...
-	if ss.Args.Bool("mpi") && time == etime.Epoch { // reset rows back to original pre-gather
-		dt := ss.Logs.Table(mode, etime.Trial)
-		dt.SetNumRows(saveRow)
+```
+
+To record the trial log data for each MPI processor, you need to set log files for each (by default log files are only saved for the 0 rank):
+
+```go
+	if ss.Args.Bool("triallog") && mpi.WorldRank() > 0 {
+		fnm := ecmd.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), ss.Net.Name(), ss.Params.RunName(ss.Args.Int("run")))
+		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
 	}
 ```
+
 
 ## CmdArgs
 
@@ -148,6 +160,7 @@ func (ss *Sim) CollectDWts(net *axon.Network) {
 // DWt changes across parallel nodes, each of which are learning on different
 // sequences of inputs.
 func (ss *Sim) MPIWtFmDWt() {
+	ctx := &ss.Context
 	if ss.Args.Bool("mpi") {
 		ss.CollectDWts(ss.Net)
 		ndw := len(ss.AllDWts)
@@ -155,10 +168,9 @@ func (ss *Sim) MPIWtFmDWt() {
 			ss.SumDWts = make([]float32, ndw)
 		}
 		ss.Comm.AllReduceF32(mpi.OpSum, ss.SumDWts, ss.AllDWts)
-		ss.Net.SetDWts(ss.SumDWts, mpi.WorldSize())
+		ss.Net.SetDWts(ctx, ss.SumDWts, mpi.WorldSize())
 	}
-    // note: if using GPU, add: ss.Net.SyncAllToGPU() here!
-	ss.Net.WtFmDWt(&ss.Context)
+	ss.Net.WtFmDWt(ctx)
 }
 ```
 

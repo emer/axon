@@ -373,6 +373,7 @@ func (ss *Sim) Init() {
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
 	ss.ConfigParamsForEnv()
+	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -1173,11 +1174,13 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("runs", 10)
 	ss.Args.AddBool("test", false, "records testing data in TestData")
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.AddBool("bench", false, "run benchmarking")
 	ss.Args.Parse() // always parse
 	if len(os.Args) > 1 {
 		ss.Args.SetBool("nogui", true) // by definition if here
 		ss.Sim.NData = ss.Args.Int("ndata")
+		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
 	}
 }
 
@@ -1209,6 +1212,8 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Args.Bool("gpu") {
 		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 	}
+	ss.Net.SetNThreads(ss.Args.Int("threads"))
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.NewRun()
 

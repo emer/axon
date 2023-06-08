@@ -6,8 +6,10 @@ package axon
 
 import (
 	"embed"
+	"fmt"
 	"unsafe"
 
+	"github.com/emer/empi/mpi"
 	"github.com/goki/gi/oswin"
 	"github.com/goki/vgpu/vgpu"
 	vk "github.com/goki/vulkan"
@@ -115,6 +117,7 @@ type GPU struct {
 // Configures the GPU -- call after Network is Built, initialized, params are set,
 // and everything is ready to run.
 func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
+	fmt.Printf("Running on the GPU\n")
 	oswin.TheApp.RunOnMain(func() {
 		nt.GPU.Config(ctx, nt)
 	})
@@ -125,6 +128,7 @@ func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
 // Configures the GPU -- call after Network is Built, initialized, params are set,
 // and everything is ready to run.
 func (nt *Network) ConfigGPUnoGUI(ctx *Context) {
+	mpi.Printf("Running on the GPU\n")
 	if TheGPU == nil {
 		if err := vgpu.InitNoDisplay(); err != nil {
 			panic(err)

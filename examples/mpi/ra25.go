@@ -7,6 +7,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -31,14 +32,20 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs GUI with the GPU -- faster with NData = 16
+	GPU = true
+)
 
 func main() {
 	sim := &Sim{}
 	sim.New()
+	sim.Config()
 	if len(os.Args) > 1 {
 		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
@@ -61,7 +68,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NData = 4 // leave some for mpi
-	ss.NTrials = 32
+	ss.NTrials = 24
 	ss.TestInterval = 25
 	ss.PCAInterval = 5
 }
@@ -90,9 +97,6 @@ type Sim struct {
 	AllDWts  []float32   `view:"-" desc:"buffer of all dwt weight changes -- for mpi sharing"`
 	SumDWts  []float32   `view:"-" desc:"buffer of MPI summed dwt weight changes"`
 }
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
@@ -138,8 +142,10 @@ func (ss *Sim) ConfigEnv() {
 	trn.Dsc = "training params and state"
 	trn.Config(etable.NewIdxView(ss.Pats))
 	if ss.Args.Bool("mpi") {
+		// this is key mpi step: allocate diff inputs to diff procs
 		st, ed, _ := empi.AllocN(ss.Pats.Rows)
 		trn.Table.Idxs = trn.Table.Idxs[st:ed]
+		// mpi.AllPrintf("st: %d  ed: %d\n", st, ed)
 	}
 	trn.Validate()
 
@@ -180,10 +186,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hid2 := net.AddLayer2D("Hidden2", ss.Params.LayY("Hidden2", 10), ss.Params.LayX("Hidden2", 10), axon.SuperLayer)
 	out := net.AddLayer2D("Output", 5, 5, axon.TargetLayer)
 
-	// use this to position layers relative to each other
-	// default is Above, YAlign = Front, XAlign = Center
-	// hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden1", YAlign: relpos.Front, Space: 2})
-
 	// note: see emergent/prjn module for all the options on how to connect
 	// NewFull returns a new prjn.Full connectivity pattern
 	full := prjn.NewFull()
@@ -205,6 +207,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
+	net.SetNThreads(4) // useful with NData
 	ss.Params.SetObject("Network")
 	net.InitWts(ctx)
 }
@@ -224,6 +227,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
+	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -240,12 +244,13 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	totND := ss.Sim.NData * mpi.WorldSize()
-	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(totND)))
+	totND := ss.Sim.NData * mpi.WorldSize() // both sources of data parallel
+	totTrls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(totND)))
+	trls := totTrls / mpi.WorldSize()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTimeIncr(etime.Trial, trls, totND).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, totND).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -363,7 +368,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs.ByMode(ctx.Mode)
+	ev := ss.Envs.ByMode(ctx.Mode).(*env.FixedTable)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
@@ -375,6 +380,7 @@ func (ss *Sim) ApplyInputs() {
 				ly.ApplyExt(ctx, di, pats)
 			}
 		}
+		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur) // for logging
 	}
 	net.ApplyExts(ctx)
 }
@@ -439,6 +445,7 @@ func (ss *Sim) OpenPats() {
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
 	ss.Stats.SetFloat("TrlCorSim", 0.0)
+	ss.Stats.SetString("TrialName", "")
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -455,8 +462,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ev := ss.Envs.ByMode(ctx.Mode)
-	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
+	ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
 }
 
 func (ss *Sim) NetViewCounters() {
@@ -524,12 +530,11 @@ func (ss *Sim) ConfigLogs() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
+	ctx := &ss.Context
 	if mode != etime.Analyze {
-		ss.Context.Mode = mode // Also set specifically in a Loop callback.
+		ctx.Mode = mode // Also set specifically in a Loop callback.
 	}
-	var saveRow int
 	if ss.Args.Bool("mpi") && time == etime.Epoch { // gather data for trial level at epoch
-		saveRow = ss.Logs.Table(mode, etime.Trial).Rows
 		ss.Logs.MPIGatherTableRows(mode, etime.Trial, ss.Comm)
 	}
 	dt := ss.Logs.Table(mode, time)
@@ -551,11 +556,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
-
-	if ss.Args.Bool("mpi") && time == etime.Epoch { // reset rows back to original pre-gather
-		dt := ss.Logs.Table(mode, etime.Trial)
-		dt.SetNumRows(saveRow)
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -619,6 +619,13 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		vgpu.Debug = Debug
+		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
 }
 
@@ -633,24 +640,30 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
-	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 100)
+	ss.Args.SetInt("epochs", 200)
+	ss.Args.AddInt("ndata", 4, "number of data items to run in parallel")
+	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.SetInt("runs", 5)
 	ss.Args.AddBool("mpi", false, "if set, use MPI for distributed computation")
-
 	ss.Args.Parse() // always parse
-}
-
-func (ss *Sim) RunNoGUI() {
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
+	}
 	if ss.Args.Bool("mpi") {
 		ss.MPIInit()
 	}
-	// key for Config and Init to be after MPIInit
-	ss.Config()
+}
 
+func (ss *Sim) RunNoGUI() {
 	ss.Args.ProcStd(&ss.Params)
 	if mpi.WorldRank() == 0 {
 		ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
+	}
+	if ss.Args.Bool("triallog") && mpi.WorldRank() > 0 {
+		fnm := ecmd.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), ss.Net.Name(), ss.Params.RunName(ss.Args.Int("run")))
+		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
 	}
 
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
@@ -674,8 +687,12 @@ func (ss *Sim) RunNoGUI() {
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
-
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	}
+	ss.Net.SetNThreads(ss.Args.Int("threads"))
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.NewRun()
 	ss.Loops.Run(etime.Train)

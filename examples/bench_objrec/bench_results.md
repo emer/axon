@@ -1,8 +1,10 @@
 # v1.8.0
 
+results are PerTrlMSec
+
 ## MacBook Pro M1
 
-results are PerTrlMSec
+using default number of threads
 
 ```
 GPU:

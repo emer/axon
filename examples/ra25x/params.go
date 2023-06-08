@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 package main
 
 import "github.com/emer/emergent/params"
@@ -22,7 +20,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal":         "0.05", // 0.05 more sensible, same perf
+					"Layer.Inhib.ActAvg.Nominal":         "0.06", // 0.06 > 0.05
 					"Layer.Inhib.Layer.Gi":               "1.1",  // 1.1 > 1.05 even for SSGi=2
 					"Layer.Inhib.Layer.SS":               "30",   // 30 > others
 					"Layer.Inhib.Layer.FS0":              "0.1",
@@ -37,7 +35,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.Decay.Act":               "0.2",   // 0.2 def
 					"Layer.Acts.Decay.Glong":             "0.6",   // 0.6 def
 					"Layer.Acts.NMDA.Gbar":               "0.006", // 0.006 def
-					"Layer.Acts.NMDA.MgC":                "1.4",
+					"Layer.Acts.NMDA.MgC":                "1.2",   // 1.2 > 1.4 here
 					"Layer.Acts.NMDA.Voff":               "0",     // 5 == 0 for trace
 					"Layer.Acts.NMDA.Tau":                "100",   // 100 def -- 50 is sig worse
 					"Layer.Acts.Mahp.Gbar":               "0.02",  // 0.05 works..
@@ -45,16 +43,16 @@ var ParamSets = params.Sets{
 					"Layer.Acts.Sahp.Off":                "0.8",   //
 					"Layer.Acts.Sahp.Slope":              "0.02",  //
 					"Layer.Acts.Sahp.CaTau":              "5",     //
-					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 > lower
+					"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 > lower
 					"Layer.Acts.AK.Gbar":                 "0.1",   // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 					"Layer.Acts.VGCC.Gbar":               "0.02",  // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Acts.VGCC.Ca":                 "25",    // 25 / 10tau default
-					"Layer.Learn.CaLrn.Norm":             "80",    // 80 works
-					"Layer.Learn.CaLrn.SpkVGCC":          "true",  // sig better..
-					"Layer.Learn.CaLrn.SpkVgccCa":        "35",    // 70 / 5 or 35 / 10 both work
-					"Layer.Learn.CaLrn.VgccTau":          "10",    // 10 > 5 ?
-					"Layer.Learn.CaLrn.UpdtThr":          "0.01",  // 0.01 def
-					"Layer.Learn.CaLrn.Dt.MTau":          "2",     // 2 > 1 ?
+					"Layer.Learn.CaLearn.Norm":           "80",    // 80 works
+					"Layer.Learn.CaLearn.SpkVGCC":        "true",  // sig better..
+					"Layer.Learn.CaLearn.SpkVgccCa":      "35",    // 70 / 5 or 35 / 10 both work
+					"Layer.Learn.CaLearn.VgccTau":        "10",    // 10 > 5 ?
+					"Layer.Learn.CaLearn.UpdtThr":        "0.01",  // 0.01 def
+					"Layer.Learn.CaLearn.Dt.MTau":        "2",     // 2 > 1 ?
 					"Layer.Learn.CaSpk.SpikeG":           "8",     // 8 produces reasonable 0-1 norm CaSpk levels?
 					"Layer.Learn.CaSpk.SynTau":           "30",    // 30 > 20, 40
 					"Layer.Learn.CaSpk.Dt.MTau":          "5",     // 5 > 10?
@@ -75,7 +73,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
-					"Layer.Acts.Clamp.Ge":        "1.5",  // 1.5 matches old fffb for gex (v13)
+					"Layer.Acts.Clamp.Ge":        "1.5",  // 1.5 matches old fffb for gex (v13) > 1.0
 					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 					"Layer.Acts.VGCC.Ca":         "1",    // otherwise dominates display
 					"Layer.Acts.Decay.Act":       "1",    // this is subtly beneficial
@@ -94,7 +92,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65 FB0.5 best
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FB":          "0.5",  // 0 > 1 here in output
-					"Layer.Acts.Spike.Tr":           "1",    // 1 is new minimum.. > 3
+					"Layer.Acts.Spikes.Tr":          "1",    // 1 is new minimum.. > 3
 					"Layer.Acts.Clamp.Ge":           "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
 					"Layer.Acts.VGCC.Ca":            "1",    // otherwise dominates display
 					"Layer.Learn.RLRate.On":         "true", // beneficial for trace

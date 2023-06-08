@@ -28,6 +28,7 @@ import (
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
+	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -242,8 +243,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) error {
 	itOut.SetClass("NovLearn")
 	outIT.SetClass("NovLearn")
 
-	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
-
 	if err := net.Build(ctx); err != nil {
 		return err
 	}
@@ -251,6 +250,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) error {
 	if err := ss.Params.SetObject("Network"); err != nil {
 		return err
 	}
+
+	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
+	// net.SetNThreads(8)
 	net.InitWts(ctx)
 
 	return nil
@@ -273,6 +275,7 @@ func (ss *Sim) Init() {
 	if err := ss.Params.SetAll(); err != nil {
 		panic(err)
 	}
+	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -795,10 +798,12 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 1)
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.Parse() // always parse
 	if len(os.Args) > 1 {
 		ss.Args.SetBool("nogui", true) // by definition if here
 		ss.Sim.NData = ss.Args.Int("ndata")
+		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
 	}
 }
 
@@ -823,11 +828,13 @@ func (ss *Sim) RunNoGUI() {
 	rc.Set(run)
 	rc.Max = run + runs
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-
-	ss.NewRun()
 	if ss.Args.Bool("gpu") {
 		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 	}
+	ss.Net.SetNThreads(ss.Args.Int("threads"))
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
+
+	ss.NewRun()
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
