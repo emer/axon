@@ -39,7 +39,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU for testing only -- is slower than CPU here -- can't do NData
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -316,6 +316,7 @@ func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
+	ev.Step()
 	ss.UpdateLoopMax()
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
