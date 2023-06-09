@@ -26,6 +26,8 @@ import (
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/minmax"
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -57,6 +59,14 @@ func main() {
 
 // see params.go for params
 
+type SimParams struct {
+	AggStats []string `desc:"stats to aggregate at higher levels"`
+}
+
+func (ss *SimParams) Defaults() {
+	ss.AggStats = []string{"DA", "VSPatch"}
+}
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
@@ -65,6 +75,7 @@ func main() {
 type Sim struct {
 	RunName  string           `view:"-" desc:"environment run name"`
 	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Sim      SimParams        `desc:"misc params specific to this simulation"`
 	Params   emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
@@ -80,6 +91,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	ss.Sim.Defaults()
 	ss.RunName = "PosAcq_A100B50"
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
@@ -215,6 +227,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
+	net.SetNThreads(2) // doesn't need all
 	ss.Params.SetObject("Network")
 	net.InitWts(ctx)
 }
@@ -469,26 +482,34 @@ func (ss *Sim) ConfigLogs() {
 
 	// ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
-	ss.ConfigLogItems()
+	plots := ss.ConfigLogItems()
 
-	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Block, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
+	// layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	// axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Block, etime.Trial)
+	// axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
 	ss.Logs.PlotItems("DA", "VSPatch")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
-	ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Train, etime.Epoch)
+	ss.Logs.NoPlot(etime.Train, etime.Epoch, etime.Cycle)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
-
 	ss.Logs.SetMeta(etime.Train, etime.Trial, "LegendCol", "Sequence")
+
+	// plot selected agg data at higher levels
+	times := []etime.Times{etime.Block, etime.Condition, etime.Run}
+	for _, tm := range times {
+		ss.Logs.SetMeta(etime.Train, tm, "DA:On", "-")
+		ss.Logs.SetMeta(etime.Train, tm, "VSPatch:On", "-")
+		for _, pl := range plots {
+			ss.Logs.SetMeta(etime.Train, tm, pl+":On", "+")
+		}
+	}
 }
 
-func (ss *Sim) ConfigLogItems() {
+func (ss *Sim) ConfigLogItems() []string {
 	li := ss.Logs.AddStatAggItem("DA", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.Range.Min = -1
 	li.Range.Max = 1.2
@@ -511,9 +532,39 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("SC", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 
+	var plots []string
+
+	points := []string{"CS", "US"}
+	for ci := 0; ci < 2; ci++ { // conditions
+		ci := ci
+		for _, pt := range points {
+			for _, st := range ss.Sim.AggStats {
+				itmName := fmt.Sprintf("C%d_%s_%s", ci, pt, st)
+				plots = append(plots, itmName)
+				statName := fmt.Sprintf("%s_%s", pt, st)
+				ss.Logs.AddItem(&elog.Item{
+					Name: itmName,
+					Type: etensor.FLOAT64,
+					// FixMin: true,
+					// FixMax: true,
+					Range: minmax.F64{Max: 1},
+					Write: elog.WriteMap{
+						etime.Scope(etime.AllModes, etime.Block): func(ctx *elog.Context) {
+							ctx.SetFloat64(ctx.Stats.FloatDi(statName, ci))
+						}, etime.Scope(etime.AllModes, etime.Condition): func(ctx *elog.Context) {
+							ctx.SetAgg(ctx.Mode, etime.Block, agg.AggMean)
+						}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+							ctx.SetAgg(ctx.Mode, etime.Condition, agg.AggMean)
+						}}})
+			}
+		}
+	}
+
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion
 	ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
+
+	return plots
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -546,7 +597,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 func (ss *Sim) BlockStats() {
 	stnm := "BlockByType"
-	plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
 
 	ix := ss.Logs.IdxView(etime.Train, etime.Trial)
 	spl := split.GroupBy(ix, []string{"TrialType", "Trial"})
@@ -569,8 +619,24 @@ func (ss *Sim) BlockStats() {
 	dt.SetMetaData("DA:FixMax", "-")
 	dt.SetMetaData("DA:Max", "1")
 	ss.Logs.MiscTables[stnm] = dt
-	plt.SetTable(dt)
-	plt.Update()
+
+	// grab selected stats at CS and US for higher level aggregation,
+	// assuming 5 trials per sequence etc
+	nseq := dt.Rows / 5
+	for seq := 0; seq < nseq; seq++ {
+		sst := seq * 5
+		ss.Stats.SetStringDi("TrialType", seq, dt.CellString("Trialtype", sst+1))
+		for _, st := range ss.Sim.AggStats {
+			ss.Stats.SetFloatDi("CS_"+st, seq, dt.CellFloat(st, sst+1))
+			ss.Stats.SetFloatDi("US_"+st, seq, dt.CellFloat(st, sst+3))
+		}
+	}
+
+	if !ss.Args.Bool("nogui") {
+		plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
+		plt.SetTable(dt)
+		plt.Update()
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -699,10 +765,12 @@ func (ss *Sim) RunGUI() {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.SetInt("epochs", 100)
-	ss.Args.SetInt("runs", 5)
-	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.SetInt("runs", 1)
+	ss.Args.AddString("runname", "PosAcqExt_A100B50_A0B0", "name of overall run conditions")
+	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
 	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
+	ss.Args.AddBool("blocklog", false, "save .blk log at block level")
+	ss.Args.AddBool("condlog", false, "save .cnd log at condition level")
 	ss.Args.Parse() // always parse
 }
 
@@ -712,11 +780,22 @@ func (ss *Sim) RunNoGUI() {
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
 
+	if ss.Args.Bool("blocklog") {
+		fnm := ecmd.LogFileName("blk", ss.Net.Name(), ss.Params.RunName(ss.Args.Int("run")))
+		ss.Logs.SetLogFile(etime.Train, etime.Block, fnm)
+	}
+	if ss.Args.Bool("condlog") {
+		fnm := ecmd.LogFileName("cnd", ss.Net.Name(), ss.Params.RunName(ss.Args.Int("run")))
+		ss.Logs.SetLogFile(etime.Train, etime.Condition, fnm)
+	}
+
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
 		mpi.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
+
+	ss.RunName = ss.Args.String("runname")
 
 	ss.Init()
 
