@@ -613,11 +613,6 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	SetNrnV(ctx, ni, di, Burst, NrnV(ctx, ni, di, CaSpkP))
 	pi := NrnI(ctx, ni, NrnSubPool) - 1 // 0-n pool index
 	pni := NrnI(ctx, ni, NrnNeurIdx) - pl.StIdx
-	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && lpl.AvgMax.CaSpkP.Cycle.Max > ly.Acts.AttnMod.RTThr {
-		if vals.RT <= 0 {
-			vals.RT = float32(ctx.Cycle)
-		}
-	}
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -746,6 +741,15 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, vals *La
 //  Special CyclePost methods for different layer types
 //  call these in layer_compute.go/CyclePost and
 //  gpu_hlsl/gpu_cyclepost.hlsl
+
+// CyclePostLayer is called for all layer types
+func (ly *LayerParams) CyclePostLayer(ctx *Context, di uint32, lpl *Pool, vals *LayerVals) {
+	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && lpl.AvgMax.CaSpkP.Cycle.Max > ly.Acts.AttnMod.RTThr {
+		if vals.RT <= 0 {
+			vals.RT = float32(ctx.Cycle)
+		}
+	}
+}
 
 func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, vals *LayerVals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
 	ach := ly.LDT.ACh(ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)

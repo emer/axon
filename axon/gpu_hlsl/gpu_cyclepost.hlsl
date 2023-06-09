@@ -51,6 +51,7 @@ void CyclePostLDT(inout Context ctx, uint di, in LayerParams ly, inout LayerVals
 }
 
 void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
+	ly.CyclePostLayer(ctx, di, lpl, vals);
 	switch (ly.LayType) {
 	case PTNotMaintLayer: {
 		ly.CyclePostPTNotMaintLayer(ctx, di, lpl);
@@ -98,6 +99,14 @@ void CyclePost(inout Context ctx, in LayerParams ly, int li, uint di) {
 	CyclePost2(ctx, ly, uint(li), di, LayVals[ly.Idxs.ValsIdx(di)], Pools[ly.Idxs.PoolIdx(0, di)]);
 }
 
+void CyclePostAll2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
+	ly.CyclePostLayer(ctx, di, lpl, vals); // does reaction time
+}
+
+void CyclePostAll(inout Context ctx, in LayerParams ly, int li, uint di) {
+	CyclePostAll2(ctx, ly, uint(li), di, LayVals[ly.Idxs.ValsIdx(di)], Pools[ly.Idxs.PoolIdx(0, di)]);
+}
+
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) {
 	if (idx.x >= Ctx[0].NetIdxs.NData) {
@@ -120,6 +129,7 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	int tdii = -1;
 	int tddi = -1;
 	for (int li = 0; li < Ctx[0].NetIdxs.NLayers; li++) {
+		CyclePostAll(Ctx[0], Layers[li], li, di);
 		switch (Layers[li].LayType) {
 		case PTNotMaintLayer:
 			pnmi = li;

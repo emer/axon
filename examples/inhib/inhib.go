@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 /*
 inhib: This simulation explores how inhibitory interneurons can dynamically
 control overall activity levels within the network, by providing both
@@ -327,9 +325,6 @@ func (ss *Sim) NewRun() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetInt("Run", 0)
-	ss.Stats.SetFloat("TrlUnitErr", 0.0)
-	ss.Stats.SetFloat("TrlCorSim", 0.0)
-	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc

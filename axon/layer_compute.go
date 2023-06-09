@@ -259,11 +259,13 @@ func (ly *Layer) CyclePost(ctx *Context) {
 	net := ly.Network
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := ly.LayerVals(di)
+		lpl := ly.Pool(0, di)
+		ly.Params.CyclePostLayer(ctx, di, lpl, vals)
 		switch ly.LayerType() {
 		case PTNotMaintLayer:
-			ly.Params.CyclePostPTNotMaintLayer(ctx, di, ly.Pool(0, di))
+			ly.Params.CyclePostPTNotMaintLayer(ctx, di, lpl)
 		case CeMLayer:
-			ly.Params.CyclePostCeMLayer(ctx, di, ly.Pool(0, di))
+			ly.Params.CyclePostCeMLayer(ctx, di, lpl)
 		case VSPatchLayer:
 			for pi := uint32(1); pi < ly.NPools; pi++ {
 				pl := ly.Pool(pi, di)
