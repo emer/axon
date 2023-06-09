@@ -436,8 +436,8 @@ func (ss *Sim) TestAll() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
-	ss.Stats.SetFloat("TrlUnitErr", 0.0)
-	ss.Stats.SetFloat("TrlCorSim", 0.0)
+	ss.Stats.SetFloat("UnitErr", 0.0)
+	ss.Stats.SetFloat("CorSim", 0.0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -463,7 +463,7 @@ func (ss *Sim) NetViewCounters() {
 	}
 	di := ss.GUI.ViewUpdt.View.Di
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "TrlCorSim"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -477,8 +477,8 @@ func (ss *Sim) TrialStats(di int) {
 
 	inp := ss.Net.AxonLayerByName("DepthP")
 	ss.Stats.SetFloat("TrlErr", 1)
-	ss.Stats.SetFloat32("TrlCorSim", inp.Vals[di].CorSim.Cor)
-	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr(ctx)[di])
+	ss.Stats.SetFloat32("CorSim", inp.Vals[di].CorSim.Cor)
+	ss.Stats.SetFloat("UnitErr", inp.PctUnitErr(ctx)[di])
 }
 
 // SimMat does similarity matrix analysis on Analyze trial data
@@ -526,12 +526,12 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("DepthP_PrvMCorSim", "DepthP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("DepthP_PrvPCorSim", "DepthP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("HeadDirP_PrvMCorSim", "HeadDirP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("HeadDirP_PrvPCorSim", "HeadDirP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DepthP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DepthP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("HeadDirP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("HeadDirP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr")

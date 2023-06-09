@@ -551,13 +551,13 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
 
-	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("Match", "Match", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("PFCVM_RT", "PFCVM_RT", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("PFCVM_ActAvg", "PFCVM_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("MtxGo_ActAvg", "MtxGo_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
-	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("Gated", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("Should", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("Match", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("PFCVM_RT", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("PFCVM_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("MtxGo_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
+	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 

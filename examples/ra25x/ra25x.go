@@ -420,8 +420,8 @@ func (ss *Sim) OpenPats() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("TrlUnitErr", 0.0)
-	ss.Stats.SetFloat("TrlCorSim", 0.0)
+	ss.Stats.SetFloat("UnitErr", 0.0)
+	ss.Stats.SetFloat("CorSim", 0.0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -448,7 +448,7 @@ func (ss *Sim) NetViewCounters() {
 	}
 	di := ss.GUI.ViewUpdt.View.Di
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -456,10 +456,10 @@ func (ss *Sim) NetViewCounters() {
 func (ss *Sim) TrialStats(di int) {
 	out := ss.Net.AxonLayerByName("Output")
 
-	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals[di].CorSim.Cor))
-	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(&ss.Context)[di])
+	ss.Stats.SetFloat("CorSim", float64(out.Vals[di].CorSim.Cor))
+	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
 
-	if ss.Stats.Float("TrlUnitErr") > 0 {
+	if ss.Stats.Float("UnitErr") > 0 {
 		ss.Stats.SetFloat("TrlErr", 1)
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
@@ -477,8 +477,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")

@@ -928,8 +928,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
-	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Test, etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.NoPlot(etime.Train, etime.Cycle)
+	ss.Logs.NoPlot(etime.Test, etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
@@ -938,22 +938,22 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ss.Logs.AddStatAggItem("AllGood", "AllGood", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("JustGated", "JustGated", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Deciding", "Deciding", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GatedAgain", "GatedAgain", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("AChShould", "AChShould", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("AChShouldnt", "AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUp", "GiveUp", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("DipSum", "DipSum", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Urge", "Urge", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("AllGood", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ActMatch", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("JustGated", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Should", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateUS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateCS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Deciding", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GatedEarly", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("MaintEarly", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GatedAgain", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DipSum", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Urge", etime.Run, etime.Epoch, etime.Trial)
 
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion
@@ -962,25 +962,25 @@ func (ss *Sim) ConfigLogItems() {
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
 	for _, lnm := range lays {
 		nm := "Maint" + lnm
-		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
+		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
 		nm = "MaintFail" + lnm
-		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
+		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
 		nm = "PreAct" + lnm
-		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
+		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
 	}
-	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
+	li = ss.Logs.AddStatAggItem("DA", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("ACh", "ACh", etime.Run, etime.Epoch, etime.Trial)
+	li = ss.Logs.AddStatAggItem("ACh", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("AChRaw", "AChRaw", etime.Run, etime.Epoch, etime.Trial)
+	li = ss.Logs.AddStatAggItem("AChRaw", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("RewPred", "RewPred", etime.Run, etime.Epoch, etime.Trial)
+	li = ss.Logs.AddStatAggItem("RewPred", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("DA_NR", "DA_NR", etime.Run, etime.Epoch, etime.Trial)
+	li = ss.Logs.AddStatAggItem("DA_NR", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("RewPred_NR", "RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
+	li = ss.Logs.AddStatAggItem("RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
