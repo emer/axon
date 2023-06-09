@@ -9,12 +9,12 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "needs some special inhibition and learning params",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":                "0.0",    // 0 > .2 -- highly sensitive
-					"Layer.Act.Decay.Glong":              "0.6",    // 0.6 def > 0.5, .7 -- highly sensitive
-					"Layer.Act.NMDA.MgC":                 "1.4",    // 1.4, 5 > 1.2, 0
-					"Layer.Act.NMDA.Voff":                "0",      // see above
-					"Layer.Act.NMDA.Gbar":                "0.006",  // 0.006 > 7 or higher
-					"Layer.Act.GABAB.Gbar":               "0.015",  // 0.015 > lower; higher not better
+					"Layer.Acts.Decay.Act":               "0.0",    // 0 > .2 -- highly sensitive
+					"Layer.Acts.Decay.Glong":             "0.6",    // 0.6 def > 0.5, .7 -- highly sensitive
+					"Layer.Acts.NMDA.MgC":                "1.4",    // 1.4, 5 > 1.2, 0
+					"Layer.Acts.NMDA.Voff":               "0",      // see above
+					"Layer.Acts.NMDA.Gbar":               "0.006",  // 0.006 > 7 or higher
+					"Layer.Acts.GabaB.Gbar":              "0.015",  // 0.015 > lower; higher not better
 					"Layer.Learn.CaSpk.SpikeG":           "12",     // 12 > 8 > 15 (too high) -- 12 makes everything work!
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // 0.0002 > others -- 0.005 sig worse
 					"Layer.Learn.LrnNMDA.MgC":            "1.4",    // 1.4, 5 > 1.2, 0
@@ -30,9 +30,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":        "0.9", // 0.9 def
 					"Layer.Inhib.Layer.FB":       "1",
 					"Layer.Inhib.Pool.FB":        "1",
-					"Layer.Act.Clamp.Ge":         "1.5", // 1.5 for fsffffb
-					"Layer.Act.Decay.Act":        "1",   // 1 = slightly beneficial
-					"Layer.Act.Decay.Glong":      "1",
+					"Layer.Acts.Clamp.Ge":        "1.5", // 1.5 for fsffffb
+					"Layer.Acts.Decay.Act":       "1",   // 1 = slightly beneficial
+					"Layer.Acts.Decay.Glong":     "1",
 				}},
 			{Sel: "#V4", Desc: "pool inhib, sparse activity",
 				Params: params.Params{
@@ -55,21 +55,21 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "high inhib for one-hot output",
 				Params: params.Params{
-					// "Layer.Act.Decay.Act":     "0.0",  // 0.2 with glong .6 best in lvis, slows learning here
-					// "Layer.Act.Decay.Glong":   "0.6",  // 0.6 def
+					// "Layer.Acts.Decay.Act":     "0.0",  // 0.2 with glong .6 best in lvis, slows learning here
+					// "Layer.Acts.Decay.Glong":   "0.6",  // 0.6 def
 					"Layer.Inhib.ActAvg.Nominal": "0.05",   // 0.05 nominal
 					"Layer.Inhib.ActAvg.Offset":  "-0.005", //
 					"Layer.Inhib.ActAvg.AdaptGi": "true",   //
 					"Layer.Inhib.Layer.Gi":       "1.2",    // 1.2 FB1 > 1.1 FB4
 					"Layer.Inhib.Layer.FB":       "1",      //
-					"Layer.Act.Clamp.Ge":         "0.8",    // 0.8 > 1.0 > 0.6 1.6.4
+					"Layer.Acts.Clamp.Ge":        "0.8",    // 0.8 > 1.0 > 0.6 1.6.4
 				}},
 			{Sel: "Prjn", Desc: "yes extra learning factors",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
 					"Prjn.Learn.Trace.SubMean": "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-					"Prjn.SWt.Adapt.LRate":     "0.0001", // 0.005 == .1 == .01
-					"Prjn.SWt.Init.SPct":       "1",      // 1 >= lower (trace-v11)
+					"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.005 == .1 == .01
+					"Prjn.SWts.Init.SPct":      "1",      // 1 >= lower (trace-v11)
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 				Params: params.Params{

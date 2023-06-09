@@ -4,7 +4,9 @@
 
 package axon
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 // prjn_compute.go has the core computational methods, for the CPU.
 // On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
@@ -17,29 +19,28 @@ import "sync/atomic"
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(ctx *Context, sendIdx uint32, nrn *Neuron) {
+func (pj *Prjn) SendSpike(ctx *Context, ni, di, maxData uint32) {
 	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
 	if pj.PrjnType() == CTCtxtPrjn {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
 		}
-		scale *= nrn.Burst // Burst is regular CaSpkP for all non-SuperLayer neurons
+		scale *= NrnV(ctx, ni, di, Burst) // Burst is regular CaSpkP for all non-SuperLayer neurons
 	} else {
-		if nrn.Spike == 0 {
+		if NrnV(ctx, ni, di, Spike) == 0 {
 			return
 		}
 	}
 	pjcom := &pj.Params.Com
-	wrOff := pjcom.WriteOff(ctx.CyclesTotal)
-	syns := pj.SendSyns(int(sendIdx))
-	for syi := range syns {
-		sy := &syns[syi]
-		recvIdx := pj.Params.SynRecvLayIdx(sy)
-		sv := int32(scale * sy.Wt)
-		bi := pjcom.WriteIdxOff(recvIdx, wrOff, pj.Params.Idxs.RecvNeurN)
+	wrOff := pjcom.WriteOff(ctx.CyclesTotal) // todo: these require di offset!
+	scon := pj.SendCon[ni-pj.Send.NeurStIdx]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		recvIdx := pj.Params.SynRecvLayIdx(ctx, syni) // note: layer-specific is ok here
+		sv := int32(scale * SynV(ctx, syni, Wt))
+		bi := pjcom.WriteIdxOff(recvIdx, di, wrOff, pj.Params.Idxs.RecvNeurN, maxData)
 		atomic.AddInt32(&pj.GBuf[bi], sv)
 	}
-
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -51,21 +52,19 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx uint32, nrn *Neuron) {
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 // Sender will update even if recv neuron spiked -- recv will skip sender spike cases.
-func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) {
+func (pj *Prjn) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	if !pj.Params.DoSynCa() {
 		return
 	}
-	rlay := pj.Recv
-	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * sn.CaSyn
-	syns := pj.SendSyns(int(si))
-	for syi := range syns {
-		sy := &syns[syi]
-		ri := pj.Params.SynRecvLayIdx(sy)
-		rn := &rlay.Neurons[ri]
-		pj.Params.SynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
+	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
+	scon := pj.SendCon[ni-pj.Send.NeurStIdx]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		ri := SynI(ctx, syni, SynRecvIdx)
+		pj.Params.SynCaSyn(ctx, syni, ri, di, snCaSyn, updtThr)
 	}
 }
 
@@ -73,24 +72,23 @@ func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) 
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike,
 // and skips when sender spiked, as those were already done in Send version.
-func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) {
+func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	if !pj.Params.DoSynCa() {
 		return
 	}
-	slay := pj.Send
-	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * rn.CaSyn
-	syIdxs := pj.RecvSynIdxs(int(ri))
+	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
+	syIdxs := pj.RecvSynIdxs(ni - pj.Recv.NeurStIdx)
+
 	for _, syi := range syIdxs {
-		sy := &pj.Syns[syi]
-		si := pj.Params.SynSendLayIdx(sy)
-		sn := &slay.Neurons[si]
-		if sn.Spike > 0 {
+		syni := pj.SynStIdx + syi
+		si := SynI(ctx, syni, SynSendIdx)
+		if NrnV(ctx, si, di, Spike) > 0 { // already handled in send version
 			continue
 		}
-		pj.Params.SynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
+		pj.Params.SynCaSyn(ctx, syni, si, di, rnCaSyn, updtThr)
 	}
 }
 
@@ -100,26 +98,31 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) 
 // DWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) DWt(ctx *Context, si uint32, sn *Neuron) {
+func (pj *Prjn) DWt(ctx *Context, si uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
+	scon := pj.SendCon[si-pj.Send.NeurStIdx]
 	rlay := pj.Recv
-	layPool := &rlay.Pools[0]
-	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
-	syns := pj.SendSyns(int(si))
-	for syi := range syns {
-		sy := &syns[syi]
-		ri := pj.Params.SynRecvLayIdx(sy)
-		rn := &rlay.Neurons[ri]
-		subPool := &rlay.Pools[rn.SubPool]
-		pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, subPool, isTarget)
+	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		ri := SynI(ctx, syni, SynRecvIdx)
+		dwt := float32(0)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			layPool := rlay.Pool(0, di)
+			subPool := rlay.SubPool(ctx, ri, di)
+			pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+			dwt += SynCaV(ctx, syni, di, DiDWt)
+		}
+		// note: on GPU, this must be a separate kernel, but can be combined here
+		AddSynV(ctx, syni, DWt, dwt)
 	}
 }
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
+func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -127,15 +130,15 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
 	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
 		return
 	}
-	syIdxs := pj.RecvSynIdxs(int(ri))
+	syIdxs := pj.RecvSynIdxs(ri - pj.Recv.NeurStIdx)
 	if len(syIdxs) < 1 {
 		return
 	}
 	sumDWt := float32(0)
 	nnz := 0 // non-zero
 	for _, syi := range syIdxs {
-		sy := &pj.Syns[syi]
-		dw := sy.DWt
+		syni := pj.SynStIdx + syi
+		dw := SynV(ctx, syni, DWt)
 		if dw != 0 {
 			sumDWt += dw
 			nnz++
@@ -146,9 +149,9 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
 	}
 	sumDWt /= float32(nnz)
 	for _, syi := range syIdxs {
-		sy := &pj.Syns[syi]
-		if sy.DWt != 0 {
-			sy.DWt -= sm * sumDWt
+		syni := pj.SynStIdx + syi
+		if SynV(ctx, syni, DWt) != 0 {
+			AddSynV(ctx, syni, DWt, -sm*sumDWt)
 		}
 	}
 }
@@ -156,85 +159,75 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
 // WtFmDWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
+func (pj *Prjn) WtFmDWt(ctx *Context, ni uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	syns := pj.SendSyns(int(si))
-	for syi := range syns {
-		sy := &syns[syi]
-		pj.Params.WtFmDWtSyn(ctx, sy)
+	scon := pj.SendCon[ni-pj.Send.NeurStIdx]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		pj.Params.WtFmDWtSyn(ctx, syni)
 	}
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
 func (pj *Prjn) SlowAdapt(ctx *Context) {
-	pj.SWtFmWt()
-	pj.SynScale()
+	pj.SynCaReset(ctx)
+	pj.SWtFmWt(ctx)
+	pj.SynScale(ctx)
 }
 
 // SWtFmWt updates structural, slowly-adapting SWt value based on
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
-func (pj *Prjn) SWtFmWt() {
-	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWt.Adapt.On.IsFalse() {
+func (pj *Prjn) SWtFmWt(ctx *Context) {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWts.Adapt.On.IsFalse() {
 		return
 	}
 	rlay := pj.Recv
 	if rlay.Params.IsTarget() {
 		return
 	}
-	max := pj.Params.SWt.Limit.Max
-	min := pj.Params.SWt.Limit.Min
-	lr := pj.Params.SWt.Adapt.LRate
-	dvar := pj.Params.SWt.Adapt.DreamVar
-	for ri := range rlay.Neurons {
-		syIdxs := pj.RecvSynIdxs(ri)
+	max := pj.Params.SWts.Limit.Max
+	min := pj.Params.SWts.Limit.Min
+	lr := pj.Params.SWts.Adapt.LRate
+	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
+		syIdxs := pj.RecvSynIdxs(lni)
 		nCons := len(syIdxs)
 		if nCons < 1 {
 			continue
 		}
 		avgDWt := float32(0)
 		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			if sy.DSWt >= 0 { // softbound for SWt
-				sy.DSWt *= (max - sy.SWt)
+			syni := pj.SynStIdx + syi
+			swt := SynV(ctx, syni, SWt)
+			if SynV(ctx, syni, DSWt) >= 0 { // softbound for SWt
+				MulSynV(ctx, syni, DSWt, (max - swt))
 			} else {
-				sy.DSWt *= (sy.SWt - min)
+				MulSynV(ctx, syni, DSWt, (swt - min))
 			}
-			avgDWt += sy.DSWt
+			avgDWt += SynV(ctx, syni, DSWt)
 		}
 		avgDWt /= float32(nCons)
-		avgDWt *= pj.Params.SWt.Adapt.SubMean
-		if dvar > 0 {
-			for _, syi := range syIdxs {
-				sy := &pj.Syns[syi]
-				sy.SWt += lr * (sy.DSWt - avgDWt)
-				sy.DSWt = 0
-				if sy.Wt == 0 { // restore failed wts
-					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
-				}
-				sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt) // + pj.Params.SWt.Adapt.RndVar()
-				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
+		avgDWt *= pj.Params.SWts.Adapt.SubMean
+		for _, syi := range syIdxs {
+			syni := pj.SynStIdx + syi
+			AddSynV(ctx, syni, SWt, lr*(SynV(ctx, syni, DSWt)-avgDWt))
+			swt := SynV(ctx, syni, SWt)
+			SetSynV(ctx, syni, DSWt, 0)
+			if SynV(ctx, syni, Wt) == 0 { // restore failed wts
+				wt := pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt))
+				SetSynV(ctx, syni, Wt, wt)
 			}
-		} else {
-			for _, syi := range syIdxs {
-				sy := &pj.Syns[syi]
-				sy.SWt += lr * (sy.DSWt - avgDWt)
-				sy.DSWt = 0
-				if sy.Wt == 0 { // restore failed wts
-					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
-				}
-				sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
-				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
-			}
+			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWts.Adapt.RndVar()
+			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 		}
 	}
 }
 
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFmTrgAvg function must be called first.
-func (pj *Prjn) SynScale() {
+func (pj *Prjn) SynScale(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
 		return
 	}
@@ -244,21 +237,37 @@ func (pj *Prjn) SynScale() {
 	}
 	tp := &rlay.Params.Learn.TrgAvgAct
 	lr := tp.SynScaleRate
-	for ri := range rlay.Neurons {
-		nrn := &rlay.Neurons[ri]
-		if nrn.IsOff() {
+	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
+		ri := rlay.NeurStIdx + lni
+		if NrnIsOff(ctx, ri) {
 			continue
 		}
-		adif := -lr * nrn.AvgDif
-		syIdxs := pj.RecvSynIdxs(ri)
+		adif := -lr * NrnAvgV(ctx, ri, AvgDif)
+		syIdxs := pj.RecvSynIdxs(lni)
 		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
+			syni := pj.SynStIdx + syi
+			lwt := SynV(ctx, syni, LWt)
+			swt := SynV(ctx, syni, SWt)
 			if adif >= 0 { // key to have soft bounding on lwt here!
-				sy.LWt += (1 - sy.LWt) * adif * sy.SWt
+				AddSynV(ctx, syni, LWt, (1-lwt)*adif*swt)
 			} else {
-				sy.LWt += sy.LWt * adif * sy.SWt
+				AddSynV(ctx, syni, LWt, lwt*adif*swt)
 			}
-			sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
+			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
+		}
+	}
+}
+
+// SynCaReset resets SynCa values -- called during SlowAdapt
+func (pj *Prjn) SynCaReset(ctx *Context) {
+	slay := pj.Send
+	for lni := uint32(0); lni < slay.NNeurons; lni++ {
+		scon := pj.SendCon[lni]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			syni := pj.SynStIdx + syi
+			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+				InitSynCa(ctx, syni, di)
+			}
 		}
 	}
 }
@@ -267,14 +276,15 @@ func (pj *Prjn) SynScale() {
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
 func (pj *Prjn) SynFail(ctx *Context) {
 	slay := pj.Send
-	for si := range slay.Neurons {
-		syns := pj.SendSyns(si)
-		for syi := range syns {
-			sy := &syns[syi]
-			if sy.Wt == 0 { // restore failed wts
-				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
+	for lni := uint32(0); lni < slay.NNeurons; lni++ {
+		scon := pj.SendCon[lni]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			syni := pj.SynStIdx + syi
+			swt := SynV(ctx, syni, SWt)
+			if SynV(ctx, syni, Wt) == 0 { // restore failed wts
+				SetSynV(ctx, syni, Wt, pj.Params.SWts.WtVal(swt, SynV(ctx, syni, LWt)))
 			}
-			pj.Params.Com.Fail(ctx, &sy.Wt, sy.SWt)
+			pj.Params.Com.Fail(ctx, syni, swt)
 		}
 	}
 }

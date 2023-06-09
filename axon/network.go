@@ -7,7 +7,6 @@ package axon
 import (
 	"fmt"
 	"strings"
-	"unsafe"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/emer"
@@ -17,14 +16,25 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// axon.Network has parameters for running a basic rate-coded Axon network
+// axon.Network implements the Axon spiking model,
+// building on the algorithm-independent NetworkBase that manages
+// all the infrastructure.
 type Network struct {
 	NetworkBase
-	SlowInterval int `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation -- in SlowAdapt method-- long enough for meaningful changes"`
-	SlowCtr      int `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
+
+// InitName MUST be called to initialize the network's pointer to itself as an emer.Network
+// which enables the proper interface methods to be called.  Also sets the name,
+// and initializes NetIdx in global list of Network
+func (nt *Network) InitName(net emer.Network, name string) {
+	nt.EmerNet = net
+	nt.Nm = name
+	nt.MaxData = 1
+	nt.NetIdx = uint32(len(Networks))
+	Networks = append(Networks, nt)
+}
 
 // NewNetwork returns a new axon Network
 func NewNetwork(name string) *Network {
@@ -50,8 +60,6 @@ func (nt *Network) NewPrjn() emer.Prjn {
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
 	nt.SetNThreads(0) // default
-	nt.SlowInterval = 100
-	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
 		ly.Defaults()
 	}
@@ -65,32 +73,6 @@ func (nt *Network) UpdateParams() {
 	}
 }
 
-// UnitVarNames returns a list of variable names available on the units in this network.
-// Not all layers need to support all variables, but must safely return 0's for
-// unsupported ones.  The order of this list determines NetView variable display order.
-// This is typically a global list so do not modify!
-func (nt *Network) UnitVarNames() []string {
-	return NeuronVars
-}
-
-// UnitVarProps returns properties for variables
-func (nt *Network) UnitVarProps() map[string]string {
-	return NeuronVarProps
-}
-
-// SynVarNames returns the names of all the variables on the synapses in this network.
-// Not all projections need to support all variables, but must safely return 0's for
-// unsupported ones.  The order of this list determines NetView variable display order.
-// This is typically a global list so do not modify!
-func (nt *Network) SynVarNames() []string {
-	return SynapseVars
-}
-
-// SynVarProps returns properties for variables
-func (nt *Network) SynVarProps() map[string]string {
-	return SynapseVarProps
-}
-
 // ////////////////////////////////////////////////////////////////////////////////////
 //
 //	Primary Algorithmic interface.
@@ -99,18 +81,23 @@ func (nt *Network) SynVarProps() map[string]string {
 // to compute one complete algorithmic alpha cycle update.
 
 // NewState handles all initialization at start of new input pattern.
-// Should already have presented the external input to the network at this point.
-// Does NOT call InitGScale()
+// This is called *before* applying external input data and operates across
+// all data parallel values.  The current Context.NData should be set
+// properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
-	if nt.GPU.On {
-		nt.GPU.RunNewState()
-		return
-	}
+	nt.NData = ctx.NetIdxs.NData
+	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
+	// 	nt.GPU.RunNewState()
+	// 	return
+	// }
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
 		ly.NewState(ctx)
+	}
+	if nt.GPU.On {
+		nt.GPU.SyncStateGBufToGPU()
 	}
 }
 
@@ -120,14 +107,14 @@ func (nt *Network) Cycle(ctx *Context) {
 		nt.GPU.RunCycle()
 		return
 	}
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.GatherSpikes(ctx, ni) }, "GatherSpikes")
 	nt.LayerMapPar(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")         // note: important to be Par for linux / amd64
 	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes") // note: Par not useful
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.PostSpike(ctx, ni, nrn) }, "PostSpike")
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SendSpike(ctx, ni, nrn) }, "SendSpike")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
 	if ctx.Testing.IsFalse() {
-		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCa(ctx, ni, nrn) }, "SynCa")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SynCa(ctx, ni) }, "SynCa")
 	}
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {
@@ -167,6 +154,9 @@ func (nt *Network) MinusPhase(ctx *Context) {
 			continue
 		}
 		ly.MinusPhasePost(ctx)
+	}
+	if nt.GPU.On {
+		nt.GPU.SyncStateToGPU()
 	}
 }
 
@@ -212,23 +202,23 @@ func (nt *Network) PlusPhase(ctx *Context) {
 // TargToExt sets external input Ext from target values Target
 // This is done at end of MinusPhase to allow targets to drive activity in plus phase.
 // This can be called separately to simulate alpha cycles within theta cycles, for example.
-func (nt *Network) TargToExt() {
+func (nt *Network) TargToExt(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.TargToExt()
+		ly.TargToExt(ctx)
 	}
 }
 
 // ClearTargExt clears external inputs Ext that were set from target values Target.
 // This can be called to simulate alpha cycles within theta cycles, for example.
-func (nt *Network) ClearTargExt() {
+func (nt *Network) ClearTargExt(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.ClearTargExt()
+		ly.ClearTargExt(ctx)
 	}
 }
 
@@ -261,34 +251,27 @@ func (nt *Network) DWt(ctx *Context) {
 		nt.GPU.RunDWt()
 		return
 	}
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.DWt(ctx, ni, nrn) }, "DWt")
-	// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
-// Also calls SlowAdapt every Interval times
+// Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 func (nt *Network) WtFmDWt(ctx *Context) {
 	nt.LayerMapSeq(func(ly *Layer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // lightweight
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
 	} else {
-		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.DWtSubMean(ctx, ni, nrn) }, "DWtSubMean")
-		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.WtFmDWt(ctx, ni, nrn) }, "WtFmDWt")
-		// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean") // todo: neuron level threaded
-		// nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFmDWt(ctx, ni) }, "WtFmDWt")
 	}
-	nt.SlowAdapt(ctx)
+	if ctx.SlowInc() {
+		nt.SlowAdapt(ctx)
+	}
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // and adapting inhibition
 func (nt *Network) SlowAdapt(ctx *Context) {
-	nt.SlowCtr++
-	if nt.SlowCtr < nt.SlowInterval {
-		return
-	}
-	nt.SlowCtr = 0
-
 	// note: for now doing all this slow stuff CPU-side
 	// These Sync calls always check if GPU is On
 	nt.GPU.SyncAllFmGPU()
@@ -304,14 +287,15 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
-func (nt *Network) InitWts() {
+func (nt *Network) InitWts(ctx *Context) {
 	nt.BuildPrjnGBuf()
-	nt.SlowCtr = 0
+	ctx.SlowCtr = 0
+	ctx.SynCaCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.InitWts(nt) // calls InitActs too
+		ly.InitWts(ctx, nt) // calls InitActs too
 	}
 	// separate pass to enforce symmetry
 	// st := time.Now()
@@ -319,7 +303,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.InitWtSym()
+		ly.InitWtSym(ctx)
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
@@ -332,6 +316,7 @@ func (nt *Network) InitWts() {
 // includes: prjn.PoolTile prjn.Circle.
 // call before InitWts if using Topo wts
 func (nt *Network) InitTopoSWts() {
+	ctx := &nt.Ctx
 	swts := &etensor.Float32{}
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -350,12 +335,12 @@ func (nt *Network) InitTopoSWts() {
 				}
 				slay := pj.Send
 				pt.TopoWts(slay.Shape(), ly.Shape(), swts)
-				pj.SetSWtsRPool(swts)
+				pj.SetSWtsRPool(ctx, swts)
 			case *prjn.Circle:
 				if !pt.TopoWts {
 					continue
 				}
-				pj.SetSWtsFunc(pt.GaussWts)
+				pj.SetSWtsFunc(ctx, pt.GaussWts)
 			}
 		}
 	}
@@ -363,12 +348,12 @@ func (nt *Network) InitTopoSWts() {
 
 // InitGScale computes the initial scaling factor for synaptic input conductances G,
 // stored in GScale.Scale, based on sending layer initial activation.
-func (nt *Network) InitGScale() {
+func (nt *Network) InitGScale(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.InitGScale()
+		ly.InitGScale(ctx)
 	}
 }
 
@@ -377,13 +362,15 @@ func (nt *Network) InitGScale() {
 // glong = separate decay factor for long-timescale conductances (g)
 // This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
-func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
+func (nt *Network) DecayState(ctx *Context, decay, glong, ahp float32) {
 	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.DecayState(ctx, decay, glong)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.DecayState(ctx, di, decay, glong, ahp)
+		}
 	}
 	nt.GPU.SyncStateToGPU()
 }
@@ -391,15 +378,15 @@ func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 // DecayStateByType decays activation state for given layer types
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
 // glong = separate decay factor for long-timescale conductances (g)
-func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ...LayerTypes) {
-	nt.DecayStateLayers(ctx, decay, glong, nt.LayersByType(types...)...)
+func (nt *Network) DecayStateByType(ctx *Context, decay, glong, ahp float32, types ...LayerTypes) {
+	nt.DecayStateLayers(ctx, decay, glong, ahp, nt.LayersByType(types...)...)
 }
 
 // DecayStateByClass decays activation state for given class name(s)
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
 // glong = separate decay factor for long-timescale conductances (g)
-func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, classes ...string) {
-	nt.DecayStateLayers(ctx, decay, glong, nt.LayersByClass(classes...)...)
+func (nt *Network) DecayStateByClass(ctx *Context, decay, glong, ahp float32, classes ...string) {
+	nt.DecayStateLayers(ctx, decay, glong, ahp, nt.LayersByClass(classes...)...)
 }
 
 // DecayStateLayers decays activation state for given layers
@@ -408,25 +395,27 @@ func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, classes
 // If this is not being called at the start, around NewState call,
 // then you should also call: nt.GPU.SyncGBufToGPU()
 // to zero the GBuf values which otherwise will persist spikes in flight.
-func (nt *Network) DecayStateLayers(ctx *Context, decay, glong float32, layers ...string) {
+func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, layers ...string) {
 	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, lynm := range layers {
 		ly := nt.AxonLayerByName(lynm)
 		if ly.IsOff() {
 			continue
 		}
-		ly.DecayState(ctx, decay, glong)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.DecayState(ctx, di, decay, glong, ahp)
+		}
 	}
 	nt.GPU.SyncStateToGPU()
 }
 
 // InitActs fully initializes activation state -- not automatically called
-func (nt *Network) InitActs() {
+func (nt *Network) InitActs(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.InitActs()
+		ly.InitActs(ctx)
 	}
 	nt.GPU.SyncStateToGPU()
 	nt.GPU.SyncGBufToGPU() // zeros everyone
@@ -434,14 +423,14 @@ func (nt *Network) InitActs() {
 
 // InitExt initializes external input state.
 // Call prior to applying external inputs to layers.
-func (nt *Network) InitExt() {
+func (nt *Network) InitExt(ctx *Context) {
 	// note: important to do this for GPU
 	// to ensure partial inputs work the same way on CPU and GPU.
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.InitExt()
+		ly.InitExt(ctx)
 	}
 }
 
@@ -459,12 +448,12 @@ func (nt *Network) ApplyExts(ctx *Context) {
 // UpdateExtFlags updates the neuron flags for external input based on current
 // layer Type field -- call this if the Type has changed since the last
 // ApplyExt* method call.
-func (nt *Network) UpdateExtFlags() {
+func (nt *Network) UpdateExtFlags(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.UpdateExtFlags()
+		ly.UpdateExtFlags(ctx)
 	}
 }
 
@@ -523,7 +512,7 @@ func (nt *Network) LayersSetOff(off bool) {
 
 // UnLesionNeurons unlesions neurons in all layers in the network.
 // Provides a clean starting point for subsequent lesion experiments.
-func (nt *Network) UnLesionNeurons() {
+func (nt *Network) UnLesionNeurons(ctx *Context) {
 	for _, ly := range nt.Layers {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
@@ -540,49 +529,56 @@ func (nt *Network) UnLesionNeurons() {
 // in which case the method returns true so that the actual length of
 // dwts can be passed next time around.
 // Used for MPI sharing of weight changes across processors.
-func (nt *Network) CollectDWts(dwts *[]float32) bool {
+func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 	idx := 0
 	made := false
 	if *dwts == nil {
 		nwts := 0
 		for _, ly := range nt.Layers {
-			nwts += 5               // ActAvgVals
-			nwts += len(ly.Neurons) // ActAvg
+			nwts += 5                // ActAvgVals
+			nwts += int(ly.NNeurons) // ActAvg
 			if ly.Params.IsLearnTrgAvg() {
-				nwts += len(ly.Neurons)
+				nwts += int(ly.NNeurons)
 			}
 			for _, pj := range ly.SndPrjns {
-				nwts += len(pj.Syns) + 3 // Scale, AvgAvg, MaxAvg
+				nwts += int(pj.NSyns) + 3 // Scale, AvgAvg, MaxAvg
 			}
 		}
 		*dwts = make([]float32, nwts)
 		made = true
 	}
 	for _, ly := range nt.Layers {
-		(*dwts)[idx+0] = ly.Vals.ActAvg.ActMAvg
-		(*dwts)[idx+1] = ly.Vals.ActAvg.ActPAvg
-		(*dwts)[idx+2] = ly.Vals.ActAvg.AvgMaxGeM
-		(*dwts)[idx+3] = ly.Vals.ActAvg.AvgMaxGiM
-		(*dwts)[idx+4] = ly.Vals.ActAvg.GiMult
+		nn := ly.NNeurons
+		(*dwts)[idx+0] = ly.LayerVals(0).ActAvg.ActMAvg
+		(*dwts)[idx+1] = ly.LayerVals(0).ActAvg.ActPAvg
+		(*dwts)[idx+2] = ly.LayerVals(0).ActAvg.AvgMaxGeM
+		(*dwts)[idx+3] = ly.LayerVals(0).ActAvg.AvgMaxGiM
+		(*dwts)[idx+4] = ly.LayerVals(0).ActAvg.GiMult
 		idx += 5
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			(*dwts)[idx+ni] = nrn.ActAvg
+		for lni := uint32(0); lni < nn; lni++ {
+			ni := ly.NeurStIdx + lni
+			(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, ActAvg)
 		}
-		idx += len(ly.Neurons)
+		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
-			for ni := range ly.Neurons {
-				nrn := &ly.Neurons[ni]
-				(*dwts)[idx+ni] = nrn.DTrgAvg
+			for lni := uint32(0); lni < nn; lni++ {
+				ni := ly.NeurStIdx + lni
+				(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, DTrgAvg)
 			}
-			idx += len(ly.Neurons)
+			idx += int(nn)
 		}
 		for _, pj := range ly.SndPrjns {
-			for j := range pj.Syns {
-				sy := &(pj.Syns[j])
-				(*dwts)[idx+j] = sy.DWt
+			for lni := range pj.SendCon {
+				scon := pj.SendCon[lni]
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+					syni := pj.SynStIdx + syi
+					(*dwts)[idx+int(syi)] = SynV(ctx, syni, DWt)
+					// if syni < 100 {
+					// 	fmt.Printf("%d: %d = %g\n", syni, syi, (*dwts)[idx+int(syi)])
+					// }
+				}
 			}
-			idx += len(pj.Syns)
+			idx += int(pj.NSyns)
 		}
 	}
 	return made
@@ -591,35 +587,41 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 // SetDWts sets the DWt weight changes from given array of floats, which must be correct size
 // navg is the number of processors aggregated in these dwts -- some variables need to be
 // averaged instead of summed (e.g., ActAvg)
-func (nt *Network) SetDWts(dwts []float32, navg int) {
+func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 	idx := 0
 	davg := 1 / float32(navg)
 	for _, ly := range nt.Layers {
-		ly.Vals.ActAvg.ActMAvg = davg * dwts[idx+0]
-		ly.Vals.ActAvg.ActPAvg = davg * dwts[idx+1]
-		ly.Vals.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
-		ly.Vals.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
-		ly.Vals.ActAvg.GiMult = davg * dwts[idx+4]
+		nn := ly.NNeurons
+		ly.LayerVals(0).ActAvg.ActMAvg = davg * dwts[idx+0]
+		ly.LayerVals(0).ActAvg.ActPAvg = davg * dwts[idx+1]
+		ly.LayerVals(0).ActAvg.AvgMaxGeM = davg * dwts[idx+2]
+		ly.LayerVals(0).ActAvg.AvgMaxGiM = davg * dwts[idx+3]
+		ly.LayerVals(0).ActAvg.GiMult = davg * dwts[idx+4]
 		idx += 5
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			nrn.ActAvg = davg * dwts[idx+ni]
+		for lni := uint32(0); lni < nn; lni++ {
+			ni := ly.NeurStIdx + lni
+			SetNrnAvgV(ctx, ni, ActAvg, davg*dwts[idx+int(lni)])
 		}
-		idx += len(ly.Neurons)
+		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
-			for ni := range ly.Neurons {
-				nrn := &ly.Neurons[ni]
-				nrn.DTrgAvg = dwts[idx+ni]
+			for lni := uint32(0); lni < nn; lni++ {
+				ni := ly.NeurStIdx + lni
+				SetNrnAvgV(ctx, ni, DTrgAvg, dwts[idx+int(lni)])
 			}
-			idx += len(ly.Neurons)
+			idx += int(nn)
 		}
 		for _, pj := range ly.SndPrjns {
-			ns := len(pj.Syns)
-			for j := range pj.Syns {
-				sy := &(pj.Syns[j])
-				sy.DWt = dwts[idx+j]
+			for lni := range pj.SendCon {
+				scon := pj.SendCon[lni]
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+					syni := pj.SynStIdx + syi
+					SetSynV(ctx, syni, DWt, dwts[idx+int(syi)])
+					// if syni < 100 {
+					// 	fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], SynV(ctx, syni, DWt))
+					// }
+				}
 			}
-			idx += ns
+			idx += int(pj.NSyns)
 		}
 	}
 }
@@ -629,43 +631,49 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 
 // SizeReport returns a string reporting the size of each layer and projection
 // in the network, and total memory footprint.
-func (nt *Network) SizeReport() string {
+// If detail flag is true, details per layer, projection is included.
+func (nt *Network) SizeReport(detail bool) string {
 	var b strings.Builder
-	globaNumNeurons := 0
-	globalMemNeurons := 0
-	globalNumSynapses := 0
-	globalMemSynapses := 0
 
-	memNeuron := int(unsafe.Sizeof(Neuron{}))
-	memSynapse := int(unsafe.Sizeof(Synapse{}))
+	varBytes := 4
+	maxData := int(nt.MaxData)
+	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIdxsN)*varBytes
+	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseCaVarsN)*maxData*varBytes + int(SynapseIdxsN)*varBytes
+
+	globalProjIdxs := 0
 
 	for _, ly := range nt.Layers {
-		layerNumNeurons := len(ly.Neurons)
-		// Sizeof returns size of struct in bytes
-		layerMemNeurons := layerNumNeurons * memNeuron
-		globaNumNeurons += layerNumNeurons
-		globalMemNeurons += layerMemNeurons
-		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, layerNumNeurons,
-			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
+		if detail {
+			nn := int(ly.NNeurons)
+			// Sizeof returns size of struct in bytes
+			nrnMem := nn * memNeuron
+			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn,
+				(datasize.ByteSize)(nrnMem).HumanReadable())
+		}
 		for _, pj := range ly.SndPrjns {
-			projNumSynapses := len(pj.Syns)
-			globalNumSynapses += projNumSynapses
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
 			//  2. RecvConIdx + RecvSynIdx + SendConIdx (consists of int32 indices = 4B)
 			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
-			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.RecvSynIdx)*4 + len(pj.SendConIdx)*4
-			globalMemSynapses += projMemSynapses + projMemIdxs
-			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
-				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())
+			projMemIdxs := len(pj.RecvConIdx)*varBytes + len(pj.RecvSynIdx)*varBytes + len(pj.SendConIdx)*varBytes
+			globalProjIdxs += projMemIdxs
+			if detail {
+				nSyn := int(pj.NSyns)
+				synMem := nSyn*memSynapse + projMemIdxs
+				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
+					nSyn, (datasize.ByteSize)(synMem).HumanReadable())
+			}
 		}
 	}
+
+	nrnMem := (len(nt.Neurons) + len(nt.NeuronAvgs) + len(nt.NeuronIxs)) * varBytes
+	synMem := (len(nt.Synapses) + len(nt.SynapseCas) + len(nt.SynapseIxs)) * varBytes
+
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n",
-		nt.Nm, globaNumNeurons, (datasize.ByteSize)(globalMemNeurons).HumanReadable(), globalNumSynapses,
-		(datasize.ByteSize)(globalMemSynapses).HumanReadable())
+		nt.Nm, nt.NNeurons, (datasize.ByteSize)(nrnMem).HumanReadable(), nt.NSyns,
+		(datasize.ByteSize)(synMem).HumanReadable())
 	return b.String()
 }
 
@@ -738,6 +746,11 @@ var NetworkProps = ki.Props{
 					"desc": "type of projection -- direction, or other more specialized factors",
 				}},
 			},
+		}},
+		{"AllGlobals", ki.Props{
+			"icon":        "file-sheet",
+			"desc":        "Shows the values of all network Global variables, for debugging purposes",
+			"show-return": true,
 		}},
 		{"AllPrjnScales", ki.Props{
 			"icon":        "file-sheet",

@@ -81,109 +81,113 @@ func (gp *GPParams) Update() {
 //gosl: end pcore_layers
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
-// downloaded from GPU.  Returns the pool index if 4D layer (0 = first).
-func (ly *Layer) MatrixGated(ctx *Context) (bool, int) {
+// downloaded from GPU, to set Gated flag based on SpkMax activity
+func (ly *Layer) MatrixGated(ctx *Context) {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
 		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
-		ly.Pools[0].Gated = oly.Pools[0].Gated
 		// note: NoGo layers don't track gating at the sub-pool level!
-		return oly.Pools[0].Gated.IsTrue(), 0
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.Pool(0, di).Gated = oly.Pool(0, di).Gated
+		}
+		return
 	}
-	mtxGated, poolIdx := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+	// todo: Context requires data parallel state!
 
-	thalGated := false
-	if ly.Params.Matrix.ThalLay1Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
-		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-		thalGated = thalGated || gt
-	}
-	if ly.Params.Matrix.ThalLay2Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
-		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-		thalGated = thalGated || gt
-	}
-	if ly.Params.Matrix.ThalLay3Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
-		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-		thalGated = thalGated || gt
-	}
-	if ly.Params.Matrix.ThalLay4Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
-		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-		thalGated = thalGated || gt
-	}
-	if ly.Params.Matrix.ThalLay5Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
-		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-		thalGated = thalGated || gt
-	}
-	if ly.Params.Matrix.ThalLay6Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
-		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-		thalGated = thalGated || gt
-	}
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		mtxGated, poolIdx := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 
-	mtxGated = mtxGated && thalGated
+		thalGated := false
+		if ly.Params.Matrix.ThalLay1Idx >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
+			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			thalGated = thalGated || gt
+		}
+		if ly.Params.Matrix.ThalLay2Idx >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
+			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			thalGated = thalGated || gt
+		}
+		if ly.Params.Matrix.ThalLay3Idx >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
+			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			thalGated = thalGated || gt
+		}
+		if ly.Params.Matrix.ThalLay4Idx >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
+			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			thalGated = thalGated || gt
+		}
+		if ly.Params.Matrix.ThalLay5Idx >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
+			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			thalGated = thalGated || gt
+		}
+		if ly.Params.Matrix.ThalLay6Idx >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
+			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			thalGated = thalGated || gt
+		}
 
-	// note: in principle with multi-pool GP, could try to establish
-	// a correspondence between thal and matrix pools, such that
-	// a failure to gate at the thal level for a given pool would veto
-	// just the one corresponding pool.  However, we're not really sure
-	// that this will make sense and not doing yet..
+		mtxGated = mtxGated && thalGated
 
-	if !mtxGated { // nobody did if thal didn't
-		for pi := range ly.Pools {
-			pl := &ly.Pools[pi]
-			pl.Gated.SetBool(false)
+		// note: in principle with multi-pool GP, could try to establish
+		// a correspondence between thal and matrix pools, such that
+		// a failure to gate at the thal level for a given pool would veto
+		// just the one corresponding pool.  However, we're not really sure
+		// that this will make sense and not doing yet..
+
+		if !mtxGated { // nobody did if thal didn't
+			for pi := uint32(0); pi < ly.NPools; pi++ {
+				pl := ly.Pool(uint32(pi), di)
+				pl.Gated.SetBool(false)
+			}
+		}
+		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
+			ctx.PVLV.VSGated(ctx, di, &ly.Network.Rand, mtxGated, GlbV(ctx, di, GvHasRew) > 0, poolIdx)
 		}
 	}
-
-	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-		ctx.PVLV.VSGated(&ly.Network.Rand, mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
-	}
-	return mtxGated, poolIdx
 }
 
 // GatedFmSpkMax updates the Gated state in Pools of given layer,
 // based on Avg SpkMax being above given threshold.
 // returns true if any gated, and the pool index if 4D layer (0 = first).
-func (ly *Layer) GatedFmSpkMax(thr float32) (bool, int) {
+func (ly *Layer) GatedFmSpkMax(di uint32, thr float32) (bool, int) {
 	anyGated := false
 	poolIdx := -1
 	if ly.Is4D() {
-		for pi := 1; pi < len(ly.Pools); pi++ {
-			pl := &ly.Pools[pi]
+		for pi := uint32(1); pi < ly.NPools; pi++ {
+			pl := ly.Pool(pi, di)
 			spkavg := pl.AvgMax.SpkMax.Cycle.Avg
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
 				if poolIdx < 0 {
-					poolIdx = pi - 1
+					poolIdx = int(pi) - 1
 				}
 			}
 			pl.Gated.SetBool(gthr)
 		}
 	} else {
-		spkavg := ly.Pools[0].AvgMax.SpkMax.Cycle.Avg
+		spkavg := ly.Pool(0, di).AvgMax.SpkMax.Cycle.Avg
 		if spkavg > thr {
 			anyGated = true
 		}
 	}
-	ly.Pools[0].Gated.SetBool(anyGated)
+	ly.Pool(0, di).Gated.SetBool(anyGated)
 	return anyGated, poolIdx
 }
 
 // AnyGated returns true if the layer-level pool Gated flag is true,
 // which indicates if any of the layers gated.
-func (ly *Layer) AnyGated() bool {
-	return ly.Pools[0].Gated.IsTrue()
+func (ly *Layer) AnyGated(di uint32) bool {
+	return ly.Pool(0, di).Gated.IsTrue()
 }
 
 func (ly *Layer) MatrixDefaults() {
-	ly.Params.Act.Decay.Act = 1
-	ly.Params.Act.Decay.Glong = 1  // prevent carryover of NMDA
-	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
-	// ly.Params.Act.NMDA.Gbar = 0    // Matrix needs nmda
+	ly.Params.Acts.Decay.Act = 1
+	ly.Params.Acts.Decay.Glong = 1  // prevent carryover of NMDA
+	ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	// ly.Params.Acts.NMDA.Gbar = 0    // Matrix needs nmda
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.FB = 1 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.3
@@ -203,12 +207,12 @@ func (ly *Layer) MatrixDefaults() {
 	// drivers vs. modulators
 
 	for _, pj := range ly.RcvPrjns {
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWts.Init.SPct = 0
 		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
 			pj.Params.SetFixedWts()
 			pj.Params.PrjnScale.Abs = 1
-			pj.Params.SWt.Init.Mean = 0.75
-			pj.Params.SWt.Init.Var = 0.0
+			pj.Params.SWts.Init.Mean = 0.75
+			pj.Params.SWts.Init.Var = 0.0
 			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
 				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
 			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
@@ -247,21 +251,21 @@ func (ly *Layer) MatrixPostBuild() {
 
 func (ly *Layer) GPDefaults() {
 	// GP is tonically self-active and has no FFFB inhibition
-	ly.Params.Act.Init.GeBase = 0.3
-	ly.Params.Act.Init.GeVar = 0.1
-	ly.Params.Act.Init.GiVar = 0.1
-	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 1
-	ly.Params.Act.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
-	ly.Params.Act.GABAB.Gbar = 0
+	ly.Params.Acts.Init.GeBase = 0.3
+	ly.Params.Acts.Init.GeVar = 0.1
+	ly.Params.Acts.Init.GiVar = 0.1
+	ly.Params.Acts.Decay.Act = 0
+	ly.Params.Acts.Decay.Glong = 1
+	ly.Params.Acts.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
+	ly.Params.Acts.GabaB.Gbar = 0
 	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
-		pj.Params.SWt.Init.Var = 0.25  // 0.25
+		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
+		pj.Params.SWts.Init.Var = 0.25  // 0.25
 		if pj.Send.LayerType() == MatrixLayer {
 			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 slightly better gating
 		} else if pj.Send.LayerType() == STNLayer {
@@ -294,13 +298,13 @@ func (ly *Layer) GPDefaults() {
 }
 
 func (ly *Layer) GPiDefaults() {
-	ly.Params.Act.Init.GeBase = 0.5
+	ly.Params.Acts.Init.GeBase = 0.5
 	// note: GPLayer took care of STN input prjns
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75          // 0.75  see above
-		pj.Params.SWt.Init.Var = 0.25           // 0.25
+		pj.Params.SWts.Init.Mean = 0.75         // 0.75  see above
+		pj.Params.SWts.Init.Var = 0.25          // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			pj.Params.PrjnScale.Abs = 1 // 0.8 orig; 1 is fine
 		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
@@ -335,13 +339,13 @@ func (ly *Layer) GPPostBuild() {
 
 func (ly *Layer) STNDefaults() {
 	// STN is tonically self-active and has no FFFB inhibition
-	ly.Params.Act.SKCa.Gbar = 2
-	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Act.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
-	ly.Params.Act.Dend.SSGi = 0
-	ly.Params.Act.NMDA.Gbar = 0 // fine with 0
-	ly.Params.Act.GABAB.Gbar = 0
+	ly.Params.Acts.SKCa.Gbar = 2
+	ly.Params.Acts.Decay.Act = 0
+	ly.Params.Acts.Decay.Glong = 0
+	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
+	ly.Params.Acts.Dend.SSGi = 0
+	ly.Params.Acts.NMDA.Gbar = 0 // fine with 0
+	ly.Params.Acts.GabaB.Gbar = 0
 	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -349,19 +353,19 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Learn.NeuroMod.AChDisInhib = 2
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
-		ly.Params.Act.SKCa.Gbar = 3
+		ly.Params.Acts.SKCa.Gbar = 3
 		// otherwise defaults are set to STNp
 	} else {
-		ly.Params.Act.SKCa.Gbar = 3
-		ly.Params.Act.SKCa.C50 = 0.4
-		ly.Params.Act.SKCa.KCaR = 0.4
-		ly.Params.Act.SKCa.CaRDecayTau = 200
+		ly.Params.Acts.SKCa.Gbar = 3
+		ly.Params.Acts.SKCa.C50 = 0.4
+		ly.Params.Acts.SKCa.KCaR = 0.4
+		ly.Params.Acts.SKCa.CaRDecayTau = 200
 	}
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWts.Init.Mean = 0.75
+		pj.Params.SWts.Init.Var = 0.25
 		if strings.HasSuffix(ly.Nm, "STNp") {
 			if pj.Send.LayerType() == GPLayer { // GPeInToSTNp
 				pj.Params.PrjnScale.Abs = 0.1
@@ -383,10 +387,10 @@ func (ly *Layer) STNDefaults() {
 
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
-	// ly.Params.Act.NMDA.Gbar = 0 // needs NMDA
-	ly.Params.Act.Decay.Act = 1
-	ly.Params.Act.Decay.Glong = 0.6
-	ly.Params.Act.Dend.SSGi = 0
+	// ly.Params.Acts.NMDA.Gbar = 0 // needs NMDA
+	ly.Params.Acts.Decay.Act = 1
+	ly.Params.Acts.Decay.Glong = 0.6
+	ly.Params.Acts.Dend.SSGi = 0
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.6
@@ -397,8 +401,8 @@ func (ly *Layer) BGThalDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.0
+		pj.Params.SWts.Init.Mean = 0.75
+		pj.Params.SWts.Init.Var = 0.0
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
 			pj.Params.PrjnScale.Abs = 5 // can now be much stronger with PTMaint mod and maint dynamics
 			pj.SetClass("GPiToBGThal")
@@ -415,6 +419,6 @@ func (ly *LayerParams) VSGatedDefaults() {
 	ly.Inhib.Layer.Gi = 1
 	ly.Inhib.Pool.On.SetBool(false)
 	ly.Inhib.Pool.Gi = 1
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 }

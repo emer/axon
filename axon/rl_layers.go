@@ -95,9 +95,9 @@ func (ly *LayerParams) RWDefaults() {
 }
 
 func (ly *LayerParams) RWPredDefaults() {
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Dt.GeTau = 40
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
+	ly.Acts.Dt.GeTau = 40
 }
 
 // RWDaPostBuild does post-Build config
@@ -110,9 +110,9 @@ func (ly *LayerParams) TDDefaults() {
 }
 
 func (ly *LayerParams) TDPredDefaults() {
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Dt.GeTau = 40
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
+	ly.Acts.Dt.GeTau = 40
 }
 
 func (ly *Layer) LDTPostBuild() {

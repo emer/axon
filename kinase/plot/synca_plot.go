@@ -118,7 +118,7 @@ func (ss *Sim) Run() {
 		caM = float32(ss.Minit)
 		caP = float32(ss.Pinit)
 		caD = float32(ss.Dinit)
-		ss.CaDt.CurCa(int32(ti), 0, &caM, &caP, &caD)
+		ss.CaDt.CurCa(float32(ti), 0, &caM, &caP, &caD)
 		mi4 := float64(caM)
 		pi4 := float64(caP)
 		di4 := float64(caD)

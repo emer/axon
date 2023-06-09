@@ -18,7 +18,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
@@ -44,40 +43,43 @@ type NetworkBase struct {
 	MinPos      mat32.Vec3          `view:"-" desc:"minimum display position in network"`
 	MaxPos      mat32.Vec3          `view:"-" desc:"maximum display position in network"`
 	MetaData    map[string]string   `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+	UseGPUOrder bool                `inactive:"+" desc:"if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called."`
 
 	// Implementation level code below:
-	MaxDelay     uint32        `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	NetIdx       uint32        `view:"-" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	MaxDelay     uint32        `inactive:"+" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	MaxData      uint32        `inactive:"+" desc:"maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
+	NData        uint32        `inactive:"+" desc:"current number of data inputs processed in parallel in one pass of the network."`
+	NNeurons     uint32        `inactive:"+" desc:"total number of neurons"`
+	NSyns        uint32        `inactive:"+" desc:"total number of synapses"`
+	Globals      []float32     `view:"-" desc:"storage for global vars"`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
-	LayVals      []LayerVals   `view:"-" desc:"[Layers] array of layer values, in 1-to-1 correspondence with Layers"`
-	Pools        []Pool        `view:"-" desc:"[Layers][Pools] array of inhibitory pools for all layers."`
-	Neurons      []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
+	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`
+	Pools        []Pool        `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
+	Neurons      []float32     `view:"-" desc:"[Layers][Neurons][MaxData] entire network's allocation of neuron variables, accessed via NrnV function with flexible striding"`
+	NeuronAvgs   []float32     `view:"-" desc:"[Layers][Neurons][MaxData]] entire network's allocation of neuron average avariables, accessed via NrnAvgV function with flexible striding"`
+	NeuronIxs    []uint32      `view:"-" desc:"[Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding"`
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
-	Synapses     []Synapse     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based"`
+	Synapses     []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function"`
+	SynapseCas   []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons][MaxData] entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function"`
+	SynapseIxs   []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
 	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
 	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
-	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
-	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
+	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay][MaxData] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
+	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxData] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 	RecvPrjnIdxs []uint32      `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
 	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
+	Exts         []float32     `desc:"[In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
-	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
-
+	Ctx         Context                `view:"-" desc:"context used only for accessing neurons for display"`
 	Rand        erand.SysRand          `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`
 	RndSeed     int64                  `inactive:"+" desc:"random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights"`
 	NThreads    int                    `desc:"number of threads to use for parallel processing"`
 	GPU         GPU                    `view:"inline" desc:"GPU implementation"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
-	WaitGp      sync.WaitGroup         `view:"-" desc:"network-level wait group for synchronizing threaded layer calls"`
-}
-
-// InitName MUST be called to initialize the network's pointer to itself as an emer.Network
-// which enables the proper interface methods to be called.  Also sets the name.
-func (nt *NetworkBase) InitName(net emer.Network, name string) {
-	nt.EmerNet = net
-	nt.Nm = name
 }
 
 // emer.Network interface methods:
@@ -86,6 +88,8 @@ func (nt *NetworkBase) Label() string                 { return nt.Nm }
 func (nt *NetworkBase) NLayers() int                  { return len(nt.Layers) }
 func (nt *NetworkBase) Layer(idx int) emer.Layer      { return nt.Layers[idx] }
 func (nt *NetworkBase) Bounds() (min, max mat32.Vec3) { min = nt.MinPos; max = nt.MaxPos; return }
+func (nt *NetworkBase) MaxParallelData() int          { return int(nt.MaxData) }
+func (nt *NetworkBase) NParallelData() int            { return int(nt.NData) }
 
 // LayByName returns a layer by looking it up by name in the layer map (nil if not found).
 // Will create the layer map if it is nil or a different size than layers slice,
@@ -169,6 +173,37 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 		panic(fmt.Sprintf("No Layers found for query: %#v. Basic layer types have been renamed since v1.7, use LayersByType for forward compatibility.", classes))
 	}
 	return layers
+}
+
+// LayerVal returns LayerVals for given layer and data parallel indexes
+func (nt *NetworkBase) LayerVals(li, di uint32) *LayerVals {
+	return &nt.LayVals[li*nt.MaxData+di]
+}
+
+// UnitVarNames returns a list of variable names available on the units in this network.
+// Not all layers need to support all variables, but must safely return 0's for
+// unsupported ones.  The order of this list determines NetView variable display order.
+// This is typically a global list so do not modify!
+func (nt *NetworkBase) UnitVarNames() []string {
+	return NeuronVarNames
+}
+
+// UnitVarProps returns properties for variables
+func (nt *NetworkBase) UnitVarProps() map[string]string {
+	return NeuronVarProps
+}
+
+// SynVarNames returns the names of all the variables on the synapses in this network.
+// Not all projections need to support all variables, but must safely return 0's for
+// unsupported ones.  The order of this list determines NetView variable display order.
+// This is typically a global list so do not modify!
+func (nt *NetworkBase) SynVarNames() []string {
+	return SynapseVarNames
+}
+
+// SynVarProps returns properties for variables
+func (nt *NetworkBase) SynVarProps() map[string]string {
+	return SynapseVarProps
 }
 
 // StdVertLayout arranges layers in a standard vertical (z axis stack) layout, by setting
@@ -367,6 +402,64 @@ func (nt *NetworkBase) AllPrjnScales() string {
 	return str
 }
 
+// AllGlobals returns a listing of all Global variables and values.
+func (nt *NetworkBase) AllGlobals() string {
+	ctx := &nt.Ctx
+	str := ""
+	for di := uint32(0); di < nt.MaxData; di++ {
+		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
+		for vv := GvRew; vv < GvVtaDA; vv++ {
+			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlbV(ctx, di, vv))
+		}
+		for vv := GvVtaDA; vv < GvUSneg; vv++ {
+			str += fmt.Sprintf("%20s:\t", vv.String())
+			for vt := GvVtaRaw; vt < GlobalVTATypeN; vt++ {
+				str += fmt.Sprintf("%10s:\t%7.4f\t", vt.String(), GlbVTA(ctx, di, vt, vv))
+			}
+			str += "\n"
+		}
+		str += fmt.Sprintf("%20s:\t", "USNeg")
+		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, ui))
+		}
+		str += "\n"
+		for vv := GvDrives; vv < GlobalVarsN; vv++ {
+			str += fmt.Sprintf("%20s:\t", vv.String())
+			for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbDrvV(ctx, di, ui, vv))
+			}
+			str += "\n"
+		}
+	}
+	return str
+}
+
+// AllGlobalVals adds to map of all Global variables and values.
+// ctrKey is a key of counters to contextualize values.
+func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
+	ctx := &nt.Ctx
+	for di := uint32(0); di < nt.MaxData; di++ {
+		for vv := GvRew; vv < GvVtaDA; vv++ {
+			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
+			vals[key] = GlbV(ctx, di, vv)
+		}
+		for vv := GvVtaDA; vv < GvUSneg; vv++ {
+			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
+			vals[key] = GlbVTA(ctx, di, GvVtaVals, vv)
+		}
+		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+			key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USneg", ui)
+			vals[key] = GlbUSneg(ctx, di, ui)
+		}
+		for vv := GvDrives; vv < GlobalVarsN; vv++ {
+			for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
+				vals[key] = GlbDrvV(ctx, di, ui, vv)
+			}
+		}
+	}
+}
+
 // AddLayerInit is implementation routine that takes a given layer and
 // adds it to the network, and initializes and configures it properly.
 func (nt *NetworkBase) AddLayerInit(ly *Layer, name string, shape []int, typ LayerTypes) {
@@ -507,13 +600,36 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay *Layer, pat prjn.Pattern, pj 
 	return pj
 }
 
+// SetCtxStrides sets the given simulation context strides for accessing
+// variables on this network -- these must be set properly before calling
+// any compute methods with the context.
+func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
+	simCtx.CopyNetStridesFrom(&nt.Ctx)
+}
+
+// SetMaxData sets the MaxData and current NData for both the Network and the Context
+func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
+	nt.MaxData = uint32(maxData)
+	simCtx.NetIdxs.NData = uint32(maxData)
+	simCtx.NetIdxs.MaxData = uint32(maxData)
+}
+
 // Build constructs the layer and projection state based on the layer shapes
 // and patterns of interconnectivity. Configures threading using heuristics based
-// on final network size.
-func (nt *NetworkBase) Build() error {
+// on final network size.  Must set UseGPUOrder properly prior to calling.
+// Configures the given Context object used in the simulation with the memory
+// access strides for this network -- must be set properly -- see SetCtxStrides.
+func (nt *NetworkBase) Build(simCtx *Context) error {
+	nt.UseGPUOrder = true // todo: set externally
+	if simCtx.PVLV.Drive.NActive <= 0 {
+		simCtx.PVLV.Defaults()
+	}
+	ctx := &nt.Ctx
+	*ctx = *simCtx
+	ctx.NetIdxs.NetIdx = nt.NetIdx
 	nt.FunTimes = make(map[string]*timer.Time)
-
 	nt.LayClassMap = make(map[string][]string)
+	maxData := int(nt.MaxData)
 	emsg := ""
 	totNeurons := 0
 	totPrjns := 0
@@ -539,12 +655,28 @@ func (nt *NetworkBase) Build() error {
 		}
 	}
 	nt.LayParams = make([]LayerParams, nLayers)
-	nt.LayVals = make([]LayerVals, nLayers)
-	nt.Pools = make([]Pool, totPools)
-	nt.Neurons = make([]Neuron, totNeurons)
+	nt.LayVals = make([]LayerVals, nLayers*maxData)
+	nt.Pools = make([]Pool, totPools*maxData)
+	nt.NNeurons = uint32(totNeurons)
+	nneurv := uint32(totNeurons) * nt.MaxData * uint32(NeuronVarsN)
+	nt.Neurons = make([]float32, nneurv)
+	nneurav := uint32(totNeurons) * uint32(NeuronAvgVarsN)
+	nt.NeuronAvgs = make([]float32, nneurav)
+	nneuri := uint32(totNeurons) * uint32(NeuronIdxsN)
+	nt.NeuronIxs = make([]uint32, nneuri)
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
-	nt.Exts = make([]float32, totExts)
+	nt.Exts = make([]float32, totExts*maxData)
+
+	if nt.UseGPUOrder {
+		ctx.NeuronVars.SetVarOuter(totNeurons, maxData)
+		ctx.NeuronAvgVars.SetVarOuter(totNeurons)
+		ctx.NeuronIdxs.SetIdxOuter(totNeurons)
+	} else {
+		ctx.NeuronVars.SetNeuronOuter(maxData)
+		ctx.NeuronAvgVars.SetNeuronOuter()
+		ctx.NeuronIdxs.SetNeuronOuter()
+	}
 
 	totSynapses := 0
 	totRecvCon := 0
@@ -557,16 +689,21 @@ func (nt *NetworkBase) Build() error {
 	for li, ly := range nt.Layers {
 		ly.Params = &nt.LayParams[li]
 		ly.Params.LayType = LayerTypes(ly.Typ)
-		ly.Vals = &nt.LayVals[li]
+		ly.Vals = nt.LayVals[li*maxData : (li+1)*maxData]
 		if ly.IsOff() {
 			continue
 		}
 		shp := ly.Shape()
 		nn := shp.Len()
-		ly.Neurons = nt.Neurons[neurIdx : neurIdx+nn]
-		ly.NeurStIdx = neurIdx
+		ly.NNeurons = uint32(nn)
+		ly.NeurStIdx = uint32(neurIdx)
+		ly.MaxData = nt.MaxData
 		np := ly.NSubPools() + 1
-		ly.Pools = nt.Pools[poolIdx : poolIdx+np]
+		npd := np * maxData
+		ly.NPools = uint32(np)
+		ly.Pools = nt.Pools[poolIdx : poolIdx+npd]
+		ly.Params.Idxs.LayIdx = uint32(li)
+		ly.Params.Idxs.MaxData = nt.MaxData
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
@@ -581,15 +718,23 @@ func (nt *NetworkBase) Build() error {
 			ly.Params.Idxs.ShpUnY = int32(shp.Dim(2))
 			ly.Params.Idxs.ShpUnX = int32(shp.Dim(3))
 		}
-		for pi := range ly.Pools {
-			pl := &ly.Pools[pi]
-			pl.LayIdx = uint32(li)
-			pl.PoolIdx = uint32(poolIdx + pi)
+		for di := uint32(0); di < ly.MaxData; di++ {
+			ly.Vals[di].LayIdx = uint32(li)
+			ly.Vals[di].DataIdx = uint32(di)
+		}
+		for pi := 0; pi < np; pi++ {
+			for di := 0; di < maxData; di++ {
+				ix := pi*int(ly.MaxData) + di
+				pl := &ly.Pools[ix]
+				pl.LayIdx = uint32(li)
+				pl.DataIdx = uint32(di)
+				pl.PoolIdx = uint32(poolIdx + ix)
+			}
 		}
 		if ly.LayerType().IsExt() {
-			ly.Exts = nt.Exts[extIdx : extIdx+nn]
+			ly.Exts = nt.Exts[extIdx : extIdx+nn*maxData]
 			ly.Params.Idxs.ExtsSt = uint32(extIdx)
-			extIdx += nn
+			extIdx += nn * maxData
 		} else {
 			ly.Exts = nil
 			ly.Params.Idxs.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
@@ -606,10 +751,6 @@ func (nt *NetworkBase) Build() error {
 		if err != nil {
 			emsg += err.Error() + "\n"
 		}
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			nrn.SubPoolN = uint32(poolIdx) + nrn.SubPool
-		}
 		// now collect total number of synapses after layer build
 		for _, pj := range sprjns {
 			totSynapses += len(pj.SendConIdx)
@@ -622,17 +763,30 @@ func (nt *NetworkBase) Build() error {
 		rprjnIdx += len(rprjns)
 		neurIdx += nn
 		prjnIdx += len(sprjns)
-		poolIdx += np
+		poolIdx += npd
 	}
 	if totSynapses > math.MaxUint32 {
 		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")
 	}
 
-	nt.Synapses = make([]Synapse, totSynapses)
+	nt.NSyns = uint32(totSynapses)
+	nt.Synapses = make([]float32, totSynapses*int(SynapseVarsN))
+	nt.SynapseCas = make([]float32, totSynapses*int(SynapseCaVarsN)*int(nt.MaxData))
+	nt.SynapseIxs = make([]uint32, totSynapses*int(SynapseIdxsN))
 	nt.PrjnSendCon = make([]StartN, totSendCon)
 	nt.PrjnRecvCon = make([]StartN, totRecvCon)
 	nt.RecvPrjnIdxs = make([]uint32, rprjnIdx)
 	nt.RecvSynIdxs = make([]uint32, totSynapses)
+
+	if nt.UseGPUOrder {
+		ctx.SynapseVars.SetVarOuter(totSynapses)
+		ctx.SynapseCaVars.SetVarOuter(totSynapses, maxData)
+		ctx.SynapseIdxs.SetIdxOuter(totSynapses)
+	} else {
+		ctx.SynapseVars.SetSynapseOuter()
+		ctx.SynapseCaVars.SetSynapseOuter(maxData)
+		ctx.SynapseIdxs.SetSynapseOuter()
+	}
 
 	// distribute synapses, send
 	syIdx := 0
@@ -643,27 +797,27 @@ func (nt *NetworkBase) Build() error {
 			rlay := pj.Recv
 			pj.Params.Idxs.RecvLay = uint32(rlay.Idx)
 			pj.Params.Idxs.RecvNeurSt = uint32(rlay.NeurStIdx)
-			pj.Params.Idxs.RecvNeurN = uint32(len(rlay.Neurons))
+			pj.Params.Idxs.RecvNeurN = rlay.NNeurons
 			pj.Params.Idxs.SendLay = uint32(ly.Idx)
 			pj.Params.Idxs.SendNeurSt = uint32(ly.NeurStIdx)
-			pj.Params.Idxs.SendNeurN = uint32(len(ly.Neurons))
+			pj.Params.Idxs.SendNeurN = ly.NNeurons
 
 			nsyn := len(pj.SendConIdx)
 			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
 			pj.Params.Idxs.SynapseSt = uint32(syIdx)
+			pj.SynStIdx = uint32(syIdx)
 			pj.Params.Idxs.PrjnIdx = uint32(pjidx)
-			pj.Syns = nt.Synapses[syIdx : syIdx+nsyn]
-			for si := range ly.Neurons {
-				scon := pj.SendCon[si]
+			pj.NSyns = uint32(nsyn)
+			for sni := uint32(0); sni < ly.NNeurons; sni++ {
+				si := ly.NeurStIdx + sni
+				scon := pj.SendCon[sni]
 				nt.PrjnSendCon[sendConIdx] = scon
 				sendConIdx++
-				syns := pj.SendSyns(si)
-				for syi := range syns {
-					sy := &syns[syi]
-					sy.SynIdx = uint32(syIdx)
-					sy.SendIdx = uint32(si + ly.NeurStIdx) // network-global idx
-					sy.RecvIdx = pj.SendConIdx[int(scon.Start)+syi] + uint32(rlay.NeurStIdx)
-					sy.PrjnIdx = uint32(pjidx)
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+					syni := pj.SynStIdx + syi
+					SetSynI(ctx, syni, SynSendIdx, uint32(si)) // network-global idx
+					SetSynI(ctx, syni, SynRecvIdx, pj.SendConIdx[syi]+uint32(rlay.NeurStIdx))
+					SetSynI(ctx, syni, SynPrjnIdx, uint32(pjidx))
 					syIdx++
 				}
 			}
@@ -680,23 +834,33 @@ func (nt *NetworkBase) Build() error {
 			nt.RecvPrjnIdxs[rprjnIdx] = pj.Params.Idxs.PrjnIdx
 			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
 			pj.Params.Idxs.RecvSynSt = uint32(syIdx)
-			for ri := range ly.Neurons {
-				if len(pj.RecvCon) <= ri {
+			synSt := pj.Params.Idxs.SynapseSt
+			for rni := uint32(0); rni < ly.NNeurons; rni++ {
+				if len(pj.RecvCon) <= int(rni) {
 					continue
 				}
-				rcon := pj.RecvCon[ri]
+				rcon := pj.RecvCon[rni]
 				nt.PrjnRecvCon[recvConIdx] = rcon
 				recvConIdx++
-				syIdxs := pj.RecvSynIdxs(ri)
+				syIdxs := pj.RecvSynIdxs(rni)
 				for _, ssi := range syIdxs {
-					sy := &pj.Syns[ssi]
-					nt.RecvSynIdxs[syIdx] = sy.SynIdx
+					nt.RecvSynIdxs[syIdx] = ssi + synSt
 					syIdx++
 				}
 			}
 			rprjnIdx++
 		}
 	}
+
+	ctx.NetIdxs.MaxData = nt.MaxData
+	ctx.NetIdxs.NLayers = uint32(nLayers)
+	ctx.NetIdxs.NNeurons = nt.NNeurons
+	ctx.NetIdxs.NPools = uint32(totPools)
+	ctx.NetIdxs.NSyns = nt.NSyns
+	ctx.SetGlobalStrides()
+
+	nt.SetCtxStrides(simCtx)
+	nt.BuildGlobals(simCtx)
 
 	nt.Layout()
 	if emsg != "" {
@@ -713,7 +877,7 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	nt.MaxDelay = 0
 	npjneur := uint32(0)
 	for _, ly := range nt.Layers {
-		nneur := uint32(len(ly.Neurons))
+		nneur := uint32(ly.NNeurons)
 		for _, pj := range ly.RcvPrjns {
 			if pj.Params.Com.MaxDelay > nt.MaxDelay {
 				nt.MaxDelay = pj.Params.Com.MaxDelay
@@ -722,32 +886,38 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 		}
 	}
 	mxlen := nt.MaxDelay + 1
-	gbsz := npjneur * mxlen
+	gbsz := npjneur * mxlen * nt.MaxData
+	gsynsz := npjneur * nt.MaxData
 	if uint32(cap(nt.PrjnGBuf)) >= gbsz {
 		nt.PrjnGBuf = nt.PrjnGBuf[:gbsz]
 	} else {
 		nt.PrjnGBuf = make([]int32, gbsz)
 	}
-	if uint32(cap(nt.PrjnGSyns)) >= npjneur {
-		nt.PrjnGSyns = nt.PrjnGSyns[:npjneur]
+	if uint32(cap(nt.PrjnGSyns)) >= gsynsz {
+		nt.PrjnGSyns = nt.PrjnGSyns[:gsynsz]
 	} else {
-		nt.PrjnGSyns = make([]float32, npjneur)
+		nt.PrjnGSyns = make([]float32, gsynsz)
 	}
 
 	gbi := uint32(0)
 	gsi := uint32(0)
 	for _, ly := range nt.Layers {
-		nneur := uint32(len(ly.Neurons))
+		nneur := uint32(ly.NNeurons)
 		for _, pj := range ly.RcvPrjns {
-			gbs := nneur * mxlen
+			gbs := nneur * mxlen * nt.MaxData
 			pj.Params.Idxs.GBufSt = gbi
 			pj.GBuf = nt.PrjnGBuf[gbi : gbi+gbs]
 			gbi += gbs
 			pj.Params.Idxs.GSynSt = gsi
-			pj.GSyns = nt.PrjnGSyns[gsi : gsi+nneur]
-			gsi += nneur
+			pj.GSyns = nt.PrjnGSyns[gsi : gsi+nneur*nt.MaxData]
+			gsi += nneur * nt.MaxData
 		}
 	}
+}
+
+// BuildGlobals builds Globals vars, using params set in given context
+func (nt *NetworkBase) BuildGlobals(ctx *Context) {
+	nt.Globals = make([]float32, ctx.GlobalVNFloats())
 }
 
 // DeleteAll deletes all layers, prepares network for re-configuring and building
@@ -755,6 +925,24 @@ func (nt *NetworkBase) DeleteAll() {
 	nt.Layers = nil
 	nt.LayMap = nil
 	nt.FunTimes = nil
+	nt.Globals = nil
+	nt.LayParams = nil
+	nt.LayVals = nil
+	nt.Pools = nil
+	nt.Neurons = nil
+	nt.NeuronAvgs = nil
+	nt.NeuronIxs = nil
+	nt.Prjns = nil
+	nt.PrjnParams = nil
+	nt.Synapses = nil
+	nt.SynapseCas = nil
+	nt.SynapseIxs = nil
+	nt.PrjnSendCon = nil
+	nt.PrjnRecvCon = nil
+	nt.PrjnGBuf = nil
+	nt.PrjnGSyns = nil
+	nt.RecvPrjnIdxs = nil
+	nt.Exts = nil
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -929,26 +1117,45 @@ func (nt *NetworkBase) ReadWtsCpp(r io.Reader) error {
 	return err
 }
 
-// WtsSlice sets all the weights in recv order in given slice, resizing as needed
-func (nt *Network) WtsSlice(wts *[]float32) {
-	numSyns := 0
-	for _, ly := range nt.Layers {
-		for _, pj := range ly.RcvPrjns {
-			numSyns += len(pj.Syns)
-		}
-	}
-	if cap(*wts) >= numSyns {
-		*wts = (*wts)[:numSyns]
+// SynsSlice returns a slice of synaptic values, in natural sending order,
+// using given synaptic variable, resizing as needed.
+func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
+	ctx := &nt.Ctx
+	if cap(*vals) >= int(nt.NSyns) {
+		*vals = (*vals)[:nt.NSyns]
 	} else {
-		*wts = make([]float32, numSyns)
+		*vals = make([]float32, nt.NSyns)
 	}
 	i := 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.RcvPrjns {
-			for j := range pj.Syns {
-				(*wts)[i] = pj.Syns[j].Wt
-				i++
+		for _, pj := range ly.SndPrjns {
+			for lni := range pj.SendCon {
+				scon := pj.SendCon[lni]
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+					syni := pj.SynStIdx + syi
+					(*vals)[i] = SynV(ctx, syni, synvar)
+					i++
+				}
 			}
+		}
+	}
+}
+
+// NeuronsSlice returns a slice of neuron values
+// using given neuron variable, resizing as needed.
+func (nt *Network) NeuronsSlice(vals *[]float32, nrnVar string, di int) {
+	if cap(*vals) >= int(nt.NNeurons) {
+		*vals = (*vals)[:nt.NNeurons]
+	} else {
+		*vals = make([]float32, nt.NNeurons)
+	}
+	i := 0
+	for _, ly := range nt.Layers {
+		varIdx, _ := ly.UnitVarIdx(nrnVar)
+		nn := int(ly.NNeurons)
+		for lni := 0; lni < nn; lni++ {
+			(*vals)[i] = ly.UnitVal1D(varIdx, lni, di)
+			i++
 		}
 	}
 }
@@ -956,7 +1163,7 @@ func (nt *Network) WtsSlice(wts *[]float32) {
 // WtsHash returns a hash code of all weight values
 func (nt *Network) WtsHash() string {
 	var wts []float32
-	nt.WtsSlice(&wts)
+	nt.SynsSlice(&wts, Wt)
 	return HashEncodeSlice(wts)
 }
 

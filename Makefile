@@ -19,6 +19,10 @@ test:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOTEST) -v $(DIRS)
 
+test_long:
+	@echo "GO111MODULE = $(value GO111MODULE)"
+	export TEST_LONG=true; $(GOTEST) -v $(DIRS)
+
 clean:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOCLEAN) ./...

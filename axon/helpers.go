@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/emer/emergent/ecmd"
-	"github.com/emer/emergent/env"
 	"github.com/emer/empi/mpi"
 	"github.com/goki/gi/gi"
 )
@@ -25,23 +24,6 @@ func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 			continue
 		}
 		lyi.SetOff(off)
-	}
-}
-
-// EnvApplyInputs applies input patterns from given env.Env environment
-// to Input and Target layer types, assuming that env provides State
-// with the same names as the layers.
-// If these assumptions don't fit, use a separate method.
-func EnvApplyInputs(net *Network, ev env.Env) {
-	net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	// going to the same layers, but good practice and cheap anyway
-	lays := net.LayersByType(InputLayer, TargetLayer)
-	for _, lnm := range lays {
-		ly := net.AxonLayerByName(lnm)
-		pats := ev.State(ly.Nm)
-		if pats != nil {
-			ly.ApplyExt(pats)
-		}
 	}
 }
 

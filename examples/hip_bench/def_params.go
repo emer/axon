@@ -15,12 +15,12 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Act.KNa.On":         "false", // false > true
+					"Layer.Acts.KNa.On":        "false", // false > true
 					"Layer.Learn.TrgAvgAct.On": "false", // true > false?
 					"Layer.Learn.RLRate.On":    "false", // no diff..
-					"Layer.Act.Gbar.L":         "0.2",   // .2 > .1
-					"Layer.Act.Decay.Act":      "1.0",   // 1.0 both is best by far!
-					"Layer.Act.Decay.Glong":    "1.0",
+					"Layer.Acts.Gbar.L":        "0.2",   // .2 > .1
+					"Layer.Acts.Decay.Act":     "1.0",   // 1.0 both is best by far!
+					"Layer.Acts.Decay.Glong":   "1.0",
 					"Layer.Inhib.Pool.Bg":      "0.0",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":  "0.6",
+					"Layer.Acts.Clamp.Ge": "0.6",
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
@@ -61,7 +61,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "keeping default params for generic prjns",
 				Params: params.Params{
-					"Prjn.SWt.Init.SPct": "0.5", // 0.5 == 1.0 > 0.0
+					"Prjn.SWts.Init.SPct": "0.5", // 0.5 == 1.0 > 0.0
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections",
 				Params: params.Params{
@@ -95,24 +95,24 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.9",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.PrjnScale.Abs": "1.0",
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Init.Mean": "0.9",
+					"Prjn.SWts.Init.Var":  "0.0",
+					"Prjn.PrjnScale.Abs":  "1.0",
 				}},
 			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.9",
-					"Prjn.SWt.Init.Var":  "0.01",
-					"Prjn.PrjnScale.Rel": "0.5", // 0.5 > 1 (sig worse)
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Init.Mean": "0.9",
+					"Prjn.SWts.Init.Var":  "0.01",
+					"Prjn.PrjnScale.Rel":  "0.5", // 0.5 > 1 (sig worse)
 				}},
 			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.9",
-					"Prjn.SWt.Init.Var":  "0.01",
-					"Prjn.PrjnScale.Rel": "3", // 4 def
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Init.Mean": "0.9",
+					"Prjn.SWts.Init.Var":  "0.01",
+					"Prjn.PrjnScale.Rel":  "3", // 4 def
 				}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons",
 				Params: params.Params{

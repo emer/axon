@@ -5,6 +5,8 @@
 package fsfffb
 
 import (
+	"log"
+
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/mat32"
 )
@@ -55,6 +57,7 @@ func (fi *Inhib) InitRaw() {
 func (fi *Inhib) Zero() {
 	fi.FFs = 0
 	fi.FBs = 0
+	fi.GeExts = 0
 	fi.FSi = 0
 	fi.SSi = 0
 	fi.SSf = 0
@@ -65,6 +68,7 @@ func (fi *Inhib) Zero() {
 	fi.FFAvgPrv = 0
 	fi.GiOrig = 0
 	fi.LayGi = 0
+	fi.Clamped.SetBool(false)
 }
 
 // Decay reduces inhibition values by given decay proportion
@@ -73,6 +77,7 @@ func (fi *Inhib) Decay(decay float32) {
 
 	fi.FFs -= decay * fi.FFs
 	fi.FBs -= decay * fi.FBs
+	fi.GeExts -= decay * fi.GeExts
 	fi.FSi -= decay * fi.FSi
 	fi.SSi -= decay * fi.SSi
 	fi.SSf -= decay * fi.SSf
@@ -149,7 +154,8 @@ func (fi *Inhib) FloatFromInt(ival int32) float32 {
 	//gosl: end fsfffb
 	// note: this is not GPU-portable..
 	if ival < 0 {
-		panic("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error")
+		log.Printf("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error\n")
+		return 1
 	}
 	//gosl: start fsfffb
 	return float32(ival) * fi.FloatFmIntFactor()

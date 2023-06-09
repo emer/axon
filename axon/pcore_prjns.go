@@ -27,12 +27,12 @@ func (tp *MatrixPrjnParams) Update() {
 //gosl: end pcore_pjrns
 
 func (pj *PrjnParams) MatrixDefaults() {
-	pj.SWt.Adapt.On.SetBool(false)
-	pj.SWt.Adapt.SigGain = 6 // not 1 -- could be for some cases
-	pj.SWt.Init.Sym.SetBool(false)
-	pj.SWt.Init.SPct = 0
-	pj.SWt.Init.Mean = 0.5
-	pj.SWt.Init.Var = 0.4
+	pj.SWts.Adapt.On.SetBool(false)
+	pj.SWts.Adapt.SigGain = 6 // not 1 -- could be for some cases
+	pj.SWts.Init.Sym.SetBool(false)
+	pj.SWts.Init.SPct = 0
+	pj.SWts.Init.Mean = 0.5
+	pj.SWts.Init.Var = 0.4
 	pj.Learn.LRate.Base = 0.02
 	pj.Learn.Trace.LearnThr = 0.75
 }

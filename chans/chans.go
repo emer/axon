@@ -26,7 +26,10 @@ type Chans struct {
 
 // SetAll sets all the values
 func (ch *Chans) SetAll(e, l, i, k float32) {
-	ch.E, ch.L, ch.I, ch.K = e, l, i, k
+	ch.E = e
+	ch.L = l
+	ch.I = i
+	ch.K = k
 }
 
 // VToBio returns biological mV voltage from normalized 0-1 voltage

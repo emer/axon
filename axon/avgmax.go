@@ -6,8 +6,22 @@ package axon
 
 import (
 	"fmt"
-	"strconv"
+	"log"
+	"runtime/debug"
+	"sync"
 )
+
+// AvgMaxFloatFromIntErr is called when there is an overflow error in AvgMaxI32 FloatFromInt
+var (
+	AvgMaxFloatFromIntErr   func()
+	AvgMaxFloatFromIntErrMu sync.Mutex
+)
+
+func SetAvgMaxFloatFromIntErr(fun func()) {
+	AvgMaxFloatFromIntErrMu.Lock()
+	AvgMaxFloatFromIntErr = fun
+	AvgMaxFloatFromIntErrMu.Unlock()
+}
 
 //gosl: start avgmaxi
 
@@ -77,7 +91,12 @@ func (am *AvgMaxI32) FloatFromInt(ival, refIdx int32) float32 {
 	//gosl: end avgmaxi
 	// note: this is not GPU-portable..
 	if ival < 0 {
-		panic("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIdx: " + strconv.Itoa(int(refIdx)))
+		log.Printf("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIdx: %d\n", refIdx)
+		fmt.Println(string(debug.Stack()))
+		if AvgMaxFloatFromIntErr != nil {
+			AvgMaxFloatFromIntErr()
+		}
+		return 1
 	}
 	//gosl: start avgmaxi
 	return float32(ival) * am.FloatFmIntFactor()

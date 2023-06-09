@@ -93,16 +93,16 @@ func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
 // note: Defaults not called on GPU
 
 func (ly *LayerParams) CTDefaults() {
-	ly.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
-	ly.Act.Dend.SSGi = 0    // key: otherwise interferes with NMDA maint!
+	ly.Acts.Decay.Act = 0 // deep doesn't decay!
+	ly.Acts.Decay.Glong = 0
+	ly.Acts.Decay.AHP = 0
+	ly.Acts.Dend.SSGi = 0   // key: otherwise interferes with NMDA maint!
 	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
 	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
-	// ly.Act.NMDA.Gbar = 0.003
-	// ly.Act.NMDA.Tau = 300
-	// ly.Act.GABAB.Gbar = 0.008
+	// ly.Acts.NMDA.Gbar = 0.003
+	// ly.Acts.NMDA.Tau = 300
+	// ly.Acts.GABAB.Gbar = 0.008
 }
 
 // CTDefParamsFast sets fast time-integration parameters for CTLayer.
@@ -110,16 +110,16 @@ func (ly *LayerParams) CTDefaults() {
 // vs Medium and Long
 func (ly *Layer) CTDefParamsFast() {
 	ly.DefParams = params.Params{
-		"Layer.CT.GeGain":       "1",
-		"Layer.CT.DecayTau":     "0",
-		"Layer.Inhib.Layer.Gi":  "2.0",
-		"Layer.Inhib.Pool.Gi":   "2.0",
-		"Layer.Act.GABAB.Gbar":  "0.006",
-		"Layer.Act.NMDA.Gbar":   "0.004",
-		"Layer.Act.NMDA.Tau":    "100",
-		"Layer.Act.Decay.Act":   "0.0",
-		"Layer.Act.Decay.Glong": "0.0",
-		"Layer.Act.Sahp.Gbar":   "1.0",
+		"Layer.CT.GeGain":        "1",
+		"Layer.CT.DecayTau":      "0",
+		"Layer.Inhib.Layer.Gi":   "2.0",
+		"Layer.Inhib.Pool.Gi":    "2.0",
+		"Layer.Acts.GabaB.Gbar":  "0.006",
+		"Layer.Acts.NMDA.Gbar":   "0.004",
+		"Layer.Acts.NMDA.Tau":    "100",
+		"Layer.Acts.Decay.Act":   "0.0",
+		"Layer.Acts.Decay.Glong": "0.0",
+		"Layer.Acts.Sahp.Gbar":   "1.0",
 	}
 }
 
@@ -128,16 +128,16 @@ func (ly *Layer) CTDefParamsFast() {
 // and Long (deep_music) time integration.
 func (ly *Layer) CTDefParamsMedium() {
 	ly.DefParams = params.Params{
-		"Layer.CT.GeGain":       "0.8",
-		"Layer.CT.DecayTau":     "50",
-		"Layer.Inhib.Layer.Gi":  "2.2",
-		"Layer.Inhib.Pool.Gi":   "2.2",
-		"Layer.Act.GABAB.Gbar":  "0.009",
-		"Layer.Act.NMDA.Gbar":   "0.008",
-		"Layer.Act.NMDA.Tau":    "200",
-		"Layer.Act.Decay.Act":   "0.0",
-		"Layer.Act.Decay.Glong": "0.0",
-		"Layer.Act.Sahp.Gbar":   "1.0",
+		"Layer.CT.GeGain":        "0.8",
+		"Layer.CT.DecayTau":      "50",
+		"Layer.Inhib.Layer.Gi":   "2.2",
+		"Layer.Inhib.Pool.Gi":    "2.2",
+		"Layer.Acts.GabaB.Gbar":  "0.009",
+		"Layer.Acts.NMDA.Gbar":   "0.008",
+		"Layer.Acts.NMDA.Tau":    "200",
+		"Layer.Acts.Decay.Act":   "0.0",
+		"Layer.Acts.Decay.Glong": "0.0",
+		"Layer.Acts.Sahp.Gbar":   "1.0",
 	}
 }
 
@@ -146,28 +146,28 @@ func (ly *Layer) CTDefParamsMedium() {
 // long time windows, compared to Medium and Fast.
 func (ly *Layer) CTDefParamsLong() {
 	ly.DefParams = params.Params{
-		"Layer.CT.GeGain":       "1.0",
-		"Layer.CT.DecayTau":     "50",
-		"Layer.Inhib.Layer.Gi":  "2.8",
-		"Layer.Inhib.Pool.Gi":   "2.8",
-		"Layer.Act.GABAB.Gbar":  "0.01",
-		"Layer.Act.NMDA.Gbar":   "0.01",
-		"Layer.Act.NMDA.Tau":    "300",
-		"Layer.Act.Decay.Act":   "0.0",
-		"Layer.Act.Decay.Glong": "0.0",
-		"Layer.Act.Dend.SSGi":   "0", // else kills nmda
-		"Layer.Act.Sahp.Gbar":   "1.0",
+		"Layer.CT.GeGain":        "1.0",
+		"Layer.CT.DecayTau":      "50",
+		"Layer.Inhib.Layer.Gi":   "2.8",
+		"Layer.Inhib.Pool.Gi":    "2.8",
+		"Layer.Acts.GabaB.Gbar":  "0.01",
+		"Layer.Acts.NMDA.Gbar":   "0.01",
+		"Layer.Acts.NMDA.Tau":    "300",
+		"Layer.Acts.Decay.Act":   "0.0",
+		"Layer.Acts.Decay.Glong": "0.0",
+		"Layer.Acts.Dend.SSGi":   "0", // else kills nmda
+		"Layer.Acts.Sahp.Gbar":   "1.0",
 	}
 }
 
 func (ly *Layer) PTMaintDefaults() {
-	ly.Params.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Act.Decay.AHP = 0
-	ly.Params.Act.Decay.OnRew.SetBool(true)
-	ly.Params.Act.Sahp.Gbar = 0.01 // not much pressure -- long maint
-	ly.Params.Act.GABAB.Gbar = 0.01
-	ly.Params.Act.Dend.ModGain = 1.5
+	ly.Params.Acts.Decay.Act = 0 // deep doesn't decay!
+	ly.Params.Acts.Decay.Glong = 0
+	ly.Params.Acts.Decay.AHP = 0
+	ly.Params.Acts.Decay.OnRew.SetBool(true)
+	ly.Params.Acts.Sahp.Gbar = 0.01 // not much pressure -- long maint
+	ly.Params.Acts.GabaB.Gbar = 0.01
+	ly.Params.Acts.Dend.ModGain = 1.5
 	ly.Params.Inhib.ActAvg.Nominal = 0.3 // very active
 	if ly.Is4D() {
 		ly.Params.Inhib.ActAvg.Nominal = 0.05
@@ -185,10 +185,10 @@ func (ly *Layer) PTMaintDefaults() {
 }
 
 func (ly *Layer) PTNotMaintDefaults() {
-	ly.Params.Act.Decay.Act = 1
-	ly.Params.Act.Decay.Glong = 1
-	ly.Params.Act.Decay.OnRew.SetBool(true)
-	ly.Params.Act.Init.GeBase = 1.2
+	ly.Params.Acts.Decay.Act = 1
+	ly.Params.Acts.Decay.Glong = 1
+	ly.Params.Acts.Decay.OnRew.SetBool(true)
+	ly.Params.Acts.Init.GeBase = 1.2
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.2
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -204,28 +204,28 @@ func (ly *Layer) PTNotMaintDefaults() {
 }
 
 func (ly *LayerParams) PTPredDefaults() {
-	ly.Act.Decay.Act = 0.12 // keep it dynamically changing
-	ly.Act.Decay.Glong = 0.6
-	ly.Act.Decay.AHP = 0
-	ly.Act.Decay.OnRew.SetBool(true)
-	ly.Act.Sahp.Gbar = 0.1    // more
-	ly.Act.KNa.Slow.Max = 0.2 // todo: more?
+	ly.Acts.Decay.Act = 0.12 // keep it dynamically changing
+	ly.Acts.Decay.Glong = 0.6
+	ly.Acts.Decay.AHP = 0
+	ly.Acts.Decay.OnRew.SetBool(true)
+	ly.Acts.Sahp.Gbar = 0.1    // more
+	ly.Acts.KNa.Slow.Max = 0.2 // todo: more?
 	ly.Inhib.Layer.Gi = 0.8
 	ly.Inhib.Pool.Gi = 0.8
 	ly.CT.GeGain = 0.01
 	ly.CT.DecayTau = 50
 
 	// regular:
-	// ly.Act.GABAB.Gbar = 0.006
-	// ly.Act.NMDA.Gbar = 0.004
-	// ly.Act.NMDA.Tau = 100
+	// ly.Acts.GabaB.Gbar = 0.006
+	// ly.Acts.NMDA.Gbar = 0.004
+	// ly.Acts.NMDA.Tau = 100
 }
 
 // called in Defaults for Pulvinar layer type
 func (ly *LayerParams) PulvDefaults() {
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
+	ly.Acts.Decay.Act = 0
+	ly.Acts.Decay.Glong = 0
+	ly.Acts.Decay.AHP = 0
 	ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
 }
 

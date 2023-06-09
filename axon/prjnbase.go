@@ -17,6 +17,10 @@ import (
 	"github.com/goki/mat32"
 )
 
+// index naming:
+// syi =  prjn-relative synapse index (per existing usage)
+// syni = network-relative synapse index -- add SynStIdx to syi
+
 // PrjnBase contains the basic structural information for specifying a projection of synaptic
 // connections between two layers, and maintaining all the synaptic connection-level data.
 // The same struct token is added to the Recv and Send layer prjn lists, and it manages everything
@@ -40,17 +44,18 @@ type PrjnBase struct {
 	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
 	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
 
+	SynStIdx   uint32   `view:"-" desc:"start index into global Synapse array: [Layer][SendPrjns][Synapses]"`
+	NSyns      uint32   `view:"-" desc:"number of synapses in this projection"`
 	RecvCon    []StartN `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage."`
 	RecvSynIdx []uint32 `view:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
 	RecvConIdx []uint32 `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
-	SendCon    []StartN  `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage."`
-	Syns       []Synapse `tableview:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] this projection's subset of global list of synaptic state values, ordered so that each sending layer neuron's connections are contiguous, with SendCon[si].N receiving connections per sender."`
-	SendConIdx []uint32  `view:"-" desc:"[SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
+	SendCon    []StartN `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage."`
+	SendConIdx []uint32 `view:"-" desc:"[SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
 	// spike aggregation values:
-	GBuf  []int32   `view:"-" desc:"[RecvNeurons][Params.Com.MaxDelay] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration"`
-	GSyns []float32 `view:"-" desc:"[RecvNeurons] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn."`
+	GBuf  []int32   `view:"-" desc:"[RecvNeurons][Params.Com.MaxDelay][MaxData] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration"`
+	GSyns []float32 `view:"-" desc:"[RecvNeurons][MaxData] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn."`
 }
 
 // emer.Prjn interface
@@ -62,7 +67,7 @@ func (pj *PrjnBase) Init(prjn emer.Prjn) {
 }
 
 func (pj *PrjnBase) TypeName() string { return "Prjn" } // always, for params..
-func (pj *PrjnBase) Class() string    { return pj.AxonPrj.PrjnTypeName() + " " + pj.Cls }
+func (pj *PrjnBase) Class() string    { return pj.PrjnTypeName() + " " + pj.Cls }
 func (pj *PrjnBase) Name() string {
 	return pj.Send.Name() + "To" + pj.Recv.Name()
 }
@@ -112,16 +117,9 @@ func (pj *PrjnBase) Validate(logmsg bool) error {
 	return nil
 }
 
-// SendSyns returns the sending synapses for given sending unit index
-// within the sending layer, to be iterated over for sender-based processing.
-func (pj *PrjnBase) SendSyns(si int) []Synapse {
-	scon := pj.SendCon[si]
-	return pj.Syns[scon.Start : scon.Start+scon.N]
-}
-
 // RecvSynIdxs returns the receiving synapse indexes for given recv unit index
 // within the receiving layer, to be iterated over for recv-based processing.
-func (pj *PrjnBase) RecvSynIdxs(ri int) []uint32 {
+func (pj *PrjnBase) RecvSynIdxs(ri uint32) []uint32 {
 	rcon := pj.RecvCon[ri]
 	return pj.RecvSynIdx[rcon.Start : rcon.Start+rcon.N]
 }
@@ -272,7 +270,7 @@ func (pj *PrjnBase) NonDefaultParams() string {
 }
 
 func (pj *PrjnBase) SynVarNames() []string {
-	return SynapseVars
+	return SynapseVarNames
 }
 
 // SynVarProps returns properties for variables
@@ -281,7 +279,8 @@ func (pj *PrjnBase) SynVarProps() map[string]string {
 }
 
 // SynIdx returns the index of the synapse between given send, recv unit indexes
-// (1D, flat indexes). Returns -1 if synapse not found between these two neurons.
+// (1D, flat indexes, layer relative).
+// Returns -1 if synapse not found between these two neurons.
 // Requires searching within connections for sending unit.
 func (pj *PrjnBase) SynIdx(sidx, ridx int) int {
 	if sidx >= len(pj.SendCon) {
@@ -338,32 +337,36 @@ func (pj *PrjnBase) SynVarIdx(varNm string) (int, error) {
 // SynVarNum returns the number of synapse-level variables
 // for this prjn.  This is needed for extending indexes in derived types.
 func (pj *PrjnBase) SynVarNum() int {
-	return len(SynapseVars)
+	return len(SynapseVarNames)
 }
 
 // Syn1DNum returns the number of synapses for this prjn as a 1D array.
 // This is the max idx for SynVal1D and the number of vals set by SynVals.
 func (pj *PrjnBase) Syn1DNum() int {
-	return len(pj.Syns)
+	return int(pj.NSyns)
 }
 
 // SynVal1D returns value of given variable index (from SynVarIdx) on given SynIdx.
 // Returns NaN on invalid index.
-// This is the core synapse var access method used by other methods,
-// so it is the only one that needs to be updated for derived layer types.
+// This is the core synapse var access method used by other methods.
 func (pj *PrjnBase) SynVal1D(varIdx int, synIdx int) float32 {
-	if synIdx < 0 || synIdx >= len(pj.Syns) {
+	if synIdx < 0 || synIdx >= int(pj.NSyns) {
 		return mat32.NaN()
 	}
 	if varIdx < 0 || varIdx >= pj.SynVarNum() {
 		return mat32.NaN()
 	}
-	sy := &pj.Syns[synIdx]
-	return sy.VarByIndex(varIdx)
+	ctx := &pj.Recv.Network.Ctx
+	syni := pj.SynStIdx + uint32(synIdx)
+	if varIdx < int(SynapseVarsN) {
+		return SynV(ctx, syni, SynapseVars(varIdx))
+	} else {
+		return SynCaV(ctx, syni, 0, SynapseCaVars(varIdx-int(SynapseVarsN))) // data = 0 def
+	}
 }
 
-// SynVals sets values of given variable name for each synapse, using the natural ordering
-// of the synapses (receiver based for Axon),
+// SynVals sets values of given variable name for each synapse,
+// using the natural ordering of the synapses (sender based for Axon),
 // into given float32 slice (only resized if not big enough).
 // Returns error on invalid var name.
 func (pj *PrjnBase) SynVals(vals *[]float32, varNm string) error {
@@ -371,14 +374,20 @@ func (pj *PrjnBase) SynVals(vals *[]float32, varNm string) error {
 	if err != nil {
 		return err
 	}
-	ns := len(pj.Syns)
+	ns := int(pj.NSyns)
 	if *vals == nil || cap(*vals) < ns {
 		*vals = make([]float32, ns)
 	} else if len(*vals) < ns {
 		*vals = (*vals)[0:ns]
 	}
-	for i := range pj.Syns {
-		(*vals)[i] = pj.AxonPrj.SynVal1D(vidx, i)
+	slay := pj.Send
+	i := 0
+	for lni := uint32(0); lni < slay.NNeurons; lni++ {
+		scon := pj.SendCon[lni]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			(*vals)[i] = pj.AxonPrj.SynVal1D(vidx, i)
+			i++
+		}
 	}
 	return nil
 }
@@ -391,6 +400,39 @@ func (pj *PrjnBase) SynVal(varNm string, sidx, ridx int) float32 {
 	if err != nil {
 		return mat32.NaN()
 	}
-	synIdx := pj.SynIdx(sidx, ridx)
-	return pj.AxonPrj.SynVal1D(vidx, synIdx)
+	syi := pj.SynIdx(sidx, ridx)
+	return pj.AxonPrj.SynVal1D(vidx, syi)
+}
+
+// SynVal1DDi returns value of given variable index (from SynVarIdx) on given SynIdx.
+// Returns NaN on invalid index.
+// This is the core synapse var access method used by other methods.
+// Includes Di data parallel index for data-parallel synaptic values.
+func (pj *PrjnBase) SynVal1DDi(varIdx int, synIdx int, di int) float32 {
+	if synIdx < 0 || synIdx >= int(pj.NSyns) {
+		return mat32.NaN()
+	}
+	if varIdx < 0 || varIdx >= pj.SynVarNum() {
+		return mat32.NaN()
+	}
+	ctx := &pj.Recv.Network.Ctx
+	syni := pj.SynStIdx + uint32(synIdx)
+	if varIdx < int(SynapseVarsN) {
+		return SynV(ctx, syni, SynapseVars(varIdx))
+	} else {
+		return SynCaV(ctx, syni, uint32(di), SynapseCaVars(varIdx-int(SynapseVarsN)))
+	}
+}
+
+// SynValDi returns value of given variable name on the synapse
+// between given send, recv unit indexes (1D, flat indexes).
+// Returns mat32.NaN() for access errors (see SynValTry for error message)
+// Includes Di data parallel index for data-parallel synaptic values.
+func (pj *PrjnBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
+	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
+	if err != nil {
+		return mat32.NaN()
+	}
+	syi := pj.SynIdx(sidx, ridx)
+	return pj.SynVal1DDi(vidx, syi, di)
 }

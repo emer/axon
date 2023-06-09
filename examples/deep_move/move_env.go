@@ -47,6 +47,8 @@ type MoveEnv struct {
 	DepthLogs  []float32                   `desc:"depth for each angle (NFOVRays), normalized log"`
 	CurStates  map[string]*etensor.Float32 `desc:"current rendered state tensors -- extensible map"`
 	NextStates map[string]*etensor.Float32 `desc:"next rendered state tensors -- updated from actions"`
+	Rand       erand.SysRand               `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	RndSeed    int64                       `inactive:"+" desc:"random seed"`
 }
 
 var KiT_MoveEnv = kit.Types.AddType(&MoveEnv{}, nil)
@@ -72,6 +74,7 @@ func (ev *MoveEnv) Defaults() {
 
 // Config configures the world
 func (ev *MoveEnv) Config(unper int) {
+	ev.Rand.NewRand(ev.RndSeed)
 	ev.UnitsPer = unper
 	ev.Acts = []string{"Forward", "Left", "Right"} // , "Back"
 	ev.NFOVRays = (ev.FOV / ev.AngInc) + 1
@@ -404,7 +407,7 @@ func (ev *MoveEnv) ActGen() int {
 			act = ltAct
 		}
 	default:
-		if erand.BoolP(0.5, -1) {
+		if erand.BoolP(0.5, -1, &ev.Rand) {
 			act = lastAct
 		} else {
 			act = rand.Intn(len(ev.Acts))

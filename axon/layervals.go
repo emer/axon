@@ -8,6 +8,7 @@ package axon
 
 // ActAvgVals are long-running-average activation levels stored in the LayerVals,
 // for monitoring and adapting inhibition and possibly scaling parameters.
+// All of these integrate over NData within a network, so are the same across them.
 type ActAvgVals struct {
 	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
 	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
@@ -62,16 +63,20 @@ func (lv *LaySpecialVals) Init() {
 // LayerVals holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
-	ActAvg   ActAvgVals     `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
-	CorSim   CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
-	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory values: global to the layer, copied from Context"`
-	Special  LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
+	LayIdx  uint32  `view:"-" desc:"layer index for these vals"`
+	DataIdx uint32  `view:"-" desc:"data index for these vals"`
+	RT      float32 `inactive:"-" desc:"reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold"`
+	pad     uint32
+
+	// note: ActAvg vals are shared across data parallel
+	ActAvg  ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition"`
+	CorSim  CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
+	Special LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
 }
 
 func (lv *LayerVals) Init() {
 	lv.ActAvg.Init()
 	lv.CorSim.Init()
-	lv.NeuroMod.Init()
 	lv.Special.Init()
 }
 

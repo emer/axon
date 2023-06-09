@@ -138,18 +138,19 @@ func (kp *CaParams) FmCa4(ca float32, caM, caP, caD *float32) {
 
 // IntFmTime returns the interval from current time
 // and last update time, which is 0 if never updated
-// (in which case return is 0)
-func (kp *CaParams) IntFmTime(ctime, utime int32) int32 {
+func (kp *CaParams) IntFmTime(ctime, utime float32) int32 {
 	if utime < 0 {
 		return -1
 	}
-	return ctime - utime
+	return int32(ctime - utime)
 }
 
 // CurCa returns the current Ca* values, dealing with updating for
 // optimized spike-time update versions.
 // ctime is current time in msec, and utime is last update time (-1 if never)
-func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
+// to avoid running out of float32 precision, ctime should be reset periodically
+// along with the Ca values -- in axon this happens during SlowAdapt.
+func (kp *CaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 	isi := kp.IntFmTime(ctime, utime)
 	if isi <= 0 {
 		return
@@ -167,7 +168,7 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
 	for i := int32(0); i < isi4; i++ {
 		kp.FmCa4(0, caM, caP, caD) // just decay to 0
 	}
-	for i := int32(0); i < rm; i++ {
+	for j := int32(0); j < rm; j++ {
 		kp.FmCa(0, caM, caP, caD) // just decay to 0
 	}
 	return

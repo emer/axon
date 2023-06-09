@@ -80,10 +80,10 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0",
-					"Prjn.SWt.Init.Sym":  "false", // for lesions, just in case
+					"Prjn.Learn.Learn":    "false",
+					"Prjn.SWts.Init.Mean": "0.8",
+					"Prjn.SWts.Init.Var":  "0",
+					"Prjn.SWts.Init.Sym":  "false", // for lesions, just in case
 				}},
 			{Sel: "Layer", Desc: "pool etc",
 				Params: params.Params{
@@ -95,13 +95,13 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.FFEx0":    "0.18",
 					"Layer.Inhib.Layer.FFEx":     "0.1",
-					"Layer.Act.Decay.Act":        "1",
-					"Layer.Act.Decay.Glong":      "1",
-					"Layer.Act.Decay.KNa":        "1",
-					"Layer.Act.KNa.On":           "false", // turn off by default
-					"Layer.Act.Noise.Dist":       "Gaussian",
-					"Layer.Act.Noise.Var":        "0.002",
-					"Layer.Act.Noise.Type":       "NoNoise", // "GeNoise",
+					"Layer.Acts.Decay.Act":       "1",
+					"Layer.Acts.Decay.Glong":     "1",
+					"Layer.Acts.Decay.KNa":       "1",
+					"Layer.Acts.KNa.On":          "false", // turn off by default
+					"Layer.Acts.Noise.Dist":      "Gaussian",
+					"Layer.Acts.Noise.Var":       "0.002",
+					"Layer.Acts.Noise.Type":      "NoNoise", // "GeNoise",
 				}},
 			{Sel: "SuperLayer", Desc: "pool etc",
 				Params: params.Params{
@@ -115,16 +115,16 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.FFEx0":     "0.18",
 					"Layer.Inhib.Pool.FFEx":      "0", // 10? no big effects
 					"Layer.Inhib.ActAvg.Nominal": "0.05",
-					"Layer.Act.Attn.On":          "true",
-					"Layer.Act.Attn.Min":         "0.2", // 0.5
+					"Layer.Acts.Attn.On":         "true",
+					"Layer.Acts.Attn.Min":        "0.2", // 0.5
 					"Layer.Inhib.Topo.On":        "true",
 					"Layer.Inhib.Topo.Width":     "4",
 					"Layer.Inhib.Topo.Sigma":     "1.0",
 					"Layer.Inhib.Topo.Gi":        "0.05",
 					"Layer.Inhib.Topo.FF0":       "0.15",
-					"Layer.Act.Noise.Dist":       "Gaussian",
-					"Layer.Act.Noise.Var":        "0.02",    // .02
-					"Layer.Act.Noise.Type":       "GeNoise", // "GeNoise",
+					"Layer.Acts.Noise.Dist":      "Gaussian",
+					"Layer.Acts.Noise.Var":       "0.02",    // .02
+					"Layer.Acts.Noise.Type":      "GeNoise", // "GeNoise",
 				}},
 			{Sel: "TRCALayer", Desc: "topo etc pool etc",
 				Params: params.Params{
@@ -163,7 +163,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":       "true",
 					"Layer.Inhib.Layer.Gi":       "2.0",
 					"Layer.Inhib.ActAvg.Nominal": ".03",
-					"Layer.Act.Dt.GTau":          "3",
+					"Layer.Acts.Dt.GTau":         "3",
 				}},
 			{Sel: ".BackPrjn", Desc: "weaker output",
 				Params: params.Params{
@@ -203,7 +203,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "KNa adapt on",
 				Params: params.Params{
-					"Layer.Act.KNa.On": "true",
+					"Layer.Acts.KNa.On": "true",
 				}},
 		},
 	}},

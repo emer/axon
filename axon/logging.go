@@ -61,7 +61,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Avg)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
 				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -74,7 +74,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Max)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Max)
 				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -85,10 +85,10 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.GeInt.Minus.Max)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorDiff",
@@ -97,7 +97,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(1.0 - ly.Vals.CorSim.Cor)
+					ctx.SetFloat32(1.0 - ly.LayerVals(uint32(ctx.Di)).CorSim.Cor)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -108,7 +108,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Vals.ActAvg.GiMult)
+					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.GiMult)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -128,7 +128,7 @@ func LogInputLayer(lg *elog.Logs, net *Network, mode etime.Modes) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.ActMAvg)
 				}}})
 	}
 }
@@ -210,7 +210,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.AvgMaxVarByPool("Ge", 0).Avg)
+					ctx.SetFloat32(ly.AvgMaxVarByPool(&net.Ctx, "Ge", 0, ctx.Di).Avg)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Act.Avg",
@@ -219,7 +219,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.AvgMaxVarByPool("Act", 0).Avg)
+					ctx.SetFloat32(ly.AvgMaxVarByPool(&net.Ctx, "Act", 0, ctx.Di).Avg)
 				}}})
 	}
 }
@@ -239,7 +239,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.CaSpkP.Minus.Avg)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Avg)
 				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -251,7 +251,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.CaSpkP.Minus.Max)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Max)
 				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -262,7 +262,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgDif.Avg) // only updt w slow wts
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgDif.Avg) // only updt w slow wts
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifMax",
@@ -271,7 +271,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgDif.Max)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgDif.Max)
 				}}})
 	}
 }
@@ -466,7 +466,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Vals.CorSim.Cor)
+					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).CorSim.Cor)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[2], agg.AggMean)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
@@ -482,10 +482,10 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Avg)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.ActMAvg)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
@@ -495,10 +495,10 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.GeInt.Minus.Max)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
 	}
 }
@@ -565,11 +565,11 @@ func LayerActsLogConfig(net *Network, lg *elog.Logs) {
 // LayerActsLog records layer activity for tuning the network
 // inhibition, nominal activity, relative scaling, etc.
 // if gui is non-nil, plot is updated.
-func LayerActsLog(net *Network, lg *elog.Logs, gui *egui.GUI) {
+func LayerActsLog(net *Network, lg *elog.Logs, di int, gui *egui.GUI) {
 	dt := lg.MiscTable("LayerActs")
 	dtRec := lg.MiscTable("LayerActsRec")
 	for li, ly := range net.Layers {
-		lpl := &ly.Pools[0]
+		lpl := ly.Pool(0, uint32(di))
 		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
 		dt.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
 		dt.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))

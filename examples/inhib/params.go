@@ -22,49 +22,49 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.SSfTau":   "20",
 					"Layer.Inhib.Layer.SSiTau":   "50",
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Act.Dt.GeTau":         "5",
-					"Layer.Act.Dt.GiTau":         "7",
-					"Layer.Act.Gbar.I":           "1.0",
-					"Layer.Act.Gbar.L":           "0.2",
-					"Layer.Act.GABAB.Gbar":       "0.2",
-					"Layer.Act.NMDA.Gbar":        "0.15",
-					"Layer.Act.Decay.Act":        "0.0", // 0.2 def
-					"Layer.Act.Decay.Glong":      "0.0", // 0.6 def
-					"Layer.Act.Noise.On":         "false",
-					"Layer.Act.Noise.GeHz":       "100",
-					"Layer.Act.Noise.Ge":         "0.002", // 0.001 min
-					"Layer.Act.Noise.GiHz":       "200",
-					"Layer.Act.Noise.Gi":         "0.002", // 0.001 min
+					"Layer.Acts.Dt.GeTau":        "5",
+					"Layer.Acts.Dt.GiTau":        "7",
+					"Layer.Acts.Gbar.I":          "1.0",
+					"Layer.Acts.Gbar.L":          "0.2",
+					"Layer.Acts.GabaB.Gbar":      "0.2",
+					"Layer.Acts.NMDA.Gbar":       "0.15",
+					"Layer.Acts.Decay.Act":       "0.0", // 0.2 def
+					"Layer.Acts.Decay.Glong":     "0.0", // 0.6 def
+					"Layer.Acts.Noise.On":        "false",
+					"Layer.Acts.Noise.GeHz":      "100",
+					"Layer.Acts.Noise.Ge":        "0.002", // 0.001 min
+					"Layer.Acts.Noise.GiHz":      "200",
+					"Layer.Acts.Noise.Gi":        "0.002", // 0.001 min
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.5",
-					"Layer.Act.Spike.Thr":        "0.5",
-					"Layer.Act.Spike.Tr":         "1",   // 3 def
-					"Layer.Act.Spike.VmR":        "0.4", // key for firing early, plus noise
-					"Layer.Act.Init.Vm":          "0.4", // key for firing early, plus noise
-					"Layer.Act.Erev.L":           "0.4", // more excitable
-					"Layer.Act.Gbar.L":           "0.2", // smaller, less leaky..
-					"Layer.Act.KNa.On":           "false",
-					"Layer.Act.GABAB.Gbar":       "0", // no gabab
-					"Layer.Act.NMDA.Gbar":        "0", // no nmda
-					"Layer.Act.Noise.On":         "false",
-					"Layer.Act.Noise.Ge":         "0.01", // 0.001 min
-					"Layer.Act.Noise.Gi":         "0.0",  //
+					"Layer.Acts.Spikes.Thr":      "0.5",
+					"Layer.Acts.Spikes.Tr":       "1",   // 3 def
+					"Layer.Acts.Spikes.VmR":      "0.4", // key for firing early, plus noise
+					"Layer.Acts.Init.Vm":         "0.4", // key for firing early, plus noise
+					"Layer.Acts.Erev.L":          "0.4", // more excitable
+					"Layer.Acts.Gbar.L":          "0.2", // smaller, less leaky..
+					"Layer.Acts.KNa.On":          "false",
+					"Layer.Acts.GabaB.Gbar":      "0", // no gabab
+					"Layer.Acts.NMDA.Gbar":       "0", // no nmda
+					"Layer.Acts.Noise.On":        "false",
+					"Layer.Acts.Noise.Ge":        "0.01", // 0.001 min
+					"Layer.Acts.Noise.Gi":        "0.0",  //
 				}},
 			{Sel: "#Layer0", Desc: "Input layer",
 				Params: params.Params{
-					"Layer.Act.Clamp.Ge": "0.6", // no inhib so needs to be lower
-					"Layer.Act.Noise.On": "true",
-					"Layer.Act.Noise.Gi": "0.002", // hard to disrupt strong inputs!
+					"Layer.Acts.Clamp.Ge": "0.6", // no inhib so needs to be lower
+					"Layer.Acts.Noise.On": "true",
+					"Layer.Acts.Noise.Gi": "0.002", // hard to disrupt strong inputs!
 				}},
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "false",
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-					"Prjn.Com.Delay":     "2",
+					// "Prjn.SWts.Init.Dist": "Uniform",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.25",
+					"Prjn.Com.Delay":      "2",
 				}},
 			{Sel: ".BackPrjn", Desc: "feedback excitatory",
 				Params: params.Params{
@@ -72,12 +72,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".InhibPrjn", Desc: "inhibitory projections",
 				Params: params.Params{
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0",
-					"Prjn.SWt.Init.Sym":  "false",
-					"Prjn.Com.Delay":     "0",
-					"Prjn.PrjnScale.Abs": "0",
+					// "Prjn.SWts.Init.Dist": "Uniform",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0",
+					"Prjn.SWts.Init.Sym":  "false",
+					"Prjn.Com.Delay":      "0",
+					"Prjn.PrjnScale.Abs":  "0",
 				}},
 			{Sel: ".ToInhib", Desc: "to inhibitory projections",
 				Params: params.Params{
@@ -88,8 +88,8 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.001", //
 					// "Prjn.Learn.Learn":      "false",
 					"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
-					"Prjn.SWt.Adapt.On":  "false", // seems better
-					// "Prjn.SWt.Init.Var":  "0.05",
+					"Prjn.SWts.Adapt.On": "false", // seems better
+					// "Prjn.SWts.Init.Var":  "0.05",
 				}},
 		},
 	}},
@@ -97,9 +97,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
+					// "Prjn.SWts.Init.Dist": "Uniform",
+					"Prjn.SWts.Init.Mean": "0.5",
+					"Prjn.SWts.Init.Var":  "0.25",
 				}},
 		},
 	}},
@@ -107,9 +107,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
-					// "Prjn.SWt.Init.Dist": "Gaussian",
-					"Prjn.SWt.Init.Mean": "0.4",
-					"Prjn.SWt.Init.Var":  "0.8",
+					// "Prjn.SWts.Init.Dist": "Gaussian",
+					"Prjn.SWts.Init.Mean": "0.4",
+					"Prjn.SWts.Init.Var":  "0.8",
 				}},
 		},
 	}},

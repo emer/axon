@@ -35,24 +35,24 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.LRate":  "0.1", // .1 >= .2,
-					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWts.Adapt.LRate": "0.1", // .1 >= .2,
+					"Prjn.SWts.Init.SPct":   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.08",
 					"Layer.Inhib.Layer.Gi":       "1.05",
-					"Layer.Act.Gbar.L":           "0.2",
+					"Layer.Acts.Gbar.L":          "0.2",
 				}},
 			{Sel: "#Input", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":   "1.5",
+					"Layer.Acts.Clamp.Ge":  "1.5",
 				}},
 			{Sel: "#Output", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.70",
-					"Layer.Act.Clamp.Ge":   "0.8",
+					"Layer.Acts.Clamp.Ge":  "0.8",
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -62,7 +62,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
+func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose bool) {
 	net.InitName(net, "BenchNet")
 
 	squn := int(math.Sqrt(float64(units)))
@@ -85,7 +85,7 @@ func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 	net.GPU.RecFunTimes = verbose
 
 	// builds with default threads
-	if err := net.Build(); err != nil {
+	if err := net.Build(ctx); err != nil {
 		panic(err)
 	}
 	net.Defaults()
@@ -101,7 +101,7 @@ func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 		net.SetNThreads(threads)
 	}
 
-	net.InitWts()
+	net.InitWts(ctx)
 }
 
 func ConfigPats(dt *etable.Table, pats, units int) {
@@ -137,9 +137,8 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, gpu bool) {
-	ctx := axon.NewContext()
-	net.InitWts()
+func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, epcs int, verbose, gpu bool) {
+	net.InitWts(ctx)
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 
@@ -171,8 +170,8 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, 
 			inp := inPats.SubSpace([]int{ppi})
 			outp := outPats.SubSpace([]int{ppi})
 
-			inLay.ApplyExt(inp)
-			outLay.ApplyExt(outp)
+			inLay.ApplyExt(ctx, 0, inp)
+			outLay.ApplyExt(ctx, 0, outp)
 			net.ApplyExts(ctx)
 
 			net.NewState(ctx)
@@ -191,8 +190,8 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, 
 			net.PlusPhase(ctx)
 			net.DWt(ctx)
 			net.WtFmDWt(ctx)
-			outCorSim += outLay.Vals.CorSim.Cor
-			pSSE := outLay.PctUnitErr()
+			outCorSim += outLay.Vals[0].CorSim.Cor
+			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
 			if pSSE != 0 {
 				cntErr++
@@ -206,19 +205,19 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, 
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Vals.CorSim.Avg, t)
+			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Vals[0].CorSim.Avg, t)
 		}
 
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Vals.CorSim.Avg))
+		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Vals[0].CorSim.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
 		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
 		epcLog.SetCellFloat("PctErr", epc, pctErr)
 		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Vals.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Vals.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Vals[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Vals[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals[0].ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {

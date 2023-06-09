@@ -222,8 +222,8 @@ func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass st
 		"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
 		"Prjn.PrjnScale.Abs":    "4",      // strong..
 		"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
-		"Prjn.SWt.Init.Mean":    "0.5",
-		"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+		"Prjn.SWts.Init.Mean":   "0.5",
+		"Prjn.SWts.Init.Var":    "0.5", // high variance so not just spreading out over time
 	}
 	pj.SetClass("PTSelfMaint" + prjnClass)
 	return pj
@@ -278,13 +278,13 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	pthal, thalpt := net.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal" + prjnClass)
 	thalpt.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel": "1.0",
-		"Prjn.Com.GType":     "ModulatoryG", // modulatory -- control with extra ModGain factor
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.PrjnScale.Rel":  "1.0",
+		"Prjn.Com.GType":      "ModulatoryG", // modulatory -- control with extra ModGain factor
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
 	}
 	thalpt.SetClass("ThalToPT" + prjnClass)
 	// if is4D {
@@ -292,10 +292,10 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	// 	"Prjn.PrjnScale.Rel": "1.0",
 	// 	"Prjn.PrjnScale.Abs": "1.0",
 	// 	"Prjn.Learn.Learn":   "false",
-	// 	"Prjn.SWt.Adapt.On":  "false",
-	// 	"Prjn.SWt.Init.SPct": "0",
-	// 	"Prjn.SWt.Init.Mean": "0.8",
-	// 	"Prjn.SWt.Init.Var":  "0.0",
+	// 	"Prjn.SWts.Adapt.On":  "false",
+	// 	"Prjn.SWts.Init.SPct": "0",
+	// 	"Prjn.SWts.Init.Mean": "0.8",
+	// 	"Prjn.SWts.Init.Var":  "0.0",
 	// }
 	// note: holding off on these for now -- thal modulation should handle..
 	// ti := net.ConnectLayers(thal, pt, full, InhibPrjn)
@@ -307,26 +307,26 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 
 	sthal := net.ConnectLayers(super, thal, superToPT, ForwardPrjn) // shortcuts
 	sthal.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel": "1.0",
-		"Prjn.PrjnScale.Abs": "4.0", // key param for driving gating -- if too strong, premature gating
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8", // typically 1to1
-		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.PrjnScale.Rel":  "1.0",
+		"Prjn.PrjnScale.Abs":  "4.0", // key param for driving gating -- if too strong, premature gating
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8", // typically 1to1
+		"Prjn.SWts.Init.Var":  "0.0",
 	}
 	sthal.SetClass("SuperToThal" + prjnClass)
 
 	pj := net.ConnectLayers(super, pt, superToPT, ForwardPrjn)
 	pj.DefParams = params.Params{
 		// one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily
-		"Prjn.PrjnScale.Rel": "1",   // irrelevant -- only normal prjn
-		"Prjn.PrjnScale.Abs": "0.5", // BGThal modulates this so strength doesn't cause wrong CS gating
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.PrjnScale.Rel":  "1",   // irrelevant -- only normal prjn
+		"Prjn.PrjnScale.Abs":  "0.5", // BGThal modulates this so strength doesn't cause wrong CS gating
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
 	}
 	pj.SetClass("SuperToPT" + prjnClass)
 
@@ -434,15 +434,15 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
 	pfcParams := params.Params{
-		"Layer.Act.Decay.Act":        "0",
-		"Layer.Act.Decay.Glong":      "0",
-		"Layer.Act.Decay.OnRew":      onRew,
+		"Layer.Acts.Decay.Act":       "0",
+		"Layer.Acts.Decay.Glong":     "0",
+		"Layer.Acts.Decay.OnRew":     onRew,
 		"Layer.Inhib.ActAvg.Nominal": "0.025",
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "2.2",
 		"Layer.Inhib.Pool.On":        "true",
 		"Layer.Inhib.Pool.Gi":        "0.8",
-		"Layer.Act.Dend.SSGi":        "0",
+		"Layer.Acts.Dend.SSGi":       "0",
 	}
 	pfc.DefParams = pfcParams
 
@@ -451,7 +451,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "4" // 4?  2.8 orig
 	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "true"
 	pfcCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
+	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
 	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
@@ -498,14 +498,14 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
 	pfcParams := params.Params{
-		"Layer.Act.Decay.Act":        "0",
-		"Layer.Act.Decay.Glong":      "0",
-		"Layer.Act.Decay.OnRew":      onRew,
+		"Layer.Acts.Decay.Act":       "0",
+		"Layer.Acts.Decay.Glong":     "0",
+		"Layer.Acts.Decay.OnRew":     onRew,
 		"Layer.Inhib.ActAvg.Nominal": "0.1",
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "0.9",
 		"Layer.Inhib.Pool.On":        "false",
-		"Layer.Act.Dend.SSGi":        "0",
+		"Layer.Acts.Dend.SSGi":       "0",
 	}
 	pfc.DefParams = pfcParams
 
@@ -514,7 +514,7 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	pfcCT.DefParams["Layer.Inhib.Layer.On"] = "true"
 	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "1.4"
 	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "false"
-	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
+	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
 	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active

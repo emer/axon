@@ -18,6 +18,7 @@ import (
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/giv"
+	"github.com/goki/ki/bools"
 	"github.com/goki/ki/ki"
 	"github.com/goki/mat32"
 )
@@ -74,35 +75,35 @@ func (ss *DrEffPlot) Update() {
 // EffortPlot plots the equation as a function of effort / time
 func (ss *DrEffPlot) EffortPlot() {
 	ss.Update()
+	ctx := &ss.Context
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
-	pp := &ss.Context.PVLV
-	pp.Effort.Reset()
+	axon.EffortReset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := pp.Effort.DiscFmEffort()
+		ev := axon.EffortDiscFmEffort(ctx, 0)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
-		pp.Effort.AddEffort(1) // unit
+		axon.EffortAddEffort(ctx, 0, 1) // unit
 	}
 	ss.Plot.Update()
 }
 
 // UrgencyPlot plots the equation as a function of effort / time
 func (ss *DrEffPlot) UrgencyPlot() {
+	ctx := &ss.Context
 	ss.Update()
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
-	pp := &ss.Context.PVLV
-	pp.Urgency.Reset()
+	axon.UrgencyReset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := pp.Urgency.UrgeFmUrgency()
+		ev := axon.UrgeFmUrgency(ctx, 0)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
-		pp.Urgency.AddEffort(1) // unit
+		axon.UrgencyAddEffort(ctx, 0, 1) // unit
 	}
 	ss.Plot.Update()
 }
@@ -136,20 +137,20 @@ func (ss *DrEffPlot) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	pv := &ss.Context.PVLV
-	pv.Effort.Reset()
-	pv.Urgency.Reset()
+	ctx := &ss.Context
+	axon.EffortReset(ctx, 0)
+	axon.UrgencyReset(ctx, 0)
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
-	pv.USpos.Set(0, 0)
-	pv.Drive.ToBaseline()
-	pv.Update()
+	axon.PVLVSetPosUS(ctx, 0, 0, 0)
+	axon.DrivesToBaseline(ctx, 0)
+	// pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := pv.Effort.DiscFmEffort()
-		urg := pv.Urgency.UrgeFmUrgency()
+		ev := axon.EffortDiscFmEffort(ctx, 0)
+		urg := axon.UrgeFmUrgency(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
-		dr := pv.Drive.Drives.Get(0)
+		dr := axon.GlbDrvV(ctx, 0, 0, axon.GvDrives)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
@@ -164,10 +165,10 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("US", ti, float64(usv))
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
-		pv.USpos.Set(0, usv)
-		pv.HasRewPrev.SetBool(usv > 0)
-		pv.EffortUrgencyUpdt(&ss.Rand, ei)
-		pv.DriveUpdt()
+		axon.PVLVSetPosUS(ctx, 0, 0, usv)
+		axon.SetGlbV(ctx, 0, axon.GvHasRewPrev, bools.ToFloat32(usv > 0))
+		ctx.PVLV.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
+		axon.PVLVDriveUpdt(ctx, 0)
 	}
 	ss.TimePlot.Update()
 }

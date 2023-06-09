@@ -4,6 +4,17 @@
 
 // performs the WtFmDWt function on all sending projections
 
+#include "synmem.hlsl"
+
+// note: all must be visible always because accessor methods refer to them
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
+[[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
+[[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
+[[vk::binding(0, 3)]] RWStructuredBuffer<SynMemBlock> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(1, 3)]] RWStructuredBuffer<SynMemBlock> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+
 #include "context.hlsl"
 #include "layerparams.hlsl"
 #include "prjnparams.hlsl"
@@ -11,41 +22,35 @@
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have prjns also be uniform..
-[[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
+[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
+[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
-// Set 1: effectively uniform prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+// Set 1: effectively uniform indexes and prjn params as structured buffers in storage
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-// [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-// [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-// [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 
-// Set 3: external inputs
 
-void WtFmDWtSyn2(in Context ctx, in PrjnParams pj, inout Synapse sy) {
+void WtFmDWtSyn2(in Context ctx, in PrjnParams pj, uint syni) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
-	pj.WtFmDWtSyn(ctx, sy);
+	pj.WtFmDWtSyn(ctx, syni);
 }
 
-void WtFmDWtSyn(in Context ctx, uint ci, inout Synapse sy) {
-	WtFmDWtSyn2(ctx, Prjns[sy.PrjnIdx], sy);
+void WtFmDWtSyn(in Context ctx, uint syni) {
+	uint pi = SynI(ctx, syni, SynPrjnIdx);
+	WtFmDWtSyn2(ctx, Prjns[pi], syni);
 }
 
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Synapses
-	uint ns;
-	uint st;
-	Synapses.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		WtFmDWtSyn(Ctx[0], idx.x, Synapses[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Synapses NOT * Data
+	uint syni = idx.x;
+	if (!Ctx[0].NetIdxs.SynIdxIsValid(syni)) {
+		return;
 	}
+	WtFmDWtSyn(Ctx[0], syni);
 }
-
 
 

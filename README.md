@@ -19,6 +19,8 @@ See [python README](python/README.md) and [Python Wiki](https://github.com/emer/
 
 # Current Status / News
 
+* June 2023: **v1.8.0** Neuron and Synapse memory now accessed via methods with arbitrary strides so GPU and CPU can each have optimal memory ordering -- NVIDIA A100 performance now comparable to Mac M1, which also improved by 25%.  Includes data parallel processing (multiple input patterns processed in parallel using shared weights) which makes GPU faster than CPU even with small networks (e.g., ra25).  See [GPU](GPU.md) and [data parallel](#data_parallel) section.
+
 * Feb 2023: **v1.7.9** completed first pass on [GPU](GPU.md) implementation based on [gosl](https://github.com/goki/gosl) conversion from the Go source to Vulkan HLSL shaders running under the [vgpu](https://github.com/goki/vgpu) framework.
 
 * Dec 2022: **v1.6.12** represents the start of an anticipated stable plateau in development, with this README fully updated to describe the current algorithm, and well-tested and biologically-based implementations of all the major elements of the core algorithm, and initial steps on specialized PFC / BG / RL algorithms as integrated in the `examples/boa` model.
@@ -83,12 +85,100 @@ func (nt *Network) InitActs() {
 
 * The `emer` interfaces are designed to support generic access to network state, e.g., for the 3D network viewer, but specifically avoid anything algorithmic.  Thus, they allow viewing of any kind of network, including PyTorch backprop nets.
 
-* The `axon.AxonLayer` and `axon.AxonPrjn` interfaces, defined in [axon.go](axon/axon.go), extend the `emer` interfaces to virtualize the Axon-specific algorithm functions at the basic level.  These interfaces are used in the base axon code, so that any more specialized version that embeds the basic axon types will be called instead.
-  This mechanism is incompatible with our GPU implementation, but we're keeping it for easy CPU-only experimentation in the future.
-
 * Layers have a `Shape` property, using the `etensor.Shape` type, which specifies their n-dimensional (tensor) shape.  Standard layers are expected to use a 2D Y*X shape (note: dimension order is now outer-to-inner or *row-major* now), and a 4D shape then enables `Pools` as hypercolumn-like structures within a layer that can have their own local level of inihbition, and are also used extensively for organizing patterns of connectivity.
 
-# Pseudocode as a LaTeX doc for Paper Appendix
+# Data Parallel
+
+As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel using the same weights is supported, as detailed below.  For models with simple "one step" independent inputs (i.e., no context required across trials -- _iid_), a single copy of the existing environment can be used, simply stepping through it in a `for` loop for each `di` data parallel index.  For models with temporal context (e.g., all deep predictive models, rl, pvlv, pcore, boa), `NData` copies of the environment must be created and used in turn for each `di`.  See the `deep_*` models and `boa` for examples.  There is support in the `emergent/env` code for managing these environments.  As usual, see `examples/ra25` or other examples as relevant for specific implementation.
+
+* `Network.MaxData` must be set to the maximum number of data parallel streams prior to `Build()` -- determines allocation of `Neurons`, `Synapses`, etc:
+
+```Go
+	net.SetMaxData(&ss.Context, ss.NData)
+```
+
+* `Context.NetIdxs.NData` must be updated with the actual number (<= MaxData) to process each step, prior to calling `Network.NewState` -- above method does both.
+
+* All compute methods take a `di` arg = data index.
+
+* Iterate over `NData` in `ApplyInputs` method, stepping the env (`ev`) and applying the external inputs to layers, passing the `di`:
+
+```Go
+net.InitExt(ctx) // clear any existing inputs
+for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	ev.Step()
+	for _, lnm := range lays {
+		ly := ss.Net.AxonLayerByName(lnm)
+		pats := ev.State(ly.Nm)
+		if pats != nil {
+			ly.ApplyExt(ctx, di, pats)
+		}
+	}
+}
+net.ApplyExts(ctx) // now required for GPU mode
+```
+
+* Configure `looper` with a counter increment equal to the number of parallel data items and a max that is an integer multiple of NData, and use the `AddTimeIncr` method to increment trials by NData each step:
+
+```Go
+	trls := int(mat32.IntMultipleGE(25, float32(ss.NData))) // 25 nominal trials per epoch
+
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
+```
+
+* `StatCounters` and `TrialStats` should take a `di` arg and are not called directly in Looper config -- instead called during logging.  Updating the counter & stats displayed at the bottom of the NetView should be done using a separate `NetViewCounters` method, called only in GUI mode in the else case of the "nogui" looper config:
+
+```Go
+	for _, m := range man.Stacks {
+		m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
+			ss.NetViewCounters()
+		})
+		m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
+			ss.NetViewCounters()
+		})
+	}
+```
+
+This ensures that the current data index counters are displayed:
+
+```Go
+func (ss *Sim) NetViewCounters() {
+	if ss.GUI.ViewUpdt.View == nil {
+		return
+	}
+	di := ss.GUI.ViewUpdt.View.Di
+	ss.StatCounters(di)
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
+    // note: replace above with relevant counters -- from prior StatCounters
+}
+```
+
+* In sim `Log()` method, iterate over `di` data parallel to record stats for each item, calling the `TrialStats` and `StatCounters` methods with the di index to compute relevant stats.  Also, cycle-level logging should not in general be used unless essential, and then only in test mode -- GPU runs 10 cycles in a chunk and doesn't sync network state back until minus & plus phase end.
+
+```Go
+	case time == etime.Cycle:
+		return
+	case time == etime.Trial:
+		trl := ss.Stats.Int("Trial")
+		row = trl
+		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+			ss.Stats.SetInt("Trial", trl+di)
+			ss.TrialStats(di)
+			ss.StatCounters(di)
+			ss.Logs.LogRowDi(mode, time, row, di)
+		}
+		return // don't do reg
+```
+
+* Custom Log items can use the `ctx.Di` data index as needed to grab the relevant state from the network -- the `di` arg has been added to methods as needed, so you'll see those during build. 
+    + Use `ly.LayerVals(ctx.Di)` instead of `ly.Vals`
+    + `ly.Pool(pi, ctx.Di)` instead of `ly.Pool[pi+1]` etc, where `pi` is the pool index.
+
+# Overview of the Axon Algorithm
+
+Axon is the spiking version of [Leabra](https://github.com/emer/leabra), which uses rate-code neurons instead of spiking.  Like Leabra, Axon is intended to capture a middle ground between neuroscience, computation, and cognition, providing a computationally effective framework based directly on the biology, to understand how cognitive function emerges from the brain.  See [Computational Cognitive Neuroscience](https://CompCogNeuro.org) for a full textbook on the principles and many implemented models.
+
+## Pseudocode as a LaTeX doc for Paper Appendix
 
 You can copy the markdown source of this README into a file, and run [pandoc](https://pandoc.org/) on it to convert to LaTeX (or other formats) for inclusion in a paper.  As this page is always kept updated, it is best to regenerate from this source -- very easy:
 
@@ -98,12 +188,6 @@ pandoc appendix.md -f gfm -t latex -o appendix.tex
 ```
 
 You can then edit the resulting .tex file to only include the parts you want, etc.
-
-# Overview of the Axon Algorithm
-
-Axon is the spiking version of [Leabra](https://github.com/emer/leabra), which uses rate-code neurons instead of spiking.  Like Leabra, Axon is intended to capture a middle ground between neuroscience, computation, and cognition, providing a computationally effective framework based directly on the biology, to understand how cognitive function emerges from the brain.  See [Computational Cognitive Neuroscience](https://CompCogNeuro.org) for a full textbook on the principles and many implemented models.
-
-First we present a brief narrative overview of axon, followed by a detailed list of all the equations and associated parameters.
 
 ## Functional Advantages of Spikes
 
@@ -313,7 +397,6 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 * `SpkPrv` = final `CaSpkD` activation state at end of previous theta cycle.  Used for specialized learning mechanisms that operate on delayed sending activations.
 * `SpkSt1` = the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by `SpkSt1()` function.  Used for example in hippocampus for CA3, CA1 learning.
 * `SpkSt2` = the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by `SpkSt2()` function.  Used for example in hippocampus for CA3, CA1 learning.
-* `DASign` = sign of dopamine-based learning effects for this neuron -- 1 = D1, -1 = D2.
 
 #### Long-term average activation, set point for synaptic scaling
 

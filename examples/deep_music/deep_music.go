@@ -35,8 +35,8 @@ import (
 var (
 	// Debug triggers various messages etc
 	Debug = false
-	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	// GPU runs GUI with the GPU -- faster with NData = 16
+	GPU = true
 )
 
 func main() {
@@ -52,27 +52,44 @@ func main() {
 	}
 }
 
+// SimParams has all the custom params for this sim
+type SimParams struct {
+	Hid2         bool `desc:"use Hidden2"`
+	FullSong     bool `desc:"train the full song -- else 30 notes"`
+	PlayTarg     bool `desc:"during testing, play the target note instead of the actual network output"`
+	TestClamp    bool `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
+	NData        int  `desc:"number of data-parallel items to process at once"`
+	TestInterval int  `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	PCAInterval  int  `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	UnitsPer     int  `desc:"number of units per localist unit"`
+}
+
+// Defaults sets default params
+func (ss *SimParams) Defaults() {
+	ss.Hid2 = false // useful only if primary hidden layer is smaller
+	ss.FullSong = false
+	ss.TestClamp = true
+	ss.NData = 16
+	ss.TestInterval = -1 // 10
+	ss.PCAInterval = 5
+	ss.UnitsPer = 4
+}
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Params       emer.Params      `view:"inline" desc:"all parameter management"`
-	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats        estats.Stats     `desc:"contains computed statistic values"`
-	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Context      axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
-	FullSong     bool             `desc:"train the full song -- else 30 notes"`
-	Hid2         bool             `desc:"use Hidden2"`
-	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
-	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
-	UnitsPer     int              `def:"4" desc:"number of units per localist unit"`
-	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Sim      SimParams        `desc:"misc params specific to this simulation"`
+	Params   emer.Params      `view:"inline" desc:"all parameter management"`
+	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
+	Stats    estats.Stats     `desc:"contains computed statistic values"`
+	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
+	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
+	Context  axon.Context     `desc:"axon timing parameters and state"`
+	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
@@ -81,19 +98,14 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	ss.Sim.Defaults()
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
-	ss.Hid2 = false // useful only if primary hidden layer is smaller
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.UnitsPer = 4
-	ss.FullSong = false
-	ss.TestClamp = true
-	ss.TestInterval = 500
-	ss.PCAInterval = 5
 	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
@@ -123,13 +135,13 @@ func (ss *Sim) ConfigEnv() {
 	song := "bach_goldberg.mid"
 	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// have to push it to 60 to get an effect of Tau=4 vs. 1
-	maxRows := 30
-	if ss.Hid2 {
+	maxRows := 32
+	if ss.Sim.Hid2 {
 		ss.Params.ExtraSets = "Hid2 "
 	} else {
 		ss.Params.ExtraSets = ""
 	}
-	if ss.FullSong {
+	if ss.Sim.FullSong {
 		maxRows = 0 // full thing
 		ss.Params.ExtraSets += "FullSong"
 	} else {
@@ -143,14 +155,16 @@ func (ss *Sim) ConfigEnv() {
 	trn.WrapNotes = wrapNotes
 	trn.Nm = etime.Train.String()
 	trn.Debug = false
-	trn.Config(song, track, maxRows, ss.UnitsPer)
+	trn.Config(song, track, maxRows, ss.Sim.UnitsPer)
+	trn.ConfigNData(ss.Sim.NData)
 	trn.Validate()
 
 	tst.Defaults()
 	tst.WrapNotes = wrapNotes
 	tst.Nm = etime.Test.String()
 	tst.Play = true // see notes in README for getting this to work
-	tst.Config(song, track, maxRows, ss.UnitsPer)
+	tst.Config(song, track, maxRows, ss.Sim.UnitsPer)
+	tst.ConfigNData(ss.Sim.NData)
 	tst.Validate()
 
 	trn.Init(0)
@@ -161,9 +175,13 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
-	net.InitName(net, "DeepMusic")
-	ev := ss.Envs[etime.Train.String()].(*MusicEnv)
+	ctx := &ss.Context
+	ev := ss.Envs.ByMode(etime.Train).(*MusicEnv)
 	nnotes := ev.NNotes
+
+	net.InitName(net, "DeepMusic")
+	net.SetMaxData(ctx, ss.Sim.NData)
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
@@ -177,14 +195,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		nUnits = 20
 	}
 
-	in, inPulv := net.AddInputPulv4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
+	in, inPulv := net.AddInputPulv4D("Input", 1, nnotes, ss.Sim.UnitsPer, 1, space)
 	in.SetClass("InLay")
 	inPulv.SetClass("InLay")
 
 	var hidp, hid2, hid2ct *axon.Layer
 	hid, hidct := net.AddSuperCT2D("Hidden", "", 20, nUnits, space, one2one) // one2one learn > full
 	_ = hidp
-	if ss.Hid2 {
+	if ss.Sim.Hid2 {
 		// hidp -> hid2 doesn't actually help at all..
 		// hidp = net.AddPulvForSuper(hid, space)
 	}
@@ -193,7 +211,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
-	if ss.Hid2 {
+	if ss.Sim.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", "", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full, "")
 		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full, "") // shortcut top-down
@@ -202,25 +220,25 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
-	if ss.Hid2 {
+	if ss.Sim.Hid2 {
 		net.BidirConnectLayers(hid, hid2, full)
 		net.ConnectLayers(hid2ct, hidct, full, axon.BackPrjn)
 		// net.ConnectLayers(hid2ct, hid, full, axon.BackPrjn)
 	}
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	if ss.Hid2 {
+	if ss.Sim.Hid2 {
 		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: hid.Name(), YAlign: relpos.Front, Space: 2})
 	}
 
-	err := net.Build()
+	err := net.Build(ctx)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	net.Defaults()
 	ss.Params.SetObject("Network")
-	net.InitWts()
+	net.InitWts(ctx)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,12 +247,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	if !ss.Args.Bool("nogui") {
+		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
+	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed()
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
+	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -244,21 +266,24 @@ func (ss *Sim) Init() {
 func (ss *Sim) InitRndSeed() {
 	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
 	ss.RndSeeds.Set(run)
+	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	ev := ss.Envs["Train"].(*MusicEnv)
+	ev := ss.Envs.ByMode(etime.Train).(*MusicEnv)
 	ntrls := ev.Song.Rows
 	if ev.MaxSteps > 0 {
 		ntrls = 4 * ev.MaxSteps
 	}
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
+	trls := int(mat32.IntMultipleGE(float32(ntrls), float32(ss.Sim.NData)))
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -266,15 +291,9 @@ func (ss *Sim) ConfigLoops() {
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
-			// note: OnStart for env.Env, others may happen OnEnd
-			ss.Envs[mode.String()].Step()
-		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
-		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
-		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -282,7 +301,7 @@ func (ss *Sim) ConfigLoops() {
 	// Add Testing
 	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
 	trainEpoch.OnStart.Add("TestAtInterval", func() {
-		if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
+		if (ss.Sim.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Sim.TestInterval == 0) {
 			// Note the +1 so that it doesn't occur at the 0th timestep.
 			ss.TestAll()
 		}
@@ -296,7 +315,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
+		if ss.Sim.PCAInterval > 0 && trnEpc%ss.Sim.PCAInterval == 0 {
 			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.SimMat()
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
@@ -308,7 +327,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if (ss.PCAInterval > 0) && (trnEpc%ss.PCAInterval == 0) {
+		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
 			ss.Log(etime.Analyze, etime.Trial)
 		}
 	})
@@ -323,21 +342,6 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
-	// lrate schedule
-	/*
-		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LRateSched", func() {
-			trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-			switch trnEpc {
-			case 40:
-				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-				// ss.Net.LRateSched(0.2) // 0.2
-			case 60:
-				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-				// ss.Net.LRateSched(0.1) // 0.1
-			}
-		})
-	*/
-
 	////////////////////////////////////////////
 	// GUI
 
@@ -348,6 +352,14 @@ func (ss *Sim) ConfigLoops() {
 	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
+		for _, m := range man.Stacks {
+			m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
+				ss.NetViewCounters()
+			})
+			m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
+				ss.NetViewCounters()
+			})
+		}
 	}
 
 	if Debug {
@@ -361,36 +373,42 @@ func (ss *Sim) ConfigLoops() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
+	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()].(*MusicEnv)
-	net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	if ss.Context.Mode == etime.Test && !ss.TestClamp {
-		lastnote := ss.Stats.Int("OutNote") + ev.NoteRange.Min
-		ev.RenderNote(lastnote)
-		// net.SynFail(&ss.Context) // not actually such a generative source of noise..
-	}
-	// going to the same layers, but good practice and cheap anyway
+	ev := ss.Envs.ByMode(ctx.Mode).(*MusicEnv)
+	ev.Step() // step once for all di -- each one gets offset
+	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	for _, lnm := range lays {
-		ly := ss.Net.AxonLayerByName(lnm)
-		pats := ev.State("Note")
-		if pats != nil {
-			ly.ApplyExt(pats)
+
+	for di := 0; di < ss.Sim.NData; di++ {
+		ev.StepDi(di)
+		if ctx.Mode == etime.Test && !ss.Sim.TestClamp {
+			lastnote := ss.Stats.IntDi("OutNote", di) + ev.NoteRange.Min
+			ev.RenderNote(lastnote)
+			// net.SynFail(&ss.Context) // not actually such a generative source of noise..
+		}
+		for _, lnm := range lays {
+			ly := ss.Net.AxonLayerByName(lnm)
+			pats := ev.State("Note")
+			if pats != nil {
+				ly.ApplyExt(ctx, uint32(di), pats)
+			}
 		}
 	}
+	net.ApplyExts(ctx)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
 // for the new run value
 func (ss *Sim) NewRun() {
+	ctx := &ss.Context
 	ss.InitRndSeed()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Context.Reset()
-	ss.Context.Mode = etime.Train
-	ss.Net.InitWts()
+	ctx.Mode = etime.Train
+	ss.Net.InitWts(ctx)
 	ss.InitStats()
-	ss.StatCounters()
+	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	ss.Logs.ResetLog(etime.Test, etime.Epoch)
 }
@@ -406,48 +424,60 @@ func (ss *Sim) TestAll() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
-	ss.Stats.SetFloat("TrlUnitErr", 0.0)
-	ss.Stats.SetFloat("TrlCorSim", 0.0)
+	ss.Stats.SetFloat("UnitErr", 0.0)
+	ss.Stats.SetFloat("CorSim", 0.0)
 	ss.Stats.SetInt("TargNote", 0)
 	ss.Stats.SetInt("OutNote", 0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
-func (ss *Sim) StatCounters() {
-	mode := ss.Context.Mode
+func (ss *Sim) StatCounters(di int) {
+	ctx := &ss.Context
+	mode := ctx.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
-	ev := ss.Envs[ss.Context.Mode.String()].(*MusicEnv)
+	ev := ss.Envs.ByMode(ctx.Mode).(*MusicEnv)
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
+	trl := ss.Stats.Int("Trial")
+	ss.Stats.SetInt("Trial", trl+di)
+	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Time", ev.Time.Cur)
 	ss.Stats.SetString("TrialName", ev.String())
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "Time", "TrialName", "TargNote", "OutNote", "TrlErr", "TrlCorSim"})
+}
+
+func (ss *Sim) NetViewCounters() {
+	if ss.GUI.ViewUpdt.View == nil {
+		return
+	}
+	di := ss.GUI.ViewUpdt.View.Di
+	ss.StatCounters(di)
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "Time", "TrialName", "TargNote", "OutNote", "TrlErr", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
-func (ss *Sim) TrialStats() {
+func (ss *Sim) TrialStats(di int) {
+	ctx := &ss.Context
 	inp := ss.Net.AxonLayerByName("InputP")
-	err, minusIdx, plusIdx := inp.LocalistErr4D()
-	ss.Stats.SetInt("TargNote", plusIdx)
-	ss.Stats.SetInt("OutNote", minusIdx)
-	if err {
+	err, minusIdx, plusIdx := inp.LocalistErr4D(ctx)
+	ss.Stats.SetInt("TargNote", plusIdx[di])
+	ss.Stats.SetInt("OutNote", minusIdx[di])
+	if err[di] {
 		ss.Stats.SetFloat("TrlErr", 1)
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
 	}
-	ss.Stats.SetFloat32("TrlCorSim", inp.Vals.CorSim.Cor)
-	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())
-	ev := ss.Envs[ss.Context.Mode.String()].(*MusicEnv)
+	ss.Stats.SetFloat32("CorSim", inp.Vals[di].CorSim.Cor)
+	ss.Stats.SetFloat("UnitErr", inp.PctUnitErr(ctx)[di])
+	ev := ss.Envs.ByMode(ctx.Mode).(*MusicEnv)
 	if ev.Play {
-		if ss.PlayTarg {
-			ev.PlayNote(plusIdx)
+		if ss.Sim.PlayTarg {
+			ev.PlayNote(plusIdx[di])
 		} else {
-			ev.PlayNote(minusIdx)
+			ev.PlayNote(minusIdx[di])
 		}
 	}
 }
@@ -493,12 +523,13 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.AllTimes, "Time")
 
-	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
@@ -537,15 +568,19 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
-	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
 	row := dt.Rows
 
 	switch {
 	case time == etime.Cycle:
-		row = ss.Stats.Int("Cycle")
+		return
 	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
+		for di := 0; di < ss.Sim.NData; di++ {
+			ss.TrialStats(di)
+			ss.StatCounters(di)
+			ss.Logs.LogRowDi(mode, time, row, di)
+		}
+		return // don't do reg below
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -569,7 +604,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 	ss.ConfigNetView(nv)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
@@ -642,10 +677,16 @@ func (ss *Sim) RunGUI() {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 1)
+	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+		ss.Sim.NData = ss.Args.Int("ndata")
+		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
+	}
 }
 
 func (ss *Sim) RunNoGUI() {
@@ -669,11 +710,13 @@ func (ss *Sim) RunNoGUI() {
 	rc.Set(run)
 	rc.Max = run + runs
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-
-	ss.NewRun()
 	if ss.Args.Bool("gpu") {
 		ss.Net.ConfigGPUnoGUI(&ss.Context)
 	}
+	ss.Net.SetNThreads(ss.Args.Int("threads"))
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
+
+	ss.NewRun()
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()

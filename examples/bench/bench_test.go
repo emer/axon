@@ -45,10 +45,11 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	rand.Seed(42)
 
+	ctx := axon.NewContext()
 	net := &axon.Network{}
-	ConfigNet(net, *threads, *numUnits, *verbose)
+	ConfigNet(net, ctx, *threads, *numUnits, *verbose)
 	if *verbose {
-		log.Println(net.SizeReport())
+		log.Println(net.SizeReport(false))
 	}
 
 	pats := &etable.Table{}
@@ -57,7 +58,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	epcLog := &etable.Table{}
 	ConfigEpcLog(epcLog)
 
-	TrainNet(net, pats, epcLog, *numEpochs, *verbose, *gpu)
+	TrainNet(net, ctx, pats, epcLog, *numEpochs, *verbose, *gpu)
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)
@@ -90,6 +91,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// this benchmark constructs the network just like `bench.go`, but without
 	// setting up the projections (not needed for benching NeuronFun) -> Test setup is much quicker.
+	ctx := axon.NewContext()
 	net := &axon.Network{}
 	net.InitName(net, "BenchNet")
 
@@ -105,7 +107,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	net.RecFunTimes = true
 
 	// builds with default threads
-	if err := net.Build(); err != nil {
+	if err := net.Build(ctx); err != nil {
 		panic(err)
 	}
 	net.Defaults()
@@ -115,8 +117,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 
 	net.SetNThreads(numThread)
 
-	net.InitWts()
-	ctx := axon.NewContext()
+	net.InitWts(ctx)
 
 	// reset timer to avoid counting setup time
 	b.ResetTimer()
@@ -126,8 +127,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// NeuronFun and divide that by (epochs * pats * quarters * cycles)
 	for i := 0; i < b.N; i++ {
 		ctx.NewState(etime.Train)
-		net.NeuronMapPar(func(ly *axon.Layer, ni uint32, nrn *axon.Neuron) { ly.CycleNeuron(ctx, ni, nrn) },
-			"CycleNeuron")
+		net.NeuronMapPar(ctx, func(ly *axon.Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
 	}
 }
 
@@ -169,39 +169,3 @@ func BenchmarkNeuronFun8ThreadsBig(b *testing.B) {
 
 // store to global to avoid compiler optimization
 var fp32Result float32
-
-// Benchmark the cost of doing a type assert on a layer
-func BenchmarkLayerTypeAssert(b *testing.B) {
-	net := &axon.Network{}
-	ConfigNet(net, 1, 2048, false)
-	tmp := float32(0.0)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		// there'll be 5 layers total
-		for _, ly := range net.Layers {
-			// do something with lyr st the compiler cannot optimize it away
-			tmp += ly.AsAxon().Neurons[0].Spike
-		}
-	}
-	// avoid compiler optimization
-	fp32Result = tmp
-}
-
-// Benchmark cost of not doing the type assertion, for comparison
-func BenchmarkLayerTypeAssertBaseline(b *testing.B) {
-	net := &axon.Network{}
-	ConfigNet(net, 1, 2048, false)
-	tmp := float32(0.0)
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		for _, ly := range net.Layers {
-			tmp += ly.Neurons[0].Spike
-		}
-	}
-	// avoid compiler optimization
-	fp32Result = tmp
-}

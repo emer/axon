@@ -100,13 +100,13 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 
 	pj := net.ConnectLayers(blaNov, blaPosAcq, p1to1, ForwardPrjn)
 	pj.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.PrjnScale.Rel": "0.1",
-		"Prjn.PrjnScale.Abs": "2", // 3 competes with CS too strongly
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.5",
-		"Prjn.SWt.Init.Var":  "0.4",
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.PrjnScale.Rel":  "0.1",
+		"Prjn.PrjnScale.Abs":  "2", // 3 competes with CS too strongly
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.5",
+		"Prjn.SWts.Init.Var":  "0.4",
 	}
 	pj.SetClass("BLAFromNovel")
 
@@ -164,11 +164,11 @@ func (net *Network) ConnectCSToBLAPos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *
 
 	toNov = net.ConnectLayers(cs, blaNov, prjn.NewFull(), BLAPrjn)
 	toNov.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.75",
-		"Prjn.SWt.Init.Var":  "0.25",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.Learn.Learn":   "false",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.75",
+		"Prjn.SWts.Init.Var":  "0.25",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.Learn.Learn":    "false",
 	}
 	toNov.SetClass("CSToBLANovel")
 	return
@@ -183,9 +183,9 @@ func (net *Network) ConnectUSToBLAPos(us, blaAcq, blaExt *Layer) (toAcq, toExt *
 	toAcq.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel":     "0.5",
 		"Prjn.PrjnScale.Abs":     "6",
-		"Prjn.SWt.Init.SPct":     "0",
-		"Prjn.SWt.Init.Mean":     "0.75",
-		"Prjn.SWt.Init.Var":      "0.25",
+		"Prjn.SWts.Init.SPct":    "0",
+		"Prjn.SWts.Init.Mean":    "0.75",
+		"Prjn.SWts.Init.Var":     "0.25",
 		"Prjn.Learn.LRate.Base":  "0.001", // could be 0
 		"Prjn.Learn.Trace.Tau":   "1",     // increase for second order conditioning
 		"Prjn.BLA.NegDeltaLRate": "0.01",  // slow for acq -- could be 0
@@ -194,12 +194,12 @@ func (net *Network) ConnectUSToBLAPos(us, blaAcq, blaExt *Layer) (toAcq, toExt *
 
 	toExt = net.ConnectLayers(us, blaExt, prjn.NewPoolOneToOne(), InhibPrjn)
 	toExt.DefParams = params.Params{ // actual US inhibits exinction -- must be strong enough to block ACh enh Ge
-		"Prjn.PrjnScale.Abs": "2",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.Learn.Learn":    "false",
 	}
 	toExt.SetClass("USToBLAExtInhib")
 	return
@@ -332,12 +332,12 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "1.2",
 		"Layer.Inhib.Pool.On":        "false",
-		"Layer.Act.Decay.Act":        "1", // key for rapid updating
-		"Layer.Act.Decay.Glong":      "0.0",
-		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
-		"Layer.Act.Decay.OnRew":      "true",
-		"Layer.Act.KNa.TrialSlow":    "true",
-		"Layer.Act.KNa.Slow.Max":     "2", // 1 not strong enough!
+		"Layer.Acts.Decay.Act":       "1", // key for rapid updating
+		"Layer.Acts.Decay.Glong":     "0.0",
+		"Layer.Acts.Decay.LearnCa":   "1.0", // uses CaSpkD as a readout -- clear
+		"Layer.Acts.Decay.OnRew":     "true",
+		"Layer.Acts.KNa.TrialSlow":   "true",
+		"Layer.Acts.KNa.Slow.Max":    "2", // 1 not strong enough!
 	}
 	sc.SetClass("SC")
 	return sc
@@ -356,12 +356,12 @@ func (net *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 		"Layer.Inhib.Layer.Gi":       "1.2",
 		"Layer.Inhib.Pool.On":        "true",
 		"Layer.Inhib.Pool.Gi":        "1.2",
-		"Layer.Act.Decay.Act":        "1", // key for rapid updating
-		"Layer.Act.Decay.Glong":      "0.0",
-		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
-		"Layer.Act.Decay.OnRew":      "true",
-		"Layer.Act.KNa.TrialSlow":    "true",
-		"Layer.Act.KNa.Slow.Max":     "1",
+		"Layer.Acts.Decay.Act":       "1", // key for rapid updating
+		"Layer.Acts.Decay.Glong":     "0.0",
+		"Layer.Acts.Decay.LearnCa":   "1.0", // uses CaSpkD as a readout -- clear
+		"Layer.Acts.Decay.OnRew":     "true",
+		"Layer.Acts.KNa.TrialSlow":   "true",
+		"Layer.Acts.KNa.Slow.Max":    "1",
 	}
 	sc.SetClass("SC")
 	return sc
@@ -383,11 +383,11 @@ func (net *Network) ConnectToSC1to1(send, recv *Layer) *Prjn {
 	recv.Shp.CopyShape(&send.Shp)
 	pj := net.ConnectLayers(send, recv, prjn.NewOneToOne(), ForwardPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Adapt.On":  "false",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
 	}
 	pj.SetClass("ToSC")
 	return pj
@@ -569,17 +569,17 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	pj = net.ConnectLayers(blaPosAcq, ofcUS, p1to1, ForwardPrjn) // main driver strong input
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "2",
-		"Prjn.SWt.Init.Mean": "0.5",
-		"Prjn.SWt.Init.Var":  "0.4",
+		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.SWts.Init.Mean": "0.5",
+		"Prjn.SWts.Init.Var":  "0.4",
 	}
 	pj.SetClass(prjnClass)
 
 	pj = net.ConnectToBLAExt(ofcUSPTp, blaPosExt, p1to1)
 	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
 	pj.DefParams["Prjn.PrjnScale.Abs"] = "0.5"
-	pj.DefParams["Prjn.SWt.Init.Mean"] = "0.5"
-	pj.DefParams["Prjn.SWt.Init.Var"] = "0.4"
+	pj.DefParams["Prjn.SWts.Init.Mean"] = "0.5"
+	pj.DefParams["Prjn.SWts.Init.Var"] = "0.4"
 	pj.SetClass("PTpToBLAExt")
 
 	///////////////////////////////////////////
@@ -588,13 +588,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	pj = net.ConnectToVSPatch(drives, vSpatch, p1to1)
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
 	pj.DefParams = params.Params{
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Abs": "2",
-		"Prjn.PrjnScale.Rel": "1",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0.0",
-		"Prjn.Com.GType":     "ModulatoryG",
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.PrjnScale.Rel":  "1",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
+		"Prjn.Com.GType":      "ModulatoryG",
 	}
 	pj.SetClass("DrivesToVSPatch")
 
@@ -625,13 +625,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
 	d2m := params.Params{
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Abs": "1",
-		"Prjn.PrjnScale.Rel": "1",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0.0",
-		"Prjn.Com.GType":     "ModulatoryG",
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.PrjnScale.Abs":  "1",
+		"Prjn.PrjnScale.Rel":  "1",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
+		"Prjn.Com.GType":      "ModulatoryG",
 	}
 	pj = net.ConnectToMatrix(drives, vSmtxGo, p1to1)
 	pj.DefParams = d2m
@@ -659,12 +659,12 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	pj = net.ConnectToMatrix(urgency, vSmtxGo, full)
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
-		"Prjn.PrjnScale.Abs": "20",  // but make it strong
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.5",
-		"Prjn.SWt.Init.Var":  "0.4",
-		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Rel":  "0.1", // don't dilute from others
+		"Prjn.PrjnScale.Abs":  "20",  // but make it strong
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.5",
+		"Prjn.SWts.Init.Var":  "0.4",
+		"Prjn.Learn.Learn":    "false",
 	}
 
 	///////////////////////////////////////////

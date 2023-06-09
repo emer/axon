@@ -66,28 +66,34 @@ Finally, you must move the calls to `net.Defaults`, `Params.SetObject` *after* t
 
 # GPU Variable layout:
 
-Set: 0 "Params" -- read only
+```
+Set: 0
     Role: Uniform
-        Var: 0:	Layers	Struct[4]	(size: 1280)	Vals: 1
-Set: 1 "Prjns" -- read only
+        Var: 0:	Layers	Struct[4]	(size: 1520)	Vals: 1
+Set: 1	Idxs
     Role: Storage
-        Var: 0:	Prjns	Struct[5]	(size: 336)	Vals: 1
-        Var: 1:	RecvCon	Struct[281]	(size: 16)	Vals: 1
-        Var: 2:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
+        Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Vals: 1
+        Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Vals: 1
+        Var: 2:	Prjns	Struct[5]	(size: 352)	Vals: 1
         Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
-        Var: 4:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
-Set: 2 "Structs" -- read-write
+        Var: 4:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
+        Var: 5:	RecvCon	Struct[281]	(size: 16)	Vals: 1
+        Var: 6:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+Set: 2	Structs
     Role: Storage
-        Var: 0:	Ctx	Struct	(size: 112)	Vals: 1
-        Var: 1:	Neurons	Struct[178]	(size: 368)	Vals: 1
-        Var: 2:	Pools	Struct[4]	(size: 720)	Vals: 1
-        Var: 3:	LayVals	Struct[4]	(size: 112)	Vals: 1
-        Var: 4:	Synapses	Struct[12992]	(size: 64)	Vals: 1
-        Var: 5:	GBuf	Int32[843]	(size: 4)	Vals: 1
-        Var: 6:	GSyns	Float32[281]	(size: 4)	Vals: 1
-Set: 3 "Exts" -- read-only
+        Var: 0:	Ctx	Struct	(size: 864)	Vals: 1
+        Var: 1:	Neurons	Float32[14596]	(size: 4)	Vals: 1
+        Var: 2:	NeuronAvgs	Float32[890]	(size: 4)	Vals: 1
+        Var: 3:	Pools	Struct[4]	(size: 1040)	Vals: 1
+        Var: 4:	LayVals	Struct[4]	(size: 128)	Vals: 1
+        Var: 5:	Exts	Float32[50]	(size: 4)	Vals: 1
+Set: 3	Syns
     Role: Storage
-        Var: 0:	Exts	Float32[50]	(size: 4)	Vals: 1
+        Var: 0:	Synapses	Float32[64960]	(size: 4)	Vals: 1
+        Var: 1:	SynapseCas	Float32[77952]	(size: 4)	Vals: 1
+        Var: 2:	GBuf	Int32[843]	(size: 4)	Vals: 1
+        Var: 3:	GSyns	Float32[281]	(size: 4)	Vals: 1
+```
 
 # General issues and strategies
 
@@ -151,10 +157,22 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 * `rl` reinforcement learning (TD and Rescorla Wagner): `rl_layers.go, rl_prjns.go, rl_net.go`
 
-# TODO:
+* `pcore` pallidal core BG model
 
-* HebbPrjn type
+* `pvlv` primary value, learned value conditioning model, also includes special BOA net configs
+
+# GPU Quirks
+
+* cannot have a struct field with the same name as a NeuronVar enum in the same method context -- results in: `error: 'NrnV' : no matching overloaded function found`
+    + Can rename the field where appropriate (e.g., Spike -> Spikes, GABAB -> GabaB to avoid conflicts).  
+    + Can also call method at a higher or lower level to avoid the name conflict (e.g., get the variable value at the outer calling level, then pass it in as an arg) -- this is preferable if name changes are not easy (e.g., Pool.AvgMaxUpdate)
+
+* List of param changes:
+    + `Layer.Act.` -> `Layer.Acts.`
+    + `Layer.Acts.GABAB.` -> `Layer.Acts.GabaB.`
+    + `Layer.Acts.Spike.` -> `Layer.Acts.Spikes.`
+    + `Layer.Acts.Attn.` -> `Layer.Acts.AttnMod.`
+    + `Layer.Learn.CaLrn.` -> `Layer.Learn.CaLearn.`
     
-* DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
-
+    
 

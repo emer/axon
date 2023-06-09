@@ -31,6 +31,7 @@ type MusicEnv struct {
 	Track          int                          `desc:"which track to process"`
 	Play           bool                         `desc:"play output as it steps"`
 	MaxSteps       int                          `desc:"limit song length to given number of steps, if > 0"`
+	DiOffset       int                          `inactive:"+" desc:"time offset for data parallel = Song.Rows / (NData+1)"`
 	UnitsPer       int                          `desc:"number of units per localist note value"`
 	NoteRange      minmax.Int                   `desc:"range of notes in given track"`
 	NNotes         int                          `desc:"number of notes"`
@@ -218,6 +219,13 @@ func (ev *MusicEnv) Config(fname string, track, maxRows, unitsper int) {
 	}
 }
 
+func (ev *MusicEnv) ConfigNData(ndata int) {
+	ev.DiOffset = ev.Song.Rows / (ndata + 1)
+	if ev.DiOffset < 2 {
+		ev.DiOffset = 2
+	}
+}
+
 func (ev *MusicEnv) Init(run int) {
 	ev.Time.Scale = env.Trial
 	ev.Time.Init()
@@ -234,6 +242,14 @@ func (ev *MusicEnv) Step() bool {
 		ev.Time.Set(0)
 		tm = 0
 	}
+	note := int(ev.Song.CellFloatIdx(ev.Track, tm))
+	ev.RenderNote(note)
+	return true
+}
+
+// StepDi is data parallel version sampling different offsets from current timestep
+func (ev *MusicEnv) StepDi(di int) bool {
+	tm := (ev.Time.Cur + di*ev.DiOffset) % ev.Song.Rows
 	note := int(ev.Song.CellFloatIdx(ev.Track, tm))
 	ev.RenderNote(note)
 	return true

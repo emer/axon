@@ -3,6 +3,7 @@ package bench
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"runtime"
 	"testing"
@@ -16,6 +17,7 @@ import (
 var gpu = flag.Bool("gpu", false, "whether to run gpu or not")
 var maxProcs = flag.Int("maxProcs", 0, "GOMAXPROCS value to set -- 0 = use current default -- better to set threads instead, as long as it is < GOMAXPROCS")
 var threads = flag.Int("threads", 2, "number of goroutines for parallel processing -- 2, 4 give good results typically")
+var maxData = flag.Int("maxData", 1, "number of inputs to run in parallel")
 var numEpochs = flag.Int("epochs", 1, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
 var verbose = flag.Bool("verbose", true, "if false, only report the final time")
@@ -33,17 +35,18 @@ func BenchmarkBenchNetFull(b *testing.B) {
 		runtime.GOMAXPROCS(*maxProcs)
 	}
 
-	if *verbose {
-		fmt.Printf("Running bench with: %d Threads, %d epochs, %d pats, (%d, %d) input, (%d) hidden, (%d, %d) output\n",
-			*threads, *numEpochs, *numPats, inputShape[0], inputShape[1], *hiddenNeurs, outputShape[0], outputShape[1])
-	}
+	// if *verbose {
+	fmt.Printf("Running bench with: %d Threads, %d MaxData, %d epochs, %d pats, (%d, %d) input, (%d) hidden, (%d, %d) output\n",
+		*threads, *maxData, *numEpochs, *numPats, inputShape[0], inputShape[1], *hiddenNeurs, outputShape[0], outputShape[1])
+	// }
 
 	rand.Seed(42)
 
+	ctx := axon.NewContext()
 	net := &axon.Network{}
-	ConfigNet(b, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *verbose)
+	ConfigNet(b, ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *maxData, *verbose)
 	// if *verbose {
-	// 	log.Println(net.SizeReport())
+	log.Println(net.SizeReport(false))
 	// }
 
 	pats := &etable.Table{}
@@ -62,5 +65,5 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	epcLog := &etable.Table{}
 	ConfigEpcLog(epcLog)
 
-	TrainNet(net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
+	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
 }

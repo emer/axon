@@ -134,22 +134,11 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 	am.GiInt.Calc(refIdx)
 }
 
-// UpdateVals for neuron values
-func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
-	am.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP)
-	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD)
-	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax)
-	am.Act.Cycle.UpdateVal(mat32.Abs(nrn.Act)) // can be neg
-	am.GeInt.Cycle.UpdateVal(nrn.GeInt)
-	am.GeIntMax.Cycle.UpdateVal(nrn.GeIntMax)
-	am.GiInt.Cycle.UpdateVal(nrn.GiInt)
-}
+//gosl: end pool
 
 // note: the following is actually being used despite appearing to be
 // commented out!  it is auto-uncommented when copied to hlsl
 // MUST update whenever above UpdateVals code is updated.
-
-//gosl: end pool
 
 //gosl: hlsl pool
 /*
@@ -157,14 +146,14 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
-#define AtomicUpdatePoolAvgMax(am, nrn) \
-	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, nrn.CaSpkP); \
-	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, nrn.CaSpkD); \
-	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, nrn.SpkMax); \
-	AtomicUpdateAvgMaxI32(am.Act.Cycle, nrn.Act); \
-	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, nrn.GeInt); \
-	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, nrn.GeIntMax); \
-	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, nrn.GiInt)
+#define AtomicUpdatePoolAvgMax(am, ctx, ni, di) \
+	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, NrnV(ctx, ni, di, CaSpkP)); \
+	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, NrnV(ctx, ni, di, CaSpkD)); \
+	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, NrnV(ctx, ni, di, SpkMax)); \
+	AtomicUpdateAvgMaxI32(am.Act.Cycle, NrnV(ctx, ni, di, Act)); \
+	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NrnV(ctx, ni, di, GeInt)); \
+	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, NrnV(ctx, ni, di, GeIntMax)); \
+	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NrnV(ctx, ni, di, GiInt))
 */
 //gosl: end pool
 
@@ -176,15 +165,17 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 type Pool struct {
 	StIdx, EdIdx uint32      `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
 	LayIdx       uint32      `view:"-" desc:"layer index in global layer list"`
-	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
+	DataIdx      uint32      `view:"-" desc:"data parallel index (innermost index per layer)"`
+	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool][Data]"`
 	IsLayPool    slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
 	Gated        slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated"`
 
-	pad, pad1 uint32
+	pad uint32
 
-	Inhib  fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
-	AvgMax PoolAvgMax   `desc:"average and max values for relevant variables in this pool, at different time scales"`
-	AvgDif AvgMaxI32    `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
+	Inhib fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
+	// note: these last two have elements that are shared across data parallel -- not worth separating though?
+	AvgMax PoolAvgMax `desc:"average and max values for relevant variables in this pool, at different time scales"`
+	AvgDif AvgMaxI32  `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 
 // Init is callled during InitActs
@@ -204,70 +195,19 @@ func (pl *Pool) NNeurons() int {
 
 //gosl: end pool
 
-/* todo: fixme below -- dumping this here so layer is clean
-
-// TopoGi computes topographic Gi inhibition
-// todo: this does not work for 2D layers, and in general needs more testing
-func (ly *Layer) TopoGi(ctx *Context) {
-	if !ly.Params.Inhib.Topo.On {
-		return
-	}
-	pyn := ly.Shp.Dim(0)
-	pxn := ly.Shp.Dim(1)
-	wd := ly.Params.Inhib.Topo.Width
-	wrap := ly.Params.Inhib.Topo.Wrap
-
-	ssq := ly.Params.Inhib.Topo.Sigma * float32(wd)
-	ssq *= ssq
-	ff0 := ly.Params.Inhib.Topo.FF0
-
-	l4d := ly.Is4D()
-
-	var clip bool
-	for py := 0; py < pyn; py++ {
-		for px := 0; px < pxn; px++ {
-			var tge, tact, twt float32
-			for iy := -wd; iy <= wd; iy++ {
-				ty := py + iy
-				if ty, clip = edge.Edge(ty, pyn, wrap); clip {
-					continue
-				}
-				for ix := -wd; ix <= wd; ix++ {
-					tx := px + ix
-					if tx, clip = edge.Edge(tx, pxn, wrap); clip {
-						continue
-					}
-					ds := float32(iy*iy + ix*ix)
-					df := mat32.Sqrt(ds)
-					di := int(mat32.Round(df))
-					if di > wd {
-						continue
-					}
-					wt := mat32.FastExp(-0.5 * ds / ssq)
-					twt += wt
-					ti := ty*pxn + tx
-					if l4d {
-						pl := &ly.Pools[ti+1]
-						tge += wt * pl.OldInhib.GeInt.Avg
-						tact += wt * pl.OldInhib.Act.Avg
-					} else {
-						nrn := &ly.Neurons[ti]
-						tge += wt * nrn.Ge
-						tact += wt * nrn.Act
-					}
-				}
-			}
-
-			gi := ly.Params.Inhib.Topo.GiFmGeAct(tge, tact, ff0*twt)
-			pi := py*pxn + px
-			if l4d {
-				pl := &ly.Pools[pi+1]
-				pl.OldInhib.Gi += gi
-				// } else {
-				// 	nrn := &ly.Neurons[pi]
-				// 	nrn.GiSelf = gi
-			}
-		}
-	}
+// AvgMaxUpdate updates the AvgMax values based on current neuron values
+func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
+	pl.AvgMax.CaSpkP.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkP))
+	pl.AvgMax.CaSpkD.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkD))
+	pl.AvgMax.SpkMax.Cycle.UpdateVal(NrnV(ctx, ni, di, SpkMax))
+	pl.AvgMax.Act.Cycle.UpdateVal(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
+	pl.AvgMax.GeInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GeInt))
+	pl.AvgMax.GeIntMax.Cycle.UpdateVal(NrnV(ctx, ni, di, GeIntMax))
+	pl.AvgMax.GiInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GiInt))
 }
-*/
+
+// TestVals returns a map of CaSpkD.Avg, which provides an
+// integrated summary of pool activity for testing
+func (pl *Pool) TestVals(layKey string, vals map[string]float32) {
+	vals[layKey+" CaSpkD Avg"] = pl.AvgMax.CaSpkD.Cycle.Avg
+}

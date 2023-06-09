@@ -29,6 +29,8 @@ type FSAEnv struct {
 	Seq        env.Ctr         `view:"inline" desc:"sequence counter within epoch"`
 	Tick       env.Ctr         `view:"inline" desc:"tick counter within sequence"`
 	Trial      env.Ctr         `view:"inline" desc:"trial is the step counter within sequence - how many steps taken within current sequence -- it resets to 0 at start of each sequence"`
+	Rand       erand.SysRand   `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	RndSeed    int64           `inactive:"+" desc:"random seed"`
 }
 
 func (ev *FSAEnv) Name() string { return ev.Nm }
@@ -117,6 +119,7 @@ func (ev *FSAEnv) String() string {
 }
 
 func (ev *FSAEnv) Init(run int) {
+	ev.Rand.NewRand(ev.RndSeed)
 	ev.Run.Scale = env.Run
 	ev.Epoch.Scale = env.Epoch
 	ev.Tick.Scale = env.Tick
@@ -141,7 +144,7 @@ func (ev *FSAEnv) NextState() {
 	ri := ev.AState.Cur * nst
 	ps := ev.TMat.Values[ri : ri+nst]
 	ls := ev.Labels.Values[ri : ri+nst]
-	nxt := erand.PChoose64(ps, -1) // next state chosen at random
+	nxt := erand.PChoose64(ps, -1, &ev.Rand) // next state chosen at random
 	ev.NextStates.Set1D(0, nxt)
 	ev.NextLabels.Set1D(0, ls[nxt])
 	idx := 1

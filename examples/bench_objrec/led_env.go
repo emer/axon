@@ -153,7 +153,7 @@ func (ev *LEDEnv) SetOutput(out int) {
 // OutErr scores the output activity of network, returning the index of
 // item with max overall activity, and 1 if that is error, 0 if correct.
 // also returns a top-two error: if 2nd most active output was correct.
-func (ev *LEDEnv) OutErr(tsr *etensor.Float32) (maxi int, err, err2 float64) {
+func (ev *LEDEnv) OutErr(tsr *etensor.Float32, corLED int) (maxi int, err, err2 float64) {
 	nc := ev.Output.Len() / ev.NOutPer
 	maxi = 0
 	maxv := 0.0
@@ -169,7 +169,7 @@ func (ev *LEDEnv) OutErr(tsr *etensor.Float32) (maxi int, err, err2 float64) {
 		}
 	}
 	err = 1.0
-	if maxi == ev.CurLED {
+	if maxi == corLED {
 		err = 0
 	}
 	maxv2 := 0.0
@@ -189,7 +189,7 @@ func (ev *LEDEnv) OutErr(tsr *etensor.Float32) (maxi int, err, err2 float64) {
 		}
 	}
 	err2 = err
-	if maxi2 == ev.CurLED {
+	if maxi2 == corLED {
 		err2 = 0
 	}
 	return

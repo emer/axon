@@ -70,24 +70,24 @@ func (lp *LDTParams) MaintFmNotMaint(notMaint float32) float32 {
 
 // ACh returns the computed ACh salience value based on given
 // source layer activations and key values from the ctx Context.
-func (lp *LDTParams) ACh(ctx *Context, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) float32 {
+func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) float32 {
 	maxSrcAct := float32(0)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay1Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay2Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay3Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
 
-	maint := lp.MaintFmNotMaint(ctx.NeuroMod.NotMaint)
+	maint := lp.MaintFmNotMaint(GlbV(ctx, di, GvNotMaint))
 	maxSrcAct *= (1.0 - maint*lp.MaintInhib) // todo: should this affect everything, not just src?
 
 	ach := maxSrcAct
 
-	if lp.Rew.IsTrue() {
-		if ctx.NeuroMod.HasRew.IsTrue() {
+	if GlbV(ctx, di, GvRew) > 0 {
+		if GlbV(ctx, di, GvHasRew) > 0 {
 			ach = 1
 		}
 	} else {
-		ach = mat32.Max(ach, ctx.PVLV.Urgency.Urge)
+		ach = mat32.Max(ach, GlbV(ctx, di, GvUrgency))
 	}
 	return ach
 }
@@ -151,15 +151,15 @@ func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")
 
 	lp := ly.Params
-	lp.Act.Decay.Act = 0.2
-	lp.Act.Decay.Glong = 0.6
-	lp.Act.Dend.SSGi = 0
+	lp.Acts.Decay.Act = 0.2
+	lp.Acts.Decay.Glong = 0.6
+	lp.Acts.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
 	if isAcq {
 		lp.Inhib.Layer.Gi = 2.2 // acq has more input
 	} else {
 		lp.Inhib.Layer.Gi = 1.8
-		lp.Act.Gbar.L = 0.25 // needed to not be active at start
+		lp.Acts.Gbar.L = 0.25 // needed to not be active at start
 	}
 	lp.Inhib.Pool.On.SetBool(true)
 	lp.Inhib.Pool.Gi = 0.9
@@ -211,9 +211,9 @@ func (ly *Layer) PVLVPostBuild() {
 
 func (ly *Layer) CeMDefaults() {
 	lp := ly.Params
-	lp.Act.Decay.Act = 1
-	lp.Act.Decay.Glong = 1
-	lp.Act.Dend.SSGi = 0
+	lp.Acts.Decay.Act = 1
+	lp.Acts.Decay.Glong = 1
+	lp.Acts.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
 	lp.Inhib.Layer.Gi = 0.5
 	lp.Inhib.Pool.On.SetBool(true)
@@ -234,9 +234,9 @@ func (ly *Layer) LDTDefaults() {
 	lp.Inhib.Layer.On.SetBool(true)
 	lp.Inhib.Layer.Gi = 1 // todo: explore
 	lp.Inhib.Pool.On.SetBool(false)
-	lp.Act.Decay.Act = 1
-	lp.Act.Decay.Glong = 1
-	lp.Act.Decay.LearnCa = 1 // uses CaSpkD as a readout!
+	lp.Acts.Decay.Act = 1
+	lp.Acts.Decay.Glong = 1
+	lp.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	lp.Learn.TrgAvgAct.On.SetBool(false)
 	lp.PVLV.Thr = 0.2
 	lp.PVLV.Gain = 2
@@ -248,9 +248,9 @@ func (ly *Layer) LDTDefaults() {
 }
 
 func (ly *LayerParams) VSPatchDefaults() {
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Decay.LearnCa = 1 // uses CaSpkD as a readout!
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
+	ly.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Layer.Gi = 0.5
@@ -277,12 +277,12 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Pool.Gi = 0.5
-	ly.Act.PopCode.On.SetBool(true)
-	ly.Act.PopCode.MinAct = 0.2 // low activity for low drive -- also has special 0 case = nothing
-	ly.Act.PopCode.MinSigma = 0.08
-	ly.Act.PopCode.MaxSigma = 0.12
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	ly.Acts.PopCode.On.SetBool(true)
+	ly.Acts.PopCode.MinAct = 0.2 // low activity for low drive -- also has special 0 case = nothing
+	ly.Acts.PopCode.MinSigma = 0.08
+	ly.Acts.PopCode.MaxSigma = 0.12
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
@@ -291,9 +291,9 @@ func (ly *LayerParams) EffortDefaults() {
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
-	ly.Act.PopCode.On.SetBool(true) // use only popcode
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	ly.Acts.PopCode.On.SetBool(true) // use only popcode
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
@@ -302,10 +302,10 @@ func (ly *LayerParams) UrgencyDefaults() {
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
-	ly.Act.PopCode.On.SetBool(true) // use only popcode
-	ly.Act.PopCode.MinAct = 0
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	ly.Acts.PopCode.On.SetBool(true) // use only popcode
+	ly.Acts.PopCode.MinAct = 0
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
@@ -314,8 +314,8 @@ func (ly *LayerParams) USDefaults() {
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
@@ -324,12 +324,12 @@ func (ly *LayerParams) PVDefaults() {
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
-	ly.Act.PopCode.On.SetBool(true)
+	ly.Acts.PopCode.On.SetBool(true)
 	// note: may want to modulate rate code as well:
-	// ly.Act.PopCode.MinAct = 0.2
-	// ly.Act.PopCode.MinSigma = 0.08
-	// ly.Act.PopCode.MaxSigma = 0.12
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	// ly.Acts.PopCode.MinAct = 0.2
+	// ly.Acts.PopCode.MinSigma = 0.08
+	// ly.Acts.PopCode.MaxSigma = 0.12
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }

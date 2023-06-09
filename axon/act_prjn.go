@@ -5,6 +5,8 @@
 package axon
 
 import (
+	"log"
+
 	"github.com/emer/emergent/erand"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/ints"
@@ -108,17 +110,17 @@ func (sc *SynComParams) WriteOff(cycTot int32) uint32 {
 }
 
 // WriteIdx returns actual index for writing new spikes into the GBuf buffer,
-// based on the layer-based recv neuron index and the
+// based on the layer-based recv neuron index, data parallel idx, and the
 // WriteOff offset computed from the CyclesTotal.
-func (sc *SynComParams) WriteIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) uint32 {
-	return sc.WriteIdxOff(rnIdx, sc.WriteOff(cycTot), nRecvNeurs)
+func (sc *SynComParams) WriteIdx(rnIdx, di uint32, cycTot int32, nRecvNeurs, maxData uint32) uint32 {
+	return sc.WriteIdxOff(rnIdx, di, sc.WriteOff(cycTot), nRecvNeurs, maxData)
 }
 
 // WriteIdxOff returns actual index for writing new spikes into the GBuf buffer,
 // based on the layer-based recv neuron index and the given WriteOff offset.
-func (sc *SynComParams) WriteIdxOff(rnIdx, wrOff uint32, nRecvNeurs uint32) uint32 {
+func (sc *SynComParams) WriteIdxOff(rnIdx, di, wrOff uint32, nRecvNeurs, maxData uint32) uint32 {
 	// return rnIdx*sc.DelLen + wrOff
-	return wrOff*nRecvNeurs + rnIdx
+	return (wrOff*nRecvNeurs+rnIdx)*maxData + di
 }
 
 // ReadOff returns offset for reading existing spikes from the GBuf buffer,
@@ -129,11 +131,12 @@ func (sc *SynComParams) ReadOff(cycTot int32) uint32 {
 }
 
 // ReadIdx returns index for reading existing spikes from the GBuf buffer,
-// based on the layer-based recv neuron index and the
+// based on the layer-based recv neuron index, data parallel idx, and the
 // ReadOff offset from the CyclesTotal.
-func (sc *SynComParams) ReadIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) uint32 {
+func (sc *SynComParams) ReadIdx(rnIdx, di uint32, cycTot int32, nRecvNeurs, maxData uint32) uint32 {
 	// return rnIdx*sc.DelLen + sc.ReadOff(cycTot)
-	return sc.ReadOff(cycTot)*nRecvNeurs + rnIdx // delay is outer, neurs are inner -- should be faster?
+	// delay is outer, neurs are inner -- should be faster?
+	return (sc.ReadOff(cycTot)*nRecvNeurs+rnIdx)*maxData + di
 }
 
 // FloatToIntFactor returns the factor used for converting float32
@@ -163,7 +166,8 @@ func (sc *SynComParams) FloatToGBuf(val float32) int32 {
 func (sc *SynComParams) FloatFromGBuf(ival int32) float32 {
 	//gosl: end act_prjn
 	if ival < 0 {
-		panic("axon.SynComParams: FloatFromGBuf is negative, there was an overflow error")
+		log.Printf("axon.SynComParams: FloatFromGBuf is negative, there was an overflow error\n")
+		return 1
 	}
 	//gosl: start act_prjn
 	return float32(ival) / sc.FloatToIntFactor()
@@ -190,10 +194,10 @@ func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
 }
 
 // Fail updates failure status of given weight, given SWt value
-func (sc *SynComParams) Fail(ctx *Context, wt *float32, swt float32) {
+func (sc *SynComParams) Fail(ctx *Context, syni uint32, swt float32) {
 	if sc.PFail > 0 {
 		if sc.WtFail(ctx, swt) {
-			*wt = 0
+			SetSynV(ctx, syni, Wt, 0)
 		}
 	}
 }
