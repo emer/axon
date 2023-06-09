@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/ecmd"
@@ -619,7 +620,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 func (ss *Sim) TestStats() {
 	tststnm := "TestTrialStats"
-	plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
 	ix := ss.Logs.IdxView(etime.Test, etime.Sequence)
 	spl := split.GroupBy(ix, []string{"TrialName"})
 	for _, ts := range ix.Table.ColNames {
@@ -629,12 +629,16 @@ func (ss *Sim) TestStats() {
 		split.Agg(spl, ts, agg.AggMean)
 	}
 	tstst := spl.AggsToTable(etable.ColNameOnly)
+	tstst.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	ss.Logs.MiscTables[tststnm] = tstst
-	plt.SetTable(tstst)
-	plt.Params.XAxisCol = "Sequence"
-	plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	if !ss.Args.Bool("nogui") {
+		plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
+		plt.SetTable(tstst)
+		plt.Params.XAxisCol = "Sequence"
+		plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -735,8 +739,9 @@ func (ss *Sim) RunGUI() {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.SetInt("epochs", 200)
-	ss.Args.SetInt("runs", 10)
+	ss.Args.SetInt("epochs", 30)
+	ss.Args.SetInt("runs", 1)
+	ss.Args.SetBool("tstepclog", true)
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.Parse() // always parse
@@ -777,7 +782,15 @@ func (ss *Sim) RunNoGUI() {
 	ss.NewRun()
 	ss.Loops.Run(etime.Train)
 
+	ss.Loops.Run(etime.Test) // test all
+
 	ss.Logs.CloseLogFiles()
+
+	if ss.Args.Bool("tstepclog") {
+		dt := ss.Logs.MiscTable("TestTrialStats")
+		fnm := ecmd.LogFileName("tst_epc", ss.Net.Name(), ss.Params.RunName(ss.Args.Int("run")))
+		dt.SaveCSV(gi.FileName(fnm), etable.Tab, etable.Headers)
+	}
 
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
