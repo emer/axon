@@ -380,15 +380,17 @@ func (cp *ClampParams) Defaults() {
 
 // AttnParams determine how the Attn modulates Ge
 type AttnParams struct {
-	On  slbool.Bool `desc:"is attentional modulation active?"`
-	Min float32     `viewif:"On" desc:"minimum act multiplier if attention is 0"`
+	On    slbool.Bool `desc:"is attentional modulation active?"`
+	Min   float32     `viewif:"On" desc:"minimum act multiplier if attention is 0"`
+	RTThr float32     `desc:"threshold on CaSpkP for determining the reaction time for the Layer -- starts after MaxCycStart to ensure that prior trial activity has had a chance to dissipate."`
 
-	pad, pad1 int32
+	pad int32
 }
 
 func (at *AttnParams) Defaults() {
 	at.On.SetBool(true)
 	at.Min = 0.8
+	at.RTThr = 0.5
 }
 
 func (at *AttnParams) Update() {

@@ -353,7 +353,7 @@ func (ss *Sim) ConfigLoops() {
 			m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
 				ss.NetViewCounters()
 			})
-			m.Loops[etime.Trial].OnEnd.InsertAfter("GatedStats", "GUI:CounterUpdt", func() {
+			m.Loops[etime.Trial].OnEnd.InsertAfter("GatedAction", "GUI:CounterUpdt", func() {
 				ss.NetViewCounters()
 			})
 		}
@@ -441,6 +441,8 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 func (ss *Sim) GatedAction() {
 	ctx := &ss.Context
 	mtxly := ss.Net.AxonLayerByName("MtxGo")
+	vmly := ss.Net.AxonLayerByName("PFCVM")
+	nan := mat32.NaN()
 	for di := 0; di < ss.Sim.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
 		didGate := mtxly.AnyGated(uint32(di))
@@ -449,6 +451,14 @@ func (ss *Sim) GatedAction() {
 			action = "NoGate"
 		}
 		ev.Action(action, nil)
+		rt := vmly.LayerVals(uint32(di)).RT
+		if rt > 0 {
+			ss.Stats.SetFloat32Di("PFCVM_RT", di, rt/200)
+		} else {
+			ss.Stats.SetFloat32Di("PFCVM_RT", di, nan)
+		}
+		ss.Stats.SetFloat32Di("PFCVM_ActAvg", di, vmly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
+		ss.Stats.SetFloat32Di("MtxGo_ActAvg", di, mtxly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
 	}
 }
 
@@ -476,11 +486,15 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("PFCVM_RT", 0.0)
 	ss.Stats.SetFloat("Gated", 0)
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("Match", 0)
 	ss.Stats.SetFloat("Rew", 0)
+	ss.Stats.SetFloat("PFCVM_RT", 0.0)
+	ss.Stats.SetFloat("PFCVM_ActAvg", 0.0)
+	ss.Stats.SetFloat("MtxGo_ActAvg", 0.0)
+	ss.Stats.SetFloat("ACCPos", 0.0)
+	ss.Stats.SetFloat("ACCNeg", 0.0)
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -517,30 +531,9 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.Should))
 	ss.Stats.SetFloat32("Match", bools.ToFloat32(ev.Match))
 	ss.Stats.SetFloat32("Rew", ev.Rew)
-	// ss.Stats.SetFloat32("PFCVM_RT",)
-}
-
-func (ss *Sim) RTStat(di int) {
-	return
-	// todo: need a GPU-based mech that sets global var
-	ctx := &ss.Context
-	net := ss.Net
-	vtly := net.AxonLayerByName("PFCVM")
-	gated := vtly.AnyGated(uint32(di))
-	if !gated {
-		return
-	}
-	mode := ctx.Mode
-	trlog := ss.Logs.Log(mode, etime.Cycle)
-	spkCyc := 0
-	for row := 0; row < trlog.Rows; row++ {
-		vts := trlog.CellTensorFloat1D("PFCVM_Spike", row, 0)
-		if vts > 0.05 {
-			spkCyc = row
-			break
-		}
-	}
-	ss.Stats.SetFloat("PFCVM_RT", float64(spkCyc)/200)
+	ss.Stats.SetFloat32("PFCVM_RT", ss.Stats.Float32Di("PFCVM_RT", di))
+	ss.Stats.SetFloat32("PFCVM_ActAvg", ss.Stats.Float32Di("PFCVM_ActAvg", di))
+	ss.Stats.SetFloat32("MtxGo_ActAvg", ss.Stats.Float32Di("MtxGo_ActAvg", di))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -561,6 +554,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("Match", "Match", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("PFCVM_RT", "PFCVM_RT", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("PFCVM_ActAvg", "PFCVM_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("MtxGo_ActAvg", "MtxGo_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
 	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
@@ -568,8 +564,7 @@ func (ss *Sim) ConfigLogs() {
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	// ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
-	ss.Logs.PlotItems("Gated", "Should", "Match", "Rew")
+	ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
 
 	ss.Logs.CreateTables()
 

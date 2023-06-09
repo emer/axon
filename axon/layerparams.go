@@ -613,6 +613,11 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	SetNrnV(ctx, ni, di, Burst, NrnV(ctx, ni, di, CaSpkP))
 	pi := NrnI(ctx, ni, NrnSubPool) - 1 // 0-n pool index
 	pni := NrnI(ctx, ni, NrnNeurIdx) - pl.StIdx
+	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && lpl.AvgMax.CaSpkP.Cycle.Max > ly.Acts.AttnMod.RTThr {
+		if vals.RT <= 0 {
+			vals.RT = float32(ctx.Cycle)
+		}
+	}
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -830,6 +835,7 @@ func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, vals *LayerVals, actMin
 func (ly *LayerParams) NewStateLayer(ctx *Context, lpl *Pool, vals *LayerVals) {
 	ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
 	ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
+	vals.RT = -1
 }
 
 func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {

@@ -63,9 +63,10 @@ func (lv *LaySpecialVals) Init() {
 // LayerVals holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
-	LayIdx    uint32 `view:"-" desc:"layer index for these vals"`
-	DataIdx   uint32 `view:"-" desc:"data index for these vals"`
-	pad, pad1 uint32
+	LayIdx  uint32  `view:"-" desc:"layer index for these vals"`
+	DataIdx uint32  `view:"-" desc:"data index for these vals"`
+	RT      float32 `inactive:"-" desc:"reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold"`
+	pad     uint32
 
 	// note: ActAvg vals are shared across data parallel
 	ActAvg  ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition"`

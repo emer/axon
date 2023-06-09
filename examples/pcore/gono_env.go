@@ -55,7 +55,7 @@ func (ev *GoNoEnv) Desc() string {
 
 func (ev *GoNoEnv) Defaults() {
 	ev.TestInc = 0.1
-	ev.TestReps = 16
+	ev.TestReps = 32
 	ev.NUnitsY = 5
 	ev.NUnitsX = 5
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
