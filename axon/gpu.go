@@ -157,7 +157,8 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	if TheGPU == nil {
 		TheGPU = vgpu.NewComputeGPU()
 		// vgpu.Debug = true
-		TheGPU.Config("axon")
+		opts := vgpu.NewRequiredOpts(vgpu.OptShaderInt64)
+		TheGPU.Config("axon", &opts)
 	}
 
 	gp.Sys = TheGPU.NewComputeSystem("axon")

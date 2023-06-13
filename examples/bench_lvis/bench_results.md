@@ -14,9 +14,53 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
-In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
+# 1.8.0  Flexible memory layout, Data Parallel
+
+## MacBook Pro M1
+
+### GPU
+
+`go test -gpu -verbose=false -ndata=1 -bench=.`
+
+* ndata=1 (1.8gb): 18
+* ndata=2 (2.7gb): 19 -- no cost
+* ndata=4 (4.4gb): 38 -- 2x = not worse than linear
+* ndata=8 (7.7gb): 162 -- falls apart
+
+
+### CPU
+
+`go test false -ndata=1 -threads=1 -bench=.`
+
+* ndata=1, threads=1 (1.8gb): 98
+* ndata=1, threads=2 (1.8gb): 54
+* ndata=1, threads=4 (1.8gb): 30
+* ndata=1, threads=8 (1.8gb): 24
+
+* ndata=2, threads=8 (2.7gb): 26
+* ndata=4, threads=8 (4.4gb): 29
+* ndata=8, threads=8 (7.7gb): 34
+* ndata=16, threads=8 (14.54gb): 43
+
+
+## HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+### GPU
+
+* ndata=1 (1.8gb): 18
+* ndata=2 (2.7gb): 22  
+* ndata=4 (4.4gb): 35
+* ndata=8 (7.7gb): 49
+* ndata=16 (14.5): 83
+
+### CPU
+
+* ndata=16, threads=16 (14.5gb): 55
+* ndata=16, threads=32 (14.5gb): 47
 
 # 1.7.24 Sender-based Synapses
+
+In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
 
 Note: it was critical to do parallel threading for GiFmSpikes at the layer level -- unclear why but this made a huge difference on Linux / AMD64, but not on the Mac (usual story).  
 
