@@ -115,11 +115,15 @@ func (net *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 	return plv
 }
 
-// ConnectToPulv connects Super and CT with given Pulv: CT -> Pulv is class CTToPulv,
-// From Pulv = type = Back, class = FmPulv
-// toPulvPat is the prjn.Pattern CT -> Pulv and fmPulvPat is Pulv -> CT, Super
-// Typically Pulv is a different shape than Super and CT, so use Full or appropriate
-// topological pattern. adds optional class name to projection.
+// ConnectToPulv adds the following projections:
+// layers      | class      | prjn type   | prjn pat
+// ------------+------------+-------------+----------
+// ct  ->pulv  | "CTToPulv" | ForwardPrjn | toPulvPat
+// pulv->super | "FmPulv"   | BackPrjn    | fmPulvPat
+// pulv->ct    | "FmPulv"   | BackPrjn    | fmPulvPat
+//
+// Typically pulv is a different shape than super and ct, so use Full or appropriate
+// topological pattern. Adds optional prjnClass name as a suffix.
 func (net *Network) ConnectToPulv(super, ct, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern, prjnClass string) (toPulv, toSuper, toCT *Prjn) {
 	if prjnClass != "" {
 		prjnClass = " " + prjnClass
