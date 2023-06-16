@@ -67,12 +67,11 @@ type SimParams struct {
 	EnvSameSeed       bool    `desc:"for testing, force each env to use same seed"`
 	TestInterval      int     `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
-	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
 	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
 	PctCortexNEpc     int     `desc:"number of epochs over which PctCortexMax is reached"`
 	PctCortexInterval int     `desc:"how often to update PctCortex"`
-	CortexDriving     bool    `inactive:"+" desc:"true if cortex is driving this behavioral approach sequence"`
+	PctCortex         float32 `inactive:"+" desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 }
 
 // Defaults sets default params
@@ -86,6 +85,19 @@ func (ss *SimParams) Defaults() {
 	ss.PctCortexStEpc = 10
 	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
+}
+
+// CurPctCortex returns current PctCortex and updates field, based on epoch counter
+func (ss *SimParams) CurPctCortex(epc int) float32 {
+	if epc >= ss.PctCortexStEpc && epc%ss.PctCortexInterval == 0 {
+		ss.PctCortex = ss.PctCortexMax * float32(epc-ss.PctCortexStEpc) / float32(ss.PctCortexNEpc)
+		if ss.PctCortex > ss.PctCortexMax {
+			ss.PctCortex = ss.PctCortexMax
+		} else {
+			mpi.Printf("PctCortex updated to: %g at epoch: %d\n", ss.PctCortex, epc)
+		}
+	}
+	return ss.PctCortex
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -471,14 +483,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if trnEpc >= ss.Sim.PctCortexStEpc && trnEpc%ss.Sim.PctCortexInterval == 0 {
-			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(trnEpc-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexNEpc)
-			if ss.Sim.PctCortex > ss.Sim.PctCortexMax {
-				ss.Sim.PctCortex = ss.Sim.PctCortexMax
-			} else {
-				mpi.Printf("PctCortex updated to: %g at epoch: %d\n", ss.Sim.PctCortex, trnEpc)
-			}
-		}
+		ss.Sim.CurPctCortex(trnEpc)
 	})
 
 	////////////////////////////////////////////
@@ -554,7 +559,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 			}
 
 			actAct := genAct
-			if ss.Sim.CortexDriving {
+			if ss.Stats.FloatDi("CortexDriving", di) > 0 {
 				actAct = netAct
 			}
 			actActNm := ev.Acts[actAct]
@@ -593,15 +598,14 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	lays := []string{"Pos", "CS", "Dist"}
 
-	trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
-	if trl.Counter.Cur == 0 {
-		ss.Sim.CortexDriving = erand.BoolP32(ss.Sim.PctCortex, -1)
-	}
-
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < uint32(ss.Sim.NData); di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*Approach)
 		ev.Step()
+
+		if ev.Time == 0 {
+			ss.Stats.SetFloat32Di("CortexDriving", int(di), bools.ToFloat32(erand.BoolP32(ss.Sim.PctCortex, -1)))
+		}
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
 			itsr := ev.State(lnm)
@@ -1217,7 +1221,8 @@ func (ss *Sim) RunNoGUI() {
 
 	tmr := timer.Time{}
 	if ss.Args.Bool("bench") {
-		// ss.Net.RecFunTimes = true
+		// ss.Net.RecFunTimes = true // these give detailed readout but are slower on GPU
+		// ss.Net.GPU.RecFunTimes = true
 		tmr.Start()
 	}
 
