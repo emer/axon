@@ -27,8 +27,10 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Learn.NeuroMod.DipGain": "0.01", // controls extinction -- reduce to slow
-					"Layer.PVLV.Thr":               "0.4",  // key user param
-					"Layer.PVLV.Gain":              "20",   // key user param
+					"Layer.VSPatch.Gain":           "30",
+					"Layer.VSPatch.ThrInit":        "0.4",
+					"Layer.VSPatch.ThrLRate":       "0.001",
+					"Layer.VSPatch.ThrNonRew":      "10",
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{

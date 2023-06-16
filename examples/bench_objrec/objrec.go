@@ -689,7 +689,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // ConfigActRFs
 func (ss *Sim) ConfigActRFs() {
 	ss.Stats.SetF32Tensor("Image", &ss.Envs.ByMode(etime.Test).(*LEDEnv).Vis.ImgTsr) // image used for actrfs, must be there first
-	ss.Stats.InitActRFs(ss.Net, []string{"V4:Image", "V4:Output", "IT:Image", "IT:Output"}, "ActM", 0)
+	ss.Stats.InitActRFs(ss.Net, []string{"V4:Image", "V4:Output", "IT:Image", "IT:Output"}, "ActM")
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

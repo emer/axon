@@ -1060,7 +1060,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 				if !axon.PVLVHasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
-				if ss.GUI.ViewUpdt.View != nil && di == ss.GUI.ViewUpdt.View.Di {
+				if ss.ViewUpdt.View != nil && di == ss.ViewUpdt.View.Di {
 					drow := ss.Logs.Table(etime.Debug, time).Rows
 					ss.Logs.LogRow(etime.Debug, time, drow)
 					if ss.StopOnSeq {
