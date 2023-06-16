@@ -31,8 +31,8 @@
 [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
 
-void CyclePostVSPatch(inout Context ctx, in LayerParams ly, uint li, uint di, int pi, in Pool pl) {
-	ly.CyclePostVSPatchLayer(ctx, di, pi, pl);
+void CyclePostVSPatch(inout Context ctx, in LayerParams ly, uint li, uint di, int pi, in Pool pl, in LayerVals vals) {
+	ly.CyclePostVSPatchLayer(ctx, di, pi, pl, vals);
 }
 
 float LDTSrcLayAct(int layIdx, uint di) {
@@ -64,7 +64,7 @@ void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout La
 	case VSPatchLayer: {
 		int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
 		for (int pi = 0; pi < npl; pi++) {
-			CyclePostVSPatch(ctx, ly, li, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)]);
+			CyclePostVSPatch(ctx, ly, li, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)], vals);
 		}
 		break;
 	}

@@ -554,7 +554,8 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 		(*dwts)[idx+2] = ly.LayerVals(0).ActAvg.AvgMaxGeM
 		(*dwts)[idx+3] = ly.LayerVals(0).ActAvg.AvgMaxGiM
 		(*dwts)[idx+4] = ly.LayerVals(0).ActAvg.GiMult
-		idx += 5
+		(*dwts)[idx+5] = ly.LayerVals(0).ActAvg.AdaptThr
+		idx += 6
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
 			(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, ActAvg)
@@ -597,7 +598,8 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 		ly.LayerVals(0).ActAvg.AvgMaxGeM = davg * dwts[idx+2]
 		ly.LayerVals(0).ActAvg.AvgMaxGiM = davg * dwts[idx+3]
 		ly.LayerVals(0).ActAvg.GiMult = davg * dwts[idx+4]
-		idx += 5
+		ly.LayerVals(0).ActAvg.AdaptThr = davg * dwts[idx+5]
+		idx += 6
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
 			SetNrnAvgV(ctx, ni, ActAvg, davg*dwts[idx+int(lni)])

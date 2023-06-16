@@ -118,7 +118,6 @@ type LayerParams struct {
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
-	PVLV    PVLVParams    `viewif:"LayType=[VSPatchLayer]" view:"inline" desc:"parameters for readout of values as inputs to PVLV equations -- provides thresholding and gain multiplier."`
 	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
@@ -141,7 +140,6 @@ func (ly *LayerParams) Update() {
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
 
-	ly.PVLV.Update()
 	ly.VSPatch.Update()
 
 	ly.Matrix.Update()
@@ -166,7 +164,6 @@ func (ly *LayerParams) Defaults() {
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
 
-	ly.PVLV.Defaults()
 	ly.VSPatch.Defaults()
 
 	ly.Matrix.Defaults()
@@ -216,8 +213,6 @@ func (ly *LayerParams) AllParams() string {
 	case VSPatchLayer:
 		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
 		str += "VSPatch: {\n " + JsonToParams(b)
-		b, _ = json.MarshalIndent(&ly.PVLV, "", " ")
-		str += "PVLV:    {\n " + JsonToParams(b)
 
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
@@ -821,8 +816,8 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 }
 
 // note: needs to iterate over sub-pools in layer!
-func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool) {
-	val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
+func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool, vals *LayerVals) {
+	val := ly.VSPatch.ThrVal(pl.AvgMax.CaSpkD.Cycle.Avg, vals.ActAvg.AdaptThr)
 	SetGlbDrvV(ctx, di, uint32(pi-1), GvVSPatch, val)
 }
 

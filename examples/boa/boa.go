@@ -267,9 +267,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(dist, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 	net.ConnectLayers(effort, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	// shortcut: todo: test removing
-	net.ConnectLayers(dist, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	net.ConnectLayers(effort, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// shortcut: not needed
+	// net.ConnectLayers(dist, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// net.ConnectLayers(effort, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+
+	// these projections are *essential* -- must get current state here
+	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
@@ -322,10 +326,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(accCostPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 	net.ConnectLayers(notMaint, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	// full shortcut -- todo: test removing
-	net.ConnectLayers(ofcValPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	net.ConnectLayers(accCostPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// full shortcut -- not needed
+	// net.ConnectLayers(ofcValPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// net.ConnectLayers(accCostPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	////////////////////////////////////////////////
 	// position
@@ -686,6 +690,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
+	ss.Stats.SetFloat("VSPatchThr", 0)
 	ss.Stats.SetFloat("DipSum", 0)
 	ss.Stats.SetFloat("GiveUp", 0)
 	ss.Stats.SetFloat("Urge", 0)
@@ -753,6 +758,9 @@ func (ss *Sim) TrialStats(di int) {
 		ss.Stats.SetFloat("RewPred", nan)
 		ss.Stats.SetFloat("Rew", nan)
 	}
+
+	vsLy := ss.Net.AxonLayerByName("VsPatch")
+	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 
 	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
@@ -987,6 +995,7 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
+	ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Epoch, etime.Trial)
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 	ss.Logs.AddItem(&elog.Item{

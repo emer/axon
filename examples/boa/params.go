@@ -56,8 +56,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
 					"Layer.Inhib.Pool.FB":          "0",
 					"Layer.Learn.NeuroMod.DipGain": "0.01", // rate of extinction -- reduce to slow
-					"Layer.PVLV.Thr":               "0.55", // this doesn't seem to fix the RewPred_NR issue..
-					"Layer.PVLV.Gain":              "20",
+					"Layer.VSPatch.Gain":           "30",
+					"Layer.VSPatch.ThrInit":        "0.4",
+					"Layer.VSPatch.ThrLRate":       "0.001",
+					"Layer.VSPatch.ThrNonRew":      "10",
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
