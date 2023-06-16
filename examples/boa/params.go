@@ -20,9 +20,13 @@ var ParamSets = params.Sets{
 					// "Layer.Inhib.Layer.Gi":  "1.0", // 1.0 for CSP, 0.9 for CS -- should be higher for CSPerDrive > 1
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 				}},
-			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
+			{Sel: "#OFCus", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .1, but 3 needed for .03
+					"Layer.Inhib.Pool.Gi": "1",
+				}},
+			{Sel: "#OFCval", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.Gi": "1",
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -34,6 +38,7 @@ var ParamSets = params.Sets{
 			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "2.4", // 2.2 not enough to knock out novelty
+					"Layer.Inhib.Pool.Gi":  "1",
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
@@ -51,14 +56,14 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
 					"Layer.Inhib.Pool.FB":          "0",
 					"Layer.Learn.NeuroMod.DipGain": "0.01", // rate of extinction -- reduce to slow
-					"Layer.PVLV.Thr":               "0.4",
+					"Layer.PVLV.Thr":               "0.55", // this doesn't seem to fix the RewPred_NR issue..
 					"Layer.PVLV.Gain":              "20",
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 4 is too strong?
+					"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later
 				}},
 			{Sel: "#OFCusToOFCval", Desc: "stronger",
 				Params: params.Params{
@@ -74,7 +79,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4",
+					"Prjn.PrjnScale.Abs":    "4",
+					"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
 				}},
 			{Sel: ".ToPTp", Desc: "",
 				Params: params.Params{
@@ -82,6 +88,10 @@ var ParamSets = params.Sets{
 				}},
 			////////////////////////////////////////////
 			// PVLV Prjns
+			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .1, but 3 needed for .03
+				}},
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Matrix.NoGateLRate": "1", // this is KEY for robustness when failing initially!

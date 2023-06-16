@@ -77,7 +77,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NData = 16
-	ss.NTrials = 64
+	ss.NTrials = 128
 	ss.EnvSameSeed = false // set to true to test ndata
 	ss.TestInterval = 500
 	ss.PCAInterval = 10
@@ -108,6 +108,7 @@ func (ss *SimParams) CurPctCortex(epc int) float32 {
 type Sim struct {
 	Net       *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Sim       SimParams        `view:"no-inline" desc:"sim params"`
+	StopOnSeq bool             `desc:"if true, stop running at end of a sequence (for NetView Di data parallel index)"`
 	StopOnErr bool             `desc:"if true, stop running when an error programmed into the code occurs"`
 	Params    emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops     *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -175,6 +176,7 @@ func (ss *Sim) ConfigEnv() {
 
 		tst.Nm = env.ModeDi(etime.Test, di)
 		tst.Defaults()
+		tst.RndSeed = 181 + int64(di)*181
 		tst.Config()
 		tst.Validate()
 
@@ -345,7 +347,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
-	net.SetNThreads(4)
+	// net.SetNThreads(4)
 	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
@@ -403,10 +405,10 @@ func (ss *Sim) ConfigLoops() {
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
 	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(ss.Sim.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	// note: not using Test mode at this point, so just commenting all this out
-	// in case there is a future need for it.
+	// in case there is a future need for it.o
 	// man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
@@ -511,8 +513,6 @@ func (ss *Sim) ConfigLoops() {
 	}
 	ss.Loops = man
 }
-
-// todo: this needs to be contextualized by di/ env
 
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
@@ -726,6 +726,7 @@ func (ss *Sim) NetViewCounters() {
 		return
 	}
 	di := ss.GUI.ViewUpdt.View.Di
+	ss.TrialStats(di)
 	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
 }
@@ -1047,11 +1048,18 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 				ss.TrialStats(di)
 				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
-				if mode == etime.Train && !axon.PVLVHasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
+				if !axon.PVLVHasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
-				ss.Logs.Log(etime.Debug, etime.Trial)
-				if !ss.Args.Bool("nogui") {
+				if ss.GUI.ViewUpdt.View != nil && di == ss.GUI.ViewUpdt.View.Di {
+					drow := ss.Logs.Table(etime.Debug, time).Rows
+					ss.Logs.LogRow(etime.Debug, time, drow)
+					if ss.StopOnSeq {
+						hasRew := axon.GlbV(ctx, uint32(di), axon.GvHasRew) > 0
+						if hasRew {
+							ss.Loops.Stop(etime.Trial)
+						}
+					}
 					ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
 				}
 				// if ss.Stats.Float("GatedEarly") > 0 {

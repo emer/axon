@@ -9,10 +9,10 @@ require (
 	github.com/emer/emergent v1.4.8
 	github.com/emer/empi v1.0.19
 	github.com/emer/envs v1.0.7
-	github.com/emer/etable v1.1.22
+	github.com/emer/etable v1.1.23
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
-	github.com/goki/gi v1.3.18
+	github.com/goki/gi v1.3.19
 	github.com/goki/gosl v1.0.16
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
