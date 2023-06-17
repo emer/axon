@@ -650,6 +650,7 @@ func (ss *Sim) ConfigArgs() {
 		ss.Sim.NData = ss.Args.Int("ndata")
 		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
 	}
+	ss.Sim.NTrials = ss.Args.Int("trials")
 	if ss.Args.Bool("mpi") {
 		ss.MPIInit()
 	}
