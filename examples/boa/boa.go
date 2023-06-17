@@ -727,10 +727,10 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters() {
-	if ss.GUI.ViewUpdt.View == nil {
+	if ss.ViewUpdt.View == nil {
 		return
 	}
-	di := ss.GUI.ViewUpdt.View.Di
+	di := ss.ViewUpdt.View.Di
 	ss.TrialStats(di)
 	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
@@ -933,8 +933,6 @@ func (ss *Sim) ConfigLogs() {
 
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
-
-	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
 	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "RewPred_NR", "MaintEarly")
 

@@ -513,10 +513,10 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters() {
-	if ss.GUI.ViewUpdt.View == nil {
+	if ss.ViewUpdt.View == nil {
 		return
 	}
-	di := ss.GUI.ViewUpdt.View.Di
+	di := ss.ViewUpdt.View.Di
 	ss.TrialStats(di)
 	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Gated", "Should", "Match", "Rew"})
@@ -563,7 +563,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
-	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
 	ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
 
