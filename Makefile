@@ -17,11 +17,11 @@ build:
 
 test:
 	@echo "GO111MODULE = $(value GO111MODULE)"
-	$(GOTEST) -v $(DIRS)
+	$(GOTEST) -v -tags multinet $(DIRS)
 
 test_long:
 	@echo "GO111MODULE = $(value GO111MODULE)"
-	export TEST_LONG=true; $(GOTEST) -v $(DIRS)
+	export TEST_LONG=true; $(GOTEST) -v -tags multinet $(DIRS)
 
 clean:
 	@echo "GO111MODULE = $(value GO111MODULE)"

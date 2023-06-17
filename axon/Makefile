@@ -10,8 +10,10 @@ all: build
 
 build:
 	$(GOBUILD) -v
+	
 test:
-	$(GOTEST) -v ./...
+	$(GOTEST) -v -tags multinet ./...
+	
 clean:
 	$(GOCLEAN)
 

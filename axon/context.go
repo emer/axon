@@ -15,10 +15,18 @@ import (
 	"github.com/goki/mat32"
 )
 
-// Networks is a global list of networks, needed for GPU shader kernel
-// compatible variable access in CPU mode.
-// This is updated in Network.InitName, which sets NetIdx.
-var Networks []*Network
+var (
+	// TheNetwork is the one current network in use, needed for GPU shader kernel
+	// compatible variable access in CPU mode, for !multinet build tags case.
+	// Typically there is just one and it is faster to access directly.
+	// This is set in Network.InitName.
+	TheNetwork *Network
+
+	// Networks is a global list of networks, needed for GPU shader kernel
+	// compatible variable access in CPU mode, for multinet build tags case.
+	// This is updated in Network.InitName, which sets NetIdx.
+	Networks []*Network
+)
 
 // note: the following nohlsl is included for the Go type inference processing
 // but is then excluded from the final .hlsl file.
@@ -29,24 +37,27 @@ var Networks []*Network
 
 // NeuronVars
 
+// note: see network_single.go and network_multi.go for GlobalNetwork function
+// depending on multinet build tag.
+
 // NrnV is the CPU version of the neuron variable accessor
 func NrnV(ctx *Context, ni, di uint32, nvar NeuronVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
+	return GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
 }
 
 // SetNrnV is the CPU version of the neuron variable settor
 func SetNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val
+	GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val
 }
 
 // AddNrnV is the CPU version of the neuron variable addor
 func AddNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val
+	GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val
 }
 
 // MulNrnV is the CPU version of the neuron variable multiplier
 func MulNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val
+	GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val
 }
 
 func NrnHasFlag(ctx *Context, ni, di uint32, flag NeuronFlags) bool {
@@ -71,90 +82,90 @@ func NrnIsOff(ctx *Context, ni uint32) bool {
 
 // NrnAvgV is the CPU version of the neuron variable accessor
 func NrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
+	return GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
 }
 
 // SetNrnAvgV is the CPU version of the neuron variable settor
 func SetNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val
+	GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val
 }
 
 // AddNrnAvgV is the CPU version of the neuron variable addor
 func AddNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val
+	GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val
 }
 
 // MulNrnAvgV is the CPU version of the neuron variable multiplier
 func MulNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val
+	GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val
 }
 
 // NeuronIdxs
 
 // NrnI is the CPU version of the neuron idx accessor
 func NrnI(ctx *Context, ni uint32, idx NeuronIdxs) uint32 {
-	return Networks[ctx.NetIdxs.NetIdx].NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)]
+	return GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)]
 }
 
 // SetNrnI is the CPU version of the neuron idx settor
 func SetNrnI(ctx *Context, ni uint32, idx NeuronIdxs, val uint32) {
-	Networks[ctx.NetIdxs.NetIdx].NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)] = val
+	GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)] = val
 }
 
 // SynapseVars
 
 // SynV is the CPU version of the synapse variable accessor
 func SynV(ctx *Context, syni uint32, svar SynapseVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)]
+	return GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Idx(syni, svar)]
 }
 
 // SetSynV is the CPU version of the synapse variable settor
 func SetSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)] = val
+	GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Idx(syni, svar)] = val
 }
 
 // AddSynV is the CPU version of the synapse variable addor
 func AddSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)] += val
+	GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Idx(syni, svar)] += val
 }
 
 // MulSynV is the CPU version of the synapse variable multiplier
 func MulSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val
+	GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val
 }
 
 // SynapseCaVars
 
 // SynCaV is the CPU version of the synapse variable accessor
 func SynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)]
+	return GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)]
 }
 
 // SetSynCaV is the CPU version of the synapse variable settor
 func SetSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] = val
+	GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] = val
 }
 
 // AddSynCaV is the CPU version of the synapse variable addor
 func AddSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] += val
+	GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] += val
 }
 
 // MulSynCaV is the CPU version of the synapse variable multiplier
 func MulSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val
+	GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val
 }
 
 // SynapseIdxs
 
 // SynI is the CPU version of the synapse idx accessor
 func SynI(ctx *Context, syni uint32, idx SynapseIdxs) uint32 {
-	return Networks[ctx.NetIdxs.NetIdx].SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)]
+	return GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)]
 }
 
 // SetSynI is the CPU version of the synapse idx settor
 func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
-	Networks[ctx.NetIdxs.NetIdx].SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
+	GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
 }
 
 /////////////////////////////////
@@ -162,52 +173,52 @@ func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
 
 // GlbV is the CPU version of the global variable accessor
 func GlbV(ctx *Context, di uint32, gvar GlobalVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalIdx(di, gvar)]
+	return GlobalNetwork(ctx).Globals[ctx.GlobalIdx(di, gvar)]
 }
 
 // SetGlbV is the CPU version of the global variable settor
 func SetGlbV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalIdx(di, gvar)] = val
+	GlobalNetwork(ctx).Globals[ctx.GlobalIdx(di, gvar)] = val
 }
 
 // AddGlbV is the CPU version of the global variable addor
 func AddGlbV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalIdx(di, gvar)] += val
+	GlobalNetwork(ctx).Globals[ctx.GlobalIdx(di, gvar)] += val
 }
 
 // GlbVTA is the CPU version of the global VTA variable accessor
 func GlbVTA(ctx *Context, di uint32, vtaType GlobalVTAType, gvar GlobalVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)]
+	return GlobalNetwork(ctx).Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)]
 }
 
 // SetGlbVTA is the CPU version of the global VTA variable settor
 func SetGlbVTA(ctx *Context, di uint32, vtaType GlobalVTAType, gvar GlobalVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val
+	GlobalNetwork(ctx).Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val
 }
 
 // GlbUSneg is the CPU version of the global USneg variable accessor
 func GlbUSneg(ctx *Context, di uint32, negIdx uint32) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalUSnegIdx(di, negIdx)]
+	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, negIdx)]
 }
 
 // SetGlbUSneg is the CPU version of the global USneg variable settor
 func SetGlbUSneg(ctx *Context, di uint32, negIdx uint32, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val
 }
 
 // GlbDriveV is the CPU version of the global Drive, USpos variable accessor
 func GlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars) float32 {
-	return Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)]
+	return GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)]
 }
 
 // SetGlbDriveV is the CPU version of the global Drive, USpos variable settor
 func SetGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val
+	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val
 }
 
 // AddGlbDriveV is the CPU version of the global Drive, USpos variable adder
 func AddGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
-	Networks[ctx.NetIdxs.NetIdx].Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val
+	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val
 }
 
 // CopyNetStridesFrom copies strides and NetIdxs for accessing

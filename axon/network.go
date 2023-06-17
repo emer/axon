@@ -34,6 +34,7 @@ func (nt *Network) InitName(net emer.Network, name string) {
 	nt.MaxData = 1
 	nt.NetIdx = uint32(len(Networks))
 	Networks = append(Networks, nt)
+	TheNetwork = nt
 }
 
 // NewNetwork returns a new axon Network
