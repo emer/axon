@@ -415,7 +415,8 @@ func (ss *Sim) ApplyInputs() {
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev.Step()
-		ss.Stats.SetIntDi("Target", int(di), ev.CurLED)
+		ss.Stats.SetIntDi("Cat", int(di), ev.CurLED) // note: must save relevant state for stats later
+		ss.Stats.SetStringDi("TrialName", int(di), ev.String())
 		for _, lnm := range lays {
 			ly := ss.Net.AxonLayerByName(lnm)
 			pats := ev.State(ly.Nm)
@@ -487,9 +488,8 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
-	ss.Stats.SetString("TrialName", ev.String())
-	ss.Stats.SetString("Cat", fmt.Sprintf("%d", ev.CurLED))
+	ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
+	ss.Stats.SetString("Cat", fmt.Sprintf("%d", ss.Stats.IntDi("Cat", di)))
 }
 
 func (ss *Sim) NetViewCounters() {
@@ -512,8 +512,8 @@ func (ss *Sim) TrialStats(di int) {
 
 	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
 	ovt := ss.Stats.SetLayerTensor(ss.Net, "Output", "ActM", di)
-	targ := ss.Stats.IntDi("Target", di)
-	rsp, trlErr, trlErr2 := ev.OutErr(ovt, targ)
+	cat := ss.Stats.IntDi("Cat", di)
+	rsp, trlErr, trlErr2 := ev.OutErr(ovt, cat)
 	ss.Stats.SetFloat("TrlErr", trlErr)
 	ss.Stats.SetFloat("TrlErr2", trlErr2)
 	ss.Stats.SetString("TrlOut", fmt.Sprintf("%d", rsp))

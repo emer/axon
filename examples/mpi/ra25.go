@@ -373,6 +373,8 @@ func (ss *Sim) ApplyInputs() {
 	net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev.Step()
+		// note: must save env state for logging / stats due to data parallel re-use of same env
+		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
 		for _, lnm := range lays {
 			ly := ss.Net.AxonLayerByName(lnm)
 			pats := ev.State(ly.Nm)
@@ -380,7 +382,6 @@ func (ss *Sim) ApplyInputs() {
 				ly.ApplyExt(ctx, di, pats)
 			}
 		}
-		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur) // for logging
 	}
 	net.ApplyExts(ctx)
 }
@@ -629,7 +630,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 }
 
 func (ss *Sim) RunGUI() {
-	ss.Config()
 	ss.Init()
 	win := ss.ConfigGui()
 	win.StartEventLoop()
@@ -642,18 +642,19 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("epochs", 200)
 	ss.Args.AddInt("ndata", 4, "number of data items to run in parallel")
 	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
+	ss.Args.AddInt("trials", 24, "number of trials per epoch")
 	ss.Args.SetInt("runs", 5)
 	ss.Args.AddBool("mpi", false, "if set, use MPI for distributed computation")
 	ss.Args.Parse() // always parse
+	if ss.Args.Bool("mpi") {
+		ss.MPIInit()
+	}
 	if len(os.Args) > 1 {
 		ss.Args.SetBool("nogui", true) // by definition if here
 		ss.Sim.NData = ss.Args.Int("ndata")
 		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
 	}
 	ss.Sim.NTrials = ss.Args.Int("trials")
-	if ss.Args.Bool("mpi") {
-		ss.MPIInit()
-	}
 }
 
 func (ss *Sim) RunNoGUI() {

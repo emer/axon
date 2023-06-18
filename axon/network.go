@@ -1,3 +1,4 @@
+// This calls SyncSynapsesFmGPU() (nop if not GPU) first.
 // Copyright (c) 2019, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -309,6 +310,7 @@ func (nt *Network) InitWts(ctx *Context) {
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
 	nt.GPU.SyncAllToGPU()
+	nt.GPU.SyncSynCaToGPU() // only time we call this
 	nt.GPU.SyncGBufToGPU()
 }
 
@@ -530,7 +532,9 @@ func (nt *Network) UnLesionNeurons(ctx *Context) {
 // in which case the method returns true so that the actual length of
 // dwts can be passed next time around.
 // Used for MPI sharing of weight changes across processors.
+// This calls SyncSynapsesFmGPU() (nop if not GPU) first.
 func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
+	nt.GPU.SyncSynapsesFmGPU()
 	idx := 0
 	made := false
 	if *dwts == nil {
@@ -589,6 +593,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 // SetDWts sets the DWt weight changes from given array of floats, which must be correct size
 // navg is the number of processors aggregated in these dwts -- some variables need to be
 // averaged instead of summed (e.g., ActAvg)
+// This calls SyncSynapsesToGPU() (nop if not GPU) after.
 func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 	idx := 0
 	davg := 1 / float32(navg)
@@ -627,6 +632,7 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 			idx += int(pj.NSyns)
 		}
 	}
+	nt.GPU.SyncSynapsesToGPU() // gpu will use dwts to update
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

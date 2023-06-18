@@ -494,6 +494,7 @@ func (gp *GPU) SyncAllToGPU() {
 }
 
 // CopySynapsesToStaging copies the synapse memory to staging (large).
+// Does not copy SynCa synapse state -- see SynCa methods.
 // This is not typically needed except when weights are initialized or
 // for the Slow weight update processes that are not on GPU.
 // Must call SyncMemToGPU after this (see SyncSynapsesToGPU).
@@ -503,8 +504,6 @@ func (gp *GPU) CopySynapsesToStaging() {
 	}
 	_, synv, _ := gp.Syns.ValByIdxTry("Synapses", 0)
 	synv.CopyFromBytes(unsafe.Pointer(&gp.Net.Synapses[0]))
-	_, syncv, _ := gp.Syns.ValByIdxTry("SynapseCas", 0)
-	syncv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseCas[0]))
 }
 
 // SyncSynapsesToGPU copies the synapse memory to GPU (large).
@@ -516,6 +515,28 @@ func (gp *GPU) SyncSynapsesToGPU() {
 		return
 	}
 	gp.CopySynapsesToStaging()
+	gp.SyncMemToGPU()
+}
+
+// CopySynCaToStaging copies the SynCa variables to GPU, which are per-Di (even larger).
+// This is only used for initialization -- SynCa vars otherwise managed entirely on GPU.
+// Must call SyncMemToGPU after this (see SyncSynCaToGPU).
+func (gp *GPU) CopySynCaToStaging() {
+	if !gp.On {
+		return
+	}
+	_, syncv, _ := gp.Syns.ValByIdxTry("SynapseCas", 0) // note: do not need these except in GUI
+	syncv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseCas[0]))
+}
+
+// SyncSynCaToGPU copies the SynCa variables to GPU, which are per-Di (even larger).
+// This is only used for initialization -- SynCa vars otherwise managed entirely on GPU.
+// Calls SyncMemToGPU -- use when this is the only copy taking place.
+func (gp *GPU) SyncSynCaToGPU() {
+	if !gp.On {
+		return
+	}
+	gp.CopySynCaToStaging()
 	gp.SyncMemToGPU()
 }
 
@@ -657,26 +678,47 @@ func (gp *GPU) SyncNeuronsFmGPU() {
 }
 
 // CopySynapsesFmStaging copies Synapses from staging to CPU, after Sync back down.
+// Does not copy SynCa synapse state -- see SynCa methods.
 func (gp *GPU) CopySynapsesFmStaging() {
 	if !gp.On {
 		return
 	}
 	_, synv, _ := gp.Syns.ValByIdxTry("Synapses", 0)
 	synv.CopyToBytes(unsafe.Pointer(&gp.Net.Synapses[0]))
-	_, syncv, _ := gp.Syns.ValByIdxTry("SynapseCas", 0)
-	syncv.CopyToBytes(unsafe.Pointer(&gp.Net.SynapseCas[0]))
 }
 
 // SyncSynapsesFmGPU copies Synapses from GPU to CPU.
+// Does not copy SynCa synapse state -- see SynCa methods.
 // Use only when only thing being copied -- more efficient to get all at once.
 func (gp *GPU) SyncSynapsesFmGPU() {
 	if !gp.On {
 		return
 	}
 	syr := gp.SyncRegionSyns("Synapses")
-	sycr := gp.SyncRegionSyns("SynapseCas")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(syr, sycr)
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(syr)
 	gp.CopySynapsesFmStaging()
+}
+
+// CopySynCaFmStaging copies the SynCa variables to GPU, which are per-Di (even larger).
+// This is only used for GUI viewing -- SynCa vars otherwise managed entirely on GPU.
+func (gp *GPU) CopySynCaFmStaging() {
+	if !gp.On {
+		return
+	}
+	_, syncv, _ := gp.Syns.ValByIdxTry("SynapseCas", 0)
+	syncv.CopyToBytes(unsafe.Pointer(&gp.Net.SynapseCas[0]))
+}
+
+// SyncSynCaFmGPU copies the SynCa variables to GPU, which are per-Di (even larger).
+// This is only used for GUI viewing -- SynCa vars otherwise managed entirely on GPU.
+// Use only when only thing being copied -- more efficient to get all at once.
+func (gp *GPU) SyncSynCaFmGPU() {
+	if !gp.On {
+		return
+	}
+	sycr := gp.SyncRegionSyns("SynapseCas")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(sycr)
+	gp.CopySynCaFmStaging()
 }
 
 // CopyLayerStateFmStaging copies Context, LayerVals and Pools from staging to CPU, after Sync.
