@@ -6,7 +6,6 @@ package axon
 
 import (
 	"embed"
-	"fmt"
 	"unsafe"
 
 	"github.com/emer/empi/mpi"
@@ -117,10 +116,10 @@ type GPU struct {
 // Configures the GPU -- call after Network is Built, initialized, params are set,
 // and everything is ready to run.
 func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
-	fmt.Printf("Running on the GPU\n")
 	oswin.TheApp.RunOnMain(func() {
 		nt.GPU.Config(ctx, nt)
 	})
+	mpi.AllPrintf("Running on GPU: %s\n", TheGPU.DeviceName)
 }
 
 // ConfigGPUnoGUI turns on GPU mode in case where no GUI is being used.

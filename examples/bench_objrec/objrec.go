@@ -518,7 +518,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("TrlErr2", trlErr2)
 	ss.Stats.SetString("TrlOut", fmt.Sprintf("%d", rsp))
 	// ss.Stats.SetFloat("TrlTrgAct", float64(out.Pools[0].ActP.Avg))
-	ss.Stats.SetString("Cat", fmt.Sprintf("%d", ev.CurLED))
+	ss.Stats.SetString("Cat", fmt.Sprintf("%d", cat))
 }
 
 //////////////////////////////////////////////////////////////////////////////
