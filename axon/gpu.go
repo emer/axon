@@ -6,6 +6,7 @@ package axon
 
 import (
 	"embed"
+	"fmt"
 	"unsafe"
 
 	"github.com/emer/empi/mpi"
@@ -119,7 +120,7 @@ func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
 	oswin.TheApp.RunOnMain(func() {
 		nt.GPU.Config(ctx, nt)
 	})
-	mpi.AllPrintf("Running on GPU: %s\n", TheGPU.DeviceName)
+	fmt.Printf("Running on GPU: %s\n", TheGPU.DeviceName)
 }
 
 // ConfigGPUnoGUI turns on GPU mode in case where no GUI is being used.
@@ -127,11 +128,11 @@ func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
 // Configures the GPU -- call after Network is Built, initialized, params are set,
 // and everything is ready to run.
 func (nt *Network) ConfigGPUnoGUI(ctx *Context) {
-	mpi.Printf("Running on the GPU\n")
 	if TheGPU == nil {
 		if err := vgpu.InitNoDisplay(); err != nil {
 			panic(err)
 		}
+		mpi.AllPrintf("Running on GPU: %s\n", TheGPU.DeviceName)
 	}
 	nt.GPU.Config(ctx, nt)
 }
