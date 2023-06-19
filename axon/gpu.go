@@ -132,9 +132,9 @@ func (nt *Network) ConfigGPUnoGUI(ctx *Context) {
 		if err := vgpu.InitNoDisplay(); err != nil {
 			panic(err)
 		}
-		mpi.AllPrintf("Running on GPU: %s\n", TheGPU.DeviceName)
 	}
 	nt.GPU.Config(ctx, nt)
+	mpi.AllPrintf("Running on GPU: %s\n", TheGPU.DeviceName)
 }
 
 // Destroy should be called to release all the resources allocated by the network
