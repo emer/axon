@@ -17,7 +17,7 @@ import (
 var gpu = flag.Bool("gpu", false, "whether to run gpu or not")
 var maxProcs = flag.Int("maxProcs", 0, "GOMAXPROCS value to set -- 0 = use current default -- better to set threads instead, as long as it is < GOMAXPROCS")
 var threads = flag.Int("threads", 2, "number of goroutines for parallel processing -- 2, 4 give good results typically")
-var maxData = flag.Int("maxData", 1, "number of inputs to run in parallel")
+var ndata = flag.Int("ndata", 1, "number of inputs to run in parallel")
 var numEpochs = flag.Int("epochs", 1, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
 var verbose = flag.Bool("verbose", true, "if false, only report the final time")
@@ -37,14 +37,14 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	// if *verbose {
 	fmt.Printf("Running bench with: %d Threads, %d MaxData, %d epochs, %d pats, (%d, %d) input, (%d) hidden, (%d, %d) output\n",
-		*threads, *maxData, *numEpochs, *numPats, inputShape[0], inputShape[1], *hiddenNeurs, outputShape[0], outputShape[1])
+		*threads, *ndata, *numEpochs, *numPats, inputShape[0], inputShape[1], *hiddenNeurs, outputShape[0], outputShape[1])
 	// }
 
 	rand.Seed(42)
 
 	ctx := axon.NewContext()
 	net := &axon.Network{}
-	ConfigNet(b, ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *maxData, *verbose)
+	ConfigNet(b, ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	// if *verbose {
 	log.Println(net.SizeReport(false))
 	// }

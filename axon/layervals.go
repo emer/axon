@@ -15,8 +15,9 @@ type ActAvgVals struct {
 	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau"`
 	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	AdaptThr  float32 `inactive:"+" desc:"adaptive threshold -- only used for specialized layers, e.g., VSPatch"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (lv *ActAvgVals) Init() {
@@ -25,6 +26,7 @@ func (lv *ActAvgVals) Init() {
 	lv.AvgMaxGeM = 1
 	lv.AvgMaxGiM = 1
 	lv.GiMult = 1
+	lv.AdaptThr = 0 // will be initialized per-user type
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
@@ -69,7 +71,7 @@ type LayerVals struct {
 	pad     uint32
 
 	// note: ActAvg vals are shared across data parallel
-	ActAvg  ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition"`
+	ActAvg  ActAvgVals     `view:"inline" desc:"running-average activation levels used for adaptive inhibition, and other adapting values"`
 	CorSim  CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
 	Special LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
 }

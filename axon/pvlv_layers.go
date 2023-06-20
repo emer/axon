@@ -92,60 +92,81 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	return ach
 }
 
-// PVLVParams has parameters for readout of values as inputs to PVLV equations.
-type PVLVParams struct {
-	Thr  float32 `desc:"threshold on value prior to multiplying by Gain"`
-	Gain float32 `desc:"multiplier applied after Thr threshold"`
-
-	pad, pad1 float32
-}
-
-func (pp *PVLVParams) Defaults() {
-	pp.Thr = 0.2
-	pp.Gain = 4
-}
-
-func (pp *PVLVParams) Update() {
-
-}
-
-func (pp *PVLVParams) Val(val float32) float32 {
-	vs := val - pp.Thr
-	if vs < 0 {
-		return 0
-	}
-	return pp.Gain * vs
-}
-
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
 	NoDALRate float32 `def:"0.1" desc:"learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well."`
 	NoDAThr   float32 `def:"0.01" desc:"threshold on DA level to engage the NoDALRate -- use a small positive number just in case"`
+	Gain      float32 `desc:"multiplier applied after Thr threshold"`
+	ThrInit   float32 `desc:"initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr"`
+	ThrLRate  float32 `desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
+	ThrNonRew float32 `desc:"extra gain factor for non-reward trials, which is the most critical"`
 
 	pad, pad1 float32
 }
 
-func (pp *VSPatchParams) Defaults() {
-	pp.NoDALRate = 0.1
-	pp.NoDAThr = 0.01
+func (vp *VSPatchParams) Defaults() {
+	vp.NoDALRate = 0.1
+	vp.NoDAThr = 0.01
+	vp.Gain = 20
+	vp.ThrInit = 0.4
+	vp.ThrLRate = 0.001
+	vp.ThrNonRew = 10
 }
 
-func (pp *VSPatchParams) Update() {
-
+func (vp *VSPatchParams) Update() {
 }
 
 // DALRate returns the learning rate modulation factor modlr based on dopamine level
-func (pp *VSPatchParams) DALRate(da, modlr float32) float32 {
-	if da <= pp.NoDAThr {
-		if modlr < -pp.NoDALRate { // big dip: use it
+func (vp *VSPatchParams) DALRate(da, modlr float32) float32 {
+	if da <= vp.NoDAThr {
+		if modlr < -vp.NoDALRate { // big dip: use it
 			return modlr
 		}
-		return -pp.NoDALRate
+		return -vp.NoDALRate
 	}
 	return modlr
 }
 
+// ThrVal returns the thresholded value, gain-multiplied value
+// for given VSPatch activity level
+func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
+	vs := act - thr
+	if vs < 0 {
+		return 0
+	}
+	return vp.Gain * vs
+}
+
 //gosl: end pvlv_layers
+
+// VSPatchAdaptThr adapts the learning threshold
+func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
+	sumDThr := float32(0)
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		da := GlbV(ctx, di, GvDA)
+		modlr := ly.Params.Learn.NeuroMod.LRMod(da, GlbV(ctx, di, GvACh))
+		modlr = ly.Params.VSPatch.DALRate(da, modlr) // always decrease if no DA
+		for pi := uint32(1); pi < ly.NPools; pi++ {
+			vsval := GlbDrvV(ctx, di, uint32(pi-1), GvVSPatch)
+			hasRew := GlbV(ctx, di, GvHasRew)
+			if hasRew == 0 {
+				sumDThr += ly.Params.VSPatch.ThrNonRew * vsval // increase threshold
+			} else {
+				sumDThr -= vsval * modlr
+			}
+		}
+	}
+	// everyone uses the same threshold
+	sumDThr *= ly.Params.VSPatch.ThrLRate
+	thr := ly.Vals[0].ActAvg.AdaptThr
+	if sumDThr < 0 {
+		sumDThr *= thr // soft decrease
+	}
+	thr += sumDThr
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		ly.Vals[di].ActAvg.AdaptThr = thr
+	}
+}
 
 func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")
@@ -238,8 +259,8 @@ func (ly *Layer) LDTDefaults() {
 	lp.Acts.Decay.Glong = 1
 	lp.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	lp.Learn.TrgAvgAct.On.SetBool(false)
-	lp.PVLV.Thr = 0.2
-	lp.PVLV.Gain = 2
+	// lp.PVLV.Thr = 0.2
+	// lp.PVLV.Gain = 2
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
@@ -268,8 +289,6 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Learn.NeuroMod.AChDisInhib = 0   // essential: has to fire when expected but not present!
 	ly.Learn.NeuroMod.BurstGain = 1
 	ly.Learn.NeuroMod.DipGain = 0.01 // extinction -- reduce to slow
-	ly.PVLV.Thr = 0.4
-	ly.PVLV.Gain = 20
 }
 
 func (ly *LayerParams) DrivesDefaults() {

@@ -10,6 +10,45 @@ Default network size:
 Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 ```
 
+# 1.8.0 Memory reorganization
+
+## 1.8.0: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+### GPU
+
+* ndata=2, mpi=4 = 8x dp  = 880
+* ndata=4, mpi=4 = 16x dp = 570
+* ndata=8, mpi=4 = 32x dp = 450  -- significant speedup
+* ndata=16,mpi=4 = 64x dp = 350  -- even better..
+
+### CPU
+
+The bottom line is that lvis_bench results "theory" does not hold up well in practice.  NData should be a big win on CPU, but it isn't!
+
+These are all PerTrlMSec for 512 trial epochs running on the cluster:
+
+16x data parallel:
+
+* ndata=1, mpi=16 node=1, 4th   = 570
+* ndata=1, mpi=16 node=1, 2th   = 600  -- 4 thread > 2
+* ndata=1, mpi=16 node=2, 4th   = 560  -- splitting helps a bit - 10 msec
+* ndata=1, mpi=16 node=4, 4th   = 550  -- splitting helps a bit
+* ndata=1, mpi=16 node=4, 8th   = 550  -- no further gains from more threads
+
+* ndata=2, mpi=8, node=1-8, 8th = 1000 -- splitting across nodes makes no diff
+
+
+32x data parallel:
+
+* ndata=2, mpi=16, node=1, 4th  = 540  -- 
+* ndata=2, mpi=16, node=4, 8th  = 500  -- 
+
+64x data parallel:
+
+* ndata=4, mpi=16, node=2, 8th = 64x = 500
+
+
+
 # 1.7.24 Sender-based Synapses
 
 ## CPU

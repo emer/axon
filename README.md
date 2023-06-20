@@ -39,6 +39,10 @@ go install github.com/goki/stringer@latest
 go generate ./...
 ```
 
+There is a `-tags multinet` build tag needed to enable there to be multiple Network objects in use at one time in a given simulation.  Typically there is just one, and with the GPU-compatible global access methods for accessing network variables, it is faster to directly use a single `*Network` pointer instead of indexing into a slice of multiple networks.
+
+The tests are one one place where `-tags multinet` must be passed, as multiple different networks are built there.
+
 ## Release
 
 There are a few main parts to releasing a new version.

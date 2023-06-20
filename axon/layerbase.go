@@ -791,7 +791,9 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.Vals[0].ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.Vals[0].ActAvg.GiMult)))
+	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\",\n", ly.Vals[0].ActAvg.GiMult)))
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"AdaptThr\": \"%g\"\n", ly.Vals[0].ActAvg.AdaptThr)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -892,6 +894,10 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			if gi, ok := lw.MetaData["GiMult"]; ok {
 				pv, _ := strconv.ParseFloat(gi, 32)
 				vals.ActAvg.GiMult = float32(pv)
+			}
+			if gi, ok := lw.MetaData["AdaptThr"]; ok {
+				pv, _ := strconv.ParseFloat(gi, 32)
+				vals.ActAvg.AdaptThr = float32(pv)
 			}
 		}
 	}

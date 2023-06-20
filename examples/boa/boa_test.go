@@ -274,6 +274,7 @@ func RunNDataTest(t *testing.T, gpu bool) {
 	sim.New()
 	sim.Sim.NData = 2
 	sim.Sim.EnvSameSeed = true
+	sim.Sim.NTrials = 50
 
 	sim.Args.SetBool("test", true)
 

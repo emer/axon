@@ -269,7 +269,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		case VSPatchLayer:
 			for pi := uint32(1); pi < ly.NPools; pi++ {
 				pl := ly.Pool(pi, di)
-				ly.Params.CyclePostVSPatchLayer(ctx, di, int32(pi), pl)
+				ly.Params.CyclePostVSPatchLayer(ctx, di, int32(pi), pl, vals)
 			}
 		case LDTLayer:
 			srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx, di)
@@ -544,6 +544,8 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	switch ly.LayerType() {
 	case MatrixLayer:
 		ly.MatrixGated(ctx)
+	case VSPatchLayer:
+		ly.VSPatchAdaptThr(ctx)
 	}
 }
 

@@ -4,16 +4,21 @@
 
 // does CyclePost: iterates over data parallel -- handles all special context updates
 
-#include "synmem.hlsl"
-
 // note: all must be visible always because accessor methods refer to them
 [[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
-[[vk::binding(0, 3)]] RWStructuredBuffer<SynMemBlock> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
-[[vk::binding(1, 3)]] RWStructuredBuffer<SynMemBlock> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+
+[[vk::binding(2, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(0, 4)]] RWStructuredBuffer<float> SynapseCas0;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(1, 4)]] RWStructuredBuffer<float> SynapseCas1;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(2, 4)]] RWStructuredBuffer<float> SynapseCas2;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(3, 4)]] RWStructuredBuffer<float> SynapseCas3;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
@@ -31,8 +36,8 @@
 [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
 
-void CyclePostVSPatch(inout Context ctx, in LayerParams ly, uint li, uint di, int pi, in Pool pl) {
-	ly.CyclePostVSPatchLayer(ctx, di, pi, pl);
+void CyclePostVSPatch(inout Context ctx, in LayerParams ly, uint li, uint di, int pi, in Pool pl, in LayerVals vals) {
+	ly.CyclePostVSPatchLayer(ctx, di, pi, pl, vals);
 }
 
 float LDTSrcLayAct(int layIdx, uint di) {
@@ -64,7 +69,7 @@ void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout La
 	case VSPatchLayer: {
 		int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
 		for (int pi = 0; pi < npl; pi++) {
-			CyclePostVSPatch(ctx, ly, li, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)]);
+			CyclePostVSPatch(ctx, ly, li, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)], vals);
 		}
 		break;
 	}

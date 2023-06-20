@@ -43,9 +43,9 @@ nompi_gpu_nd12:
 	./mpi -gpu -ndata=12 -tag=nompi_gpu_nd12 &
 
 mpi_gpu2:
-	mpirun -np 2 ./mpi -gpu -mpi -ndata=12 -tag=mpi2_gpu_nd12 &
+	mpirun -np 2 ./mpi -gpu -mpi -ndata=4 -tag=mpi2_gpu_nd12 &
 
 mpi_gpu4:
-	mpirun -np 4 ./mpi -gpu -mpi -ndata=8 -tag=mpi4_gpu_nd8 &
+	mpirun -np 4 ./mpi -gpu -mpi -ndata=3 -tag=mpi4_gpu_nd8 &
 
 

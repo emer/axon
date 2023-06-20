@@ -80,8 +80,9 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 		net.DWt(ctx)
 		if viewupdt.IsViewingSynapse() {
 			net.GPU.SyncSynapsesFmGPU()
+			net.GPU.SyncSynCaFmGPU() // note: only time we call this
+			viewupdt.RecordSyns()    // note: critical to update weights here so DWt is visible
 		}
-		viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 		net.WtFmDWt(ctx)
 	})
 

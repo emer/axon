@@ -63,9 +63,12 @@ type SynapseVarStrides struct {
 	pad, pad1 uint32
 }
 
+// note: when increasing synapse var capacity beyond 2^31, change back to uint64
+
 // Idx returns the index into network float32 array for given synapse, and variable
-func (ns *SynapseVarStrides) Idx(synIdx uint32, nvar SynapseVars) uint64 {
-	return uint64(synIdx)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var)
+func (ns *SynapseVarStrides) Idx(synIdx uint32, nvar SynapseVars) uint32 {
+	// return uint64(synIdx)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var)
+	return synIdx*ns.Synapse + uint32(nvar)*ns.Var
 }
 
 // SetSynapseOuter sets strides with synapses as outer loop:

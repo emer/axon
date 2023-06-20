@@ -1,3 +1,4 @@
+// This calls SyncSynapsesFmGPU() (nop if not GPU) first.
 // Copyright (c) 2019, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -34,6 +35,7 @@ func (nt *Network) InitName(net emer.Network, name string) {
 	nt.MaxData = 1
 	nt.NetIdx = uint32(len(Networks))
 	Networks = append(Networks, nt)
+	TheNetwork = nt
 }
 
 // NewNetwork returns a new axon Network
@@ -280,6 +282,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 	nt.PrjnMapSeq(func(pj *Prjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 
 	nt.GPU.SyncAllToGPU()
+	nt.GPU.SyncSynCaToGPU() // was cleared
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -308,6 +311,7 @@ func (nt *Network) InitWts(ctx *Context) {
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
 	nt.GPU.SyncAllToGPU()
+	nt.GPU.SyncSynCaToGPU() // only time we call this
 	nt.GPU.SyncGBufToGPU()
 }
 
@@ -529,7 +533,9 @@ func (nt *Network) UnLesionNeurons(ctx *Context) {
 // in which case the method returns true so that the actual length of
 // dwts can be passed next time around.
 // Used for MPI sharing of weight changes across processors.
+// This calls SyncSynapsesFmGPU() (nop if not GPU) first.
 func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
+	nt.GPU.SyncSynapsesFmGPU()
 	idx := 0
 	made := false
 	if *dwts == nil {
@@ -554,7 +560,8 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 		(*dwts)[idx+2] = ly.LayerVals(0).ActAvg.AvgMaxGeM
 		(*dwts)[idx+3] = ly.LayerVals(0).ActAvg.AvgMaxGiM
 		(*dwts)[idx+4] = ly.LayerVals(0).ActAvg.GiMult
-		idx += 5
+		(*dwts)[idx+5] = ly.LayerVals(0).ActAvg.AdaptThr
+		idx += 6
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
 			(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, ActAvg)
@@ -587,6 +594,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 // SetDWts sets the DWt weight changes from given array of floats, which must be correct size
 // navg is the number of processors aggregated in these dwts -- some variables need to be
 // averaged instead of summed (e.g., ActAvg)
+// This calls SyncSynapsesToGPU() (nop if not GPU) after.
 func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 	idx := 0
 	davg := 1 / float32(navg)
@@ -597,7 +605,8 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 		ly.LayerVals(0).ActAvg.AvgMaxGeM = davg * dwts[idx+2]
 		ly.LayerVals(0).ActAvg.AvgMaxGiM = davg * dwts[idx+3]
 		ly.LayerVals(0).ActAvg.GiMult = davg * dwts[idx+4]
-		idx += 5
+		ly.LayerVals(0).ActAvg.AdaptThr = davg * dwts[idx+5]
+		idx += 6
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
 			SetNrnAvgV(ctx, ni, ActAvg, davg*dwts[idx+int(lni)])
@@ -624,6 +633,7 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 			idx += int(pj.NSyns)
 		}
 	}
+	nt.GPU.SyncSynapsesToGPU() // gpu will use dwts to update
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -636,6 +646,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	var b strings.Builder
 
 	varBytes := 4
+	synVarBytes := 4
 	maxData := int(nt.MaxData)
 	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIdxsN)*varBytes
 	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseCaVarsN)*maxData*varBytes + int(SynapseIdxsN)*varBytes
@@ -669,11 +680,13 @@ func (nt *Network) SizeReport(detail bool) string {
 	}
 
 	nrnMem := (len(nt.Neurons) + len(nt.NeuronAvgs) + len(nt.NeuronIxs)) * varBytes
-	synMem := (len(nt.Synapses) + len(nt.SynapseCas) + len(nt.SynapseIxs)) * varBytes
+	synIdxMem := len(nt.SynapseIxs) * varBytes
+	synWtMem := (len(nt.Synapses)) * synVarBytes
+	synCaMem := (len(nt.SynapseCas)) * synVarBytes
 
-	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n",
+	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIdxs: %v \t SynWts: %v \t SynCa: %v\n",
 		nt.Nm, nt.NNeurons, (datasize.ByteSize)(nrnMem).HumanReadable(), nt.NSyns,
-		(datasize.ByteSize)(synMem).HumanReadable())
+		(datasize.ByteSize)(synIdxMem).HumanReadable(), (datasize.ByteSize)(synWtMem).HumanReadable(), (datasize.ByteSize)(synCaMem).HumanReadable())
 	return b.String()
 }
 

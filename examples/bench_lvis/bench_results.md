@@ -14,9 +14,83 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
-In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
+# 1.8.0  Flexible memory layout, Data Parallel
+
+IMPORTANT: the `ndata` data parallel is *in addition* to the default 10 trials of processing -- e.g., if ndata=8, the network is actually processing 80 trials worth of data, vs. 10 for ndata=1!  So e.g., going from ndata=1 to 2 and not seeing any additional time cost translates into a straight 2x speedup overall in real-world computation.
+
+In general, the ndata is a huge win for both GPU and CPU, as we saw in the boa benchmark, but here the Mac GPU M1 starts to fall apart with higher ndata levels.  It will be interesting to test on M2 pro and M3.
+
+There are some weird cases where it seems that doing more overall processing with ndata=2 is actually net faster than ndata=1 -- how is that possible?
+
+## MacBook Pro M1
+
+### GPU
+
+`go test -gpu -verbose=false -ndata=1 -bench=.`
+
+* ndata=1 (1.8gb): 18
+* ndata=2 (2.7gb): 19 -- no cost = sweet spot
+* ndata=4 (4.4gb): 37 -- 2x vs 2 a= not worse than linear but not great
+* ndata=8 (7.7gb): 44 -- not bad -- was much worse before fixing 2^31 GPU memory access
+
+
+### CPU
+
+`go test false -ndata=1 -threads=1 -bench=.`
+
+* ndata=1, threads=1 (1.8gb): 98
+* ndata=1, threads=2 (1.8gb): 54
+* ndata=1, threads=4 (1.8gb): 30
+* ndata=1, threads=8 (1.8gb): 24  -- surprisingly fast here but still 33% slower than GPU
+
+* ndata=2, threads=8 (2.7gb): 26  -- 37% slower than GPU
+* ndata=4, threads=8 (4.4gb): 29
+* ndata=8, threads=8 (7.7gb): 34
+* ndata=16, threads=8 (14.54gb): 43
+
+
+## HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+### GPU
+
+* ndata=1 (1.8gb): 18
+* ndata=2 (2.7gb): 22  -- ~no cost
+* ndata=4 (4.4gb): 35  -- similar to mac
+* ndata=8 (7.7gb): 49  -- much better than mac -- doesn't fall off the cliff
+* ndata=16 (14.5): 83
+
+### CPU
+
+* ndata=1, threads=1 (1.8gb):  186 -- GPU raw speedup is ~10x vs. single CPU thread
+* ndata=1, threads=2 (1.8gb):  94  -- nice linear speedup
+* ndata=1, threads=4 (1.8gb):  58
+* ndata=1, threads=8 (1.8gb):  50  -- diminishing returns
+* ndata=1, threads=16 (1.8gb): 37  -- not 2x better but still faster than 4->8; still 2x slower than GPU 
+
+* ndata=2, threads=1 (2.7gb):  159 -- how is more processing (ndata=2) actually net *faster* than less??
+* ndata=2, threads=2 (2.7gb):  94
+* ndata=2, threads=4 (2.7gb):  58  -- identical to ndata=1 overall for all these cases
+* ndata=2, threads=8 (2.7gb):  50
+* ndata=2, threads=16 (2.7gb): 38
+
+* ndata=4, threads=1 (4.4gb):  172 -- how is more processing (4x) actually net *faster* than less??
+* ndata=4, threads=2 (4.4gb):  102
+* ndata=4, threads=4 (4.4gb):  62  -- just a bit slower than 2
+* ndata=4, threads=8 (4.4gb):  54
+* ndata=4, threads=16 (4.4gb): 40
+
+* ndata=8, threads=1 (7.7gb):  192
+* ndata=8, threads=2 (7.7gb):  111 -- vs ndata=1, 2 thr -- only a bit slower to get 8x!
+* ndata=8, threads=4 (7.7gb):  68
+* ndata=8, threads=8 (7.7gb):  58  -- 8x data for same time using 2x threads, vs ndata=1, threads=4
+* ndata=8, threads=16 (7.7gb): 44  -- slightly faster than GPU
+
+* ndata=16, threads=16 (14.5gb): 55 -- actually better than GPU here
+* ndata=16, threads=32 (14.5gb): 47 -- saturating -- definitely not worth 2x procs
 
 # 1.7.24 Sender-based Synapses
+
+In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
 
 Note: it was critical to do parallel threading for GiFmSpikes at the layer level -- unclear why but this made a huge difference on Linux / AMD64, but not on the Mac (usual story).  
 
