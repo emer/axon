@@ -62,9 +62,16 @@ type NetworkBase struct {
 	NeuronIxs    []uint32      `view:"-" desc:"[Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding"`
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
+	SynapseIxs   []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
 	Synapses     []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function"`
 	SynapseCas   []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons][MaxData] entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function"`
-	SynapseIxs   []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
+	SynapseCas0  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
+	SynapseCas1  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
+	SynapseCas2  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
+	SynapseCas3  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
+	SynapseCas4  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
+	SynapseCas5  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
+	SynapseCas6  []float32     `view:"-" desc:"bank of 2^31 = 0x80000000 floats for GPU access"`
 	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
 	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
 	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay][MaxData] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
@@ -770,13 +777,67 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	}
 
 	nt.NSyns = uint32(totSynapses)
-	nt.Synapses = make([]float32, totSynapses*int(SynapseVarsN))
-	nt.SynapseCas = make([]float32, totSynapses*int(SynapseCaVarsN)*int(nt.MaxData))
+	nSynFloat := totSynapses * int(SynapseVarsN)
+	nt.Synapses = make([]float32, nSynFloat)
+	nSynCaFloat := totSynapses * int(SynapseCaVarsN) * int(nt.MaxData)
+	nt.SynapseCas = make([]float32, nSynCaFloat)
 	nt.SynapseIxs = make([]uint32, totSynapses*int(SynapseIdxsN))
 	nt.PrjnSendCon = make([]StartN, totSendCon)
 	nt.PrjnRecvCon = make([]StartN, totRecvCon)
 	nt.RecvPrjnIdxs = make([]uint32, rprjnIdx)
 	nt.RecvSynIdxs = make([]uint32, totSynapses)
+
+	nCaBanks := nSynCaFloat / 0x80000000
+	caLast := nSynCaFloat % 0x80000000
+	if caLast > 0 {
+		nCaBanks++
+	}
+	ctx.NetIdxs.NSynCaBanks = uint32(nCaBanks)
+	if nCaBanks > 7 {
+		panic(fmt.Sprintf("SynapseCas only supports 7 banks of 2^31 floats -- needs: %d\n", nCaBanks))
+	}
+	base := 0
+	if nCaBanks > 1 {
+		nt.SynapseCas0 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 1 {
+		nt.SynapseCas0 = nt.SynapseCas[base : base+caLast]
+	}
+	base += 0x80000000
+	if nCaBanks > 2 {
+		nt.SynapseCas1 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 2 {
+		nt.SynapseCas1 = nt.SynapseCas[base : base+caLast]
+	}
+	base += 0x80000000
+	if nCaBanks > 3 {
+		nt.SynapseCas2 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 3 {
+		nt.SynapseCas2 = nt.SynapseCas[base : base+caLast]
+	}
+	base += 0x80000000
+	if nCaBanks > 4 {
+		nt.SynapseCas3 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 4 {
+		nt.SynapseCas3 = nt.SynapseCas[base : base+caLast]
+	}
+	base += 0x80000000
+	if nCaBanks > 5 {
+		nt.SynapseCas4 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 5 {
+		nt.SynapseCas4 = nt.SynapseCas[base : base+caLast]
+	}
+	base += 0x80000000
+	if nCaBanks > 6 {
+		nt.SynapseCas5 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 6 {
+		nt.SynapseCas5 = nt.SynapseCas[base : base+caLast]
+	}
+	base += 0x80000000
+	if nCaBanks > 7 {
+		nt.SynapseCas6 = nt.SynapseCas[base : base+0x80000000]
+	} else if nCaBanks == 7 {
+		nt.SynapseCas6 = nt.SynapseCas[base : base+caLast]
+	}
 
 	if nt.UseGPUOrder {
 		ctx.SynapseVars.SetVarOuter(totSynapses)

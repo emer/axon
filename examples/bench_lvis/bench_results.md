@@ -30,8 +30,8 @@ There are some weird cases where it seems that doing more overall processing wit
 
 * ndata=1 (1.8gb): 18
 * ndata=2 (2.7gb): 19 -- no cost = sweet spot
-* ndata=4 (4.4gb): 38 -- 2x vs 2 a= not worse than linear but not great -- found the mem limit on M1
-* ndata=8 (7.7gb): 162 -- falls apart
+* ndata=4 (4.4gb): 37 -- 2x vs 2 a= not worse than linear but not great
+* ndata=8 (7.7gb): 44 -- not bad -- was much worse before fixing 2^31 GPU memory access
 
 
 ### CPU

@@ -258,13 +258,14 @@ type NetIdxs struct {
 	NNeurons      uint32 `inactive:"+" desc:"total number of neurons"`
 	NPools        uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
 	NSyns         uint32 `inactive:"+" desc:"total number of synapses"`
+	NSynCaBanks   uint32 `inactive:"+" desc:"total number of SynCa banks of 2^31 arrays in GPU"`
 	GvVTAOff      uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
 	GvVTAStride   uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
 	GvUSnegOff    uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
 	GvDriveOff    uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
 	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
 
-	// pad uint32
+	pad, pad1, pad2 uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -428,14 +429,6 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 
 // note: following is real code, uncommented by gosl
 
-// synmem is a way to extend memory capacity under uint limits
-
-//gosl: hlsl synmem
-// struct SynMemBlock {
-// 	float vals[64];
-// };
-//gosl: end synmem
-
 //gosl: hlsl context
 
 // // NeuronVars
@@ -501,50 +494,138 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 //
 
 // // SynapseVars
-// // note: use SynMemBlock to extend memory capacity
 
 // // SynV is GPU version of synapse var accessor into Synapses array
 // float SynV(in Context ctx, uint syni, SynapseVars svar) {
-// 	uint64 ix = ctx.SynapseVars.Idx(syni, svar);
-// 	return Synapses[ uint(ix / 64)].vals[uint(ix % 64)];
+// 	return Synapses[ctx.SynapseVars.Idx(syni, svar)];
 // }
 // // SetSynV is the GPU version of the synapse variable settor
 // void SetSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
-// 	uint64 ix = ctx.SynapseVars.Idx(syni, svar);
-//  	Synapses[ uint(ix / 64)].vals[uint(ix % 64)] = val;
+//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] = val;
 // }
 // // AddSynV is the GPU version of the synapse variable addor
 // void AddSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
-// 	uint64 ix = ctx.SynapseVars.Idx(syni, svar);
-//  	Synapses[ uint(ix / 64)].vals[uint(ix % 64)] += val;
+//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] += val;
 // }
 // // MulSynV is the GPU version of the synapse variable multor
 // void MulSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
-// 	uint64 ix = ctx.SynapseVars.Idx(syni, svar);
-//  	Synapses[ uint(ix / 64)].vals[uint(ix % 64)] *= val;
+//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val;
 // }
 
 // // SynapseCaVars
 
+// // with NData repetition, SynCa can easily exceed the nominal 2^31 capacity
+// // for buffer access.
+
 // // SynCaV is GPU version of synapse var accessor into Synapses array
 // float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-//  	return SynapseCas[ uint(ix / 64)].vals[uint(ix % 64)];
+// 	uint bank = uint(ix / 0x80000000);
+// 	uint res = uint(ix % 0x80000000);
+// 	switch (bank) {
+// 		case 0:
+// 			return SynapseCas0[res];
+// 		case 1:
+// 			return SynapseCas1[res];
+// 		case 2:
+// 			return SynapseCas2[res];
+// 		case 3:
+// 			return SynapseCas3[res];
+// 		case 4:
+// 			return SynapseCas4[res];
+// 		case 5:
+// 			return SynapseCas5[res];
+// 		case 6:
+// 			return SynapseCas6[res];
+// 	}
+// 	return 0;
 // }
 // // SetSynCaV is the GPU version of the synapse variable settor
 // void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-//  	SynapseCas[ uint(ix / 64)].vals[uint(ix % 64)] = val;
+// 	uint bank = uint(ix / 0x80000000);
+// 	uint res = uint(ix % 0x80000000);
+// 	switch (bank) {
+// 		case 0:
+// 			SynapseCas0[res] = val;
+// 			break;
+// 		case 1:
+// 			SynapseCas1[res] = val;
+// 			break;
+// 		case 2:
+// 			SynapseCas2[res] = val;
+// 			break;
+// 		case 3:
+// 			SynapseCas3[res] = val;
+// 			break;
+// 		case 4:
+// 			SynapseCas4[res] = val;
+// 			break;
+// 		case 5:
+// 			SynapseCas5[res] = val;
+// 			break;
+// 		case 6:
+// 			SynapseCas6[res] = val;
+// 			break;
+// 	}
 // }
 // // AddSynCaV is the GPU version of the synapse variable addor
 // void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-//  	SynapseCas[ uint(ix / 64)].vals[uint(ix % 64)] += val;
+// 	uint bank = uint(ix / 0x80000000);
+// 	uint res = uint(ix % 0x80000000);
+// 	switch (bank) {
+// 		case 0:
+// 			SynapseCas0[res] += val;
+// 			break;
+// 		case 1:
+// 			SynapseCas1[res] += val;
+// 			break;
+// 		case 2:
+// 			SynapseCas2[res] += val;
+// 			break;
+// 		case 3:
+// 			SynapseCas3[res] += val;
+// 			break;
+// 		case 4:
+// 			SynapseCas4[res] += val;
+// 			break;
+// 		case 5:
+// 			SynapseCas5[res] += val;
+// 			break;
+// 		case 6:
+// 			SynapseCas6[res] += val;
+// 			break;
+// 	}
 // }
 // // MulSynCaV is the GPU version of the synapse variable multor
 // void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-//  	SynapseCas[ uint(ix / 64)].vals[uint(ix % 64)] *= val;
+// 	uint bank = uint(ix / 0x80000000);
+// 	uint res = uint(ix % 0x80000000);
+// 	switch (bank) {
+// 		case 0:
+// 			SynapseCas0[res] *= val;
+// 			break;
+// 		case 1:
+// 			SynapseCas1[res] *= val;
+// 			break;
+// 		case 2:
+// 			SynapseCas2[res] *= val;
+// 			break;
+// 		case 3:
+// 			SynapseCas3[res] *= val;
+// 			break;
+// 		case 4:
+// 			SynapseCas4[res] *= val;
+// 			break;
+// 		case 5:
+// 			SynapseCas5[res] *= val;
+// 			break;
+// 		case 6:
+// 			SynapseCas6[res] *= val;
+// 			break;
+// 	}
 // }
 
 // // SynapseIdxs

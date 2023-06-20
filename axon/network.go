@@ -645,6 +645,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	var b strings.Builder
 
 	varBytes := 4
+	synVarBytes := 4
 	maxData := int(nt.MaxData)
 	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIdxsN)*varBytes
 	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseCaVarsN)*maxData*varBytes + int(SynapseIdxsN)*varBytes
@@ -678,11 +679,13 @@ func (nt *Network) SizeReport(detail bool) string {
 	}
 
 	nrnMem := (len(nt.Neurons) + len(nt.NeuronAvgs) + len(nt.NeuronIxs)) * varBytes
-	synMem := (len(nt.Synapses) + len(nt.SynapseCas) + len(nt.SynapseIxs)) * varBytes
+	synIdxMem := len(nt.SynapseIxs) * varBytes
+	synWtMem := (len(nt.Synapses)) * synVarBytes
+	synCaMem := (len(nt.SynapseCas)) * synVarBytes
 
-	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n",
+	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIdxs: %v \t SynWts: %v \t SynCa: %v\n",
 		nt.Nm, nt.NNeurons, (datasize.ByteSize)(nrnMem).HumanReadable(), nt.NSyns,
-		(datasize.ByteSize)(synMem).HumanReadable())
+		(datasize.ByteSize)(synIdxMem).HumanReadable(), (datasize.ByteSize)(synWtMem).HumanReadable(), (datasize.ByteSize)(synCaMem).HumanReadable())
 	return b.String()
 }
 

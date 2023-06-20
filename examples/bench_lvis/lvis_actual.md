@@ -10,6 +10,28 @@ Default network size:
 Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 ```
 
+# 1.8.0 Memory reorganization
+
+## CPU 1.8.0: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+The bottom line is that lvis_bench results "theory" does not hold up well in practice..
+
+These are all PerTrlMSec for 512 trial epochs running on the cluster:
+
+* ndata=1, mpi=16 node=1, 4th = 16x = 570
+* ndata=2, mpi=8, node=1-8, 8th = 16x = 1000 --- splitting across nodes makes no diff
+
+32x data parallel:
+
+* ndata=4, mpi=16, node=1, 4th  = 540
+
+
+64x data parallel:
+
+* ndata=4, mpi=16, node=2, 8th = 64x = 500
+
+
+
 # 1.7.24 Sender-based Synapses
 
 ## CPU

@@ -684,6 +684,9 @@ func NetTestLearn(t *testing.T, gpu bool) {
 	ctx := NewContext()
 
 	testNet := newTestNet(ctx, 1)
+
+	// fmt.Printf("synbanks: %d\n", ctx.NetIdxs.NSynCaBanks)
+
 	inPats := newInPats()
 	inLay := testNet.AxonLayerByName("Input")
 	hidLay := testNet.AxonLayerByName("Hidden")
@@ -811,6 +814,7 @@ func NetTestLearn(t *testing.T, gpu bool) {
 			testNet.DWt(ctx)
 			if gpu {
 				testNet.GPU.SyncSynapsesFmGPU()
+				testNet.GPU.SyncSynCaFmGPU()
 			}
 
 			didx := ti*4 + pi
@@ -821,6 +825,7 @@ func NetTestLearn(t *testing.T, gpu bool) {
 			testNet.WtFmDWt(ctx)
 			if gpu {
 				testNet.GPU.SyncSynapsesFmGPU()
+				testNet.GPU.SyncSynCaFmGPU()
 			}
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -1103,6 +1108,7 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 		testNet.DWt(ctx)
 		if gpu {
 			testNet.GPU.SyncSynapsesFmGPU()
+			testNet.GPU.SyncSynCaFmGPU()
 		}
 
 		for ni := 0; ni < 4; ni++ {
@@ -1136,6 +1142,7 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 		testNet.WtFmDWt(ctx)
 		if gpu {
 			testNet.GPU.SyncSynapsesFmGPU()
+			testNet.GPU.SyncSynCaFmGPU()
 		}
 
 		pi += nData - 1
