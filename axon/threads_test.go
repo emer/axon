@@ -1,3 +1,9 @@
+// Copyright (c) 2023, The Emergent Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+//go:build multinet
+
 package axon
 
 import (
@@ -42,9 +48,6 @@ func TestMultithreading(t *testing.T) {
 }
 
 func TestCollectAndSetDWts(t *testing.T) {
-	// TODO: This should be moved out of threads_test.go, but all the useful
-	// helper functions are here.
-
 	ctxA := NewContext()
 	ctxB := NewContext()
 
@@ -343,46 +346,7 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, nthrs int) (*Netwo
 	rand.Seed(1337)
 	netM := buildNet(ctxB, t, shape, nthrs)
 
-	// The below code doesn't work, because we have no clean way of storing and restoring
-	// the full state of a network.
-	//
-	// run for a few cycles to get more interesting state on the single-threaded net
-	// rand.Seed(1337)
-	// inPats := pats.ColByName("Input").(*etensor.Float32)
-	// outPats := pats.ColByName("Output").(*etensor.Float32)
-	// inputLayer := netS.AxonLayerByName("Input").(*Layer)
-	// outputLayer := netS.AxonLayerByName("Output").(*Layer)
-	// input := inPats.SubSpace([]int{0})
-	// output := outPats.SubSpace([]int{0})
-	// inputLayer.ApplyExt(input)
-	// outputLayer.ApplyExt(output)
-	// netS.NewState()
-	// ctx := NewContext()
-	// ctx.NewState("train")
-	// for i := 0; i < 150; i++ {
-	// 	netS.Cycle(ctx)
-	// }
-
-	// // sync the weights
-	// filename := t.TempDir() + "/netS.json"
-	// // write Synapse weights to file
-	// fh, err := os.Create(filename)
-	// require.NoError(t, err)
-	// bw := bufio.NewWriter(fh)
-	// require.NoError(t, netS.WriteWtsJSON(bw))
-	// require.NoError(t, bw.Flush())
-	// require.NoError(t, fh.Close())
-	// // read Synapse weights from file
-	// fh, err = os.Open(filename)
-	// require.NoError(t, err)
-	// br := bufio.NewReader(fh)
-	// require.NoError(t, netM.ReadWtsJSON(br))
-	// require.NoError(t, fh.Close())
-	// // sync Neuron weights as well (TODO: we need a better way to do this)
-	// copy(netM.Neurons, netS.Neurons)
-
-	// todo: this should be uncommented!
-	// assert.True(t, assertneuronsAreEqual(netS, netM))
+	assertNeuronsSynsEqual(t, netS, netM)
 
 	return netS, netM, ctxA, ctxB
 }
@@ -433,6 +397,7 @@ func runFunEpochs(ctx *Context, pats *etable.Table, net *Network, fun func(*Netw
 			ctx.NewState(etime.Train)
 			inputLayer.ApplyExt(ctx, 0, input)
 			outputLayer.ApplyExt(ctx, 0, output)
+			net.ApplyExts(ctx)
 			for cycle := 0; cycle < nCycles; cycle++ {
 				fun(net, ctx)
 			}

@@ -282,6 +282,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 	nt.PrjnMapSeq(func(pj *Prjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 
 	nt.GPU.SyncAllToGPU()
+	nt.GPU.SyncSynCaToGPU() // was cleared
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

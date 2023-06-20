@@ -550,7 +550,7 @@ func (gp *GPU) CopySynCaToStaging() {
 	if !gp.On {
 		return
 	}
-	// note: do not need these except in GUI
+	// note: do not need these except in GUI or tests
 	_, syncv, _ := gp.SynCas.ValByIdxTry("SynapseCas0", 0)
 	syncv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseCas0[0]))
 	if gp.Ctx.NetIdxs.NSynCaBanks > 1 {
@@ -1046,6 +1046,7 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 	lvr := gp.SyncRegionStruct("LayVals")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
+	nrar := gp.SyncRegionStruct("NeuronAvgs") // not strictly needed but consistency..
 
 	maxData := int(gp.Net.MaxData)
 	layDataN := gp.Net.NLayers() * maxData
@@ -1072,7 +1073,7 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 	}
 
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr)
+	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr, nrar)
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd
 }
@@ -1370,13 +1371,14 @@ func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
 	nrr := gp.SyncRegionStruct("Neurons")
+	nrar := gp.SyncRegionStruct("NeuronAvgs")
 
 	// note: not * MaxData
 	synN := int(gp.Net.NSyns)
 	neurN := int(gp.Net.NNeurons)
 
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr)                   // staging -> GPU
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr, nrar)             // staging -> GPU
 	gp.RunPipelineCmd(cmd, "DWtSubMean", neurN, "", "PoolGi") // using poolgi for kicks
 	gp.RunPipelineCmd(cmd, "WtFmDWt", synN, "PoolGi", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)

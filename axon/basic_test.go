@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build multinet
+
 package axon
 
 import (
@@ -1026,7 +1028,7 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 // NetDebugLearn prints selected values (if printVals),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, submean bool) map[string]float32 {
+func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
 	ctx := NewContext()
 	var testNet *Network
 	rand.Seed(1337)
@@ -1068,6 +1070,9 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 	stLayer := 1 // max 2
 	edLayer := 2 // max 3
 	nNeurs := 4  // max 4 -- number of neuron values to print
+	var vals []float32
+
+	syncAfterWt := false // shows slow adapt errors earlier if true
 
 	for pi := 0; pi < 4; pi++ {
 		if initWts {
@@ -1106,6 +1111,14 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 
 		testNet.PlusPhase(ctx)
 		testNet.DWt(ctx)
+
+		if syncAfterWt {
+			testNet.WtFmDWt(ctx)
+			if slowAdapt {
+				testNet.GPU.SyncSynCaFmGPU() // will be sent back and forth
+				testNet.SlowAdapt(ctx)
+			}
+		}
 		if gpu {
 			testNet.GPU.SyncSynapsesFmGPU()
 			testNet.GPU.SyncSynCaFmGPU()
@@ -1120,6 +1133,25 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 					doPrint := (printVals && pi < nPats && ni < nNeurs && li >= stLayer && li < edLayer)
 					if doPrint {
 						fmt.Println(key + fmt.Sprintf("  di: %d", di))
+					}
+					for nvi, vnm := range NeuronVarNames {
+						ly.UnitVals(&vals, vnm, di)
+						vkey := key + fmt.Sprintf("\t%s", vnm)
+						valMap[vkey] = vals[ni]
+						if doPrint {
+							fmt.Printf("\t%-10s%7.4f", vnm, vals[ni])
+							if (int(nvi)+1)%valsPerRow == 0 {
+								fmt.Printf("\n")
+							}
+						}
+					}
+					lnm := fmt.Sprintf("%s: di: %d", ly.Nm, di)
+					lpl := ly.Pool(0, uint32(di))
+					StructVals(&lpl.Inhib, valMap, lnm)
+					lval := ly.LayerVals(uint32(di))
+					StructVals(&lval, valMap, lnm)
+					if doPrint {
+						fmt.Printf("\n")
 					}
 					for svi, snm := range SynapseVarNames {
 						val := ly.RcvPrjns[0].SynValDi(snm, ni, ni, di)
@@ -1139,10 +1171,15 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 			}
 		}
 
-		testNet.WtFmDWt(ctx)
-		if gpu {
-			testNet.GPU.SyncSynapsesFmGPU()
-			testNet.GPU.SyncSynCaFmGPU()
+		if !syncAfterWt {
+			testNet.WtFmDWt(ctx)
+			if slowAdapt {
+				testNet.SlowAdapt(ctx)
+			}
+			if gpu {
+				testNet.GPU.SyncSynapsesFmGPU()
+				testNet.GPU.SyncSynCaFmGPU()
+			}
 		}
 
 		pi += nData - 1
@@ -1154,13 +1191,24 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, s
 
 func TestDebugLearn(t *testing.T) {
 	t.Skip("skipped in regular testing")
-	NetDebugLearn(t, true, false, 2, true, false)
+	NetDebugLearn(t, true, false, 2, true, false, false)
 }
 
 func TestNDataLearn(t *testing.T) {
-	nd1Vals := NetDebugLearn(t, false, false, 1, true, false)
-	nd4Vals := NetDebugLearn(t, false, false, 4, true, false)
-	ReportValDiffs(t, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt"})
+	nd1Vals := NetDebugLearn(t, false, false, 1, true, false, false)
+	nd4Vals := NetDebugLearn(t, false, false, 4, true, false, false)
+	ReportValDiffs(t, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+}
+
+func TestGPULearnDiff(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	// fmt.Printf("\n#############\nCPU\n")
+	cpuVals := NetDebugLearn(t, false, false, 1, false, false, false)
+	// fmt.Printf("\n#############\nGPU\n")
+	gpuVals := NetDebugLearn(t, false, true, 1, false, false, false)
+	ReportValDiffs(t, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
 
 func TestGPUSubMeanLearn(t *testing.T) {
@@ -1168,9 +1216,20 @@ func TestGPUSubMeanLearn(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, false, true)
+	cpuVals := NetDebugLearn(t, false, false, 1, false, true, false)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, false, true)
+	gpuVals := NetDebugLearn(t, false, true, 1, false, true, false)
+	ReportValDiffs(t, cpuVals, gpuVals, "CPU", "GPU", nil)
+}
+
+func TestGPUSlowAdaptLearn(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	// fmt.Printf("\n#############\nCPU\n")
+	cpuVals := NetDebugLearn(t, false, false, 1, false, false, true)
+	// fmt.Printf("\n#############\nGPU\n")
+	gpuVals := NetDebugLearn(t, false, true, 1, false, false, true)
 	ReportValDiffs(t, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
 
