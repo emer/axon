@@ -69,7 +69,7 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 16
+	ss.NData = 1
 	ss.NTrials = 32
 	ss.TestInterval = 25
 	ss.PCAInterval = 5
@@ -171,7 +171,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
-	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
+	// hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
+	hid1 := net.AddLayer4D("Hidden1", 2, 2, 3, 3, axon.SuperLayer)
 	hid2 := net.AddLayer2D("Hidden2", ss.Params.LayY("Hidden2", 10), ss.Params.LayX("Hidden2", 10), axon.SuperLayer)
 	out := net.AddLayer2D("Output", 5, 5, axon.TargetLayer)
 

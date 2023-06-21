@@ -62,11 +62,11 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 		subPool := NrnI(ctx, ni, NrnSubPool)
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			pl := ly.Pool(subPool, di)
-			pl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))
+			pl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt), pl.NNeurons())
 			pl.AvgMaxUpdate(ctx, ni, di)
 			if hasSubPools { // update layer too -- otherwise pl == lpl
 				lpl := ly.Pool(0, di)
-				lpl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))
+				lpl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt), lpl.NNeurons())
 				lpl.AvgMaxUpdate(ctx, ni, di)
 			}
 		}

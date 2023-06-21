@@ -85,6 +85,11 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.06", // 0.06 > 0.05
 					"Layer.Inhib.ActAvg.AdaptGi": "true",
 				}},
+			{Sel: "#Hidden1", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.On": "false",
+					"Layer.Inhib.Pool.On":  "true",
+				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":    "0.24", // 0.24 > 0.3

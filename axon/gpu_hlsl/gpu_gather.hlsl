@@ -61,10 +61,10 @@ void NeuronAvgMax2(in Context ctx, in LayerParams ly, uint pi, uint lpi, uint ni
 	float nrnSpike = NrnV(ctx, ni, di, Spike);
 	float nrnGeRaw = NrnV(ctx, ni, di, GeRaw);
 	float nrnGeExt = NrnV(ctx, ni, di, GeExt);
-	AtomicInhibRawIncr(Pools[pi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt);
+	AtomicInhibRawIncr(Pools[pi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt, Pools[pi].NNeurons());
 	AtomicUpdatePoolAvgMax(Pools[pi].AvgMax, ctx, ni, di);
 	if (Pools[pi].IsLayPool == 0) { // also update layer pool if I am a subpool
-		AtomicInhibRawIncr(Pools[lpi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt);
+		AtomicInhibRawIncr(Pools[lpi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt, Pools[lpi].NNeurons());
 		AtomicUpdatePoolAvgMax(Pools[lpi].AvgMax, ctx, ni, di);
 	}
 }
