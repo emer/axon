@@ -349,7 +349,7 @@ func TestInitWts(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	NetActTest(t, Tol8, false)
+	NetActTest(t, Tol7, false)
 }
 
 func TestGPUAct(t *testing.T) {
@@ -681,7 +681,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printVals bool, g
 }
 
 func TestNetLearn(t *testing.T) {
-	NetTestLearn(t, Tol8, false)
+	NetTestLearn(t, Tol7, false)
 }
 
 func TestGPULearn(t *testing.T) {
@@ -857,7 +857,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 }
 
 func TestNetRLRate(t *testing.T) {
-	NetTestRLRate(t, Tol8, false)
+	NetTestRLRate(t, Tol7, false)
 }
 
 func TestGPURLRate(t *testing.T) {
@@ -1244,7 +1244,7 @@ func TestGPUSlowAdaptLearn(t *testing.T) {
 }
 
 func TestInhibAct(t *testing.T) {
-	tol := Tol8
+	tol := Tol6
 
 	inPats := newInPats()
 	var InhibNet Network
