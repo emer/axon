@@ -37,7 +37,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs GUI with the GPU -- faster with NData = 16
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -108,11 +108,11 @@ type HipParams struct {
 
 func (hp *HipParams) Defaults() {
 	// size
-	hp.EC2Size.Set(21, 21)
+	hp.EC2Size.Set(21, 21) // 21
 	hp.ECSize.Set(2, 3)
 	hp.ECPool.Set(7, 7)
-	hp.CA1Pool.Set(20, 20) // using MedHip now
-	hp.CA3Size.Set(40, 40) // using MedHip now
+	hp.CA1Pool.Set(10, 10) // using MedHip now
+	hp.CA3Size.Set(20, 20) // using MedHip now
 	hp.DGRatio = 2.236     // c.f. Ketz et al., 2013
 
 	// ratio
@@ -298,82 +298,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inh.SetClass("InhibLateral")
 
 	// MSP
-	hipPrjn := &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj := net.ConnectLayersPrjn(ec3, ca1, pool1to1, axon.ForwardPrjn, hipPrjn)
-	pj.SetClass("EcCa1Prjn")
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(ca1, ec5, pool1to1, axon.ForwardPrjn, hipPrjn) // what to use now for prjn?
-	pj.SetClass("EcCa1Prjn")
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(ec5, ca1, pool1to1, axon.BackPrjn, hipPrjn) // what to use now for prjn?
-	pj.SetClass("EcCa1Prjn")
+	net.ConnectLayers(ec3, ca1, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
+	net.ConnectLayers(ca1, ec5, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
+	net.ConnectLayers(ec5, ca1, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
 
 	// TSP
 	ppathDG := prjn.NewUnifRnd()
 	ppathDG.PCon = hp.DGPCon
 	ppathCA3 := prjn.NewUnifRnd()
 	ppathCA3.PCon = hp.CA3PCon
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(ec2, dg, ppathDG, axon.ForwardPrjn, hipPrjn) // was CHLPrjn, using new EcCa1Prjn for now
-	pj.SetClass("HippoCHL")
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(ec2, ca3, ppathCA3, axon.ForwardPrjn, hipPrjn)
-	pj.SetClass("PPath")
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(ca3, ca3, full, axon.LateralPrjn, hipPrjn)
-	pj.SetClass("PPath")
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(dg, ca3, mossy, axon.ForwardPrjn, hipPrjn) // was CHLPrjn, using new EcCa1Prjn for now
-	pj.SetClass("HippoCHL")
-	hipPrjn = &axon.Prjn{}
-	hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	pj = net.ConnectLayersPrjn(ca3, ca1, full, axon.ForwardPrjn, hipPrjn) // was CHLPrjn, using new EcCa1Prjn for now
-	pj.SetClass("HippoCHL")
-
-	// // MSP
-	// hipPrjn := &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ec3, ca1, pool1to1, axon.ForwardPrjn, hipPrjn)
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ca1, ec5, pool1to1, axon.ForwardPrjn, hipPrjn) // what to use now for prjn?
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ec5, ca1, pool1to1, axon.BackPrjn, hipPrjn) // what to use now for prjn?
-
-	// // TSP
-	// ppathDG := prjn.NewUnifRnd()
-	// ppathDG.PCon = hp.DGPCon
-	// ppathCA3 := prjn.NewUnifRnd()
-	// ppathCA3.PCon = hp.CA3PCon
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ec2, dg, ppathDG, axon.ForwardPrjn, hipPrjn) // was CHLPrjn, using new EcCa1Prjn for now
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ec2, ca3, ppathCA3, axon.ForwardPrjn, hipPrjn)
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ca3, ca3, full, axon.LateralPrjn, hipPrjn)
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(dg, ca3, mossy, axon.ForwardPrjn, hipPrjn) // was CHLPrjn, using new EcCa1Prjn for now
-	// hipPrjn = &axon.Prjn{}
-	// hipPrjn.PrjnBase.Typ = axon.HipPrjn
-	// net.ConnectLayersPrjn(ca3, ca1, full, axon.ForwardPrjn, hipPrjn) // was CHLPrjn, using new EcCa1Prjn for now
-
-	// dg.(axon.AxonLayer).SetThread(1) // ??? does this conflict w/ SetNTHreads below?
-	// ca3.(axon.AxonLayer).SetThread(2)
-	// ca1.(axon.AxonLayer).SetThread(3)
-
-	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
+	net.ConnectLayers(ec2, dg, ppathDG, axon.ForwardPrjn).SetClass("HippoCHL")
+	net.ConnectLayers(ec2, ca3, ppathCA3, axon.ForwardPrjn).SetClass("PPath")
+	net.ConnectLayers(ca3, ca3, full, axon.LateralPrjn).SetClass("PPath")
+	net.ConnectLayers(dg, ca3, mossy, axon.ForwardPrjn).SetClass("HippoCHL")
+	net.ConnectLayers(ca3, ca1, full, axon.ForwardPrjn).SetClass("HippoCHL")
 
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
@@ -685,7 +623,7 @@ func (ss *Sim) NetViewCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
-	out := ss.Net.AxonLayerByName("Output")
+	out := ss.Net.AxonLayerByName("EC5")
 
 	ss.Stats.SetFloat("CorSim", float64(out.Vals[di].CorSim.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
