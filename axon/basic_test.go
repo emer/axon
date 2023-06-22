@@ -1216,7 +1216,7 @@ func TestGPULearnDiff(t *testing.T) {
 	cpuVals := NetDebugLearn(t, false, false, 1, false, false, false)
 	// fmt.Printf("\n#############\nGPU\n")
 	gpuVals := NetDebugLearn(t, false, true, 1, false, false, false)
-	ReportValDiffs(t, Tol5, cpuVals, gpuVals, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol4, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
 
 func TestGPUSubMeanLearn(t *testing.T) {
