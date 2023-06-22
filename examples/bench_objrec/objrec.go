@@ -654,7 +654,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ctx.SetFloat32(ly.Pool(0, ctx.Di).Inhib.SSGi)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).Inhib.SSGi)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}}})
