@@ -1,9 +1,9 @@
 module github.com/emer/axon
 
-go 1.18
+go 1.20
 
 require (
-	github.com/alecthomas/assert/v2 v2.2.2
+	github.com/alecthomas/assert/v2 v2.3.0
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/emer/emergent v1.4.14
@@ -19,9 +19,9 @@ require (
 	github.com/goki/mat32 v1.0.15
 	github.com/goki/vgpu v1.0.33
 	github.com/goki/vulkan v1.0.6
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	gitlab.com/gomidi/midi/v2 v2.0.30
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
 
 require (

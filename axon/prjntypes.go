@@ -65,6 +65,8 @@ const (
 	// It can also learn based on CS onset if there is a prior CS that predicts that.
 	BLAPrjn
 
+	HipPrjn
+
 	// VSPatchPrjn implements the VSPatch learning rule:
 	// dW = ACh * DA * X * Y
 	// where DA is D1 vs. D2 modulated DA level, X = sending activity factor,

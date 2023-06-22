@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build this_is_broken_we_should_fix_or_delete
-
 package main
 
 import "github.com/emer/emergent/params"
@@ -13,271 +11,349 @@ import "github.com/emer/emergent/params"
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "generic layer params",
-				Params: params.Params{
-					"Layer.Acts.KNa.On":        "false", // false > true
-					"Layer.Learn.TrgAvgAct.On": "false", // true > false?
-					"Layer.Learn.RLRate.On":    "false", // no diff..
-					"Layer.Acts.Gbar.L":        "0.2",   // .2 > .1
-					"Layer.Acts.Decay.Act":     "1.0",   // 1.0 both is best by far!
-					"Layer.Acts.Decay.Glong":   "1.0",
-					"Layer.Inhib.Pool.Bg":      "0.0",
-				}},
-			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
-				Params: params.Params{
-					"Layer.Learn.TrgAvgAct.On":   "false", // def true, not rel?
-					"Layer.Learn.RLRate.On":      "false", // def true, too slow?
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Layer.Gi":       "0.2", // weak just to keep it from blowing up
-					"Layer.Inhib.Pool.Gi":        "1.1",
-					"Layer.Inhib.Pool.On":        "true",
-				}},
-			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
-				Params: params.Params{
-					"Layer.Inhib.Pool.Gi": "1.1",
-					"Layer.Acts.Clamp.Ge": "0.6",
-				}},
-			{Sel: "#CA1", Desc: "CA1 only Pools",
-				Params: params.Params{
-					"Layer.Learn.TrgAvgAct.On":   "true",  // actually a bit better
-					"Layer.Learn.RLRate.On":      "false", // def true, too slow?
-					"Layer.Inhib.ActAvg.Nominal": "0.02",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Pool.Gi":        "1.3", // 1.3 > 1.2 > 1.1
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.FFEx0":     "1.0", // blowup protection
-					"Layer.Inhib.Pool.FFEx":      "0.0",
-				}},
-			{Sel: "#DG", Desc: "very sparse = high inibhition",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.005", // actual .002-3
-					"Layer.Inhib.Layer.Gi":       "2.2",   // 2.2 > 2.0 on larger
-				}},
-			{Sel: "#CA3", Desc: "sparse = high inibhition",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.02",
-					"Layer.Inhib.Layer.Gi":       "1.8", // 1.8 > 1.6 > 2.0
-				}},
 			{Sel: "Prjn", Desc: "keeping default params for generic prjns",
 				Params: params.Params{
-					"Prjn.SWts.Init.SPct": "0.5", // 0.5 == 1.0 > 0.0
+					"Prjn.Learn.Momentum.On": "true",
+					"Prjn.Learn.Norm.On":     "true",
+					"Prjn.Learn.WtBal.On":    "false",
 				}},
-			{Sel: ".EcCa1Prjn", Desc: "encoder projections",
+			//{Sel: "Layer", Desc: "if cycperqtr=50 (i.e., 200ms theta cycle), use this setting",
+			//	Params: params.Params{
+			//		"Layer.Learn.ActAvg.SSTau": "4",
+			//		"Layer.Learn.ActAvg.STau":  "2",
+			//		"Layer.Learn.ActAvg.MTau":  "10",
+			//	}},
+			//{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			//	Params: params.Params{
+			//		"Prjn.WtScale.Rel": "0.2",
+			//	}},
+			{Sel: ".InhibLateral", Desc: "circle lateral inhibitory connection -- good params, longer time, more ABmem",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.04", // 0.04 for Axon -- 0.01 for EcCa1
+					//"Prjn.Off": "true",
+					//"Prjn.Learn.XCal.MLrn":    "0", // pure hebb
+					//"Prjn.Learn.XCal.SetLLrn": "true",
+					"Prjn.Learn.Learn": "false", // ??? not sure
+					"Prjn.WtInit.Mean": "1",     // 0.1 was the standard Grid model as of 02242023
+					"Prjn.WtInit.Var":  "0",
+					"Prjn.WtInit.Sym":  "false",
+					//"Prjn.WtScale.Abs": "0.5", // higher gives better grid
 				}},
-			{Sel: ".HippoCHL", Desc: "hippo CHL projections",
+			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":         "0.05",
-					"Prjn.Learn.LRate.Base": "0.02", // .2 def
+					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "true", // counteracting hogging
+					//"Prjn.Learn.XCal.SetLLrn": "true", // bcm now avail, comment out = default LLrn
+					//"Prjn.Learn.XCal.LLrn":    "0",    // 0 = turn off BCM, must with SetLLrn = true
 				}},
-			{Sel: ".PPath", Desc: "perforant path, new Dg error-driven EcCa1Prjn prjns",
+			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.1", // .1 > .04 -- makes a diff
-					// moss=4, delta=4, lr=0.2, test = 3 are best
+					"Prjn.CHL.Hebb":          "0.01", // .01 > .05? > .1?
+					"Prjn.Learn.Lrate":       "0.2",  // .2 probably better? .4 was prev default
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "true",
 				}},
-			{Sel: "#CA1ToECout", Desc: "extra strong from CA1 to ECout",
+			{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0", // 2.0 > 3.0 for larger
+					"Prjn.Learn.Lrate":       "0.15", // err driven: .15 > .2 > .25 > .1
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "true",
+					//"Prjn.Learn.XCal.SetLLrn": "true", // bcm now avail, comment out = default LLrn
+					//"Prjn.Learn.XCal.LLrn":    "0",    // 0 = turn off BCM, must with SetLLrn = true
 				}},
-			{Sel: "#ECinToCA3", Desc: "stronger",
+			{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3.0", // 4.0 > 3.0
+					"Prjn.WtScale.Abs": "4.0", // 4 > 6 > 2 (fails)
 				}},
-			{Sel: "#ECinToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
+			{Sel: "#InputToEC2", Desc: "for CAN ec2",
 				Params: params.Params{
-					"Prjn.Learn.Learn":      "true", // absolutely essential to have on!
-					"Prjn.CHL.Hebb":         "0.5",  // .5 > 1 overall
-					"Prjn.CHL.SAvgCor":      "0.1",  // .1 > .2 > .3 > .4 ?
-					"Prjn.CHL.MinusQ1":      "true", // dg self err?
-					"Prjn.Learn.LRate.Base": "0.01", // 0.01 > 0.04 maybe
+					"Prjn.Learn.Learn": "false", // no learning better
+					//"Prjn.Learn.Lrate": "0.01",
+					//"Prjn.Learn.XCal.MLrn": "0", // pure hebb not as good
+					//"Prjn.Learn.XCal.SetLLrn": "true",
+					//"Prjn.Learn.XCal.LLrn":    "0.1", // 0.1 works the best
+					//"Prjn.Learn.Lrate":        "0.4", // 0.4 works the best
+					//"Prjn.WtInit.Mean": "0.8", // 0.8 is for one to one deterministic connections, not for learning!
+					// "Prjn.WtInit.Var": "0",
+					//"Prjn.WtScale.Rel": "4", // from CAN EC -- needed to be super strong for position
 				}},
-			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
+			{Sel: "#InputToEC3", Desc: "one-to-one input to EC",
 				Params: params.Params{
-					"Prjn.Learn.Learn":    "false",
-					"Prjn.SWts.Init.Mean": "0.9",
-					"Prjn.SWts.Init.Var":  "0.0",
-					"Prjn.PrjnScale.Abs":  "1.0",
+					"Prjn.Learn.Learn": "false",
+					"Prjn.WtInit.Mean": "0.8",
+					"Prjn.WtInit.Var":  "0.0",
 				}},
-			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
+			{Sel: "#EC3ToEC2", Desc: "copied from InputToEC2",
 				Params: params.Params{
-					"Prjn.Learn.Learn":    "false",
-					"Prjn.SWts.Init.Mean": "0.9",
-					"Prjn.SWts.Init.Var":  "0.01",
-					"Prjn.PrjnScale.Rel":  "0.5", // 0.5 > 1 (sig worse)
+					"Prjn.Learn.Learn": "false", // no learning better
+					//"Prjn.Learn.Lrate": "0.01",
+					//"Prjn.Learn.XCal.MLrn":    "0", // pure hebb
+					//"Prjn.Learn.XCal.SetLLrn": "true",
+					//"Prjn.Learn.XCal.LLrn":    "0.2",
+					//"Prjn.WtInit.Mean": "0.8", // 0.8 is for one to one deterministic connections, not for learning!
+					//"Prjn.WtInit.Var":         "0",
+					"Prjn.WtScale.Rel": "1", // was 1
+				}},
+			{Sel: "#EC5ToEC3", Desc: "one-to-one out to in",
+				Params: params.Params{
+					"Prjn.Learn.Learn": "false",
+					"Prjn.WtInit.Mean": "0.9",
+					"Prjn.WtInit.Var":  "0.01",
+					"Prjn.WtScale.Rel": "0.5", // was 0.5
 				}},
 			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":    "false",
-					"Prjn.SWts.Init.Mean": "0.9",
-					"Prjn.SWts.Init.Var":  "0.01",
-					"Prjn.PrjnScale.Rel":  "3", // 4 def
+					"Prjn.Learn.Learn": "false", // learning here definitely does NOT work!
+					"Prjn.WtInit.Mean": "0.9",
+					"Prjn.WtInit.Var":  "0.01",
+					"Prjn.WtScale.Rel": "4", // err del 4: 4 > 6 > 8
+					//"Prjn.WtScale.Abs": "1.5", // zycyc, test if abs activation was not enough
 				}},
-			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons",
+			{Sel: "#EC2ToCA3", Desc: "EC2 Perforant Path",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel":    "0.1",  // 0.1 > 0.2 == 0
-					"Prjn.Learn.LRate.Base": "0.04", // 0.1 v.s .04 not much diff
+					// "Prjn.WtScale.Rel": "2",
+					"Prjn.Learn.Lrate": "0.2", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
+				}},
+			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons: rel=2 still the best",
+				Params: params.Params{
+					"Prjn.WtScale.Rel": "2",   // 2 > 1 > .5 = .1
+					"Prjn.Learn.Lrate": "0.1", // .1  > .08 (close) > .15 > .2 > .04; large list size: 0.01>0.1~=0.04
+				}},
+			{Sel: "#EC2ToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
+				Params: params.Params{
+					"Prjn.Learn.Learn":       "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
+					"Prjn.CHL.Hebb":          "0.2",  // .2 seems good
+					"Prjn.CHL.SAvgCor":       "0.1",  // 0.01 = 0.05 = .1 > .2 > .3 > .4 (listlize 20-100)
+					"Prjn.CHL.MinusQ1":       "true", // dg self err slightly better
+					"Prjn.Learn.Lrate":       "0.05", // .05 > .1 > .2 > .4; grid model: 0.1 converges nicely but forgets very soon, don't use it
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "false", // hip_ec325 improved a lot from turning off!!!
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					// "Prjn.CHL.Hebb":         "0.01",
-					// "Prjn.CHL.SAvgCor":      "0.4",
-					"Prjn.Learn.LRate.Base": "0.1", // 0.1 > 0.04
-					"Prjn.PrjnScale.Rel":    "2",   // 2 > 1
+					"Prjn.CHL.Hebb":          "0.01", // .01 > .005 > .02 > .002 > .001 > .05 (crazy)
+					"Prjn.CHL.SAvgCor":       "0.4",
+					"Prjn.Learn.Lrate":       "0.1", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "false", // hip_ec325 improved a lot from turning off!!!
 				}},
-			{Sel: "#ECoutToCA1", Desc: "weaker",
+			//{Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
+			//	Params: params.Params{
+			//		"Prjn.WtScale.Abs": "1.5", // zycyc, test if abs activation was not enough
+			//	}},
+			{Sel: "#EC5ToCA1", Desc: "EC5 Perforant Path",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1.0", // 1.0 -- try 0.5
+					"Prjn.WtScale.Rel": "0.3", // Back proj should generally be very weak but we're specifically setting this here bc others are set already
+				}},
+			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level -- now for EC3 and EC5",
+				Params: params.Params{
+					"Layer.Act.Gbar.L":        "0.1",
+					"Layer.Inhib.ActAvg.Init": "0.2",
+					"Layer.Inhib.Layer.On":    "false",
+					"Layer.Inhib.Pool.Gi":     "2.0",
+					"Layer.Inhib.Pool.On":     "true",
+				}},
+			//{Sel: "#EC2", Desc: "very sparse = high inhibition",
+			//	Params: params.Params{
+			//		"Layer.Inhib.Layer.Gi":    "1.8", // more active..
+			//		"Layer.Inhib.Layer.FBTau": "3",
+			//		"Layer.Inhib.ActAvg.Init": "0.1",
+			//		"Layer.Act.Gbar.L":        "0.1",
+			//		"Layer.Act.Dt.GTau":       "3",
+			//	}},
+
+			///////////////// for mimicking EC3 compositional
+			//{Sel: "#EC2", Desc: "GI to 1.8 for normal level of activation",
+			//	Params: params.Params{
+			//		"Layer.Inhib.Pool.Gi": "1.8",
+			//	}},
+			//{Sel: "#DG", Desc: "very sparse = high inhibition",
+			//	Params: params.Params{
+			//		"Layer.Inhib.ActAvg.Init": "0.01",
+			//		"Layer.Inhib.Layer.Gi":    "3.4", // 3.8 for circle lateral, 4 more ABMem more time. 3.6 for 25*25 EC2
+			//	}},
+			//{Sel: "#CA3", Desc: "sparse = high inhibition",
+			//	Params: params.Params{
+			//		"Layer.Inhib.ActAvg.Init": "0.02",
+			//		"Layer.Inhib.Layer.Gi":    "2.4", // 3 > 2.8
+			//		"Layer.Learn.AvgL.Gain":   "2.5", // stick with 2.5. 1 also works??
+			//	}},
+
+			/////////////// for CAN EC2
+			{Sel: "#DG", Desc: "very sparse = high inhibition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.01",
+					"Layer.Inhib.Layer.Gi":    "4.8", //  was 4.8
+				}},
+			{Sel: "#CA3", Desc: "sparse = high inhibition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.02",
+					"Layer.Inhib.Layer.Gi":    "2.8", // was 2.8
+					"Layer.Learn.AvgL.Gain":   "2.5", // stick with 2.5
+				}},
+
+			{Sel: "#CA1", Desc: "CA1 only Pools",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.1",
+					"Layer.Inhib.Layer.On":    "false",
+					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.Gi":     "2.4", // 2.4 > 2.2 > 2.6 > 2.8 -- 2.4 better *for small net* but not for larger!
+					"Layer.Learn.AvgL.Gain":   "2.5", // 2.5 > 2 > 3
+					//"Layer.Inhib.ActAvg.UseFirst": "false", // first activity is too low, throws off scaling, from Randy, zycyc: do we need this?
 				}},
 		},
 		// NOTE: it is essential not to put Pat / Hip params here, as we have to use Base
 		// to initialize the network every time, even if it is a different size..
 	}},
-	{Name: "List010", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "10",
-				}},
-		},
-	}},
-	{Name: "List020", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "20",
-				}},
-		},
-	}},
-	{Name: "List030", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "30",
-				}},
-		},
-	}},
-	{Name: "List040", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "40",
-				}},
-		},
-	}},
-	{Name: "List050", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "50",
-				}},
-		},
-	}},
-	{Name: "List060", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "60",
-				}},
-		},
-	}},
-	{Name: "List070", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "70",
-				}},
-		},
-	}},
-	{Name: "List080", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "80",
-				}},
-		},
-	}},
-	{Name: "List090", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "90",
-				}},
-		},
-	}},
-	{Name: "List100", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "100",
-				}},
-		},
-	}},
-	{Name: "List125", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "125",
-				}},
-		},
-	}},
-	{Name: "List150", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "150",
-				}},
-		},
-	}},
-	{Name: "List200", Desc: "list size", Sheets: params.Sheets{
-		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
-				Params: params.Params{
-					"PatParams.ListSize": "200",
-				}},
-		},
-	}},
-	{Name: "SmallHip", Desc: "hippo size", Sheets: params.Sheets{
-		"Hip": &params.Sheet{
-			{Sel: "HipParams", Desc: "hip sizes",
-				Params: params.Params{
-					"HipParams.ECPool.Y":  "7",
-					"HipParams.ECPool.X":  "7",
-					"HipParams.CA1Pool.Y": "10",
-					"HipParams.CA1Pool.X": "10",
-					"HipParams.CA3Size.Y": "20",
-					"HipParams.CA3Size.X": "20",
-					"HipParams.DGRatio":   "2.236", // 1.5 before, sqrt(5) aligns with Ketz et al. 2013
-				}},
-		},
-	}},
-	{Name: "MedHip", Desc: "hippo size", Sheets: params.Sheets{
-		"Hip": &params.Sheet{
-			{Sel: "HipParams", Desc: "hip sizes",
-				Params: params.Params{
-					"HipParams.ECPool.Y":  "7",
-					"HipParams.ECPool.X":  "7",
-					"HipParams.CA1Pool.Y": "15",
-					"HipParams.CA1Pool.X": "15",
-					"HipParams.CA3Size.Y": "30",
-					"HipParams.CA3Size.X": "30",
-					"HipParams.DGRatio":   "2.236", // 1.5 before
-				}},
-		},
-	}},
-	{Name: "BigHip", Desc: "hippo size", Sheets: params.Sheets{
-		"Hip": &params.Sheet{
-			{Sel: "HipParams", Desc: "hip sizes",
-				Params: params.Params{
-					"HipParams.ECPool.Y":  "7",
-					"HipParams.ECPool.X":  "7",
-					"HipParams.CA1Pool.Y": "20",
-					"HipParams.CA1Pool.X": "20",
-					"HipParams.CA3Size.Y": "40",
-					"HipParams.CA3Size.X": "40",
-					"HipParams.DGRatio":   "2.236", // 1.5 before
-				}},
-		},
-	}},
+	// {Name: "List010", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "10",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List020", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "20",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List030", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "30",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List040", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "40",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List050", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "50",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List060", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "60",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List070", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "70",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List080", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "80",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List090", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "90",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List100", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "100",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List125", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "125",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List150", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "150",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "List200", Desc: "list size", Sheets: params.Sheets{
+	// 	"Pat": &params.Sheet{
+	// 		{Sel: "PatParams", Desc: "pattern params",
+	// 			Params: params.Params{
+	// 				"PatParams.ListSize": "200",
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "SmallHip", Desc: "hippo size", Sheets: params.Sheets{
+	// 	"Hip": &params.Sheet{
+	// 		{Sel: "HipParams", Desc: "hip sizes",
+	// 			Params: params.Params{
+	// 				"HipParams.ECPool.Y":  "7",
+	// 				"HipParams.ECPool.X":  "7",
+	// 				"HipParams.CA1Pool.Y": "10",
+	// 				"HipParams.CA1Pool.X": "10",
+	// 				"HipParams.CA3Size.Y": "20",
+	// 				"HipParams.CA3Size.X": "20",
+	// 				"HipParams.DGRatio":   "2.236", // 1.5 before, sqrt(5) aligns with Ketz et al. 2013
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "MedHip", Desc: "hippo size", Sheets: params.Sheets{
+	// 	"Hip": &params.Sheet{
+	// 		{Sel: "HipParams", Desc: "hip sizes",
+	// 			Params: params.Params{
+	// 				"HipParams.ECPool.Y":  "7",
+	// 				"HipParams.ECPool.X":  "7",
+	// 				"HipParams.CA1Pool.Y": "15",
+	// 				"HipParams.CA1Pool.X": "15",
+	// 				"HipParams.CA3Size.Y": "30",
+	// 				"HipParams.CA3Size.X": "30",
+	// 				"HipParams.DGRatio":   "2.236", // 1.5 before
+	// 			}},
+	// 	},
+	// }},
+	// {Name: "BigHip", Desc: "hippo size", Sheets: params.Sheets{
+	// 	"Hip": &params.Sheet{
+	// 		{Sel: "HipParams", Desc: "hip sizes",
+	// 			Params: params.Params{
+	// 				"HipParams.ECPool.Y":  "7",
+	// 				"HipParams.ECPool.X":  "7",
+	// 				"HipParams.CA1Pool.Y": "20",
+	// 				"HipParams.CA1Pool.X": "20",
+	// 				"HipParams.CA3Size.Y": "40",
+	// 				"HipParams.CA3Size.X": "40",
+	// 				"HipParams.DGRatio":   "2.236", // 1.5 before
+	// 			}},
+	// 	},
+	// }},
 }

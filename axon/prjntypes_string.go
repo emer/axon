@@ -21,9 +21,10 @@ func _() {
 	_ = x[RWPrjn-5]
 	_ = x[TDPredPrjn-6]
 	_ = x[BLAPrjn-7]
-	_ = x[VSPatchPrjn-8]
-	_ = x[MatrixPrjn-9]
-	_ = x[PrjnTypesN-10]
+	_ = x[HipPrjn-8]
+	_ = x[VSPatchPrjn-9]
+	_ = x[MatrixPrjn-10]
+	_ = x[PrjnTypesN-11]
 }
 
 const _PrjnTypes_name = "ForwardPrjnBackPrjnLateralPrjnInhibPrjnCTCtxtPrjnRWPrjnTDPredPrjnBLAPrjnVSPatchPrjnMatrixPrjnPrjnTypesN"
