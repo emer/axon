@@ -609,6 +609,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
 	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
+	ss.Args.AddString("startWts", "", "starting weights -- start run with these weights")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
 	ss.Args.Parse() // always parse
@@ -647,6 +648,13 @@ func (ss *Sim) RunNoGUI() {
 	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.NewRun()
+
+	if swts := ss.Args.String("startWts"); swts != "" {
+		ss.Loops.Step(etime.Train, 1, etime.Trial) // get past NewRun
+		ss.Net.OpenWtsJSON(gi.FileName(swts))
+		mpi.Printf("Starting with initial weights from: %s\n", swts)
+	}
+
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()

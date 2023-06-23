@@ -865,7 +865,7 @@ func TestGPURLRate(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	NetTestRLRate(t, Tol8, true)
+	NetTestRLRate(t, Tol7, true)
 }
 
 func NetTestRLRate(t *testing.T, tol float32, gpu bool) {

@@ -62,11 +62,12 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 		subPool := NrnI(ctx, ni, NrnSubPool)
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			pl := ly.Pool(subPool, di)
-			pl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt), pl.NNeurons())
+			// note: using Int version here so we can have greater match with GPU
+			pl.Inhib.RawIncrInt(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt), pl.NNeurons())
 			pl.AvgMaxUpdate(ctx, ni, di)
 			if hasSubPools { // update layer too -- otherwise pl == lpl
 				lpl := ly.Pool(0, di)
-				lpl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt), lpl.NNeurons())
+				lpl.Inhib.RawIncrInt(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt), lpl.NNeurons())
 				lpl.AvgMaxUpdate(ctx, ni, di)
 			}
 		}
@@ -84,6 +85,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	}
 	for di := uint32(0); di < ly.MaxData; di++ {
 		lpl := ly.Pool(0, di)
+		lpl.Inhib.IntToRaw()
 		ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.LayerVals(di))
 	}
 	// ly.PoolGiFmSpikes(ctx) // note: this is now called as a second pass
@@ -104,6 +106,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 		lpl := ly.Pool(0, di)
 		for pi := uint32(1); pi < np; pi++ {
 			pl := ly.Pool(pi, di)
+			pl.Inhib.IntToRaw()
 			ly.Params.SubPoolGiFmSpikes(ctx, di, pl, lpl, lyInhib, ly.Vals[di].ActAvg.GiMult)
 		}
 	}
