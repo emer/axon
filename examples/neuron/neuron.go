@@ -12,15 +12,20 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
+	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
+	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/eplot"
+	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/minmax"
@@ -28,15 +33,27 @@ import (
 	"github.com/goki/gi/gimain"
 	"github.com/goki/gi/giv"
 	"github.com/goki/ki/ki"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
-// this is the stub main for gogi that calls our actual mainrun function, at end of file
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs GUI with the GPU -- for debugging / testing
+	GPU = true
+)
+
 func main() {
-	gimain.Main(func() {
-		mainrun()
-	})
+	sim := &Sim{}
+	sim.New()
+	sim.Config()
+	if len(os.Args) > 1 {
+		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
+	} else {
+		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
+			sim.RunGUI()
+		})
+	}
 }
 
 // LogPrec is precision for saving float values in logs
@@ -55,6 +72,15 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.On": "false",
 					"Layer.Acts.Init.Vm":   "0.3",
+				}},
+		},
+	}},
+	{Name: "Testing", Desc: "for testing", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "",
+				Params: params.Params{
+					"Layer.Acts.NMDA.Gbar":  "0.0",
+					"Layer.Acts.GabaB.Gbar": "0.0",
 				}},
 		},
 	}},
@@ -97,32 +123,30 @@ type Sim struct {
 	Context      axon.Context  `desc:"axon timing parameters and state"`
 	Stats        estats.Stats  `desc:"contains computed statistic values"`
 	Logs         elog.Logs     `view:"no-inline" desc:"logging"`
-	Params       params.Sets   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
+	Params       emer.Params   `view:"inline" desc:"all parameter management"`
+	Args         ecmd.Args     `view:"no-inline" desc:"command line args"`
 
 	Cycle int `inactive:"+" desc:"current cycle of updating"`
 
 	// internal state - view:"-"
-	Win        *gi.Window       `view:"-" desc:"main GUI window"`
-	NetView    *netview.NetView `view:"-" desc:"the network viewer"`
-	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
-	TstCycPlot *eplot.Plot2D    `view:"-" desc:"the test-trial plot"`
-	IsRunning  bool             `view:"-" desc:"true if sim is running"`
-	StopNow    bool             `view:"-" desc:"flag to stop running"`
+	Win        *gi.Window         `view:"-" desc:"main GUI window"`
+	NetView    *netview.NetView   `view:"-" desc:"the network viewer"`
+	ToolBar    *gi.ToolBar        `view:"-" desc:"the master toolbar"`
+	TstCycPlot *eplot.Plot2D      `view:"-" desc:"the test-trial plot"`
+	ValMap     map[string]float32 `view:"-" desc:"map of values for detailed debugging / testing"`
+	IsRunning  bool               `view:"-" desc:"true if sim is running"`
+	StopNow    bool               `view:"-" desc:"flag to stop running"`
 }
-
-// this registers this Sim Type and gives it properties that e.g.,
-// prompt for filename for save methods.
-var KiT_Sim = kit.Types.AddType(&Sim{}, SimProps)
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
-	ss.Params = ParamSets
+	ss.Params.Params = ParamSets
+	ss.Params.AddNetwork(ss.Net)
 	ss.Stats.Init()
+	ss.ValMap = make(map[string]float32)
 	ss.Defaults()
+	ss.ConfigArgs()
 }
 
 // Defaults sets default params
@@ -162,7 +186,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 
 	net.InitName(net, "Neuron")
-	net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
+	in := net.AddLayer2D("Input", 1, 1, axon.InputLayer)
+	hid := net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
+
+	net.ConnectLayers(in, hid, prjn.NewFull(), axon.ForwardPrjn)
 
 	err := net.Build(ctx)
 	if err != nil {
@@ -232,6 +259,7 @@ func (ss *Sim) RunCycles() {
 		}
 		ss.NeuronUpdt(ss.Net, inputOn)
 		ss.Logs.LogRow(etime.Test, etime.Cycle, cyc)
+		ss.RecordVals(cyc)
 		if cyc%ss.UpdtInterval == 0 {
 			ss.UpdateView()
 		}
@@ -243,39 +271,58 @@ func (ss *Sim) RunCycles() {
 	ss.UpdateView()
 }
 
+func (ss *Sim) RecordVals(cyc int) {
+	var vals []float32
+	ly := ss.Net.AxonLayerByName("Neuron")
+	key := fmt.Sprintf("cyc: %03d", cyc)
+	for _, vnm := range axon.NeuronVarNames {
+		ly.UnitVals(&vals, vnm, 0)
+		vkey := key + fmt.Sprintf("\t%s", vnm)
+		ss.ValMap[vkey] = vals[0]
+	}
+}
+
 // NeuronUpdt updates the neuron
 // this just calls the relevant code directly, bypassing most other stuff.
 func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ctx := &ss.Context
 	ly := ss.Net.AxonLayerByName("Neuron")
+	ni := ly.NeurStIdx
+	di := uint32(0)
 	ac := &ly.Params.Acts
-	// nrn := &(ly.Neurons[0])
 	nex := &ss.NeuronEx
 	// nrn.Noise = float32(ly.Params.Act.Noise.Gen(-1))
 	// nrn.Ge += nrn.Noise // GeNoise
 	// nrn.Gi = 0
 	if inputOn {
 		if ss.GeClamp {
-			axon.SetNrnV(ctx, 0, 0, axon.GeRaw, ss.Ge)
-			axon.SetNrnV(ctx, 0, 0, axon.GeSyn, ac.Dt.GeSynFmRawSteady(axon.NrnV(ctx, 0, 0, axon.GeRaw)))
+			axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Ge)
+			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFmRawSteady(axon.NrnV(ctx, ni, di, axon.GeRaw)))
 		} else {
 			nex.InISI += 1
 			if nex.InISI > 1000/ss.SpikeHz {
-				axon.SetNrnV(ctx, 0, 0, axon.GeRaw, ss.Ge)
+				axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Ge)
 				nex.InISI = 0
 			} else {
-				axon.SetNrnV(ctx, 0, 0, axon.GeRaw, 0)
+				axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
 			}
-			axon.SetNrnV(ctx, 0, 0, axon.GeSyn, ac.Dt.GeSynFmRaw(axon.NrnV(ctx, 0, 0, axon.GeSyn), axon.NrnV(ctx, 0, 0, axon.GeRaw)))
+			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFmRaw(axon.NrnV(ctx, ni, di, axon.GeSyn), axon.NrnV(ctx, ni, di, axon.GeRaw)))
 		}
 	} else {
-		axon.SetNrnV(ctx, 0, 0, axon.GeRaw, 0)
-		axon.SetNrnV(ctx, 0, 0, axon.GeSyn, 0)
+		axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
+		axon.SetNrnV(ctx, ni, di, axon.GeSyn, 0)
 	}
-	axon.SetNrnV(ctx, 0, 0, axon.GiRaw, ss.Gi)
-	axon.SetNrnV(ctx, 0, 0, axon.GiSyn, ac.Dt.GiSynFmRawSteady(axon.NrnV(ctx, 0, 0, axon.GiRaw)))
-	ly.GInteg(ctx, 0, 0, ly.Pool(0, 0), ly.LayerVals(0))
-	ly.SpikeFmG(ctx, 0, 0)
+	axon.SetNrnV(ctx, ni, di, axon.GiRaw, ss.Gi)
+	axon.SetNrnV(ctx, ni, di, axon.GiSyn, ac.Dt.GiSynFmRawSteady(axon.NrnV(ctx, ni, di, axon.GiRaw)))
+
+	if ss.Net.GPU.On {
+		ss.Net.GPU.SyncStateToGPU()
+		ss.Net.GPU.RunPipelineWait("Cycle", 2)
+		ss.Net.GPU.SyncStateFmGPU()
+	} else {
+		ly.GInteg(ctx, ni, di, ly.Pool(0, di), ly.LayerVals(0))
+		ly.SpikeFmG(ctx, ni, di)
+	}
 }
 
 // Stop tells the sim to stop running
@@ -290,12 +337,8 @@ func (ss *Sim) Stop() {
 // If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
 // otherwise just the named sheet
 // if setMsg = true then we output a message for each param that was set.
-func (ss *Sim) SetParams(sheet string, setMsg bool) error {
-	if sheet == "" {
-		// this is important for catching typos and ensuring that all sheets can be used
-		ss.Params.ValidateSheets([]string{"Network", "Sim"})
-	}
-	err := ss.SetParamsSet("Base", sheet, setMsg)
+func (ss *Sim) SetParams(sheet string, setMsg bool) {
+	ss.Params.SetAll()
 	ly := ss.Net.AxonLayerByName("Neuron")
 	lyp := ly.Params
 	lyp.Acts.Gbar.E = 1
@@ -310,34 +353,6 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	lyp.Acts.VGCC.Gbar = ss.VGCCGbar
 	lyp.Acts.AK.Gbar = ss.AKGbar
 	lyp.Acts.Update()
-	return err
-}
-
-// SetParamsSet sets the params for given params.Set name.
-// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
-// otherwise just the named sheet
-// if setMsg = true then we output a message for each param that was set.
-func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
-	pset, err := ss.Params.SetByNameTry(setNm)
-	if err != nil {
-		return err
-	}
-	if sheet == "" || sheet == "Network" {
-		netp, ok := pset.Sheets["Network"]
-		if ok {
-			ss.Net.ApplyParams(netp, setMsg)
-		}
-	}
-
-	if sheet == "" || sheet == "Sim" {
-		simp, ok := pset.Sheets["Sim"]
-		if ok {
-			simp.Apply(ss, setMsg)
-		}
-	}
-	// note: if you have more complex environments with parameters, definitely add
-	// sheets for them, e.g., "TrainEnv", "TestEnv" etc
-	return err
 }
 
 func (ss *Sim) ConfigLogs() {
@@ -510,26 +525,43 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 	return win
 }
 
-// These props register Save methods so they can be used
-var SimProps = ki.Props{
-	"CallMethods": ki.PropSlice{
-		{"SaveWeights", ki.Props{
-			"desc": "save network weights to file",
-			"icon": "file-save",
-			"Args": ki.PropSlice{
-				{"File Name", ki.Props{
-					"ext": ".wts",
-				}},
-			},
-		}},
-	},
+func (ss *Sim) RunGUI() {
+	ss.Init()
+	win := ss.ConfigGui()
+	win.StartEventLoop()
 }
 
-func mainrun() {
-	TheSim.New()
-	TheSim.Config()
+func (ss *Sim) ConfigArgs() {
+	ss.Args.Init()
+	ss.Args.AddStd()
+	ss.Args.SetInt("epochs", 1)
+	ss.Args.SetInt("runs", 1)
+	ss.Args.AddBool("cyclog", true, "if true, save cycle log to file (main log)")
+	ss.Args.Parse() // always parse
+	if len(os.Args) > 1 {
+		ss.Args.SetBool("nogui", true) // by definition if here
+	}
+}
 
-	TheSim.Init()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
+func (ss *Sim) RunNoGUI() {
+	ss.Args.ProcStd(&ss.Params)
+	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
+	ss.Args.SetBool("nogui", true)                                       // by definition if here
+	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+
+	ss.Init()
+
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	}
+
+	ss.RunCycles()
+
+	ss.Logs.CloseLogFiles()
+
+	if ss.Args.Bool("cyclog") {
+		dt := ss.Logs.Table(etime.Test, etime.Cycle)
+		fnm := ecmd.LogFileName("cyc", ss.Net.Name(), ss.Params.RunName(0))
+		dt.SaveCSV(gi.FileName(fnm), etable.Tab, etable.Headers)
+	}
 }

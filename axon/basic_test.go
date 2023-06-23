@@ -362,7 +362,8 @@ func TestGPUAct(t *testing.T) {
 
 // NetActTest runs an activation test on the network and checks
 // for key values relative to known standards.
-// Note: use NetActDebug for printf debugging of all values -- "this is only a test"
+// Note: use NetDebugAct for printf debugging of all values --
+// "this is only a test"
 func NetActTest(t *testing.T, tol float32, gpu bool) {
 	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)

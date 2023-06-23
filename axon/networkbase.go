@@ -1060,6 +1060,7 @@ func (nt *NetworkBase) OpenWtsJSON(filename gi.FileName) error {
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (nt *NetworkBase) WriteWtsJSON(w io.Writer) error {
+	nt.GPU.SyncSynapsesFmGPU()
 	depth := 0
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("{\n"))

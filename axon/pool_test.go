@@ -60,10 +60,12 @@ var PoolParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "1",
-					"Layer.Inhib.Pool.On":  "false",
-					"Layer.Inhib.Pool.Gi":  ".7",
+					"Layer.Inhib.Layer.On":  "true",
+					"Layer.Inhib.Layer.Gi":  "1",
+					"Layer.Inhib.Pool.On":   "false",
+					"Layer.Inhib.Pool.Gi":   ".7",
+					"Layer.Acts.NMDA.Gbar":  "0.0", // <- avoid larger numerical issues by turning these off
+					"Layer.Acts.GabaB.Gbar": "0.0",
 				}},
 		},
 	}},
@@ -120,7 +122,7 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet.MaxData = uint32(nData)
 
 	inLay := testNet.AddLayer4D("Input", 4, 1, 1, 4, InputLayer)
-	hidLay := testNet.AddLayer4D("Hidden", 4, 1, 1, 4, SuperLayer)
+	hidLay := testNet.AddLayer4D("Hidden", 4, 1, 1, 4, SuperLayer) // note: tried with up to 400 -- no diff
 	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
@@ -144,7 +146,7 @@ func TestPoolGPUDiffsLayerOnly(t *testing.T) {
 	}
 	cpuVals := netDebugAct(t, "LayerOnly", false, false, 1, true)
 	gpuVals := netDebugAct(t, "LayerOnly", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol4, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
 
 func TestPoolGPUDiffsPoolOnly(t *testing.T) {
