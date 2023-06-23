@@ -40,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs GUI with the GPU -- for debugging / testing
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -258,6 +258,7 @@ func (ss *Sim) RunCycles() {
 			inputOn = false
 		}
 		ss.NeuronUpdt(ss.Net, inputOn)
+		ctx.Cycle = int32(cyc)
 		ss.Logs.LogRow(etime.Test, etime.Cycle, cyc)
 		ss.RecordVals(cyc)
 		if cyc%ss.UpdtInterval == 0 {
@@ -319,6 +320,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 		ss.Net.GPU.SyncStateToGPU()
 		ss.Net.GPU.RunPipelineWait("Cycle", 2)
 		ss.Net.GPU.SyncStateFmGPU()
+		ctx.CycleInc() // why is this not working!?
 	} else {
 		ly.GInteg(ctx, ni, di, ly.Pool(0, di), ly.LayerVals(0))
 		ly.SpikeFmG(ctx, ni, di)
@@ -520,6 +522,13 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 	win.SetCloseCleanFunc(func(w *gi.Window) {
 		go gi.Quit() // once main window is closed, quit
 	})
+
+	if GPU {
+		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 
 	win.MainMenuUpdated()
 	return win

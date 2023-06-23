@@ -334,8 +334,8 @@ type Context struct {
 	Time         float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	TrialsTotal  int32       `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
 	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-	SlowInterval int32       `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models."`
-	SlowCtr      int32       `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency."`
+	SlowInterval int32       `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models."`
+	SlowCtr      int32       `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter."`
 	SynCaCtr     float32     `inactive:"+" desc:"synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset."`
 
 	pad, pad1 float32
