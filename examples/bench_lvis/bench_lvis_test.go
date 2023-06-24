@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"runtime"
 	"testing"
 
@@ -44,7 +45,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	ctx := axon.NewContext()
 	net := &axon.Network{}
-	ConfigNet(b, ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
+	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	// if *verbose {
 	log.Println(net.SizeReport(false))
 	// }
@@ -66,4 +67,27 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	ConfigEpcLog(epcLog)
 
 	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
+}
+
+func TestGPUSynCa(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	rand.Seed(42)
+
+	ctx := axon.NewContext()
+	net := &axon.Network{}
+	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
+	log.Println(net.SizeReport(false))
+
+	// vgpu.Debug = true // definitely enable if failing!!
+	net.ConfigGPUnoGUI(ctx)
+
+	// on mac, only works up to ndata = 6 -- 7 fails
+	fmt.Printf("ndata: %d   floats per: %X  banks: %d\n", ctx.NetIdxs.NData, ctx.NetIdxs.GPUMaxBuffFloats, ctx.NetIdxs.GPUSynCaBanks)
+
+	passed := net.GPU.TestSynCa()
+	if !passed {
+		t.Errorf("GPU SynCa write failed\n")
+	}
 }

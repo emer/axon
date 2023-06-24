@@ -161,6 +161,18 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 * `pvlv` primary value, learned value conditioning model, also includes special BOA net configs
 
+# GPU StorageBuffer memory limits
+
+There is a hard max storage buffer limit of 4GB, and MaxStorageBufferRange in PhysicalDeviceLimits has the specific number for a given device.  We need to use this in constraining our memory allocations:
+
+`vgpu.GPU has GPUProps.Limits.MaxStorageBufferRange`
+
+* https://github.com/gpuweb/gpuweb/issues/1371
+* https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceLimits.html
+* https://github.com/KhronosGroup/Vulkan-Docs/issues/1016
+* https://vulkan.gpuinfo.org/listreports.php?limit=maxStorageBufferRange&value=4294967295&platform=macos
+* https://vulkan.gpuinfo.org/displaydevicelimit.php?name=maxStorageBufferRange
+
 # GPU Quirks
 
 * cannot have a struct field with the same name as a NeuronVar enum in the same method context -- results in: `error: 'NrnV' : no matching overloaded function found`

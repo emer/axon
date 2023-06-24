@@ -1036,21 +1036,23 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 // NetDebugLearn prints selected values (if printVals),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func NetDebugLearn(t *testing.T, printVals bool, gpu bool, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
+func NetDebugLearn(t *testing.T, printVals bool, gpu bool, maxData, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
 	ctx := NewContext()
 	var testNet *Network
 	rand.Seed(1337)
 
 	if submean {
-		testNet = newTestNetFull(ctx, nData) // otherwise no effect
+		testNet = newTestNetFull(ctx, maxData) // otherwise no effect
 	} else {
-		testNet = newTestNet(ctx, nData)
+		testNet = newTestNet(ctx, maxData)
 	}
 	testNet.ApplyParams(ParamSets.SetByName("FullDecay").Sheets["Network"], false)
 
 	if submean {
 		testNet.ApplyParams(ParamSets.SetByName("SubMean").Sheets["Network"], false)
 	}
+
+	ctx.NetIdxs.NData = uint32(nData)
 	return RunDebugLearn(t, ctx, testNet, printVals, gpu, initWts, slowAdapt)
 }
 
@@ -1200,13 +1202,37 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printVals bool,
 
 func TestDebugLearn(t *testing.T) {
 	t.Skip("skipped in regular testing")
-	NetDebugLearn(t, true, false, 2, true, false, false)
+	NetDebugLearn(t, true, false, 2, 2, true, false, false)
 }
 
 func TestNDataLearn(t *testing.T) {
-	nd1Vals := NetDebugLearn(t, false, false, 1, true, false, false)
-	nd4Vals := NetDebugLearn(t, false, false, 4, true, false, false)
+	nd1Vals := NetDebugLearn(t, false, false, 1, 1, true, false, false)
+	nd4Vals := NetDebugLearn(t, false, false, 4, 4, true, false, false)
 	ReportValDiffs(t, Tol8, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+}
+
+func TestNDataMaxDataLearn(t *testing.T) {
+	nd84Vals := NetDebugLearn(t, false, false, 8, 4, false, false, false)
+	nd44Vals := NetDebugLearn(t, false, false, 4, 4, false, false, false)
+	ReportValDiffs(t, Tol8, nd84Vals, nd44Vals, "maxData = 8, nData = 4", "maxData = 4, nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+}
+
+func TestGPUNDataLearn(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	nd1Vals := NetDebugLearn(t, false, true, 1, 1, true, false, false)
+	nd4Vals := NetDebugLearn(t, false, true, 4, 4, true, false, false)
+	ReportValDiffs(t, Tol8, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+}
+
+func TestGPUNDataMaxDataLearn(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	nd84Vals := NetDebugLearn(t, false, true, 8, 4, false, false, false)
+	nd44Vals := NetDebugLearn(t, false, true, 4, 4, false, false, false)
+	ReportValDiffs(t, Tol8, nd84Vals, nd44Vals, "maxData = 8, nData = 4", "maxData = 4, nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
 }
 
 func TestGPULearnDiff(t *testing.T) {
@@ -1214,9 +1240,9 @@ func TestGPULearnDiff(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, false, false, false)
+	cpuVals := NetDebugLearn(t, false, false, 1, 1, false, false, false)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, false, false, false)
+	gpuVals := NetDebugLearn(t, false, true, 1, 1, false, false, false)
 	ReportValDiffs(t, Tol4, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
 
@@ -1225,9 +1251,9 @@ func TestGPUSubMeanLearn(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, false, true, false)
+	cpuVals := NetDebugLearn(t, false, false, 1, 1, false, true, false)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, false, true, false)
+	gpuVals := NetDebugLearn(t, false, true, 1, 1, false, true, false)
 	// this has bad tolerance, due to GABAB -- similar to NMDA issues
 	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
 }
@@ -1237,11 +1263,24 @@ func TestGPUSlowAdaptLearn(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, false, false, true)
+	cpuVals := NetDebugLearn(t, false, false, 1, 1, false, false, true)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, false, false, true)
+	gpuVals := NetDebugLearn(t, false, true, 1, 1, false, false, true)
 	// this has bad tolerance, due to GABAB -- similar to NMDA issues
 	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+}
+
+func TestGPUSynCa(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	ctx := NewContext()
+	testNet := newTestNetFull(ctx, 16)
+	testNet.ConfigGPUnoGUI(ctx)
+	passed := testNet.GPU.TestSynCa()
+	if !passed {
+		t.Errorf("GPU SynCa write failed\n")
+	}
 }
 
 func TestInhibAct(t *testing.T) {

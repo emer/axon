@@ -251,21 +251,22 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 
 // NetIdxs are indexes and sizes for processing network
 type NetIdxs struct {
-	NData         uint32 `min:"1" desc:"number of data parallel items to process currently"`
-	NetIdx        uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	MaxData       uint32 `inactive:"+" desc:"maximum amount of data parallel"`
-	NLayers       uint32 `inactive:"+" desc:"number of layers in the network"`
-	NNeurons      uint32 `inactive:"+" desc:"total number of neurons"`
-	NPools        uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
-	NSyns         uint32 `inactive:"+" desc:"total number of synapses"`
-	NSynCaBanks   uint32 `inactive:"+" desc:"total number of SynCa banks of 2^31 arrays in GPU"`
-	GvVTAOff      uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
-	GvVTAStride   uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
-	GvUSnegOff    uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
-	GvDriveOff    uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
-	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
+	NData            uint32 `min:"1" desc:"number of data parallel items to process currently"`
+	NetIdx           uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	MaxData          uint32 `inactive:"+" desc:"maximum amount of data parallel"`
+	NLayers          uint32 `inactive:"+" desc:"number of layers in the network"`
+	NNeurons         uint32 `inactive:"+" desc:"total number of neurons"`
+	NPools           uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
+	NSyns            uint32 `inactive:"+" desc:"total number of synapses"`
+	GPUMaxBuffFloats uint32 `inactive:"+" desc:"maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access"`
+	GPUSynCaBanks    uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
+	GvVTAOff         uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
+	GvVTAStride      uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
+	GvUSnegOff       uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
+	GvDriveOff       uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
+	GvDriveStride    uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
 
-	pad, pad1, pad2 uint32
+	pad, pad1 uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -520,8 +521,8 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 // // SynCaV is GPU version of synapse var accessor into Synapses array
 // float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
+// 	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+// 	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
 // 	switch (bank) {
 // 		case 0:
 // 			return SynapseCas0[res];
@@ -543,8 +544,8 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 // // SetSynCaV is the GPU version of the synapse variable settor
 // void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
+// 	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+// 	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
 // 	switch (bank) {
 // 		case 0:
 // 			SynapseCas0[res] = val;
@@ -572,8 +573,8 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 // // AddSynCaV is the GPU version of the synapse variable addor
 // void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
+// 	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+// 	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
 // 	switch (bank) {
 // 		case 0:
 // 			SynapseCas0[res] += val;
@@ -601,8 +602,8 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 // // MulSynCaV is the GPU version of the synapse variable multor
 // void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 // 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
+// 	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+// 	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
 // 	switch (bank) {
 // 		case 0:
 // 			SynapseCas0[res] *= val;

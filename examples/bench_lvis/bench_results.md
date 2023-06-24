@@ -1,6 +1,6 @@
 # Results from bench_lvis
 
-Run: `go test -bench=.`  or `go test -gpu -verbose=false -bench=.`
+Run: `go test -bench=. -run not`  or `go test -gpu -verbose=false -bench=. -run not`
 
 ```
   BenchLvisNet:	 Neurons: 47,204	 NeurMem: 16.6 MB 	 Syns: 32,448,512 	 SynMem: 2.3 GB
