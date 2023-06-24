@@ -8,6 +8,8 @@ package axon
 
 type HipPrjnParams struct {
 	LRate float32 `def:"0.01,1" desc:"use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier"`
+
+	pad, pad1, pad2 float32
 }
 
 func (hp *HipPrjnParams) Defaults() {
@@ -18,7 +20,7 @@ func (hp *HipPrjnParams) Update() {
 
 }
 
-// gosl: end hip_prjns
+//gosl: end hip_prjns
 
 func (pj *PrjnParams) HipDefaults() {
 	pj.SWts.Init.Sym.SetBool(false)

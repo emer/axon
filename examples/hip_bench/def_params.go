@@ -103,11 +103,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level -- now for EC3 and EC5",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					// "Layer.Inhib.ActAvg.Nominal": "0.15",
+					// "Layer.Inhib.Layer.On":       "false",
+					// "Layer.Inhib.Layer.Gi":       "0.2", // weak just to keep it from blowing up
+					// "Layer.Inhib.Pool.Gi":        "1.1",
+					// "Layer.Inhib.Pool.On":        "true",
+
+					// "Layer.Act.Gbar.L":        "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Layer.Gi":       "0.2", // weak just to keep it from blowing up
-					"Layer.Inhib.Pool.Gi":        "1.1",
 					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "1.1",
 				}},
 
 			/////////////// for CAN EC2
@@ -119,7 +125,7 @@ var ParamSets = params.Sets{
 			{Sel: "#CA3", Desc: "sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.02",
-					"Layer.Inhib.Layer.Gi":       "1.8",
+					"Layer.Inhib.Layer.Gi":       "1.2",
 					// "Layer.Learn.AvgL.Gain":   "2.5", // stick with 2.5
 				}},
 
@@ -128,7 +134,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "1.2",
+					"Layer.Inhib.Pool.Gi":        "0.8",
 					// "Layer.Learn.AvgL.Gain":   "2.5", // 2.5 > 2 > 3
 					//"Layer.Inhib.ActAvg.UseFirst": "false", // first activity is too low, throws off scaling, from Randy, zycyc: do we need this?
 				}},
