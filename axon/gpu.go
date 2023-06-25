@@ -64,6 +64,7 @@ var content embed.FS
 [[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 [[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 [[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 
 
 Set: 0
@@ -111,6 +112,13 @@ var TheGPU *vgpu.GPU
 // 10 is good enough and unlikely to mess with anything else..
 const CyclesN = 10
 
+// PushOff has push constants for setting offset into compute shader
+type PushOff struct {
+	Off uint32 `desc:"offset"`
+
+	pad, pad1, pad2 uint32
+}
+
 // GPU manages all of the GPU-based computation for a given Network.
 // Lives within the network.
 type GPU struct {
@@ -137,6 +145,7 @@ type GPU struct {
 	SynapseCas4 []float32 `view:"-" desc:"bank of floats for GPU access"`
 	SynapseCas5 []float32 `view:"-" desc:"bank of floats for GPU access"`
 	SynapseCas6 []float32 `view:"-" desc:"bank of floats for GPU access"`
+	SynapseCas7 []float32 `view:"-" desc:"bank of floats for GPU access"`
 
 	DidBind map[string]bool `view:"-" desc:"tracks var binding"`
 }
@@ -196,11 +205,15 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.ConfigSynCaBuffs()
 
 	vars := gp.Sys.Vars()
+
+	pcset := vars.AddPushSet()
 	gp.Params = vars.AddSet()
 	gp.Idxs = vars.AddSet()
 	gp.Structs = vars.AddSet()
 	gp.Syns = vars.AddSet()
 	gp.SynCas = vars.AddSet()
+
+	pcset.AddStruct("PushOff", int(unsafe.Sizeof(PushOff{})), 1, vgpu.Push, vgpu.ComputeShader)
 
 	gp.Params.AddStruct("Layers", int(unsafe.Sizeof(LayerParams{})), len(gp.Net.LayParams), vgpu.Storage, vgpu.ComputeShader)
 	gp.Params.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(gp.Net.PrjnParams), vgpu.Storage, vgpu.ComputeShader)
@@ -233,6 +246,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.SynCas.Add("SynapseCas4", vgpu.Float32, len(gp.SynapseCas4), vgpu.Storage, vgpu.ComputeShader)
 	gp.SynCas.Add("SynapseCas5", vgpu.Float32, len(gp.SynapseCas5), vgpu.Storage, vgpu.ComputeShader)
 	gp.SynCas.Add("SynapseCas6", vgpu.Float32, len(gp.SynapseCas6), vgpu.Storage, vgpu.ComputeShader)
+	gp.SynCas.Add("SynapseCas7", vgpu.Float32, len(gp.SynapseCas7), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Params.ConfigVals(1)
 	gp.Idxs.ConfigVals(1)
@@ -320,11 +334,20 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	vars.BindDynValIdx(4, "SynapseCas4", 0)
 	vars.BindDynValIdx(4, "SynapseCas5", 0)
 	vars.BindDynValIdx(4, "SynapseCas6", 0)
+	vars.BindDynValIdx(4, "SynapseCas7", 0)
 }
 
 // ConfigSynCaBuffs configures special SynapseCas buffers needed for larger memory access
 func (gp *GPU) ConfigSynCaBuffs() {
 	bufMax := gp.MaxBufferBytes
+	bm := uint32(1 << 29) // this moves the errors around: clearly a buffer issue!
+	if bufMax > bm {
+		bufMax = bm
+	}
+
+	// ok: there is clearly a total memory limit across all things within SynCas
+	// can reorganize the banks and it always fails in the same way..
+
 	floatMax := int(bufMax) / 4 // 32 bit floats for now
 
 	ctx := gp.Ctx
@@ -341,50 +364,95 @@ func (gp *GPU) ConfigSynCaBuffs() {
 	ctx.NetIdxs.GPUSynCaBanks = uint32(nCaBanks)
 	net.Ctx.NetIdxs.GPUSynCaBanks = uint32(nCaBanks)
 
-	if nCaBanks > 7 {
-		panic(fmt.Sprintf("SynapseCas only supports 7 banks of %X floats -- needs: %d banks\n", floatMax, nCaBanks))
+	fmt.Printf("banks %d: MaxBuffFloats: %X\n", ctx.NetIdxs.GPUSynCaBanks, ctx.NetIdxs.GPUMaxBuffFloats)
+
+	if nCaBanks > 8 {
+		panic(fmt.Sprintf("SynapseCas only supports 8 banks of %X floats -- needs: %d banks\n", floatMax, nCaBanks))
 	}
 	base := 0
 	if nCaBanks > 1 {
-		gp.SynapseCas0 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas0 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas0 = make([]float32, floatMax)
+		fmt.Printf("bank 0: %X : %X\n", base, base+floatMax)
 	} else if nCaBanks == 1 {
-		gp.SynapseCas0 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas0 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas0 = make([]float32, caLast)
+		fmt.Printf("bank 0: %X : %X\n", base, base+caLast)
 	}
 	base += floatMax
 	if nCaBanks > 2 {
-		gp.SynapseCas1 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas1 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas1 = make([]float32, floatMax)
+		fmt.Printf("bank 1: %X : %X\n", base, base+floatMax)
 	} else if nCaBanks == 2 {
-		gp.SynapseCas1 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas1 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas1 = make([]float32, caLast)
+		fmt.Printf("bank 1: %X : %X\n", base, base+caLast)
+	} else {
+		gp.SynapseCas1 = make([]float32, 4) // dummy
 	}
 	base += floatMax
 	if nCaBanks > 3 {
-		gp.SynapseCas2 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas2 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas2 = make([]float32, floatMax)
+		fmt.Printf("bank 2: %X : %X\n", base, base+floatMax)
 	} else if nCaBanks == 3 {
-		gp.SynapseCas2 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas2 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas2 = make([]float32, caLast)
+		fmt.Printf("bank 2: %X : %X\n", base, base+caLast)
+	} else {
+		gp.SynapseCas2 = make([]float32, 4) // dummy
 	}
 	base += floatMax
 	if nCaBanks > 4 {
-		gp.SynapseCas3 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas3 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas3 = make([]float32, floatMax)
+		fmt.Printf("bank 3: %X : %X\n", base, base+floatMax)
 	} else if nCaBanks == 4 {
-		gp.SynapseCas3 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas3 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas3 = make([]float32, caLast)
+	} else {
+		gp.SynapseCas3 = make([]float32, 4) // dummy
 	}
 	base += floatMax
 	if nCaBanks > 5 {
-		gp.SynapseCas4 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas4 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas4 = make([]float32, floatMax)
 	} else if nCaBanks == 5 {
-		gp.SynapseCas4 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas4 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas4 = make([]float32, caLast)
+	} else {
+		gp.SynapseCas4 = make([]float32, 4) // dummy
 	}
 	base += floatMax
 	if nCaBanks > 6 {
-		gp.SynapseCas5 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas5 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas5 = make([]float32, floatMax)
 	} else if nCaBanks == 6 {
-		gp.SynapseCas5 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas5 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas5 = make([]float32, caLast)
+	} else {
+		gp.SynapseCas5 = make([]float32, 4) // dummy
 	}
 	base += floatMax
 	if nCaBanks > 7 {
-		gp.SynapseCas6 = net.SynapseCas[base : base+floatMax]
+		// gp.SynapseCas6 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas6 = make([]float32, floatMax)
 	} else if nCaBanks == 7 {
-		gp.SynapseCas6 = net.SynapseCas[base : base+caLast]
+		// gp.SynapseCas6 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas6 = make([]float32, caLast)
+	} else {
+		gp.SynapseCas6 = make([]float32, 4) // dummy
+	}
+	base += floatMax
+	if nCaBanks > 8 {
+		// gp.SynapseCas7 = net.SynapseCas[base : base+floatMax]
+		gp.SynapseCas7 = make([]float32, floatMax)
+	} else if nCaBanks == 8 {
+		// gp.SynapseCas7 = net.SynapseCas[base : base+caLast]
+		gp.SynapseCas7 = make([]float32, caLast)
+	} else {
+		gp.SynapseCas7 = make([]float32, 4) // dummy
 	}
 }
 
@@ -640,6 +708,7 @@ func (gp *GPU) CopySynCaToStaging() {
 	if !gp.On {
 		return
 	}
+	return // todo: undo!
 	// note: do not need these except in GUI or tests
 	_, syncv, _ := gp.SynCas.ValByIdxTry("SynapseCas0", 0)
 	syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas0[0]))
@@ -666,6 +735,10 @@ func (gp *GPU) CopySynCaToStaging() {
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 6 {
 		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas6", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas6[0]))
+	}
+	if gp.Ctx.NetIdxs.GPUSynCaBanks > 7 {
+		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas7", 0)
+		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas7[0]))
 	}
 }
 
@@ -857,29 +930,55 @@ func (gp *GPU) CopySynCaFmStaging() {
 	_, syncv, _ := gp.SynCas.ValByIdxTry("SynapseCas0", 0)
 	syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas0[0]))
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 1 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas1", 0)
-		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas1[0]))
+		_, syncv1, _ := gp.SynCas.ValByIdxTry("SynapseCas1", 0)
+		syncv1.CopyToBytes(unsafe.Pointer(&gp.SynapseCas1[0]))
 	}
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 2 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas2", 0)
-		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas2[0]))
+		_, syncv2, _ := gp.SynCas.ValByIdxTry("SynapseCas2", 0)
+		syncv2.CopyToBytes(unsafe.Pointer(&gp.SynapseCas2[0]))
 	}
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 3 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas3", 0)
-		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas3[0]))
+		_, syncv3, _ := gp.SynCas.ValByIdxTry("SynapseCas3", 0)
+		syncv3.CopyToBytes(unsafe.Pointer(&gp.SynapseCas3[0]))
 	}
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 4 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas4", 0)
-		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas4[0]))
+		_, syncv4, _ := gp.SynCas.ValByIdxTry("SynapseCas4", 0)
+		syncv4.CopyToBytes(unsafe.Pointer(&gp.SynapseCas4[0]))
 	}
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 5 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas5", 0)
-		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas5[0]))
+		_, syncv5, _ := gp.SynCas.ValByIdxTry("SynapseCas5", 0)
+		syncv5.CopyToBytes(unsafe.Pointer(&gp.SynapseCas5[0]))
 	}
 	if gp.Ctx.NetIdxs.GPUSynCaBanks > 6 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas6", 0)
-		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas6[0]))
+		_, syncv6, _ := gp.SynCas.ValByIdxTry("SynapseCas6", 0)
+		syncv6.CopyToBytes(unsafe.Pointer(&gp.SynapseCas6[0]))
 	}
+	if gp.Ctx.NetIdxs.GPUSynCaBanks > 7 {
+		_, syncv7, _ := gp.SynCas.ValByIdxTry("SynapseCas7", 0)
+		syncv7.CopyToBytes(unsafe.Pointer(&gp.SynapseCas7[0]))
+	}
+}
+
+func (gp *GPU) SynCaBuff(idx uint32) []float32 {
+	switch idx {
+	case 0:
+		return gp.SynapseCas0
+	case 1:
+		return gp.SynapseCas1
+	case 2:
+		return gp.SynapseCas2
+	case 3:
+		return gp.SynapseCas3
+	case 4:
+		return gp.SynapseCas4
+	case 5:
+		return gp.SynapseCas5
+	case 6:
+		return gp.SynapseCas6
+	case 7:
+		return gp.SynapseCas7
+	}
+	return nil
 }
 
 // SyncSynCaFmGPU copies the SynCa variables to GPU, which are per-Di (even larger).
@@ -889,29 +988,43 @@ func (gp *GPU) SyncSynCaFmGPU() {
 	if !gp.On {
 		return
 	}
-	sycr := gp.SyncRegionSynCas("SynapseCas0")
-	regs := []vgpu.MemReg{sycr}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 1 {
-		regs = append(regs, gp.SyncRegionSynCas("SynapseCas1"))
-	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 2 {
-		regs = append(regs, gp.SyncRegionSynCas("SynapseCas2"))
-	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 3 {
-		regs = append(regs, gp.SyncRegionSynCas("SynapseCas3"))
-	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 4 {
-		regs = append(regs, gp.SyncRegionSynCas("SynapseCas4"))
-	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 5 {
-		regs = append(regs, gp.SyncRegionSynCas("SynapseCas5"))
-	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 6 {
-		regs = append(regs, gp.SyncRegionSynCas("SynapseCas6"))
-	}
+	ctx := gp.Ctx
+	// sycr := gp.SyncRegionSynCas("SynapseCas0")
+	// regs := []vgpu.MemReg{sycr}
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 1 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas1"))
+	// }
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 2 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas2"))
+	// }
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 3 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas3"))
+	// }
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 4 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas4"))
+	// }
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 5 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas5"))
+	// }
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 6 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas6"))
+	// }
+	// if gp.Ctx.NetIdxs.GPUSynCaBanks > 7 {
+	// 	regs = append(regs, gp.SyncRegionSynCas("SynapseCas7"))
+	// }
+	// gp.Sys.Mem.SyncStorageRegionsFmGPU(regs...)
 
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(regs...)
-	gp.CopySynCaFmStaging()
+	for i := uint32(0); i < gp.Ctx.NetIdxs.GPUSynCaBanks; i++ {
+		reg := fmt.Sprintf("SynapseCas%d", i)
+		sycr := gp.SyncRegionSynCas(reg)
+		gp.Sys.Mem.SyncStorageRegionsFmGPU(sycr)
+		_, syncv, _ := gp.SynCas.ValByIdxTry(reg, 0)
+		buf := gp.SynCaBuff(i)
+		syncv.CopyToBytes(unsafe.Pointer(&buf[0]))
+		off := int(i) * int(ctx.NetIdxs.GPUMaxBuffFloats)
+		copy(gp.Net.SynapseCas[off:off+len(buf)], buf)
+	}
+	// gp.CopySynCaFmStaging()
 }
 
 // CopyLayerStateFmStaging copies Context, LayerVals and Pools from staging to CPU, after Sync.
@@ -1038,6 +1151,25 @@ func (gp *GPU) RunPipelineCmd(cmd vk.CommandBuffer, name string, n int, wait, si
 	if wait != "" {
 		gp.Sys.ComputeWaitEventsCmd(cmd, wait)
 	}
+	pl.ComputeCommand1DCmd(cmd, n, gp.NThreads)
+	if signal != "" {
+		gp.Sys.ComputeSetEventCmd(cmd, signal)
+	}
+}
+
+// RunPipelineCmdOff records command to run given pipeline with
+// optional wait & signal event names
+func (gp *GPU) RunPipelineCmdOff(cmd vk.CommandBuffer, name string, n, off int, wait, signal string) {
+	pl, err := gp.Sys.PipelineByNameTry(name)
+	if err != nil {
+		panic(err)
+	}
+	if wait != "" {
+		gp.Sys.ComputeWaitEventsCmd(cmd, wait)
+	}
+	vars := gp.Sys.Vars()
+	pvar, _ := vars.VarByNameTry(int(vgpu.PushSet), "PushOff")
+	pl.Push(cmd, pvar, unsafe.Pointer(&PushOff{Off: uint32(off)}))
 	pl.ComputeCommand1DCmd(cmd, n, gp.NThreads)
 	if signal != "" {
 		gp.Sys.ComputeSetEventCmd(cmd, signal)
@@ -1478,55 +1610,251 @@ func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 /////////////////////////////////////////////
 //   Tests
 
+// SynDataNs returns the numbers for processing SynapseCas vars =
+// Synapses * MaxData.  Can exceed thread count limit and require
+// multiple command launches with different offsets.
+// The offset is in terms of synapse index, so everything is computed
+// in terms of synapse indexes, with MaxData then multiplied to get final values.
+// nCmd = number of command launches, nPer = number of synapses per cmd,
+// nLast = number of synapses for last command launch.
+func (gp *GPU) SynDataNs() (nCmd, nPer, nLast int) {
+	synN := int(gp.Net.NSyns)
+	maxData := int(gp.Net.MaxData)
+	maxTh := int(TheGPU.MaxComputeWorkGroupCount1D)
+	maxThSyn := maxTh / maxData
+	fmt.Printf("synN: %X  maxTh: %X  maxThSyn: %X\n", synN, maxTh, maxThSyn)
+
+	// 153,391,689
+	//  32,448,512
+	// 227,139,584 = 32m * 7
+	// 1,589,977,088 = max idx -- not a uint32 overflow!
+
+	if synN < maxThSyn {
+		nCmd = 1
+		nPer = synN
+		nLast = synN
+		return
+	}
+	nCmd = synN / maxThSyn
+	if synN%maxThSyn > 0 {
+		nCmd++
+	}
+	nPer = synN / nCmd
+	nLast = synN - ((nCmd - 1) * nPer)
+	if nPer*maxData > maxTh {
+		panic("axon.GPU.SynDataNs allocated too many nPer threads!")
+	}
+	if nLast*maxData > maxTh {
+		panic("axon.GPU.SynDataNs allocated too many nLast threads!")
+	}
+	return
+}
+
+func (gp *GPU) TestSynCaCmd() vk.CommandBuffer {
+	cnm := "TestSynCa"
+	cmd, err := gp.Sys.CmdBuffByNameTry(cnm)
+	if err == nil {
+		return cmd
+	}
+	cmd = gp.Sys.NewCmdBuff(cnm)
+
+	maxData := int(gp.Net.MaxData)
+	nCmd, nPer, nLast := gp.SynDataNs()
+	fmt.Printf("nCmd: %d  nPer: %d  nLast: %d\n", nCmd, nPer, nLast)
+	gp.StartRunCmd(cmd)
+	off := 0
+	for i := 0; i < nCmd; i++ {
+		n := nPer
+		if i == nCmd-1 {
+			n = nLast
+		}
+		fmt.Printf("i: %d  n: %X  off: %X\n", i, n, off)
+		gp.RunPipelineCmdOff(cmd, cnm, n*maxData, off, "", "")
+		off += n
+	}
+	gp.Sys.ComputeCmdEndCmd(cmd)
+	return cmd
+}
+
 // TestSynCa tests writing to SynCa -- returns true if passed
 func (gp *GPU) TestSynCa() bool {
-	synDataN := int(gp.Net.NSyns) * int(gp.Net.MaxData)
 	ctx := gp.Ctx
-
-	gp.RunPipelineWait("TestSynCa", synDataN)
+	cmd := gp.TestSynCaCmd()
+	gnm := "GPU:TestSynCa"
+	gp.Net.FunTimerStart(gnm)
+	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Net.FunTimerStop(gnm)
 
 	gp.SyncSynCaFmGPU()
 
-	passed := true
-	for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-		for di := uint32(0); di < gp.Net.MaxData; di++ {
-			pi := SynI(ctx, syni, SynPrjnIdx)
-			si := SynI(ctx, syni, SynSendIdx)
-			ri := SynI(ctx, syni, SynRecvIdx)
+	fmt.Printf("synca idx: %v\n", ctx.SynapseCaVars)
 
-			ppi := math.Float32bits(SynCaV(ctx, syni, di, CaM))
-			ssi := math.Float32bits(SynCaV(ctx, syni, di, CaP))
-			rri := math.Float32bits(SynCaV(ctx, syni, di, CaD))
+	varBank := make([]uint32, SynapseCaVarsN)
+	varStart := make([]uint64, SynapseCaVarsN)
+	for vr := CaM; vr < SynapseCaVarsN; vr++ {
+		ix := ctx.SynapseCaVars.Idx(0, 0, vr)
+		varStart[vr] = ix
+		bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+		varBank[vr] = bank
+		res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+		fmt.Printf("var: %d  %s   \tix: %X  bank: %d  res: %X\n", vr, vr.String(), ix, bank, res)
+	}
 
-			ssyni := math.Float32bits(SynCaV(ctx, syni, di, CaUpT))
-			ddi := math.Float32bits(SynCaV(ctx, syni, di, Tr))
+	limit := 2
+	failed := false
 
-			if ppi != pi {
-				passed = false
-				fmt.Printf("syni: %d  di: %d  ppi: %d  pi: %d\n", syni, di, ppi, pi)
-				return false
+	for vr := CaM; vr < SynapseCaVarsN; vr++ {
+		nfail := 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, vr)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				iix := math.Float32bits(SynCaV(ctx, syni, di, vr))
+				if uint32(ix) != iix {
+					fmt.Printf("FAIL: var: %d  %s   \t syni: %X  di: %d  bank: %d  res: %x  ix: %X  ixb: %X  iix: %X\n", vr, vr.String(), syni, di, bank, res, ix, 4*ix, iix)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
 			}
-			if ssi != si {
-				passed = false
-				fmt.Printf("syni: %d  di: %d  ssi: %d  si: %d\n", syni, di, ssi, si)
-				return false
-			}
-			if rri != ri {
-				passed = false
-				fmt.Printf("syni: %d  di: %d  rri: %d  ri: %d\n", syni, di, rri, ri)
-				return false
-			}
-			if ssyni != syni {
-				passed = false
-				fmt.Printf("syni: %d  di: %d  ssyni: %d  syni: %d\n", syni, di, ssyni, syni)
-				return false
-			}
-			if ddi != di {
-				passed = false
-				fmt.Printf("syni: %d  di: %d  ddi: %d  di: %d\n", syni, di, ddi, di)
-				return false
+			if nfail > limit {
+				break
 			}
 		}
 	}
-	return passed
+
+	/*
+		nfail = 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, DTr)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				rres := math.Float32bits(SynCaV(ctx, syni, di, DiDWt))
+				if res != rres {
+					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x rres: %X\n", syni, di, ix, bank, res, rres)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
+			}
+			if nfail > limit {
+				break
+			}
+		}
+
+		nfail = 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, CaM)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				ppi := math.Float32bits(SynCaV(ctx, syni, di, CaM))
+				pi := SynI(ctx, syni, SynPrjnIdx)
+				if ppi != pi {
+					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ppi: %d  pi: %d\n", syni, di, ix, bank, res, ppi, pi)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
+			}
+			if nfail > limit {
+				break
+			}
+		}
+
+		nfail = 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, CaP)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				ssi := math.Float32bits(SynCaV(ctx, syni, di, CaP))
+				si := SynI(ctx, syni, SynSendIdx)
+				if ssi != si {
+					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ssi: %d  si: %d\n", syni, di, ix, bank, res, ssi, si)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
+			}
+			if nfail > limit {
+				break
+			}
+		}
+
+		nfail = 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, CaD)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				rri := math.Float32bits(SynCaV(ctx, syni, di, CaD))
+				ri := SynI(ctx, syni, SynRecvIdx)
+				if rri != ri {
+					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  rri: %d  ri: %d\n", syni, di, ix, bank, res, rri, ri)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
+			}
+			if nfail > limit {
+				break
+			}
+		}
+
+		nfail = 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, CaUpT)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				ssyni := math.Float32bits(SynCaV(ctx, syni, di, CaUpT))
+				if ssyni != syni {
+					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ssyni: %X  syni: %X\n", syni, di, ix, bank, res, ssyni, syni)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
+			}
+			if nfail > limit {
+				break
+			}
+		}
+
+		nfail = 0
+		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+			for di := uint32(0); di < gp.Net.MaxData; di++ {
+				ix := ctx.SynapseCaVars.Idx(syni, di, Tr)
+				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				ddi := math.Float32bits(SynCaV(ctx, syni, di, Tr))
+				if ddi != di {
+					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ddi: %d  di: %d\n", syni, di, ix, bank, res, ddi, di)
+					nfail++
+					failed = true
+					if nfail > limit {
+						break
+					}
+				}
+			}
+			if nfail > limit {
+				break
+			}
+		}
+	*/
+	return !failed
 }

@@ -97,6 +97,8 @@ Set: 3	Syns
 
 # General issues and strategies
 
+* See [Managing Limits](#managing_limits) for issues with overcoming various limits imposed by the GPU architecture.
+
 * Everything must be stored in top-level arrays of structs as shown above -- these are the only variable length data structures.
 
 * The projections and synapses are now organized in a receiver-based ordering, with indexes used to access in a sender-based order. 
@@ -161,17 +163,38 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 * `pvlv` primary value, learned value conditioning model, also includes special BOA net configs
 
-# GPU StorageBuffer memory limits
+* `hip` hippocampus
 
-There is a hard max storage buffer limit of 4GB, and MaxStorageBufferRange in PhysicalDeviceLimits has the specific number for a given device.  We need to use this in constraining our memory allocations:
+# Managing Limits
 
-`vgpu.GPU has GPUProps.Limits.MaxStorageBufferRange`
+Standard backprop-based neural network operate on a "tensor" as the basic unit, which corresponds to a "layer" of units.  Each layer must be processed in full before moving on to the next layer, so that forms the natural computational chunk size, and it isn't typically that big.  In axon, the entire network's worth of neurons and synapses is processed in parallel, so as we scale up the models, we run up against the limits imposed by GPU hardware and software, which are typically in the 32 bit range or lower, in contrast to the 64 bit memory addressing capability of most current CPUs.  Thus, extra steps are required to work around these limits.
 
-* https://github.com/gpuweb/gpuweb/issues/1371
-* https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceLimits.html
-* https://github.com/KhronosGroup/Vulkan-Docs/issues/1016
-* https://vulkan.gpuinfo.org/listreports.php?limit=maxStorageBufferRange&value=4294967295&platform=macos
-* https://vulkan.gpuinfo.org/displaydevicelimit.php?name=maxStorageBufferRange
+**The current implementation (v1.8.x, from June 2023) has an overall hard uint32 limit (4 Gi) on number of synapses**.  Significant additional work will be required to support more than this number.  Also, a single  `Synapses` memory buffer is currently being used, with a 4 GiB memory limit, and each synapse takes 5 * 4 bytes of memory, so the effective limit is 214,748,364.  It is easy to increase this up to the 4 Gi limit, following the example of `SynapseCas`.  For reference, the LVis model has 32,448,512 synapses.
+
+Most of the relevant limits in Vulkan are listed in the [PhysicalDeviceLimits](https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceLimits.html) struct which is available in the [vgpu](https://github.com/goki/vgpu) `GPU` type as `GPUProps.Limits`.  In general the limits in Vulkan are also present in [CUDA](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications), so these are things that have to be worked around regardless of the implementation.
+
+## Compute threads
+
+In HLSL, a compute shader is parameterized by `Dispatch` indexes (equivalent to the `thread block` concept in CUDA), which determine the total number and shape of parallel compute threads that run the given compute shader (kernel in CUDA).  The threads are grouped together into a *Warp*, which shares memory access and is the minimum chunk of computation.  Each HLSL shader has a `[numthreads(x, y, z)]` directive right before the `main` function specifying how many threads per dimension are executed in each warp: [HLSL numthreads doc](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/sm5-attributes-numthreads).  According to this [reddit/r/GraphicsProgramming post](https://www.reddit.com/r/GraphicsProgramming/comments/aeyfkh/for_compute_shaders_is_there_an_ideal_numthreads/), 
+the hardware typically has 32 (NVIDIA, M1, M2) or 64 (AMD) hardware threads per warp, so 64 is typically used as a default product of threads per warp across all of the dimensions.  Here's more [HLSL docs on dispatch](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-dispatch).
+
+Because of this lower hardware limit, the upper bounds on threads per warp (numthreads x*y*z) is not that relevant, but it is given by `maxComputeWorkGroupInvocations`, and is typically 1024 for relevant hardware: [vulkan gpuinfo browser](https://vulkan.gpuinfo.org/displaydevicelimit.php?name=maxComputeWorkGroupInvocations&platform=all).
+
+The limit on *total number of threads* in any invocation is the main relevant limit, and is given by `maxComputeWorkGroupCount[x,y,z] * numthreads`.  The 1D `x` dimension is generally larger than the other two (`y, z`), which are almost always 2^16-1 (64k), and it varies widely across platforms: [vulkan gpuinfo browser](https://vulkan.gpuinfo.org/displaydevicelimit.php?name=maxComputeWorkGroupCount[0]&platform=all)with ~2^16 (64k) or ~2^31 (2 Gi) being the modal values.  It appears to be a largely software-defined value, as all macs with a variety of discrete GPU types, including the M1, have 2^30 (1 Gi), whereas that same chip on other platforms can have a lower value (e.g., 64k).  The modern desktop NVIDIA chips generally have 2 Gi.
+
+Given that this limit is specified per dimension, it remains unclear exactly how all the dimensions add up into an overall total limit.  Empirically, for both the Mac M1 and NVIDIA A100, the actual hard limit was 2 Gi for a 1D case -- invoking with more than that many threads resulted in a failure on the `gpu_test_synca.hlsl` shader run in the `TestGPUSynCa` test in `bench_lvis` varying `ndata` to push the memory and compute limits, without any diagnostic warning from the `vgpu.Debug = true` mode that activates Vulkan validation.  [vgpu](https://github.com/goki/vgpu) now has a MaxComputeWorkGroupCount1D for the max threads when using just 1D (typical case) -- it is set to 2 Gi for Mac and NVIDIA.
+
+To work around the limit, we are just launching multiple kernels with a push constant starting offset set for each, to cover the full space.
+
+This is a useful [stackoverflow answer](https://stackoverflow.com/questions/68653519/maximum-number-of-threads-of-vulkan-compute-shader) explaining these vulkan compute shader compute thread limits.
+
+## Memory buffers
+
+There is a hard max storage buffer limit of 4 GiB (uint32), and `MaxStorageBufferRange` in `PhysicalDeviceLimits` has the specific number for a given device.  We use this `GPUProps.Limits.MaxStorageBufferRange` in constraining our memory allocations, but the typical GPU targets have the 4 GiB limit.
+
+* [vulkan gpu info](https://vulkan.gpuinfo.org/displaydevicelimit.php?name=maxStorageBufferRange)
+* [vulkan gpu info, mac](https://vulkan.gpuinfo.org/listreports.php?limit=maxStorageBufferRange&value=4294967295&platform=macos)
+* related discussion: https://github.com/gpuweb/gpuweb/issues/1371, https://github.com/KhronosGroup/Vulkan-Docs/issues/1016, https://github.com/openxla/iree/issues/13196
 
 # GPU Quirks
 

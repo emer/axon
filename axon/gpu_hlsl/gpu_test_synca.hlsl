@@ -19,6 +19,16 @@
 [[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 [[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 [[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+
+struct PushConst {
+	uint Off;
+ 	uint pad;
+	uint pad1;
+	uint pad2;
+};
+
+[[vk::push_constant]] PushConst PushOff;
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
@@ -34,20 +44,34 @@
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 
 void WriteSynCa(in Context ctx, uint syni, uint di) {
-	uint pi = SynI(ctx, syni, SynPrjnIdx);
-	uint si = SynI(ctx, syni, SynSendIdx);
-	uint ri = SynI(ctx, syni, SynRecvIdx);
-	SetSynCaV(ctx, syni, di, CaM, asfloat(pi));
-	SetSynCaV(ctx, syni, di, CaP, asfloat(si));
-	SetSynCaV(ctx, syni, di, CaD, asfloat(ri));
-	SetSynCaV(ctx, syni, di, CaUpT, asfloat(syni));
-	SetSynCaV(ctx, syni, di, Tr, asfloat(di));
+	// uint64_t ix = ctx.SynapseCaVars.Idx(syni, di, DTr);
+	// uint bank = uint(ix / uint64_t(ctx.NetIdxs.GPUMaxBuffFloats));
+	// uint res = uint(ix % uint64_t(ctx.NetIdxs.GPUMaxBuffFloats));
+	// uint pi = SynI(ctx, syni, SynPrjnIdx);
+	// uint si = SynI(ctx, syni, SynSendIdx);
+	// uint ri = SynI(ctx, syni, SynRecvIdx);
+	// SetSynCaV(ctx, syni, di, CaM, asfloat(pi));
+	// SetSynCaV(ctx, syni, di, CaP, asfloat(si));
+	// SetSynCaV(ctx, syni, di, CaD, asfloat(ri));
+	// SetSynCaV(ctx, syni, di, CaUpT, asfloat(syni));
+	// SetSynCaV(ctx, syni, di, Tr, asfloat(di));
+	// SetSynCaV(ctx, syni, di, DTr, asfloat(bank));
+	// SetSynCaV(ctx, syni, di, DiDWt, asfloat(res));
+
+	// note: following only works for < 4 GiB test
+	SetSynCaV(ctx, syni, di, CaM, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaM))));
+	SetSynCaV(ctx, syni, di, CaP, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaP))));
+	SetSynCaV(ctx, syni, di, CaD, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaD))));
+	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaUpT))));
+	SetSynCaV(ctx, syni, di, Tr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, Tr))));
+	SetSynCaV(ctx, syni, di, DTr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DTr))));
+	SetSynCaV(ctx, syni, di, DiDWt, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DiDWt))));
 }
 
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Synapses * Data
-	uint syni = Ctx[0].NetIdxs.ItemIdx(idx.x);
+	uint syni = Ctx[0].NetIdxs.ItemIdx(idx.x) + PushOff.Off;
 	if (!Ctx[0].NetIdxs.SynIdxIsValid(syni)) {
 		return;
 	}
