@@ -59,13 +59,20 @@ void WriteSynCa(in Context ctx, uint syni, uint di) {
 	// SetSynCaV(ctx, syni, di, DiDWt, asfloat(res));
 
 	// note: following only works for < 4 GiB test
-	SetSynCaV(ctx, syni, di, CaM, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaM))));
-	SetSynCaV(ctx, syni, di, CaP, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaP))));
-	SetSynCaV(ctx, syni, di, CaD, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaD))));
-	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaUpT))));
-	SetSynCaV(ctx, syni, di, Tr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, Tr))));
-	SetSynCaV(ctx, syni, di, DTr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DTr))));
-	SetSynCaV(ctx, syni, di, DiDWt, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DiDWt))));
+	// SetSynCaV(ctx, syni, di, CaM, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaM) % 0xFFFFFFFF)));
+	// SetSynCaV(ctx, syni, di, CaP, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaP) % 0xFFFFFFFF)));
+	// SetSynCaV(ctx, syni, di, CaD, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaD) % 0xFFFFFFFF)));
+	// SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaUpT) % 0xFFFFFFFF)));
+	// SetSynCaV(ctx, syni, di, Tr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, Tr) % 0xFFFFFFFF)));
+	// SetSynCaV(ctx, syni, di, DTr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DTr) % 0xFFFFFFFF)));
+	// SetSynCaV(ctx, syni, di, DiDWt, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DiDWt) % 0xFFFFFFFF)));
+
+	// SetSynCaV(ctx, syni, di, DiDWt, 42.22);
+	// uint64_t ix = ctx.SynapseCaVars.Idx(syni, di, DiDWt);
+	// uint res = uint(ix - uint64_t(ctx.NetIdxs.GPUMaxBuffFloats));
+	uint res = syni * ctx.NetIdxs.MaxData + di;
+	SynapseCas1[res] = asfloat(0x6666666);
+	SynapseCas0[res] = asfloat(0x4444444);
 }
 
 

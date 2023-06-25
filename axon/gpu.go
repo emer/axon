@@ -194,8 +194,8 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	if TheGPU == nil {
 		TheGPU = vgpu.NewComputeGPU()
-		// vgpu.Debug = true
-		opts := vgpu.NewRequiredOpts(vgpu.OptShaderInt64)
+		vgpu.Debug = true
+		opts := vgpu.NewRequiredOpts(vgpu.OptShaderInt64, vgpu.OptRobustBufferAccess) // todo: remove robust later
 		TheGPU.Config("axon", &opts)
 	}
 
@@ -339,11 +339,13 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 // ConfigSynCaBuffs configures special SynapseCas buffers needed for larger memory access
 func (gp *GPU) ConfigSynCaBuffs() {
-	bufMax := gp.MaxBufferBytes
-	bm := uint32(1 << 29) // this moves the errors around: clearly a buffer issue!
-	if bufMax > bm {
-		bufMax = bm
-	}
+	bufMax := gp.MaxBufferBytes - 4
+	// bm := uint32(1 << 29) // this moves the errors around: clearly a buffer issue!
+	// if bufMax > bm {
+	// 	bufMax = bm
+	// }
+
+	bufMax = 0x30000000 * 4
 
 	// ok: there is clearly a total memory limit across all things within SynCas
 	// can reorganize the banks and it always fails in the same way..
@@ -1023,6 +1025,7 @@ func (gp *GPU) SyncSynCaFmGPU() {
 		syncv.CopyToBytes(unsafe.Pointer(&buf[0]))
 		off := int(i) * int(ctx.NetIdxs.GPUMaxBuffFloats)
 		copy(gp.Net.SynapseCas[off:off+len(buf)], buf)
+		fmt.Printf("Sync'd: %d  off: %X : %x\n", i, off, off+len(buf))
 	}
 	// gp.CopySynCaFmStaging()
 }
@@ -1660,6 +1663,7 @@ func (gp *GPU) TestSynCaCmd() vk.CommandBuffer {
 
 	maxData := int(gp.Net.MaxData)
 	nCmd, nPer, nLast := gp.SynDataNs()
+	nLast = 64 // todo: undo
 	fmt.Printf("nCmd: %d  nPer: %d  nLast: %d\n", nCmd, nPer, nLast)
 	gp.StartRunCmd(cmd)
 	off := 0
@@ -1700,29 +1704,47 @@ func (gp *GPU) TestSynCa() bool {
 		fmt.Printf("var: %d  %s   \tix: %X  bank: %d  res: %X\n", vr, vr.String(), ix, bank, res)
 	}
 
-	limit := 2
+	diOff := uint32(0x654000)
+
+	// limit := 2
 	failed := false
 
-	for vr := CaM; vr < SynapseCaVarsN; vr++ {
+	for vr := DiDWt; vr < SynapseCaVarsN; vr++ {
 		nfail := 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
+		for syni := uint32(0); syni < uint32(4); syni++ {
 			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, vr)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				iix := math.Float32bits(SynCaV(ctx, syni, di, vr))
-				if uint32(ix) != iix {
-					fmt.Printf("FAIL: var: %d  %s   \t syni: %X  di: %d  bank: %d  res: %x  ix: %X  ixb: %X  iix: %X\n", vr, vr.String(), syni, di, bank, res, ix, 4*ix, iix)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
+				{
+					ix := ctx.SynapseCaVars.Idx(syni+diOff, di, vr)
+					bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+					res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+					iix := math.Float32bits(SynCaV(ctx, syni+diOff, di, vr))
+					if uint32(ix) != iix {
+						fmt.Printf("FAIL: var: %d  %s   \t syni: %X  di: %d  bank: %d  res: %x  ix: %X  ixb: %X  iix: %X\n", vr, vr.String(), syni, di, bank, res, ix, 4*ix, iix)
+						nfail++
+						failed = true
+						// if nfail > limit {
+						// 	break
+						// }
+					}
+				}
+				{
+					ix := ctx.SynapseCaVars.Idx(syni, di, CaM)
+					bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+					res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+					iix := math.Float32bits(SynCaV(ctx, syni, di, CaM))
+					if uint32(ix) != iix {
+						fmt.Printf("FAIL: var: %d  %s   \t syni: %X  di: %d  bank: %d  res: %x  ix: %X  ixb: %X  iix: %X\n", CaM, CaM.String(), syni, di, bank, res, ix, 4*ix, iix)
+						nfail++
+						failed = true
+						// if nfail > limit {
+						// 	break
+						// }
 					}
 				}
 			}
-			if nfail > limit {
-				break
-			}
+			// if nfail > limit {
+			// 	break
+			// }
 		}
 	}
 
