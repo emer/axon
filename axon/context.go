@@ -542,54 +542,35 @@ float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
 	return 0;
 }
 
-// // 	switch (bank) {
-// // 		case 0: {
-// // 			SynapseCas0[res] = val;
-// // 			break; }
-// // 		case 1: {
-// // 			SynapseCas1[res] = val;
-// // 			break; }
-// // 		case 2: {
-// // 			SynapseCas2[res] = val;
-// // 			break; }
-// // 		case 3: {
-// // 			SynapseCas3[res] = val;
-// // 			break; }
-// // 		case 4: {
-// // 			SynapseCas4[res] = val;
-// // 			break; }
-// // 		case 5: {
-// // 			SynapseCas5[res] = val;
-// // 			break; }
-// // 		case 6: {
-// // 			SynapseCas6[res] = val;
-// // 			break; }
-// // 		case 7: {
-// // 			SynapseCas7[res] = val;
-// // 			break; }
-// // 	}
-
 void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
 	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
 	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
-
-	if (bank == 0) {
-		SynapseCas0[res] = val;
-	} else if (bank == 1) {
-		SynapseCas1[res] = val;
-	} else if (bank == 2) {
-		SynapseCas2[res] = val;
-	} else if (bank == 3) {
-		SynapseCas3[res] = val;
-	} else if (bank == 4) {
-		SynapseCas4[res] = val;
-	} else if (bank == 5) {
-		SynapseCas5[res] = val;
-	} else if (bank == 6) {
-		SynapseCas6[res] = val;
-	} else if (bank == 7) {
-		SynapseCas7[res] = val;
+	switch (bank) {
+		case 0: {
+			SynapseCas0[res] = val;
+			break; }
+		case 1: {
+			SynapseCas1[res] = val;
+			break; }
+		case 2: {
+			SynapseCas2[res] = val;
+			break; }
+		case 3: {
+			SynapseCas3[res] = val;
+			break; }
+		case 4: {
+			SynapseCas4[res] = val;
+			break; }
+		case 5: {
+			SynapseCas5[res] = val;
+			break; }
+		case 6: {
+			SynapseCas6[res] = val;
+			break; }
+		case 7: {
+			SynapseCas7[res] = val;
+			break; }
 	}
 }
 

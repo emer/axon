@@ -783,6 +783,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	if nt.UseGPUOrder {
 		ctx.SynapseVars.SetVarOuter(totSynapses)
 		ctx.SynapseCaVars.SetVarOuter(totSynapses, maxData)
+		// ctx.SynapseCaVars.SetSynapseOuter(maxData)
 		ctx.SynapseIdxs.SetIdxOuter(totSynapses)
 	} else {
 		ctx.SynapseVars.SetSynapseOuter()
