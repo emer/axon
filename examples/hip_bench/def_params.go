@@ -21,20 +21,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.04",
+					"Prjn.Learn.LRate.Base": "0.2",
 				}},
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
 					// "Prjn.CHL.Hebb":              "0.01", // .01 > .05? > .1?
-					"Prjn.Learn.LRate.Base": "0.2", // .2
+					"Prjn.Learn.LRate.Base": "0.4", // .2
 				}},
 			{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.15", // err driven: .15 > .2 > .25 > .1
+					"Prjn.Learn.LRate.Base": "0.6", // err driven: .15 > .2 > .25 > .1
 				}},
 			{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4.0", // 4 > 6 > 2 (fails)
+					"Prjn.PrjnScale.Abs": "3.0", // 4 > 6 > 2 (fails)
 				}},
 			{Sel: "#InputToEC2", Desc: "for CAN ec2",
 				Params: params.Params{
@@ -52,7 +52,7 @@ var ParamSets = params.Sets{
 					//"Prjn.Learn.LRate.Base": "0.01",
 					//"Prjn.SWts.Init.Mean": "0.8", // 0.8 is for one to one deterministic connections, not for learning!
 					//"Prjn.SWts.Init.Var":         "0",
-					"Prjn.PrjnScale.Rel": "1", // was 1
+					// "Prjn.PrjnScale.Rel": "1", // was 1
 				}},
 			{Sel: "#EC5ToEC3", Desc: "one-to-one out to in",
 				Params: params.Params{
@@ -67,31 +67,33 @@ var ParamSets = params.Sets{
 					"Prjn.SWts.Init.Mean": "0.9",
 					"Prjn.SWts.Init.Var":  "0.01",
 					"Prjn.PrjnScale.Rel":  "4", // err del 4: 4 > 6 > 8
-					//"Prjn.PrjnScale.Abs": "1.5", // zycyc, test if abs activation was not enough
+					"Prjn.PrjnScale.Abs": "1.5", // zycyc, test if abs activation was not enough
 				}},
 			{Sel: "#EC2ToCA3", Desc: "EC2 Perforant Path",
 				Params: params.Params{
-					// "Prjn.PrjnScale.Rel": "2",
-					"Prjn.Learn.LRate.Base": "0.2", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
+					// "Prjn.PrjnScale.Abs": "2",
+					"Prjn.Learn.LRate.Base": "0.8", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
 				}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons: rel=2 still the best",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel":    "2",   // 2 > 1 > .5 = .1
-					"Prjn.Learn.LRate.Base": "0.1", // .1  > .08 (close) > .15 > .2 > .04; large list size: 0.01>0.1~=0.04
+					"Prjn.Learn.LRate.Base": "0.4", // .1  > .08 (close) > .15 > .2 > .04; large list size: 0.01>0.1~=0.04
 				}},
 			{Sel: "#EC2ToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
+					"Prjn.PrjnScale.Abs":    "0.7",
 					// "Prjn.CHL.Hebb":         "0.2",  // .2 seems good
 					// "Prjn.CHL.SAvgCor":      "0.1",  // 0.01 = 0.05 = .1 > .2 > .3 > .4 (listlize 20-100)
 					// "Prjn.CHL.MinusQ1":      "true", // dg self err slightly better
-					"Prjn.Learn.LRate.Base": "0.05", // .05 > .1 > .2 > .4; grid model: 0.1 converges nicely but forgets very soon, don't use it
+					"Prjn.Learn.LRate.Base": "0.2", // .05 > .1 > .2 > .4; grid model: 0.1 converges nicely but forgets very soon, don't use it
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs":    "1.5",
 					// "Prjn.CHL.Hebb":          "0.01", // .01 > .005 > .02 > .002 > .001 > .05 (crazy)
 					// "Prjn.CHL.SAvgCor":       "0.4",
-					"Prjn.Learn.LRate.Base": "0.1", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
+					"Prjn.Learn.LRate.Base": "0.4", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
 				}},
 			//{Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
 			//	Params: params.Params{
@@ -103,38 +105,41 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level -- now for EC3 and EC5",
 				Params: params.Params{
-					// "Layer.Inhib.ActAvg.Nominal": "0.15",
+					// "Layer.Inhib.ActAvg.Nominal": "0.2",
 					// "Layer.Inhib.Layer.On":       "false",
 					// "Layer.Inhib.Layer.Gi":       "0.2", // weak just to keep it from blowing up
 					// "Layer.Inhib.Pool.Gi":        "1.1",
 					// "Layer.Inhib.Pool.On":        "true",
 
 					// "Layer.Act.Gbar.L":        "0.1",
-					"Layer.Inhib.ActAvg.Nominal": "0.01",
+					"Layer.Inhib.ActAvg.Nominal": "0.05",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.1",
 				}},
-
-			/////////////// for CAN EC2
 			{Sel: "#DG", Desc: "very sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
-					"Layer.Inhib.Layer.Gi":       "2.8",
+					"Layer.Inhib.Layer.Gi":       "2.2",
+				}},
+			{Sel: "#EC2", Desc: "very sparse = high inhibition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.02",
+					// "Layer.Inhib.Layer.Gi":       "2.8",
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.02",
+					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.Gi":       "1.2",
 					// "Layer.Learn.AvgL.Gain":   "2.5", // stick with 2.5
 				}},
 
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.03",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.8",
+					"Layer.Inhib.Pool.Gi":        "1.1",
 					// "Layer.Learn.AvgL.Gain":   "2.5", // 2.5 > 2 > 3
 					//"Layer.Inhib.ActAvg.UseFirst": "false", // first activity is too low, throws off scaling, from Randy, zycyc: do we need this?
 				}},
