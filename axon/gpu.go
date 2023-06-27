@@ -199,7 +199,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 		TheGPU.Config("axon", &opts)
 	}
 
-	gp.MaxBufferBytes = TheGPU.GPUProps.Limits.MaxStorageBufferRange
+	gp.MaxBufferBytes = TheGPU.GPUProps.Limits.MaxStorageBufferRange - 16
 	gp.Sys = TheGPU.NewComputeSystem("axon")
 
 	gp.ConfigSynCaBuffs()
@@ -340,11 +340,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 // ConfigSynCaBuffs configures special SynapseCas buffers needed for larger memory access
 func (gp *GPU) ConfigSynCaBuffs() {
 	bufMax := gp.MaxBufferBytes
-	bm := uint32(1 << 31) // 2 GiB max..  allows ndata = 4 to work in lvis test..
-	if bufMax > bm {
-		bufMax = bm
-	}
-	// bufMax = 0x30000000 * 4
 
 	floatMax := int(bufMax) / 4 // 32 bit floats for now
 
@@ -1628,7 +1623,7 @@ func (gp *GPU) TestSynCaCmd() vk.CommandBuffer {
 		if i == nCmd-1 {
 			n = nLast
 		}
-		fmt.Printf("i: %d  n: %X  off: %X\n", i, n, off)
+		fmt.Printf("proc i: %d  n: %X  off: %X\n", i, n, off)
 		gp.RunPipelineCmdOff(cmd, cnm, n*maxData, off, "", "")
 		off += n
 	}
@@ -1648,19 +1643,19 @@ func (gp *GPU) TestSynCa() bool {
 	gp.SyncSynCaFmGPU()
 
 	// for synapse-ordered memory
-	nCmd, nPer, nLast := gp.SynDataNs()
-	off := 0
-	for i := 0; i < nCmd; i++ {
-		n := nPer
-		if i == nCmd-1 {
-			n = nLast
-		}
-		ix := ctx.SynapseCaVars.Idx(uint32(off), 0, CaM)
-		bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-		res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-		fmt.Printf("proc: %d  ix: %X  bank: %d  res: %X\n", i, ix, bank, res)
-		off += n
-	}
+	// nCmd, nPer, nLast := gp.SynDataNs()
+	// off := 0
+	// for i := 0; i < nCmd; i++ {
+	// 	n := nPer
+	// 	if i == nCmd-1 {
+	// 		n = nLast
+	// 	}
+	// 	ix := ctx.SynapseCaVars.Idx(uint32(off), 0, CaM)
+	// 	bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+	// 	res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+	// 	fmt.Printf("proc: %d  ix: %X  bank: %d  res: %X\n", i, ix, bank, res)
+	// 	off += n
+	// }
 
 	// for var-ordered memory:
 	// for vr := CaM; vr < SynapseCaVarsN; vr++ {
@@ -1696,135 +1691,5 @@ func (gp *GPU) TestSynCa() bool {
 		}
 	}
 
-	/*
-		nfail = 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, DTr)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				rres := math.Float32bits(SynCaV(ctx, syni, di, DiDWt))
-				if res != rres {
-					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x rres: %X\n", syni, di, ix, bank, res, rres)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
-					}
-				}
-			}
-			if nfail > limit {
-				break
-			}
-		}
-
-		nfail = 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, CaM)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				ppi := math.Float32bits(SynCaV(ctx, syni, di, CaM))
-				pi := SynI(ctx, syni, SynPrjnIdx)
-				if ppi != pi {
-					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ppi: %d  pi: %d\n", syni, di, ix, bank, res, ppi, pi)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
-					}
-				}
-			}
-			if nfail > limit {
-				break
-			}
-		}
-
-		nfail = 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, CaP)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				ssi := math.Float32bits(SynCaV(ctx, syni, di, CaP))
-				si := SynI(ctx, syni, SynSendIdx)
-				if ssi != si {
-					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ssi: %d  si: %d\n", syni, di, ix, bank, res, ssi, si)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
-					}
-				}
-			}
-			if nfail > limit {
-				break
-			}
-		}
-
-		nfail = 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, CaD)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				rri := math.Float32bits(SynCaV(ctx, syni, di, CaD))
-				ri := SynI(ctx, syni, SynRecvIdx)
-				if rri != ri {
-					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  rri: %d  ri: %d\n", syni, di, ix, bank, res, rri, ri)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
-					}
-				}
-			}
-			if nfail > limit {
-				break
-			}
-		}
-
-		nfail = 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, CaUpT)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				ssyni := math.Float32bits(SynCaV(ctx, syni, di, CaUpT))
-				if ssyni != syni {
-					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ssyni: %X  syni: %X\n", syni, di, ix, bank, res, ssyni, syni)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
-					}
-				}
-			}
-			if nfail > limit {
-				break
-			}
-		}
-
-		nfail = 0
-		for syni := uint32(0); syni < gp.Net.NSyns; syni++ {
-			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, Tr)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				ddi := math.Float32bits(SynCaV(ctx, syni, di, Tr))
-				if ddi != di {
-					fmt.Printf("FAIL: syni: %X  di: %d  ix: %X  bank: %d  res: %x  ddi: %d  di: %d\n", syni, di, ix, bank, res, ddi, di)
-					nfail++
-					failed = true
-					if nfail > limit {
-						break
-					}
-				}
-			}
-			if nfail > limit {
-				break
-			}
-		}
-	*/
 	return !failed
 }

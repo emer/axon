@@ -69,6 +69,8 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
 }
 
+// TestGPUSynCa is a key test for large memory allocations
+// as in the SynapseCas variables at high ndata levels (8, 16)
 func TestGPUSynCa(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
