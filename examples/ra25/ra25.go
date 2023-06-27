@@ -36,7 +36,7 @@ import (
 
 var (
 	// Debug triggers various messages etc
-	Debug = true
+	Debug = false
 	// GPU runs GUI with the GPU -- faster with NData = 16
 	GPU = true
 )

@@ -201,6 +201,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	gp.MaxBufferBytes = TheGPU.GPUProps.Limits.MaxStorageBufferRange - 16
 	gp.Sys = TheGPU.NewComputeSystem("axon")
+	gp.Sys.StaticVars = false // todo: not working
 
 	gp.ConfigSynCaBuffs()
 
@@ -280,19 +281,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	gp.Sys.NewComputePipelineEmbed("TestSynCa", content, "shaders/gpu_test_synca.spv")
 
-	gp.Sys.NewEvent("MemCopyTo")
-	gp.Sys.NewEvent("MemCopyTo2")
-	gp.Sys.NewEvent("MemCopyFm")
-	gp.Sys.NewEvent("CycleEnd")
-	gp.Sys.NewEvent("CycleInc")
-	gp.Sys.NewEvent("GatherSpikes")
-	gp.Sys.NewEvent("LayGi")
-	gp.Sys.NewEvent("BetweenGi")
-	gp.Sys.NewEvent("PoolGi")
-	gp.Sys.NewEvent("Cycle")
-	gp.Sys.NewEvent("CyclePost")
-	gp.Sys.NewEvent("SendSpike")
-
 	gp.Sys.Config()
 
 	gp.CopyParamsToStaging()
@@ -301,46 +289,16 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.CopyContextToStaging()
 	gp.CopyStateToStaging()
 	gp.CopySynapsesToStaging()
+	gp.CopySynCaToStaging()
 
 	gp.Sys.Mem.SyncToGPU()
 
-	// todo: add a convenience method to vgpu to do this for everything
-	vars.BindDynValIdx(0, "Layers", 0)
-	vars.BindDynValIdx(0, "Prjns", 0)
-
-	vars.BindDynValIdx(1, "NeuronIxs", 0)
-	vars.BindDynValIdx(1, "SynapseIxs", 0)
-	vars.BindDynValIdx(1, "SendCon", 0)
-	vars.BindDynValIdx(1, "RecvPrjnIdxs", 0)
-	vars.BindDynValIdx(1, "RecvCon", 0)
-	vars.BindDynValIdx(1, "RecvSynIdxs", 0)
-
-	vars.BindDynValIdx(2, "Ctx", 0)
-	vars.BindDynValIdx(2, "Neurons", 0)
-	vars.BindDynValIdx(2, "NeuronAvgs", 0)
-	vars.BindDynValIdx(2, "Pools", 0)
-	vars.BindDynValIdx(2, "LayVals", 0)
-	vars.BindDynValIdx(2, "Globals", 0)
-	vars.BindDynValIdx(2, "Exts", 0)
-
-	vars.BindDynValIdx(3, "GBuf", 0)
-	vars.BindDynValIdx(3, "GSyns", 0)
-	vars.BindDynValIdx(3, "Synapses", 0)
-
-	vars.BindDynValIdx(4, "SynapseCas0", 0)
-	vars.BindDynValIdx(4, "SynapseCas1", 0)
-	vars.BindDynValIdx(4, "SynapseCas2", 0)
-	vars.BindDynValIdx(4, "SynapseCas3", 0)
-	vars.BindDynValIdx(4, "SynapseCas4", 0)
-	vars.BindDynValIdx(4, "SynapseCas5", 0)
-	vars.BindDynValIdx(4, "SynapseCas6", 0)
-	vars.BindDynValIdx(4, "SynapseCas7", 0)
+	vars.BindDynValsAllIdx(0)
 }
 
 // ConfigSynCaBuffs configures special SynapseCas buffers needed for larger memory access
 func (gp *GPU) ConfigSynCaBuffs() {
 	bufMax := gp.MaxBufferBytes
-
 	floatMax := int(bufMax) / 4 // 32 bit floats for now
 
 	ctx := gp.Ctx
@@ -1042,80 +1000,66 @@ func (gp *GPU) RunPipelineWait(name string, n int) {
 	}
 	gnm := "GPU:" + name
 	gp.Net.FunTimerStart(gnm)
-	gp.Sys.ComputeResetBindVars(0)
-	pl.ComputeCommand1D(n, gp.NThreads)
-	gp.Sys.ComputeSubmitWait()
+	cmd := gp.Sys.ComputeCmdBuff()
+	gp.Sys.ComputeResetBindVars(cmd, 0)
+	// gp.Sys.ComputeResetBegin(cmd)
+	pl.ComputeDispatch1D(cmd, n, gp.NThreads)
+	gp.Sys.ComputeCmdEnd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 }
 
-// StartRun resets the command buffer in preparation for recording commands
-// for a multi-step run.
-// It is much more efficient to record all commands to one buffer, and use
-// Events to synchronize the steps between them, rather than using semaphores.
-// The submit call is by far the most expensive so that should only happen once!
-func (gp *GPU) StartRun() {
-	gp.Sys.ComputeResetBindVars(0)
-}
-
-// StartRunCmd resets the given command buffer in preparation
+// StartRun resets the given command buffer in preparation
 // for recording commands for a multi-step run.
 // It is much more efficient to record all commands to one buffer, and use
 // Events to synchronize the steps between them, rather than using semaphores.
 // The submit call is by far the most expensive so that should only happen once!
-func (gp *GPU) StartRunCmd(cmd vk.CommandBuffer) {
-	gp.Sys.ComputeResetBindVarsCmd(cmd, 0)
+func (gp *GPU) StartRun(cmd vk.CommandBuffer) {
+	gp.Sys.ComputeResetBindVars(cmd, 0)
+	// gp.Sys.ComputeResetBegin(cmd)
 }
 
-// RunPipeline records command to run given pipeline with
-// optional wait & signal event names
-func (gp *GPU) RunPipeline(name string, n int, wait, signal string) {
+// RunPipelineMemWait records command to run given pipeline
+// with a WaitMemWriteRead after it, so subsequent pipeline run will
+// have access to values updated by this command.
+func (gp *GPU) RunPipelineMemWait(cmd vk.CommandBuffer, name string, n int) {
 	pl, err := gp.Sys.PipelineByNameTry(name)
 	if err != nil {
 		panic(err)
 	}
-	if wait != "" {
-		gp.Sys.ComputeWaitEvents(wait)
-	}
-	pl.ComputeCommand1D(n, gp.NThreads)
-	if signal != "" {
-		gp.Sys.ComputeSetEvent(signal)
-	}
+	pl.ComputeDispatch1D(cmd, n, gp.NThreads)
+	gp.Sys.ComputeWaitMemWriteRead(cmd)
 }
 
-// RunPipelineCmd records command to run given pipeline with
-// optional wait & signal event names
-func (gp *GPU) RunPipelineCmd(cmd vk.CommandBuffer, name string, n int, wait, signal string) {
+// RunPipelineNoWait records command to run given pipeline
+// without any waiting after it for writes to complete.
+// This should be the last command in the sequence.
+func (gp *GPU) RunPipelineNoWait(cmd vk.CommandBuffer, name string, n int) {
 	pl, err := gp.Sys.PipelineByNameTry(name)
 	if err != nil {
 		panic(err)
 	}
-	if wait != "" {
-		gp.Sys.ComputeWaitEventsCmd(cmd, wait)
-	}
-	pl.ComputeCommand1DCmd(cmd, n, gp.NThreads)
-	if signal != "" {
-		gp.Sys.ComputeSetEventCmd(cmd, signal)
-	}
+	pl.ComputeDispatch1D(cmd, n, gp.NThreads)
 }
 
-// RunPipelineCmdOff records command to run given pipeline with
-// optional wait & signal event names
-func (gp *GPU) RunPipelineCmdOff(cmd vk.CommandBuffer, name string, n, off int, wait, signal string) {
+// RunPipelineOffset records command to run given pipeline
+// with a push constant offset for the starting index to compute.
+// This is needed when the total number of dispatch indexes exceeds
+// GPU.MaxComputeWorkGroupCount1D.  Does NOT wait for writes,
+// assuming a parallel launch of all.
+func (gp *GPU) RunPipelineOffset(cmd vk.CommandBuffer, name string, n, off int) {
 	pl, err := gp.Sys.PipelineByNameTry(name)
 	if err != nil {
 		panic(err)
-	}
-	if wait != "" {
-		gp.Sys.ComputeWaitEventsCmd(cmd, wait)
 	}
 	vars := gp.Sys.Vars()
 	pvar, _ := vars.VarByNameTry(int(vgpu.PushSet), "PushOff")
 	pl.Push(cmd, pvar, unsafe.Pointer(&PushOff{Off: uint32(off)}))
-	pl.ComputeCommand1DCmd(cmd, n, gp.NThreads)
-	if signal != "" {
-		gp.Sys.ComputeSetEventCmd(cmd, signal)
-	}
+	pl.ComputeDispatch1D(cmd, n, gp.NThreads)
 }
+
+///////////////////////////////////////////////////////////////
+//  Actual Network computation functions
 
 // RunApplyExts copies Exts external input memory to the GPU and then
 // runs the ApplyExts shader that applies those external inputs to the
@@ -1127,7 +1071,7 @@ func (gp *GPU) RunApplyExts() {
 	gp.Net.FunTimerStart(gnm)
 	gp.CopyExtsToStaging()
 	gp.CopyContextToStaging()
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 }
 
@@ -1149,11 +1093,11 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 	exr := gp.SyncRegionStruct("Exts")
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, exr, cxr, glr)
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo2")
-	gp.RunPipelineCmd(cmd, "ApplyExts", neurDataN, "MemCopyTo2", "")
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.StartRun(cmd)
+	gp.Sys.ComputeCopyToGPU(cmd, exr, cxr, glr)
+	gp.Sys.ComputeWaitMemHostToShader(cmd)
+	gp.RunPipelineNoWait(cmd, "ApplyExts", neurDataN)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1184,7 +1128,7 @@ func (gp *GPU) RunCycleOne() {
 	gnm := "GPU:CycleOne"
 	gp.Net.FunTimerStart(gnm)
 	gp.CopyContextToStaging()
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
 }
@@ -1216,28 +1160,27 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
-	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "MemCopyTo", "GatherSpikes")
+	gp.StartRun(cmd)
+	gp.Sys.ComputeCopyToGPU(cmd, cxr, glr) // staging -> GPU
+	gp.Sys.ComputeWaitMemHostToShader(cmd)
+	gp.RunPipelineMemWait(cmd, "GatherSpikes", neurDataN)
 
-	gp.RunPipelineCmd(cmd, "LayGi", layDataN, "GatherSpikes", "LayGi")
-	gp.RunPipelineCmd(cmd, "BetweenGi", layDataN, "LayGi", "BetweenGi")
-	gp.RunPipelineCmd(cmd, "PoolGi", poolDataN, "BetweenGi", "PoolGi")
+	gp.RunPipelineMemWait(cmd, "LayGi", layDataN)
+	gp.RunPipelineMemWait(cmd, "BetweenGi", layDataN)
+	gp.RunPipelineMemWait(cmd, "PoolGi", poolDataN)
 
-	gp.RunPipelineCmd(cmd, "Cycle", neurDataN, "PoolGi", "Cycle")
+	gp.RunPipelineMemWait(cmd, "Cycle", neurDataN)
 
-	gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
+	gp.RunPipelineMemWait(cmd, "SendSpike", neurDataN)
 	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CycleEnd")
+		gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
 	} else {
-		gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CyclePost")
-		gp.RunPipelineCmd(cmd, "SynCa", neurDataN, "CyclePost", "CycleEnd")
+		gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
+		gp.RunPipelineMemWait(cmd, "SynCa", neurDataN)
 	}
 
-	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr, nrar)
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr, nrr, nrar)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1248,7 +1191,7 @@ func (gp *GPU) RunCycles() {
 	gp.Net.FunTimerStart(gnm)
 	stCtx := *gp.Ctx
 	gp.CopyContextToStaging()
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.CopyLayerStateFmStaging()
 	*gp.Ctx = stCtx
 	gp.Net.FunTimerStop(gnm)
@@ -1277,36 +1220,35 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
-	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "MemCopyTo", "GatherSpikes")
+	gp.StartRun(cmd)
+	gp.Sys.ComputeCopyToGPU(cmd, cxr, glr) // staging -> GPU
+	gp.Sys.ComputeWaitMemHostToShader(cmd)
+	gp.RunPipelineMemWait(cmd, "GatherSpikes", neurDataN)
 
 	for ci := 0; ci < CyclesN; ci++ {
 		if ci > 0 {
-			gp.RunPipelineCmd(cmd, "GatherSpikes", neurDataN, "CycleInc", "GatherSpikes")
+			gp.RunPipelineMemWait(cmd, "GatherSpikes", neurDataN)
 		}
 
-		gp.RunPipelineCmd(cmd, "LayGi", layDataN, "GatherSpikes", "LayGi")
-		gp.RunPipelineCmd(cmd, "BetweenGi", layDataN, "LayGi", "BetweenGi")
-		gp.RunPipelineCmd(cmd, "PoolGi", poolDataN, "BetweenGi", "PoolGi")
+		gp.RunPipelineMemWait(cmd, "LayGi", layDataN)
+		gp.RunPipelineMemWait(cmd, "BetweenGi", layDataN)
+		gp.RunPipelineMemWait(cmd, "PoolGi", poolDataN)
 
-		gp.RunPipelineCmd(cmd, "Cycle", neurDataN, "PoolGi", "Cycle")
+		gp.RunPipelineMemWait(cmd, "Cycle", neurDataN)
 
-		gp.RunPipelineCmd(cmd, "SendSpike", neurDataN, "Cycle", "SendSpike")
+		gp.RunPipelineMemWait(cmd, "SendSpike", neurDataN)
 		if gp.Ctx.Testing.IsTrue() {
-			gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CycleEnd")
+			gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
 		} else {
-			gp.RunPipelineCmd(cmd, "CyclePost", maxData, "SendSpike", "CyclePost")
-			gp.RunPipelineCmd(cmd, "SynCa", neurDataN, "CyclePost", "CycleEnd")
+			gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
+			gp.RunPipelineMemWait(cmd, "SynCa", neurDataN)
 		}
 		if ci < CyclesN-1 {
-			gp.RunPipelineCmd(cmd, "CycleInc", 1, "CycleEnd", "CycleInc") // we do
+			gp.RunPipelineMemWait(cmd, "CycleInc", 1) // we do
 		}
 	}
-	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr)
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1345,7 +1287,7 @@ func (gp *GPU) RunNewState() {
 	cmd := gp.RunNewStateCmd()
 	gnm := "GPU:NewState"
 	gp.Net.FunTimerStart(gnm)
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 }
 
@@ -1363,10 +1305,10 @@ func (gp *GPU) RunNewStateCmd() vk.CommandBuffer {
 	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
 	poolDataN := len(gp.Net.Pools)
 
-	gp.StartRunCmd(cmd)
-	gp.RunPipelineCmd(cmd, "NewStatePool", poolDataN, "", "PoolGi")
-	gp.RunPipelineCmd(cmd, "NewStateNeuron", neurDataN, "PoolGi", "") // todo: this has NrnV read = 0 bug
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.StartRun(cmd)
+	gp.RunPipelineMemWait(cmd, "NewStatePool", poolDataN)
+	gp.RunPipelineNoWait(cmd, "NewStateNeuron", neurDataN) // todo: this has NrnV read = 0 bug
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1380,7 +1322,7 @@ func (gp *GPU) RunMinusPhase() {
 	gnm := "GPU:MinusPhase"
 	gp.Net.FunTimerStart(gnm)
 	gp.CopyContextToStaging()
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
 }
@@ -1407,14 +1349,13 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
 	poolDataN := len(gp.Net.Pools)
 
-	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "MinusPool", poolDataN, "MemCopyTo", "PoolGi")
-	gp.RunPipelineCmd(cmd, "MinusNeuron", neurDataN, "PoolGi", "MemCopyFm")
-	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr)
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.StartRun(cmd)
+	gp.Sys.ComputeCopyToGPU(cmd, cxr, glr) // staging -> GPU
+	gp.Sys.ComputeWaitMemHostToShader(cmd)
+	gp.RunPipelineMemWait(cmd, "MinusPool", poolDataN)
+	gp.RunPipelineNoWait(cmd, "MinusNeuron", neurDataN)
+	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr, nrr)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1435,7 +1376,7 @@ func (gp *GPU) RunPlusPhase() {
 	gnm := "GPU:PlusPhase"
 	gp.Net.FunTimerStart(gnm)
 	gp.CopyContextToStaging()
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
 }
@@ -1461,11 +1402,11 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	neurDataN := int(gp.Net.NNeurons) * int(gp.Net.MaxData)
 	poolDataN := len(gp.Net.Pools)
 
-	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr, glr) // staging -> GPU
-	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
-	gp.RunPipelineCmd(cmd, "PlusPool", poolDataN, "MemCopyTo", "PoolGi")
-	gp.RunPipelineCmd(cmd, "PlusNeuron", neurDataN, "PoolGi", "MemCopyFm")
+	gp.StartRun(cmd)
+	gp.Sys.ComputeCopyToGPU(cmd, cxr, glr) // staging -> GPU
+	gp.Sys.ComputeWaitMemHostToShader(cmd)
+	gp.RunPipelineMemWait(cmd, "PlusPool", poolDataN)
+	gp.RunPipelineNoWait(cmd, "PlusNeuron", neurDataN)
 
 	// note: could use atomic add to accumulate CorSim stat values in LayVals tmp vars for Cosv, ssm and ssp
 	// from which the overall val is computed
@@ -1473,10 +1414,48 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	// also, matrix gated could be computed all on GPU without too much difficulty.
 	// this would put all standard computation on the GPU for entire ThetaCycle
 
-	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
-	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, glr, lvr, plr, nrr)
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr, nrr)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
+}
+
+///////////////////////////////////////////////////////////
+//    Synaptic level computation
+
+// SynDataNs returns the numbers for processing SynapseCas vars =
+// Synapses * MaxData.  Can exceed thread count limit and require
+// multiple command launches with different offsets.
+// The offset is in terms of synapse index, so everything is computed
+// in terms of synapse indexes, with MaxData then multiplied to get final values.
+// nCmd = number of command launches, nPer = number of synapses per cmd,
+// nLast = number of synapses for last command launch.
+func (gp *GPU) SynDataNs() (nCmd, nPer, nLast int) {
+	synN := int(gp.Net.NSyns)
+	maxData := int(gp.Net.MaxData)
+	maxTh := int(TheGPU.MaxComputeWorkGroupCount1D)
+	maxThSyn := maxTh / maxData
+
+	// fmt.Printf("synN: %X  maxTh: %X  maxThSyn: %X\n", synN, maxTh, maxThSyn)
+	if synN < maxThSyn {
+		nCmd = 1
+		nPer = synN
+		nLast = synN
+		return
+	}
+	nCmd = synN / maxThSyn
+	if synN%maxThSyn > 0 {
+		nCmd++
+	}
+	nPer = synN / nCmd
+	nLast = synN - ((nCmd - 1) * nPer)
+	// sanity checks:
+	if nPer*maxData > maxTh {
+		panic("axon.GPU.SynDataNs allocated too many nPer threads!")
+	}
+	if nLast*maxData > maxTh {
+		panic("axon.GPU.SynDataNs allocated too many nLast threads!")
+	}
+	return
 }
 
 // RunDWt runs the DWt shader to compute weight changes.
@@ -1485,7 +1464,7 @@ func (gp *GPU) RunDWt() {
 	cmd := gp.RunDWtCmd()
 	gnm := "GPU:DWt"
 	gp.Net.FunTimerStart(gnm)
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 }
 
@@ -1504,7 +1483,7 @@ func (gp *GPU) RunDWtCmd() vk.CommandBuffer {
 
 	maxData := int(gp.Net.MaxData)
 	nCmd, nPer, nLast := gp.SynDataNs()
-	gp.StartRunCmd(cmd)
+	gp.StartRun(cmd)
 	off := 0
 	for i := 0; i < nCmd; i++ {
 		n := nPer
@@ -1512,17 +1491,15 @@ func (gp *GPU) RunDWtCmd() vk.CommandBuffer {
 			n = nLast
 		}
 		if nCmd == 1 {
-			gp.RunPipelineCmdOff(cmd, "DWt", n*maxData, off, "", "MemCopyFm")
+			gp.RunPipelineOffset(cmd, "DWt", n*maxData, off) // note: no wait
 		} else {
-			gp.RunPipelineCmdOff(cmd, "DWt", n*maxData, off, "", "")
+			gp.RunPipelineOffset(cmd, "DWt", n*maxData, off) // note: no wait
 		}
 		off += n
 	}
-	if nCmd > 1 {
-		gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
-	}
-	gp.RunPipelineCmd(cmd, "DWtFmDi", synN, "MemCopyFm", "")
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.Sys.ComputeWaitMemWriteRead(cmd)
+	gp.RunPipelineNoWait(cmd, "DWtFmDi", synN)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1533,7 +1510,7 @@ func (gp *GPU) RunWtFmDWt() {
 	gnm := "GPU:WtFmDWt"
 	gp.Net.FunTimerStart(gnm)
 	gp.CopyNeuronsToStaging()
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 }
 
@@ -1556,54 +1533,17 @@ func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 	synN := int(gp.Net.NSyns)
 	neurN := int(gp.Net.NNeurons)
 
-	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr, nrar)             // staging -> GPU
-	gp.RunPipelineCmd(cmd, "DWtSubMean", neurN, "", "PoolGi") // using poolgi for kicks
-	gp.RunPipelineCmd(cmd, "WtFmDWt", synN, "PoolGi", "")
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.StartRun(cmd)
+	gp.Sys.ComputeCopyToGPU(cmd, nrr, nrar) // staging -> GPU
+	gp.Sys.ComputeWaitMemHostToShader(cmd)
+	gp.RunPipelineMemWait(cmd, "DWtSubMean", neurN) // using poolgi for kicks
+	gp.RunPipelineNoWait(cmd, "WtFmDWt", synN)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
 /////////////////////////////////////////////
 //   Tests
-
-// SynDataNs returns the numbers for processing SynapseCas vars =
-// Synapses * MaxData.  Can exceed thread count limit and require
-// multiple command launches with different offsets.
-// The offset is in terms of synapse index, so everything is computed
-// in terms of synapse indexes, with MaxData then multiplied to get final values.
-// nCmd = number of command launches, nPer = number of synapses per cmd,
-// nLast = number of synapses for last command launch.
-func (gp *GPU) SynDataNs() (nCmd, nPer, nLast int) {
-	// ctx := gp.Ctx
-	synN := int(gp.Net.NSyns)
-	maxData := int(gp.Net.MaxData)
-	maxTh := int(TheGPU.MaxComputeWorkGroupCount1D)
-	maxThSyn := maxTh / maxData
-	// attempting to keep aligned with SynCa memory banks -- doesn't get around basic issue
-	// maxThSyn := int(ctx.NetIdxs.GPUMaxBuffFloats) / (maxData * int(SynapseCaVarsN))
-
-	// fmt.Printf("synN: %X  maxTh: %X  maxThSyn: %X\n", synN, maxTh, maxThSyn)
-	if synN < maxThSyn {
-		nCmd = 1
-		nPer = synN
-		nLast = synN
-		return
-	}
-	nCmd = synN / maxThSyn
-	if synN%maxThSyn > 0 {
-		nCmd++
-	}
-	nPer = synN / nCmd // maxThSyn
-	nLast = synN - ((nCmd - 1) * nPer)
-	if nPer*maxData > maxTh {
-		panic("axon.GPU.SynDataNs allocated too many nPer threads!")
-	}
-	if nLast*maxData > maxTh {
-		panic("axon.GPU.SynDataNs allocated too many nLast threads!")
-	}
-	return
-}
 
 func (gp *GPU) TestSynCaCmd() vk.CommandBuffer {
 	cnm := "TestSynCa"
@@ -1616,7 +1556,7 @@ func (gp *GPU) TestSynCaCmd() vk.CommandBuffer {
 	maxData := int(gp.Net.MaxData)
 	nCmd, nPer, nLast := gp.SynDataNs()
 	fmt.Printf("nCmd: %d  nPer: %X  nLast: %X\n", nCmd, nPer, nLast)
-	gp.StartRunCmd(cmd)
+	gp.StartRun(cmd)
 	off := 0
 	for i := 0; i < nCmd; i++ {
 		n := nPer
@@ -1624,10 +1564,10 @@ func (gp *GPU) TestSynCaCmd() vk.CommandBuffer {
 			n = nLast
 		}
 		fmt.Printf("proc i: %d  n: %X  off: %X\n", i, n, off)
-		gp.RunPipelineCmdOff(cmd, cnm, n*maxData, off, "", "")
+		gp.RunPipelineOffset(cmd, cnm, n*maxData, off)
 		off += n
 	}
-	gp.Sys.ComputeCmdEndCmd(cmd)
+	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
 
@@ -1637,7 +1577,7 @@ func (gp *GPU) TestSynCa() bool {
 	cmd := gp.TestSynCaCmd()
 	gnm := "GPU:TestSynCa"
 	gp.Net.FunTimerStart(gnm)
-	gp.Sys.ComputeSubmitWaitCmd(cmd)
+	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 
 	gp.SyncSynCaFmGPU()

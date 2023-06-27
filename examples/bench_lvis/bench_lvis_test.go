@@ -21,7 +21,7 @@ var threads = flag.Int("threads", 2, "number of goroutines for parallel processi
 var ndata = flag.Int("ndata", 1, "number of inputs to run in parallel")
 var numEpochs = flag.Int("epochs", 1, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
-var verbose = flag.Bool("verbose", true, "if false, only report the final time")
+var verbose = flag.Bool("verbose", false, "if false, only report the final time")
 var inputNeurs = flag.Int("inputNeurs", 5, "input neurons per pool")
 var inputPools = flag.Int("inputPools", 16, "key parameter: number of input pools, also determines number of hidden pools")
 var pathways = flag.Int("pathways", 4, "number of separate pathways for different resolution / receptive field")
@@ -46,9 +46,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	ctx := axon.NewContext()
 	net := &axon.Network{}
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
-	// if *verbose {
 	log.Println(net.SizeReport(false))
-	// }
 
 	pats := &etable.Table{}
 	ConfigPats(pats, *numPats, inputShape, outputShape)
@@ -59,7 +57,6 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 
-	// todo: is the input shape actually correct for a 4D layer?
 	require.Equal(b, inLay.Shp.Len(), inPats.Len() / *numPats)
 	require.Equal(b, outLay.Shp.Len(), outPats.Len() / *numPats)
 
