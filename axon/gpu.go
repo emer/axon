@@ -201,7 +201,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	gp.MaxBufferBytes = TheGPU.GPUProps.Limits.MaxStorageBufferRange - 16
 	gp.Sys = TheGPU.NewComputeSystem("axon")
-	gp.Sys.StaticVars = false // todo: not working
+	gp.Sys.StaticVars = true // no diff in perf..
 
 	gp.ConfigSynCaBuffs()
 
@@ -292,8 +292,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.CopySynCaToStaging()
 
 	gp.Sys.Mem.SyncToGPU()
-
-	vars.BindDynValsAllIdx(0)
 }
 
 // ConfigSynCaBuffs configures special SynapseCas buffers needed for larger memory access
@@ -1108,15 +1106,15 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 // The caller must check the On flag before running this, to use CPU vs. GPU.
 func (gp *GPU) RunCycle() {
 	if gp.RecFunTimes { // must use Wait calls here.
-		gp.RunCycleSeparateFuns() // todo: NVIDIA diff results here
+		gp.RunCycleSeparateFuns()
 		return
 	}
 	if gp.CycleByCycle {
-		gp.RunCycleOne() // only case where NVIDIA matches CPU
+		gp.RunCycleOne()
 		return
 	}
 	if gp.Ctx.Cycle%CyclesN == 0 {
-		gp.RunCycles() // todo: NVIDIA diff results here
+		gp.RunCycles()
 	}
 }
 
@@ -1616,7 +1614,8 @@ func (gp *GPU) TestSynCa() bool {
 				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
 				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
 				iix := math.Float32bits(SynCaV(ctx, syni, di, vr))
-				if uint32(ix) != iix {
+				ix32 := uint32(ix % 0xFFFFFFFF)
+				if ix32 != iix {
 					fmt.Printf("FAIL: var: %d  %s   \t syni: %X  di: %d  bank: %d  res: %x  ix: %X  ixb: %X  iix: %X\n", vr, vr.String(), syni, di, bank, res, ix, 4*ix, iix)
 					nfail++
 					failed = true
