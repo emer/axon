@@ -49,7 +49,7 @@ func (gp *GABABParams) GFmV(v float32) float32 {
 	if vbio < -90 {
 		vbio = -90
 	}
-	return (vbio + 90) / (1.0 + mat32.FastExp(0.1*((vbio+90)+10)))
+	return (vbio + 90.0) / (1.0 + mat32.FastExp(0.1*((vbio+90.0)+10.0)))
 }
 
 // GFmS returns the GABA-B conductance as a function of GABA spiking rate,

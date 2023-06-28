@@ -517,7 +517,6 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("TrlErr", trlErr)
 	ss.Stats.SetFloat("TrlErr2", trlErr2)
 	ss.Stats.SetString("TrlOut", fmt.Sprintf("%d", rsp))
-	// ss.Stats.SetFloat("TrlTrgAct", float64(out.Pools[0].ActP.Avg))
 	ss.Stats.SetString("Cat", fmt.Sprintf("%d", cat))
 }
 
@@ -655,7 +654,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ctx.SetFloat32(ly.Pools[0].Inhib.SSGi)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).Inhib.SSGi)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}}})

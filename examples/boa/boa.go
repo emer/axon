@@ -1159,6 +1159,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.GUI.FinalizeGUI(false)
 	if GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		ss.Net.GPU.CycleByCycle = true
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

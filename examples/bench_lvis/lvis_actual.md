@@ -16,10 +16,11 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 ### GPU
 
-* ndata=2, mpi=4 = 8x dp  = 880
-* ndata=4, mpi=4 = 16x dp = 570
-* ndata=8, mpi=4 = 32x dp = 450  -- significant speedup
-* ndata=16,mpi=4 = 64x dp = 350  -- even better..
+* ndata=2, mpi=4 = 8x   dp = 880
+* ndata=4, mpi=4 = 16x  dp = 570
+* ndata=8, mpi=4 = 32x  dp = 450 -- significant speedup
+* ndata=16,mpi=4 = 64x  dp = 350 -- even better..
+* ndata=32,mpi=4 = 128x dp = 250 -- super fast, but doesn't learn - too much parallel!
 
 ### CPU
 

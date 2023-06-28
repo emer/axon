@@ -19,6 +19,7 @@
 [[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 [[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 [[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
@@ -61,10 +62,10 @@ void NeuronAvgMax2(in Context ctx, in LayerParams ly, uint pi, uint lpi, uint ni
 	float nrnSpike = NrnV(ctx, ni, di, Spike);
 	float nrnGeRaw = NrnV(ctx, ni, di, GeRaw);
 	float nrnGeExt = NrnV(ctx, ni, di, GeExt);
-	AtomicInhibRawIncr(Pools[pi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt);
+	AtomicInhibRawIncr(Pools[pi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt, Pools[pi].NNeurons());
 	AtomicUpdatePoolAvgMax(Pools[pi].AvgMax, ctx, ni, di);
 	if (Pools[pi].IsLayPool == 0) { // also update layer pool if I am a subpool
-		AtomicInhibRawIncr(Pools[lpi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt);
+		AtomicInhibRawIncr(Pools[lpi].Inhib, nrnSpike, nrnGeRaw, nrnGeExt, Pools[lpi].NNeurons());
 		AtomicUpdatePoolAvgMax(Pools[lpi].AvgMax, ctx, ni, di);
 	}
 }

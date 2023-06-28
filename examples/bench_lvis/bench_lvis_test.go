@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"runtime"
 	"testing"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
+	"github.com/goki/vgpu/vgpu"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +22,7 @@ var threads = flag.Int("threads", 2, "number of goroutines for parallel processi
 var ndata = flag.Int("ndata", 1, "number of inputs to run in parallel")
 var numEpochs = flag.Int("epochs", 1, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
-var verbose = flag.Bool("verbose", true, "if false, only report the final time")
+var verbose = flag.Bool("verbose", false, "if false, only report the final time")
 var inputNeurs = flag.Int("inputNeurs", 5, "input neurons per pool")
 var inputPools = flag.Int("inputPools", 16, "key parameter: number of input pools, also determines number of hidden pools")
 var pathways = flag.Int("pathways", 4, "number of separate pathways for different resolution / receptive field")
@@ -44,10 +46,8 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	ctx := axon.NewContext()
 	net := &axon.Network{}
-	ConfigNet(b, ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
-	// if *verbose {
+	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	log.Println(net.SizeReport(false))
-	// }
 
 	pats := &etable.Table{}
 	ConfigPats(pats, *numPats, inputShape, outputShape)
@@ -58,7 +58,6 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 
-	// todo: is the input shape actually correct for a 4D layer?
 	require.Equal(b, inLay.Shp.Len(), inPats.Len() / *numPats)
 	require.Equal(b, outLay.Shp.Len(), outPats.Len() / *numPats)
 
@@ -66,4 +65,29 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	ConfigEpcLog(epcLog)
 
 	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
+}
+
+// TestGPUSynCa is a key test for large memory allocations
+// as in the SynapseCas variables at high ndata levels (8, 16)
+func TestGPUSynCa(t *testing.T) {
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
+	rand.Seed(42)
+
+	ctx := axon.NewContext()
+	net := &axon.Network{}
+	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
+	log.Println(net.SizeReport(false))
+
+	vgpu.Debug = true // definitely enable if failing!!
+	net.ConfigGPUnoGUI(ctx)
+
+	// on mac, only works up to ndata = 6 -- 7 fails
+	fmt.Printf("ndata: %d   floats per: %X  banks: %d\n", ctx.NetIdxs.NData, ctx.NetIdxs.GPUMaxBuffFloats, ctx.NetIdxs.GPUSynCaBanks)
+
+	passed := net.GPU.TestSynCa()
+	if !passed {
+		t.Errorf("GPU SynCa write failed\n")
+	}
 }

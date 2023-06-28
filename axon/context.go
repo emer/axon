@@ -251,21 +251,22 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 
 // NetIdxs are indexes and sizes for processing network
 type NetIdxs struct {
-	NData         uint32 `min:"1" desc:"number of data parallel items to process currently"`
-	NetIdx        uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	MaxData       uint32 `inactive:"+" desc:"maximum amount of data parallel"`
-	NLayers       uint32 `inactive:"+" desc:"number of layers in the network"`
-	NNeurons      uint32 `inactive:"+" desc:"total number of neurons"`
-	NPools        uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
-	NSyns         uint32 `inactive:"+" desc:"total number of synapses"`
-	NSynCaBanks   uint32 `inactive:"+" desc:"total number of SynCa banks of 2^31 arrays in GPU"`
-	GvVTAOff      uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
-	GvVTAStride   uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
-	GvUSnegOff    uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
-	GvDriveOff    uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
-	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
+	NData            uint32 `min:"1" desc:"number of data parallel items to process currently"`
+	NetIdx           uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	MaxData          uint32 `inactive:"+" desc:"maximum amount of data parallel"`
+	NLayers          uint32 `inactive:"+" desc:"number of layers in the network"`
+	NNeurons         uint32 `inactive:"+" desc:"total number of neurons"`
+	NPools           uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
+	NSyns            uint32 `inactive:"+" desc:"total number of synapses"`
+	GPUMaxBuffFloats uint32 `inactive:"+" desc:"maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access"`
+	GPUSynCaBanks    uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
+	GvVTAOff         uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
+	GvVTAStride      uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
+	GvUSnegOff       uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
+	GvDriveOff       uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
+	GvDriveStride    uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
 
-	pad, pad1, pad2 uint32
+	pad, pad1 uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -334,8 +335,8 @@ type Context struct {
 	Time         float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	TrialsTotal  int32       `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
 	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-	SlowInterval int32       `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models."`
-	SlowCtr      int32       `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
+	SlowInterval int32       `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models."`
+	SlowCtr      int32       `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter."`
 	SynCaCtr     float32     `inactive:"+" desc:"synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset."`
 
 	pad, pad1 float32
@@ -431,265 +432,237 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 
 //gosl: hlsl context
 
+/*
+
 // // NeuronVars
 
-// // NrnV is GPU version of neuron var accessor into Neurons array
-// float NrnV(in Context ctx, uint ni, uint di, NeuronVars nvar) {
-//    return Neurons[ctx.NeuronVars.Idx(ni, di, nvar)];
-// }
-// // SetNrnV is the GPU version of the neuron variable settor
-// void SetNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
-//  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val;
-// }
-// // AddNrnV is the GPU version of the neuron variable addor
-// void AddNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
-//  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val;
-// }
-// // MulNrnV is the GPU version of the neuron variable multor
-// void MulNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
-//  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val;
-// }
-//
-// bool NrnHasFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
-// 	return (NeuronFlags(asuint(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0; // weird: != 0 does NOT work on GPU
-// }
-// void NrnSetFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
-// 	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))|uint(flag)));
-// }
-// void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
-// 	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))& ~uint(flag)));
-// }
-// // NrnIsOff returns true if the neuron has been turned off (lesioned)
-// // Only checks the first data item -- all should be consistent.
-// bool NrnIsOff(in Context ctx, uint ni) {
-// 	return NrnHasFlag(ctx, ni, 0, NeuronOff);
-// }
+float NrnV(in Context ctx, uint ni, uint di, NeuronVars nvar) {
+   return Neurons[ctx.NeuronVars.Idx(ni, di, nvar)];
+}
+
+void SetNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
+ 	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val;
+}
+
+void AddNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
+ 	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val;
+}
+
+void MulNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
+ 	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val;
+}
+
+bool NrnHasFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
+	return (NeuronFlags(asuint(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0; // weird: != 0 does NOT work on GPU
+}
+
+void NrnSetFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
+	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))|uint(flag)));
+}
+
+void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
+	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))& ~uint(flag)));
+}
+
+bool NrnIsOff(in Context ctx, uint ni) {
+	return NrnHasFlag(ctx, ni, 0, NeuronOff);
+}
 
 // // NeuronAvgVars
 
-// // NrnAvgV is GPU version of neuron var accessor into Neurons array
-// float NrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar) {
-//    return NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)];
-// }
-// // SetNrnAvgV is the GPU version of the neuron variable settor
-// void SetNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
-//  	NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val;
-// }
-// // AddNrnAvgV is the GPU version of the neuron variable addor
-// void AddNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
-//  	NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val;
-// }
-// // MulNrnAvgV is the GPU version of the neuron variable multor
-// void MulNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
-//  	NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val;
-// }
+float NrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar) {
+   return NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)];
+}
+
+void SetNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
+ 	NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val;
+}
+
+void AddNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
+ 	NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val;
+}
+
+void MulNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
+ 	NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val;
+}
 
 // // NeuronIdxs
-//
-// // NrnI is the GPU version of the neuron idx accessor
-// uint NrnI(in Context ctx, uint ni, NeuronIdxs idx) {
-// 	return NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)];
-// }
+
+uint NrnI(in Context ctx, uint ni, NeuronIdxs idx) {
+	return NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)];
+}
+
 // // note: no SetNrnI in GPU mode -- all init done in CPU
-//
 
 // // SynapseVars
 
-// // SynV is GPU version of synapse var accessor into Synapses array
-// float SynV(in Context ctx, uint syni, SynapseVars svar) {
-// 	return Synapses[ctx.SynapseVars.Idx(syni, svar)];
-// }
-// // SetSynV is the GPU version of the synapse variable settor
-// void SetSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
-//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] = val;
-// }
-// // AddSynV is the GPU version of the synapse variable addor
-// void AddSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
-//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] += val;
-// }
-// // MulSynV is the GPU version of the synapse variable multor
-// void MulSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
-//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val;
-// }
+float SynV(in Context ctx, uint syni, SynapseVars svar) {
+	return Synapses[ctx.SynapseVars.Idx(syni, svar)];
+}
+
+void SetSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
+ 	Synapses[ctx.SynapseVars.Idx(syni, svar)] = val;
+}
+
+void AddSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
+ 	Synapses[ctx.SynapseVars.Idx(syni, svar)] += val;
+}
+
+void MulSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
+ 	Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val;
+}
 
 // // SynapseCaVars
 
-// // with NData repetition, SynCa can easily exceed the nominal 2^31 capacity
-// // for buffer access.
+// // note: with NData repetition, SynCa can easily exceed the nominal 2^31 capacity
+// // for buffer access.  Also, if else is significantly faster than switch case here.
 
-// // SynCaV is GPU version of synapse var accessor into Synapses array
-// float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
-// 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
-// 	switch (bank) {
-// 		case 0:
-// 			return SynapseCas0[res];
-// 		case 1:
-// 			return SynapseCas1[res];
-// 		case 2:
-// 			return SynapseCas2[res];
-// 		case 3:
-// 			return SynapseCas3[res];
-// 		case 4:
-// 			return SynapseCas4[res];
-// 		case 5:
-// 			return SynapseCas5[res];
-// 		case 6:
-// 			return SynapseCas6[res];
-// 	}
-// 	return 0;
-// }
-// // SetSynCaV is the GPU version of the synapse variable settor
-// void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
-// 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
-// 	switch (bank) {
-// 		case 0:
-// 			SynapseCas0[res] = val;
-// 			break;
-// 		case 1:
-// 			SynapseCas1[res] = val;
-// 			break;
-// 		case 2:
-// 			SynapseCas2[res] = val;
-// 			break;
-// 		case 3:
-// 			SynapseCas3[res] = val;
-// 			break;
-// 		case 4:
-// 			SynapseCas4[res] = val;
-// 			break;
-// 		case 5:
-// 			SynapseCas5[res] = val;
-// 			break;
-// 		case 6:
-// 			SynapseCas6[res] = val;
-// 			break;
-// 	}
-// }
-// // AddSynCaV is the GPU version of the synapse variable addor
-// void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
-// 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
-// 	switch (bank) {
-// 		case 0:
-// 			SynapseCas0[res] += val;
-// 			break;
-// 		case 1:
-// 			SynapseCas1[res] += val;
-// 			break;
-// 		case 2:
-// 			SynapseCas2[res] += val;
-// 			break;
-// 		case 3:
-// 			SynapseCas3[res] += val;
-// 			break;
-// 		case 4:
-// 			SynapseCas4[res] += val;
-// 			break;
-// 		case 5:
-// 			SynapseCas5[res] += val;
-// 			break;
-// 		case 6:
-// 			SynapseCas6[res] += val;
-// 			break;
-// 	}
-// }
-// // MulSynCaV is the GPU version of the synapse variable multor
-// void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
-// 	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
-// 	uint bank = uint(ix / 0x80000000);
-// 	uint res = uint(ix % 0x80000000);
-// 	switch (bank) {
-// 		case 0:
-// 			SynapseCas0[res] *= val;
-// 			break;
-// 		case 1:
-// 			SynapseCas1[res] *= val;
-// 			break;
-// 		case 2:
-// 			SynapseCas2[res] *= val;
-// 			break;
-// 		case 3:
-// 			SynapseCas3[res] *= val;
-// 			break;
-// 		case 4:
-// 			SynapseCas4[res] *= val;
-// 			break;
-// 		case 5:
-// 			SynapseCas5[res] *= val;
-// 			break;
-// 		case 6:
-// 			SynapseCas6[res] *= val;
-// 			break;
-// 	}
-// }
+float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
+	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
+	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	if (bank == 0) {
+		return SynapseCas0[res];
+	} else if (bank == 1) {
+		return SynapseCas1[res];
+	} else if (bank == 2) {
+		return SynapseCas2[res];
+	} else if (bank == 3) {
+		return SynapseCas3[res];
+	} else if (bank == 4) {
+		return SynapseCas4[res];
+	} else if (bank == 5) {
+		return SynapseCas5[res];
+	} else if (bank == 6) {
+		return SynapseCas6[res];
+	} else if (bank == 7) {
+		return SynapseCas7[res];
+	}
+	return 0;
+}
+
+void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
+	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
+	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	if (bank == 0) {
+		SynapseCas0[res] = val;
+	} else if (bank == 1) {
+		SynapseCas1[res] = val;
+	} else if (bank == 2) {
+		SynapseCas2[res] = val;
+	} else if (bank == 3) {
+		SynapseCas3[res] = val;
+	} else if (bank == 4) {
+		SynapseCas4[res] = val;
+	} else if (bank == 5) {
+		SynapseCas5[res] = val;
+	} else if (bank == 6) {
+		SynapseCas6[res] = val;
+	} else if (bank == 7) {
+		SynapseCas7[res] = val;
+	}
+}
+
+void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
+	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
+	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	if (bank == 0) {
+		SynapseCas0[res] += val;
+	} else if (bank == 1) {
+		SynapseCas1[res] += val;
+	} else if (bank == 2) {
+		SynapseCas2[res] += val;
+	} else if (bank == 3) {
+		SynapseCas3[res] += val;
+	} else if (bank == 4) {
+		SynapseCas4[res] += val;
+	} else if (bank == 5) {
+		SynapseCas5[res] += val;
+	} else if (bank == 6) {
+		SynapseCas6[res] += val;
+	} else if (bank == 7) {
+		SynapseCas7[res] += val;
+	}
+}
+
+void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
+	uint64 ix = ctx.SynapseCaVars.Idx(syni, di, svar);
+	uint bank = uint(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	uint res = uint(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats));
+	if (bank == 0) {
+		SynapseCas0[res] *= val;
+	} else if (bank == 1) {
+		SynapseCas1[res] *= val;
+	} else if (bank == 2) {
+		SynapseCas2[res] *= val;
+	} else if (bank == 3) {
+		SynapseCas3[res] *= val;
+	} else if (bank == 4) {
+		SynapseCas4[res] *= val;
+	} else if (bank == 5) {
+		SynapseCas5[res] *= val;
+	} else if (bank == 6) {
+		SynapseCas6[res] *= val;
+	} else if (bank == 7) {
+		SynapseCas7[res] *= val;
+	}
+}
 
 // // SynapseIdxs
-//
-// // SynI is the GPU version of the synapse idx accessor
-// uint SynI(in Context ctx, uint syni, SynapseIdxs idx) {
-// 	return SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)];
-// }
+
+uint SynI(in Context ctx, uint syni, SynapseIdxs idx) {
+	return SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)];
+}
+
 // // note: no SetSynI in GPU mode -- all init done in CPU
-//
-//
+
 // /////////////////////////////////
 // //  Global Vars
-//
-// // GlbV is the CPU version of the global variable accessor
-// float GlbV(in Context ctx, uint di, GlobalVars gvar) {
-// 	return Globals[ctx.GlobalIdx(di, gvar)];
-// }
-//
-// // SetGlbV is the CPU version of the global variable settor
-// void SetGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
-// 	Globals[ctx.GlobalIdx(di, gvar)] = val;
-// }
-//
-// // AddGlbV is the CPU version of the global variable addor
-// void AddGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
-// 	Globals[ctx.GlobalIdx(di, gvar)] += val;
-// }
-//
-// // GlbVTA is the CPU version of the global VTA variable accessor
-// float GlbVTA(in Context ctx, uint di, GlobalVTAType vtaType, GlobalVars gvar) {
-// 	return Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)];
-// }
-//
-// // SetGlbVTA is the CPU version of the global VTA variable settor
-// void SetGlbVTA(in Context ctx, uint di, GlobalVTAType vtaType, GlobalVars gvar, float val) {
-// 	Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val;
-// }
-//
-// // GlbUSneg is the CPU version of the global USneg variable accessor
-// float GlbUSneg(in Context ctx, uint di, uint negIdx) {
-// 	return Globals[ctx.GlobalUSnegIdx(di, negIdx)];
-// }
-//
-// // SetGlbUSneg is the CPU version of the global USneg variable settor
-// void SetGlbUSneg(in Context ctx, uint di, uint negIdx, float val) {
-// 	Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val;
-// }
-//
-// // GlbDrvV is the CPU version of the global Drive, USpos variable accessor
-// float GlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar) {
-// 	return Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)];
-// }
-//
-// // SetGlbDrvV is the CPU version of the global Drive, USpos variable settor
-// void SetGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
-// 	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val;
-// }
-//
-// // AddGlbDrvV is the CPU version of the global Drive, USpos variable adder
-// void AddGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
-// 	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val;
-// }
-//
+
+float GlbV(in Context ctx, uint di, GlobalVars gvar) {
+	return Globals[ctx.GlobalIdx(di, gvar)];
+}
+
+void SetGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
+	Globals[ctx.GlobalIdx(di, gvar)] = val;
+}
+
+void AddGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
+	Globals[ctx.GlobalIdx(di, gvar)] += val;
+}
+
+float GlbVTA(in Context ctx, uint di, GlobalVTAType vtaType, GlobalVars gvar) {
+	return Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)];
+}
+
+void SetGlbVTA(in Context ctx, uint di, GlobalVTAType vtaType, GlobalVars gvar, float val) {
+	Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val;
+}
+
+float GlbUSneg(in Context ctx, uint di, uint negIdx) {
+	return Globals[ctx.GlobalUSnegIdx(di, negIdx)];
+}
+
+void SetGlbUSneg(in Context ctx, uint di, uint negIdx, float val) {
+	Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val;
+}
+
+
+float GlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar) {
+	return Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)];
+}
+
+void SetGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
+	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val;
+}
+
+void AddGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
+	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val;
+}
+
+*/
 
 //gosl: end context
 

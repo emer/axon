@@ -12,7 +12,6 @@ package bench
 import (
 	"fmt"
 	"math/rand"
-	"testing"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/erand"
@@ -59,9 +58,9 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(b *testing.B, ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
+func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
-	net.MaxData = uint32(maxData)
+	net.SetMaxData(ctx, maxData)
 
 	/*
 	 * v1m6 ---> v2m16 <--> v4f16 <--> output

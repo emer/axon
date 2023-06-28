@@ -88,17 +88,22 @@ func (fi *Inhib) Decay(decay float32) {
 }
 
 // RawIncr increments raw values from given neuron-based input values
-func (fi *Inhib) RawIncr(spike, geRaw, geExt float32) {
-	fi.FBsRaw += spike
-	fi.FFsRaw += geRaw
-	fi.GeExtRaw += geExt
+func (fi *Inhib) RawIncr(spike, geRaw, geExt float32, nneurons int) {
+	fi.FBsRaw += spike // is int, accumulate as such, then normalize
+	fi.FFsRaw += geRaw / float32(nneurons)
+	fi.GeExtRaw += geExt / float32(nneurons)
 }
 
+// SpikesFmRawFloat updates spike values from raw, dividing by given number in pool
+// for float-based aggregation, which does not divide by nneurons up front
+// func (fi *Inhib) SpikesFmRawFloat(nneurons int) {
+// }
+
 // SpikesFmRaw updates spike values from raw, dividing by given number in pool
-func (fi *Inhib) SpikesFmRaw(npool int) {
-	fi.FFs = fi.FFsRaw / float32(npool)
-	fi.FBs = fi.FBsRaw / float32(npool)
-	fi.GeExts = fi.GeExtRaw / float32(npool)
+func (fi *Inhib) SpikesFmRaw(nneurons int) {
+	fi.FBs = fi.FBsRaw / float32(nneurons)
+	fi.FFs = fi.FFsRaw
+	fi.GeExts = fi.GeExtRaw
 	fi.InitRaw()
 }
 
@@ -132,20 +137,20 @@ func (fi *Inhib) PoolMax(piGi float32) {
 // to int32 for summing, assuming that
 // the overall value is in the general order of 0-1 (512 is the max).
 func (fi *Inhib) FloatToIntFactor() float32 {
-	return float32(1 << 22) // leaves 9 bits = 512 to cover extreme values
+	return float32(1 << 24) // leaves 9 bits = 512 to cover extreme values
 }
 
 // FloatFmIntFactor returns the factor used for converting int32
 // back to float32 -- this is 1 / FloatToIntFactor for faster multiplication
 // instead of dividing.
 func (fi *Inhib) FloatFmIntFactor() float32 {
-	return 1.0 / float32(1<<22)
+	return 1.0 / float32(1<<24)
 }
 
 // FloatToInt converts the given floating point value
 // to a large int for max updating.
-func (fi *Inhib) FloatToInt(val float32) int32 {
-	return int32(val * fi.FloatToIntFactor())
+func (fi *Inhib) FloatToInt(val float32, nneurons int) int32 {
+	return int32((val / float32(nneurons)) * fi.FloatToIntFactor())
 }
 
 // FloatFromInt converts the given int32 value produced
@@ -163,10 +168,10 @@ func (fi *Inhib) FloatFromInt(ival int32) float32 {
 
 // RawIncrInt increments raw values from given neuron-based input values
 // for the int-based values (typically use Atomic InterlockedAdd instead)
-func (fi *Inhib) RawIncrInt(spike, geRaw, geExt float32) {
+func (fi *Inhib) RawIncrInt(spike, geRaw, geExt float32, nneurons int) {
 	fi.FBsRawInt += int32(spike) // already an int!
-	fi.FFsRawInt += fi.FloatToInt(geRaw)
-	fi.GeExtRawInt += fi.FloatToInt(geExt)
+	fi.FFsRawInt += fi.FloatToInt(geRaw, nneurons)
+	fi.GeExtRawInt += fi.FloatToInt(geExt, nneurons)
 }
 
 // IntToRaw computes int values into float32 raw values
@@ -184,10 +189,10 @@ func (fi *Inhib) IntToRaw() {
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
-#define AtomicInhibRawIncr(fi, spike, geRaw, geExt) \
+#define AtomicInhibRawIncr(fi, spike, geRaw, geExt, nneurons) \
 	InterlockedAdd(fi.FBsRawInt, int(spike)); \
-	InterlockedAdd(fi.FFsRawInt, fi.FloatToInt(geRaw)); \
-	InterlockedAdd(fi.GeExtRawInt, fi.FloatToInt(geExt))
+	InterlockedAdd(fi.FFsRawInt, fi.FloatToInt(geRaw, nneurons)); \
+	InterlockedAdd(fi.GeExtRawInt, fi.FloatToInt(geExt, nneurons))
 */
 //gosl: end fsfffb
 

@@ -120,29 +120,27 @@ const (
 // SynapseCaStrides encodes the stride offsets for synapse variable access
 // into network float32 array.  Data is always the inner-most variable.
 type SynapseCaStrides struct {
-	Synapse uint32 `desc:"synapse level"`
-	Var     uint32 `desc:"variable level"`
-
-	pad, pad1 uint32
+	Synapse uint64 `desc:"synapse level"`
+	Var     uint64 `desc:"variable level"`
 }
 
 // Idx returns the index into network float32 array for given synapse, data, and variable
 func (ns *SynapseCaStrides) Idx(synIdx, di uint32, nvar SynapseCaVars) uint64 {
-	return uint64(synIdx)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var) + uint64(di)
+	return uint64(synIdx)*ns.Synapse + uint64(nvar)*ns.Var + uint64(di)
 }
 
 // SetSynapseOuter sets strides with synapses as outer loop:
 // [Synapses][Vars][Data], which is optimal for CPU-based computation.
 func (ns *SynapseCaStrides) SetSynapseOuter(ndata int) {
-	ns.Synapse = uint32(ndata) * uint32(SynapseCaVarsN)
-	ns.Var = uint32(ndata)
+	ns.Synapse = uint64(ndata) * uint64(SynapseCaVarsN)
+	ns.Var = uint64(ndata)
 }
 
 // SetVarOuter sets strides with vars as outer loop:
 // [Vars][Synapses][Data], which is optimal for GPU-based computation.
 func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
-	ns.Var = uint32(ndata) * uint32(nsyn)
-	ns.Synapse = uint32(ndata)
+	ns.Var = uint64(ndata) * uint64(nsyn)
+	ns.Synapse = uint64(ndata)
 }
 
 ////////////////////////////////////////////////

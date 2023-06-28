@@ -1,6 +1,6 @@
 # Results from bench_lvis
 
-Run: `go test -bench=.`  or `go test -gpu -verbose=false -bench=.`
+Run: `go test -bench=. -run not`  or `go test -gpu -verbose=false -bench=. -run not`
 
 ```
   BenchLvisNet:	 Neurons: 47,204	 NeurMem: 16.6 MB 	 Syns: 32,448,512 	 SynMem: 2.3 GB
@@ -13,6 +13,22 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 ```
 
 and performance is roughly similar.
+
+# 1.8.2  PoolGi and SynCas access fixes: works for large models (Lvis)
+
+## MacBook Pro M1
+
+### GPU
+
+`go test -gpu -verbose=false -ndata=1 -bench=.`
+
+memory sizes are for SynCa
+
+* ndata=1 (1.8gb): 19.6
+* ndata=2 (1.7gb): 27
+* ndata=4 (3.4gb): 41
+* ndata=8 (5.9gb): 69
+
 
 # 1.8.0  Flexible memory layout, Data Parallel
 
@@ -31,7 +47,7 @@ There are some weird cases where it seems that doing more overall processing wit
 * ndata=1 (1.8gb): 18
 * ndata=2 (2.7gb): 19 -- no cost = sweet spot
 * ndata=4 (4.4gb): 37 -- 2x vs 2 a= not worse than linear but not great
-* ndata=8 (7.7gb): 44 -- not bad -- was much worse before fixing 2^31 GPU memory access
+* ndata=8 (7.7gb): 44 -- NOTE: is not actually using full memory due to bugs!
 
 
 ### CPU
