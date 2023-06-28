@@ -30,7 +30,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.6", // err driven: .15 > .2 > .25 > .1
+					"Prjn.Learn.LRate.Base": "0.4", // err driven: .15 > .2 > .25 > .1
 				}},
 			{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
 				Params: params.Params{
@@ -64,15 +64,15 @@ var ParamSets = params.Sets{
 			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
 					"Prjn.Learn.Learn":    "false", // learning here definitely does NOT work!
-					"Prjn.SWts.Init.Mean": "0.9",
+					// "Prjn.SWts.Init.Mean": "0.9", // commmenting this our prevents CA3 overactivation
 					"Prjn.SWts.Init.Var":  "0.01",
 					"Prjn.PrjnScale.Rel":  "4", // err del 4: 4 > 6 > 8
-					"Prjn.PrjnScale.Abs": "1.5", // zycyc, test if abs activation was not enough
+					// "Prjn.PrjnScale.Abs": "1.5", // commmenting this our prevents CA3 overactivation
 				}},
 			{Sel: "#EC2ToCA3", Desc: "EC2 Perforant Path",
 				Params: params.Params{
 					// "Prjn.PrjnScale.Abs": "2",
-					"Prjn.Learn.LRate.Base": "0.8", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
+					"Prjn.Learn.LRate.Base": "0.4", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
 				}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons: rel=2 still the best",
 				Params: params.Params{
@@ -86,7 +86,7 @@ var ParamSets = params.Sets{
 					// "Prjn.CHL.Hebb":         "0.2",  // .2 seems good
 					// "Prjn.CHL.SAvgCor":      "0.1",  // 0.01 = 0.05 = .1 > .2 > .3 > .4 (listlize 20-100)
 					// "Prjn.CHL.MinusQ1":      "true", // dg self err slightly better
-					"Prjn.Learn.LRate.Base": "0.2", // .05 > .1 > .2 > .4; grid model: 0.1 converges nicely but forgets very soon, don't use it
+					"Prjn.Learn.LRate.Base": "0.4", // 0.6, 0.4 learns faster than 0.2
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
@@ -120,12 +120,12 @@ var ParamSets = params.Sets{
 			{Sel: "#DG", Desc: "very sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
-					"Layer.Inhib.Layer.Gi":       "2.2",
+					"Layer.Inhib.Layer.Gi":       "2.4",
 				}},
 			{Sel: "#EC2", Desc: "very sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.02",
-					// "Layer.Inhib.Layer.Gi":       "2.8",
+					"Layer.Inhib.Layer.Gi":       "1.2",
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inhibition",
 				Params: params.Params{
