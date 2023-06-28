@@ -153,6 +153,7 @@ type Sim struct {
 	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats estats.Stats    `desc:"contains computed statistic values"`
 	Logs  elog.Logs       `desc:"Contains all the logs and information about the logs.'"`
+	PretrainMode bool	 `desc:"if true, run in pretrain mode"`
 
 	PoolVocab    patgen.Vocab     `view:"no-inline" desc:"pool patterns vocabulary"`
 	TrainAB      *etable.Table    `view:"no-inline" desc:"AB training patterns to use"`
@@ -377,6 +378,8 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 	
 
 	var tmpVals []float32
+	thetaLow := float32(.9)
+	thetaHigh := float32(1)
 
 	input := net.AxonLayerByName("Input")
 	ec5 := net.AxonLayerByName("EC5")
@@ -394,9 +397,11 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 	// 	ec5.Params.LayType = axon.CompareLayer
 	// }
 
+
+	// put pretrain here
 	startOfQ1 := looper.NewEvent("Q0", 0, func() {
-		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = 1
-		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = 0.3
+		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
+		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaLow
 
 		ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDel // turn off DG input to CA3 in first quarter
 
@@ -404,8 +409,8 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 		net.GPU.SyncParamsToGPU()
 	})
 	endOfQ1 := looper.NewEvent("Q1", 50, func() {
-		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = 0.3
-		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = 1
+		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = thetaLow
+		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
 		if man.Mode == etime.Train {
 			ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore after 1st quarter
 		} else {
@@ -415,8 +420,8 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 		net.GPU.SyncParamsToGPU()
 	}) // 50ms
 	endOfQ3 := looper.NewEvent("Q3", 150, func() {
-		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = 1
-		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = 0.3
+		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
+		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaLow
 		if man.Mode == etime.Train { // clamp EC5 from Input
 			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 				input.UnitVals(&tmpVals, "Act", int(di))
@@ -428,7 +433,7 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 	})
 	endOfQ4 := looper.NewEvent("Q4", 200, func() {
 		ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore
-		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = 1
+		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
@@ -873,7 +878,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test Init", Icon: "update",
 		Tooltip: "Call ResetCountersByMode with test mode and update GUI.",
 		Active:  egui.ActiveStopped,
@@ -882,7 +886,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.GUI.UpdateWindow()
 		},
 	})
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Test})
+
+	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
+	
+	
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")

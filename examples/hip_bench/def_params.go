@@ -90,7 +90,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "1.5",
+					// "Prjn.PrjnScale.Abs":    "1.5",
 					// "Prjn.CHL.Hebb":          "0.01", // .01 > .005 > .02 > .002 > .001 > .05 (crazy)
 					// "Prjn.CHL.SAvgCor":       "0.4",
 					"Prjn.Learn.LRate.Base": "0.4", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
