@@ -583,13 +583,17 @@ type TraceParams struct {
 	Tau      float32 `def:"1,2,4" desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
 	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always"`
 	LearnThr float32 `desc:"threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntMax value -- setting this relatively high encourages sparser representations"`
+	LTDFactor float32 `desc:"factor for computing LTD -- typically 1.0 for standard trace learning, and higher for more LTD (e.g., hippocampus)"`
 	Dt       float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+
+	pad, pad1, pad2 float32
 }
 
 func (tp *TraceParams) Defaults() {
 	tp.Tau = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0
+	tp.LTDFactor = 1
 	tp.Update()
 }
 

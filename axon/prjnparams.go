@@ -278,31 +278,34 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 // Uses synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
-	caUpT := SynCaV(ctx, syni, di, CaUpT)
-	syCaM := SynCaV(ctx, syni, di, CaM)
-	syCaP := SynCaV(ctx, syni, di, CaP)
-	syCaD := SynCaV(ctx, syni, di, CaD)
-	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update
-	dtr := syCaD                                                         // caD reflects entire window
-	if pj.PrjnType == CTCtxtPrjn {
+	// credit assignment part
+	caUpT := SynCaV(ctx, syni, di, CaUpT) // time of last update
+	syCaM := SynCaV(ctx, syni, di, CaM) // fast time scale
+	syCaP := SynCaV(ctx, syni, di, CaP) // slower but still fast time scale, drives Potentiation
+	syCaD := SynCaV(ctx, syni, di, CaD) // slow time scale, drives Depression (one trial = 200 cycles)
+	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
+	dtr := syCaD               // delta trace, caD reflects entire window
+	if pj.PrjnType == CTCtxtPrjn { // layer 6 CT projection
 		dtr = NrnV(ctx, si, di, BurstPrv)
 	}
-	SetSynCaV(ctx, syni, di, DTr, dtr)
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)
-	SetSynCaV(ctx, syni, di, Tr, tr)
+	SetSynCaV(ctx, syni, di, DTr, dtr) // save delta trace for GUI
+	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr) // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
 	if SynV(ctx, syni, Wt) == 0 { // failed con, no learn
 		return
 	}
+
+	// error part
 	var err float32
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (NrnV(ctx, ri, di, NrnCaP) - NrnV(ctx, ri, di, NrnCaD)) // hiddens: recv Ca drives error signal w/ trace credit
+		err = tr * (NrnV(ctx, ri, di, NrnCaP) - pj.Learn.Trace.LTDFactor*NrnV(ctx, ri, di, NrnCaD)) // hiddens: recv NMDA Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum.
 	// also other types might not use, so need to do this per learning rule
-	lwt := SynV(ctx, syni, LWt)
+	lwt := SynV(ctx, syni, LWt) // linear weight
 	if err > 0 {
 		err *= (1 - lwt)
 	} else {

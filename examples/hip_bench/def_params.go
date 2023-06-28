@@ -25,11 +25,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
+					"Prjn.Learn.Learn": "true",
 					// "Prjn.CHL.Hebb":              "0.01", // .01 > .05? > .1?
 					"Prjn.Learn.LRate.Base": "0.4", // .2
 				}},
 			{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
+					"Prjn.Learn.Learn": "true",
 					"Prjn.Learn.LRate.Base": "0.4", // err driven: .15 > .2 > .25 > .1
 				}},
 			{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
@@ -81,18 +83,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#EC2ToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
 				Params: params.Params{
+					// "Prjn.Learn.Trace.LTDFactor": "1.1",
 					"Prjn.Learn.Learn": "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
 					"Prjn.PrjnScale.Abs":    "0.7",
-					// "Prjn.CHL.Hebb":         "0.2",  // .2 seems good
-					// "Prjn.CHL.SAvgCor":      "0.1",  // 0.01 = 0.05 = .1 > .2 > .3 > .4 (listlize 20-100)
-					// "Prjn.CHL.MinusQ1":      "true", // dg self err slightly better
 					"Prjn.Learn.LRate.Base": "0.4", // 0.6, 0.4 learns faster than 0.2
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
+					// "Prjn.Learn.Trace.LTDFactor": "1.1",
 					// "Prjn.PrjnScale.Abs":    "1.5",
-					// "Prjn.CHL.Hebb":          "0.01", // .01 > .005 > .02 > .002 > .001 > .05 (crazy)
-					// "Prjn.CHL.SAvgCor":       "0.4",
 					"Prjn.Learn.LRate.Base": "0.4", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
 				}},
 			//{Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
@@ -116,22 +115,29 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.1",
+
+					"Layer.Acts.Clamp.Ge":        "1",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.Gi":       "2.4",
+					// "Layer.Inhib.Layer.FB":       "4",
+					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
 			{Sel: "#EC2", Desc: "very sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.02",
 					"Layer.Inhib.Layer.Gi":       "1.2",
+					// "Layer.Inhib.Layer.FB":       "4",
+					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.Gi":       "1.2",
-					// "Layer.Learn.AvgL.Gain":   "2.5", // stick with 2.5
+					// "Layer.Inhib.Layer.FB":       "4",
+					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
 
 			{Sel: "#CA1", Desc: "CA1 only Pools",
@@ -140,8 +146,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.1",
-					// "Layer.Learn.AvgL.Gain":   "2.5", // 2.5 > 2 > 3
-					//"Layer.Inhib.ActAvg.UseFirst": "false", // first activity is too low, throws off scaling, from Randy, zycyc: do we need this?
+					// "Layer.Inhib.Pool.FB":       "4",
+					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
 		},
 		// NOTE: it is essential not to put Pat / Hip params here, as we have to use Base

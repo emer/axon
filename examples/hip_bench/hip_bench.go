@@ -105,6 +105,8 @@ type HipParams struct {
 	ECPctAct     float32    `desc:"percent activation in EC pool"`
 	MossyDel     float32    `desc:"delta in mossy effective strength between minus and plus phase"`
 	MossyDelTest float32    `desc:"delta in mossy strength for testing (relative to base param)"`
+	ThetaLow     float32    `desc:"theta low value"`
+	ThetaHigh     float32    `desc:"theta low value"`
 	MemThr       float64    `desc:"memory threshold"`
 }
 
@@ -126,6 +128,8 @@ func (hp *HipParams) Defaults() {
 	hp.lateralPCon = 0.75
 	hp.EC2PCon = 0.25      // 0.005 for no binding
 	hp.EC3ToEC2PCon = 0.1 // 0.1 for EC3-EC2 in WintererMaierWoznyEtAl17, not sure about Input-EC2
+	hp.ThetaLow = 0.9
+	hp.ThetaHigh = 1
 
 	hp.MossyDel = 4     // 4 -- best is 4 del on 4 rel baseline
 	hp.MossyDelTest = 3 // for rel = 4: 3 > 2 > 0 > 4 -- 4 is very bad -- need a small amount.. 0 for NoDynMF and orig
@@ -190,6 +194,7 @@ func (ss *Sim) New() {
 	ss.PreTrainLure = &etable.Table{}
 	ss.TestLure = &etable.Table{}
 	ss.TrainAll = &etable.Table{}
+	ss.PretrainMode = false
 
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
@@ -374,22 +379,24 @@ func (ss *Sim) InitRndSeed() {
 	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
 
-func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, mossyDel, mossyDelTest float32) {
+func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, mossyDel, mossyDelTest, thetaLow, thetaHigh float32, pretrain *bool) {
 	
-
 	var tmpVals []float32
-	thetaLow := float32(.9)
-	thetaHigh := float32(1)
 
 	input := net.AxonLayerByName("Input")
 	ec5 := net.AxonLayerByName("EC5")
 	ca1 := net.AxonLayerByName("CA1")
 	ca3 := net.AxonLayerByName("CA3")
+	dg := net.AxonLayerByName("DG")
+	dgFmEc2, _ := dg.SendNameTry("EC2")
 	ca1FmEc3, _ := ca1.SendNameTry("EC3")
 	ca1FmCa3, _ := ca1.SendNameTry("CA3")
 	ca3FmDg, _ := ca3.SendNameTry("DG")
+	ca3FmEc2, _ := ca3.SendNameTry("EC2")
+	ca3FmCa3, _ := ca3.SendNameTry("CA3")
 
 	dgPjScale := ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel
+	ca1FmCa3Abs := ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Abs
 
 	// if man.Mode == etime.Train {
 	// 	ec5.Params.LayType = axon.TargetLayer
@@ -398,8 +405,23 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 	// }
 
 
-	// put pretrain here
+	// put pretrain here (cut CA3->CA1 and put a TSP class for setting all lrate = 0)
+	
+
 	startOfQ1 := looper.NewEvent("Q0", 0, func() {
+		if *pretrain {
+			dgFmEc2.(*axon.Prjn).Params.Learn.Learn = 0
+			ca3FmEc2.(*axon.Prjn).Params.Learn.Learn = 0
+			ca3FmCa3.(*axon.Prjn).Params.Learn.Learn = 0
+			ca1FmCa3.(*axon.Prjn).Params.Learn.Learn = 0
+			ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Abs = 0
+		} else {
+			dgFmEc2.(*axon.Prjn).Params.Learn.Learn = 1
+			ca3FmEc2.(*axon.Prjn).Params.Learn.Learn = 1
+			ca3FmCa3.(*axon.Prjn).Params.Learn.Learn = 1
+			ca1FmCa3.(*axon.Prjn).Params.Learn.Learn = 1
+			ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Abs = ca1FmCa3Abs
+		}
 		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
 		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaLow
 
@@ -454,7 +476,7 @@ func (ss *Sim) ConfigLoops() {
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
-	ConfigLoopsHip(&ss.Context, man, ss.Net, 4, 3)
+	ConfigLoopsHip(&ss.Context, man, ss.Net, ss.Hip.MossyDel, ss.Hip.MossyDelTest, ss.Hip.ThetaLow, ss.Hip.ThetaHigh, &ss.PretrainMode)
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
