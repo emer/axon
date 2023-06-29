@@ -241,7 +241,7 @@ func (ev *Approach) RenderAction(act int) {
 // Step does one step
 func (ev *Approach) Step() bool {
 	ev.LastCS = ev.CS
-	if ev.LastUS != -1 { // || ev.Time >= ev.TimeMax {
+	if ev.LastUS != -1 {
 		ev.NewStart()
 	}
 	ev.RenderState()
@@ -284,9 +284,7 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	us := int(uss.Values[ev.Pos])
 	switch action {
 	case "Forward":
-		if ev.Dist == 0 {
-			ev.SetRewFmUS()
-		} else {
+		if ev.Dist != 0 {
 			ev.Dist--
 		}
 	case "Left":
@@ -301,12 +299,10 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if ev.US > -1 {
-				ev.SetRewFmUS()
-			} else {
+			if ev.US == -1 {
 				ev.US = us
-				ev.SetRewFmUS()
 			}
+			ev.SetRewFmUS()
 		}
 	}
 	ev.LastAct = act
@@ -345,7 +341,6 @@ func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
 	if ev.Dist == 0 {
 		if ev.LastAct == cons {
 			ev.ShouldGate = true
-			return cons
 		}
 		return cons
 	}
