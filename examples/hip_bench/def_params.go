@@ -21,6 +21,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works
 					"Prjn.Learn.LRate.Base": "0.2",
 				}},
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
@@ -31,6 +32,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.8", // 0.8 helps preventing CA3 fixation
 					"Prjn.Learn.Learn": "true",
 					"Prjn.Learn.LRate.Base": "0.4", // err driven: .15 > .2 > .25 > .1
 				}},
@@ -86,7 +88,7 @@ var ParamSets = params.Sets{
 					// "Prjn.Learn.Trace.LTDFactor": "1.1",
 					"Prjn.Learn.Learn": "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
 					"Prjn.PrjnScale.Abs":    "0.7",
-					"Prjn.Learn.LRate.Base": "0.4", // 0.6, 0.4 learns faster than 0.2
+					"Prjn.Learn.LRate.Base": "0.2", 
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
@@ -116,7 +118,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.1",
 
-					"Layer.Acts.Clamp.Ge":        "1",
+					"Layer.Acts.Clamp.Ge":        "1.4",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inhibition",
 				Params: params.Params{

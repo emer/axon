@@ -751,7 +751,6 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	trgOffN := 0.0
 	actMi, _ := ecout.UnitVarIdx("ActM")
 	targi, _ := ecout.UnitVarIdx("Target")
-	// actQ1i, _ := ecout.UnitVarIdx("ActSt1") // where to see this?
 	for ni := 0; ni < nn; ni++ {
 		actm := ecout.UnitVal1D(actMi, ni, di)
 		trg := ecout.UnitVal1D(targi, ni, di) // full pattern target
@@ -785,8 +784,6 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 			ss.Stats.SetFloat("Mem", 0)
 		}
 	} else { // test
-		// fmt.Println("cmpN", cmpN)
-		fmt.Println("trgOnWasOffCmp", trgOnWasOffCmp)
 		if cmpN > 0 { // should be
 			trgOnWasOffCmp /= cmpN
 			if trgOnWasOffCmp < memthr && trgOffWasOn < memthr {
