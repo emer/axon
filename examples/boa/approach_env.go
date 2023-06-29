@@ -43,7 +43,6 @@ type Approach struct {
 	Pos        int                         `inactive:"+" desc:"current position being looked at"`
 	Rew        float32                     `inactive:"+" desc:"reward"`
 	US         int                         `inactive:"+" desc:"US is -1 unless consumed at Dist = 0"`
-	LastUS     int                         `inactive:"+" desc:"previous US state"`
 	StateCtr   int                         `inactive:"+" desc:"count up for generating a new state"`
 	LastAct    int                         `inactive:"+" desc:"last action taken"`
 	CS         int                         `inactive:"+" desc:"current CS"`
@@ -174,7 +173,6 @@ func (ev *Approach) NewStart() {
 		}
 	}
 	ev.US = -1
-	ev.LastUS = -1
 	ev.Rew = 0
 	ev.JustGated = false
 	ev.HasGated = false
@@ -241,7 +239,7 @@ func (ev *Approach) RenderAction(act int) {
 // Step does one step
 func (ev *Approach) Step() bool {
 	ev.LastCS = ev.CS
-	if ev.LastUS != -1 { // || ev.Time >= ev.TimeMax {
+	if ev.US != -1 {
 		ev.NewStart()
 	}
 	ev.RenderState()
@@ -277,7 +275,6 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		fmt.Printf("Action not recognized: %s\n", action)
 		return
 	}
-	ev.LastUS = ev.US
 	ev.RenderAction(act)
 	ev.Time++
 	uss := ev.States["USs"]
@@ -301,12 +298,10 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if ev.US > -1 {
-				ev.SetRewFmUS()
-			} else {
+			if ev.US == -1 {
 				ev.US = us
-				ev.SetRewFmUS()
 			}
+			ev.SetRewFmUS()
 		}
 	}
 	ev.LastAct = act
