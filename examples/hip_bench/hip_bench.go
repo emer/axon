@@ -8,6 +8,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 
 	"github.com/emer/axon/axon"
@@ -26,7 +27,9 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -59,21 +62,24 @@ func main() {
 type SimParams struct {
 	NData        int `desc:"number of data-parallel items to process at once"`
 	NTrials      int `desc:"number of trials per epoch"`
+	NEpochs      int `desc:"number of epochs per run"`
+	NRuns      int `desc:"number of runs"`
 	TestInterval int `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	// PCAInterval  int `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 1
+	ss.NData = 10
 	ss.NTrials = 10
+	ss.NEpochs = 300
+	ss.NRuns = 5
 	ss.TestInterval = 1
 	// ss.PCAInterval = 5
 }
 
 // PatParams have the pattern parameters
 type PatParams struct {
-	ListSize    int     `desc:"number of A-B, A-C patterns each"`
 	MinDiffPct  float32 `desc:"minimum difference between item random patterns, as a proportion (0-1) of total active"`
 	DriftCtxt   bool    `desc:"use drifting context representations -- otherwise does bit flips from prototype"`
 	CtxtFlipPct float32 `desc:"proportion (0-1) of active bits to flip for each context pattern, relative to a prototype, for non-drifting"`
@@ -81,7 +87,6 @@ type PatParams struct {
 }
 
 func (pp *PatParams) Defaults() {
-	pp.ListSize = 10 // 20 def
 	pp.MinDiffPct = 0.5
 	pp.CtxtFlipPct = .25
 }
@@ -197,6 +202,7 @@ func (ss *Sim) New() {
 	ss.PretrainMode = false
 
 	ss.RndSeeds.Init(100) // max 100 runs
+	ss.InitRndSeed(0)
 	ss.Context.Defaults()
 	ss.Pat.Defaults() // ??? where to put this?
 	ss.Hip.Defaults() // ??? where to put this?
@@ -309,9 +315,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inh.SetClass("InhibLateral")
 
 	// MSP
-	net.ConnectLayers(ec3, ca1, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
+	net.ConnectLayers(ec3, ca1, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn") // maybe try HipPrjn (i.e., no limit)
 	net.ConnectLayers(ca1, ec5, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
-	net.ConnectLayers(ec5, ca1, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
+	net.ConnectLayers(ec5, ca1, pool1to1, axon.HipPrjn).SetClass("EcCa1Prjn")
 
 	// TSP
 	ppathDG := prjn.NewUnifRnd()
@@ -320,11 +326,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ppathCA3.PCon = hp.CA3PCon
 	ca3ToCa1 := prjn.NewUnifRnd()
 	ca3ToCa1.PCon = hp.CA1PCon
-	net.ConnectLayers(ec2, dg, ppathDG, axon.ForwardPrjn).SetClass("HippoCHL")
+	net.ConnectLayers(ec2, dg, ppathDG, axon.HipPrjn).SetClass("HippoCHL")
 	net.ConnectLayers(ec2, ca3, ppathCA3, axon.ForwardPrjn).SetClass("PPath")
 	net.ConnectLayers(ca3, ca3, full, axon.LateralPrjn).SetClass("PPath")
 	net.ConnectLayers(dg, ca3, mossy, axon.ForwardPrjn).SetClass("HippoCHL")
-	net.ConnectLayers(ca3, ca1, ca3ToCa1, axon.ForwardPrjn).SetClass("HippoCHL")
+	net.ConnectLayers(ca3, ca1, ca3ToCa1, axon.HipPrjn).SetClass("HippoCHL")
 
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
@@ -357,7 +363,6 @@ func (ss *Sim) Init() {
 		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
 	}
 	ss.Loops.ResetCounters()
-	ss.InitRndSeed()
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
@@ -373,8 +378,8 @@ func (ss *Sim) TestInit() {
 }
 
 // InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed() {
-	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
+func (ss *Sim) InitRndSeed(run int) {
+	rand.Seed(ss.RndSeeds[run])
 	ss.RndSeeds.Set(run)
 	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
@@ -469,7 +474,7 @@ func (ss *Sim) ConfigLoops() {
 
 	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(ss.Sim.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, ss.Sim.NRuns).AddTime(etime.Epoch, ss.Sim.NEpochs).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
@@ -585,7 +590,8 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed()
+	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
+	ss.ConfigPats()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ctx.Reset()
@@ -613,7 +619,7 @@ func (ss *Sim) ConfigPats() {
 	ecX := hp.ECSize.X
 	plY := hp.ECPool.Y // good idea to get shorter vars when used frequently
 	plX := hp.ECPool.X // makes much more readable
-	npats := ss.Pat.ListSize
+	npats := ss.Sim.NTrials
 	pctAct := hp.ECPctAct
 	minDiff := ss.Pat.MinDiffPct
 	nOn := patgen.NFmPct(pctAct, plY*plX)
@@ -801,6 +807,24 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 //////////////////////////////////////////////////////////////////////////////
 // 		Logging
 
+func (ss *Sim) AddLogItems() {
+	itemNames := []string {"CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem"}
+	for _, st := range itemNames {
+		stnm := st
+		tonm := "Tst" + st
+		ss.Logs.AddItem(&elog.Item{
+			Name: tonm,
+			Type: etensor.FLOAT64,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm))
+				},
+				etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Epoch, agg.AggMax)
+				}}})
+	}
+}
+
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
@@ -817,7 +841,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("Mem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem")
+	// ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem")
+	ss.AddLogItems()
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -830,7 +855,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
-	ss.Logs.PlotItems("FirstZero", "LastZero", "TrgOnWasOffAll", "TrgOnWasOffCmp", "Mem")
+	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "Mem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

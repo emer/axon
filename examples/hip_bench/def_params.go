@@ -71,7 +71,7 @@ var ParamSets = params.Sets{
 					// "Prjn.SWts.Init.Mean": "0.9", // commmenting this our prevents CA3 overactivation
 					"Prjn.SWts.Init.Var":  "0.01",
 					"Prjn.PrjnScale.Rel":  "4", // err del 4: 4 > 6 > 8
-					// "Prjn.PrjnScale.Abs": "1.5", // commmenting this our prevents CA3 overactivation
+					"Prjn.PrjnScale.Abs": "0.3",
 				}},
 			{Sel: "#EC2ToCA3", Desc: "EC2 Perforant Path",
 				Params: params.Params{
@@ -80,26 +80,44 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons: rel=2 still the best",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.3",
 					"Prjn.PrjnScale.Rel":    "2",   // 2 > 1 > .5 = .1
 					"Prjn.Learn.LRate.Base": "0.4", // .1  > .08 (close) > .15 > .2 > .04; large list size: 0.01>0.1~=0.04
 				}},
 			{Sel: "#EC2ToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
 				Params: params.Params{
-					// "Prjn.Learn.Trace.LTDFactor": "1.1",
+					// "Prjn.Hip.Hebb": "0.2",
+					// "Prjn.Hip.Err": "0.8",
+					// "Prjn.Hip.SAvgCor": "0.1",
+					// "Prjn.Hip.SNominal": "0.02", // !! need to keep it the same as actual layer Nominal
 					"Prjn.Learn.Learn": "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
 					"Prjn.PrjnScale.Abs":    "0.7",
 					"Prjn.Learn.LRate.Base": "0.2", 
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					// "Prjn.Learn.Trace.LTDFactor": "1.1",
 					// "Prjn.PrjnScale.Abs":    "1.5",
+					
+					
+					// "Prjn.Hip.Hebb": "0.01", // worked whole 300 epcs!
+					// "Prjn.Hip.Err": "0.9",
+
+					// "Prjn.Hip.Hebb": "0",
+					// "Prjn.Hip.Err": "1",
+					// "Prjn.SWts.Adapt.SigGain": "1",
+					// "Prjn.SWts.Init.SPct": "0",
+
+					// "Prjn.Learn.Trace.SubMean": "1", // predition: zero-sum at LWt level makes more fixation
+
+
+					"Prjn.Hip.SAvgCor": "0.4",
+					"Prjn.Hip.SNominal": "0.03", // !! need to keep it the same as actual layer Nominal
 					"Prjn.Learn.LRate.Base": "0.4", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
 				}},
-			//{Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
-			//	Params: params.Params{
-			//		"Prjn.PrjnScale.Abs": "1.5", // zycyc, test if abs activation was not enough
-			//	}},
+			// {Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
+			// 	Params: params.Params{
+			// 		"Prjn.SWts.Adapt.SigGain": "1", // if 1, Wt = LWt, weight more linear less extreme, if 6 (default), Wt = sigmoid(LWt)
+			// 	}},
 			{Sel: "#EC5ToCA1", Desc: "EC5 Perforant Path",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // Back proj should generally be very weak but we're specifically setting this here bc others are set already
@@ -119,11 +137,16 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":        "1.1",
 
 					"Layer.Acts.Clamp.Ge":        "1.4",
+
+					// "Layer.Learn.TrgAvgAct.SubMean":       "0",
+					"Layer.Learn.TrgAvgAct.SynScaleRate":       "0.0002",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.Gi":       "2.4",
+					// "Layer.Learn.TrgAvgAct.SubMean":       "0",
+					"Layer.Learn.TrgAvgAct.SynScaleRate":       "0.0002",
 					// "Layer.Inhib.Layer.FB":       "4",
 					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
@@ -131,6 +154,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.02",
 					"Layer.Inhib.Layer.Gi":       "1.2",
+					"Layer.Learn.TrgAvgAct.SynScaleRate":       "0.0002",
 					// "Layer.Inhib.Layer.FB":       "4",
 					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
@@ -138,6 +162,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.Gi":       "1.2",
+					// "Layer.Learn.TrgAvgAct.SubMean":       "0",
+					"Layer.Learn.TrgAvgAct.SynScaleRate":       "0.0002",
 					// "Layer.Inhib.Layer.FB":       "4",
 					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
@@ -148,6 +174,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.1",
+					// "Layer.Learn.TrgAvgAct.SubMean":       "0",
+					// "Layer.Learn.TrgAvgAct.On":       "false",
+					"Layer.Learn.TrgAvgAct.SynScaleRate":       "0.0002",
 					// "Layer.Inhib.Pool.FB":       "4",
 					// "Layer.Learn.RLRate.SigmoidMin":       "0.01",
 				}},
