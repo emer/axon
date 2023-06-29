@@ -53,6 +53,8 @@ type Approach struct {
 	HasGated   bool                        `inactive:"+" desc:"has gated at some point during sequence"`
 }
 
+const noUS = -1
+
 func (ev *Approach) Name() string {
 	return ev.Nm
 }
@@ -173,8 +175,8 @@ func (ev *Approach) NewStart() {
 			break
 		}
 	}
-	ev.US = -1
-	ev.LastUS = -1
+	ev.US = noUS
+	ev.LastUS = noUS
 	ev.Rew = 0
 	ev.JustGated = false
 	ev.HasGated = false
@@ -241,7 +243,7 @@ func (ev *Approach) RenderAction(act int) {
 // Step does one step
 func (ev *Approach) Step() bool {
 	ev.LastCS = ev.CS
-	if ev.LastUS != -1 {
+	if ev.LastUS != noUS {
 		ev.NewStart()
 	}
 	ev.RenderState()
@@ -299,7 +301,7 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if ev.US == -1 {
+			if ev.US == noUS {
 				ev.US = us
 			}
 			ev.SetRewFmUS()
