@@ -14,27 +14,27 @@ var ParamSets = params.Sets{
 			{Sel: ".InhibLateral", Desc: "circle lateral inhibitory connection -- good params, longer time, more ABmem",
 				Params: params.Params{
 					"Prjn.Learn.Learn":    "false", // ??? not sure
-					"Prjn.SWts.Init.Mean": "1",     // 0.1 was the standard Grid model as of 02242023
+					// "Prjn.SWts.Init.Mean": "1",     // 0.1 was the standard Grid model as of 02242023
 					"Prjn.SWts.Init.Var":  "0",
 					"Prjn.SWts.Init.Sym":  "false",
 					//"Prjn.PrjnScale.Abs": "0.5", // higher gives better grid
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works
+					"Prjn.PrjnScale.Abs": "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works -- try each one of them separately
 					"Prjn.Learn.LRate.Base": "0.2",
 				}},
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "true",
 					// "Prjn.CHL.Hebb":              "0.01", // .01 > .05? > .1?
-					"Prjn.Learn.LRate.Base": "0.4", // .2
+					"Prjn.Learn.LRate.Base": "0.2", // .2
 				}},
 			{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.8", // 0.8 helps preventing CA3 fixation
+					// "Prjn.PrjnScale.Abs": "0.8", // 0.8 helps preventing CA3 fixation
 					"Prjn.Learn.Learn": "true",
-					"Prjn.Learn.LRate.Base": "0.4", // err driven: .15 > .2 > .25 > .1
+					"Prjn.Learn.LRate.Base": "0.2", // err driven: .15 > .2 > .25 > .1
 				}},
 			{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
 				Params: params.Params{
@@ -56,7 +56,7 @@ var ParamSets = params.Sets{
 					//"Prjn.Learn.LRate.Base": "0.01",
 					//"Prjn.SWts.Init.Mean": "0.8", // 0.8 is for one to one deterministic connections, not for learning!
 					//"Prjn.SWts.Init.Var":         "0",
-					// "Prjn.PrjnScale.Rel": "1", // was 1
+					// "Prjn.PrjnScale.Abs": "0.8", // was 1
 				}},
 			{Sel: "#EC5ToEC3", Desc: "one-to-one out to in",
 				Params: params.Params{
@@ -73,16 +73,16 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Rel":  "4", // err del 4: 4 > 6 > 8
 					"Prjn.PrjnScale.Abs": "0.3",
 				}},
-			{Sel: "#EC2ToCA3", Desc: "EC2 Perforant Path",
-				Params: params.Params{
-					// "Prjn.PrjnScale.Abs": "2",
-					"Prjn.Learn.LRate.Base": "0.4", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
-				}},
+			// {Sel: "#EC2ToCA3", Desc: "EC2 Perforant Path",
+			// 	Params: params.Params{
+			// 		// "Prjn.PrjnScale.Abs": "2",
+			// 		"Prjn.Learn.LRate.Base": "0.4", // list150: 0.2 > 0.3 > 0.1 > 0.05 > 0.01
+			// 	}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons: rel=2 still the best",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.3",
 					"Prjn.PrjnScale.Rel":    "2",   // 2 > 1 > .5 = .1
-					"Prjn.Learn.LRate.Base": "0.4", // .1  > .08 (close) > .15 > .2 > .04; large list size: 0.01>0.1~=0.04
+					// "Prjn.Learn.LRate.Base": "0.4", // .1  > .08 (close) > .15 > .2 > .04; large list size: 0.01>0.1~=0.04
 				}},
 			{Sel: "#EC2ToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
 				Params: params.Params{
@@ -90,6 +90,7 @@ var ParamSets = params.Sets{
 					// "Prjn.Hip.Err": "0.8",
 					// "Prjn.Hip.SAvgCor": "0.1",
 					// "Prjn.Hip.SNominal": "0.02", // !! need to keep it the same as actual layer Nominal
+
 					"Prjn.Learn.Learn": "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
 					"Prjn.PrjnScale.Abs":    "0.7",
 					"Prjn.Learn.LRate.Base": "0.2", 
@@ -110,13 +111,15 @@ var ParamSets = params.Sets{
 					// "Prjn.Learn.Trace.SubMean": "1", // predition: zero-sum at LWt level makes more fixation
 
 
+					// "Prjn.PrjnScale.Abs": "0.1", 
 					"Prjn.Hip.SAvgCor": "0.4",
 					"Prjn.Hip.SNominal": "0.03", // !! need to keep it the same as actual layer Nominal
-					"Prjn.Learn.LRate.Base": "0.4", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
+					"Prjn.Learn.LRate.Base": "0.2", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
 				}},
 			// {Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
 			// 	Params: params.Params{
-			// 		"Prjn.SWts.Adapt.SigGain": "1", // if 1, Wt = LWt, weight more linear less extreme, if 6 (default), Wt = sigmoid(LWt)
+			// 		"Prjn.PrjnScale.Abs": "0.1", 
+			// 		// "Prjn.SWts.Adapt.SigGain": "1", // if 1, Wt = LWt, weight more linear less extreme, if 6 (default), Wt = sigmoid(LWt)
 			// 	}},
 			{Sel: "#EC5ToCA1", Desc: "EC5 Perforant Path",
 				Params: params.Params{

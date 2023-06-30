@@ -133,7 +133,7 @@ func (hp *HipParams) Defaults() {
 	hp.lateralPCon = 0.75
 	hp.EC2PCon = 0.25      // 0.005 for no binding
 	hp.EC3ToEC2PCon = 0.1 // 0.1 for EC3-EC2 in WintererMaierWoznyEtAl17, not sure about Input-EC2
-	hp.ThetaLow = 0.9
+	hp.ThetaLow = 0.9 // doesn't have strong effect at low NTrials but shouldn't go too low (e.g., 0.3)
 	hp.ThetaHigh = 1
 
 	hp.MossyDel = 4     // 4 -- best is 4 del on 4 rel baseline
@@ -315,9 +315,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inh.SetClass("InhibLateral")
 
 	// MSP
-	net.ConnectLayers(ec3, ca1, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn") // maybe try HipPrjn (i.e., no limit)
-	net.ConnectLayers(ca1, ec5, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn")
-	net.ConnectLayers(ec5, ca1, pool1to1, axon.HipPrjn).SetClass("EcCa1Prjn")
+	net.ConnectLayers(ec3, ca1, pool1to1, axon.HipPrjn).SetClass("EcCa1Prjn") // HipPrjn makes wt linear
+	net.ConnectLayers(ca1, ec5, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn") // doesn't work w/ HipPrjn
+	net.ConnectLayers(ec5, ca1, pool1to1, axon.HipPrjn).SetClass("EcCa1Prjn") // HipPrjn makes wt linear
 
 	// TSP
 	ppathDG := prjn.NewUnifRnd()
@@ -327,8 +327,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ca3ToCa1 := prjn.NewUnifRnd()
 	ca3ToCa1.PCon = hp.CA1PCon
 	net.ConnectLayers(ec2, dg, ppathDG, axon.HipPrjn).SetClass("HippoCHL")
-	net.ConnectLayers(ec2, ca3, ppathCA3, axon.ForwardPrjn).SetClass("PPath")
-	net.ConnectLayers(ca3, ca3, full, axon.LateralPrjn).SetClass("PPath")
+	net.ConnectLayers(ec2, ca3, ppathCA3, axon.HipPrjn).SetClass("PPath")
+	net.ConnectLayers(ca3, ca3, full, axon.HipPrjn).SetClass("PPath")
 	net.ConnectLayers(dg, ca3, mossy, axon.ForwardPrjn).SetClass("HippoCHL")
 	net.ConnectLayers(ca3, ca1, ca3ToCa1, axon.HipPrjn).SetClass("HippoCHL")
 
