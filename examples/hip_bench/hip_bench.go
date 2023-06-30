@@ -8,8 +8,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"os"
+	"strings"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/ecmd"
@@ -72,7 +74,7 @@ type SimParams struct {
 func (ss *SimParams) Defaults() {
 	ss.NData = 10
 	ss.NTrials = 10
-	ss.NEpochs = 300
+	ss.NEpochs = 500
 	ss.NRuns = 5
 	ss.TestInterval = 1
 	// ss.PCAInterval = 5
@@ -172,6 +174,7 @@ type Sim struct {
 	PreTrainLure *etable.Table    `view:"no-inline" desc:"Lure pretrain patterns to use"`
 	TestLure     *etable.Table    `view:"no-inline" desc:"Lure testing patterns to use"`
 	TrainAll     *etable.Table    `view:"no-inline" desc:"all training patterns -- for pretrain"`
+	TestABAC     *etable.Table    `view:"no-inline" desc:"TestAB + TestAC"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Context      axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
@@ -199,6 +202,7 @@ func (ss *Sim) New() {
 	ss.PreTrainLure = &etable.Table{}
 	ss.TestLure = &etable.Table{}
 	ss.TrainAll = &etable.Table{}
+	ss.TestABAC = &etable.Table{}
 	ss.PretrainMode = false
 
 	ss.RndSeeds.Init(100) // max 100 runs
@@ -242,7 +246,7 @@ func (ss *Sim) ConfigEnv() {
 
 	tst.Nm = etime.Test.String()
 	tst.Dsc = "testing params and state"
-	tst.Config(etable.NewIdxView(ss.TestAB))
+	tst.Config(etable.NewIdxView(ss.TestABAC))
 	tst.Sequential = true
 	tst.Validate()
 
@@ -476,7 +480,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Train).AddTime(etime.Run, ss.Sim.NRuns).AddTime(etime.Epoch, ss.Sim.NEpochs).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, 2*trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -500,8 +504,42 @@ func (ss *Sim) ConfigLoops() {
 		if (ss.Sim.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Sim.TestInterval == 0) {
 			// Note the +1 so that it doesn't occur at the 0th timestep.
 			ss.TestAll()
+
+			// switch to AC
+			trn := ss.Envs.ByMode(etime.Train).(*env.FixedTable)
+			tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
+			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (tstEpcLog.Table.CellFloat("ABMem", ss.Stats.Int("Epoch")) == 1 || ss.Stats.Int("Epoch") == 30) {
+				trn.Config(etable.NewIdxView(ss.TrainAC))
+				trn.Validate()
+
+				// tst := ss.Envs.ByMode(etime.Test).(*env.FixedTable)
+				// tst.Config(etable.NewIdxView(ss.TestAC))
+				// tst.Validate()
+			}
+
+			// early stop
+			// if (trn.Table.Table.MetaData["name"] == "TrainAC") && (tstEpcLog.Table.CellFloat("Mem", ss.Stats.Int("Epoch")) == 1) {
+			// 	// man.ModeStack().StopFlag = true
+			// 	// man.Stop(etime.Epoch)
+			// 	// man.Step(etime.Train, 1, etime.Run)
+			// }
 		}
 	})
+
+	man.GetLoop(etime.Train, etime.Epoch).IsDone["ACMemStop"] = func() bool {
+		// This is calculated in TrialStats
+		tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
+		mem := tstEpcLog.Table.CellFloat("ACMem", ss.Stats.Int("Epoch"))
+		stop := mem >= 1
+		return stop
+	}
+
+
+	// add TrainAC and TestAC when mem reachese 1
+	// ss.Envs.ByMode(etime.Train).(*env.FixedTable).Table.Table.CellFloat()
+
+	
+	
 
 	/////////////////////////////////////////////
 	// Logging
@@ -570,11 +608,12 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
-	ev := ss.Envs.ByMode(ctx.Mode)
+	ev := ss.Envs.ByMode(ctx.Mode).(*env.FixedTable)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev.Step()
+		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
 		for _, lnm := range lays {
 			ly := ss.Net.AxonLayerByName(lnm)
 			pats := ev.State(ly.Nm)
@@ -592,6 +631,7 @@ func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
 	ss.ConfigPats()
+	ss.ConfigEnv()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ctx.Reset()
@@ -669,6 +709,16 @@ func (ss *Sim) ConfigPats() {
 	ss.TrainAll = ss.TrainAB.Clone()
 	ss.TrainAll.AppendRows(ss.TrainAC)
 	ss.TrainAll.AppendRows(ss.PreTrainLure)
+	ss.TrainAll.MetaData["name"] = "TrainAll"
+	ss.TrainAll.MetaData["desc"] = "All Training Patterns"
+
+
+	
+
+	ss.TestABAC = ss.TestAB.Clone()
+	ss.TestABAC.AppendRows(ss.TestAC)
+	ss.TestABAC.MetaData["name"] = "TestABAC"
+	ss.TestABAC.MetaData["desc"] = "All Testing Patterns"
 }
 
 func (ss *Sim) OpenPats() {
@@ -692,6 +742,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("TrgOnWasOffAll", 0.0)
 	ss.Stats.SetFloat("TrgOnWasOffCmp", 0.0)
 	ss.Stats.SetFloat("TrgOffWasOn", 0.0)
+	ss.Stats.SetFloat("ABMem", 0.0)
+	ss.Stats.SetFloat("ACMem", 0.0)
 	ss.Stats.SetFloat("Mem", 0.0)
 
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
@@ -710,8 +762,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ev := ss.Envs.ByMode(ctx.Mode)
-	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
+	ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
 }
 
 func (ss *Sim) NetViewCounters() {
@@ -757,6 +808,8 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	trgOffN := 0.0
 	actMi, _ := ecout.UnitVarIdx("ActM")
 	targi, _ := ecout.UnitVarIdx("Target")
+	ss.Stats.SetFloat("ABMem", math.NaN())
+	ss.Stats.SetFloat("ACMem", math.NaN())
 	for ni := 0; ni < nn; ni++ {
 		actm := ecout.UnitVal1D(actMi, ni, di)
 		trg := ecout.UnitVal1D(targi, ni, di) // full pattern target
@@ -794,8 +847,18 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 			trgOnWasOffCmp /= cmpN
 			if trgOnWasOffCmp < memthr && trgOffWasOn < memthr {
 				ss.Stats.SetFloat("Mem", 1)
+				if strings.Contains(ss.Envs.ByMode(etime.Test).(*env.FixedTable).TrialName.Cur, "AB") {
+					ss.Stats.SetFloat("ABMem", 1)
+				} else {
+					ss.Stats.SetFloat("ACMem", 1)
+				}
 			} else {
 				ss.Stats.SetFloat("Mem", 0)
+				if strings.Contains(ss.Envs.ByMode(etime.Test).(*env.FixedTable).TrialName.Cur, "AB") {
+					ss.Stats.SetFloat("ABMem", 0)
+				} else {
+					ss.Stats.SetFloat("ACMem", 0)
+				}
 			}
 		}
 	}
@@ -808,7 +871,7 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 // 		Logging
 
 func (ss *Sim) AddLogItems() {
-	itemNames := []string {"CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem"}
+	itemNames := []string {"CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem", "ABMem", "ACMem"}
 	for _, st := range itemNames {
 		stnm := st
 		tonm := "Tst" + st
@@ -838,6 +901,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("TrgOnWasOffAll", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("TrgOnWasOffCmp", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("TrgOffWasOn", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ABMem", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ACMem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Mem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
@@ -855,7 +920,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
-	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "Mem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem")
+	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "ABMem", "ACMem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem", "TstABMem", "TstACMem")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
