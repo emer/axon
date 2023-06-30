@@ -87,7 +87,7 @@ func (nt *Network) UpdateParams() {
 // all data parallel values.  The current Context.NData should be set
 // properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
-	nt.NData = ctx.NetIdxs.NData
+	nt.Ctx.NetIdxs.NData = ctx.NetIdxs.NData
 	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
 	// 	nt.GPU.RunNewState()
 	// 	return

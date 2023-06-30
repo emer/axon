@@ -503,11 +503,11 @@ func (ss *Sim) ConfigLoops() {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 		for _, m := range man.Stacks {
-			m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
-				ss.NetViewCounters()
+			m.Loops[etime.Cycle].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
+				ss.NetViewCounters(etime.Cycle)
 			})
-			m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
-				ss.NetViewCounters()
+			m.Loops[etime.Trial].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
+				ss.NetViewCounters(etime.Trial)
 			})
 		}
 	}
@@ -728,12 +728,14 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetString("TrialName", "trl") // todo: could have dist, US etc
 }
 
-func (ss *Sim) NetViewCounters() {
+func (ss *Sim) NetViewCounters(tm etime.Times) {
 	if ss.ViewUpdt.View == nil {
 		return
 	}
 	di := ss.ViewUpdt.View.Di
-	ss.TrialStats(di)
+	if tm == etime.Trial {
+		ss.TrialStats(di) // get trial stats for current di
+	}
 	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
 }
