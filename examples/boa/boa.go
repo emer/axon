@@ -1201,6 +1201,9 @@ func (ss *Sim) ConfigArgs() {
 	if len(os.Args) > 1 {
 		ss.Args.SetBool("nogui", true) // by definition if here
 		ss.Sim.NData = ss.Args.Int("ndata")
+		if ss.Sim.NData < 1 {
+			ss.Sim.NData = 1
+		}
 		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
 	}
 }
