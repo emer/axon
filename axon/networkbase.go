@@ -386,15 +386,15 @@ func (nt *NetworkBase) AllPrjnScales() string {
 				continue
 			}
 			sn := pj.Send.Name()
-			str += fmt.Sprintf("\t%15s\t\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
+			str += fmt.Sprintf("\t%15s\t%15s\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.PrjnType().String(), pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
 			ph := pj.ParamsHistory.ParamsHistory()
 			rh := ph["Prjn.PrjnScale.Rel"]
 			ah := ph["Prjn.PrjnScale.Abs"]
 			if ah != "" {
-				str += fmt.Sprintf("\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
+				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
 			}
 			if rh != "" {
-				str += fmt.Sprintf("\t\t\t\t\t\t\t    Rel Params: %s\n", rh)
+				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Rel Params: %s\n", rh)
 			}
 		}
 	}
@@ -524,14 +524,6 @@ func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, ty
 // requires Build.
 func (nt *NetworkBase) ConnectLayers(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes) *Prjn {
 	pj := &Prjn{}
-	return nt.ConnectLayersPrjn(send, recv, pat, typ, pj)
-}
-
-// ConnectLayersPrjn makes connection using given projection between two layers,
-// adding given prjn to the recv and send projection lists on each side of the connection.
-// Does not yet actually connect the units within the layers -- that
-// requires Build.
-func (nt *NetworkBase) ConnectLayersPrjn(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes, pj *Prjn) *Prjn {
 	pj.Init(pj)
 	pj.Connect(send, recv, pat, typ)
 	recv.RcvPrjns.Add(pj)

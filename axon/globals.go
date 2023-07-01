@@ -95,9 +95,6 @@ const (
 	// HasPosUSPrev is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial
 	GvHasPosUSPrev
 
-	// HasPosUS is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial
-	GvHasPosUS
-
 	/////////////////////////////////////////
 	// LHb lateral habenula component of the PVLV model
 
