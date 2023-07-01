@@ -76,7 +76,7 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 16
+	ss.NData = 1
 	ss.NTrials = 128
 	ss.EnvSameSeed = false // set to true to test ndata
 	ss.TestInterval = 500
