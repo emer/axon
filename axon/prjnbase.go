@@ -72,6 +72,7 @@ func (pj *PrjnBase) Name() string {
 	return pj.Send.Name() + "To" + pj.Recv.Name()
 }
 func (pj *PrjnBase) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj.AxonPrj }
+func (pj *PrjnBase) AddClass(cls string)                   { pj.Cls = params.AddClass(pj.Cls, cls) }
 func (pj *PrjnBase) SetPattern(pat prjn.Pattern) emer.Prjn { pj.Pat = pat; return pj.AxonPrj }
 func (pj *PrjnBase) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = PrjnTypes(typ); return pj.AxonPrj }
 func (pj *PrjnBase) Label() string                         { return pj.Name() }
