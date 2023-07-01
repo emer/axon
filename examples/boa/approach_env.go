@@ -243,6 +243,8 @@ func (ev *Approach) RenderAction(act int) {
 // Step does one step
 func (ev *Approach) Step() bool {
 	ev.LastCS = ev.CS
+	// This has the effect of delaying restarting the env until the
+	// US is in place for 2 trials.
 	if ev.LastUS != noUS {
 		ev.NewStart()
 	}
@@ -282,8 +284,6 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	ev.LastUS = ev.US
 	ev.RenderAction(act)
 	ev.Time++
-	uss := ev.States["USs"]
-	us := int(uss.Values[ev.Pos])
 	switch action {
 	case "Forward":
 		if ev.Dist != 0 {
@@ -301,9 +301,6 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if ev.US == noUS {
-				ev.US = us
-			}
 			ev.SetRewFmUS()
 		}
 	}
@@ -314,6 +311,8 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 
 // SetRewFmUS set reward from US
 func (ev *Approach) SetRewFmUS() {
+	uss := ev.States["USs"]
+	ev.US = int(uss.Values[ev.Pos])
 	if ev.US == ev.Drive {
 		ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
 	} else {
