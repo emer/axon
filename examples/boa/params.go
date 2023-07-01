@@ -15,6 +15,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Acts.Clamp.Ge": "1.5",
 				}},
+			{Sel: ".PFCLayer", Desc: "pfc layers: slower trgavgact",
+				Params: params.Params{
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
+				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 				Params: params.Params{
 					// "Layer.Inhib.Layer.Gi":  "1.0", // 1.0 for CSP, 0.9 for CS -- should be higher for CSPerDrive > 1
@@ -63,6 +67,11 @@ var ParamSets = params.Sets{
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
+			{Sel: ".PFCPrjn", Desc: "pfc prjn params -- more robust to long-term training",
+				Params: params.Params{
+					"Prjn.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
+					"Prjn.Learn.LRate.Base":    "0.02", // 0.04 def; 0.02 more stable
+				}},
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later
