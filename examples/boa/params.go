@@ -17,7 +17,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PFCLayer", Desc: "pfc layers: slower trgavgact",
 				Params: params.Params{
-					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // also now set by default
 				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 				Params: params.Params{

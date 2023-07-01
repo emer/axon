@@ -415,6 +415,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 // * AddPTPredLayer (PTPred)
 // with given name prefix, which is also set as the Class for all layers,
 // and suffix for the BGThal layer (e.g., "MD" or "VM" etc for different thalamic nuclei).
+// Sets PFCLayer as additional class for all cortical layers.
 // OneToOne and PoolOneToOne connectivity is used between layers.
 // decayOnRew determines the Act.Decay.OnRew setting (true of OFC, ACC type for sure).
 // CT layer uses the Medium timescale params.
@@ -423,13 +424,18 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	p1to1 := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 	prjnClass := "PFCPrjn"
+	layClass := "PFCLayer"
 
 	pfc, pfcCT = net.AddSuperCT4D(name, prjnClass, nPoolsY, nPoolsX, nNeurY, nNeurX, space, one2one)
 	pfcCT.SetClass(name)
+	pfc.AddClass(layClass)
+	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
 	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, p1to1, p1to1, prjnClass, space)
 	pfcPTp.SetClass(name)
+	pfcPT.AddClass(layClass)
+	pfcPTp.AddClass(layClass)
 
 	pfcThal.PlaceBehind(pfcPTp, space)
 
@@ -438,15 +444,16 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
 	pfcParams := params.Params{
-		"Layer.Acts.Decay.Act":       "0",
-		"Layer.Acts.Decay.Glong":     "0",
-		"Layer.Acts.Decay.OnRew":     onRew,
-		"Layer.Inhib.ActAvg.Nominal": "0.025",
-		"Layer.Inhib.Layer.On":       "true",
-		"Layer.Inhib.Layer.Gi":       "2.2",
-		"Layer.Inhib.Pool.On":        "true",
-		"Layer.Inhib.Pool.Gi":        "0.8",
-		"Layer.Acts.Dend.SSGi":       "0",
+		"Layer.Acts.Decay.Act":               "0",
+		"Layer.Acts.Decay.Glong":             "0",
+		"Layer.Acts.Decay.OnRew":             onRew,
+		"Layer.Inhib.ActAvg.Nominal":         "0.025",
+		"Layer.Inhib.Layer.On":               "true",
+		"Layer.Inhib.Layer.Gi":               "2.2",
+		"Layer.Inhib.Pool.On":                "true",
+		"Layer.Inhib.Pool.Gi":                "0.8",
+		"Layer.Acts.Dend.SSGi":               "0",
+		"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
 	}
 	pfc.DefParams = pfcParams
 
@@ -480,20 +487,26 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 // * AddPTPredLayer (PTPred)
 // with given name prefix, which is also set as the Class for all layers,
 // and suffix for the BGThal layer (e.g., "MD" or "VM" etc for different thalamic nuclei).
+// Sets PFCLayer as additional class for all cortical layers.
 // OneToOne, full connectivity is used between layers.
 // decayOnRew determines the Act.Decay.OnRew setting (true of OFC, ACC type for sure).
 // CT layer uses the Medium timescale params.
 func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
-
 	prjnClass := "PFCPrjn"
+	layClass := "PFCLayer"
+
 	pfc, pfcCT = net.AddSuperCT2D(name, prjnClass, nNeurY, nNeurX, space, one2one)
 	pfcCT.SetClass(name)
+	pfc.AddClass(layClass)
+	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
 	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, full, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, full, full, prjnClass, space)
 	pfcPTp.SetClass(name)
+	pfcPT.AddClass(layClass)
+	pfcPTp.AddClass(layClass)
 
 	pfcThal.PlaceBehind(pfcPTp, space)
 

@@ -75,6 +75,7 @@ func (ly *LayerBase) Name() string               { return ly.Nm }
 func (ly *LayerBase) SetName(nm string)          { ly.Nm = nm }
 func (ly *LayerBase) Label() string              { return ly.Nm }
 func (ly *LayerBase) SetClass(cls string)        { ly.Cls = cls }
+func (ly *LayerBase) AddClass(cls string)        { ly.Cls = params.AddClass(ly.Cls, cls) }
 func (ly *LayerBase) LayerType() LayerTypes      { return LayerTypes(ly.Typ) }
 func (ly *LayerBase) Class() string              { return ly.LayerType().String() + " " + ly.Cls }
 func (ly *LayerBase) TypeName() string           { return "Layer" } // type category, for params..
