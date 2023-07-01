@@ -967,7 +967,6 @@ func PVLVReset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
 	SetGlbV(ctx, di, GvHasRewPrev, 0)
-	SetGlbV(ctx, di, GvHasPosUS, 0)
 	// pp.HasPosUSPrev.SetBool(false) // key to not reset!!
 }
 
