@@ -32,7 +32,7 @@ func (pj *Prjn) SendSpike(ctx *Context, ni, di, maxData uint32) {
 		}
 	}
 	pjcom := &pj.Params.Com
-	wrOff := pjcom.WriteOff(ctx.CyclesTotal) // todo: these require di offset!
+	wrOff := pjcom.WriteOff(ctx.CyclesTotal)
 	scon := pj.SendCon[ni-pj.Send.NeurStIdx]
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIdx + syi

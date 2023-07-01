@@ -36,11 +36,8 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 		ctx.NewPhase(true)
 		net.PlusPhaseStart(ctx)
 	})
-	plusPhaseEnd := looper.NewEvent("PlusPhase:End", plusEnd, func() {
-		net.PlusPhase(ctx)
-	})
 
-	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase, plusPhaseEnd)
+	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase)
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -48,6 +45,9 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 		stack.Loops[trl].OnStart.Add("NewState", func() {
 			net.NewState(ctx)
 			ctx.NewState(mode)
+		})
+		stack.Loops[trl].OnEnd.Add("PlusPhase:End", func() {
+			net.PlusPhase(ctx)
 		})
 	}
 }

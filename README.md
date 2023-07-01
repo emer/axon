@@ -134,23 +134,26 @@ net.ApplyExts(ctx) // now required for GPU mode
 
 ```Go
 	for _, m := range man.Stacks {
-		m.Loops[etime.Cycle].OnEnd.Prepend("GUI:CounterUpdt", func() {
-			ss.NetViewCounters()
-		})
-		m.Loops[etime.Trial].OnEnd.Prepend("GUI:CounterUpdt", func() {
-			ss.NetViewCounters()
-		})
+			m.Loops[etime.Cycle].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
+				ss.NetViewCounters(etime.Cycle)
+			})
+			m.Loops[etime.Trial].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
+				ss.NetViewCounters(etime.Trial)
+			})
 	}
 ```
 
 This ensures that the current data index counters are displayed:
 
 ```Go
-func (ss *Sim) NetViewCounters() {
+func (ss *Sim) NetViewCounters(tm etime.Times) {
 	if ss.GUI.ViewUpdt.View == nil {
 		return
 	}
 	di := ss.GUI.ViewUpdt.View.Di
+	if tm == etime.Trial {
+		ss.TrialStats(di) // get trial stats for current di
+	}
 	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
     // note: replace above with relevant counters -- from prior StatCounters
