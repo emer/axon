@@ -337,19 +337,15 @@ func (ev *Approach) PosHasDriveUS() bool {
 func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
 	ev.JustGated = justGated
 	ev.HasGated = hasGated
-	fwd := ev.ActMap["Forward"]
-	cons := ev.ActMap["Consume"]
-	ev.ShouldGate = false
+	ev.ShouldGate = ((hasGated && ev.US != noUS) || // To clear the goal after US
+		(!hasGated && ev.PosHasDriveUS())) // looking at correct, haven't yet gated
+
 	if ev.Dist == 0 {
-		if ev.LastAct == cons {
-			ev.ShouldGate = true
-		}
-		return cons
+		return ev.ActMap["Consume"]
 	}
 	if ev.HasGated {
-		return fwd
+		return ev.ActMap["Forward"]
 	}
-	ev.ShouldGate = ev.PosHasDriveUS() // looking at correct, haven't yet gated
 	lt := ev.ActMap["Left"]
 	rt := ev.ActMap["Right"]
 	if ev.LastAct == lt || ev.LastAct == rt {
