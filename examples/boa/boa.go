@@ -76,7 +76,7 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NData = 1
+	ss.NData = 16
 	ss.NTrials = 128
 	ss.EnvSameSeed = false // set to true to test ndata
 	ss.TestInterval = 500
@@ -1194,7 +1194,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.SetInt("epochs", 50)
 	ss.Args.SetInt("runs", 10)
 	ss.Args.AddBool("test", false, "records testing data in TestData")
-	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("ndata", 1, "number of data items to run in parallel")
 	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
 	ss.Args.AddBool("bench", false, "run benchmarking")
 	ss.Args.Parse() // always parse
