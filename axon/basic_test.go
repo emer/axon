@@ -1480,6 +1480,129 @@ func TestGlobalIdxs(t *testing.T) {
 	}
 }
 
+func TestSendGatherIdxs(t *testing.T) {
+	ctx := NewContext()
+	nData := uint32(3)
+	ctx.PVLV.Drive.NActive = 4
+	ctx.PVLV.Drive.NNegUSs = 3
+	net := newTestNet(ctx, int(nData))
+
+	maxDel := net.MaxDelay + 1
+	maxCyc := int32(2 * maxDel)
+
+	type vals struct {
+		cyc int32
+		ri  uint32
+		bi  uint32
+	}
+
+	bimap := make(map[uint32]string)
+	bivals := make(map[uint32][]vals)
+	rimap := make(map[uint32]string)
+
+	nni := net.NNeurons
+	for cyc := int32(0); cyc < maxCyc; cyc++ {
+		for ni := uint32(0); ni < nni; ni++ {
+			for di := uint32(0); di < nData; di++ {
+				li := NrnI(ctx, ni, NrnLayIdx)
+				ly := net.Layers[li]
+				if len(ly.SndPrjns) > 0 {
+					pj := ly.SndPrjns[0]
+					pjcom := &pj.Params.Com
+					wrOff := pjcom.WriteOff(int32(cyc))
+					scon := pj.SendCon[ni-pj.Send.NeurStIdx]
+					for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+						syni := pj.SynStIdx + syi
+						recvIdx := pj.Params.SynRecvLayIdx(ctx, syni) // note: layer-specific is ok here
+						ri := SynI(ctx, syni, SynRecvIdx)
+						bio := pj.Params.Idxs.GBufSt + pjcom.WriteIdxOff(recvIdx, di, wrOff, pj.Params.Idxs.RecvNeurN, nData)
+						bi := pj.Params.Idxs.GBufSt + pjcom.WriteIdx(recvIdx, di, int32(cyc), pj.Params.Idxs.RecvNeurN, nData)
+						sidx := syni*nData + di
+						key := fmt.Sprintf("send: cyc: %d  synidx: %03d  bi: %03d  si: %02d  di: %d  ri: %02d\n", cyc, sidx, bi, ni, di, ri)
+						if bio != bi {
+							t.Errorf("writeIdx %d != WriteIdxOff %d: %s\n", bi, bio, key)
+						}
+
+						vl, ok := bivals[bi]
+						vl = append(vl, vals{cyc: cyc, ri: ri, bi: bi})
+						bivals[bi] = vl
+
+						cur, ok := bimap[bi]
+						if !ok {
+							bimap[bi] = key
+						} else {
+							bimap[bi] = cur + key
+						}
+						cur, ok = rimap[ri]
+						if !ok {
+							rimap[ri] = key
+						} else {
+							rimap[ri] = cur + key
+						}
+						// if pj.Send.Idx == 42 && pj.Recv.Idx == 44 && di == 0 && ri == 2783 {
+						// 	fmt.Printf("send: cyc: %d  bi: %d  di: %02d  ni: %04d  scale: %g  sv: %d\n", ctx.CyclesTotal, bi, di, ni, scale, sv)
+						// }
+					}
+				}
+				if len(ly.RcvPrjns) > 0 {
+					lni := ni - ly.NeurStIdx
+					pj := ly.RcvPrjns[0]
+					bi := pj.Params.Idxs.GBufSt + pj.Params.Com.ReadIdx(lni, di, int32(cyc), pj.Params.Idxs.RecvNeurN, nData)
+					key := fmt.Sprintf("recv: cyc: %d  bi: %03d  di: %d  ri: %02d\n", cyc, bi, di, ni)
+
+					vl, ok := bivals[bi]
+					vl = append(vl, vals{cyc: cyc, ri: ni, bi: bi})
+					bivals[bi] = vl
+
+					cur, ok := bimap[bi]
+					if !ok {
+						bimap[bi] = key
+					} else {
+						bimap[bi] = cur + key
+					}
+					cur, ok = rimap[ni]
+					if !ok {
+						rimap[ni] = key
+					} else {
+						rimap[ni] = cur + key
+					}
+				}
+			}
+		}
+	}
+
+	maxDeli := int32(maxDel)
+	for _, vls := range bivals {
+		fvl := vls[0]
+		for _, vl := range vls {
+			if vl.ri != fvl.ri {
+				t.Errorf("recv index mismatch -- each bi must be for 1 ri: first: %#v  cur: %#v\n", vl, fvl)
+			}
+			if vl.cyc%maxDeli != fvl.cyc%maxDeli {
+				t.Errorf("cyc mismatch -- must be multiple of maxDel: %d %#v  cur: %#v\n", maxDel, vl, fvl)
+			}
+		}
+	}
+
+	if false { // print for human consumption
+		keys := maps.Keys(bimap)
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
+		for i, bi := range keys {
+			fmt.Printf("%d  bi: %d\n%s\n", i, bi, bimap[bi])
+		}
+
+		keys = maps.Keys(rimap)
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i] < keys[j]
+		})
+		for i, ri := range keys {
+			fmt.Printf("%d  ri: %d\n%s\n", i, ri, rimap[ri])
+		}
+	}
+}
+
 /* todo: fixme
 func TestSWtInit(t *testing.T) {
 	pj := &PrjnParams{}

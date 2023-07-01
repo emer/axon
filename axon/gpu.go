@@ -1000,7 +1000,6 @@ func (gp *GPU) RunPipelineWait(name string, n int) {
 	gp.Net.FunTimerStart(gnm)
 	cmd := gp.Sys.ComputeCmdBuff()
 	gp.Sys.ComputeResetBindVars(cmd, 0)
-	// gp.Sys.ComputeResetBegin(cmd)
 	pl.ComputeDispatch1D(cmd, n, gp.NThreads)
 	gp.Sys.ComputeCmdEnd(cmd)
 	gp.Sys.ComputeSubmitWait(cmd)
@@ -1014,7 +1013,6 @@ func (gp *GPU) RunPipelineWait(name string, n int) {
 // The submit call is by far the most expensive so that should only happen once!
 func (gp *GPU) StartRun(cmd vk.CommandBuffer) {
 	gp.Sys.ComputeResetBindVars(cmd, 0)
-	// gp.Sys.ComputeResetBegin(cmd)
 }
 
 // RunPipelineMemWait records command to run given pipeline

@@ -33,10 +33,10 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 			if pj.IsOff() {
 				continue
 			}
-			bi := pj.Params.Com.ReadIdx(lni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN, ly.MaxData)
+			bi := pj.Params.Com.ReadIdx(lni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN, ctx.NetIdxs.MaxData)
 			gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
 			pj.GBuf[bi] = 0
-			gsi := lni*ly.MaxData + di
+			gsi := lni*ctx.NetIdxs.MaxData + di
 			pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[gsi])
 		}
 	}
@@ -73,7 +73,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 		}
 	}
 	for pi := uint32(0); pi < ly.NPools; pi++ {
-		for di := uint32(0); di < ly.MaxData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
 			ppi := pi
 			ddi := di
 			SetAvgMaxFloatFromIntErr(func() {
@@ -83,7 +83,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 			pl.AvgMax.Calc(int32(ly.Idx))
 		}
 	}
-	for di := uint32(0); di < ly.MaxData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
 		lpl := ly.Pool(0, di)
 		lpl.Inhib.IntToRaw()
 		ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.LayerVals(di))
@@ -205,7 +205,7 @@ func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			sp.SendSpike(ctx, ni, di, ly.MaxData)
+			sp.SendSpike(ctx, ni, di, ctx.NetIdxs.MaxData)
 		}
 	}
 }
@@ -382,9 +382,6 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		}
 	}
 	ly.DecayStateLayer(ctx, di, decay, glong, ahp)
-	// note: would be somewhat more expensive to only clear the di specific subset
-	// but all di are decayed every trial anyway so no big deal
-	ly.InitPrjnGBuffs(ctx)
 }
 
 // DecayStateLayer does layer-level decay, but not neuron level
