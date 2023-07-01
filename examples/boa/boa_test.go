@@ -165,8 +165,11 @@ func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 
 	sim.Config()
 
+	sim.Sim.NData = ndata
+
 	sim.Args.SetInt("runs", 1)
 	sim.Args.SetInt("epochs", 1)
+	sim.Args.SetInt("ndata", ndata)
 	sim.Args.SetBool("gpu", gpu)
 	sim.Args.SetBool("epclog", false)
 	sim.Args.SetBool("runlog", false)
