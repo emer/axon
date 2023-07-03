@@ -270,7 +270,7 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 	case BLAPrjn:
 		pj.DWtSynBLA(ctx, syni, si, ri, di, layPool, subPool)
 	case HipPrjn:
-		pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFmDWtSynNoLimits
+		pj.DWtSynHip(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFmDWtSynNoLimits
 	default:
 		pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
 	}

@@ -29,7 +29,6 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/gi/gi"
@@ -73,8 +72,8 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NData = 10
-	ss.NTrials = 10
-	ss.NEpochs = 500
+	ss.NTrials = 20
+	ss.NEpochs = 100
 	ss.NRuns = 5
 	ss.TestInterval = 1
 	// ss.PCAInterval = 5
@@ -189,6 +188,9 @@ func (ss *Sim) New() {
 	ss.Sim.Defaults()
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
+	ss.Params.AddObject("Hip", &ss.Hip)
+	ss.Params.AddObject("Pat", &ss.Pat)
+	// ss.Params.AddObject("Sim", ss.Sim)
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -349,9 +351,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(4) // useful with NData
 	ss.Params.SetObject("Network")
-	ss.Params.SetObject("Sim")
-	ss.Params.SetObject("Hip")
-	ss.Params.SetObject("Pat")
 	net.InitWts(ctx)
 	net.InitTopoSWts()
 	net.InitWts(ctx)
@@ -383,6 +382,7 @@ func (ss *Sim) TestInit() {
 
 // InitRndSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRndSeed(run int) {
+	fmt.Println("random seed:", ss.RndSeeds[run])
 	rand.Seed(ss.RndSeeds[run])
 	ss.RndSeeds.Set(run)
 	ss.RndSeeds.Set(run, &ss.Net.Rand)
@@ -508,37 +508,22 @@ func (ss *Sim) ConfigLoops() {
 			// switch to AC
 			trn := ss.Envs.ByMode(etime.Train).(*env.FixedTable)
 			tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
-			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (tstEpcLog.Table.CellFloat("ABMem", ss.Stats.Int("Epoch")) == 1 || ss.Stats.Int("Epoch") == 30) {
+			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (tstEpcLog.Table.CellFloat("ABMem", ss.Stats.Int("Epoch")) == 1 || ss.Stats.Int("Epoch") == ss.Sim.NEpochs/2) {
+				ss.Stats.SetInt("FirstPerfect", ss.Stats.Int("Epoch"))
 				trn.Config(etable.NewIdxView(ss.TrainAC))
 				trn.Validate()
-
-				// tst := ss.Envs.ByMode(etime.Test).(*env.FixedTable)
-				// tst.Config(etable.NewIdxView(ss.TestAC))
-				// tst.Validate()
 			}
-
-			// early stop
-			// if (trn.Table.Table.MetaData["name"] == "TrainAC") && (tstEpcLog.Table.CellFloat("Mem", ss.Stats.Int("Epoch")) == 1) {
-			// 	// man.ModeStack().StopFlag = true
-			// 	// man.Stop(etime.Epoch)
-			// 	// man.Step(etime.Train, 1, etime.Run)
-			// }
 		}
 	})
 
+	// early stop
 	man.GetLoop(etime.Train, etime.Epoch).IsDone["ACMemStop"] = func() bool {
 		// This is calculated in TrialStats
 		tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
-		mem := tstEpcLog.Table.CellFloat("ACMem", ss.Stats.Int("Epoch"))
-		stop := mem >= 1
+		acMem := tstEpcLog.Table.CellFloat("ACMem", ss.Stats.Int("Epoch"))
+		stop := acMem >= 1
 		return stop
 	}
-
-
-	// add TrainAC and TestAC when mem reachese 1
-	// ss.Envs.ByMode(etime.Train).(*env.FixedTable).Table.Table.CellFloat()
-
-	
 	
 
 	/////////////////////////////////////////////
@@ -547,6 +532,11 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("LogTestErrors", func() {
 		axon.LogTestErrors(&ss.Logs)
 	})
+
+	// man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("LogABMem", func() {
+	// 	// if (trn.Table.Table.MetaData["name"] == "TrainAB") && (tstEpcLog.Table.CellFloat("ABMem", ss.Stats.Int("Epoch")) == 1 || ss.Stats.Int("Epoch") == ss.Sim.NEpochs/2) {
+	// 	if 
+	// })
 	// man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 	// 	trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	// 	if ss.Sim.PCAInterval > 0 && trnEpc%ss.Sim.PCAInterval == 0 {
@@ -745,6 +735,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("ABMem", 0.0)
 	ss.Stats.SetFloat("ACMem", 0.0)
 	ss.Stats.SetFloat("Mem", 0.0)
+	ss.Stats.SetInt("FirstPerfect", -1) // first epoch at when AB Mem is perfect
+	ss.Stats.SetFloat("LastABMem", 0.0) // last AB Mem performance when an epoch ends (either AC is done or reaching max epochs)
 
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
@@ -883,7 +875,8 @@ func (ss *Sim) AddLogItems() {
 					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm))
 				},
 				etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Epoch, agg.AggMax)
+					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm)) // take the last epoch
+					// ctx.SetAgg(ctx.Mode, etime.Epoch, agg.AggMax) // agg.AggMax for max over epochs
 				}}})
 	}
 }
@@ -904,6 +897,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("ABMem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("ACMem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Mem", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatIntNoAggItem(etime.Train, etime.Run, "FirstPerfect")
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
 	// ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem")
@@ -918,7 +912,8 @@ func (ss *Sim) ConfigLogs() {
 	// axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
+	ss.Logs.AddLayerTensorItems(ss.Net, "ActM", etime.Test, etime.Trial, "TargetLayer")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
 
 	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "ABMem", "ACMem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem", "TstABMem", "TstACMem")
 
@@ -1050,9 +1045,9 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
-	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
+	ss.Args.AddInt("ndata", 10, "number of data items to run in parallel")
 	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
-	ss.Args.SetInt("epochs", 100)
+	ss.Args.SetInt("epochs", 60)
 	ss.Args.SetInt("runs", 5)
 	ss.Args.Parse() // always parse
 	if len(os.Args) > 1 {
@@ -1076,21 +1071,22 @@ func (ss *Sim) RunNoGUI() {
 
 	ss.Init()
 
-	runs := ss.Args.Int("runs")
-	run := ss.Args.Int("run")
-	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
-	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
-	rc.Set(run)
-	rc.Max = run + runs
-	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-	if ss.Args.Bool("gpu") {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	}
-	ss.Net.SetNThreads(ss.Args.Int("threads"))
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
+	// runs := ss.Args.Int("runs")
+	// run := ss.Args.Int("run")
+	// mpi.Printf("Running %d Runs starting at %d\n", runs, run)
+	// rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
+	// rc.Set(run)
+	// rc.Max = run + runs
+	// ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
+	// if ss.Args.Bool("gpu") {
+	// 	ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	// }
+	// ss.Net.SetNThreads(ss.Args.Int("threads"))
+	// mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
-	ss.NewRun()
-	ss.Loops.Run(etime.Train)
+	// ss.NewRun()
+	ss.TwoFactorRun()
+	// ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
 
@@ -1100,3 +1096,55 @@ func (ss *Sim) RunNoGUI() {
 
 	ss.Net.GPU.Destroy() // safe even if no GPU
 }
+
+var OuterLoopParams = []string{"SmallHip"}
+
+var InnerLoopParams = []string{"List020"}
+
+// TwoFactorRun runs outer-loop crossed with inner-loop params
+func (ss *Sim) TwoFactorRun() {
+	for _, otf := range OuterLoopParams {
+		for _, inf := range InnerLoopParams {
+			// ss.InitRndSeed(ss.Args.Int("run"))
+
+			ss.Params.ExtraSets = otf + " " + inf
+			ss.Params.SetObject("Hip")
+			ss.Params.SetObject("Sim")
+
+			ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run")))
+
+			ss.ConfigNet(ss.Net)
+
+
+			runs := ss.Args.Int("runs")
+			run := ss.Args.Int("run")
+			mpi.Printf("Running %d Runs starting at %d\n", runs, run)
+			rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
+			rc.Set(run)
+			rc.Max = run + runs
+			ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
+			if ss.Args.Bool("gpu") {
+				ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+			}
+			ss.Net.SetNThreads(ss.Args.Int("threads"))
+			mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
+
+
+			ss.NewRun() // includes configpats and configenv
+			
+			fmt.Println("CA3 shape: ", ss.Net.AxonLayerByName("CA3").Shp.Shp)
+			fmt.Println("EC2 shape: ", ss.Net.AxonLayerByName("EC2").Shp.Shp)
+			
+			fmt.Println("# of pairs: ", ss.TrainAB.Rows)
+			ss.Loops.Run(etime.Train)
+		}
+	}
+}
+
+
+// func (ss *Sim) ReConfigNet() {
+// 	ss.ConfigPats()
+// 	ss.ConfigEnv() // including update DG size
+// 	ss.ConfigNet(ss.Net)
+// 	// log?
+// }

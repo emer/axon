@@ -11,15 +11,19 @@ import "github.com/emer/emergent/params"
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
+			// {Sel: "Prjn", Desc: "basic prjn params",
+			// 	Params: params.Params{
+			// 		"Prjn.Learn.LRate.Base": "0.4",
+			// 	}},
 			{Sel: ".InhibLateral", Desc: "circle lateral inhibitory connection -- good params, longer time, more ABmem",
 				Params: params.Params{
 					"Prjn.Learn.Learn":    "false", // ??? not sure
 					// "Prjn.SWts.Init.Mean": "1",     // 0.1 was the standard Grid model as of 02242023
 					"Prjn.SWts.Init.Var":  "0",
 					"Prjn.SWts.Init.Sym":  "false",
-					//"Prjn.PrjnScale.Abs": "0.5", // higher gives better grid
+					"Prjn.PrjnScale.Abs": "0", // lower is better for spiking model?
 				}},
-			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
+			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works -- try each one of them separately
 					"Prjn.Learn.LRate.Base": "0.2",
@@ -187,150 +191,150 @@ var ParamSets = params.Sets{
 		// NOTE: it is essential not to put Pat / Hip params here, as we have to use Base
 		// to initialize the network every time, even if it is a different size..
 	}},
-	// {Name: "List010", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "10",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List020", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "20",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List030", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "30",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List040", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "40",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List050", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "50",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List060", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "60",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List070", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "70",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List080", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "80",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List090", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "90",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List100", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "100",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List125", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "125",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List150", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "150",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "List200", Desc: "list size", Sheets: params.Sheets{
-	// 	"Pat": &params.Sheet{
-	// 		{Sel: "PatParams", Desc: "pattern params",
-	// 			Params: params.Params{
-	// 				"PatParams.ListSize": "200",
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "SmallHip", Desc: "hippo size", Sheets: params.Sheets{
-	// 	"Hip": &params.Sheet{
-	// 		{Sel: "HipParams", Desc: "hip sizes",
-	// 			Params: params.Params{
-	// 				"HipParams.ECPool.Y":  "7",
-	// 				"HipParams.ECPool.X":  "7",
-	// 				"HipParams.CA1Pool.Y": "10",
-	// 				"HipParams.CA1Pool.X": "10",
-	// 				"HipParams.CA3Size.Y": "20",
-	// 				"HipParams.CA3Size.X": "20",
-	// 				"HipParams.DGRatio":   "2.236", // 1.5 before, sqrt(5) aligns with Ketz et al. 2013
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "MedHip", Desc: "hippo size", Sheets: params.Sheets{
-	// 	"Hip": &params.Sheet{
-	// 		{Sel: "HipParams", Desc: "hip sizes",
-	// 			Params: params.Params{
-	// 				"HipParams.ECPool.Y":  "7",
-	// 				"HipParams.ECPool.X":  "7",
-	// 				"HipParams.CA1Pool.Y": "15",
-	// 				"HipParams.CA1Pool.X": "15",
-	// 				"HipParams.CA3Size.Y": "30",
-	// 				"HipParams.CA3Size.X": "30",
-	// 				"HipParams.DGRatio":   "2.236", // 1.5 before
-	// 			}},
-	// 	},
-	// }},
-	// {Name: "BigHip", Desc: "hippo size", Sheets: params.Sheets{
-	// 	"Hip": &params.Sheet{
-	// 		{Sel: "HipParams", Desc: "hip sizes",
-	// 			Params: params.Params{
-	// 				"HipParams.ECPool.Y":  "7",
-	// 				"HipParams.ECPool.X":  "7",
-	// 				"HipParams.CA1Pool.Y": "20",
-	// 				"HipParams.CA1Pool.X": "20",
-	// 				"HipParams.CA3Size.Y": "40",
-	// 				"HipParams.CA3Size.X": "40",
-	// 				"HipParams.DGRatio":   "2.236", // 1.5 before
-	// 			}},
-	// 	},
-	// }},
+	{Name: "List010", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "10",
+				}},
+		},
+	}},
+	{Name: "List020", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "20",
+				}},
+		},
+	}},
+	{Name: "List030", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "30",
+				}},
+		},
+	}},
+	{Name: "List040", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "40",
+				}},
+		},
+	}},
+	{Name: "List050", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "50",
+				}},
+		},
+	}},
+	{Name: "List060", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "60",
+				}},
+		},
+	}},
+	{Name: "List070", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "70",
+				}},
+		},
+	}},
+	{Name: "List080", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "80",
+				}},
+		},
+	}},
+	{Name: "List090", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "90",
+				}},
+		},
+	}},
+	{Name: "List100", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "100",
+				}},
+		},
+	}},
+	{Name: "List125", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "125",
+				}},
+		},
+	}},
+	{Name: "List150", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "150",
+				}},
+		},
+	}},
+	{Name: "List200", Desc: "list size", Sheets: params.Sheets{
+		"Sim": &params.Sheet{
+			{Sel: "SimParams", Desc: "pattern params",
+				Params: params.Params{
+					"Sim.Sim.NTrials": "200",
+				}},
+		},
+	}},
+	{Name: "SmallHip", Desc: "hippo size", Sheets: params.Sheets{
+		"Hip": &params.Sheet{
+			{Sel: "HipParams", Desc: "hip sizes",
+				Params: params.Params{
+					"HipParams.ECPool.Y":  "7",
+					"HipParams.ECPool.X":  "7",
+					"HipParams.CA1Pool.Y": "10",
+					"HipParams.CA1Pool.X": "10",
+					"HipParams.CA3Size.Y": "20",
+					"HipParams.CA3Size.X": "20",
+					"HipParams.DGRatio":   "2.236", // 1.5 before, sqrt(5) aligns with Ketz et al. 2013
+				}},
+		},
+	}},
+	{Name: "MedHip", Desc: "hippo size", Sheets: params.Sheets{
+		"Hip": &params.Sheet{
+			{Sel: "HipParams", Desc: "hip sizes",
+				Params: params.Params{
+					"HipParams.ECPool.Y":  "7",
+					"HipParams.ECPool.X":  "7",
+					"HipParams.CA1Pool.Y": "15",
+					"HipParams.CA1Pool.X": "15",
+					"HipParams.CA3Size.Y": "30",
+					"HipParams.CA3Size.X": "30",
+					"HipParams.DGRatio":   "2.236", // 1.5 before
+				}},
+		},
+	}},
+	{Name: "BigHip", Desc: "hippo size", Sheets: params.Sheets{
+		"Hip": &params.Sheet{
+			{Sel: "HipParams", Desc: "hip sizes",
+				Params: params.Params{
+					"HipParams.ECPool.Y":  "7",
+					"HipParams.ECPool.X":  "7",
+					"HipParams.CA1Pool.Y": "20",
+					"HipParams.CA1Pool.X": "20",
+					"HipParams.CA3Size.Y": "40",
+					"HipParams.CA3Size.X": "40",
+					"HipParams.DGRatio":   "2.236", // 1.5 before
+				}},
+		},
+	}},
 }
