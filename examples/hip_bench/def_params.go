@@ -21,7 +21,7 @@ var ParamSets = params.Sets{
 					// "Prjn.SWts.Init.Mean": "1",     // 0.1 was the standard Grid model as of 02242023
 					"Prjn.SWts.Init.Var":  "0",
 					"Prjn.SWts.Init.Sym":  "false",
-					"Prjn.PrjnScale.Abs": "0", // lower is better for spiking model?
+					"Prjn.PrjnScale.Abs": "0.1", // lower is better for spiking model?
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5",
 				Params: params.Params{
@@ -60,7 +60,7 @@ var ParamSets = params.Sets{
 					//"Prjn.Learn.LRate.Base": "0.01",
 					//"Prjn.SWts.Init.Mean": "0.8", // 0.8 is for one to one deterministic connections, not for learning!
 					//"Prjn.SWts.Init.Var":         "0",
-					// "Prjn.PrjnScale.Abs": "0.8", // was 1
+					"Prjn.PrjnScale.Abs": "0.5", // was 1, lower better
 				}},
 			{Sel: "#EC5ToEC3", Desc: "one-to-one out to in",
 				Params: params.Params{

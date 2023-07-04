@@ -1083,10 +1083,12 @@ func (ss *Sim) RunNoGUI() {
 	// }
 	// ss.Net.SetNThreads(ss.Args.Int("threads"))
 	// mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
 	// ss.NewRun()
-	ss.TwoFactorRun()
 	// ss.Loops.Run(etime.Train)
+	
+	
+	ss.TwoFactorRun()
+	
 
 	ss.Logs.CloseLogFiles()
 
@@ -1107,14 +1109,15 @@ func (ss *Sim) TwoFactorRun() {
 		for _, inf := range InnerLoopParams {
 			// ss.InitRndSeed(ss.Args.Int("run"))
 
+			fmt.Println(otf, " ", inf)
 			ss.Params.ExtraSets = otf + " " + inf
 			ss.Params.SetObject("Hip")
 			ss.Params.SetObject("Sim")
-
 			ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run")))
 
 			ss.ConfigNet(ss.Net)
-
+			// ss.ConfigLogs()
+			ss.ConfigLoops()
 
 			runs := ss.Args.Int("runs")
 			run := ss.Args.Int("run")
