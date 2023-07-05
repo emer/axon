@@ -1,8 +1,0 @@
-# config for NoGUI background run
-
-GUI = false
-
-[Params]
-  Note = "test nogui run"
-  Tag = "expt1"
-

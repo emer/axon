@@ -32,7 +32,7 @@ type Prjn struct {
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
 
 // Object returns the object with parameters to be set by emer.Params
-func (pj *Prjn) Object() interface{} {
+func (pj *Prjn) Object() any {
 	return pj.Params
 }
 

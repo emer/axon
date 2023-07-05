@@ -31,7 +31,6 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
-	"github.com/goki/vgpu/vgpu"
 )
 
 func main() {
@@ -223,9 +222,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
-	net.SetNThreads(4) // useful with NData
-	ss.Params.SetObject("Network")
+	net.SetNThreads(ss.Config.Run.Threads)
+	ss.ApplyParams()
 	net.InitWts(ctx)
+}
+
+func (ss *Sim) ApplyParams() {
+	ss.Params.SetAll()
+	if ss.Config.Params.Network != nil {
+		ss.Params.SetMsg = ss.Config.Debug
+		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
+		ss.Params.SetMsg = false // too much for regular
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -242,7 +250,7 @@ func (ss *Sim) Init() {
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
-	ss.Params.SetAll()
+	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
@@ -262,7 +270,7 @@ func (ss *Sim) ConfigLoops() {
 
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.Runs).AddTime(etime.Epoch, ss.Config.Run.Epochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
@@ -618,7 +626,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
-		vgpu.Debug = ss.Config.Debug
+		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
@@ -664,24 +672,17 @@ func (ss *Sim) RunNoGUI() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	ss.Init()
-
-	runs := ss.Config.Run.Runs
-	run := ss.Config.Run.Run
-	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
-	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
-	rc.Set(run)
-	rc.Max = run + runs
-	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Config.Run.Epochs
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 	}
-	ss.Net.SetNThreads(ss.Config.Run.Threads)
 	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
-	ss.NewRun()
+	ss.Init()
 
-	if ss.Config.Run.StartWts != "" {
+	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
+	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
+
+	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
 		ss.Loops.Step(etime.Train, 1, etime.Trial) // get past NewRun
 		ss.Net.OpenWtsJSON(gi.FileName(ss.Config.Run.StartWts))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
