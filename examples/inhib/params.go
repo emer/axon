@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
@@ -93,7 +93,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "Untrained", Desc: "simulates untrained weights -- lower variance", Sheets: params.Sheets{
+	"Untrained": {Name: "Untrained", Desc: "simulates untrained weights -- lower variance", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
@@ -103,7 +103,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "Trained", Desc: "simulates trained weights -- higher variance", Sheets: params.Sheets{
+	"Trained": {Name: "Trained", Desc: "simulates trained weights -- higher variance", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{

@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/assert/v2 v2.2.2
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.4.10
+	github.com/emer/emergent v1.4.13
 	github.com/emer/empi v1.0.19
 	github.com/emer/envs v1.0.7
 	github.com/emer/etable v1.1.23
@@ -14,7 +14,7 @@ require (
 	github.com/emer/vision v1.1.18
 	github.com/goki/gi v1.3.19
 	github.com/goki/gosl v1.0.16
-	github.com/goki/ki v1.1.11
+	github.com/goki/ki v1.1.13
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.15
 	github.com/goki/vgpu v1.0.33
@@ -28,6 +28,7 @@ require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298 // indirect
 	github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/BurntSushi/xgb v0.0.0-20210121224620-deaf085860bc // indirect
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046 // indirect
 	github.com/Masterminds/vcs v1.13.3 // indirect

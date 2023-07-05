@@ -16,7 +16,7 @@ import (
 
 // Note: subsequent params applied after Base
 var PoolParamSets = params.Sets{
-	{Name: "Base", Desc: "base testing", Sheets: params.Sheets{
+	"Base": {Name: "Base", Desc: "base testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -46,7 +46,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "FullDecay", Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
+	"FullDecay": {Name: "FullDecay", Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -56,7 +56,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "LayerOnly", Desc: "only layer inhibition", Sheets: params.Sheets{
+	"LayerOnly": {Name: "LayerOnly", Desc: "only layer inhibition", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -69,7 +69,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "PoolOnly", Desc: "only pool inhibition", Sheets: params.Sheets{
+	"PoolOnly": {Name: "PoolOnly", Desc: "only pool inhibition", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -80,7 +80,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "LayerPoolSame", Desc: "same strength both", Sheets: params.Sheets{
+	"LayerPoolSame": {Name: "LayerPoolSame", Desc: "same strength both", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -91,7 +91,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "LayerWeakPoolStrong", Desc: "both diff strength", Sheets: params.Sheets{
+	"LayerWeakPoolStrong": {Name: "LayerWeakPoolStrong", Desc: "both diff strength", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -102,7 +102,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "LayerStrongPoolWeak", Desc: "both diff strength", Sheets: params.Sheets{
+	"LayerStrongPoolWeak": {Name: "LayerStrongPoolWeak", Desc: "both diff strength", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -133,8 +133,8 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet.Build(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
 	testNet.Defaults()
-	testNet.ApplyParams(PoolParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts(ctx)                                           // get GScale here
+	testNet.ApplyParams(PoolParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
+	testNet.InitWts(ctx)                                                // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }
