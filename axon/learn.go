@@ -584,7 +584,6 @@ type TraceParams struct {
 	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always"`
 	LearnThr float32 `desc:"threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntMax value -- setting this relatively high encourages sparser representations"`
 	Dt       float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	pad, pad1, pad2 float32
 }
 
 func (tp *TraceParams) Defaults() {
