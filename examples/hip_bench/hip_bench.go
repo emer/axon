@@ -385,7 +385,9 @@ func (ss *Sim) InitRndSeed(run int) {
 	fmt.Println("random seed:", ss.RndSeeds[run])
 	rand.Seed(ss.RndSeeds[run])
 	ss.RndSeeds.Set(run)
+	// fmt.Println("ss.Net.Rand ", &ss.Net.Rand)
 	ss.RndSeeds.Set(run, &ss.Net.Rand)
+	// fmt.Println(ss.Net.Rand.Float32(-1));
 }
 
 func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, mossyDel, mossyDelTest, thetaLow, thetaHigh float32, pretrain *bool) {
@@ -442,15 +444,19 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 	endOfQ1 := looper.NewEvent("Q1", 50, func() {
 		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = thetaLow
 		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
-		if man.Mode == etime.Train {
-			ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore after 1st quarter
-		} else {
+		if man.Mode == etime.Test {
 			ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDelTest // testing
 		}
+		// if man.Mode == etime.Train {
+		// 	ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore after 1st quarter
+		// } else {
+		// 	ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDelTest // testing
+		// }
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	}) // 50ms
 	endOfQ3 := looper.NewEvent("Q3", 150, func() {
+		ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase
 		ca1FmEc3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
 		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaLow
 		if man.Mode == etime.Train { // clamp EC5 from Input
@@ -463,7 +469,7 @@ func ConfigLoopsHip(ctx *axon.Context, man *looper.Manager, net *axon.Network, m
 		net.GPU.SyncParamsToGPU()
 	})
 	endOfQ4 := looper.NewEvent("Q4", 200, func() {
-		ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore
+		ca3FmDg.(*axon.Prjn).Params.PrjnScale.Rel = dgPjScale // restore at plus phase
 		ca1FmCa3.(*axon.Prjn).Params.PrjnScale.Rel = thetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
@@ -857,6 +863,9 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	ss.Stats.SetFloat("TrgOnWasOffAll", trgOnWasOffAll)
 	ss.Stats.SetFloat("TrgOnWasOffCmp", trgOnWasOffCmp)
 	ss.Stats.SetFloat("TrgOffWasOn", trgOffWasOn)
+
+
+	// take completion pool to do CosDiff
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1107,7 +1116,14 @@ var InnerLoopParams = []string{"List020"}
 func (ss *Sim) TwoFactorRun() {
 	for _, otf := range OuterLoopParams {
 		for _, inf := range InnerLoopParams {
+			
 			// ss.InitRndSeed(ss.Args.Int("run"))
+
+			
+
+			ss.Net.GPU.Destroy()
+			ss.Net = &axon.Network{}
+			ss.Params.AddNetwork(ss.Net)
 
 			fmt.Println(otf, " ", inf)
 			ss.Params.ExtraSets = otf + " " + inf
@@ -1115,9 +1131,13 @@ func (ss *Sim) TwoFactorRun() {
 			ss.Params.SetObject("Sim")
 			ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run")))
 
+
+			ss.InitRndSeed(0)
 			ss.ConfigNet(ss.Net)
 			// ss.ConfigLogs()
 			ss.ConfigLoops()
+
+			
 
 			runs := ss.Args.Int("runs")
 			run := ss.Args.Int("run")
@@ -1132,8 +1152,8 @@ func (ss *Sim) TwoFactorRun() {
 			ss.Net.SetNThreads(ss.Args.Int("threads"))
 			mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
-
-			ss.NewRun() // includes configpats and configenv
+			ss.Init()
+			// ss.NewRun() // includes configpats and configenv
 			
 			fmt.Println("CA3 shape: ", ss.Net.AxonLayerByName("CA3").Shp.Shp)
 			fmt.Println("EC2 shape: ", ss.Net.AxonLayerByName("EC2").Shp.Shp)
