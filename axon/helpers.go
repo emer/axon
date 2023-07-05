@@ -61,3 +61,15 @@ func SaveWeightsIfArgSet(net *Network, args *ecmd.Args, ctrString, runName strin
 	}
 	return ""
 }
+
+// SaveWeightsIfConfigSet saves network weights if the given config
+// bool value has been set to true.
+// uses WeightsFileName information to identify the weights.
+// only for 0 rank MPI if running mpi
+// Returns the name of the file saved to, or empty if not saved.
+func SaveWeightsIfConfigSet(net *Network, cfgWts bool, ctrString, runName string) string {
+	if cfgWts {
+		return SaveWeights(net, ctrString, runName)
+	}
+	return ""
+}

@@ -13,7 +13,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -55,14 +54,14 @@ type ParamConfig struct {
 	Network map[string]any `desc:"network parameters"`
 	Set     string         `desc:"ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params"`
 	File    string         `desc:"Name of the JSON file to input saved parameters from."`
-	DocFile string         `desc:"Name of the file to output all parameter data. If not empty string, program should write file(s) and then exit"`
 	Tag     string         `desc:"extra tag to add to file names and logs saved from this run"`
 	Note    string         `desc:"user note -- describe the run params etc -- like a git commit message for the run"`
+	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> then quit -- useful for comparing to later changes and seeing multiple views of current params"`
 }
 
 // RunConfig has config parameters related to running the sim
 type RunConfig struct {
-	GPU          bool   `desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
+	GPU          bool   `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
 	Threads      int    `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
 	Run          int    `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
 	Runs         int    `def:"5" min:"1" desc:"total number of runs to do when running Train"`
@@ -77,13 +76,13 @@ type RunConfig struct {
 
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
-	SaveWts      bool `desc:"if true, save final weights after each run"`
-	EpochLog     bool `def:"true" desc:"if true, save train epoch log to file, as .epc.tsv typically"`
-	RunLog       bool `def:"true" desc:"if true, save run log to file, as .run.tsv typically"`
-	TrialLog     bool `def:"false" desc:"if true, save train trial log to file, as .trl.tsv typically. May be large."`
-	TestEpochLog bool `def:"false" desc:"if true, save testing epoch log to file, as .tst_epc.tsv typically.  In general it is better to copy testing items over to the training epoch log and record there."`
-	TestTrialLog bool `def:"false" desc:"if true, save testing trial log to file, as .tst_trl.tsv typically. May be large."`
-	NetData      bool `desc:"if true, save network activation etc data from testing trials, for later viewing in netview"`
+	SaveWts   bool `desc:"if true, save final weights after each run"`
+	Epoch     bool `def:"true" desc:"if true, save train epoch log to file, as .epc.tsv typically"`
+	Run       bool `def:"true" desc:"if true, save run log to file, as .run.tsv typically"`
+	Trial     bool `def:"false" desc:"if true, save train trial log to file, as .trl.tsv typically. May be large."`
+	TestEpoch bool `def:"false" desc:"if true, save testing epoch log to file, as .tst_epc.tsv typically.  In general it is better to copy testing items over to the training epoch log and record there."`
+	TestTrial bool `def:"false" desc:"if true, save testing trial log to file, as .tst_trl.tsv typically. May be large."`
+	NetData   bool `desc:"if true, save network activation etc data from testing trials, for later viewing in netview"`
 }
 
 // Config is a standard Sim config -- use as a starting point.
@@ -116,7 +115,6 @@ type Sim struct {
 	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
-	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
 }
 
@@ -145,9 +143,8 @@ func (ss *Sim) ConfigAll() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
 	ss.ConfigLoops()
-	if ss.Config.Params.DocFile != "" {
-		// todo: support for this
-		econfig.Save(&ss.Config, "config_cur.toml")
+	if ss.Config.Params.SaveAll {
+		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config)
 		os.Exit(0)
 	}
 }
@@ -334,7 +331,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
@@ -655,11 +652,11 @@ func (ss *Sim) RunNoGUI() {
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 	netName := ss.Net.Name()
 
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.TrialLog, etime.Train, etime.Trial, "trl", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.EpochLog, etime.Train, etime.Epoch, "epc", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.RunLog, etime.Train, etime.Run, "run", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.TestEpochLog, etime.Test, etime.Epoch, "tst_epc", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.TestTrialLog, etime.Test, etime.Trial, "tst_trl", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Run, etime.Train, etime.Run, "run", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.TestEpoch, etime.Test, etime.Epoch, "tst_epc", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.TestTrial, etime.Test, etime.Trial, "tst_trl", netName, runName)
 
 	netdata := ss.Config.Log.NetData
 	if netdata {

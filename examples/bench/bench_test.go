@@ -111,7 +111,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
+	if _, err := net.ApplyParams(ParamSets["Base"].Sheets["Network"], false); err != nil {
 		panic(err)
 	}
 

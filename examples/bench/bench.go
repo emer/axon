@@ -30,7 +30,7 @@ import (
 // so these params below are reasonable for actually learning (eventually)
 
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
@@ -89,7 +89,7 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
+	if _, err := net.ApplyParams(ParamSets["Base"].Sheets["Network"], false); err != nil {
 		panic(err)
 	}
 
