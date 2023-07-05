@@ -239,23 +239,23 @@ func (ss *DrEffPlot) ConfigGui() *gi.Window {
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "Effort Plot", Icon: "update", Tooltip: "plot effort equation."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(gi.ActOpts{Label: "Effort Plot", Icon: "update", Tooltip: "plot effort equation."}, win.This(), func(recv, send ki.Ki, sig int64, data any) {
 		ss.EffortPlot()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Urgency Plot", Icon: "update", Tooltip: "plot urgency equation."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(gi.ActOpts{Label: "Urgency Plot", Icon: "update", Tooltip: "plot urgency equation."}, win.This(), func(recv, send ki.Ki, sig int64, data any) {
 		ss.UrgencyPlot()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Time Run", Icon: "update", Tooltip: "Run a simulated time-evolution and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(gi.ActOpts{Label: "Time Run", Icon: "update", Tooltip: "Run a simulated time-evolution and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data any) {
 		ss.TimeRun()
 		vp.SetNeedsFullRender()
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
+		func(recv, send ki.Ki, sig int64, data any) {
 			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
 		})
 
