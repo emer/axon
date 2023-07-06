@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the active set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+	"Base": {Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers",
 				Params: params.Params{

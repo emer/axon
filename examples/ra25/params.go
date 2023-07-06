@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets sets the minimal non-default params
 // Base is always applied, and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"NetSize": &params.Sheet{
 			{Sel: "Layer", Desc: "all layers",
 				Params: params.Params{

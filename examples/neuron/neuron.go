@@ -62,7 +62,7 @@ const LogPrec = 4
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
@@ -75,7 +75,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"Testing": {Name: "Testing", Desc: "for testing", Sheets: params.Sheets{
+	"Testing": {Desc: "for testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{

@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "#Input", Desc: "input fixed act",
 				Params: params.Params{
@@ -24,7 +24,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"RW": {Name: "RW", Desc: "RW params", Sheets: params.Sheets{
+	"RW": {Desc: "RW params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".RWPredLayer", Desc: "",
 				Params: params.Params{
@@ -43,7 +43,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"TD": {Name: "TD", Desc: "TD params", Sheets: params.Sheets{
+	"TD": {Desc: "TD params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".TDPredLayer", Desc: "",
 				Params: params.Params{
