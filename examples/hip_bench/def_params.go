@@ -43,9 +43,11 @@ var ParamSets = params.Sets{
 			{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "3.0", // 4 > 6 > 2 (fails)
+					"Prjn.Learn.LRate.Base": "0.4", // ABmem slightly impaired compared to 0.2 but faster
 				}},
 			{Sel: "#InputToEC2", Desc: "for CAN ec2",
 				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "2.0",// 2 vs. 1: memory much better, FirstPerfect generally longer
 					"Prjn.Learn.Learn": "false", // no learning better
 				}},
 			{Sel: "#InputToEC3", Desc: "one-to-one input to EC",
@@ -116,8 +118,8 @@ var ParamSets = params.Sets{
 
 
 					// "Prjn.PrjnScale.Abs": "0.1", 
-					"Prjn.Hip.SAvgCor": "0.4",
-					"Prjn.Hip.SNominal": "0.03", // !! need to keep it the same as actual layer Nominal
+					// "Prjn.Hip.SAvgCor": "0.4",
+					// "Prjn.Hip.SNominal": "0.03", // !! need to keep it the same as actual layer Nominal
 					"Prjn.Learn.LRate.Base": "0.2", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
 				}},
 			// {Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
