@@ -86,6 +86,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	econfig.IncludePaths = []string{".", "configs"}
 	ss.Config.Defaults()
 	econfig.Config(&ss.Config, "config.toml")
 	
@@ -841,6 +842,16 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "ABMem", "ACMem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem", "TstABMem", "TstACMem")
 
 	ss.Logs.CreateTables()
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TrgOnWasOffAll:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TrgOnWasOffCmp:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "ABMem:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "ACMem:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TstTrgOnWasOffAll:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TstTrgOnWasOffCmp:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TstMem:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TstACMem:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "FirstPerfect:On", "+")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "Type", "Bar")
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
@@ -1021,45 +1032,39 @@ func (ss *Sim) RunNoGUI() {
 	ss.Net.GPU.Destroy() // safe even if no GPU
 }
 
-var OuterLoopParams = []string{"SmallHip"}
+// var ConfigFiles = []string{"smallhip.toml"}
 
-var InnerLoopParams = []string{"List020"}
+// var ListSizes = []int{20}
 
 // // TwoFactorRun runs outer-loop crossed with inner-loop params
 // func (ss *Sim) TwoFactorRun() {
-// 	for _, otf := range OuterLoopParams {
-// 		for _, inf := range InnerLoopParams {
+// 	for _, otf := range ConfigFiles {
+// 		for _, listSize := range ListSizes {
 
 // 			ss.Net.GPU.Destroy()
 // 			ss.Net = &axon.Network{}
 // 			ss.Params.AddNetwork(ss.Net)
 
-// 			fmt.Println(otf, " ", inf)
-// 			ss.Params.ExtraSets = otf + " " + inf
-// 			ss.Params.SetObject("Hip")
-// 			ss.Params.SetObject("Sim")
-// 			ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run")))
+// 			// fmt.Println(otf, " ", inf)
+// 			// ss.Params.ExtraSets = otf + " " + inf
+// 			// ss.Params.SetObject("Hip")
+// 			// ss.Params.SetObject("Sim")
+// 			ss.Params.Tag = fmt.Sprintf("%s_%d", otf, listSize)
+// 			ss.Stats.SetString("RunName", ss.Params.RunName(ss.Config.Run.Run))
 
+// 			ss.Config.Run.NTrials = listSize
+// 			econfig.OpenWithIncludes(&ss.Config, otf)
 
 // 			ss.InitRndSeed(0)
 // 			ss.ConfigNet(ss.Net)
 // 			// ss.ConfigLogs()
 // 			ss.ConfigLoops()
 
-			
-
-// 			runs := ss.Args.Int("runs")
-// 			run := ss.Args.Int("run")
-// 			mpi.Printf("Running %d Runs starting at %d\n", runs, run)
-// 			rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
-// 			rc.Set(run)
-// 			rc.Max = run + runs
-// 			ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-// 			if ss.Args.Bool("gpu") {
+// 			if ss.Config.Run.GPU {
 // 				ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 // 			}
-// 			ss.Net.SetNThreads(ss.Args.Int("threads"))
 // 			mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
+
 
 // 			ss.Init()
 // 			// ss.NewRun() // includes configpats and configenv
