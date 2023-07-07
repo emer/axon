@@ -11,16 +11,18 @@ func TestRace(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Sim.NTrials = 2
 
-	sim.Config()
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = false
+	sim.Config.Run.NData = 2
+	sim.Config.Run.NRuns = 1
+	sim.Config.Run.NEpochs = 1
+	sim.Config.Run.NTrials = 2
+	sim.Config.Run.Threads = 8
+	sim.Config.Log.Run = false
+	sim.Config.Log.Epoch = false
 
-	sim.Net.SetNThreads(8)
-
-	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 1)
-	sim.Args.SetBool("epclog", false)
-	sim.Args.SetBool("runlog", false)
+	sim.ConfigAll()
 
 	sim.RunNoGUI()
 }
