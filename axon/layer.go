@@ -31,7 +31,7 @@ type Layer struct {
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
 // Object returns the object with parameters to be set by emer.Params
-func (ly *Layer) Object() interface{} {
+func (ly *Layer) Object() any {
 	return ly.Params
 }
 

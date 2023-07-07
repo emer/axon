@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the default set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+	"Base": {Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "clamp gain makes big diff on overall excitation, gating propensity",
 				Params: params.Params{
@@ -59,7 +59,7 @@ var ParamSets = params.Sets{
 // ParamSetsDefs is the default set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
 var ParamSetsDefs = params.Sets{
-	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+	"Base": {Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
@@ -282,7 +282,7 @@ var ParamSetsDefs = params.Sets{
 				}},
 		}},
 	},
-	{Name: "NoTrainMtx", Desc: "turn off training in Mtx", Sheets: params.Sheets{
+	"NoTrainMtx": {Desc: "turn off training in Mtx", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "MatrixPrjn", Desc: "learning in mtx",
 				Params: params.Params{
@@ -290,7 +290,7 @@ var ParamSetsDefs = params.Sets{
 				}},
 		}},
 	},
-	{Name: "LearnWts", Desc: "learned weights", Sheets: params.Sheets{
+	"LearnWts": {Desc: "learned weights", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "#ACCPosToMtxGo", Desc: "trained wts",
 				Params: params.Params{
@@ -318,7 +318,7 @@ var ParamSetsDefs = params.Sets{
 				}},
 		}},
 	},
-	{Name: "WtScales", Desc: "these should all be hard-coded", Sheets: params.Sheets{
+	"WtScales": {Desc: "these should all be hard-coded", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".GPeTAToMtx", Desc: "nonspecific gating activity surround inhibition -- wta",
 				Params: params.Params{

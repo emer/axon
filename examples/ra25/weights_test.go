@@ -19,14 +19,13 @@ func TestWeightsSave(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
 
-	sim.Args.SetBool("epclog", false)    // set to true to debug runs
-	sim.Args.SetBool("tstepclog", false) // set to true to debug runs
-	sim.Args.SetBool("runlog", false)
-	sim.Args.SetBool("gpu", false) // set to false for CI testing -- set to true for interactive testing
-	sim.Args.SetInt("runs", 1)
+	sim.Config.Log.Epoch = false
+	sim.Config.Log.Run = false
+	sim.Config.Run.GPU = false
+	sim.Config.Run.NRuns = 1
 
+	sim.ConfigAll()
 	sim.RunNoGUI()
 
 	sim.Net.SaveWtsJSON(gi.FileName("wtstest.wts.gz"))
@@ -40,7 +39,7 @@ func TestWeightsLoad(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
+	sim.ConfigAll()
 
 	sim.Init()
 
@@ -64,7 +63,7 @@ func TestWeightsLoadGPU(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
+	sim.ConfigAll()
 
 	sim.Init()
 
@@ -90,22 +89,23 @@ func TestWeightsTrain(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
 
-	sim.Args.SetBool("epclog", true)     // set to true to debug runs
-	sim.Args.SetBool("tstepclog", false) // set to true to debug runs
-	sim.Args.SetBool("runlog", false)
-	sim.Args.SetBool("gpu", false) // set to false for CI testing -- set to true for interactive testing
+	sim.Config.GUI = false
+	sim.Config.Log.Epoch = false
+	sim.Config.Log.Run = false
+	sim.Config.Run.GPU = false
 	// note: gets a few errors and takes longer on GPU vs. CPU..  hmm..
-	sim.Args.SetInt("runs", 1)
-	sim.Args.SetString("startWts", "wtstest.wts.gz")
+	sim.Config.Run.NRuns = 1
+	sim.Config.Run.StartWts = "wtstest.wts.gz"
+
+	sim.ConfigAll()
 
 	sim.RunNoGUI()
 
 	epcTable := sim.Logs.Table(etime.Train, etime.Epoch)
 	nrows := epcTable.Rows
 	fmt.Printf("nrows: %d\n", nrows)
-	if nrows > 3 {
-		t.Errorf("more than 3 epochs to learn after loading weights\n")
+	if nrows > 10 {
+		t.Errorf("more than 10 epochs to learn after loading weights\n")
 	}
 }

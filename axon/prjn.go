@@ -32,7 +32,7 @@ type Prjn struct {
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
 
 // Object returns the object with parameters to be set by emer.Params
-func (pj *Prjn) Object() interface{} {
+func (pj *Prjn) Object() any {
 	return pj.Params
 }
 
@@ -80,6 +80,9 @@ func (pj *Prjn) Defaults() {
 func (pj *Prjn) Update() {
 	if pj.Params == nil {
 		return
+	}
+	if pj.Params.PrjnType == InhibPrjn {
+		pj.Params.Com.GType = InhibitoryG
 	}
 	pj.Params.Update()
 }
@@ -349,9 +352,6 @@ func (pj *Prjn) InitSynCa(ctx *Context, syni, di uint32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
-	if pj.Typ == InhibPrjn {
-		pj.Params.Com.GType = InhibitoryG
-	}
 	pj.Params.Learn.LRate.Init()
 	pj.InitGBuffs()
 	rlay := pj.Recv

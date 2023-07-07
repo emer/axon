@@ -681,7 +681,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		}
 	}
 	cb.SelectItem(ri)
-	cb.ComboSig.Connect(ss.GUI.Win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	cb.ComboSig.Connect(ss.GUI.Win.This(), func(recv, send ki.Ki, sig int64, data any) {
 		ss.RunName = data.(string)
 		ss.InitEnvRun()
 	})

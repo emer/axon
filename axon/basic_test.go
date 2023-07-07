@@ -46,7 +46,7 @@ const NLrnPars = 1
 
 // Note: subsequent params applied after Base
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "base testing", Sheets: params.Sheets{
+	"Base": {Desc: "base testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -75,7 +75,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "FullDecay", Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
+	"FullDecay": {Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -85,7 +85,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "SubMean", Desc: "submean on Prjn dwt", Sheets: params.Sheets{
+	"SubMean": {Desc: "submean on Prjn dwt", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "submean used in some models but not by default",
 				Params: params.Params{
@@ -113,8 +113,8 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.Build(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts(ctx)                                       // get GScale here
+	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
+	testNet.InitWts(ctx)                                            // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }
@@ -139,8 +139,8 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	testNet.Build(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts(ctx)                                       // get GScale here
+	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
+	testNet.InitWts(ctx)                                            // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }
@@ -214,7 +214,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.Build(ctx)
 	net.Defaults()
-	net.ApplyParams(ParamSets[0].Sheets["Network"], false)
+	net.ApplyParams(ParamSets["Base"].Sheets["Network"], false)
 
 	net.InitExt(ctx)
 
@@ -743,105 +743,102 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 
 	cycPerQtr := 50
 
-	for ti := 0; ti < NLrnPars; ti++ {
-		testNet.Defaults()
-		testNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
-		testNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
-		testNet.InitWts(ctx)
-		testNet.InitExt(ctx)
+	testNet.Defaults()
+	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // always apply base
+	testNet.InitWts(ctx)
+	testNet.InitExt(ctx)
 
-		if gpu {
-			testNet.ConfigGPUnoGUI(ctx)
-			// testNet.GPU.RecFunTimes = true // alt forms
-			// testNet.GPU.CycleByCycle = true //
+	if gpu {
+		testNet.ConfigGPUnoGUI(ctx)
+		// testNet.GPU.RecFunTimes = true // alt forms
+		// testNet.GPU.CycleByCycle = true //
+	}
+
+	for pi := 0; pi < 4; pi++ {
+		ctx.NewState(etime.Train)
+		testNet.NewState(ctx)
+
+		inpat, err := inPats.SubSpaceTry([]int{pi})
+		if err != nil {
+			t.Error(err)
 		}
+		testNet.InitExt(ctx)
+		inLay.ApplyExt(ctx, 0, inpat)
+		outLay.ApplyExt(ctx, 0, inpat)
+		testNet.ApplyExts(ctx) // key now for GPU
 
-		for pi := 0; pi < 4; pi++ {
-			ctx.NewState(etime.Train)
-			testNet.NewState(ctx)
-
-			inpat, err := inPats.SubSpaceTry([]int{pi})
-			if err != nil {
-				t.Error(err)
-			}
-			testNet.InitExt(ctx)
-			inLay.ApplyExt(ctx, 0, inpat)
-			outLay.ApplyExt(ctx, 0, inpat)
-			testNet.ApplyExts(ctx) // key now for GPU
-
-			for qtr := 0; qtr < 4; qtr++ {
-				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					testNet.Cycle(ctx)
-					ctx.CycleInc()
-					if gpu {
-						testNet.GPU.SyncNeuronsFmGPU()
-					}
-
-					hidLay.UnitVals(&hidAct, "Act", 0)
-					hidLay.UnitVals(&hidGes, "Ge", 0)
-					hidLay.UnitVals(&hidGis, "Gi", 0)
-					hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
-					hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
-					hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
-
-					outLay.UnitVals(&outCaP, "NrnCaP", 0)
-					outLay.UnitVals(&outCaD, "NrnCaD", 0)
-
-					if printCycs {
-						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
-					}
-				}
-				if qtr == 2 {
-					testNet.MinusPhase(ctx)
-					ctx.NewPhase(false)
-					testNet.PlusPhaseStart(ctx)
+		for qtr := 0; qtr < 4; qtr++ {
+			for cyc := 0; cyc < cycPerQtr; cyc++ {
+				testNet.Cycle(ctx)
+				ctx.CycleInc()
+				if gpu {
+					testNet.GPU.SyncNeuronsFmGPU()
 				}
 
+				hidLay.UnitVals(&hidAct, "Act", 0)
+				hidLay.UnitVals(&hidGes, "Ge", 0)
+				hidLay.UnitVals(&hidGis, "Gi", 0)
+				hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
 				hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
 				hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
 
 				outLay.UnitVals(&outCaP, "NrnCaP", 0)
 				outLay.UnitVals(&outCaD, "NrnCaD", 0)
 
-				if qtr == 3 {
-					didx := ti*4 + pi
-					q3hidCaD[didx] = hidCaD[pi]
-					q3hidCaP[didx] = hidCaP[pi]
-					q3outCaD[didx] = outCaD[pi]
-					q3outCaP[didx] = outCaP[pi]
+				if printCycs {
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
 				}
-
-				if printQtrs {
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
-				}
-
 			}
-			testNet.PlusPhase(ctx)
+			if qtr == 2 {
+				testNet.MinusPhase(ctx)
+				ctx.NewPhase(false)
+				testNet.PlusPhaseStart(ctx)
+			}
+
+			hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
+			hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
+
+			outLay.UnitVals(&outCaP, "NrnCaP", 0)
+			outLay.UnitVals(&outCaD, "NrnCaD", 0)
+
+			if qtr == 3 {
+				didx := pi
+				q3hidCaD[didx] = hidCaD[pi]
+				q3hidCaP[didx] = hidCaP[pi]
+				q3outCaD[didx] = outCaD[pi]
+				q3outCaP[didx] = outCaP[pi]
+			}
 
 			if printQtrs {
-				fmt.Printf("=============================\n")
+				fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
 			}
 
-			testNet.DWt(ctx)
-			if gpu {
-				testNet.GPU.SyncSynapsesFmGPU()
-				testNet.GPU.SyncSynCaFmGPU()
-			}
-
-			didx := ti*4 + pi
-
-			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
-			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
-
-			testNet.WtFmDWt(ctx)
-			if gpu {
-				testNet.GPU.SyncSynapsesFmGPU()
-				testNet.GPU.SyncSynCaFmGPU()
-			}
-
-			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
-			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 		}
+		testNet.PlusPhase(ctx)
+
+		if printQtrs {
+			fmt.Printf("=============================\n")
+		}
+
+		testNet.DWt(ctx)
+		if gpu {
+			testNet.GPU.SyncSynapsesFmGPU()
+			testNet.GPU.SyncSynCaFmGPU()
+		}
+
+		didx := pi
+
+		hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+		outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+
+		testNet.WtFmDWt(ctx)
+		if gpu {
+			testNet.GPU.SyncSynapsesFmGPU()
+			testNet.GPU.SyncSynCaFmGPU()
+		}
+
+		hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
+		outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, q3hidCaP, qtr3HidCaP, "qtr3HidCaP", t)
@@ -921,101 +918,98 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 
 	cycPerQtr := 50
 
-	for ti := 0; ti < NLrnPars; ti++ {
-		testNet.Defaults()
-		testNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
-		testNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
-		hidLay.Params.Learn.RLRate.On.SetBool(true)
-		testNet.InitWts(ctx)
+	testNet.Defaults()
+	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // always apply base
+	hidLay.Params.Learn.RLRate.On.SetBool(true)
+	testNet.InitWts(ctx)
+	testNet.InitExt(ctx)
+
+	for pi := 0; pi < 4; pi++ {
+		inpat, err := inPats.SubSpaceTry([]int{pi})
+		if err != nil {
+			t.Error(err)
+		}
 		testNet.InitExt(ctx)
+		inLay.ApplyExt(ctx, 0, inpat)
+		outLay.ApplyExt(ctx, 0, inpat)
+		testNet.ApplyExts(ctx) // key now for GPU
 
-		for pi := 0; pi < 4; pi++ {
-			inpat, err := inPats.SubSpaceTry([]int{pi})
-			if err != nil {
-				t.Error(err)
-			}
-			testNet.InitExt(ctx)
-			inLay.ApplyExt(ctx, 0, inpat)
-			outLay.ApplyExt(ctx, 0, inpat)
-			testNet.ApplyExts(ctx) // key now for GPU
+		ctx.NewState(etime.Train)
+		testNet.NewState(ctx)
+		for qtr := 0; qtr < 4; qtr++ {
+			for cyc := 0; cyc < cycPerQtr; cyc++ {
+				testNet.Cycle(ctx)
+				ctx.CycleInc()
+				testNet.GPU.SyncNeuronsFmGPU()
 
-			ctx.NewState(etime.Train)
-			testNet.NewState(ctx)
-			for qtr := 0; qtr < 4; qtr++ {
-				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					testNet.Cycle(ctx)
-					ctx.CycleInc()
-					testNet.GPU.SyncNeuronsFmGPU()
-
-					hidLay.UnitVals(&hidAct, "Act", 0)
-					hidLay.UnitVals(&hidGes, "Ge", 0)
-					hidLay.UnitVals(&hidGis, "Gi", 0)
-					hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
-					hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
-					hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
-
-					outLay.UnitVals(&outCaP, "NrnCaP", 0)
-					outLay.UnitVals(&outCaD, "NrnCaD", 0)
-
-					if printCycs {
-						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
-					}
-				}
-				if qtr == 2 {
-					testNet.MinusPhase(ctx)
-					ctx.NewPhase(false)
-					testNet.PlusPhaseStart(ctx)
-				}
-
+				hidLay.UnitVals(&hidAct, "Act", 0)
+				hidLay.UnitVals(&hidGes, "Ge", 0)
+				hidLay.UnitVals(&hidGis, "Gi", 0)
+				hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
 				hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
 				hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
 
 				outLay.UnitVals(&outCaP, "NrnCaP", 0)
 				outLay.UnitVals(&outCaD, "NrnCaD", 0)
 
-				if qtr == 3 {
-					didx := ti*4 + pi
-					q3hidCaD[didx] = hidCaD[pi]
-					q3hidCaP[didx] = hidCaP[pi]
-					q3outCaD[didx] = outCaD[pi]
-					q3outCaP[didx] = outCaP[pi]
-				}
-
-				if printQtrs {
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
+				if printCycs {
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
 				}
 			}
-			testNet.PlusPhase(ctx)
-			if gpu {
-				testNet.GPU.SyncNeuronsFmGPU() // RLRate updated after plus
+			if qtr == 2 {
+				testNet.MinusPhase(ctx)
+				ctx.NewPhase(false)
+				testNet.PlusPhaseStart(ctx)
+			}
+
+			hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
+			hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
+
+			outLay.UnitVals(&outCaP, "NrnCaP", 0)
+			outLay.UnitVals(&outCaD, "NrnCaD", 0)
+
+			if qtr == 3 {
+				didx := pi
+				q3hidCaD[didx] = hidCaD[pi]
+				q3hidCaP[didx] = hidCaP[pi]
+				q3outCaD[didx] = outCaD[pi]
+				q3outCaP[didx] = outCaP[pi]
 			}
 
 			if printQtrs {
-				fmt.Printf("=============================\n")
+				fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
 			}
-
-			hidLay.UnitVals(&hidRLRate, "RLRate", 0)
-			ridx := ti*4*4 + pi*4
-			copy(hidrlrs[ridx:ridx+4], hidRLRate)
-
-			testNet.DWt(ctx)
-			if gpu {
-				testNet.GPU.SyncSynapsesFmGPU()
-			}
-
-			didx := ti*4 + pi
-
-			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
-			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
-
-			testNet.WtFmDWt(ctx)
-			if gpu {
-				testNet.GPU.SyncSynapsesFmGPU()
-			}
-
-			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
-			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 		}
+		testNet.PlusPhase(ctx)
+		if gpu {
+			testNet.GPU.SyncNeuronsFmGPU() // RLRate updated after plus
+		}
+
+		if printQtrs {
+			fmt.Printf("=============================\n")
+		}
+
+		hidLay.UnitVals(&hidRLRate, "RLRate", 0)
+		ridx := pi * 4
+		copy(hidrlrs[ridx:ridx+4], hidRLRate)
+
+		testNet.DWt(ctx)
+		if gpu {
+			testNet.GPU.SyncSynapsesFmGPU()
+		}
+
+		didx := pi
+
+		hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+		outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+
+		testNet.WtFmDWt(ctx)
+		if gpu {
+			testNet.GPU.SyncSynapsesFmGPU()
+		}
+
+		hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
+		outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, hidrlrs, patHidRLRates, "patHidRLRates", t)
@@ -1306,8 +1300,8 @@ func TestInhibAct(t *testing.T) {
 
 	InhibNet.Build(ctx)
 	InhibNet.Defaults()
-	InhibNet.ApplyParams(ParamSets[0].Sheets["Network"], false)
-	InhibNet.ApplyParams(ParamSets[0].Sheets["InhibOff"], false)
+	InhibNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false)
+	InhibNet.ApplyParams(ParamSets["Base"].Sheets["InhibOff"], false)
 	InhibNet.InitWts(ctx) // get GScale
 	InhibNet.NewState(ctx)
 

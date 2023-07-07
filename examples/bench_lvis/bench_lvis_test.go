@@ -12,7 +12,6 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	"github.com/goki/vgpu/vgpu"
 	"github.com/stretchr/testify/require"
 )
 
@@ -80,7 +79,7 @@ func TestGPUSynCa(t *testing.T) {
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	log.Println(net.SizeReport(false))
 
-	vgpu.Debug = true // definitely enable if failing!!
+	// vgpu.Debug = true // definitely enable if failing!!
 	net.ConfigGPUnoGUI(ctx)
 
 	// on mac, only works up to ndata = 6 -- 7 fails

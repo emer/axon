@@ -25,7 +25,7 @@ import (
 )
 
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
@@ -125,7 +125,7 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
+	if _, err := net.ApplyParams(ParamSets["Base"].Sheets["Network"], false); err != nil {
 		panic(err)
 	}
 

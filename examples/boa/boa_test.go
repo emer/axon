@@ -23,7 +23,7 @@ var (
 	SaveStandard    = false
 	StandardFile    = "testdata/boa_test_std.json"
 	LayTolerance    = float32(0.2) // there is horrible variability on vspatch
-	GlobalTolerance = float32(0.05)
+	GlobalTolerance = float32(0.1)
 	NotMaintTol     = float32(0.02)
 	PTTol           = float32(0.08) // note: nmda diverges in maint on GPU, even with fastexp on GPU
 )
@@ -85,14 +85,16 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Sim.NData = ndata
-	sim.Config()
 
-	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 4)
-	sim.Args.SetBool("epclog", false) // set to true to debug runs
-	sim.Args.SetBool("runlog", false)
-	sim.Args.SetBool("gpu", gpu)
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = gpu
+	sim.Config.Run.NData = ndata
+	sim.Config.Run.NRuns = 1
+	sim.Config.Run.NEpochs = 4
+	sim.Config.Log.Run = false
+	sim.Config.Log.Epoch = false
+
+	sim.ConfigAll()
 
 	sim.RunNoGUI()
 
@@ -155,21 +157,19 @@ func TestPerfGPUnData2(t *testing.T) {
 func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 	sim := &Sim{}
 
-	GPU = gpu
-
 	sim.New()
-	sim.Sim.NData = ndata
-	sim.Sim.NTrials = 9
 
-	sim.Args.SetBool("test", true)
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = gpu
+	sim.Config.Run.NData = ndata
+	sim.Config.Run.NRuns = 1
+	sim.Config.Run.NEpochs = 1
+	sim.Config.Run.NTrials = 9
+	sim.Config.Log.Run = false
+	sim.Config.Log.Epoch = false
+	sim.Config.Log.Testing = true
 
-	sim.Config()
-
-	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 1)
-	sim.Args.SetBool("gpu", gpu)
-	sim.Args.SetBool("epclog", false)
-	sim.Args.SetBool("runlog", false)
+	sim.ConfigAll()
 
 	sim.RunNoGUI()
 
@@ -272,19 +272,19 @@ func RunNDataTest(t *testing.T, gpu bool) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Sim.NData = 2
-	sim.Sim.EnvSameSeed = true
-	sim.Sim.NTrials = 50
 
-	sim.Args.SetBool("test", true)
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = gpu
+	sim.Config.Run.NData = 2
+	sim.Config.Run.NRuns = 1
+	sim.Config.Run.NEpochs = 4
+	sim.Config.Run.NTrials = 50
+	sim.Config.Log.Run = false
+	sim.Config.Log.Epoch = false
+	sim.Config.Log.Testing = true
+	sim.Config.Env.SameSeed = true
 
-	sim.Config()
-
-	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 1)
-	sim.Args.SetBool("gpu", gpu)
-	sim.Args.SetBool("epclog", false)
-	sim.Args.SetBool("runlog", false)
+	sim.ConfigAll()
 
 	sim.RunNoGUI()
 

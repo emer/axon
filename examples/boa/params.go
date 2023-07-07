@@ -9,11 +9,15 @@ import "github.com/emer/emergent/params"
 // ParamSets is the active set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+	"Base": {Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers",
 				Params: params.Params{
 					"Layer.Acts.Clamp.Ge": "1.5",
+				}},
+			{Sel: ".PFCLayer", Desc: "pfc layers: slower trgavgact",
+				Params: params.Params{
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // also now set by default
 				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 				Params: params.Params{
@@ -63,6 +67,11 @@ var ParamSets = params.Sets{
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
+			{Sel: ".PFCPrjn", Desc: "pfc prjn params -- more robust to long-term training",
+				Params: params.Params{
+					"Prjn.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
+					"Prjn.Learn.LRate.Base":    "0.02", // 0.04 def; 0.02 more stable
+				}},
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later

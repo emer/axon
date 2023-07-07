@@ -18,7 +18,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/params"
@@ -386,19 +388,81 @@ func (nt *NetworkBase) AllPrjnScales() string {
 				continue
 			}
 			sn := pj.Send.Name()
-			str += fmt.Sprintf("\t%15s\t\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
+			str += fmt.Sprintf("\t%15s\t%15s\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.PrjnType().String(), pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
 			ph := pj.ParamsHistory.ParamsHistory()
 			rh := ph["Prjn.PrjnScale.Rel"]
 			ah := ph["Prjn.PrjnScale.Abs"]
 			if ah != "" {
-				str += fmt.Sprintf("\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
+				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
 			}
 			if rh != "" {
-				str += fmt.Sprintf("\t\t\t\t\t\t\t    Rel Params: %s\n", rh)
+				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Rel Params: %s\n", rh)
 			}
 		}
 	}
 	return str
+}
+
+// SaveParamsSnapshot saves various views of current parameters
+// to a directory based on current date, as a kind of snapshot of the simulation state.
+// Also saves current Config and Params state.
+func (nt *NetworkBase) SaveParamsSnapshot(pars *params.Sets, cfg any) error {
+	date := time.Now().Format("2006_01_02")
+	dir := "params_" + date
+	err := os.Mkdir(dir, 0775)
+	if err != nil {
+		log.Println(err) // notify but OK if it exists
+	}
+	econfig.Save(cfg, filepath.Join(dir, "config.toml"))
+	pars.SaveTOML(gi.FileName(filepath.Join(dir, "params.toml")))
+	nt.SaveAllParams(gi.FileName(filepath.Join(dir, "params_all.txt")))
+	nt.SaveNonDefaultParams(gi.FileName(filepath.Join(dir, "params_nondef.txt")))
+	nt.SaveAllLayerInhibs(gi.FileName(filepath.Join(dir, "params_layers.txt")))
+	nt.SaveAllPrjnScales(gi.FileName(filepath.Join(dir, "params_prjns.txt")))
+	return nil
+}
+
+// SaveAllParams saves list of all parameters in Network to given file.
+func (nt *NetworkBase) SaveAllParams(filename gi.FileName) error {
+	str := nt.AllParams()
+	err := os.WriteFile(string(filename), []byte(str), 0666)
+	if err != nil {
+		log.Println(err)
+	}
+	return err
+}
+
+// SaveNonDefaultParams saves list of all non-default parameters in Network to given file.
+func (nt *NetworkBase) SaveNonDefaultParams(filename gi.FileName) error {
+	str := nt.NonDefaultParams()
+	err := os.WriteFile(string(filename), []byte(str), 0666)
+	if err != nil {
+		log.Println(err)
+	}
+	return err
+}
+
+// SaveAllLayerInhibs saves list of all layer Inhibition parameters to given file
+func (nt *NetworkBase) SaveAllLayerInhibs(filename gi.FileName) error {
+	str := nt.AllLayerInhibs()
+	err := os.WriteFile(string(filename), []byte(str), 0666)
+	if err != nil {
+		log.Println(err)
+	}
+	return err
+}
+
+// SavePrjnScales saves a listing of all PrjnScale parameters in the Network
+// in all Layers, Recv projections.  These are among the most important
+// and numerous of parameters (in larger networks) -- this helps keep
+// track of what they all are set to.
+func (nt *NetworkBase) SaveAllPrjnScales(filename gi.FileName) error {
+	str := nt.AllPrjnScales()
+	err := os.WriteFile(string(filename), []byte(str), 0666)
+	if err != nil {
+		log.Println(err)
+	}
+	return err
 }
 
 // AllGlobals returns a listing of all Global variables and values.
@@ -524,14 +588,6 @@ func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, ty
 // requires Build.
 func (nt *NetworkBase) ConnectLayers(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes) *Prjn {
 	pj := &Prjn{}
-	return nt.ConnectLayersPrjn(send, recv, pat, typ, pj)
-}
-
-// ConnectLayersPrjn makes connection using given projection between two layers,
-// adding given prjn to the recv and send projection lists on each side of the connection.
-// Does not yet actually connect the units within the layers -- that
-// requires Build.
-func (nt *NetworkBase) ConnectLayersPrjn(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes, pj *Prjn) *Prjn {
 	pj.Init(pj)
 	pj.Connect(send, recv, pat, typ)
 	recv.RcvPrjns.Add(pj)
