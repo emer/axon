@@ -63,8 +63,8 @@ type RunConfig struct {
 	GPU          bool   `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
 	Threads      int    `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
 	Run          int    `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
-	Runs         int    `def:"5" min:"1" desc:"total number of runs to do when running Train"`
-	Epochs       int    `def:"100" desc:"total number of epochs per run"`
+	NRuns        int    `def:"5" min:"1" desc:"total number of runs to do when running Train"`
+	NEpochs      int    `def:"100" desc:"total number of epochs per run"`
 	NZero        int    `def:"2" desc:"stop run after this number of perfect, zero-error epochs"`
 	NTrials      int    `def:"32" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
 	NData        int    `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
@@ -270,7 +270,7 @@ func (ss *Sim) ConfigLoops() {
 
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.Runs).AddTime(etime.Epoch, ss.Config.Run.Epochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.NRuns).AddTime(etime.Epoch, ss.Config.Run.NEpochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
@@ -346,9 +346,11 @@ func (ss *Sim) ConfigLoops() {
 	// GUI
 
 	if !ss.Config.GUI {
-		man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
-		})
+		if ss.Config.Log.NetData {
+			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
+				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+			})
+		}
 	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
@@ -679,8 +681,8 @@ func (ss *Sim) RunNoGUI() {
 
 	ss.Init()
 
-	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
-	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
+	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
+	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
 
 	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
 		ss.Loops.Step(etime.Train, 1, etime.Trial) // get past NewRun

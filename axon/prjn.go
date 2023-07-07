@@ -81,6 +81,9 @@ func (pj *Prjn) Update() {
 	if pj.Params == nil {
 		return
 	}
+	if pj.Params.PrjnType == InhibPrjn {
+		pj.Params.Com.GType = InhibitoryG
+	}
 	pj.Params.Update()
 }
 
@@ -349,9 +352,6 @@ func (pj *Prjn) InitSynCa(ctx *Context, syni, di uint32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
-	if pj.Typ == InhibPrjn {
-		pj.Params.Com.GType = InhibitoryG
-	}
 	pj.Params.Learn.LRate.Init()
 	pj.InitGBuffs()
 	rlay := pj.Recv

@@ -26,7 +26,7 @@ type Approach struct {
 	TimeMax     int           `desc:"maximum number of time steps represented in Time layer"`
 	AlwaysLeft  bool          `desc:"always turn left -- zoolander style"`
 	NewStateInt int           `desc:"interval in trials for generating a new state, only if > 0"`
-	CSTot       int           `desc:"total number of CS's = NDrives * CSPerDrive"`
+	CSTot       int           `inactive:"+" desc:"total number of CS's = NDrives * CSPerDrive"`
 	NYReps      int           `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
 	PatSize     evec.Vec2i    `desc:"size of CS patterns"`
 	Rand        erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`

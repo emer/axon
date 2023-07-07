@@ -411,8 +411,7 @@ func (nt *NetworkBase) SaveParamsSnapshot(pars *params.Sets, cfg any) error {
 	dir := "params_" + date
 	err := os.Mkdir(dir, 0775)
 	if err != nil {
-		log.Println(err)
-		return err
+		log.Println(err) // notify but OK if it exists
 	}
 	econfig.Save(cfg, filepath.Join(dir, "config.toml"))
 	pars.SaveTOML(gi.FileName(filepath.Join(dir, "params.toml")))
