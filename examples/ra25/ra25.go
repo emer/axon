@@ -55,19 +55,20 @@ type ParamConfig struct {
 	File    string         `desc:"Name of the JSON file to input saved parameters from."`
 	Tag     string         `desc:"extra tag to add to file names and logs saved from this run"`
 	Note    string         `desc:"user note -- describe the run params etc -- like a git commit message for the run"`
-	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+	Good    bool           `desc:"for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time."`
 }
 
 // RunConfig has config parameters related to running the sim
 type RunConfig struct {
 	GPU          bool   `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
+	NData        int    `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
 	Threads      int    `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
 	Run          int    `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
 	NRuns        int    `def:"5" min:"1" desc:"total number of runs to do when running Train"`
 	NEpochs      int    `def:"100" desc:"total number of epochs per run"`
 	NZero        int    `def:"2" desc:"stop run after this number of perfect, zero-error epochs"`
 	NTrials      int    `def:"32" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
-	NData        int    `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
 	TestInterval int    `def:"5" desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int    `def:"5" desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 	StartWts     string `desc:"if non-empty, is the name of weights file to load at start of first run -- for testing"`
@@ -144,7 +145,7 @@ func (ss *Sim) ConfigAll() {
 	ss.ConfigLogs()
 	ss.ConfigLoops()
 	if ss.Config.Params.SaveAll {
-		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config)
+		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
 }

@@ -1,0 +1,32 @@
+GUI = true
+Debug = false
+
+[Params]
+  Set = ""
+  File = ""
+  Tag = ""
+  Note = ""
+  SaveAll = true
+  Good = true
+
+[Run]
+  GPU = true
+  NData = 16
+  Threads = 0
+  Run = 0
+  NRuns = 5
+  NEpochs = 100
+  NZero = 2
+  NTrials = 32
+  TestInterval = 5
+  PCAInterval = 5
+  StartWts = ""
+
+[Log]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Trial = false
+  TestEpoch = false
+  TestTrial = false
+  NetData = false

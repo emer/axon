@@ -77,7 +77,7 @@
 
     BLAPosAcqD1		Nominal:	  0.03	
 						Layer.Gi:	  2.40	Params: #BLAPosAcqD1: 2.4
-						Pool.Gi: 	  0.90	
+						Pool.Gi: 	  1.00	Params: #BLAPosAcqD1: 1
 
     BLAPosExtD2		Nominal:	  0.03	
 						Layer.Gi:	  1.80	
@@ -104,7 +104,7 @@
 
           OFCus		Nominal:	  0.03	
 						Layer.Gi:	  2.20	
-						Pool.Gi: 	  0.80	
+						Pool.Gi: 	  1.00	Params: #OFCus: 1
 
         OFCusCT		Nominal:	  0.03	
 						Layer.Gi:	  4.00	
@@ -220,5 +220,4 @@
 
          ALMPTp		Nominal:	  0.10	
 						Layer.Gi:	  0.80	
-
 

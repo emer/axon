@@ -1,0 +1,59 @@
+[Base]
+  Desc = "these are the best params"
+  [Base.Sheets]
+
+    [[Base.Sheets.NetSize]]
+      Sel = "Layer"
+      Desc = "all layers"
+      [Base.Sheets.NetSize.Params]
+        "Layer.X" = "8"
+        "Layer.Y" = "8"
+
+    [[Base.Sheets.Network]]
+      Sel = "Layer"
+      Desc = "all defaults"
+      [Base.Sheets.Network.Params]
+        "Layer.Acts.NMDA.MgC" = "1.2"
+        "Layer.Inhib.ActAvg.Nominal" = "0.06"
+        "Layer.Inhib.Layer.FB" = "0.5"
+        "Layer.Inhib.Layer.Gi" = "1.05"
+      [Base.Sheets.Network.Hypers]
+        [Base.Sheets.Network.Hypers."Layer.Inhib.ActAvg.Nominal"]
+          Min = "0.01"
+          StdDev = "0.01"
+        [Base.Sheets.Network.Hypers."Layer.Inhib.Layer.Gi"]
+          Min = "0.5"
+          StdDev = "0.1"
+
+    [[Base.Sheets.Network]]
+      Sel = "#Input"
+      Desc = "critical now to specify the activity level"
+      [Base.Sheets.Network.Params]
+        "Layer.Acts.Clamp.Ge" = "1.5"
+        "Layer.Inhib.ActAvg.Nominal" = "0.15"
+        "Layer.Inhib.Layer.Gi" = "0.9"
+
+    [[Base.Sheets.Network]]
+      Sel = "#Output"
+      Desc = "output definitely needs lower inhib -- true for smaller layers in general"
+      [Base.Sheets.Network.Params]
+        "Layer.Acts.Clamp.Ge" = "0.8"
+        "Layer.Acts.Spikes.Tr" = "1"
+        "Layer.Inhib.ActAvg.Nominal" = "0.24"
+        "Layer.Inhib.Layer.Gi" = "0.65"
+        "Layer.Learn.RLRate.SigmoidMin" = "0.05"
+
+    [[Base.Sheets.Network]]
+      Sel = "Prjn"
+      Desc = "basic prjn params"
+      [Base.Sheets.Network.Params]
+        "Prjn.Learn.LRate.Base" = "0.1"
+        "Prjn.Learn.Trace.SubMean" = "0"
+        "Prjn.SWts.Adapt.LRate" = "0.1"
+        "Prjn.SWts.Init.SPct" = "0.5"
+
+    [[Base.Sheets.Network]]
+      Sel = ".BackPrjn"
+      Desc = "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Rel" = "0.3"

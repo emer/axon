@@ -1,0 +1,8 @@
+GUI = true
+Debug = true
+Includes = ["2csperdrive.toml"]
+
+[Env.Env]
+	NYReps = 4
+	Acts = ["Run", "Jump"]
+	ActMap = {"Run" = 0, "Jump" = 1}
