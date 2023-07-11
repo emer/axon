@@ -341,7 +341,7 @@ func (ss *Sim) ApplyInputs() {
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 
 	net.InitExt(ctx)
-	for di := uint32(0); di < uint32(ss.Config.Run.NData); di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		fsenv := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*FSAEnv)
 		fsenv.Step()
 		ns := fsenv.NNext.Values[0]
@@ -689,15 +689,15 @@ func (ss *Sim) RunNoGUI() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	}
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
 	ss.Init()
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
 	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
+
+	if ss.Config.Run.GPU {
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
+	}
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.Loops.Run(etime.Train)
 

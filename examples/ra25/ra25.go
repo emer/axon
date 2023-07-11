@@ -214,11 +214,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	err := net.Build(ctx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	net.Build(ctx)
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
@@ -457,6 +453,7 @@ func (ss *Sim) OpenPats() {
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("UnitErr", 0.0)
 	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetString("TrialName", "")
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -668,11 +665,6 @@ func (ss *Sim) RunNoGUI() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	}
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
 	ss.Init()
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
@@ -683,6 +675,11 @@ func (ss *Sim) RunNoGUI() {
 		ss.Net.OpenWtsJSON(gi.FileName(ss.Config.Run.StartWts))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
 	}
+
+	if ss.Config.Run.GPU {
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
+	}
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.Loops.Run(etime.Train)
 

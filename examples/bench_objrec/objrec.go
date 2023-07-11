@@ -765,15 +765,15 @@ func (ss *Sim) RunNoGUI() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	}
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
 	ss.Init()
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
 	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
+
+	if ss.Config.Run.GPU {
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	}
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.Loops.Run(etime.Train)
 
