@@ -226,7 +226,7 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32,
 // DoSynCa returns false if should not do synaptic-level calcium updating.
 // Done by default in Cortex, not for some other special projection types.
 func (pj *PrjnParams) DoSynCa() bool {
-	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn { // || pj.PrjnType == HipPrjn {
 		return false
 	}
 	return true
@@ -332,13 +332,10 @@ func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 	syCaD := SynCaV(ctx, syni, di, CaD)                                  // slow time scale, drives Depression (one trial = 200 cycles)
 	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
 	dtr := syCaD                                                         // delta trace, caD reflects entire window
-	if pj.PrjnType == CTCtxtPrjn {                                       // layer 6 CT projection
-		dtr = NrnV(ctx, si, di, BurstPrv)
-	}
-	SetSynCaV(ctx, syni, di, DTr, dtr)                          // save delta trace for GUI
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	SetSynCaV(ctx, syni, di, Tr, tr)                            // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
-	if SynV(ctx, syni, Wt) == 0 {                               // failed con, no learn
+	SetSynCaV(ctx, syni, di, DTr, dtr)                                   // save delta trace for GUI
+	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)          // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr)                                     // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
+	if SynV(ctx, syni, Wt) == 0 {                                        // failed con, no learn
 		return
 	}
 

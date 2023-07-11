@@ -19,7 +19,7 @@ type ParamConfig struct {
 
 // RunConfig has config parameters related to running the sim
 type RunConfig struct {
-	StopMem      float32 `def:"0.95" desc:"mem % correct level (proportion) above which training on current list stops (switch from AB to AC or stop on AC)"`
+	StopMem      float32 `def:"0.9" desc:"mem % correct level (proportion) above which training on current list stops (switch from AB to AC or stop on AC)"`
 	GPU          bool    `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
 	NThreads     int     `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
 	Run          int     `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`

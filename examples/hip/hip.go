@@ -34,6 +34,7 @@ import (
 	"github.com/emer/etable/metric"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/ki/bools"
 	"github.com/goki/mat32"
 )
 
@@ -595,10 +596,10 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("ABMem", 0.0)
 	ss.Stats.SetFloat("ACMem", 0.0)
 	ss.Stats.SetFloat("Mem", 0.0)
-	ss.Stats.SetInt("FirstPerfect", -1)       // first epoch at when AB Mem is perfect
-	ss.Stats.SetInt("RecallItem", -1)         // item recalled in EC5 completion pool
-	ss.Stats.SetFloat("ABRecallCorrect", 0.0) // similar to ABMem but using correlation on completion pool
-	ss.Stats.SetFloat("ACRecallCorrect", 0.0)
+	ss.Stats.SetInt("FirstPerfect", -1) // first epoch at when AB Mem is perfect
+	ss.Stats.SetInt("RecallItem", -1)   // item recalled in EC5 completion pool
+	ss.Stats.SetFloat("ABRecMem", 0.0)  // similar to ABMem but using correlation on completion pool
+	ss.Stats.SetFloat("ACRecMem", 0.0)
 
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
@@ -665,8 +666,15 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	trgOffN := 0.0
 	actMi, _ := ecout.UnitVarIdx("ActM")
 	targi, _ := ecout.UnitVarIdx("Target")
+
 	ss.Stats.SetFloat("ABMem", math.NaN())
 	ss.Stats.SetFloat("ACMem", math.NaN())
+	ss.Stats.SetFloat("ABRecMem", math.NaN())
+	ss.Stats.SetFloat("ACRecMem", math.NaN())
+
+	trialnm := ss.Stats.StringDi("TrialName", di)
+	isAB := strings.Contains(trialnm, "AB")
+
 	for ni := 0; ni < nn; ni++ {
 		actm := ecout.UnitVal1D(actMi, ni, di)
 		trg := ecout.UnitVal1D(targi, ni, di) // full pattern target
@@ -704,14 +712,14 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 			trgOnWasOffCmp /= cmpN
 			if trgOnWasOffCmp < memthr && trgOffWasOn < memthr {
 				ss.Stats.SetFloat("Mem", 1)
-				if strings.Contains(ss.Stats.StringDi("TrialName", di), "AB") {
+				if isAB {
 					ss.Stats.SetFloat("ABMem", 1)
 				} else {
 					ss.Stats.SetFloat("ACMem", 1)
 				}
 			} else {
 				ss.Stats.SetFloat("Mem", 0)
-				if strings.Contains(ss.Stats.StringDi("TrialName", di), "AB") {
+				if isAB {
 					ss.Stats.SetFloat("ABMem", 0)
 				} else {
 					ss.Stats.SetFloat("ACMem", 0)
@@ -731,12 +739,12 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	var cosDiff float32
 	var patToComplete *etensor.Float32
 	var correctIdx int
-	if strings.Contains(ss.Stats.StringDi("TrialName", di), "AB") {
+	if isAB {
 		patToComplete, _ = ss.PoolVocab.ByNameTry("B")
-		correctIdx, _ = strconv.Atoi(strings.Split(ss.Stats.StringDi("TrialName", di), "AB")[1])
+		correctIdx, _ = strconv.Atoi(strings.Split(trialnm, "AB")[1])
 	} else {
 		patToComplete, _ = ss.PoolVocab.ByNameTry("C")
-		correctIdx, _ = strconv.Atoi(strings.Split(ss.Stats.StringDi("TrialName", di), "AC")[1])
+		correctIdx, _ = strconv.Atoi(strings.Split(trialnm, "AC")[1])
 	}
 	for i := 0; i < patToComplete.Shp[0]; i++ { // for each item in the list
 		cosDiff = metric.Correlation32(recallPat.SubSpace([]int{0, 1}).(*etensor.Float32).Values, patToComplete.SubSpace([]int{i}).(*etensor.Float32).Values)
@@ -747,10 +755,10 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	}
 
 	ss.Stats.SetInt("RecallItem", mostSimilar)
-	if strings.Contains(ss.Stats.StringDi("TrialName", di), "AB") {
-		ss.Stats.SetFloat("ABRecallCorrect", map[bool]float64{true: 1.0, false: 0.0}[mostSimilar == correctIdx])
+	if isAB {
+		ss.Stats.SetFloat("ABRecMem", bools.ToFloat64(mostSimilar == correctIdx))
 	} else {
-		ss.Stats.SetFloat("ACRecallCorrect", map[bool]float64{true: 1.0, false: 0.0}[mostSimilar == correctIdx])
+		ss.Stats.SetFloat("ACRecMem", bools.ToFloat64(mostSimilar == correctIdx))
 	}
 }
 
@@ -758,7 +766,7 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 // 		Logging
 
 func (ss *Sim) AddLogItems() {
-	itemNames := []string{"CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem", "ABMem", "ACMem", "ABRecallCorrect", "ACRecallCorrect"}
+	itemNames := []string{"CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem", "ABMem", "ACMem", "ABRecMem", "ACRecMem"}
 	for _, st := range itemNames {
 		stnm := st
 		tonm := "Tst" + st
@@ -792,8 +800,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("ABMem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("ACMem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Mem", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ABRecallCorrect", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ACRecallCorrect", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ABRecMem", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ACRecMem", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatIntNoAggItem(etime.Train, etime.Run, "FirstPerfect")
 	ss.Logs.AddStatIntNoAggItem(etime.Train, etime.Trial, "RecallItem")
 	ss.Logs.AddStatIntNoAggItem(etime.Test, etime.Trial, "RecallItem")
@@ -814,20 +822,20 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "ActM", etime.Test, etime.Trial, "TargetLayer")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
 
-	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "ABMem", "ACMem", "ABRecallCorrect", "ACRecallCorrect", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem", "TstABMem", "TstACMem", "TstABRecallCorrect", "TstACRecallCorrect")
+	ss.Logs.PlotItems("TrgOnWasOffAll", "TrgOnWasOffCmp", "ABMem", "ACMem", "ABRecMem", "ACRecMem", "TstTrgOnWasOffAll", "TstTrgOnWasOffCmp", "TstMem", "TstABMem", "TstACMem", "TstABRecMem", "TstACRecMem")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetMeta(etime.Train, etime.Run, "TrgOnWasOffAll:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "TrgOnWasOffCmp:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "ABMem:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "ACMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "ABRecallCorrect:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "ACRecallCorrect:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "ABRecMem:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "ACRecMem:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "TstTrgOnWasOffAll:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "TstTrgOnWasOffCmp:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "TstMem:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "TstACMem:On", "-")
-	ss.Logs.SetMeta(etime.Train, etime.Run, "TstACRecallCorrect:On", "-")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "TstACRecMem:On", "-")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "FirstPerfect:On", "+")
 	ss.Logs.SetMeta(etime.Train, etime.Run, "Type", "Bar")
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

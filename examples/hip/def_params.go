@@ -28,24 +28,24 @@ var ParamSets = netparams.Sets{
 		{Sel: ".EcCa1Prjn", Desc: "encoder projections -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":    "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works -- try each one of them separately
-				"Prjn.Learn.LRate.Base": "0.1",
+				"Prjn.Learn.LRate.Base": "0.2",
 			}},
 		{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 			Params: params.Params{
 				"Prjn.Learn.Learn": "true",
 				// "Prjn.CHL.Hebb":              "0.01", // .01 > .05? > .1?
-				"Prjn.Learn.LRate.Base": "0.1", // .2
+				"Prjn.Learn.LRate.Base": "0.2", // .2
 			}},
 		{Sel: ".PPath", Desc: "performant path, new Dg error-driven EcCa1Prjn prjns",
 			Params: params.Params{
 				// "Prjn.PrjnScale.Abs": "0.8", // 0.8 helps preventing CA3 fixation
 				"Prjn.Learn.Learn":      "true",
-				"Prjn.Learn.LRate.Base": "0.1", // err driven: .15 > .2 > .25 > .1
+				"Prjn.Learn.LRate.Base": "0.2", // err driven: .15 > .2 > .25 > .1
 			}},
 		{Sel: "#CA1ToEC5", Desc: "extra strong from CA1 to EC5",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":    "3.0", // 4 > 6 > 2 (fails)
-				"Prjn.Learn.LRate.Base": "0.2", // ABmem slightly impaired compared to 0.2 but faster
+				"Prjn.Learn.LRate.Base": "0.4", // ABmem slightly impaired compared to 0.2 but faster
 			}},
 		{Sel: "#InputToEC2", Desc: "for CAN ec2",
 			Params: params.Params{
@@ -101,7 +101,7 @@ var ParamSets = netparams.Sets{
 
 				"Prjn.Learn.Learn":      "true", // absolutely essential to have on! learning slow if off. key for NoDGLearn
 				"Prjn.PrjnScale.Abs":    "0.7",
-				"Prjn.Learn.LRate.Base": "0.1",
+				"Prjn.Learn.LRate.Base": "0.2",
 			}},
 		{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 			Params: params.Params{
@@ -120,7 +120,7 @@ var ParamSets = netparams.Sets{
 				// "Prjn.PrjnScale.Abs": "0.1",
 				// "Prjn.Hip.SAvgCor": "0.4",
 				// "Prjn.Hip.SNominal": "0.03", // !! need to keep it the same as actual layer Nominal
-				"Prjn.Learn.LRate.Base": "0.1", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
+				"Prjn.Learn.LRate.Base": "0.2", // CHL: .1 =~ .08 > .15 > .2, .05 (sig worse)
 			}},
 		// {Sel: "#EC3ToCA1", Desc: "EC3 Perforant Path",
 		// 	Params: params.Params{
