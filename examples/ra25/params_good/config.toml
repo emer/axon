@@ -2,12 +2,18 @@ GUI = true
 Debug = false
 
 [Params]
-  Set = ""
+  Sheet = ""
   File = ""
   Tag = ""
   Note = ""
   SaveAll = true
   Good = true
+  [Params.Hidden1Size]
+    X = 10
+    Y = 10
+  [Params.Hidden2Size]
+    X = 10
+    Y = 10
 
 [Run]
   GPU = true

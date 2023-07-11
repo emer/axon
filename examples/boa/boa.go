@@ -44,9 +44,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(func() {
-			sim.RunGUI()
-		})
+		gimain.Main(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -64,7 +62,7 @@ type Sim struct {
 	Net       *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	StopOnSeq bool             `desc:"if true, stop running at end of a sequence (for NetView Di data parallel index)"`
 	StopOnErr bool             `desc:"if true, stop running when an error programmed into the code occurs"`
-	Params    emer.Params      `view:"inline" desc:"all parameter management"`
+	Params    emer.NetParams   `view:"inline" desc:"network parameter management"`
 	Loops     *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats     estats.Stats     `desc:"contains computed statistic values"`
 	Logs      elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
@@ -81,10 +79,7 @@ type Sim struct {
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSets
-	ss.Params.AddNetwork(ss.Net)
-	ss.Params.AddSim(ss)
-	ss.Params.AddNetSize()
+	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
@@ -101,6 +96,7 @@ func (ss *Sim) ConfigAll() {
 	ss.ConfigLogs()
 	ss.ConfigLoops()
 	if ss.Config.Params.SaveAll {
+		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
@@ -307,7 +303,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
-	net.SetNThreads(ss.Config.Run.Threads)
+	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	ss.InitWts(net)
 }
@@ -346,6 +342,9 @@ func (ss *Sim) InitWts(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	if ss.Config.GUI {
+		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
+	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
@@ -372,7 +371,11 @@ func (ss *Sim) ConfigLoops() {
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.NRuns).AddTime(etime.Epoch, ss.Config.Run.NEpochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).
+		AddTime(etime.Run, ss.Config.Run.NRuns).
+		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
+		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
+		AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -1125,14 +1128,6 @@ func (ss *Sim) RecordTestData() {
 func (ss *Sim) RunNoGUI() {
 	if ss.Config.Params.Note != "" {
 		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
-	}
-	if ss.Config.Params.Set != "" {
-		ss.Params.ExtraSets = ss.Config.Params.Set
-		mpi.Printf("Using ParamSet: %s\n", ss.Config.Params.Set)
-	}
-	if ss.Config.Params.Tag != "" {
-		ss.Params.Tag = ss.Config.Params.Tag
-		mpi.Printf("Tag: %s\n", ss.Config.Params.Tag)
 	}
 	if ss.Config.Log.SaveWts {
 		mpi.Printf("Saving final weights per run\n")

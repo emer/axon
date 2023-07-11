@@ -23,6 +23,7 @@ import (
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
+	"github.com/emer/emergent/netparams"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -408,7 +409,7 @@ func (nt *NetworkBase) AllPrjnScales() string {
 // or `params_2006_01_02` (year, month, day) datestamp,
 // providing a snapshot of the simulation params for easy diffs and later reference.
 // Also saves current Config and Params state.
-func (nt *NetworkBase) SaveParamsSnapshot(pars *params.Sets, cfg any, good bool) error {
+func (nt *NetworkBase) SaveParamsSnapshot(pars *netparams.Sets, cfg any, good bool) error {
 	date := time.Now().Format("2006_01_02")
 	if good {
 		date = "good"
