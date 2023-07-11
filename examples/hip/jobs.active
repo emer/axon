@@ -1,0 +1,2 @@
+$JobId,$Server,$SlurmId,$Status,$SlurmStat,$Submit,$Start,$End,$Args,$Message
+ore000187,blanca,,Pending,,2020-03-17 01:50:51 PDT,,,--runs=10,"best params, 40-200, med, CA1->EC Abs=2, Rel=2"

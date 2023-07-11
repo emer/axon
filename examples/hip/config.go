@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// hip_bench runs a hippocampus model for testing parameters and new learning ideas
 package main
 
 import "github.com/emer/emergent/evec"
@@ -10,24 +9,26 @@ import "github.com/emer/emergent/evec"
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
 	Network map[string]any `desc:"network parameters"`
-	Set     string         `desc:"ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params"`
+	Sheet   string         `desc:"Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params"`
 	File    string         `desc:"Name of the JSON file to input saved parameters from."`
 	Tag     string         `desc:"extra tag to add to file names and logs saved from this run"`
 	Note    string         `desc:"user note -- describe the run params etc -- like a git commit message for the run"`
-	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+	Good    bool           `desc:"for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time."`
 }
 
 // RunConfig has config parameters related to running the sim
 type RunConfig struct {
-	GPU          bool   `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
-	Threads      int    `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
-	Run          int    `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
-	Runs         int    `def:"5" min:"1" desc:"total number of runs to do when running Train"`
-	Epochs       int    `def:"100" desc:"total number of epochs per run"`
-	NZero        int    `def:"2" desc:"stop run after this number of perfect, zero-error epochs"`
-	NTrials      int    `def:"20" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
-	NData        int    `def:"10" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
-	TestInterval int    `def:"1" desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	StopMem      float32 `def:"0.95" desc:"mem % correct level (proportion) above which training on current list stops (switch from AB to AC or stop on AC)"`
+	GPU          bool    `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
+	NThreads     int     `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
+	Run          int     `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
+	Runs         int     `def:"5" min:"1" desc:"total number of runs to do when running Train"`
+	Epochs       int     `def:"100" desc:"total number of epochs per run"`
+	NZero        int     `def:"2" desc:"stop run after this number of perfect, zero-error epochs"`
+	NTrials      int     `def:"20" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
+	NData        int     `def:"10" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
+	TestInterval int     `def:"1" desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 }
 
 // LogConfig has config parameters related to logging data
@@ -40,7 +41,6 @@ type LogConfig struct {
 	TestTrial bool `def:"false" desc:"if true, save testing trial log to file, as .tst_trl.tsv typically. May be large."`
 	NetData   bool `desc:"if true, save network activation etc data from testing trials, for later viewing in netview"`
 }
-
 
 // PatConfig have the pattern parameters
 type PatConfig struct {
@@ -75,7 +75,7 @@ type HipConfig struct {
 	MossyDel     float32    `desc:"delta in mossy effective strength between minus and plus phase"`
 	MossyDelTest float32    `desc:"delta in mossy strength for testing (relative to base param)"`
 	ThetaLow     float32    `desc:"theta low value"`
-	ThetaHigh     float32    `desc:"theta low value"`
+	ThetaHigh    float32    `desc:"theta low value"`
 	MemThr       float64    `desc:"memory threshold"`
 }
 
@@ -95,9 +95,9 @@ func (hp *HipConfig) Defaults() {
 	hp.MossyPCon = 0.02 // .02 > .05 > .01 (for small net)
 	hp.ECPctAct = 0.2
 	hp.lateralPCon = 0.75
-	hp.EC2PCon = 0.25      // 0.005 for no binding
+	hp.EC2PCon = 0.25     // 0.005 for no binding
 	hp.EC3ToEC2PCon = 0.1 // 0.1 for EC3-EC2 in WintererMaierWoznyEtAl17, not sure about Input-EC2
-	hp.ThetaLow = 0.9 // doesn't have strong effect at low NTrials but shouldn't go too low (e.g., 0.3)
+	hp.ThetaLow = 0.9     // doesn't have strong effect at low NTrials but shouldn't go too low (e.g., 0.3)
 	hp.ThetaHigh = 1
 
 	hp.MossyDel = 4     // 4 -- best is 4 del on 4 rel baseline
@@ -113,16 +113,16 @@ func (hp *HipConfig) Update() {
 
 // Config is a standard Sim config -- use as a starting point.
 type Config struct {
-	Includes []string    `desc:"specify include files here, and after configuration, it contains list of include files added"`
-	GUI      bool        `def:"true" desc:"open the GUI -- does not automatically run -- if false, then runs automatically and quits"`
-	Debug    bool        `desc:"log debugging information"`
+	Includes []string `desc:"specify include files here, and after configuration, it contains list of include files added"`
+	GUI      bool     `def:"true" desc:"open the GUI -- does not automatically run -- if false, then runs automatically and quits"`
+	Debug    bool     `desc:"log debugging information"`
 
-	Hip    HipConfig     `desc:"hippocampus sizing parameters"`
-	Pat    PatConfig     `desc:"parameters for the input patterns"`
+	Hip HipConfig `desc:"hippocampus sizing parameters"`
+	Pat PatConfig `desc:"parameters for the input patterns"`
 
-	Params   ParamConfig `view:"add-fields" desc:"parameter related configuration options"`
-	Run      RunConfig   `view:"add-fields" desc:"sim running related configuration options"`
-	Log      LogConfig   `view:"add-fields" desc:"data logging related configuration options"`
+	Params ParamConfig `view:"add-fields" desc:"parameter related configuration options"`
+	Run    RunConfig   `view:"add-fields" desc:"sim running related configuration options"`
+	Log    LogConfig   `view:"add-fields" desc:"data logging related configuration options"`
 }
 
 func (cfg *Config) Defaults() {
