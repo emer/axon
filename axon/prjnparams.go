@@ -7,6 +7,8 @@ package axon
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/goki/mat32"
 )
 
 //gosl: hlsl prjnparams
@@ -17,6 +19,7 @@ import (
 // #include "rl_prjns.hlsl"
 // #include "pvlv_prjns.hlsl"
 // #include "pcore_prjns.hlsl"
+// #include "hip_prjns.hlsl"
 
 //gosl: end prjnparams
 
@@ -97,6 +100,7 @@ type PrjnParams struct {
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
 	BLA    BLAPrjnParams    `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
+	Hip    HipPrjnParams    `viewif:"PrjnType=HipPrjn" view:"inline" desc:"Hip bench parameters."`
 }
 
 func (pj *PrjnParams) Defaults() {
@@ -107,6 +111,7 @@ func (pj *PrjnParams) Defaults() {
 	pj.RLPred.Defaults()
 	pj.Matrix.Defaults()
 	pj.BLA.Defaults()
+	pj.Hip.Defaults()
 }
 
 func (pj *PrjnParams) Update() {
@@ -117,6 +122,7 @@ func (pj *PrjnParams) Update() {
 	pj.RLPred.Update()
 	pj.Matrix.Update()
 	pj.BLA.Update()
+	pj.Hip.Update()
 
 	if pj.PrjnType == CTCtxtPrjn {
 		pj.Com.GType = ContextG
@@ -144,6 +150,9 @@ func (pj *PrjnParams) AllParams() string {
 	case BLAPrjn:
 		b, _ = json.MarshalIndent(&pj.BLA, "", " ")
 		str += "BLA: {\n " + JsonToParams(b)
+	case HipPrjn:
+		b, _ = json.MarshalIndent(&pj.BLA, "", " ")
+		str += "Hip: {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -217,7 +226,7 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32,
 // DoSynCa returns false if should not do synaptic-level calcium updating.
 // Done by default in Cortex, not for some other special projection types.
 func (pj *PrjnParams) DoSynCa() bool {
-	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn || pj.PrjnType == HipPrjn {
 		return false
 	}
 	return true
@@ -260,6 +269,8 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 		pj.DWtSynVSPatch(ctx, syni, si, ri, di, layPool, subPool)
 	case BLAPrjn:
 		pj.DWtSynBLA(ctx, syni, si, ri, di, layPool, subPool)
+	case HipPrjn:
+		pj.DWtSynHip(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFmDWtSynNoLimits
 	default:
 		pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
 	}
@@ -269,31 +280,34 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 // Uses synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
-	caUpT := SynCaV(ctx, syni, di, CaUpT)
-	syCaM := SynCaV(ctx, syni, di, CaM)
-	syCaP := SynCaV(ctx, syni, di, CaP)
-	syCaD := SynCaV(ctx, syni, di, CaD)
-	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update
-	dtr := syCaD                                                         // caD reflects entire window
-	if pj.PrjnType == CTCtxtPrjn {
+	// credit assignment part
+	caUpT := SynCaV(ctx, syni, di, CaUpT) // time of last update
+	syCaM := SynCaV(ctx, syni, di, CaM) // fast time scale
+	syCaP := SynCaV(ctx, syni, di, CaP) // slower but still fast time scale, drives Potentiation
+	syCaD := SynCaV(ctx, syni, di, CaD) // slow time scale, drives Depression (one trial = 200 cycles)
+	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
+	dtr := syCaD               // delta trace, caD reflects entire window
+	if pj.PrjnType == CTCtxtPrjn { // layer 6 CT projection
 		dtr = NrnV(ctx, si, di, BurstPrv)
 	}
-	SetSynCaV(ctx, syni, di, DTr, dtr)
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)
-	SetSynCaV(ctx, syni, di, Tr, tr)
+	SetSynCaV(ctx, syni, di, DTr, dtr) // save delta trace for GUI
+	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr) // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
 	if SynV(ctx, syni, Wt) == 0 { // failed con, no learn
 		return
 	}
+
+	// error-driven learning
 	var err float32
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (NrnV(ctx, ri, di, NrnCaP) - NrnV(ctx, ri, di, NrnCaD)) // hiddens: recv Ca drives error signal w/ trace credit
+		err = tr * (NrnV(ctx, ri, di, NrnCaP) - NrnV(ctx, ri, di, NrnCaD)) // hiddens: recv NMDA Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum.
 	// also other types might not use, so need to do this per learning rule
-	lwt := SynV(ctx, syni, LWt)
+	lwt := SynV(ctx, syni, LWt) // linear weight
 	if err > 0 {
 		err *= (1 - lwt)
 	} else {
@@ -303,6 +317,62 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 		SetSynCaV(ctx, syni, di, DiDWt, pj.Learn.LRate.Eff*err)
 	} else {
 		SetSynCaV(ctx, syni, di, DiDWt, NrnV(ctx, ri, di, RLRate)*pj.Learn.LRate.Eff*err)
+	}
+}
+
+
+// DWtSynHip computes the weight change (learning) at given synapse for cortex + Hip (CPCA Hebb learning).
+// Uses synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+// Adds proportional CPCA learning rule for hip-specific prjns
+func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
+	// credit assignment part
+	caUpT := SynCaV(ctx, syni, di, CaUpT) // time of last update
+	syCaM := SynCaV(ctx, syni, di, CaM) // fast time scale
+	syCaP := SynCaV(ctx, syni, di, CaP) // slower but still fast time scale, drives Potentiation
+	syCaD := SynCaV(ctx, syni, di, CaD) // slow time scale, drives Depression (one trial = 200 cycles)
+	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
+	dtr := syCaD               // delta trace, caD reflects entire window
+	if pj.PrjnType == CTCtxtPrjn { // layer 6 CT projection
+		dtr = NrnV(ctx, si, di, BurstPrv)
+	}
+	SetSynCaV(ctx, syni, di, DTr, dtr) // save delta trace for GUI
+	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr) // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
+	if SynV(ctx, syni, Wt) == 0 { // failed con, no learn
+		return
+	}
+
+	// error-driven learning part
+	rNrnCaP := NrnV(ctx, ri, di, NrnCaP)
+	rNrnCaD := NrnV(ctx, ri, di, NrnCaD)
+	var err float32
+	if isTarget {
+		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
+	} else {
+		err = tr * (rNrnCaP - rNrnCaD) // hiddens: recv NMDA Ca drives error signal w/ trace credit
+	}
+	// note: trace ensures that nothing changes for inactive synapses..
+	// sb immediately -- enters into zero sum.
+	// also other types might not use, so need to do this per learning rule
+	lwt := SynV(ctx, syni, LWt) // linear weight
+	if err > 0 {
+		err *= (1 - lwt)
+	} else {
+		err *= lwt
+	}
+
+	// hebbian-learning part
+	sNrnCap := NrnV(ctx, si, di, NrnCaP)
+	savg := 0.5 + pj.Hip.SAvgCor*(pj.Hip.SNominal-0.5)
+	savg = 0.5 / mat32.Max(pj.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
+	hebb := rNrnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
+
+	// setting delta weight
+	if pj.PrjnType == CTCtxtPrjn { // rn.RLRate IS needed for other projections, just not the context one
+		SetSynCaV(ctx, syni, di, DiDWt, pj.Learn.LRate.Eff*(pj.Hip.Hebb*hebb + pj.Hip.Err*err))
+	} else {
+		SetSynCaV(ctx, syni, di, DiDWt, NrnV(ctx, ri, di, RLRate)*pj.Learn.LRate.Eff*(pj.Hip.Hebb*hebb + pj.Hip.Err*err))
 	}
 }
 
@@ -472,6 +542,8 @@ func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, syni uint32) {
 	case TDPredPrjn:
 		pj.WtFmDWtSynNoLimits(ctx, syni)
 	case BLAPrjn:
+		pj.WtFmDWtSynNoLimits(ctx, syni)
+	case HipPrjn:
 		pj.WtFmDWtSynNoLimits(ctx, syni)
 	default:
 		pj.WtFmDWtSynCortex(ctx, syni)

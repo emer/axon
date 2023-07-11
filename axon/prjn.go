@@ -67,6 +67,8 @@ func (pj *Prjn) Defaults() {
 		pj.Params.RLPredDefaults()
 	case BLAPrjn:
 		pj.Params.BLADefaults()
+	case HipPrjn:
+		pj.Params.HipDefaults()
 	case VSPatchPrjn:
 		pj.Params.VSPatchDefaults()
 	case MatrixPrjn:
