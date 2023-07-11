@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the default set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+	"Base": {Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".InputLayer", Desc: "",
 				Params: params.Params{
@@ -103,7 +103,7 @@ var ParamSets = params.Sets{
 // ParamSetsDefs contains default params that could potentially be tweaked
 // with all of the built-in ("factory") defaults shown, for reference.
 var ParamSetsDefs = params.Sets{
-	"Base": {Name: "Base", Desc: "full factory defaults for all layer / prjn types in model", Sheets: params.Sheets{
+	"Base": {Desc: "full factory defaults for all layer / prjn types in model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".MatrixLayer", Desc: "factory defaults",
 				Params: params.Params{

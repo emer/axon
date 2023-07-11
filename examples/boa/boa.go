@@ -14,7 +14,7 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
+	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
@@ -24,6 +24,7 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
+	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/timer"
 	"github.com/emer/empi/mpi"
@@ -48,57 +49,88 @@ var (
 func main() {
 	sim := &Sim{}
 	sim.New()
-	sim.Config()
-	if len(os.Args) > 1 {
-		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
-	} else {
+	sim.ConfigAll()
+	if sim.Config.GUI {
 		gimain.Main(func() {
 			sim.RunGUI()
 		})
+	} else {
+		sim.RunNoGUI()
 	}
 }
 
 // see params.go for network params
 
-// SimParams has all the custom params for this sim
-type SimParams struct {
-	NData             int     `desc:"number of data-parallel items to process at once"`
-	NTrials           int     `desc:"number of trials per epoch"`
-	EnvSameSeed       bool    `desc:"for testing, force each env to use same seed"`
-	TestInterval      int     `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
-	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
-	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
-	PctCortexNEpc     int     `desc:"number of epochs over which PctCortexMax is reached"`
-	PctCortexInterval int     `desc:"how often to update PctCortex"`
-	PctCortex         float32 `inactive:"+" desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
-}
-
-// Defaults sets default params
-func (ss *SimParams) Defaults() {
-	ss.NData = 16
-	ss.NTrials = 128
-	ss.EnvSameSeed = false // set to true to test ndata
-	ss.TestInterval = 500
-	ss.PCAInterval = 10
-	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 10
-	ss.PctCortexNEpc = 5
-	ss.PctCortexInterval = 1
+// EnvConfig has config params for environment
+// note: only adding fields for key Env params that matter for both Network and Env
+// other params are set via the Env map data mechanism.
+type EnvConfig struct {
+	Env            map[string]any `desc:"env parameters -- can set any field/subfield on Approach env struct, using standard TOML formatting"`
+	NDrives        int            `def:"4" desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
+	CSPerDrive     int            `def:"1" desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
+	PctCortexStEpc int            `def:"10" desc:"epoch when PctCortex starts increasing"`
+	PctCortexNEpc  int            `def:"1" desc:"number of epochs over which PctCortexMax is reached"`
+	PctCortex      float32        `inactive:"+" desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
+	SameSeed       bool           `desc:"for testing, force each env to use same seed"`
 }
 
 // CurPctCortex returns current PctCortex and updates field, based on epoch counter
-func (ss *SimParams) CurPctCortex(epc int) float32 {
-	if epc >= ss.PctCortexStEpc && epc%ss.PctCortexInterval == 0 {
-		ss.PctCortex = ss.PctCortexMax * float32(epc-ss.PctCortexStEpc) / float32(ss.PctCortexNEpc)
-		if ss.PctCortex > ss.PctCortexMax {
-			ss.PctCortex = ss.PctCortexMax
+func (cfg *EnvConfig) CurPctCortex(epc int) float32 {
+	if epc >= cfg.PctCortexStEpc && cfg.PctCortex < 1 {
+		cfg.PctCortex = float32(epc-cfg.PctCortexStEpc) / float32(cfg.PctCortexNEpc)
+		if cfg.PctCortex > 1 {
+			cfg.PctCortex = 1
 		} else {
-			mpi.Printf("PctCortex updated to: %g at epoch: %d\n", ss.PctCortex, epc)
+			mpi.Printf("PctCortex updated to: %g at epoch: %d\n", cfg.PctCortex, epc)
 		}
 	}
-	return ss.PctCortex
+	return cfg.PctCortex
 }
+
+// ParamConfig has config parameters related to sim params
+type ParamConfig struct {
+	Network map[string]any `desc:"network parameters"`
+	Set     string         `desc:"ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params"`
+	File    string         `desc:"Name of the JSON file to input saved parameters from."`
+	Tag     string         `desc:"extra tag to add to file names and logs saved from this run"`
+	Note    string         `desc:"user note -- describe the run params etc -- like a git commit message for the run"`
+	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+}
+
+// RunConfig has config parameters related to running the sim
+type RunConfig struct {
+	GPU         bool `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
+	Threads     int  `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
+	Run         int  `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
+	NRuns       int  `def:"5" min:"1" desc:"total number of runs to do when running Train"`
+	NEpochs     int  `def:"100" desc:"total number of epochs per run"`
+	NTrials     int  `def:"128" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
+	NData       int  `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
+	PCAInterval int  `def:"10" desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+}
+
+// LogConfig has config parameters related to logging data
+type LogConfig struct {
+	SaveWts bool `desc:"if true, save final weights after each run"`
+	Epoch   bool `def:"true" desc:"if true, save train epoch log to file, as .epc.tsv typically"`
+	Run     bool `def:"true" desc:"if true, save run log to file, as .run.tsv typically"`
+	Trial   bool `def:"false" desc:"if true, save train trial log to file, as .trl.tsv typically. May be large."`
+	NetData bool `desc:"if true, save network activation etc data from testing trials, for later viewing in netview"`
+	Testing bool `desc:"activates testing mode -- records detailed data for Go CI tests (not the same as running test mode on network, via Looper)"`
+}
+
+// Config is a standard Sim config -- use as a starting point.
+type Config struct {
+	Includes []string    `desc:"specify include files here, and after configuration, it contains list of include files added"`
+	GUI      bool        `def:"true" desc:"open the GUI -- does not automatically run -- if false, then runs automatically and quits"`
+	Debug    bool        `desc:"log debugging information"`
+	Env      EnvConfig   `view:"add-fields" desc:"environment configuration options"`
+	Params   ParamConfig `view:"add-fields" desc:"parameter related configuration options"`
+	Run      RunConfig   `view:"add-fields" desc:"sim running related configuration options"`
+	Log      LogConfig   `view:"add-fields" desc:"data logging related configuration options"`
+}
+
+func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
 
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
@@ -106,8 +138,8 @@ func (ss *SimParams) CurPctCortex(epc int) float32 {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+	Config    Config           `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
 	Net       *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Sim       SimParams        `view:"no-inline" desc:"sim params"`
 	StopOnSeq bool             `desc:"if true, stop running at end of a sequence (for NetView Di data parallel index)"`
 	StopOnErr bool             `desc:"if true, stop running when an error programmed into the code occurs"`
 	Params    emer.Params      `view:"inline" desc:"all parameter management"`
@@ -119,72 +151,70 @@ type Sim struct {
 	ViewUpdt  netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI           `view:"-" desc:"manages all the gui elements"`
-	Args     ecmd.Args          `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds        `view:"-" desc:"a list of random seeds to use for each run"`
 	TestData map[string]float32 `view:"-" desc:"testing data, from -test arg"`
 }
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	econfig.Config(&ss.Config, "config.toml")
 	ss.Net = &axon.Network{}
-	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	// ss.Params.ExtraSets = "WtScales"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
+	ss.InitRndSeed(0)
 	ss.Context.Defaults()
-	ss.ConfigArgs() // do this first, has key defaults
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Configs
 
-// Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
+// ConfigAll configures all the elements using the standard functions
+func (ss *Sim) ConfigAll() {
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
 	ss.ConfigLoops()
+	if ss.Config.Params.SaveAll {
+		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config)
+		os.Exit(0)
+	}
 }
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
 
-	for di := 0; di < ss.Sim.NData; di++ {
-		var trn, tst *Approach
+	for di := 0; di < ss.Config.Run.NData; di++ {
+		var trn *Approach
 		if newEnv {
 			trn = &Approach{}
-			tst = &Approach{}
 		} else {
 			trn = ss.Envs.ByModeDi(etime.Train, di).(*Approach)
-			tst = ss.Envs.ByModeDi(etime.Test, di).(*Approach)
 		}
 
 		// note: names must be standard here!
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Defaults()
 		trn.RndSeed = 73
-		if !ss.Sim.EnvSameSeed {
+		if !ss.Config.Env.SameSeed {
 			trn.RndSeed += int64(di) * 73
 		}
+		if ss.Config.Env.Env != nil {
+			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
+		}
+		trn.NDrives = ss.Config.Env.NDrives
+		trn.CSPerDrive = ss.Config.Env.CSPerDrive
 		trn.Config()
 		trn.Validate()
 
-		tst.Nm = env.ModeDi(etime.Test, di)
-		tst.Defaults()
-		tst.RndSeed = 181 + int64(di)*181
-		tst.Config()
-		tst.Validate()
-
 		trn.Init(0)
-		tst.Init(0)
 
 		// note: names must be in place when adding
-		ss.Envs.Add(trn, tst)
+		ss.Envs.Add(trn)
 		if di == 0 {
 			ss.ConfigPVLV(trn)
 		}
@@ -206,7 +236,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 	net.InitName(net, "Boa")
-	net.SetMaxData(ctx, ss.Sim.NData)
+	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	nUSs := ev.NDrives + 1 // first US / drive is novelty / curiosity
@@ -233,6 +263,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vSgpi, effort, effortP, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(ctx, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = accUtil, urgency
+
+	accUtilPTp := net.AxonLayerByName("ACCutilPTp")
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.CSTot, space)
 	dist, distP := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
@@ -317,14 +349,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.BidirConnectLayers(accCost, alm, full)
 
 	// action needs to know if maintaining a goal or not
-	// using ofcVal and accCost as representatives
-	net.ConnectLayers(ofcValPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	net.ConnectLayers(accCostPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	net.ConnectLayers(notMaint, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	// using accUtil as main summary "driver" input to action system
+	// PTp provides good notmaint signal for action.
+	net.ConnectLayers(accUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	net.ConnectLayers(accUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	net.ConnectLayers(ofcValPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(accCostPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(notMaint, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	// these are no longer necc:
+	// net.ConnectLayers(ofcValPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	// net.ConnectLayers(notMaint, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	// net.ConnectLayers(ofcValPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	// net.ConnectLayers(notMaint, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
 	// full shortcut -- not needed
 	// net.ConnectLayers(ofcValPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
@@ -351,29 +385,37 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
-	// net.SetNThreads(4)
-	ss.Params.SetObject("Network")
+	net.SetNThreads(ss.Config.Run.Threads)
+	ss.ApplyParams()
 	ss.InitWts(net)
 }
 
-// InitWts configures initial weights according to structure
-func (ss *Sim) InitWts(net *axon.Network) {
-	net.InitWts(&ss.Context)
-	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
-}
-
-// ConfigParamsForEnv configures parameters that depend on environment params
-func (ss *Sim) ConfigParamsForEnv() {
-	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
+func (ss *Sim) ApplyParams() {
 	net := ss.Net
+	ss.Params.SetAll() // first hard-coded defaults
+
+	// params that vary as number of CSs
+
+	nCSTot := ss.Config.Env.CSPerDrive * ss.Config.Env.NDrives
+
 	cs := net.AxonLayerByName("CS")
-	cs.Params.Inhib.ActAvg.Nominal = 0.08 / float32(ev.CSPerDrive)
+	cs.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 	csp := net.AxonLayerByName("CSP")
-	csp.Params.Inhib.ActAvg.Nominal = 0.08 / float32(ev.CSPerDrive)
+	csp.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 	bla := net.AxonLayerByName("BLAPosAcqD1")
 	pji, _ := bla.SendNameTry("BLANovelCS")
 	pj := pji.(*axon.Prjn)
-	pj.Params.PrjnScale.Abs = 2.0 + (float32(ev.CSPerDrive) / 2)
+	pj.Params.PrjnScale.Abs = 2.0 + (float32(nCSTot) / 8.0)
+
+	// then apply config-set params.
+	if ss.Config.Params.Network != nil {
+		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
+	}
+}
+
+func (ss *Sim) InitWts(net *axon.Network) {
+	net.InitWts(&ss.Context)
+	ss.ViewUpdt.RecordSyns()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -383,12 +425,11 @@ func (ss *Sim) ConfigParamsForEnv() {
 // and resets the epoch log table
 func (ss *Sim) Init() {
 	ss.Loops.ResetCounters()
-	ss.InitRndSeed()
+	ss.InitRndSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
-	ss.Params.SetAll()
-	ss.ConfigParamsForEnv()
+	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
@@ -396,9 +437,9 @@ func (ss *Sim) Init() {
 }
 
 // InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed() {
-	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
+func (ss *Sim) InitRndSeed(run int) {
 	ss.RndSeeds.Set(run)
+	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -407,22 +448,12 @@ func (ss *Sim) ConfigLoops() {
 	// ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
-	trls := int(mat32.IntMultipleGE(float32(ss.Sim.NTrials), float32(ss.Sim.NData)))
+	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTimeIncr(etime.Trial, trls, ss.Sim.NData).AddTime(etime.Cycle, 200)
-
-	// note: not using Test mode at this point, so just commenting all this out
-	// in case there is a future need for it.o
-	// man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.NRuns).AddTime(etime.Epoch, ss.Config.Run.NEpochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
-
-	man.GetLoop(etime.Train, etime.Trial).OnEnd.Replace("UpdateWeights", func() {
-		ss.Net.DWt(&ss.Context)
-		ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
-		ss.Net.WtFmDWt(&ss.Context)
-	})
 
 	for m := range man.Stacks {
 		mode := m // For closures
@@ -442,24 +473,12 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
-	// Add Testing
-	// trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
-	// trainEpoch.OnStart.Add("TestAtInterval", func() {
-	// 	if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
-	// 		// Note the +1 so that it doesn't occur at the 0th timestep.
-	// 		ss.TestAll()
-	// 	}
-	// })
-
 	/////////////////////////////////////////////
 	// Logging
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
-			// if ss.Args.Bool("mpi") {
-			// 	ss.Logs.MPIGatherTableRows(etime.Analyze, etime.Trial, ss.Comm)
-			// }
+		if (ss.Config.Run.PCAInterval > 0) && (trnEpc%ss.Config.Run.PCAInterval == 0) {
 			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
@@ -470,12 +489,12 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
+		if (ss.Config.Run.PCAInterval > 0) && (trnEpc%ss.Config.Run.PCAInterval == 0) {
 			ss.Log(etime.Analyze, etime.Trial)
 		}
 	})
 
-	if ss.Args.Bool("test") {
+	if ss.Config.Log.Testing {
 		man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("RecordTestData", func() {
 			ss.RecordTestData()
 		})
@@ -484,21 +503,23 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		ss.Sim.CurPctCortex(trnEpc)
+		ss.Config.Env.CurPctCortex(trnEpc)
 	})
 
 	////////////////////////////////////////////
 	// GUI
 
-	if ss.Args.Bool("nogui") {
-		// man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-		// 	ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
-		// })
+	if !ss.Config.GUI {
+		if ss.Config.Log.NetData {
+			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
+				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+			})
+		}
 	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
@@ -512,7 +533,7 @@ func (ss *Sim) ConfigLoops() {
 		}
 	}
 
-	if Debug {
+	if ss.Config.Debug {
 		mpi.Println(man.DocString())
 	}
 	ss.Loops = man
@@ -527,7 +548,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
 	vlly := ss.Net.AxonLayerByName("VL")
 	threshold := float32(0.1)
-	for di := 0; di < ss.Sim.NData; di++ {
+	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*Approach)
 		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
@@ -603,12 +624,12 @@ func (ss *Sim) ApplyInputs() {
 	lays := []string{"Pos", "CS", "Dist"}
 
 	ss.Net.InitExt(ctx)
-	for di := uint32(0); di < uint32(ss.Sim.NData); di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*Approach)
 		ev.Step()
 
 		if ev.Time == 0 {
-			ss.Stats.SetFloat32Di("CortexDriving", int(di), bools.ToFloat32(erand.BoolP32(ss.Sim.PctCortex, -1)))
+			ss.Stats.SetFloat32Di("CortexDriving", int(di), bools.ToFloat32(erand.BoolP32(ss.Config.Env.PctCortex, -1)))
 		}
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
@@ -636,27 +657,18 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach, di uint32) {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed()
+	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
 	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
-		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Sim.PctCortex = 0
+	ss.Config.Env.PctCortex = 0
 	ss.InitWts(ss.Net)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
-	// ss.Logs.ResetLog(etime.Test, etime.Epoch)
 }
-
-// TestAll runs through the full set of testing items
-// func (ss *Sim) TestAll() {
-// 	// ss.Envs.ByMode(etime.Test).Init(0)
-// 	ss.Loops.ResetAndRun(etime.Test)
-// 	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
-// }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Stats
@@ -719,7 +731,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ss.Stats.SetFloat32("PctCortex", ss.Sim.PctCortex)
+	ss.Stats.SetFloat32("PctCortex", ss.Config.Env.PctCortex)
 	ss.Stats.SetFloat32("Dist", float32(ev.Dist))
 	ss.Stats.SetFloat32("Drive", float32(ev.Drive))
 	ss.Stats.SetFloat32("CS", float32(ev.CS))
@@ -1133,7 +1145,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.GUI.ToolBar.AddSeparator("log")
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset RunLog",
 		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+		Tooltip: "Reset the accumulated log of all NRuns, which are tagged with the ParamSet used",
 		Active:  egui.ActiveAlways,
 		Func: func() {
 			ss.Logs.ResetLog(etime.Train, etime.Run)
@@ -1188,70 +1200,57 @@ func (ss *Sim) RecordTestData() {
 	}
 }
 
-func (ss *Sim) ConfigArgs() {
-	ss.Args.Init()
-	ss.Args.AddStd()
-	ss.Args.SetInt("epochs", 50)
-	ss.Args.SetInt("runs", 10)
-	ss.Args.AddBool("test", false, "records testing data in TestData")
-	ss.Args.AddInt("ndata", 16, "number of data items to run in parallel")
-	ss.Args.AddInt("threads", 0, "number of parallel threads, for cpu computation (0 = use default)")
-	ss.Args.AddBool("bench", false, "run benchmarking")
-	ss.Args.Parse() // always parse
-	if len(os.Args) > 1 {
-		ss.Args.SetBool("nogui", true) // by definition if here
-		ss.Sim.NData = ss.Args.Int("ndata")
-		mpi.Printf("Set NData to: %d\n", ss.Sim.NData)
-	}
-}
-
 func (ss *Sim) RunNoGUI() {
-	ss.Args.ProcStd(&ss.Params)
-	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
-	ss.Args.SetBool("nogui", true)                                       // by definition if here
-	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
-
-	if ss.Args.Bool("test") {
-		ss.TestData = make(map[string]float32)
+	if ss.Config.Params.Note != "" {
+		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
 	}
+	if ss.Config.Params.Set != "" {
+		ss.Params.ExtraSets = ss.Config.Params.Set
+		mpi.Printf("Using ParamSet: %s\n", ss.Config.Params.Set)
+	}
+	if ss.Config.Params.Tag != "" {
+		ss.Params.Tag = ss.Config.Params.Tag
+		mpi.Printf("Tag: %s\n", ss.Config.Params.Tag)
+	}
+	if ss.Config.Log.SaveWts {
+		mpi.Printf("Saving final weights per run\n")
+	}
+	runName := ss.Params.RunName(ss.Config.Run.Run)
+	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
+	netName := ss.Net.Name()
 
-	netdata := ss.Args.Bool("netdata")
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Run, etime.Train, etime.Run, "run", netName, runName)
+
+	netdata := ss.Config.Log.NetData
 	if netdata {
 		mpi.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	ss.Init()
-
-	runs := ss.Args.Int("runs")
-	run := ss.Args.Int("run")
-	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
-	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
-	rc.Set(run)
-	rc.Max = run + runs
-	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-	if ss.Args.Bool("gpu") {
+	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 	}
-	ss.Net.SetNThreads(ss.Args.Int("threads"))
 	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
-	ss.NewRun()
+	if ss.Config.Log.Testing {
+		ss.TestData = make(map[string]float32)
+	}
+
+	ss.Init()
+
+	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
+	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
 
 	tmr := timer.Time{}
-	if ss.Args.Bool("bench") {
-		// ss.Net.RecFunTimes = true // these give detailed readout but are slower on GPU
-		// ss.Net.GPU.RecFunTimes = true
-		tmr.Start()
-	}
+	tmr.Start()
 
 	ss.Loops.Run(etime.Train)
 
-	if ss.Args.Bool("bench") {
-		tmr.Stop()
-		fmt.Printf("Total Time: %6.3g\n", tmr.TotalSecs())
-		ss.Net.TimerReport()
-	}
+	tmr.Stop()
+	fmt.Printf("Total Time: %6.3g\n", tmr.TotalSecs())
+	ss.Net.TimerReport()
 
 	ss.Logs.CloseLogFiles()
 

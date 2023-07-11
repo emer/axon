@@ -30,7 +30,7 @@ import (
 // so these params below are reasonable for actually learning (eventually)
 
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{

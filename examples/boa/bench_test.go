@@ -17,19 +17,17 @@ func RunBench(b *testing.B, gpu bool, ndata, nthread int) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Sim.NData = ndata
 
-	sim.Config()
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = gpu
+	sim.Config.Run.NData = ndata
+	sim.Config.Run.Threads = nthread
+	sim.Config.Run.NRuns = 1
+	sim.Config.Run.NEpochs = 1
+	sim.Config.Log.Run = false
+	sim.Config.Log.Epoch = false
 
-	sim.Net.SetNThreads(nthread)
-
-	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 1)
-	sim.Args.SetBool("epclog", false) // set to true to debug runs
-	sim.Args.SetBool("runlog", false)
-	sim.Args.SetBool("bench", true)
-	sim.Args.SetBool("gpu", gpu)
-
+	sim.ConfigAll()
 	sim.RunNoGUI()
 }
 

@@ -16,7 +16,7 @@ import (
 
 // Note: subsequent params applied after Base
 var PoolParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "base testing", Sheets: params.Sheets{
+	"Base": {Desc: "base testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -46,7 +46,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	"FullDecay": {Name: "FullDecay", Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
+	"FullDecay": {Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -56,7 +56,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	"LayerOnly": {Name: "LayerOnly", Desc: "only layer inhibition", Sheets: params.Sheets{
+	"LayerOnly": {Desc: "only layer inhibition", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -69,7 +69,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	"PoolOnly": {Name: "PoolOnly", Desc: "only pool inhibition", Sheets: params.Sheets{
+	"PoolOnly": {Desc: "only pool inhibition", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -80,7 +80,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	"LayerPoolSame": {Name: "LayerPoolSame", Desc: "same strength both", Sheets: params.Sheets{
+	"LayerPoolSame": {Desc: "same strength both", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -91,7 +91,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	"LayerWeakPoolStrong": {Name: "LayerWeakPoolStrong", Desc: "both diff strength", Sheets: params.Sheets{
+	"LayerWeakPoolStrong": {Desc: "both diff strength", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{
@@ -102,7 +102,7 @@ var PoolParamSets = params.Sets{
 				}},
 		},
 	}},
-	"LayerStrongPoolWeak": {Name: "LayerStrongPoolWeak", Desc: "both diff strength", Sheets: params.Sheets{
+	"LayerStrongPoolWeak": {Desc: "both diff strength", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".SuperLayer", Desc: "layer defaults",
 				Params: params.Params{

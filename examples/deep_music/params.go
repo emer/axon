@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
@@ -119,7 +119,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"Hid2": {Name: "Hid2", Desc: "Hid2 config", Sheets: params.Sheets{
+	"Hid2": {Desc: "Hid2 config", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "#Hidden2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
@@ -149,7 +149,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"30Notes": {Name: "30Notes", Desc: "for the small 30 note test case", Sheets: params.Sheets{
+	"30Notes": {Desc: "for the small 30 note test case", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
@@ -157,7 +157,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"FullSong": {Name: "FullSong", Desc: "for the full song", Sheets: params.Sheets{
+	"FullSong": {Desc: "for the full song", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{

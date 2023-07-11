@@ -9,7 +9,7 @@ import "github.com/emer/emergent/params"
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
@@ -147,7 +147,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"Hid2": {Name: "Hid2", Desc: "second hidden layer", Sheets: params.Sheets{
+	"Hid2": {Desc: "second hidden layer", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "#DepthHid2CTToDepthP", Desc: "",
 				Params: params.Params{

@@ -152,7 +152,7 @@ func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
 			if hasRew == 0 {
 				sumDThr += ly.Params.VSPatch.ThrNonRew * vsval // increase threshold
 			} else {
-				sumDThr -= vsval * modlr
+				sumDThr -= modlr
 			}
 		}
 	}

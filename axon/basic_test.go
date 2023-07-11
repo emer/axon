@@ -46,7 +46,7 @@ const NLrnPars = 1
 
 // Note: subsequent params applied after Base
 var ParamSets = params.Sets{
-	"Base": {Name: "Base", Desc: "base testing", Sheets: params.Sheets{
+	"Base": {Desc: "base testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -75,7 +75,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"FullDecay": {Name: "FullDecay", Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
+	"FullDecay": {Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
@@ -85,7 +85,7 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"SubMean": {Name: "SubMean", Desc: "submean on Prjn dwt", Sheets: params.Sheets{
+	"SubMean": {Desc: "submean on Prjn dwt", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "submean used in some models but not by default",
 				Params: params.Params{

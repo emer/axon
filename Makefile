@@ -17,11 +17,23 @@ build:
 
 test:
 	@echo "GO111MODULE = $(value GO111MODULE)"
-	$(GOTEST) -v -tags multinet $(DIRS)
+	export TEST_GPU=false; $(GOTEST) -v -tags multinet $(DIRS)
+
+test_race:
+	@echo "GO111MODULE = $(value GO111MODULE)"
+	export TEST_GPU=false; $(GOTEST) -v -race -tags multinet $(DIRS)
+
+test_gpu:
+	@echo "GO111MODULE = $(value GO111MODULE)"
+	export TEST_GPU=true; $(GOTEST) -v -tags multinet $(DIRS)
 
 test_long:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	export TEST_LONG=true; $(GOTEST) -v -tags multinet $(DIRS)
+
+test_long_gpu:
+	@echo "GO111MODULE = $(value GO111MODULE)"
+	export TEST_LONG=true TEST_GPU=true; $(GOTEST) -v -tags multinet $(DIRS)
 
 clean:
 	@echo "GO111MODULE = $(value GO111MODULE)"

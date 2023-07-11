@@ -1449,7 +1449,7 @@ func (gp *GPU) SynDataNs() (nCmd, nPer, nLast int) {
 		panic("axon.GPU.SynDataNs allocated too many nPer threads!")
 	}
 	if nLast*maxData > maxTh {
-		panic("axon.GPU.SynDataNs allocated too many nLast threads!")
+		panic(fmt.Sprintf("axon.GPU.SynDataNs allocated too many nLast threads. maxData: %d  nCmd: %d  synN: %X  nPer: %X  nLast: %X MaxComputeWorkGroupCount1D: %d", maxData, nCmd, synN, nPer, nLast, maxTh))
 	}
 	return
 }
