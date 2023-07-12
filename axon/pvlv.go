@@ -362,6 +362,7 @@ func (ef *Effort) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
 // of a new goal engaged state.
 func (pp *PVLV) VSGated(ctx *Context, di uint32, rnd erand.Rand, gated, hasRew bool, poolIdx int) {
 	if !hasRew && gated {
+		UrgencyReset(ctx, di)
 		pp.Effort.ReStart(ctx, di, rnd)
 		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
 		if poolIdx == 0 { // novelty / curiosity pool
