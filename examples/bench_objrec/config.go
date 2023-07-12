@@ -10,7 +10,7 @@ import "github.com/emer/emergent/prjn"
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
-	Env     map[string]any `desc:"env parameters -- can set any field/subfield on Approach env struct, using standard TOML formatting"`
+	Env     map[string]any `desc:"env parameters -- can set any field/subfield on Env struct, using standard TOML formatting"`
 	NOutPer int            `def:"5" desc:"number of units per localist output unit"`
 }
 

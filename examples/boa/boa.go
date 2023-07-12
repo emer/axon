@@ -9,7 +9,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"os"
 
@@ -77,8 +76,8 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	econfig.Config(&ss.Config, "config.toml")
 	ss.Net = &axon.Network{}
+	econfig.Config(&ss.Config, "config.toml")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
@@ -297,15 +296,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	notMaint.PlaceRightOf(alm, space)
 
-	err := net.Build(ctx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	net.Build(ctx)
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	ss.InitWts(net)
+	ss.Net.InitWts(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -329,11 +324,6 @@ func (ss *Sim) ApplyParams() {
 	if ss.Config.Params.Network != nil {
 		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
 	}
-}
-
-func (ss *Sim) InitWts(net *axon.Network) {
-	net.InitWts(&ss.Context)
-	ss.ViewUpdt.RecordSyns()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -589,7 +579,7 @@ func (ss *Sim) NewRun() {
 	ctx.Reset()
 	ctx.Mode = etime.Train
 	ss.Config.Env.PctCortex = 0
-	ss.InitWts(ss.Net)
+	ss.Net.InitWts(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)

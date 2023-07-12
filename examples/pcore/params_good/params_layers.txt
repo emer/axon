@@ -1,0 +1,50 @@
+            GPi		Nominal:	  1.00	
+
+         GPeOut		Nominal:	  1.00	
+
+          GPeIn		Nominal:	  1.00	
+
+          GPeTA		Nominal:	  1.00	
+
+           STNp		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+           STNs		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+          MtxGo		Nominal:	  0.25	
+						Layer.Gi:	  0.30	
+
+          MtxNo		Nominal:	  0.25	
+						Layer.Gi:	  0.30	
+
+            SNc		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+        Urgency		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         ACCPos		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+         ACCNeg		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+             In		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+            InP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            PFC		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+          PFCCT		Nominal:	  0.10	
+						Layer.Gi:	  2.20	
+
+          PFCPT		Nominal:	  0.05	
+						Layer.Gi:	  3.20	Params: .PTMaintLayer: 3.2
+
+          PFCVM		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+

@@ -14,13 +14,16 @@ func TestPCore(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
 
-	sim.Args.SetBool("epclog", false)    // set to true to debug runs
-	sim.Args.SetBool("tstepclog", false) // set to true to debug runs
-	sim.Args.SetBool("runlog", false)
-	sim.Args.SetBool("gpu", false) // set to false for CI testing -- set to true for interactive testing
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = false // for CI
+	sim.Config.Run.NRuns = 1
+	sim.Config.Log.Run = false
+	sim.Config.Log.Epoch = false
+	sim.Config.Log.Run = false
+	sim.Config.Log.TestEpoch = false
 
+	sim.ConfigAll()
 	sim.RunNoGUI()
 
 	tstdt := sim.Logs.MiscTable("TestTrialStats")

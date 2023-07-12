@@ -113,7 +113,7 @@
 						Pool.Gi: 	  1.20	
 
         OFCusPT		Nominal:	  0.05	
-						Layer.Gi:	  3.20	Params: Base:.PTMaintLayer: 3.2
+						Layer.Gi:	  3.20	Params: .PTMaintLayer: 3.2
 						Pool.Gi: 	  3.20	Params: .PTMaintLayer: 3.2
 
         OFCusMD		Nominal:	  0.03	
@@ -134,7 +134,7 @@
 						Layer.Gi:	  1.40	
 
        OFCvalPT		Nominal:	  0.30	
-						Layer.Gi:	  3.20	Params: Base:.PTMaintLayer: 3.2
+						Layer.Gi:	  3.20	Params: .PTMaintLayer: 3.2
 
        OFCvalMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
@@ -154,7 +154,6 @@
             CSP		Nominal:	  0.10	
 						Layer.Gi:	  1.00	
 
-      ContextIn		Nominal:	  0.10	
+      ContextIn		Nominal:	  0.03	Params: #ContextIn: 0.025
 						Layer.Gi:	  0.90	
-
 

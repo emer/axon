@@ -1,0 +1,4 @@
+Hidden1.Inhib.Layer.Gi: 1.05 // [Def: 1,1.1,0.75,0.9] <br>
+Hidden2.Inhib.Layer.Gi: 1.05 // [Def: 1,1.1,0.75,0.9] <br>
+Output.Acts.Spikes.Tr: 1 // [Def: 3] <br>
+Output.Inhib.Layer.Gi: 0.65 // [Def: 1,1.1,0.75,0.9] <br>

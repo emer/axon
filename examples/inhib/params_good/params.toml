@@ -1,0 +1,116 @@
+[[Base]]
+  Sel = "Layer"
+  Desc = "generic params for all layers: lower gain, slower, soft clamp"
+  [Base.Params]
+    "Layer.Acts.Decay.Act" = "0.0"
+    "Layer.Acts.Decay.Glong" = "0.0"
+    "Layer.Acts.Dt.GeTau" = "5"
+    "Layer.Acts.Dt.GiTau" = "7"
+    "Layer.Acts.Gbar.I" = "1.0"
+    "Layer.Acts.Gbar.L" = "0.2"
+    "Layer.Acts.Noise.Ge" = "0.002"
+    "Layer.Acts.Noise.GeHz" = "100"
+    "Layer.Acts.Noise.Gi" = "0.002"
+    "Layer.Acts.Noise.GiHz" = "200"
+    "Layer.Acts.Noise.On" = "false"
+    "Layer.Inhib.ActAvg.Nominal" = "0.1"
+    "Layer.Inhib.Layer.Gi" = "1.0"
+    "Layer.Inhib.Layer.On" = "false"
+
+[[Base]]
+  Sel = ".InhibLay"
+  Desc = "generic params for all layers: lower gain, slower, soft clamp"
+  [Base.Params]
+    "Layer.Acts.Erev.L" = "0.4"
+    "Layer.Acts.GabaB.Gbar" = "0"
+    "Layer.Acts.Gbar.L" = "0.2"
+    "Layer.Acts.Init.Vm" = "0.4"
+    "Layer.Acts.KNa.On" = "false"
+    "Layer.Acts.NMDA.Gbar" = "0"
+    "Layer.Acts.Noise.Ge" = "0.01"
+    "Layer.Acts.Noise.Gi" = "0.0"
+    "Layer.Acts.Noise.On" = "false"
+    "Layer.Acts.Spikes.Thr" = "0.5"
+    "Layer.Acts.Spikes.Tr" = "1"
+    "Layer.Acts.Spikes.VmR" = "0.4"
+    "Layer.Inhib.ActAvg.Nominal" = "0.5"
+
+[[Base]]
+  Sel = "#Layer0"
+  Desc = "Input layer"
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "0.6"
+    "Layer.Acts.Noise.Gi" = "0.002"
+    "Layer.Acts.Noise.On" = "true"
+
+[[Base]]
+  Sel = "Prjn"
+  Desc = "no learning"
+  [Base.Params]
+    "Prjn.Com.Delay" = "2"
+    "Prjn.Learn.Learn" = "false"
+    "Prjn.SWts.Init.Mean" = "0.5"
+    "Prjn.SWts.Init.Var" = "0.25"
+
+[[Base]]
+  Sel = ".BackPrjn"
+  Desc = "feedback excitatory"
+  [Base.Params]
+    "Prjn.PrjnScale.Rel" = "0.2"
+
+[[Base]]
+  Sel = ".InhibPrjn"
+  Desc = "inhibitory projections"
+  [Base.Params]
+    "Prjn.Com.Delay" = "0"
+    "Prjn.PrjnScale.Abs" = "6"
+    "Prjn.SWts.Init.Mean" = "0.5"
+    "Prjn.SWts.Init.Sym" = "false"
+    "Prjn.SWts.Init.Var" = "0"
+
+[[Base]]
+  Sel = ".ToInhib"
+  Desc = "to inhibitory projections"
+  [Base.Params]
+    "Prjn.Com.Delay" = "1"
+
+[[Base]]
+  Sel = ".RndSc"
+  Desc = "random shortcut"
+  [Base.Params]
+    "Prjn.Learn.LRate.Base" = "0.001"
+    "Prjn.PrjnScale.Rel" = "0.5"
+    "Prjn.SWts.Adapt.On" = "false"
+
+[[FSFFFB]]
+  Sel = "Layer"
+  Desc = "use FSFFFB computed inhibition"
+  [FSFFFB.Params]
+    "Layer.Inhib.Layer.FB" = "1"
+    "Layer.Inhib.Layer.FS0" = "0.1"
+    "Layer.Inhib.Layer.FSTau" = "6"
+    "Layer.Inhib.Layer.Gi" = "1.0"
+    "Layer.Inhib.Layer.On" = "true"
+    "Layer.Inhib.Layer.SS" = "30"
+    "Layer.Inhib.Layer.SSfTau" = "20"
+    "Layer.Inhib.Layer.SSiTau" = "50"
+
+[[FSFFFB]]
+  Sel = ".InhibPrjn"
+  Desc = "inhibitory projections"
+  [FSFFFB.Params]
+    "Prjn.PrjnScale.Abs" = "0"
+
+[[Trained]]
+  Sel = ".Excite"
+  Desc = "excitatory connections"
+  [Trained.Params]
+    "Prjn.SWts.Init.Mean" = "0.4"
+    "Prjn.SWts.Init.Var" = "0.8"
+
+[[Untrained]]
+  Sel = ".Excite"
+  Desc = "excitatory connections"
+  [Untrained.Params]
+    "Prjn.SWts.Init.Mean" = "0.5"
+    "Prjn.SWts.Init.Var" = "0.25"

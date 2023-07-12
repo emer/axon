@@ -1,0 +1,54 @@
+[[Base]]
+  Sel = "Layer"
+  Desc = "clamp gain makes big diff on overall excitation, gating propensity"
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "1.0"
+
+[[Base]]
+  Sel = ".MatrixLayer"
+  Desc = "all mtx"
+  [Base.Params]
+    "Layer.Inhib.Pool.FB" = "1"
+    "Layer.Inhib.Pool.Gi" = "0.3"
+    "Layer.Inhib.Pool.On" = "false"
+    "Layer.Matrix.GateThr" = "0.05"
+
+[[Base]]
+  Sel = ".PTMaintLayer"
+  Desc = "time integration params"
+  [Base.Params]
+    "Layer.Acts.Dend.ModGain" = "1.5"
+    "Layer.Inhib.Layer.Gi" = "3.2"
+
+[[Base]]
+  Sel = ".MatrixPrjn"
+  Desc = ""
+  [Base.Params]
+    "Prjn.Learn.LRate.Base" = "0.02"
+    "Prjn.Matrix.NoGateLRate" = "1"
+
+[[Base]]
+  Sel = "#UrgencyToMtxGo"
+  Desc = "strong urgency factor"
+  [Base.Params]
+    "Prjn.Learn.Learn" = "false"
+    "Prjn.PrjnScale.Abs" = "20"
+    "Prjn.PrjnScale.Rel" = "0.1"
+
+[[Base]]
+  Sel = ".SuperToPT"
+  Desc = "one-to-one from super"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0.5"
+
+[[Base]]
+  Sel = ".PTSelfMaint"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4"
+
+[[Base]]
+  Sel = ".SuperToThal"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4.0"

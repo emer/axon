@@ -61,16 +61,17 @@ func RunNeuron(t *testing.T, gpu bool) map[string]float32 {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
 
-	sim.Args.SetBool("epclog", false) // set to true to debug runs
-	sim.Args.SetBool("cyclog", false) // set to true to debug runs
-	sim.Args.SetBool("gpu", gpu)      // set to false for CI testing -- set to true for interactive testing
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = false // for CI
+	sim.Config.Run.NRuns = 1
+	sim.Config.Log.Cycle = false
 
-	sim.Args.SetString("params", "Testing")
-	sim.GABABGbar = 0
-	sim.NMDAGbar = 0
+	sim.Config.Params.Sheet = "Testing"
+	sim.Config.GABABGbar = 0
+	sim.Config.NMDAGbar = 0
 
+	sim.ConfigAll()
 	sim.RunNoGUI()
 
 	return sim.ValMap

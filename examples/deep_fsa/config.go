@@ -8,7 +8,7 @@ package main
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
-	Env          map[string]any `desc:"env parameters -- can set any field/subfield on Approach env struct, using standard TOML formatting"`
+	Env          map[string]any `desc:"env parameters -- can set any field/subfield on Env struct, using standard TOML formatting"`
 	UnitsPer     int            `def:"1" desc:"number of units per localist output unit -- 1 works better than 5 here"`
 	InputNames   []string       `def:"['B','T','S','X','V','P','E']" desc:"names of input letters"`
 	InputNameMap map[string]int `desc:"map of input names -- initialized during Configenv"`

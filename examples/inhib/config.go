@@ -10,7 +10,7 @@ import "github.com/emer/emergent/evec"
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
-	Env      map[string]any `desc:"env parameters -- can set any field/subfield on Approach env struct, using standard TOML formatting"`
+	Env      map[string]any `desc:"env parameters -- can set any field/subfield on Env struct, using standard TOML formatting"`
 	InputPct float32        `def:"15" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
 }
 

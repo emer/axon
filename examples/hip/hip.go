@@ -243,7 +243,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.ApplyParams()
 	net.InitWts(ctx)
 	net.InitTopoSWts()
-	net.InitWts(ctx)
+	// net.InitWts(ctx) // why are there 2 initwts calls??
 }
 
 func (ss *Sim) ApplyParams() {

@@ -10,7 +10,7 @@ import "github.com/emer/empi/mpi"
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
-	Env            map[string]any `desc:"env parameters -- can set any field/subfield on Approach env struct, using standard TOML formatting"`
+	Env            map[string]any `desc:"env parameters -- can set any field/subfield on Env struct, using standard TOML formatting"`
 	NDrives        int            `def:"4" desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
 	CSPerDrive     int            `def:"1" desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
 	PctCortexStEpc int            `def:"10" desc:"epoch when PctCortex starts increasing"`
@@ -61,6 +61,7 @@ type LogConfig struct {
 	Epoch   bool `def:"true" nest:"+" desc:"if true, save train epoch log to file, as .epc.tsv typically"`
 	Run     bool `def:"true" nest:"+" desc:"if true, save run log to file, as .run.tsv typically"`
 	Trial   bool `def:"false" nest:"+" desc:"if true, save train trial log to file, as .trl.tsv typically. May be large."`
+	NetData bool `desc:"if true, save network activation etc data from testing trials, for later viewing in netview"`
 	Testing bool `desc:"activates testing mode -- records detailed data for Go CI tests (not the same as running test mode on network, via Looper)"`
 }
 

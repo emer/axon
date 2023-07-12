@@ -57,13 +57,13 @@ func (pp *PatConfig) Defaults() {
 
 // HipConfig have the hippocampus size and connectivity parameters
 type HipConfig struct {
-	EC2Size      evec.Vec2i `desc:"size of EC2"`
-	ECSize       evec.Vec2i `desc:"size of EC in terms of overall pools (outer dimension)"`
-	ECPool       evec.Vec2i `desc:"size of one EC pool"`
-	CA1Pool      evec.Vec2i `desc:"size of one CA1 pool"`
-	CA3Size      evec.Vec2i `desc:"size of CA3"`
+	EC2Size      evec.Vec2i `nest:"+" desc:"size of EC2"`
+	ECSize       evec.Vec2i `nest:"+" desc:"size of EC in terms of overall pools (outer dimension)"`
+	ECPool       evec.Vec2i `nest:"+" desc:"size of one EC pool"`
+	CA1Pool      evec.Vec2i `nest:"+" desc:"size of one CA1 pool"`
+	CA3Size      evec.Vec2i `nest:"+" desc:"size of CA3"`
 	DGRatio      float32    `desc:"size of DG / CA3"`
-	DGSize       evec.Vec2i `inactive:"+" desc:"size of DG"`
+	DGSize       evec.Vec2i `nest:"+" inactive:"+" desc:"size of DG"`
 	lateralPCon  float32    `desc:"percent connectivity in EC2 lateral"`
 	EC2PCon      float32    `desc:"percent connectivity from Input to EC2"`
 	EC3ToEC2PCon float32    `desc:"percent connectivity from EC3 to EC2"`

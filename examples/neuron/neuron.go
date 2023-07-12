@@ -16,14 +16,17 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/ecmd"
+	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
+	"github.com/emer/emergent/netparams"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
+	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -36,54 +39,40 @@ import (
 	"github.com/goki/mat32"
 )
 
-var (
-	// Debug triggers various messages etc
-	Debug = false
-	// GPU runs GUI with the GPU -- for debugging / testing
-	GPU = false
-)
-
 func main() {
 	sim := &Sim{}
 	sim.New()
-	sim.Config()
-	if len(os.Args) > 1 {
-		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
+	sim.ConfigAll()
+	if sim.Config.GUI {
+		gimain.Main(sim.RunGUI)
 	} else {
-		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-			sim.RunGUI()
-		})
+		sim.RunNoGUI()
 	}
 }
 
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
+// see config.go for Config
 
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
-var ParamSets = params.Sets{
-	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "no learning",
-				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
-				}},
-			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "false",
-					"Layer.Acts.Init.Vm":   "0.3",
-				}},
-		},
-	}},
-	"Testing": {Desc: "for testing", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "",
-				Params: params.Params{
-					"Layer.Acts.NMDA.Gbar":  "0.0",
-					"Layer.Acts.GabaB.Gbar": "0.0",
-				}},
-		},
-	}},
+var ParamSets = netparams.Sets{
+	"Base": {
+		{Sel: "Prjn", Desc: "no learning",
+			Params: params.Params{
+				"Prjn.Learn.Learn": "false",
+			}},
+		{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "false",
+				"Layer.Acts.Init.Vm":   "0.3",
+			}},
+	},
+	"Testing": {
+		{Sel: "Layer", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.NMDA.Gbar":  "0.0",
+				"Layer.Acts.GabaB.Gbar": "0.0",
+			}},
+	},
 }
 
 // Extra state for neuron
@@ -101,30 +90,13 @@ func (nrn *NeuronEx) Init() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	GeClamp      bool          `desc:"clamp constant Ge value -- otherwise drive discrete spiking input"`
-	SpikeHz      float32       `desc:"frequency of input spiking for !GeClamp mode"`
-	Ge           float32       `min:"0" step:"0.01" desc:"Raw synaptic excitatory conductance"`
-	Gi           float32       `min:"0" step:"0.01" desc:"Inhibitory conductance "`
-	ErevE        float32       `min:"0" max:"1" step:"0.01" def:"1" desc:"excitatory reversal (driving) potential -- determines where excitation pushes Vm up to"`
-	ErevI        float32       `min:"0" max:"1" step:"0.01" def:"0.3" desc:"leak reversal (driving) potential -- determines where excitation pulls Vm down to"`
-	Noise        float32       `min:"0" step:"0.01" desc:"the variance parameter for Gaussian noise added to unit activations on every cycle"`
-	KNaAdapt     bool          `desc:"apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time"`
-	MahpGbar     float32       `def:"0.05" desc:"strength of mAHP M-type channel -- used to be implemented by KNa but now using the more standard M-type channel mechanism"`
-	NMDAGbar     float32       `def:"0,0.006" desc:"strength of NMDA current -- 0.006 default for posterior cortex"`
-	GABABGbar    float32       `def:"0,0.015" desc:"strength of GABAB current -- 0.015 default for posterior cortex"`
-	VGCCGbar     float32       `def:"0.02" desc:"strength of VGCC voltage gated calcium current -- only activated during spikes -- this is now an essential part of Ca-driven learning to reflect recv spiking in the Ca signal -- but if too strong leads to runaway excitatory bursting."`
-	AKGbar       float32       `def:"0.1" desc:"strength of A-type potassium channel -- this is only active at high (depolarized) membrane potentials -- only during spikes -- useful to counteract VGCC's"`
-	NCycles      int           `min:"10" def:"200" desc:"total number of cycles to run"`
-	OnCycle      int           `min:"0" def:"10" desc:"when does excitatory input into neuron come on?"`
-	OffCycle     int           `min:"0" def:"160" desc:"when does excitatory input into neuron go off?"`
-	UpdtInterval int           `min:"1" def:"10"  desc:"how often to update display (in cycles)"`
-	Net          *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	NeuronEx     NeuronEx      `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
-	Context      axon.Context  `desc:"axon timing parameters and state"`
-	Stats        estats.Stats  `desc:"contains computed statistic values"`
-	Logs         elog.Logs     `view:"no-inline" desc:"logging"`
-	Params       emer.Params   `view:"inline" desc:"all parameter management"`
-	Args         ecmd.Args     `view:"no-inline" desc:"command line args"`
+	Config   Config         `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Net      *axon.Network  `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	NeuronEx NeuronEx       `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	Context  axon.Context   `desc:"axon timing parameters and state"`
+	Stats    estats.Stats   `desc:"contains computed statistic values"`
+	Logs     elog.Logs      `view:"no-inline" desc:"logging"`
+	Params   emer.NetParams `view:"inline" desc:"all parameter management"`
 
 	Cycle int `inactive:"+" desc:"current cycle of updating"`
 
@@ -141,45 +113,28 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSets
-	ss.Params.AddNetwork(ss.Net)
+	econfig.Config(&ss.Config, "config.toml")
+	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.ValMap = make(map[string]float32)
-	ss.Defaults()
-	ss.ConfigArgs()
 }
 
-// Defaults sets default params
 func (ss *Sim) Defaults() {
-	ss.UpdtInterval = 10
-	ss.GeClamp = true
-	ss.SpikeHz = 50
-	ss.Ge = 0.1
-	ss.Gi = 0.1
-	ss.ErevE = 1
-	ss.ErevI = 0.3
-	ss.Noise = 0
-	ss.KNaAdapt = true
-	ss.MahpGbar = 0.05
-	ss.NMDAGbar = 0.006
-	ss.GABABGbar = 0.015
-	ss.VGCCGbar = 0.02
-	ss.AKGbar = 0.1
-	ss.NCycles = 200
-	ss.OnCycle = 10
-	ss.OffCycle = 160
-	ss.Context.Defaults()
-	ss.Context.Reset()
-	ss.Context.Mode = etime.Train
+	econfig.Config(&ss.Config, "config.toml")
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Configs
 
-// Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
+// ConfigAll configures all the elements using the standard functions
+func (ss *Sim) ConfigAll() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
+	if ss.Config.Params.SaveAll {
+		ss.Config.Params.SaveAll = false
+		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
+		os.Exit(0)
+	}
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -250,18 +205,18 @@ func (ss *Sim) RunCycles() {
 	// ly := ss.Net.AxonLayerByName("Neuron")
 	// nrn := &(ly.Neurons[0])
 	inputOn := false
-	for cyc := 0; cyc < ss.NCycles; cyc++ {
+	for cyc := 0; cyc < ss.Config.NCycles; cyc++ {
 		switch cyc {
-		case ss.OnCycle:
+		case ss.Config.OnCycle:
 			inputOn = true
-		case ss.OffCycle:
+		case ss.Config.OffCycle:
 			inputOn = false
 		}
 		ss.NeuronUpdt(ss.Net, inputOn)
 		ctx.Cycle = int32(cyc)
 		ss.Logs.LogRow(etime.Test, etime.Cycle, cyc)
 		ss.RecordVals(cyc)
-		if cyc%ss.UpdtInterval == 0 {
+		if cyc%ss.Config.UpdtInterval == 0 {
 			ss.UpdateView()
 		}
 		ss.Context.CycleInc()
@@ -296,13 +251,13 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	// nrn.Ge += nrn.Noise // GeNoise
 	// nrn.Gi = 0
 	if inputOn {
-		if ss.GeClamp {
-			axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Ge)
+		if ss.Config.GeClamp {
+			axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Config.Ge)
 			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFmRawSteady(axon.NrnV(ctx, ni, di, axon.GeRaw)))
 		} else {
 			nex.InISI += 1
-			if nex.InISI > 1000/ss.SpikeHz {
-				axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Ge)
+			if nex.InISI > 1000/ss.Config.SpikeHz {
+				axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Config.Ge)
 				nex.InISI = 0
 			} else {
 				axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
@@ -313,7 +268,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 		axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
 		axon.SetNrnV(ctx, ni, di, axon.GeSyn, 0)
 	}
-	axon.SetNrnV(ctx, ni, di, axon.GiRaw, ss.Gi)
+	axon.SetNrnV(ctx, ni, di, axon.GiRaw, ss.Config.Gi)
 	axon.SetNrnV(ctx, ni, di, axon.GiSyn, ac.Dt.GiSynFmRawSteady(axon.NrnV(ctx, ni, di, axon.GiRaw)))
 
 	if ss.Net.GPU.On {
@@ -345,15 +300,15 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) {
 	lyp := ly.Params
 	lyp.Acts.Gbar.E = 1
 	lyp.Acts.Gbar.L = 0.2
-	lyp.Acts.Erev.E = float32(ss.ErevE)
-	lyp.Acts.Erev.I = float32(ss.ErevI)
-	// lyp.Acts.Noise.Var = float64(ss.Noise)
-	lyp.Acts.KNa.On.SetBool(ss.KNaAdapt)
-	lyp.Acts.Mahp.Gbar = ss.MahpGbar
-	lyp.Acts.NMDA.Gbar = ss.NMDAGbar
-	lyp.Acts.GabaB.Gbar = ss.GABABGbar
-	lyp.Acts.VGCC.Gbar = ss.VGCCGbar
-	lyp.Acts.AK.Gbar = ss.AKGbar
+	lyp.Acts.Erev.E = float32(ss.Config.ErevE)
+	lyp.Acts.Erev.I = float32(ss.Config.ErevI)
+	// lyp.Acts.Noise.Var = float64(ss.Config.Noise)
+	lyp.Acts.KNa.On.SetBool(ss.Config.KNaAdapt)
+	lyp.Acts.Mahp.Gbar = ss.Config.MahpGbar
+	lyp.Acts.NMDA.Gbar = ss.Config.NMDAGbar
+	lyp.Acts.GabaB.Gbar = ss.Config.GABABGbar
+	lyp.Acts.VGCC.Gbar = ss.Config.VGCCGbar
+	lyp.Acts.AK.Gbar = ss.Config.AKGbar
 	lyp.Acts.Update()
 }
 
@@ -523,7 +478,7 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 		go gi.Quit() // once main window is closed, quit
 	})
 
-	if GPU {
+	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
@@ -540,37 +495,41 @@ func (ss *Sim) RunGUI() {
 	win.StartEventLoop()
 }
 
-func (ss *Sim) ConfigArgs() {
-	ss.Args.Init()
-	ss.Args.AddStd()
-	ss.Args.SetInt("epochs", 1)
-	ss.Args.SetInt("runs", 1)
-	ss.Args.AddBool("cyclog", true, "if true, save cycle log to file (main log)")
-	ss.Args.Parse() // always parse
-	if len(os.Args) > 1 {
-		ss.Args.SetBool("nogui", true) // by definition if here
-	}
-}
-
 func (ss *Sim) RunNoGUI() {
-	ss.Args.ProcStd(&ss.Params)
-	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
-	ss.Args.SetBool("nogui", true)                                       // by definition if here
-	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+	if ss.Config.Params.Note != "" {
+		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
+	}
+	if ss.Config.Log.SaveWts {
+		mpi.Printf("Saving final weights per run\n")
+	}
+	runName := ss.Params.RunName(ss.Config.Run.Run)
+	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
+	netName := ss.Net.Name()
+
+	// netdata := ss.Config.Log.NetData
+	// if netdata {
+	// 	mpi.Printf("Saving NetView data from testing\n")
+	// 	ss.GUI.InitNetData(ss.Net, 200)
+	// }
 
 	ss.Init()
 
-	if ss.Args.Bool("gpu") {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	if ss.Config.Run.GPU {
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
 	}
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.RunCycles()
 
-	ss.Logs.CloseLogFiles()
-
-	if ss.Args.Bool("cyclog") {
+	if ss.Config.Log.Cycle {
 		dt := ss.Logs.Table(etime.Test, etime.Cycle)
-		fnm := ecmd.LogFileName("cyc", ss.Net.Name(), ss.Params.RunName(0))
+		fnm := ecmd.LogFileName("cyc", netName, runName)
 		dt.SaveCSV(gi.FileName(fnm), etable.Tab, etable.Headers)
 	}
+
+	// if netdata {
+	// 	ss.GUI.SaveNetData(ss.Stats.String("RunName"))
+	// }
+
+	ss.Net.GPU.Destroy() // safe even if no GPU
 }
