@@ -26,8 +26,6 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -129,7 +127,6 @@ func (ss *Sim) ConfigAll() {
 }
 
 func (ss *Sim) ConfigEnv() {
-	ss.Config.Hip.Update() // update DG size
 	// Can be called multiple times -- don't re-create
 	var trn, tst *env.FixedTable
 	if len(ss.Envs) == 0 {
@@ -165,73 +162,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	hp := &ss.Config.Hip
-	in := net.AddLayer4D("Input", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, axon.InputLayer)
-	ec2 := net.AddLayer2D("EC2", hp.EC2Size.Y, hp.EC2Size.X, axon.SuperLayer)
-	ec3 := net.AddLayer4D("EC3", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, axon.SuperLayer)
-	ec5 := net.AddLayer4D("EC5", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, axon.TargetLayer) // clamped in plus phase
-	ca1 := net.AddLayer4D("CA1", hp.ECSize.Y, hp.ECSize.X, hp.CA1Pool.Y, hp.CA1Pool.X, axon.SuperLayer)
-	dg := net.AddLayer2D("DG", hp.DGSize.Y, hp.DGSize.X, axon.SuperLayer)
-	ca3 := net.AddLayer2D("CA3", hp.CA3Size.Y, hp.CA3Size.X, axon.SuperLayer)
-
-	ec3.SetClass("EC")
-	ec5.SetClass("EC")
-
-	ec2.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", YAlign: relpos.Front, Space: 2})
-	ec3.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "EC2", YAlign: relpos.Front, Space: 2})
-	ec5.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "EC3", YAlign: relpos.Front, Space: 2})
-	dg.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "EC2", YAlign: relpos.Front, XAlign: relpos.Left, Space: 0})
-	ca3.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "DG", YAlign: relpos.Front, XAlign: relpos.Left, Space: 0})
-	ca1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "CA3", YAlign: relpos.Front, Space: 2})
-
-	// note: see emergent/prjn module for all the options on how to connect
-	// NewFull returns a new prjn.Full connectivity pattern
-	onetoone := prjn.NewOneToOne()
-	pool1to1 := prjn.NewPoolOneToOne()
-	full := prjn.NewFull()
-	inToEc2 := prjn.NewUnifRnd()
-	inToEc2.PCon = hp.EC2PCon
-	Ec3ToEc2 := prjn.NewUnifRnd()
-	Ec3ToEc2.PCon = hp.EC3ToEC2PCon
-	mossy := prjn.NewUnifRnd()
-	mossy.PCon = hp.MossyPCon
-
-	// circle inhibitory lateral
-	lat := prjn.NewCircle()
-	lat.TopoWts = true
-	lat.Radius = 2
-	lat.Sigma = 2
-
-	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPrjn)
-	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPrjn)
-	net.ConnectLayers(ec3, ec2, Ec3ToEc2, axon.ForwardPrjn)
-	net.ConnectLayers(ec5, ec3, onetoone, axon.BackPrjn)
-
-	inh := net.ConnectLayers(ec2, ec2, lat, axon.InhibPrjn)
-	inh.SetClass("InhibLateral")
-
-	// MSP
-	net.ConnectLayers(ec3, ca1, pool1to1, axon.HipPrjn).SetClass("EcCa1Prjn")     // HipPrjn makes wt linear
-	net.ConnectLayers(ca1, ec5, pool1to1, axon.ForwardPrjn).SetClass("EcCa1Prjn") // doesn't work w/ HipPrjn
-	net.ConnectLayers(ec5, ca1, pool1to1, axon.HipPrjn).SetClass("EcCa1Prjn")     // HipPrjn makes wt linear
-
-	// TSP
-	ppathDG := prjn.NewUnifRnd()
-	ppathDG.PCon = hp.DGPCon
-	ppathCA3 := prjn.NewUnifRnd()
-	ppathCA3.PCon = hp.CA3PCon
-	ca3ToCa1 := prjn.NewUnifRnd()
-	ca3ToCa1.PCon = hp.CA1PCon
-	net.ConnectLayers(ec2, dg, ppathDG, axon.HipPrjn).SetClass("HippoCHL")
-	net.ConnectLayers(ec2, ca3, ppathCA3, axon.HipPrjn).SetClass("PPath")
-	net.ConnectLayers(ca3, ca3, full, axon.HipPrjn).SetClass("PPath")
-	net.ConnectLayers(dg, ca3, mossy, axon.ForwardPrjn).SetClass("HippoCHL")
-	net.ConnectLayers(ca3, ca1, ca3ToCa1, axon.HipPrjn).SetClass("HippoCHL")
-
-	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
-	// out.SetType(emer.Compare)
-	// that would mean that the output layer doesn't reflect target values in plus phase
-	// and thus removes error-driven learning -- but stats are still computed.
+	net.AddHip(ctx, &ss.Config.Hip, 2)
 
 	err := net.Build(ctx)
 	if err != nil {
@@ -243,7 +174,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.ApplyParams()
 	net.InitWts(ctx)
 	net.InitTopoSWts()
-	// net.InitWts(ctx) // why are there 2 initwts calls??
 }
 
 func (ss *Sim) ApplyParams() {
@@ -509,10 +439,10 @@ func (ss *Sim) TestAll() {
 
 func (ss *Sim) ConfigPats() {
 	hp := &ss.Config.Hip
-	ecY := hp.ECSize.Y
-	ecX := hp.ECSize.X
-	plY := hp.ECPool.Y // good idea to get shorter vars when used frequently
-	plX := hp.ECPool.X // makes much more readable
+	ecY := hp.EC3NPool.Y
+	ecX := hp.EC3NPool.X
+	plY := hp.EC3NNrn.Y // good idea to get shorter vars when used frequently
+	plX := hp.EC3NNrn.X // makes much more readable
 	npats := ss.Config.Run.NTrials
 	pctAct := hp.ECPctAct
 	minDiff := ss.Config.Pat.MinDiffPct
