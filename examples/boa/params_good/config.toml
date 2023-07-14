@@ -1,0 +1,38 @@
+GUI = true
+Debug = false
+
+[Env]
+  NDrives = 4
+  CSPerDrive = 1
+  PctCortexStEpc = 10
+  PctCortexNEpc = 1
+  PctCortex = 0.0
+  SameSeed = false
+  [Env.Env]
+    NYReps = 4
+
+[Params]
+  Set = ""
+  File = ""
+  Tag = ""
+  Note = ""
+  SaveAll = true
+  Good = true
+
+[Run]
+  GPU = true
+  NData = 16
+  Threads = 0
+  Run = 0
+  NRuns = 5
+  NEpochs = 100
+  NTrials = 128
+  PCAInterval = 10
+
+[Log]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Trial = false
+  NetData = false
+  Testing = false

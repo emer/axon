@@ -21,7 +21,7 @@ func RunBench(b *testing.B, gpu bool, ndata, nthread int) {
 	sim.Config.GUI = false
 	sim.Config.Run.GPU = gpu
 	sim.Config.Run.NData = ndata
-	sim.Config.Run.Threads = nthread
+	sim.Config.Run.NThreads = nthread
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 1
 	sim.Config.Log.Run = false

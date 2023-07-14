@@ -1,0 +1,29 @@
+RW = false
+GUI = true
+Debug = false
+
+[Env]
+
+[Params]
+  Sheet = ""
+  Tag = ""
+  Note = ""
+  File = ""
+  SaveAll = false
+  Good = true
+
+[Run]
+  GPU = false
+  NThreads = 2
+  Run = 0
+  NRuns = 1
+  NEpochs = 100
+  NTrials = 20
+
+[Log]
+  AggStats = ["DA", "VSPatch"]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Trial = false
+  NetData = false

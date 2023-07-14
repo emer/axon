@@ -1,0 +1,223 @@
+            VTA		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            LHb		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            LDT		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+          USpos		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          USneg		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         USposP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         USnegP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          PVpos		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          PVneg		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         PVposP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         PVnegP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         Drives		Nominal:	  0.01	
+						Pool.Gi: 	  0.50	
+
+        DrivesP		Nominal:	  0.01	
+						Pool.Gi: 	  0.50	
+
+         Effort		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+        EffortP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+        Urgency		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          VsGPi		Nominal:	  1.00	
+
+       VsGPeOut		Nominal:	  1.00	
+
+        VsGPeIn		Nominal:	  1.00	
+
+        VsGPeTA		Nominal:	  1.00	
+
+         VsSTNp		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+         VsSTNs		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+        VsMtxGo		Nominal:	  0.03	
+						Pool.Gi: 	  0.30	Params: .MatrixLayer: 0.3
+
+        VsMtxNo		Nominal:	  0.03	
+						Pool.Gi: 	  0.30	Params: .MatrixLayer: 0.3
+
+        VSGated		Nominal:	  0.50	
+						Layer.Gi:	  1.00	
+
+        VsPatch		Nominal:	  0.20	
+						Pool.Gi: 	  0.50	Params: .VSPatchLayer: 0.5
+
+             SC		Nominal:	  0.10	
+						Layer.Gi:	  1.20	
+
+    BLAPosAcqD1		Nominal:	  0.03	
+						Layer.Gi:	  2.40	Params: #BLAPosAcqD1: 2.4
+						Pool.Gi: 	  1.00	Params: #BLAPosAcqD1: 1
+
+    BLAPosExtD2		Nominal:	  0.03	
+						Layer.Gi:	  1.80	
+						Pool.Gi: 	  0.90	
+
+    BLANegExtD1		Nominal:	  0.03	
+						Layer.Gi:	  1.80	
+						Pool.Gi: 	  0.90	
+
+    BLANegAcqD2		Nominal:	  0.03	
+						Layer.Gi:	  2.20	
+						Pool.Gi: 	  0.90	
+
+         CeMPos		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.30	
+
+         CeMNeg		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.30	
+
+     BLANovelCS		Nominal:	  0.05	
+						Layer.Gi:	  0.80	
+
+          OFCus		Nominal:	  0.03	
+						Layer.Gi:	  2.20	
+						Pool.Gi: 	  1.00	Params: #OFCus: 1
+
+        OFCusCT		Nominal:	  0.03	
+						Layer.Gi:	  4.00	
+						Pool.Gi: 	  1.20	
+
+        OFCusPT		Nominal:	  0.05	
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+						Pool.Gi: 	  2.40	Params: .PTMaintLayer: 2.4
+
+        OFCusMD		Nominal:	  0.03	
+						Layer.Gi:	  2.00	
+						Pool.Gi: 	  0.60	
+
+       OFCusPTp		Nominal:	  0.03	
+						Layer.Gi:	  1.20	
+						Pool.Gi: 	  0.80	
+
+       NotMaint		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         OFCval		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+       OFCvalCT		Nominal:	  0.10	
+						Layer.Gi:	  1.40	
+
+       OFCvalPT		Nominal:	  0.30	
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+
+       OFCvalMD		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+
+      OFCvalPTp		Nominal:	  0.10	
+						Layer.Gi:	  0.80	
+
+        OFCvalP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+        ACCcost		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+      ACCcostCT		Nominal:	  0.10	
+						Layer.Gi:	  1.40	
+
+      ACCcostPT		Nominal:	  0.30	
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+
+      ACCcostMD		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+
+     ACCcostPTp		Nominal:	  0.10	
+						Layer.Gi:	  0.80	
+
+       ACCcostP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+        ACCutil		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+      ACCutilCT		Nominal:	  0.10	
+						Layer.Gi:	  1.40	
+
+      ACCutilPT		Nominal:	  0.30	
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+
+      ACCutilMD		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+
+     ACCutilPTp		Nominal:	  0.10	
+						Layer.Gi:	  0.80	
+
+             CS		Nominal:	  0.08	Params: .CS: 0.1
+						Layer.Gi:	  0.90	
+
+            CSP		Nominal:	  0.08	Params: .CS: 0.1
+						Layer.Gi:	  1.00	
+
+           Dist		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+          DistP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            Pos		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+            Act		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+             VL		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+             M1		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+           M1CT		Nominal:	  0.10	
+						Layer.Gi:	  2.20	
+
+            M1P		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            ALM		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+          ALMCT		Nominal:	  0.10	
+						Layer.Gi:	  1.40	
+
+          ALMPT		Nominal:	  0.30	
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+
+          ALMMD		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+
+         ALMPTp		Nominal:	  0.10	
+						Layer.Gi:	  0.80	
+

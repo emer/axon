@@ -2,7 +2,9 @@
 
 This is adapted from [CCN Sims](https://github.com/CompCogNeuro/sims).
 
-NOTE: currently this model is used for testing the FS-FFFB inhibition function -- interneurons aspect is not yet enabled.
+Note: see `config_example.toml` for an example config file -- copy to `config.toml` to use.
+
+The `FSFFFB` params `Sheet` engages the computed fast-slow (FS) feedforward (FF) / feedback (FB) inhibition mechanism, while the default uses direct inhibitory interneuron computation (which is currently not at all tuned and not working very well).
 
 This simulation explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.  This inhibition is critical when neurons have bidirectional excitatory connections, as otherwise the positive feedback loops will result in the equivalent of epileptic seizures -- runaway excitatory activity.
 

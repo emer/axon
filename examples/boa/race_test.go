@@ -18,7 +18,7 @@ func TestRace(t *testing.T) {
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 1
 	sim.Config.Run.NTrials = 2
-	sim.Config.Run.Threads = 8
+	sim.Config.Run.NThreads = 8
 	sim.Config.Log.Run = false
 	sim.Config.Log.Epoch = false
 

@@ -1,0 +1,39 @@
+GeClamp = true
+SpikeHz = 50.0
+Ge = 0.1
+Gi = 0.1
+ErevE = 1.0
+ErevI = 0.3
+Noise = 0.0
+KNaAdapt = true
+MahpGbar = 0.05
+NMDAGbar = 0.006
+GABABGbar = 0.015
+VGCCGbar = 0.02
+AKGbar = 0.1
+NCycles = 200
+OnCycle = 10
+OffCycle = 160
+UpdtInterval = 10
+GUI = true
+Debug = false
+
+[Params]
+  Sheet = ""
+  Tag = ""
+  Note = ""
+  File = ""
+  SaveAll = false
+  Good = true
+
+[Run]
+  GPU = false
+  NThreads = 2
+  Run = 0
+  NRuns = 1
+  NEpochs = 1
+
+[Log]
+  SaveWts = false
+  Cycle = true
+  NetData = false

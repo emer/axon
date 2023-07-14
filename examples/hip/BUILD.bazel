@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "hip_bench_lib",
+    srcs = [
+        "def_params.go",
+        "hip_bench.go",
+        "orig_params.go",
+        "params.go",
+    ],
+    importpath = "github.com/emer/axon/examples/hip_bench",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//axon",
+        "//hip",
+        "@com_github_emer_emergent//emer",
+        "@com_github_emer_emergent//env",
+        "@com_github_emer_emergent//evec",
+        "@com_github_emer_emergent//netview",
+        "@com_github_emer_emergent//params",
+        "@com_github_emer_emergent//patgen",
+        "@com_github_emer_emergent//prjn",
+        "@com_github_emer_emergent//relpos",
+        "@com_github_emer_etable//agg",
+        "@com_github_emer_etable//eplot",
+        "@com_github_emer_etable//etable",
+        "@com_github_emer_etable//etensor",
+        "@com_github_emer_etable//etview",
+        "@com_github_emer_etable//metric",
+        "@com_github_emer_etable//simat",
+        "@com_github_emer_etable//split",
+        "@com_github_goki_gi//gi",
+        "@com_github_goki_gi//gimain",
+        "@com_github_goki_gi//giv",
+        "@com_github_goki_ki//ki",
+        "@com_github_goki_ki//kit",
+        "@com_github_goki_mat32//:mat32",
+    ],
+)
+
+go_binary(
+    name = "hip_bench",
+    embed = [":hip_bench_lib"],
+    visibility = ["//visibility:public"],
+)

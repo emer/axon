@@ -1,0 +1,39 @@
+Includes = ["30notes.toml"]
+GUI = true
+Debug = false
+
+[Env]
+  UnitsPer = 4
+  FullSong = false
+  PlayTarg = false
+  TestClamp = true
+
+[Params]
+  Hid2 = false
+  Sheet = ""
+  File = ""
+  Tag = ""
+  Note = ""
+  SaveAll = false
+  Good = true
+
+[Run]
+  GPU = true
+  NData = 16
+  NThreads = 0
+  Run = 0
+  NRuns = 5
+  NEpochs = 100
+  NTrials = 128
+  PCAInterval = 5
+  TestInterval = -1
+
+[Log]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Trial = false
+  TestEpoch = false
+  TestTrial = false
+  NetData = false
+  Testing = false

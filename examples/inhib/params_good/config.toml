@@ -1,0 +1,25 @@
+GUI = true
+Debug = false
+
+[Env]
+  InputPct = 15.0
+
+[Params]
+  NLayers = 2
+  Sheet = "FSFFFB Trained"
+  Tag = ""
+  Note = ""
+  File = ""
+  SaveAll = false
+  Good = true
+  [Params.HidSize]
+    X = 10
+    Y = 10
+
+[Run]
+  GPU = true
+
+[Log]
+  Epoch = true
+  Trial = false
+  NetData = false
