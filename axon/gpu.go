@@ -1443,7 +1443,7 @@ func (gp *GPU) SynDataNs() (nCmd, nPer, nLast int) {
 		nCmd++
 	}
 	nPer = synN / nCmd
-	nLast = synN - ((nCmd - 1) * nPer)
+	nLast = synN - (nCmd * nPer)
 	// sanity checks:
 	if nPer*maxData > maxTh {
 		panic("axon.GPU.SynDataNs allocated too many nPer threads!")
