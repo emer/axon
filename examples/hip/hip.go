@@ -26,6 +26,7 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
+	"github.com/emer/emergent/prjn"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -158,11 +159,19 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
+	hip := &ss.Config.Hip
 	net.InitName(net, "Hip_bench")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	net.AddHip(ctx, &ss.Config.Hip, 2)
+	in := net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, axon.InputLayer)
+	inToEc2 := prjn.NewUnifRnd()
+	inToEc2.PCon = hip.InToEc2PCon
+	onetoone := prjn.NewOneToOne()
+	ec2, ec3, _, _, _, _ := net.AddHip(ctx, &ss.Config.Hip, 2)
+	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPrjn)
+	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPrjn)
+	ec2.PlaceAbove(in)
 
 	err := net.Build(ctx)
 	if err != nil {

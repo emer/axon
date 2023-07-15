@@ -73,8 +73,8 @@ func (hip *HipConfig) Defaults() {
 
 // AddHip adds a new Hippocampal network for episodic memory.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (in, ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
-	in = net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, InputLayer)
+func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
+	// in = net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, InputLayer)
 
 	// Trisynaptic Pathway (TSP)
 	ec2 = net.AddLayer2D("EC2", hip.EC2Size.Y, hip.EC2Size.X, SuperLayer)
@@ -90,14 +90,14 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (in, ec2
 
 	// Input and ECs connections
 	onetoone := prjn.NewOneToOne()
-	inToEc2 := prjn.NewUnifRnd()
-	inToEc2.PCon = hip.InToEc2PCon
+	// inToEc2 := prjn.NewUnifRnd()
+	// inToEc2.PCon = hip.InToEc2PCon
 	Ec3ToEc2 := prjn.NewUnifRnd()
 	Ec3ToEc2.PCon = hip.Ec3ToEc2PCon
 	mossy := prjn.NewUnifRnd()
 	mossy.PCon = hip.DgToCa3PCon
-	net.ConnectLayers(in, ec2, inToEc2, ForwardPrjn)
-	net.ConnectLayers(in, ec3, onetoone, ForwardPrjn)
+	// net.ConnectLayers(in, ec2, inToEc2, ForwardPrjn)
+	// net.ConnectLayers(in, ec3, onetoone, ForwardPrjn)
 	net.ConnectLayers(ec3, ec2, Ec3ToEc2, ForwardPrjn)
 	net.ConnectLayers(ec5, ec3, onetoone, BackPrjn)
 
@@ -130,7 +130,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (in, ec2
 	net.ConnectLayers(ec5, ca1, pool1to1, HipPrjn).SetClass("EcCa1Prjn")     // HipPrjn makes wt linear
 
 	// positioning
-	ec2.PlaceAbove(in)
+	// ec2.PlaceAbove(in)
 	ec3.PlaceRightOf(ec2, space)
 	ec5.PlaceRightOf(ec3, space)
 	dg.PlaceAbove(ec2)
