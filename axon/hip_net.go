@@ -20,7 +20,6 @@ type HipConfig struct {
 	DGRatio  float32    `def:"2.236" desc:"size of DG / CA3"`
 
 	// pcon
-	// InToEC2PCon  float32    `desc:"percent connectivity from Input to EC2"`
 	EC3ToEC2PCon float32 `def:"0.1" desc:"percent connectivity from EC3 to EC2"`
 	EC2ToDGPCon  float32 `def:"0.25" desc:"percent connectivity from EC2 to DG"`
 	EC2ToCA3PCon float32 `def:"0.25" desc:"percent connectivity from EC2 to CA3"`
@@ -29,13 +28,6 @@ type HipConfig struct {
 
 	EC2LatRadius int     `desc:"lateral radius in EC2"`
 	EC2LatSigma  float32 `desc:"lateral sigma in EC2"`
-
-	// ECPctAct     float32 `desc:"percent activation in EC pool"`
-	// MossyDel     float32 `desc:"delta in mossy effective strength between minus and plus phase"`
-	// MossyDelTest float32 `desc:"delta in mossy strength for testing (relative to base param)"`
-	// ThetaLow     float32 `desc:"theta low value"`
-	// ThetaHigh    float32 `desc:"theta low value"`
-	// MemThr       float64 `desc:"memory threshold"`
 }
 
 func (hip *HipConfig) Defaults() {
@@ -62,8 +54,6 @@ func (hip *HipConfig) Defaults() {
 // AddHip adds a new Hippocampal network for episodic memory.
 // Returns layers most likely to be used for remaining connections and positions.
 func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
-	// in = net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, InputLayer)
-
 	// Trisynaptic Pathway (TSP)
 	ec2 = net.AddLayer2D("EC2", hip.EC2Size.Y, hip.EC2Size.X, SuperLayer)
 	dg = net.AddLayer2D("DG", int(float32(hip.CA3Size.Y)*hip.DGRatio), int(float32(hip.CA3Size.X)*hip.DGRatio), SuperLayer)
@@ -114,7 +104,6 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	net.ConnectLayers(ec5, ca1, pool1to1, HipPrjn).SetClass("EcCA1Prjn")     // HipPrjn makes wt linear
 
 	// positioning
-	// ec2.PlaceAbove(in)
 	ec3.PlaceRightOf(ec2, space)
 	ec5.PlaceRightOf(ec3, space)
 	dg.PlaceAbove(ec2)
