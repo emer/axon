@@ -1,7 +1,7 @@
 # "SmallHip"= {Name= "SmallHip", Desc= "hippo size"}
 [Hip]		
-    EC3NPool.Y=  7
-    EC3NPool.X=  7
+    EC3NPoolY=  7
+    EC3NPoolX=  7
     CA1NNrn.Y= 10
     CA1NNrn.X= 10
     CA3Size.Y= 20

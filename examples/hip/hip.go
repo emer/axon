@@ -166,9 +166,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	in := net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, axon.InputLayer)
 	inToEc2 := prjn.NewUnifRnd()
-	inToEc2.PCon = hip.InToEc2PCon
+	inToEc2.PCon = ss.Config.ModConfig.InToEc2PCon
 	onetoone := prjn.NewOneToOne()
-	ec2, ec3, _, _, _, _ := net.AddHip(ctx, &ss.Config.Hip, 2)
+	ec2, ec3, _, _, _, _ := net.AddHip(ctx, hip, 2)
 	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPrjn)
 	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPrjn)
 	ec2.PlaceAbove(in)
@@ -308,7 +308,7 @@ func (ss *Sim) ConfigLoops() {
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
-	ConfigLoopsHip(&ss.Context, man, ss.Net, ss.Config.Hip.MossyDel, ss.Config.Hip.MossyDelTest, ss.Config.Hip.ThetaLow, ss.Config.Hip.ThetaHigh, &ss.PretrainMode)
+	ConfigLoopsHip(&ss.Context, man, ss.Net, ss.Config.ModConfig.MossyDel, ss.Config.ModConfig.MossyDelTest, ss.Config.ModConfig.ThetaLow, ss.Config.ModConfig.ThetaHigh, &ss.PretrainMode)
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -453,7 +453,7 @@ func (ss *Sim) ConfigPats() {
 	plY := hp.EC3NNrn.Y // good idea to get shorter vars when used frequently
 	plX := hp.EC3NNrn.X // makes much more readable
 	npats := ss.Config.Run.NTrials
-	pctAct := hp.ECPctAct
+	pctAct := ss.Config.ModConfig.ECPctAct
 	minDiff := ss.Config.Pat.MinDiffPct
 	nOn := patgen.NFmPct(pctAct, plY*plX)
 	ctxtflip := patgen.NFmPct(ss.Config.Pat.CtxtFlipPct, nOn)
@@ -580,7 +580,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
 	ss.MemStats(ss.Loops.Mode, di)
 
-	if ss.Stats.Float("UnitErr") > ss.Config.Hip.MemThr {
+	if ss.Stats.Float("UnitErr") > ss.Config.ModConfig.MemThr {
 		ss.Stats.SetFloat("TrlErr", 1)
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
@@ -592,7 +592,7 @@ func (ss *Sim) TrialStats(di int) {
 // for the entire full pattern as opposed to the plus-phase target
 // values clamped from ECin activations
 func (ss *Sim) MemStats(mode etime.Modes, di int) {
-	memthr := ss.Config.Hip.MemThr
+	memthr := ss.Config.ModConfig.MemThr
 	ecout := ss.Net.AxonLayerByName("EC5")
 	inp := ss.Net.AxonLayerByName("Input") // note: must be input b/c ECin can be active
 	nn := ecout.Shape().Len()
