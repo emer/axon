@@ -1,0 +1,15 @@
+
+Layer: Input
+
+Layer: Hidden1
+	          Input	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.19	Rel:  0.77
+	        Hidden2	       BackPrjn	Abs:	  1.00	Rel:	  0.30	GScale:	  0.04	Rel:  0.23
+								    Rel Params: .BackPrjn: 0.3
+
+Layer: Hidden2
+	        Hidden1	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.13	Rel:  0.77
+	         Output	       BackPrjn	Abs:	  1.00	Rel:	  0.30	GScale:	  0.04	Rel:  0.23
+								    Rel Params: .BackPrjn: 0.3
+
+Layer: Output
+	        Hidden2	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  1.00

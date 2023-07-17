@@ -1,0 +1,5 @@
+[Env]
+  CSPerDrive = 2
+  PctCortexStEpc = 20
+
+

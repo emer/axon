@@ -1,0 +1,13 @@
+
+Layer: Rew
+
+Layer: RewPred
+	          Input	     TDPredPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: RewInteg
+
+Layer: TD
+
+Layer: ACh
+
+Layer: Input

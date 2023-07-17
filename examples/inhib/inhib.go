@@ -11,19 +11,17 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
+	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
@@ -38,25 +36,15 @@ import (
 	"github.com/goki/mat32"
 )
 
-// Debug triggers various messages etc
-var Debug = false
-
 func main() {
-	TheSim.New()
-	TheSim.Config()
-	if len(os.Args) > 1 {
-		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
+	sim := &Sim{}
+	sim.New()
+	sim.ConfigAll()
+	if sim.Config.GUI {
+		gimain.Main(sim.RunGUI)
 	} else {
-		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-			guirun()
-		})
+		sim.RunNoGUI()
 	}
-}
-
-func guirun() {
-	TheSim.Init()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
 }
 
 // see params.go for params
@@ -67,11 +55,9 @@ func guirun() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	NLayers  int              `min:"1" desc:"number of hidden layers to add"`
-	HidSize  evec.Vec2i       `desc:"size of hidden layers"`
-	InputPct float32          `def:"15" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
+	Config   Config           `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
 	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Params   emer.Params      `view:"inline" desc:"all parameter management"`
+	Params   emer.NetParams   `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
@@ -80,43 +66,35 @@ type Sim struct {
 	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
-	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
 }
 
-// TheSim is the overall state for this simulation
-var TheSim Sim
-
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	econfig.Config(&ss.Config, "config.toml")
 	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSets
-	ss.Params.AddNetwork(ss.Net)
-	ss.Params.AddSim(ss)
-	ss.Params.AddNetSize()
+	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
+	ss.InitRndSeed(0)
 	ss.Context.Defaults()
-	ss.ConfigArgs() // do this first, has key defaults
-	ss.Defaults()
-}
-
-func (ss *Sim) Defaults() {
-	ss.NLayers = 2
-	ss.HidSize.Set(10, 10)
-	ss.InputPct = 15
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Configs
 
-// Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
+// ConfigAll configures all the elements using the standard functions
+func (ss *Sim) ConfigAll() {
 	ss.ConfigPats()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
 	ss.ConfigLoops()
+	if ss.Config.Params.SaveAll {
+		ss.Config.Params.SaveAll = false
+		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
+		os.Exit(0)
+	}
 }
 
 func (ss *Sim) ConfigPats() {
@@ -129,7 +107,7 @@ func (ss *Sim) ConfigPats() {
 	}
 	dt.SetFromSchema(sch, 10)
 	pc := dt.Cols[1].(*etensor.Float32)
-	patgen.PermutedBinaryRows(pc, int(ss.InputPct), 1, 0)
+	patgen.PermutedBinaryRows(pc, int(ss.Config.Env.InputPct), 1, 0)
 	for i, v := range pc.Values {
 		if v > 0.5 {
 			pc.Values[i] = 0.5 + 0.5*rand.Float32()
@@ -163,20 +141,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	net.InitName(net, "Inhib")
 	net.SetMaxData(ctx, 1)
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	inlay := net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, axon.InputLayer)
+	sz := ss.Config.Params.HidSize
+
+	inlay := net.AddLayer2D(LayNm(0), sz.Y, sz.X, axon.InputLayer)
 	_ = inlay
 
-	for hi := 1; hi <= ss.NLayers; hi++ {
-		net.AddLayer2D(LayNm(hi), ss.HidSize.Y, ss.HidSize.X, axon.SuperLayer)
-		net.AddLayer2D(InhNm(hi), ss.HidSize.Y, 2, axon.SuperLayer).SetClass("InhibLay")
+	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
+		net.AddLayer2D(LayNm(hi), sz.Y, sz.X, axon.SuperLayer)
+		net.AddLayer2D(InhNm(hi), sz.Y, 2, axon.SuperLayer).SetClass("InhibLay")
 	}
 
 	full := prjn.NewFull()
 	rndcut := prjn.NewUnifRnd()
 	rndcut.PCon = 0.1
 
-	for hi := 1; hi <= ss.NLayers; hi++ {
+	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
 		ll := LayByNm(net, hi-1)
 		tl := LayByNm(net, hi)
 		il := InhByNm(net, hi)
@@ -193,21 +174,25 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
 		il.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: tl.Name(), YAlign: relpos.Front, Space: 1})
 
-		if hi < ss.NLayers {
+		if hi < ss.Config.Params.NLayers {
 			nl := LayByNm(net, hi+1)
 			net.ConnectLayers(nl, il, full, axon.ForwardPrjn).SetClass("ToInhib")
 			net.ConnectLayers(tl, nl, full, axon.ForwardPrjn).SetClass("Excite")
 			net.ConnectLayers(nl, tl, full, axon.BackPrjn).SetClass("Excite")
 		}
 	}
-	err := net.Build(ctx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	net.Build(ctx)
 	net.Defaults()
-	ss.Params.SetObject("Network")
+	net.Defaults()
+	ss.ApplyParams()
 	ss.Net.InitWts(ctx)
+}
+
+func (ss *Sim) ApplyParams() {
+	ss.Params.SetAll()
+	if ss.Config.Params.Network != nil {
+		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -216,21 +201,24 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	if ss.Config.GUI {
+		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
+	}
 	ss.Loops.ResetCounters()
-	ss.InitRndSeed()
+	ss.InitRndSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
-	ss.Params.SetAll()
+	ss.ApplyParams()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed() {
-	// run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
-	// ss.RndSeeds.Set(run)
+func (ss *Sim) InitRndSeed(run int) {
+	ss.RndSeeds.Set(run)
+	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -239,7 +227,10 @@ func (ss *Sim) ConfigLoops() {
 	net := ss.Net
 	time := &ss.Context
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 10).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).
+		AddTime(etime.Epoch, 1).
+		AddTime(etime.Trial, 10).
+		AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199) // plus phase timing
 
@@ -277,16 +268,18 @@ func (ss *Sim) ConfigLoops() {
 	////////////////////////////////////////////
 	// GUI
 
-	if ss.Args.Bool("nogui") {
-		man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
-		})
+	if !ss.Config.GUI {
+		if ss.Config.Log.NetData {
+			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
+				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+			})
+		}
 	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
-	if Debug {
+	if ss.Config.Debug {
 		mpi.Println(man.DocString())
 	}
 	ss.Loops = man
@@ -310,7 +303,7 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed()
+	ss.InitRndSeed(0)
 	ctx.Reset()
 	ctx.Mode = etime.Test
 	ss.Net.InitWts(ctx)
@@ -550,39 +543,32 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	return ss.GUI.Win
 }
 
-func (ss *Sim) ConfigArgs() {
-	ss.Args.Init()
-	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
-	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 100)
-	ss.Args.SetInt("runs", 5)
-	ss.Args.Parse() // always parse
+func (ss *Sim) RunGUI() {
+	ss.Init()
+	win := ss.ConfigGui()
+	win.StartEventLoop()
 }
 
-func (ss *Sim) CmdArgs() {
-	ss.Args.ProcStd(&ss.Params)
-	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
-	ss.Args.SetBool("nogui", true)                                       // by definition if here
-	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+func (ss *Sim) RunNoGUI() {
+	if ss.Config.Params.Note != "" {
+		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
+	}
+	runName := ss.Params.RunName(0)
+	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
+	netName := ss.Net.Name()
 
-	netdata := ss.Args.Bool("netdata")
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
+	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Test, etime.Epoch, "epc", netName, runName)
+
+	netdata := ss.Config.Log.NetData
 	if netdata {
 		mpi.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	runs := ss.Args.Int("runs")
-	run := ss.Args.Int("run")
-	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
-	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
-	rc.Set(run)
-	rc.Max = run + runs
+	ss.Init()
 
-	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-
-	ss.NewRun()
-	ss.Loops.Run(etime.Train)
+	ss.Loops.Run(etime.Test)
 
 	ss.Logs.CloseLogFiles()
 

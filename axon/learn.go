@@ -132,7 +132,7 @@ type TrgAvgActParams struct {
 	ErrLRate     float32     `viewif:"On" def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference."`
 	SynScaleRate float32     `viewif:"On" def:"0.005,0.0002" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity -- this determines the effective strength of the constraint, and larger models may need more than the weaker default value."`
 	SubMean      float32     `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point."`
-	TrgRange     minmax.F32  `viewif:"On" def:"{0.5 2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	TrgRange     minmax.F32  `viewif:"On" def:"{'Min':0.5,'Max':2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      slbool.Bool `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Pool         slbool.Bool `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
 
@@ -417,7 +417,7 @@ func (sp *SWtInitParams) RndVar(rnd erand.Rand) float32 {
 type SWtParams struct {
 	Init  SWtInitParams  `view:"inline" desc:"initialization of SWt values"`
 	Adapt SWtAdaptParams `view:"inline" desc:"adaptation of SWt values in response to LWt learning"`
-	Limit minmax.F32     `def:"{0.2 0.8}" view:"inline" desc:"range limits for SWt values"`
+	Limit minmax.F32     `def:"{'Min':0.2,'Max':0.8}" view:"inline" desc:"range limits for SWt values"`
 }
 
 func (sp *SWtParams) Defaults() {

@@ -1,0 +1,10 @@
+# "MedHip"= {Name= "MedHip", Desc= "hippo size"}
+[Hip]		
+    EC3NPoolY=  7
+    EC3NPoolX=  7
+    CA1NNrn.Y= 15
+    CA1NNrn.X= 15
+    CA3Size.Y= 30
+    CA3Size.X= 30
+    DGRatio=   2.236
+	

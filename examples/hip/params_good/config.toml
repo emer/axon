@@ -1,0 +1,71 @@
+Includes = ["medhip.toml"]
+GUI = true
+Debug = false
+
+[Hip]
+  DGRatio = 2.236
+  EC2PCon = 0.25
+  EC3ToEC2PCon = 0.1
+  DGPCon = 0.25
+  CA3PCon = 0.25
+  CA1PCon = 0.25
+  MossyPCon = 0.02
+  ECPctAct = 0.2
+  MossyDel = 4.0
+  MossyDelTest = 3.0
+  ThetaLow = 0.9
+  ThetaHigh = 1.0
+  MemThr = 0.34
+  [Hip.EC2Size]
+    X = 21
+    Y = 21
+  [Hip.ECSize]
+    X = 2
+    Y = 3
+  [Hip.ECPool]
+    X = 7
+    Y = 7
+  [Hip.CA1Pool]
+    X = 15
+    Y = 15
+  [Hip.CA3Size]
+    X = 30
+    Y = 30
+  [Hip.DGSize]
+    X = 67
+    Y = 67
+
+[Pat]
+  MinDiffPct = 0.5
+  DriftCtxt = false
+  CtxtFlipPct = 0.25
+  DriftPct = 0.0
+
+[Params]
+  Sheet = ""
+  Tag = ""
+  Note = ""
+  File = ""
+  SaveAll = false
+  Good = true
+
+[Run]
+  StopMem = 0.9
+  GPU = true
+  NThreads = 0
+  Run = 0
+  Runs = 5
+  Epochs = 100
+  NZero = 2
+  NTrials = 60
+  NData = 10
+  TestInterval = 1
+
+[Log]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Trial = false
+  TestEpoch = false
+  TestTrial = false
+  NetData = false

@@ -1,0 +1,60 @@
+[[Base]]
+  Sel = "#Input"
+  Desc = "input fixed act"
+  [Base.Params]
+    "Layer.Acts.Decay.Act" = "1"
+    "Layer.Acts.Decay.Glong" = "1"
+    "Layer.Inhib.ActAvg.Nominal" = "0.05"
+
+[[Base]]
+  Sel = "#Rew"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "1"
+    "Layer.Inhib.Layer.Gi" = "0.2"
+
+[[RW]]
+  Sel = ".RWPredLayer"
+  Desc = ""
+  [RW.Params]
+    "Layer.Acts.Dt.GeTau" = "40"
+    "Layer.Inhib.ActAvg.Nominal" = "1"
+    "Layer.Inhib.Layer.Gi" = "0.2"
+
+[[RW]]
+  Sel = ".RWPrjn"
+  Desc = "RW pred"
+  [RW.Params]
+    "Prjn.Learn.LRate.Base" = "0.1"
+    "Prjn.RLPred.DaTol" = "0.0"
+    "Prjn.RLPred.OppSignLRate" = "1.0"
+    "Prjn.SWts.Init.Mean" = "0"
+    "Prjn.SWts.Init.Sym" = "false"
+    "Prjn.SWts.Init.Var" = "0"
+
+[[TD]]
+  Sel = ".TDPredLayer"
+  Desc = ""
+  [TD.Params]
+    "Layer.Acts.Dt.GeTau" = "40"
+    "Layer.Inhib.ActAvg.Nominal" = "1"
+    "Layer.Inhib.Layer.Gi" = "0.2"
+
+[[TD]]
+  Sel = ".TDIntegLayer"
+  Desc = ""
+  [TD.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "1"
+    "Layer.Inhib.Layer.Gi" = "0.2"
+    "Layer.TDInteg.Discount" = "0.9"
+    "Layer.TDInteg.PredGain" = "1.0"
+
+[[TD]]
+  Sel = "#InputToRewPred"
+  Desc = "input to rewpred"
+  [TD.Params]
+    "Prjn.Learn.LRate.Base" = "0.1"
+    "Prjn.RLPred.OppSignLRate" = "1.0"
+    "Prjn.SWts.Init.Mean" = "0"
+    "Prjn.SWts.Init.Sym" = "false"
+    "Prjn.SWts.Init.Var" = "0"

@@ -21,6 +21,7 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
+	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
@@ -38,9 +39,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(func() {
-			sim.RunGUI()
-		})
+		gimain.Main(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -50,24 +49,27 @@ func main() {
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
-	Network map[string]any `desc:"network parameters"`
-	Set     string         `desc:"ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params"`
-	File    string         `desc:"Name of the JSON file to input saved parameters from."`
-	Tag     string         `desc:"extra tag to add to file names and logs saved from this run"`
-	Note    string         `desc:"user note -- describe the run params etc -- like a git commit message for the run"`
-	SaveAll bool           `desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+	Network     map[string]any `desc:"network parameters"`
+	Hidden1Size evec.Vec2i     `def:"{'X':10,'Y':10}" nest:"+" desc:"size of hidden layer -- can use emer.LaySize for 4D layers"`
+	Hidden2Size evec.Vec2i     `def:"{'X':10,'Y':10}" nest:"+" desc:"size of hidden layer -- can use emer.LaySize for 4D layers"`
+	Sheet       string         `desc:"Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params"`
+	Tag         string         `desc:"extra tag to add to file names and logs saved from this run"`
+	Note        string         `desc:"user note -- describe the run params etc -- like a git commit message for the run"`
+	File        string         `nest:"+" desc:"Name of the JSON file to input saved parameters from."`
+	SaveAll     bool           `nest:"+" desc:"Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params"`
+	Good        bool           `nest:"+" desc:"for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time."`
 }
 
 // RunConfig has config parameters related to running the sim
 type RunConfig struct {
 	GPU          bool   `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
-	Threads      int    `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
+	NData        int    `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
+	NThreads     int    `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
 	Run          int    `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
 	NRuns        int    `def:"5" min:"1" desc:"total number of runs to do when running Train"`
 	NEpochs      int    `def:"100" desc:"total number of epochs per run"`
 	NZero        int    `def:"2" desc:"stop run after this number of perfect, zero-error epochs"`
 	NTrials      int    `def:"32" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
-	NData        int    `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
 	TestInterval int    `def:"5" desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int    `def:"5" desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 	StartWts     string `desc:"if non-empty, is the name of weights file to load at start of first run -- for testing"`
@@ -76,11 +78,11 @@ type RunConfig struct {
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
 	SaveWts   bool `desc:"if true, save final weights after each run"`
-	Epoch     bool `def:"true" desc:"if true, save train epoch log to file, as .epc.tsv typically"`
-	Run       bool `def:"true" desc:"if true, save run log to file, as .run.tsv typically"`
-	Trial     bool `def:"false" desc:"if true, save train trial log to file, as .trl.tsv typically. May be large."`
-	TestEpoch bool `def:"false" desc:"if true, save testing epoch log to file, as .tst_epc.tsv typically.  In general it is better to copy testing items over to the training epoch log and record there."`
-	TestTrial bool `def:"false" desc:"if true, save testing trial log to file, as .tst_trl.tsv typically. May be large."`
+	Epoch     bool `def:"true" nest:"+" desc:"if true, save train epoch log to file, as .epc.tsv typically"`
+	Run       bool `def:"true" nest:"+" desc:"if true, save run log to file, as .run.tsv typically"`
+	Trial     bool `def:"false" nest:"+" desc:"if true, save train trial log to file, as .trl.tsv typically. May be large."`
+	TestEpoch bool `def:"false" nest:"+" desc:"if true, save testing epoch log to file, as .tst_epc.tsv typically.  In general it is better to copy testing items over to the training epoch log and record there."`
+	TestTrial bool `def:"false" nest:"+" desc:"if true, save testing trial log to file, as .tst_trl.tsv typically. May be large."`
 	NetData   bool `desc:"if true, save network activation etc data from testing trials, for later viewing in netview"`
 }
 
@@ -104,7 +106,7 @@ func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
 type Sim struct {
 	Config   Config           `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
 	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Params   emer.Params      `view:"inline" desc:"all parameter management"`
+	Params   emer.NetParams   `view:"inline" desc:"network parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
@@ -121,10 +123,7 @@ type Sim struct {
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSets
-	ss.Params.AddNetwork(ss.Net)
-	ss.Params.AddSim(ss)
-	ss.Params.AddNetSize()
+	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
@@ -144,7 +143,8 @@ func (ss *Sim) ConfigAll() {
 	ss.ConfigLogs()
 	ss.ConfigLoops()
 	if ss.Config.Params.SaveAll {
-		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config)
+		ss.Config.Params.SaveAll = false
+		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
 }
@@ -187,16 +187,13 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	ss.Params.AddLayers([]string{"Hidden1", "Hidden2"}, "Hidden")
-	ss.Params.SetObject("NetSize")
-
 	net.InitName(net, "RA25")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
-	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
-	hid2 := net.AddLayer2D("Hidden2", ss.Params.LayY("Hidden2", 10), ss.Params.LayX("Hidden2", 10), axon.SuperLayer)
+	hid1 := net.AddLayer2D("Hidden1", ss.Config.Params.Hidden1Size.Y, ss.Config.Params.Hidden1Size.X, axon.SuperLayer)
+	hid2 := net.AddLayer2D("Hidden2", ss.Config.Params.Hidden2Size.Y, ss.Config.Params.Hidden2Size.X, axon.SuperLayer)
 	out := net.AddLayer2D("Output", 5, 5, axon.TargetLayer)
 
 	// use this to position layers relative to each other
@@ -217,13 +214,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	err := net.Build(ctx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	net.Build(ctx)
 	net.Defaults()
-	net.SetNThreads(ss.Config.Run.Threads)
+	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	net.InitWts(ctx)
 }
@@ -231,9 +224,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 func (ss *Sim) ApplyParams() {
 	ss.Params.SetAll()
 	if ss.Config.Params.Network != nil {
-		ss.Params.SetMsg = ss.Config.Debug
 		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
-		ss.Params.SetMsg = false // too much for regular
 	}
 }
 
@@ -270,9 +261,16 @@ func (ss *Sim) ConfigLoops() {
 
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
-	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.NRuns).AddTime(etime.Epoch, ss.Config.Run.NEpochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).
+		AddTime(etime.Run, ss.Config.Run.NRuns).
+		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
+		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
+		AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).
+		AddTime(etime.Epoch, 1).
+		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
+		AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
@@ -455,6 +453,7 @@ func (ss *Sim) OpenPats() {
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("UnitErr", 0.0)
 	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetString("TrialName", "")
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -647,14 +646,6 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Params.Note != "" {
 		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
 	}
-	if ss.Config.Params.Set != "" {
-		ss.Params.ExtraSets = ss.Config.Params.Set
-		mpi.Printf("Using ParamSet: %s\n", ss.Config.Params.Set)
-	}
-	if ss.Config.Params.Tag != "" {
-		ss.Params.Tag = ss.Config.Params.Tag
-		mpi.Printf("Tag: %s\n", ss.Config.Params.Tag)
-	}
 	if ss.Config.Log.SaveWts {
 		mpi.Printf("Saving final weights per run\n")
 	}
@@ -674,11 +665,6 @@ func (ss *Sim) RunNoGUI() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	}
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
 	ss.Init()
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
@@ -689,6 +675,11 @@ func (ss *Sim) RunNoGUI() {
 		ss.Net.OpenWtsJSON(gi.FileName(ss.Config.Run.StartWts))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
 	}
+
+	if ss.Config.Run.GPU {
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
+	}
+	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.Loops.Run(etime.Train)
 

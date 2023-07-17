@@ -1,0 +1,12 @@
+Rew.Inhib.Layer.Gi: 0.2 // [Def: 1,1.1,0.75,0.9] <br>
+RewPred.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
+RewPred.Acts.Dt.GeTau: 40 // [Def: 5] <br>
+RewPred.Inhib.Layer.Gi: 0.2 // [Def: 1,1.1,0.75,0.9] <br>
+RewPred.InputToRewPred.SWts.Init.Mean: 0 // [Def: 0.5,0.4] <br>
+RewPred.InputToRewPred.SWts.Init.Var: 0 // [Def: 0.25] <br>
+RewPred.InputToRewPred.SWts.Init.Sym: false // [Def: true] <br>
+RewPred.InputToRewPred.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
+RewInteg.Inhib.Layer.Gi: 0.2 // [Def: 1,1.1,0.75,0.9] <br>
+ACh.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
+ACh.Acts.Decay.LearnCa: 1 // [Def: 0] <br>
+Input.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>

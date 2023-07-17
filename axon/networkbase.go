@@ -23,6 +23,7 @@ import (
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
+	"github.com/emer/emergent/netparams"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -404,10 +405,15 @@ func (nt *NetworkBase) AllPrjnScales() string {
 }
 
 // SaveParamsSnapshot saves various views of current parameters
-// to a directory based on current date, as a kind of snapshot of the simulation state.
+// to either `params_good` if good = true (for current good reference params)
+// or `params_2006_01_02` (year, month, day) datestamp,
+// providing a snapshot of the simulation params for easy diffs and later reference.
 // Also saves current Config and Params state.
-func (nt *NetworkBase) SaveParamsSnapshot(pars *params.Sets, cfg any) error {
+func (nt *NetworkBase) SaveParamsSnapshot(pars *netparams.Sets, cfg any, good bool) error {
 	date := time.Now().Format("2006_01_02")
+	if good {
+		date = "good"
+	}
 	dir := "params_" + date
 	err := os.Mkdir(dir, 0775)
 	if err != nil {

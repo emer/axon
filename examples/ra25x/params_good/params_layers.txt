@@ -1,0 +1,12 @@
+          Input		Nominal:	  0.15	Params: #Input: 0.15 | Layer: 0.06
+						Layer.Gi:	  0.90	Params: #Input: 0.9 | Layer: 1.1
+
+        Hidden1		Nominal:	  0.06	Params: .SuperLayer: 0.06 | Layer: 0.06
+						Layer.Gi:	  1.10	Params: .SuperLayer: 1.1 | Layer: 1.1
+
+        Hidden2		Nominal:	  0.06	Params: .SuperLayer: 0.06 | Layer: 0.06
+						Layer.Gi:	  1.10	Params: .SuperLayer: 1.1 | Layer: 1.1
+
+         Output		Nominal:	  0.24	Params: #Output: 0.24 | Layer: 0.06
+						Layer.Gi:	  0.65	Params: #Output: 0.65 | Layer: 1.1
+

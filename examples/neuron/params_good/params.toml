@@ -1,0 +1,19 @@
+[[Base]]
+  Sel = "Prjn"
+  Desc = "no learning"
+  [Base.Params]
+    "Prjn.Learn.Learn" = "false"
+
+[[Base]]
+  Sel = "Layer"
+  Desc = "generic params for all layers: lower gain, slower, soft clamp"
+  [Base.Params]
+    "Layer.Acts.Init.Vm" = "0.3"
+    "Layer.Inhib.Layer.On" = "false"
+
+[[Testing]]
+  Sel = "Layer"
+  Desc = ""
+  [Testing.Params]
+    "Layer.Acts.GabaB.Gbar" = "0.0"
+    "Layer.Acts.NMDA.Gbar" = "0.0"

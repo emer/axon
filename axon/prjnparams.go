@@ -226,7 +226,7 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32,
 // DoSynCa returns false if should not do synaptic-level calcium updating.
 // Done by default in Cortex, not for some other special projection types.
 func (pj *PrjnParams) DoSynCa() bool {
-	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn || pj.PrjnType == HipPrjn {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn { // || pj.PrjnType == HipPrjn {
 		return false
 	}
 	return true
@@ -281,19 +281,19 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
 	// credit assignment part
-	caUpT := SynCaV(ctx, syni, di, CaUpT) // time of last update
-	syCaM := SynCaV(ctx, syni, di, CaM) // fast time scale
-	syCaP := SynCaV(ctx, syni, di, CaP) // slower but still fast time scale, drives Potentiation
-	syCaD := SynCaV(ctx, syni, di, CaD) // slow time scale, drives Depression (one trial = 200 cycles)
+	caUpT := SynCaV(ctx, syni, di, CaUpT)                                // time of last update
+	syCaM := SynCaV(ctx, syni, di, CaM)                                  // fast time scale
+	syCaP := SynCaV(ctx, syni, di, CaP)                                  // slower but still fast time scale, drives Potentiation
+	syCaD := SynCaV(ctx, syni, di, CaD)                                  // slow time scale, drives Depression (one trial = 200 cycles)
 	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
-	dtr := syCaD               // delta trace, caD reflects entire window
-	if pj.PrjnType == CTCtxtPrjn { // layer 6 CT projection
+	dtr := syCaD                                                         // delta trace, caD reflects entire window
+	if pj.PrjnType == CTCtxtPrjn {                                       // layer 6 CT projection
 		dtr = NrnV(ctx, si, di, BurstPrv)
 	}
-	SetSynCaV(ctx, syni, di, DTr, dtr) // save delta trace for GUI
+	SetSynCaV(ctx, syni, di, DTr, dtr)                          // save delta trace for GUI
 	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	SetSynCaV(ctx, syni, di, Tr, tr) // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
-	if SynV(ctx, syni, Wt) == 0 { // failed con, no learn
+	SetSynCaV(ctx, syni, di, Tr, tr)                            // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
+	if SynV(ctx, syni, Wt) == 0 {                               // failed con, no learn
 		return
 	}
 
@@ -320,26 +320,22 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 	}
 }
 
-
 // DWtSynHip computes the weight change (learning) at given synapse for cortex + Hip (CPCA Hebb learning).
 // Uses synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 // Adds proportional CPCA learning rule for hip-specific prjns
 func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
 	// credit assignment part
-	caUpT := SynCaV(ctx, syni, di, CaUpT) // time of last update
-	syCaM := SynCaV(ctx, syni, di, CaM) // fast time scale
-	syCaP := SynCaV(ctx, syni, di, CaP) // slower but still fast time scale, drives Potentiation
-	syCaD := SynCaV(ctx, syni, di, CaD) // slow time scale, drives Depression (one trial = 200 cycles)
+	caUpT := SynCaV(ctx, syni, di, CaUpT)                                // time of last update
+	syCaM := SynCaV(ctx, syni, di, CaM)                                  // fast time scale
+	syCaP := SynCaV(ctx, syni, di, CaP)                                  // slower but still fast time scale, drives Potentiation
+	syCaD := SynCaV(ctx, syni, di, CaD)                                  // slow time scale, drives Depression (one trial = 200 cycles)
 	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
-	dtr := syCaD               // delta trace, caD reflects entire window
-	if pj.PrjnType == CTCtxtPrjn { // layer 6 CT projection
-		dtr = NrnV(ctx, si, di, BurstPrv)
-	}
-	SetSynCaV(ctx, syni, di, DTr, dtr) // save delta trace for GUI
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	SetSynCaV(ctx, syni, di, Tr, tr) // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
-	if SynV(ctx, syni, Wt) == 0 { // failed con, no learn
+	dtr := syCaD                                                         // delta trace, caD reflects entire window
+	SetSynCaV(ctx, syni, di, DTr, dtr)                                   // save delta trace for GUI
+	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)          // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr)                                     // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
+	if SynV(ctx, syni, Wt) == 0 {                                        // failed con, no learn
 		return
 	}
 
@@ -368,12 +364,9 @@ func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 	savg = 0.5 / mat32.Max(pj.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
 	hebb := rNrnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
 
-	// setting delta weight
-	if pj.PrjnType == CTCtxtPrjn { // rn.RLRate IS needed for other projections, just not the context one
-		SetSynCaV(ctx, syni, di, DiDWt, pj.Learn.LRate.Eff*(pj.Hip.Hebb*hebb + pj.Hip.Err*err))
-	} else {
-		SetSynCaV(ctx, syni, di, DiDWt, NrnV(ctx, ri, di, RLRate)*pj.Learn.LRate.Eff*(pj.Hip.Hebb*hebb + pj.Hip.Err*err))
-	}
+	// setting delta weight (note: impossible to be CTCtxtPrjn)
+	dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * (pj.Hip.Hebb*hebb + pj.Hip.Err*err)
+	SetSynCaV(ctx, syni, di, DiDWt, dwt)
 }
 
 // DWtSynBLA computes the weight change (learning) at given synapse for BLAPrjn type.

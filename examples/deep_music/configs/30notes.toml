@@ -1,0 +1,7 @@
+[Env]
+	FullSong = false
+
+[Run]
+	NTrials = 128
+	NEpochs = 100
+

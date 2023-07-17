@@ -38,4 +38,4 @@ examples/bench_objrec/Objrec_*.tsv
 
 # Bazel
 /bazel-*
-examples/hip_bench/hip_bench
+

@@ -1,0 +1,4 @@
+GUI = true
+Debug = false
+
+Includes = ["30notes.toml"]

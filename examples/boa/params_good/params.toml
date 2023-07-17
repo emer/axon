@@ -1,0 +1,212 @@
+[Base]
+  Desc = "minimal base params needed for this model"
+  [Base.Sheets]
+
+    [[Base.Sheets.Network]]
+      Sel = "Layer"
+      Desc = "generic params for all layers"
+      [Base.Sheets.Network.Params]
+        "Layer.Acts.Clamp.Ge" = "1.5"
+
+    [[Base.Sheets.Network]]
+      Sel = ".PFCLayer"
+      Desc = "pfc layers: slower trgavgact"
+      [Base.Sheets.Network.Params]
+        "Layer.Learn.TrgAvgAct.SynScaleRate" = "0.0002"
+
+    [[Base.Sheets.Network]]
+      Sel = ".CS"
+      Desc = "need to adjust Nominal for number of CSs -- now down automatically"
+      [Base.Sheets.Network.Params]
+        "Layer.Inhib.ActAvg.Nominal" = "0.1"
+
+    [[Base.Sheets.Network]]
+      Sel = "#OFCus"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Layer.Inhib.Pool.Gi" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = "#OFCval"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Layer.Inhib.Pool.Gi" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".MatrixLayer"
+      Desc = "all mtx"
+      [Base.Sheets.Network.Params]
+        "Layer.Acts.Dend.ModGain" = "1"
+        "Layer.Inhib.Layer.On" = "false"
+        "Layer.Inhib.Pool.FB" = "1"
+        "Layer.Inhib.Pool.Gi" = "0.3"
+
+    [[Base.Sheets.Network]]
+      Sel = "#BLAPosAcqD1"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Layer.Inhib.Layer.Gi" = "2.4"
+        "Layer.Inhib.Pool.Gi" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".PTMaintLayer"
+      Desc = "time integration params"
+      [Base.Sheets.Network.Params]
+        "Layer.Acts.Dend.ModGain" = "1.5"
+        "Layer.Inhib.Layer.Gi" = "2.4"
+        "Layer.Inhib.Pool.Gi" = "2.4"
+        "Layer.Learn.NeuroMod.AChDisInhib" = "0"
+
+    [[Base.Sheets.Network]]
+      Sel = ".VSPatchLayer"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Layer.Inhib.Pool.FB" = "0"
+        "Layer.Inhib.Pool.Gi" = "0.5"
+        "Layer.Learn.NeuroMod.DipGain" = "0.01"
+        "Layer.VSPatch.Gain" = "30"
+        "Layer.VSPatch.ThrInit" = "0.4"
+        "Layer.VSPatch.ThrLRate" = "0.001"
+        "Layer.VSPatch.ThrNonRew" = "10"
+
+    [[Base.Sheets.Network]]
+      Sel = ".PFCPrjn"
+      Desc = "pfc prjn params -- more robust to long-term training"
+      [Base.Sheets.Network.Params]
+        "Prjn.Learn.LRate.Base" = "0.02"
+        "Prjn.Learn.Trace.SubMean" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = "#BLAPosAcqD1ToOFCus"
+      Desc = "stronger"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "1.5"
+
+    [[Base.Sheets.Network]]
+      Sel = "#OFCusToOFCval"
+      Desc = "stronger"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "3"
+
+    [[Base.Sheets.Network]]
+      Sel = "#ACCcostToACCutil"
+      Desc = "stronger"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "3"
+
+    [[Base.Sheets.Network]]
+      Sel = "#OFCvalToACCutil"
+      Desc = "not good to make this stronger"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".PTSelfMaint"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.Learn.LRate.Base" = "0.0001"
+        "Prjn.PrjnScale.Abs" = "4"
+
+    [[Base.Sheets.Network]]
+      Sel = ".ToPTp"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "4"
+
+    [[Base.Sheets.Network]]
+      Sel = ".BLAFromNovel"
+      Desc = "must be strong enough to compete with CS at start -- now done automatically"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "3"
+
+    [[Base.Sheets.Network]]
+      Sel = ".MatrixPrjn"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.Matrix.NoGateLRate" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".ToSC"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "2"
+
+    [[Base.Sheets.Network]]
+      Sel = ".DrivesToMtx"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".BLAExtPrjn"
+      Desc = "ext learns relatively fast"
+      [Base.Sheets.Network.Params]
+        "Prjn.Learn.LRate.Base" = "0.02"
+
+    [[Base.Sheets.Network]]
+      Sel = ".BLAAcqToGo"
+      Desc = "must dominate"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "3"
+        "Prjn.PrjnScale.Rel" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".PFCToVSMtx"
+      Desc = "contextual, should be weaker"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Rel" = "0.1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".VSPatchPrjn"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.Learn.LRate.Base" = "0.01"
+        "Prjn.PrjnScale.Abs" = "2"
+
+    [[Base.Sheets.Network]]
+      Sel = ".DrivesToVSPatch"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "1"
+
+    [[Base.Sheets.Network]]
+      Sel = "#OFCusPTpToVsPatch"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "5"
+
+    [[Base.Sheets.Network]]
+      Sel = "#CSToBLAPosAcqD1"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.Learn.LRate.Base" = "0.1"
+
+    [[Base.Sheets.Network]]
+      Sel = ".SuperToThal"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "4"
+
+    [[Base.Sheets.Network]]
+      Sel = ".SuperToPT"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "0.5"
+
+    [[Base.Sheets.Network]]
+      Sel = "#ACCcostToACCcostMD"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "3"
+
+    [[Base.Sheets.Network]]
+      Sel = ".GPiToBGThal"
+      Desc = "inhibition from GPi to MD"
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "5"
+
+    [[Base.Sheets.Network]]
+      Sel = "#UrgencyToVsMtxGo"
+      Desc = ""
+      [Base.Sheets.Network.Params]
+        "Prjn.PrjnScale.Abs" = "0"

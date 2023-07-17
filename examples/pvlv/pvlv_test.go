@@ -36,14 +36,16 @@ func TestPVLVAcqExt(t *testing.T) {
 	sim := &Sim{}
 
 	sim.New()
-	sim.Config()
 
-	// acquire then extinguish
-	sim.Args.SetString("runname", "PosAcqExt_A100B50_A0B0")
-	sim.Args.SetBool("blocklog", false) // set to true to debug runs
-	sim.Args.SetBool("condlog", false)  // set to true to debug runs
-	sim.Args.SetBool("runlog", false)
-	sim.Args.SetBool("gpu", false) // set to false for CI testing -- set to true for interactive testing
+	sim.Config.GUI = false
+	sim.Config.Run.GPU = false // for CI
+	sim.Config.Run.NRuns = 1
+	sim.Config.Log.Block = false
+	sim.Config.Log.Cond = false
+	sim.Config.Log.Trial = false
+	sim.Config.Env.RunName = "PosAcqExt_A100B50_A0B0" // acquire then extinguish
+
+	sim.ConfigAll()
 
 	sim.RunNoGUI()
 

@@ -1,0 +1,33 @@
+GUI = true
+Debug = false
+
+[Env]
+  ZeroTest = false
+  NPools = 1
+
+[Params]
+  Sheet = ""
+  Tag = ""
+  Note = ""
+  File = ""
+  SaveAll = false
+  Good = true
+
+[Run]
+  GPU = true
+  NData = 16
+  NThreads = 0
+  Run = 0
+  NRuns = 1
+  NEpochs = 30
+  NTrials = 128
+
+[Log]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Trial = false
+  TestEpoch = false
+  TestTrial = false
+  NetData = false
+  Testing = false
