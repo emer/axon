@@ -5,7 +5,9 @@
 package axon
 
 import (
+	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/evec"
+	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/prjn"
 )
 
@@ -111,4 +113,78 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	ca1.PlaceRightOf(ca3, space)
 
 	return
+}
+
+// ConfigLoopsHip configures the hippocampal looper and should be included in ConfigLoops in model to make sure hip loops is configured correctly
+// see hip.go for an instance of implementation of this function
+func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, mossyDel, mossyDelTest, thetaLow, thetaHigh float32, pretrain *bool) {
+
+	var tmpVals []float32
+
+	input := net.AxonLayerByName("Input")
+	ec5 := net.AxonLayerByName("EC5")
+	ca1 := net.AxonLayerByName("CA1")
+	ca3 := net.AxonLayerByName("CA3")
+	dg := net.AxonLayerByName("DG")
+	dgFmEc2, _ := dg.SendNameTry("EC2")
+	ca1FmEc3, _ := ca1.SendNameTry("EC3")
+	ca1FmCa3, _ := ca1.SendNameTry("CA3")
+	ca3FmDg, _ := ca3.SendNameTry("DG")
+	ca3FmEc2, _ := ca3.SendNameTry("EC2")
+	ca3FmCa3, _ := ca3.SendNameTry("CA3")
+
+	dgPjScale := ca3FmDg.(*Prjn).Params.PrjnScale.Rel
+	ca1FmCa3Abs := ca1FmCa3.(*Prjn).Params.PrjnScale.Abs
+
+	startOfQ1 := looper.NewEvent("Q0", 0, func() {
+		if *pretrain {
+			dgFmEc2.(*Prjn).Params.Learn.Learn = 0
+			ca3FmEc2.(*Prjn).Params.Learn.Learn = 0
+			ca3FmCa3.(*Prjn).Params.Learn.Learn = 0
+			ca1FmCa3.(*Prjn).Params.Learn.Learn = 0
+			ca1FmCa3.(*Prjn).Params.PrjnScale.Abs = 0
+		} else {
+			dgFmEc2.(*Prjn).Params.Learn.Learn = 1
+			ca3FmEc2.(*Prjn).Params.Learn.Learn = 1
+			ca3FmCa3.(*Prjn).Params.Learn.Learn = 1
+			ca1FmCa3.(*Prjn).Params.Learn.Learn = 1
+			ca1FmCa3.(*Prjn).Params.PrjnScale.Abs = ca1FmCa3Abs
+		}
+		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaLow
+
+		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDel // turn off DG input to CA3 in first quarter
+
+		net.InitGScale(ctx) // update computed scaling factors
+		net.GPU.SyncParamsToGPU()
+	})
+	endOfQ1 := looper.NewEvent("Q1", 50, func() {
+		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = thetaLow
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
+		if man.Mode == etime.Test {
+			ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDelTest // testing
+		}
+		net.InitGScale(ctx) // update computed scaling factors
+		net.GPU.SyncParamsToGPU()
+	}) // 50ms
+	endOfQ3 := looper.NewEvent("Q3", 150, func() {
+		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
+		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaLow
+		if man.Mode == etime.Train { // clamp EC5 from Input
+			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+				input.UnitVals(&tmpVals, "Act", int(di))
+				ec5.ApplyExt1D32(ctx, di, tmpVals)
+			}
+		}
+		net.InitGScale(ctx) // update computed scaling factors
+		net.GPU.SyncParamsToGPU()
+	})
+	endOfQ4 := looper.NewEvent("Q4", 200, func() {
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
+		net.InitGScale(ctx) // update computed scaling factors
+		net.GPU.SyncParamsToGPU()
+	})
+
+	man.AddEventAllModes(etime.Cycle, startOfQ1, endOfQ1, endOfQ3, endOfQ4)
 }
