@@ -21,6 +21,12 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // also now set by default
 			}},
+		{Sel: ".PTPredLayer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.ActAvg.Nominal": "0.1",
+				"Layer.CT.GeGain":            "0.05", // has no effect
+				"Layer.CT.DecayTau":          "50",
+			}},
 		{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 			Params: params.Params{
 				// "Layer.Inhib.Layer.Gi":  "1.0", // 1.0 for CSP, 0.9 for CS -- should be higher for CSPerDrive > 1
@@ -29,6 +35,14 @@ var ParamSets = netparams.Sets{
 		{Sel: "#OFCus", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1",
+			}},
+		{Sel: "#OFCusPT", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.ActAvg.Nominal": "0.2",
+			}},
+		{Sel: "#OFCusPTp", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Pool.Gi": "1.4",
 			}},
 		{Sel: "#OFCval", Desc: "",
 			Params: params.Params{
@@ -73,6 +87,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
 				"Prjn.Learn.LRate.Base":    "0.02", // 0.04 def; 0.02 more stable
+			}},
+		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "4",
 			}},
 		{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
 			Params: params.Params{
