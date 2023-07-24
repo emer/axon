@@ -361,7 +361,8 @@ func (ef *Effort) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
 // Also resets effort and LHb.DipSumCur counters -- starting fresh at start
 // of a new goal engaged state.
 func (pp *PVLV) VSGated(ctx *Context, di uint32, rnd erand.Rand, gated, hasRew bool, poolIdx int) {
-	if !hasRew && gated {
+	hasGated := GlbV(ctx, di, GvVSMatrixHasGated) > 0
+	if !hasRew && gated && !hasGated {
 		UrgencyReset(ctx, di)
 		pp.Effort.ReStart(ctx, di, rnd)
 		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
