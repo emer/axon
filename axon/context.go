@@ -1108,7 +1108,11 @@ func PVLVDriveUpdt(ctx *Context, di uint32) {
 	nd := ctx.PVLV.Drive.NActive
 	for i := uint32(0); i < nd; i++ {
 		us := GlbDrvV(ctx, di, i, GvUSpos)
-		AddGlbDrvV(ctx, di, i, GvDrives, -us*ctx.PVLV.Drive.USDec.Get(i))
+		nwdrv := GlbDrvV(ctx, di, i, GvDrives) - us*ctx.PVLV.Drive.USDec.Get(i)
+		if nwdrv < 0 {
+			nwdrv = 0
+		}
+		SetGlbDrvV(ctx, di, i, GvDrives, nwdrv)
 	}
 }
 
