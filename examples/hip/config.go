@@ -56,32 +56,32 @@ func (pp *PatConfig) Defaults() {
 }
 
 type ModConfig struct {
-	InToEc2PCon  float32 `desc:"percent connectivity from Input to EC2"`
-	ECPctAct     float32 `desc:"percent activation in EC pool"`
-	MossyDel     float32 `desc:"delta in mossy effective strength between minus and plus phase"`
-	MossyDelTest float32 `desc:"delta in mossy strength for testing (relative to base param)"`
-	ThetaLow     float32 `desc:"theta low value"`
-	ThetaHigh    float32 `desc:"theta low value"`
-	MemThr       float64 `desc:"memory threshold"`
+	InToEc2PCon float32 `desc:"percent connectivity from Input to EC2"`
+	ECPctAct    float32 `desc:"percent activation in EC pool, used in patgen for input generation"`
+	// MossyDel     float32 `desc:"delta in mossy effective strength between minus and plus phase"`
+	// MossyDelTest float32 `desc:"delta in mossy strength for testing (relative to base param)"`
+	// ThetaLow     float32 `desc:"theta low value"`
+	// ThetaHigh    float32 `desc:"theta low value"`
+	MemThr float64 `desc:"memory threshold"`
 }
 
-func (modelcfg *ModConfig) Defaults() {
+func (mod *ModConfig) Defaults() {
 	// patgen
-	modelcfg.ECPctAct = 0.2
+	mod.ECPctAct = 0.2
 
 	// input to EC2 pcon
-	modelcfg.InToEc2PCon = 0.25
+	mod.InToEc2PCon = 0.25
 
-	// theta EDL in CA1
-	modelcfg.ThetaLow = 0.9 // doesn't have strong effect at low NTrials but shouldn't go too low (e.g., 0.3)
-	modelcfg.ThetaHigh = 1
+	// // theta EDL in CA1
+	// mod.ThetaLow = 0.9 // doesn't have strong effect at low NTrials but shouldn't go too low (e.g., 0.3)
+	// mod.ThetaHigh = 1
 
-	// EDL in CA3
-	modelcfg.MossyDel = 4
-	modelcfg.MossyDelTest = 3
+	// // EDL in CA3
+	// mod.MossyDel = 4
+	// mod.MossyDelTest = 3
 
 	// memory threshold
-	modelcfg.MemThr = 0.34
+	mod.MemThr = 0.34
 }
 
 // Config is a standard Sim config -- use as a starting point.
@@ -90,16 +90,16 @@ type Config struct {
 	GUI      bool     `def:"true" desc:"open the GUI -- does not automatically run -- if false, then runs automatically and quits"`
 	Debug    bool     `desc:"log debugging information"`
 
-	ModConfig ModConfig      `view:"inline" desc:"misc model parameters"`
-	Hip       axon.HipConfig `desc:"Hippocampus sizing parameters"`
-	Pat       PatConfig      `desc:"parameters for the input patterns"`
-	Params    ParamConfig    `view:"add-fields" desc:"parameter related configuration options"`
-	Run       RunConfig      `view:"add-fields" desc:"sim running related configuration options"`
-	Log       LogConfig      `view:"add-fields" desc:"data logging related configuration options"`
+	Mod    ModConfig      `view:"inline" desc:"misc model parameters"`
+	Hip    axon.HipConfig `desc:"Hippocampus sizing parameters"`
+	Pat    PatConfig      `desc:"parameters for the input patterns"`
+	Params ParamConfig    `view:"add-fields" desc:"parameter related configuration options"`
+	Run    RunConfig      `view:"add-fields" desc:"sim running related configuration options"`
+	Log    LogConfig      `view:"add-fields" desc:"data logging related configuration options"`
 }
 
 func (cfg *Config) Defaults() {
-	cfg.ModConfig.Defaults()
+	cfg.Mod.Defaults()
 	cfg.Hip.Defaults()
 	cfg.Pat.Defaults()
 }
