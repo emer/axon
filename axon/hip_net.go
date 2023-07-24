@@ -30,6 +30,11 @@ type HipConfig struct {
 
 	EC2LatRadius int     `desc:"lateral radius in EC2"`
 	EC2LatSigma  float32 `desc:"lateral sigma in EC2"`
+
+	MossyDel     float32 `def:"4" desc:"mossy fiber component to delete in training for CA3 EDL"`
+	MossyDelTest float32 `def:"3" desc:"mossy fiber  component to delete in testing for CA3 EDL"`
+	ThetaLow     float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL"`
+	ThetaHigh    float32 `def:"1" desc:"high theta modulation value for temporal difference EDL"`
 }
 
 func (hip *HipConfig) Defaults() {
@@ -51,6 +56,11 @@ func (hip *HipConfig) Defaults() {
 	// lateral
 	hip.EC2LatRadius = 2
 	hip.EC2LatSigma = 2
+
+	hip.MossyDel = 4
+	hip.MossyDelTest = 3
+	hip.ThetaLow = 0.9
+	hip.ThetaHigh = 1
 }
 
 // AddHip adds a new Hippocampal network for episodic memory.
@@ -117,7 +127,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 
 // ConfigLoopsHip configures the hippocampal looper and should be included in ConfigLoops in model to make sure hip loops is configured correctly
 // see hip.go for an instance of implementation of this function
-func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, mossyDel, mossyDelTest, thetaLow, thetaHigh float32, pretrain *bool) {
+func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipConfig, pretrain *bool) {
 
 	var tmpVals []float32
 
@@ -150,27 +160,27 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, mossyDel, 
 			ca1FmCa3.(*Prjn).Params.Learn.Learn = 1
 			ca1FmCa3.(*Prjn).Params.PrjnScale.Abs = ca1FmCa3Abs
 		}
-		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaLow
+		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
 
-		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDel // turn off DG input to CA3 in first quarter
+		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - hip.MossyDel // turn off DG input to CA3 in first quarter
 
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
 	endOfQ1 := looper.NewEvent("Q1", 50, func() {
-		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = thetaLow
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
+		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
 		if man.Mode == etime.Test {
-			ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - mossyDelTest // testing
+			ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - hip.MossyDelTest // testing
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	}) // 50ms
 	endOfQ3 := looper.NewEvent("Q3", 150, func() {
 		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
-		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaLow
+		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
 		if man.Mode == etime.Train { // clamp EC5 from Input
 			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 				input.UnitVals(&tmpVals, "Act", int(di))
@@ -181,7 +191,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, mossyDel, 
 		net.GPU.SyncParamsToGPU()
 	})
 	endOfQ4 := looper.NewEvent("Q4", 200, func() {
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = thetaHigh
+		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
