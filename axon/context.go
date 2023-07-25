@@ -1014,17 +1014,6 @@ func PVLVHasPosUS(ctx *Context, di uint32) bool {
 	return false
 }
 
-// PVLVHasNegUS returns true if there is at least one non-zero negative US
-func PVLVHasNegUS(ctx *Context, di uint32) bool {
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		if GlbDrvV(ctx, di, i, GvUSpos) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
 // PVLVNetPV returns VTA.Vals.PVpos - VTA.Vals.PVneg
 func PVLVNetPV(ctx *Context, di uint32) float32 {
 	return GlbVTA(ctx, di, GvVtaVals, GvVtaPVpos) - GlbVTA(ctx, di, GvVtaVals, GvVtaPVneg)
@@ -1036,16 +1025,6 @@ func PVLVNetPV(ctx *Context, di uint32) float32 {
 // usValue * drive * Effort.DiscFun(effort)
 func PVLVPosPVFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
 	return usValue * drive * ctx.PVLV.Effort.DiscFun(effort)
-}
-
-// PVLVSetPosUS sets given positive US (associated with same-indexed Drive) to given value
-func PVLVSetPosUS(ctx *Context, di uint32, usn uint32, val float32) {
-	SetGlbDrvV(ctx, di, usn, GvUSpos, val)
-}
-
-// PVLVSetNegUS sets given negative US to given value
-func PVLVSetNegUS(ctx *Context, di uint32, usn uint32, val float32) {
-	SetGlbDrvV(ctx, di, usn, GvUSneg, val)
 }
 
 // PVLVSetDrive sets given Drive to given value
@@ -1185,10 +1164,10 @@ func (ctx *Context) PVLVInitUS(di uint32) {
 // in the course of goal engaged approach.
 func (ctx *Context) PVLVSetUS(di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
 	if valence == Positive {
-		SetGlbV(ctx, di, GvHasRew, 1)                     // only for positive USs
-		PVLVSetPosUS(ctx, di, uint32(usIdx)+1, magnitude) // +1 for curiosity
+		SetGlbV(ctx, di, GvHasRew, 1)                            // only for positive USs
+		SetGlbDrvV(ctx, di, uint32(usIdx)+1, GvUSpos, magnitude) // +1 for curiosity
 	} else {
-		PVLVSetNegUS(ctx, di, uint32(usIdx), magnitude)
+		SetGlbUSneg(ctx, di, uint32(usIdx), magnitude)
 	}
 }
 
