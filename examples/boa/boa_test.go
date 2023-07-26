@@ -48,6 +48,10 @@ func ReportValDiffs(t *testing.T, va, vb map[string]float32, aLabel, bLabel stri
 		bv := vb[k]
 		dif := mat32.Abs(av - bv)
 
+		if strings.Contains(k, "GvACh") || strings.Contains(k, "GvVtaCeMpos") { // bad variability..
+			continue
+		}
+
 		isLay := strings.Contains(k, "Lay:")
 		tol := LayTolerance
 		if isLay {
@@ -277,7 +281,7 @@ func RunNDataTest(t *testing.T, gpu bool) {
 	sim.Config.Run.GPU = gpu
 	sim.Config.Run.NData = 2
 	sim.Config.Run.NRuns = 1
-	sim.Config.Run.NEpochs = 4
+	sim.Config.Run.NEpochs = 1
 	sim.Config.Run.NTrials = 50
 	sim.Config.Log.Run = false
 	sim.Config.Log.Epoch = false

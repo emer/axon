@@ -21,11 +21,19 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // also now set by default
 			}},
+		{Sel: ".PTMaintLayer", Desc: "time integration params",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi":             "2.4",
+				"Layer.Inhib.Pool.Gi":              "2.4",
+				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",   // todo: explore!  might be bad..
+			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1",
 				"Layer.CT.GeGain":            "0.05", // has no effect
 				"Layer.CT.DecayTau":          "50",
+				// 		"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
 			}},
 		{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 			Params: params.Params{
@@ -39,6 +47,7 @@ var ParamSets = netparams.Sets{
 		{Sel: "#OFCusPT", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.2",
+				"Layer.Inhib.Pool.Gi":        "3.0",
 			}},
 		{Sel: "#OFCusPTp", Desc: "",
 			Params: params.Params{
@@ -60,26 +69,23 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.Gi": "2.4", // 2.2 not enough to knock out novelty
 				"Layer.Inhib.Pool.Gi":  "1",
 			}},
-		{Sel: ".PTMaintLayer", Desc: "time integration params",
-			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":             "2.4",
-				"Layer.Inhib.Pool.Gi":              "2.4",
-				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",   // todo: explore!  might be bad..
-			}},
-		// {Sel: ".PTPredLayer", Desc: "",
-		// 	Params: params.Params{
-		// 		"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
-		// 	}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":          "0",
 				"Layer.Learn.NeuroMod.DipGain": "0.01", // rate of extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "30",
+				"Layer.VSPatch.Gain":           "30",   // 20 too low still
 				"Layer.VSPatch.ThrInit":        "0.4",
 				"Layer.VSPatch.ThrLRate":       "0.001",
 				"Layer.VSPatch.ThrNonRew":      "10",
+			}},
+		{Sel: ".LDTLayer", Desc: "",
+			Params: params.Params{
+				"Layer.LDT.MaintInhib": "2.0", // 0.95 is too weak -- depends on activity..
+			}},
+		{Sel: "#SC", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.KNa.Slow.Max": "0.2",
 			}},
 		////////////////////////////////////////////
 		// Cortical Prjns
@@ -90,7 +96,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
+				"Prjn.PrjnScale.Abs": "6",
 			}},
 		{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
 			Params: params.Params{
