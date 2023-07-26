@@ -261,26 +261,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// ALM, M1 <-> OFC, ACC
 
-	// super contextualization based on action, not good?
-	// net.BidirConnectLayers(ofcUS, alm, full)
-	// net.BidirConnectLayers(accCost, alm, full)
-
 	// action needs to know if maintaining a goal or not
 	// using accUtil as main summary "driver" input to action system
 	// PTp provides good notmaint signal for action.
 	net.ConnectLayers(accUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
 	net.ConnectLayers(accUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	// these are no longer necc:
-	// net.ConnectLayers(ofcValPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	// net.ConnectLayers(notMaint, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	// net.ConnectLayers(ofcValPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	// net.ConnectLayers(notMaint, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-
-	// full shortcut -- not needed
-	// net.ConnectLayers(ofcValPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	// net.ConnectLayers(accCostPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// this helps with getting the Consume action right:
+	net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	////////////////////////////////////////////////
 	// position
