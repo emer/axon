@@ -267,8 +267,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(accUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
 	net.ConnectLayers(accUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	// this helps with getting the Consume action right:
-	net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// note: in Obelisk this helps with the Consume action
+	// but here in this example it produces some instability
+	// at later time points -- todo: investigate later.
+	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	////////////////////////////////////////////////
 	// position
