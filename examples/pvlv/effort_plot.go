@@ -142,7 +142,7 @@ func (ss *DrEffPlot) TimeRun() {
 	axon.UrgencyReset(ctx, 0)
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
-	axon.PVLVSetPosUS(ctx, 0, 0, 0)
+	axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, 0)
 	axon.DrivesToBaseline(ctx, 0)
 	// pv.Update()
 	lastUS := 0
@@ -165,7 +165,7 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("US", ti, float64(usv))
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
-		axon.PVLVSetPosUS(ctx, 0, 0, usv)
+		axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, usv)
 		axon.SetGlbV(ctx, 0, axon.GvHasRewPrev, bools.ToFloat32(usv > 0))
 		ctx.PVLV.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
 		axon.PVLVDriveUpdt(ctx, 0)
