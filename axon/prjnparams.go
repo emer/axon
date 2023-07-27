@@ -375,7 +375,8 @@ func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 // (temporal difference), which limits learning.
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	dwt := float32(0)
-	if GlbV(ctx, di, GvHasRew) > 0 { // reset
+	ach := GlbV(ctx, di, GvACh)
+	if GlbV(ctx, di, GvHasRew) > 0 { // learn and reset
 		ract := NrnV(ctx, ri, di, GeIntMax)
 		lmax := layPool.AvgMax.GeIntMax.Plus.Max
 		if lmax > 0 {
@@ -384,15 +385,18 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
 		}
+		tr := SynCaV(ctx, syni, di, Tr)
+		ustr := pj.BLA.USTrace
+		tr = ustr*NrnV(ctx, si, di, Burst) + (1.0-ustr)*tr
 		delta := NrnV(ctx, ri, di, CaSpkP) - NrnV(ctx, ri, di, SpkPrv)
 		if delta < 0 { // neg delta learns slower in Acq, not Ext
 			delta *= pj.BLA.NegDeltaLRate
 		}
-		dwt = SynCaV(ctx, syni, di, Tr) * delta * ract
+		dwt = tr * delta * ract
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
-	} else if GlbV(ctx, di, GvACh) > 0.1 {
+	} else if ach > pj.BLA.AChThr {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
-		SetSynCaV(ctx, syni, di, DTr, GlbV(ctx, di, GvACh)*NrnV(ctx, si, di, Burst))
+		SetSynCaV(ctx, syni, di, DTr, ach*NrnV(ctx, si, di, Burst))
 		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), SynCaV(ctx, syni, di, DTr))
 		SetSynCaV(ctx, syni, di, Tr, tr)
 	} else {
