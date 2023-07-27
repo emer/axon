@@ -131,7 +131,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 	var tmpVals []float32
 
-	input := net.AxonLayerByName("Input")
+	ec3 := net.AxonLayerByName("EC3")
 	ec5 := net.AxonLayerByName("EC5")
 	ca1 := net.AxonLayerByName("CA1")
 	ca3 := net.AxonLayerByName("CA3")
@@ -183,7 +183,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
 		if man.Mode == etime.Train { // clamp EC5 from Input
 			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-				input.UnitVals(&tmpVals, "Act", int(di))
+				ec3.UnitVals(&tmpVals, "Act", int(di))
 				ec5.ApplyExt1D32(ctx, di, tmpVals)
 			}
 		}
