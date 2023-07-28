@@ -1,10 +1,10 @@
 # Hippocampus
 
-[![GoDoc](https://godoc.org/github.com/emer/leabra/hip?status.svg)](https://godoc.org/github.com/emer/leabra/hip)
+Package hip provides special hippocampus algorithms for implementing the Theta-phase hippocampus model described in [Zheng et al., 2022](#references) and [Ketz, Morkonda, & O'Reilly (2013)](#references).
 
-Package hip provides special hippocampus algorithms for implementing the Theta-phase hippocampus model from Ketz, Morkonda, & O'Reilly (2013).
+Files: hip_{[net.go](axon/hip_net.go), [prjns.go](axon/hip_prjns.go)}
 
-timing of ThetaPhase dynamics -- based on quarter structure:
+Timing of ThetaPhase dynamics -- based on quarter structure:
 
 * **Q1:**   ECin -> CA1 -> ECout (CA3 -> CA1 off)  : ActQ1 = minus phase for auto-encoder
 * **Q2,3:** CA3 -> CA1 -> ECout  (ECin -> CA1 off) : ActM = minus phase for recall
@@ -35,9 +35,12 @@ CA3 -> CA1 = 0, ECin -> CA1 = 1
 
 learning just happens at end of trial as usual, but encoder projections use the ActQ1, ActM, ActP variables to learn on the right signals
 
-# TODO
+# References
 
-- [ ] try error-driven CA3 learning based on DG -> CA3 plus phase per https://arxiv.org/abs/1909.10340
+Papers also avail at https://ccnlab.org/pubs
 
-- [ ] implement a two-trial version of the code to produce a true theta rhythm integrating over two adjacent alpha trials..
+* Ketz, N., Morkonda, S. G., & O’Reilly, R. C. (2013). Theta coordinated error-driven learning in the hippocampus. PLoS Computational Biology, 9, e1003067. http://www.ncbi.nlm.nih.gov/pubmed/23762019  [PDF](https://ccnlab.org/papers/KetzMorkondaOReilly13.pdf)
+
+* Zheng, Y., Liu, X. L., Nishiyama, S., Ranganath, C., & O’Reilly, R. C. (2022). Correcting the hebbian mistake: Toward a fully error-driven hippocampus. PLOS Computational Biology, 18(10), e1010589. https://doi.org/10.1371/journal.pcbi.1010589 [PDF]((https://ccnlab.org/papers/ZhengLiuNishiyamaEtAl22.pdf)
+
 

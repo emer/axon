@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/looper"
@@ -28,13 +29,13 @@ type HipConfig struct {
 	CA3ToCA1PCon float32 `def:"0.25" desc:"percent connectivity from CA3 to CA1"`
 	DGToCA3PCon  float32 `def:"0.02" desc:"percent connectivity into CA3 from DG"`
 
-	EC2LatRadius int     `desc:"lateral radius in EC2"`
-	EC2LatSigma  float32 `desc:"lateral sigma in EC2"`
+	EC2LatRadius int     `desc:"lateral radius of connectivity in EC2"`
+	EC2LatSigma  float32 `desc:"lateral gaussian sigma in EC2 for how quickly weights fall off with distance"`
 
-	MossyDel     float32 `def:"4" desc:"mossy fiber component to delete in training for CA3 EDL"`
-	MossyDelTest float32 `def:"3" desc:"mossy fiber  component to delete in testing for CA3 EDL"`
-	ThetaLow     float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL"`
-	ThetaHigh    float32 `def:"1" desc:"high theta modulation value for temporal difference EDL"`
+	MossyDelta     float32 `def:"1" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
+	MossyDeltaTest float32 `def:"0.75" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
+	ThetaLow       float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
+	ThetaHigh      float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
 }
 
 func (hip *HipConfig) Defaults() {
@@ -57,8 +58,8 @@ func (hip *HipConfig) Defaults() {
 	hip.EC2LatRadius = 2
 	hip.EC2LatSigma = 2
 
-	hip.MossyDel = 4
-	hip.MossyDelTest = 3
+	hip.MossyDelta = 1
+	hip.MossyDeltaTest = .75
 	hip.ThetaLow = 0.9
 	hip.ThetaHigh = 1
 }
@@ -68,15 +69,21 @@ func (hip *HipConfig) Defaults() {
 func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
 	// Trisynaptic Pathway (TSP)
 	ec2 = net.AddLayer2D("EC2", hip.EC2Size.Y, hip.EC2Size.X, SuperLayer)
+	ec2.SetRepIdxsShape(emer.Layer2DRepIdxs(ec2, 10))
 	dg = net.AddLayer2D("DG", int(float32(hip.CA3Size.Y)*hip.DGRatio), int(float32(hip.CA3Size.X)*hip.DGRatio), SuperLayer)
+	dg.SetRepIdxsShape(emer.Layer2DRepIdxs(dg, 10))
 	ca3 = net.AddLayer2D("CA3", hip.CA3Size.Y, hip.CA3Size.X, SuperLayer)
+	ca3.SetRepIdxsShape(emer.Layer2DRepIdxs(ca3, 10))
 
 	// Monosynaptic Pathway (MSP)
 	ec3 = net.AddLayer4D("EC3", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
 	ec3.SetClass("EC")
+	ec3.SetRepIdxsShape(emer.CenterPoolIdxs(ec3, 2), emer.CenterPoolShape(ec3, 2))
 	ca1 = net.AddLayer4D("CA1", hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X, SuperLayer)
+	ca1.SetRepIdxsShape(emer.CenterPoolIdxs(ca1, 2), emer.CenterPoolShape(ca1, 2))
 	ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, TargetLayer) // clamped in plus phase
 	ec5.SetClass("EC")
+	ec5.SetRepIdxsShape(emer.CenterPoolIdxs(ec5, 2), emer.CenterPoolShape(ec5, 2))
 
 	// Input and ECs connections
 	onetoone := prjn.NewOneToOne()
@@ -136,51 +143,60 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 	ca1 := net.AxonLayerByName("CA1")
 	ca3 := net.AxonLayerByName("CA3")
 	dg := net.AxonLayerByName("DG")
-	dgFmEc2, _ := dg.SendNameTry("EC2")
-	ca1FmEc3, _ := ca1.SendNameTry("EC3")
-	ca1FmCa3, _ := ca1.SendNameTry("CA3")
-	ca3FmDg, _ := ca3.SendNameTry("DG")
-	ca3FmEc2, _ := ca3.SendNameTry("EC2")
-	ca3FmCa3, _ := ca3.SendNameTry("CA3")
+	dgFmEc2 := dg.SendName("EC2")
+	ca1FmEc3 := ca1.SendName("EC3")
+	ca1FmCa3 := ca1.SendName("CA3")
+	ca3FmDg := ca3.SendName("DG")
+	ca3FmEc2 := ca3.SendName("EC2")
+	ca3FmCa3 := ca3.SendName("CA3")
 
-	dgPjScale := ca3FmDg.(*Prjn).Params.PrjnScale.Rel
-	ca1FmCa3Abs := ca1FmCa3.(*Prjn).Params.PrjnScale.Abs
+	dgPjScale := ca3FmDg.Params.PrjnScale.Rel
+	ca1FmCa3Abs := ca1FmCa3.Params.PrjnScale.Abs
 
-	startOfQ1 := looper.NewEvent("Q0", 0, func() {
+	// configure events -- note that events are shared between Train, Test
+	// so only need to do it once on Train
+	mode := etime.Train
+	stack := man.Stacks[mode]
+	cyc, _ := stack.Loops[etime.Cycle]
+	minusStart, _ := cyc.EventByName("MinusPhase")
+	minusStart.OnEvent.Add("HipMinusPhase:Start", func() {
 		if *pretrain {
-			dgFmEc2.(*Prjn).Params.Learn.Learn = 0
-			ca3FmEc2.(*Prjn).Params.Learn.Learn = 0
-			ca3FmCa3.(*Prjn).Params.Learn.Learn = 0
-			ca1FmCa3.(*Prjn).Params.Learn.Learn = 0
-			ca1FmCa3.(*Prjn).Params.PrjnScale.Abs = 0
+			dgFmEc2.Params.Learn.Learn = 0
+			ca3FmEc2.Params.Learn.Learn = 0
+			ca3FmCa3.Params.Learn.Learn = 0
+			ca1FmCa3.Params.Learn.Learn = 0
+			ca1FmCa3.Params.PrjnScale.Abs = 0
 		} else {
-			dgFmEc2.(*Prjn).Params.Learn.Learn = 1
-			ca3FmEc2.(*Prjn).Params.Learn.Learn = 1
-			ca3FmCa3.(*Prjn).Params.Learn.Learn = 1
-			ca1FmCa3.(*Prjn).Params.Learn.Learn = 1
-			ca1FmCa3.(*Prjn).Params.PrjnScale.Abs = ca1FmCa3Abs
+			dgFmEc2.Params.Learn.Learn = 1
+			ca3FmEc2.Params.Learn.Learn = 1
+			ca3FmCa3.Params.Learn.Learn = 1
+			ca1FmCa3.Params.Learn.Learn = 1
+			ca1FmCa3.Params.PrjnScale.Abs = ca1FmCa3Abs
 		}
-		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
+		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
 
-		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - hip.MossyDel // turn off DG input to CA3 in first quarter
+		ca3FmDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
 
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
-	endOfQ1 := looper.NewEvent("Q1", 50, func() {
-		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
+	beta1, _ := cyc.EventByName("Beta1")
+	beta1.OnEvent.Add("Hip:Beta1", func() {
+		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaLow
+		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaHigh
 		if man.Mode == etime.Test {
-			ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale - hip.MossyDelTest // testing
+			ca3FmDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
-	}) // 50ms
-	endOfQ3 := looper.NewEvent("Q3", 150, func() {
-		ca3FmDg.(*Prjn).Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
-		ca1FmEc3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaLow
+	})
+	plus, _ := cyc.EventByName("PlusPhase")
+	// note: critical for this to come before std start
+	plus.OnEvent.InsertBefore("PlusPhase:Start", "HipPlusPhase:Start", func() {
+		ca3FmDg.Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
+		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
 		if man.Mode == etime.Train { // clamp EC5 from Input
 			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 				ec3.UnitVals(&tmpVals, "Act", int(di))
@@ -189,12 +205,13 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
+		net.ApplyExts(ctx) // essential for GPU
 	})
-	endOfQ4 := looper.NewEvent("Q4", 200, func() {
-		ca1FmCa3.(*Prjn).Params.PrjnScale.Rel = hip.ThetaHigh
+
+	trl := stack.Loops[etime.Trial]
+	trl.OnEnd.Prepend("HipPlusPhase:End", func() {
+		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
-
-	man.AddEventAllModes(etime.Cycle, startOfQ1, endOfQ1, endOfQ3, endOfQ4)
 }

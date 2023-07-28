@@ -136,3 +136,4 @@ One further wrinkle is that the BG will become permanently stuck if there is no 
 * Wei, W., & Wang, X. J. (2016). Inhibitory control in the cortico-basal ganglia-thalamocortical loop: complex regulation and interplay with memory and decision processes. Neuron, 92(5), 1093-1105.
     + simple model of SSRT -- good point of comparison
 
+    
