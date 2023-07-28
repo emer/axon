@@ -41,6 +41,6 @@ Papers also avail at https://ccnlab.org/pubs
 
 * Ketz, N., Morkonda, S. G., & O’Reilly, R. C. (2013). Theta coordinated error-driven learning in the hippocampus. PLoS Computational Biology, 9, e1003067. http://www.ncbi.nlm.nih.gov/pubmed/23762019  [PDF](https://ccnlab.org/papers/KetzMorkondaOReilly13.pdf)
 
-* Zheng, Y., Liu, X. L., Nishiyama, S., Ranganath, C., & O’Reilly, R. C. (2022). Correcting the hebbian mistake: Toward a fully error-driven hippocampus. PLOS Computational Biology, 18(10), e1010589. https://doi.org/10.1371/journal.pcbi.1010589 [PDF]((https://ccnlab.org/papers/ZhengLiuNishiyamaEtAl22.pdf)
+* Zheng, Y., Liu, X. L., Nishiyama, S., Ranganath, C., & O’Reilly, R. C. (2022). Correcting the hebbian mistake: Toward a fully error-driven hippocampus. PLOS Computational Biology, 18(10), e1010589. https://doi.org/10.1371/journal.pcbi.1010589 [PDF](https://ccnlab.org/papers/ZhengLiuNishiyamaEtAl22.pdf)
 
 
