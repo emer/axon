@@ -25,7 +25,6 @@ type RunConfig struct {
 	Run          int     `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`
 	Runs         int     `def:"5" min:"1" desc:"total number of runs to do when running Train"`
 	Epochs       int     `def:"100" desc:"total number of epochs per run"`
-	NZero        int     `def:"2" desc:"stop run after this number of perfect, zero-error epochs"`
 	NTrials      int     `def:"20" desc:"total number of trials per epoch.  Should be an even multiple of NData."`
 	NData        int     `def:"10" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
 	TestInterval int     `def:"1" desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`

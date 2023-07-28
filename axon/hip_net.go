@@ -10,6 +10,7 @@ import (
 	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/prjn"
+	"github.com/emer/etable/norm"
 )
 
 // HipConfig have the hippocampus size and connectivity parameters
@@ -36,6 +37,9 @@ type HipConfig struct {
 	MossyDeltaTest float32 `def:"0.75" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
 	ThetaLow       float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
 	ThetaHigh      float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
+
+	EC5ClampSrc string  `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
+	EC5ClampThr float32 `def:"0.1" desc:"threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization."`
 }
 
 func (hip *HipConfig) Defaults() {
@@ -132,13 +136,15 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	return
 }
 
-// ConfigLoopsHip configures the hippocampal looper and should be included in ConfigLoops in model to make sure hip loops is configured correctly
-// see hip.go for an instance of implementation of this function
+// ConfigLoopsHip configures the hippocampal looper and should be included in ConfigLoops
+// in model to make sure hip loops is configured correctly.
+// see hip.go for an instance of implementation of this function.
+// ec5ClampFrom specifies the layer to clamp EC5 plus phase values from:
+// EC3 is the biological source, but can use Input layer for simple testing net.
 func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipConfig, pretrain *bool) {
-
 	var tmpVals []float32
 
-	ec3 := net.AxonLayerByName("EC3")
+	clampSrc := net.AxonLayerByName(hip.EC5ClampSrc)
 	ec5 := net.AxonLayerByName("EC5")
 	ca1 := net.AxonLayerByName("CA1")
 	ca3 := net.AxonLayerByName("CA3")
@@ -192,16 +198,19 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		net.GPU.SyncParamsToGPU()
 	})
 	plus, _ := cyc.EventByName("PlusPhase")
+
 	// note: critical for this to come before std start
 	plus.OnEvent.InsertBefore("PlusPhase:Start", "HipPlusPhase:Start", func() {
 		ca3FmDg.Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
 		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
 		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
-		if man.Mode == etime.Train { // clamp EC5 from Input
-			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-				ec3.UnitVals(&tmpVals, "Act", int(di))
-				ec5.ApplyExt1D32(ctx, di, tmpVals)
+		// clamp EC5 from clamp source (EC3 typically)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			clampSrc.UnitVals(&tmpVals, "Act", int(di))
+			if hip.EC5ClampThr > 0 {
+				norm.Binarize32(tmpVals, hip.EC5ClampThr, 1, 0)
 			}
+			ec5.ApplyExt1D32(ctx, di, tmpVals)
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
