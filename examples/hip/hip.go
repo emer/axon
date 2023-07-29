@@ -87,6 +87,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Config.Defaults()
+	ss.Config.Hip.EC5ClampTest = false // key to be off for cmp stats on completion region
 	econfig.Config(&ss.Config, "config.toml")
 
 	ss.Net = &axon.Network{}

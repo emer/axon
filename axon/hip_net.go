@@ -38,8 +38,9 @@ type HipConfig struct {
 	ThetaLow       float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
 	ThetaHigh      float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
 
-	EC5ClampSrc string  `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
-	EC5ClampThr float32 `def:"0.1" desc:"threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization."`
+	EC5ClampSrc  string  `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
+	EC5ClampTest bool    `def:"true" desc:"clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there"`
+	EC5ClampThr  float32 `def:"0.1" desc:"threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization."`
 }
 
 func (hip *HipConfig) Defaults() {
@@ -66,6 +67,10 @@ func (hip *HipConfig) Defaults() {
 	hip.MossyDeltaTest = .75
 	hip.ThetaLow = 0.9
 	hip.ThetaHigh = 1
+
+	hip.EC5ClampSrc = "EC3"
+	hip.EC5ClampTest = true
+	hip.EC5ClampThr = 0.1
 }
 
 // AddHip adds a new Hippocampal network for episodic memory.
@@ -205,7 +210,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
 		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
 		// clamp EC5 from clamp source (EC3 typically)
-		if man.Mode == etime.Train { // clamp EC5 from Input
+		if hip.EC5ClampTest && mode == etime.Test {
 			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 				clampSrc.UnitVals(&tmpVals, "Act", int(di))
 				if hip.EC5ClampThr > 0 {
