@@ -205,12 +205,14 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
 		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
 		// clamp EC5 from clamp source (EC3 typically)
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-			clampSrc.UnitVals(&tmpVals, "Act", int(di))
-			if hip.EC5ClampThr > 0 {
-				norm.Binarize32(tmpVals, hip.EC5ClampThr, 1, 0)
+		if man.Mode == etime.Train { // clamp EC5 from Input
+			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+				clampSrc.UnitVals(&tmpVals, "Act", int(di))
+				if hip.EC5ClampThr > 0 {
+					norm.Binarize32(tmpVals, hip.EC5ClampThr, 1, 0)
+				}
+				ec5.ApplyExt1D32(ctx, di, tmpVals)
 			}
-			ec5.ApplyExt1D32(ctx, di, tmpVals)
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
