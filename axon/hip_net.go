@@ -210,7 +210,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
 		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
 		// clamp EC5 from clamp source (EC3 typically)
-		if hip.EC5ClampTest && mode == etime.Test {
+		if mode != etime.Test || hip.EC5ClampTest {
 			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 				clampSrc.UnitVals(&tmpVals, "Act", int(di))
 				if hip.EC5ClampThr > 0 {
