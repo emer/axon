@@ -123,6 +123,35 @@ func (ly *LayerBase) RecvNameTypeTry(receiver, typ string) (emer.Prjn, error) {
 	return emer.RecvNameTypeTry(ly.AxonLay, receiver, typ)
 }
 
+func (ly *LayerBase) SendName(sender string) *Prjn {
+	pj, err := ly.SendNameTry(sender)
+	if err != nil {
+		log.Println(err)
+	}
+	return pj.(*Prjn) // will panic on nil
+}
+func (ly *LayerBase) SendNameType(sender, typ string) *Prjn {
+	pj, err := ly.SendNameTypeTry(sender, typ)
+	if err != nil {
+		log.Println(err)
+	}
+	return pj.(*Prjn) // will panic on nil
+}
+func (ly *LayerBase) RecvName(receiver string) *Prjn {
+	pj, err := ly.RecvNameTry(receiver)
+	if err != nil {
+		log.Println(err)
+	}
+	return pj.(*Prjn) // will panic on nil
+}
+func (ly *LayerBase) RecvNameType(receiver, typ string) *Prjn {
+	pj, err := ly.RecvNameTypeTry(receiver, typ)
+	if err != nil {
+		log.Println(err)
+	}
+	return pj.(*Prjn) // will panic on nil
+}
+
 func (ly *LayerBase) Idx4DFrom2D(x, y int) ([]int, bool) {
 	lshp := ly.Shape()
 	nux := lshp.Dim(3)

@@ -849,7 +849,7 @@ This repository contains specialized additions to the core algorithm described a
 
 * The [PCORE](PCORE_BG.md) Pallidal Core model of basal ganglia (BG) in: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
 
-* [hip](hip) has the hippocampus specific learning mechanisms (not yet updated).
+* [HIP](HIP.md) implements the hippocampus-specific learning mechanisms, in hip_{[net.go](axon/hip_net.go), [prjns.go](axon/hip_prjns.go)}.
 
 # Appendix: Kinase-Trace Learning Rule Derivation
 
