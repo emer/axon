@@ -15,8 +15,12 @@ import (
 // Source code available at http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/Urakubo2008.tar.gz.
 // In particular look at the file MODEL/Poirazi_cell/CaL.g.
 type VGCCParams struct {
+
+	// [def: 0.02,0.12] strength of VGCC current -- 0.12 value is from Urakubo et al (2008) model -- best fits actual model behavior using axon equations (1.5 nominal in that model), 0.02 works better in practice for not getting stuck in high plateau firing
 	Gbar float32 `def:"0.02,0.12" desc:"strength of VGCC current -- 0.12 value is from Urakubo et al (2008) model -- best fits actual model behavior using axon equations (1.5 nominal in that model), 0.02 works better in practice for not getting stuck in high plateau firing"`
-	Ca   float32 `viewif:"Gbar>0" def:"25" desc:"calcium from conductance factor -- important for learning contribution of VGCC"`
+
+	// [def: 25] [viewif: Gbar>0] calcium from conductance factor -- important for learning contribution of VGCC
+	Ca float32 `viewif:"Gbar>0" def:"25" desc:"calcium from conductance factor -- important for learning contribution of VGCC"`
 
 	pad, pad1 int32
 }

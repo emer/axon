@@ -345,8 +345,12 @@ const (
 // NeuronVarStrides encodes the stride offsets for neuron variable access
 // into network float32 array.  Data is always the inner-most variable.
 type NeuronVarStrides struct {
+
+	// neuron level
 	Neuron uint32 `desc:"neuron level"`
-	Var    uint32 `desc:"variable level"`
+
+	// variable level
+	Var uint32 `desc:"variable level"`
 
 	pad, pad1 uint32
 }
@@ -406,8 +410,12 @@ const (
 // NeuronAvgVarStrides encodes the stride offsets for neuron variable access
 // into network float32 array.  Data is always the inner-most variable.
 type NeuronAvgVarStrides struct {
+
+	// neuron level
 	Neuron uint32 `desc:"neuron level"`
-	Var    uint32 `desc:"variable level"`
+
+	// variable level
+	Var uint32 `desc:"variable level"`
 
 	pad, pad1 uint32
 }
@@ -459,8 +467,12 @@ const (
 // NeuronIdxStrides encodes the stride offsets for neuron index access
 // into network uint32 array.
 type NeuronIdxStrides struct {
+
+	// neuron level
 	Neuron uint32 `desc:"neuron level"`
-	Index  uint32 `desc:"index value level"`
+
+	// index value level
+	Index uint32 `desc:"index value level"`
 
 	pad, pad1 uint32
 }

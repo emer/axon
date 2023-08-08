@@ -14,7 +14,11 @@ import (
 // BurstParams determine how the 5IB Burst activation is computed from
 // CaSpkP integrated spiking values in Super layers -- thresholded.
 type BurstParams struct {
+
+	// [def: 0.1] [max: 1] Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds.
 	ThrRel float32 `max:"1" def:"0.1" desc:"Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds."`
+
+	// [def: 0.1] [min: 0] [max: 1] Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  Overall effective threshold is MAX of relative and absolute thresholds.
 	ThrAbs float32 `min:"0" max:"1" def:"0.1" desc:"Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  Overall effective threshold is MAX of relative and absolute thresholds."`
 
 	pad, pad1 float32
@@ -37,9 +41,15 @@ func (bp *BurstParams) ThrFmAvgMax(avg, mx float32) float32 {
 
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
-	GeGain   float32 `def:"0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
+
+	// [def: 0.8,1] gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
+	GeGain float32 `def:"0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
+
+	// [def: 0,50] decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50
 	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50"`
-	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
+
+	// [view: -] 1 / tau
+	DecayDt float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
 
 	pad float32
 }
@@ -62,10 +72,16 @@ func (cp *CTParams) Defaults() {
 // state of Pulvinar thalamic relay cell neurons is computed from
 // the corresponding driver neuron Burst activation (or CaSpkP if not Super)
 type PulvParams struct {
-	DriveScale   float32 `def:"0.1" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
+
+	// [def: 0.1] [min: 0.0] multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit.
+	DriveScale float32 `def:"0.1" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
+
+	// [def: 0.6] [min: 0.01] Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning.
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
-	DriveLayIdx  int32   `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting"`
-	pad          float32
+
+	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
+	DriveLayIdx int32 `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting"`
+	pad         float32
 }
 
 func (tp *PulvParams) Update() {

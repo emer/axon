@@ -22,20 +22,47 @@ import "github.com/goki/gosl/slbool"
 // across Fast (PV+) and Slow (SST+) timescales.
 // FF -> PV -> FS fast spikes, FB -> SST -> SS slow spikes (slow to get going)
 type GiParams struct {
-	On       slbool.Bool `desc:"enable this level of inhibition"`
-	Gi       float32     `viewif:"On" min:"0" def:"1,1.1,0.75,0.9" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
-	FB       float32     `viewif:"On" min:"0" def:"0.5,1,4" desc:"amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels."`
-	FSTau    float32     `viewif:"On" min:"0" def:"6" desc:"fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
-	SS       float32     `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
-	SSfTau   float32     `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
-	SSiTau   float32     `viewif:"On" min:"0" def:"50" desc:"slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
-	FS0      float32     `viewif:"On" def:"0.1" desc:"fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi"`
-	FFAvgTau float32     `viewif:"On" def:"50" desc:"time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv"`
-	FFPrv    float32     `viewif:"On" def:"0" desc:"proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time."`
 
-	FSDt    float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	SSfDt   float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	SSiDt   float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// enable this level of inhibition
+	On slbool.Bool `desc:"enable this level of inhibition"`
+
+	// [def: 1,1.1,0.75,0.9] [viewif: On] [min: 0] [0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly
+	Gi float32 `viewif:"On" min:"0" def:"1,1.1,0.75,0.9" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
+
+	// [def: 0.5,1,4] [viewif: On] [min: 0] amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels.
+	FB float32 `viewif:"On" min:"0" def:"0.5,1,4" desc:"amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels."`
+
+	// [def: 6] [viewif: On] [min: 0] fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	FSTau float32 `viewif:"On" min:"0" def:"6" desc:"fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
+
+	// [def: 30] [viewif: On] [min: 0] multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1
+	SS float32 `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
+
+	// [def: 20] [viewif: On] [min: 0] slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
+
+	// [def: 50] [viewif: On] [min: 0] slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	SSiTau float32 `viewif:"On" min:"0" def:"50" desc:"slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
+
+	// [def: 0.1] [viewif: On] fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi
+	FS0 float32 `viewif:"On" def:"0.1" desc:"fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi"`
+
+	// [def: 50] [viewif: On] time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv
+	FFAvgTau float32 `viewif:"On" def:"50" desc:"time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv"`
+
+	// [def: 0] [viewif: On] proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time.
+	FFPrv float32 `viewif:"On" def:"0" desc:"proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time."`
+
+	// [view: -] rate = 1 / tau
+	FSDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+
+	// [view: -] rate = 1 / tau
+	SSfDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+
+	// [view: -] rate = 1 / tau
+	SSiDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+
+	// [view: -] rate = 1 / tau
 	FFAvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 
 	pad, pad1 float32

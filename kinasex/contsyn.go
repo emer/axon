@@ -8,7 +8,11 @@ import "github.com/goki/mat32"
 
 // ContSyn holds extra synaptic state for continuous learning
 type ContSyn struct {
-	TDWt   float32 `desc:"transitional, temporary DWt value, which is updated in a window after synaptic activity when Ca levels are still elevated, and added to the DWt value after a longer break of spiking where there is enough time for CaMKII driven AMPA receptor trafficking to take place"`
+
+	// transitional, temporary DWt value, which is updated in a window after synaptic activity when Ca levels are still elevated, and added to the DWt value after a longer break of spiking where there is enough time for CaMKII driven AMPA receptor trafficking to take place
+	TDWt float32 `desc:"transitional, temporary DWt value, which is updated in a window after synaptic activity when Ca levels are still elevated, and added to the DWt value after a longer break of spiking where there is enough time for CaMKII driven AMPA receptor trafficking to take place"`
+
+	// maximum CaD value since last DWt change -- DWt occurs when current CaD has decreased by a given proportion from this recent peak
 	CaDMax float32 `desc:"maximum CaD value since last DWt change -- DWt occurs when current CaD has decreased by a given proportion from this recent peak"`
 }
 

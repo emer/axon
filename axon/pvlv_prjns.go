@@ -14,9 +14,15 @@ package axon
 // when ACh is above threshold -- this determines strength of second-order
 // conditioning -- default of 1 means none, but can be increased as needed.
 type BLAPrjnParams struct {
+
+	// [def: 0.01,1] use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier
 	NegDeltaLRate float32 `def:"0.01,1" desc:"use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier"`
-	AChThr        float32 `def:"0.1" desc:"threshold on this layer's ACh level for trace learning updates"`
-	USTrace       float32 `def:"0,0.5" desc:"proportion of US time stimulus activity to use for the trace component of "`
+
+	// [def: 0.1] threshold on this layer's ACh level for trace learning updates
+	AChThr float32 `def:"0.1" desc:"threshold on this layer's ACh level for trace learning updates"`
+
+	// [def: 0,0.5] proportion of US time stimulus activity to use for the trace component of
+	USTrace float32 `def:"0,0.5" desc:"proportion of US time stimulus activity to use for the trace component of "`
 
 	pad float32
 }

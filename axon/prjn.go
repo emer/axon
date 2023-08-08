@@ -26,6 +26,8 @@ import (
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
+
+	// all prjn-level parameters -- these must remain constant once configured
 	Params *PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
 }
 

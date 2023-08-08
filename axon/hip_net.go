@@ -15,32 +15,66 @@ import (
 
 // HipConfig have the hippocampus size and connectivity parameters
 type HipConfig struct {
-	// model size
-	EC2Size  evec.Vec2i `nest:"+" desc:"size of EC2"`
+
+	// size of EC2
+	EC2Size evec.Vec2i `nest:"+" desc:"size of EC2"`
+
+	// number of EC3 pools (outer dimension)
 	EC3NPool evec.Vec2i `nest:"+" desc:"number of EC3 pools (outer dimension)"`
-	EC3NNrn  evec.Vec2i `nest:"+" desc:"number of neurons in one EC3 pool"`
-	CA1NNrn  evec.Vec2i `nest:"+" desc:"number of neurons in one CA1 pool"`
-	CA3Size  evec.Vec2i `nest:"+" desc:"size of CA3"`
-	DGRatio  float32    `def:"2.236" desc:"size of DG / CA3"`
 
-	// pcon
+	// number of neurons in one EC3 pool
+	EC3NNrn evec.Vec2i `nest:"+" desc:"number of neurons in one EC3 pool"`
+
+	// number of neurons in one CA1 pool
+	CA1NNrn evec.Vec2i `nest:"+" desc:"number of neurons in one CA1 pool"`
+
+	// size of CA3
+	CA3Size evec.Vec2i `nest:"+" desc:"size of CA3"`
+
+	// [def: 2.236] size of DG / CA3
+	DGRatio float32 `def:"2.236" desc:"size of DG / CA3"`
+
+	// [def: 0.1] percent connectivity from EC3 to EC2
 	EC3ToEC2PCon float32 `def:"0.1" desc:"percent connectivity from EC3 to EC2"`
-	EC2ToDGPCon  float32 `def:"0.25" desc:"percent connectivity from EC2 to DG"`
+
+	// [def: 0.25] percent connectivity from EC2 to DG
+	EC2ToDGPCon float32 `def:"0.25" desc:"percent connectivity from EC2 to DG"`
+
+	// [def: 0.25] percent connectivity from EC2 to CA3
 	EC2ToCA3PCon float32 `def:"0.25" desc:"percent connectivity from EC2 to CA3"`
+
+	// [def: 0.25] percent connectivity from CA3 to CA1
 	CA3ToCA1PCon float32 `def:"0.25" desc:"percent connectivity from CA3 to CA1"`
-	DGToCA3PCon  float32 `def:"0.02" desc:"percent connectivity into CA3 from DG"`
 
-	EC2LatRadius int     `desc:"lateral radius of connectivity in EC2"`
-	EC2LatSigma  float32 `desc:"lateral gaussian sigma in EC2 for how quickly weights fall off with distance"`
+	// [def: 0.02] percent connectivity into CA3 from DG
+	DGToCA3PCon float32 `def:"0.02" desc:"percent connectivity into CA3 from DG"`
 
-	MossyDelta     float32 `def:"1" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
+	// lateral radius of connectivity in EC2
+	EC2LatRadius int `desc:"lateral radius of connectivity in EC2"`
+
+	// lateral gaussian sigma in EC2 for how quickly weights fall off with distance
+	EC2LatSigma float32 `desc:"lateral gaussian sigma in EC2 for how quickly weights fall off with distance"`
+
+	// [def: 1] proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
+	MossyDelta float32 `def:"1" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
+
+	// [def: 0.75] proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
 	MossyDeltaTest float32 `def:"0.75" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
-	ThetaLow       float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
-	ThetaHigh      float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
 
-	EC5ClampSrc  string  `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
-	EC5ClampTest bool    `def:"true" desc:"clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there"`
-	EC5ClampThr  float32 `def:"0.1" desc:"threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization."`
+	// [def: 0.9] low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
+	ThetaLow float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
+
+	// [def: 1] high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
+	ThetaHigh float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
+
+	// [def: EC3] source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available
+	EC5ClampSrc string `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
+
+	// [def: true] clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there
+	EC5ClampTest bool `def:"true" desc:"clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there"`
+
+	// [def: 0.1] threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization.
+	EC5ClampThr float32 `def:"0.1" desc:"threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization."`
 }
 
 func (hip *HipConfig) Defaults() {

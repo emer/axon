@@ -251,20 +251,48 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 
 // NetIdxs are indexes and sizes for processing network
 type NetIdxs struct {
-	NData            uint32 `min:"1" desc:"number of data parallel items to process currently"`
-	NetIdx           uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	MaxData          uint32 `inactive:"+" desc:"maximum amount of data parallel"`
-	NLayers          uint32 `inactive:"+" desc:"number of layers in the network"`
-	NNeurons         uint32 `inactive:"+" desc:"total number of neurons"`
-	NPools           uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
-	NSyns            uint32 `inactive:"+" desc:"total number of synapses"`
+
+	// [min: 1] number of data parallel items to process currently
+	NData uint32 `min:"1" desc:"number of data parallel items to process currently"`
+
+	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
+	NetIdx uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+
+	// maximum amount of data parallel
+	MaxData uint32 `inactive:"+" desc:"maximum amount of data parallel"`
+
+	// number of layers in the network
+	NLayers uint32 `inactive:"+" desc:"number of layers in the network"`
+
+	// total number of neurons
+	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
+
+	// total number of pools excluding * MaxData factor
+	NPools uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
+
+	// total number of synapses
+	NSyns uint32 `inactive:"+" desc:"total number of synapses"`
+
+	// maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access
 	GPUMaxBuffFloats uint32 `inactive:"+" desc:"maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access"`
-	GPUSynCaBanks    uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
-	GvVTAOff         uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
-	GvVTAStride      uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
-	GvUSnegOff       uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
-	GvDriveOff       uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
-	GvDriveStride    uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
+
+	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
+	GPUSynCaBanks uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
+
+	// offset into GlobalVars for VTA values
+	GvVTAOff uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
+
+	// stride into GlobalVars for VTA values
+	GvVTAStride uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
+
+	// offset into GlobalVars for USneg values
+	GvUSnegOff uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
+
+	// offset into GlobalVars for Drive and USpos values
+	GvDriveOff uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
+
+	// stride into GlobalVars for Drive and USpos values
+	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
 
 	pad, pad1 uint32
 }
@@ -324,33 +352,77 @@ func (ctx *NetIdxs) SynIdxIsValid(si uint32) bool {
 // It contains timing, Testing vs. Training mode, random number context,
 // global neuromodulation, etc.
 type Context struct {
-	Mode         etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
-	Testing      slbool.Bool `inactive:"+" desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train"`
-	Phase        int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
-	PlusPhase    slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
-	PhaseCycle   int32       `desc:"cycle within current phase -- minus or plus"`
-	Cycle        int32       `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
-	ThetaCycles  int32       `def:"200" desc:"length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn)."`
-	CyclesTotal  int32       `desc:"total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
-	Time         float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
-	TrialsTotal  int32       `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
-	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-	SlowInterval int32       `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models."`
-	SlowCtr      int32       `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter."`
-	SynCaCtr     float32     `inactive:"+" desc:"synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset."`
+
+	// current evaluation mode, e.g., Train, Test, etc
+	Mode etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
+
+	// if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train
+	Testing slbool.Bool `inactive:"+" desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train"`
+
+	// phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms
+	Phase int32 `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
+
+	// true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase
+	PlusPhase slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
+
+	// cycle within current phase -- minus or plus
+	PhaseCycle int32 `desc:"cycle within current phase -- minus or plus"`
+
+	// cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState
+	Cycle int32 `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
+
+	// [def: 200] length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn).
+	ThetaCycles int32 `def:"200" desc:"length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn)."`
+
+	// total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time
+	CyclesTotal int32 `desc:"total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
+
+	// accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds
+	Time float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
+
+	// total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes
+	TrialsTotal int32 `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
+
+	// [def: 0.001] amount of time to increment per cycle
+	TimePerCycle float32 `def:"0.001" desc:"amount of time to increment per cycle"`
+
+	// [def: 100] how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models.
+	SlowInterval int32 `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models."`
+
+	// counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter.
+	SlowCtr int32 `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter."`
+
+	// synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset.
+	SynCaCtr float32 `inactive:"+" desc:"synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset."`
 
 	pad, pad1 float32
 
-	NetIdxs       NetIdxs             `view:"inline" desc:"indexes and sizes of current network"`
-	NeuronVars    NeuronVarStrides    `view:"-" desc:"stride offsets for accessing neuron variables"`
-	NeuronAvgVars NeuronAvgVarStrides `view:"-" desc:"stride offsets for accessing neuron average variables"`
-	NeuronIdxs    NeuronIdxStrides    `view:"-" desc:"stride offsets for accessing neuron indexes"`
-	SynapseVars   SynapseVarStrides   `view:"-" desc:"stride offsets for accessing synapse variables"`
-	SynapseCaVars SynapseCaStrides    `view:"-" desc:"stride offsets for accessing synapse Ca variables"`
-	SynapseIdxs   SynapseIdxStrides   `view:"-" desc:"stride offsets for accessing synapse indexes"`
+	// [view: inline] indexes and sizes of current network
+	NetIdxs NetIdxs `view:"inline" desc:"indexes and sizes of current network"`
 
+	// [view: -] stride offsets for accessing neuron variables
+	NeuronVars NeuronVarStrides `view:"-" desc:"stride offsets for accessing neuron variables"`
+
+	// [view: -] stride offsets for accessing neuron average variables
+	NeuronAvgVars NeuronAvgVarStrides `view:"-" desc:"stride offsets for accessing neuron average variables"`
+
+	// [view: -] stride offsets for accessing neuron indexes
+	NeuronIdxs NeuronIdxStrides `view:"-" desc:"stride offsets for accessing neuron indexes"`
+
+	// [view: -] stride offsets for accessing synapse variables
+	SynapseVars SynapseVarStrides `view:"-" desc:"stride offsets for accessing synapse variables"`
+
+	// [view: -] stride offsets for accessing synapse Ca variables
+	SynapseCaVars SynapseCaStrides `view:"-" desc:"stride offsets for accessing synapse Ca variables"`
+
+	// [view: -] stride offsets for accessing synapse indexes
+	SynapseIdxs SynapseIdxStrides `view:"-" desc:"stride offsets for accessing synapse indexes"`
+
+	// random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.
 	RandCtr slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	PVLV    PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+
+	// PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
+	PVLV PVLV `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values

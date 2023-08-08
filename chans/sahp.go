@@ -17,13 +17,26 @@ import "github.com/goki/mat32"
 // the scope of a single theta cycle, so we just omit the time integration
 // of the n gating value, but tau is computed in any case.
 type SahpParams struct {
-	Gbar   float32 `def:"0.05,0.1" desc:"strength of sAHP current"`
-	CaTau  float32 `viewif:"Gbar>0" def:"5,10" desc:"time constant for integrating Ca across theta cycles"`
-	Off    float32 `viewif:"Gbar>0" def:"0.8" desc:"integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength"`
-	Slope  float32 `viewif:"Gbar>0" def:"0.02" desc:"slope of the infinite time logistic gating function"`
+
+	// [def: 0.05,0.1] strength of sAHP current
+	Gbar float32 `def:"0.05,0.1" desc:"strength of sAHP current"`
+
+	// [def: 5,10] [viewif: Gbar>0] time constant for integrating Ca across theta cycles
+	CaTau float32 `viewif:"Gbar>0" def:"5,10" desc:"time constant for integrating Ca across theta cycles"`
+
+	// [def: 0.8] [viewif: Gbar>0] integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength
+	Off float32 `viewif:"Gbar>0" def:"0.8" desc:"integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength"`
+
+	// [def: 0.02] [viewif: Gbar>0] slope of the infinite time logistic gating function
+	Slope float32 `viewif:"Gbar>0" def:"0.02" desc:"slope of the infinite time logistic gating function"`
+
+	// [def: 1] [viewif: Gbar>0] maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
 	TauMax float32 `viewif:"Gbar>0" def:"1" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
 
-	CaDt  float32 `view:"-" inactive:"+" desc:"1/Tau"`
+	// [view: -] 1/Tau
+	CaDt float32 `view:"-" inactive:"+" desc:"1/Tau"`
+
+	// [view: -] 1/Tau
 	DtMax float32 `view:"-" inactive:"+" desc:"1/Tau"`
 
 	pad int32

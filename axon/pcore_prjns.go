@@ -12,6 +12,8 @@ package axon
 // and subsequent activity, and is based biologically on synaptic tags.
 // Trace is applied to DWt and reset at the time of reward.
 type MatrixPrjnParams struct {
+
+	// [def: 0.01] learning rate for when ACh was elevated but no gating took place, in proportion to the level of ACh that indicates the salience of the event.  A low level of this learning prevents the highly maladaptive situation where the BG is not gating and thus no learning can occur.
 	NoGateLRate float32 `def:"0.01" desc:"learning rate for when ACh was elevated but no gating took place, in proportion to the level of ACh that indicates the salience of the event.  A low level of this learning prevents the highly maladaptive situation where the BG is not gating and thus no learning can occur."`
 
 	pad, pad1, pad2 float32

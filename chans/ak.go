@@ -16,12 +16,24 @@ import "github.com/goki/mat32"
 // See AKsParams for a much simpler version that works fine when full AP-like spikes are
 // not simulated, as in our standard axon models.
 type AKParams struct {
+
+	// [def: 1,0.1,0.01] strength of AK current
 	Gbar float32 `def:"1,0.1,0.01" desc:"strength of AK current"`
+
+	// [def: 0.01446,02039] [viewif: Gbar>0] multiplier for the beta term; 0.01446 for distal, 0.02039 for proximal dendrites
 	Beta float32 `viewif:"Gbar>0" def:"0.01446,02039" desc:"multiplier for the beta term; 0.01446 for distal, 0.02039 for proximal dendrites"`
-	Dm   float32 `viewif:"Gbar>0" def:"0.5,0.25" desc:"Dm factor: 0.5 for distal, 0.25 for proximal"`
+
+	// [def: 0.5,0.25] [viewif: Gbar>0] Dm factor: 0.5 for distal, 0.25 for proximal
+	Dm float32 `viewif:"Gbar>0" def:"0.5,0.25" desc:"Dm factor: 0.5 for distal, 0.25 for proximal"`
+
+	// [def: 1.8,1.5] [viewif: Gbar>0] offset for K, 1.8 for distal, 1.5 for proximal
 	Koff float32 `viewif:"Gbar>0" def:"1.8,1.5" desc:"offset for K, 1.8 for distal, 1.5 for proximal"`
+
+	// [def: 1,11] [viewif: Gbar>0] voltage offset for alpha and beta functions: 1 for distal, 11 for proximal
 	Voff float32 `viewif:"Gbar>0" def:"1,11" desc:"voltage offset for alpha and beta functions: 1 for distal, 11 for proximal"`
-	Hf   float32 `viewif:"Gbar>0" def:"0.1133,0.1112" desc:"h multiplier factor, 0.1133 for distal, 0.1112 for proximal"`
+
+	// [def: 0.1133,0.1112] [viewif: Gbar>0] h multiplier factor, 0.1133 for distal, 0.1112 for proximal
+	Hf float32 `viewif:"Gbar>0" def:"0.1133,0.1112" desc:"h multiplier factor, 0.1133 for distal, 0.1112 for proximal"`
 
 	pad, pad1 float32
 }
@@ -126,10 +138,20 @@ func (ap *AKParams) Gak(m, h float32) float32 {
 // It is particularly important for counteracting the excitatory effects of
 // voltage gated calcium channels which can otherwise drive runaway excitatory currents.
 type AKsParams struct {
+
+	// [def: 2,0.1,0.01] strength of AK current
 	Gbar float32 `def:"2,0.1,0.01" desc:"strength of AK current"`
-	Hf   float32 `viewif:"Gbar>0" def:"0.076" desc:"H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength"`
-	Mf   float32 `viewif:"Gbar>0" def:"0.075" desc:"multiplier for M -- determines slope of function"`
+
+	// [def: 0.076] [viewif: Gbar>0] H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength
+	Hf float32 `viewif:"Gbar>0" def:"0.076" desc:"H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength"`
+
+	// [def: 0.075] [viewif: Gbar>0] multiplier for M -- determines slope of function
+	Mf float32 `viewif:"Gbar>0" def:"0.075" desc:"multiplier for M -- determines slope of function"`
+
+	// [def: 2] [viewif: Gbar>0] voltage offset in biological units for M function
 	Voff float32 `viewif:"Gbar>0" def:"2" desc:"voltage offset in biological units for M function"`
+
+	// [viewif: Gbar>0]
 	Vmax float32 `viewif:"Gbar>0" def:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
 
 	pad, pad1, pad2 int32

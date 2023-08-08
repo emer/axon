@@ -215,37 +215,90 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Cycles      int             `def:"200" desc:"number of cycles per trial"`
-	Runs        int             `def:"10" desc:"number of runs to run to collect stats"`
-	KNaAdapt    bool            `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
-	Net         *axon.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Prjn3x3Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
-	Prjn5x5Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
-	Test        TestType        `desc:"select which type of test (input patterns) to use"`
-	TstTrlLog   *etable.Table   `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
-	TstRunLog   *etable.Table   `view:"no-inline" desc:"aggregated testing data"`
-	TstStats    *etable.Table   `view:"no-inline" desc:"aggregate stats on testing data"`
-	Params      params.Sets     `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
-	TestEnv     AttnEnv         `desc:"Testing environment -- manages iterating over testing"`
-	Context     axon.Context    `desc:"axon timing parameters and state"`
-	ViewOn      bool            `desc:"whether to update the network view while running"`
-	ViewUpdt    axon.TimeScales `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
-	AttnLay     string          `desc:"layer to measure attentional effects on"`
-	TstRecLays  []string        `desc:"names of layers to record activations etc of during testing"`
 
-	S1Act  float32 `desc:"max activation in center of stimulus 1 (attended, stronger)"`
-	S2Act  float32 `desc:"max activation in center of stimulus 2 (ignored, weaker)"`
+	// [def: 200] number of cycles per trial
+	Cycles int `def:"200" desc:"number of cycles per trial"`
+
+	// [def: 10] number of runs to run to collect stats
+	Runs int `def:"10" desc:"number of runs to run to collect stats"`
+
+	// [def: true] sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time
+	KNaAdapt bool `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
+
+	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+
+	// [view: Standard same-to-same size topographic projection]
+	Prjn3x3Skp1 *prjn.PoolTile `view:"Standard same-to-same size topographic projection"`
+
+	// [view: Standard same-to-same size topographic projection]
+	Prjn5x5Skp1 *prjn.PoolTile `view:"Standard same-to-same size topographic projection"`
+
+	// select which type of test (input patterns) to use
+	Test TestType `desc:"select which type of test (input patterns) to use"`
+
+	// [view: no-inline] testing trial-level log data -- click to see record of network's response to each input
+	TstTrlLog *etable.Table `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
+
+	// [view: no-inline] aggregated testing data
+	TstRunLog *etable.Table `view:"no-inline" desc:"aggregated testing data"`
+
+	// [view: no-inline] aggregate stats on testing data
+	TstStats *etable.Table `view:"no-inline" desc:"aggregate stats on testing data"`
+
+	// [view: no-inline] full collection of param sets -- not really interesting for this model
+	Params params.Sets `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
+
+	// Testing environment -- manages iterating over testing
+	TestEnv AttnEnv `desc:"Testing environment -- manages iterating over testing"`
+
+	// axon timing parameters and state
+	Context axon.Context `desc:"axon timing parameters and state"`
+
+	// whether to update the network view while running
+	ViewOn bool `desc:"whether to update the network view while running"`
+
+	// at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster
+	ViewUpdt axon.TimeScales `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
+
+	// layer to measure attentional effects on
+	AttnLay string `desc:"layer to measure attentional effects on"`
+
+	// names of layers to record activations etc of during testing
+	TstRecLays []string `desc:"names of layers to record activations etc of during testing"`
+
+	// max activation in center of stimulus 1 (attended, stronger)
+	S1Act float32 `desc:"max activation in center of stimulus 1 (attended, stronger)"`
+
+	// max activation in center of stimulus 2 (ignored, weaker)
+	S2Act float32 `desc:"max activation in center of stimulus 2 (ignored, weaker)"`
+
+	// percent modulation = (S1Act - S2Act) / S1Act
 	PctMod float32 `desc:"percent modulation = (S1Act - S2Act) / S1Act"`
 
-	// internal state - view:"-"
-	Win        *gi.Window                  `view:"-" desc:"main GUI window"`
-	NetView    *netview.NetView            `view:"-" desc:"the network viewer"`
-	ToolBar    *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
-	TstTrlPlot *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
-	TstRunPlot *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
-	ValsTsrs   map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
-	IsRunning  bool                        `view:"-" desc:"true if sim is running"`
-	StopNow    bool                        `view:"-" desc:"flag to stop running"`
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the network viewer
+	NetView *netview.NetView `view:"-" desc:"the network viewer"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+
+	// [view: -] the test-trial plot
+	TstTrlPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
+
+	// [view: -] the test-trial plot
+	TstRunPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
+
+	// [view: -] for holding layer values
+	ValsTsrs map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
+
+	// [view: -] true if sim is running
+	IsRunning bool `view:"-" desc:"true if sim is running"`
+
+	// [view: -] flag to stop running
+	StopNow bool `view:"-" desc:"flag to stop running"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,

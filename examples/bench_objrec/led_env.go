@@ -18,22 +18,54 @@ import (
 // and vertical elements.  All possible such combinations of 3 out of 6 line segments are created.
 // Renders using SVG.
 type LEDEnv struct {
-	Nm        string          `desc:"name of this environment"`
-	Dsc       string          `desc:"description of this environment"`
-	Draw      LEDraw          `desc:"draws LEDs onto image"`
-	Vis       Vis             `desc:"visual processing params"`
-	NOutPer   int             `desc:"number of output units per LED item -- spiking benefits from replication"`
-	MinLED    int             `min:"0" max:"19" desc:"minimum LED number to draw (0-19)"`
-	MaxLED    int             `min:"0" max:"19" desc:"maximum LED number to draw (0-19)"`
-	CurLED    int             `inactive:"+" desc:"current LED number that was drawn"`
-	PrvLED    int             `inactive:"+" desc:"previous LED number that was drawn"`
-	XFormRand vxform.Rand     `desc:"random transform parameters"`
-	XForm     vxform.XForm    `desc:"current -- prev transforms"`
-	Run       env.Ctr         `view:"inline" desc:"current run of model as provided during Init"`
-	Epoch     env.Ctr         `view:"inline" desc:"number of times through Seq.Max number of sequences"`
-	Trial     env.Ctr         `view:"inline" desc:"trial is the step counter within epoch"`
-	OrigImg   etensor.Float32 `desc:"original image prior to random transforms"`
-	Output    etensor.Float32 `desc:"CurLED one-hot output tensor"`
+
+	// name of this environment
+	Nm string `desc:"name of this environment"`
+
+	// description of this environment
+	Dsc string `desc:"description of this environment"`
+
+	// draws LEDs onto image
+	Draw LEDraw `desc:"draws LEDs onto image"`
+
+	// visual processing params
+	Vis Vis `desc:"visual processing params"`
+
+	// number of output units per LED item -- spiking benefits from replication
+	NOutPer int `desc:"number of output units per LED item -- spiking benefits from replication"`
+
+	// [min: 0] [max: 19] minimum LED number to draw (0-19)
+	MinLED int `min:"0" max:"19" desc:"minimum LED number to draw (0-19)"`
+
+	// [min: 0] [max: 19] maximum LED number to draw (0-19)
+	MaxLED int `min:"0" max:"19" desc:"maximum LED number to draw (0-19)"`
+
+	// current LED number that was drawn
+	CurLED int `inactive:"+" desc:"current LED number that was drawn"`
+
+	// previous LED number that was drawn
+	PrvLED int `inactive:"+" desc:"previous LED number that was drawn"`
+
+	// random transform parameters
+	XFormRand vxform.Rand `desc:"random transform parameters"`
+
+	// current -- prev transforms
+	XForm vxform.XForm `desc:"current -- prev transforms"`
+
+	// [view: inline] current run of model as provided during Init
+	Run env.Ctr `view:"inline" desc:"current run of model as provided during Init"`
+
+	// [view: inline] number of times through Seq.Max number of sequences
+	Epoch env.Ctr `view:"inline" desc:"number of times through Seq.Max number of sequences"`
+
+	// [view: inline] trial is the step counter within epoch
+	Trial env.Ctr `view:"inline" desc:"trial is the step counter within epoch"`
+
+	// original image prior to random transforms
+	OrigImg etensor.Float32 `desc:"original image prior to random transforms"`
+
+	// CurLED one-hot output tensor
+	Output etensor.Float32 `desc:"CurLED one-hot output tensor"`
 }
 
 func (ev *LEDEnv) Name() string { return ev.Nm }

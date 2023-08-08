@@ -14,11 +14,20 @@ import "github.com/goki/gosl/slbool"
 // the K channels, which, like leak channels, pull the membrane
 // potential back down toward rest (or even below).
 type KNaParams struct {
-	On   slbool.Bool `desc:"if On, use this component of K-Na adaptation"`
-	Rise float32     `viewif:"On" desc:"Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate"`
-	Max  float32     `viewif:"On" desc:"Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here"`
-	Tau  float32     `viewif:"On" desc:"time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)"`
 
+	// if On, use this component of K-Na adaptation
+	On slbool.Bool `desc:"if On, use this component of K-Na adaptation"`
+
+	// [viewif: On] Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate
+	Rise float32 `viewif:"On" desc:"Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate"`
+
+	// [viewif: On] Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here
+	Max float32 `viewif:"On" desc:"Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here"`
+
+	// [viewif: On] time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
+	Tau float32 `viewif:"On" desc:"time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)"`
+
+	// [view: -] 1/Tau rate constant
 	Dt float32 `view:"-" desc:"1/Tau rate constant"`
 
 	pad, pad1, pad2 int32
@@ -53,12 +62,19 @@ func (ka *KNaParams) GcFmSpike(gKNa *float32, spike bool) {
 // Evidence supports 2 different time constants:
 // Slick (medium) and Slack (slow)
 type KNaMedSlow struct {
-	On        slbool.Bool `desc:"if On, apply K-Na adaptation"`
+
+	// if On, apply K-Na adaptation
+	On slbool.Bool `desc:"if On, apply K-Na adaptation"`
+
+	// engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation
 	TrialSlow slbool.Bool `desc:"engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation"`
 
 	pad, pad1 int32
 
-	Med  KNaParams `viewif:"On" view:"inline" desc:"medium time-scale adaptation"`
+	// [view: inline] [viewif: On] medium time-scale adaptation
+	Med KNaParams `viewif:"On" view:"inline" desc:"medium time-scale adaptation"`
+
+	// [view: inline] [viewif: On] slow time-scale adaptation
 	Slow KNaParams `viewif:"On" view:"inline" desc:"slow time-scale adaptation"`
 }
 

@@ -38,19 +38,45 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	Sahp        chans.SahpParams `view:"inline" desc:"sAHP function"`
-	CaStart     float32          `def:"0" desc:"starting calcium"`
-	CaEnd       float32          `def:"1.5" desc:"ending calcium"`
-	CaStep      float32          `def:"0.01" desc:"calcium increment"`
-	TimeSteps   int              `desc:"number of time steps"`
-	TimeCaStart float32          `desc:"time-run starting calcium"`
-	TimeCaD     float32          `desc:"time-run CaD value at end of each theta cycle"`
-	Table       *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot        *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable   *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot    *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win         *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+
+	// [view: inline] sAHP function
+	Sahp chans.SahpParams `view:"inline" desc:"sAHP function"`
+
+	// [def: 0] starting calcium
+	CaStart float32 `def:"0" desc:"starting calcium"`
+
+	// [def: 1.5] ending calcium
+	CaEnd float32 `def:"1.5" desc:"ending calcium"`
+
+	// [def: 0.01] calcium increment
+	CaStep float32 `def:"0.01" desc:"calcium increment"`
+
+	// number of time steps
+	TimeSteps int `desc:"number of time steps"`
+
+	// time-run starting calcium
+	TimeCaStart float32 `desc:"time-run starting calcium"`
+
+	// time-run CaD value at end of each theta cycle
+	TimeCaD float32 `desc:"time-run CaD value at end of each theta cycle"`
+
+	// [view: no-inline] table for plot
+	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: no-inline] table for plot
+	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation

@@ -38,21 +38,51 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	Mahp       chans.MahpParams `view:"inline" desc:"mAHP function"`
-	Vstart     float32          `def:"-100" desc:"starting voltage"`
-	Vend       float32          `def:"100" desc:"ending voltage"`
-	Vstep      float32          `def:"1" desc:"voltage increment"`
-	TimeSteps  int              `desc:"number of time steps"`
-	TimeSpike  bool             `desc:"do spiking instead of voltage ramp"`
-	SpikeFreq  float32          `desc:"spiking frequency"`
-	TimeVstart float32          `desc:"time-run starting membrane potential"`
-	TimeVend   float32          `desc:"time-run ending membrane potential"`
-	Table      *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot       *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable  *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot   *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win        *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+
+	// [view: inline] mAHP function
+	Mahp chans.MahpParams `view:"inline" desc:"mAHP function"`
+
+	// [def: -100] starting voltage
+	Vstart float32 `def:"-100" desc:"starting voltage"`
+
+	// [def: 100] ending voltage
+	Vend float32 `def:"100" desc:"ending voltage"`
+
+	// [def: 1] voltage increment
+	Vstep float32 `def:"1" desc:"voltage increment"`
+
+	// number of time steps
+	TimeSteps int `desc:"number of time steps"`
+
+	// do spiking instead of voltage ramp
+	TimeSpike bool `desc:"do spiking instead of voltage ramp"`
+
+	// spiking frequency
+	SpikeFreq float32 `desc:"spiking frequency"`
+
+	// time-run starting membrane potential
+	TimeVstart float32 `desc:"time-run starting membrane potential"`
+
+	// time-run ending membrane potential
+	TimeVend float32 `desc:"time-run ending membrane potential"`
+
+	// [view: no-inline] table for plot
+	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: no-inline] table for plot
+	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation

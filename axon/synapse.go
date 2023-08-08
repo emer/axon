@@ -57,8 +57,12 @@ const (
 // SynapseVarStrides encodes the stride offsets for synapse variable access
 // into network float32 array.
 type SynapseVarStrides struct {
+
+	// synapse level
 	Synapse uint32 `desc:"synapse level"`
-	Var     uint32 `desc:"variable level"`
+
+	// variable level
+	Var uint32 `desc:"variable level"`
 
 	pad, pad1 uint32
 }
@@ -120,8 +124,12 @@ const (
 // SynapseCaStrides encodes the stride offsets for synapse variable access
 // into network float32 array.  Data is always the inner-most variable.
 type SynapseCaStrides struct {
+
+	// synapse level
 	Synapse uint64 `desc:"synapse level"`
-	Var     uint64 `desc:"variable level"`
+
+	// variable level
+	Var uint64 `desc:"variable level"`
 }
 
 // Idx returns the index into network float32 array for given synapse, data, and variable
@@ -166,8 +174,12 @@ const (
 // SynapseIdxStrides encodes the stride offsets for synapse index access
 // into network uint32 array.
 type SynapseIdxStrides struct {
+
+	// synapse level
 	Synapse uint32 `desc:"synapse level"`
-	Index   uint32 `desc:"index value level"`
+
+	// index value level
+	Index uint32 `desc:"index value level"`
 
 	pad, pad1 uint32
 }

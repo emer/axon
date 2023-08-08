@@ -20,35 +20,87 @@ import (
 
 // MoveEnv is a flat-world grid-based environment
 type MoveEnv struct {
-	Nm         string             `desc:"name of this environment"`
-	Disp       bool               `desc:"update display -- turn off to make it faster"`
-	Size       evec.Vec2i         `desc:"size of 2D world"`
-	World      *etensor.Int       `view:"no-inline" desc:"2D grid world, each cell is a material (mat)"`
-	Acts       []string           `desc:"list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible"`
-	ActMap     map[string]int     `desc:"action map of action names to indexes"`
-	Params     map[string]float32 `desc:"map of optional interoceptive and world-dynamic parameters -- cleaner to store in a map"`
-	FOV        int                `desc:"field of view in degrees, e.g., 180, must be even multiple of AngInc"`
-	AngInc     int                `desc:"angle increment for rotation, in degrees -- defaults to 15"`
-	NRotAngles int                `inactive:"+" desc:"total number of rotation angles in a circle"`
-	NFOVRays   int                `inactive:"+" desc:"total number of FOV rays that are traced"`
-	DepthSize  int                `inactive:"+" desc:"number of units in depth population codes"`
-	DepthCode  popcode.OneD       `desc:"population code for depth, in normalized units"`
-	AngCode    popcode.Ring       `desc:"angle population code values, in normalized units"`
-	UnitsPer   int                `desc:"number of units per localist value"`
-	Debug      bool               `desc:"print debug messages"`
 
-	// current state below (params above)
-	PosF       mat32.Vec2                  `inactive:"+" desc:"current location of agent, floating point"`
-	PosI       evec.Vec2i                  `inactive:"+" desc:"current location of agent, integer"`
-	Angle      int                         `inactive:"+" desc:"current angle, in degrees"`
-	RotAng     int                         `inactive:"+" desc:"angle that we just rotated -- drives vestibular"`
-	Act        int                         `inactive:"+" desc:"last action taken"`
-	Depths     []float32                   `desc:"depth for each angle (NFOVRays), raw"`
-	DepthLogs  []float32                   `desc:"depth for each angle (NFOVRays), normalized log"`
-	CurStates  map[string]*etensor.Float32 `desc:"current rendered state tensors -- extensible map"`
+	// name of this environment
+	Nm string `desc:"name of this environment"`
+
+	// update display -- turn off to make it faster
+	Disp bool `desc:"update display -- turn off to make it faster"`
+
+	// size of 2D world
+	Size evec.Vec2i `desc:"size of 2D world"`
+
+	// [view: no-inline] 2D grid world, each cell is a material (mat)
+	World *etensor.Int `view:"no-inline" desc:"2D grid world, each cell is a material (mat)"`
+
+	// list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible
+	Acts []string `desc:"list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible"`
+
+	// action map of action names to indexes
+	ActMap map[string]int `desc:"action map of action names to indexes"`
+
+	// map of optional interoceptive and world-dynamic parameters -- cleaner to store in a map
+	Params map[string]float32 `desc:"map of optional interoceptive and world-dynamic parameters -- cleaner to store in a map"`
+
+	// field of view in degrees, e.g., 180, must be even multiple of AngInc
+	FOV int `desc:"field of view in degrees, e.g., 180, must be even multiple of AngInc"`
+
+	// angle increment for rotation, in degrees -- defaults to 15
+	AngInc int `desc:"angle increment for rotation, in degrees -- defaults to 15"`
+
+	// total number of rotation angles in a circle
+	NRotAngles int `inactive:"+" desc:"total number of rotation angles in a circle"`
+
+	// total number of FOV rays that are traced
+	NFOVRays int `inactive:"+" desc:"total number of FOV rays that are traced"`
+
+	// number of units in depth population codes
+	DepthSize int `inactive:"+" desc:"number of units in depth population codes"`
+
+	// population code for depth, in normalized units
+	DepthCode popcode.OneD `desc:"population code for depth, in normalized units"`
+
+	// angle population code values, in normalized units
+	AngCode popcode.Ring `desc:"angle population code values, in normalized units"`
+
+	// number of units per localist value
+	UnitsPer int `desc:"number of units per localist value"`
+
+	// print debug messages
+	Debug bool `desc:"print debug messages"`
+
+	// current location of agent, floating point
+	PosF mat32.Vec2 `inactive:"+" desc:"current location of agent, floating point"`
+
+	// current location of agent, integer
+	PosI evec.Vec2i `inactive:"+" desc:"current location of agent, integer"`
+
+	// current angle, in degrees
+	Angle int `inactive:"+" desc:"current angle, in degrees"`
+
+	// angle that we just rotated -- drives vestibular
+	RotAng int `inactive:"+" desc:"angle that we just rotated -- drives vestibular"`
+
+	// last action taken
+	Act int `inactive:"+" desc:"last action taken"`
+
+	// depth for each angle (NFOVRays), raw
+	Depths []float32 `desc:"depth for each angle (NFOVRays), raw"`
+
+	// depth for each angle (NFOVRays), normalized log
+	DepthLogs []float32 `desc:"depth for each angle (NFOVRays), normalized log"`
+
+	// current rendered state tensors -- extensible map
+	CurStates map[string]*etensor.Float32 `desc:"current rendered state tensors -- extensible map"`
+
+	// next rendered state tensors -- updated from actions
 	NextStates map[string]*etensor.Float32 `desc:"next rendered state tensors -- updated from actions"`
-	Rand       erand.SysRand               `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
-	RndSeed    int64                       `inactive:"+" desc:"random seed"`
+
+	// [view: -] random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
+	Rand erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+
+	// random seed
+	RndSeed int64 `inactive:"+" desc:"random seed"`
 }
 
 var KiT_MoveEnv = kit.Types.AddType(&MoveEnv{}, nil)

@@ -39,20 +39,42 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	CaDt      kinase.CaParams `view:"inline" desc:"Ca time constants"`
-	Minit     float64
-	Pinit     float64
-	Dinit     float64
-	MdtAdj    float64       `def:"0,0.11" desc:"adjustment to dt to account for discrete time updating"`
-	PdtAdj    float64       `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
-	DdtAdj    float64       `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
-	TimeSteps int           `desc:"number of time steps"`
-	Table     *etable.Table `view:"no-inline" desc:"table for plot"`
-	Plot      *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: inline] Ca time constants
+	CaDt  kinase.CaParams `view:"inline" desc:"Ca time constants"`
+	Minit float64
+	Pinit float64
+	Dinit float64
+
+	// [def: 0,0.11] adjustment to dt to account for discrete time updating
+	MdtAdj float64 `def:"0,0.11" desc:"adjustment to dt to account for discrete time updating"`
+
+	// [def: 0.0.03] adjustment to dt to account for discrete time updating
+	PdtAdj float64 `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
+
+	// [def: 0.0.03] adjustment to dt to account for discrete time updating
+	DdtAdj float64 `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
+
+	// number of time steps
+	TimeSteps int `desc:"number of time steps"`
+
+	// [view: no-inline] table for plot
+	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: no-inline] table for plot
 	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
-	TimePlot  *eplot.Plot2D `view:"-" desc:"the plot"`
-	Win       *gi.Window    `view:"-" desc:"main GUI window"`
-	ToolBar   *gi.ToolBar   `view:"-" desc:"the master toolbar"`
+
+	// [view: -] the plot
+	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation

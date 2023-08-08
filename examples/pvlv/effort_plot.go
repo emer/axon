@@ -35,17 +35,39 @@ const LogPrec = 4
 
 // DrEffPlot holds the params, table, etc
 type DrEffPlot struct {
-	Context   axon.Context  `desc:"Drive, Effort, Urgency params are under PVLV"`
-	TimeSteps int           `desc:"total number of time steps to simulate"`
-	USTime    minmax.Int    `desc:"range for number of time steps between US receipt"`
-	Effort    minmax.F32    `desc:"range for random effort per step"`
-	Table     *etable.Table `view:"no-inline" desc:"table for plot"`
-	Plot      *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// Drive, Effort, Urgency params are under PVLV
+	Context axon.Context `desc:"Drive, Effort, Urgency params are under PVLV"`
+
+	// total number of time steps to simulate
+	TimeSteps int `desc:"total number of time steps to simulate"`
+
+	// range for number of time steps between US receipt
+	USTime minmax.Int `desc:"range for number of time steps between US receipt"`
+
+	// range for random effort per step
+	Effort minmax.F32 `desc:"range for random effort per step"`
+
+	// [view: no-inline] table for plot
+	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: no-inline] table for plot
 	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
-	TimePlot  *eplot.Plot2D `view:"-" desc:"the plot"`
-	Win       *gi.Window    `view:"-" desc:"main GUI window"`
-	ToolBar   *gi.ToolBar   `view:"-" desc:"the master toolbar"`
-	Rand      erand.SysRand `view:"-" desc:"random number generator"`
+
+	// [view: -] the plot
+	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+
+	// [view: -] random number generator
+	Rand erand.SysRand `view:"-" desc:"random number generator"`
 }
 
 // Config configures all the elements using the standard functions
