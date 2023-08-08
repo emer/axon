@@ -23,10 +23,18 @@ import (
 // All of the cycle level values are updated at the *start* of the cycle
 // based on values from the prior cycle -- thus are 1 cycle behind in general.
 type AvgMaxPhases struct {
+
+	// [view: inline] updated every cycle -- this is the source of all subsequent time scales
 	Cycle AvgMaxI32 `view:"inline" desc:"updated every cycle -- this is the source of all subsequent time scales"`
+
+	// [view: inline] at the end of the minus phase
 	Minus AvgMaxI32 `view:"inline" desc:"at the end of the minus phase"`
-	Plus  AvgMaxI32 `view:"inline" desc:"at the end of the plus phase"`
-	Prev  AvgMaxI32 `view:"inline" desc:"at the end of the previous plus phase"`
+
+	// [view: inline] at the end of the plus phase
+	Plus AvgMaxI32 `view:"inline" desc:"at the end of the plus phase"`
+
+	// [view: inline] at the end of the previous plus phase
+	Prev AvgMaxI32 `view:"inline" desc:"at the end of the previous plus phase"`
 }
 
 // CycleToMinus grabs current Cycle values into the Minus phase values
@@ -58,13 +66,27 @@ func (am *AvgMaxPhases) Zero() {
 // All of the cycle level values are updated at the *start* of the cycle
 // based on values from the prior cycle -- thus are 1 cycle behind in general.
 type PoolAvgMax struct {
-	CaSpkP   AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity"`
-	CaSpkD   AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer"`
-	SpkMax   AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle"`
-	Act      AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Act firing rate value"`
-	GeInt    AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GeInt integrated running-average excitatory conductance value"`
+
+	// [view: inline] avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity
+	CaSpkP AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity"`
+
+	// [view: inline] avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer
+	CaSpkD AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer"`
+
+	// [view: inline] avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle
+	SpkMax AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle"`
+
+	// [view: inline] avg and maximum Act firing rate value
+	Act AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Act firing rate value"`
+
+	// [view: inline] avg and maximum GeInt integrated running-average excitatory conductance value
+	GeInt AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GeInt integrated running-average excitatory conductance value"`
+
+	// [view: inline] avg and maximum GeIntMax integrated running-average excitatory conductance value
 	GeIntMax AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GeIntMax integrated running-average excitatory conductance value"`
-	GiInt    AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GiInt integrated running-average inhibitory conductance value"`
+
+	// [view: inline] avg and maximum GiInt integrated running-average inhibitory conductance value
+	GiInt AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GiInt integrated running-average inhibitory conductance value"`
 }
 
 // SetN sets the N for aggregation
@@ -163,19 +185,35 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 // and various other state values for layers
 // and pools (unit groups) that can be subject to inhibition
 type Pool struct {
-	StIdx, EdIdx uint32      `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
-	LayIdx       uint32      `view:"-" desc:"layer index in global layer list"`
-	DataIdx      uint32      `view:"-" desc:"data parallel index (innermost index per layer)"`
-	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool][Data]"`
-	IsLayPool    slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
-	Gated        slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated"`
+
+	// starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool
+	StIdx, EdIdx uint32 `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
+
+	// [view: -] layer index in global layer list
+	LayIdx uint32 `view:"-" desc:"layer index in global layer list"`
+
+	// [view: -] data parallel index (innermost index per layer)
+	DataIdx uint32 `view:"-" desc:"data parallel index (innermost index per layer)"`
+
+	// [view: -] pool index in global pool list: [Layer][Pool][Data]
+	PoolIdx uint32 `view:"-" desc:"pool index in global pool list: [Layer][Pool][Data]"`
+
+	// is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer
+	IsLayPool slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
+
+	// for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated
+	Gated slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated"`
 
 	pad uint32
 
+	// fast-slow FFFB inhibition values
 	Inhib fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
-	// note: these last two have elements that are shared across data parallel -- not worth separating though?
+
+	// average and max values for relevant variables in this pool, at different time scales
 	AvgMax PoolAvgMax `desc:"average and max values for relevant variables in this pool, at different time scales"`
-	AvgDif AvgMaxI32  `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
+
+	// [view: inline] absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg
+	AvgDif AvgMaxI32 `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 
 // Init is callled during InitActs

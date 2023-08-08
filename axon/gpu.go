@@ -114,6 +114,8 @@ const CyclesN = 10
 
 // PushOff has push constants for setting offset into compute shader
 type PushOff struct {
+
+	// offset
 	Off uint32 `desc:"offset"`
 
 	pad, pad1, pad2 uint32
@@ -122,31 +124,72 @@ type PushOff struct {
 // GPU manages all of the GPU-based computation for a given Network.
 // Lives within the network.
 type GPU struct {
-	On           bool `desc:"if true, actually use the GPU"`
-	RecFunTimes  bool `desc:"if true, slower separate shader pipeline runs are used, with a CPU-sync Wait at the end, to enable timing information about each individual shader to be collected using the network FunTimer system.  otherwise, only aggregate information is available about the entire Cycle call.`
+
+	// if true, actually use the GPU
+	On          bool `desc:"if true, actually use the GPU"`
+	RecFunTimes bool `desc:"if true, slower separate shader pipeline runs are used, with a CPU-sync Wait at the end, to enable timing information about each individual shader to be collected using the network FunTimer system.  otherwise, only aggregate information is available about the entire Cycle call.`
+
+	// if true, process each cycle one at a time.  Otherwise, 10 cycles at a time are processed in one batch.
 	CycleByCycle bool `desc:"if true, process each cycle one at a time.  Otherwise, 10 cycles at a time are processed in one batch."`
 
-	Net            *Network                `view:"-" desc:"the network we operate on -- we live under this net"`
-	Ctx            *Context                `view:"-" desc:"the context we use"`
-	Sys            *vgpu.System            `view:"-" desc:"the vgpu compute system"`
-	Params         *vgpu.VarSet            `view:"-" desc:"VarSet = 0: the uniform LayerParams"`
-	Idxs           *vgpu.VarSet            `view:"-" desc:"VarSet = 1: the storage indexes and PrjnParams"`
-	Structs        *vgpu.VarSet            `view:"-" desc:"VarSet = 2: the Storage buffer for RW state structs and neuron floats"`
-	Syns           *vgpu.VarSet            `view:"-" desc:"Varset = 3: the Storage buffer for synapses"`
-	SynCas         *vgpu.VarSet            `view:"-" desc:"Varset = 4: the Storage buffer for SynCa banks"`
-	Semaphores     map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
-	NThreads       int                     `view:"-" inactive:"-" def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
-	MaxBufferBytes uint32                  `view:"-" desc:"maximum number of bytes per individual storage buffer element, from GPUProps.Limits.MaxStorageBufferRange"`
+	// [view: -] the network we operate on -- we live under this net
+	Net *Network `view:"-" desc:"the network we operate on -- we live under this net"`
 
+	// [view: -] the context we use
+	Ctx *Context `view:"-" desc:"the context we use"`
+
+	// [view: -] the vgpu compute system
+	Sys *vgpu.System `view:"-" desc:"the vgpu compute system"`
+
+	// [view: -] VarSet = 0: the uniform LayerParams
+	Params *vgpu.VarSet `view:"-" desc:"VarSet = 0: the uniform LayerParams"`
+
+	// [view: -] VarSet = 1: the storage indexes and PrjnParams
+	Idxs *vgpu.VarSet `view:"-" desc:"VarSet = 1: the storage indexes and PrjnParams"`
+
+	// [view: -] VarSet = 2: the Storage buffer for RW state structs and neuron floats
+	Structs *vgpu.VarSet `view:"-" desc:"VarSet = 2: the Storage buffer for RW state structs and neuron floats"`
+
+	// [view: -] Varset = 3: the Storage buffer for synapses
+	Syns *vgpu.VarSet `view:"-" desc:"Varset = 3: the Storage buffer for synapses"`
+
+	// [view: -] Varset = 4: the Storage buffer for SynCa banks
+	SynCas *vgpu.VarSet `view:"-" desc:"Varset = 4: the Storage buffer for SynCa banks"`
+
+	// [view: -] for sequencing commands
+	Semaphores map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
+
+	// [def: 64] [view: -] number of warp threads -- typically 64 -- must update all hlsl files if changed!
+	NThreads int `view:"-" inactive:"-" def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
+
+	// [view: -] maximum number of bytes per individual storage buffer element, from GPUProps.Limits.MaxStorageBufferRange
+	MaxBufferBytes uint32 `view:"-" desc:"maximum number of bytes per individual storage buffer element, from GPUProps.Limits.MaxStorageBufferRange"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas0 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas1 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas2 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas3 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas4 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas5 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas6 []float32 `view:"-" desc:"bank of floats for GPU access"`
+
+	// [view: -] bank of floats for GPU access
 	SynapseCas7 []float32 `view:"-" desc:"bank of floats for GPU access"`
 
+	// [view: -] tracks var binding
 	DidBind map[string]bool `view:"-" desc:"tracks var binding"`
 }
 

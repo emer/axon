@@ -18,10 +18,18 @@ import (
 
 // Stim describes a single stimulus
 type Stim struct {
-	Pos      mat32.Vec2 `desc:"position in normalized coordintes"`
-	Feat     int        `desc:"feature number: 0-3 for V1 input, -1 for LIP attn"`
-	Width    float32    `desc:"normalized width"`
-	Contrast float32    `desc:"normalized contrast level"`
+
+	// position in normalized coordintes
+	Pos mat32.Vec2 `desc:"position in normalized coordintes"`
+
+	// feature number: 0-3 for V1 input, -1 for LIP attn
+	Feat int `desc:"feature number: 0-3 for V1 input, -1 for LIP attn"`
+
+	// normalized width
+	Width float32 `desc:"normalized width"`
+
+	// normalized contrast level
+	Contrast float32 `desc:"normalized contrast level"`
 }
 
 // PosXY returns XY position projected into size of grid
@@ -31,7 +39,11 @@ func (st *Stim) PosXY(size evec.Vec2i) mat32.Vec2 {
 
 // StimSet is a set of stimuli to be presented together
 type StimSet struct {
-	Name  string `desc:"description of set"`
+
+	// description of set
+	Name string `desc:"description of set"`
+
+	// stims to present
 	Stims []Stim `desc:"stims to present"`
 }
 
@@ -43,23 +55,54 @@ type Stims []StimSet
 // It can be used as a starting point for writing your own Env, without
 // having much existing code to rewrite.
 type AttnEnv struct {
-	Nm           string     `desc:"name of this environment"`
-	Dsc          string     `desc:"description of this environment"`
-	ContrastMult float32    `desc:"multiplier on contrast function"`
-	ContrastGain float32    `desc:"gain on contrast function inside exponential"`
-	ContrastOff  float32    `desc:"offset on contrast function"`
-	LIPGauss     bool       `desc:"use gaussian for LIP -- otherwise fixed circle"`
-	Stims        Stims      `desc:"a list of stimuli to present"`
-	CurStim      *StimSet   `inactive:"+" desc:"current stimuli presented"`
-	Act          float32    `desc:"activation level (midpoint) -- feature is incremented, rest decremented relative to this"`
-	V1Pools      evec.Vec2i `desc:"size of V1 Pools"`
-	V1Feats      evec.Vec2i `desc:"size of V1 features per pool"`
 
-	V1    etensor.Float32 `desc:"V1 rendered input state, 4D Size x Size"`
-	LIP   etensor.Float32 `desc:"LIP top-down attention"`
-	Run   env.Ctr         `view:"inline" desc:"current run of model as provided during Init"`
-	Epoch env.Ctr         `view:"inline" desc:"number of times through Seq.Max number of sequences"`
-	Trial env.Ctr         `view:"inline" desc:"trial increments over input states -- could add Event as a lower level"`
+	// name of this environment
+	Nm string `desc:"name of this environment"`
+
+	// description of this environment
+	Dsc string `desc:"description of this environment"`
+
+	// multiplier on contrast function
+	ContrastMult float32 `desc:"multiplier on contrast function"`
+
+	// gain on contrast function inside exponential
+	ContrastGain float32 `desc:"gain on contrast function inside exponential"`
+
+	// offset on contrast function
+	ContrastOff float32 `desc:"offset on contrast function"`
+
+	// use gaussian for LIP -- otherwise fixed circle
+	LIPGauss bool `desc:"use gaussian for LIP -- otherwise fixed circle"`
+
+	// a list of stimuli to present
+	Stims Stims `desc:"a list of stimuli to present"`
+
+	// current stimuli presented
+	CurStim *StimSet `inactive:"+" desc:"current stimuli presented"`
+
+	// activation level (midpoint) -- feature is incremented, rest decremented relative to this
+	Act float32 `desc:"activation level (midpoint) -- feature is incremented, rest decremented relative to this"`
+
+	// size of V1 Pools
+	V1Pools evec.Vec2i `desc:"size of V1 Pools"`
+
+	// size of V1 features per pool
+	V1Feats evec.Vec2i `desc:"size of V1 features per pool"`
+
+	// V1 rendered input state, 4D Size x Size
+	V1 etensor.Float32 `desc:"V1 rendered input state, 4D Size x Size"`
+
+	// LIP top-down attention
+	LIP etensor.Float32 `desc:"LIP top-down attention"`
+
+	// [view: inline] current run of model as provided during Init
+	Run env.Ctr `view:"inline" desc:"current run of model as provided during Init"`
+
+	// [view: inline] number of times through Seq.Max number of sequences
+	Epoch env.Ctr `view:"inline" desc:"number of times through Seq.Max number of sequences"`
+
+	// [view: inline] trial increments over input states -- could add Event as a lower level
+	Trial env.Ctr `view:"inline" desc:"trial increments over input states -- could add Event as a lower level"`
 }
 
 func (ev *AttnEnv) Name() string { return ev.Nm }

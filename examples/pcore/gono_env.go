@@ -17,32 +17,81 @@ import (
 
 // GoNoEnv implements simple Go vs. NoGo input patterns to test BG learning.
 type GoNoEnv struct {
-	Nm         string        `desc:"name of environment -- Train or Test"`
-	Mode       etime.Modes   `desc:"training or testing env?"`
-	Trial      env.Ctr       `desc:"trial counter -- set by caller for testing"`
-	ACCPos     float32       `desc:"activation of ACC positive valence -- drives go"`
-	ACCNeg     float32       `desc:"activation of ACC neg valence -- drives nogo"`
-	PosNegThr  float32       `desc:"threshold on diff between ACCPos - ACCNeg for counting as a Go trial"`
-	ManualVals bool          `desc:"ACCPos and Neg are set manually -- do not generate random vals for training or auto-increment ACCPos / Neg values during test"`
-	TestInc    float32       `desc:"increment in testing activation for test all"`
-	TestReps   int           `desc:"number of repetitions per testing level"`
-	NPools     int           `view:"-" desc:"number of pools for representing multiple different options to be evaluated in parallel, vs. 1 pool with a simple go nogo overall choice -- currently tested / configured for the 1 pool case"`
-	ACCPosInc  float32       `desc:"for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
-	ACCNegInc  float32       `desc:"for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
-	NUnitsY    int           `view:"-" desc:"number of units within each pool, Y"`
-	NUnitsX    int           `view:"-" desc:"number of units within each pool, X"`
-	NUnits     int           `view:"-" desc:"total number of units within each pool"`
-	InN        int           `desc:"number of different values for PFC to learn in input layer -- gives PFC network something to do"`
-	PopCode    popcode.OneD  `desc:"pop code the values in ACCPos and Neg"`
-	Rand       erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
-	RndSeed    int64         `inactive:"+" desc:"random seed"`
 
+	// name of environment -- Train or Test
+	Nm string `desc:"name of environment -- Train or Test"`
+
+	// training or testing env?
+	Mode etime.Modes `desc:"training or testing env?"`
+
+	// trial counter -- set by caller for testing
+	Trial env.Ctr `desc:"trial counter -- set by caller for testing"`
+
+	// activation of ACC positive valence -- drives go
+	ACCPos float32 `desc:"activation of ACC positive valence -- drives go"`
+
+	// activation of ACC neg valence -- drives nogo
+	ACCNeg float32 `desc:"activation of ACC neg valence -- drives nogo"`
+
+	// threshold on diff between ACCPos - ACCNeg for counting as a Go trial
+	PosNegThr float32 `desc:"threshold on diff between ACCPos - ACCNeg for counting as a Go trial"`
+
+	// ACCPos and Neg are set manually -- do not generate random vals for training or auto-increment ACCPos / Neg values during test
+	ManualVals bool `desc:"ACCPos and Neg are set manually -- do not generate random vals for training or auto-increment ACCPos / Neg values during test"`
+
+	// increment in testing activation for test all
+	TestInc float32 `desc:"increment in testing activation for test all"`
+
+	// number of repetitions per testing level
+	TestReps int `desc:"number of repetitions per testing level"`
+
+	// [view: -] number of pools for representing multiple different options to be evaluated in parallel, vs. 1 pool with a simple go nogo overall choice -- currently tested / configured for the 1 pool case
+	NPools int `view:"-" desc:"number of pools for representing multiple different options to be evaluated in parallel, vs. 1 pool with a simple go nogo overall choice -- currently tested / configured for the 1 pool case"`
+
+	// for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%
+	ACCPosInc float32 `desc:"for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
+
+	// for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%
+	ACCNegInc float32 `desc:"for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
+
+	// [view: -] number of units within each pool, Y
+	NUnitsY int `view:"-" desc:"number of units within each pool, Y"`
+
+	// [view: -] number of units within each pool, X
+	NUnitsX int `view:"-" desc:"number of units within each pool, X"`
+
+	// [view: -] total number of units within each pool
+	NUnits int `view:"-" desc:"total number of units within each pool"`
+
+	// number of different values for PFC to learn in input layer -- gives PFC network something to do
+	InN int `desc:"number of different values for PFC to learn in input layer -- gives PFC network something to do"`
+
+	// pop code the values in ACCPos and Neg
+	PopCode popcode.OneD `desc:"pop code the values in ACCPos and Neg"`
+
+	// [view: -] random number generator for the env -- all random calls must use this
+	Rand erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
+
+	// random seed
+	RndSeed int64 `inactive:"+" desc:"random seed"`
+
+	// named states: ACCPos, ACCNeg
 	States map[string]*etensor.Float32 `desc:"named states: ACCPos, ACCNeg"`
-	Should bool                        `inactive:"+" desc:"true if Pos - Neg > Thr"`
-	Gated  bool                        `inactive:"+" desc:"true if model gated on this trial"`
-	Match  bool                        `inactive:"+" desc:"true if gated == should"`
-	Rew    float32                     `inactive:"+" desc:"reward based on match between Should vs. Gated"`
-	InCtr  int                         `inactive:"+" desc:"input counter -- gives PFC network something to do"`
+
+	// true if Pos - Neg > Thr
+	Should bool `inactive:"+" desc:"true if Pos - Neg > Thr"`
+
+	// true if model gated on this trial
+	Gated bool `inactive:"+" desc:"true if model gated on this trial"`
+
+	// true if gated == should
+	Match bool `inactive:"+" desc:"true if gated == should"`
+
+	// reward based on match between Should vs. Gated
+	Rew float32 `inactive:"+" desc:"reward based on match between Should vs. Gated"`
+
+	// input counter -- gives PFC network something to do
+	InCtr int `inactive:"+" desc:"input counter -- gives PFC network something to do"`
 }
 
 func (ev *GoNoEnv) Name() string {

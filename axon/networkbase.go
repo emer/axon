@@ -38,50 +38,129 @@ import (
 // NetworkBase manages the basic structural components of a network (layers).
 // The main Network then can just have the algorithm-specific code.
 type NetworkBase struct {
-	EmerNet     emer.Network        `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Nm          string              `desc:"overall name of network -- helps discriminate if there are multiple"`
-	WtsFile     string              `desc:"filename of last weights file loaded or saved"`
-	LayMap      map[string]*Layer   `view:"-" desc:"map of name to layers -- layer names must be unique"`
+
+	// [view: -] we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary.
+	EmerNet emer.Network `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+
+	// overall name of network -- helps discriminate if there are multiple
+	Nm string `desc:"overall name of network -- helps discriminate if there are multiple"`
+
+	// filename of last weights file loaded or saved
+	WtsFile string `desc:"filename of last weights file loaded or saved"`
+
+	// [view: -] map of name to layers -- layer names must be unique
+	LayMap map[string]*Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
+
+	// [view: -] map of layer classes -- made during Build
 	LayClassMap map[string][]string `view:"-" desc:"map of layer classes -- made during Build"`
-	MinPos      mat32.Vec3          `view:"-" desc:"minimum display position in network"`
-	MaxPos      mat32.Vec3          `view:"-" desc:"maximum display position in network"`
-	MetaData    map[string]string   `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
-	UseGPUOrder bool                `inactive:"+" desc:"if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called."`
 
-	// Implementation level code below:
-	NetIdx       uint32        `view:"-" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	MaxDelay     uint32        `inactive:"+" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
-	MaxData      uint32        `inactive:"+" desc:"maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount during Build process, and this value reflects that."`
-	NNeurons     uint32        `inactive:"+" desc:"total number of neurons"`
-	NSyns        uint32        `inactive:"+" desc:"total number of synapses"`
-	Globals      []float32     `view:"-" desc:"storage for global vars"`
-	Layers       []*Layer      `desc:"array of layers"`
-	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
-	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`
-	Pools        []Pool        `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
-	Neurons      []float32     `view:"-" desc:"[Layers][Neurons][MaxData] entire network's allocation of neuron variables, accessed via NrnV function with flexible striding"`
-	NeuronAvgs   []float32     `view:"-" desc:"[Layers][Neurons][MaxData]] entire network's allocation of neuron average avariables, accessed via NrnAvgV function with flexible striding"`
-	NeuronIxs    []uint32      `view:"-" desc:"[Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding"`
-	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
-	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
-	SynapseIxs   []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
-	Synapses     []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function"`
-	SynapseCas   []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons][MaxData] entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function"`
-	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
-	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
-	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay][MaxData] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
-	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxData] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
-	RecvPrjnIdxs []uint32      `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
-	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
-	Exts         []float32     `desc:"[In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
+	// [view: -] minimum display position in network
+	MinPos mat32.Vec3 `view:"-" desc:"minimum display position in network"`
 
-	Ctx         Context                `view:"-" desc:"context used only for accessing neurons for display -- NetIdxs.NData in here is copied from active context in NewState"`
-	Rand        erand.SysRand          `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`
-	RndSeed     int64                  `inactive:"+" desc:"random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights"`
-	NThreads    int                    `desc:"number of threads to use for parallel processing"`
-	GPU         GPU                    `view:"inline" desc:"GPU implementation"`
-	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
-	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
+	// [view: -] maximum display position in network
+	MaxPos mat32.Vec3 `view:"-" desc:"maximum display position in network"`
+
+	// optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save
+	MetaData map[string]string `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+
+	// if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called.
+	UseGPUOrder bool `inactive:"+" desc:"if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called."`
+
+	// [view: -] network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
+	NetIdx uint32 `view:"-" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+
+	// [view: -] maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer.
+	MaxDelay uint32 `inactive:"+" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+
+	// maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount during Build process, and this value reflects that.
+	MaxData uint32 `inactive:"+" desc:"maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount during Build process, and this value reflects that."`
+
+	// total number of neurons
+	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
+
+	// total number of synapses
+	NSyns uint32 `inactive:"+" desc:"total number of synapses"`
+
+	// [view: -] storage for global vars
+	Globals []float32 `view:"-" desc:"storage for global vars"`
+
+	// array of layers
+	Layers []*Layer `desc:"array of layers"`
+
+	// [view: -] [Layers] array of layer parameters, in 1-to-1 correspondence with Layers
+	LayParams []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
+
+	// [view: -] [Layers][MaxData] array of layer values, with extra per data
+	LayVals []LayerVals `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`
+
+	// [view: -] [Layers][Pools][MaxData] array of inhibitory pools for all layers.
+	Pools []Pool `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
+
+	// [view: -] [Layers][Neurons][MaxData] entire network's allocation of neuron variables, accessed via NrnV function with flexible striding
+	Neurons []float32 `view:"-" desc:"[Layers][Neurons][MaxData] entire network's allocation of neuron variables, accessed via NrnV function with flexible striding"`
+
+	// [view: -] [Layers][Neurons][MaxData]] entire network's allocation of neuron average avariables, accessed via NrnAvgV function with flexible striding
+	NeuronAvgs []float32 `view:"-" desc:"[Layers][Neurons][MaxData]] entire network's allocation of neuron average avariables, accessed via NrnAvgV function with flexible striding"`
+
+	// [view: -] [Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding
+	NeuronIxs []uint32 `view:"-" desc:"[Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding"`
+
+	// [view: -] [Layers][SendPrjns] pointers to all projections in the network, sender-based
+	Prjns []*Prjn `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
+
+	// [view: -] [Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based
+	PrjnParams []PrjnParams `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
+
+	// [view: -] [Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function
+	SynapseIxs []uint32 `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
+
+	// [view: -] [Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function
+	Synapses []float32 `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function"`
+
+	// [view: -] [Layers][SendPrjns][SendNeurons][RecvNeurons][MaxData] entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function
+	SynapseCas []float32 `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons][MaxData] entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function"`
+
+	// [view: -] [Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.
+	PrjnSendCon []StartN `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
+
+	// [view: -] [Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.
+	PrjnRecvCon []StartN `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
+
+	// [view: -] [Layers][RecvPrjns][RecvNeurons][MaxDelay][MaxData] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration
+	PrjnGBuf []int32 `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay][MaxData] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
+
+	// [view: -] [Layers][RecvPrjns][RecvNeurons][MaxData] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection
+	PrjnGSyns []float32 `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxData] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
+
+	// [view: -] [Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU.
+	RecvPrjnIdxs []uint32 `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
+
+	// [view: -] [Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access.
+	RecvSynIdxs []uint32 `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
+
+	// [In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method.
+	Exts []float32 `desc:"[In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
+
+	// [view: -] context used only for accessing neurons for display -- NetIdxs.NData in here is copied from active context in NewState
+	Ctx Context `view:"-" desc:"context used only for accessing neurons for display -- NetIdxs.NData in here is copied from active context in NewState"`
+
+	// [view: -] random number generator for the network -- all random calls must use this -- set seed here for weight initialization values
+	Rand erand.SysRand `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`
+
+	// random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights
+	RndSeed int64 `inactive:"+" desc:"random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights"`
+
+	// number of threads to use for parallel processing
+	NThreads int `desc:"number of threads to use for parallel processing"`
+
+	// [view: inline] GPU implementation
+	GPU GPU `view:"inline" desc:"GPU implementation"`
+
+	// [view: -] record function timer information
+	RecFunTimes bool `view:"-" desc:"record function timer information"`
+
+	// [view: -] timers for each major function (step of processing)
+	FunTimes map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
 }
 
 // emer.Network interface methods:

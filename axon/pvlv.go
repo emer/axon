@@ -88,16 +88,28 @@ func (ds *DriveVals) Get(drv uint32) float32 {
 // Drives manages the drive parameters for updating drive state,
 // and drive state.
 type Drives struct {
-	NActive  uint32  `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8"`
-	NNegUSs  uint32  `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
+
+	// [max: 8] number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8
+	NActive uint32 `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8"`
+
+	// [min: 1] [max: 8] number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved
+	NNegUSs uint32 `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
+
+	// minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline.
 	DriveMin float32 `desc:"minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline."`
 
 	pad int32
 
-	Base  DriveVals `view:"inline" desc:"baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range)."`
-	Tau   DriveVals `view:"inline" desc:"time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update."`
+	// [view: inline] baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).
+	Base DriveVals `view:"inline" desc:"baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range)."`
+
+	// [view: inline] time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.
+	Tau DriveVals `view:"inline" desc:"time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update."`
+
+	// [view: inline] decrement in drive value when Drive-US is consumed -- positive values are subtracted from current Drive value.
 	USDec DriveVals `view:"inline" desc:"decrement in drive value when Drive-US is consumed -- positive values are subtracted from current Drive value."`
 
+	// [view: -] 1/Tau
 	Dt DriveVals `view:"-" desc:"1/Tau"`
 }
 
@@ -131,11 +143,21 @@ func (dp *Drives) Update() {
 
 // Effort has effort and parameters for updating it
 type Effort struct {
-	Gain       float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
-	Max        float32 `desc:"default maximum raw effort level, when MaxNovel and MaxPostDip don't apply."`
-	MaxNovel   float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
+
+	// gain factor for computing effort discount factor -- larger = quicker discounting
+	Gain float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
+
+	// default maximum raw effort level, when MaxNovel and MaxPostDip don't apply.
+	Max float32 `desc:"default maximum raw effort level, when MaxNovel and MaxPostDip don't apply."`
+
+	// maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max
+	MaxNovel float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
+
+	// if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever..
 	MaxPostDip float32 `desc:"if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever.."`
-	MaxVar     float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
+
+	// variance in additional maximum effort level, applied whenever CurMax is updated
+	MaxVar float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
 
 	pad, pad1, pad2 float32
 }
@@ -168,9 +190,15 @@ func (ef *Effort) DiscFun(effort float32) float32 {
 // e.g., desperate thirst, hunger.  Drive activations probably have limited range
 // and renormalization, so urgency can be another dimension with more impact by directly biasing Go.
 type Urgency struct {
-	U50   float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
-	Power int32   `def:"4" desc:"exponent on the urge factor -- valid numbers are 1,2,4,6"`
-	Thr   float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
+
+	// value of raw urgency where the urgency activation level is 50%
+	U50 float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
+
+	// [def: 4] exponent on the urge factor -- valid numbers are 1,2,4,6
+	Power int32 `def:"4" desc:"exponent on the urge factor -- valid numbers are 1,2,4,6"`
+
+	// [def: 0.2] threshold for urge -- cuts off small baseline values
+	Thr float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
 
 	pad float32
 }
@@ -212,9 +240,17 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 // e.g., when actual pos > predicted (redundant with LV / Amygdala)
 // or "relief" burst when actual neg < predicted.
 type LHb struct {
-	PosGain   float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
-	NegGain   float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
+
+	// [def: 1] gain multiplier on overall VSPatchPos - PosPV component
+	PosGain float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
+
+	// [def: 1] gain multiplier on overall PVneg component
+	NegGain float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
+
+	// [def: 0.2] threshold on summed LHbDip over trials for triggering a reset of goal engaged state
 	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
+
+	// [def: 0.05] low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip
 	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
 }
 
@@ -236,14 +272,32 @@ func (lh *LHb) Update() {
 // VTAVals has values for all the inputs to the VTA.
 // Used as gain factors and computed values.
 type VTAVals struct {
-	DA         float32 `desc:"overall dopamine value reflecting all of the different inputs"`
-	USpos      float32 `desc:"total positive valence primary value = sum of USpos * Drive without effort discounting"`
-	PVpos      float32 `desc:"total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
-	PVneg      float32 `desc:"total negative valence primary value = sum of USneg inputs"`
-	CeMpos     float32 `desc:"positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
-	CeMneg     float32 `desc:"negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly."`
-	LHbDip     float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
-	LHbBurst   float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
+
+	// overall dopamine value reflecting all of the different inputs
+	DA float32 `desc:"overall dopamine value reflecting all of the different inputs"`
+
+	// total positive valence primary value = sum of USpos * Drive without effort discounting
+	USpos float32 `desc:"total positive valence primary value = sum of USpos * Drive without effort discounting"`
+
+	// total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received
+	PVpos float32 `desc:"total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
+
+	// total negative valence primary value = sum of USneg inputs
+	PVneg float32 `desc:"total negative valence primary value = sum of USneg inputs"`
+
+	// positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes.
+	CeMpos float32 `desc:"positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
+
+	// negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly.
+	CeMneg float32 `desc:"negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly."`
+
+	// dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips
+	LHbDip float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
+
+	// burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts
+	LHbBurst float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
+
+	// net shunting input from VSPatch (PosD1 -- PVi in original PVLV)
 	VSPatchPos float32 `desc:"net shunting input from VSPatch (PosD1 -- PVi in original PVLV)"`
 
 	pad, pad1, pad2 float32
@@ -285,10 +339,13 @@ func (vt *VTAVals) Zero() {
 //   - ACh from LDT (laterodorsal tegmentum) reflecting sensory / reward salience,
 //     which disinhibits VTA activity.
 type VTA struct {
+
+	// threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present
 	PVThr float32 `desc:"threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present"`
 
 	pad, pad1, pad2 float32
 
+	// [view: inline] gain multipliers on inputs from each input
 	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
 }
 
@@ -315,11 +372,21 @@ func (vt *VTA) Update() {
 // (LDTLayer driven by BLA, CeM layers, VSPatchLayer).
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
 type PVLV struct {
-	Drive   Drives  `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
-	Effort  Effort  `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+
+	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
+	Drive Drives `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+
+	// [view: inline] effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion
+	Effort Effort `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+
+	// [view: inline] urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.
 	Urgency Urgency `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
-	VTA     VTA     `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
-	LHb     LHb     `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+
+	// parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb
+	VTA VTA `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
+
+	// [view: inline] lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing
+	LHb LHb `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
 }
 
 func (pp *PVLV) Defaults() {

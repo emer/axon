@@ -17,14 +17,30 @@ import (
 // LDTParams compute reward salience as ACh global neuromodulatory signal
 // as a function of the MAX activation of its inputs.
 type LDTParams struct {
-	SrcThr      float32     `def:"0.05" desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
-	Rew         slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
-	MaintInhib  float32     `desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
-	NotMaintMax float32     `desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
-	SrcLay1Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
-	SrcLay2Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
-	SrcLay3Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
-	SrcLay4Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
+
+	// [def: 0.05] threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
+	SrcThr float32 `def:"0.05" desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+
+	// use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
+	Rew slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
+
+	// extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
+	MaintInhib float32 `desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
+
+	// maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
+	NotMaintMax float32 `desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
+
+	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
+	SrcLay1Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
+
+	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used
+	SrcLay2Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
+
+	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used
+	SrcLay3Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
+
+	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used
+	SrcLay4Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
 }
 
 func (lp *LDTParams) Defaults() {
@@ -94,11 +110,23 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
+
+	// [def: 0.1] learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well.
 	NoDALRate float32 `def:"0.1" desc:"learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well."`
-	NoDAThr   float32 `def:"0.01" desc:"threshold on DA level to engage the NoDALRate -- use a small positive number just in case"`
-	Gain      float32 `desc:"multiplier applied after Thr threshold"`
-	ThrInit   float32 `desc:"initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr"`
-	ThrLRate  float32 `desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
+
+	// [def: 0.01] threshold on DA level to engage the NoDALRate -- use a small positive number just in case
+	NoDAThr float32 `def:"0.01" desc:"threshold on DA level to engage the NoDALRate -- use a small positive number just in case"`
+
+	// multiplier applied after Thr threshold
+	Gain float32 `desc:"multiplier applied after Thr threshold"`
+
+	// initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr
+	ThrInit float32 `desc:"initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr"`
+
+	// learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
+	ThrLRate float32 `desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
+
+	// extra gain factor for non-reward trials, which is the most critical
 	ThrNonRew float32 `desc:"extra gain factor for non-reward trials, which is the most critical"`
 
 	pad, pad1 float32

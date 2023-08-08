@@ -27,20 +27,48 @@ import (
 
 // LayerIdxs contains index access into network global arrays for GPU.
 type LayerIdxs struct {
-	LayIdx  uint32 `inactive:"+" desc:"layer index"`
+
+	// layer index
+	LayIdx uint32 `inactive:"+" desc:"layer index"`
+
+	// maximum number of data parallel elements
 	MaxData uint32 `inactive:"+" desc:"maximum number of data parallel elements"`
-	PoolSt  uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
-	NeurSt  uint32 `inactive:"+" desc:"start of neurons for this layer in global array (same as Layer.NeurStIdx)"`
-	NeurN   uint32 `inactive:"+" desc:"number of neurons in layer"`
-	RecvSt  uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
-	RecvN   uint32 `inactive:"+" desc:"number of recv projections"`
-	SendSt  uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
-	SendN   uint32 `inactive:"+" desc:"number of recv projections"`
-	ExtsSt  uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
-	ShpPlY  int32  `inactive:"+" desc:"layer shape Pools Y dimension -- 1 for 2D"`
-	ShpPlX  int32  `inactive:"+" desc:"layer shape Pools X dimension -- 1 for 2D"`
-	ShpUnY  int32  `inactive:"+" desc:"layer shape Units Y dimension"`
-	ShpUnX  int32  `inactive:"+" desc:"layer shape Units X dimension"`
+
+	// start of pools for this layer -- first one is always the layer-wide pool
+	PoolSt uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
+
+	// start of neurons for this layer in global array (same as Layer.NeurStIdx)
+	NeurSt uint32 `inactive:"+" desc:"start of neurons for this layer in global array (same as Layer.NeurStIdx)"`
+
+	// number of neurons in layer
+	NeurN uint32 `inactive:"+" desc:"number of neurons in layer"`
+
+	// start index into RecvPrjns global array
+	RecvSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
+
+	// number of recv projections
+	RecvN uint32 `inactive:"+" desc:"number of recv projections"`
+
+	// start index into RecvPrjns global array
+	SendSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
+
+	// number of recv projections
+	SendN uint32 `inactive:"+" desc:"number of recv projections"`
+
+	// starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types
+	ExtsSt uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
+
+	// layer shape Pools Y dimension -- 1 for 2D
+	ShpPlY int32 `inactive:"+" desc:"layer shape Pools Y dimension -- 1 for 2D"`
+
+	// layer shape Pools X dimension -- 1 for 2D
+	ShpPlX int32 `inactive:"+" desc:"layer shape Pools X dimension -- 1 for 2D"`
+
+	// layer shape Units Y dimension
+	ShpUnY int32 `inactive:"+" desc:"layer shape Units Y dimension"`
+
+	// layer shape Units X dimension
+	ShpUnX int32 `inactive:"+" desc:"layer shape Units X dimension"`
 
 	pad, pad1 uint32
 }
@@ -65,9 +93,17 @@ func (lx *LayerIdxs) ExtIdx(ni, di uint32) uint32 {
 
 // LayerInhibIdxs contains indexes of layers for between-layer inhibition
 type LayerInhibIdxs struct {
+
+	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used
 	Idx1 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used"`
+
+	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used
 	Idx2 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used"`
+
+	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used
 	Idx3 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used"`
+
+	// idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used
 	Idx4 int32 `inactive:"+" desc:"idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used"`
 }
 
@@ -96,32 +132,58 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 // These values must remain constant over the course of computation.
 // On the GPU, they are loaded into a uniform.
 type LayerParams struct {
+
+	// functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Typ value
 	LayType LayerTypes `desc:"functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Typ value"`
 
 	pad, pad1, pad2 int32
 
-	Acts     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
-	Inhib    InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
-	LayInhib LayerInhibIdxs  `view:"inline" desc:"indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)"`
-	Learn    LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
+	// [view: add-fields] Activation parameters and methods for computing activations
+	Acts ActParams `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
 
-	//////////////////////////////////////////
-	//  Specialized layer type parameters
-	//     each applies to a specific layer type.
-	//     use the `viewif` field tag to condition on LayType.
+	// [view: add-fields] Inhibition parameters and methods for computing layer-level inhibition
+	Inhib InhibParams `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
 
-	Bursts  BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
-	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
-	LDT     LDTParams     `viewif:"LayType=LDTLayer" view:"inline" desc:"parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition"`
-	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
-	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
+	// [view: inline] indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)
+	LayInhib LayerInhibIdxs `view:"inline" desc:"indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)"`
+
+	// [view: add-fields] Learning parameters and methods that operate at the neuron level
+	Learn LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
+
+	// [view: inline] [viewif: LayType=SuperLayer] BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.
+	Bursts BurstParams `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
+
+	// [view: inline] [viewif: LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace
+	CT CTParams `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+
+	// [view: inline] [viewif: LayType=PulvinarLayer] provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)
+	Pulv PulvParams `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
+
+	// [view: inline] [viewif: LayType=LDTLayer] parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
+	LDT LDTParams `viewif:"LayType=LDTLayer" view:"inline" desc:"parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition"`
+
+	// [view: inline] [viewif: LayType=RWPredLayer] parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
+	RWPred RWPredParams `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
+
+	// [view: inline] [viewif: LayType=RWDaLayer] parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
+	RWDa RWDaParams `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
+
+	// [view: inline] [viewif: LayType=TDIntegLayer] parameterizes TD reward integration layer
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
-	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
-	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
-	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
-	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
+	// [view: inline] [viewif: LayType=TDDaLayer] parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
+	TDDa TDDaParams `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
+
+	// [view: inline] [viewif: LayType=VSPatchLayer] parameters for VSPatch learning
+	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
+
+	// [view: inline] [viewif: LayType=MatrixLayer] parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
+	Matrix MatrixParams `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
+
+	// [view: inline] [viewif: LayType=GPLayer] type of GP Layer.
+	GP GPParams `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
+
+	// recv and send projection array access info
 	Idxs LayerIdxs `desc:"recv and send projection array access info"`
 }
 

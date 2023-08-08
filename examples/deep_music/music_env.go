@@ -24,23 +24,57 @@ import (
 // Songs with one note at a time per track are currently supported.
 // Renders note to a tensor with localist note coding with duplicate units for spiking.
 type MusicEnv struct {
-	Nm             string                       `desc:"name of this environment"`
-	Debug          bool                         `desc:"emit debugging messages about the music file"`
-	WrapNotes      bool                         `desc:"use only 1 octave of 12 notes for everything -- keeps it consistent"`
-	TicksPer       int                          `def:"120" desc:"number of time ticks per row in table -- note transitions that are faster than this will be lost"`
-	Track          int                          `desc:"which track to process"`
-	Play           bool                         `desc:"play output as it steps"`
-	MaxSteps       int                          `desc:"limit song length to given number of steps, if > 0"`
-	DiOffset       int                          `inactive:"+" desc:"time offset for data parallel = Song.Rows / (NData+1)"`
-	UnitsPer       int                          `desc:"number of units per localist note value"`
-	NoteRange      minmax.Int                   `desc:"range of notes in given track"`
-	NNotes         int                          `desc:"number of notes"`
-	Song           etable.Table                 `desc:"the song encoded into 200 msec increments, with columns as tracks"`
-	Time           env.Ctr                      `view:"inline" desc:"current time step"`
-	Note           etensor.Float32              `desc:"current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]"`
-	NoteIdx        int                          `desc:"current note index"`
-	Player         func(msg midi.Message) error `view:"-" desc:"the function for playing midi"`
-	LastNotePlayed int                          `view:"-" desc:"for playing notes"`
+
+	// name of this environment
+	Nm string `desc:"name of this environment"`
+
+	// emit debugging messages about the music file
+	Debug bool `desc:"emit debugging messages about the music file"`
+
+	// use only 1 octave of 12 notes for everything -- keeps it consistent
+	WrapNotes bool `desc:"use only 1 octave of 12 notes for everything -- keeps it consistent"`
+
+	// [def: 120] number of time ticks per row in table -- note transitions that are faster than this will be lost
+	TicksPer int `def:"120" desc:"number of time ticks per row in table -- note transitions that are faster than this will be lost"`
+
+	// which track to process
+	Track int `desc:"which track to process"`
+
+	// play output as it steps
+	Play bool `desc:"play output as it steps"`
+
+	// limit song length to given number of steps, if > 0
+	MaxSteps int `desc:"limit song length to given number of steps, if > 0"`
+
+	// time offset for data parallel = Song.Rows / (NData+1)
+	DiOffset int `inactive:"+" desc:"time offset for data parallel = Song.Rows / (NData+1)"`
+
+	// number of units per localist note value
+	UnitsPer int `desc:"number of units per localist note value"`
+
+	// range of notes in given track
+	NoteRange minmax.Int `desc:"range of notes in given track"`
+
+	// number of notes
+	NNotes int `desc:"number of notes"`
+
+	// the song encoded into 200 msec increments, with columns as tracks
+	Song etable.Table `desc:"the song encoded into 200 msec increments, with columns as tracks"`
+
+	// [view: inline] current time step
+	Time env.Ctr `view:"inline" desc:"current time step"`
+
+	// current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]
+	Note etensor.Float32 `desc:"current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]"`
+
+	// current note index
+	NoteIdx int `desc:"current note index"`
+
+	// [view: -] the function for playing midi
+	Player func(msg midi.Message) error `view:"-" desc:"the function for playing midi"`
+
+	// [view: -] for playing notes
+	LastNotePlayed int `view:"-" desc:"for playing notes"`
 }
 
 func (ev *MusicEnv) Name() string { return ev.Nm }

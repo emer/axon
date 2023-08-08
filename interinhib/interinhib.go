@@ -27,9 +27,15 @@ import (
 // the receiving layer either does a Max or Add of portion of
 // inhibition from other layer(s).
 type InterInhib struct {
+
+	// layers to receive inhibition from
 	Lays emer.LayNames `desc:"layers to receive inhibition from"`
-	Gi   float32       `desc:"multiplier on Gi from other layers"`
-	Add  bool          `desc:"add inhibition -- otherwise Max"`
+
+	// multiplier on Gi from other layers
+	Gi float32 `desc:"multiplier on Gi from other layers"`
+
+	// add inhibition -- otherwise Max
+	Add bool `desc:"add inhibition -- otherwise Max"`
 }
 
 func (il *InterInhib) Defaults() {

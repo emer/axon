@@ -57,20 +57,47 @@ func main() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Config    Config           `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
-	Net       *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	StopOnSeq bool             `desc:"if true, stop running at end of a sequence (for NetView Di data parallel index)"`
-	StopOnErr bool             `desc:"if true, stop running when an error programmed into the code occurs"`
-	Params    emer.NetParams   `view:"inline" desc:"network parameter management"`
-	Loops     *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats     estats.Stats     `desc:"contains computed statistic values"`
-	Logs      elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
-	Envs      env.Envs         `view:"no-inline" desc:"Environments"`
-	Context   axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt  netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
-	GUI      egui.GUI           `view:"-" desc:"manages all the gui elements"`
-	RndSeeds erand.Seeds        `view:"-" desc:"a list of random seeds to use for each run"`
+	// simulation configuration parameters -- set by .toml config file and / or args
+	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+
+	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+
+	// if true, stop running at end of a sequence (for NetView Di data parallel index)
+	StopOnSeq bool `desc:"if true, stop running at end of a sequence (for NetView Di data parallel index)"`
+
+	// if true, stop running when an error programmed into the code occurs
+	StopOnErr bool `desc:"if true, stop running when an error programmed into the code occurs"`
+
+	// [view: inline] network parameter management
+	Params emer.NetParams `view:"inline" desc:"network parameter management"`
+
+	// [view: no-inline] contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
+
+	// contains computed statistic values
+	Stats estats.Stats `desc:"contains computed statistic values"`
+
+	// Contains all the logs and information about the logs.'
+	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+
+	// [view: no-inline] Environments
+	Envs env.Envs `view:"no-inline" desc:"Environments"`
+
+	// axon timing parameters and state
+	Context axon.Context `desc:"axon timing parameters and state"`
+
+	// [view: inline] netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+
+	// [view: -] manages all the gui elements
+	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+
+	// [view: -] a list of random seeds to use for each run
+	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+
+	// [view: -] testing data, from -test arg
 	TestData map[string]float32 `view:"-" desc:"testing data, from -test arg"`
 }
 

@@ -77,6 +77,8 @@ var ParamSets = netparams.Sets{
 
 // Extra state for neuron
 type NeuronEx struct {
+
+	// input ISI countdown for spiking mode -- counts up
 	InISI float32 `desc:"input ISI countdown for spiking mode -- counts up"`
 }
 
@@ -90,24 +92,51 @@ func (nrn *NeuronEx) Init() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Config   Config         `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
-	Net      *axon.Network  `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	NeuronEx NeuronEx       `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
-	Context  axon.Context   `desc:"axon timing parameters and state"`
-	Stats    estats.Stats   `desc:"contains computed statistic values"`
-	Logs     elog.Logs      `view:"no-inline" desc:"logging"`
-	Params   emer.NetParams `view:"inline" desc:"all parameter management"`
 
+	// simulation configuration parameters -- set by .toml config file and / or args
+	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+
+	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+
+	// [view: no-inline] extra neuron state for additional channels: VGCC, AK
+	NeuronEx NeuronEx `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+
+	// axon timing parameters and state
+	Context axon.Context `desc:"axon timing parameters and state"`
+
+	// contains computed statistic values
+	Stats estats.Stats `desc:"contains computed statistic values"`
+
+	// [view: no-inline] logging
+	Logs elog.Logs `view:"no-inline" desc:"logging"`
+
+	// [view: inline] all parameter management
+	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+
+	// current cycle of updating
 	Cycle int `inactive:"+" desc:"current cycle of updating"`
 
-	// internal state - view:"-"
-	Win        *gi.Window         `view:"-" desc:"main GUI window"`
-	NetView    *netview.NetView   `view:"-" desc:"the network viewer"`
-	ToolBar    *gi.ToolBar        `view:"-" desc:"the master toolbar"`
-	TstCycPlot *eplot.Plot2D      `view:"-" desc:"the test-trial plot"`
-	ValMap     map[string]float32 `view:"-" desc:"map of values for detailed debugging / testing"`
-	IsRunning  bool               `view:"-" desc:"true if sim is running"`
-	StopNow    bool               `view:"-" desc:"flag to stop running"`
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the network viewer
+	NetView *netview.NetView `view:"-" desc:"the network viewer"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+
+	// [view: -] the test-trial plot
+	TstCycPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
+
+	// [view: -] map of values for detailed debugging / testing
+	ValMap map[string]float32 `view:"-" desc:"map of values for detailed debugging / testing"`
+
+	// [view: -] true if sim is running
+	IsRunning bool `view:"-" desc:"true if sim is running"`
+
+	// [view: -] flag to stop running
+	StopNow bool `view:"-" desc:"flag to stop running"`
 }
 
 // New creates new blank elements and initializes defaults

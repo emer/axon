@@ -29,8 +29,12 @@ import (
 // arranged from Start to Start+N (exclusive).
 // This is not 16 byte padded and only for use on CPU side.
 type StartN struct {
+
+	// starting offset
 	Start uint32 `desc:"starting offset"`
-	N     uint32 `desc:"number of items -- [Start:Start+N]"`
+
+	// number of items -- [Start:Start+N]
+	N uint32 `desc:"number of items -- [Start:Start+N]"`
 
 	pad, pad1 uint32 // todo: see if we can do without these?
 }
@@ -71,8 +75,12 @@ func (pi *PrjnIdxs) SendNIdxToLayIdx(ni uint32) uint32 {
 // These are computed once at start and remain constant thereafter,
 // and therefore belong on Params and not on PrjnVals.
 type GScaleVals struct {
+
+	// scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params
 	Scale float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
-	Rel   float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
+
+	// normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)
+	Rel float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
 
 	pad, pad1 float32
 }
@@ -81,26 +89,41 @@ type GScaleVals struct {
 // These values must remain constant over the course of computation.
 // On the GPU, they are loaded into a uniform.
 type PrjnParams struct {
+
+	// functional type of prjn -- determines functional code path for specialized layer types, and is synchronized with the Prjn.Typ value
 	PrjnType PrjnTypes `desc:"functional type of prjn -- determines functional code path for specialized layer types, and is synchronized with the Prjn.Typ value"`
 
 	pad, pad1, pad2 int32
 
-	Idxs      PrjnIdxs        `view:"-" desc:"recv and send neuron-level projection index array access info"`
-	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
+	// [view: -] recv and send neuron-level projection index array access info
+	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
+
+	// [view: inline] synaptic communication parameters: delay, probability of failure
+	Com SynComParams `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
+
+	// [view: inline] projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
-	SWts      SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
-	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
-	GScale    GScaleVals      `view:"inline" desc:"conductance scaling values"`
 
-	//////////////////////////////////////////
-	//  Specialized prjn type parameters
-	//     each applies to a specific prjn type.
-	//     use the `viewif` field tag to condition on PrjnType.
+	// [view: add-fields] slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments
+	SWts SWtParams `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 
+	// [view: add-fields] synaptic-level learning parameters for learning in the fast LWt values.
+	Learn LearnSynParams `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
+
+	// [view: inline] conductance scaling values
+	GScale GScaleVals `view:"inline" desc:"conductance scaling values"`
+
+	// [view: inline] [viewif: PrjnType=[RWPrjn,TDPredPrjn]] Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only.
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
+
+	// [view: inline] [viewif: PrjnType=MatrixPrjn] for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs.
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
-	BLA    BLAPrjnParams    `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
-	Hip    HipPrjnParams    `viewif:"PrjnType=HipPrjn" view:"inline" desc:"Hip bench parameters."`
+
+	// [view: inline] [viewif: PrjnType=BLAPrjn] Basolateral Amygdala projection parameters.
+	BLA BLAPrjnParams `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
+
+	// [view: inline] [viewif: PrjnType=HipPrjn] Hip bench parameters.
+	Hip HipPrjnParams `viewif:"PrjnType=HipPrjn" view:"inline" desc:"Hip bench parameters."`
 }
 
 func (pj *PrjnParams) Defaults() {

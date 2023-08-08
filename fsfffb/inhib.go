@@ -15,26 +15,65 @@ import (
 
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
-	FFsRaw   float32     `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
-	FBsRaw   float32     `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
-	GeExtRaw float32     `desc:"all extra GeExt conductances added to neurons"`
-	FFs      float32     `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
-	FBs      float32     `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
-	GeExts   float32     `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
-	Clamped  slbool.Bool `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
-	FSi      float32     `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
-	SSi      float32     `desc:"slow spiking SST+ integration of FBs feedback spikes"`
-	SSf      float32     `desc:"slow spiking facilitation factor, representing facilitating effects of recent activity"`
-	FSGi     float32     `desc:"overall fast-spiking inhibitory conductance"`
-	SSGi     float32     `desc:"overall slow-spiking inhibitory conductance"`
-	Gi       float32     `desc:"overall inhibitory conductance = FSGi + SSGi"`
-	GiOrig   float32     `desc:"original value of the inhibition (before pool or other effects)"`
-	LayGi    float32     `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
-	FFAvg    float32     `desc:"longer time scale running average FF drive -- used for FFAvgPrv"`
-	FFAvgPrv float32     `desc:"previous theta cycle FFAvg value -- for FFPrv factor -- updated in Decay function that is called at start of new ThetaCycle"`
 
-	FFsRawInt   int32 `desc:"int32 atomic add compatible integration of FFsRaw"`
-	FBsRawInt   int32 `desc:"int32 atomic add compatible integration of FBsRaw"`
+	// all feedforward incoming spikes into neurons in this pool -- raw aggregation
+	FFsRaw float32 `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
+
+	// all feedback outgoing spikes generated from neurons in this pool -- raw aggregation
+	FBsRaw float32 `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
+
+	// all extra GeExt conductances added to neurons
+	GeExtRaw float32 `desc:"all extra GeExt conductances added to neurons"`
+
+	// all feedforward incoming spikes into neurons in this pool, normalized by pool size
+	FFs float32 `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
+
+	// all feedback outgoing spikes generated from neurons in this pool, normalized by pool size
+	FBs float32 `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
+
+	// all extra GeExt conductances added to neurons, normalized by pool size
+	GeExts float32 `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
+
+	// if true, this layer is hard-clamped and should use GeExts exclusively for PV
+	Clamped slbool.Bool `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
+
+	// fast spiking PV+ fast integration of FFs feedforward spikes
+	FSi float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
+
+	// slow spiking SST+ integration of FBs feedback spikes
+	SSi float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
+
+	// slow spiking facilitation factor, representing facilitating effects of recent activity
+	SSf float32 `desc:"slow spiking facilitation factor, representing facilitating effects of recent activity"`
+
+	// overall fast-spiking inhibitory conductance
+	FSGi float32 `desc:"overall fast-spiking inhibitory conductance"`
+
+	// overall slow-spiking inhibitory conductance
+	SSGi float32 `desc:"overall slow-spiking inhibitory conductance"`
+
+	// overall inhibitory conductance = FSGi + SSGi
+	Gi float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
+
+	// original value of the inhibition (before pool or other effects)
+	GiOrig float32 `desc:"original value of the inhibition (before pool or other effects)"`
+
+	// for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition
+	LayGi float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+
+	// longer time scale running average FF drive -- used for FFAvgPrv
+	FFAvg float32 `desc:"longer time scale running average FF drive -- used for FFAvgPrv"`
+
+	// previous theta cycle FFAvg value -- for FFPrv factor -- updated in Decay function that is called at start of new ThetaCycle
+	FFAvgPrv float32 `desc:"previous theta cycle FFAvg value -- for FFPrv factor -- updated in Decay function that is called at start of new ThetaCycle"`
+
+	// int32 atomic add compatible integration of FFsRaw
+	FFsRawInt int32 `desc:"int32 atomic add compatible integration of FFsRaw"`
+
+	// int32 atomic add compatible integration of FBsRaw
+	FBsRawInt int32 `desc:"int32 atomic add compatible integration of FBsRaw"`
+
+	// int32 atomic add compatible integration of GeExtRaw
 	GeExtRawInt int32 `desc:"int32 atomic add compatible integration of GeExtRaw"`
 }
 

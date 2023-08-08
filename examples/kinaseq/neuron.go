@@ -79,11 +79,23 @@ var ParamSets = params.Sets{
 
 // Extra state for neuron
 type NeuronEx struct {
-	SCaUpT   int     `desc:"time of last sending spike"`
-	RCaUpT   int     `desc:"time of last recv spike"`
-	Sp       float32 `desc:"sending poisson firing probability accumulator"`
-	Rp       float32 `desc:"recv poisson firing probability accumulator"`
-	NMDAGmg  float32 `desc:"NMDA mg-based blocking conductance"`
+
+	// time of last sending spike
+	SCaUpT int `desc:"time of last sending spike"`
+
+	// time of last recv spike
+	RCaUpT int `desc:"time of last recv spike"`
+
+	// sending poisson firing probability accumulator
+	Sp float32 `desc:"sending poisson firing probability accumulator"`
+
+	// recv poisson firing probability accumulator
+	Rp float32 `desc:"recv poisson firing probability accumulator"`
+
+	// NMDA mg-based blocking conductance
+	NMDAGmg float32 `desc:"NMDA mg-based blocking conductance"`
+
+	// when 0, it is time to learn according to theta cycle, otherwise increments up unless still -1 from init
 	LearnNow float32 `desc:"when 0, it is time to learn according to theta cycle, otherwise increments up unless still -1 from init"`
 }
 

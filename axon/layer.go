@@ -25,6 +25,8 @@ import (
 // and manages learning in the projections.
 type Layer struct {
 	LayerBase
+
+	// all layer-level parameters -- these must remain constant once configured
 	Params *LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
 }
 

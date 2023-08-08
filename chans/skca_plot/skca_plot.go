@@ -39,19 +39,45 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	SKCa       chans.SKCaParams `desc:"SKCa params"`
-	CaParams   kinase.CaParams  `desc:"time constants for integrating Ca from spiking across M, P and D cascading levels"`
-	NoSpikeThr float32          `def:"0.5" desc:"threshold of SK M gating factor above which the neuron cannot spike"`
-	CaStep     float32          `def:"0.05" desc:"Ca conc increment for M gating func plot"`
-	TimeSteps  int              `desc:"number of time steps"`
-	TimeSpike  bool             `desc:"do spiking instead of Ca conc ramp"`
-	SpikeFreq  float32          `desc:"spiking frequency"`
-	Table      *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot       *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable  *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot   *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win        *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+
+	// SKCa params
+	SKCa chans.SKCaParams `desc:"SKCa params"`
+
+	// time constants for integrating Ca from spiking across M, P and D cascading levels
+	CaParams kinase.CaParams `desc:"time constants for integrating Ca from spiking across M, P and D cascading levels"`
+
+	// [def: 0.5] threshold of SK M gating factor above which the neuron cannot spike
+	NoSpikeThr float32 `def:"0.5" desc:"threshold of SK M gating factor above which the neuron cannot spike"`
+
+	// [def: 0.05] Ca conc increment for M gating func plot
+	CaStep float32 `def:"0.05" desc:"Ca conc increment for M gating func plot"`
+
+	// number of time steps
+	TimeSteps int `desc:"number of time steps"`
+
+	// do spiking instead of Ca conc ramp
+	TimeSpike bool `desc:"do spiking instead of Ca conc ramp"`
+
+	// spiking frequency
+	SpikeFreq float32 `desc:"spiking frequency"`
+
+	// [view: no-inline] table for plot
+	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: no-inline] table for plot
+	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation

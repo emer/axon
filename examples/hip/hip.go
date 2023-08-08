@@ -58,29 +58,68 @@ func main() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Config Config         `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
-	Net    *axon.Network  `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+
+	// simulation configuration parameters -- set by .toml config file and / or args
+	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+
+	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+
+	// [view: inline] all parameter management
 	Params emer.NetParams `view:"inline" desc:"all parameter management"`
 
-	Loops        *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats        estats.Stats    `desc:"contains computed statistic values"`
-	Logs         elog.Logs       `desc:"Contains all the logs and information about the logs.'"`
-	PretrainMode bool            `desc:"if true, run in pretrain mode"`
+	// [view: no-inline] contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
 
-	PoolVocab    patgen.Vocab     `view:"no-inline" desc:"pool patterns vocabulary"`
-	TrainAB      *etable.Table    `view:"no-inline" desc:"AB training patterns to use"`
-	TrainAC      *etable.Table    `view:"no-inline" desc:"AC training patterns to use"`
-	TestAB       *etable.Table    `view:"no-inline" desc:"AB testing patterns to use"`
-	TestAC       *etable.Table    `view:"no-inline" desc:"AC testing patterns to use"`
-	PreTrainLure *etable.Table    `view:"no-inline" desc:"Lure pretrain patterns to use"`
-	TestLure     *etable.Table    `view:"no-inline" desc:"Lure testing patterns to use"`
-	TrainAll     *etable.Table    `view:"no-inline" desc:"all training patterns -- for pretrain"`
-	TestABAC     *etable.Table    `view:"no-inline" desc:"TestAB + TestAC"`
-	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Context      axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+	// contains computed statistic values
+	Stats estats.Stats `desc:"contains computed statistic values"`
 
-	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
+	// Contains all the logs and information about the logs.'
+	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+
+	// if true, run in pretrain mode
+	PretrainMode bool `desc:"if true, run in pretrain mode"`
+
+	// [view: no-inline] pool patterns vocabulary
+	PoolVocab patgen.Vocab `view:"no-inline" desc:"pool patterns vocabulary"`
+
+	// [view: no-inline] AB training patterns to use
+	TrainAB *etable.Table `view:"no-inline" desc:"AB training patterns to use"`
+
+	// [view: no-inline] AC training patterns to use
+	TrainAC *etable.Table `view:"no-inline" desc:"AC training patterns to use"`
+
+	// [view: no-inline] AB testing patterns to use
+	TestAB *etable.Table `view:"no-inline" desc:"AB testing patterns to use"`
+
+	// [view: no-inline] AC testing patterns to use
+	TestAC *etable.Table `view:"no-inline" desc:"AC testing patterns to use"`
+
+	// [view: no-inline] Lure pretrain patterns to use
+	PreTrainLure *etable.Table `view:"no-inline" desc:"Lure pretrain patterns to use"`
+
+	// [view: no-inline] Lure testing patterns to use
+	TestLure *etable.Table `view:"no-inline" desc:"Lure testing patterns to use"`
+
+	// [view: no-inline] all training patterns -- for pretrain
+	TrainAll *etable.Table `view:"no-inline" desc:"all training patterns -- for pretrain"`
+
+	// [view: no-inline] TestAB + TestAC
+	TestABAC *etable.Table `view:"no-inline" desc:"TestAB + TestAC"`
+
+	// [view: no-inline] Environments
+	Envs env.Envs `view:"no-inline" desc:"Environments"`
+
+	// axon timing parameters and state
+	Context axon.Context `desc:"axon timing parameters and state"`
+
+	// [view: inline] netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+
+	// [view: -] manages all the gui elements
+	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+
+	// [view: -] a list of random seeds to use for each run
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
 }
 

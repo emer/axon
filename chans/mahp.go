@@ -16,12 +16,23 @@ import "github.com/goki/mat32"
 // The infinite-time value of n is voltage dependent according to a logistic function
 // of the membrane potential, centered at Voff with slope Vslope.
 type MahpParams struct {
-	Gbar   float32 `desc:"strength of mAHP current"`
-	Voff   float32 `viewif:"Gbar>0" def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
-	Vslope float32 `viewif:"Gbar>0" def:"9" desc:"slope of the arget (infinite time) gating function"`
-	TauMax float32 `viewif:"Gbar>0" def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
-	Tadj   float32 `viewif:"Gbar>0" view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
 
+	// strength of mAHP current
+	Gbar float32 `desc:"strength of mAHP current"`
+
+	// [def: -30] [viewif: Gbar>0] voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength
+	Voff float32 `viewif:"Gbar>0" def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
+
+	// [def: 9] [viewif: Gbar>0] slope of the arget (infinite time) gating function
+	Vslope float32 `viewif:"Gbar>0" def:"9" desc:"slope of the arget (infinite time) gating function"`
+
+	// [def: 1000] [viewif: Gbar>0] maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
+	TauMax float32 `viewif:"Gbar>0" def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
+
+	// [view: -] [viewif: Gbar>0] temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
+	Tadj float32 `viewif:"Gbar>0" view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
+
+	// [view: -] 1/Tau
 	DtMax float32 `view:"-" inactive:"+" desc:"1/Tau"`
 
 	pad, pad2 int32

@@ -39,25 +39,63 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	NMDAStd   chans.NMDAParams `desc:"standard NMDA implementation in chans"`
-	NMDAv     float64          `def:"0.062" desc:"multiplier on NMDA as function of voltage"`
-	MgC       float64          `desc:"magnesium ion concentration -- somewhere between 1 and 1.5"`
-	NMDAd     float64          `def:"3.57" desc:"denominator of NMDA function"`
-	NMDAerev  float64          `def:"0" desc:"NMDA reversal / driving potential"`
-	BugVoff   float64          `desc:"for old buggy NMDA: voff value to use"`
-	Vstart    float64          `def:"-90" desc:"starting voltage"`
-	Vend      float64          `def:"10" desc:"ending voltage"`
-	Vstep     float64          `def:"1" desc:"voltage increment"`
-	Tau       float64          `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
-	TimeSteps int              `desc:"number of time steps"`
-	TimeV     float64          `desc:"voltage for TimeRun"`
-	TimeGin   float64          `desc:"NMDA Gsyn current input at every time step"`
-	Table     *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot      *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot  *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win       *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar   *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+
+	// standard NMDA implementation in chans
+	NMDAStd chans.NMDAParams `desc:"standard NMDA implementation in chans"`
+
+	// [def: 0.062] multiplier on NMDA as function of voltage
+	NMDAv float64 `def:"0.062" desc:"multiplier on NMDA as function of voltage"`
+
+	// magnesium ion concentration -- somewhere between 1 and 1.5
+	MgC float64 `desc:"magnesium ion concentration -- somewhere between 1 and 1.5"`
+
+	// [def: 3.57] denominator of NMDA function
+	NMDAd float64 `def:"3.57" desc:"denominator of NMDA function"`
+
+	// [def: 0] NMDA reversal / driving potential
+	NMDAerev float64 `def:"0" desc:"NMDA reversal / driving potential"`
+
+	// for old buggy NMDA: voff value to use
+	BugVoff float64 `desc:"for old buggy NMDA: voff value to use"`
+
+	// [def: -90] starting voltage
+	Vstart float64 `def:"-90" desc:"starting voltage"`
+
+	// [def: 10] ending voltage
+	Vend float64 `def:"10" desc:"ending voltage"`
+
+	// [def: 1] voltage increment
+	Vstep float64 `def:"1" desc:"voltage increment"`
+
+	// [def: 100] decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential
+	Tau float64 `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
+
+	// number of time steps
+	TimeSteps int `desc:"number of time steps"`
+
+	// voltage for TimeRun
+	TimeV float64 `desc:"voltage for TimeRun"`
+
+	// NMDA Gsyn current input at every time step
+	TimeGin float64 `desc:"NMDA Gsyn current input at every time step"`
+
+	// [view: no-inline] table for plot
+	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: no-inline] table for plot
+	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+
+	// [view: -] the plot
+	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+
+	// [view: -] main GUI window
+	Win *gi.Window `view:"-" desc:"main GUI window"`
+
+	// [view: -] the master toolbar
+	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation

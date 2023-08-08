@@ -11,8 +11,12 @@ package axon
 // to generate reward predictions based on its incoming weights, using linear activation
 // function. Has no weight bounds or limits on sign etc.
 type RLPredPrjnParams struct {
+
+	// how much to learn on opposite DA sign coding neuron (0..1)
 	OppSignLRate float32 `desc:"how much to learn on opposite DA sign coding neuron (0..1)"`
-	DaTol        float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
+
+	// tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal
+	DaTol float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
 
 	pad, pad1 float32
 }
