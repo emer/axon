@@ -1086,6 +1086,17 @@ func PVLVHasPosUS(ctx *Context, di uint32) bool {
 	return false
 }
 
+// PVLVHasNegUS returns true if there is at least one non-zero negative US
+func PVLVHasNegUS(ctx *Context, di uint32) bool {
+	nd := ctx.PVLV.Drive.NNegUSs
+	for i := uint32(0); i < nd; i++ {
+		if GlbUSneg(ctx, di, i) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // PVLVNetPV returns VTA.Vals.PVpos - VTA.Vals.PVneg
 func PVLVNetPV(ctx *Context, di uint32) float32 {
 	return GlbVTA(ctx, di, GvVtaVals, GvVtaPVpos) - GlbVTA(ctx, di, GvVtaVals, GvVtaPVneg)
