@@ -374,16 +374,8 @@ func (ss *Sim) ConfigLoops() {
 			})
 		}
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
 		axon.LooperUpdtPlots(man, &ss.GUI)
-		for _, m := range man.Stacks {
-			m.Loops[etime.Cycle].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
-				ss.NetViewCounters(etime.Cycle)
-			})
-			m.Loops[etime.Trial].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
-				ss.NetViewCounters(etime.Trial)
-			})
-		}
 	}
 
 	if ss.Config.Debug {

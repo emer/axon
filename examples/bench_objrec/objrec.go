@@ -355,16 +355,8 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.Grid("Image").UpdateSig()
 		})
 
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
 		axon.LooperUpdtPlots(man, &ss.GUI)
-		for _, m := range man.Stacks {
-			m.Loops[etime.Cycle].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
-				ss.NetViewCounters(etime.Cycle)
-			})
-			m.Loops[etime.Trial].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
-				ss.NetViewCounters(etime.Trial)
-			})
-		}
 	}
 
 	if ss.Config.Debug {
@@ -743,7 +735,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/bench_objrec/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

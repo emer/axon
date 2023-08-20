@@ -247,7 +247,7 @@ func (ss *Sim) ConfigLoops() {
 			})
 		}
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -320,11 +320,14 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetString("TrialName", ev.(*CondEnv).String())
 }
 
-func (ss *Sim) NetViewCounters() {
+func (ss *Sim) NetViewCounters(tm etime.Times) {
 	if ss.GUI.ViewUpdt.View == nil {
 		return
 	}
 	di := ss.GUI.ViewUpdt.View.Di
+	if tm == etime.Trial {
+		ss.TrialStats(di) // get trial stats for current di
+	}
 	ss.StatCounters(di)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle"})
 }

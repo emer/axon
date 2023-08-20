@@ -43,7 +43,7 @@ type ParamConfig struct {
 	Good bool `nest:"+" desc:"for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time."`
 
 	// [view: projection from V1 to V4 which is tiled 4x4 skip 2 with topo scale values]
-	V1V4Prjn *prjn.PoolTile `view:"projection from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
+	V1V4Prjn *prjn.PoolTile `nest:"+" view:"projection from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
 }
 
 func (cfg *ParamConfig) Defaults() {
