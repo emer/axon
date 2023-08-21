@@ -177,7 +177,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".SuperToPT", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // 4 def
+				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def
 			}},
 		{Sel: "#ACCcostToACCcostMD", Desc: "",
 			Params: params.Params{

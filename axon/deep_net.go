@@ -397,8 +397,11 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 	}
 	ptPred.SetClass(name)
 	ptPred.PlaceBehind(ptMaint, space)
-	net.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred" + prjnClass)
-	pj := net.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn)
+	pj := net.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred" + prjnClass)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "6.0", // much stronger
+	}
+	pj = net.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel": "1", // 1 > 0.5
 		// "Prjn.PrjnScale.Abs": "2.0", // 2?
@@ -455,7 +458,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 		"Layer.Acts.Dend.SSGi":               "0",
 		"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
 	}
-	pfc.DefParams = pfcParams
+	pfc.DefParams = maps.Clone(pfcParams)
 
 	pfcCT.CTDefParamsMedium()
 	pfcCT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.025"
@@ -535,10 +538,12 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
 	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active
-	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.0"
-	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "1" // maybe better -- test further
+	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"
+	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
+	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
 
 	pfcPTp.DefParams = maps.Clone(pfcParams)
+	pfcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	pfcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "0.8"
 
 	pfcThal.DefParams = maps.Clone(pfcParams)

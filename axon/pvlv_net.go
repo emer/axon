@@ -511,6 +511,14 @@ func (net *Network) AddOFCus(ctx *Context, nUSs, nY, ofcY, ofcX int, space float
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCus", "MD", 1, nUSs, ofcY, ofcX, true, space)
 	notMaint = net.AddPTNotMaintLayer(ofcPT, nY, 1, space)
 	notMaint.Nm = "NotMaint"
+
+	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
+
+	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+
 	return
 }
 

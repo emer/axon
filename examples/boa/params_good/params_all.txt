@@ -119,7 +119,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 LDT: {
-  SrcThr: 0.05 Rew: true MaintInhib: 0.5 NotMaintMax: 0.4 SrcLay1Idx: 26 SrcLay2Idx: -1 SrcLay3Idx: -1 SrcLay4Idx: -1
+  SrcThr: 0.05 Rew: true MaintInhib: 2 NotMaintMax: 0.4 SrcLay1Idx: 26 SrcLay2Idx: -1 SrcLay3Idx: -1 SrcLay4Idx: -1
 }
 /////////////////////////////////////////////////
 Layer: USpos
@@ -2177,7 +2177,7 @@ Act: {
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
-  KNa: {  On: true  TrialSlow: true  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 2   Tau: 1000   Dt: 0.001
+  KNa: {  On: true  TrialSlow: true  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
@@ -2329,7 +2329,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 0.01
+  NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0
 }
 ///////////////////////////////////////////////////
 Prjn: CSToBLAPosAcqD1
@@ -2352,7 +2352,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 0.01
+  NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0
 }
 /////////////////////////////////////////////////
 Layer: BLAPosExtD2
@@ -2458,7 +2458,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 1
+  NegDeltaLRate: 1 AChThr: 0.1 USTrace: 0
 }
 ///////////////////////////////////////////////////
 Prjn: CSToBLAPosExtD2
@@ -2481,7 +2481,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 1
+  NegDeltaLRate: 1 AChThr: 0.1 USTrace: 0
 }
 /////////////////////////////////////////////////
 Layer: BLANegExtD1
@@ -2567,7 +2567,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 1
+  NegDeltaLRate: 1 AChThr: 0.1 USTrace: 0
 }
 /////////////////////////////////////////////////
 Layer: BLANegAcqD2
@@ -2653,7 +2653,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 0.01
+  NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0
 }
 /////////////////////////////////////////////////
 Layer: CeMPos
@@ -2879,7 +2879,7 @@ Learn: {
   } }
 }
 BLA: {
-  NegDeltaLRate: 0.01
+  NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0
 }
 /////////////////////////////////////////////////
 Layer: OFCus
@@ -3434,9 +3434,9 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.05  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.2  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 2.4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: true  Gi: 2.4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Pool: {  On: true  Gi: 3  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -3634,9 +3634,9 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: true  Gi: 0.8  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Pool: {  On: true  Gi: 1.4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -3648,7 +3648,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.01 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: OFCusPTToOFCusPTp
@@ -3656,7 +3656,7 @@ Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 1
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
@@ -4580,7 +4580,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.01 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: OFCvalPTToOFCvalPTp
@@ -4588,7 +4588,7 @@ Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 1
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
@@ -5372,7 +5372,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.01 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: ACCcostPTToACCcostPTp
@@ -5380,7 +5380,7 @@ Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 1
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
@@ -6064,7 +6064,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.01 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: ACCutilPTToACCutilPTp
@@ -6072,7 +6072,7 @@ Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 1
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
@@ -7691,7 +7691,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.01 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: ALMPTToALMPTp
@@ -7699,7 +7699,7 @@ Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 1
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
