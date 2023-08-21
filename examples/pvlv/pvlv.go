@@ -321,7 +321,7 @@ func (ss *Sim) ConfigLoops() {
 	// GUI
 
 	if ss.Config.GUI {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -466,6 +466,13 @@ func (ss *Sim) StatCounters() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
+}
+
+func (ss *Sim) NetViewCounters(tm etime.Times) {
+	if ss.ViewUpdt.View == nil {
+		return
+	}
+	ss.StatCounters()
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle"})
 }
 
@@ -592,7 +599,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode != etime.Analyze && mode != etime.Debug {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
-	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
 	if dt == nil {
 		return
@@ -604,6 +610,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		return
 	case mode == etime.Train && time == etime.Trial:
 		ss.TrialStats()
+		ss.StatCounters()
 		ss.Logs.Log(etime.Debug, etime.Trial)
 		if ss.Config.GUI {
 			ss.GUI.UpdateTableView(etime.Debug, etime.Trial)

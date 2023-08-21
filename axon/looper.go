@@ -124,13 +124,14 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.T
 }
 
 // LooperUpdtNetView adds netview update calls at each time level
-func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Network) {
+func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Network, ctrUpdtFunc func(tm etime.Times)) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
 			if curTime != etime.Cycle {
 				loop.OnEnd.Add("GUI:UpdateNetView", func() {
+					ctrUpdtFunc(curTime)
 					viewupdt.UpdateTime(curTime)
 				})
 			}
@@ -138,6 +139,7 @@ func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Net
 		cycLoop := man.GetLoop(curMode, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
 			cyc := cycLoop.Counter.Cur
+			ctrUpdtFunc(etime.Cycle)
 			viewupdt.UpdateCycle(cyc)
 		})
 	}
