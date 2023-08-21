@@ -102,7 +102,7 @@
   Sel = ".PFCPrjn"
   Desc = "pfc prjn params -- more robust to long-term training"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.02"
+    "Prjn.Learn.LRate.Base" = "0.01"
     "Prjn.Learn.Trace.SubMean" = "1"
 
 [[Base]]

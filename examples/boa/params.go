@@ -92,7 +92,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PFCPrjn", Desc: "pfc prjn params -- more robust to long-term training",
 			Params: params.Params{
 				"Prjn.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
-				"Prjn.Learn.LRate.Base":    "0.02", // 0.04 def; 0.02 more stable
+				"Prjn.Learn.LRate.Base":    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
 			}},
 		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
 			Params: params.Params{

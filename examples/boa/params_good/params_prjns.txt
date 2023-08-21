@@ -115,7 +115,7 @@ Layer: VsPatch
 	       OFCusPTp	    VSPatchPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.21	Rel:  0.25
 								    Abs Params: #OFCusPTpToVsPatch: 5 | Base:.VSPatchPrjn: 2
 	      OFCvalPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
-								    Abs Params: Base:.VSPatchPrjn: 2
+								    Abs Params: .VSPatchPrjn: 2
 	     ACCcostPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
 								    Abs Params: Base:.VSPatchPrjn: 2
 	     ACCutilPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25

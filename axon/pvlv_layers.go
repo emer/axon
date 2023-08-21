@@ -46,7 +46,7 @@ type LDTParams struct {
 func (lp *LDTParams) Defaults() {
 	lp.SrcThr = 0.05
 	lp.Rew.SetBool(true)
-	lp.MaintInhib = 0.5
+	lp.MaintInhib = 2 // was 0.5
 	lp.NotMaintMax = 0.4
 }
 
