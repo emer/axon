@@ -642,12 +642,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAExtToNo")
-	pj = net.ConnectToMatrix(blaNegExt, vSmtxGo, full) // no neg -> go -- not so sure about this one
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
-		"Prjn.PrjnScale.Rel": "1",
-	}
-	pj.SetClass("BLAExtToNo")
+	// pj = net.ConnectToMatrix(blaNegExt, vSmtxGo, full) // no neg -> go
+	// Note: this impairs perf in basic examples/boa, and is questionable functionally
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
+	// 	"Prjn.PrjnScale.Rel": "1",
+	// }
+	// pj.SetClass("BLAExtToNo")
 
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
 	d2m := params.Params{
