@@ -625,7 +625,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAAcqToGo")
-	pj = net.ConnectToMatrix(blaNegAcq, vSmtxGo, full)
+	pj = net.ConnectToMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4", // key strength driver
 		"Prjn.PrjnScale.Rel": "1",
@@ -642,7 +642,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAExtToNo")
-	pj = net.ConnectToMatrix(blaNegExt, vSmtxNo, full)
+	pj = net.ConnectToMatrix(blaNegExt, vSmtxGo, full) // no neg -> go -- not so sure about this one
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
 		"Prjn.PrjnScale.Rel": "1",
@@ -710,7 +710,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	net.ConnectLayers(pvPos, ofcUS, full, BackPrjn).SetClass(prjnClass)
 	net.ConnectLayers(pvNeg, ofcUS, full, BackPrjn).SetClass(prjnClass)
 	net.ConnectLayers(usPos, ofcUS, p1to1, BackPrjn).SetClass(prjnClass)
-	net.ConnectLayers(usNeg, ofcUS, p1to1, BackPrjn).SetClass(prjnClass)
+	net.ConnectLayers(usNeg, ofcUS, full, BackPrjn).SetClass(prjnClass)
 
 	// note: these are all very static, lead to static PT reps:
 	// need a more dynamic US / value representation to predict.
@@ -718,9 +718,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	// note: even though these are static, CT is
 	net.ConnectToPulv(ofcUS, ofcUSCT, drivesP, p1to1, p1to1, prjnClass)
 	net.ConnectToPulv(ofcUS, ofcUSCT, usPosP, p1to1, p1to1, prjnClass)
-	net.ConnectToPulv(ofcUS, ofcUSCT, usNegP, p1to1, p1to1, prjnClass)
+	net.ConnectToPulv(ofcUS, ofcUSCT, usNegP, full, full, prjnClass)
 	net.ConnectToPulv(ofcUS, ofcUSCT, pvPosP, p1to1, p1to1, prjnClass)
-	net.ConnectToPulv(ofcUS, ofcUSCT, pvNegP, p1to1, p1to1, prjnClass)
+	net.ConnectToPulv(ofcUS, ofcUSCT, pvNegP, full, full, prjnClass)
 
 	// net.ConnectPTPredToPulv(ofcUSPTp, drivesP, p1to1, p1to1, prjnClass)
 	// net.ConnectPTPredToPulv(ofcUSPTp, usPosP, p1to1, p1to1), prjnClass
