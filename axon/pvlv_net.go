@@ -174,11 +174,11 @@ func (net *Network) ConnectCSToBLAPos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *
 	return
 }
 
-// ConnectUSToBLAPos connects the US input to BLAPosAcqD1 and
-// BLAPosExtD2 layers,
+// ConnectUSToBLA connects the US input to BLAPos(Neg)AcqD1(D2) and
+// BLAPos(Neg)ExtD2(D1) layers,
 // using fixed, higher-variance weights, full projection.
 // Sets classes to: USToBLAAcq and USToBLAExt
-func (net *Network) ConnectUSToBLAPos(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prjn) {
+func (net *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prjn) {
 	toAcq = net.ConnectLayers(us, blaAcq, prjn.NewPoolOneToOne(), BLAPrjn)
 	toAcq.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel":     "0.5",
@@ -466,7 +466,7 @@ func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo,
 	vSmtxGo.SetClass("VSMatrixLayer")
 
 	vSmtxNo.DefParams = mp
-	vSmtxGo.SetClass("VSMatrixLayer")
+	vSmtxNo.SetClass("VSMatrixLayer")
 
 	vSgated = net.AddVSGatedLayer("", nY)
 	vSpatch = net.AddVSPatchLayer("", nUSs, nNeurY, nNeurX)
@@ -533,7 +533,6 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	drives, drivesP, effort, effortP, urgency, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(ctx, nUSneg, nYneur, popY, popX, space)
 	_, _ = effort, urgency
-	_, _, _, _ = usNeg, usNegP, pvNeg, pvNegP
 
 	vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch, vSgated := net.AddVS(nUSs, bgY, bgX, nYneur, space)
 
@@ -565,7 +564,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	///////////////////////////////////////////
 	//  BLA
 
-	net.ConnectUSToBLAPos(usPos, blaPosAcq, blaPosExt)
+	net.ConnectUSToBLA(usPos, blaPosAcq, blaPosExt)
+	net.ConnectUSToBLA(usNeg, blaNegAcq, blaNegExt)
 
 	pj = net.ConnectLayers(blaPosAcq, ofcUS, p1to1, ForwardPrjn) // main driver strong input
 	pj.DefParams = params.Params{
@@ -574,6 +574,16 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.SWts.Init.Var":  "0.4",
 	}
 	pj.SetClass(prjnClass)
+	// note: this should connect with a separate OFCneg <-> ACCcost area
+	// not directly with OFCus which is positive only.
+	// also removing this improves performance.
+	// pj = net.ConnectLayers(blaNegAcq, ofcUS, full, ForwardPrjn)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs":  "2",
+	// 	"Prjn.SWts.Init.Mean": "0.5",
+	// 	"Prjn.SWts.Init.Var":  "0.4",
+	// }
+	// pj.SetClass(prjnClass)
 
 	pj = net.ConnectToBLAExt(ofcUSPTp, blaPosExt, p1to1)
 	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
@@ -613,8 +623,25 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAAcqToGo")
+
+	// The usPos version is needed for US gating to clear goal.
+	// it is not clear that direct usNeg should drive nogo directly.
+	// pj = net.ConnectToMatrix(usNeg, vSmtxNo, full)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "2", // strong
+	// 	"Prjn.PrjnScale.Rel": ".2",
+	// }
+	pj = net.ConnectToMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "4",
+		"Prjn.PrjnScale.Rel": "1",
+	}
+	pj.SetClass("BLAAcqToGo")
+
 	net.ConnectLayers(blaPosAcq, vSstnp, full, ForwardPrjn)
 	net.ConnectLayers(blaPosAcq, vSstns, full, ForwardPrjn)
+	net.ConnectLayers(blaNegAcq, vSstnp, full, ForwardPrjn)
+	net.ConnectLayers(blaNegAcq, vSstns, full, ForwardPrjn)
 
 	pj = net.ConnectToMatrix(blaPosExt, vSmtxNo, p1to1)
 	pj.DefParams = params.Params{
@@ -622,6 +649,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAExtToNo")
+	// pj = net.ConnectToMatrix(blaNegExt, vSmtxGo, full) // no neg -> go
+	// Note: this impairs perf in basic examples/boa, and is questionable functionally
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
+	// 	"Prjn.PrjnScale.Rel": "1",
+	// }
+	// pj.SetClass("BLAExtToNo")
 
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
 	d2m := params.Params{
@@ -682,8 +716,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	// net.ConnectCTSelf(ofcValCT, full, prjnClass) // todo: test
 
 	net.ConnectLayers(pvPos, ofcUS, full, BackPrjn).SetClass(prjnClass)
+	net.ConnectLayers(pvNeg, ofcUS, full, BackPrjn).SetClass(prjnClass)
 	net.ConnectLayers(usPos, ofcUS, p1to1, BackPrjn).SetClass(prjnClass)
-	// note: not connecting negative value cases yet -- no idea what to do yet..
+	net.ConnectLayers(usNeg, ofcUS, full, BackPrjn).SetClass(prjnClass)
 
 	// note: these are all very static, lead to static PT reps:
 	// need a more dynamic US / value representation to predict.
@@ -691,8 +726,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	// note: even though these are static, CT is
 	net.ConnectToPulv(ofcUS, ofcUSCT, drivesP, p1to1, p1to1, prjnClass)
 	net.ConnectToPulv(ofcUS, ofcUSCT, usPosP, p1to1, p1to1, prjnClass)
+	net.ConnectToPulv(ofcUS, ofcUSCT, usNegP, full, full, prjnClass)
 	net.ConnectToPulv(ofcUS, ofcUSCT, pvPosP, p1to1, p1to1, prjnClass)
-	// note: not connecting negative value cases yet -- no idea what to do yet..
+	net.ConnectToPulv(ofcUS, ofcUSCT, pvNegP, full, full, prjnClass)
 
 	// net.ConnectPTPredToPulv(ofcUSPTp, drivesP, p1to1, p1to1, prjnClass)
 	// net.ConnectPTPredToPulv(ofcUSPTp, usPosP, p1to1, p1to1), prjnClass
