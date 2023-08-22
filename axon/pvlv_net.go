@@ -574,7 +574,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.SWts.Init.Var":  "0.4",
 	}
 	pj.SetClass(prjnClass)
-	pj = net.ConnectLayers(blaNegAcq, ofcUS, p1to1, ForwardPrjn) // main driver strong input
+	pj = net.ConnectLayers(blaNegAcq, ofcUS, full, ForwardPrjn)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs":  "2",
 		"Prjn.SWts.Init.Mean": "0.5",
@@ -614,7 +614,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Abs": "2", // strong
 		"Prjn.PrjnScale.Rel": ".2",
 	}
-	pj = net.ConnectToMatrix(usNeg, vSmtxGo, p1to1)
+	pj = net.ConnectToMatrix(usNeg, vSmtxGo, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "2", // strong
 		"Prjn.PrjnScale.Rel": ".2",
@@ -625,7 +625,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAAcqToGo")
-	pj = net.ConnectToMatrix(blaNegAcq, vSmtxGo, p1to1)
+	pj = net.ConnectToMatrix(blaNegAcq, vSmtxGo, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4", // key strength driver
 		"Prjn.PrjnScale.Rel": "1",
@@ -642,7 +642,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAExtToNo")
-	pj = net.ConnectToMatrix(blaNegExt, vSmtxNo, p1to1)
+	pj = net.ConnectToMatrix(blaNegExt, vSmtxNo, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
 		"Prjn.PrjnScale.Rel": "1",
