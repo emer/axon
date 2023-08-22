@@ -574,13 +574,16 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.SWts.Init.Var":  "0.4",
 	}
 	pj.SetClass(prjnClass)
-	pj = net.ConnectLayers(blaNegAcq, ofcUS, full, ForwardPrjn)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs":  "2",
-		"Prjn.SWts.Init.Mean": "0.5",
-		"Prjn.SWts.Init.Var":  "0.4",
-	}
-	pj.SetClass(prjnClass)
+	// note: this should connect with a separate OFCneg <-> ACCcost area
+	// not directly with OFCus which is positive only.
+	// also removing this improves performance.
+	// pj = net.ConnectLayers(blaNegAcq, ofcUS, full, ForwardPrjn)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs":  "2",
+	// 	"Prjn.SWts.Init.Mean": "0.5",
+	// 	"Prjn.SWts.Init.Var":  "0.4",
+	// }
+	// pj.SetClass(prjnClass)
 
 	pj = net.ConnectToBLAExt(ofcUSPTp, blaPosExt, p1to1)
 	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
@@ -627,7 +630,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	pj.SetClass("BLAAcqToGo")
 	pj = net.ConnectToMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "4", // key strength driver
+		"Prjn.PrjnScale.Abs": "4",
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAAcqToGo")
