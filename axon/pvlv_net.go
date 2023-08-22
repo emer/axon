@@ -617,23 +617,27 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.PrjnScale.Abs": "2", // strong
 		"Prjn.PrjnScale.Rel": ".2",
 	}
-	pj = net.ConnectToMatrix(usNeg, vSmtxGo, full)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "2", // strong
-		"Prjn.PrjnScale.Rel": ".2",
-	}
 	pj = net.ConnectToMatrix(blaPosAcq, vSmtxGo, p1to1)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4", // key strength driver
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAAcqToGo")
+
+	// The usPos version is needed for US gating to clear goal.
+	// it is not clear that direct usNeg should drive nogo directly.
+	// pj = net.ConnectToMatrix(usNeg, vSmtxNo, full)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "2", // strong
+	// 	"Prjn.PrjnScale.Rel": ".2",
+	// }
 	pj = net.ConnectToMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4",
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAAcqToGo")
+
 	net.ConnectLayers(blaPosAcq, vSstnp, full, ForwardPrjn)
 	net.ConnectLayers(blaPosAcq, vSstns, full, ForwardPrjn)
 	net.ConnectLayers(blaNegAcq, vSstnp, full, ForwardPrjn)
