@@ -140,10 +140,10 @@ func (ly *Layer) BetweenLayerGiMax(net *Network, di uint32, maxGi float32, layId
 	return maxGi
 }
 
-func (ly *Layer) PulvinarDriver(ctx *Context, lni, di uint32) (drvGe, nonDrvPct float32) {
+func (ly *Layer) PulvinarDriver(ctx *Context, lni, di uint32) (drvGe, nonDrivePct float32) {
 	dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
 	drvMax := dly.Pool(0, di).AvgMax.CaSpkP.Cycle.Max
-	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+	nonDrivePct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	burst := NrnV(ctx, uint32(dly.NeurStIdx)+lni, di, Burst)
 	drvGe = ly.Params.Pulv.DriveGe(burst)
 	return
@@ -153,13 +153,13 @@ func (ly *Layer) PulvinarDriver(ctx *Context, lni, di uint32) (drvGe, nonDrvPct 
 // calls SpecialGFmRawSyn, GiInteg
 func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) {
 	drvGe := float32(0)
-	nonDrvPct := float32(0)
+	nonDrivePct := float32(0)
 	if ly.LayerType() == PulvinarLayer {
-		drvGe, nonDrvPct = ly.PulvinarDriver(ctx, ni-ly.NeurStIdx, di)
-		SetNrnV(ctx, ni, di, Ext, nonDrvPct) // use for regulating inhibition
+		drvGe, nonDrivePct = ly.PulvinarDriver(ctx, ni-ly.NeurStIdx, di)
+		SetNrnV(ctx, ni, di, Ext, nonDrivePct) // use for regulating inhibition
 	}
 
-	saveVal := ly.Params.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrvPct)
+	saveVal := ly.Params.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct)
 
 	ly.Params.GFmRawSyn(ctx, ni, di)
 	ly.Params.GiInteg(ctx, ni, di, pl, vals)
@@ -462,8 +462,8 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 			if ly.LayerType() == PulvinarLayer {
 				dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
 				drvMax := dly.Pool(0, di).AvgMax.CaSpkP.Cycle.Max
-				nonDrvPct := ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-				if nonDrvPct < 0.5 {
+				nonDrivePct := ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+				if nonDrivePct < ly.Params.Pulv.InhibClampThr {
 					pl.Inhib.Clamped.SetBool(true)
 				} else { // if more non-drive, then must not use clamped
 					pl.Inhib.Clamped.SetBool(false)

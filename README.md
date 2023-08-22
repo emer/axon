@@ -428,7 +428,7 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 
 #### Ge, Gi integration
 
-* `GeExt` = extra excitatory conductance added to `Ge` -- from `Ext` input.
+* `GeExt` = extra excitatory conductance added to `Ge` -- from `Ext` input and other special layer types that receive special Ext-like input (e.g., PulvinarLayer getting Driver input in plus phase; CTLayer context input).
 * `GeRaw` = raw excitatory conductance (net input) received from senders = current raw spiking drive.
 * `GeSyn` = time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in `GeRaw`) and exponential decay with `Dt.GeTau`, aggregated over projections -- does *not* include `Gbar.E`.
 * `GeBase` = baseline level of `Ge`, added to `GeRaw`, for intrinsic excitability.
@@ -603,6 +603,16 @@ Then all the special conductances:
 * NMDA, VGCC, GABAB, Gk -- see [chans](chans) for equations, which operate on `VmDend` instead of `Vm`, as these channels are primarily located in the dendrites.  These contribute to overall `Ge` excitatory conductance and `Gi` inhibition.
 
 And add in the pool inhib `Gi` computed above.
+
+
+#### External (Ext) Input from Clamped layers
+
+For "visible" layers that are driven by external input (`InputLayer`, `TargetLayer`), their input comes from the `Ext` neuron value (set via `ApplyInputs` method), which drives the `GeExt` variable as a temporally-integrated excitatory synaptic conductance value.  `TargetLayer`s are driven by regular synaptic inputs during the minus phase, but then only by Ext input during the plus phase.  Likewise, the `PulvinarLayer` in the [Deep](DEEP.md) predictive learning framework is driven by driver inputs in the plus phase.
+
+It is important that the FS-FFFB inhibition function properly adjusts for the Target-like layers, so that inhibition is computed on all the synaptic input in the minus phase, but only on the GeExt-based input in the plus phase.  The `Clamped` flag on the `fsfffb.Inhib` state makes this happen.
+
+The `PulvinarLayer` case is particularly tricky because sometimes the driver input can be weak or entirely missing, in which case it behaves like it does in the plus phase (using synaptic input).  Thus, this layer needs to set the `Clamped` flag based on whether it actually got sufficient driver input -- see the `InhibClampThr` in `LayerParams.Pulv` for the controlling parameters here.
+
 
 #### SpikeFmG: Compute Vm and Spikes from all the G's
 
