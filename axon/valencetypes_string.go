@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var _ = errors.New("dummy error")
-
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
@@ -37,4 +35,17 @@ func (i *ValenceTypes) FromString(s string) error {
 		}
 	}
 	return errors.New("String: " + s + " is not a valid option for type: ValenceTypes")
+}
+
+var _ValenceTypes_descMap = map[ValenceTypes]string{
+	0: `Positive valence codes for outcomes aligned with drives / goals.`,
+	1: `Negative valence codes for harmful or aversive outcomes.`,
+	2: ``,
+}
+
+func (i ValenceTypes) Desc() string {
+	if str, ok := _ValenceTypes_descMap[i]; ok {
+		return str
+	}
+	return "ValenceTypes(" + strconv.FormatInt(int64(i), 10) + ")"
 }

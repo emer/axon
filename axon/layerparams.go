@@ -623,8 +623,13 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *Laye
 	SetNrnV(ctx, ni, di, Gi, gi)
 	SetNrnV(ctx, ni, di, SSGi, pl.Inhib.SSGi)
 	SetNrnV(ctx, ni, di, SSGiDend, 0)
-	if !(ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue()) {
-		SetNrnV(ctx, ni, di, SSGiDend, ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
+	if ctx.PlusPhase.IsTrue() && ly.LayType == PulvinarLayer {
+		ext := NrnV(ctx, ni, di, Ext) // nonDrvPct
+		SetNrnV(ctx, ni, di, SSGiDend, ext*ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
+	} else {
+		if !(ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue()) {
+			SetNrnV(ctx, ni, di, SSGiDend, ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
+		}
 	}
 	nrnGABAB := NrnV(ctx, ni, di, GABAB)
 	nrnGABABx := NrnV(ctx, ni, di, GABABx)

@@ -36,6 +36,14 @@
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
 [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
+void PulvinarDriver2(in Context ctx, in LayerParams ly, in LayerParams dly, in Pool dlpl, uint di, out float nonDrvPct) {
+	float drvMax = dlpl.AvgMax.CaSpkP.Cycle.Max;
+	nonDrvPct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
+}
+
+void PulvinarDriver(in Context ctx, in LayerParams ly, in LayerParams dly, uint di, out float nonDrvPct) {
+	PulvinarDriver2(ctx, ly, dly, Pools[dly.Idxs.PoolIdx(0, di)], di, nonDrvPct);
+}
 
 void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVals vals) {
 	ly.MinusPhasePool(ctx, pl);
@@ -47,6 +55,17 @@ void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVal
 			giIntMinusMax = max(giIntMinusMax, Pools[ly.Idxs.PoolIdx(0, di)].AvgMax.GiInt.Cycle.Max);
 		}
 		ly.AvgGeM(ctx, vals, geIntMinusMax, giIntMinusMax);
+	}
+	if (ly.LayType == PulvinarLayer) {
+		for (uint di = 0; di < ctx.NetIdxs.NData; di++) {
+			float nonDrvPct = 0;
+			PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], di, nonDrvPct);
+			if (nonDrvPct < 0.5) {
+				pl.Inhib.Clamped = 1;
+			} else { // if more non-drive, then must not use clamped
+				pl.Inhib.Clamped = 0;
+			}
+		}
 	}
 }
 

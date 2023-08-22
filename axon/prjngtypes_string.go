@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var _ = errors.New("dummy error")
-
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
@@ -40,4 +38,20 @@ func (i *PrjnGTypes) FromString(s string) error {
 		}
 	}
 	return errors.New("String: " + s + " is not a valid option for type: PrjnGTypes")
+}
+
+var _PrjnGTypes_descMap = map[PrjnGTypes]string{
+	0: `Excitatory projections drive Ge conductance on receiving neurons, which send to GiRaw and GiSyn neuron variables.`,
+	1: `Inhibitory projections drive Gi inhibitory conductance, which send to GiRaw and GiSyn neuron variables.`,
+	2: `Modulatory projections have a multiplicative effect on other inputs, which send to GModRaw and GModSyn neuron variables.`,
+	3: `Maintenance projections drive unique set of NMDA channels that support strong active maintenance abilities. Send to GMaintRaw and GMaintSyn neuron variables.`,
+	4: `Context projections are for inputs to CT layers, which update only at the end of the plus phase, and send to CtxtGe.`,
+	5: ``,
+}
+
+func (i PrjnGTypes) Desc() string {
+	if str, ok := _PrjnGTypes_descMap[i]; ok {
+		return str
+	}
+	return "PrjnGTypes(" + strconv.FormatInt(int64(i), 10) + ")"
 }

@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var _ = errors.New("dummy error")
-
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
@@ -39,4 +37,19 @@ func (i *GPLayerTypes) FromString(s string) error {
 		}
 	}
 	return errors.New("String: " + s + " is not a valid option for type: GPLayerTypes")
+}
+
+var _GPLayerTypes_descMap = map[GPLayerTypes]string{
+	0: `GPeOut is Outer layer of GPe neurons, receiving inhibition from MtxGo`,
+	1: `GPeIn is Inner layer of GPe neurons, receiving inhibition from GPeOut and MtxNo`,
+	2: `GPeTA is arkypallidal layer of GPe neurons, receiving inhibition from GPeIn and projecting inhibition to Mtx`,
+	3: `GPi is the inner globus pallidus, functionally equivalent to SNr, receiving from MtxGo and GPeIn, and sending inhibition to VThal`,
+	4: ``,
+}
+
+func (i GPLayerTypes) Desc() string {
+	if str, ok := _GPLayerTypes_descMap[i]; ok {
+		return str
+	}
+	return "GPLayerTypes(" + strconv.FormatInt(int64(i), 10) + ")"
 }

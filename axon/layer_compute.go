@@ -156,6 +156,7 @@ func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) 
 	nonDrvPct := float32(0)
 	if ly.LayerType() == PulvinarLayer {
 		drvGe, nonDrvPct = ly.PulvinarDriver(ctx, ni-ly.NeurStIdx, di)
+		SetNrnV(ctx, ni, di, Ext, nonDrvPct) // use for regulating inhibition
 	}
 
 	saveVal := ly.Params.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrvPct)
@@ -453,9 +454,22 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIdx, di int) mi
 
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ctx *Context) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		ly.Params.MinusPhasePool(ctx, pl) // grabs AvgMax.Minus from Cycle
+	np := ly.NPools
+	for pi := uint32(0); pi < np; pi++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			pl := ly.Pool(pi, di)
+			ly.Params.MinusPhasePool(ctx, pl) // grabs AvgMax.Minus from Cycle
+			if ly.LayerType() == PulvinarLayer {
+				dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
+				drvMax := dly.Pool(0, di).AvgMax.CaSpkP.Cycle.Max
+				nonDrvPct := ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+				if nonDrvPct < 0.5 {
+					pl.Inhib.Clamped.SetBool(true)
+				} else { // if more non-drive, then must not use clamped
+					pl.Inhib.Clamped.SetBool(false)
+				}
+			}
+		}
 	}
 	nn := ly.NNeurons
 	geIntMinusMax := float32(0)
@@ -510,9 +524,12 @@ func (ly *Layer) PlusPhaseStart(ctx *Context) {
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ctx *Context) {
 	// todo: see if it is faster to just grab pool info now, then do everything below on CPU
-	for pi := range ly.Pools { // gpu_cycletoplus
-		pl := &ly.Pools[pi]
-		ly.Params.PlusPhasePool(ctx, pl)
+	np := ly.NPools
+	for pi := uint32(0); pi < np; pi++ { // gpu_cycletoplus
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			pl := ly.Pool(pi, di)
+			ly.Params.PlusPhasePool(ctx, pl)
+		}
 	}
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {

@@ -57,6 +57,7 @@ void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in 
 	float nonDrvPct = 0;
 	if (ly.LayType == PulvinarLayer) {
 		PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], ni, di, drvGe, nonDrvPct);
+		SetNrnV(ctx, ni, di, Ext, nonDrvPct); // use for regulating inhibition
 	}
 
 	float saveVal = ly.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrvPct);

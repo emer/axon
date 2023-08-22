@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var _ = errors.New("dummy error")
-
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
@@ -42,4 +40,22 @@ func (i *NeuronAvgVars) FromString(s string) error {
 		}
 	}
 	return errors.New("String: " + s + " is not a valid option for type: NeuronAvgVars")
+}
+
+var _NeuronAvgVars_descMap = map[NeuronAvgVars]string{
+	0: `ActAvg is average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation`,
+	1: `AvgPct is ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals`,
+	2: `TrgAvg is neuron&#39;s target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct`,
+	3: `DTrgAvg is change in neuron&#39;s target average activation as a result of unit-wise error gradient -- acts like a bias weight. MPI needs to share these across processors.`,
+	4: `AvgDif is AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals`,
+	5: `GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability`,
+	6: `GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability`,
+	7: ``,
+}
+
+func (i NeuronAvgVars) Desc() string {
+	if str, ok := _NeuronAvgVars_descMap[i]; ok {
+		return str
+	}
+	return "NeuronAvgVars(" + strconv.FormatInt(int64(i), 10) + ")"
 }

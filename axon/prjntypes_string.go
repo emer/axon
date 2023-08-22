@@ -7,8 +7,6 @@ import (
 	"strconv"
 )
 
-var _ = errors.New("dummy error")
-
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
@@ -46,4 +44,26 @@ func (i *PrjnTypes) FromString(s string) error {
 		}
 	}
 	return errors.New("String: " + s + " is not a valid option for type: PrjnTypes")
+}
+
+var _PrjnTypes_descMap = map[PrjnTypes]string{
+	0:  `Forward is a feedforward, bottom-up projection from sensory inputs to higher layers`,
+	1:  `Back is a feedback, top-down projection from higher layers back to lower layers`,
+	2:  `Lateral is a lateral projection within the same layer / area`,
+	3:  `Inhib is an inhibitory projection that drives inhibitory synaptic conductances instead of the default excitatory ones.`,
+	4:  `CTCtxt are projections from Superficial layers to CT layers that send Burst activations drive updating of CtxtGe excitatory conductance, at end of plus (51B Bursting) phase. Biologically, this projection comes from the PT layer 5IB neurons, but it is simpler to use the Super neurons directly, and PT are optional for most network types. These projections also use a special learning rule that takes into account the temporal delays in the activation states. Can also add self context from CT for deeper temporal context.`,
+	5:  `RWPrjn does dopamine-modulated learning for reward prediction: Da * Send.CaSpkP (integrated current spiking activity). Uses RLPredPrjn parameters. Use in RWPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully. Lower lrate applies for opposite cases. Weights are positive-only.`,
+	6:  `TDPredPrjn does dopamine-modulated learning for reward prediction: DWt = Da * Send.SpkPrv (activity on *previous* timestep) Uses RLPredPrjn parameters. Use in TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully. Lower lrate applies for opposite cases. Weights are positive-only.`,
+	7:  `BLAPrjn implements the PVLV BLA learning rule: dW = ACh * X_t-1 * (Y_t - Y_t-1) The recv delta is across trials, where the US should activate on trial boundary, to enable sufficient time for gating through to OFC, so BLA initially learns based on US present - US absent. It can also learn based on CS onset if there is a prior CS that predicts that.`,
+	8:  ``,
+	9:  `VSPatchPrjn implements the VSPatch learning rule: dW = ACh * DA * X * Y where DA is D1 vs. D2 modulated DA level, X = sending activity factor, Y = receiving activity factor, and ACh provides overall modulation.`,
+	10: `MatrixPrjn supports trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`,
+	11: ``,
+}
+
+func (i PrjnTypes) Desc() string {
+	if str, ok := _PrjnTypes_descMap[i]; ok {
+		return str
+	}
+	return "PrjnTypes(" + strconv.FormatInt(int64(i), 10) + ")"
 }

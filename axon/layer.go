@@ -364,13 +364,16 @@ func (ly *Layer) InitActs(ctx *Context) {
 			ly.Params.Acts.InitActs(ctx, ni, di)
 		}
 	}
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.Init()
-		if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
-			pl.Inhib.Clamped.SetBool(true)
+	np := ly.NPools
+	for pi := uint32(0); pi < np; pi++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
+			pl := ly.Pool(pi, di)
+			pl.Init()
+			if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
+				pl.Inhib.Clamped.SetBool(true)
+			}
+			// Target layers are dynamically updated
 		}
-		// Target layers are dynamically updated
 	}
 	ly.InitPrjnGBuffs(ctx)
 }
