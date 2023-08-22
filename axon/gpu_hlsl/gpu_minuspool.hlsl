@@ -45,7 +45,7 @@ void PulvinarDriver(in Context ctx, in LayerParams ly, in LayerParams dly, uint 
 	PulvinarDriver2(ctx, ly, dly, Pools[dly.Idxs.PoolIdx(0, di)], di, nonDrvPct);
 }
 
-void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVals vals) {
+void MinusPool2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout LayerVals vals) {
 	ly.MinusPhasePool(ctx, pl);
 	if (pl.IsLayPool != 0) {
 		float geIntMinusMax = 0;
@@ -57,20 +57,18 @@ void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVal
 		ly.AvgGeM(ctx, vals, geIntMinusMax, giIntMinusMax);
 	}
 	if (ly.LayType == PulvinarLayer) {
-		for (uint di = 0; di < ctx.NetIdxs.NData; di++) {
-			float nonDrvPct = 0;
-			PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], di, nonDrvPct);
-			if (nonDrvPct < 0.5) {
-				pl.Inhib.Clamped = 1;
-			} else { // if more non-drive, then must not use clamped
-				pl.Inhib.Clamped = 0;
-			}
+		float nonDrvPct = 0;
+		PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], di, nonDrvPct);
+		if (nonDrvPct < 0.5) {
+			pl.Inhib.Clamped = 1;
+		} else { // if more non-drive, then must not use clamped
+			pl.Inhib.Clamped = 0;
 		}
 	}
 }
 
 void MinusPool(in Context ctx, uint di, inout Pool pl) {
-	MinusPool2(ctx, Layers[pl.LayIdx], pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
+	MinusPool2(ctx, Layers[pl.LayIdx], di, pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
 }
 
 [numthreads(64, 1, 1)]
