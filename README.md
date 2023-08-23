@@ -611,8 +611,7 @@ For "visible" layers that are driven by external input (`InputLayer`, `TargetLay
 
 It is important that the FS-FFFB inhibition function properly adjusts for the Target-like layers, so that inhibition is computed on all the synaptic input in the minus phase, but only on the GeExt-based input in the plus phase.  The `Clamped` flag on the `fsfffb.Inhib` state makes this happen.
 
-The `PulvinarLayer` case is particularly tricky because sometimes the driver input can be weak or entirely missing, in which case it behaves like it does in the plus phase (using synaptic input).  Thus, this layer needs to set the `Clamped` flag based on whether it actually got sufficient driver input -- see the `InhibClampThr` in `LayerParams.Pulv` for the controlling parameters here.
-
+Importantly, if `GeExt` is weak (less than [fsfffb](fsfffb) `ClampExtMin`), then all the synaptic input is used, so that the plus phase activity matches the activity in the minus phase.
 
 #### SpikeFmG: Compute Vm and Spikes from all the G's
 

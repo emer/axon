@@ -79,11 +79,10 @@ type PulvParams struct {
 	// [def: 0.6] [min: 0.01] Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning.
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
 
-	// [def: 0.5] [min: 0] [max: 1] threshold on NonDrivePct value (see method below, based on FullDriveAct), below which the FS-FFFB inhibition function sets the Clamped flag, which then only uses GeExt values for driving inhibition (assuming the layer is being driven primarily by its Ext values).  If the drivers are weak or off, NonDrivePct is high, and inhibition should then be computed based on the full Ge inputs, like a non-clamped layer, and like the Pulvinar layer does in the minus phase
-	InhibClampThr float32 `def:"0.5" min:"0" max:"1" desc:"threshold on NonDrivePct value (see method below, based on FullDriveAct), below which the FS-FFFB inhibition function sets the Clamped flag, which then only uses GeExt values for driving inhibition (assuming the layer is being driven primarily by its Ext values).  If the drivers are weak or off, NonDrivePct is high, and inhibition should then be computed based on the full Ge inputs, like a non-clamped layer, and like the Pulvinar layer does in the minus phase"`
-
 	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
 	DriveLayIdx int32 `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting"`
+
+	pad float32
 }
 
 func (tp *PulvParams) Update() {
@@ -92,7 +91,6 @@ func (tp *PulvParams) Update() {
 func (tp *PulvParams) Defaults() {
 	tp.DriveScale = 0.1
 	tp.FullDriveAct = 0.6
-	tp.InhibClampThr = 0.5
 }
 
 // DriveGe returns effective excitatory conductance

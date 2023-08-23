@@ -79,7 +79,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.Gi":          "0.8", // 0.8 good -- was 0.9
 				"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 -- does not work with 0.05
 				"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
-				"Layer.Pulv.InhibClampThr":      "0.5", // 0.5 def
 				"Layer.Acts.Decay.Act":          "0.0",
 				"Layer.Acts.Decay.Glong":        "0.0", // clear long
 				"Layer.Acts.Decay.AHP":          "0.0", // clear long

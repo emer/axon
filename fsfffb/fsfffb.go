@@ -53,6 +53,9 @@ type GiParams struct {
 	// [def: 0] [viewif: On] proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time.
 	FFPrv float32 `viewif:"On" def:"0" desc:"proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time."`
 
+	// [def: 0.05] [viewif: On] minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used.
+	ClampExtMin float32 `viewif:"On" def:"0.05" desc:"minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used."`
+
 	// [view: -] rate = 1 / tau
 	FSDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 
@@ -65,7 +68,7 @@ type GiParams struct {
 	// [view: -] rate = 1 / tau
 	FFAvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (fb *GiParams) Update() {
@@ -85,6 +88,7 @@ func (fb *GiParams) Defaults() {
 	fb.FS0 = 0.1
 	fb.FFAvgTau = 50
 	fb.FFPrv = 0
+	fb.ClampExtMin = 0.05
 	fb.Update()
 }
 
@@ -105,7 +109,7 @@ func (fb *GiParams) FS0Thr(val float32) float32 {
 // FS returns the current effective FS value based on fsi and fsd
 // if clamped, then only use gext, without applying FS0
 func (fb *GiParams) FS(fsi, gext float32, clamped bool) float32 {
-	if clamped {
+	if clamped && gext > fb.ClampExtMin {
 		return gext
 	}
 	return fb.FS0Thr(fsi) + gext

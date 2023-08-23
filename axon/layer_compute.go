@@ -459,16 +459,6 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			pl := ly.Pool(pi, di)
 			ly.Params.MinusPhasePool(ctx, pl) // grabs AvgMax.Minus from Cycle
-			if ly.LayerType() == PulvinarLayer {
-				dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
-				drvMax := dly.Pool(0, di).AvgMax.CaSpkP.Cycle.Max
-				nonDrivePct := ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-				if nonDrivePct < ly.Params.Pulv.InhibClampThr {
-					pl.Inhib.Clamped.SetBool(true)
-				} else { // if more non-drive, then must not use clamped
-					pl.Inhib.Clamped.SetBool(false)
-				}
-			}
 		}
 	}
 	nn := ly.NNeurons
