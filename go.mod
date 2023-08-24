@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/assert/v2 v2.3.0
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.4.24
+	github.com/emer/emergent v1.4.25
 	github.com/emer/empi v1.0.22
 	github.com/emer/envs v1.0.7
 	github.com/emer/etable v1.1.24
@@ -20,7 +20,6 @@ require (
 	github.com/goki/vgpu v1.0.33
 	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.4
-	gitlab.com/gomidi/midi/v2 v2.0.30
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
 
