@@ -41,8 +41,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".DepthIn", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.2", // was .13 -- Ge very high b/c of topo prjn
-				"Layer.Inhib.Layer.Gi":       "0.9", //
+				"Layer.Inhib.ActAvg.Nominal": "0.15", // was .13 -- Ge very high b/c of topo prjn
+				"Layer.Inhib.Layer.Gi":       "0.9",  //
 			}},
 		{Sel: ".HeadDirIn", Desc: "",
 			Params: params.Params{
@@ -53,7 +53,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
 				"Layer.Inhib.Layer.Gi":       "2.0",  // 2.0 is fine -- was 1.4
-				"Layer.CT.GeGain":            "1.5",  // 1.5 == 1
+				"Layer.CT.GeGain":            "1.0",  // 1 == 1.5 > 0.5 except depth
 				"Layer.CT.DecayTau":          "0",    // decay is very bad
 				"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
 				"Layer.Acts.Decay.Act":       "0.0",
@@ -71,8 +71,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#DepthHidCT", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":       "2.8",  // 2.8 is reasonable; was 2.0
+				"Layer.Inhib.Layer.Gi":       "2.6",  // 2.8 is reasonable; was 2.0
 				"Layer.Inhib.ActAvg.Nominal": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
+				"Layer.CT.GeGain":            "0.5",  // 1 == 1.5 > 0.5 except depth
 			}},
 		{Sel: ".PulvinarLayer", Desc: "Pulvinar",
 			Params: params.Params{
@@ -93,10 +94,10 @@ var ParamSets = netparams.Sets{
 		// Projections below
 		{Sel: "Prjn", Desc: "std",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.005", // 0.005 > 0.002 > 0.01
-				"Prjn.Learn.Trace.SubMean": "0",     // 0 > 1 even with CTCtxt = 0
-				"Prjn.SWts.Adapt.LRate":    "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
-				"Prjn.SWts.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
+				"Prjn.Learn.LRate.Base":    "0.02", // 0.02 == 0.03 == 0.01 > 0.005 > 0.002
+				"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 even with CTCtxt = 0
+				"Prjn.SWts.Adapt.LRate":    "0.01", // 0.01 == 0.0001 but 0.001 not as good..
+				"Prjn.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 				"Prjn.Com.PFail":           "0.0",
 				"Prjn.Learn.Trace.Tau":     "2", // 4 == 2 > 1
 			}},

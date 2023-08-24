@@ -59,8 +59,8 @@ type RunConfig struct {
 	// [def: true] use the GPU for computation -- generally faster even for small models if NData ~16
 	GPU bool `def:"true" desc:"use the GPU for computation -- generally faster even for small models if NData ~16"`
 
-	// [def: 16] [min: 1] number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `def:"16" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."`
+	// [def: 4] [min: 1] number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.  is noisy above 4 for 30 note case.
+	NData int `def:"4" min:"1" desc:"number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.  is noisy above 4 for 30 note case."`
 
 	// [def: 0] number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`

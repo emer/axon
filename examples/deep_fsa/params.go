@@ -73,7 +73,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 				"Layer.Inhib.Layer.FB":          "1",
-				"Layer.Pulv.DriveScale":         "0.1", // was 0.1 -- 0.05 now with decay?
+				"Layer.Pulv.DriveScale":         "0.2", // 0.2 > 0.1, 0.15, 0.25, 0.3
 				"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 				"Layer.Acts.Spikes.Tr":          "3",   // 1 is best for ra25..
 				"Layer.Acts.Decay.Act":          "0.0",
