@@ -2,7 +2,7 @@
 						Layer.Gi:	  0.90	Params: Layer: 0.9
 
          InputP		Nominal:	  0.05	Params: 30Notes:.InLay: 0.05 | .InLay: 0.025 | Layer: 0.1
-						Layer.Gi:	  1.00	Params: .PulvinarLayer: 1.0 | Layer: 0.9
+						Layer.Gi:	  1.00	Params: .PulvinarLayer: 1.0 | Base:Layer: 0.9
 
          Hidden		Nominal:	  0.10	Params: .SuperLayer: 0.1 | Layer: 0.1
 						Layer.Gi:	  0.90	Params: Base:Layer: 0.9

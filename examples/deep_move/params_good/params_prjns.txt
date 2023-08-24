@@ -16,7 +16,7 @@ Layer: DepthHid
 								    Rel Params: .FmPulv: 0.1 | .BackPrjn: 0.2
 	         Action	    ForwardPrjn	Abs:	  1.00	Rel:	  2.00	GScale:	  0.22	Rel:  0.65
 								    Rel Params: #ActionToDepthHid: 2.0
-	          Depth	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.32
+	          Depth	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.32
 
 Layer: DepthHidCT
 	       DepthHid	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.91	Rel:  0.91
