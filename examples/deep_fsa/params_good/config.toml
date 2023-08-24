@@ -15,9 +15,9 @@ Debug = false
 
 [Params]
   Sheet = ""
-  File = ""
   Tag = ""
   Note = ""
+  File = ""
   SaveAll = false
   Good = true
 
@@ -26,7 +26,7 @@ Debug = false
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 1
+  NRuns = 5
   NEpochs = 100
   NTrials = 196
   PCAInterval = 5
@@ -40,4 +40,3 @@ Debug = false
   TestEpoch = false
   TestTrial = false
   NetData = false
-  Testing = false

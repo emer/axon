@@ -73,7 +73,7 @@
     "Layer.Inhib.Layer.FB" = "1"
     "Layer.Inhib.Layer.Gi" = "0.75"
     "Layer.Learn.RLRate.SigmoidMin" = "1.0"
-    "Layer.Pulv.DriveScale" = "0.1"
+    "Layer.Pulv.DriveScale" = "0.2"
     "Layer.Pulv.FullDriveAct" = "0.6"
 
 [[Base]]

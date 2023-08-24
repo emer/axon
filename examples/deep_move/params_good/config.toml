@@ -3,13 +3,15 @@ Debug = false
 
 [Env]
   UnitsPer = 4
+  [Env.Env]
+    PctBlank = 0
 
 [Params]
   Hid2 = false
   Sheet = ""
-  File = ""
   Tag = ""
   Note = ""
+  File = ""
   SaveAll = false
   Good = true
 
@@ -32,4 +34,3 @@ Debug = false
   TestEpoch = false
   TestTrial = false
   NetData = false
-  Testing = false

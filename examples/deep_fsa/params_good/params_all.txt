@@ -26,8 +26,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.15  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -66,8 +66,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.15  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 0.75  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Layer: {  On: true  Gi: 0.75  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -79,7 +79,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 0
+  DriveScale: 0.2 FullDriveAct: 0.6 DriveLayIdx: 0
 }
 ///////////////////////////////////////////////////
 Prjn: HiddenCTToInputP
@@ -129,8 +129,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.15  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -169,8 +169,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.15  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -252,8 +252,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.15  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 2.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
-  Pool: {  On: false  Gi: 2.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
+  Layer: {  On: true  Gi: 2.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: false  Gi: 2.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }

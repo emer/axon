@@ -11,15 +11,15 @@ Debug = false
 [Params]
   Hid2 = false
   Sheet = ""
-  File = ""
   Tag = ""
   Note = ""
+  File = ""
   SaveAll = false
   Good = true
 
 [Run]
   GPU = true
-  NData = 16
+  NData = 4
   NThreads = 0
   Run = 0
   NRuns = 5
@@ -36,4 +36,3 @@ Debug = false
   TestEpoch = false
   TestTrial = false
   NetData = false
-  Testing = false
