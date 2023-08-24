@@ -39,3 +39,17 @@ func (i *GlobalVTAType) FromString(s string) error {
 	}
 	return errors.New("String: " + s + " is not a valid option for type: GlobalVTAType")
 }
+
+var _GlobalVTAType_descMap = map[GlobalVTAType]string{
+	0: `GvVtaRaw are raw VTA values -- inputs to the computation`,
+	1: `GvVtaVals are computed current VTA values`,
+	2: `GvVtaPrev are previous computed values -- to avoid a data race`,
+	3: ``,
+}
+
+func (i GlobalVTAType) Desc() string {
+	if str, ok := _GlobalVTAType_descMap[i]; ok {
+		return str
+	}
+	return "GlobalVTAType(" + strconv.FormatInt(int64(i), 10) + ")"
+}

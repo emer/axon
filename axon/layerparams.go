@@ -433,7 +433,7 @@ func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals, drvGe float32, nonDrvPct float32) float32 {
+func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals, drvGe float32, nonDrivePct float32) float32 {
 	saveVal := float32(0)               // sometimes we need to use a value computed here, for the post Gs step
 	pi := NrnI(ctx, ni, NrnSubPool) - 1 // 0-n pool index
 	pni := NrnI(ctx, ni, NrnNeurIdx) - pl.StIdx
@@ -460,8 +460,10 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		if ctx.PlusPhase.IsFalse() {
 			break
 		}
-		SetNrnV(ctx, ni, di, GeRaw, nonDrvPct*nrnGeRaw+drvGe)
-		SetNrnV(ctx, ni, di, GeSyn, nonDrvPct*NrnV(ctx, ni, di, GeSyn)+ly.Acts.Dt.GeSynFmRawSteady(drvGe))
+		// geSyn, goes into nrn.GeExt in PostGs, so inhibition gets it
+		saveVal = nonDrivePct*NrnV(ctx, ni, di, GeSyn) + ly.Acts.Dt.GeSynFmRawSteady(drvGe)
+		SetNrnV(ctx, ni, di, GeRaw, nonDrivePct*nrnGeRaw+drvGe)
+		SetNrnV(ctx, ni, di, GeSyn, saveVal)
 	case RewLayer:
 		NrnSetFlag(ctx, ni, di, NeuronHasExt)
 		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRew)) // Rew must be set in Context!
@@ -566,6 +568,8 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		fallthrough
 	case CTLayer:
 		SetNrnV(ctx, ni, di, GeExt, saveVal)
+	case PulvinarLayer:
+		SetNrnV(ctx, ni, di, GeExt, saveVal)
 	case PTPredLayer:
 		SetNrnV(ctx, ni, di, GeExt, saveVal)
 		orig := NrnV(ctx, ni, di, CtxtGeOrig)
@@ -623,8 +627,13 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *Laye
 	SetNrnV(ctx, ni, di, Gi, gi)
 	SetNrnV(ctx, ni, di, SSGi, pl.Inhib.SSGi)
 	SetNrnV(ctx, ni, di, SSGiDend, 0)
-	if !(ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue()) {
-		SetNrnV(ctx, ni, di, SSGiDend, ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
+	if ctx.PlusPhase.IsTrue() && ly.LayType == PulvinarLayer {
+		ext := NrnV(ctx, ni, di, Ext) // nonDrivePct
+		SetNrnV(ctx, ni, di, SSGiDend, ext*ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
+	} else {
+		if !(ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue()) {
+			SetNrnV(ctx, ni, di, SSGiDend, ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
+		}
 	}
 	nrnGABAB := NrnV(ctx, ni, di, GABAB)
 	nrnGABABx := NrnV(ctx, ni, di, GABABx)

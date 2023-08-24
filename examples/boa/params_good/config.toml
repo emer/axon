@@ -12,17 +12,17 @@ Debug = false
     NYReps = 4
 
 [Params]
-  Set = ""
-  File = ""
+  Sheet = ""
   Tag = ""
   Note = ""
-  SaveAll = true
+  File = ""
+  SaveAll = false
   Good = true
 
 [Run]
   GPU = true
   NData = 16
-  Threads = 0
+  NThreads = 0
   Run = 0
   NRuns = 5
   NEpochs = 100

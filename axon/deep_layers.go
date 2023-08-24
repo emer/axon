@@ -81,7 +81,8 @@ type PulvParams struct {
 
 	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
 	DriveLayIdx int32 `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting"`
-	pad         float32
+
+	pad float32
 }
 
 func (tp *PulvParams) Update() {

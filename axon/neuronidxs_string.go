@@ -39,3 +39,17 @@ func (i *NeuronIdxs) FromString(s string) error {
 	}
 	return errors.New("String: " + s + " is not a valid option for type: NeuronIdxs")
 }
+
+var _NeuronIdxs_descMap = map[NeuronIdxs]string{
+	0: `NrnNeurIdx is the index of this neuron within its owning layer`,
+	1: `NrnLayIdx is the index of the layer that this neuron belongs to, needed for neuron-level parallel code.`,
+	2: `NrnSubPool is the index of the sub-level inhibitory pool for this neuron (only for 4D shapes, the pool (unit-group / hypercolumn) structure level). Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).`,
+	3: ``,
+}
+
+func (i NeuronIdxs) Desc() string {
+	if str, ok := _NeuronIdxs_descMap[i]; ok {
+		return str
+	}
+	return "NeuronIdxs(" + strconv.FormatInt(int64(i), 10) + ")"
+}

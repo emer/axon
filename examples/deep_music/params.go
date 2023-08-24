@@ -48,7 +48,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
 				"Layer.Inhib.Layer.Gi":       "2.2",  // 2.2 >= 2.4 > 2.8
-				"Layer.CT.GeGain":            "1.0",  // 1.0 >= 1.5 > 2.0 (very bad)
+				"Layer.CT.GeGain":            "1.0",  // 1.0 >= 1.5 > 2.0 (very bad) > 0.5
 				"Layer.CT.DecayTau":          "50",   // 50 > 30 -- 30 ok but takes a bit to get going
 				"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
 				"Layer.Acts.Decay.Act":       "0.0",
@@ -65,7 +65,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PulvinarLayer", Desc: "Pulv = Pulvinar",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1 >> 1.2
-				"Layer.Pulv.DriveScale":         "0.1", // 0.1 shows up -- was 0.02
+				"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 > 0.2; .05 doesn't work at all
 				"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 				"Layer.Acts.Decay.Act":          "0.0",
 				"Layer.Acts.Decay.Glong":        "0.0", // clear long
@@ -75,7 +75,7 @@ var ParamSets = netparams.Sets{
 		// Projections below
 		{Sel: "Prjn", Desc: "std",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
+				"Prjn.Learn.LRate.Base":    "0.002",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
 				"Prjn.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
 				"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 				"Prjn.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok

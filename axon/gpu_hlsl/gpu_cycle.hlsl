@@ -39,27 +39,28 @@
 [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
 
-void PulvinarDriver2(in Context ctx, in LayerParams ly, in LayerParams dly, in Pool dlpl, uint ni, uint di, out float drvGe, out float nonDrvPct) {
+void PulvinarDriver2(in Context ctx, in LayerParams ly, in LayerParams dly, in Pool dlpl, uint ni, uint di, out float drvGe, out float nonDrivePct) {
 	float drvMax = dlpl.AvgMax.CaSpkP.Cycle.Max;
-	nonDrvPct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
+	nonDrivePct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
 	uint pni = (ni - ly.Idxs.NeurSt) + dly.Idxs.NeurSt;
 	drvGe = ly.Pulv.DriveGe(NrnV(ctx, pni, di, Burst));
 }
 
-void PulvinarDriver(in Context ctx, in LayerParams ly, in LayerParams dly, uint ni, uint di, out float drvGe, out float nonDrvPct) {
-	PulvinarDriver2(ctx, ly, dly, Pools[dly.Idxs.PoolIdx(0, di)], ni, di, drvGe, nonDrvPct);
+void PulvinarDriver(in Context ctx, in LayerParams ly, in LayerParams dly, uint ni, uint di, out float drvGe, out float nonDrivePct) {
+	PulvinarDriver2(ctx, ly, dly, Pools[dly.Idxs.PoolIdx(0, di)], ni, di, drvGe, nonDrivePct);
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
 void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in LayerVals vals) {
 	float drvGe = 0;
-	float nonDrvPct = 0;
+	float nonDrivePct = 0;
 	if (ly.LayType == PulvinarLayer) {
-		PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], ni, di, drvGe, nonDrvPct);
+		PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], ni, di, drvGe, nonDrivePct);
+		SetNrnV(ctx, ni, di, Ext, nonDrivePct); // use for regulating inhibition
 	}
 
-	float saveVal = ly.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrvPct);
+	float saveVal = ly.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct);
 	
 	ly.GFmRawSyn(ctx, ni, di);
 	ly.GiInteg(ctx, ni, di, pl, vals);

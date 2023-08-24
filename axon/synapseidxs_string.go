@@ -39,3 +39,17 @@ func (i *SynapseIdxs) FromString(s string) error {
 	}
 	return errors.New("String: " + s + " is not a valid option for type: SynapseIdxs")
 }
+
+var _SynapseIdxs_descMap = map[SynapseIdxs]string{
+	0: `SynRecvIdx is receiving neuron index in network&#39;s global list of neurons`,
+	1: `SynSendIdx is sending neuron index in network&#39;s global list of neurons`,
+	2: `SynPrjnIdx is projection index in global list of projections organized as [Layers][RecvPrjns]`,
+	3: ``,
+}
+
+func (i SynapseIdxs) Desc() string {
+	if str, ok := _SynapseIdxs_descMap[i]; ok {
+		return str
+	}
+	return "SynapseIdxs(" + strconv.FormatInt(int64(i), 10) + ")"
+}

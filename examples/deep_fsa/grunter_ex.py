@@ -26,7 +26,7 @@ import getpass
 # max number of hours -- slurm will terminate if longer, so be generous
 # 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
 # full run taking about 60 hrs, so use 72
-hours = 12
+hours = 8
 
 # memory per CPU, which is only way to allocate on hpc2 (otherwise per node and doesn't fit)
 # to tune, look at AveRSS from salloc report
@@ -39,7 +39,7 @@ mem = "1G" # 3G @ 2 thr is minimum, 5G reserves a node and is sig faster
 tasks = 1
 
 # number of cpu cores (threads) per task
-cpus_per_task = 2
+cpus_per_task = 8
 
 # how to allocate tasks within compute nodes
 # cpus_per_task * tasks_per_node <= total cores per node
@@ -163,7 +163,8 @@ def write_sbatch_header(f):
     f.write("#SBATCH --ntasks=" + str(tasks) + "\n")
     f.write("#SBATCH --cpus-per-task=" + str(cpus_per_task) + "\n")
     f.write("#SBATCH --ntasks-per-node=" + str(tasks_per_node) + "\n")
-    # f.write("#SBATCH --exclude=agate-[2,4-7,37-40]\n")
+    # f.write("#SBATCH --nodelist=agate-0\n")
+    f.write("#SBATCH --exclude=agate-[27-40]\n")
     # f.write("#SBATCH --qos=" + qos + "\n")
     # f.write("#SBATCH --partition=" + partition + "\n")
     f.write("#SBATCH --mail-type=FAIL\n")
@@ -210,7 +211,7 @@ def write_sbatch_array(setup_id):
 
     f.write("echo $SLURM_ARRAY_JOB_ID\n")
     f.write("\n\n")
-    f.write("srun ./" + grunt_proj + " --nogui --run $SLURM_ARRAY_TASK_ID --runs " +  str(runs) + " " +  args + "\n")
+    f.write("srun ./" + grunt_proj + " -no-gui -no-gpu -run $SLURM_ARRAY_TASK_ID -nruns " +  str(runs) + " " +  args + "\n")
     f.flush()
     f.close()
 

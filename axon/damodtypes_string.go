@@ -40,3 +40,18 @@ func (i *DAModTypes) FromString(s string) error {
 	}
 	return errors.New("String: " + s + " is not a valid option for type: DAModTypes")
 }
+
+var _DAModTypes_descMap = map[DAModTypes]string{
+	0: `NoDAMod means there is no effect of dopamine on neural activity`,
+	1: `D1Mod is for neurons that primarily express dopamine D1 receptors, which are excitatory from DA bursts, inhibitory from dips. Cortical neurons can generally use this type, while subcortical populations are more diverse in having both D1 and D2 subtypes.`,
+	2: `D2Mod is for neurons that primarily express dopamine D2 receptors, which are excitatory from DA dips, inhibitory from bursts.`,
+	3: `D1AbsMod is like D1Mod, except the absolute value of DA is used instead of the signed value. There are a subset of DA neurons that send increased DA for both negative and positive outcomes, targeting frontal neurons.`,
+	4: ``,
+}
+
+func (i DAModTypes) Desc() string {
+	if str, ok := _DAModTypes_descMap[i]; ok {
+		return str
+	}
+	return "DAModTypes(" + strconv.FormatInt(int64(i), 10) + ")"
+}

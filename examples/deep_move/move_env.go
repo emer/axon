@@ -39,9 +39,6 @@ type MoveEnv struct {
 	// action map of action names to indexes
 	ActMap map[string]int `desc:"action map of action names to indexes"`
 
-	// map of optional interoceptive and world-dynamic parameters -- cleaner to store in a map
-	Params map[string]float32 `desc:"map of optional interoceptive and world-dynamic parameters -- cleaner to store in a map"`
-
 	// field of view in degrees, e.g., 180, must be even multiple of AngInc
 	FOV int `desc:"field of view in degrees, e.g., 180, must be even multiple of AngInc"`
 
@@ -68,6 +65,9 @@ type MoveEnv struct {
 
 	// print debug messages
 	Debug bool `desc:"print debug messages"`
+
+	// proportion of times that a blank input is generated -- for testing pulvinar behavior with blank inputs
+	PctBlank float32 `desc:"proportion of times that a blank input is generated -- for testing pulvinar behavior with blank inputs"`
 
 	// current location of agent, floating point
 	PosF mat32.Vec2 `inactive:"+" desc:"current location of agent, floating point"`
@@ -332,6 +332,13 @@ func (ev *MoveEnv) RenderState() {
 	ev.RenderAction()
 }
 
+// RenderBlank renders current state as zeros
+func (ev *MoveEnv) RenderBlank() {
+	for _, ns := range ev.NextStates {
+		ns.SetZeros()
+	}
+}
+
 // CopyNextToCur copy next state to current state
 func (ev *MoveEnv) CopyNextToCur() {
 	for k, ns := range ev.NextStates {
@@ -348,7 +355,11 @@ func (ev *MoveEnv) CopyNextToCur() {
 // Step is called to advance the environment state
 func (ev *MoveEnv) Step() bool {
 	ev.Act = ev.ActGen()
-	ev.RenderState()
+	if erand.BoolP32(ev.PctBlank, -1, &ev.Rand) {
+		ev.RenderBlank()
+	} else {
+		ev.RenderState()
+	}
 	ev.CopyNextToCur()
 	ev.TakeAct(ev.Act)
 	return true

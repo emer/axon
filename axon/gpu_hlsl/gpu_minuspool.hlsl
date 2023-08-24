@@ -36,8 +36,7 @@
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
 [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
-
-void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVals vals) {
+void MinusPool2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout LayerVals vals) {
 	ly.MinusPhasePool(ctx, pl);
 	if (pl.IsLayPool != 0) {
 		float geIntMinusMax = 0;
@@ -51,7 +50,7 @@ void MinusPool2(in Context ctx, in LayerParams ly, inout Pool pl, inout LayerVal
 }
 
 void MinusPool(in Context ctx, uint di, inout Pool pl) {
-	MinusPool2(ctx, Layers[pl.LayIdx], pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
+	MinusPool2(ctx, Layers[pl.LayIdx], di, pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
 }
 
 [numthreads(64, 1, 1)]

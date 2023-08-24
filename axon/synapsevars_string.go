@@ -41,3 +41,19 @@ func (i *SynapseVars) FromString(s string) error {
 	}
 	return errors.New("String: " + s + " is not a valid option for type: SynapseVars")
 }
+
+var _SynapseVars_descMap = map[SynapseVars]string{
+	0: `Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse. Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.`,
+	1: `LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec. Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density. Initially all LWt are .5, which gives 1 from WtSig function.`,
+	2: `SWt is slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine. SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn. Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.`,
+	3: `DWt is delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.`,
+	4: `DSWt is change in SWt slow synaptic weight -- accumulates DWt`,
+	5: ``,
+}
+
+func (i SynapseVars) Desc() string {
+	if str, ok := _SynapseVars_descMap[i]; ok {
+		return str
+	}
+	return "SynapseVars(" + strconv.FormatInt(int64(i), 10) + ")"
+}

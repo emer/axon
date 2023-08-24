@@ -42,3 +42,17 @@ func (i NeuronFlags) String() string {
 		return "NeuronFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 }
+
+var _NeuronFlags_descMap = map[NeuronFlags]string{
+	1: `NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)`,
+	2: `NeuronHasExt means the neuron has external input in its Ext field`,
+	4: `NeuronHasTarg means the neuron has external target input in its Target field`,
+	8: `NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing comparison statistics but does not drive neural activity ever`,
+}
+
+func (i NeuronFlags) Desc() string {
+	if str, ok := _NeuronFlags_descMap[i]; ok {
+		return str
+	}
+	return "NeuronFlags(" + strconv.FormatInt(int64(i), 10) + ")"
+}

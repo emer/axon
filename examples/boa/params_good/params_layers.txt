@@ -110,17 +110,17 @@
 						Layer.Gi:	  4.00	
 						Pool.Gi: 	  1.20	
 
-        OFCusPT		Nominal:	  0.05	
+        OFCusPT		Nominal:	  0.20	Params: #OFCusPT: 0.2
 						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
-						Pool.Gi: 	  2.40	Params: .PTMaintLayer: 2.4
+						Pool.Gi: 	  3.00	Params: #OFCusPT: 3.0 | .PTMaintLayer: 2.4
 
         OFCusMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
 						Pool.Gi: 	  0.60	
 
-       OFCusPTp		Nominal:	  0.03	
+       OFCusPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  0.80	
+						Pool.Gi: 	  1.40	Params: #OFCusPTp: 1.4
 
        NotMaint		Nominal:	  0.20	
 						Layer.Gi:	  0.50	
@@ -137,7 +137,7 @@
        OFCvalMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-      OFCvalPTp		Nominal:	  0.10	
+      OFCvalPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
         OFCvalP		Nominal:	  0.10	
@@ -155,7 +155,7 @@
       ACCcostMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-     ACCcostPTp		Nominal:	  0.10	
+     ACCcostPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
        ACCcostP		Nominal:	  0.10	
@@ -173,7 +173,7 @@
       ACCutilMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-     ACCutilPTp		Nominal:	  0.10	
+     ACCutilPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
              CS		Nominal:	  0.08	Params: .CS: 0.1
@@ -218,6 +218,6 @@
           ALMMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-         ALMPTp		Nominal:	  0.10	
+         ALMPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
