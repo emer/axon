@@ -874,6 +874,8 @@ func EffortReset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvEffortDisc, 1)
 }
 
+// todo: these don't happen like this anymore:
+
 // EffortDiscFmEffort computes Disc from Raw effort
 func EffortDiscFmEffort(ctx *Context, di uint32) float32 {
 	disc := ctx.PVLV.Effort.DiscFun(GlbV(ctx, di, GvEffortRaw))
@@ -1042,24 +1044,32 @@ func PVLVReset(ctx *Context, di uint32) {
 	// pp.HasPosUSPrev.SetBool(false) // key to not reset!!
 }
 
-// PVLVPosPV returns the reward for current positive US state relative to current drives
+// PVLVPosPV returns the normalized weighted positive reward
+// for current positive US state, where each US is multiplied by
+// its current drive and weighting factor, then summed
+// and normalized via the 1-(1/(1+x))) function.
 func PVLVPosPV(ctx *Context, di uint32) float32 {
 	rew := float32(0)
 	nd := ctx.PVLV.Drive.NActive
+	wts := ctx.PVLV.USs.PosWts
 	for i := uint32(0); i < nd; i++ {
-		rew += GlbDrvV(ctx, di, i, GvUSpos) * DrivesEffectiveDrive(ctx, di, i)
+		rew += wts.Get(i) * GlbDrvV(ctx, di, i, GvUSpos) * DrivesEffectiveDrive(ctx, di, i)
 	}
-	return rew
+	return PVLVNormFun(rew)
 }
 
-// PVLVNegPV returns the reward for current negative US state -- just a sum of USneg
+// PVLVNegPV returns the normalized weighted negative value
+// associated with current negative US state, where each US
+// is multiplied by a weighting factor, then summed
+// and normalized via the 1-(1/(1+x))) function.
 func PVLVNegPV(ctx *Context, di uint32) float32 {
 	rew := float32(0)
 	nn := ctx.PVLV.Drive.NNegUSs
+	wts := ctx.PVLV.USs.NegWts
 	for i := uint32(0); i < nn; i++ {
-		rew += GlbUSneg(ctx, di, i)
+		rew += wts.Get(i) * GlbUSneg(ctx, di, i)
 	}
-	return rew
+	return PVLVNormFun(rew)
 }
 
 // PVLVVSPatchMax returns the max VSPatch value across drives
@@ -1105,7 +1115,9 @@ func PVLVNetPV(ctx *Context, di uint32) float32 {
 // PVLVPosPVFmDriveEffort returns the net primary value ("reward") based on
 // given US value and drive for that value (typically in 0-1 range),
 // and total effort, from which the effort discount factor is computed an applied:
-// usValue * drive * Effort.DiscFun(effort)
+// usValue * drive * Effort.DiscFun(effort).
+// This is not called directly in the PVLV code -- can be used to compute
+// what the PVLV code itself will compute -- see PVLVDAImpl.
 func PVLVPosPVFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
 	return usValue * drive * ctx.PVLV.Effort.DiscFun(effort)
 }
@@ -1140,18 +1152,30 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 // Resulting DA is in VTA.Vals.DA, and is returned
 // (to be set to Context.NeuroMod.DA)
 func PVLVDAImpl(ctx *Context, di uint32, ach float32, hasRew bool) float32 {
-	usPos := PVLVPosPV(ctx, di)
+	pvPos := PVLVPosPV(ctx, di)
 	pvNeg := PVLVNegPV(ctx, di)
-	giveUp := GlbV(ctx, di, GvLHbGiveUp)
-	effDisc := GlbV(ctx, di, GvEffortDisc)
-	if giveUp > 0 {
-		pvNeg += 1.0 - effDisc // pay effort cost here..
+	// giveUp := GlbV(ctx, di, GvLHbGiveUp)
+
+	thr := ctx.PVLV.USs.NegThr * pvNeg
+
+	pvNet := float32(0)
+	if pvPos > thr { // worth it, got reward
+		pvNet = pvPos * (1 - pvNeg) // get positive, discounted
+	} else {
+		pvNet = -pvNeg * (1 - pvPos) // get negative, disounting
 	}
-	pvPos := usPos * effDisc
+
+	// if giveUp > 0 {
+	// 	pvNeg += 1.0 - effDisc // pay effort cost here..
+	// }
+
+	// todo: should above be contingent on getting actual PosUS?
+
 	vsPatchPos := PVLVVSPatchMax(ctx, di)
 	LHbFmPVVS(ctx, di, pvPos, pvNeg, vsPatchPos)
 
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaUSpos, usPos)
+	// todo: no more USPos
+	// SetGlbVTA(ctx, di, GvVtaRaw, GvVtaUSpos, pvPos)
 	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaPVpos, pvPos)
 	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaPVneg, pvNeg)
 	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaLHbDip, GlbV(ctx, di, GvLHbDip))

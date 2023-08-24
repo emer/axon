@@ -11,78 +11,132 @@ import (
 
 //gosl: start pvlv
 
-// DriveVals represents different internal drives,
-// such as hunger, thirst, etc.  The first drive is
-// typically reserved for novelty / curiosity.
-// labels can be provided by specific environments.
-type DriveVals struct {
-	D0 float32
-	D1 float32
-	D2 float32
-	D3 float32
-	D4 float32
-	D5 float32
-	D6 float32
-	D7 float32
+// PVec is a PVLV Primary Value Vector
+// used for representing a variable number of
+// values associated with USs, Drives, etc
+// using a fixed memory allocation that is
+// GPU-compatible.  The number of values can be
+// increased if in increments of 4 if needed.
+type PVec struct {
+	V0 float32
+	V1 float32
+	V2 float32
+	V3 float32
+	V4 float32
+	V5 float32
+	V6 float32
+	V7 float32
 }
 
-func (ds *DriveVals) SetAll(val float32) {
-	ds.D0 = val
-	ds.D1 = val
-	ds.D2 = val
-	ds.D3 = val
-	ds.D4 = val
-	ds.D5 = val
-	ds.D6 = val
-	ds.D7 = val
+func (pv *PVec) SetAll(val float32) {
+	pv.V0 = val
+	pv.V1 = val
+	pv.V2 = val
+	pv.V3 = val
+	pv.V4 = val
+	pv.V5 = val
+	pv.V6 = val
+	pv.V7 = val
 }
 
-func (ds *DriveVals) Zero() {
-	ds.SetAll(0)
+func (pv *PVec) Zero() {
+	pv.SetAll(0)
 }
 
-func (ds *DriveVals) Set(drv uint32, val float32) {
-	switch drv {
+func (pv *PVec) Set(idx uint32, val float32) {
+	switch idx {
 	case 0:
-		ds.D0 = val
+		pv.V0 = val
 	case 1:
-		ds.D1 = val
+		pv.V1 = val
 	case 2:
-		ds.D2 = val
+		pv.V2 = val
 	case 3:
-		ds.D3 = val
+		pv.V3 = val
 	case 4:
-		ds.D4 = val
+		pv.V4 = val
 	case 5:
-		ds.D5 = val
+		pv.V5 = val
 	case 6:
-		ds.D6 = val
+		pv.V6 = val
 	case 7:
-		ds.D7 = val
+		pv.V7 = val
 	}
 }
 
-func (ds *DriveVals) Get(drv uint32) float32 {
+func (pv *PVec) Get(idx uint32) float32 {
 	val := float32(0)
-	switch drv {
+	switch idx {
 	case 0:
-		val = ds.D0
+		val = pv.V0
 	case 1:
-		val = ds.D1
+		val = pv.V1
 	case 2:
-		val = ds.D2
+		val = pv.V2
 	case 3:
-		val = ds.D3
+		val = pv.V3
 	case 4:
-		val = ds.D4
+		val = pv.V4
 	case 5:
-		val = ds.D5
+		val = pv.V5
 	case 6:
-		val = ds.D6
+		val = pv.V6
 	case 7:
-		val = ds.D7
+		val = pv.V7
 	}
 	return val
+}
+
+func (pv PVec) Sum() float32 {
+	return pv.V0 + pv.V1 + pv.V2 + pv.V3 + pv.V4 + pv.V5 + pv.V6 + pv.V7
+}
+
+func (pv PVec) Add(ov PVec) PVec {
+	pv.V0 += ov.V0
+	pv.V1 += ov.V1
+	pv.V2 += ov.V2
+	pv.V3 += ov.V3
+	pv.V4 += ov.V4
+	pv.V5 += ov.V5
+	pv.V6 += ov.V6
+	pv.V7 += ov.V7
+	return pv
+}
+
+func (pv PVec) Sub(ov PVec) PVec {
+	pv.V0 -= ov.V0
+	pv.V1 -= ov.V1
+	pv.V2 -= ov.V2
+	pv.V3 -= ov.V3
+	pv.V4 -= ov.V4
+	pv.V5 -= ov.V5
+	pv.V6 -= ov.V6
+	pv.V7 -= ov.V7
+	return pv
+}
+
+func (pv PVec) Mul(ov PVec) PVec {
+	pv.V0 *= ov.V0
+	pv.V1 *= ov.V1
+	pv.V2 *= ov.V2
+	pv.V3 *= ov.V3
+	pv.V4 *= ov.V4
+	pv.V5 *= ov.V5
+	pv.V6 *= ov.V6
+	pv.V7 *= ov.V7
+	return pv
+}
+
+func (pv PVec) Div(ov PVec) PVec {
+	pv.V0 /= ov.V0
+	pv.V1 /= ov.V1
+	pv.V2 /= ov.V2
+	pv.V3 /= ov.V3
+	pv.V4 /= ov.V4
+	pv.V5 /= ov.V5
+	pv.V6 /= ov.V6
+	pv.V7 /= ov.V7
+	return pv
 }
 
 // Drives manages the drive parameters for updating drive state,
@@ -101,16 +155,16 @@ type Drives struct {
 	pad int32
 
 	// [view: inline] baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).
-	Base DriveVals `view:"inline" desc:"baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range)."`
+	Base PVec `view:"inline" desc:"baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range)."`
 
 	// [view: inline] time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.
-	Tau DriveVals `view:"inline" desc:"time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update."`
+	Tau PVec `view:"inline" desc:"time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update."`
 
 	// [view: inline] decrement in drive value when Drive-US is consumed -- positive values are subtracted from current Drive value.
-	USDec DriveVals `view:"inline" desc:"decrement in drive value when Drive-US is consumed -- positive values are subtracted from current Drive value."`
+	USDec PVec `view:"inline" desc:"decrement in drive value when Drive-US is consumed -- positive values are subtracted from current Drive value."`
 
 	// [view: -] 1/Tau
-	Dt DriveVals `view:"-" desc:"1/Tau"`
+	Dt PVec `view:"-" desc:"1/Tau"`
 }
 
 func (dp *Drives) Defaults() {
@@ -138,17 +192,44 @@ func (dp *Drives) Update() {
 
 // see context.go for most Drives methods
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
+// USParams
+
+// PVLVLNormFun is the normalizing function applied to the sum of all
+// weighted raw values: 1 - (1 / (1 + usRaw.Sum()))
+func PVLVNormFun(raw float32) float32 {
+	return 1.0 - (1.0 / (1.0 + raw))
+}
+
+// USParams control how positive and negative USs are
+// weighted and integrated to compute an overall PV primary value.
+type USParams struct {
+
+	// weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each US is also multiplied by its dynamic Drive factor as well
+	PosWts PVec `desc:"weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each US is also multiplied by its dynamic Drive factor as well"`
+
+	// weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum.
+	NegWts PVec `desc:"weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum."`
+
+	// threshold factor that multiplies integrated negPV value to establish a threshold for whether the integrated posPV value is good enough to drive overall net positive reward
+	NegThr float32 `desc:"threshold factor that multiplies integrated negPV value to establish a threshold for whether the integrated posPV value is good enough to drive overall net positive reward"`
+}
+
+func (us *USParams) Defaults() {
+	us.PosWts.SetAll(1)
+	us.NegWts.SetAll(1)
+	us.NegThr = 1
+}
+
+/////////////////////////////////////////////////////////
 //  Effort
 
-// Effort has effort and parameters for updating it
+// Effort has parameters for updating effort,
+// which is the first negative US.
 type Effort struct {
 
-	// gain factor for computing effort discount factor -- larger = quicker discounting
-	Gain float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
-
-	// default maximum raw effort level, when MaxNovel and MaxPostDip don't apply.
-	Max float32 `desc:"default maximum raw effort level, when MaxNovel and MaxPostDip don't apply."`
+	// default maximum raw effort level, for deciding when to give up on goal pursuit, when MaxNovel and MaxPostDip don't apply.
+	Max float32 `desc:"default maximum raw effort level, for deciding when to give up on goal pursuit, when MaxNovel and MaxPostDip don't apply."`
 
 	// maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max
 	MaxNovel float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
@@ -158,12 +239,9 @@ type Effort struct {
 
 	// variance in additional maximum effort level, applied whenever CurMax is updated
 	MaxVar float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
-
-	pad, pad1, pad2 float32
 }
 
 func (ef *Effort) Defaults() {
-	ef.Gain = 0.1
 	ef.Max = 100
 	ef.MaxNovel = 8
 	ef.MaxPostDip = 4
@@ -172,11 +250,6 @@ func (ef *Effort) Defaults() {
 
 func (ef *Effort) Update() {
 
-}
-
-// DiscFun is the effort discount function: 1 / (1 + ef.Gain * effort)
-func (ef *Effort) DiscFun(effort float32) float32 {
-	return 1.0 / (1.0 + ef.Gain*effort)
 }
 
 // see context.go for most Effort methods
@@ -375,6 +448,9 @@ type PVLV struct {
 
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
 	Drive Drives `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+
+	USs USParams `desc:"control how positive and negative USs are 
+// weighted and integrated to compute an overall PV primary value."`
 
 	// [view: inline] effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion
 	Effort Effort `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
