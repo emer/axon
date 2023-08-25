@@ -537,9 +537,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = GlbV(ctx, di, GvVtaPVpos)
+			pv = GlbV(ctx, di, GvLHbPVpos)
 		} else {
-			pv = GlbV(ctx, di, GvVtaPVneg)
+			pv = GlbV(ctx, di, GvLHbPVneg)
 		}
 		pc := ly.Acts.PopCode.EncodeGe(pni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, GeRaw, pc)
@@ -772,9 +772,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = GlbV(ctx, di, GvVtaPVpos)
+			pv = GlbV(ctx, di, GvLHbPVpos)
 		} else {
-			pv = GlbV(ctx, di, GvVtaPVneg)
+			pv = GlbV(ctx, di, GvLHbPVneg)
 		}
 		pc := ly.Acts.PopCode.EncodeVal(pni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, Act, pc)
@@ -871,9 +871,9 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32, vals *LayerVa
 
 func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, di uint32, lpl *Pool) {
 	if ly.Learn.NeuroMod.Valence == Positive {
-		SetGlbV(ctx, di, GvVtaCeMpos, lpl.AvgMax.CaSpkD.Cycle.Max)
+		SetGlbV(ctx, di, GvCeMpos, lpl.AvgMax.CaSpkD.Cycle.Max)
 	} else {
-		SetGlbV(ctx, di, GvVtaCeMneg, lpl.AvgMax.CaSpkD.Cycle.Max)
+		SetGlbV(ctx, di, GvCeMneg, lpl.AvgMax.CaSpkD.Cycle.Max)
 	}
 }
 
@@ -882,7 +882,7 @@ func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, di uint32, lpl *Po
 }
 
 func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
-	PVLVDA(ctx, di)
+	VTADA(ctx, di, GlbV(ctx, di, GvACh), (GlbV(ctx, di, GvHasRew) > 0))
 }
 
 // note: needs to iterate over sub-pools in layer!

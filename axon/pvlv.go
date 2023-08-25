@@ -153,8 +153,8 @@ func PVLVNormFun(raw float32) float32 {
 // weighted and integrated to compute an overall PV primary value.
 type USParams struct {
 
-	// weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each US is also multiplied by its dynamic Drive factor as well
-	PosWts PVec `desc:"weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each US is also multiplied by its dynamic Drive factor as well"`
+	// weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each pos US is also multiplied by its dynamic Drive factor as well
+	PosWts PVec `desc:"weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each pos US is also multiplied by its dynamic Drive factor as well"`
 
 	// weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum.
 	NegWts PVec `desc:"weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum."`
@@ -163,13 +163,12 @@ type USParams struct {
 func (us *USParams) Defaults() {
 	us.PosWts.SetAll(1)
 	us.NegWts.SetAll(1)
-	us.NegThr = 1
 }
 
 /////////////////////////////////////////////////////////
 //  Effort
 
-// Effort has parameters for updating effort,
+// Effort has parameters for giving up based on effort,
 // which is the first negative US.
 type Effort struct {
 
@@ -252,6 +251,7 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 //  LHb & RMTg
 
 // LHb has values for computing LHb & RMTg which drives dips / pauses in DA firing.
+// LHb handles all US-related (PV = primary value) processing.
 // Positive net LHb activity drives dips / pauses in VTA DA activity,
 // e.g., when predicted pos > actual or actual neg > predicted.
 // Negative net LHb activity drives bursts in VTA DA activity,
@@ -262,11 +262,11 @@ type LHb struct {
 	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
 	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
 
-	// [def: 1] gain multiplier on overall VSPatchPos - PosPV component
-	PosGain float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
+	// [def: 4] gain multiplier on PosPV for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	PosGain float32 `def:"4" desc:"gain multiplier on PosPV for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
-	// [def: 1] gain multiplier on overall PVneg component
-	NegGain float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
+	// [def: 4] gain multiplier on NegPV for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	NegGain float32 `def:"4" desc:"gain multiplier on NegPV for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
 	// [def: 0.2] threshold on summed LHbDip over trials for triggering a reset of goal engaged state
 	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
@@ -279,8 +279,8 @@ type LHb struct {
 
 func (lh *LHb) Defaults() {
 	lh.NegThr = 1
-	lh.PosGain = 1
-	lh.NegGain = 1
+	lh.PosGain = 4
+	lh.NegGain = 4
 	lh.GiveUpThr = 0.2
 	lh.DipLowThr = 0.05
 }
@@ -302,14 +302,18 @@ func (lh *LHb) Update() {
 //     which disinhibits VTA activity.
 type VTA struct {
 
-	// threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present
-	PVThr float32 `desc:"threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present"`
+	// gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
+	CeMGain float32 `desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
 
-	pad, pad1, pad2 float32
+	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
+	LHbGain float32 `desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
+
+	pad, pad1 float32
 }
 
 func (vt *VTA) Defaults() {
-	vt.PVThr = 0.05
+	vt.CeMGain = 2
+	vt.LHbGain = 1
 }
 
 func (vt *VTA) Update() {
@@ -334,8 +338,8 @@ type PVLV struct {
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
 	Drive Drives `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
 
-	USs USParams `desc:"control how positive and negative USs are 
-// weighted and integrated to compute an overall PV primary value."`
+	// control how positive and negative USs are weighted and integrated to compute an overall PV primary value.
+	USs USParams `desc:"control how positive and negative USs are weighted and integrated to compute an overall PV primary value."`
 
 	// [view: inline] effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion
 	Effort Effort `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
@@ -343,11 +347,11 @@ type PVLV struct {
 	// [view: inline] urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.
 	Urgency Urgency `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
 
-	// parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb
-	VTA VTA `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
-
 	// [view: inline] lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing
 	LHb LHb `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+
+	// parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb
+	VTA VTA `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
 }
 
 func (pp *PVLV) Defaults() {
@@ -428,7 +432,7 @@ func (pp *PVLV) EffortUpdt(ctx *Context, di uint32, rnd erand.Rand, effort float
 	if GlbV(ctx, di, GvHasRewPrev) > 0 {
 		pp.Effort.ReStart(ctx, di, rnd)
 	} else {
-		EffortAddEffort(ctx, di, effort)
+		// EffortAddEffort(ctx, di, effort) // todo!
 	}
 }
 

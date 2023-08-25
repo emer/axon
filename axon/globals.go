@@ -13,11 +13,6 @@ var KiT_GlobalVars = kit.Enums.AddEnum(GlobalVarsN, kit.NotBitFlag, nil)
 func (ev GlobalVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
 func (ev *GlobalVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
-var KiT_GlobalVTAType = kit.Enums.AddEnum(GlobalVTATypeN, kit.NotBitFlag, nil)
-
-func (ev GlobalVTAType) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *GlobalVTAType) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
 //gosl: start globals
 
 // GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc
@@ -95,7 +90,7 @@ const (
 	GvHasPosUSPrev
 
 	/////////////////////////////////////////
-	// LHb lateral habenula component of the PVLV model
+	// LHb lateral habenula component of the PVLV model -- does all US processing
 
 	// computed LHb activity level that drives dipping / pausing of DA firing,
 	// when VSPatch pos prediction > actual PV reward drive
@@ -117,38 +112,35 @@ const (
 	// GvLHbGiveUp is true if a reset was triggered from LHbDipSum > Reset Thr
 	GvLHbGiveUp
 
-	// GvLHbPos is computed PosGain * PVpos
-	GvLHbPos
+	// GvLHbVSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
+	GvLHbVSPatchPos
 
-	// GvLHbNeg is computed NegGain * PVneg
-	GvLHbNeg
+	// GvLHbUSpos is total weighted positive valence primary value = sum of Weight * USpos * Drive
+	GvLHbUSpos
+
+	// GvLHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))
+	GvLHbPVpos
+
+	// GvLHbUSneg is total weighted negative valence primary value = sum of Weight * USneg
+	GvLHbUSneg
+
+	// GvLHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))
+	GvLHbPVneg
+
+	/////////////////////////////////////////
+	// Amygdala CS / LV variables
+
+	// GvCeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes
+	GvCeMpos
+
+	// GvCeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly
+	GvCeMneg
 
 	/////////////////////////////////////////
 	// VTA ventral tegmental area dopamine release
 
 	// GvVtaDA is overall dopamine value reflecting all of the different inputs
 	GvVtaDA
-
-	// GvVtaUSpos is total weighted positive valence primary value = sum of Weight * USpos * Drive
-	GvVtaUSpos
-
-	// GvVtaPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))
-	GvVtaPVpos
-
-	// GvVtaUSneg is total weighted negative valence primary value = sum of Weight * USneg
-	GvVtaUSneg
-
-	// GvVtaPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))
-	GvVtaPVneg
-
-	// GvVtaCeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes
-	GvVtaCeMpos
-
-	// GvVtaCeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly
-	GvVtaCeMneg
-
-	// GvVtaVSPatchPos is net shunting input from VSPatch (PosD1 -- PVi in original PVLV)
-	GvVtaVSPatchPos
 
 	/////////////////////////////////////////
 	// USneg is negative valence US

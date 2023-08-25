@@ -490,9 +490,9 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
 
-	ss.Stats.SetFloat32("LHbBurst", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVpos))
-	ss.Stats.SetFloat32("PVpos", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVneg))
+	ss.Stats.SetFloat32("LHbBurst", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvLHbPVpos))
+	ss.Stats.SetFloat32("PVpos", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvLHbPVpos))
+	ss.Stats.SetFloat32("PVneg", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvLHbPVneg))
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 

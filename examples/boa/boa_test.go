@@ -48,7 +48,7 @@ func ReportValDiffs(t *testing.T, va, vb map[string]float32, aLabel, bLabel stri
 		bv := vb[k]
 		dif := mat32.Abs(av - bv)
 
-		if strings.Contains(k, "GvACh") || strings.Contains(k, "GvVtaCeMpos") { // bad variability..
+		if strings.Contains(k, "GvACh") || strings.Contains(k, "GvCeMpos") { // bad variability..
 			continue
 		}
 

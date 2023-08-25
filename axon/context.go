@@ -447,7 +447,7 @@ func (ctx *Context) SlowInc() bool {
 
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
-	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvVtaVSPatchPos)
+	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvVtaDA)
 	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(0, ctx.PVLV.Drive.NNegUSs)
 	ctx.NetIdxs.GvDriveStride = uint32(ctx.PVLV.Drive.NActive) * ctx.NetIdxs.MaxData
 }
@@ -918,8 +918,6 @@ func LHbFmPVVS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
 	} else {
 		dip = neg * (1 - pvPos) // todo: vsPatchNeg needed
 	}
-	SetGlbV(ctx, di, GvLHbPos, pos)
-	SetGlbV(ctx, di, GvLHbNeg, neg)
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 }
@@ -935,7 +933,6 @@ func LHbShouldGiveUp(ctx *Context, di uint32) bool {
 	if cur > ctx.PVLV.LHb.GiveUpThr {
 		giveUp = true
 		SetGlbV(ctx, di, GvLHbGiveUp, 1)
-		SetGlbV(ctx, di, GvLHbGiveUp, 1)
 		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
 	}
 	return giveUp
@@ -944,18 +941,16 @@ func LHbShouldGiveUp(ctx *Context, di uint32) bool {
 /////////////////////////////////////////////////////////
 // 	VTA
 
-// VTAZeroVals sets all VTA values to zero
-func VTAZeroVals(ctx *Context, di uint32) {
-	for vv := GvVtaDA; vv <= GvVtaVSPatchPos; vv++ {
-		SetGlbV(ctx, di, vv, 0)
-	}
+// VTAReset resets all vars back to 0
+func VTAReset(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvVtaDA, 0)
 }
 
 // VTADA computes the final DA value from LHb values
 // ACh value from LDT is passed as a parameter.
 func VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	pvDA := GlbV(ctx, di, GvLHbDA)
-	csNet := GlbV(ctx, di, GvVtaCeMpos) - GlbV(ctx, di, GvVtaCeMneg)
+	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
 	csDA := ach * csNet
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)
@@ -987,7 +982,7 @@ func PVLVReset(ctx *Context, di uint32) {
 	EffortReset(ctx, di)
 	UrgencyReset(ctx, di)
 	LHbReset(ctx, di)
-	VTAZeroVals(ctx, di)
+	VTAReset(ctx, di)
 	PVLVInitUS(ctx, di)
 	DriveVarToZero(ctx, di, GvVSPatch)
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
@@ -1057,9 +1052,9 @@ func PVLVHasNegUS(ctx *Context, di uint32) bool {
 	return false
 }
 
-// PVLVNetPV returns VTA.Vals.PVpos - VTA.Vals.PVneg
+// PVLVNetPV returns PVpos - PVneg as an overall signed net external reward
 func PVLVNetPV(ctx *Context, di uint32) float32 {
-	return GlbV(ctx, di, GvVtaPVpos) - GlbV(ctx, di, GvVtaPVneg)
+	return GlbV(ctx, di, GvLHbPVpos) - GlbV(ctx, di, GvLHbPVneg)
 }
 
 // PVLVPosPVFmDriveEffort returns the net primary value ("reward") based on
@@ -1104,24 +1099,21 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 func PVLVDAImpl(ctx *Context, di uint32, ach float32, hasRew bool) float32 {
 	pvPos := PVLVPosPV(ctx, di)
 	pvNeg := PVLVNegPV(ctx, di)
-	SetGlbV(ctx, di, GvVtaUSpos, pvPos)
-	SetGlbV(ctx, di, GvVtaUSneg, pvNeg)
+	SetGlbV(ctx, di, GvLHbUSpos, pvPos)
+	SetGlbV(ctx, di, GvLHbUSneg, pvNeg)
 
 	pvPosNorm := PVLVNormFun(pvPos)
 	pvNegNorm := PVLVNormFun(pvNeg)
-	SetGlbV(ctx, di, GvVtaPVpos, pvPosNorm)
-	SetGlbV(ctx, di, GvVtaPVneg, pvNegNorm)
+	SetGlbV(ctx, di, GvLHbPVpos, pvPosNorm)
+	SetGlbV(ctx, di, GvLHbPVneg, pvNegNorm)
 
 	vsPatchPos := PVLVVSPatchMax(ctx, di)
-	SetGlbV(ctx, di, GvVtaVSPatchPos, vsPatchPos)
+	SetGlbV(ctx, di, GvLHbVSPatchPos, vsPatchPos)
 
-	giveUp := GlbV(ctx, di, GvLHbGiveUp)
-	if giveUp || hasRew {
+	if hasRew { // note: also true for giveup
 		LHbFmPVVS(ctx, di, pvPosNorm, pvNegNorm, vsPatchPos) // only when actual pos rew
 		VTADA(ctx, di, ach, true)                            // has rew
 	} else {
-		SetGlbV(ctx, di, GvLHbPos, 0)
-		SetGlbV(ctx, di, GvLHbNeg, 0)
 		SetGlbV(ctx, di, GvLHbDip, 0)
 		SetGlbV(ctx, di, GvLHbBurst, 0)
 		SetGlbV(ctx, di, GvLHbDA, 0)
@@ -1165,7 +1157,7 @@ func PVLVUrgencyUpdt(ctx *Context, di uint32, effort float32) {
 func PVLVDA(ctx *Context, di uint32) float32 {
 	da := PVLVDAImpl(ctx, di, GlbV(ctx, di, GvACh), (GlbV(ctx, di, GvHasRew) > 0))
 	SetGlbV(ctx, di, GvDA, da)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvVtaVSPatchPos))
+	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
 	if PVLVHasPosUS(ctx, di) {
 		NeuroModSetRew(ctx, di, PVLVNetPV(ctx, di), true)
 	}
