@@ -87,58 +87,6 @@ func (pv *PVec) Get(idx uint32) float32 {
 	return val
 }
 
-func (pv PVec) Sum() float32 {
-	return pv.V0 + pv.V1 + pv.V2 + pv.V3 + pv.V4 + pv.V5 + pv.V6 + pv.V7
-}
-
-func (pv PVec) Add(ov PVec) PVec {
-	pv.V0 += ov.V0
-	pv.V1 += ov.V1
-	pv.V2 += ov.V2
-	pv.V3 += ov.V3
-	pv.V4 += ov.V4
-	pv.V5 += ov.V5
-	pv.V6 += ov.V6
-	pv.V7 += ov.V7
-	return pv
-}
-
-func (pv PVec) Sub(ov PVec) PVec {
-	pv.V0 -= ov.V0
-	pv.V1 -= ov.V1
-	pv.V2 -= ov.V2
-	pv.V3 -= ov.V3
-	pv.V4 -= ov.V4
-	pv.V5 -= ov.V5
-	pv.V6 -= ov.V6
-	pv.V7 -= ov.V7
-	return pv
-}
-
-func (pv PVec) Mul(ov PVec) PVec {
-	pv.V0 *= ov.V0
-	pv.V1 *= ov.V1
-	pv.V2 *= ov.V2
-	pv.V3 *= ov.V3
-	pv.V4 *= ov.V4
-	pv.V5 *= ov.V5
-	pv.V6 *= ov.V6
-	pv.V7 *= ov.V7
-	return pv
-}
-
-func (pv PVec) Div(ov PVec) PVec {
-	pv.V0 /= ov.V0
-	pv.V1 /= ov.V1
-	pv.V2 /= ov.V2
-	pv.V3 /= ov.V3
-	pv.V4 /= ov.V4
-	pv.V5 /= ov.V5
-	pv.V6 /= ov.V6
-	pv.V7 /= ov.V7
-	return pv
-}
-
 // Drives manages the drive parameters for updating drive state,
 // and drive state.
 type Drives struct {
@@ -210,9 +158,6 @@ type USParams struct {
 
 	// weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum.
 	NegWts PVec `desc:"weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum."`
-
-	// threshold factor that multiplies integrated negPV value to establish a threshold for whether the integrated posPV value is good enough to drive overall net positive reward
-	NegThr float32 `desc:"threshold factor that multiplies integrated negPV value to establish a threshold for whether the integrated posPV value is good enough to drive overall net positive reward"`
 }
 
 func (us *USParams) Defaults() {
@@ -314,6 +259,9 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 // or "relief" burst when actual neg < predicted.
 type LHb struct {
 
+	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
+	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
+
 	// [def: 1] gain multiplier on overall VSPatchPos - PosPV component
 	PosGain float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
 
@@ -325,9 +273,12 @@ type LHb struct {
 
 	// [def: 0.05] low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip
 	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
+
+	pad, pad1, pad2 float32
 }
 
 func (lh *LHb) Defaults() {
+	lh.NegThr = 1
 	lh.PosGain = 1
 	lh.NegGain = 1
 	lh.GiveUpThr = 0.2
@@ -338,68 +289,6 @@ func (lh *LHb) Update() {
 }
 
 // see context.go for most LHb methods
-
-///////////////////////////////////////////////////////////////////////////////
-//  VTA
-
-// VTAVals has values for all the inputs to the VTA.
-// Used as gain factors and computed values.
-type VTAVals struct {
-
-	// overall dopamine value reflecting all of the different inputs
-	DA float32 `desc:"overall dopamine value reflecting all of the different inputs"`
-
-	// total positive valence primary value = sum of USpos * Drive without effort discounting
-	USpos float32 `desc:"total positive valence primary value = sum of USpos * Drive without effort discounting"`
-
-	// total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received
-	PVpos float32 `desc:"total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
-
-	// total negative valence primary value = sum of USneg inputs
-	PVneg float32 `desc:"total negative valence primary value = sum of USneg inputs"`
-
-	// positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes.
-	CeMpos float32 `desc:"positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
-
-	// negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly.
-	CeMneg float32 `desc:"negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly."`
-
-	// dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips
-	LHbDip float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
-
-	// burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts
-	LHbBurst float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
-
-	// net shunting input from VSPatch (PosD1 -- PVi in original PVLV)
-	VSPatchPos float32 `desc:"net shunting input from VSPatch (PosD1 -- PVi in original PVLV)"`
-
-	pad, pad1, pad2 float32
-}
-
-func (vt *VTAVals) Set(usPos, pvPos, pvNeg, lhbDip, lhbBurst, vsPatchPos float32) {
-	vt.USpos = usPos
-	vt.PVpos = pvPos
-	vt.PVneg = pvNeg
-	vt.LHbDip = lhbDip
-	vt.LHbBurst = lhbBurst
-	vt.VSPatchPos = vsPatchPos
-}
-
-func (vt *VTAVals) SetAll(val float32) {
-	vt.DA = val
-	vt.USpos = val
-	vt.PVpos = val
-	vt.PVneg = val
-	vt.CeMpos = val
-	vt.CeMneg = val
-	vt.LHbDip = val
-	vt.LHbBurst = val
-	vt.VSPatchPos = val
-}
-
-func (vt *VTAVals) Zero() {
-	vt.SetAll(0)
-}
 
 // VTA has parameters and values for computing VTA DA dopamine,
 // as a function of:
@@ -417,14 +306,10 @@ type VTA struct {
 	PVThr float32 `desc:"threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present"`
 
 	pad, pad1, pad2 float32
-
-	// [view: inline] gain multipliers on inputs from each input
-	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
 }
 
 func (vt *VTA) Defaults() {
 	vt.PVThr = 0.05
-	vt.Gain.SetAll(1)
 }
 
 func (vt *VTA) Update() {

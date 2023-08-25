@@ -1434,20 +1434,12 @@ func TestGlobalIdxs(t *testing.T) {
 	net := newTestNet(ctx, int(nData))
 	val := float32(0)
 
-	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: GvVTAOff: %d  Stride: %d  USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.Drive.NActive, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvVTAOff, ctx.NetIdxs.GvVTAStride, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
+	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.Drive.NActive, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
 
-	for vv := GvRew; vv < GvVtaDA; vv++ {
+	for vv := GvRew; vv < GvUSneg; vv++ {
 		for di := uint32(0); di < nData; di++ {
 			SetGlbV(ctx, di, vv, val)
 			val += 1
-		}
-	}
-	for vv := GvVtaDA; vv < GvUSneg; vv++ {
-		for vt := GvVtaRaw; vt < GlobalVTATypeN; vt++ {
-			for di := uint32(0); di < nData; di++ {
-				SetGlbVTA(ctx, di, vt, vv, val)
-				val += 1
-			}
 		}
 	}
 	for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {

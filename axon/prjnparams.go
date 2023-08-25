@@ -538,7 +538,9 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPo
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.
-	dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * NrnV(ctx, si, di, CaSpkD) * ract
+	// sact := NrnV(ctx, si, di, CaSpkD)
+	sact := NrnV(ctx, si, di, SpkPrv) // t-1
+	dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * sact * ract
 	SetSynCaV(ctx, syni, di, DiDWt, dwt)
 }
 

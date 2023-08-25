@@ -484,7 +484,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRewPred))
 
 	case VTALayer:
-		geRaw := ly.RWDa.GeFmDA(GlbVTA(ctx, di, GvVtaVals, GvVtaDA))
+		geRaw := ly.RWDa.GeFmDA(GlbV(ctx, di, GvVtaDA))
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
 	case BLALayer:
@@ -537,10 +537,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			// undiscounted by effort..
-			pv = GlbVTA(ctx, di, GvVtaPrev, GvVtaUSpos) // could be PVpos
+			pv = GlbV(ctx, di, GvVtaPVpos)
 		} else {
-			pv = GlbVTA(ctx, di, GvVtaPrev, GvVtaPVneg)
+			pv = GlbV(ctx, di, GvVtaPVneg)
 		}
 		pc := ly.Acts.PopCode.EncodeGe(pni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, GeRaw, pc)
@@ -738,7 +737,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvDA)) // I set this in CyclePost
 
 	case VTALayer:
-		SetNrnV(ctx, ni, di, Act, GlbVTA(ctx, di, GvVtaVals, GvVtaDA)) // I set this in CyclePost
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvVtaDA)) // I set this in CyclePost
 	case LHbLayer:
 		if pni == 0 {
 			SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvLHbDip))
@@ -773,9 +772,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = GlbVTA(ctx, di, GvVtaVals, GvVtaPVpos)
+			pv = GlbV(ctx, di, GvVtaPVpos)
 		} else {
-			pv = GlbVTA(ctx, di, GvVtaVals, GvVtaPVneg)
+			pv = GlbV(ctx, di, GvVtaPVneg)
 		}
 		pc := ly.Acts.PopCode.EncodeVal(pni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, Act, pc)
@@ -872,9 +871,9 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32, vals *LayerVa
 
 func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, di uint32, lpl *Pool) {
 	if ly.Learn.NeuroMod.Valence == Positive {
-		SetGlbVTA(ctx, di, GvVtaRaw, GvVtaCeMpos, lpl.AvgMax.CaSpkD.Cycle.Max)
+		SetGlbV(ctx, di, GvVtaCeMpos, lpl.AvgMax.CaSpkD.Cycle.Max)
 	} else {
-		SetGlbVTA(ctx, di, GvVtaRaw, GvVtaCeMneg, lpl.AvgMax.CaSpkD.Cycle.Max)
+		SetGlbV(ctx, di, GvVtaCeMneg, lpl.AvgMax.CaSpkD.Cycle.Max)
 	}
 }
 

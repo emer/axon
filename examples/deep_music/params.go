@@ -75,7 +75,7 @@ var ParamSets = netparams.Sets{
 		// Projections below
 		{Sel: "Prjn", Desc: "std",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.002",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
+				"Prjn.Learn.LRate.Base":    "0.005",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
 				"Prjn.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
 				"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 				"Prjn.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok

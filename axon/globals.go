@@ -7,7 +7,6 @@ package axon
 import "github.com/goki/ki/kit"
 
 //go:generate stringer -type=GlobalVars
-//go:generate stringer -type=GlobalVTAType
 
 var KiT_GlobalVars = kit.Enums.AddEnum(GlobalVarsN, kit.NotBitFlag, nil)
 
@@ -98,11 +97,16 @@ const (
 	/////////////////////////////////////////
 	// LHb lateral habenula component of the PVLV model
 
-	// computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive
+	// computed LHb activity level that drives dipping / pausing of DA firing,
+	// when VSPatch pos prediction > actual PV reward drive
+	// or PVNeg > PVPos
 	GvLHbDip
 
-	// GvLHbBurst is computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction
+	// GvLHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive > VSPatch pos prediction
 	GvLHbBurst
+
+	// GvLHbDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
+	GvLHbDA
 
 	// GvLHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset
 	GvLHbDipSumCur
@@ -113,7 +117,7 @@ const (
 	// GvLHbGiveUp is true if a reset was triggered from LHbDipSum > Reset Thr
 	GvLHbGiveUp
 
-	// GvLHbPos is computed PosGain * (VSPatchPos - PVpos)
+	// GvLHbPos is computed PosGain * PVpos
 	GvLHbPos
 
 	// GvLHbNeg is computed NegGain * PVneg
@@ -121,19 +125,20 @@ const (
 
 	/////////////////////////////////////////
 	// VTA ventral tegmental area dopamine release
-	// we store raw, computed vals, and prev vals, so 3x of each of these values
-	// [var][type][ndata]
 
 	// GvVtaDA is overall dopamine value reflecting all of the different inputs
 	GvVtaDA
 
-	// GvVtaUSpos is total positive valence primary value = sum of USpos * Drive without effort discounting
+	// GvVtaUSpos is total weighted positive valence primary value = sum of Weight * USpos * Drive
 	GvVtaUSpos
 
-	// GvVtaPVpos is total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received
+	// GvVtaPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))
 	GvVtaPVpos
 
-	// GvVtaPVneg is total negative valence primary value = sum of USneg inputs
+	// GvVtaUSneg is total weighted negative valence primary value = sum of Weight * USneg
+	GvVtaUSneg
+
+	// GvVtaPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))
 	GvVtaPVneg
 
 	// GvVtaCeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes
@@ -141,12 +146,6 @@ const (
 
 	// GvVtaCeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly
 	GvVtaCeMneg
-
-	// GvVtaLHbDip is dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips
-	GvVtaLHbDip
-
-	// GvVtaLHbBurst is burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts
-	GvVtaLHbBurst
 
 	// GvVtaVSPatchPos is net shunting input from VSPatch (PosD1 -- PVi in original PVLV)
 	GvVtaVSPatchPos
@@ -185,22 +184,6 @@ const (
 	GvVSPatch
 
 	GlobalVarsN
-)
-
-// GlobalVTAType are types of VTA variables
-type GlobalVTAType int32
-
-const (
-	// GvVtaRaw are raw VTA values -- inputs to the computation
-	GvVtaRaw GlobalVTAType = iota
-
-	// GvVtaVals are computed current VTA values
-	GvVtaVals
-
-	// GvVtaPrev are previous computed values -- to avoid a data race
-	GvVtaPrev
-
-	GlobalVTATypeN
 )
 
 //gosl: end globals
