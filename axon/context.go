@@ -838,24 +838,21 @@ func DrivesEffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 func EffortReset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvEffortRaw, 0)
 	SetGlbV(ctx, di, GvEffortCurMax, ctx.PVLV.Effort.Max)
-	SetGlbV(ctx, di, GvEffortDisc, 1)
+	SetGlbUSneg(ctx, di, 0, 0) // effort is neg 0
 }
 
-// todo: these don't happen like this anymore:
-/*
-// EffortDiscFmEffort computes Disc from Raw effort
-func EffortDiscFmEffort(ctx *Context, di uint32) float32 {
-	disc := ctx.PVLV.Effort.DiscFun(GlbV(ctx, di, GvEffortRaw))
-	SetGlbV(ctx, di, GvEffortDisc, disc)
-	return disc
+// EffortNorm returns the current effort value as a normalized number.
+// This normalization is performed internally on _all_ negative USs
+// but this can be useful for external calculation purposes
+func EffortNorm(ctx *Context, di uint32) float32 {
+	return PVLVNormFun(ctx.PVLV.USs.NegWts.Get(0) * GlbV(ctx, di, GvEffortRaw))
 }
 
 // EffortAddEffort adds an increment of effort and updates the Disc discount factor
 func EffortAddEffort(ctx *Context, di uint32, inc float32) {
 	AddGlbV(ctx, di, GvEffortRaw, inc)
-	EffortDiscFmEffort(ctx, di)
+	SetGlbUSneg(ctx, di, 0, GlbV(ctx, di, GvEffortRaw)) // effort is neg 0
 }
-*/
 
 // EffortGiveUp returns true if maximum effort has been exceeded
 func EffortGiveUp(ctx *Context, di uint32) bool {
@@ -893,103 +890,7 @@ func UrgencyAddEffort(ctx *Context, di uint32, inc float32) {
 }
 
 /////////////////////////////////////////////////////////
-// 	LHb
-
-// LHbReset resets all LHb vars back to 0
-func LHbReset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvLHbDip, 0)
-	SetGlbV(ctx, di, GvLHbBurst, 0)
-	SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	SetGlbV(ctx, di, GvLHbDipSum, 0)
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
-}
-
-// LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
-// and VSPatch inputs.
-func LHbFmPVVS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
-	thr := ctx.PVLV.LHb.NegThr * pvNeg
-
-	pos := ctx.PVLV.LHb.PosGain * pvPos
-	neg := ctx.PVLV.LHb.NegGain * pvNeg
-	burst := float32(0)
-	dip := float32(0)
-	if pvPos > thr { // worth it, got reward
-		burst = pos*(1-pvNeg) - vsPatchPos
-	} else {
-		dip = neg * (1 - pvPos) // todo: vsPatchNeg needed
-	}
-	SetGlbV(ctx, di, GvLHbDip, dip)
-	SetGlbV(ctx, di, GvLHbBurst, burst)
-}
-
-// LHbShouldGiveUp increments DipSum and checks if should give up if above threshold
-func LHbShouldGiveUp(ctx *Context, di uint32) bool {
-	dip := GlbV(ctx, di, GvLHbDip)
-	AddGlbV(ctx, di, GvLHbDipSumCur, dip)
-	cur := GlbV(ctx, di, GvLHbDipSumCur)
-	SetGlbV(ctx, di, GvLHbDipSum, cur)
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
-	giveUp := false
-	if cur > ctx.PVLV.LHb.GiveUpThr {
-		giveUp = true
-		SetGlbV(ctx, di, GvLHbGiveUp, 1)
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	}
-	return giveUp
-}
-
-/////////////////////////////////////////////////////////
-// 	VTA
-
-// VTAReset resets all vars back to 0
-func VTAReset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvVtaDA, 0)
-}
-
-// VTADA computes the final DA value from LHb values
-// ACh value from LDT is passed as a parameter.
-func VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
-	pvDA := GlbV(ctx, di, GvLHbDA)
-	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
-	csDA := ach * csNet
-	// note that ach is only on cs -- should be 1 for PV events anyway..
-	netDA := float32(0)
-	if hasRew {
-		netDA = pvDA
-	} else {
-		netDA = csDA
-	}
-	SetGlbV(ctx, di, GvVtaDA, netDA)
-}
-
-/////////////////////////////////////////////////////////
-// 	PVLV
-
-// PVLVInitUS initializes all the USs to zero
-func PVLVInitUS(ctx *Context, di uint32) {
-	DriveVarToZero(ctx, di, GvUSpos)
-	USnegToZero(ctx, di)
-}
-
-// PVLVInitDrives initializes all the Drives to zero
-func PVLVInitDrives(ctx *Context, di uint32) {
-	DrivesToZero(ctx, di)
-}
-
-// PVLVReset resets all PVLV state
-func PVLVReset(ctx *Context, di uint32) {
-	DrivesToZero(ctx, di)
-	EffortReset(ctx, di)
-	UrgencyReset(ctx, di)
-	LHbReset(ctx, di)
-	VTAReset(ctx, di)
-	PVLVInitUS(ctx, di)
-	DriveVarToZero(ctx, di, GvVSPatch)
-	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
-	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
-	SetGlbV(ctx, di, GvHasRewPrev, 0)
-	// pp.HasPosUSPrev.SetBool(false) // key to not reset!!
-}
+// 	USs
 
 // PVLVPosPV returns the weighted positive reward
 // for current positive US state, where each US is multiplied by
@@ -1057,14 +958,149 @@ func PVLVNetPV(ctx *Context, di uint32) float32 {
 	return GlbV(ctx, di, GvLHbPVpos) - GlbV(ctx, di, GvLHbPVneg)
 }
 
+/////////////////////////////////////////////////////////
+// 	LHb
+
+// LHbReset resets all LHb vars back to 0
+func LHbReset(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvLHbDip, 0)
+	SetGlbV(ctx, di, GvLHbBurst, 0)
+	SetGlbV(ctx, di, GvLHbPVDA, 0)
+	SetGlbV(ctx, di, GvLHbDipSumCur, 0)
+	SetGlbV(ctx, di, GvLHbDipSum, 0)
+	SetGlbV(ctx, di, GvLHbGiveUp, 0)
+}
+
+// LHbFmPVVS computes the overall LHbDip and LHbBurst, and LHbPVDA as their diff,
+// from PV (primary value) and VSPatch inputs.
+func LHbFmPVVS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
+	thr := ctx.PVLV.LHb.NegThr * pvNeg
+
+	pos := ctx.PVLV.LHb.PosGain * pvPos
+	neg := ctx.PVLV.LHb.NegGain * pvNeg
+	burst := float32(0)
+	dip := float32(0)
+	if pvPos > thr { // worth it, got reward
+		burst = pos*(1-pvNeg) - vsPatchPos
+	} else {
+		dip = neg * (1 - pvPos) // todo: vsPatchNeg needed
+	}
+	SetGlbV(ctx, di, GvLHbDip, dip)
+	SetGlbV(ctx, di, GvLHbBurst, burst)
+	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
+}
+
+// LHbPVDA computes the PV (primary value) based dopamine
+// based on current state information, at the start of a trial.
+// PV DA is computed by the VS (ventral striatum) and the LHb / RMTg,
+// and the resulting values are stored in LHb global variables.
+// Called after updating USs, Effort, Drives at start of trial step,
+// in PVLVStepStart.  Returns the resulting LHbPVDA value.
+func LHbPVDA(ctx *Context, di uint32) float32 {
+	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
+	pvPos := PVLVPosPV(ctx, di)
+	pvNeg := PVLVNegPV(ctx, di)
+	SetGlbV(ctx, di, GvLHbUSpos, pvPos)
+	SetGlbV(ctx, di, GvLHbUSneg, pvNeg)
+
+	pvPosNorm := PVLVNormFun(pvPos)
+	pvNegNorm := PVLVNormFun(pvNeg)
+	SetGlbV(ctx, di, GvLHbPVpos, pvPosNorm)
+	SetGlbV(ctx, di, GvLHbPVneg, pvNegNorm)
+
+	vsPatchPos := PVLVVSPatchMax(ctx, di)
+	SetGlbV(ctx, di, GvLHbVSPatchPos, vsPatchPos)
+	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
+
+	if hasRew { // note: also true for giveup
+		LHbFmPVVS(ctx, di, pvPosNorm, pvNegNorm, vsPatchPos) // only when actual pos rew
+		SetGlbV(ctx, di, GvRew, PVLVNetPV(ctx, di))          // primary value diff
+	} else {
+		SetGlbV(ctx, di, GvLHbDip, 0)
+		SetGlbV(ctx, di, GvLHbBurst, 0)
+		SetGlbV(ctx, di, GvLHbPVDA, 0)
+		SetGlbV(ctx, di, GvRew, 0)
+	}
+	return GlbV(ctx, di, GvLHbPVDA)
+}
+
+// LHbShouldGiveUp increments DipSum and checks if should give up if above threshold
+func LHbShouldGiveUp(ctx *Context, di uint32) bool {
+	dip := GlbV(ctx, di, GvLHbDip)
+	AddGlbV(ctx, di, GvLHbDipSumCur, dip)
+	cur := GlbV(ctx, di, GvLHbDipSumCur)
+	SetGlbV(ctx, di, GvLHbDipSum, cur)
+	SetGlbV(ctx, di, GvLHbGiveUp, 0)
+	giveUp := false
+	if cur > ctx.PVLV.LHb.GiveUpThr {
+		giveUp = true
+		SetGlbV(ctx, di, GvLHbGiveUp, 1)
+		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
+	}
+	return giveUp
+}
+
+/////////////////////////////////////////////////////////
+// 	VTA
+
+// VTAReset resets all vars back to 0
+func VTAReset(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvVtaDA, 0)
+}
+
+// VTADA computes the final DA value from LHb values
+// ACh value from LDT is passed as a parameter.
+func VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
+	pvDA := GlbV(ctx, di, GvLHbPVDA)
+	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
+	csDA := ach * csNet
+	// note that ach is only on cs -- should be 1 for PV events anyway..
+	netDA := float32(0)
+	if hasRew {
+		netDA = pvDA
+	} else {
+		netDA = csDA
+	}
+	SetGlbV(ctx, di, GvVtaDA, netDA)
+}
+
+/////////////////////////////////////////////////////////
+// 	PVLV
+
+// PVLVInitUS initializes all the USs to zero
+func PVLVInitUS(ctx *Context, di uint32) {
+	DriveVarToZero(ctx, di, GvUSpos)
+	USnegToZero(ctx, di)
+}
+
+// PVLVInitDrives initializes all the Drives to zero
+func PVLVInitDrives(ctx *Context, di uint32) {
+	DrivesToZero(ctx, di)
+}
+
+// PVLVReset resets all PVLV state
+func PVLVReset(ctx *Context, di uint32) {
+	DrivesToZero(ctx, di)
+	EffortReset(ctx, di)
+	UrgencyReset(ctx, di)
+	LHbReset(ctx, di)
+	VTAReset(ctx, di)
+	PVLVInitUS(ctx, di)
+	DriveVarToZero(ctx, di, GvVSPatch)
+	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
+	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
+	SetGlbV(ctx, di, GvHasRewPrev, 0)
+	// pp.HasPosUSPrev.SetBool(false) // key to not reset!!
+}
+
 // PVLVPosPVFmDriveEffort returns the net primary value ("reward") based on
 // given US value and drive for that value (typically in 0-1 range),
 // and total effort, from which the effort discount factor is computed an applied:
 // usValue * drive * Effort.DiscFun(effort).
 // This is not called directly in the PVLV code -- can be used to compute
-// what the PVLV code itself will compute -- see PVLVDAImpl.
+// what the PVLV code itself will compute -- see LHbPVDA
 func PVLVPosPVFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
-	return usValue * drive // * ctx.PVLV.Effort.DiscFun(effort) // todo: fixme
+	return usValue * drive * (1 - PVLVNormFun(ctx.PVLV.USs.NegWts.Get(0)*effort))
 }
 
 // PVLVSetDrive sets given Drive to given value
@@ -1085,41 +1121,7 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 			us = GlbUSneg(ctx, di, usIdx)
 		}
 	}
-	if us > 0.01 { // threshold for presentation to net
-		us = 1 // https://github.com/emer/axon/issues/194
-	}
 	return us
-}
-
-// PVLVDAImpl computes the updated dopamine from all the current state,
-// including ACh from LDT via Context.
-// Call after setting USs, Effort, Drives, VSPatch vals etc.
-// Resulting DA is in VTA.Vals.DA, and is returned
-// (to be set to Context.NeuroMod.DA)
-func PVLVDAImpl(ctx *Context, di uint32, ach float32, hasRew bool) float32 {
-	pvPos := PVLVPosPV(ctx, di)
-	pvNeg := PVLVNegPV(ctx, di)
-	SetGlbV(ctx, di, GvLHbUSpos, pvPos)
-	SetGlbV(ctx, di, GvLHbUSneg, pvNeg)
-
-	pvPosNorm := PVLVNormFun(pvPos)
-	pvNegNorm := PVLVNormFun(pvNeg)
-	SetGlbV(ctx, di, GvLHbPVpos, pvPosNorm)
-	SetGlbV(ctx, di, GvLHbPVneg, pvNegNorm)
-
-	vsPatchPos := PVLVVSPatchMax(ctx, di)
-	SetGlbV(ctx, di, GvLHbVSPatchPos, vsPatchPos)
-
-	if hasRew { // note: also true for giveup
-		LHbFmPVVS(ctx, di, pvPosNorm, pvNegNorm, vsPatchPos) // only when actual pos rew
-		VTADA(ctx, di, ach, true)                            // has rew
-	} else {
-		SetGlbV(ctx, di, GvLHbDip, 0)
-		SetGlbV(ctx, di, GvLHbBurst, 0)
-		SetGlbV(ctx, di, GvLHbDA, 0)
-		VTADA(ctx, di, ach, false)
-	}
-	return GlbV(ctx, di, GvVtaDA)
 }
 
 // PVLVDriveUpdt updates the drives based on the current USs,
@@ -1148,20 +1150,6 @@ func PVLVUrgencyUpdt(ctx *Context, di uint32, effort float32) {
 	} else {
 		UrgencyAddEffort(ctx, di, effort)
 	}
-}
-
-// PVLVDA computes the updated dopamine for PVLV algorithm from all the current state,
-// including pptg and vsPatchPos (from RewPred) via Context.
-// Call after setting USs, VSPatchVals, Effort, Drives, etc.
-// Resulting DA is in VTA.Vals.DA is returned.
-func PVLVDA(ctx *Context, di uint32) float32 {
-	da := PVLVDAImpl(ctx, di, GlbV(ctx, di, GvACh), (GlbV(ctx, di, GvHasRew) > 0))
-	SetGlbV(ctx, di, GvDA, da)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
-	if PVLVHasPosUS(ctx, di) {
-		NeuroModSetRew(ctx, di, PVLVNetPV(ctx, di), true)
-	}
-	return da
 }
 
 //gosl: end context
@@ -1226,9 +1214,10 @@ func (ctx *Context) PVLVSetDrives(di uint32, curiosity, magnitude float32, drive
 // PVLVStepStart must be called at start of a new iteration (trial)
 // of behavior when using the PVLV framework, after applying USs,
 // Drives, and updating Effort (e.g., as last step in ApplyPVLV method).
-// Calls PVLVGiveUp (and potentially other things).
+// Calls PVLVGiveUp and LHbPVDA, which computes the primary value DA.
 func (ctx *Context) PVLVStepStart(di uint32, rnd erand.Rand) {
 	ctx.PVLVShouldGiveUp(di, rnd)
+	LHbPVDA(ctx, di)
 }
 
 // PVLVShouldGiveUp tests whether it is time to give up on the current goal,

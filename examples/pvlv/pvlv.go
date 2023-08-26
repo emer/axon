@@ -151,12 +151,12 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigPVLV() {
 	pv := &ss.Context.PVLV
 	pv.Drive.NActive = uint32(cond.NUSs + 1)
-	pv.Drive.NNegUSs = 1
-	pv.Urgency.U50 = 50      // no pressure during regular trials
-	pv.Effort.Gain = 0.01    // don't discount as much
-	pv.Effort.Max = 8        // give up if nothing happening.
-	pv.Effort.MaxNovel = 2   // give up if nothing happening.
-	pv.Effort.MaxPostDip = 2 // give up if nothing happening.
+	pv.Drive.NNegUSs = 2       // 1=effort, 2=negUS
+	pv.Urgency.U50 = 50        // no pressure during regular trials
+	pv.USs.NegWts.Set(0, 0.01) // effort weight: don't discount as much
+	pv.Effort.Max = 8          // give up if nothing happening.
+	pv.Effort.MaxNovel = 2     // give up if nothing happening.
+	pv.Effort.MaxPostDip = 2   // give up if nothing happening.
 	if ss.Config.Env.PVLV != nil {
 		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
 	}
@@ -190,7 +190,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
@@ -229,8 +229,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBack(time, timeP, ofcVal, ofcValCT, ofcValPTp, full)
 	// note: following are needed by violate true predictive learning of time
 
-	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
+	// todo: usNeg, not effort
+	// net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	// net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
 
 	////////////////////////////////////////////////
 	// position
@@ -377,7 +378,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 		if trl.Valence == cond.Pos {
 			ctx.PVLVSetUS(0, axon.Positive, trl.US, trl.USMag)
 		} else {
-			ctx.PVLVSetUS(0, axon.Negative, trl.US, trl.USMag)
+			ctx.PVLVSetUS(0, axon.Negative, 1+trl.US, trl.USMag) // 0 = effort
 		}
 	}
 	ctx.PVLVSetDrives(0, 1, 1, trl.US)
@@ -485,14 +486,14 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
 	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
 
-	ss.Stats.SetFloat32("LHbDip", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaLHbDip))
+	ss.Stats.SetFloat32("LHbDip", axon.GlbV(ctx, diu, axon.GvLHbDip))
 
 	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
 
-	ss.Stats.SetFloat32("LHbBurst", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvLHbPVpos))
-	ss.Stats.SetFloat32("PVpos", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvLHbPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvLHbPVneg))
+	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbPVpos))
+	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvLHbPVpos))
+	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvLHbPVneg))
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 

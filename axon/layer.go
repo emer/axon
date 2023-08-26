@@ -96,8 +96,6 @@ func (ly *Layer) Defaults() {
 		ly.Params.VSPatchDefaults()
 	case DrivesLayer:
 		ly.Params.DrivesDefaults()
-	case EffortLayer:
-		ly.Params.EffortDefaults()
 	case UrgencyLayer:
 		ly.Params.UrgencyDefaults()
 	case USLayer:

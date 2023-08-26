@@ -385,7 +385,7 @@ func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
 func (ef *Effort) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
 	SetGlbV(ctx, di, GvEffortRaw, 0)
 	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.Max))
-	SetGlbV(ctx, di, GvEffortDisc, 1)
+	SetGlbUSneg(ctx, di, 0, 0) // effort is neg 0
 }
 
 // VSGated updates JustGated and HasGated as function of VS

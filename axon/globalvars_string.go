@@ -24,41 +24,40 @@ func _() {
 	_ = x[GvAChRaw-8]
 	_ = x[GvNotMaint-9]
 	_ = x[GvEffortRaw-10]
-	_ = x[GvEffortDisc-11]
-	_ = x[GvEffortCurMax-12]
-	_ = x[GvUrgency-13]
-	_ = x[GvUrgencyRaw-14]
-	_ = x[GvVSMatrixJustGated-15]
-	_ = x[GvVSMatrixHasGated-16]
-	_ = x[GvHasRewPrev-17]
-	_ = x[GvHasPosUSPrev-18]
-	_ = x[GvLHbDip-19]
-	_ = x[GvLHbBurst-20]
-	_ = x[GvLHbDA-21]
-	_ = x[GvLHbDipSumCur-22]
-	_ = x[GvLHbDipSum-23]
-	_ = x[GvLHbGiveUp-24]
-	_ = x[GvLHbVSPatchPos-25]
-	_ = x[GvLHbUSpos-26]
-	_ = x[GvLHbPVpos-27]
-	_ = x[GvLHbUSneg-28]
-	_ = x[GvLHbPVneg-29]
-	_ = x[GvCeMpos-30]
-	_ = x[GvCeMneg-31]
-	_ = x[GvVtaDA-32]
-	_ = x[GvUSneg-33]
-	_ = x[GvDrives-34]
-	_ = x[GvBaseDrives-35]
-	_ = x[GvDrivesTau-36]
-	_ = x[GvDrivesUSDec-37]
-	_ = x[GvUSpos-38]
-	_ = x[GvVSPatch-39]
-	_ = x[GlobalVarsN-40]
+	_ = x[GvEffortCurMax-11]
+	_ = x[GvUrgency-12]
+	_ = x[GvUrgencyRaw-13]
+	_ = x[GvVSMatrixJustGated-14]
+	_ = x[GvVSMatrixHasGated-15]
+	_ = x[GvHasRewPrev-16]
+	_ = x[GvHasPosUSPrev-17]
+	_ = x[GvLHbDip-18]
+	_ = x[GvLHbBurst-19]
+	_ = x[GvLHbPVDA-20]
+	_ = x[GvLHbDipSumCur-21]
+	_ = x[GvLHbDipSum-22]
+	_ = x[GvLHbGiveUp-23]
+	_ = x[GvLHbVSPatchPos-24]
+	_ = x[GvLHbUSpos-25]
+	_ = x[GvLHbPVpos-26]
+	_ = x[GvLHbUSneg-27]
+	_ = x[GvLHbPVneg-28]
+	_ = x[GvCeMpos-29]
+	_ = x[GvCeMneg-30]
+	_ = x[GvVtaDA-31]
+	_ = x[GvUSneg-32]
+	_ = x[GvDrives-33]
+	_ = x[GvBaseDrives-34]
+	_ = x[GvDrivesTau-35]
+	_ = x[GvDrivesUSDec-36]
+	_ = x[GvUSpos-37]
+	_ = x[GvVSPatch-38]
+	_ = x[GlobalVarsN-39]
 }
 
-const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortDiscGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvVSMatrixHasGatedGvHasRewPrevGvHasPosUSPrevGvLHbDipGvLHbBurstGvLHbDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbVSPatchPosGvLHbUSposGvLHbPVposGvLHbUSnegGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvDrivesGvBaseDrivesGvDrivesTauGvDrivesUSDecGvUSposGvVSPatchGlobalVarsN"
+const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvVSMatrixHasGatedGvHasRewPrevGvHasPosUSPrevGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbVSPatchPosGvLHbUSposGvLHbPVposGvLHbUSnegGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvDrivesGvBaseDrivesGvDrivesTauGvDrivesUSDecGvUSposGvVSPatchGlobalVarsN"
 
-var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 36, 41, 45, 50, 58, 68, 79, 91, 105, 114, 126, 145, 163, 175, 189, 197, 207, 214, 228, 239, 250, 265, 275, 285, 295, 305, 313, 321, 328, 335, 343, 355, 366, 379, 386, 395, 406}
+var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 36, 41, 45, 50, 58, 68, 79, 93, 102, 114, 133, 151, 163, 177, 185, 195, 204, 218, 229, 240, 255, 265, 275, 285, 295, 303, 311, 318, 325, 333, 345, 356, 369, 376, 385, 396}
 
 func (i GlobalVars) String() string {
 	if i < 0 || i >= GlobalVars(len(_GlobalVars_index)-1) {
@@ -88,37 +87,36 @@ var _GlobalVars_descMap = map[GlobalVars]string{
 	7:  `GvSer is serotonin -- not yet in use`,
 	8:  `GvAChRaw is raw ACh value used in updating global ACh value by LDTLayer`,
 	9:  `GvNotMaint is activity of the PTNotMaintLayer -- drives top-down inhibition of LDT layer / ACh activity.`,
-	10: `GvEffortRaw is raw effort -- increments linearly upward for each additional effort step`,
-	11: `GvEffortDisc is effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier`,
-	12: `GvEffortCurMax is current maximum raw effort level -- above this point, any current goal will be terminated during the GiveUp function, which also looks for accumulated disappointment. See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered`,
-	13: `GvUrgency is the overall urgency activity level (normalized 0-1), computed from logistic function of GvUrgencyRaw`,
-	14: `GvUrgencyRaw is raw effort for urgency -- increments linearly upward from effort increments per step`,
-	15: `GvVSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US`,
-	16: `GvVSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received`,
-	17: `HasRewPrev is state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial`,
-	18: `HasPosUSPrev is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial`,
-	19: `computed LHb activity level that drives dipping / pausing of DA firing, when VSPatch pos prediction &gt; actual PV reward drive or PVNeg &gt; PVPos`,
-	20: `GvLHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive &gt; VSPatch pos prediction`,
-	21: `GvLHbDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions`,
-	22: `GvLHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset`,
-	23: `GvLHbDipSum is copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials`,
-	24: `GvLHbGiveUp is true if a reset was triggered from LHbDipSum &gt; Reset Thr`,
-	25: `GvLHbVSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)`,
-	26: `GvLHbUSpos is total weighted positive valence primary value = sum of Weight * USpos * Drive`,
-	27: `GvLHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))`,
-	28: `GvLHbUSneg is total weighted negative valence primary value = sum of Weight * USneg`,
-	29: `GvLHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))`,
-	30: `GvCeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes`,
-	31: `GvCeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified. CeM sets Raw directly`,
-	32: `GvVtaDA is overall dopamine value reflecting all of the different inputs`,
-	33: `GvUSneg is negative valence US outcomes -- NNegUSs of them`,
-	34: `GvDrives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
-	35: `GvDrivesBase are baseline levels for each drive -- what they naturally trend toward in the absence of any input. Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).`,
-	36: `GvDrivesTau are time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.`,
-	37: `GvDrivesUSDec are decrement factors for reducing drive value when Drive-US is consumed (multiply the US magnitude) -- these are positive valued numbers.`,
-	38: `GvUSpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
-	39: `GvUSpos is current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values`,
-	40: ``,
+	10: `GvEffortRaw is raw effort -- increments linearly upward for each additional effort step This is also copied directly into NegUS[0] which tracks effort, but we maintain a separate effort value to make it clearer.`,
+	11: `GvEffortCurMax is current maximum raw effort level -- above this point, any current goal will be terminated during the GiveUp function, which also looks for accumulated disappointment. See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered`,
+	12: `GvUrgency is the overall urgency activity level (normalized 0-1), computed from logistic function of GvUrgencyRaw`,
+	13: `GvUrgencyRaw is raw effort for urgency -- increments linearly upward from effort increments per step`,
+	14: `GvVSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US`,
+	15: `GvVSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received`,
+	16: `HasRewPrev is state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial`,
+	17: `HasPosUSPrev is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial`,
+	18: `computed LHb activity level that drives dipping / pausing of DA firing, when VSPatch pos prediction &gt; actual PV reward drive or PVNeg &gt; PVPos`,
+	19: `GvLHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive &gt; VSPatch pos prediction`,
+	20: `GvLHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions`,
+	21: `GvLHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset`,
+	22: `GvLHbDipSum is copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials`,
+	23: `GvLHbGiveUp is true if a reset was triggered from LHbDipSum &gt; Reset Thr`,
+	24: `GvLHbVSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)`,
+	25: `GvLHbUSpos is total weighted positive valence primary value = sum of Weight * USpos * Drive`,
+	26: `GvLHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))`,
+	27: `GvLHbUSneg is total weighted negative valence primary value = sum of Weight * USneg`,
+	28: `GvLHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))`,
+	29: `GvCeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes`,
+	30: `GvCeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified. CeM sets Raw directly`,
+	31: `GvVtaDA is overall dopamine value reflecting all of the different inputs`,
+	32: `GvUSneg is negative valence US outcomes -- NNegUSs of them`,
+	33: `GvDrives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
+	34: `GvDrivesBase are baseline levels for each drive -- what they naturally trend toward in the absence of any input. Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).`,
+	35: `GvDrivesTau are time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.`,
+	36: `GvDrivesUSDec are decrement factors for reducing drive value when Drive-US is consumed (multiply the US magnitude) -- these are positive valued numbers.`,
+	37: `GvUSpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
+	38: `GvUSpos is current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values`,
+	39: ``,
 }
 
 func (i GlobalVars) Desc() string {

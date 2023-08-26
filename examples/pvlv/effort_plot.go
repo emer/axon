@@ -103,7 +103,7 @@ func (ss *DrEffPlot) EffortPlot() {
 	dt.SetNumRows(nv)
 	axon.EffortReset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := axon.EffortDiscFmEffort(ctx, 0)
+		ev := 1 - axon.EffortNorm(ctx, 0)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
@@ -169,7 +169,7 @@ func (ss *DrEffPlot) TimeRun() {
 	// pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := axon.EffortDiscFmEffort(ctx, 0)
+		ev := 1 - axon.EffortNorm(ctx, 0)
 		urg := axon.UrgeFmUrgency(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbDrvV(ctx, 0, 0, axon.GvDrives)

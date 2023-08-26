@@ -60,10 +60,9 @@ const (
 	// Effort & Urgency
 
 	// GvEffortRaw is raw effort -- increments linearly upward for each additional effort step
+	// This is also copied directly into NegUS[0] which tracks effort, but we maintain
+	// a separate effort value to make it clearer.
 	GvEffortRaw
-
-	// GvEffortDisc is effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier
-	GvEffortDisc
 
 	// GvEffortCurMax is current maximum raw effort level -- above this point, any current goal will be terminated during the GiveUp function, which also looks for accumulated disappointment.  See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered
 	GvEffortCurMax
@@ -100,8 +99,8 @@ const (
 	// GvLHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive > VSPatch pos prediction
 	GvLHbBurst
 
-	// GvLHbDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
-	GvLHbDA
+	// GvLHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
+	GvLHbPVDA
 
 	// GvLHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset
 	GvLHbDipSumCur
