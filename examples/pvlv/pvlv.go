@@ -190,11 +190,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
-	_, _, _, _, _ = ofcVal, ofcValCT, ofcValPTp, ofcValMD, notMaint
+	_, _, _, _, _ = ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, notMaint
+	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
+	_, _, _, _ = accNegVal, accNegValCT, accNegValPTp, accNegValMD
+	// todo: connect more of above
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -217,7 +220,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
 
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
@@ -225,13 +228,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// note: these should be predicted by ACC, not included in this sim
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
-	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	net.ConnectToPFCBack(time, timeP, ofcVal, ofcValCT, ofcValPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
 	// note: following are needed by violate true predictive learning of time
 
 	// todo: usNeg, not effort
-	// net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	// net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
+	// net.ConnectToPFCBack(effort, effortP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	// net.ConnectToPFCBack(effort, effortP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
 
 	////////////////////////////////////////////////
 	// position
