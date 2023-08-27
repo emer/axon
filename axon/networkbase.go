@@ -561,7 +561,12 @@ func (nt *NetworkBase) AllGlobals() string {
 		}
 		str += fmt.Sprintf("%20s:\t", "USNeg")
 		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
-			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, ui))
+			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, GvUSneg, ui))
+		}
+		str += "\n"
+		str += fmt.Sprintf("%20s:\t", "USNegRaw")
+		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, GvUSnegRaw, ui))
 		}
 		str += "\n"
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
@@ -586,7 +591,9 @@ func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 		}
 		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USneg", ui)
-			vals[key] = GlbUSneg(ctx, di, ui)
+			vals[key] = GlbUSneg(ctx, di, GvUSneg, ui)
+			key = fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USnegRaw", ui)
+			vals[key] = GlbUSneg(ctx, di, GvUSnegRaw, ui)
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {

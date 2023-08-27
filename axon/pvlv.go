@@ -385,7 +385,8 @@ func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
 func (ef *Effort) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
 	SetGlbV(ctx, di, GvEffortRaw, 0)
 	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.Max))
-	SetGlbUSneg(ctx, di, 0, 0) // effort is neg 0
+	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, 0) // effort is neg 0
+	SetGlbUSneg(ctx, di, GvUSneg, 0, 0)    // effort is neg 0
 }
 
 // VSGated updates JustGated and HasGated as function of VS
@@ -432,7 +433,7 @@ func (pp *PVLV) EffortUpdt(ctx *Context, di uint32, rnd erand.Rand, effort float
 	if GlbV(ctx, di, GvHasRewPrev) > 0 {
 		pp.Effort.ReStart(ctx, di, rnd)
 	} else {
-		// EffortAddEffort(ctx, di, effort) // todo!
+		EffortAddEffort(ctx, di, effort)
 	}
 }
 

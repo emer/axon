@@ -145,8 +145,13 @@ const (
 	// USneg is negative valence US
 	//   allocated for Nitems
 
-	// GvUSneg is negative valence US outcomes -- NNegUSs of them
+	// GvUSneg are negative valence US outcomes -- normalized version of raw,
+	// NNegUSs of them
 	GvUSneg
+
+	// GvUSnegRaw are raw, linearly incremented negative valence US outcomes,
+	// this value is also integrated together with all US vals for PVneg
+	GvUSnegRaw
 
 	///////////////////////////////////////////////////////////
 	// Drives

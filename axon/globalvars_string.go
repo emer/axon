@@ -46,18 +46,19 @@ func _() {
 	_ = x[GvCeMneg-30]
 	_ = x[GvVtaDA-31]
 	_ = x[GvUSneg-32]
-	_ = x[GvDrives-33]
-	_ = x[GvBaseDrives-34]
-	_ = x[GvDrivesTau-35]
-	_ = x[GvDrivesUSDec-36]
-	_ = x[GvUSpos-37]
-	_ = x[GvVSPatch-38]
-	_ = x[GlobalVarsN-39]
+	_ = x[GvUSnegRaw-33]
+	_ = x[GvDrives-34]
+	_ = x[GvBaseDrives-35]
+	_ = x[GvDrivesTau-36]
+	_ = x[GvDrivesUSDec-37]
+	_ = x[GvUSpos-38]
+	_ = x[GvVSPatch-39]
+	_ = x[GlobalVarsN-40]
 }
 
-const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvVSMatrixHasGatedGvHasRewPrevGvHasPosUSPrevGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbVSPatchPosGvLHbUSposGvLHbPVposGvLHbUSnegGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvDrivesGvBaseDrivesGvDrivesTauGvDrivesUSDecGvUSposGvVSPatchGlobalVarsN"
+const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvVSMatrixHasGatedGvHasRewPrevGvHasPosUSPrevGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbVSPatchPosGvLHbUSposGvLHbPVposGvLHbUSnegGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvBaseDrivesGvDrivesTauGvDrivesUSDecGvUSposGvVSPatchGlobalVarsN"
 
-var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 36, 41, 45, 50, 58, 68, 79, 93, 102, 114, 133, 151, 163, 177, 185, 195, 204, 218, 229, 240, 255, 265, 275, 285, 295, 303, 311, 318, 325, 333, 345, 356, 369, 376, 385, 396}
+var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 36, 41, 45, 50, 58, 68, 79, 93, 102, 114, 133, 151, 163, 177, 185, 195, 204, 218, 229, 240, 255, 265, 275, 285, 295, 303, 311, 318, 325, 335, 343, 355, 366, 379, 386, 395, 406}
 
 func (i GlobalVars) String() string {
 	if i < 0 || i >= GlobalVars(len(_GlobalVars_index)-1) {
@@ -109,14 +110,15 @@ var _GlobalVars_descMap = map[GlobalVars]string{
 	29: `GvCeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes`,
 	30: `GvCeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified. CeM sets Raw directly`,
 	31: `GvVtaDA is overall dopamine value reflecting all of the different inputs`,
-	32: `GvUSneg is negative valence US outcomes -- NNegUSs of them`,
-	33: `GvDrives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
-	34: `GvDrivesBase are baseline levels for each drive -- what they naturally trend toward in the absence of any input. Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).`,
-	35: `GvDrivesTau are time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.`,
-	36: `GvDrivesUSDec are decrement factors for reducing drive value when Drive-US is consumed (multiply the US magnitude) -- these are positive valued numbers.`,
-	37: `GvUSpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
-	38: `GvUSpos is current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values`,
-	39: ``,
+	32: `GvUSneg are negative valence US outcomes -- normalized version of raw, NNegUSs of them`,
+	33: `GvUSnegRaw are raw, linearly incremented negative valence US outcomes, this value is also integrated together with all US vals for PVneg`,
+	34: `GvDrives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
+	35: `GvDrivesBase are baseline levels for each drive -- what they naturally trend toward in the absence of any input. Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).`,
+	36: `GvDrivesTau are time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.`,
+	37: `GvDrivesUSDec are decrement factors for reducing drive value when Drive-US is consumed (multiply the US magnitude) -- these are positive valued numbers.`,
+	38: `GvUSpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
+	39: `GvUSpos is current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values`,
+	40: ``,
 }
 
 func (i GlobalVars) Desc() string {

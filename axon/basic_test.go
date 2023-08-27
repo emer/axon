@@ -1442,10 +1442,12 @@ func TestGlobalIdxs(t *testing.T) {
 			val += 1
 		}
 	}
-	for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
-		for di := uint32(0); di < nData; di++ {
-			SetGlbUSneg(ctx, di, ui, val)
-			val += 1
+	for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
+		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+			for di := uint32(0); di < nData; di++ {
+				SetGlbUSneg(ctx, di, vv, ui, val)
+				val += 1
+			}
 		}
 	}
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {

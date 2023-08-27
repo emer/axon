@@ -187,13 +187,18 @@ func AddGlbV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
 }
 
 // GlbUSneg is the CPU version of the global USneg variable accessor
-func GlbUSneg(ctx *Context, di uint32, negIdx uint32) float32 {
-	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, negIdx)]
+func GlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32) float32 {
+	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)]
 }
 
 // SetGlbUSneg is the CPU version of the global USneg variable settor
-func SetGlbUSneg(ctx *Context, di uint32, negIdx uint32, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val
+func SetGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] = val
+}
+
+// AddGlbUSneg is the CPU version of the global USneg variable addor
+func AddGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val
 }
 
 // GlbDriveV is the CPU version of the global Drive, USpos variable accessor
@@ -447,8 +452,8 @@ func (ctx *Context) SlowInc() bool {
 
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
-	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvVtaDA)
-	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(0, ctx.PVLV.Drive.NNegUSs)
+	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvUSneg)
+	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(0, GvUSnegRaw, ctx.PVLV.Drive.NNegUSs)
 	ctx.NetIdxs.GvDriveStride = uint32(ctx.PVLV.Drive.NActive) * ctx.NetIdxs.MaxData
 }
 
@@ -459,8 +464,8 @@ func (ctx *Context) GlobalIdx(di uint32, gvar GlobalVars) uint32 {
 }
 
 // GlobalUSnegIdx returns index into USneg global variables
-func (ctx *Context) GlobalUSnegIdx(di uint32, negIdx uint32) uint32 {
-	return ctx.NetIdxs.GvUSnegOff + negIdx*ctx.NetIdxs.MaxData + di
+func (ctx *Context) GlobalUSnegIdx(di uint32, gvar GlobalVars, negIdx uint32) uint32 {
+	return ctx.NetIdxs.GvUSnegOff + uint32(gvar-GvUSneg)*ctx.PVLV.Drive.NNegUSs*ctx.NetIdxs.MaxData + negIdx*ctx.NetIdxs.MaxData + di
 }
 
 // GlobalDriveIdx returns index into Drive and USpos, VSPatch global variables
@@ -680,14 +685,17 @@ void AddGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
 	Globals[ctx.GlobalIdx(di, gvar)] += val;
 }
 
-float GlbUSneg(in Context ctx, uint di, uint negIdx) {
-	return Globals[ctx.GlobalUSnegIdx(di, negIdx)];
+float GlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx) {
+	return Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)];
 }
 
-void SetGlbUSneg(in Context ctx, uint di, uint negIdx, float val) {
-	Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val;
+void SetGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] = val;
 }
 
+void AddGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val;
+}
 
 float GlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar) {
 	return Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)];
@@ -760,11 +768,20 @@ func DrivesToBaseline(ctx *Context, di uint32) {
 	}
 }
 
-// USnegToZero sets all values of USneg to zero
+// USnegFromRaw sets normalized NegUS values from Raw values
+func USnegFromRaw(ctx *Context, di uint32) {
+	nn := ctx.PVLV.Drive.NNegUSs
+	for i := uint32(0); i < nn; i++ {
+		SetGlbUSneg(ctx, di, GvUSneg, i, PVLVNormFun(GlbUSneg(ctx, di, GvUSneg, i)))
+	}
+}
+
+// USnegToZero sets all values of USneg, USNegRaw to zero
 func USnegToZero(ctx *Context, di uint32) {
 	nn := ctx.PVLV.Drive.NNegUSs
 	for i := uint32(0); i < nn; i++ {
-		SetGlbUSneg(ctx, di, i, 0)
+		SetGlbUSneg(ctx, di, GvUSneg, i, 0)
+		SetGlbUSneg(ctx, di, GvUSnegRaw, i, 0)
 	}
 }
 
@@ -838,7 +855,8 @@ func DrivesEffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 func EffortReset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvEffortRaw, 0)
 	SetGlbV(ctx, di, GvEffortCurMax, ctx.PVLV.Effort.Max)
-	SetGlbUSneg(ctx, di, 0, 0) // effort is neg 0
+	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, 0) // effort is neg 0
+	SetGlbUSneg(ctx, di, GvUSneg, 0, 0)
 }
 
 // EffortNorm returns the current effort value as a normalized number.
@@ -851,7 +869,7 @@ func EffortNorm(ctx *Context, di uint32) float32 {
 // EffortAddEffort adds an increment of effort and updates the Disc discount factor
 func EffortAddEffort(ctx *Context, di uint32, inc float32) {
 	AddGlbV(ctx, di, GvEffortRaw, inc)
-	SetGlbUSneg(ctx, di, 0, GlbV(ctx, di, GvEffortRaw)) // effort is neg 0
+	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, GlbV(ctx, di, GvEffortRaw)) // effort is neg 0
 }
 
 // EffortGiveUp returns true if maximum effort has been exceeded
@@ -913,7 +931,7 @@ func PVLVNegPV(ctx *Context, di uint32) float32 {
 	nn := ctx.PVLV.Drive.NNegUSs
 	wts := ctx.PVLV.USs.NegWts
 	for i := uint32(0); i < nn; i++ {
-		rew += wts.Get(i) * GlbUSneg(ctx, di, i)
+		rew += wts.Get(i) * GlbUSneg(ctx, di, GvUSnegRaw, i)
 	}
 	return rew
 }
@@ -946,7 +964,7 @@ func PVLVHasPosUS(ctx *Context, di uint32) bool {
 func PVLVHasNegUS(ctx *Context, di uint32) bool {
 	nd := ctx.PVLV.Drive.NNegUSs
 	for i := uint32(0); i < nd; i++ {
-		if GlbUSneg(ctx, di, i) > 0 {
+		if GlbUSneg(ctx, di, GvUSnegRaw, i) > 0 {
 			return true
 		}
 	}
@@ -1118,7 +1136,7 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 		}
 	} else {
 		if usIdx < ctx.PVLV.Drive.NNegUSs {
-			us = GlbUSneg(ctx, di, usIdx)
+			us = GlbUSneg(ctx, di, GvUSneg, usIdx)
 		}
 	}
 	return us
@@ -1195,7 +1213,7 @@ func (ctx *Context) PVLVSetUS(di uint32, valence ValenceTypes, usIdx int, magnit
 		SetGlbV(ctx, di, GvHasRew, 1)                            // only for positive USs
 		SetGlbDrvV(ctx, di, uint32(usIdx)+1, GvUSpos, magnitude) // +1 for curiosity
 	} else {
-		SetGlbUSneg(ctx, di, uint32(usIdx), magnitude)
+		SetGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+1, magnitude) // +1 for effort
 	}
 }
 
@@ -1216,6 +1234,7 @@ func (ctx *Context) PVLVSetDrives(di uint32, curiosity, magnitude float32, drive
 // Drives, and updating Effort (e.g., as last step in ApplyPVLV method).
 // Calls PVLVGiveUp and LHbPVDA, which computes the primary value DA.
 func (ctx *Context) PVLVStepStart(di uint32, rnd erand.Rand) {
+	USnegFromRaw(ctx, di)
 	ctx.PVLVShouldGiveUp(di, rnd)
 	LHbPVDA(ctx, di)
 }
