@@ -221,6 +221,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// OFCus predicts cs
 	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
 
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
@@ -230,11 +231,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
 	net.ConnectToPFCBack(time, timeP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
-	// note: following are needed by violate true predictive learning of time
 
-	// todo: usNeg, not effort
-	// net.ConnectToPFCBack(effort, effortP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	// net.ConnectToPFCBack(effort, effortP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, accNegVal, accNegValCT, accNegValPTp, full)
 
 	////////////////////////////////////////////////
 	// position

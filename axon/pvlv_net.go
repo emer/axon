@@ -602,16 +602,14 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 		"Prjn.SWts.Init.Var":  "0.4",
 	}
 	pj.SetClass(prjnClass)
-	// note: this should connect with a separate OFCneg <-> ACCnegVal area
-	// not directly with OFCposUS which is positive only.
-	// also removing this improves performance.
-	// pj = net.ConnectLayers(blaNegAcq, ofcPosUS, full, ForwardPrjn)
-	// pj.DefParams = params.Params{
-	// 	"Prjn.PrjnScale.Abs":  "2",
-	// 	"Prjn.SWts.Init.Mean": "0.5",
-	// 	"Prjn.SWts.Init.Var":  "0.4",
-	// }
-	// pj.SetClass(prjnClass)
+
+	pj = net.ConnectLayers(blaNegAcq, ofcNegUS, p1to1, ForwardPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.SWts.Init.Mean": "0.5",
+		"Prjn.SWts.Init.Var":  "0.4",
+	}
+	pj.SetClass(prjnClass)
 
 	pj = net.ConnectToBLAExt(ofcPosUSPTp, blaPosExt, p1to1)
 	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
@@ -672,6 +670,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	net.ConnectLayers(blaPosAcq, vSstns, full, ForwardPrjn)
 	net.ConnectLayers(blaNegAcq, vSstnp, full, ForwardPrjn)
 	net.ConnectLayers(blaNegAcq, vSstns, full, ForwardPrjn)
+
+	// todo: ofc -> STN?
 
 	pj = net.ConnectToMatrix(blaPosExt, vSmtxNo, p1to1)
 	pj.DefParams = params.Params{
@@ -762,10 +762,10 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	net.ConnectToPulv(ofcPosUS, ofcPosUSCT, usPosP, p1to1, p1to1, prjnClass)
 	net.ConnectToPulv(ofcPosUS, ofcPosUSCT, pvPosP, full, full, prjnClass)
 
-	// todo: see about predictive value of PTp
-	// net.ConnectPTPredToPulv(ofcPosUSPTp, drivesP, p1to1, p1to1, prjnClass)
-	// net.ConnectPTPredToPulv(ofcPosUSPTp, usPosP, p1to1, p1to1), prjnClass
-	// net.ConnectPTPredToPulv(ofcPosUSPTp, pvPosP, p1to1, p1to1, prjnClass)
+	// note: newly trying this
+	net.ConnectPTPredToPulv(ofcPosUSPTp, drivesP, p1to1, p1to1, prjnClass)
+	net.ConnectPTPredToPulv(ofcPosUSPTp, usPosP, p1to1, p1to1, prjnClass)
+	net.ConnectPTPredToPulv(ofcPosUSPTp, pvPosP, p1to1, p1to1, prjnClass)
 
 	///////////////////////////////////////////
 	// OFCposVal
@@ -783,7 +783,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
 	net.ConnectToPFC(pvPos, pvPosP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
-	net.ConnectToPFC(pvNeg, pvNegP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
+
+	net.ConnectPTPredToPulv(ofcPosValPTp, pvPosP, full, full, prjnClass)
 
 	// note: not connecting deeper CT and PT layers to vSmtxGo at this point
 	// could explore that later
@@ -802,9 +803,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	net.ConnectToPulv(ofcNegUS, ofcNegUSCT, usNegP, p1to1, p1to1, prjnClass)
 	net.ConnectToPulv(ofcNegUS, ofcNegUSCT, pvNegP, full, full, prjnClass)
 
-	// todo: see about predictive value of PTp
-	// net.ConnectPTPredToPulv(ofcNegUSPTp, usNegP, p1to1, p1to1), prjnClass
-	// net.ConnectPTPredToPulv(ofcNegUSPTp, pvNegP, full, full, prjnClass)
+	// note: newly trying this
+	net.ConnectPTPredToPulv(ofcNegUSPTp, usNegP, p1to1, p1to1, prjnClass)
+	net.ConnectPTPredToPulv(ofcNegUSPTp, pvNegP, full, full, prjnClass)
 
 	///////////////////////////////////////////
 	// ACCnegVal
@@ -822,7 +823,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
 	net.ConnectToPFC(pvNeg, pvNegP, accNegVal, accNegValCT, accNegValPTp, full)
-	net.ConnectToPFC(pvNeg, pvNegP, accNegVal, accNegValCT, accNegValPTp, full)
+
+	net.ConnectPTPredToPulv(accNegValPTp, pvNegP, full, full, prjnClass)
 
 	// note: not connecting deeper CT and PT layers to vSmtxGo at this point
 	// could explore that later
@@ -839,7 +841,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	blaPosAcq.PlaceAbove(usPos)
 	ofcPosUS.PlaceRightOf(blaPosAcq, space)
 	ofcPosVal.PlaceRightOf(ofcPosUS, space)
-	ofcNegUS.PlaceRightOf(ofcPosVal, space)
+	ofcNegUS.PlaceRightOf(ofcPosVal, 3*space)
 	accNegVal.PlaceRightOf(ofcNegUS, space)
 	notMaint.PlaceRightOf(accNegVal, space)
 
