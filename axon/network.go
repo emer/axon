@@ -65,6 +65,7 @@ func (nt *Network) Defaults() {
 	for _, ly := range nt.Layers {
 		ly.Defaults()
 	}
+	nt.PVLV.Defaults()
 }
 
 // UpdateParams updates all the derived parameters if any have changed, for all layers

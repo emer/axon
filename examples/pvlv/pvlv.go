@@ -149,14 +149,18 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigPVLV() {
-	pv := &ss.Context.PVLV
+	pv := &ss.Net.PVLV
 	pv.Drive.NActive = uint32(cond.NUSs + 1)
-	pv.Drive.NNegUSs = 2       // 1=effort, 2=negUS
-	pv.Urgency.U50 = 50        // no pressure during regular trials
-	pv.USs.NegWts.Set(0, 0.01) // effort weight: don't discount as much
-	pv.Effort.Max = 8          // give up if nothing happening.
-	pv.Effort.MaxNovel = 2     // give up if nothing happening.
-	pv.Effort.MaxPostDip = 2   // give up if nothing happening.
+	pv.USs.NNegUSs = 2 // 0=effort, 1=negUS
+	pv.Update()
+	pv.USs.PVPosGain = 1
+	pv.USs.PVNegGain = 0.05
+	pv.USs.PVNegWts[0] = 0.01
+	pv.USs.PVNegWts[1] = 0.1
+	pv.Urgency.U50 = 50      // no pressure during regular trials
+	pv.Effort.Max = 8        // give up if nothing happening.
+	pv.Effort.MaxNovel = 2   // give up if nothing happening.
+	pv.Effort.MaxPostDip = 2 // give up if nothing happening.
 	if ss.Config.Env.PVLV != nil {
 		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
 	}
@@ -374,16 +378,17 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	ctx.PVLV.EffortUrgencyUpdt(ctx, 0, &ss.Net.Rand, 1)
+	pv := &ss.Net.PVLV
+	pv.EffortUrgencyUpdt(ctx, 0, &ss.Net.Rand, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			ctx.PVLVSetUS(0, axon.Positive, trl.US, trl.USMag)
+			pv.SetUS(ctx, 0, axon.Positive, trl.US, trl.USMag)
 		} else {
-			ctx.PVLVSetUS(0, axon.Negative, trl.US, trl.USMag) // adds to neg us
+			pv.SetUS(ctx, 0, axon.Negative, trl.US, trl.USMag) // adds to neg us
 		}
 	}
-	ctx.PVLVSetDrives(0, 1, 1, trl.US)
-	ctx.PVLVStepStart(0, &ss.Net.Rand)
+	pv.SetDrives(ctx, 0, 1, 1, trl.US)
+	pv.StepStart(ctx, 0, &ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed

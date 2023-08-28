@@ -36,8 +36,11 @@ const LogPrec = 4
 // DrEffPlot holds the params, table, etc
 type DrEffPlot struct {
 
-	// Drive, Effort, Urgency params are under PVLV
-	Context axon.Context `desc:"Drive, Effort, Urgency params are under PVLV"`
+	// context just for plotting
+	Context axon.Context `desc:"context just for plotting"`
+
+	// PVLV params
+	PVLV axon.PVLV `desc:"PVLV params"`
 
 	// total number of time steps to simulate
 	TimeSteps int `desc:"total number of time steps to simulate"`
@@ -73,12 +76,13 @@ type DrEffPlot struct {
 // Config configures all the elements using the standard functions
 func (ss *DrEffPlot) Config() {
 	ss.Context.Defaults()
-	pp := &ss.Context.PVLV
+	ss.PVLV.Defaults()
+	pp := &ss.PVLV
 	pp.Drive.NActive = 1
 	pp.Drive.DriveMin = 0
-	pp.Drive.Base.Set(0, 1)
-	pp.Drive.Tau.Set(0, 100)
-	pp.Drive.USDec.Set(0, 1)
+	pp.Drive.Base[0] = 1
+	pp.Drive.Tau[0] = 100
+	pp.Drive.USDec[0] = 1
 	pp.Drive.Update()
 	ss.TimeSteps = 100
 	ss.USTime.Set(2, 20)
@@ -98,16 +102,17 @@ func (ss *DrEffPlot) Update() {
 func (ss *DrEffPlot) EffortPlot() {
 	ss.Update()
 	ctx := &ss.Context
+	pp := &ss.PVLV
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
-	axon.EffortReset(ctx, 0)
+	pp.Effort.Reset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := 1 - axon.EffortNorm(ctx, 0)
+		ev := 1 - axon.EffortNorm(ctx, 0, 0.02)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
-		axon.EffortAddEffort(ctx, 0, 1) // unit
+		pp.Effort.AddEffort(ctx, 0, 1) // unit
 	}
 	ss.Plot.Update()
 }
@@ -115,17 +120,18 @@ func (ss *DrEffPlot) EffortPlot() {
 // UrgencyPlot plots the equation as a function of effort / time
 func (ss *DrEffPlot) UrgencyPlot() {
 	ctx := &ss.Context
+	pp := &ss.PVLV
 	ss.Update()
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
-	axon.UrgencyReset(ctx, 0)
+	pp.Urgency.Reset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := axon.UrgeFmUrgency(ctx, 0)
+		ev := pp.Urgency.UrgeFmUrgency(ctx, 0)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
-		axon.UrgencyAddEffort(ctx, 0, 1) // unit
+		pp.Urgency.AddEffort(ctx, 0, 1) // unit
 	}
 	ss.Plot.Update()
 }
@@ -158,19 +164,19 @@ func (ss *DrEffPlot) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 func (ss *DrEffPlot) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
-
+	pp := &ss.PVLV
 	ctx := &ss.Context
-	axon.EffortReset(ctx, 0)
-	axon.UrgencyReset(ctx, 0)
+	pp.Effort.Reset(ctx, 0)
+	pp.Urgency.Reset(ctx, 0)
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
 	axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, 0)
-	axon.DrivesToBaseline(ctx, 0)
+	pp.Drive.ToBaseline(ctx, 0)
 	// pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := 1 - axon.EffortNorm(ctx, 0)
-		urg := axon.UrgeFmUrgency(ctx, 0)
+		ev := 1 - axon.EffortNorm(ctx, 0, 0.02)
+		urg := pp.Urgency.UrgeFmUrgency(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbDrvV(ctx, 0, 0, axon.GvDrives)
 		usv := float32(0)
@@ -189,8 +195,8 @@ func (ss *DrEffPlot) TimeRun() {
 
 		axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, usv)
 		axon.SetGlbV(ctx, 0, axon.GvHasRewPrev, bools.ToFloat32(usv > 0))
-		ctx.PVLV.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
-		axon.PVLVDriveUpdt(ctx, 0)
+		pp.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
+		pp.DriveUpdt(ctx, 0)
 	}
 	ss.TimePlot.Update()
 }

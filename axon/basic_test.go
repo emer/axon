@@ -110,6 +110,10 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
+	testNet.PVLV.Drive.NActive = 4
+	testNet.PVLV.USs.NNegUSs = 3
+	testNet.PVLV.Defaults()
+
 	testNet.Build(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
 	testNet.Defaults()
@@ -1429,9 +1433,8 @@ func saveToFile(net *Network, t *testing.T) {
 func TestGlobalIdxs(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(5)
-	ctx.PVLV.Drive.NActive = 4
-	ctx.PVLV.Drive.NNegUSs = 3
 	net := newTestNet(ctx, int(nData))
+	pv := &net.PVLV
 	val := float32(0)
 
 	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.Drive.NActive, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
@@ -1443,7 +1446,7 @@ func TestGlobalIdxs(t *testing.T) {
 		}
 	}
 	for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
-		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
+		for ui := uint32(0); ui < pv.USs.NNegUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
 				SetGlbUSneg(ctx, di, vv, ui, val)
 				val += 1
@@ -1451,7 +1454,7 @@ func TestGlobalIdxs(t *testing.T) {
 		}
 	}
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {
-		for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+		for ui := uint32(0); ui < pv.Drive.NActive; ui++ {
 			for di := uint32(0); di < nData; di++ {
 				SetGlbDrvV(ctx, di, ui, vv, val)
 				val += 1
@@ -1471,8 +1474,6 @@ func TestGlobalIdxs(t *testing.T) {
 func TestSendGatherIdxs(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(3)
-	ctx.PVLV.Drive.NActive = 4
-	ctx.PVLV.Drive.NNegUSs = 3
 	net := newTestNet(ctx, int(nData))
 
 	maxDel := net.MaxDelay + 1
