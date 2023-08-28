@@ -285,6 +285,8 @@ type NetIdxs struct {
 
 	// stride into GlobalVars for Drive and USpos values
 	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
+
+	pad, pad1 uint32
 }
 
 // ValsIdx returns the global network index for LayerVals

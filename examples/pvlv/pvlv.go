@@ -153,6 +153,10 @@ func (ss *Sim) ConfigPVLV() {
 	pv.Drive.NActive = uint32(cond.NUSs + 1)
 	pv.USs.NNegUSs = 2 // 0=effort, 1=negUS
 	pv.Update()
+	pv.Defaults()
+	// todo: need to set this prior to confignet
+	ss.Context.NetIdxs.PVLVNDrives = pv.Drive.NActive
+	ss.Context.NetIdxs.PVLVNNegUSs = pv.USs.NNegUSs
 	pv.USs.PVPosGain = 1
 	pv.USs.PVNegGain = 0.05
 	pv.USs.PVNegWts[0] = 0.01
@@ -176,6 +180,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	ny := ev.NYReps
 	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
+
+	fmt.Printf("%#v\n", net.PVLV)
 
 	nuBgY := 5
 	nuBgX := 5

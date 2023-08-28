@@ -997,7 +997,6 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx.NetIdxs.NSyns = nt.NSyns
 	ctx.NetIdxs.PVLVNDrives = nt.PVLV.Drive.NActive
 	ctx.NetIdxs.PVLVNNegUSs = nt.PVLV.USs.NNegUSs
-	nt.PVLV.Update() // ensure allocated
 	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)
