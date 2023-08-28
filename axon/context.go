@@ -272,7 +272,7 @@ type NetIdxs struct {
 	GPUSynCaBanks uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
 
 	// total number of PVLV Drives / positive USs
-	PVLVNDrives uint32 `inactive:"+" desc:"total number of PVLV Drives / positive USs"`
+	PVLVNPosUSs uint32 `inactive:"+" desc:"total number of PVLV Drives / positive USs"`
 
 	// total number of PVLV Negative USs
 	PVLVNNegUSs uint32 `inactive:"+" desc:"total number of PVLV Negative USs"`
@@ -455,7 +455,7 @@ func (ctx *Context) SlowInc() bool {
 func (ctx *Context) SetGlobalStrides() {
 	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvUSneg)
 	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(0, GvUSnegRaw, ctx.NetIdxs.PVLVNNegUSs)
-	ctx.NetIdxs.GvDriveStride = uint32(ctx.NetIdxs.PVLVNDrives) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvDriveStride = uint32(ctx.NetIdxs.PVLVNPosUSs) * ctx.NetIdxs.MaxData
 }
 
 // GlobalIdx returns index into main global variables,
@@ -767,7 +767,7 @@ func VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) float32 {
 	us := float32(0)
 	if valence == Positive {
-		if usIdx < ctx.NetIdxs.PVLVNDrives {
+		if usIdx < ctx.NetIdxs.PVLVNPosUSs {
 			us = GlbDrvV(ctx, di, usIdx, GvUSpos)
 		}
 	} else {

@@ -167,7 +167,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Context.PVLV
-	pv.Drive.NActive = uint32(trn.NDrives) + 1
+	pv.NPosUSs = uint32(trn.NDrives) + 1
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
 	pv.Effort.Gain = 0.1    // faster effort
 	pv.Effort.Max = 20

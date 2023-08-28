@@ -110,7 +110,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
-	testNet.PVLV.Drive.NActive = 4
+	testNet.PVLV.NPosUSs = 4
 	testNet.PVLV.USs.NNegUSs = 3
 	testNet.PVLV.Defaults()
 
@@ -1437,7 +1437,7 @@ func TestGlobalIdxs(t *testing.T) {
 	pv := &net.PVLV
 	val := float32(0)
 
-	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.Drive.NActive, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
+	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.NPosUSs, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
 
 	for vv := GvRew; vv < GvUSneg; vv++ {
 		for di := uint32(0); di < nData; di++ {
@@ -1454,7 +1454,7 @@ func TestGlobalIdxs(t *testing.T) {
 		}
 	}
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {
-		for ui := uint32(0); ui < pv.Drive.NActive; ui++ {
+		for ui := uint32(0); ui < pv.NPosUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
 				SetGlbDrvV(ctx, di, ui, vv, val)
 				val += 1

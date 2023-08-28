@@ -574,7 +574,7 @@ func (nt *NetworkBase) AllGlobals() string {
 		str += "\n"
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNDrives; ui++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
 				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbDrvV(ctx, di, ui, vv))
 			}
 			str += "\n"
@@ -599,7 +599,7 @@ func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 			vals[key] = GlbUSneg(ctx, di, GvUSnegRaw, ui)
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNDrives; ui++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbDrvV(ctx, di, ui, vv)
 			}
@@ -995,7 +995,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx.NetIdxs.NNeurons = nt.NNeurons
 	ctx.NetIdxs.NPools = uint32(totPools)
 	ctx.NetIdxs.NSyns = nt.NSyns
-	ctx.NetIdxs.PVLVNDrives = nt.PVLV.Drive.NActive
+	ctx.NetIdxs.PVLVNPosUSs = nt.PVLV.NPosUSs
 	ctx.NetIdxs.PVLVNNegUSs = nt.PVLV.USs.NNegUSs
 	ctx.SetGlobalStrides()
 

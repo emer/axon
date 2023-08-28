@@ -78,7 +78,7 @@ func (ss *DrEffPlot) Config() {
 	ss.Context.Defaults()
 	ss.PVLV.Defaults()
 	pp := &ss.PVLV
-	pp.Drive.NActive = 1
+	pp.SetNUSs(1, 1)
 	pp.Drive.DriveMin = 0
 	pp.Drive.Base[0] = 1
 	pp.Drive.Tau[0] = 100

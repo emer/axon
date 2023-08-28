@@ -16,9 +16,6 @@ import (
 // and drive state.
 type Drives struct {
 
-	// number of active drives -- first drive is novelty / curiosity drive
-	NActive uint32 `desc:"number of active drives -- first drive is novelty / curiosity drive"`
-
 	// minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline.
 	DriveMin float32 `desc:"minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline."`
 
@@ -35,6 +32,16 @@ type Drives struct {
 	Dt []float32 `view:"-" desc:"1/Tau"`
 }
 
+func (dp *Drives) Alloc(nDrives int) {
+	if len(dp.Base) == nDrives {
+		return
+	}
+	dp.Base = make([]float32, nDrives)
+	dp.Tau = make([]float32, nDrives)
+	dp.Dt = make([]float32, nDrives)
+	dp.USDec = make([]float32, nDrives)
+}
+
 func (dp *Drives) Defaults() {
 	if dp.NActive <= 0 {
 		dp.NActive = 1
@@ -47,12 +54,6 @@ func (dp *Drives) Defaults() {
 }
 
 func (dp *Drives) Update() {
-	if len(dp.Base) != int(dp.NActive) {
-		dp.Base = make([]float32, dp.NActive)
-		dp.Tau = make([]float32, dp.NActive)
-		dp.Dt = make([]float32, dp.NActive)
-		dp.USDec = make([]float32, dp.NActive)
-	}
 	for i, tau := range dp.Tau {
 		if tau <= 0 {
 			dp.Dt[i] = 0
@@ -65,8 +66,8 @@ func (dp *Drives) Update() {
 // VarToZero sets all values of given drive-sized variable to 0
 func (dp *Drives) VarToZero(ctx *Context, di uint32, gvar GlobalVars) {
 	nd := dp.NActive
-	for i := uint32(0); i < nd; i++ {
-		SetGlbDrvV(ctx, di, i, gvar, 0)
+	for i := range dp.Base {
+		SetGlbDrvV(ctx, di, uint32(i), gvar, 0)
 	}
 }
 
@@ -77,7 +78,6 @@ func (dp *Drives) ToZero(ctx *Context, di uint32) {
 
 // ToBaseline sets all drives to their baseline levels
 func (dp *Drives) ToBaseline(ctx *Context, di uint32) {
-	nd := dp.NActive
 	for i := uint32(0); i < nd; i++ {
 		SetGlbDrvV(ctx, di, i, GvDrives, dp.Base[i])
 	}
@@ -307,12 +307,6 @@ func PVLVNormFun(raw float32) float32 {
 // weighted and integrated to compute an overall PV primary value.
 type USParams struct {
 
-	// [min: 1] number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved
-	NNegUSs uint32 `min:"1" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
-
-	// number of active positive US states -- set from Drives.NActive -- needed for local computations
-	NPosUSs uint32 `inactive:"-" desc:"number of active positive US states -- set from Drives.NActive -- needed for local computations"`
-
 	// gain factor for sum of positive USs, multiplied prior to 1/(1+x) normalization in computing PVPos.
 	PVPosGain float32 `desc:"gain factor for sum of positive USs, multiplied prior to 1/(1+x) normalization in computing PVPos."`
 
@@ -329,38 +323,25 @@ type USParams struct {
 	PVNegWts []float32 `desc:"weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum."`
 }
 
+func (us *USParams) Alloc(nPos, nNeg int) {
+	if len(us.PVPosWts) != nPos {
+		us.PVPosWts = make([]float32, nPos)
+	}
+	if len(us.PVNegWts) != nNeg {
+		us.NegGains = make([]float32, nNeg)
+		us.PVNegWts = make([]float32, nNeg)
+	}
+}
+
 func (us *USParams) Defaults() {
-	if us.NNegUSs <= 0 {
-		us.NNegUSs = 1
-	}
-	if us.NPosUSs <= 0 {
-		us.NPosUSs = 1
-	}
 	us.PVPosGain = 1
 	us.PVNegGain = 0.05
-	us.Update()
 	for i := range us.PVPosWts {
 		us.PVPosWts[i] = 1
 	}
 	for i := range us.NegGains {
 		us.NegGains[i] = 0.05
 		us.PVNegWts[i] = 1
-	}
-}
-
-func (us *USParams) Update() {
-	if us.NNegUSs < 1 {
-		us.NNegUSs = 1
-	}
-	if us.NPosUSs < 1 { // copied from Drive.NActive
-		us.NPosUSs = 1
-	}
-	if len(us.PVPosWts) != int(us.NPosUSs) {
-		us.PVPosWts = make([]float32, us.NPosUSs)
-	}
-	if len(us.PVNegWts) != int(us.NNegUSs) {
-		us.NegGains = make([]float32, us.NNegUSs)
-		us.PVNegWts = make([]float32, us.NNegUSs)
 	}
 }
 
@@ -522,6 +503,12 @@ func (vt *VTA) Update() {
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
 type PVLV struct {
 
+	// number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
+	NPosUSs uint32 `inactive:"+" desc:"number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
+
+	// number of possible negative US states -- the first is always reserved for the accumulated effort cost (which drives dissapointment when an expected US is not achieved).  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
+	NNegUSs uint32 `inactive:"+" desc:"number of possible negative US states -- the first is always reserved for the accumulated effort cost (which drives dissapointment when an expected US is not achieved).  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
+
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
 	Drive Drives `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
 
@@ -552,7 +539,7 @@ func (pp *PVLV) Defaults() {
 
 func (pp *PVLV) Update() {
 	pp.Drive.Update()
-	pp.USs.NPosUSs = pp.Drive.NActive
+	pp.USs.NPosUSs = pp.NPosUSs
 	pp.Effort.Update()
 	pp.Urgency.Update()
 	pp.USs.Update()
@@ -560,12 +547,21 @@ func (pp *PVLV) Update() {
 	pp.VTA.Update()
 }
 
+func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg) {
+	ctx.NetIdxs.PVLVNPosUSs = nPos
+	ctx.NetIdxs.PVLVNNegUSs = nNeg
+	pp.Drive.Alloc(nPos)
+	
+}
+
+
+
 // PosPV returns the weighted positive reward
 // for current positive US state, where each US is multiplied by
 // its current drive and weighting factor and summed
 func (pp *PVLV) PosPV(ctx *Context, di uint32) float32 {
 	rew := float32(0)
-	nd := pp.Drive.NActive
+	nd := pp.NPosUSs
 	wts := pp.USs.PVPosWts
 	for i := uint32(0); i < nd; i++ {
 		rew += wts[i] * GlbDrvV(ctx, di, i, GvUSpos) * pp.Drive.EffectiveDrive(ctx, di, i)
@@ -589,7 +585,7 @@ func (pp *PVLV) NegPV(ctx *Context, di uint32) float32 {
 // VSPatchMax returns the max VSPatch value across drives
 func (pp *PVLV) VSPatchMax(ctx *Context, di uint32) float32 {
 	max := float32(0)
-	nd := pp.Drive.NActive
+	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		vs := GlbDrvV(ctx, di, i, GvVSPatch)
 		if vs > max {
@@ -601,7 +597,7 @@ func (pp *PVLV) VSPatchMax(ctx *Context, di uint32) float32 {
 
 // HasPosUS returns true if there is at least one non-zero positive US
 func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
-	nd := pp.Drive.NActive
+	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		if GlbDrvV(ctx, di, i, GvUSpos) > 0 {
 			return true
@@ -734,7 +730,7 @@ func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
 // and calling ExpStep with the Dt and Base params.
 func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 	pp.Drive.ExpStepAll(ctx, di)
-	nd := pp.Drive.NActive
+	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		us := GlbDrvV(ctx, di, i, GvUSpos)
 		nwdrv := GlbDrvV(ctx, di, i, GvDrives) - us*pp.Drive.USDec[i]

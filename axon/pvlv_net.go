@@ -398,7 +398,7 @@ func (net *Network) ConnectToSC1to1(send, recv *Layer) *Prjn {
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
 func (net *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
-	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIdxs.PVLVNDrives), nNeurY, nNeurX, DrivesLayer)
+	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIdxs.PVLVNPosUSs), nNeurY, nNeurX, DrivesLayer)
 	return drv
 }
 
@@ -467,7 +467,7 @@ func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo,
 // with Drives in the back; urgency behind that.
 func (net *Network) AddPVLVPulvLayers(ctx *Context, nUSneg, nYneur, popY, popX int, space float32) (drives, drivesP, urgency, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
 	rel := relpos.Behind
-	nUSpos := int(ctx.NetIdxs.PVLVNDrives)
+	nUSpos := int(ctx.NetIdxs.PVLVNPosUSs)
 	usPos, usNeg, usPosP, usNegP = net.AddUSPulvLayers(nUSpos, nUSneg, popY, popX, rel, space)
 	pvPos, pvNeg, pvPosP, pvNegP = net.AddPVPulvLayers(popY, popX, rel, space)
 	drives, drivesP = net.AddDrivesPulvLayer(ctx, popY, popX, space)
@@ -526,7 +526,7 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
 func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint *Layer) {
-	nUSs := int(ctx.NetIdxs.PVLVNDrives)
+	nUSs := int(ctx.NetIdxs.PVLVNPosUSs)
 
 	vta, lhb, ldt := net.AddVTALHbLDTLayers(relpos.Behind, space)
 	_ = lhb
@@ -854,7 +854,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
 func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accUtil, sc, notMaint *Layer) {
-	// nUSs := int(ctx.PVLV.Drive.NActive)
+	// nUSs := int(ctx.PVLV.NPosUSs)
 
 	full := prjn.NewFull()
 	var pj *Prjn

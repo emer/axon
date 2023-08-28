@@ -150,13 +150,8 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigPVLV() {
 	pv := &ss.Net.PVLV
-	pv.Drive.NActive = uint32(cond.NUSs + 1)
-	pv.USs.NNegUSs = 2 // 0=effort, 1=negUS
-	pv.Update()
+	pv.SetNUSs(&ss.Context, cond.NUSs+1, 2) // 0=effort, 1=negUS
 	pv.Defaults()
-	// todo: need to set this prior to confignet
-	ss.Context.NetIdxs.PVLVNDrives = pv.Drive.NActive
-	ss.Context.NetIdxs.PVLVNNegUSs = pv.USs.NNegUSs
 	pv.USs.PVPosGain = 1
 	pv.USs.PVNegGain = 0.05
 	pv.USs.PVNegWts[0] = 0.01

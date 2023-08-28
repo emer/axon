@@ -7,7 +7,7 @@ func TestSetGetUS(t *testing.T) {
 	ctx := NewContext()
 	// TODO: seems impossible to test with only one drive
 	// because of the +1 for curiosity in PVLVSetUS.
-	ctx.PVLV.Drive.NActive = 2
+	ctx.PVLV.NPosUSs = 2
 	require.NoError(t, TheNetwork.Build(ctx))
 	const di = 0
 	ctx.PVLVInitUS(di)
