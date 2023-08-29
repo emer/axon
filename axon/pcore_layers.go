@@ -115,7 +115,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 	// todo: Context requires data parallel state!
 
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		mtxGated, _ := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr) // poolIdx
+		mtxGated, poolIdx := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 
 		thalGated := false
 		if ly.Params.Matrix.ThalLay1Idx >= 0 {
@@ -165,9 +165,12 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
 			SetGlbV(ctx, di, GvVSMatrixJustGated, bools.ToFloat32(mtxGated))
+			if poolIdx == 0 { // novelty / curiosity pool
+				SetGlbV(ctx, di, GvCuriosityPoolGated, 1)
+			} else {
+				SetGlbV(ctx, di, GvCuriosityPoolGated, 0)
+			}
 		}
-		// 	ctx.PVLV.VSGated(ctx, di, &ly.Network.Rand, mtxGated, GlbV(ctx, di, GvHasRew) > 0, poolIdx)
-		// }
 	}
 }
 

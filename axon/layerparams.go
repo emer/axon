@@ -6,7 +6,6 @@ package axon
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/goki/mat32"
 )
@@ -628,9 +627,6 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni, di uint32) {
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) {
 	gi := vals.ActAvg.GiMult*pl.Inhib.Gi + NrnV(ctx, ni, di, GiSyn) + NrnV(ctx, ni, di, GiNoise) + ly.Learn.NeuroMod.GiFmACh(GlbV(ctx, di, GvACh))
-	if gi < 0 {
-		fmt.Printf("gi < 0: %g\n", gi)
-	}
 	SetNrnV(ctx, ni, di, Gi, gi)
 	SetNrnV(ctx, ni, di, SSGi, pl.Inhib.SSGi)
 	SetNrnV(ctx, ni, di, SSGiDend, 0)

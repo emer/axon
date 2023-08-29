@@ -187,6 +187,17 @@ func (ef *EffortParams) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
 	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.Max))
 }
 
+// SetPostDipMax sets the current Max to current raw effort plus
+// MaxPostDip, with random additional variance.
+func (ef *EffortParams) SetPostDipMax(ctx *Context, di uint32, rnd erand.Rand) {
+	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, GlbV(ctx, di, GvEffortRaw)+ef.MaxPostDip))
+}
+
+// SetNovelMax sets the current Max to MaxNovel with random additional variance.
+func (ef *EffortParams) SetNovelMax(ctx *Context, di uint32, rnd erand.Rand) {
+	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.MaxNovel))
+}
+
 // EffortNorm returns the current effort value as a normalized number,
 // for external calculation purposes (this method not used for PVLV computations).
 // This normalization is performed internally on _all_ negative USs
@@ -688,10 +699,9 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 		pp.Effort.ReStart(ctx, di, rnd)
 		pp.USs.USnegToZero(ctx, di) // all negs restart
 		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-		// todo: we don't have this:
-		// if poolIdx == 0 { // novelty / curiosity pool
-		// 	SetGlbV(ctx, di, GvEffortCurMax, pp.Effort.MaxNovel)
-		// }
+		if GlbV(ctx, di, GvCuriosityPoolGated) > 0 {
+			pp.Effort.SetNovelMax(ctx, di, rnd)
+		}
 	}
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 	pp.USs.USposToZero(ctx, di) // pos USs must be set fresh every time
@@ -793,7 +803,7 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 	prevSum := GlbV(ctx, di, GvLHbDipSumCur)
 	giveUp := pp.LHb.ShouldGiveUp(ctx, di)
 	if prevSum < pp.LHb.DipLowThr && GlbV(ctx, di, GvLHbDipSumCur) >= pp.LHb.DipLowThr {
-		SetGlbV(ctx, di, GvEffortCurMax, pp.Effort.PlusVar(rnd, GlbV(ctx, di, GvEffortRaw)+pp.Effort.MaxPostDip))
+		pp.Effort.SetPostDipMax(ctx, di, rnd)
 	}
 	if pp.Effort.GiveUp(ctx, di) {
 		SetGlbV(ctx, di, GvLHbGiveUp, 1)
@@ -832,21 +842,4 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32) float32 {
 		SetGlbV(ctx, di, GvRew, 0)
 	}
 	return GlbV(ctx, di, GvLHbPVDA)
-}
-
-// VSGated updates JustGated and HasGated as function of VS
-// (ventral striatum / ventral pallidum) gating at end of the plus phase.
-// Also resets effort and LHb.DipSumCur counters -- starting fresh at start
-// of a new goal engaged state.
-func (pp *PVLV) VSGated(ctx *Context, di uint32, rnd erand.Rand, gated, hasRew bool, poolIdx int) {
-	hasGated := GlbV(ctx, di, GvVSMatrixHasGated) > 0
-	if !hasRew && gated && !hasGated {
-		pp.Urgency.Reset(ctx, di)
-		pp.Effort.ReStart(ctx, di, rnd)
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-		if poolIdx == 0 { // novelty / curiosity pool
-			SetGlbV(ctx, di, GvEffortCurMax, pp.Effort.MaxNovel)
-		}
-	}
-	SetGlbV(ctx, di, GvVSMatrixJustGated, bools.ToFloat32(gated))
 }
