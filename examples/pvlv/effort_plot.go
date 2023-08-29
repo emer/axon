@@ -76,13 +76,13 @@ type DrEffPlot struct {
 // Config configures all the elements using the standard functions
 func (ss *DrEffPlot) Config() {
 	ss.Context.Defaults()
-	ss.PVLV.Defaults()
 	pp := &ss.PVLV
-	pp.SetNUSs(1, 1)
+	pp.SetNUSs(&ss.Context, 1, 1)
+	pp.Defaults()
 	pp.Drive.DriveMin = 0
 	pp.Drive.Base[0] = 1
 	pp.Drive.Tau[0] = 100
-	pp.Drive.USDec[0] = 1
+	pp.Drive.Satisfaction[0] = 1
 	pp.Drive.Update()
 	ss.TimeSteps = 100
 	ss.USTime.Set(2, 20)
@@ -194,7 +194,7 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
 		axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, usv)
-		axon.SetGlbV(ctx, 0, axon.GvHasRewPrev, bools.ToFloat32(usv > 0))
+		axon.SetGlbV(ctx, 0, axon.GvHadRew, bools.ToFloat32(usv > 0))
 		pp.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
 		pp.DriveUpdt(ctx, 0)
 	}

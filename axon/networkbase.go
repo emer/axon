@@ -996,7 +996,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx.NetIdxs.NPools = uint32(totPools)
 	ctx.NetIdxs.NSyns = nt.NSyns
 	ctx.NetIdxs.PVLVNPosUSs = nt.PVLV.NPosUSs
-	ctx.NetIdxs.PVLVNNegUSs = nt.PVLV.USs.NNegUSs
+	ctx.NetIdxs.PVLVNNegUSs = nt.PVLV.NNegUSs
 	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/ki/bools"
 	"github.com/goki/ki/kit"
 )
 
@@ -162,8 +163,9 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 				pl.Gated.SetBool(false)
 			}
 		}
-		// todo: must call separately:
-		// if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
+		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
+			SetGlbV(ctx, di, GvVSMatrixJustGated, bools.ToFloat32(mtxGated))
+		}
 		// 	ctx.PVLV.VSGated(ctx, di, &ly.Network.Rand, mtxGated, GlbV(ctx, di, GvHasRew) > 0, poolIdx)
 		// }
 	}

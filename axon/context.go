@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/emer/emergent/etime"
@@ -199,17 +200,17 @@ func AddGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val fl
 	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val
 }
 
-// GlbDriveV is the CPU version of the global Drive, USpos variable accessor
+// GlbDrvV is the CPU version of the global Drive, USpos variable accessor
 func GlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars) float32 {
 	return GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)]
 }
 
-// SetGlbDriveV is the CPU version of the global Drive, USpos variable settor
+// SetGlbDrvV is the CPU version of the global Drive, USpos variable settor
 func SetGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val
 }
 
-// AddGlbDriveV is the CPU version of the global Drive, USpos variable adder
+// AddGlbDrvV is the CPU version of the global Drive, USpos variable adder
 func AddGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val
 }
@@ -730,6 +731,7 @@ func NeuroModInit(ctx *Context, di uint32) {
 
 // NeuroModSetRew is a convenience function for setting the external reward
 func NeuroModSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
+	fmt.Printf("set hasr: %v\n", hasRew)
 	SetGlbV(ctx, di, GvHasRew, bools.ToFloat32(hasRew))
 	if hasRew {
 		SetGlbV(ctx, di, GvRew, rew)
@@ -784,9 +786,9 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
-	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
-		NeuroModInit(ctx, di)
-	}
+	// for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
+	// 	NeuroModInit(ctx, di)
+	// }
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0

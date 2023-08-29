@@ -176,8 +176,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
 
-	fmt.Printf("%#v\n", net.PVLV)
-
 	nuBgY := 5
 	nuBgX := 5
 	nuCtxY := 6
@@ -380,6 +378,8 @@ func (ss *Sim) ApplyInputs() {
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	pv := &ss.Net.PVLV
+	di := uint32(0)                    // not doing NData here -- otherwise loop over
+	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
 	pv.EffortUrgencyUpdt(ctx, 0, &ss.Net.Rand, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
@@ -389,7 +389,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 		}
 	}
 	pv.SetDrives(ctx, 0, 1, 1, trl.US)
-	pv.StepStart(ctx, 0, &ss.Net.Rand)
+	pv.Step(ctx, 0, &ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed

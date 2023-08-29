@@ -292,6 +292,9 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts(ctx *Context) {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		nt.PVLV.Reset(ctx, di)
+	}
 	nt.BuildPrjnGBuf()
 	ctx.SlowCtr = 0
 	ctx.SynCaCtr = 0
