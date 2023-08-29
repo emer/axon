@@ -110,8 +110,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
-	testNet.PVLV.NPosUSs = 4
-	testNet.PVLV.USs.NNegUSs = 3
+	testNet.PVLV.SetNUSs(ctx, 4, 3)
 	testNet.PVLV.Defaults()
 
 	testNet.Build(ctx)
@@ -1446,7 +1445,7 @@ func TestGlobalIdxs(t *testing.T) {
 		}
 	}
 	for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
-		for ui := uint32(0); ui < pv.USs.NNegUSs; ui++ {
+		for ui := uint32(0); ui < pv.NNegUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
 				SetGlbUSneg(ctx, di, vv, ui, val)
 				val += 1

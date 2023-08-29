@@ -82,6 +82,9 @@ const (
 	// VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US
 	GvVSMatrixJustGated
 
+	// CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated -- this can change the giving up Effort.Max parameter.
+	GvCuriosityPoolGated
+
 	// VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received
 	GvVSMatrixHasGated
 

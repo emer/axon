@@ -127,7 +127,7 @@ func (ss *DrEffPlot) UrgencyPlot() {
 	dt.SetNumRows(nv)
 	pp.Urgency.Reset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := pp.Urgency.UrgeFmUrgency(ctx, 0)
+		ev := pp.Urgency.Urge(ctx, 0)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
@@ -176,7 +176,7 @@ func (ss *DrEffPlot) TimeRun() {
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		ev := 1 - axon.EffortNorm(ctx, 0, 0.02)
-		urg := pp.Urgency.UrgeFmUrgency(ctx, 0)
+		urg := pp.Urgency.Urge(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbUSposV(ctx, 0, axon.GvDrives, 0)
 		usv := float32(0)

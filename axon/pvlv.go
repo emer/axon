@@ -10,11 +10,11 @@ import (
 	"github.com/goki/mat32"
 )
 
-// Drives manages the drive parameters for computing and updating drive state.
+// DriveParams manages the drive parameters for computing and updating drive state.
 // Most of the params are for optional case where drives are automatically
 // updated based on US consumption (which satisfies drives) and time passing
 // (which increases drives).
-type Drives struct {
+type DriveParams struct {
 
 	// minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline.
 	DriveMin float32 `desc:"minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline."`
@@ -32,7 +32,7 @@ type Drives struct {
 	Dt []float32 `view:"-" desc:"1/Tau"`
 }
 
-func (dp *Drives) Alloc(nDrives int) {
+func (dp *DriveParams) Alloc(nDrives int) {
 	if len(dp.Base) == nDrives {
 		return
 	}
@@ -42,7 +42,7 @@ func (dp *Drives) Alloc(nDrives int) {
 	dp.Satisfaction = make([]float32, nDrives)
 }
 
-func (dp *Drives) Defaults() {
+func (dp *DriveParams) Defaults() {
 	dp.DriveMin = 0.5
 	for i := range dp.Satisfaction {
 		dp.Satisfaction[i] = 0
@@ -50,7 +50,7 @@ func (dp *Drives) Defaults() {
 	dp.Update()
 }
 
-func (dp *Drives) Update() {
+func (dp *DriveParams) Update() {
 	for i, tau := range dp.Tau {
 		if tau <= 0 {
 			dp.Dt[i] = 0
@@ -61,19 +61,19 @@ func (dp *Drives) Update() {
 }
 
 // VarToZero sets all values of given drive-sized variable to 0
-func (dp *Drives) VarToZero(ctx *Context, di uint32, gvar GlobalVars) {
+func (dp *DriveParams) VarToZero(ctx *Context, di uint32, gvar GlobalVars) {
 	for i := range dp.Base {
 		SetGlbUSposV(ctx, di, gvar, uint32(i), 0)
 	}
 }
 
 // ToZero sets all drives to 0
-func (dp *Drives) ToZero(ctx *Context, di uint32) {
+func (dp *DriveParams) ToZero(ctx *Context, di uint32) {
 	dp.VarToZero(ctx, di, GvDrives)
 }
 
 // ToBaseline sets all drives to their baseline levels
-func (dp *Drives) ToBaseline(ctx *Context, di uint32) {
+func (dp *DriveParams) ToBaseline(ctx *Context, di uint32) {
 	for i := range dp.Base {
 		SetGlbUSposV(ctx, di, GvDrives, uint32(i), dp.Base[i])
 	}
@@ -81,7 +81,7 @@ func (dp *Drives) ToBaseline(ctx *Context, di uint32) {
 
 // AddTo increments drive by given amount, subject to 0-1 range clamping.
 // Returns new val.
-func (dp *Drives) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
+func (dp *DriveParams) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
 	dv := GlbUSposV(ctx, di, GvDrives, drv) + delta
 	if dv > 1 {
 		dv = 1
@@ -94,7 +94,7 @@ func (dp *Drives) AddTo(ctx *Context, di uint32, drv uint32, delta float32) floa
 
 // SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
 // if delta is positive, multiply by 1-val, else val.  Returns new val.
-func (dp *Drives) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
+func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
 	dv := GlbUSposV(ctx, di, GvDrives, drv)
 	if delta > 0 {
 		dv += (1 - dv) * delta
@@ -112,7 +112,7 @@ func (dp *Drives) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) fl
 
 // ExpStep updates drive with an exponential step with given dt value
 // toward given baseline value.
-func (dp *Drives) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
+func (dp *DriveParams) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
 	dv := GlbUSposV(ctx, di, GvDrives, drv)
 	dv += dt * (base - dv)
 	if dv > 1 {
@@ -126,7 +126,7 @@ func (dp *Drives) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32)
 
 // ExpStepAll updates given drives with an exponential step using dt values
 // toward baseline values.
-func (dp *Drives) ExpStepAll(ctx *Context, di uint32) {
+func (dp *DriveParams) ExpStepAll(ctx *Context, di uint32) {
 	for i := range dp.Base {
 		dp.ExpStep(ctx, di, uint32(i), dp.Dt[i], dp.Base[i])
 	}
@@ -134,7 +134,7 @@ func (dp *Drives) ExpStepAll(ctx *Context, di uint32) {
 
 // EffectiveDrive returns the Max of Drives at given index and DriveMin.
 // note that index 0 is the novelty / curiosity drive, which doesn't use DriveMin.
-func (dp *Drives) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
+func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 	if i == 0 {
 		return GlbUSposV(ctx, di, GvDrives, uint32(0))
 	}
@@ -142,11 +142,11 @@ func (dp *Drives) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 }
 
 /////////////////////////////////////////////////////////
-//  Effort
+//  EffortParams
 
-// Effort has parameters for giving up based on effort,
+// EffortParams has parameters for giving up based on effort,
 // which is the first negative US.
-type Effort struct {
+type EffortParams struct {
 
 	// default maximum raw effort level, for deciding when to give up on goal pursuit, when MaxNovel and MaxPostDip don't apply.
 	Max float32 `desc:"default maximum raw effort level, for deciding when to give up on goal pursuit, when MaxNovel and MaxPostDip don't apply."`
@@ -161,19 +161,19 @@ type Effort struct {
 	MaxVar float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
 }
 
-func (ef *Effort) Defaults() {
+func (ef *EffortParams) Defaults() {
 	ef.Max = 100
 	ef.MaxNovel = 8
 	ef.MaxPostDip = 4
 	ef.MaxVar = 2
 }
 
-func (ef *Effort) Update() {
+func (ef *EffortParams) Update() {
 
 }
 
 // Reset resets the raw effort back to zero -- at start of new gating event
-func (ef *Effort) Reset(ctx *Context, di uint32) {
+func (ef *EffortParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvEffortRaw, 0)
 	SetGlbV(ctx, di, GvEffortCurMax, ef.Max)
 	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, 0) // effort is neg 0
@@ -182,7 +182,7 @@ func (ef *Effort) Reset(ctx *Context, di uint32) {
 
 // ReStart restarts restarts the raw effort back to zero
 // and sets the Max with random additional variance.
-func (ef *Effort) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
+func (ef *EffortParams) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
 	ef.Reset(ctx, di)
 	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.Max))
 }
@@ -195,7 +195,7 @@ func EffortNorm(ctx *Context, di uint32, factor float32) float32 {
 }
 
 // AddEffort adds an increment of effort and updates the Disc discount factor
-func (ef *Effort) AddEffort(ctx *Context, di uint32, inc float32) {
+func (ef *EffortParams) AddEffort(ctx *Context, di uint32, inc float32) {
 	AddGlbV(ctx, di, GvEffortRaw, inc)
 	eff := GlbV(ctx, di, GvEffortRaw)
 	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, eff) // effort is neg 0
@@ -204,7 +204,7 @@ func (ef *Effort) AddEffort(ctx *Context, di uint32, inc float32) {
 // todo: on all not this:
 
 // GiveUp returns true if maximum effort has been exceeded
-func (ef *Effort) GiveUp(ctx *Context, di uint32) bool {
+func (ef *EffortParams) GiveUp(ctx *Context, di uint32) bool {
 	raw := GlbV(ctx, di, GvEffortRaw)
 	curMax := GlbV(ctx, di, GvEffortCurMax)
 	if curMax > 0 && raw > curMax {
@@ -214,7 +214,7 @@ func (ef *Effort) GiveUp(ctx *Context, di uint32) bool {
 }
 
 // PlusVar returns value plus random variance
-func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
+func (ef *EffortParams) PlusVar(rnd erand.Rand, max float32) float32 {
 	if ef.MaxVar == 0 {
 		return max
 	}
@@ -222,14 +222,14 @@ func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//  Urgency
+//  UrgencyParams
 
-// Urgency has urgency (increasing pressure to do something) and parameters for updating it.
+// UrgencyParams has urgency (increasing pressure to do something) and parameters for updating it.
 // Raw urgency is incremented by same units as effort, but is only reset with a positive US.
 // Could also make it a function of drives and bodily state factors
 // e.g., desperate thirst, hunger.  Drive activations probably have limited range
 // and renormalization, so urgency can be another dimension with more impact by directly biasing Go.
-type Urgency struct {
+type UrgencyParams struct {
 
 	// value of raw urgency where the urgency activation level is 50%
 	U50 float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
@@ -241,19 +241,19 @@ type Urgency struct {
 	Thr float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
 }
 
-func (ur *Urgency) Defaults() {
+func (ur *UrgencyParams) Defaults() {
 	ur.U50 = 20
 	ur.Power = 4
 	ur.Thr = 0.2
 }
 
-func (ur *Urgency) Update() {
+func (ur *UrgencyParams) Update() {
 
 }
 
 // UrgeFun is the urgency function: urgency / (urgency + 1) where
 // urgency = (Raw / U50)^Power
-func (ur *Urgency) UrgeFun(urgency float32) float32 {
+func (ur *UrgencyParams) UrgeFun(urgency float32) float32 {
 	urgency /= ur.U50
 	switch ur.Power {
 	case 2:
@@ -267,13 +267,13 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 }
 
 // Reset resets the raw urgency back to zero -- at start of new gating event
-func (ur *Urgency) Reset(ctx *Context, di uint32) {
+func (ur *UrgencyParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvUrgencyRaw, 0)
 	SetGlbV(ctx, di, GvUrgency, 0)
 }
 
-// UrgeFmUrgency computes Urge from Raw
-func (ur *Urgency) UrgeFmUrgency(ctx *Context, di uint32) float32 {
+// Urge computes normalized Urge value from Raw
+func (ur *UrgencyParams) Urge(ctx *Context, di uint32) float32 {
 	urge := ur.UrgeFun(GlbV(ctx, di, GvUrgencyRaw))
 	if urge < ur.Thr {
 		urge = 0
@@ -283,9 +283,9 @@ func (ur *Urgency) UrgeFmUrgency(ctx *Context, di uint32) float32 {
 }
 
 // AddEffort adds an effort increment of urgency and updates the Urge factor
-func (ur *Urgency) AddEffort(ctx *Context, di uint32, inc float32) {
+func (ur *UrgencyParams) AddEffort(ctx *Context, di uint32, inc float32) {
 	AddGlbV(ctx, di, GvUrgencyRaw, inc)
-	ur.UrgeFmUrgency(ctx, di)
+	ur.Urge(ctx, di)
 }
 
 /////////////////////////////////////////////////////////
@@ -370,23 +370,23 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 ///////////////////////////////////////////////////////////////////
 //  LHb & RMTg
 
-// LHb has values for computing LHb & RMTg which drives dips / pauses in DA firing.
+// LHbParams has values for computing LHb & RMTg which drives dips / pauses in DA firing.
 // LHb handles all US-related (PV = primary value) processing.
 // Positive net LHb activity drives dips / pauses in VTA DA activity,
 // e.g., when predicted pos > actual or actual neg > predicted.
 // Negative net LHb activity drives bursts in VTA DA activity,
 // e.g., when actual pos > predicted (redundant with LV / Amygdala)
 // or "relief" burst when actual neg < predicted.
-type LHb struct {
+type LHbParams struct {
 
 	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
 	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
 
-	// [def: 4] gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	PosGain float32 `def:"4" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	// [def: 2] gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	PosGain float32 `def:"2" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
-	// [def: 4] gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	NegGain float32 `def:"4" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	// [def: 2] gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	NegGain float32 `def:"2" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
 	// [def: 0.2] threshold on summed LHbDip over trials for triggering a reset of goal engaged state
 	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
@@ -395,19 +395,19 @@ type LHb struct {
 	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
 }
 
-func (lh *LHb) Defaults() {
+func (lh *LHbParams) Defaults() {
 	lh.NegThr = 1
-	lh.PosGain = 4
-	lh.NegGain = 4
+	lh.PosGain = 2
+	lh.NegGain = 2
 	lh.GiveUpThr = 0.2
 	lh.DipLowThr = 0.05
 }
 
-func (lh *LHb) Update() {
+func (lh *LHbParams) Update() {
 }
 
 // Reset resets all LHb vars back to 0
-func (lh *LHb) Reset(ctx *Context, di uint32) {
+func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvLHbDip, 0)
 	SetGlbV(ctx, di, GvLHbBurst, 0)
 	SetGlbV(ctx, di, GvLHbPVDA, 0)
@@ -419,7 +419,7 @@ func (lh *LHb) Reset(ctx *Context, di uint32) {
 // DAforUS computes the overall LHb Dip or Burst (one is always 0),
 // and PVDA ~= Burst - Dip, for case when there is a primary
 // positive reward value or a give-up state has triggered.
-func (lh *LHb) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
+func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
 	thr := lh.NegThr * pvNeg
 	pos := lh.PosGain * pvPos
 	neg := lh.NegGain * pvNeg
@@ -448,7 +448,7 @@ func (lh *LHb) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32
 // positive reward value or a give-up state.
 // In this case, inhibition of VS via ACh is assumed to prevent activity of PVneg
 // (and there is no PVpos), so only vsPatchPos is operative.
-func (lh *LHb) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
+func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
 	burst := float32(0)
 	dip := vsPatchPos // dip is entirely mis-prediction of positive outcome
 	SetGlbV(ctx, di, GvLHbDip, dip)
@@ -459,7 +459,7 @@ func (lh *LHb) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
 // todo: based on total negus too!
 
 // ShouldGiveUp increments DipSum and checks if should give up if above threshold
-func (lh *LHb) ShouldGiveUp(ctx *Context, di uint32) bool {
+func (lh *LHbParams) ShouldGiveUp(ctx *Context, di uint32) bool {
 	dip := GlbV(ctx, di, GvLHbDip)
 	AddGlbV(ctx, di, GvLHbDipSumCur, dip)
 	cur := GlbV(ctx, di, GvLHbDipSumCur)
@@ -474,26 +474,6 @@ func (lh *LHb) ShouldGiveUp(ctx *Context, di uint32) bool {
 	return giveUp
 }
 
-// VTA computes overall DA based on LHb PVDA (primary value -- at US time,
-// computed each trial and stored in LHbPVDA global value)
-// and Amygdala (CeM) CS / learned value (LV) activations.
-type VTA struct {
-
-	// gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
-	CeMGain float32 `desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
-
-	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
-	LHbGain float32 `desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
-}
-
-func (vt *VTA) Defaults() {
-	vt.CeMGain = 2
-	vt.LHbGain = 1
-}
-
-func (vt *VTA) Update() {
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //  PVLV
 
@@ -501,10 +481,13 @@ func (vt *VTA) Update() {
 // and resulting dopamine from US (unconditioned stimulus) inputs,
 // as computed by the PVLV model of primary value (PV)
 // and learned value (LV), describing the functions of the Amygala,
-// Ventral Striatum, VTA and associated midbrain nuclei (LDT, LHb, RMTg)
+// Ventral Striatum, VTA and associated midbrain nuclei (LDT, LHb, RMTg).
 // Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine
 // are computed in equations using inputs from specialized network layers
 // (LDTLayer driven by BLA, CeM layers, VSPatchLayer).
+// The Drives, Effort, US and resulting LHb PV dopamine computation all happens at the
+// at the start of each trial (NewState, Step).  The LV / CS dopamine is computed
+// cycle-by-cycle by the VTA layer using parameters set by the VTA layer.
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
 type PVLV struct {
 
@@ -515,22 +498,19 @@ type PVLV struct {
 	NNegUSs uint32 `inactive:"+" desc:"number of possible negative US states -- the first is always reserved for the accumulated effort cost (which drives dissapointment when an expected US is not achieved).  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
 
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
-	Drive Drives `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+	Drive DriveParams `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
 
 	// [view: inline] effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion
-	Effort Effort `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+	Effort EffortParams `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
 
 	// [view: inline] urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.
-	Urgency Urgency `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
+	Urgency UrgencyParams `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
 
 	// controls how positive and negative USs are weighted and integrated to compute an overall PV primary value.
 	USs USParams `desc:"controls how positive and negative USs are weighted and integrated to compute an overall PV primary value."`
 
 	// [view: inline] lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing
-	LHb LHb `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
-
-	// parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb
-	VTA VTA `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
+	LHb LHbParams `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
 }
 
 func (pp *PVLV) Defaults() {
@@ -539,7 +519,6 @@ func (pp *PVLV) Defaults() {
 	pp.Urgency.Defaults()
 	pp.USs.Defaults()
 	pp.LHb.Defaults()
-	pp.VTA.Defaults()
 }
 
 func (pp *PVLV) Update() {
@@ -548,7 +527,6 @@ func (pp *PVLV) Update() {
 	pp.Urgency.Update()
 	pp.USs.Update()
 	pp.LHb.Update()
-	pp.VTA.Update()
 }
 
 // SetNUSs sets the number of positive and negative USs (primary value outcomes).
@@ -579,8 +557,8 @@ func (pp *PVLV) Reset(ctx *Context, di uint32) {
 	pp.Urgency.Reset(ctx, di)
 	pp.InitUS(ctx, di)
 	pp.LHb.Reset(ctx, di)
-	VTAReset(ctx, di)
 	pp.Drive.VarToZero(ctx, di, GvVSPatch)
+	SetGlbV(ctx, di, GvVtaDA, 0)
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
 	SetGlbV(ctx, di, GvHadRew, 0)

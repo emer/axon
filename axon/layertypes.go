@@ -189,8 +189,12 @@ const (
 	LDTLayer
 
 	// VTALayer represents the ventral tegmental area, which releases
-	// dopamine.  It calls the Global VTA methods,
-	// and tracks resulting DA for visualization purposes.
+	// dopamine.  It computes final DA value from PVLV-computed
+	// LHb PVDA (primary value DA), updated at start of each trial from
+	// updated US, Effort, etc state, and cycle-by-cycle LV learned value
+	// state reflecting CS inputs, in the Amygdala (CeM).
+	// Its activity reflects this DA level, which is effectively broadcast
+	// vial Global state values to all layers.
 	VTALayer
 
 	/////////////

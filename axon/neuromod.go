@@ -169,6 +169,9 @@ func (nm *NeuroModParams) GGain(da float32) float32 {
 	case D1AbsMod:
 		gain += nm.DAModGain * mat32.Abs(da)
 	}
+	if gain < 0 {
+		gain = 0
+	}
 	return gain
 }
 

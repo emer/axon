@@ -165,6 +165,47 @@ func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
 	return vp.Gain * vs
 }
 
+// VTAParams are for computing overall VTA DA based on LHb PVDA
+// (primary value -- at US time, computed at start of each trial
+// and stored in LHbPVDA global value)
+// and Amygdala (CeM) CS / learned value (LV) activations, which update
+// every cycle.
+type VTAParams struct {
+
+	// gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
+	CeMGain float32 `desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
+
+	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
+	LHbGain float32 `desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
+
+	pad, pad1 float32
+}
+
+func (vt *VTAParams) Defaults() {
+	vt.CeMGain = 2
+	vt.LHbGain = 1
+}
+
+func (vt *VTAParams) Update() {
+}
+
+// VTADA computes the final DA value from LHb values
+// ACh value from LDT is passed as a parameter.
+func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
+	pvDA := vt.LHbGain * GlbV(ctx, di, GvLHbPVDA)
+	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
+	csDA := vt.CeMGain * ach * csNet
+	// note that ach is only on cs -- should be 1 for PV events anyway..
+	netDA := float32(0)
+	if hasRew {
+		netDA = pvDA
+	} else {
+		netDA = csDA
+	}
+	SetGlbV(ctx, di, GvVtaDA, netDA) // note: keeping this separately just for semantics
+	SetGlbV(ctx, di, GvDA, netDA)    // general neuromod DA
+}
+
 //gosl: end pvlv_layers
 
 // VSPatchAdaptThr adapts the learning threshold

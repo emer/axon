@@ -6,6 +6,7 @@ package axon
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/goki/mat32"
 )
@@ -159,8 +160,20 @@ type LayerParams struct {
 	// [view: inline] [viewif: LayType=PulvinarLayer] provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)
 	Pulv PulvParams `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
 
+	// [view: inline] [viewif: LayType=MatrixLayer] parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
+	Matrix MatrixParams `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
+
+	// [view: inline] [viewif: LayType=GPLayer] type of GP Layer.
+	GP GPParams `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
+
+	// [view: inline] [viewif: LayType=VSPatchLayer] parameters for VSPatch learning
+	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
+
 	// [view: inline] [viewif: LayType=LDTLayer] parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
 	LDT LDTParams `viewif:"LayType=LDTLayer" view:"inline" desc:"parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition"`
+
+	// [view: inline] [viewif: LayType=VTALayer] parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.
+	VTA VTAParams `viewif:"LayType=VTALayer" view:"inline" desc:"parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle."`
 
 	// [view: inline] [viewif: LayType=RWPredLayer] parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
 	RWPred RWPredParams `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
@@ -173,15 +186,6 @@ type LayerParams struct {
 
 	// [view: inline] [viewif: LayType=TDDaLayer] parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
 	TDDa TDDaParams `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
-
-	// [view: inline] [viewif: LayType=VSPatchLayer] parameters for VSPatch learning
-	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
-
-	// [view: inline] [viewif: LayType=MatrixLayer] parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
-	Matrix MatrixParams `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
-
-	// [view: inline] [viewif: LayType=GPLayer] type of GP Layer.
-	GP GPParams `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
 	// recv and send projection array access info
 	Idxs LayerIdxs `desc:"recv and send projection array access info"`
@@ -196,16 +200,17 @@ func (ly *LayerParams) Update() {
 	ly.CT.Update()
 	ly.Pulv.Update()
 
+	ly.Matrix.Update()
+	ly.GP.Update()
+
+	ly.VSPatch.Update()
 	ly.LDT.Update()
+	ly.VTA.Update()
+
 	ly.RWPred.Update()
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
-
-	ly.VSPatch.Update()
-
-	ly.Matrix.Update()
-	ly.GP.Update()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -220,16 +225,17 @@ func (ly *LayerParams) Defaults() {
 	ly.CT.Defaults()
 	ly.Pulv.Defaults()
 
+	ly.Matrix.Defaults()
+	ly.GP.Defaults()
+
+	ly.VSPatch.Defaults()
 	ly.LDT.Defaults()
+	ly.VTA.Defaults()
+
 	ly.RWPred.Defaults()
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
-
-	ly.VSPatch.Defaults()
-
-	ly.Matrix.Defaults()
-	ly.GP.Defaults()
 }
 
 // AllParams returns a listing of all parameters in the Layer
@@ -256,9 +262,23 @@ func (ly *LayerParams) AllParams() string {
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
 		str += "Pulv:    {\n " + JsonToParams(b)
 
+	case MatrixLayer:
+		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
+		str += "Matrix:  {\n " + JsonToParams(b)
+	case GPLayer:
+		b, _ = json.MarshalIndent(&ly.GP, "", " ")
+		str += "GP:      {\n " + JsonToParams(b)
+
+	case VSPatchLayer:
+		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
+		str += "VSPatch: {\n " + JsonToParams(b)
 	case LDTLayer:
 		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
 		str += "LDT: {\n " + JsonToParams(b)
+	case VTALayer:
+		b, _ = json.MarshalIndent(&ly.VTA, "", " ")
+		str += "VTA: {\n " + JsonToParams(b)
+
 	case RWPredLayer:
 		b, _ = json.MarshalIndent(&ly.RWPred, "", " ")
 		str += "RWPred:  {\n " + JsonToParams(b)
@@ -271,17 +291,6 @@ func (ly *LayerParams) AllParams() string {
 	case TDDaLayer:
 		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
 		str += "TDDa:    {\n " + JsonToParams(b)
-
-	case VSPatchLayer:
-		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
-		str += "VSPatch: {\n " + JsonToParams(b)
-
-	case MatrixLayer:
-		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
-		str += "Matrix:  {\n " + JsonToParams(b)
-	case GPLayer:
-		b, _ = json.MarshalIndent(&ly.GP, "", " ")
-		str += "GP:      {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -464,29 +473,17 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		saveVal = nonDrivePct*NrnV(ctx, ni, di, GeSyn) + ly.Acts.Dt.GeSynFmRawSteady(drvGe)
 		SetNrnV(ctx, ni, di, GeRaw, nonDrivePct*nrnGeRaw+drvGe)
 		SetNrnV(ctx, ni, di, GeSyn, saveVal)
-	case RewLayer:
-		NrnSetFlag(ctx, ni, di, NeuronHasExt)
-		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRew)) // Rew must be set in Context!
-	case LDTLayer:
-		geRaw := 0.4 * GlbV(ctx, di, GvACh)
-		SetNrnV(ctx, ni, di, GeRaw, geRaw)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
-	case RWDaLayer:
-		geRaw := ly.RWDa.GeFmDA(GlbV(ctx, di, GvDA))
-		SetNrnV(ctx, ni, di, GeRaw, geRaw)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
-	case TDDaLayer:
-		geRaw := ly.TDDa.GeFmDA(GlbV(ctx, di, GvDA))
-		SetNrnV(ctx, ni, di, GeRaw, geRaw)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
-	case TDIntegLayer:
-		NrnSetFlag(ctx, ni, di, NeuronHasExt)
-		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRewPred))
+	case VSGatedLayer:
+		dr := float32(0)
+		if pi == 0 {
+			dr = GlbV(ctx, di, GvVSMatrixJustGated)
+		} else {
+			dr = GlbV(ctx, di, GvVSMatrixHasGated)
+		}
+		dr = mat32.Abs(dr)
+		SetNrnV(ctx, ni, di, GeRaw, dr)
+		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(dr))
 
-	case VTALayer:
-		geRaw := ly.RWDa.GeFmDA(GlbV(ctx, di, GvVtaDA))
-		SetNrnV(ctx, ni, di, GeRaw, geRaw)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
 	case BLALayer:
 		// only for ext type:
 		if ly.Learn.NeuroMod.IsBLAExt() {
@@ -539,16 +536,29 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		pc := ly.Acts.PopCode.EncodeGe(pni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, GeRaw, pc)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(pc))
-	case VSGatedLayer:
-		dr := float32(0)
-		if pi == 0 {
-			dr = GlbV(ctx, di, GvVSMatrixJustGated)
-		} else {
-			dr = GlbV(ctx, di, GvVSMatrixHasGated)
-		}
-		dr = mat32.Abs(dr)
-		SetNrnV(ctx, ni, di, GeRaw, dr)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(dr))
+	case LDTLayer:
+		geRaw := 0.4 * GlbV(ctx, di, GvACh)
+		SetNrnV(ctx, ni, di, GeRaw, geRaw)
+		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
+	case VTALayer:
+		geRaw := ly.RWDa.GeFmDA(GlbV(ctx, di, GvVtaDA))
+		SetNrnV(ctx, ni, di, GeRaw, geRaw)
+		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
+
+	case RewLayer:
+		NrnSetFlag(ctx, ni, di, NeuronHasExt)
+		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRew)) // Rew must be set in Context!
+	case RWDaLayer:
+		geRaw := ly.RWDa.GeFmDA(GlbV(ctx, di, GvDA))
+		SetNrnV(ctx, ni, di, GeRaw, geRaw)
+		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
+	case TDDaLayer:
+		geRaw := ly.TDDa.GeFmDA(GlbV(ctx, di, GvDA))
+		SetNrnV(ctx, ni, di, GeRaw, geRaw)
+		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
+	case TDIntegLayer:
+		NrnSetFlag(ctx, ni, di, NeuronHasExt)
+		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRewPred))
 	}
 	return saveVal
 }
@@ -618,6 +628,9 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni, di uint32) {
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) {
 	gi := vals.ActAvg.GiMult*pl.Inhib.Gi + NrnV(ctx, ni, di, GiSyn) + NrnV(ctx, ni, di, GiNoise) + ly.Learn.NeuroMod.GiFmACh(GlbV(ctx, di, GvACh))
+	if gi < 0 {
+		fmt.Printf("gi < 0: %g\n", gi)
+	}
 	SetNrnV(ctx, ni, di, Gi, gi)
 	SetNrnV(ctx, ni, di, SSGi, pl.Inhib.SSGi)
 	SetNrnV(ctx, ni, di, SSGiDend, 0)
@@ -696,6 +709,15 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 			}
 			SetNrnV(ctx, ni, di, CtxtGeOrig, NrnV(ctx, ni, di, CtxtGe))
 		}
+	case VSGatedLayer:
+		dr := float32(0)
+		if pi == 0 {
+			dr = GlbV(ctx, di, GvVSMatrixJustGated)
+		} else {
+			dr = GlbV(ctx, di, GvVSMatrixHasGated)
+		}
+		SetNrnV(ctx, ni, di, Act, dr)
+
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			if GlbV(ctx, di, GvHasRew) > 0 {
@@ -706,33 +728,6 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 				SetNrnV(ctx, ni, di, CtxtGeOrig, NrnV(ctx, ni, di, CtxtGe))
 			}
 		}
-	case RewLayer:
-		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvRew))
-	case LDTLayer:
-		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvAChRaw)) // I set this in CyclePost
-	case RWPredLayer:
-		SetNrnV(ctx, ni, di, Act, ly.RWPred.PredRange.ClipVal(NrnV(ctx, ni, di, Ge))) // clipped linear
-		if pni == 0 {
-			vals.Special.V1 = NrnV(ctx, ni, di, ActInt) // warning: if more than 1 layer writes to vals, gpu will fail!
-		} else {
-			vals.Special.V2 = NrnV(ctx, ni, di, ActInt)
-		}
-	case RWDaLayer:
-		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvDA)) // I set this in CyclePost
-	case TDPredLayer:
-		SetNrnV(ctx, ni, di, Act, NrnV(ctx, ni, di, Ge)) // linear
-		if pni == 0 {
-			vals.Special.V1 = NrnV(ctx, ni, di, ActInt) // warning: if more than 1 layer writes to vals, gpu will fail!
-		} else {
-			vals.Special.V2 = NrnV(ctx, ni, di, ActInt)
-		}
-	case TDIntegLayer:
-		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvRewPred))
-	case TDDaLayer:
-		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvDA)) // I set this in CyclePost
-
-	case VTALayer:
-		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvVtaDA)) // I set this in CyclePost
 	case LHbLayer:
 		if pni == 0 {
 			SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvLHbDip))
@@ -770,14 +765,33 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		}
 		act := ly.Acts.PopCode.EncodeVal(pni, ly.Idxs.NeurN, pv)
 		SetNrnV(ctx, ni, di, Act, act)
-	case VSGatedLayer:
-		dr := float32(0)
-		if pi == 0 {
-			dr = GlbV(ctx, di, GvVSMatrixJustGated)
+	case LDTLayer:
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvAChRaw)) // I set this in CyclePost
+	case VTALayer:
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvVtaDA)) // I set this in CyclePost
+
+	case RewLayer:
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvRew))
+	case RWPredLayer:
+		SetNrnV(ctx, ni, di, Act, ly.RWPred.PredRange.ClipVal(NrnV(ctx, ni, di, Ge))) // clipped linear
+		if pni == 0 {
+			vals.Special.V1 = NrnV(ctx, ni, di, ActInt) // warning: if more than 1 layer writes to vals, gpu will fail!
 		} else {
-			dr = GlbV(ctx, di, GvVSMatrixHasGated)
+			vals.Special.V2 = NrnV(ctx, ni, di, ActInt)
 		}
-		SetNrnV(ctx, ni, di, Act, dr)
+	case RWDaLayer:
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvDA)) // I set this in CyclePost
+	case TDPredLayer:
+		SetNrnV(ctx, ni, di, Act, NrnV(ctx, ni, di, Ge)) // linear
+		if pni == 0 {
+			vals.Special.V1 = NrnV(ctx, ni, di, ActInt) // warning: if more than 1 layer writes to vals, gpu will fail!
+		} else {
+			vals.Special.V2 = NrnV(ctx, ni, di, ActInt)
+		}
+	case TDIntegLayer:
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvRewPred))
+	case TDDaLayer:
+		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvDA)) // I set this in CyclePost
 	}
 }
 
@@ -874,7 +888,7 @@ func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, di uint32, lpl *Po
 }
 
 func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
-	VTADA(ctx, di, GlbV(ctx, di, GvACh), (GlbV(ctx, di, GvHasRew) > 0))
+	ly.VTA.VTADA(ctx, di, GlbV(ctx, di, GvACh), (GlbV(ctx, di, GvHasRew) > 0))
 }
 
 // note: needs to iterate over sub-pools in layer!

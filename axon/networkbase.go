@@ -757,6 +757,9 @@ func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
 // access strides for this network -- must be set properly -- see SetCtxStrides.
 func (nt *NetworkBase) Build(simCtx *Context) error {
 	nt.UseGPUOrder = true // todo: set externally
+	if nt.PVLV.NPosUSs == 0 {
+		nt.PVLV.SetNUSs(simCtx, 1, 1)
+	}
 	ctx := &nt.Ctx
 	*ctx = *simCtx
 	ctx.NetIdxs.NetIdx = nt.NetIdx

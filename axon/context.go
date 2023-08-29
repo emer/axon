@@ -750,30 +750,6 @@ func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 	}
 }
 
-/////////////////////////////////////////////////////////
-// 	VTA
-
-// VTAReset resets all vars back to 0
-func VTAReset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvVtaDA, 0)
-}
-
-// VTADA computes the final DA value from LHb values
-// ACh value from LDT is passed as a parameter.
-func VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
-	pvDA := GlbV(ctx, di, GvLHbPVDA)
-	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
-	csDA := ach * csNet
-	// note that ach is only on cs -- should be 1 for PV events anyway..
-	netDA := float32(0)
-	if hasRew {
-		netDA = pvDA
-	} else {
-		netDA = csDA
-	}
-	SetGlbV(ctx, di, GvVtaDA, netDA)
-}
-
 // PVLVUSStimVal returns stimulus value for US at given index
 // and valence.  If US > 0.01, a full 1 US activation is returned.
 func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) float32 {
