@@ -175,7 +175,7 @@ func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
 		modlr := ly.Params.Learn.NeuroMod.LRMod(da, GlbV(ctx, di, GvACh))
 		modlr = ly.Params.VSPatch.DALRate(da, modlr) // always decrease if no DA
 		for pi := uint32(1); pi < ly.NPools; pi++ {
-			vsval := GlbDrvV(ctx, di, uint32(pi-1), GvVSPatch)
+			vsval := GlbUSposV(ctx, di, GvVSPatch, uint32(pi-1))
 			hasRew := GlbV(ctx, di, GvHasRew)
 			if hasRew == 0 {
 				sumDThr += ly.Params.VSPatch.ThrNonRew * vsval // increase threshold

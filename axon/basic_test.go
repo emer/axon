@@ -1456,7 +1456,7 @@ func TestGlobalIdxs(t *testing.T) {
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {
 		for ui := uint32(0); ui < pv.NPosUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbDrvV(ctx, di, ui, vv, val)
+				SetGlbUSposV(ctx, di, vv, ui, val)
 				val += 1
 			}
 		}

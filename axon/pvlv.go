@@ -63,7 +63,7 @@ func (dp *Drives) Update() {
 // VarToZero sets all values of given drive-sized variable to 0
 func (dp *Drives) VarToZero(ctx *Context, di uint32, gvar GlobalVars) {
 	for i := range dp.Base {
-		SetGlbDrvV(ctx, di, uint32(i), gvar, 0)
+		SetGlbUSposV(ctx, di, gvar, uint32(i), 0)
 	}
 }
 
@@ -75,27 +75,27 @@ func (dp *Drives) ToZero(ctx *Context, di uint32) {
 // ToBaseline sets all drives to their baseline levels
 func (dp *Drives) ToBaseline(ctx *Context, di uint32) {
 	for i := range dp.Base {
-		SetGlbDrvV(ctx, di, uint32(i), GvDrives, dp.Base[i])
+		SetGlbUSposV(ctx, di, GvDrives, uint32(i), dp.Base[i])
 	}
 }
 
 // AddTo increments drive by given amount, subject to 0-1 range clamping.
 // Returns new val.
 func (dp *Drives) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbDrvV(ctx, di, drv, GvDrives) + delta
+	dv := GlbUSposV(ctx, di, GvDrives, drv) + delta
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbDrvV(ctx, di, drv, GvDrives, dv)
+	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
 	return dv
 }
 
 // SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
 // if delta is positive, multiply by 1-val, else val.  Returns new val.
 func (dp *Drives) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbDrvV(ctx, di, drv, GvDrives)
+	dv := GlbUSposV(ctx, di, GvDrives, drv)
 	if delta > 0 {
 		dv += (1 - dv) * delta
 	} else {
@@ -106,21 +106,21 @@ func (dp *Drives) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) fl
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbDrvV(ctx, di, drv, GvDrives, dv)
+	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
 	return dv
 }
 
 // ExpStep updates drive with an exponential step with given dt value
 // toward given baseline value.
 func (dp *Drives) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
-	dv := GlbDrvV(ctx, di, drv, GvDrives)
+	dv := GlbUSposV(ctx, di, GvDrives, drv)
 	dv += dt * (base - dv)
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbDrvV(ctx, di, drv, GvDrives, dv)
+	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
 	return dv
 }
 
@@ -136,9 +136,9 @@ func (dp *Drives) ExpStepAll(ctx *Context, di uint32) {
 // note that index 0 is the novelty / curiosity drive, which doesn't use DriveMin.
 func (dp *Drives) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 	if i == 0 {
-		return GlbDrvV(ctx, di, uint32(0), GvDrives)
+		return GlbUSposV(ctx, di, GvDrives, uint32(0))
 	}
-	return mat32.Max(GlbDrvV(ctx, di, i, GvDrives), dp.DriveMin)
+	return mat32.Max(GlbUSposV(ctx, di, GvDrives, i), dp.DriveMin)
 }
 
 /////////////////////////////////////////////////////////
@@ -363,7 +363,7 @@ func (us *USParams) USnegToZero(ctx *Context, di uint32) {
 // USposToZero sets all values of USpos to zero
 func (us *USParams) USposToZero(ctx *Context, di uint32) {
 	for i := range us.PVPosWts {
-		SetGlbDrvV(ctx, di, uint32(i), GvUSpos, 0)
+		SetGlbUSposV(ctx, di, GvUSpos, uint32(i), 0)
 	}
 }
 
@@ -627,7 +627,7 @@ func (pp *PVLV) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32)
 
 // PVLVSetDrive sets given Drive to given value
 func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
-	SetGlbDrvV(ctx, di, dr, GvDrives, val)
+	SetGlbUSposV(ctx, di, GvDrives, dr, val)
 }
 
 // SetDrives is used when directly controlling drive levels externally.
@@ -651,12 +651,12 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 	pp.Drive.ExpStepAll(ctx, di)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		us := GlbDrvV(ctx, di, i, GvUSpos)
-		nwdrv := GlbDrvV(ctx, di, i, GvDrives) - us*pp.Drive.Satisfaction[i]
+		us := GlbUSposV(ctx, di, GvUSpos, i)
+		nwdrv := GlbUSposV(ctx, di, GvDrives, i) - us*pp.Drive.Satisfaction[i]
 		if nwdrv < 0 {
 			nwdrv = 0
 		}
-		SetGlbDrvV(ctx, di, i, GvDrives, nwdrv)
+		SetGlbUSposV(ctx, di, GvDrives, i, nwdrv)
 	}
 }
 
@@ -681,8 +681,8 @@ func (pp *PVLV) UrgencyUpdt(ctx *Context, di uint32, effort float32) {
 // which is the trigger for a full-blown US learning event.
 func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
 	if valence == Positive {
-		SetGlbV(ctx, di, GvHasRew, 1)                            // only for positive USs
-		SetGlbDrvV(ctx, di, uint32(usIdx)+1, GvUSpos, magnitude) // +1 for curiosity
+		SetGlbV(ctx, di, GvHasRew, 1)                              // only for positive USs
+		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx)+1, magnitude) // +1 for curiosity
 	} else {
 		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+1, magnitude) // +1 for effort
 	}
@@ -742,7 +742,7 @@ func (pp *PVLV) PVpos(ctx *Context, di uint32) (usPosSum, pvPos float32) {
 	nd := pp.NPosUSs
 	wts := pp.USs.PVPosWts
 	for i := uint32(0); i < nd; i++ {
-		usPosSum += wts[i] * GlbDrvV(ctx, di, i, GvUSpos) * pp.Drive.EffectiveDrive(ctx, di, i)
+		usPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * pp.Drive.EffectiveDrive(ctx, di, i)
 	}
 	pvPos = PVLVNormFun(pp.USs.PVPosGain * usPosSum)
 	return
@@ -768,7 +768,7 @@ func (pp *PVLV) VSPatchMax(ctx *Context, di uint32) float32 {
 	max := float32(0)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		vs := GlbDrvV(ctx, di, i, GvVSPatch)
+		vs := GlbUSposV(ctx, di, GvVSPatch, i)
 		if vs > max {
 			max = vs
 		}
@@ -780,7 +780,7 @@ func (pp *PVLV) VSPatchMax(ctx *Context, di uint32) float32 {
 func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		if GlbDrvV(ctx, di, i, GvUSpos) > 0 {
+		if GlbUSposV(ctx, di, GvUSpos, i) > 0 {
 			return true
 		}
 	}
@@ -822,7 +822,7 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 		giveUp = true
 	}
 	if giveUp {
-		NeuroModSetRew(ctx, di, 0, true) // sets HasRew -- drives maint reset, ACh
+		GlobalSetRew(ctx, di, 0, true) // sets HasRew -- drives maint reset, ACh
 	}
 	return giveUp
 }

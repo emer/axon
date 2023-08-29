@@ -506,7 +506,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
 	case DrivesLayer:
-		dr := GlbDrvV(ctx, di, uint32(pi), GvDrives)
+		dr := GlbUSposV(ctx, di, GvDrives, uint32(pi))
 		geRaw := dr
 		if dr > 0 {
 			geRaw = ly.Acts.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
@@ -741,7 +741,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		}
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(NrnV(ctx, ni, di, GeRaw)))
 	case DrivesLayer:
-		dr := GlbDrvV(ctx, di, uint32(pi), GvDrives)
+		dr := GlbUSposV(ctx, di, GvDrives, uint32(pi))
 		act := dr
 		if dr > 0 {
 			act = ly.Acts.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
@@ -880,7 +880,7 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 // note: needs to iterate over sub-pools in layer!
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool, vals *LayerVals) {
 	val := ly.VSPatch.ThrVal(pl.AvgMax.CaSpkD.Cycle.Avg, vals.ActAvg.AdaptThr)
-	SetGlbDrvV(ctx, di, uint32(pi-1), GvVSPatch, val)
+	SetGlbUSposV(ctx, di, GvVSPatch, uint32(pi-1), val)
 }
 
 /////////////////////////////////////////////////////////////////////////

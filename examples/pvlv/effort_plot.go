@@ -170,7 +170,7 @@ func (ss *DrEffPlot) TimeRun() {
 	pp.Urgency.Reset(ctx, 0)
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
-	axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, 0)
+	axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, 0)
 	pp.Drive.ToBaseline(ctx, 0)
 	// pv.Update()
 	lastUS := 0
@@ -178,7 +178,7 @@ func (ss *DrEffPlot) TimeRun() {
 		ev := 1 - axon.EffortNorm(ctx, 0, 0.02)
 		urg := pp.Urgency.UrgeFmUrgency(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
-		dr := axon.GlbDrvV(ctx, 0, 0, axon.GvDrives)
+		dr := axon.GlbUSposV(ctx, 0, axon.GvDrives, 0)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
@@ -193,7 +193,7 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("US", ti, float64(usv))
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
-		axon.SetGlbDrvV(ctx, 0, 1, axon.GvUSpos, usv)
+		axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, usv)
 		axon.SetGlbV(ctx, 0, axon.GvHadRew, bools.ToFloat32(usv > 0))
 		pp.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
 		pp.DriveUpdt(ctx, 0)

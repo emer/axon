@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/emer/emergent/etime"
@@ -200,19 +199,19 @@ func AddGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val fl
 	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val
 }
 
-// GlbDrvV is the CPU version of the global Drive, USpos variable accessor
-func GlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars) float32 {
-	return GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)]
+// GlbUSposV is the CPU version of the global Drive, USpos variable accessor
+func GlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIdx uint32) float32 {
+	return GlobalNetwork(ctx).Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)]
 }
 
-// SetGlbDrvV is the CPU version of the global Drive, USpos variable settor
-func SetGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val
+// SetGlbUSposV is the CPU version of the global Drive, USpos variable settor
+func SetGlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] = val
 }
 
-// AddGlbDrvV is the CPU version of the global Drive, USpos variable adder
-func AddGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val
+// AddGlbUSposV is the CPU version of the global Drive, USpos variable adder
+func AddGlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] += val
 }
 
 // CopyNetStridesFrom copies strides and NetIdxs for accessing
@@ -281,13 +280,16 @@ type NetIdxs struct {
 	// offset into GlobalVars for USneg values
 	GvUSnegOff uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
 
-	// offset into GlobalVars for Drive and USpos values
-	GvDriveOff uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
+	// stride into GlobalVars for USneg values
+	GvUSnegStride uint32 `inactive:"+" desc:"stride into GlobalVars for USneg values"`
 
-	// stride into GlobalVars for Drive and USpos values
-	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
+	// offset into GlobalVars for USpos, Drive, VSPatch values values
+	GvUSposOff uint32 `inactive:"+" desc:"offset into GlobalVars for USpos, Drive, VSPatch values values"`
 
-	pad, pad1 uint32
+	// stride into GlobalVars for USpos, Drive, VSPatch values
+	GvUSposStride uint32 `inactive:"+" desc:"stride into GlobalVars for USpos, Drive, VSPatch values"`
+
+	pad uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -455,8 +457,9 @@ func (ctx *Context) SlowInc() bool {
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
 	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvUSneg)
-	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(0, GvUSnegRaw, ctx.NetIdxs.PVLVNNegUSs)
-	ctx.NetIdxs.GvDriveStride = uint32(ctx.NetIdxs.PVLVNPosUSs) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvUSnegStride = uint32(ctx.NetIdxs.PVLVNNegUSs) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvUSposOff = ctx.GlobalUSnegIdx(0, GvUSnegRaw, ctx.NetIdxs.PVLVNNegUSs)
+	ctx.NetIdxs.GvUSposStride = uint32(ctx.NetIdxs.PVLVNPosUSs) * ctx.NetIdxs.MaxData
 }
 
 // GlobalIdx returns index into main global variables,
@@ -467,17 +470,17 @@ func (ctx *Context) GlobalIdx(di uint32, gvar GlobalVars) uint32 {
 
 // GlobalUSnegIdx returns index into USneg global variables
 func (ctx *Context) GlobalUSnegIdx(di uint32, gvar GlobalVars, negIdx uint32) uint32 {
-	return ctx.NetIdxs.GvUSnegOff + uint32(gvar-GvUSneg)*ctx.NetIdxs.PVLVNNegUSs*ctx.NetIdxs.MaxData + negIdx*ctx.NetIdxs.MaxData + di
+	return ctx.NetIdxs.GvUSnegOff + uint32(gvar-GvUSneg)*ctx.NetIdxs.GvUSnegStride + negIdx*ctx.NetIdxs.MaxData + di
 }
 
-// GlobalDriveIdx returns index into Drive and USpos, VSPatch global variables
-func (ctx *Context) GlobalDriveIdx(di uint32, drIdx uint32, gvar GlobalVars) uint32 {
-	return ctx.NetIdxs.GvDriveOff + uint32(gvar-GvDrives)*ctx.NetIdxs.GvDriveStride + drIdx*ctx.NetIdxs.MaxData + di
+// GlobalUSposIdx returns index into USpos, Drive, VSPatch global variables
+func (ctx *Context) GlobalUSposIdx(di uint32, gvar GlobalVars, posIdx uint32) uint32 {
+	return ctx.NetIdxs.GvUSposOff + uint32(gvar-GvDrives)*ctx.NetIdxs.GvUSposStride + posIdx*ctx.NetIdxs.MaxData + di
 }
 
 // GlobalVNFloats number of floats to allocate for Globals
 func (ctx *Context) GlobalVNFloats() uint32 {
-	return ctx.GlobalDriveIdx(0, 0, GlobalVarsN)
+	return ctx.GlobalUSposIdx(0, GlobalVarsN, 0)
 }
 
 //gosl: end context
@@ -699,16 +702,16 @@ void AddGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float va
 	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val;
 }
 
-float GlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar) {
-	return Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)];
+float GlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx) {
+	return Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)];
 }
 
-void SetGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val;
+void SetGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx, float val) {
+	Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] = val;
 }
 
-void AddGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val;
+void AddGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx, float val) {
+	Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] += val;
 }
 
 */
@@ -717,21 +720,28 @@ void AddGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val)
 
 //gosl: start context
 
-/////////////////////////////////////////////////////////
-// NeuroMod global functions
-
-// NeuroModInit does neuromod initialization
-func NeuroModInit(ctx *Context, di uint32) {
-	for ns := GvRew; ns <= GvNotMaint; ns++ {
-		if ns != GvPrevPred {
-			SetGlbV(ctx, di, ns, 0)
+// GlobalsReset resets all global values to 0, for all NData
+func GlobalsReset(ctx *Context) {
+	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
+		for vg := GvRew; vg < GvUSneg; vg++ {
+			SetGlbV(ctx, di, vg, 0)
+		}
+		for vn := GvUSneg; vn <= GvUSnegRaw; vn++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+				SetGlbUSneg(ctx, di, vn, ui, 0)
+			}
+		}
+		for vp := GvDrives; vp < GlobalVarsN; vp++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
+				SetGlbUSposV(ctx, di, vp, ui, 0)
+			}
 		}
 	}
 }
 
-// NeuroModSetRew is a convenience function for setting the external reward
-func NeuroModSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
-	fmt.Printf("set hasr: %v\n", hasRew)
+// GlobalSetRew is a convenience function for setting the external reward
+// state in Globals variables
+func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 	SetGlbV(ctx, di, GvHasRew, bools.ToFloat32(hasRew))
 	if hasRew {
 		SetGlbV(ctx, di, GvRew, rew)
@@ -770,7 +780,7 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 	us := float32(0)
 	if valence == Positive {
 		if usIdx < ctx.NetIdxs.PVLVNPosUSs {
-			us = GlbDrvV(ctx, di, usIdx, GvUSpos)
+			us = GlbUSposV(ctx, di, GvUSpos, usIdx)
 		}
 	} else {
 		if usIdx < ctx.NetIdxs.PVLVNNegUSs {
@@ -786,9 +796,6 @@ func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) 
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
-	// for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
-	// 	NeuroModInit(ctx, di)
-	// }
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -816,9 +823,7 @@ func (ctx *Context) Reset() {
 		ctx.Defaults()
 	}
 	ctx.RandCtr.Reset()
-	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
-		NeuroModInit(ctx, di)
-	}
+	GlobalsReset(ctx)
 }
 
 // NewContext returns a new Time struct with default parameters

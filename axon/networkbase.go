@@ -562,20 +562,17 @@ func (nt *NetworkBase) AllGlobals() string {
 		for vv := GvRew; vv < GvUSneg; vv++ {
 			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlbV(ctx, di, vv))
 		}
-		str += fmt.Sprintf("%20s:\t", "USNeg")
-		for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
-			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, GvUSneg, ui))
+		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
+			str += fmt.Sprintf("%20s:\t", vv.String())
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, vv, ui))
+			}
+			str += "\n"
 		}
-		str += "\n"
-		str += fmt.Sprintf("%20s:\t", "USNegRaw")
-		for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
-			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, GvUSnegRaw, ui))
-		}
-		str += "\n"
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
-				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbDrvV(ctx, di, ui, vv))
+				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbUSposV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
@@ -592,16 +589,16 @@ func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlbV(ctx, di, vv)
 		}
-		for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
-			key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USneg", ui)
-			vals[key] = GlbUSneg(ctx, di, GvUSneg, ui)
-			key = fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USnegRaw", ui)
-			vals[key] = GlbUSneg(ctx, di, GvUSnegRaw, ui)
+		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
+				vals[key] = GlbUSneg(ctx, di, vv, ui)
+			}
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlbDrvV(ctx, di, ui, vv)
+				vals[key] = GlbUSposV(ctx, di, vv, ui)
 			}
 		}
 	}
