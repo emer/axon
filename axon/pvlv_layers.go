@@ -182,7 +182,7 @@ type VTAParams struct {
 }
 
 func (vt *VTAParams) Defaults() {
-	vt.CeMGain = 2
+	vt.CeMGain = 1
 	vt.LHbGain = 1
 }
 
@@ -374,17 +374,6 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
-func (ly *LayerParams) EffortDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.2
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 0.5
-	ly.Inhib.Pool.On.SetBool(false)
-	ly.Acts.PopCode.On.SetBool(true) // use only popcode
-	ly.Acts.Decay.Act = 1
-	ly.Acts.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
-}
-
 func (ly *LayerParams) UrgencyDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Inhib.Layer.On.SetBool(true)
@@ -398,10 +387,14 @@ func (ly *LayerParams) UrgencyDefaults() {
 }
 
 func (ly *LayerParams) USDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.2
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 0.5
-	ly.Inhib.Pool.On.SetBool(false)
+	ly.Inhib.ActAvg.Nominal = 0.05
+	ly.Inhib.Layer.On.SetBool(false)
+	ly.Inhib.Pool.On.SetBool(true)
+	ly.Inhib.Pool.Gi = 0.5
+	ly.Acts.PopCode.On.SetBool(true)
+	ly.Acts.PopCode.MinAct = 0.2 // low activity for low val -- also has special 0 case = nothing
+	ly.Acts.PopCode.MinSigma = 0.08
+	ly.Acts.PopCode.MaxSigma = 0.12
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)

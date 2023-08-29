@@ -237,8 +237,10 @@ func (net *Network) AddUSPulvLayers(nUSpos, nUSneg, popY, popX int, rel relpos.R
 		usNeg.PlaceBehind(usPosP, space)
 	}
 	usParams := params.Params{
-		"Layer.Inhib.ActAvg.Nominal": "0.2",
-		"Layer.Inhib.Layer.Gi":       "0.5",
+		"Layer.Inhib.ActAvg.Nominal": "0.05",
+		"Layer.Inhib.Layer.On":       "false",
+		"Layer.Inhib.Pool.On":        "true",
+		"Layer.Inhib.Pool.Gi":        "0.5",
 	}
 	usPosP.DefParams = usParams
 	usPosP.SetClass("USLayer")
