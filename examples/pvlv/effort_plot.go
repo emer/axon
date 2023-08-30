@@ -195,7 +195,7 @@ func (ss *DrEffPlot) TimeRun() {
 
 		axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, usv)
 		axon.SetGlbV(ctx, 0, axon.GvHadRew, bools.ToFloat32(usv > 0))
-		pp.EffortUrgencyUpdt(ctx, 0, &ss.Rand, 0)
+		pp.EffortUrgencyUpdt(ctx, 0, 0)
 		pp.DriveUpdt(ctx, 0)
 	}
 	ss.TimePlot.Update()

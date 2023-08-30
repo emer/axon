@@ -379,7 +379,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	pv := &ss.Net.PVLV
 	di := uint32(0)                    // not doing NData here -- otherwise loop over
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
+	pv.EffortUrgencyUpdt(ctx, di, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
 			pv.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)

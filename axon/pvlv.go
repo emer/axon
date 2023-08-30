@@ -235,11 +235,10 @@ func (ef *EffortParams) PlusVar(rnd erand.Rand, max float32) float32 {
 ///////////////////////////////////////////////////////////////////////////////
 //  UrgencyParams
 
-// UrgencyParams has urgency (increasing pressure to do something) and parameters for updating it.
-// Raw urgency is incremented by same units as effort, but is only reset with a positive US.
-// Could also make it a function of drives and bodily state factors
-// e.g., desperate thirst, hunger.  Drive activations probably have limited range
-// and renormalization, so urgency can be another dimension with more impact by directly biasing Go.
+// UrgencyParams has urgency (increasing pressure to do something)
+// and parameters for updating it.
+// Raw urgency integrates effort when _not_ goal engaged
+// while effort (negative US 0) integrates when a goal _is_ engaged.
 type UrgencyParams struct {
 
 	// value of raw urgency where the urgency activation level is 50%
@@ -253,7 +252,7 @@ type UrgencyParams struct {
 }
 
 func (ur *UrgencyParams) Defaults() {
-	ur.U50 = 20
+	ur.U50 = 10
 	ur.Power = 4
 	ur.Thr = 0.2
 }
@@ -589,19 +588,18 @@ func (pp *PVLV) InitDrives(ctx *Context, di uint32) {
 	pp.Drive.ToBaseline(ctx, di)
 }
 
-// EffortUpdt updates the effort based on given effort increment,
-// resetting instead if HasRewPrev flag is true.
-// Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) EffortUpdt(ctx *Context, di uint32, rnd erand.Rand, effort float32) {
-	pp.Effort.AddEffort(ctx, di, effort)
-}
-
-// EffortUrgencyUpdt updates the Effort & Urgency based on
-// given effort increment, resetting instead if HasRewPrev flag is true.
-// Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) EffortUrgencyUpdt(ctx *Context, di uint32, rnd erand.Rand, effort float32) {
-	pp.EffortUpdt(ctx, di, rnd, effort)
-	pp.UrgencyUpdt(ctx, di, effort)
+// EffortUrgencyUpdt updates the Effort or Urgency based on
+// given effort increment.
+// Effort is incremented when VSMatrixHasGated (i.e., goal engaged)
+// and Urgency updates otherwise (when not goal engaged)
+// Call this at the start of the trial, in ApplyPVLV method,
+// after NewState.
+func (pp *PVLV) EffortUrgencyUpdt(ctx *Context, di uint32, effort float32) {
+	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
+		pp.Effort.AddEffort(ctx, di, effort)
+	} else {
+		pp.Urgency.AddEffort(ctx, di, effort)
+	}
 }
 
 // PVposFmDriveEffort returns the net primary value ("reward") based on
@@ -646,18 +644,6 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 			nwdrv = 0
 		}
 		SetGlbUSposV(ctx, di, GvDrives, i, nwdrv)
-	}
-}
-
-// UrgencyUpdt updates the urgency and urgency based on given effort increment,
-// resetting instead if HasRewPrev and HasPosUSPrev is true indicating receipt
-// of an actual positive US.
-// Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) UrgencyUpdt(ctx *Context, di uint32, effort float32) {
-	if (GlbV(ctx, di, GvHadRew) > 0) && (GlbV(ctx, di, GvHadPosUS) > 0) {
-		pp.Urgency.Reset(ctx, di)
-	} else {
-		pp.Urgency.AddEffort(ctx, di, effort)
 	}
 }
 

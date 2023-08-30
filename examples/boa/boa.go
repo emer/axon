@@ -573,7 +573,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach, di uint32) {
 	pv := &ss.Net.PVLV
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
+	pv.EffortUrgencyUpdt(ctx, di, 1)   // note: effort can vary with terrain!
 	if ev.US != noUS {
 		pv.SetUS(ctx, di, axon.Positive, ev.US, 1) // mag 1 for now..
 	}
