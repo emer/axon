@@ -33,32 +33,34 @@ func _() {
 	_ = x[GvVSMatrixHasGated-17]
 	_ = x[GvHasPosUS-18]
 	_ = x[GvHadPosUS-19]
-	_ = x[GvLHbDip-20]
-	_ = x[GvLHbBurst-21]
-	_ = x[GvLHbPVDA-22]
-	_ = x[GvLHbDipSumCur-23]
-	_ = x[GvLHbDipSum-24]
-	_ = x[GvLHbGiveUp-25]
-	_ = x[GvLHbGaveUp-26]
-	_ = x[GvLHbVSPatchPos-27]
-	_ = x[GvLHbPVposSum-28]
-	_ = x[GvLHbPVpos-29]
-	_ = x[GvLHbPVnegSum-30]
-	_ = x[GvLHbPVneg-31]
-	_ = x[GvCeMpos-32]
-	_ = x[GvCeMneg-33]
-	_ = x[GvVtaDA-34]
-	_ = x[GvUSneg-35]
-	_ = x[GvUSnegRaw-36]
-	_ = x[GvDrives-37]
-	_ = x[GvUSpos-38]
-	_ = x[GvVSPatch-39]
-	_ = x[GlobalVarsN-40]
+	_ = x[GvNegUSOutcome-20]
+	_ = x[GvHadNegUSOutcome-21]
+	_ = x[GvLHbDip-22]
+	_ = x[GvLHbBurst-23]
+	_ = x[GvLHbPVDA-24]
+	_ = x[GvLHbDipSumCur-25]
+	_ = x[GvLHbDipSum-26]
+	_ = x[GvLHbGiveUp-27]
+	_ = x[GvLHbGaveUp-28]
+	_ = x[GvLHbVSPatchPos-29]
+	_ = x[GvLHbPVposSum-30]
+	_ = x[GvLHbPVpos-31]
+	_ = x[GvLHbPVnegSum-32]
+	_ = x[GvLHbPVneg-33]
+	_ = x[GvCeMpos-34]
+	_ = x[GvCeMneg-35]
+	_ = x[GvVtaDA-36]
+	_ = x[GvUSneg-37]
+	_ = x[GvUSnegRaw-38]
+	_ = x[GvDrives-39]
+	_ = x[GvUSpos-40]
+	_ = x[GvVSPatch-41]
+	_ = x[GlobalVarsN-42]
 }
 
-const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvHadRewGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvCuriosityPoolGatedGvVSMatrixHasGatedGvHasPosUSGvHadPosUSGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbGaveUpGvLHbVSPatchPosGvLHbPVposSumGvLHbPVposGvLHbPVnegSumGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvUSposGvVSPatchGlobalVarsN"
+const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvHadRewGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvCuriosityPoolGatedGvVSMatrixHasGatedGvHasPosUSGvHadPosUSGvNegUSOutcomeGvHadNegUSOutcomeGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbGaveUpGvLHbVSPatchPosGvLHbPVposSumGvLHbPVposGvLHbPVnegSumGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvUSposGvVSPatchGlobalVarsN"
 
-var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 40, 44, 49, 53, 58, 66, 76, 87, 101, 110, 122, 141, 161, 179, 189, 199, 207, 217, 226, 240, 251, 262, 273, 288, 301, 311, 324, 334, 342, 350, 357, 364, 374, 382, 389, 398, 409}
+var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 40, 44, 49, 53, 58, 66, 76, 87, 101, 110, 122, 141, 161, 179, 189, 199, 213, 230, 238, 248, 257, 271, 282, 293, 304, 319, 332, 342, 355, 365, 373, 381, 388, 395, 405, 413, 420, 429, 440}
 
 func (i GlobalVars) String() string {
 	if i < 0 || i >= GlobalVars(len(_GlobalVars_index)-1) {
@@ -97,28 +99,30 @@ var _GlobalVars_descMap = map[GlobalVars]string{
 	16: `CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated -- this can change the giving up Effort.Max parameter.`,
 	17: `VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received`,
 	18: `HasPosUS has positive US on this trial`,
-	19: `HadPosUS is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial`,
-	20: `computed LHb activity level that drives dipping / pausing of DA firing, when VSPatch pos prediction &gt; actual PV reward drive or PVNeg &gt; PVPos`,
-	21: `LHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive &gt; VSPatch pos prediction`,
-	22: `LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions`,
-	23: `LHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset`,
-	24: `LHbDipSum is copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials`,
-	25: `LHbGiveUp is true if a reset was triggered from LHbDipSum &gt; Reset Thr`,
-	26: `LHbGaveUp is copy of LHbGiveUp from previous trial`,
-	27: `LHbVSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)`,
-	28: `LHbPVposSum is total weighted positive valence primary value = sum of Weight * USpos * Drive`,
-	29: `LHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))`,
-	30: `LHbPVnegSum is total weighted negative valence primary value = sum of Weight * USneg`,
-	31: `LHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))`,
-	32: `CeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes`,
-	33: `CeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified. CeM sets Raw directly`,
-	34: `VtaDA is overall dopamine value reflecting all of the different inputs`,
-	35: `USneg are negative valence US outcomes -- normalized version of raw, NNegUSs of them`,
-	36: `USnegRaw are raw, linearly incremented negative valence US outcomes, this value is also integrated together with all US vals for PVneg`,
-	37: `Drives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
-	38: `USpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
-	39: `VSPatch is current reward predicting VSPatch (PosD1) values`,
-	40: ``,
+	19: `HadPosUS is state from the previous trial (copied from HasPosUS in NewState) used for updating Effort, Urgency at start of new trial`,
+	20: `NegUSOutcome indicates that a strong negative US stimulus was experienced, driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any), and phasic dopamine based on the outcome.`,
+	21: `HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome in NewState)`,
+	22: `computed LHb activity level that drives dipping / pausing of DA firing, when VSPatch pos prediction &gt; actual PV reward drive or PVNeg &gt; PVPos`,
+	23: `LHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive &gt; VSPatch pos prediction`,
+	24: `LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions`,
+	25: `LHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset`,
+	26: `LHbDipSum is copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials`,
+	27: `LHbGiveUp is true if a reset was triggered from LHbDipSum &gt; Reset Thr`,
+	28: `LHbGaveUp is copy of LHbGiveUp from previous trial`,
+	29: `LHbVSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)`,
+	30: `LHbPVposSum is total weighted positive valence primary value = sum of Weight * USpos * Drive`,
+	31: `LHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))`,
+	32: `LHbPVnegSum is total weighted negative valence primary value = sum of Weight * USneg`,
+	33: `LHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))`,
+	34: `CeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes`,
+	35: `CeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified. CeM sets Raw directly`,
+	36: `VtaDA is overall dopamine value reflecting all of the different inputs`,
+	37: `USneg are negative valence US outcomes -- normalized version of raw, NNegUSs of them`,
+	38: `USnegRaw are raw, linearly incremented negative valence US outcomes, this value is also integrated together with all US vals for PVneg`,
+	39: `Drives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
+	40: `USpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
+	41: `VSPatch is current reward predicting VSPatch (PosD1) values`,
+	42: ``,
 }
 
 func (i GlobalVars) Desc() string {

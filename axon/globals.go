@@ -94,8 +94,14 @@ const (
 	// HasPosUS has positive US on this trial
 	GvHasPosUS
 
-	// HadPosUS is state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial
+	// HadPosUS is state from the previous trial (copied from HasPosUS in NewState) used for updating Effort, Urgency at start of new trial
 	GvHadPosUS
+
+	// NegUSOutcome indicates that a strong negative US stimulus was experienced, driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any), and phasic dopamine based on the outcome.
+	GvNegUSOutcome
+
+	// HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome in NewState)
+	GvHadNegUSOutcome
 
 	/////////////////////////////////////////
 	// LHb lateral habenula component of the PVLV model -- does all US processing

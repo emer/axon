@@ -311,6 +311,9 @@ func PVLVNormFun(raw float32) float32 {
 // weighted and integrated to compute an overall PV primary value.
 type USParams struct {
 
+	// threshold for a negative US increment, _after_ multiplying by the NegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)
+	NegUSOutcomeThr float32 `desc:"threshold for a negative US increment, _after_ multiplying by the NegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)"`
+
 	// gain factor for sum of positive USs, multiplied prior to 1/(1+x) normalization in computing PVPos.
 	PVPosGain float32 `desc:"gain factor for sum of positive USs, multiplied prior to 1/(1+x) normalization in computing PVPos."`
 
@@ -338,7 +341,8 @@ func (us *USParams) Alloc(nPos, nNeg int) {
 }
 
 func (us *USParams) Defaults() {
-	us.PVPosGain = 1
+	us.NegUSOutcomeThr = 0.5
+	us.PVPosGain = 5
 	us.PVNegGain = 0.05
 	for i := range us.PVPosWts {
 		us.PVPosWts[i] = 1
@@ -375,6 +379,17 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 	for i := range us.PVPosWts {
 		SetGlbUSposV(ctx, di, GvUSpos, uint32(i), 0)
 	}
+}
+
+// NegUSOutcome returns true if given magnitude of negative US increment
+// is sufficient to drive a full-blown outcome event, clearing goals, driving DA etc.
+func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32) bool {
+	gmag := us.NegGains[usIdx] * mag
+	if gmag > us.NegUSOutcomeThr {
+		SetGlbV(ctx, di, GvNegUSOutcome, 1)
+		return true
+	}
+	return false
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -652,14 +667,17 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 // The US index is automatically adjusted for the curiosity drive / US for
 // positive US outcomes and effort for negative USs --
 // i.e., pass in a value with 0 starting index.
-// By default, negative USs do not set the overall ctx.NeuroMod.HasRew flag,
-// which is the trigger for a full-blown US learning event.
+// By default, negative USs only set the overall ctx.NeuroMod.HasRew flag,
+// when they exceed the NegUSOutcomeThr, thus triggering a full-blown US learning event.
 func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
 	if valence == Positive {
 		SetGlbV(ctx, di, GvHasRew, 1)                              // only for positive USs
 		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx)+1, magnitude) // +1 for curiosity
 	} else {
 		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+1, magnitude) // +1 for effort
+		if pp.USs.NegUSOutcome(ctx, di, usIdx, magnitude) {
+			SetGlbV(ctx, di, GvHasRew, 1)
+		}
 	}
 }
 
@@ -671,14 +689,22 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	hadRew := bools.FromFloat32(hadRewF)
 	SetGlbV(ctx, di, GvHadRew, hadRewF)
 	SetGlbV(ctx, di, GvHadPosUS, GlbV(ctx, di, GvHasPosUS))
+	SetGlbV(ctx, di, GvHadNegUSOutcome, GlbV(ctx, di, GvNegUSOutcome))
 	SetGlbV(ctx, di, GvLHbGaveUp, GlbV(ctx, di, GvLHbGiveUp))
 
 	SetGlbV(ctx, di, GvHasRew, 0)
+	SetGlbV(ctx, di, GvNegUSOutcome, 0)
+
+	vsPatchPos := pp.VSPatchMax(ctx, di)
+	SetGlbV(ctx, di, GvLHbVSPatchPos, vsPatchPos)
+	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
 
 	if hadRew {
 		SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
 		pp.Effort.ReStart(ctx, di, rnd)
 		pp.USs.USnegToZero(ctx, di) // all negs restart
+		SetGlbV(ctx, di, GvLHbVSPatchPos, 0)
+		SetGlbV(ctx, di, GvRewPred, 0)
 	} else if GlbV(ctx, di, GvVSMatrixJustGated) > 0 {
 		SetGlbV(ctx, di, GvVSMatrixHasGated, 1)
 		pp.Urgency.Reset(ctx, di)
@@ -806,7 +832,7 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 // PV DA is computed by the VS (ventral striatum) and the LHb / RMTg,
 // and the resulting values are stored in LHb global variables.
 // Called after updating USs, Effort, Drives at start of trial step,
-// in PVLVStepStart.  Returns the resulting LHbPVDA value.
+// in Step.  Returns the resulting LHbPVDA value.
 func (pp *PVLV) PVDA(ctx *Context, di uint32) float32 {
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
 	usPosSum, pvPos := pp.PVpos(ctx, di)
@@ -816,9 +842,7 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32) float32 {
 	SetGlbV(ctx, di, GvLHbPVpos, pvPos)
 	SetGlbV(ctx, di, GvLHbPVneg, pvNeg)
 
-	vsPatchPos := pp.VSPatchMax(ctx, di)
-	SetGlbV(ctx, di, GvLHbVSPatchPos, vsPatchPos)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
+	vsPatchPos := GlbV(ctx, di, GvLHbVSPatchPos)
 
 	if hasRew { // note: also true for giveup
 		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew

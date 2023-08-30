@@ -169,7 +169,7 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, trn.NDrives+1, 2) // 0=effort, 1=negUS
 	pv.Defaults()
-	pv.USs.PVPosGain = 1
+	pv.USs.PVPosGain = 5
 	pv.USs.PVNegGain = 0.05
 	pv.USs.PVNegWts[0] = 0.01
 	pv.USs.PVNegWts[1] = 0.1
@@ -633,6 +633,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("VSPatchThr", 0)
 	ss.Stats.SetFloat("DipSum", 0)
 	ss.Stats.SetFloat("GiveUp", 0)
+	ss.Stats.SetFloat("NegUSOutcome", 0)
 	ss.Stats.SetFloat("Urge", 0)
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
@@ -709,6 +710,7 @@ func (ss *Sim) TrialStats(di int) {
 
 	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
+	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
 	ss.Stats.SetFloat32("Urge", axon.GlbV(ctx, diu, axon.GvUrgency))
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
 	ss.Stats.SetFloat32("AChRaw", axon.GlbV(ctx, diu, axon.GvAChRaw))
@@ -909,6 +911,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("NegUSOutcome", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("DipSum", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Urge", etime.Run, etime.Epoch, etime.Trial)
 
