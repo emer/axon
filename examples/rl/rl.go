@@ -276,7 +276,7 @@ func (ss *Sim) ApplyInputs() {
 			}
 			ly.ApplyExt(ctx, di, pats)
 		}
-		axon.NeuroModSetRew(ctx, di, float32(ev.Reward.Values[0]), ev.HasRew)
+		axon.GlobalSetRew(ctx, di, float32(ev.Reward.Values[0]), ev.HasRew)
 	}
 	ss.Net.ApplyExts(ctx)
 }
