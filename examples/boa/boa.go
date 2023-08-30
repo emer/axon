@@ -166,14 +166,21 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigPVLV(trn *Approach) {
-	pv := &ss.Context.PVLV
-	pv.NPosUSs = uint32(trn.NDrives) + 1
+	pv := &ss.Net.PVLV
+	pv.SetNUSs(&ss.Context, trn.NDrives+1, 2) // 0=effort, 1=negUS
+	pv.Defaults()
+	pv.USs.PVPosGain = 1
+	pv.USs.PVNegGain = 0.05
+	pv.USs.PVNegWts[0] = 0.01
+	pv.USs.PVNegWts[1] = 0.1
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
-	pv.Effort.Gain = 0.1    // faster effort
 	pv.Effort.Max = 20
 	pv.Effort.MaxNovel = 8
 	pv.Effort.MaxPostDip = 4
 	pv.Urgency.U50 = 10
+	if ss.Config.Env.PVLV != nil {
+		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
+	}
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -183,7 +190,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	nUSs := ev.NDrives + 1 // first US / drive is novelty / curiosity
 	nuBgY := 5
 	nuBgX := 5
 	nuCtxY := 6
@@ -205,8 +211,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	vSgpi, effort, effortP, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(ctx, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accUtil, sc, notMaint := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = accUtil, urgency
+	_, _ = ofcNegUSCT, ofcNegUSPTp
 
 	accUtilPTp := net.AxonLayerByName("ACCutilPTp")
 
@@ -241,11 +248,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// note: alm gets effort, dist via predictive coding below
 
 	net.ConnectLayers(dist, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(effort, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
 	// shortcut: not needed
 	// net.ConnectLayers(dist, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	// net.ConnectLayers(effort, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
@@ -265,24 +271,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(cs, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
 
 	///////////////////////////////////////////
 	// OFC, ACC, ALM predicts dist
 
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 	// using distance and effort here in the meantime
-	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	net.ConnectToPFCBack(dist, distP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(dist, distP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	net.ConnectToPFCBack(dist, distP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
 
-	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
-	net.ConnectToPFCBack(dist, distP, ofcVal, ofcValCT, ofcValPTp, full)
-
-	// note: effort, urgency for accCost already set in AddBOA
-	net.ConnectToPFC(dist, distP, accCost, accCostCT, accCostPTp, full)
+	// note: effort, urgency for accNegVal already set in AddBOA
+	net.ConnectToPFC(dist, distP, accNegVal, accNegValCT, accNegValPTp, full)
 
 	//	alm predicts all effort, cost, sensory state vars
-	net.ConnectToPFC(effort, effortP, alm, almCT, almPTp, full)
 	net.ConnectToPFC(dist, distP, alm, almCT, almPTp, full)
 
 	///////////////////////////////////////////
@@ -469,16 +471,17 @@ func (ss *Sim) ConfigLoops() {
 // after this point, so that is dealt with at end of plus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
+	pv := &ss.Net.PVLV
 	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
 	vlly := ss.Net.AxonLayerByName("VL")
 	threshold := float32(0.1)
 	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*Approach)
-		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
+		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: pv.VSMatrix.JustGated.IsTrue()
 		hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 		ev.InstinctAct(justGated, hasGated)
-		csGated := (justGated && !axon.PVLVHasPosUS(ctx, diu))
+		csGated := (justGated && !pv.HasPosUS(ctx, diu))
 		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
 		ss.Stats.SetFloat32Di("Deciding", di, bools.ToFloat32(deciding))
 		if csGated || deciding {
@@ -568,13 +571,14 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach, di uint32) {
-	ctx.PVLV.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
-	ctx.PVLVInitUS(di)
+	pv := &ss.Net.PVLV
+	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
+	pv.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
 	if ev.US != noUS {
-		ctx.PVLVSetUS(di, axon.Positive, ev.US, 1) // mag 1 for now..
+		pv.SetUS(ctx, di, axon.Positive, ev.US, 1) // mag 1 for now..
 	}
-	ctx.PVLVSetDrives(di, 0.5, 1, ev.Drive)
-	ctx.PVLVStepStart(di, &ss.Net.Rand)
+	pv.SetDrives(ctx, di, 0.5, 1, ev.Drive)
+	pv.Step(ctx, di, &ss.Net.Rand)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -684,8 +688,9 @@ func (ss *Sim) TrialStats(di int) {
 
 	diu := uint32(di)
 	ctx := &ss.Context
+	pv := &ss.Net.PVLV
 	nan := math.NaN()
-	if axon.PVLVHasPosUS(ctx, diu) {
+	if pv.HasPosUS(ctx, diu) {
 		ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
 		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat("DA_NR", nan)
@@ -755,6 +760,7 @@ func (ss *Sim) ActionStatsDi(di int) {
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats(di int) {
 	ctx := &ss.Context
+	pv := &ss.Net.PVLV
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*Approach)
 	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
@@ -774,7 +780,7 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("WrongCSGate", nan)
 	ss.Stats.SetFloat32("AChShould", nan)
 	ss.Stats.SetFloat32("AChShouldnt", nan)
-	hasPos := axon.PVLVHasPosUS(ctx, diu)
+	hasPos := pv.HasPosUS(ctx, diu)
 	if justGated {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(!ev.PosHasDriveUS()))
 	}
@@ -974,6 +980,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ctx := &ss.Context
+	pv := &ss.Net.PVLV
 	if mode != etime.Analyze && mode != etime.Debug {
 		ctx.Mode = mode // Also set specifically in a Loop callback.
 	}
@@ -995,7 +1002,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 				ss.TrialStats(di)
 				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
-				if !axon.PVLVHasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
+				if !pv.HasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
 				if ss.ViewUpdt.View != nil && di == ss.ViewUpdt.View.Di {

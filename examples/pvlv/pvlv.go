@@ -379,16 +379,16 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	pv := &ss.Net.PVLV
 	di := uint32(0)                    // not doing NData here -- otherwise loop over
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.EffortUrgencyUpdt(ctx, 0, &ss.Net.Rand, 1)
+	pv.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			pv.SetUS(ctx, 0, axon.Positive, trl.US, trl.USMag)
+			pv.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)
 		} else {
-			pv.SetUS(ctx, 0, axon.Negative, trl.US, trl.USMag) // adds to neg us
+			pv.SetUS(ctx, di, axon.Negative, trl.US, trl.USMag) // adds to neg us
 		}
 	}
-	pv.SetDrives(ctx, 0, 1, 1, trl.US)
-	pv.Step(ctx, 0, &ss.Net.Rand)
+	pv.SetDrives(ctx, di, 1, 1, trl.US)
+	pv.Step(ctx, di, &ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
