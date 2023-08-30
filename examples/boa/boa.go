@@ -281,7 +281,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBack(dist, distP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
 	net.ConnectToPFCBack(dist, distP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
 
-	// note: effort, urgency for accNegVal already set in AddBOA
+	net.ConnectToPFC(dist, distP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
 	net.ConnectToPFC(dist, distP, accNegVal, accNegValCT, accNegValPTp, full)
 
 	//	alm predicts all effort, cost, sensory state vars

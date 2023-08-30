@@ -852,7 +852,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	vSgpi.PlaceRightOf(vta, space)
 	drives.PlaceBehind(vSmtxGo, space)
 	drivesP.PlaceBehind(vSmtxNo, space)
-	blaNov.PlaceRightOf(vSgated, space*3)
+	blaNov.PlaceRightOf(vSgated, space*4)
 	sc.PlaceRightOf(vSpatch, space)
 	usPos.PlaceAbove(vta)
 	blaPosAcq.PlaceAbove(usPos)
@@ -878,7 +878,7 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	var pj *Prjn
 
 	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
-	_, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ofcPosValCT
+	_, _, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ofcPosValCT, accNegValMD
 	_, _ = blaNegAcq, blaNegExt
 
 	// OFCposValP is what ACCutil predicts, in order to learn about value (reward)
@@ -933,10 +933,8 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 
 	ofcPosVal.PlaceRightOf(ofcPosUS, space)
 	ofcPosValP.PlaceBehind(ofcPosValMD, space)
-	ofcNegUS.PlaceRightOf(ofcPosVal, space)
-	accNegVal.PlaceRightOf(ofcNegUS, space)
 	accNegValP.PlaceBehind(accNegValMD, space)
-	accUtil.PlaceRightOf(accNegVal, space)
+	accUtil.PlaceRightOf(accNegVal, 3*space)
 
 	return
 }
