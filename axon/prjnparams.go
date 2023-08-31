@@ -416,6 +416,9 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 			delta *= pj.BLA.NegDeltaLRate
 		}
 		dwt = tr * delta * ract
+		// if pj.Idxs.RecvLay == 28 && (ri-pj.Idxs.RecvNeurSt) == 36 && NrnV(ctx, si, di, Burst) > 0.5 {
+		// 	fmt.Printf("ri: %d  si: %d  tr: %g  delta: %g  ract: %g  dwt: %g\n", ri, si, tr, delta, ract, dwt)
+		// }
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 	} else if ach > pj.BLA.AChThr {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant

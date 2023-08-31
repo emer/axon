@@ -169,7 +169,9 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, trn.NDrives+1, 2) // 0=effort, 1=negUS
 	pv.Defaults()
-	pv.USs.PVPosGain = 5
+	pv.LHb.PosGain = 1
+	pv.LHb.NegGain = 1
+	pv.USs.PVPosGain = 2
 	pv.USs.PVNegGain = 0.05
 	pv.USs.PVNegWts[0] = 0.01
 	pv.USs.PVNegWts[1] = 0.1

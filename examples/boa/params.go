@@ -85,7 +85,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.2",
+				"Layer.Acts.KNa.Slow.Max": "0.1",
 			}},
 		////////////////////////////////////////////
 		// Cortical Prjns

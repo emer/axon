@@ -30,7 +30,7 @@ type BLAPrjnParams struct {
 func (bp *BLAPrjnParams) Defaults() {
 	bp.NegDeltaLRate = 0.01
 	bp.AChThr = 0.1
-	bp.USTrace = 0
+	bp.USTrace = 0.5
 }
 
 func (bp *BLAPrjnParams) Update() {

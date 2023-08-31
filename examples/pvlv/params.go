@@ -256,6 +256,18 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Learn.NeuroMod.BurstGain":  "1",
 				"Layer.Learn.NeuroMod.DipGain":    "1",
 			}},
+		{Sel: "#BLANegAcqD2", Desc: "",
+			Params: params.Params{
+				"Layer.Learn.NeuroMod.DALRateMod": "0.5",
+				"Layer.Learn.NeuroMod.BurstGain":  "0",
+				"Layer.Learn.NeuroMod.DipGain":    "0.2",
+			}},
+		{Sel: "#BLANegExtD1", Desc: "",
+			Params: params.Params{
+				"Layer.Learn.NeuroMod.DALRateMod": "0",
+				"Layer.Learn.NeuroMod.BurstGain":  "1",
+				"Layer.Learn.NeuroMod.DipGain":    "1",
+			}},
 		{Sel: ".CeMLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.15",

@@ -383,6 +383,7 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 
 // NegUSOutcome returns true if given magnitude of negative US increment
 // is sufficient to drive a full-blown outcome event, clearing goals, driving DA etc.
+// usIdx is actual index (0 = effort)
 func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32) bool {
 	gmag := us.NegGains[usIdx] * mag
 	if gmag > us.NegUSOutcomeThr {
@@ -407,11 +408,11 @@ type LHbParams struct {
 	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
 	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
 
-	// [def: 2] gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	PosGain float32 `def:"2" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	// [def: 1] gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	PosGain float32 `def:"1" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
-	// [def: 2] gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	NegGain float32 `def:"2" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	// [def: 1] gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	NegGain float32 `def:"1" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
 	// [def: 0.2] threshold on summed LHbDip over trials for triggering a reset of goal engaged state
 	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
@@ -422,8 +423,8 @@ type LHbParams struct {
 
 func (lh *LHbParams) Defaults() {
 	lh.NegThr = 1
-	lh.PosGain = 2
-	lh.NegGain = 2
+	lh.PosGain = 1
+	lh.NegGain = 1
 	lh.GiveUpThr = 0.2
 	lh.DipLowThr = 0.05
 }
@@ -675,7 +676,7 @@ func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, 
 		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx)+1, magnitude) // +1 for curiosity
 	} else {
 		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+1, magnitude) // +1 for effort
-		if pp.USs.NegUSOutcome(ctx, di, usIdx, magnitude) {
+		if pp.USs.NegUSOutcome(ctx, di, usIdx+1, magnitude) {
 			SetGlbV(ctx, di, GvHasRew, 1)
 		}
 	}

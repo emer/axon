@@ -153,9 +153,11 @@ func (ss *Sim) ConfigPVLV() {
 	pv.SetNUSs(&ss.Context, cond.NUSs+1, 2) // 0=effort, 1=negUS
 	pv.Defaults()
 	pv.USs.PVPosGain = 1
-	pv.USs.PVNegGain = 0.05
+	pv.USs.PVNegGain = 1
 	pv.USs.PVNegWts[0] = 0.01
-	pv.USs.PVNegWts[1] = 0.1
+	pv.USs.PVNegWts[1] = 2
+
+	pv.USs.NegGains[1] = 2   // big salient input!
 	pv.Urgency.U50 = 50      // no pressure during regular trials
 	pv.Effort.Max = 8        // give up if nothing happening.
 	pv.Effort.MaxNovel = 2   // give up if nothing happening.

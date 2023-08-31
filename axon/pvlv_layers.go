@@ -98,10 +98,8 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 
 	ach := maxSrcAct
 
-	if GlbV(ctx, di, GvRew) > 0 {
-		if GlbV(ctx, di, GvHasRew) > 0 {
-			ach = 1
-		}
+	if GlbV(ctx, di, GvHasRew) > 0 {
+		ach = 1
 	} else {
 		ach = mat32.Max(ach, GlbV(ctx, di, GvUrgency))
 	}
