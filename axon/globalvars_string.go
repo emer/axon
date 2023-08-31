@@ -55,12 +55,13 @@ func _() {
 	_ = x[GvDrives-39]
 	_ = x[GvUSpos-40]
 	_ = x[GvVSPatch-41]
-	_ = x[GlobalVarsN-42]
+	_ = x[GvVSPatchPrev-42]
+	_ = x[GlobalVarsN-43]
 }
 
-const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvHadRewGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvCuriosityPoolGatedGvVSMatrixHasGatedGvHasPosUSGvHadPosUSGvNegUSOutcomeGvHadNegUSOutcomeGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbGaveUpGvLHbVSPatchPosGvLHbPVposSumGvLHbPVposGvLHbPVnegSumGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvUSposGvVSPatchGlobalVarsN"
+const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvHadRewGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvCuriosityPoolGatedGvVSMatrixHasGatedGvHasPosUSGvHadPosUSGvNegUSOutcomeGvHadNegUSOutcomeGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbGaveUpGvLHbVSPatchPosGvLHbPVposSumGvLHbPVposGvLHbPVnegSumGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvUSposGvVSPatchGvVSPatchPrevGlobalVarsN"
 
-var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 40, 44, 49, 53, 58, 66, 76, 87, 101, 110, 122, 141, 161, 179, 189, 199, 213, 230, 238, 248, 257, 271, 282, 293, 304, 319, 332, 342, 355, 365, 373, 381, 388, 395, 405, 413, 420, 429, 440}
+var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 40, 44, 49, 53, 58, 66, 76, 87, 101, 110, 122, 141, 161, 179, 189, 199, 213, 230, 238, 248, 257, 271, 282, 293, 304, 319, 332, 342, 355, 365, 373, 381, 388, 395, 405, 413, 420, 429, 442, 453}
 
 func (i GlobalVars) String() string {
 	if i < 0 || i >= GlobalVars(len(_GlobalVars_index)-1) {
@@ -122,7 +123,8 @@ var _GlobalVars_descMap = map[GlobalVars]string{
 	39: `Drives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
 	40: `USpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
 	41: `VSPatch is current reward predicting VSPatch (PosD1) values`,
-	42: ``,
+	42: `VSPatch is previous reward predicting VSPatch (PosD1) values`,
+	43: ``,
 }
 
 func (i GlobalVars) Desc() string {

@@ -659,18 +659,21 @@ func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32, vals *LayerVals) {
 //  SpikeFmG
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *LayerParams) SpikeFmG(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) SpikeFmG(ctx *Context, ni, di uint32, lpl *Pool) {
 	ly.Acts.VmFmG(ctx, ni, di)
 	ly.Acts.SpikeFmVm(ctx, ni, di)
 	ly.Learn.CaFmSpike(ctx, ni, di)
+	lmax := lpl.AvgMax.GeInt.Cycle.Max
+	if lmax > 0 {
+		SetNrnV(ctx, ni, di, GeIntNorm, NrnV(ctx, ni, di, GeInt)/lmax)
+	} else {
+		SetNrnV(ctx, ni, di, GeIntNorm, NrnV(ctx, ni, di, GeInt))
+	}
 	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
 		AddNrnV(ctx, ni, di, SpkMaxCa, ly.Learn.CaSpk.Dt.PDt*(NrnV(ctx, ni, di, CaSpkM)-NrnV(ctx, ni, di, SpkMaxCa)))
 		spkmax := NrnV(ctx, ni, di, SpkMaxCa)
 		if spkmax > NrnV(ctx, ni, di, SpkMax) {
 			SetNrnV(ctx, ni, di, SpkMax, spkmax)
-		}
-		if NrnV(ctx, ni, di, GeInt) > NrnV(ctx, ni, di, GeIntMax) {
-			SetNrnV(ctx, ni, di, GeIntMax, NrnV(ctx, ni, di, GeInt))
 		}
 	}
 }
@@ -796,12 +799,13 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 // It also updates the CaSpkPCyc stats.
 func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) {
 	intdt := ly.Acts.Dt.IntDt
+	AddNrnV(ctx, ni, di, GeInt, intdt*(NrnV(ctx, ni, di, Ge)-NrnV(ctx, ni, di, GeInt)))
+	AddNrnV(ctx, ni, di, GiInt, intdt*(NrnV(ctx, ni, di, GiSyn)-NrnV(ctx, ni, di, GiInt)))
+	// act int is reset at start of the plus phase -- needs faster integration:
 	if ctx.PlusPhase.IsTrue() {
 		intdt *= 3.0
 	}
 	AddNrnV(ctx, ni, di, ActInt, intdt*(NrnV(ctx, ni, di, Act)-NrnV(ctx, ni, di, ActInt))) // using reg act here now
-	AddNrnV(ctx, ni, di, GeInt, intdt*(NrnV(ctx, ni, di, Ge)-NrnV(ctx, ni, di, GeInt)))
-	AddNrnV(ctx, ni, di, GiInt, intdt*(NrnV(ctx, ni, di, GiSyn)-NrnV(ctx, ni, di, GiInt)))
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -920,12 +924,18 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
 
 // NewStateNeuron handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
-func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVals) {
+func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVals, pl *Pool) {
 	SetNrnV(ctx, ni, di, BurstPrv, NrnV(ctx, ni, di, Burst))
 	SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, CaSpkD))
 	SetNrnV(ctx, ni, di, SpkMax, 0)
 	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
-	SetNrnV(ctx, ni, di, GeIntMax, 0)
+
+	if ly.LayType == VSPatchLayer {
+		if pl.AvgMax.CaSpkD.Plus.Max < 0.5 { // todo: param here
+			SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, GeIntNorm))
+		}
+	}
+
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
@@ -986,9 +996,6 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 		if !ly.Learn.NeuroMod.IsBLAExt() && pl.StIdx == 0 {                    // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
-	case VSPatchLayer:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
-		modlr = ly.VSPatch.DALRate(GlbV(ctx, di, GvDA), modlr) // always decrease if no DA
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
 	}

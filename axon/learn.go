@@ -674,8 +674,8 @@ type TraceParams struct {
 	// [def: 0,1] amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always
 	SubMean float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always"`
 
-	// threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntMax value -- setting this relatively high encourages sparser representations
-	LearnThr float32 `desc:"threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntMax value -- setting this relatively high encourages sparser representations"`
+	// threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntNorm value -- setting this relatively high encourages sparser representations
+	LearnThr float32 `desc:"threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntNorm value -- setting this relatively high encourages sparser representations"`
 
 	// [view: -] rate = 1 / tau
 	Dt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`

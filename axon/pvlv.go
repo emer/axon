@@ -696,9 +696,7 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	SetGlbV(ctx, di, GvHasRew, 0)
 	SetGlbV(ctx, di, GvNegUSOutcome, 0)
 
-	vsPatchPos := pp.VSPatchMax(ctx, di)
-	SetGlbV(ctx, di, GvLHbVSPatchPos, vsPatchPos)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
+	pp.VSPatchNewState(ctx, di)
 
 	if hadRew {
 		SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
@@ -764,17 +762,20 @@ func (pp *PVLV) PVneg(ctx *Context, di uint32) (usNegSum, pvNeg float32) {
 	return
 }
 
-// VSPatchMax returns the max VSPatch value across drives
-func (pp *PVLV) VSPatchMax(ctx *Context, di uint32) float32 {
-	max := float32(0)
+// VSPatchNewState does VSPatch processing in NewState:
+// saves to Prev, updates global LhbVSPatchPos from Max
+func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
+	mx := float32(0)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		vs := GlbUSposV(ctx, di, GvVSPatch, i)
-		if vs > max {
-			max = vs
+		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
+		if vs > mx {
+			mx = vs
 		}
 	}
-	return max
+	SetGlbV(ctx, di, GvLHbVSPatchPos, mx)
+	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
 }
 
 // HasPosUS returns true if there is at least one non-zero positive US

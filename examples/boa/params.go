@@ -73,11 +73,11 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":          "0",
-				"Layer.Learn.NeuroMod.DipGain": "0.01", // rate of extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "30",   // 20 too low still
-				"Layer.VSPatch.ThrInit":        "0.4",
+				"Layer.Learn.NeuroMod.DipGain": "0.1", // rate of extinction -- reduce to slow
+				"Layer.VSPatch.Gain":           "4",
+				"Layer.VSPatch.ThrInit":        "0.25",
 				"Layer.VSPatch.ThrLRate":       "0.001",
-				"Layer.VSPatch.ThrNonRew":      "10",
+				"Layer.VSPatch.ThrNonRew":      "1",
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{

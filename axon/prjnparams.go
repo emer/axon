@@ -400,10 +400,11 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 	dwt := float32(0)
 	ach := GlbV(ctx, di, GvACh)
 	if GlbV(ctx, di, GvHasRew) > 0 { // learn and reset
-		ract := NrnV(ctx, ri, di, GeIntMax)
-		lmax := layPool.AvgMax.GeIntMax.Plus.Max
-		if lmax > 0 {
-			ract /= lmax
+		ract := float32(0)
+		if subPool.AvgMax.CaSpkD.Plus.Max > pj.Learn.Trace.LearnThr+0.1 {
+			ract = NrnV(ctx, ri, di, CaSpkD)
+		} else {
+			ract = NrnV(ctx, ri, di, GeIntNorm)
 		}
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
@@ -501,10 +502,11 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	ract := NrnV(ctx, ri, di, GeIntMax)
-	lmax := layPool.AvgMax.GeIntMax.Plus.Max
-	if lmax > 0 {
-		ract /= lmax
+	ract := float32(0)
+	if subPool.AvgMax.CaSpkD.Plus.Max > pj.Learn.Trace.LearnThr+0.1 {
+		ract = NrnV(ctx, ri, di, CaSpkD)
+	} else {
+		ract = NrnV(ctx, ri, di, GeIntNorm)
 	}
 	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
@@ -531,11 +533,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPoo
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPrjn type.  Currently only supporting the Pos D1 type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
-	ract := NrnV(ctx, ri, di, GeIntMax)
-	lmax := layPool.AvgMax.GeIntMax.Plus.Max
-	if lmax > 0 {
-		ract /= lmax
-	}
+	ract := NrnV(ctx, ri, di, SpkPrv) // t-1
 	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
 	}

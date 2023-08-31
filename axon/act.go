@@ -289,8 +289,8 @@ type DtParams struct {
 	// [def: 20] [min: 1] time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models
 	LongAvgTau float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 
-	// [def: 10] [min: 0] cycle to start updating the SpkMaxCa, SpkMax, GeIntMax values within a theta cycle -- early cycles often reflect prior state
-	MaxCycStart int32 `def:"10" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax, GeIntMax values within a theta cycle -- early cycles often reflect prior state"`
+	// [def: 10] [min: 0] cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state
+	MaxCycStart int32 `def:"10" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state"`
 
 	// [view: -] nominal rate = Integ / tau
 	VmDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -824,6 +824,10 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 		AddNrnV(ctx, ni, di, GiNoise, -decay*NrnV(ctx, ni, di, GiNoise))
 
 		AddNrnV(ctx, ni, di, GiSyn, -decay*NrnV(ctx, ni, di, GiSyn))
+
+		AddNrnV(ctx, ni, di, GeInt, -decay*NrnV(ctx, ni, di, GeInt))
+		AddNrnV(ctx, ni, di, GiInt, -decay*NrnV(ctx, ni, di, GiInt))
+		AddNrnV(ctx, ni, di, GeIntNorm, -decay*NrnV(ctx, ni, di, GeIntNorm))
 	}
 
 	AddNrnV(ctx, ni, di, VmDend, -glong*(NrnV(ctx, ni, di, VmDend)-ac.Init.Vm))
@@ -957,9 +961,6 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, SpkSt2, 0)
 	SetNrnV(ctx, ni, di, ActM, 0)
 	SetNrnV(ctx, ni, di, ActP, 0)
-	SetNrnV(ctx, ni, di, GeInt, 0)
-	SetNrnV(ctx, ni, di, GiInt, 0)
-	SetNrnV(ctx, ni, di, GeIntMax, 0)
 }
 
 //gosl: start act

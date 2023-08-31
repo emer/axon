@@ -39,7 +39,8 @@
 
 
 void NewStateNeuron2(in Context ctx, in LayerParams ly, uint ni, uint di) {
-	ly.NewStateNeuron(ctx, ni, di, LayVals[ly.Idxs.ValsIdx(di)]);
+	uint pi = NrnI(ctx, ni, NrnSubPool);
+	ly.NewStateNeuron(ctx, ni, di, LayVals[ly.Idxs.ValsIdx(di)], Pools[ly.Idxs.PoolIdx(pi, di)]);
 }
 
 void NewStateNeuron(in Context ctx, uint ni, uint di) {

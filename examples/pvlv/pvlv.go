@@ -162,10 +162,12 @@ func (ss *Sim) ConfigPVLV() {
 	pv.Effort.Max = 8        // give up if nothing happening.
 	pv.Effort.MaxNovel = 2   // give up if nothing happening.
 	pv.Effort.MaxPostDip = 2 // give up if nothing happening.
+	pv.Effort.MaxVar = 0     // give up if nothing happening.
+	pv.LHb.GiveUpThr = 0.2
+	pv.LHb.DipLowThr = 0.1
 	if ss.Config.Env.PVLV != nil {
 		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
 	}
-	// pv.LHb.GiveUpThr = 0.2
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -508,6 +510,9 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))
 
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
+
+	vsLy := ss.Net.AxonLayerByName("VsPatch")
+	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -575,6 +580,7 @@ func (ss *Sim) ConfigLogItems() []string {
 	li = ss.Logs.AddStatAggItem("CeMpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("CeMneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("SC", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 
 	var plots []string
 

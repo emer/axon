@@ -82,9 +82,6 @@ type PoolAvgMax struct {
 	// [view: inline] avg and maximum GeInt integrated running-average excitatory conductance value
 	GeInt AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GeInt integrated running-average excitatory conductance value"`
 
-	// [view: inline] avg and maximum GeIntMax integrated running-average excitatory conductance value
-	GeIntMax AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GeIntMax integrated running-average excitatory conductance value"`
-
 	// [view: inline] avg and maximum GiInt integrated running-average inhibitory conductance value
 	GiInt AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GiInt integrated running-average inhibitory conductance value"`
 }
@@ -96,7 +93,6 @@ func (am *PoolAvgMax) SetN(n int32) {
 	am.SpkMax.Cycle.N = n
 	am.Act.Cycle.N = n
 	am.GeInt.Cycle.N = n
-	am.GeIntMax.Cycle.N = n
 	am.GiInt.Cycle.N = n
 }
 
@@ -107,7 +103,6 @@ func (am *PoolAvgMax) CycleToMinus() {
 	am.SpkMax.CycleToMinus()
 	am.Act.CycleToMinus()
 	am.GeInt.CycleToMinus()
-	am.GeIntMax.CycleToMinus()
 	am.GiInt.CycleToMinus()
 }
 
@@ -118,7 +113,6 @@ func (am *PoolAvgMax) CycleToPlus() {
 	am.SpkMax.CycleToPlus()
 	am.Act.CycleToPlus()
 	am.GeInt.CycleToPlus()
-	am.GeIntMax.CycleToPlus()
 	am.GiInt.CycleToPlus()
 }
 
@@ -130,7 +124,6 @@ func (am *PoolAvgMax) Init() {
 	am.SpkMax.Cycle.Init()
 	am.Act.Cycle.Init()
 	am.GeInt.Cycle.Init()
-	am.GeIntMax.Cycle.Init()
 	am.GiInt.Cycle.Init()
 }
 
@@ -141,7 +134,6 @@ func (am *PoolAvgMax) Zero() {
 	am.SpkMax.Zero()
 	am.Act.Zero()
 	am.GeInt.Zero()
-	am.GeIntMax.Zero()
 	am.GiInt.Zero()
 }
 
@@ -152,7 +144,6 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 	am.SpkMax.Calc(refIdx)
 	am.Act.Calc(refIdx)
 	am.GeInt.Calc(refIdx)
-	am.GeIntMax.Calc(refIdx)
 	am.GiInt.Calc(refIdx)
 }
 
@@ -174,7 +165,6 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, NrnV(ctx, ni, di, SpkMax)); \
 	AtomicUpdateAvgMaxI32(am.Act.Cycle, NrnV(ctx, ni, di, Act)); \
 	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NrnV(ctx, ni, di, GeInt)); \
-	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, NrnV(ctx, ni, di, GeIntMax)); \
 	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NrnV(ctx, ni, di, GiInt))
 */
 //gosl: end pool
@@ -240,7 +230,6 @@ func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
 	pl.AvgMax.SpkMax.Cycle.UpdateVal(NrnV(ctx, ni, di, SpkMax))
 	pl.AvgMax.Act.Cycle.UpdateVal(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
 	pl.AvgMax.GeInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GeInt))
-	pl.AvgMax.GeIntMax.Cycle.UpdateVal(NrnV(ctx, ni, di, GeIntMax))
 	pl.AvgMax.GiInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GiInt))
 }
 

@@ -183,6 +183,9 @@ const (
 	// VSPatch is current reward predicting VSPatch (PosD1) values
 	GvVSPatch
 
+	// VSPatch is previous reward predicting VSPatch (PosD1) values
+	GvVSPatchPrev
+
 	GlobalVarsN
 )
 

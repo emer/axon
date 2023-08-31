@@ -109,48 +109,31 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
 
-	// [def: 0.1] learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well.
-	NoDALRate float32 `def:"0.1" desc:"learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well."`
+	// [def: 0.1] learning rate when no US is present -- should not be active at this time.  If it is active, there will typically be a negative dopamine signal, that will naturally drive down activity.  But this This is also the extinif too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well.
 
-	// [def: 0.01] threshold on DA level to engage the NoDALRate -- use a small positive number just in case
-	NoDAThr float32 `def:"0.01" desc:"threshold on DA level to engage the NoDALRate -- use a small positive number just in case"`
+	// [def: 4] multiplier applied after Thr threshold
+	Gain float32 `def:"4" desc:"multiplier applied after Thr threshold"`
 
-	// multiplier applied after Thr threshold
-	Gain float32 `desc:"multiplier applied after Thr threshold"`
+	// [def: 0.25] initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
+	ThrInit float32 `def:"0.25" desc:"initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr"`
 
-	// initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr
-	ThrInit float32 `desc:"initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr"`
+	// [def: 0,0.001] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
+	ThrLRate float32 `def:"0,0.001" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
 
-	// learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
-
-	// extra gain factor for non-reward trials, which is the most critical
-	ThrNonRew float32 `desc:"extra gain factor for non-reward trials, which is the most critical"`
+	// [def: 1] extra gain factor for non-reward trials, which is the most critical
+	ThrNonRew float32 `def:"1" desc:"extra gain factor for non-reward trials, which is the most critical"`
 
 	pad, pad1 float32
 }
 
 func (vp *VSPatchParams) Defaults() {
-	vp.NoDALRate = 0.1
-	vp.NoDAThr = 0.01
-	vp.Gain = 20
-	vp.ThrInit = 0.4
+	vp.Gain = 4
+	vp.ThrInit = 0.25
 	vp.ThrLRate = 0.001
-	vp.ThrNonRew = 10
+	vp.ThrNonRew = 1
 }
 
 func (vp *VSPatchParams) Update() {
-}
-
-// DALRate returns the learning rate modulation factor modlr based on dopamine level
-func (vp *VSPatchParams) DALRate(da, modlr float32) float32 {
-	if da <= vp.NoDAThr {
-		if modlr < -vp.NoDALRate { // big dip: use it
-			return modlr
-		}
-		return -vp.NoDALRate
-	}
-	return modlr
 }
 
 // ThrVal returns the thresholded value, gain-multiplied value
@@ -170,18 +153,18 @@ func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
 // every cycle.
 type VTAParams struct {
 
-	// gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
-	CeMGain float32 `desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
+	// [def: 0.75] gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
+	CeMGain float32 `def:"0.75" desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
 
-	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
-	LHbGain float32 `desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
+	// [def: 1.25] gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
+	LHbGain float32 `def:"1.25" desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
 
 	pad, pad1 float32
 }
 
 func (vt *VTAParams) Defaults() {
-	vt.CeMGain = 1
-	vt.LHbGain = 1
+	vt.CeMGain = 0.75
+	vt.LHbGain = 1.25
 }
 
 func (vt *VTAParams) Update() {
@@ -192,7 +175,8 @@ func (vt *VTAParams) Update() {
 func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	pvDA := vt.LHbGain * GlbV(ctx, di, GvLHbPVDA)
 	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
-	csDA := vt.CeMGain * ach * csNet
+	csDA := vt.CeMGain*ach*csNet - GlbV(ctx, di, GvLHbVSPatchPos)
+
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)
 	if hasRew {
@@ -210,16 +194,17 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
 	sumDThr := float32(0)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		da := GlbV(ctx, di, GvDA)
-		modlr := ly.Params.Learn.NeuroMod.LRMod(da, GlbV(ctx, di, GvACh))
-		modlr = ly.Params.VSPatch.DALRate(da, modlr) // always decrease if no DA
+		hasRew := GlbV(ctx, di, GvHasRew)
+		// note: this all must be based on t-1 values!!!
+		modlr := ly.Params.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
 		for pi := uint32(1); pi < ly.NPools; pi++ {
-			vsval := GlbUSposV(ctx, di, GvVSPatch, uint32(pi-1))
-			hasRew := GlbV(ctx, di, GvHasRew)
+			vsval := GlbUSposV(ctx, di, GvVSPatchPrev, uint32(pi-1)) // must be prev!
 			if hasRew == 0 {
-				sumDThr += ly.Params.VSPatch.ThrNonRew * vsval // increase threshold
+				dthr := ly.Params.VSPatch.ThrNonRew * vsval // increase threshold if active
+				sumDThr += dthr
+				// note: if added DA modlr here, CS DA might cause some interesting effcts..
 			} else {
-				sumDThr -= modlr
+				sumDThr -= modlr // decrease in proportion to DA on US trials
 			}
 		}
 	}

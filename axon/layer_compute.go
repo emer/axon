@@ -169,17 +169,18 @@ func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) 
 }
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32) {
-	ly.Params.SpikeFmG(ctx, ni, di)
+func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32, lpl *Pool) {
+	ly.Params.SpikeFmG(ctx, ni, di, lpl)
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 // Called directly by Network, iterates over data.
 func (ly *Layer) CycleNeuron(ctx *Context, ni uint32) {
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		lpl := ly.Pool(0, di)
 		pl := ly.SubPool(ctx, ni, di)
 		ly.GInteg(ctx, ni, di, pl, ly.LayerVals(di))
-		ly.SpikeFmG(ctx, ni, di)
+		ly.SpikeFmG(ctx, ni, di, lpl)
 	}
 }
 
@@ -329,8 +330,9 @@ func (ly *Layer) NewState(ctx *Context) {
 			if NrnIsOff(ctx, ni) {
 				continue
 			}
+			pl := ly.SubPool(ctx, ni, di)
 			// note: this calls the basic neuron-level DecayState
-			ly.Params.NewStateNeuron(ctx, ni, di, vals)
+			ly.Params.NewStateNeuron(ctx, ni, di, vals, pl)
 		}
 	}
 
@@ -356,8 +358,9 @@ func (ly *Layer) NewStateNeurons(ctx *Context) {
 		vals := ly.LayerVals(di)
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
+			pl := ly.SubPool(ctx, ni, di)
 			// note: this calls the basic neuron-level DecayState
-			ly.Params.NewStateNeuron(ctx, ni, di, vals)
+			ly.Params.NewStateNeuron(ctx, ni, di, vals, pl)
 		}
 	}
 }

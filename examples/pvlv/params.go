@@ -28,11 +28,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain": "0.01", // controls extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "30",
-				"Layer.VSPatch.ThrInit":        "0.4",
+				"Layer.Learn.NeuroMod.DipGain": "0.1", // controls extinction -- reduce to slow
+				"Layer.VSPatch.Gain":           "4",
+				"Layer.VSPatch.ThrInit":        "0.25",
 				"Layer.VSPatch.ThrLRate":       "0.001",
-				"Layer.VSPatch.ThrNonRew":      "10",
+				"Layer.VSPatch.ThrNonRew":      "1",
 			}},
 		{Sel: "#BLAPosExtD2", Desc: "",
 			Params: params.Params{
