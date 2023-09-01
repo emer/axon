@@ -29,9 +29,9 @@ var ParamSets = netparams.Sets{
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Learn.NeuroMod.DipGain": "0.1", // controls extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "4",
+				"Layer.VSPatch.Gain":           "5",
 				"Layer.VSPatch.ThrInit":        "0.25",
-				"Layer.VSPatch.ThrLRate":       "0.001",
+				"Layer.VSPatch.ThrLRate":       "0", // .001",
 				"Layer.VSPatch.ThrNonRew":      "1",
 			}},
 		{Sel: "#BLAPosExtD2", Desc: "",
@@ -41,8 +41,6 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":      "3.2",
-				"Layer.Inhib.Pool.Gi":       "3.2",
 				"Layer.Acts.Dend.ModGain":   "1.5",
 				"Layer.Acts.MaintNMDA.Gbar": "0.007",
 				"Layer.Acts.MaintNMDA.Tau":  "200",
@@ -66,7 +64,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.02", // 0.02 allows .5 CS for B50
+				"Prjn.Learn.LRate.Base":  "0.005", // 0.02 allows .5 CS for B50
+				"Prjn.BLA.NegDeltaLRate": "1",
 			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
@@ -93,6 +92,10 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4", // 4 needed to sustain
+			}},
+		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
 			}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{

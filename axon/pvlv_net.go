@@ -146,9 +146,9 @@ func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.LRate.Base":  "0.02", // 0.02 for pvlv CS 50% balance
-		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
-		"Prjn.BLA.NegDeltaLRate": "1",    // fast for extinction unlearning -- could be slower
+		"Prjn.Learn.LRate.Base":  "0.005", // 0.02 for pvlv CS 50% balance
+		"Prjn.Learn.Trace.Tau":   "1",     // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "1",     // fast for extinction unlearning -- could be slower
 	}
 	pj.SetClass("BLAExtPrjn")
 	return pj
@@ -506,7 +506,7 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
 
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
 
 	return
 }

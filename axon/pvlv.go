@@ -725,8 +725,8 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
 	pp.SetHasPosUS(ctx, di)
 	pp.USs.USnegFromRaw(ctx, di)
-	pp.ShouldGiveUp(ctx, di, rnd)
 	pp.PVDA(ctx, di)
+	pp.ShouldGiveUp(ctx, di, rnd)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

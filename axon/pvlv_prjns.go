@@ -60,7 +60,7 @@ func (pj *PrjnParams) VSPatchDefaults() {
 	pj.SWts.Init.Var = 0.05
 	pj.SWts.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
-	pj.Learn.Trace.LearnThr = 0.3
+	pj.Learn.Trace.LearnThr = 0 // 0.3
 	pj.Learn.Trace.Update()
 	pj.Learn.LRate.Base = 0.05
 }
