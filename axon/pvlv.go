@@ -482,8 +482,6 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
 	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
 }
 
-// todo: based on total negus too!
-
 // ShouldGiveUp increments DipSum and checks if should give up if above threshold
 func (lh *LHbParams) ShouldGiveUp(ctx *Context, di uint32) bool {
 	dip := GlbV(ctx, di, GvLHbDip)
@@ -725,8 +723,14 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
 	pp.SetHasPosUS(ctx, di)
 	pp.USs.USnegFromRaw(ctx, di)
+	pp.CurPVs(ctx, di)
+	if GlbV(ctx, di, GvHasRew) > 0 { // can't give up if got something now
+		SetGlbV(ctx, di, GvLHbGiveUp, 0)
+		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
+	} else {
+		pp.ShouldGiveUp(ctx, di, rnd)
+	}
 	pp.PVDA(ctx, di)
-	pp.ShouldGiveUp(ctx, di, rnd)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -808,18 +812,12 @@ func (pp *PVLV) SetHasPosUS(ctx *Context, di uint32) {
 // ShouldGiveUp tests whether it is time to give up on the current goal,
 // based on sum of LHb Dip (missed expected rewards) and maximum effort.
 func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
-	hasRew := GlbV(ctx, di, GvHasRew) > 0
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
-	if hasRew { // can't give up if got something now
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-		return false
-	}
 	prevSum := GlbV(ctx, di, GvLHbDipSumCur)
 	giveUp := pp.LHb.ShouldGiveUp(ctx, di)
 	if prevSum < pp.LHb.DipLowThr && GlbV(ctx, di, GvLHbDipSumCur) >= pp.LHb.DipLowThr {
 		pp.Effort.SetPostDipMax(ctx, di, rnd)
 	}
-	if pp.Effort.GiveUp(ctx, di) {
+	if pp.Effort.GiveUp(ctx, di) { // todo: based on PVneg normalized units
 		SetGlbV(ctx, di, GvLHbGiveUp, 1)
 		giveUp = true
 	}
@@ -827,6 +825,15 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 		GlobalSetRew(ctx, di, 0, true) // sets HasRew -- drives maint reset, ACh
 	}
 	return giveUp
+}
+
+func (pp *PVLV) CurPVs(ctx *Context, di uint32) {
+	usPosSum, pvPos := pp.PVpos(ctx, di)
+	usNegSum, pvNeg := pp.PVneg(ctx, di)
+	SetGlbV(ctx, di, GvLHbPVposSum, usPosSum)
+	SetGlbV(ctx, di, GvLHbPVnegSum, usNegSum)
+	SetGlbV(ctx, di, GvLHbPVpos, pvPos)
+	SetGlbV(ctx, di, GvLHbPVneg, pvNeg)
 }
 
 // PVDA computes the PV (primary value) based dopamine
@@ -837,15 +844,9 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 // in Step.  Returns the resulting LHbPVDA value.
 func (pp *PVLV) PVDA(ctx *Context, di uint32) float32 {
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
-	usPosSum, pvPos := pp.PVpos(ctx, di)
-	usNegSum, pvNeg := pp.PVneg(ctx, di)
-	SetGlbV(ctx, di, GvLHbPVposSum, usPosSum)
-	SetGlbV(ctx, di, GvLHbPVnegSum, usNegSum)
-	SetGlbV(ctx, di, GvLHbPVpos, pvPos)
-	SetGlbV(ctx, di, GvLHbPVneg, pvNeg)
-
 	vsPatchPos := GlbV(ctx, di, GvLHbVSPatchPos)
-
+	pvPos := GlbV(ctx, di, GvLHbPVpos)
+	pvNeg := GlbV(ctx, di, GvLHbPVneg)
 	if hasRew { // note: also true for giveup
 		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
 		SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff

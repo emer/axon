@@ -40,20 +40,20 @@ var ParamSets = netparams.Sets{
 				// "Layer.Inhib.Layer.Gi":  "1.0", // 1.0 for CSP, 0.9 for CS -- should be higher for CSPerDrive > 1
 				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 			}},
-		{Sel: "#OFCus", Desc: "",
+		{Sel: "#OFCposUS", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1",
 			}},
-		{Sel: "#OFCusPT", Desc: "",
+		{Sel: "#OFCposUSPT", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.2",
 				"Layer.Inhib.Pool.Gi":        "3.0",
 			}},
-		{Sel: "#OFCusPTp", Desc: "",
+		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1.4",
 			}},
-		{Sel: "#OFCval", Desc: "",
+		{Sel: "#OFCposVal", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1",
 			}},
@@ -74,7 +74,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":          "0",
 				"Layer.Learn.NeuroMod.DipGain": "0.1", // rate of extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "4",
+				"Layer.VSPatch.Gain":           "5",
 				"Layer.VSPatch.ThrInit":        "0.25",
 				"Layer.VSPatch.ThrLRate":       "0.001",
 				"Layer.VSPatch.ThrNonRew":      "1",
@@ -98,19 +98,19 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "6",
 			}},
-		{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
+		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later
 			}},
-		{Sel: "#OFCusToOFCval", Desc: "stronger",
+		{Sel: "#OFCposUSToOFCposVal", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3",
 			}},
-		{Sel: "#ACCcostToACCutil", Desc: "stronger",
+		{Sel: "#ACCnegValToACCutil", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // fairly sensitive to this param..
 			}},
-		{Sel: "#OFCvalToACCutil", Desc: "not good to make this stronger",
+		{Sel: "#OFCposValToACCutil", Desc: "not good to make this stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			}},
@@ -143,7 +143,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.02",
+				"Prjn.Learn.LRate.Base": "0.005",
 			}},
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
@@ -163,7 +163,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 3 orig
 			}},
-		{Sel: "#OFCusPTpToVsPatch", Desc: "",
+		{Sel: "#OFCposUSPTpToVsPatch", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5", // 3 orig
 			}},
@@ -179,7 +179,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def
 			}},
-		{Sel: "#ACCcostToACCcostMD", Desc: "",
+		{Sel: "#ACCnegValToACCnegValMD", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // supertothal for us stronger
 			}},

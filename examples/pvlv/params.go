@@ -75,7 +75,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5", // todo: expt
 			}},
-		{Sel: "#BLAPosAcqD1ToOFCus", Desc: "strong, high variance",
+		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "strong, high variance",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // key param for OFC focusing on current cs -- expt
 			}},
@@ -86,7 +86,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{ // todo: expt with these more..
 				"Prjn.PrjnScale.Abs":        "2",
-				"Prjn.Learn.Trace.LearnThr": "0.3",
+				"Prjn.Learn.Trace.LearnThr": "0",
 				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
