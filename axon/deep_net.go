@@ -471,7 +471,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfcPT.DefParams = maps.Clone(pfcParams)
 	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
 	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"        // 2.4 orig
-	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
+	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
 	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "1" // maybe better -- test further
 
 	pfcPTp.DefParams = maps.Clone(pfcParams)

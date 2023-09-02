@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/examples/pvlv/cond"
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -27,7 +28,6 @@ import (
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/empi/mpi"
-	"github.com/emer/envs/cond"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
@@ -165,8 +165,8 @@ func (ss *Sim) ConfigPVLV() {
 	pv.Effort.MaxVar = 0     // give up if nothing happening.
 	pv.LHb.GiveUpThr = 0.2
 	pv.LHb.DipLowThr = 0.1
-	if ss.Config.Env.PVLV != nil {
-		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
+	if ss.Config.Params.PVLV != nil {
+		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
 	}
 }
 
@@ -348,6 +348,10 @@ func (ss *Sim) UpdateLoopMax() {
 	trn.Loops[etime.Block].Counter.Max = ev.Block.Max
 	trn.Loops[etime.Sequence].Counter.Max = ev.Trial.Max
 	trn.Loops[etime.Trial].Counter.Max = ev.Tick.Max
+
+	if ss.Config.Env.SetNBlocks {
+		trn.Loops[etime.Block].Counter.Max = ss.Config.Env.NBlocks
+	}
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -503,8 +507,8 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
 
-	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvLHbPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvLHbPVneg))
+	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
+	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
 
 	ss.Stats.SetFloat32("CeMpos", axon.GlbV(ctx, diu, axon.GvCeMpos))
 	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))

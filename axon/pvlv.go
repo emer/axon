@@ -141,97 +141,6 @@ func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32
 	return mat32.Max(GlbUSposV(ctx, di, GvDrives, i), dp.DriveMin)
 }
 
-/////////////////////////////////////////////////////////
-//  EffortParams
-
-// EffortParams has parameters for giving up based on effort,
-// which is the first negative US.
-type EffortParams struct {
-
-	// default maximum raw effort level, for deciding when to give up on goal pursuit, when MaxNovel and MaxPostDip don't apply.
-	Max float32 `desc:"default maximum raw effort level, for deciding when to give up on goal pursuit, when MaxNovel and MaxPostDip don't apply."`
-
-	// maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max
-	MaxNovel float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
-
-	// if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever..
-	MaxPostDip float32 `desc:"if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever.."`
-
-	// variance in additional maximum effort level, applied whenever CurMax is updated
-	MaxVar float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
-}
-
-func (ef *EffortParams) Defaults() {
-	ef.Max = 100
-	ef.MaxNovel = 8
-	ef.MaxPostDip = 4
-	ef.MaxVar = 2
-}
-
-func (ef *EffortParams) Update() {
-
-}
-
-// Reset resets the raw effort back to zero -- at start of new gating event
-func (ef *EffortParams) Reset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvEffortRaw, 0)
-	SetGlbV(ctx, di, GvEffortCurMax, ef.Max)
-	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, 0) // effort is neg 0
-	SetGlbUSneg(ctx, di, GvUSneg, 0, 0)
-}
-
-// ReStart restarts restarts the raw effort back to zero
-// and sets the Max with random additional variance.
-func (ef *EffortParams) ReStart(ctx *Context, di uint32, rnd erand.Rand) {
-	ef.Reset(ctx, di)
-	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.Max))
-}
-
-// SetPostDipMax sets the current Max to current raw effort plus
-// MaxPostDip, with random additional variance.
-func (ef *EffortParams) SetPostDipMax(ctx *Context, di uint32, rnd erand.Rand) {
-	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, GlbV(ctx, di, GvEffortRaw)+ef.MaxPostDip))
-}
-
-// SetNovelMax sets the current Max to MaxNovel with random additional variance.
-func (ef *EffortParams) SetNovelMax(ctx *Context, di uint32, rnd erand.Rand) {
-	SetGlbV(ctx, di, GvEffortCurMax, ef.PlusVar(rnd, ef.MaxNovel))
-}
-
-// EffortNorm returns the current effort value as a normalized number,
-// for external calculation purposes (this method not used for PVLV computations).
-// This normalization is performed internally on _all_ negative USs
-func EffortNorm(ctx *Context, di uint32, factor float32) float32 {
-	return PVLVNormFun(factor * GlbV(ctx, di, GvEffortRaw))
-}
-
-// AddEffort adds an increment of effort and updates the Disc discount factor
-func (ef *EffortParams) AddEffort(ctx *Context, di uint32, inc float32) {
-	AddGlbV(ctx, di, GvEffortRaw, inc)
-	eff := GlbV(ctx, di, GvEffortRaw)
-	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, eff) // effort is neg 0
-}
-
-// todo: on all not this:
-
-// GiveUp returns true if maximum effort has been exceeded
-func (ef *EffortParams) GiveUp(ctx *Context, di uint32) bool {
-	raw := GlbV(ctx, di, GvEffortRaw)
-	curMax := GlbV(ctx, di, GvEffortCurMax)
-	if curMax > 0 && raw > curMax {
-		return true
-	}
-	return false
-}
-
-// PlusVar returns value plus random variance
-func (ef *EffortParams) PlusVar(rnd erand.Rand, max float32) float32 {
-	if ef.MaxVar == 0 {
-		return max
-	}
-	return max + ef.MaxVar*float32(rnd.NormFloat64(-1))
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //  UrgencyParams
 
@@ -394,6 +303,15 @@ func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32
 }
 
 ///////////////////////////////////////////////////////////////////
+//  GiveUpParams
+
+type GiveUpParams struct {
+
+	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
+	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
+}
+
+///////////////////////////////////////////////////////////////////
 //  LHb & RMTg
 
 // LHbParams has values for computing LHb & RMTg which drives dips / pauses in DA firing.
@@ -409,24 +327,15 @@ type LHbParams struct {
 	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
 
 	// [def: 1] gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	PosGain float32 `def:"1" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	BurstGain float32 `def:"1" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 
 	// [def: 1] gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	NegGain float32 `def:"1" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
-
-	// [def: 0.2] threshold on summed LHbDip over trials for triggering a reset of goal engaged state
-	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
-
-	// [def: 0.05] low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip
-	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
+	DipGain float32 `def:"1" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
 }
 
 func (lh *LHbParams) Defaults() {
 	lh.NegThr = 1
-	lh.PosGain = 1
-	lh.NegGain = 1
-	lh.GiveUpThr = 0.2
-	lh.DipLowThr = 0.05
+	lh.BurstGain = 1
 }
 
 func (lh *LHbParams) Update() {
@@ -447,22 +356,19 @@ func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 // positive reward value or a give-up state has triggered.
 func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
 	thr := lh.NegThr * pvNeg
-	pos := lh.PosGain * pvPos
-	neg := lh.NegGain * pvNeg
 	burst := float32(0)
 	dip := float32(0)
 	net := pvPos - thr // if > 0, net positive outcome; else net negative (not worth it)
 	if net > 0 {       // worth it
-		pr := pos * (1 - pvNeg) // positive reward value: pos with mult neg discount factor
-		rpe := pr - vsPatchPos  // prediction error relative to pos reward value
+		pr := lh.BurstGain * pvPos * (1 - pvNeg) // positive reward value: pos with mult neg discount factor
+		rpe := pr - vsPatchPos                   // prediction error relative to pos reward value
 		if rpe < 0 {
 			dip = -rpe // positive dip = negative value
 		} else {
 			burst = rpe
 		}
 	} else { // not worth it: net negative but moderated (discounted) by strength of positive
-		dip = neg * (1 - pvPos)
-		// todo: vsPatchNeg needed
+		dip = lh.DipGain * pvNeg * (1 - pvPos)
 	}
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
@@ -480,22 +386,6 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
-}
-
-// ShouldGiveUp increments DipSum and checks if should give up if above threshold
-func (lh *LHbParams) ShouldGiveUp(ctx *Context, di uint32) bool {
-	dip := GlbV(ctx, di, GvLHbDip)
-	AddGlbV(ctx, di, GvLHbDipSumCur, dip)
-	cur := GlbV(ctx, di, GvLHbDipSumCur)
-	SetGlbV(ctx, di, GvLHbDipSum, cur)
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
-	giveUp := false
-	if cur > lh.GiveUpThr {
-		giveUp = true
-		SetGlbV(ctx, di, GvLHbGiveUp, 1)
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	}
-	return giveUp
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -523,9 +413,6 @@ type PVLV struct {
 
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
 	Drive DriveParams `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
-
-	// [view: inline] effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion
-	Effort EffortParams `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
 
 	// [view: inline] urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.
 	Urgency UrgencyParams `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
@@ -577,7 +464,7 @@ func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg int) {
 // Reset resets all PVLV state
 func (pp *PVLV) Reset(ctx *Context, di uint32) {
 	pp.Drive.ToBaseline(ctx, di)
-	pp.Effort.Reset(ctx, di)
+	pp.TimeEffortReset(ctx, di)
 	pp.Urgency.Reset(ctx, di)
 	pp.InitUS(ctx, di)
 	pp.LHb.Reset(ctx, di)
@@ -602,6 +489,17 @@ func (pp *PVLV) InitDrives(ctx *Context, di uint32) {
 	pp.Drive.ToBaseline(ctx, di)
 }
 
+// AddTimeEffort adds a unit of time and an increment of effort
+func (pp *PVLV) AddTimeEffort(ctx *Context, di uint32, effort float32) {
+	AddGlbV(ctx, di, GvTime, 1)
+	tm := GlbV(ctx, di, GvTime)
+	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, tm) // time is neg 0
+
+	AddGlbV(ctx, di, GvEffort, effort)
+	eff := GlbV(ctx, di, GvEffort)
+	SetGlbUSneg(ctx, di, GvUSnegRaw, 1, eff) // effort is neg 1
+}
+
 // EffortUrgencyUpdt updates the Effort or Urgency based on
 // given effort increment.
 // Effort is incremented when VSMatrixHasGated (i.e., goal engaged)
@@ -610,10 +508,19 @@ func (pp *PVLV) InitDrives(ctx *Context, di uint32) {
 // after NewState.
 func (pp *PVLV) EffortUrgencyUpdt(ctx *Context, di uint32, effort float32) {
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
-		pp.Effort.AddEffort(ctx, di, effort)
+		pp.AddTimeEffort(ctx, di, effort)
 	} else {
 		pp.Urgency.AddEffort(ctx, di, effort)
 	}
+}
+
+// TimeEffortReset resets the raw time and effort back to zero,
+// at start of new gating event
+func (pp *PVLV) TimeEffortReset(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvTime, 0)
+	SetGlbV(ctx, di, GvEffort, 0)
+	SetGlbUSneg(ctx, di, GvUSnegRaw, 0, 0) // effort is neg 0
+	SetGlbUSneg(ctx, di, GvUSneg, 0, 0)
 }
 
 // PVposFmDriveEffort returns the net primary value ("reward") based on
@@ -622,9 +529,10 @@ func (pp *PVLV) EffortUrgencyUpdt(ctx *Context, di uint32, effort float32) {
 // usValue * drive * Effort.DiscFun(effort).
 // This is not called directly in the PVLV code -- can be used to compute
 // what the PVLV code itself will compute -- see LHbPVDA
-func (pp *PVLV) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
-	return usValue * drive * (1 - PVLVNormFun(pp.USs.PVNegWts[0]*effort))
-}
+// todo: this is not very meaningful anymore
+// func (pp *PVLV) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
+// 	return usValue * drive * (1 - PVLVNormFun(pp.USs.PVNegWts[0]*effort))
+// }
 
 // PVLVSetDrive sets given Drive to given value
 func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
@@ -680,6 +588,24 @@ func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, 
 	}
 }
 
+// ResetGoalState resets all the goal-engaged global values.
+// Critically, this is only called after goal accomplishment,
+// not after goal gating -- prevents "shortcutting" by re-gating.
+func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
+	pp.Urgency.Reset(ctx, di)
+	pp.TimeEffortReset(ctx, di)
+	pp.USs.USnegToZero(ctx, di) // all negs restart
+	SetGlbV(ctx, di, GvVSPatchPos, 0)
+	SetGlbV(ctx, di, GvVSPatchPosSum, 0)
+	SetGlbV(ctx, di, GvRewPred, 0)
+	nd := pp.NPosUSs
+	for i := uint32(0); i < nd; i++ {
+		SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, i, 0)
+		SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, i, 0)
+	}
+}
+
 // NewState is called at very start of new state (trial) of processing.
 // sets HadRew = HasRew from last trial -- used to then reset various things
 // after reward.
@@ -697,20 +623,10 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	pp.VSPatchNewState(ctx, di)
 
 	if hadRew {
-		SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
-		pp.Effort.ReStart(ctx, di, rnd)
-		pp.USs.USnegToZero(ctx, di) // all negs restart
-		SetGlbV(ctx, di, GvLHbVSPatchPos, 0)
-		SetGlbV(ctx, di, GvRewPred, 0)
+		pp.ResetGoalState(ctx, di)
 	} else if GlbV(ctx, di, GvVSMatrixJustGated) > 0 {
 		SetGlbV(ctx, di, GvVSMatrixHasGated, 1)
 		pp.Urgency.Reset(ctx, di)
-		pp.Effort.ReStart(ctx, di, rnd)
-		pp.USs.USnegToZero(ctx, di) // all negs restart
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-		if GlbV(ctx, di, GvCuriosityPoolGated) > 0 {
-			pp.Effort.SetNovelMax(ctx, di, rnd)
-		}
 	}
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 	pp.USs.USposToZero(ctx, di) // pos USs must be set fresh every time
@@ -721,66 +637,11 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 // Updates USneg from USnegRaw, ShouldGiveUp, and PVDA,
 // which computes the primary value DA.
 func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
-	pp.SetHasPosUS(ctx, di)
-	pp.USs.USnegFromRaw(ctx, di)
-	pp.CurPVs(ctx, di)
-	if GlbV(ctx, di, GvHasRew) > 0 { // can't give up if got something now
-		SetGlbV(ctx, di, GvLHbGiveUp, 0)
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	} else {
-		pp.ShouldGiveUp(ctx, di, rnd)
-	}
-	pp.PVDA(ctx, di)
+	pp.PVDA(ctx, di, rnd)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //    methods below used in computing PVLV state, not generally called from sims
-
-// PVpos returns the summed weighted positive value of
-// current positive US state, where each US is multiplied by
-// its current drive and weighting factor (usPosSum),
-// and the normalized version of this sum (PVpos = overall positive PV)
-// as 1 / (1 + (PVPosGain * usPosSum))
-func (pp *PVLV) PVpos(ctx *Context, di uint32) (usPosSum, pvPos float32) {
-	nd := pp.NPosUSs
-	wts := pp.USs.PVPosWts
-	for i := uint32(0); i < nd; i++ {
-		usPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * pp.Drive.EffectiveDrive(ctx, di, i)
-	}
-	pvPos = PVLVNormFun(pp.USs.PVPosGain * usPosSum)
-	return
-}
-
-// PVneg returns the summed weighted negative value
-// of current negative US state, where each US
-// is multiplied by a weighting factor and summed (usNegSum)
-// and the normalized version of this sum (PVneg = overall negative PV)
-// as 1 / (1 + (PVNegGain * usNegSum))
-func (pp *PVLV) PVneg(ctx *Context, di uint32) (usNegSum, pvNeg float32) {
-	nn := pp.NNegUSs
-	wts := pp.USs.PVNegWts
-	for i := uint32(0); i < nn; i++ {
-		usNegSum += wts[i] * GlbUSneg(ctx, di, GvUSnegRaw, i)
-	}
-	pvNeg = PVLVNormFun(pp.USs.PVNegGain * usNegSum)
-	return
-}
-
-// VSPatchNewState does VSPatch processing in NewState:
-// saves to Prev, updates global LhbVSPatchPos from Max
-func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
-	mx := float32(0)
-	nd := pp.NPosUSs
-	for i := uint32(0); i < nd; i++ {
-		vs := GlbUSposV(ctx, di, GvVSPatch, i)
-		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
-		if vs > mx {
-			mx = vs
-		}
-	}
-	SetGlbV(ctx, di, GvLHbVSPatchPos, mx)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvLHbVSPatchPos))
-}
 
 // HasPosUS returns true if there is at least one non-zero positive US
 func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
@@ -793,20 +654,82 @@ func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
 	return false
 }
 
-// HasNegUS returns true if there is at least one non-zero negative US
-func (pp *PVLV) HasNegUS(ctx *Context, di uint32) bool {
-	nd := pp.NNegUSs
+// PVpos returns the summed weighted positive value of
+// current positive US state, where each US is multiplied by
+// its current drive and weighting factor (pvPosSum),
+// and the normalized version of this sum (PVpos = overall positive PV)
+// as 1 / (1 + (PVPosGain * pvPosSum))
+func (pp *PVLV) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
+	nd := pp.NPosUSs
+	wts := pp.USs.PVPosWts
 	for i := uint32(0); i < nd; i++ {
-		if GlbUSneg(ctx, di, GvUSnegRaw, i) > 0 {
-			return true
-		}
+		pvPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * pp.Drive.EffectiveDrive(ctx, di, i)
 	}
-	return false
+	pvPos = PVLVNormFun(pp.USs.PVPosGain * pvPosSum)
+	return
 }
 
-// SetHasPosUS sets the HasPosUS global flag
-func (pp *PVLV) SetHasPosUS(ctx *Context, di uint32) {
+// PVneg returns the summed weighted negative value
+// of current negative US state, where each US
+// is multiplied by a weighting factor and summed (usNegSum)
+// and the normalized version of this sum (PVneg = overall negative PV)
+// as 1 / (1 + (PVNegGain * PVNegSum))
+func (pp *PVLV) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
+	nn := pp.NNegUSs
+	wts := pp.USs.PVNegWts
+	for i := uint32(0); i < nn; i++ {
+		pvNegSum += wts[i] * GlbUSneg(ctx, di, GvUSnegRaw, i)
+	}
+	pvNeg = PVLVNormFun(pp.USs.PVNegGain * pvNegSum)
+	return
+}
+
+// PVsFmUSs updates the current PV summed, weighted, normalized values
+// from the underlying US values.
+func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
+	pvPosSum, pvPos := pp.PVpos(ctx, di)
+	SetGlbV(ctx, di, GvPVposSum, pvPosSum)
+	SetGlbV(ctx, di, GvPVpos, pvPos)
 	SetGlbV(ctx, di, GvHasPosUS, bools.ToFloat32(pp.HasPosUS(ctx, di)))
+
+	pvNegSum, pvNeg := pp.PVneg(ctx, di)
+	SetGlbV(ctx, di, GvPVnegSum, pvNegSum)
+	SetGlbV(ctx, di, GvPVneg, pvNeg)
+}
+
+// PVposEst returns the estimated positive PV value
+// based on drives and, for now, assuming US's are 1 in magnitude..
+// todo: needs fixed.
+func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
+	nd := pp.NPosUSs
+	wts := pp.USs.PVPosWts
+	for i := uint32(0); i < nd; i++ {
+		maint := GlbUSposV(ctx, di, GvOFCposUSPTMaint, i)
+		gate := GlbUSposV(ctx, di, GvVSMatrixPoolGated, i)
+		// todo make an estimate based on these two -- if either is active, set to 1
+		est := float32(1)
+		pvPosSum += wts[i] * 1 * pp.Drive.EffectiveDrive(ctx, di, i)
+	}
+	pvPos = PVLVNormFun(pp.USs.PVPosGain * pvPosSum)
+	return
+}
+
+// VSPatchNewState does VSPatch processing in NewState:
+// saves to Prev, updates global VSPatchPos and VSPatchPosSum.
+// uses max across recorded VSPatch activity levels.
+func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
+	mx := float32(0)
+	nd := pp.NPosUSs
+	for i := uint32(0); i < nd; i++ {
+		vs := GlbUSposV(ctx, di, GvVSPatch, i)
+		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
+		if vs > mx {
+			mx = vs
+		}
+	}
+	SetGlbV(ctx, di, GvVSPatchPos, mx)
+	AddGlbV(ctx, di, GvVSPatchPosSum, mx)
+	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvVSPatchPos))
 }
 
 // ShouldGiveUp tests whether it is time to give up on the current goal,
@@ -827,32 +750,45 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 	return giveUp
 }
 
-func (pp *PVLV) CurPVs(ctx *Context, di uint32) {
-	usPosSum, pvPos := pp.PVpos(ctx, di)
-	usNegSum, pvNeg := pp.PVneg(ctx, di)
-	SetGlbV(ctx, di, GvLHbPVposSum, usPosSum)
-	SetGlbV(ctx, di, GvLHbPVnegSum, usNegSum)
-	SetGlbV(ctx, di, GvLHbPVpos, pvPos)
-	SetGlbV(ctx, di, GvLHbPVneg, pvNeg)
-}
-
 // PVDA computes the PV (primary value) based dopamine
 // based on current state information, at the start of a trial.
 // PV DA is computed by the VS (ventral striatum) and the LHb / RMTg,
-// and the resulting values are stored in LHb global variables.
+// and the resulting values are stored in global variables.
 // Called after updating USs, Effort, Drives at start of trial step,
-// in Step.  Returns the resulting LHbPVDA value.
-func (pp *PVLV) PVDA(ctx *Context, di uint32) float32 {
+// in Step.
+func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
+	pp.USs.USnegFromRaw(ctx, di)
+	pp.PVsFmUSs()(ctx, di)
+
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
-	vsPatchPos := GlbV(ctx, di, GvLHbVSPatchPos)
-	pvPos := GlbV(ctx, di, GvLHbPVpos)
-	pvNeg := GlbV(ctx, di, GvLHbPVneg)
-	if hasRew { // note: also true for giveup
+	pvPos := GlbV(ctx, di, GvPVpos)
+	pvNeg := GlbV(ctx, di, GvPVneg)
+	vsPatchPos := GlbV(ctx, di, GvVSPatchPos)
+
+	if hasRew {
 		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
 		SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
-	} else {
-		pp.LHb.DAforNoUS(ctx, di, vsPatchPos)
-		SetGlbV(ctx, di, GvRew, 0)
+		return
 	}
-	return GlbV(ctx, di, GvLHbPVDA)
+
+	// now compute give-up
+
+	posEstSum, posEst := pp.PVposEst(ctx, di)
+	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
+	posDisc := posEst - vsPatchSum
+
+	// todo: record all these vars
+
+	giveUpProb, giveUp := logisticOf(posDisc - pvNeg)
+
+	if giveUp {
+		// give up: set give up flag, compute forUS stuff
+		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+		SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
+		return
+	}
+
+	// no US regular case
+	pp.LHb.DAforNoUS(ctx, di, vsPatchPos)
+	SetGlbV(ctx, di, GvRew, 0)
 }

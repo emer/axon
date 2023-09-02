@@ -12,15 +12,21 @@ type EnvConfig struct {
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any `desc:"env parameters -- can set any field/subfield on Env struct, using standard TOML formatting"`
 
-	// PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting
-	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting"`
-
 	// [def: PosAcq_A100B50] environment run name
 	RunName string `def:"PosAcq_A100B50" desc:"environment run name"`
+
+	// override the default number of blocks to run conditions with NBlocks
+	SetNBlocks bool `desc:"override the default number of blocks to run conditions with NBlocks"`
+
+	// [viewif: SetNBlocks] number of blocks to run if SetNBlocks is true
+	NBlocks int `viewif:"SetNBlocks" desc:"number of blocks to run if SetNBlocks is true"`
 }
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
+
+	// PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting
+	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting"`
 
 	// network parameters
 	Network map[string]any `desc:"network parameters"`

@@ -31,7 +31,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1",
-				"Layer.CT.GeGain":            "0.05", // has no effect
+				"Layer.CT.GeGain":            "0.05", // 0.05 key for stronger activity
 				"Layer.CT.DecayTau":          "50",
 				// 		"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
 			}},

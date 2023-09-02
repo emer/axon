@@ -502,11 +502,9 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 	notMaint.Nm = "NotMaint"
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
-
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
-
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
+	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
 
 	return
 }
@@ -518,11 +516,9 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCnegUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
-
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
-
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
+	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
 
 	return
 }

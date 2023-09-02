@@ -175,7 +175,7 @@ func (vt *VTAParams) Update() {
 func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	pvDA := vt.LHbGain * GlbV(ctx, di, GvLHbPVDA)
 	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
-	csDA := vt.CeMGain*ach*csNet - GlbV(ctx, di, GvLHbVSPatchPos)
+	csDA := vt.CeMGain*ach*csNet - GlbV(ctx, di, GvVSPatchPos)
 
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)

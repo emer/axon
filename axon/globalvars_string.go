@@ -24,7 +24,7 @@ func _() {
 	_ = x[GvSer-8]
 	_ = x[GvAChRaw-9]
 	_ = x[GvNotMaint-10]
-	_ = x[GvEffortRaw-11]
+	_ = x[GvEffort-11]
 	_ = x[GvEffortCurMax-12]
 	_ = x[GvUrgency-13]
 	_ = x[GvUrgencyRaw-14]
@@ -42,11 +42,11 @@ func _() {
 	_ = x[GvLHbDipSum-26]
 	_ = x[GvLHbGiveUp-27]
 	_ = x[GvLHbGaveUp-28]
-	_ = x[GvLHbVSPatchPos-29]
-	_ = x[GvLHbPVposSum-30]
-	_ = x[GvLHbPVpos-31]
-	_ = x[GvLHbPVnegSum-32]
-	_ = x[GvLHbPVneg-33]
+	_ = x[GvVSPatchPos-29]
+	_ = x[GvPVposSum-30]
+	_ = x[GvPVpos-31]
+	_ = x[GvPVnegSum-32]
+	_ = x[GvPVneg-33]
 	_ = x[GvCeMpos-34]
 	_ = x[GvCeMneg-35]
 	_ = x[GvVtaDA-36]
@@ -59,7 +59,7 @@ func _() {
 	_ = x[GlobalVarsN-43]
 }
 
-const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvHadRewGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortRawGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvCuriosityPoolGatedGvVSMatrixHasGatedGvHasPosUSGvHadPosUSGvNegUSOutcomeGvHadNegUSOutcomeGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbGaveUpGvLHbVSPatchPosGvLHbPVposSumGvLHbPVposGvLHbPVnegSumGvLHbPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvUSposGvVSPatchGvVSPatchPrevGlobalVarsN"
+const _GlobalVars_name = "GvRewGvHasRewGvRewPredGvPrevPredGvHadRewGvDAGvAChGvNEGvSerGvAChRawGvNotMaintGvEffortGvEffortCurMaxGvUrgencyGvUrgencyRawGvVSMatrixJustGatedGvCuriosityPoolGatedGvVSMatrixHasGatedGvHasPosUSGvHadPosUSGvNegUSOutcomeGvHadNegUSOutcomeGvLHbDipGvLHbBurstGvLHbPVDAGvLHbDipSumCurGvLHbDipSumGvLHbGiveUpGvLHbGaveUpGvVSPatchPosGvPVposSumGvPVposGvPVnegSumGvPVnegGvCeMposGvCeMnegGvVtaDAGvUSnegGvUSnegRawGvDrivesGvUSposGvVSPatchGvVSPatchPrevGlobalVarsN"
 
 var _GlobalVars_index = [...]uint16{0, 5, 13, 22, 32, 40, 44, 49, 53, 58, 66, 76, 87, 101, 110, 122, 141, 161, 179, 189, 199, 213, 230, 238, 248, 257, 271, 282, 293, 304, 319, 332, 342, 355, 365, 373, 381, 388, 395, 405, 413, 420, 429, 442, 453}
 

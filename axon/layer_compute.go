@@ -267,6 +267,13 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		lpl := ly.Pool(0, di)
 		ly.Params.CyclePostLayer(ctx, di, lpl, vals)
 		switch ly.LayerType() {
+		case PTMaintLayer:
+			if ly.Params.Matrix.IsVS.IsTrue() { // todo!
+				for pi := uint32(1); pi < ly.NPools; pi++ {
+					pl := ly.Pool(pi, di)
+					ly.Params.CyclePostOFCposUSPTMaintLayer(ctx, di, int32(pi), pl)
+				}
+			}
 		case PTNotMaintLayer:
 			ly.Params.CyclePostPTNotMaintLayer(ctx, di, lpl)
 		case CeMLayer:

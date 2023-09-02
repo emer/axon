@@ -60,48 +60,78 @@ const (
 	GvNotMaint
 
 	/////////////////////////////////////////
-	// Effort & Urgency
-
-	// EffortRaw is raw effort -- increments linearly upward for each additional effort step
-	// This is also copied directly into NegUS[0] which tracks effort, but we maintain
-	// a separate effort value to make it clearer.
-	GvEffortRaw
-
-	// EffortCurMax is current maximum raw effort level -- above this point, any current goal will be terminated during the GiveUp function, which also looks for accumulated disappointment.  See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered
-	GvEffortCurMax
-
-	// Urgency is the overall urgency activity level (normalized 0-1), computed from logistic function of GvUrgencyRaw
-	GvUrgency
-
-	// UrgencyRaw is raw effort for urgency -- increments linearly upward from effort increments per step
-	GvUrgencyRaw
-
-	/////////////////////////////////////////
 	// VSMatrix gating and PVLV Rew flags
 
 	// VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US
 	GvVSMatrixJustGated
 
-	// CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated -- this can change the giving up Effort.Max parameter.
-	GvCuriosityPoolGated
-
 	// VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received
 	GvVSMatrixHasGated
 
-	/////////////////////////////////////////
-	// US
+	// CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated -- this can change the giving up Effort.Max parameter.
+	GvCuriosityPoolGated
 
-	// HasPosUS has positive US on this trial
+	/////////////////////////////////////////
+	// Time, Effort & Urgency
+
+	// Time is raw time counter, incrementing upward during goal engaged window.
+	// This is also copied directly into NegUS[0] which tracks time, but we maintain
+	// a separate effort value to make it clearer.
+	GvTime
+
+	// Effort is raw effort counter -- incrementing upward for each effort step
+	// during goal engaged window.
+	// This is also copied directly into NegUS[1] which tracks effort, but we maintain
+	// a separate effort value to make it clearer.
+	GvEffort
+
+	// UrgencyRaw is raw effort for urgency -- incrementing upward from effort
+	// increments per step when _not_ goal engaged
+	GvUrgencyRaw
+
+	// Urgency is the overall urgency activity level (normalized 0-1),
+	// computed from logistic function of GvUrgencyRaw
+	GvUrgency
+
+	/////////////////////////////////////////
+	// US / PV
+
+	// HasPosUS indicates has positive US on this trial -- drives goal accomplishment logic
+	// and gating.
 	GvHasPosUS
 
-	// HadPosUS is state from the previous trial (copied from HasPosUS in NewState) used for updating Effort, Urgency at start of new trial
+	// HadPosUS is state from the previous trial (copied from HasPosUS in NewState).
 	GvHadPosUS
 
-	// NegUSOutcome indicates that a strong negative US stimulus was experienced, driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any), and phasic dopamine based on the outcome.
+	// NegUSOutcome indicates that a strong negative US stimulus was experienced,
+	// driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any),
+	// and phasic dopamine based on the outcome.
 	GvNegUSOutcome
 
 	// HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome in NewState)
 	GvHadNegUSOutcome
+
+	// PVposSum is total weighted positive valence primary value = sum of Weight * USpos * Drive
+	GvPVposSum
+
+	// PVpos is normalized positive valence primary value = (1 - 1/(1+PVPosGain * PVposSum))
+	GvPVpos
+
+	// PVnegSum is total weighted negative valence primary value = sum of Weight * USneg
+	GvPVnegSum
+
+	// PVpos is normalized negative valence primary value = (1 - 1/(1+PVNegGain * PVnegSum))
+	GvPVneg
+
+	/////////////////////////////////////////
+	// VSPatch prediction of PVpos net value
+
+	// VSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
+	// computed as the Max of US-specific VSPatch saved values
+	GvVSPatchPos
+
+	// VSPatchPosSum is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
+	GvVSPatchPosSum
 
 	/////////////////////////////////////////
 	// LHb lateral habenula component of the PVLV model -- does all US processing
@@ -128,21 +158,6 @@ const (
 
 	// LHbGaveUp is copy of LHbGiveUp from previous trial
 	GvLHbGaveUp
-
-	// LHbVSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
-	GvLHbVSPatchPos
-
-	// LHbPVposSum is total weighted positive valence primary value = sum of Weight * USpos * Drive
-	GvLHbPVposSum
-
-	// LHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.PosGain * USpos))
-	GvLHbPVpos
-
-	// LHbPVnegSum is total weighted negative valence primary value = sum of Weight * USneg
-	GvLHbPVnegSum
-
-	// LHbPVpos is positive valence primary value (normalized USpos) = (1 - 1/(1+LHb.NegGain * USpos))
-	GvLHbPVneg
 
 	/////////////////////////////////////////
 	// Amygdala CS / LV variables
@@ -185,6 +200,14 @@ const (
 
 	// VSPatch is previous reward predicting VSPatch (PosD1) values
 	GvVSPatchPrev
+
+	// OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool
+	// used in anticipating potential USpos outcome value
+	GvOFCposUSPTMaint
+
+	// VSMatrixPoolGated indicates whether given VSMatrix pool gated
+	// this is reset after last goal accomplished -- records gating since then.
+	GvVSMatrixPoolGated
 
 	GlobalVarsN
 )
