@@ -55,15 +55,6 @@ void CyclePostLDT(inout Context ctx, uint di, in LayerParams ly, inout LayerVals
 void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
 	ly.CyclePostLayer(ctx, di, lpl, vals);
 	switch (ly.LayType) {
-	case PTMaintLayer: {
-		if (ly.Params.Matrix.IsVS > 0) { // todo!
-			int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
-			for (int pi = 0; pi < npl; pi++) {
-				ly.CyclePostOFCUSposPTMaintLayer(ctx, ly, li, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)]);
-			}
-		}
-		break;
-	}
 	case PTNotMaintLayer: {
 		ly.CyclePostPTNotMaintLayer(ctx, di, lpl);
 		break;
@@ -75,7 +66,7 @@ void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout La
 	case VSPatchLayer: {
 		int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
 		for (int pi = 0; pi < npl; pi++) {
-			ly.CyclePostVSPatchLayer(ctx, di, pi, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)], vals);
+			ly.CyclePostVSPatchLayer(ctx, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)], vals);
 		}
 		break;
 	}

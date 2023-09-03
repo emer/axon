@@ -167,7 +167,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Net.PVLV
-	pv.SetNUSs(&ss.Context, trn.NDrives+1, 2) // 0=effort, 1=negUS
+	pv.SetNUSs(&ss.Context, trn.NDrives, 1)
 	pv.Defaults()
 	pv.LHb.PosGain = 1
 	pv.LHb.NegGain = 1
@@ -711,7 +711,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 
 	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
 	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
 	ss.Stats.SetFloat32("Urge", axon.GlbV(ctx, diu, axon.GvUrgency))
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))

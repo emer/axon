@@ -106,13 +106,13 @@ func (ss *DrEffPlot) EffortPlot() {
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
-	pp.Effort.Reset(ctx, 0)
+	pp.TimeEffortReset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := 1 - axon.EffortNorm(ctx, 0, 0.02)
+		ev := 1 - axon.PVLVNormFun(0.02)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
-		pp.Effort.AddEffort(ctx, 0, 1) // unit
+		pp.AddTimeEffort(ctx, 0, 1) // unit
 	}
 	ss.Plot.Update()
 }
@@ -166,7 +166,7 @@ func (ss *DrEffPlot) TimeRun() {
 	dt := ss.TimeTable
 	pp := &ss.PVLV
 	ctx := &ss.Context
-	pp.Effort.Reset(ctx, 0)
+	pp.TimeEffortReset(ctx, 0)
 	pp.Urgency.Reset(ctx, 0)
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
@@ -175,7 +175,7 @@ func (ss *DrEffPlot) TimeRun() {
 	// pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := 1 - axon.EffortNorm(ctx, 0, 0.02)
+		ev := 1 - axon.PVLVNormFun(0.02)
 		urg := pp.Urgency.Urge(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbUSposV(ctx, 0, axon.GvDrives, 0)

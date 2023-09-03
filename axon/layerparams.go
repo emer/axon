@@ -883,11 +883,6 @@ func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, di uint32, lpl *Pool) {
 	}
 }
 
-func (ly *LayerParams) CyclePostOFCposUSPTMaintLayer(ctx *Context, di uint32, pi int32, pl *Pool, vals *LayerVals) {
-	val := pl.AvgMax.CaSpkD.Cycle.Avg
-	SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, uint32(pi-1), val)
-}
-
 func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, di uint32, lpl *Pool) {
 	SetGlbV(ctx, di, GvNotMaint, lpl.AvgMax.CaSpkD.Cycle.Max)
 }

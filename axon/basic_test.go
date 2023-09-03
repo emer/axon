@@ -17,6 +17,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -1588,6 +1589,17 @@ func TestSendGatherIdxs(t *testing.T) {
 		for i, ri := range keys {
 			fmt.Printf("%d  ri: %d\n%s\n", i, ri, rimap[ri])
 		}
+	}
+}
+
+func TestPVLVGiveUp(t *testing.T) {
+	t.Skip("")
+	gp := &GiveUpParams{}
+	gp.Defaults()
+	rnd := erand.NewGlobalRand()
+	for v := float32(-1.0); v <= float32(1); v += 0.01 {
+		p, b := gp.Prob(v, rnd)
+		fmt.Printf("%g\tp: %g\tb: %v\n", v, p, b)
 	}
 }
 

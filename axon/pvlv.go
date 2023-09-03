@@ -237,11 +237,15 @@ type USParams struct {
 
 	// weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum.
 	PVNegWts []float32 `desc:"weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum."`
+
+	// estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst
+	USposEst []float32 `desc:"estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst"`
 }
 
 func (us *USParams) Alloc(nPos, nNeg int) {
 	if len(us.PVPosWts) != nPos {
 		us.PVPosWts = make([]float32, nPos)
+		us.USposEst = make([]float32, nPos)
 	}
 	if len(us.PVNegWts) != nNeg {
 		us.NegGains = make([]float32, nNeg)
@@ -252,12 +256,12 @@ func (us *USParams) Alloc(nPos, nNeg int) {
 func (us *USParams) Defaults() {
 	us.NegUSOutcomeThr = 0.5
 	us.PVPosGain = 5
-	us.PVNegGain = 0.05
+	us.PVNegGain = 0.02
 	for i := range us.PVPosWts {
 		us.PVPosWts[i] = 1
 	}
 	for i := range us.NegGains {
-		us.NegGains[i] = 0.05
+		us.NegGains[i] = 0.02
 		us.PVNegWts[i] = 1
 	}
 }
@@ -303,15 +307,6 @@ func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32
 }
 
 ///////////////////////////////////////////////////////////////////
-//  GiveUpParams
-
-type GiveUpParams struct {
-
-	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
-	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
-}
-
-///////////////////////////////////////////////////////////////////
 //  LHb & RMTg
 
 // LHbParams has values for computing LHb & RMTg which drives dips / pauses in DA firing.
@@ -336,6 +331,7 @@ type LHbParams struct {
 func (lh *LHbParams) Defaults() {
 	lh.NegThr = 1
 	lh.BurstGain = 1
+	lh.DipGain = 1
 }
 
 func (lh *LHbParams) Update() {
@@ -346,9 +342,6 @@ func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvLHbDip, 0)
 	SetGlbV(ctx, di, GvLHbBurst, 0)
 	SetGlbV(ctx, di, GvLHbPVDA, 0)
-	SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	SetGlbV(ctx, di, GvLHbDipSum, 0)
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
 }
 
 // DAforUS computes the overall LHb Dip or Burst (one is always 0),
@@ -388,7 +381,36 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
 	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
 }
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+//  GiveUpParams
+
+// GiveUpParams are parameters for computing when to give up
+type GiveUpParams struct {
+
+	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
+	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
+
+	// multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
+	Gain float32 `desc:"multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold"`
+}
+
+func (gp *GiveUpParams) Defaults() {
+	gp.NegThr = 1
+	gp.Gain = 6
+}
+
+// LogisticFun is the sigmoid logistic function
+func LogisticFun(v, gain float32) float32 {
+	return (1.0 / (1.0 + mat32.Exp(-gain*v)))
+}
+
+func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
+	prob := LogisticFun(pvDiff, gp.Gain)
+	giveUp := erand.BoolP32(prob, -1, rnd)
+	return prob, giveUp
+}
+
+//////////////////////////////////////////////////////////
 //  PVLV
 
 // PVLV represents the core brainstem-level (hypothalamus) bodily drives
@@ -408,8 +430,8 @@ type PVLV struct {
 	// number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
 	NPosUSs uint32 `inactive:"+" desc:"number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
 
-	// number of possible negative US states -- the first is always reserved for the accumulated effort cost (which drives dissapointment when an expected US is not achieved).  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
-	NNegUSs uint32 `inactive:"+" desc:"number of possible negative US states -- the first is always reserved for the accumulated effort cost (which drives dissapointment when an expected US is not achieved).  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
+	// number of possible negative US states -- [0] is reserved for accumulated time, [1] the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
+	NNegUSs uint32 `inactive:"+" desc:"number of possible negative US states -- [0] is reserved for accumulated time, [1] the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
 
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
 	Drive DriveParams `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
@@ -422,37 +444,36 @@ type PVLV struct {
 
 	// [view: inline] lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing
 	LHb LHbParams `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+
+	// parameters for giving up based on PV pos - neg difference
+	GiveUp GiveUpParams `desc:"parameters for giving up based on PV pos - neg difference"`
 }
 
 func (pp *PVLV) Defaults() {
 	pp.Drive.Defaults()
-	pp.Effort.Defaults()
 	pp.Urgency.Defaults()
 	pp.USs.Defaults()
 	pp.LHb.Defaults()
+	pp.GiveUp.Defaults()
 }
 
 func (pp *PVLV) Update() {
 	pp.Drive.Update()
-	pp.Effort.Update()
 	pp.Urgency.Update()
 	pp.USs.Update()
 	pp.LHb.Update()
 }
 
-// SetNUSs sets the number of positive and negative USs (primary value outcomes).
+// SetNUSs sets the number of additional positive and negative USs (primary value outcomes).
+// 1 PosUS (curiosity / novelty) and 2 NegUSs (time, effort) are managed automatically
+// by the PVLV model; the additional USs specified here need to be managed by the
+// simulation through the SetUS code.
 // This must be called _before_ network Build, which allocates global values
 // that depend on these numbers.  Any change must also call network.BuildGlobals.
-// Positive USs each have corresponding Drives, and drive 0 is novelty / curiosity
-// (nPos must be >= 1).
-// Negative US 0 is effort (implicitly represents time), so nNeg must be >= 1).
+// Positive USs each have corresponding Drives.
 func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg int) {
-	if nPos < 1 {
-		nPos = 1
-	}
-	if nNeg < 1 {
-		nNeg = 1
-	}
+	nPos += 1 // curiosity
+	nNeg += 2 // time, effort
 	pp.NPosUSs = uint32(nPos)
 	pp.NNegUSs = uint32(nNeg)
 	ctx.NetIdxs.PVLVNPosUSs = pp.NPosUSs
@@ -606,6 +627,16 @@ func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
 	}
 }
 
+// ResetGiveUp resets all the give-up related global values.
+func (pp *PVLV) ResetGiveUp(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvPVposEst, 0)
+	SetGlbV(ctx, di, GvPVposEstSum, 0)
+	SetGlbV(ctx, di, GvPVposEstDisc, 0)
+	SetGlbV(ctx, di, GvGiveUpDiff, 0)
+	SetGlbV(ctx, di, GvGiveUpProb, 0)
+	SetGlbV(ctx, di, GvGiveUp, 0)
+}
+
 // NewState is called at very start of new state (trial) of processing.
 // sets HadRew = HasRew from last trial -- used to then reset various things
 // after reward.
@@ -615,7 +646,7 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	SetGlbV(ctx, di, GvHadRew, hadRewF)
 	SetGlbV(ctx, di, GvHadPosUS, GlbV(ctx, di, GvHasPosUS))
 	SetGlbV(ctx, di, GvHadNegUSOutcome, GlbV(ctx, di, GvNegUSOutcome))
-	SetGlbV(ctx, di, GvLHbGaveUp, GlbV(ctx, di, GvLHbGiveUp))
+	SetGlbV(ctx, di, GvGaveUp, GlbV(ctx, di, GvGiveUp))
 
 	SetGlbV(ctx, di, GvHasRew, 0)
 	SetGlbV(ctx, di, GvNegUSOutcome, 0)
@@ -698,17 +729,33 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 }
 
 // PVposEst returns the estimated positive PV value
-// based on drives and, for now, assuming US's are 1 in magnitude..
-// todo: needs fixed.
+// based on drives and OFCposUSPT maint and VSMatrix gating
 func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 	nd := pp.NPosUSs
+	for i := uint32(0); i < nd; i++ {
+		maint := GlbUSposV(ctx, di, GvOFCposUSPTMaint, i)  // avg act
+		gate := GlbUSposV(ctx, di, GvVSMatrixPoolGated, i) // bool
+		est := float32(0)
+		if maint > 0.2 || gate > 0 {
+			est = 1 // don't have value
+		}
+		pp.USs.USposEst[i] = est
+	}
+	return pp.PVposEstFmUSs(ctx, di, pp.USs.USposEst)
+}
+
+// PVposEstFmUSs returns the estimated positive PV value
+// based on drives and given US values.  This can be used
+// to compute estimates to compare network performance.
+func (pp *PVLV) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosSum, pvPos float32) {
+	nd := pp.NPosUSs
+	if len(uss) < int(nd) {
+		nd = uint32(len(uss))
+	}
 	wts := pp.USs.PVPosWts
 	for i := uint32(0); i < nd; i++ {
-		maint := GlbUSposV(ctx, di, GvOFCposUSPTMaint, i)
-		gate := GlbUSposV(ctx, di, GvVSMatrixPoolGated, i)
-		// todo make an estimate based on these two -- if either is active, set to 1
-		est := float32(1)
-		pvPosSum += wts[i] * 1 * pp.Drive.EffectiveDrive(ctx, di, i)
+		us := uss[i]
+		pvPosSum += wts[i] * us * pp.Drive.EffectiveDrive(ctx, di, i)
 	}
 	pvPos = PVLVNormFun(pp.USs.PVPosGain * pvPosSum)
 	return
@@ -732,24 +779,6 @@ func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvVSPatchPos))
 }
 
-// ShouldGiveUp tests whether it is time to give up on the current goal,
-// based on sum of LHb Dip (missed expected rewards) and maximum effort.
-func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
-	prevSum := GlbV(ctx, di, GvLHbDipSumCur)
-	giveUp := pp.LHb.ShouldGiveUp(ctx, di)
-	if prevSum < pp.LHb.DipLowThr && GlbV(ctx, di, GvLHbDipSumCur) >= pp.LHb.DipLowThr {
-		pp.Effort.SetPostDipMax(ctx, di, rnd)
-	}
-	if pp.Effort.GiveUp(ctx, di) { // todo: based on PVneg normalized units
-		SetGlbV(ctx, di, GvLHbGiveUp, 1)
-		giveUp = true
-	}
-	if giveUp {
-		GlobalSetRew(ctx, di, 0, true) // sets HasRew -- drives maint reset, ACh
-	}
-	return giveUp
-}
-
 // PVDA computes the PV (primary value) based dopamine
 // based on current state information, at the start of a trial.
 // PV DA is computed by the VS (ventral striatum) and the LHb / RMTg,
@@ -758,7 +787,7 @@ func (pp *PVLV) ShouldGiveUp(ctx *Context, di uint32, rnd erand.Rand) bool {
 // in Step.
 func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	pp.USs.USnegFromRaw(ctx, di)
-	pp.PVsFmUSs()(ctx, di)
+	pp.PVsFmUSs(ctx, di)
 
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
 	pvPos := GlbV(ctx, di, GvPVpos)
@@ -766,20 +795,25 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	vsPatchPos := GlbV(ctx, di, GvVSPatchPos)
 
 	if hasRew {
+		pp.ResetGiveUp(ctx, di)
 		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
 		SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
 		return
 	}
 
 	// now compute give-up
-
 	posEstSum, posEst := pp.PVposEst(ctx, di)
 	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
 	posDisc := posEst - vsPatchSum
+	diff := posDisc - pvNeg
+	prob, giveUp := pp.GiveUp.Prob(diff, rnd)
 
-	// todo: record all these vars
-
-	giveUpProb, giveUp := logisticOf(posDisc - pvNeg)
+	SetGlbV(ctx, di, GvPVposEst, posEst)
+	SetGlbV(ctx, di, GvPVposEstSum, posEstSum)
+	SetGlbV(ctx, di, GvPVposEstDisc, posDisc)
+	SetGlbV(ctx, di, GvGiveUpDiff, diff)
+	SetGlbV(ctx, di, GvGiveUpProb, prob)
+	SetGlbV(ctx, di, GvGiveUp, bools.ToFloat32(giveUp))
 
 	if giveUp {
 		// give up: set give up flag, compute forUS stuff

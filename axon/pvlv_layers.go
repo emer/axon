@@ -109,8 +109,6 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
 
-	// [def: 0.1] learning rate when no US is present -- should not be active at this time.  If it is active, there will typically be a negative dopamine signal, that will naturally drive down activity.  But this This is also the extinif too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well.
-
 	// [def: 4] multiplier applied after Thr threshold
 	Gain float32 `def:"4" desc:"multiplier applied after Thr threshold"`
 
@@ -122,8 +120,6 @@ type VSPatchParams struct {
 
 	// [def: 1] extra gain factor for non-reward trials, which is the most critical
 	ThrNonRew float32 `def:"1" desc:"extra gain factor for non-reward trials, which is the most critical"`
-
-	pad, pad1 float32
 }
 
 func (vp *VSPatchParams) Defaults() {

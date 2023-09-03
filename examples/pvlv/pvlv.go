@@ -150,21 +150,16 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigPVLV() {
 	pv := &ss.Net.PVLV
-	pv.SetNUSs(&ss.Context, cond.NUSs+1, 2) // 0=effort, 1=negUS
+	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=negUS
 	pv.Defaults()
 	pv.USs.PVPosGain = 1
 	pv.USs.PVNegGain = 1
 	pv.USs.PVNegWts[0] = 0.01
-	pv.USs.PVNegWts[1] = 2
+	pv.USs.PVNegWts[1] = 0.01
+	pv.USs.PVNegWts[2] = 2
 
-	pv.USs.NegGains[1] = 2   // big salient input!
-	pv.Urgency.U50 = 50      // no pressure during regular trials
-	pv.Effort.Max = 8        // give up if nothing happening.
-	pv.Effort.MaxNovel = 2   // give up if nothing happening.
-	pv.Effort.MaxPostDip = 2 // give up if nothing happening.
-	pv.Effort.MaxVar = 0     // give up if nothing happening.
-	pv.LHb.GiveUpThr = 0.2
-	pv.LHb.DipLowThr = 0.1
+	pv.USs.NegGains[2] = 2 // big salient input!
+	pv.Urgency.U50 = 50    // no pressure during regular trials
 	if ss.Config.Params.PVLV != nil {
 		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
 	}
@@ -504,8 +499,11 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbBurst))
 	ss.Stats.SetFloat32("LHbDA", axon.GlbV(ctx, diu, axon.GvLHbPVDA))
 
-	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
+	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
+	ss.Stats.SetFloat32("PVposEstDisc", axon.GlbV(ctx, diu, axon.GvPVposEstDisc))
+	ss.Stats.SetFloat32("GiveUpDiff", axon.GlbV(ctx, diu, axon.GvGiveUpDiff))
+	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
 
 	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
 	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
@@ -577,7 +575,10 @@ func (ss *Sim) ConfigLogItems() []string {
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("LHbDA", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("DipSum", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("PVposEstDisc", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("GiveUpDiff", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)

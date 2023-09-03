@@ -123,6 +123,32 @@ const (
 	// PVpos is normalized negative valence primary value = (1 - 1/(1+PVNegGain * PVnegSum))
 	GvPVneg
 
+	// PVposEst is the estimated PVpos value based on OFCposUSPT and VSMatrix gating
+	GvPVposEst
+
+	// PVposEstSum is the sum that goes into computing estimated PVpos
+	// value based on OFCposUSPT and VSMatrix gating
+	GvPVposEstSum
+
+	// PVposEstDisc is the discounted version of PVposEst, subtracting VSPatchPosSum,
+	// which represents the accumulated expectation of PVpos to this point.
+	GvPVposEstDisc
+
+	// GiveUpDiff is the difference: PVposEstDisc - PVneg representing the
+	// expected positive outcome up to this point.  When this turns negative,
+	// the chance of giving up goes up proportionally, as a logistic
+	// function of this difference.
+	GvGiveUpDiff
+
+	// GiveUpProb is the probability from the logistic function of GiveUpDiff
+	GvGiveUpProb
+
+	// GiveUp is true if a reset was triggered probabilistically based on GiveUpProb
+	GvGiveUp
+
+	// GaveUp is copy of GiveUp from previous trial
+	GvGaveUp
+
 	/////////////////////////////////////////
 	// VSPatch prediction of PVpos net value
 
@@ -146,18 +172,6 @@ const (
 
 	// LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
 	GvLHbPVDA
-
-	// LHbDipSumCur is current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset
-	GvLHbDipSumCur
-
-	// LHbDipSum is copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials
-	GvLHbDipSum
-
-	// LHbGiveUp is true if a reset was triggered from LHbDipSum > Reset Thr
-	GvLHbGiveUp
-
-	// LHbGaveUp is copy of LHbGiveUp from previous trial
-	GvLHbGaveUp
 
 	/////////////////////////////////////////
 	// Amygdala CS / LV variables

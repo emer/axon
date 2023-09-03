@@ -267,13 +267,6 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		lpl := ly.Pool(0, di)
 		ly.Params.CyclePostLayer(ctx, di, lpl, vals)
 		switch ly.LayerType() {
-		case PTMaintLayer:
-			if ly.Params.Matrix.IsVS.IsTrue() { // todo!
-				for pi := uint32(1); pi < ly.NPools; pi++ {
-					pl := ly.Pool(pi, di)
-					ly.Params.CyclePostOFCposUSPTMaintLayer(ctx, di, int32(pi), pl)
-				}
-			}
 		case PTNotMaintLayer:
 			ly.Params.CyclePostPTNotMaintLayer(ctx, di, lpl)
 		case CeMLayer:
@@ -549,10 +542,21 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
+	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposUSPT" {
+		np := ly.NPools
+		for pi := uint32(1); pi < np; pi++ {
+			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+				pl := ly.Pool(pi, di)
+				val := pl.AvgMax.CaSpkD.Cycle.Avg
+				SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, uint32(pi-1), val)
+			}
+		}
+	}
+
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			hasRew := (GlbV(ctx, di, GvHasRew) > 0)
-			giveUp := (GlbV(ctx, di, GvLHbGiveUp) > 0)
+			giveUp := (GlbV(ctx, di, GvGiveUp) > 0)
 			if hasRew || giveUp {
 				ly.DecayState(ctx, di, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 			}
