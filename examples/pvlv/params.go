@@ -28,7 +28,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain": "0.5", // controls extinction -- reduce to slow
+				"Layer.Learn.NeuroMod.DipGain": "0.1", // controls extinction -- reduce to slow
 				"Layer.VSPatch.Gain":           "5",
 				"Layer.VSPatch.ThrInit":        "0.25",
 				"Layer.VSPatch.ThrLRate":       "0", // .001",
@@ -77,7 +77,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // todo: expt
+				"Prjn.Learn.LRate.Base": "0.001",
+				"Prjn.PrjnScale.Abs":    "0.5", // todo: expt
 			}},
 		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "strong, high variance",
 			Params: params.Params{
@@ -91,7 +92,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{ // todo: expt with these more..
 				"Prjn.PrjnScale.Abs":        "2",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
+				"Prjn.Learn.LRate.Base":     "0.01", // 0.05 def
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{

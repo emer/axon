@@ -392,11 +392,15 @@ type GiveUpParams struct {
 
 	// multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
 	Gain float32 `desc:"multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold"`
+
+	// minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen.
+	MinPVposEst float32 `desc:"minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen."`
 }
 
 func (gp *GiveUpParams) Defaults() {
 	gp.NegThr = 1
 	gp.Gain = 6
+	gp.MinPVposEst = 0.2
 }
 
 // LogisticFun is the sigmoid logistic function
@@ -490,6 +494,7 @@ func (pp *PVLV) Reset(ctx *Context, di uint32) {
 	pp.InitUS(ctx, di)
 	pp.LHb.Reset(ctx, di)
 	pp.Drive.VarToZero(ctx, di, GvVSPatch)
+	pp.ResetGoalState(ctx, di)
 	SetGlbV(ctx, di, GvVtaDA, 0)
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
@@ -665,8 +670,7 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 
 // Step does one step (trial) after applying USs, Drives,
 // and updating Effort.  It should be the final call in ApplyPVLV.
-// Updates USneg from USnegRaw, ShouldGiveUp, and PVDA,
-// which computes the primary value DA.
+// Calls PVDA which does all US, PV, LHb, GiveUp updating.
 func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
 	pp.PVDA(ctx, di, rnd)
 }
@@ -728,6 +732,24 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvPVneg, pvNeg)
 }
 
+// VSPatchNewState does VSPatch processing in NewState:
+// saves to Prev, updates global VSPatchPos and VSPatchPosSum.
+// uses max across recorded VSPatch activity levels.
+func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
+	mx := float32(0)
+	nd := pp.NPosUSs
+	for i := uint32(0); i < nd; i++ {
+		vs := GlbUSposV(ctx, di, GvVSPatch, i)
+		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
+		if vs > mx {
+			mx = vs
+		}
+	}
+	SetGlbV(ctx, di, GvVSPatchPos, mx)
+	AddGlbV(ctx, di, GvVSPatchPosSum, mx)
+	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvVSPatchPos))
+}
+
 // PVposEst returns the estimated positive PV value
 // based on drives and OFCposUSPT maint and VSMatrix gating
 func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
@@ -741,7 +763,11 @@ func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 		}
 		pp.USs.USposEst[i] = est
 	}
-	return pp.PVposEstFmUSs(ctx, di, pp.USs.USposEst)
+	pvPosSum, pvPos = pp.PVposEstFmUSs(ctx, di, pp.USs.USposEst)
+	if pvPos < pp.GiveUp.MinPVposEst {
+		pvPos = pp.GiveUp.MinPVposEst
+	}
+	return
 }
 
 // PVposEstFmUSs returns the estimated positive PV value
@@ -761,22 +787,24 @@ func (pp *PVLV) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosSum,
 	return
 }
 
-// VSPatchNewState does VSPatch processing in NewState:
-// saves to Prev, updates global VSPatchPos and VSPatchPosSum.
-// uses max across recorded VSPatch activity levels.
-func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
-	mx := float32(0)
-	nd := pp.NPosUSs
-	for i := uint32(0); i < nd; i++ {
-		vs := GlbUSposV(ctx, di, GvVSPatch, i)
-		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
-		if vs > mx {
-			mx = vs
-		}
-	}
-	SetGlbV(ctx, di, GvVSPatchPos, mx)
-	AddGlbV(ctx, di, GvVSPatchPosSum, mx)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvVSPatchPos))
+// GiveUpFmPV determines whether to give up on current goal
+// based on balance between estimated PVpos and accumulated PVneg.
+// returns true if give up triggered.
+func (pp *PVLV) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Rand) bool {
+	// now compute give-up
+	posEstSum, posEst := pp.PVposEst(ctx, di)
+	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
+	posDisc := posEst - vsPatchSum
+	diff := posDisc - pvNeg
+	prob, giveUp := pp.GiveUp.Prob(-diff, rnd)
+
+	SetGlbV(ctx, di, GvPVposEst, posEst)
+	SetGlbV(ctx, di, GvPVposEstSum, posEstSum)
+	SetGlbV(ctx, di, GvPVposEstDisc, posDisc)
+	SetGlbV(ctx, di, GvGiveUpDiff, diff)
+	SetGlbV(ctx, di, GvGiveUpProb, prob)
+	SetGlbV(ctx, di, GvGiveUp, bools.ToFloat32(giveUp))
+	return giveUp
 }
 
 // PVDA computes the PV (primary value) based dopamine
@@ -801,25 +829,14 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 		return
 	}
 
-	// now compute give-up
-	posEstSum, posEst := pp.PVposEst(ctx, di)
-	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
-	posDisc := posEst - vsPatchSum
-	diff := posDisc - pvNeg
-	prob, giveUp := pp.GiveUp.Prob(diff, rnd)
-
-	SetGlbV(ctx, di, GvPVposEst, posEst)
-	SetGlbV(ctx, di, GvPVposEstSum, posEstSum)
-	SetGlbV(ctx, di, GvPVposEstDisc, posDisc)
-	SetGlbV(ctx, di, GvGiveUpDiff, diff)
-	SetGlbV(ctx, di, GvGiveUpProb, prob)
-	SetGlbV(ctx, di, GvGiveUp, bools.ToFloat32(giveUp))
-
-	if giveUp {
-		// give up: set give up flag, compute forUS stuff
-		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
-		SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
-		return
+	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
+		giveUp := pp.GiveUpFmPV(ctx, di, pvNeg, rnd)
+		if giveUp {
+			// give up: set give up flag, compute forUS stuff
+			pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+			SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
+			return
+		}
 	}
 
 	// no US regular case
