@@ -71,14 +71,18 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.LRate.Base":  "0.005", // 0.02 allows .5 CS for B50
 				"Prjn.BLA.NegDeltaLRate": "1",
 			}},
+		{Sel: ".CSToBLAPos", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.LRate.Base": "0",
+			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leaks with supertothal 4
 			}},
 		{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.001",
-				"Prjn.PrjnScale.Abs":    "0.5", // todo: expt
+				// "Prjn.Learn.LRate.Base": "0.0",
+				"Prjn.PrjnScale.Abs": "0.5", // todo: expt
 			}},
 		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "strong, high variance",
 			Params: params.Params{

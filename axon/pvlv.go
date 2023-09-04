@@ -468,12 +468,13 @@ func (pp *PVLV) Update() {
 	pp.LHb.Update()
 }
 
-// SetNUSs sets the number of additional positive and negative USs (primary value outcomes).
-// 1 PosUS (curiosity / novelty) and 2 NegUSs (time, effort) are managed automatically
-// by the PVLV model; the additional USs specified here need to be managed by the
-// simulation through the SetUS code.
+// SetNUSs sets the number of _additional_ simulation-specific
+// positive and negative USs (primary value outcomes).
 // This must be called _before_ network Build, which allocates global values
 // that depend on these numbers.  Any change must also call network.BuildGlobals.
+// 1 PosUS (curiosity / novelty) and 2 NegUSs (time, effort) are managed automatically
+// by the PVLV code; any additional USs specified here need to be managed by the
+// simulation via the SetUS method.
 // Positive USs each have corresponding Drives.
 func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg int) {
 	nPos += 1 // curiosity
@@ -595,19 +596,19 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 	}
 }
 
-// SetUS sets the given unconditioned stimulus (US) state for PVLV algorithm.
-// This then drives activity of relevant PVLV-rendered inputs, and dopamine.
-// The US index is automatically adjusted for the curiosity drive / US for
-// positive US outcomes and effort for negative USs --
-// i.e., pass in a value with 0 starting index.
-// By default, negative USs only set the overall ctx.NeuroMod.HasRew flag,
+// SetUS sets the given _additional_ (simulation specific) unconditioned
+// stimulus (US) state for PVLV algorithm.  usIdx = 0 is first additional US, etc.
+// The US then drives activity of relevant PVLV-rendered inputs, and dopamine.
+// By default, negative USs only set the overall ctx.NeuroMod.HasRew flag
 // when they exceed the NegUSOutcomeThr, thus triggering a full-blown US learning event.
+// Otherwise, they accumulate as in the case of effort and time, and can then
+// trigger giving up as a function of the total accumulated negative valence.
 func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
 	if valence == Positive {
 		SetGlbV(ctx, di, GvHasRew, 1)                              // only for positive USs
 		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx)+1, magnitude) // +1 for curiosity
 	} else {
-		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+1, magnitude) // +1 for effort
+		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+2, magnitude) // +2 for effort, time
 		if pp.USs.NegUSOutcome(ctx, di, usIdx+1, magnitude) {
 			SetGlbV(ctx, di, GvHasRew, 1)
 		}
@@ -622,6 +623,7 @@ func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
 	pp.Urgency.Reset(ctx, di)
 	pp.TimeEffortReset(ctx, di)
 	pp.USs.USnegToZero(ctx, di) // all negs restart
+	pp.ResetGiveUp(ctx, di)
 	SetGlbV(ctx, di, GvVSPatchPos, 0)
 	SetGlbV(ctx, di, GvVSPatchPosSum, 0)
 	SetGlbV(ctx, di, GvRewPred, 0)
@@ -832,7 +834,7 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
 		giveUp := pp.GiveUpFmPV(ctx, di, pvNeg, rnd)
 		if giveUp {
-			// give up: set give up flag, compute forUS stuff
+			SetGlbV(ctx, di, GvHasRew, 1)                     // key for triggering reset
 			pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
 			SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
 			return
