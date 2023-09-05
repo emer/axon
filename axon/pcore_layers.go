@@ -165,7 +165,9 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
 			SetGlbV(ctx, di, GvVSMatrixJustGated, bools.ToFloat32(mtxGated))
-			SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, uint32(poolIdx), 1)
+			if mtxGated {
+				SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, uint32(poolIdx), 1)
+			}
 		}
 	}
 }

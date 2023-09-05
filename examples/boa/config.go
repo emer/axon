@@ -14,9 +14,6 @@ type EnvConfig struct {
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any `desc:"env parameters -- can set any field/subfield on Env struct, using standard TOML formatting"`
 
-	// PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting
-	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting"`
-
 	// [def: 4] number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
 	NDrives int `def:"4" desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
 
@@ -51,6 +48,9 @@ func (cfg *EnvConfig) CurPctCortex(epc int) float32 {
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
+
+	// PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting
+	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting"`
 
 	// network parameters
 	Network map[string]any `desc:"network parameters"`

@@ -75,8 +75,8 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.FB":          "0",
 				"Layer.Learn.NeuroMod.DipGain": "0.1", // rate of extinction -- reduce to slow
 				"Layer.VSPatch.Gain":           "5",
-				"Layer.VSPatch.ThrInit":        "0.25",
-				"Layer.VSPatch.ThrLRate":       "0.001",
+				"Layer.VSPatch.ThrInit":        "0.3",
+				"Layer.VSPatch.ThrLRate":       "0.0001",
 				"Layer.VSPatch.ThrNonRew":      "1",
 			}},
 		{Sel: ".LDTLayer", Desc: "",
@@ -150,6 +150,10 @@ var ParamSets = netparams.Sets{
 				"Prjn.PrjnScale.Rel": "1",
 				"Prjn.PrjnScale.Abs": "3",
 			}},
+		{Sel: ".BLAExtToAcq", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.5", // todo: key param
+			}},
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // 0.1 def
@@ -189,7 +193,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#UrgencyToVsMtxGo", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0", // todo: not working -- no ach by time this happens!  need to drive ach too.
+				"Prjn.PrjnScale.Abs": "1", // todo: not working -- no ach by time this happens!  need to drive ach too.
 			}},
 	},
 }

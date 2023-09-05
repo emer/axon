@@ -152,8 +152,9 @@ func (ss *Sim) ConfigPVLV() {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=negUS
 	pv.Defaults()
-	pv.USs.PVPosGain = 1
+	pv.USs.PVPosGain = 2
 	pv.USs.PVNegGain = 1
+
 	pv.USs.PVNegWts[0] = 0.01
 	pv.USs.PVNegWts[1] = 0.01
 	pv.USs.PVNegWts[2] = 2
@@ -500,7 +501,7 @@ func (ss *Sim) TrialStats() {
 
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
 	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
-	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgencyRaw))
+	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
 
 	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
 	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))

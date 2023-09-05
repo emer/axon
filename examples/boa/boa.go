@@ -169,19 +169,18 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, trn.NDrives, 1)
 	pv.Defaults()
-	pv.LHb.PosGain = 1
-	pv.LHb.NegGain = 1
 	pv.USs.PVPosGain = 2
-	pv.USs.PVNegGain = 0.05
+	pv.USs.PVNegGain = 1
+
 	pv.USs.PVNegWts[0] = 0.01
-	pv.USs.PVNegWts[1] = 0.1
+	pv.USs.PVNegWts[1] = 0.01
+	pv.USs.PVNegWts[2] = 2
+	pv.USs.NegGains[2] = 2 // big salient input!
+
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
-	pv.Effort.Max = 20
-	pv.Effort.MaxNovel = 8
-	pv.Effort.MaxPostDip = 4
 	pv.Urgency.U50 = 10
-	if ss.Config.Env.PVLV != nil {
-		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
+	if ss.Config.Params.PVLV != nil {
+		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
 	}
 }
 
@@ -616,6 +615,9 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetString("NetAction", "")
 	ss.Stats.SetString("Instinct", "")
 	ss.Stats.SetString("ActAction", "")
+	ss.Stats.SetFloat("ActMatch", 0)
+	ss.Stats.SetFloat("AllGood", 0)
+
 	ss.Stats.SetFloat("JustGated", 0)
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
@@ -633,12 +635,29 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
 	ss.Stats.SetFloat("VSPatchThr", 0)
-	ss.Stats.SetFloat("DipSum", 0)
-	ss.Stats.SetFloat("GiveUp", 0)
+
+	ss.Stats.SetFloat("Time", 0)
+	ss.Stats.SetFloat("Effort", 0)
+	ss.Stats.SetFloat("Urgency", 0)
+
 	ss.Stats.SetFloat("NegUSOutcome", 0)
-	ss.Stats.SetFloat("Urge", 0)
-	ss.Stats.SetFloat("ActMatch", 0)
-	ss.Stats.SetFloat("AllGood", 0)
+	ss.Stats.SetFloat("PVpos", 0)
+	ss.Stats.SetFloat("PVneg", 0)
+
+	ss.Stats.SetFloat("PVposEst", 0)
+	ss.Stats.SetFloat("PVposEstDisc", 0)
+	ss.Stats.SetFloat("GiveUpDiff", 0)
+	ss.Stats.SetFloat("GiveUpProb", 0)
+	ss.Stats.SetFloat("GiveUp", 0)
+
+	ss.Stats.SetFloat("LHbDip", 0)
+	ss.Stats.SetFloat("LHbBurst", 0)
+	ss.Stats.SetFloat("LHbDA", 0)
+
+	ss.Stats.SetFloat("CeMpos", 0)
+	ss.Stats.SetFloat("CeMneg", 0)
+	ss.Stats.SetFloat("SC", 0)
+
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
 	for _, lnm := range lays {
 		ss.Stats.SetFloat("Maint"+lnm, 0)
@@ -710,10 +729,29 @@ func (ss *Sim) TrialStats(di int) {
 	vsLy := ss.Net.AxonLayerByName("VsPatch")
 	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 
-	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
+	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
+	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
+	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
+
 	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
-	ss.Stats.SetFloat32("Urge", axon.GlbV(ctx, diu, axon.GvUrgency))
+	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
+	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
+
+	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
+	ss.Stats.SetFloat32("PVposEstDisc", axon.GlbV(ctx, diu, axon.GvPVposEstDisc))
+	ss.Stats.SetFloat32("GiveUpDiff", axon.GlbV(ctx, diu, axon.GvGiveUpDiff))
+	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
+
+	ss.Stats.SetFloat32("LHbDip", axon.GlbV(ctx, diu, axon.GvLHbDip))
+	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbBurst))
+	ss.Stats.SetFloat32("LHbDA", axon.GlbV(ctx, diu, axon.GvLHbPVDA))
+
+	ss.Stats.SetFloat32("CeMpos", axon.GlbV(ctx, diu, axon.GvCeMpos))
+	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))
+
+	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
+
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
 	ss.Stats.SetFloat32("AChRaw", axon.GlbV(ctx, diu, axon.GvAChRaw))
 
@@ -912,24 +950,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("NegUSOutcome", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("DipSum", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Urge", etime.Run, etime.Epoch, etime.Trial)
 
-	// Add a special debug message -- use of etime.Debug triggers
-	// inclusion
-	ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
-
-	lays := ss.Net.LayersByType(axon.PTMaintLayer)
-	for _, lnm := range lays {
-		nm := "Maint" + lnm
-		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
-		nm = "MaintFail" + lnm
-		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
-		nm = "PreAct" + lnm
-		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
-	}
 	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA", etime.Run, etime.Epoch, etime.Trial)
@@ -945,6 +966,32 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Epoch, etime.Trial)
+
+	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Urgency", etime.Run, etime.Epoch, etime.Trial)
+
+	ss.Logs.AddStatAggItem("NegUSOutcome", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PVpos", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Epoch, etime.Trial)
+
+	ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PVposEstDisc", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUpDiff", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
+
+	ss.Logs.AddStatAggItem("LHbDip", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("LHbDA", etime.Run, etime.Epoch, etime.Trial)
+
+	ss.Logs.AddStatAggItem("CeMpos", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("CeMneg", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("SC", etime.Run, etime.Epoch, etime.Trial)
+
+	// Add a special debug message -- use of etime.Debug triggers
+	// inclusion
+	ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 	ss.Logs.AddItem(&elog.Item{
@@ -979,6 +1026,16 @@ func (ss *Sim) ConfigLogItems() {
 						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}
 				}}})
+	}
+
+	lays := ss.Net.LayersByType(axon.PTMaintLayer)
+	for _, lnm := range lays {
+		nm := "Maint" + lnm
+		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
+		nm = "MaintFail" + lnm
+		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
+		nm = "PreAct" + lnm
+		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
 	}
 }
 

@@ -199,7 +199,7 @@ func (net *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prj
 
 	toExt = net.ConnectLayers(us, blaExt, prjn.NewPoolOneToOne(), InhibPrjn)
 	toExt.DefParams = params.Params{ // actual US inhibits exinction -- must be strong enough to block ACh enh Ge
-		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.PrjnScale.Abs":  "0.5", // todo: could be lower
 		"Prjn.SWts.Init.SPct": "0",
 		"Prjn.SWts.Init.Mean": "0.8",
 		"Prjn.SWts.Init.Var":  "0",

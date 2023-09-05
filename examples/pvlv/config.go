@@ -25,8 +25,8 @@ type EnvConfig struct {
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
 
-	// PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting
-	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Context.PVLV params, using standard TOML formatting"`
+	// PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting
+	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting"`
 
 	// network parameters
 	Network map[string]any `desc:"network parameters"`
