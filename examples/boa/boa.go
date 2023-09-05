@@ -9,6 +9,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"os"
 
@@ -421,6 +422,15 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
+	if ss.Config.GUI {
+		man.GetLoop(etime.Train, etime.Trial).OnStart.Add("ResetDebugTrial", func() {
+			di := uint32(ss.ViewUpdt.View.Di)
+			hadRew := axon.GlbV(&ss.Context, di, axon.GvHadRew) > 0
+			if hadRew {
+				ss.Logs.ResetLog(etime.Debug, etime.Trial)
+			}
+		})
+	}
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
@@ -484,6 +494,10 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ev.InstinctAct(justGated, hasGated)
 		csGated := (justGated && !pv.HasPosUS(ctx, diu))
 		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
+		wasDeciding := bools.FromFloat32(ss.Stats.Float32Di("Deciding", di))
+		if wasDeciding {
+			deciding = false // can't keep deciding!
+		}
 		ss.Stats.SetFloat32Di("Deciding", di, bools.ToFloat32(deciding))
 		if csGated || deciding {
 			act := "CSGated"
@@ -597,6 +611,10 @@ func (ss *Sim) NewRun() {
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
+	if ss.Config.OpenWts != "" {
+		ss.Net.OpenWtsJSON(gi.FileName(ss.Config.OpenWts))
+		log.Println("Opened weights:", ss.Config.OpenWts)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -634,6 +652,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
+	ss.Stats.SetFloat("DA_GiveUp", 0)
 	ss.Stats.SetFloat("VSPatchThr", 0)
 
 	ss.Stats.SetFloat("Time", 0)
@@ -712,18 +731,22 @@ func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	pv := &ss.Net.PVLV
 	nan := math.NaN()
+	ss.Stats.SetFloat("DA", nan)
+	ss.Stats.SetFloat("RewPred", nan)
+	ss.Stats.SetFloat("Rew", nan)
+	ss.Stats.SetFloat("DA_NR", nan)
+	ss.Stats.SetFloat("RewPred_NR", nan)
 	if pv.HasPosUS(ctx, diu) {
 		ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
 		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
-		ss.Stats.SetFloat("DA_NR", nan)
-		ss.Stats.SetFloat("RewPred_NR", nan)
 		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
 	} else {
-		ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
-		ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
-		ss.Stats.SetFloat("DA", nan)
-		ss.Stats.SetFloat("RewPred", nan)
-		ss.Stats.SetFloat("Rew", nan)
+		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 || axon.GlbV(ctx, diu, axon.GvNegUSOutcome) > 0 {
+			ss.Stats.SetFloat32("DA_GiveUp", axon.GlbV(ctx, diu, axon.GvDA))
+		} else {
+			ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
+			ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
+		}
 	}
 
 	vsLy := ss.Net.AxonLayerByName("VsPatch")
@@ -965,6 +988,8 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("DA_GiveUp", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
 	ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Epoch, etime.Trial)
@@ -991,7 +1016,9 @@ func (ss *Sim) ConfigLogItems() {
 
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion
-	ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
+	if ss.Config.GUI {
+		ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
+	}
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*Approach)
 	ss.Logs.AddItem(&elog.Item{

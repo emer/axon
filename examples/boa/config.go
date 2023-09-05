@@ -136,6 +136,9 @@ type Config struct {
 	// log debugging information
 	Debug bool `desc:"log debugging information"`
 
+	// if set, open given weights file at start of training
+	OpenWts string `desc:"if set, open given weights file at start of training"`
+
 	// [view: add-fields] environment configuration options
 	Env EnvConfig `view:"add-fields" desc:"environment configuration options"`
 

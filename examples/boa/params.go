@@ -77,7 +77,7 @@ var ParamSets = netparams.Sets{
 				"Layer.VSPatch.Gain":           "5",
 				"Layer.VSPatch.ThrInit":        "0.3",
 				"Layer.VSPatch.ThrLRate":       "0.0001",
-				"Layer.VSPatch.ThrNonRew":      "1",
+				"Layer.VSPatch.ThrNonRew":      "10", // todo: 10 to prevent creeping up NR
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -85,7 +85,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.1",
+				"Layer.Acts.KNa.Slow.Max": "0.05", // .1 still enough to shut off -- was .2
 			}},
 		////////////////////////////////////////////
 		// Cortical Prjns
@@ -152,7 +152,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // todo: key param
+				"Prjn.PrjnScale.Abs": "0.5", // note: key param -- 0.5 > 1
 			}},
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{
@@ -193,7 +193,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#UrgencyToVsMtxGo", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // todo: not working -- no ach by time this happens!  need to drive ach too.
+				"Prjn.PrjnScale.Abs": "4", // 4 good -- 1,2 too weak
 			}},
 	},
 }

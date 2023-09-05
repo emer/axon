@@ -318,7 +318,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Block).OnStart.Add("ResetLogTrial", func() {
 		ss.Logs.ResetLog(etime.Train, etime.Trial)
 	})
-	man.GetLoop(etime.Train, etime.Sequence).OnStart.Add("ResetLogTrial", func() {
+	man.GetLoop(etime.Train, etime.Sequence).OnStart.Add("ResetDebugTrial", func() {
 		ss.Logs.ResetLog(etime.Debug, etime.Trial)
 	})
 
@@ -659,8 +659,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case mode == etime.Train && time == etime.Trial:
 		ss.TrialStats()
 		ss.StatCounters()
-		ss.Logs.Log(etime.Debug, etime.Trial)
 		if ss.Config.GUI {
+			ss.Logs.Log(etime.Debug, etime.Trial)
 			ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
 		}
 	case time == etime.Block:
