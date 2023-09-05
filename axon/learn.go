@@ -151,6 +151,9 @@ type TrgAvgActParams struct {
 	// whether to use target average activity mechanism to scale synaptic weights
 	On slbool.Bool `desc:"whether to use target average activity mechanism to scale synaptic weights"`
 
+	// if this is > 0, then each neuron's GiBase is initialized as this proportion of TrgRange.Max - TrgAvg -- gives neurons differences in intrinsic inhibition / leak as a starting bias
+	GiBaseInit float32 `desc:"if this is > 0, then each neuron's GiBase is initialized as this proportion of TrgRange.Max - TrgAvg -- gives neurons differences in intrinsic inhibition / leak as a starting bias"`
+
 	// [def: 0.02] [viewif: On] learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference.
 	ErrLRate float32 `viewif:"On" def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference."`
 
@@ -160,16 +163,16 @@ type TrgAvgActParams struct {
 	// [def: 0,1] [viewif: On] amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point.
 	SubMean float32 `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point."`
 
-	// [def: {'Min':0.5,'Max':2}] [viewif: On] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range.
-	TrgRange minmax.F32 `viewif:"On" def:"{'Min':0.5,'Max':2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
-
 	// [def: true] [viewif: On] permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used
 	Permute slbool.Bool `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 
 	// [viewif: On] use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool
 	Pool slbool.Bool `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
 
-	pad, pad1 int32
+	pad int32
+
+	// [def: {'Min':0.5,'Max':2}] [viewif: On] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range.
+	TrgRange minmax.F32 `viewif:"On" def:"{'Min':0.5,'Max':2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 }
 
 func (ta *TrgAvgActParams) Update() {

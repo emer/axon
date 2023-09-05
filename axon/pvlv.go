@@ -797,6 +797,7 @@ func (pp *PVLV) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Ran
 	posEstSum, posEst := pp.PVposEst(ctx, di)
 	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
 	posDisc := posEst - vsPatchSum
+	// note: cannot do ratio here because discounting can get negative
 	diff := posDisc - pvNeg
 	prob, giveUp := pp.GiveUp.Prob(-diff, rnd)
 

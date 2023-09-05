@@ -931,9 +931,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVa
 	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
 
 	if ly.LayType == VSPatchLayer {
-		if pl.AvgMax.CaSpkD.Plus.Max < 0.5 { // todo: param here
-			SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, GeIntNorm))
-		}
+		// if pl.AvgMax.CaSpkD.Plus.Max < 0.5 { // todo: param here
+		SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, GeIntNorm))
+		// }
 	}
 
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
@@ -989,12 +989,18 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	nrnCaSpkD := NrnV(ctx, ni, di, CaSpkD)
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
 	modlr := ly.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
-	dlr := float32(0)
+	dlr := float32(1)
 	switch ly.LayType {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, NrnV(ctx, ni, di, SpkPrv)) // delta on previous trial
 		if !ly.Learn.NeuroMod.IsBLAExt() && pl.StIdx == 0 {                    // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
+		}
+	case VSPatchLayer:
+		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // max is 1 due to norming of GeIntMod
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
+		if modlr < 0 { // for negative da, target the strongest
+			mlr = 1 - mlr
 		}
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)

@@ -75,7 +75,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.FB":          "0",
 				"Layer.Learn.NeuroMod.DipGain": "0.1", // rate of extinction -- reduce to slow
 				"Layer.VSPatch.Gain":           "5",
-				"Layer.VSPatch.ThrInit":        "0.3",
+				"Layer.VSPatch.ThrInit":        "0.2",
 				"Layer.VSPatch.ThrLRate":       "0.0001",
 				"Layer.VSPatch.ThrNonRew":      "10", // todo: 10 to prevent creeping up NR
 			}},
@@ -160,8 +160,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "2",    // 3 orig
-				"Prjn.Learn.LRate.Base": "0.01", // 0.05 def
+				"Prjn.PrjnScale.Abs":    "2",   // 3 orig
+				"Prjn.Learn.LRate.Base": "0.1", // 0.05 def
 			}},
 		{Sel: ".DrivesToVSPatch", Desc: "",
 			Params: params.Params{

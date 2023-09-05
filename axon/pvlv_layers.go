@@ -115,18 +115,18 @@ type VSPatchParams struct {
 	// [def: 0.25] initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
 	ThrInit float32 `def:"0.25" desc:"initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr"`
 
-	// [def: 0,0.001] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `def:"0,0.001" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
+	// [def: 0,0.0001] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
+	ThrLRate float32 `def:"0,0.0001" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
 
-	// [def: 1] extra gain factor for non-reward trials, which is the most critical
-	ThrNonRew float32 `def:"1" desc:"extra gain factor for non-reward trials, which is the most critical"`
+	// [def: 10] extra gain factor for non-reward trials, which is the most critical
+	ThrNonRew float32 `def:"10" desc:"extra gain factor for non-reward trials, which is the most critical"`
 }
 
 func (vp *VSPatchParams) Defaults() {
 	vp.Gain = 4
-	vp.ThrInit = 0.25
-	vp.ThrLRate = 0 // 0.001
-	vp.ThrNonRew = 1
+	vp.ThrInit = 0.15
+	vp.ThrLRate = 0.0001
+	vp.ThrNonRew = 10
 }
 
 func (vp *VSPatchParams) Update() {
@@ -328,8 +328,9 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Inhib.Pool.Gi = 0.5
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Learn.RLRate.Diff.SetBool(false)
-	ly.Learn.RLRate.SigmoidMin = 1
+	ly.Learn.RLRate.SigmoidMin = 0.05 // todo: try lower?
 	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.GiBaseInit = 0.5
 
 	// ms.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Learn.NeuroMod.DALRateSign.SetBool(true)

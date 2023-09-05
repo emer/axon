@@ -28,11 +28,12 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain": "0.1", // controls extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "5",
-				"Layer.VSPatch.ThrInit":        "0.25",
-				"Layer.VSPatch.ThrLRate":       "0", // .001",
-				"Layer.VSPatch.ThrNonRew":      "1",
+				"Layer.Learn.NeuroMod.DipGain":  "0.1", // controls extinction -- reduce to slow
+				"Layer.VSPatch.Gain":            "5",
+				"Layer.VSPatch.ThrInit":         "0.15",
+				"Layer.VSPatch.ThrLRate":        "0.0001", // .001",
+				"Layer.VSPatch.ThrNonRew":       "10",
+				"ly.Learn.TrgAvgAct.GiBaseInit": "0.5",
 			}},
 		{Sel: "#BLAPosExtD2", Desc: "",
 			Params: params.Params{
@@ -71,10 +72,6 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.LRate.Base":  "0.005", // 0.02 allows .5 CS for B50
 				"Prjn.BLA.NegDeltaLRate": "1",
 			}},
-		{Sel: ".CSToBLAPos", Desc: "",
-			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0",
-			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leaks with supertothal 4
@@ -96,7 +93,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{ // todo: expt with these more..
 				"Prjn.PrjnScale.Abs":        "2",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.01", // 0.05 def
+				"Prjn.Learn.LRate.Base":     "0.2", // 0.2 -- much higher with RLRate in place
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
