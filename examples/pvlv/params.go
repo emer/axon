@@ -28,12 +28,13 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain":  "0.1", // controls extinction -- reduce to slow
-				"Layer.VSPatch.Gain":            "5",
-				"Layer.VSPatch.ThrInit":         "0.15",
-				"Layer.VSPatch.ThrLRate":        "0.0001", // .001",
-				"Layer.VSPatch.ThrNonRew":       "10",
-				"ly.Learn.TrgAvgAct.GiBaseInit": "0.5",
+				"Layer.Learn.NeuroMod.DipGain":     "1",    // controls extinction -- reduce to slow
+				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
+				"Layer.VSPatch.Gain":               "5",
+				"Layer.VSPatch.ThrInit":            "0.15",
+				"Layer.VSPatch.ThrLRate":           "0.002", // .001",
+				"Layer.VSPatch.ThrNonRew":          "10",
+				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
 			}},
 		{Sel: "#BLAPosExtD2", Desc: "",
 			Params: params.Params{
@@ -93,7 +94,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{ // todo: expt with these more..
 				"Prjn.PrjnScale.Abs":        "2",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.2", // 0.2 -- much higher with RLRate in place
+				"Prjn.Learn.LRate.Base":     "0.05", // 0.2 to speed up
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{

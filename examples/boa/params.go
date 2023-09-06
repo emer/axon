@@ -71,13 +71,15 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
-				"Layer.Inhib.Pool.FB":          "0",
-				"Layer.Learn.NeuroMod.DipGain": "0.1", // rate of extinction -- reduce to slow
-				"Layer.VSPatch.Gain":           "5",
-				"Layer.VSPatch.ThrInit":        "0.2",
-				"Layer.VSPatch.ThrLRate":       "0.0001",
-				"Layer.VSPatch.ThrNonRew":      "10", // todo: 10 to prevent creeping up NR
+				"Layer.Inhib.Pool.Gi":              "0.5",   // 0.5 ok?
+				"Layer.Inhib.Pool.FB":              "0",     // only fb
+				"Layer.Learn.NeuroMod.DipGain":     "1",     // if < 1, overshoots, more -DA
+				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.05 def
+				"Layer.VSPatch.Gain":               "3",     // 3 smoother than higher
+				"Layer.VSPatch.ThrInit":            "0.2",   // could be a bit lower
+				"Layer.VSPatch.ThrLRate":           "0.002", // 0.002 good
+				"Layer.VSPatch.ThrNonRew":          "10",    // 10 to prevent creeping up NR
+				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -160,8 +162,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "2",   // 3 orig
-				"Prjn.Learn.LRate.Base": "0.1", // 0.05 def
+				"Prjn.PrjnScale.Abs":    "2",    // 3 orig
+				"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
 			}},
 		{Sel: ".DrivesToVSPatch", Desc: "",
 			Params: params.Params{

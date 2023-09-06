@@ -153,10 +153,16 @@ const (
 	// VSPatch prediction of PVpos net value
 
 	// VSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
-	// computed as the Max of US-specific VSPatch saved values
+	// computed as the Max of US-specific VSPatch saved values.
+	// This is also stored as GvRewPred.
 	GvVSPatchPos
 
-	// VSPatchPosSum is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
+	// VSPatchPosPrev is the previous-trial version of VSPatchPos -- for adjusting the
+	// VSPatchThr threshold
+	GvVSPatchPosPrev
+
+	// VSPatchPosSum is the sum of VSPatchPos over goal engaged trials,
+	// representing the integrated prediction that the US is going to occur
 	GvVSPatchPosSum
 
 	/////////////////////////////////////////

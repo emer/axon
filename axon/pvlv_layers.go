@@ -193,15 +193,12 @@ func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
 		hasRew := GlbV(ctx, di, GvHasRew)
 		// note: this all must be based on t-1 values!!!
 		modlr := ly.Params.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
-		for pi := uint32(1); pi < ly.NPools; pi++ {
-			vsval := GlbUSposV(ctx, di, GvVSPatchPrev, uint32(pi-1)) // must be prev!
-			if hasRew == 0 {
-				dthr := ly.Params.VSPatch.ThrNonRew * vsval // increase threshold if active
-				sumDThr += dthr
-				// note: if added DA modlr here, CS DA might cause some interesting effcts..
-			} else {
-				sumDThr -= modlr // decrease in proportion to DA on US trials
-			}
+		if hasRew == 0 {
+			vsval := GlbV(ctx, di, GvVSPatchPosPrev)    // must be prev!
+			dthr := ly.Params.VSPatch.ThrNonRew * vsval // increase threshold if active
+			sumDThr += dthr
+		} else {
+			sumDThr -= modlr
 		}
 	}
 	// everyone uses the same threshold
@@ -328,7 +325,7 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Inhib.Pool.Gi = 0.5
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Learn.RLRate.Diff.SetBool(false)
-	ly.Learn.RLRate.SigmoidMin = 0.05 // todo: try lower?
+	ly.Learn.RLRate.SigmoidMin = 0.01 // 0.01 > 0.05
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 	ly.Learn.TrgAvgAct.GiBaseInit = 0.5
 

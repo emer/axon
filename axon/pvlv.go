@@ -390,8 +390,8 @@ type GiveUpParams struct {
 	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
 	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
 
-	// multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
-	Gain float32 `desc:"multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold"`
+	// [def: 10] multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
+	Gain float32 `def:"10" desc:"multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold"`
 
 	// minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen.
 	MinPVposEst float32 `desc:"minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen."`
@@ -399,7 +399,7 @@ type GiveUpParams struct {
 
 func (gp *GiveUpParams) Defaults() {
 	gp.NegThr = 1
-	gp.Gain = 6
+	gp.Gain = 10
 	gp.MinPVposEst = 0.2
 }
 
@@ -625,6 +625,7 @@ func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
 	pp.USs.USnegToZero(ctx, di) // all negs restart
 	pp.ResetGiveUp(ctx, di)
 	SetGlbV(ctx, di, GvVSPatchPos, 0)
+	SetGlbV(ctx, di, GvVSPatchPosPrev, 0)
 	SetGlbV(ctx, di, GvVSPatchPosSum, 0)
 	SetGlbV(ctx, di, GvRewPred, 0)
 	nd := pp.NPosUSs
@@ -738,6 +739,7 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 // saves to Prev, updates global VSPatchPos and VSPatchPosSum.
 // uses max across recorded VSPatch activity levels.
 func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
+	SetGlbV(ctx, di, GvVSPatchPosPrev, GlbV(ctx, di, GvVSPatchPos))
 	mx := float32(0)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
