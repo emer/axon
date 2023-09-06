@@ -8,6 +8,7 @@ GOGET=$(GOCMD) get
 
 # exclude python from std builds
 DIRS=`go list ./... | grep -v python`
+CWD=`$(dir $(abspath $(firstword $(MAKEFILE_LIST))))`
 
 all: build
 
@@ -15,6 +16,15 @@ build:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOBUILD) -v $(DIRS)
 
+params_good: ./examples/*
+	@echo "GO111MODULE = $(value GO111MODULE) CWD: $(value CWD)"
+	@for f in $^; do  \
+		DIR=$$(basename $${f}) && \
+		echo "example: $${DIR} in example path: $${f}" && \
+		cd $${f} && $${DIR} -no-gui -Params.SaveAll -Params.Good && \
+		cd $${CWD}; \
+    done
+	
 test:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	export TEST_GPU=false; $(GOTEST) -v -tags multinet $(DIRS)

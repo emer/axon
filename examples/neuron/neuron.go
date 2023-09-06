@@ -306,8 +306,9 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 		ss.Net.GPU.SyncStateFmGPU()
 		ctx.CycleInc() // why is this not working!?
 	} else {
-		ly.GInteg(ctx, ni, di, ly.Pool(0, di), ly.LayerVals(0))
-		ly.SpikeFmG(ctx, ni, di)
+		lpl := ly.Pool(0, di)
+		ly.GInteg(ctx, ni, di, lpl, ly.LayerVals(0))
+		ly.SpikeFmG(ctx, ni, di, lpl)
 	}
 }
 

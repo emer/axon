@@ -468,6 +468,20 @@ func (pp *PVLV) Update() {
 	pp.LHb.Update()
 }
 
+// USposIdx adds 1 to the given _simulation specific_ positive US index
+// to get the actual US / Drive index, where the first pool is reserved
+// for curiosity / novelty.
+func (pp *PVLV) USposIdx(simUsIdx int) int {
+	return simUsIdx + 1
+}
+
+// USnegIdx adds 2 to the given _simulation specific_ negative US index
+// to get the actual US index, where the first pool is reserved
+// for time, and the second for effort
+func (pp *PVLV) USnegIdx(simUsIdx int) int {
+	return simUsIdx + 2
+}
+
 // SetNUSs sets the number of _additional_ simulation-specific
 // positive and negative USs (primary value outcomes).
 // This must be called _before_ network Build, which allocates global values
@@ -477,8 +491,8 @@ func (pp *PVLV) Update() {
 // simulation via the SetUS method.
 // Positive USs each have corresponding Drives.
 func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg int) {
-	nPos += 1 // curiosity
-	nNeg += 2 // time, effort
+	nPos = pp.USposIdx(nPos)
+	nNeg = pp.USnegIdx(nNeg)
 	pp.NPosUSs = uint32(nPos)
 	pp.NNegUSs = uint32(nNeg)
 	ctx.NetIdxs.PVLVNPosUSs = pp.NPosUSs
@@ -596,7 +610,7 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 	}
 }
 
-// SetUS sets the given _additional_ (simulation specific) unconditioned
+// SetUS sets the given _simulation specific_ unconditioned
 // stimulus (US) state for PVLV algorithm.  usIdx = 0 is first additional US, etc.
 // The US then drives activity of relevant PVLV-rendered inputs, and dopamine.
 // By default, negative USs only set the overall ctx.NeuroMod.HasRew flag
@@ -605,11 +619,13 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 // trigger giving up as a function of the total accumulated negative valence.
 func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
 	if valence == Positive {
-		SetGlbV(ctx, di, GvHasRew, 1)                              // only for positive USs
-		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx)+1, magnitude) // +1 for curiosity
+		usIdx = pp.USposIdx(usIdx)
+		SetGlbV(ctx, di, GvHasRew, 1) // all positive USs are final outcomes
+		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx), magnitude)
 	} else {
-		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx)+2, magnitude) // +2 for effort, time
-		if pp.USs.NegUSOutcome(ctx, di, usIdx+1, magnitude) {
+		usIdx = pp.USnegIdx(usIdx)
+		AddGlbUSneg(ctx, di, GvUSnegRaw, uint32(usIdx), magnitude)
+		if pp.USs.NegUSOutcome(ctx, di, usIdx, magnitude) {
 			SetGlbV(ctx, di, GvHasRew, 1)
 		}
 	}

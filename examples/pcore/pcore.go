@@ -163,9 +163,6 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigPVLV(trn *GoNoEnv) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, 2, 1)
-	pv.Effort.Max = 20
-	pv.Effort.MaxNovel = 8
-	pv.Effort.MaxPostDip = 4
 	pv.Urgency.U50 = 20 // 20 def
 }
 
