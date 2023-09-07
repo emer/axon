@@ -931,9 +931,7 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVa
 	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
 
 	if ly.LayType == VSPatchLayer {
-		// if pl.AvgMax.CaSpkD.Plus.Max < 0.5 { // todo: param here
 		SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, GeIntNorm))
-		// }
 	}
 
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)

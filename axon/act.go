@@ -901,6 +901,9 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, GiNoise, 0)
 
 	SetNrnV(ctx, ni, di, GiSyn, 0)
+	SetNrnV(ctx, ni, di, GeInt, 0)
+	SetNrnV(ctx, ni, di, GeIntNorm, 0)
+	SetNrnV(ctx, ni, di, GiInt, 0)
 
 	SetNrnV(ctx, ni, di, MahpN, 0)
 	SetNrnV(ctx, ni, di, SahpCa, 0)
@@ -951,7 +954,7 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (SpkPrv, SpkSt*, ActM, ActP, GeInt, GiInt)
+// (SpkPrv, SpkSt*, ActM, ActP)
 // Called from InitActs, which is called from InitWts,
 // but otherwise not automatically called
 // (DecayState is used instead)
