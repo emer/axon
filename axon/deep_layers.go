@@ -189,9 +189,10 @@ func (ly *Layer) PTMaintDefaults() {
 	if ly.Is4D() {
 		ly.Params.Inhib.ActAvg.Nominal = 0.05
 	}
-	ly.Params.Inhib.Layer.Gi = 3.2
-	ly.Params.Inhib.Pool.Gi = 3.2
+	ly.Params.Inhib.Layer.Gi = 2.4
+	ly.Params.Inhib.Pool.Gi = 2.4
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Params.Learn.NeuroMod.AChDisInhib = 0
 
 	for _, pj := range ly.RcvPrjns {
 		slay := pj.Send

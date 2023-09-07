@@ -43,9 +43,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				"Layer.Acts.Dend.ModGain":   "1.5",
-				"Layer.Acts.MaintNMDA.Gbar": "0.007",
-				"Layer.Acts.MaintNMDA.Tau":  "200",
+				"Layer.Acts.Dend.ModGain": "1.5",
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{

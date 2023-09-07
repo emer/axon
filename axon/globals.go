@@ -114,13 +114,13 @@ const (
 	// PVposSum is total weighted positive valence primary value = sum of Weight * USpos * Drive
 	GvPVposSum
 
-	// PVpos is normalized positive valence primary value = (1 - 1/(1+PVPosGain * PVposSum))
+	// PVpos is normalized positive valence primary value = (1 - 1/(1+PVposGain * PVposSum))
 	GvPVpos
 
 	// PVnegSum is total weighted negative valence primary value = sum of Weight * USneg
 	GvPVnegSum
 
-	// PVpos is normalized negative valence primary value = (1 - 1/(1+PVNegGain * PVnegSum))
+	// PVpos is normalized negative valence primary value = (1 - 1/(1+PVnegGain * PVnegSum))
 	GvPVneg
 
 	// PVposEst is the estimated PVpos value based on OFCposUSPT and VSMatrix gating
@@ -170,7 +170,7 @@ const (
 
 	// computed LHb activity level that drives dipping / pausing of DA firing,
 	// when VSPatch pos prediction > actual PV reward drive
-	// or PVNeg > PVPos
+	// or PVneg > PVpos
 	GvLHbDip
 
 	// LHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive > VSPatch pos prediction

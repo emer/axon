@@ -35,6 +35,9 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 		d2 := net.AddLayer4D(prefix+"BLANegAcqD2", 1, nUs, nNeurY, nNeurX, BLALayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
 		d2.SetBuildConfig("Valence", "Negative")
+		d2.DefParams = params.Params{
+			"Layer.Inhib.Layer.Gi": "1.2", // weaker
+		}
 		acq = d2
 		ext = d1
 	}
@@ -348,7 +351,7 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		"Layer.Acts.Decay.LearnCa":   "1.0", // uses CaSpkD as a readout -- clear
 		"Layer.Acts.Decay.OnRew":     "true",
 		"Layer.Acts.KNa.TrialSlow":   "true",
-		"Layer.Acts.KNa.Slow.Max":    "2", // 1 not strong enough!
+		"Layer.Acts.KNa.Slow.Max":    "0.05", // 0.1 enough to fully inhibit over several trials
 	}
 	sc.SetClass("SC")
 	return sc
@@ -503,8 +506,8 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 
 	return
 }
@@ -516,9 +519,10 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCnegUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
+	ofc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 
 	return
 }

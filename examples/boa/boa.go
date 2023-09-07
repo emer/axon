@@ -170,13 +170,16 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, trn.NDrives, 1)
 	pv.Defaults()
-	pv.USs.PVPosGain = 2
-	pv.USs.PVNegGain = 1
+	pv.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
+	pv.USs.PVnegGain = 1 // global scaling of PV neg level
 
-	pv.USs.PVNegWts[0] = 0.01
-	pv.USs.PVNegWts[1] = 0.01
-	pv.USs.PVNegWts[2] = 2
-	pv.USs.NegGains[2] = 2 // big salient input!
+	pv.USs.USnegGains[0] = 0.1 // time: if USneg pool is saturating, reduce
+	pv.USs.USnegGains[1] = 0.1 // effort: if USneg pool is saturating, reduce
+	pv.USs.USnegGains[2] = 2   // big salient input!
+
+	pv.USs.PVnegWts[0] = 0.02 // time: controls overall PVneg -- if too high, not enough reward..
+	pv.USs.PVnegWts[1] = 0.02 // effort: controls overall PVneg -- if too high, not enough reward..
+	pv.USs.PVnegWts[2] = 1
 
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
 	pv.Urgency.U50 = 10
