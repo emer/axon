@@ -17,7 +17,7 @@
     "Layer.Acts.Dend.ModGain" = "1.5"
     "Layer.Inhib.Layer.Gi" = "2.4"
     "Layer.Inhib.Pool.Gi" = "2.4"
-    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
+    "Layer.Learn.NeuroMod.AChDisInhib" = "0.0"
 
 [[Base]]
   Sel = ".PTPredLayer"
@@ -53,6 +53,26 @@
     "Layer.Inhib.Pool.Gi" = "1.4"
 
 [[Base]]
+  Sel = "#OFCnegUS"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "0.1"
+    "Layer.Inhib.Layer.Gi" = "1.2"
+
+[[Base]]
+  Sel = "#OFCnegUSPT"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "0.2"
+    "Layer.Inhib.Pool.Gi" = "3.0"
+
+[[Base]]
+  Sel = "#OFCnegUSPTp"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.Pool.Gi" = "1.4"
+
+[[Base]]
   Sel = "#OFCposVal"
   Desc = ""
   [Base.Params]
@@ -75,6 +95,12 @@
     "Layer.Inhib.Pool.Gi" = "1"
 
 [[Base]]
+  Sel = "#BLANegAcqD2"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.Layer.Gi" = "1.2"
+
+[[Base]]
   Sel = ".VSPatchLayer"
   Desc = ""
   [Base.Params]
@@ -84,7 +110,7 @@
     "Layer.Learn.RLRate.SigmoidMin" = "0.01"
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
     "Layer.VSPatch.Gain" = "3"
-    "Layer.VSPatch.ThrInit" = "0.2"
+    "Layer.VSPatch.ThrInit" = "0.15"
     "Layer.VSPatch.ThrLRate" = "0.002"
     "Layer.VSPatch.ThrNonRew" = "10"
 

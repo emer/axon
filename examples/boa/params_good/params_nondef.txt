@@ -220,7 +220,6 @@ VsPatch.Inhib.Layer.FB: 0 // [Def: 0.5,1,4] <br>
 VsPatch.Inhib.Pool.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
 VsPatch.Inhib.Pool.FB: 0 // [Def: 0.5,1,4] <br>
 VsPatch.Learn.RLRate.SigmoidMin: 0.01 // [Def: 0.05,1] <br>
-VsPatch.VSPatch.ThrInit: 0.2 // [Def: 0.15] <br>
 VsPatch.ACCnegValPTpToVsPatch.PrjnScale.Abs: 2 // [Def: 1] <br>
 VsPatch.ACCnegValPTpToVsPatch.SWts.Init.Mean: 0.1 // [Def: 0.5,0.4] <br>
 VsPatch.ACCnegValPTpToVsPatch.SWts.Init.Var: 0.05 // [Def: 0.25] <br>
@@ -323,7 +322,7 @@ BLANegExtD1.CSToBLANegExtD1.SWts.Init.Var: 0.05 // [Def: 0.25] <br>
 BLANegExtD1.CSToBLANegExtD1.SWts.Init.Sym: false // [Def: true] <br>
 BLANegExtD1.CSToBLANegExtD1.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
 BLANegExtD1.CSToBLANegExtD1.Learn.LRate.Base: 0.005 // [Def: 0.04,0.1,0.2] <br>
-BLANegAcqD2.Inhib.Layer.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
+BLANegAcqD2.Inhib.Layer.Gi: 1.2 // [Def: 1,1.1,0.75,0.9] <br>
 BLANegAcqD2.Learn.RLRate.DiffThr: 0.01 // [Def: 0.02] <br>
 BLANegAcqD2.Learn.NeuroMod.BurstGain: 0.2 // [Def: 1] <br>
 BLANegAcqD2.Learn.NeuroMod.DipGain: 0 // [Def: 1] <br>
@@ -470,7 +469,7 @@ NotMaint.ACCutilPTToNotMaint.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
 NotMaint.ACCutilPTToNotMaint.SWts.Init.Var: 0 // [Def: 0.25] <br>
 NotMaint.ACCutilPTToNotMaint.SWts.Init.Sym: false // [Def: true] <br>
 NotMaint.ACCutilPTToNotMaint.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-OFCnegUS.Inhib.Layer.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
+OFCnegUS.Inhib.Layer.Gi: 1.2 // [Def: 1,1.1,0.75,0.9] <br>
 OFCnegUS.BLANegAcqD2ToOFCnegUS.PrjnScale.Abs: 2 // [Def: 1] <br>
 OFCnegUS.BLANegAcqD2ToOFCnegUS.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
 OFCnegUS.BLANegAcqD2ToOFCnegUS.Learn.LRate.Base: 0.01 // [Def: 0.04,0.1,0.2] <br>
@@ -494,7 +493,7 @@ OFCnegUSCT.DistPToOFCnegUSCT.Learn.LRate.Base: 0.01 // [Def: 0.04,0.1,0.2] <br>
 OFCnegUSPT.Acts.Sahp.Gbar: 0.01 // [Def: 0.05,0.1] <br>
 OFCnegUSPT.Acts.GabaB.Gbar: 0.01 // [Def: 0,0.012,0.015] <br>
 OFCnegUSPT.Inhib.Layer.Gi: 2.4 // [Def: 1,1.1,0.75,0.9] <br>
-OFCnegUSPT.Inhib.Pool.Gi: 2.4 // [Def: 1,1.1,0.75,0.9] <br>
+OFCnegUSPT.Inhib.Pool.Gi: 3 // [Def: 1,1.1,0.75,0.9] <br>
 OFCnegUSPT.OFCnegUSMDToOFCnegUSPT.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
 OFCnegUSPT.OFCnegUSMDToOFCnegUSPT.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCnegUSPT.OFCnegUSMDToOFCnegUSPT.Learn.LRate.Base: 0.01 // [Def: 0.04,0.1,0.2] <br>
@@ -525,7 +524,7 @@ OFCnegUSMD.VsGPiToOFCnegUSMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCnegUSMD.VsGPiToOFCnegUSMD.SWts.Init.Sym: false // [Def: true] <br>
 OFCnegUSMD.VsGPiToOFCnegUSMD.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
 OFCnegUSPTp.Inhib.Layer.Gi: 1.2 // [Def: 1,1.1,0.75,0.9] <br>
-OFCnegUSPTp.Inhib.Pool.Gi: 1.2 // [Def: 1,1.1,0.75,0.9] <br>
+OFCnegUSPTp.Inhib.Pool.Gi: 1.4 // [Def: 1,1.1,0.75,0.9] <br>
 OFCnegUSPTp.OFCnegUSPTToOFCnegUSPTp.PrjnScale.Abs: 6 // [Def: 1] <br>
 OFCnegUSPTp.OFCnegUSPTToOFCnegUSPTp.Learn.LRate.Base: 0.01 // [Def: 0.04,0.1,0.2] <br>
 OFCnegUSPTp.OFCnegUSCTToOFCnegUSPTp.Learn.LRate.Base: 0.01 // [Def: 0.04,0.1,0.2] <br>

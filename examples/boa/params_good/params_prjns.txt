@@ -104,7 +104,7 @@ Layer: VsMtxNo
 								    Rel Params: .PFCToVSMtx: 0.1
 	      OFCposVal	     MatrixPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Rel Params: .PFCToVSMtx: 0.1
-	       OFCnegUS	     MatrixPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	       OFCnegUS	     MatrixPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.04
 								    Rel Params: .PFCToVSMtx: 0.1
 	      ACCnegVal	     MatrixPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Rel Params: .PFCToVSMtx: 0.1
@@ -311,7 +311,7 @@ Layer: OFCposValPTp
 								    Abs Params: .ToPTp: 4
 
 Layer: ACCnegVal
-	       OFCnegUS	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.30	Rel:  0.30
+	       OFCnegUS	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.30
 	          PVneg	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.30
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
 	        ACCutil	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
@@ -432,7 +432,7 @@ Layer: M1
 	            ALM	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
 	             VL	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.03
 	           Dist	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.31
-	       OFCnegUS	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.31
+	       OFCnegUS	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.31
 	     ACCutilPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.31
 
 Layer: M1CT

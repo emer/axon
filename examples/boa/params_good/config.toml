@@ -1,4 +1,4 @@
-GUI = false
+GUI = true
 Debug = false
 OpenWts = ""
 
