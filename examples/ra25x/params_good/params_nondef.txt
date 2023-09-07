@@ -1,9 +1,5 @@
 Input.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 Input.Acts.VGCC.Ca: 1 // [Def: 25] <br>
-Input.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
-Hidden1.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
-Hidden2.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 Output.Acts.Spikes.Tr: 1 // [Def: 3] <br>
 Output.Acts.VGCC.Ca: 1 // [Def: 25] <br>
 Output.Inhib.Layer.Gi: 0.65 // [Def: 1,1.1,0.75,0.9] <br>
-Output.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>

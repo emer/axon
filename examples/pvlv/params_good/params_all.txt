@@ -2064,7 +2064,7 @@ Learn: {
   NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 VSPatch: {
-  Gain: 5 ThrInit: 0.15 ThrLRate: 0.002 ThrNonRew: 10
+  Gain: 3 ThrInit: 0.15 ThrLRate: 0.002 ThrNonRew: 10
 }
 ///////////////////////////////////////////////////
 Prjn: ACCnegValPTpToVsPatch

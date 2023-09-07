@@ -30,7 +30,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Learn.NeuroMod.DipGain":     "1",    // controls extinction -- reduce to slow
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
-				"Layer.VSPatch.Gain":               "5",
+				"Layer.VSPatch.Gain":               "3",
 				"Layer.VSPatch.ThrInit":            "0.15",
 				"Layer.VSPatch.ThrLRate":           "0.002", // .001",
 				"Layer.VSPatch.ThrNonRew":          "10",

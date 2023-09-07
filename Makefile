@@ -15,12 +15,20 @@ build:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOBUILD) -v $(DIRS)
 
+build_exe: ./examples/*
+	@echo "GO111MODULE = $(value GO111MODULE)"
+	@for f in $^; do  \
+		DIR=$$(basename $${f}) && echo "" && echo "###########################" && \
+		echo "example: $${DIR} in path: $${f}"; \
+		cd $${f}; go build -v; cd ../../; \
+    done
+
 params_good: ./examples/*
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	@for f in $^; do  \
 		DIR=$$(basename $${f}) && echo "" && echo "###########################" && \
 		echo "example: $${DIR} in path: $${f}"; \
-		cd $${f}; ./$${DIR} -no-gui -Params.SaveAll -Params.Good; cd ../../; \
+		cd $${f}; go build -v; ./$${DIR} -no-gui -Params.SaveAll -Params.Good; cd ../../; \
     done
 	
 test:

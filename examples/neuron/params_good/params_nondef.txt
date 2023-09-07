@@ -1,2 +1,0 @@
-Input.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
-Neuron.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>

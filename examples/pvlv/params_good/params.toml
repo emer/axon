@@ -24,7 +24,7 @@
     "Layer.Learn.NeuroMod.DipGain" = "1"
     "Layer.Learn.RLRate.SigmoidMin" = "0.01"
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
-    "Layer.VSPatch.Gain" = "5"
+    "Layer.VSPatch.Gain" = "3"
     "Layer.VSPatch.ThrInit" = "0.15"
     "Layer.VSPatch.ThrLRate" = "0.002"
     "Layer.VSPatch.ThrNonRew" = "10"

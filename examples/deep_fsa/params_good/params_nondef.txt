@@ -1,14 +1,9 @@
-Input.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 InputP.Pulv.DriveScale: 0.2 // [Def: 0.1] <br>
-InputP.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 InputP.HiddenCTToInputP.Learn.LRate.Base: 0.03 // [Def: 0.04,0.1,0.2] <br>
-Targets.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
-Hidden.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 Hidden.InputToHidden.Learn.LRate.Base: 0.03 // [Def: 0.04,0.1,0.2] <br>
 Hidden.InputPToHidden.Learn.LRate.Base: 0.03 // [Def: 0.04,0.1,0.2] <br>
 HiddenCT.Inhib.Layer.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
 HiddenCT.Inhib.Pool.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
-HiddenCT.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 HiddenCT.HiddenToHiddenCT.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
 HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
 HiddenCT.HiddenCTToHiddenCT.PrjnScale.Abs: 0.5 // [Def: 1] <br>

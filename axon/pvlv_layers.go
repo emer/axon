@@ -109,23 +109,23 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
 
-	// [def: 4] multiplier applied after Thr threshold
-	Gain float32 `def:"4" desc:"multiplier applied after Thr threshold"`
+	// [def: 3] multiplier applied after Thr threshold
+	Gain float32 `def:"3" desc:"multiplier applied after Thr threshold"`
 
-	// [def: 0.25] initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
-	ThrInit float32 `def:"0.25" desc:"initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr"`
+	// [def: 0.15] initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
+	ThrInit float32 `def:"0.15" desc:"initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr"`
 
-	// [def: 0,0.0001] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `def:"0,0.0001" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
+	// [def: 0,0.002] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
+	ThrLRate float32 `def:"0,0.002" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
 
 	// [def: 10] extra gain factor for non-reward trials, which is the most critical
 	ThrNonRew float32 `def:"10" desc:"extra gain factor for non-reward trials, which is the most critical"`
 }
 
 func (vp *VSPatchParams) Defaults() {
-	vp.Gain = 4
+	vp.Gain = 3
 	vp.ThrInit = 0.15
-	vp.ThrLRate = 0.0001
+	vp.ThrLRate = 0.002
 	vp.ThrNonRew = 10
 }
 
