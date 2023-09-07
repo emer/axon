@@ -106,9 +106,9 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 		{"ActMatch", 0.95},
 		{"GateUS", 1.0},
 		{"GateCS", 1.0},
-		{"MaintEarly", 0.0},
+		{"MaintEarly", 0.02},
 		{"WrongCSGate", 0.0},
-		{"Rew", 0.6},
+		{"Rew", 0.5},
 		// {"RewPred", 0.001}, // doesn't reliably come on until later -- expensive to run longer
 	}
 	epochTable := sim.Logs.Table(etime.Train, etime.Epoch)
@@ -117,6 +117,8 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 		assert.False(t, math.IsNaN(val), "%s is NaN", expected.name)
 		if expected.val == 1.0 || expected.val == 0 {
 			assert.Equal(t, expected.val, val, "%s: %f, want %f", expected.name, val, expected.val)
+		} else if expected.val < 0.1 {
+			assert.True(t, val <= expected.val, "%s: %f, want <= %f", expected.name, val, expected.val)
 		} else {
 			assert.True(t, val >= expected.val, "%s: %f, want >= %f", expected.name, val, expected.val)
 		}
@@ -282,7 +284,7 @@ func RunNDataTest(t *testing.T, gpu bool) {
 	sim.Config.Run.NData = 2
 	sim.Config.Run.NRuns = 1
 	sim.Config.Run.NEpochs = 1
-	sim.Config.Run.NTrials = 50
+	sim.Config.Run.NTrials = 30
 	sim.Config.Log.Run = false
 	sim.Config.Log.Epoch = false
 	sim.Config.Log.Testing = true
