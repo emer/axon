@@ -230,7 +230,7 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.Acts.KNa.Slow.Max = 0.2 // todo: more?
 	ly.Inhib.Layer.Gi = 0.8
 	ly.Inhib.Pool.Gi = 0.8
-	ly.CT.GeGain = 0.1
+	ly.CT.GeGain = 0.05
 	ly.CT.DecayTau = 50
 
 	// regular:

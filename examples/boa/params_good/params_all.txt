@@ -2138,7 +2138,7 @@ Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 1
+  Rel: 1 Abs: 2
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: false }
@@ -2158,7 +2158,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 5
+  Rel: 1 Abs: 2
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }

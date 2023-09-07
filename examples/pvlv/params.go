@@ -31,7 +31,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
 				"Layer.VSPatch.Gain":               "3",
-				"Layer.VSPatch.ThrInit":            "0.15",
+				"Layer.VSPatch.ThrInit":            "0.12",
 				"Layer.VSPatch.ThrLRate":           "0.002", // .001",
 				"Layer.VSPatch.ThrNonRew":          "10",
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
@@ -60,7 +60,7 @@ var ParamSets = netparams.Sets{
 		// current experimental settings
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate": "0.0", // 0.01 default, 0 needed b/c no actual contingency in pavlovian
+				"Prjn.Matrix.NoGateLRate": "0.0", // 1 default, 0 needed b/c no actual contingency in pavlovian
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
@@ -94,14 +94,10 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.Trace.LearnThr": "0",
 				"Prjn.Learn.LRate.Base":     "0.05", // 0.2 to speed up
 			}},
-		{Sel: ".PTSelfMaint", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 needed to sustain
-			}},
-		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
-			}},
+		// {Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
+		// 	}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2",

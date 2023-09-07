@@ -73,8 +73,8 @@
 						Layer.Gi:	  1.20	
 
     BLAPosAcqD1		Nominal:	  0.03	
-						Layer.Gi:	  2.20	
-						Pool.Gi: 	  0.90	
+						Layer.Gi:	  2.40	
+						Pool.Gi: 	  1.00	
 
     BLAPosExtD2		Nominal:	  0.03	
 						Layer.Gi:	  1.80	Params: Base:#BLAPosExtD2: 1.8
@@ -82,11 +82,11 @@
 
     BLANegExtD1		Nominal:	  0.03	
 						Layer.Gi:	  1.80	
-						Pool.Gi: 	  0.90	
+						Pool.Gi: 	  1.00	
 
     BLANegAcqD2		Nominal:	  0.03	
-						Layer.Gi:	  2.20	
-						Pool.Gi: 	  0.90	
+						Layer.Gi:	  1.20	
+						Pool.Gi: 	  1.00	
 
          CeMPos		Nominal:	  0.15	
 						Layer.Gi:	  0.50	
@@ -109,21 +109,21 @@
 
      OFCposUSPT		Nominal:	  0.20	
 						Layer.Gi:	  2.40	
-						Pool.Gi: 	  2.40	
+						Pool.Gi: 	  3.00	
 
      OFCposUSMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
 						Pool.Gi: 	  0.60	
 
-    OFCposUSPTp		Nominal:	  0.03	
+    OFCposUSPTp		Nominal:	  0.10	
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.20	
+						Pool.Gi: 	  1.40	
 
        NotMaint		Nominal:	  0.20	
 						Layer.Gi:	  0.50	
 
-       OFCnegUS		Nominal:	  0.03	
-						Layer.Gi:	  2.20	
+       OFCnegUS		Nominal:	  0.10	
+						Layer.Gi:	  1.20	
 						Pool.Gi: 	  1.00	
 
      OFCnegUSCT		Nominal:	  0.03	
@@ -132,15 +132,15 @@
 
      OFCnegUSPT		Nominal:	  0.20	
 						Layer.Gi:	  2.40	
-						Pool.Gi: 	  2.40	
+						Pool.Gi: 	  3.00	
 
      OFCnegUSMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
 						Pool.Gi: 	  0.60	
 
-    OFCnegUSPTp		Nominal:	  0.03	
+    OFCnegUSPTp		Nominal:	  0.10	
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.20	
+						Pool.Gi: 	  1.40	
 
       OFCposVal		Nominal:	  0.10	
 						Layer.Gi:	  0.90	

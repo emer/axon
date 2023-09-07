@@ -26,6 +26,7 @@
     "Layer.CT.DecayTau" = "50"
     "Layer.CT.GeGain" = "0.05"
     "Layer.Inhib.ActAvg.Nominal" = "0.1"
+    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
 
 [[Base]]
   Sel = ".CS"
@@ -231,18 +232,6 @@
   [Base.Params]
     "Prjn.Learn.LRate.Base" = "0.05"
     "Prjn.PrjnScale.Abs" = "2"
-
-[[Base]]
-  Sel = ".DrivesToVSPatch"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
-
-[[Base]]
-  Sel = "#OFCposUSPTpToVsPatch"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "5"
 
 [[Base]]
   Sel = "#CSToBLAPosAcqD1"

@@ -4,7 +4,7 @@
         RewPred		Nominal:	  1.00	Params: .TDPredLayer: 1
 						Layer.Gi:	  0.20	Params: TD:.TDPredLayer: 0.2
 
-       RewInteg		Nominal:	  1.00	Params: .TDIntegLayer: 1
+       RewInteg		Nominal:	  1.00	Params: TD:.TDIntegLayer: 1
 						Layer.Gi:	  0.20	Params: .TDIntegLayer: 0.2
 
              TD		Nominal:	  0.50	

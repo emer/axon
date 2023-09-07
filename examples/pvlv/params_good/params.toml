@@ -25,7 +25,7 @@
     "Layer.Learn.RLRate.SigmoidMin" = "0.01"
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
     "Layer.VSPatch.Gain" = "3"
-    "Layer.VSPatch.ThrInit" = "0.15"
+    "Layer.VSPatch.ThrInit" = "0.12"
     "Layer.VSPatch.ThrLRate" = "0.002"
     "Layer.VSPatch.ThrNonRew" = "10"
 
@@ -41,8 +41,6 @@
   Desc = "time integration params"
   [Base.Params]
     "Layer.Acts.Dend.ModGain" = "1.5"
-    "Layer.Acts.MaintNMDA.Gbar" = "0.007"
-    "Layer.Acts.MaintNMDA.Tau" = "200"
 
 [[Base]]
   Sel = ".PTPredLayer"
@@ -107,18 +105,6 @@
     "Prjn.Learn.LRate.Base" = "0.05"
     "Prjn.Learn.Trace.LearnThr" = "0"
     "Prjn.PrjnScale.Abs" = "2"
-
-[[Base]]
-  Sel = ".PTSelfMaint"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
-
-[[Base]]
-  Sel = "#OFCposUSPTToOFCposUSPT"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "5"
 
 [[Base]]
   Sel = ".ToPTp"

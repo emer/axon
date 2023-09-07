@@ -91,16 +91,13 @@ MtxGo.GPeInToMtxGo.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
 MtxGo.ACCPosToMtxGo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
 MtxGo.ACCPosToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
 MtxGo.ACCPosToMtxGo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxGo.ACCPosToMtxGo.Matrix.NoGateLRate: 1 // [Def: 0.01] <br>
 MtxGo.ACCNegToMtxGo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
 MtxGo.ACCNegToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
 MtxGo.ACCNegToMtxGo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxGo.ACCNegToMtxGo.Matrix.NoGateLRate: 1 // [Def: 0.01] <br>
 MtxGo.UrgencyToMtxGo.PrjnScale.Abs: 20 // [Def: 1] <br>
 MtxGo.UrgencyToMtxGo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
 MtxGo.UrgencyToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
 MtxGo.UrgencyToMtxGo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxGo.UrgencyToMtxGo.Matrix.NoGateLRate: 1 // [Def: 0.01] <br>
 MtxNo.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 MtxNo.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 MtxNo.Inhib.Layer.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
@@ -119,11 +116,9 @@ MtxNo.GPeInToMtxNo.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
 MtxNo.ACCNegToMtxNo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
 MtxNo.ACCNegToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
 MtxNo.ACCNegToMtxNo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxNo.ACCNegToMtxNo.Matrix.NoGateLRate: 1 // [Def: 0.01] <br>
 MtxNo.ACCPosToMtxNo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
 MtxNo.ACCPosToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
 MtxNo.ACCPosToMtxNo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxNo.ACCPosToMtxNo.Matrix.NoGateLRate: 1 // [Def: 0.01] <br>
 SNc.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 Urgency.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 Urgency.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
@@ -144,7 +139,7 @@ PFCPT.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 PFCPT.Acts.Sahp.Gbar: 0.01 // [Def: 0.05,0.1] <br>
 PFCPT.Acts.GabaB.Gbar: 0.01 // [Def: 0,0.012,0.015] <br>
 PFCPT.Inhib.Layer.Gi: 3.2 // [Def: 1,1.1,0.75,0.9] <br>
-PFCPT.Inhib.Pool.Gi: 3.2 // [Def: 1,1.1,0.75,0.9] <br>
+PFCPT.Inhib.Pool.Gi: 2.4 // [Def: 1,1.1,0.75,0.9] <br>
 PFCPT.PFCVMToPFCPT.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
 PFCPT.PFCVMToPFCPT.SWts.Init.Var: 0 // [Def: 0.25] <br>
 PFCPT.PFCToPFCPT.PrjnScale.Abs: 0.5 // [Def: 1] <br>

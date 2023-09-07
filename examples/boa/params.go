@@ -75,7 +75,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On":    "false", // todo: explore -- could be bad for gating
 				"Layer.Inhib.Pool.Gi":     "0.3",   // go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":     "1",
-				"Layer.Acts.Dend.ModGain": "1", // todo: try with lower drive
+				"Layer.Acts.Dend.ModGain": "1", // todo: 2 is default
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
 			Params: params.Params{
@@ -181,14 +181,6 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":    "2",    // 3 orig
 				"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
-			}},
-		{Sel: ".DrivesToVSPatch", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 3 orig
-			}},
-		{Sel: "#OFCposUSPTpToVsPatch", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // 3 orig
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
 			Params: params.Params{
