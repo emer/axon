@@ -24,8 +24,8 @@ type Approach struct {
 	// cost per unit time, subtracted from reward
 	TimeCost float32 `desc:"cost per unit time, subtracted from reward"`
 
-	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
-	NDrives int `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
+	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome -- this does not include the first curiosity drive
+	NDrives int `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome -- this does not include the first curiosity drive"`
 
 	// number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer
 	CSPerDrive int `desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`

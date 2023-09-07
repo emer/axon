@@ -6,9 +6,8 @@ require (
 	github.com/alecthomas/assert/v2 v2.3.0
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.4.25
+	github.com/emer/emergent v1.4.28
 	github.com/emer/empi v1.0.22
-	github.com/emer/envs v1.0.7
 	github.com/emer/etable v1.1.24
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18

@@ -49,6 +49,9 @@ func (cfg *EnvConfig) CurPctCortex(epc int) float32 {
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
 
+	// PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting
+	PVLV map[string]any `desc:"PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting"`
+
 	// network parameters
 	Network map[string]any `desc:"network parameters"`
 
@@ -132,6 +135,9 @@ type Config struct {
 
 	// log debugging information
 	Debug bool `desc:"log debugging information"`
+
+	// if set, open given weights file at start of training
+	OpenWts string `desc:"if set, open given weights file at start of training"`
 
 	// [view: add-fields] environment configuration options
 	Env EnvConfig `view:"add-fields" desc:"environment configuration options"`

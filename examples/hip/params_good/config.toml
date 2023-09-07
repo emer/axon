@@ -1,39 +1,43 @@
 Includes = ["medhip.toml"]
-GUI = true
+GUI = false
 Debug = false
+
+[Mod]
+  InToEc2PCon = 0.25
+  ECPctAct = 0.2
+  MemThr = 0.34
 
 [Hip]
   DGRatio = 2.236
-  EC2PCon = 0.25
   EC3ToEC2PCon = 0.1
-  DGPCon = 0.25
-  CA3PCon = 0.25
-  CA1PCon = 0.25
-  MossyPCon = 0.02
-  ECPctAct = 0.2
-  MossyDel = 4.0
-  MossyDelTest = 3.0
+  EC2ToDGPCon = 0.25
+  EC2ToCA3PCon = 0.25
+  CA3ToCA1PCon = 0.25
+  DGToCA3PCon = 0.02
+  EC2LatRadius = 2
+  EC2LatSigma = 2.0
+  MossyDelta = 1.0
+  MossyDeltaTest = 0.75
   ThetaLow = 0.9
   ThetaHigh = 1.0
-  MemThr = 0.34
+  EC5ClampSrc = "EC3"
+  EC5ClampTest = true
+  EC5ClampThr = 0.1
   [Hip.EC2Size]
     X = 21
     Y = 21
-  [Hip.ECSize]
+  [Hip.EC3NPool]
     X = 2
     Y = 3
-  [Hip.ECPool]
+  [Hip.EC3NNrn]
     X = 7
     Y = 7
-  [Hip.CA1Pool]
+  [Hip.CA1NNrn]
     X = 15
     Y = 15
   [Hip.CA3Size]
     X = 30
     Y = 30
-  [Hip.DGSize]
-    X = 67
-    Y = 67
 
 [Pat]
   MinDiffPct = 0.5
@@ -56,8 +60,7 @@ Debug = false
   Run = 0
   Runs = 5
   Epochs = 100
-  NZero = 2
-  NTrials = 60
+  NTrials = 20
   NData = 10
   TestInterval = 1
 

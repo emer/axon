@@ -25,11 +25,11 @@ var ParamSets = netparams.Sets{
 				"Prjn.SWts.Init.Sym": "false",
 				"Prjn.PrjnScale.Abs": "0.1", // lower is better for spiking model?
 			}},
-		{Sel: ".EcCa1Prjn", Desc: "encoder projections -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works -- try each one of them separately
-				"Prjn.Learn.LRate.Base": "0.2",
-			}},
+		// {Sel: ".EcCa1Prjn", Desc: "encoder projections -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs":    "0.1", // as low as 0.3 helped hugely preventing CA1 fixation, even 0.1 works -- try each one of them separately
+		// 		"Prjn.Learn.LRate.Base": "0.2",
+		// 	}},
 		{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 			Params: params.Params{
 				"Prjn.Learn.Learn": "true",

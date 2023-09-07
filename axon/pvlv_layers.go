@@ -98,10 +98,8 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 
 	ach := maxSrcAct
 
-	if GlbV(ctx, di, GvRew) > 0 {
-		if GlbV(ctx, di, GvHasRew) > 0 {
-			ach = 1
-		}
+	if GlbV(ctx, di, GvHasRew) > 0 {
+		ach = 1
 	} else {
 		ach = mat32.Max(ach, GlbV(ctx, di, GvUrgency))
 	}
@@ -111,48 +109,27 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
 
-	// [def: 0.1] learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well.
-	NoDALRate float32 `def:"0.1" desc:"learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well."`
+	// [def: 3] multiplier applied after Thr threshold
+	Gain float32 `def:"3" desc:"multiplier applied after Thr threshold"`
 
-	// [def: 0.01] threshold on DA level to engage the NoDALRate -- use a small positive number just in case
-	NoDAThr float32 `def:"0.01" desc:"threshold on DA level to engage the NoDALRate -- use a small positive number just in case"`
+	// [def: 0.15] initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
+	ThrInit float32 `def:"0.15" desc:"initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr"`
 
-	// multiplier applied after Thr threshold
-	Gain float32 `desc:"multiplier applied after Thr threshold"`
+	// [def: 0,0.002] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
+	ThrLRate float32 `def:"0,0.002" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
 
-	// initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr
-	ThrInit float32 `desc:"initial value for overall threshold, which adapts over time -- in LayerVals.ActAvgVals.AdaptThr"`
-
-	// learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
-
-	// extra gain factor for non-reward trials, which is the most critical
-	ThrNonRew float32 `desc:"extra gain factor for non-reward trials, which is the most critical"`
-
-	pad, pad1 float32
+	// [def: 10] extra gain factor for non-reward trials, which is the most critical
+	ThrNonRew float32 `def:"10" desc:"extra gain factor for non-reward trials, which is the most critical"`
 }
 
 func (vp *VSPatchParams) Defaults() {
-	vp.NoDALRate = 0.1
-	vp.NoDAThr = 0.01
-	vp.Gain = 20
-	vp.ThrInit = 0.4
-	vp.ThrLRate = 0.001
+	vp.Gain = 3
+	vp.ThrInit = 0.15
+	vp.ThrLRate = 0.002
 	vp.ThrNonRew = 10
 }
 
 func (vp *VSPatchParams) Update() {
-}
-
-// DALRate returns the learning rate modulation factor modlr based on dopamine level
-func (vp *VSPatchParams) DALRate(da, modlr float32) float32 {
-	if da <= vp.NoDAThr {
-		if modlr < -vp.NoDALRate { // big dip: use it
-			return modlr
-		}
-		return -vp.NoDALRate
-	}
-	return modlr
 }
 
 // ThrVal returns the thresholded value, gain-multiplied value
@@ -165,23 +142,63 @@ func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
 	return vp.Gain * vs
 }
 
+// VTAParams are for computing overall VTA DA based on LHb PVDA
+// (primary value -- at US time, computed at start of each trial
+// and stored in LHbPVDA global value)
+// and Amygdala (CeM) CS / learned value (LV) activations, which update
+// every cycle.
+type VTAParams struct {
+
+	// [def: 0.75] gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
+	CeMGain float32 `def:"0.75" desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
+
+	// [def: 1.25] gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
+	LHbGain float32 `def:"1.25" desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
+
+	pad, pad1 float32
+}
+
+func (vt *VTAParams) Defaults() {
+	vt.CeMGain = 0.75
+	vt.LHbGain = 1.25
+}
+
+func (vt *VTAParams) Update() {
+}
+
+// VTADA computes the final DA value from LHb values
+// ACh value from LDT is passed as a parameter.
+func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
+	pvDA := vt.LHbGain * GlbV(ctx, di, GvLHbPVDA)
+	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
+	csDA := vt.CeMGain*ach*csNet - GlbV(ctx, di, GvVSPatchPos)
+
+	// note that ach is only on cs -- should be 1 for PV events anyway..
+	netDA := float32(0)
+	if hasRew {
+		netDA = pvDA
+	} else {
+		netDA = csDA
+	}
+	SetGlbV(ctx, di, GvVtaDA, netDA) // note: keeping this separately just for semantics
+	SetGlbV(ctx, di, GvDA, netDA)    // general neuromod DA
+}
+
 //gosl: end pvlv_layers
 
 // VSPatchAdaptThr adapts the learning threshold
 func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
 	sumDThr := float32(0)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		da := GlbV(ctx, di, GvDA)
-		modlr := ly.Params.Learn.NeuroMod.LRMod(da, GlbV(ctx, di, GvACh))
-		modlr = ly.Params.VSPatch.DALRate(da, modlr) // always decrease if no DA
-		for pi := uint32(1); pi < ly.NPools; pi++ {
-			vsval := GlbDrvV(ctx, di, uint32(pi-1), GvVSPatch)
-			hasRew := GlbV(ctx, di, GvHasRew)
-			if hasRew == 0 {
-				sumDThr += ly.Params.VSPatch.ThrNonRew * vsval // increase threshold
-			} else {
-				sumDThr -= modlr
-			}
+		hasRew := GlbV(ctx, di, GvHasRew)
+		// note: this all must be based on t-1 values!!!
+		modlr := ly.Params.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
+		if hasRew == 0 {
+			vsval := GlbV(ctx, di, GvVSPatchPosPrev)    // must be prev!
+			dthr := ly.Params.VSPatch.ThrNonRew * vsval // increase threshold if active
+			sumDThr += dthr
+		} else {
+			sumDThr -= modlr
 		}
 	}
 	// everyone uses the same threshold
@@ -301,22 +318,23 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Acts.Decay.Glong = 1
 	ly.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Layer.On.SetBool(false)
+	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Layer.FB = 0
 	ly.Inhib.Pool.FB = 0
 	ly.Inhib.Pool.Gi = 0.5
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Learn.RLRate.Diff.SetBool(false)
-	ly.Learn.RLRate.SigmoidMin = 1
+	ly.Learn.RLRate.SigmoidMin = 0.01 // 0.01 > 0.05
 	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.GiBaseInit = 0.5
 
 	// ms.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Learn.NeuroMod.DALRateSign.SetBool(true)
 	ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
 	ly.Learn.NeuroMod.AChDisInhib = 0   // essential: has to fire when expected but not present!
 	ly.Learn.NeuroMod.BurstGain = 1
-	ly.Learn.NeuroMod.DipGain = 0.01 // extinction -- reduce to slow
+	ly.Learn.NeuroMod.DipGain = 1 // now must be balanced -- otherwise overshoots
 }
 
 func (ly *LayerParams) DrivesDefaults() {
@@ -328,17 +346,6 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Acts.PopCode.MinAct = 0.2 // low activity for low drive -- also has special 0 case = nothing
 	ly.Acts.PopCode.MinSigma = 0.08
 	ly.Acts.PopCode.MaxSigma = 0.12
-	ly.Acts.Decay.Act = 1
-	ly.Acts.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
-}
-
-func (ly *LayerParams) EffortDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.2
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 0.5
-	ly.Inhib.Pool.On.SetBool(false)
-	ly.Acts.PopCode.On.SetBool(true) // use only popcode
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
@@ -357,10 +364,14 @@ func (ly *LayerParams) UrgencyDefaults() {
 }
 
 func (ly *LayerParams) USDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.2
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 0.5
-	ly.Inhib.Pool.On.SetBool(false)
+	ly.Inhib.ActAvg.Nominal = 0.05
+	ly.Inhib.Layer.On.SetBool(false)
+	ly.Inhib.Pool.On.SetBool(true)
+	ly.Inhib.Pool.Gi = 0.5
+	ly.Acts.PopCode.On.SetBool(true)
+	ly.Acts.PopCode.MinAct = 0.2 // low activity for low val -- also has special 0 case = nothing
+	ly.Acts.PopCode.MinSigma = 0.08
+	ly.Acts.PopCode.MaxSigma = 0.12
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)

@@ -15,7 +15,7 @@ NCycles = 200
 OnCycle = 10
 OffCycle = 160
 UpdtInterval = 10
-GUI = true
+GUI = false
 Debug = false
 
 [Params]

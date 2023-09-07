@@ -149,7 +149,7 @@ func (ss *Sim) New() {
 }
 
 func (ss *Sim) Defaults() {
-	econfig.Config(&ss.Config, "config.toml")
+	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -306,8 +306,9 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 		ss.Net.GPU.SyncStateFmGPU()
 		ctx.CycleInc() // why is this not working!?
 	} else {
-		ly.GInteg(ctx, ni, di, ly.Pool(0, di), ly.LayerVals(0))
-		ly.SpikeFmG(ctx, ni, di)
+		lpl := ly.Pool(0, di)
+		ly.GInteg(ctx, ni, di, lpl, ly.LayerVals(0))
+		ly.SpikeFmG(ctx, ni, di, lpl)
 	}
 }
 

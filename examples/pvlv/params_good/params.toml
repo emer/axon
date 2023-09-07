@@ -21,10 +21,12 @@
   Sel = ".VSPatchLayer"
   Desc = ""
   [Base.Params]
-    "Layer.Learn.NeuroMod.DipGain" = "0.01"
-    "Layer.VSPatch.Gain" = "30"
-    "Layer.VSPatch.ThrInit" = "0.4"
-    "Layer.VSPatch.ThrLRate" = "0.001"
+    "Layer.Learn.NeuroMod.DipGain" = "1"
+    "Layer.Learn.RLRate.SigmoidMin" = "0.01"
+    "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
+    "Layer.VSPatch.Gain" = "3"
+    "Layer.VSPatch.ThrInit" = "0.15"
+    "Layer.VSPatch.ThrLRate" = "0.002"
     "Layer.VSPatch.ThrNonRew" = "10"
 
 [[Base]]
@@ -41,8 +43,12 @@
     "Layer.Acts.Dend.ModGain" = "1.5"
     "Layer.Acts.MaintNMDA.Gbar" = "0.007"
     "Layer.Acts.MaintNMDA.Tau" = "200"
-    "Layer.Inhib.Layer.Gi" = "3.2"
-    "Layer.Inhib.Pool.Gi" = "3.2"
+
+[[Base]]
+  Sel = ".PTPredLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.CT.GeGain" = "0.1"
 
 [[Base]]
   Sel = "#ContextInToBLAPosExtD2"
@@ -67,7 +73,8 @@
   Sel = ".BLAExtPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.02"
+    "Prjn.BLA.NegDeltaLRate" = "1"
+    "Prjn.Learn.LRate.Base" = "0.005"
 
 [[Base]]
   Sel = ".GPiToBGThal"
@@ -82,7 +89,7 @@
     "Prjn.PrjnScale.Abs" = "0.5"
 
 [[Base]]
-  Sel = "#BLAPosAcqD1ToOFCus"
+  Sel = "#BLAPosAcqD1ToOFCposUS"
   Desc = "strong, high variance"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "2"
@@ -98,7 +105,7 @@
   Desc = ""
   [Base.Params]
     "Prjn.Learn.LRate.Base" = "0.05"
-    "Prjn.Learn.Trace.LearnThr" = "0.3"
+    "Prjn.Learn.Trace.LearnThr" = "0"
     "Prjn.PrjnScale.Abs" = "2"
 
 [[Base]]
@@ -106,6 +113,12 @@
   Desc = ""
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "4"
+
+[[Base]]
+  Sel = "#OFCposUSPTToOFCposUSPT"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "5"
 
 [[Base]]
   Sel = ".ToPTp"

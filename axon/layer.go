@@ -96,8 +96,6 @@ func (ly *Layer) Defaults() {
 		ly.Params.VSPatchDefaults()
 	case DrivesLayer:
 		ly.Params.DrivesDefaults()
-	case EffortLayer:
-		ly.Params.EffortDefaults()
 	case UrgencyLayer:
 		ly.Params.UrgencyDefaults()
 	case USLayer:
@@ -280,6 +278,8 @@ func (ly *Layer) InitActAvg(ctx *Context) {
 func (ly *Layer) InitActAvgLayer(ctx *Context) {
 	strg := ly.Params.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Params.Learn.TrgAvgAct.TrgRange.Range()
+	tmax := ly.Params.Learn.TrgAvgAct.TrgRange.Max
+	gibinit := ly.Params.Learn.TrgAvgAct.GiBaseInit
 	inc := float32(0)
 	nn := ly.NNeurons
 	if nn > 1 {
@@ -306,6 +306,10 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		SetNrnAvgV(ctx, ni, DTrgAvg, 0)
 		SetNrnAvgV(ctx, ni, GeBase, ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand))
 		SetNrnAvgV(ctx, ni, GiBase, ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand))
+		if gibinit > 0 {
+			gib := gibinit * (tmax - trg)
+			SetNrnAvgV(ctx, ni, GiBase, gib)
+		}
 	}
 }
 
@@ -315,6 +319,8 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 func (ly *Layer) InitActAvgPools(ctx *Context) {
 	strg := ly.Params.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Params.Learn.TrgAvgAct.TrgRange.Range()
+	tmax := ly.Params.Learn.TrgAvgAct.TrgRange.Max
+	gibinit := ly.Params.Learn.TrgAvgAct.GiBaseInit
 	inc := float32(0)
 	nNy := ly.Shp.Dim(2)
 	nNx := ly.Shp.Dim(3)
@@ -346,6 +352,10 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			SetNrnAvgV(ctx, ni, DTrgAvg, 0)
 			SetNrnAvgV(ctx, ni, GeBase, ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand))
 			SetNrnAvgV(ctx, ni, GiBase, ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand))
+			if gibinit > 0 {
+				gib := gibinit * (tmax - trg)
+				SetNrnAvgV(ctx, ni, GiBase, gib)
+			}
 		}
 	}
 }

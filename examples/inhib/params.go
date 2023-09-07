@@ -77,14 +77,14 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.Com.Delay": "1",
 			}},
-		{Sel: ".RndSc", Desc: "random shortcut",
-			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.001", //
-				// "Prjn.Learn.Learn":      "false",
-				"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
-				"Prjn.SWts.Adapt.On": "false", // seems better
-				// "Prjn.SWts.Init.Var":  "0.05",
-			}},
+		// {Sel: ".RndSc", Desc: "random shortcut",
+		// 	Params: params.Params{
+		// 		"Prjn.Learn.LRate.Base": "0.001", //
+		// 		// "Prjn.Learn.Learn":      "false",
+		// 		"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
+		// 		"Prjn.SWts.Adapt.On": "false", // seems better
+		// 		// "Prjn.SWts.Init.Var":  "0.05",
+		// 	}},
 	},
 	"FSFFFB": {
 		{Sel: "Layer", Desc: "use FSFFFB computed inhibition",

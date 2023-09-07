@@ -8,7 +8,7 @@ DepthHid.ActionToDepthHid.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
 DepthHid.DepthToDepthHid.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
 DepthHidCT.Inhib.Layer.Gi: 2.6 // [Def: 1,1.1,0.75,0.9] <br>
 DepthHidCT.Inhib.Pool.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
-DepthHidCT.CT.GeGain: 0.5 // [Def: 0.8,1] <br>
+DepthHidCT.CT.GeGain: 0.5 // [Def: 0.05,0.1,1,2] <br>
 DepthHidCT.DepthHidToDepthHidCT.Learn.LRate.Base: 0.002 // [Def: 0.04,0.1,0.2] <br>
 DepthHidCT.DepthPToDepthHidCT.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
 HeadDirHid.HeadDirPToHeadDirHid.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>

@@ -161,13 +161,8 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigPVLV(trn *GoNoEnv) {
-	pv := &ss.Context.PVLV
-	pv.Drive.NActive = 2
-	pv.Drive.NNegUSs = 1
-	pv.Effort.Gain = 0.05 // not using but anyway
-	pv.Effort.Max = 20
-	pv.Effort.MaxNovel = 8
-	pv.Effort.MaxPostDip = 4
+	pv := &ss.Net.PVLV
+	pv.SetNUSs(&ss.Context, 2, 1)
 	pv.Urgency.U50 = 20 // 20 def
 }
 
@@ -403,17 +398,18 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 // ApplyPVLV applies PVLV reward inputs
 func (ss *Sim) ApplyPVLV(ev *GoNoEnv, trial int, di uint32) {
 	ctx := &ss.Context
-	ctx.PVLV.EffortUrgencyUpdt(ctx, di, &ss.Net.Rand, 1)
+	pv := &ss.Net.PVLV
+	pv.EffortUrgencyUpdt(ctx, di, 1)
 	if ctx.Mode == etime.Test {
-		axon.UrgencyReset(ctx, di)
+		pv.Urgency.Reset(ctx, di)
 	}
 
 	switch trial {
 	case 0:
-		axon.NeuroModSetRew(ctx, di, 0, false) // no rew
+		axon.GlobalSetRew(ctx, di, 0, false) // no rew
 		axon.SetGlbV(ctx, di, axon.GvACh, 0)
 	case 1:
-		axon.NeuroModSetRew(ctx, di, 0, false) // no rew
+		axon.GlobalSetRew(ctx, di, 0, false) // no rew
 		axon.SetGlbV(ctx, di, axon.GvACh, 1)
 	case 2:
 		axon.SetGlbV(ctx, di, axon.GvACh, 1)
@@ -429,13 +425,13 @@ func (ss *Sim) GatedRew(ev *GoNoEnv, di uint32) {
 
 func (ss *Sim) SetRew(rew float32, di uint32) {
 	ctx := &ss.Context
-	ctx.PVLVInitUS(di)
-	axon.NeuroModSetRew(ctx, di, rew, true)
+	pv := &ss.Net.PVLV
+	axon.GlobalSetRew(ctx, di, rew, true)
 	axon.SetGlbV(ctx, di, axon.GvDA, rew) // no reward prediction error
 	if rew > 0 {
-		ctx.PVLVSetUS(di, axon.Positive, 0, 1)
+		pv.SetUS(ctx, di, axon.Positive, 0, 1)
 	} else if rew < 0 {
-		ctx.PVLVSetUS(di, axon.Negative, 0, 1)
+		pv.SetUS(ctx, di, axon.Negative, 0, 1)
 	}
 }
 

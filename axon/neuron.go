@@ -205,8 +205,8 @@ const (
 	// GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive
 	GeInt
 
-	// GeIntMax is maximum GeInt value across one theta cycle time window.
-	GeIntMax
+	// GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity
+	GeIntNorm
 
 	// GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive
 	GiInt
@@ -569,7 +569,7 @@ var NeuronVarProps = map[string]string{
 	"GiRaw":     `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`,
 	"GiSyn":     `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`,
 	"GeInt":     `range:"2" desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`,
-	"GeIntMax":  `range:"2" desc:"maximum GeInt value across one theta cycle time window."`,
+	"GeIntNorm": `range:"1" desc:"GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity."`,
 	"GiInt":     `range:"2" desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`,
 	"GModRaw":   `desc:"raw modulatory conductance, received from GType = ModulatoryG projections"`,
 	"GModSyn":   `desc:"syn integrated modulatory conductance, received from GType = ModulatoryG projections"`,

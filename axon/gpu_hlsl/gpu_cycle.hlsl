@@ -73,7 +73,7 @@ void CycleNeuron3(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool p
 	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
 	
 	GInteg(ctx, ly, ni, di, pl, vals);
-	ly.SpikeFmG(ctx, ni, di);
+	ly.SpikeFmG(ctx, ni, di, lpl);
 }
 
 void CycleNeuron2(in Context ctx, in LayerParams ly, uint ni, uint di) {

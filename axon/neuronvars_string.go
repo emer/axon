@@ -56,7 +56,7 @@ func _() {
 	_ = x[GiRaw-40]
 	_ = x[GiSyn-41]
 	_ = x[GeInt-42]
-	_ = x[GeIntMax-43]
+	_ = x[GeIntNorm-43]
 	_ = x[GiInt-44]
 	_ = x[GModRaw-45]
 	_ = x[GModSyn-46]
@@ -96,9 +96,9 @@ func _() {
 	_ = x[NeuronVarsN-80]
 }
 
-const _NeuronVars_name = "SpikeSpikedActActIntActMActPExtTargetGeGiGkInetVmVmDendISIISIAvgCaSpkPCaSpkDCaSynCaSpkMCaSpkPMCaLrnNrnCaMNrnCaPNrnCaDCaDiffAttnRLRateSpkMaxCaSpkMaxSpkPrvSpkSt1SpkSt2GeNoisePGeNoiseGiNoisePGiNoiseGeExtGeRawGeSynGiRawGiSynGeIntGeIntMaxGiIntGModRawGModSynGMaintRawGMaintSynSSGiSSGiDendGakMahpNSahpCaSahpNGknaMedGknaSlowGnmdaSynGnmdaGnmdaMaintGnmdaLrnNmdaCaGgabaBGABABGABABxGvgccVgccMVgccHVgccCaVgccCaIntSKCaInSKCaRSKCaMGskBurstBurstPrvCtxtGeCtxtGeRawCtxtGeOrigNrnFlagsNeuronVarsN"
+const _NeuronVars_name = "SpikeSpikedActActIntActMActPExtTargetGeGiGkInetVmVmDendISIISIAvgCaSpkPCaSpkDCaSynCaSpkMCaSpkPMCaLrnNrnCaMNrnCaPNrnCaDCaDiffAttnRLRateSpkMaxCaSpkMaxSpkPrvSpkSt1SpkSt2GeNoisePGeNoiseGiNoisePGiNoiseGeExtGeRawGeSynGiRawGiSynGeIntGeIntNormGiIntGModRawGModSynGMaintRawGMaintSynSSGiSSGiDendGakMahpNSahpCaSahpNGknaMedGknaSlowGnmdaSynGnmdaGnmdaMaintGnmdaLrnNmdaCaGgabaBGABABGABABxGvgccVgccMVgccHVgccCaVgccCaIntSKCaInSKCaRSKCaMGskBurstBurstPrvCtxtGeCtxtGeRawCtxtGeOrigNrnFlagsNeuronVarsN"
 
-var _NeuronVars_index = [...]uint16{0, 5, 11, 14, 20, 24, 28, 31, 37, 39, 41, 43, 47, 49, 55, 58, 64, 70, 76, 81, 87, 94, 99, 105, 111, 117, 123, 127, 133, 141, 147, 153, 159, 165, 173, 180, 188, 195, 200, 205, 210, 215, 220, 225, 233, 238, 245, 252, 261, 270, 274, 282, 285, 290, 296, 301, 308, 316, 324, 329, 339, 347, 353, 359, 364, 370, 375, 380, 385, 391, 400, 406, 411, 416, 419, 424, 432, 438, 447, 457, 465, 476}
+var _NeuronVars_index = [...]uint16{0, 5, 11, 14, 20, 24, 28, 31, 37, 39, 41, 43, 47, 49, 55, 58, 64, 70, 76, 81, 87, 94, 99, 105, 111, 117, 123, 127, 133, 141, 147, 153, 159, 165, 173, 180, 188, 195, 200, 205, 210, 215, 220, 225, 234, 239, 246, 253, 262, 271, 275, 283, 286, 291, 297, 302, 309, 317, 325, 330, 340, 348, 354, 360, 365, 371, 376, 381, 386, 392, 401, 407, 412, 417, 420, 425, 433, 439, 448, 458, 466, 477}
 
 func (i NeuronVars) String() string {
 	if i < 0 || i >= NeuronVars(len(_NeuronVars_index)-1) {
@@ -161,7 +161,7 @@ var _NeuronVars_descMap = map[NeuronVars]string{
 	40: `GiRaw is raw inhibitory conductance (net input) received from senders = current raw spiking drive`,
 	41: `GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I. This is added with computed FFFB inhibition to get the full inhibition in Gi`,
 	42: `GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive`,
-	43: `GeIntMax is maximum GeInt value across one theta cycle time window.`,
+	43: `GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity`,
 	44: `GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive`,
 	45: `GModRaw is raw modulatory conductance, received from GType = ModulatoryG projections`,
 	46: `GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG projections`,

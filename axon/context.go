@@ -7,12 +7,10 @@ package axon
 import (
 	"math"
 
-	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/gosl/slrand"
 	"github.com/goki/ki/bools"
-	"github.com/goki/mat32"
 )
 
 var (
@@ -186,39 +184,34 @@ func AddGlbV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalIdx(di, gvar)] += val
 }
 
-// GlbVTA is the CPU version of the global VTA variable accessor
-func GlbVTA(ctx *Context, di uint32, vtaType GlobalVTAType, gvar GlobalVars) float32 {
-	return GlobalNetwork(ctx).Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)]
-}
-
-// SetGlbVTA is the CPU version of the global VTA variable settor
-func SetGlbVTA(ctx *Context, di uint32, vtaType GlobalVTAType, gvar GlobalVars, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val
-}
-
 // GlbUSneg is the CPU version of the global USneg variable accessor
-func GlbUSneg(ctx *Context, di uint32, negIdx uint32) float32 {
-	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, negIdx)]
+func GlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32) float32 {
+	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)]
 }
 
 // SetGlbUSneg is the CPU version of the global USneg variable settor
-func SetGlbUSneg(ctx *Context, di uint32, negIdx uint32, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val
+func SetGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] = val
 }
 
-// GlbDriveV is the CPU version of the global Drive, USpos variable accessor
-func GlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars) float32 {
-	return GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)]
+// AddGlbUSneg is the CPU version of the global USneg variable addor
+func AddGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val
 }
 
-// SetGlbDriveV is the CPU version of the global Drive, USpos variable settor
-func SetGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val
+// GlbUSposV is the CPU version of the global Drive, USpos variable accessor
+func GlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIdx uint32) float32 {
+	return GlobalNetwork(ctx).Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)]
 }
 
-// AddGlbDriveV is the CPU version of the global Drive, USpos variable adder
-func AddGlbDrvV(ctx *Context, di uint32, drIdx uint32, gvar GlobalVars, val float32) {
-	GlobalNetwork(ctx).Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val
+// SetGlbUSposV is the CPU version of the global Drive, USpos variable settor
+func SetGlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] = val
+}
+
+// AddGlbUSposV is the CPU version of the global Drive, USpos variable adder
+func AddGlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] += val
 }
 
 // CopyNetStridesFrom copies strides and NetIdxs for accessing
@@ -244,7 +237,6 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 // #include "synapse.hlsl"
 // #include "globals.hlsl"
 // #include "neuromod.hlsl"
-// #include "pvlv.hlsl"
 //gosl: end context
 
 //gosl: start context
@@ -279,22 +271,25 @@ type NetIdxs struct {
 	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
 	GPUSynCaBanks uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
 
-	// offset into GlobalVars for VTA values
-	GvVTAOff uint32 `inactive:"+" desc:"offset into GlobalVars for VTA values"`
+	// total number of PVLV Drives / positive USs
+	PVLVNPosUSs uint32 `inactive:"+" desc:"total number of PVLV Drives / positive USs"`
 
-	// stride into GlobalVars for VTA values
-	GvVTAStride uint32 `inactive:"+" desc:"stride into GlobalVars for VTA values"`
+	// total number of PVLV Negative USs
+	PVLVNNegUSs uint32 `inactive:"+" desc:"total number of PVLV Negative USs"`
 
 	// offset into GlobalVars for USneg values
 	GvUSnegOff uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
 
-	// offset into GlobalVars for Drive and USpos values
-	GvDriveOff uint32 `inactive:"+" desc:"offset into GlobalVars for Drive and USpos values"`
+	// stride into GlobalVars for USneg values
+	GvUSnegStride uint32 `inactive:"+" desc:"stride into GlobalVars for USneg values"`
 
-	// stride into GlobalVars for Drive and USpos values
-	GvDriveStride uint32 `inactive:"+" desc:"stride into GlobalVars for Drive and USpos values"`
+	// offset into GlobalVars for USpos, Drive, VSPatch values values
+	GvUSposOff uint32 `inactive:"+" desc:"offset into GlobalVars for USpos, Drive, VSPatch values values"`
 
-	pad, pad1 uint32
+	// stride into GlobalVars for USpos, Drive, VSPatch values
+	GvUSposStride uint32 `inactive:"+" desc:"stride into GlobalVars for USpos, Drive, VSPatch values"`
+
+	pad uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -420,9 +415,6 @@ type Context struct {
 
 	// random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.
 	RandCtr slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-
-	// PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
-	PVLV PVLV `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -432,7 +424,6 @@ func (ctx *Context) Defaults() {
 	ctx.ThetaCycles = 200
 	ctx.SlowInterval = 100
 	ctx.Mode = etime.Train
-	ctx.PVLV.Defaults()
 }
 
 // NewPhase resets PhaseCycle = 0 and sets the plus phase as specified
@@ -465,11 +456,10 @@ func (ctx *Context) SlowInc() bool {
 
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
-	ctx.NetIdxs.GvVTAOff = ctx.GlobalIdx(0, GvVtaDA)
-	ctx.NetIdxs.GvVTAStride = uint32(GlobalVTATypeN) * ctx.NetIdxs.MaxData
-	ctx.NetIdxs.GvUSnegOff = ctx.GlobalVTAIdx(0, GvVtaRaw, GvUSneg)
-	ctx.NetIdxs.GvDriveOff = ctx.GlobalUSnegIdx(0, ctx.PVLV.Drive.NNegUSs)
-	ctx.NetIdxs.GvDriveStride = uint32(ctx.PVLV.Drive.NActive) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvUSneg)
+	ctx.NetIdxs.GvUSnegStride = uint32(ctx.NetIdxs.PVLVNNegUSs) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvUSposOff = ctx.GlobalUSnegIdx(0, GvUSnegRaw, ctx.NetIdxs.PVLVNNegUSs)
+	ctx.NetIdxs.GvUSposStride = uint32(ctx.NetIdxs.PVLVNPosUSs) * ctx.NetIdxs.MaxData
 }
 
 // GlobalIdx returns index into main global variables,
@@ -478,24 +468,19 @@ func (ctx *Context) GlobalIdx(di uint32, gvar GlobalVars) uint32 {
 	return ctx.NetIdxs.MaxData*uint32(gvar) + di
 }
 
-// GlobalVTAIdx returns index into VTA global variables
-func (ctx *Context) GlobalVTAIdx(di uint32, vtaType GlobalVTAType, gvar GlobalVars) uint32 {
-	return ctx.NetIdxs.GvVTAOff + uint32(gvar-GvVtaDA)*ctx.NetIdxs.GvVTAStride + uint32(vtaType)*ctx.NetIdxs.MaxData + di
-}
-
 // GlobalUSnegIdx returns index into USneg global variables
-func (ctx *Context) GlobalUSnegIdx(di uint32, negIdx uint32) uint32 {
-	return ctx.NetIdxs.GvUSnegOff + negIdx*ctx.NetIdxs.MaxData + di
+func (ctx *Context) GlobalUSnegIdx(di uint32, gvar GlobalVars, negIdx uint32) uint32 {
+	return ctx.NetIdxs.GvUSnegOff + uint32(gvar-GvUSneg)*ctx.NetIdxs.GvUSnegStride + negIdx*ctx.NetIdxs.MaxData + di
 }
 
-// GlobalDriveIdx returns index into Drive and USpos, VSPatch global variables
-func (ctx *Context) GlobalDriveIdx(di uint32, drIdx uint32, gvar GlobalVars) uint32 {
-	return ctx.NetIdxs.GvDriveOff + uint32(gvar-GvDrives)*ctx.NetIdxs.GvDriveStride + drIdx*ctx.NetIdxs.MaxData + di
+// GlobalUSposIdx returns index into USpos, Drive, VSPatch global variables
+func (ctx *Context) GlobalUSposIdx(di uint32, gvar GlobalVars, posIdx uint32) uint32 {
+	return ctx.NetIdxs.GvUSposOff + uint32(gvar-GvDrives)*ctx.NetIdxs.GvUSposStride + posIdx*ctx.NetIdxs.MaxData + di
 }
 
 // GlobalVNFloats number of floats to allocate for Globals
 func (ctx *Context) GlobalVNFloats() uint32 {
-	return ctx.GlobalDriveIdx(0, 0, GlobalVarsN)
+	return ctx.GlobalUSposIdx(0, GlobalVarsN, 0)
 }
 
 //gosl: end context
@@ -705,33 +690,28 @@ void AddGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
 	Globals[ctx.GlobalIdx(di, gvar)] += val;
 }
 
-float GlbVTA(in Context ctx, uint di, GlobalVTAType vtaType, GlobalVars gvar) {
-	return Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)];
+float GlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx) {
+	return Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)];
 }
 
-void SetGlbVTA(in Context ctx, uint di, GlobalVTAType vtaType, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalVTAIdx(di, vtaType, gvar)] = val;
+void SetGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] = val;
 }
 
-float GlbUSneg(in Context ctx, uint di, uint negIdx) {
-	return Globals[ctx.GlobalUSnegIdx(di, negIdx)];
+void AddGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val;
 }
 
-void SetGlbUSneg(in Context ctx, uint di, uint negIdx, float val) {
-	Globals[ctx.GlobalUSnegIdx(di, negIdx)] = val;
+float GlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx) {
+	return Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)];
 }
 
-
-float GlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar) {
-	return Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)];
+void SetGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx, float val) {
+	Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] = val;
 }
 
-void SetGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] = val;
-}
-
-void AddGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalDriveIdx(di, drIdx, gvar)] += val;
+void AddGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx, float val) {
+	Globals[ctx.GlobalUSposIdx(di, gvar, posIdx)] += val;
 }
 
 */
@@ -740,27 +720,28 @@ void AddGlbDrvV(in Context ctx, uint di, uint drIdx, GlobalVars gvar, float val)
 
 //gosl: start context
 
-/////////////////////////////////////////////////////////
-// NeuroMod and PVLV global functions
-
-// note: These global methods are needed for GPU which requires
-// a strictly linear order of dependencies, and global var
-// access depends on Context, so these can't be methods.
-
-/////////////////////////////////////////////////////////
-// 	NeuroMod
-
-// NeuroModInit does neuromod initialization
-func NeuroModInit(ctx *Context, di uint32) {
-	for ns := GvRew; ns <= GvNotMaint; ns++ {
-		if ns != GvPrevPred {
-			SetGlbV(ctx, di, ns, 0)
+// GlobalsReset resets all global values to 0, for all NData
+func GlobalsReset(ctx *Context) {
+	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
+		for vg := GvRew; vg < GvUSneg; vg++ {
+			SetGlbV(ctx, di, vg, 0)
+		}
+		for vn := GvUSneg; vn <= GvUSnegRaw; vn++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+				SetGlbUSneg(ctx, di, vn, ui, 0)
+			}
+		}
+		for vp := GvDrives; vp < GlobalVarsN; vp++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
+				SetGlbUSposV(ctx, di, vp, ui, 0)
+			}
 		}
 	}
 }
 
-// NeuroModSetRew is a convenience function for setting the external reward
-func NeuroModSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
+// GlobalSetRew is a convenience function for setting the external reward
+// state in Globals variables
+func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 	SetGlbV(ctx, di, GvHasRew, bools.ToFloat32(hasRew))
 	if hasRew {
 		SetGlbV(ctx, di, GvRew, rew)
@@ -769,442 +750,20 @@ func NeuroModSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 	}
 }
 
-/////////////////////////////////////////////////////////
-// 	Drives
-
-// DriveVarToZero sets all values of given drive-sized variable to 0
-func DriveVarToZero(ctx *Context, di uint32, gvar GlobalVars) {
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		SetGlbDrvV(ctx, di, i, gvar, 0)
-	}
-}
-
-// DrivesToZero sets all drives to 0
-func DrivesToZero(ctx *Context, di uint32) {
-	DriveVarToZero(ctx, di, GvDrives)
-}
-
-// DrivesToBaseline sets all drives to their baseline levels
-func DrivesToBaseline(ctx *Context, di uint32) {
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		SetGlbDrvV(ctx, di, i, GvDrives, ctx.PVLV.Drive.Base.Get(i))
-	}
-}
-
-// USnegToZero sets all values of USneg to zero
-func USnegToZero(ctx *Context, di uint32) {
-	nn := ctx.PVLV.Drive.NNegUSs
-	for i := uint32(0); i < nn; i++ {
-		SetGlbUSneg(ctx, di, i, 0)
-	}
-}
-
-// AddTo increments drive by given amount, subject to 0-1 range clamping.
-// Returns new val.
-func DrivesAddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbDrvV(ctx, di, drv, GvDrives) + delta
-	if dv > 1 {
-		dv = 1
-	} else if dv < 0 {
-		dv = 0
-	}
-	SetGlbDrvV(ctx, di, drv, GvDrives, dv)
-	return dv
-}
-
-// DrivesSoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
-// if delta is positive, multiply by 1-val, else val.  Returns new val.
-func DrivesSoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbDrvV(ctx, di, drv, GvDrives)
-	if delta > 0 {
-		dv += (1 - dv) * delta
-	} else {
-		dv += dv * delta
-	}
-	if dv > 1 {
-		dv = 1
-	} else if dv < 0 {
-		dv = 0
-	}
-	SetGlbDrvV(ctx, di, drv, GvDrives, dv)
-	return dv
-}
-
-// DrivesExpStep updates drive with an exponential step with given dt value
-// toward given baseline value.
-func DrivesExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
-	dv := GlbDrvV(ctx, di, drv, GvDrives)
-	dv += dt * (base - dv)
-	if dv > 1 {
-		dv = 1
-	} else if dv < 0 {
-		dv = 0
-	}
-	SetGlbDrvV(ctx, di, drv, GvDrives, dv)
-	return dv
-}
-
-// DrivesExpStepAll updates given drives with an exponential step using dt values
-// toward baseline values.
-func DrivesExpStepAll(ctx *Context, di uint32) {
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		DrivesExpStep(ctx, di, i, ctx.PVLV.Drive.Dt.Get(i), ctx.PVLV.Drive.Base.Get(i))
-	}
-}
-
-// DrivesEffectiveDrive returns the Max of Drives at given index and DriveMin.
-// note that index 0 is the novelty / curiosity drive.
-func DrivesEffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
-	if i == 0 {
-		return GlbDrvV(ctx, di, uint32(0), GvDrives)
-	}
-	return mat32.Max(GlbDrvV(ctx, di, i, GvDrives), ctx.PVLV.Drive.DriveMin)
-}
-
-/////////////////////////////////////////////////////////
-// 	Effort
-
-// EffortReset resets the raw effort back to zero -- at start of new gating event
-func EffortReset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvEffortRaw, 0)
-	SetGlbV(ctx, di, GvEffortCurMax, ctx.PVLV.Effort.Max)
-	SetGlbV(ctx, di, GvEffortDisc, 1)
-}
-
-// EffortDiscFmEffort computes Disc from Raw effort
-func EffortDiscFmEffort(ctx *Context, di uint32) float32 {
-	disc := ctx.PVLV.Effort.DiscFun(GlbV(ctx, di, GvEffortRaw))
-	SetGlbV(ctx, di, GvEffortDisc, disc)
-	return disc
-}
-
-// EffortAddEffort adds an increment of effort and updates the Disc discount factor
-func EffortAddEffort(ctx *Context, di uint32, inc float32) {
-	AddGlbV(ctx, di, GvEffortRaw, inc)
-	EffortDiscFmEffort(ctx, di)
-}
-
-// EffortGiveUp returns true if maximum effort has been exceeded
-func EffortGiveUp(ctx *Context, di uint32) bool {
-	raw := GlbV(ctx, di, GvEffortRaw)
-	curMax := GlbV(ctx, di, GvEffortCurMax)
-	if curMax > 0 && raw > curMax {
-		return true
-	}
-	return false
-}
-
-/////////////////////////////////////////////////////////
-// 	Urgency
-
-// UrgencyReset resets the raw urgency back to zero -- at start of new gating event
-func UrgencyReset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvUrgencyRaw, 0)
-	SetGlbV(ctx, di, GvUrgency, 0)
-}
-
-// UrgeFmUrgency computes Urge from Raw
-func UrgeFmUrgency(ctx *Context, di uint32) float32 {
-	urge := ctx.PVLV.Urgency.UrgeFun(GlbV(ctx, di, GvUrgencyRaw))
-	if urge < ctx.PVLV.Urgency.Thr {
-		urge = 0
-	}
-	SetGlbV(ctx, di, GvUrgency, urge)
-	return urge
-}
-
-// UrgencyAddEffort adds an effort increment of urgency and updates the Urge factor
-func UrgencyAddEffort(ctx *Context, di uint32, inc float32) {
-	AddGlbV(ctx, di, GvUrgencyRaw, inc)
-	UrgeFmUrgency(ctx, di)
-}
-
-/////////////////////////////////////////////////////////
-// 	LHb
-
-// LHbReset resets all LHb vars back to 0
-func LHbReset(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvLHbDip, 0)
-	SetGlbV(ctx, di, GvLHbBurst, 0)
-	SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	SetGlbV(ctx, di, GvLHbDipSum, 0)
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
-}
-
-// LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
-// and VSPatch inputs.
-func LHbFmPVVS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
-	pos := ctx.PVLV.LHb.PosGain * (vsPatchPos - pvPos)
-	neg := ctx.PVLV.LHb.NegGain * pvNeg
-	SetGlbV(ctx, di, GvLHbPos, pos)
-	SetGlbV(ctx, di, GvLHbNeg, neg)
-	netLHb := pos + neg
-
-	if netLHb > 0 {
-		SetGlbV(ctx, di, GvLHbDip, netLHb)
-		SetGlbV(ctx, di, GvLHbBurst, 0)
-	} else {
-		SetGlbV(ctx, di, GvLHbBurst, -netLHb)
-		SetGlbV(ctx, di, GvLHbDip, 0)
-	}
-}
-
-// LHbShouldGiveUp increments DipSum and checks if should give up if above threshold
-func LHbShouldGiveUp(ctx *Context, di uint32) bool {
-	dip := GlbV(ctx, di, GvLHbDip)
-	AddGlbV(ctx, di, GvLHbDipSumCur, dip)
-	cur := GlbV(ctx, di, GvLHbDipSumCur)
-	SetGlbV(ctx, di, GvLHbDipSum, cur)
-	SetGlbV(ctx, di, GvLHbGiveUp, 0)
-	giveUp := false
-	if cur > ctx.PVLV.LHb.GiveUpThr {
-		giveUp = true
-		SetGlbV(ctx, di, GvLHbGiveUp, 1)
-		SetGlbV(ctx, di, GvLHbGiveUp, 1)
-		SetGlbV(ctx, di, GvLHbDipSumCur, 0)
-	}
-	return giveUp
-}
-
-/////////////////////////////////////////////////////////
-// 	VTA
-
-// VTAZeroVals sets all VTA values to zero for given type
-func VTAZeroVals(ctx *Context, di uint32, vtaType GlobalVTAType) {
-	for vv := GvVtaDA; vv <= GvVtaVSPatchPos; vv++ {
-		SetGlbVTA(ctx, di, vtaType, vv, 0)
-	}
-}
-
-// VTAReset sets everything to zero
-func VTAReset(ctx *Context, di uint32) {
-	VTAZeroVals(ctx, di, GvVtaRaw)
-	VTAZeroVals(ctx, di, GvVtaVals)
-	VTAZeroVals(ctx, di, GvVtaPrev)
-}
-
-// VTADAFmRaw computes the intermediate Vals and final DA value from
-// Raw values that have been set prior to calling.
-// ACh value from LDT is passed as a parameter.
-func VTADAFmRaw(ctx *Context, di uint32, ach float32, hasRew bool) {
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaPVpos, ctx.PVLV.VTA.Gain.PVpos*GlbVTA(ctx, di, GvVtaRaw, GvVtaPVpos))
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaCeMpos, ctx.PVLV.VTA.Gain.CeMpos*GlbVTA(ctx, di, GvVtaRaw, GvVtaCeMpos))
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaCeMneg, ctx.PVLV.VTA.Gain.CeMneg*GlbVTA(ctx, di, GvVtaRaw, GvVtaCeMneg))
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaLHbDip, ctx.PVLV.VTA.Gain.LHbDip*GlbVTA(ctx, di, GvVtaRaw, GvVtaLHbDip))
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaLHbBurst, ctx.PVLV.VTA.Gain.LHbBurst*GlbVTA(ctx, di, GvVtaRaw, GvVtaLHbBurst))
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos, ctx.PVLV.VTA.Gain.VSPatchPos*GlbVTA(ctx, di, GvVtaRaw, GvVtaVSPatchPos))
-
-	if GlbVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos) < 0 {
-		SetGlbVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos, 0)
-	}
-	pvDA := GlbVTA(ctx, di, GvVtaVals, GvVtaPVpos) - GlbVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos) - GlbVTA(ctx, di, GvVtaVals, GvVtaPVneg) - GlbVTA(ctx, di, GvVtaVals, GvVtaLHbDip)
-	csNet := GlbVTA(ctx, di, GvVtaVals, GvVtaCeMpos) - GlbVTA(ctx, di, GvVtaVals, GvVtaCeMneg)
-	csDA := ach*mat32.Max(csNet, GlbVTA(ctx, di, GvVtaVals, GvVtaLHbBurst)) - GlbVTA(ctx, di, GvVtaVals, GvVtaLHbDip) // restore LHbDip contribution
-	// note that ach is only on cs -- should be 1 for PV events anyway..
-	netDA := float32(0)
-	if hasRew {
-		netDA = pvDA
-	} else {
-		netDA = csDA
-	}
-	SetGlbVTA(ctx, di, GvVtaVals, GvVtaDA, ctx.PVLV.VTA.Gain.DA*netDA)
-}
-
-/////////////////////////////////////////////////////////
-// 	PVLV
-
-// PVLVInitUS initializes all the USs to zero
-func PVLVInitUS(ctx *Context, di uint32) {
-	DriveVarToZero(ctx, di, GvUSpos)
-	USnegToZero(ctx, di)
-}
-
-// PVLVInitDrives initializes all the Drives to zero
-func PVLVInitDrives(ctx *Context, di uint32) {
-	DrivesToZero(ctx, di)
-}
-
-// PVLVReset resets all PVLV state
-func PVLVReset(ctx *Context, di uint32) {
-	DrivesToZero(ctx, di)
-	EffortReset(ctx, di)
-	UrgencyReset(ctx, di)
-	LHbReset(ctx, di)
-	VTAReset(ctx, di)
-	PVLVInitUS(ctx, di)
-	DriveVarToZero(ctx, di, GvVSPatch)
-	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
-	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
-	SetGlbV(ctx, di, GvHasRewPrev, 0)
-	// pp.HasPosUSPrev.SetBool(false) // key to not reset!!
-}
-
-// PVLVPosPV returns the reward for current positive US state relative to current drives
-func PVLVPosPV(ctx *Context, di uint32) float32 {
-	rew := float32(0)
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		rew += GlbDrvV(ctx, di, i, GvUSpos) * DrivesEffectiveDrive(ctx, di, i)
-	}
-	return rew
-}
-
-// PVLVNegPV returns the reward for current negative US state -- just a sum of USneg
-func PVLVNegPV(ctx *Context, di uint32) float32 {
-	rew := float32(0)
-	nn := ctx.PVLV.Drive.NNegUSs
-	for i := uint32(0); i < nn; i++ {
-		rew += GlbUSneg(ctx, di, i)
-	}
-	return rew
-}
-
-// PVLVVSPatchMax returns the max VSPatch value across drives
-func PVLVVSPatchMax(ctx *Context, di uint32) float32 {
-	max := float32(0)
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		vs := GlbDrvV(ctx, di, i, GvVSPatch)
-		if vs > max {
-			max = vs
-		}
-	}
-	return max
-}
-
-// PVLVHasPosUS returns true if there is at least one non-zero positive US
-func PVLVHasPosUS(ctx *Context, di uint32) bool {
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		if GlbDrvV(ctx, di, i, GvUSpos) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-// PVLVHasNegUS returns true if there is at least one non-zero negative US
-func PVLVHasNegUS(ctx *Context, di uint32) bool {
-	nd := ctx.PVLV.Drive.NNegUSs
-	for i := uint32(0); i < nd; i++ {
-		if GlbUSneg(ctx, di, i) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-// PVLVNetPV returns VTA.Vals.PVpos - VTA.Vals.PVneg
-func PVLVNetPV(ctx *Context, di uint32) float32 {
-	return GlbVTA(ctx, di, GvVtaVals, GvVtaPVpos) - GlbVTA(ctx, di, GvVtaVals, GvVtaPVneg)
-}
-
-// PVLVPosPVFmDriveEffort returns the net primary value ("reward") based on
-// given US value and drive for that value (typically in 0-1 range),
-// and total effort, from which the effort discount factor is computed an applied:
-// usValue * drive * Effort.DiscFun(effort)
-func PVLVPosPVFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
-	return usValue * drive * ctx.PVLV.Effort.DiscFun(effort)
-}
-
-// PVLVSetDrive sets given Drive to given value
-func PVLVSetDrive(ctx *Context, di uint32, dr uint32, val float32) {
-	SetGlbDrvV(ctx, di, dr, GvDrives, val)
-}
-
 // PVLVUSStimVal returns stimulus value for US at given index
 // and valence.  If US > 0.01, a full 1 US activation is returned.
 func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) float32 {
 	us := float32(0)
 	if valence == Positive {
-		if usIdx < ctx.PVLV.Drive.NActive {
-			us = GlbDrvV(ctx, di, usIdx, GvUSpos)
+		if usIdx < ctx.NetIdxs.PVLVNPosUSs {
+			us = GlbUSposV(ctx, di, GvUSpos, usIdx)
 		}
 	} else {
-		if usIdx < ctx.PVLV.Drive.NNegUSs {
-			us = GlbUSneg(ctx, di, usIdx)
+		if usIdx < ctx.NetIdxs.PVLVNNegUSs {
+			us = GlbUSneg(ctx, di, GvUSneg, usIdx)
 		}
-	}
-	if us > 0.01 { // threshold for presentation to net
-		us = 1 // https://github.com/emer/axon/issues/194
 	}
 	return us
-}
-
-// PVLVDAImpl computes the updated dopamine from all the current state,
-// including ACh from LDT via Context.
-// Call after setting USs, Effort, Drives, VSPatch vals etc.
-// Resulting DA is in VTA.Vals.DA, and is returned
-// (to be set to Context.NeuroMod.DA)
-func PVLVDAImpl(ctx *Context, di uint32, ach float32, hasRew bool) float32 {
-	usPos := PVLVPosPV(ctx, di)
-	pvNeg := PVLVNegPV(ctx, di)
-	giveUp := GlbV(ctx, di, GvLHbGiveUp)
-	effDisc := GlbV(ctx, di, GvEffortDisc)
-	if giveUp > 0 {
-		pvNeg += 1.0 - effDisc // pay effort cost here..
-	}
-	pvPos := usPos * effDisc
-	vsPatchPos := PVLVVSPatchMax(ctx, di)
-	LHbFmPVVS(ctx, di, pvPos, pvNeg, vsPatchPos)
-
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaUSpos, usPos)
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaPVpos, pvPos)
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaPVneg, pvNeg)
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaLHbDip, GlbV(ctx, di, GvLHbDip))
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaLHbBurst, GlbV(ctx, di, GvLHbBurst))
-	SetGlbVTA(ctx, di, GvVtaRaw, GvVtaVSPatchPos, vsPatchPos)
-
-	VTADAFmRaw(ctx, di, ach, hasRew)
-	return GlbVTA(ctx, di, GvVtaVals, GvVtaDA)
-}
-
-// PVLVDriveUpdt updates the drives based on the current USs,
-// subtracting USDec * US from current Drive,
-// and calling ExpStep with the Dt and Base params.
-func PVLVDriveUpdt(ctx *Context, di uint32) {
-	DrivesExpStepAll(ctx, di)
-	nd := ctx.PVLV.Drive.NActive
-	for i := uint32(0); i < nd; i++ {
-		us := GlbDrvV(ctx, di, i, GvUSpos)
-		nwdrv := GlbDrvV(ctx, di, i, GvDrives) - us*ctx.PVLV.Drive.USDec.Get(i)
-		if nwdrv < 0 {
-			nwdrv = 0
-		}
-		SetGlbDrvV(ctx, di, i, GvDrives, nwdrv)
-	}
-}
-
-// PVLVUrgencyUpdt updates the urgency and urgency based on given effort increment,
-// resetting instead if HasRewPrev and HasPosUSPrev is true indicating receipt
-// of an actual positive US.
-// Call this at the start of the trial, in ApplyPVLV method.
-func PVLVUrgencyUpdt(ctx *Context, di uint32, effort float32) {
-	if (GlbV(ctx, di, GvHasRewPrev) > 0) && (GlbV(ctx, di, GvHasPosUSPrev) > 0) {
-		UrgencyReset(ctx, di)
-	} else {
-		UrgencyAddEffort(ctx, di, effort)
-	}
-}
-
-// PVLVDA computes the updated dopamine for PVLV algorithm from all the current state,
-// including pptg and vsPatchPos (from RewPred) via Context.
-// Call after setting USs, VSPatchVals, Effort, Drives, etc.
-// Resulting DA is in VTA.Vals.DA is returned.
-func PVLVDA(ctx *Context, di uint32) float32 {
-	da := PVLVDAImpl(ctx, di, GlbV(ctx, di, GvACh), (GlbV(ctx, di, GvHasRew) > 0))
-	SetGlbV(ctx, di, GvDA, da)
-	SetGlbV(ctx, di, GvRewPred, GlbVTA(ctx, di, GvVtaVals, GvVtaVSPatchPos))
-	for vv := GvVtaDA; vv <= GvVtaVSPatchPos; vv++ {
-		SetGlbVTA(ctx, di, GvVtaPrev, vv, GlbVTA(ctx, di, GvVtaVals, vv)) // avoid race
-	}
-	if PVLVHasPosUS(ctx, di) {
-		NeuroModSetRew(ctx, di, PVLVNetPV(ctx, di), true)
-	}
-	return da
 }
 
 //gosl: end context
@@ -1213,10 +772,6 @@ func PVLVDA(ctx *Context, di uint32) float32 {
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
-	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
-		PVLVNewState(ctx, di, bools.FromFloat32(GlbV(ctx, di, GvHasRew)))
-		NeuroModInit(ctx, di)
-	}
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -1226,78 +781,6 @@ func (ctx *Context) NewState(mode etime.Modes) {
 	if mode == etime.Train {
 		ctx.TrialsTotal++
 	}
-}
-
-// PVLVInitUS initializes the US state -- call this before calling PVLVSetUS.
-func (ctx *Context) PVLVInitUS(di uint32) {
-	PVLVInitUS(ctx, di)
-	SetGlbV(ctx, di, GvHasRew, 0)
-	SetGlbV(ctx, di, GvRew, 0)
-}
-
-// PVLVSetUS sets the given unconditioned stimulus (US) state for PVLV algorithm.
-// Call PVLVInitUS before calling this, and only call this when a US has been received,
-// at the start of a Trial typically.
-// This then drives activity of relevant PVLV-rendered inputs, and dopamine.
-// The US index is automatically adjusted for the curiosity drive / US for
-// positive US outcomes -- i.e., pass in a value with 0 starting index.
-// By default, negative USs do not set the overall ctx.NeuroMod.HasRew flag,
-// which is the trigger for a full-blown US learning event. Set this yourself
-// if the negative US is more of a discrete outcome vs. something that happens
-// in the course of goal engaged approach.
-func (ctx *Context) PVLVSetUS(di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
-	if valence == Positive {
-		SetGlbV(ctx, di, GvHasRew, 1)                            // only for positive USs
-		SetGlbDrvV(ctx, di, uint32(usIdx)+1, GvUSpos, magnitude) // +1 for curiosity
-	} else {
-		SetGlbUSneg(ctx, di, uint32(usIdx), magnitude)
-	}
-}
-
-// PVLVSetDrives sets current PVLV drives to given magnitude,
-// and sets the first curiosity drive to given level.
-// Drive indexes are 0 based, so 1 is added automatically to accommodate
-// the first curiosity drive.
-func (ctx *Context) PVLVSetDrives(di uint32, curiosity, magnitude float32, drives ...int) {
-	PVLVInitDrives(ctx, di)
-	PVLVSetDrive(ctx, di, 0, curiosity)
-	for _, i := range drives {
-		PVLVSetDrive(ctx, di, uint32(1+i), magnitude)
-	}
-}
-
-// PVLVStepStart must be called at start of a new iteration (trial)
-// of behavior when using the PVLV framework, after applying USs,
-// Drives, and updating Effort (e.g., as last step in ApplyPVLV method).
-// Calls PVLVGiveUp (and potentially other things).
-func (ctx *Context) PVLVStepStart(di uint32, rnd erand.Rand) {
-	ctx.PVLVShouldGiveUp(di, rnd)
-}
-
-// PVLVShouldGiveUp tests whether it is time to give up on the current goal,
-// based on sum of LHb Dip (missed expected rewards) and maximum effort.
-// called in PVLVStepStart.
-func (ctx *Context) PVLVShouldGiveUp(di uint32, rnd erand.Rand) {
-	giveUp := ctx.PVLV.ShouldGiveUp(ctx, di, rnd, GlbV(ctx, di, GvHasRew) > 0)
-	if giveUp {
-		NeuroModSetRew(ctx, di, 0, true) // sets HasRew -- drives maint reset, ACh
-	}
-}
-
-// PVLVNewState is called at start of new state (trial) of processing.
-// hadRew indicates if there was a reward state the previous trial.
-// It calls LHGiveUpFmSum to trigger a "give up" state on this trial
-// if previous expectation of reward exceeds critical sum.
-func PVLVNewState(ctx *Context, di uint32, hadRew bool) {
-	SetGlbV(ctx, di, GvHasRewPrev, bools.ToFloat32(hadRew))
-	SetGlbV(ctx, di, GvHasPosUSPrev, bools.ToFloat32(PVLVHasPosUS(ctx, di)))
-
-	if hadRew {
-		SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
-	} else if GlbV(ctx, di, GvVSMatrixJustGated) > 0 {
-		SetGlbV(ctx, di, GvVSMatrixHasGated, 1)
-	}
-	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 }
 
 // Reset resets the counters all back to zero
@@ -1316,10 +799,7 @@ func (ctx *Context) Reset() {
 		ctx.Defaults()
 	}
 	ctx.RandCtr.Reset()
-	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
-		PVLVReset(ctx, di)
-		NeuroModInit(ctx, di)
-	}
+	GlobalsReset(ctx)
 }
 
 // NewContext returns a new Time struct with default parameters

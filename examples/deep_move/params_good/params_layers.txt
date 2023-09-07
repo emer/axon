@@ -1,10 +1,10 @@
           Depth		Nominal:	  0.15	Params: .DepthIn: 0.15 | Layer: 0.1
 						Layer.Gi:	  0.90	Params: .DepthIn: 0.9 | Layer: 1.0
 
-         DepthP		Nominal:	  0.15	Params: .DepthIn: 0.15 | Layer: 0.1
-						Layer.Gi:	  0.80	Params: .PulvinarLayer: 0.8 | .DepthIn: 0.9 | Base:Layer: 1.0
+         DepthP		Nominal:	  0.15	Params: .DepthIn: 0.15 | Base:Layer: 0.1
+						Layer.Gi:	  0.80	Params: .PulvinarLayer: 0.8 | .DepthIn: 0.9 | Layer: 1.0
 
-        HeadDir		Nominal:	  0.13	Params: .HeadDirIn: 0.13 | Layer: 0.1
+        HeadDir		Nominal:	  0.13	Params: .HeadDirIn: 0.13 | Base:Layer: 0.1
 						Layer.Gi:	  0.90	Params: .HeadDirIn: 0.9 | Layer: 1.0
 
        HeadDirP		Nominal:	  0.13	Params: .HeadDirIn: 0.13 | Layer: 0.1
@@ -16,7 +16,7 @@
        DepthHid		Nominal:	  0.07	Params: #DepthHid: 0.07 | .SuperLayer: 0.1 | Layer: 0.1
 						Layer.Gi:	  1.20	Params: #DepthHid: 1.2 | Layer: 1.0
 
-     DepthHidCT		Nominal:	  0.07	Params: #DepthHidCT: 0.07 | .CTLayer: 0.12 | Base:Layer: 0.1
+     DepthHidCT		Nominal:	  0.07	Params: #DepthHidCT: 0.07 | .CTLayer: 0.12 | Layer: 0.1
 						Layer.Gi:	  2.60	Params: #DepthHidCT: 2.6 | .CTLayer: 2.0 | Layer: 1.0
 
      HeadDirHid		Nominal:	  0.10	Params: .SuperLayer: 0.1 | Layer: 0.1

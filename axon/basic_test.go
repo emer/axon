@@ -17,6 +17,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -109,6 +110,9 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
+
+	testNet.PVLV.SetNUSs(ctx, 4, 3)
+	testNet.PVLV.Defaults()
 
 	testNet.Build(ctx)
 	ctx.NetIdxs.NData = uint32(nData)
@@ -1429,37 +1433,30 @@ func saveToFile(net *Network, t *testing.T) {
 func TestGlobalIdxs(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(5)
-	ctx.PVLV.Drive.NActive = 4
-	ctx.PVLV.Drive.NNegUSs = 3
 	net := newTestNet(ctx, int(nData))
+	pv := &net.PVLV
 	val := float32(0)
 
-	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: GvVTAOff: %d  Stride: %d  USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.Drive.NActive, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvVTAOff, ctx.NetIdxs.GvVTAStride, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
+	// fmt.Printf("MaxData: %d  NActive: %d  NNegUSs: %d  NetIdxs: USnegOff: %d  DriveOff: %d  DriveStride: %d\n", ctx.NetIdxs.MaxData, ctx.PVLV.NPosUSs, ctx.PVLV.Drive.NNegUSs, ctx.NetIdxs.GvUSnegOff, ctx.NetIdxs.GvDriveOff, ctx.NetIdxs.GvDriveStride)
 
-	for vv := GvRew; vv < GvVtaDA; vv++ {
+	for vv := GvRew; vv < GvUSneg; vv++ {
 		for di := uint32(0); di < nData; di++ {
 			SetGlbV(ctx, di, vv, val)
 			val += 1
 		}
 	}
-	for vv := GvVtaDA; vv < GvUSneg; vv++ {
-		for vt := GvVtaRaw; vt < GlobalVTATypeN; vt++ {
+	for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
+		for ui := uint32(0); ui < pv.NNegUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbVTA(ctx, di, vt, vv, val)
+				SetGlbUSneg(ctx, di, vv, ui, val)
 				val += 1
 			}
 		}
 	}
-	for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
-		for di := uint32(0); di < nData; di++ {
-			SetGlbUSneg(ctx, di, ui, val)
-			val += 1
-		}
-	}
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {
-		for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+		for ui := uint32(0); ui < pv.NPosUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbDrvV(ctx, di, ui, vv, val)
+				SetGlbUSposV(ctx, di, vv, ui, val)
 				val += 1
 			}
 		}
@@ -1477,8 +1474,6 @@ func TestGlobalIdxs(t *testing.T) {
 func TestSendGatherIdxs(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(3)
-	ctx.PVLV.Drive.NActive = 4
-	ctx.PVLV.Drive.NNegUSs = 3
 	net := newTestNet(ctx, int(nData))
 
 	maxDel := net.MaxDelay + 1
@@ -1594,6 +1589,17 @@ func TestSendGatherIdxs(t *testing.T) {
 		for i, ri := range keys {
 			fmt.Printf("%d  ri: %d\n%s\n", i, ri, rimap[ri])
 		}
+	}
+}
+
+func TestPVLVGiveUp(t *testing.T) {
+	t.Skip("")
+	gp := &GiveUpParams{}
+	gp.Defaults()
+	rnd := erand.NewGlobalRand()
+	for v := float32(-1.0); v <= float32(1); v += 0.01 {
+		p, b := gp.Prob(v, rnd)
+		fmt.Printf("%g\tp: %g\tb: %v\n", v, p, b)
 	}
 }
 

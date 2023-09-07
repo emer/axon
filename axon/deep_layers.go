@@ -42,8 +42,8 @@ func (bp *BurstParams) ThrFmAvgMax(avg, mx float32) float32 {
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
 
-	// [def: 0.8,1] gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
-	GeGain float32 `def:"0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
+	// [def: 0.05,0.1,1,2] gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
+	GeGain float32 `def:"0.05,0.1,1,2" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
 
 	// [def: 0,50] decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50
 	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50"`
@@ -63,7 +63,7 @@ func (cp *CTParams) Update() {
 }
 
 func (cp *CTParams) Defaults() {
-	cp.GeGain = 0.8
+	cp.GeGain = 1
 	cp.DecayTau = 50
 	cp.Update()
 }
@@ -145,7 +145,7 @@ func (ly *Layer) CTDefParamsFast() {
 // and Long (deep_music) time integration.
 func (ly *Layer) CTDefParamsMedium() {
 	ly.DefParams = params.Params{
-		"Layer.CT.GeGain":        "0.8",
+		"Layer.CT.GeGain":        "2",
 		"Layer.CT.DecayTau":      "50",
 		"Layer.Inhib.Layer.Gi":   "2.2",
 		"Layer.Inhib.Pool.Gi":    "2.2",
@@ -229,7 +229,7 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.Acts.KNa.Slow.Max = 0.2 // todo: more?
 	ly.Inhib.Layer.Gi = 0.8
 	ly.Inhib.Pool.Gi = 0.8
-	ly.CT.GeGain = 0.01
+	ly.CT.GeGain = 0.1
 	ly.CT.DecayTau = 50
 
 	// regular:

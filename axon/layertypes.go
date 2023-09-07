@@ -151,33 +151,28 @@ const (
 	VSPatchLayer
 
 	// LHbLayer represents the lateral habenula, which drives dipping
-	// in the VTA.  It tracks the ContextPVLV.LHb values for
+	// in the VTA.  It tracks the Global LHb values for
 	// visualization purposes -- updated by VTALayer.
 	LHbLayer
 
 	// DrivesLayer represents the Drives in PVLV framework.
-	// It tracks the ContextPVLV.Drives values for
+	// It tracks the Global Drives values for
 	// visualization and predictive learning purposes.
 	DrivesLayer
 
-	// EffortLayer represents the Effort factor in PVLV framework.
-	// It tracks the ContextPVLV.Effort.Disc value for
-	// visualization and predictive learning purposes.
-	EffortLayer
-
 	// UrgencyLayer represents the Urgency factor in PVLV framework.
-	// It tracks the ContextPVLV.Urgency.Urge value for
+	// It tracks the Global Urgency.Urge value for
 	// visualization and predictive learning purposes.
 	UrgencyLayer
 
 	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
-	// It tracks the ContextPVLV.USpos or USneg, for visualization
+	// It tracks the Global USpos or USneg, for visualization
 	// and predictive learning purposes. Actual US inputs are set in PVLV.
 	USLayer
 
 	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
 	// the total primary value as a function of US inputs, drives, and effort.
-	// It tracks the ContextPVLV.VTA.PVpos, PVneg values for
+	// It tracks the Global VTA.PVpos, PVneg values for
 	// visualization and predictive learning purposes.
 	PVLayer
 
@@ -194,8 +189,12 @@ const (
 	LDTLayer
 
 	// VTALayer represents the ventral tegmental area, which releases
-	// dopamine.  It calls the ContextPVLV.VTA methods,
-	// and tracks resulting DA for visualization purposes.
+	// dopamine.  It computes final DA value from PVLV-computed
+	// LHb PVDA (primary value DA), updated at start of each trial from
+	// updated US, Effort, etc state, and cycle-by-cycle LV learned value
+	// state reflecting CS inputs, in the Amygdala (CeM).
+	// Its activity reflects this DA level, which is effectively broadcast
+	// vial Global state values to all layers.
 	VTALayer
 
 	/////////////

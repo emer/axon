@@ -33,24 +33,23 @@ func _() {
 	_ = x[VSPatchLayer-17]
 	_ = x[LHbLayer-18]
 	_ = x[DrivesLayer-19]
-	_ = x[EffortLayer-20]
-	_ = x[UrgencyLayer-21]
-	_ = x[USLayer-22]
-	_ = x[PVLayer-23]
-	_ = x[LDTLayer-24]
-	_ = x[VTALayer-25]
-	_ = x[RewLayer-26]
-	_ = x[RWPredLayer-27]
-	_ = x[RWDaLayer-28]
-	_ = x[TDPredLayer-29]
-	_ = x[TDIntegLayer-30]
-	_ = x[TDDaLayer-31]
-	_ = x[LayerTypesN-32]
+	_ = x[UrgencyLayer-20]
+	_ = x[USLayer-21]
+	_ = x[PVLayer-22]
+	_ = x[LDTLayer-23]
+	_ = x[VTALayer-24]
+	_ = x[RewLayer-25]
+	_ = x[RWPredLayer-26]
+	_ = x[RWDaLayer-27]
+	_ = x[TDPredLayer-28]
+	_ = x[TDIntegLayer-29]
+	_ = x[TDDaLayer-30]
+	_ = x[LayerTypesN-31]
 }
 
-const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerPTMaintLayerPTPredLayerPTNotMaintLayerMatrixLayerSTNLayerGPLayerBGThalLayerVSGatedLayerBLALayerCeMLayerVSPatchLayerLHbLayerDrivesLayerEffortLayerUrgencyLayerUSLayerPVLayerLDTLayerVTALayerRewLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerLayerTypesN"
+const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerPTMaintLayerPTPredLayerPTNotMaintLayerMatrixLayerSTNLayerGPLayerBGThalLayerVSGatedLayerBLALayerCeMLayerVSPatchLayerLHbLayerDrivesLayerUrgencyLayerUSLayerPVLayerLDTLayerVTALayerRewLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerLayerTypesN"
 
-var _LayerTypes_index = [...]uint16{0, 10, 20, 31, 43, 50, 63, 71, 83, 94, 109, 120, 128, 135, 146, 158, 166, 174, 186, 194, 205, 216, 228, 235, 242, 250, 258, 266, 277, 286, 297, 309, 318, 329}
+var _LayerTypes_index = [...]uint16{0, 10, 20, 31, 43, 50, 63, 71, 83, 94, 109, 120, 128, 135, 146, 158, 166, 174, 186, 194, 205, 217, 224, 231, 239, 247, 255, 266, 275, 286, 298, 307, 318}
 
 func (i LayerTypes) String() string {
 	if i < 0 || i >= LayerTypes(len(_LayerTypes_index)-1) {
@@ -88,21 +87,20 @@ var _LayerTypes_descMap = map[LayerTypes]string{
 	15: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`,
 	16: `CeMLayer represents a central nucleus of the amygdala layer.`,
 	17: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`,
-	18: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the ContextPVLV.LHb values for visualization purposes -- updated by VTALayer.`,
-	19: `DrivesLayer represents the Drives in PVLV framework. It tracks the ContextPVLV.Drives values for visualization and predictive learning purposes.`,
-	20: `EffortLayer represents the Effort factor in PVLV framework. It tracks the ContextPVLV.Effort.Disc value for visualization and predictive learning purposes.`,
-	21: `UrgencyLayer represents the Urgency factor in PVLV framework. It tracks the ContextPVLV.Urgency.Urge value for visualization and predictive learning purposes.`,
-	22: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the ContextPVLV.USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in PVLV.`,
-	23: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the ContextPVLV.VTA.PVpos, PVneg values for visualization and predictive learning purposes.`,
-	24: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`,
-	25: `VTALayer represents the ventral tegmental area, which releases dopamine. It calls the ContextPVLV.VTA methods, and tracks resulting DA for visualization purposes.`,
-	26: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`,
-	27: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPrjn which does simple delta-rule learning on minus-plus.`,
-	28: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`,
-	29: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPrjn projection type for DA modulated learning.`,
-	30: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerVals from TDPredLayer.`,
-	31: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerVals.`,
-	32: ``,
+	18: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`,
+	19: `DrivesLayer represents the Drives in PVLV framework. It tracks the Global Drives values for visualization and predictive learning purposes.`,
+	20: `UrgencyLayer represents the Urgency factor in PVLV framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`,
+	21: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in PVLV.`,
+	22: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`,
+	23: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`,
+	24: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from PVLV-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`,
+	25: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`,
+	26: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPrjn which does simple delta-rule learning on minus-plus.`,
+	27: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`,
+	28: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPrjn projection type for DA modulated learning.`,
+	29: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerVals from TDPredLayer.`,
+	30: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerVals.`,
+	31: ``,
 }
 
 func (i LayerTypes) Desc() string {

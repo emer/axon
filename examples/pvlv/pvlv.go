@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/examples/pvlv/cond"
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -27,7 +28,6 @@ import (
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/empi/mpi"
-	"github.com/emer/envs/cond"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
@@ -149,18 +149,21 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigPVLV() {
-	pv := &ss.Context.PVLV
-	pv.Drive.NActive = uint32(cond.NUSs + 1)
-	pv.Drive.NNegUSs = 1
-	pv.Urgency.U50 = 50      // no pressure during regular trials
-	pv.Effort.Gain = 0.01    // don't discount as much
-	pv.Effort.Max = 8        // give up if nothing happening.
-	pv.Effort.MaxNovel = 2   // give up if nothing happening.
-	pv.Effort.MaxPostDip = 2 // give up if nothing happening.
-	if ss.Config.Env.PVLV != nil {
-		params.ApplyMap(pv, ss.Config.Env.PVLV, ss.Config.Debug)
+	pv := &ss.Net.PVLV
+	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=negUS
+	pv.Defaults()
+	pv.USs.PVPosGain = 2
+	pv.USs.PVNegGain = 1
+
+	pv.USs.PVNegWts[0] = 0.01
+	pv.USs.PVNegWts[1] = 0.01
+	pv.USs.PVNegWts[2] = 2
+
+	pv.USs.NegGains[2] = 2 // big salient input!
+	pv.Urgency.U50 = 50    // no pressure during regular trials
+	if ss.Config.Params.PVLV != nil {
+		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
 	}
-	// pv.LHb.GiveUpThr = 0.2
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -171,7 +174,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
 	ny := ev.NYReps
-	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
 
 	nuBgY := 5
 	nuBgX := 5
@@ -190,11 +192,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
-	_, _, _, _, _ = ofcVal, ofcValCT, ofcValPTp, ofcValMD, notMaint
+	_, _, _, _, _ = ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, notMaint
+	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
+	_, _, _, _ = accNegVal, accNegValCT, accNegValPTp, accNegValMD
+	// todo: connect more of above
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -217,7 +222,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
 
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
@@ -225,12 +231,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// note: these should be predicted by ACC, not included in this sim
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
-	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	net.ConnectToPFCBack(time, timeP, ofcVal, ofcValCT, ofcValPTp, full)
-	// note: following are needed by violate true predictive learning of time
+	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
 
-	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, accNegVal, accNegValCT, accNegValPTp, full)
 
 	////////////////////////////////////////////////
 	// position
@@ -313,7 +318,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Block).OnStart.Add("ResetLogTrial", func() {
 		ss.Logs.ResetLog(etime.Train, etime.Trial)
 	})
-	man.GetLoop(etime.Train, etime.Sequence).OnStart.Add("ResetLogTrial", func() {
+	man.GetLoop(etime.Train, etime.Sequence).OnStart.Add("ResetDebugTrial", func() {
 		ss.Logs.ResetLog(etime.Debug, etime.Trial)
 	})
 
@@ -339,6 +344,10 @@ func (ss *Sim) UpdateLoopMax() {
 	trn.Loops[etime.Block].Counter.Max = ev.Block.Max
 	trn.Loops[etime.Sequence].Counter.Max = ev.Trial.Max
 	trn.Loops[etime.Trial].Counter.Max = ev.Tick.Max
+
+	if ss.Config.Env.SetNBlocks {
+		trn.Loops[etime.Block].Counter.Max = ss.Config.Env.NBlocks
+	}
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -371,17 +380,19 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	ctx.PVLV.EffortUrgencyUpdt(ctx, 0, &ss.Net.Rand, 1)
-	ctx.PVLVInitUS(0)
+	pv := &ss.Net.PVLV
+	di := uint32(0)                    // not doing NData here -- otherwise loop over
+	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
+	pv.EffortUrgencyUpdt(ctx, di, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			ctx.PVLVSetUS(0, axon.Positive, trl.US, trl.USMag)
+			pv.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)
 		} else {
-			ctx.PVLVSetUS(0, axon.Negative, trl.US, trl.USMag)
+			pv.SetUS(ctx, di, axon.Negative, trl.US, trl.USMag) // adds to neg us
 		}
 	}
-	ctx.PVLVSetDrives(0, 1, 1, trl.US)
-	ctx.PVLVStepStart(0, &ss.Net.Rand)
+	pv.SetDrives(ctx, di, 1, 1, trl.US)
+	pv.Step(ctx, di, &ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -473,7 +484,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		return
 	}
 	ss.StatCounters()
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle", "Time", "HasRew", "Gated", "GiveUp"})
 }
 
 // TrialStats computes the tick-level statistics.
@@ -484,16 +495,35 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
 	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
+	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
 
-	ss.Stats.SetFloat32("LHbDip", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaLHbDip))
+	ss.Stats.SetFloat32("Gated", axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated))
 
-	ss.Stats.SetFloat32("DipSum", axon.GlbV(ctx, diu, axon.GvLHbDipSum))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvLHbGiveUp))
+	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
+	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
+	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
 
-	ss.Stats.SetFloat32("LHbBurst", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVpos))
-	ss.Stats.SetFloat32("PVpos", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbVTA(ctx, diu, axon.GvVtaVals, axon.GvVtaPVneg))
+	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
+	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
+	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
+
+	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
+	ss.Stats.SetFloat32("PVposEstDisc", axon.GlbV(ctx, diu, axon.GvPVposEstDisc))
+	ss.Stats.SetFloat32("GiveUpDiff", axon.GlbV(ctx, diu, axon.GvGiveUpDiff))
+	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
+
+	ss.Stats.SetFloat32("LHbDip", axon.GlbV(ctx, diu, axon.GvLHbDip))
+	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbBurst))
+	ss.Stats.SetFloat32("LHbDA", axon.GlbV(ctx, diu, axon.GvLHbPVDA))
+
+	ss.Stats.SetFloat32("CeMpos", axon.GlbV(ctx, diu, axon.GvCeMpos))
+	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))
+
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
+
+	vsLy := ss.Net.AxonLayerByName("VsPatch")
+	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -550,14 +580,32 @@ func (ss *Sim) ConfigLogItems() []string {
 	li.Range.Max = 1.1
 	li.FixMin = true
 	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("LHbDip", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("DipSum", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("PVpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("SC", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("HasRew", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
+
+	ss.Logs.AddStatAggItem("Gated", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
+
+	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("Urgency", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+
+	ss.Logs.AddStatAggItem("NegUSOutcome", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("PVpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+
+	ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("PVposEstDisc", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUpDiff", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMin = false
+	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+
+	ss.Logs.AddStatAggItem("LHbDip", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
+	ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("LHbDA", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+
+	ss.Logs.AddStatAggItem("CeMpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("CeMneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("SC", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 
 	var plots []string
 
@@ -611,8 +659,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case mode == etime.Train && time == etime.Trial:
 		ss.TrialStats()
 		ss.StatCounters()
-		ss.Logs.Log(etime.Debug, etime.Trial)
 		if ss.Config.GUI {
+			ss.Logs.Log(etime.Debug, etime.Trial)
 			ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
 		}
 	case time == etime.Block:

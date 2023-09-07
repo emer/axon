@@ -48,6 +48,9 @@ type NetworkBase struct {
 	// filename of last weights file loaded or saved
 	WtsFile string `desc:"filename of last weights file loaded or saved"`
 
+	// PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
+	PVLV PVLV `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+
 	// [view: -] map of name to layers -- layer names must be unique
 	LayMap map[string]*Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 
@@ -556,25 +559,20 @@ func (nt *NetworkBase) AllGlobals() string {
 	str := ""
 	for di := uint32(0); di < nt.MaxData; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
-		for vv := GvRew; vv < GvVtaDA; vv++ {
+		for vv := GvRew; vv < GvUSneg; vv++ {
 			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlbV(ctx, di, vv))
 		}
-		for vv := GvVtaDA; vv < GvUSneg; vv++ {
+		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for vt := GvVtaRaw; vt < GlobalVTATypeN; vt++ {
-				str += fmt.Sprintf("%10s:\t%7.4f\t", vt.String(), GlbVTA(ctx, di, vt, vv))
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
-		str += fmt.Sprintf("%20s:\t", "USNeg")
-		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
-			str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, ui))
-		}
-		str += "\n"
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
-				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbDrvV(ctx, di, ui, vv))
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
+				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbUSposV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
@@ -587,22 +585,20 @@ func (nt *NetworkBase) AllGlobals() string {
 func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 	ctx := &nt.Ctx
 	for di := uint32(0); di < nt.MaxData; di++ {
-		for vv := GvRew; vv < GvVtaDA; vv++ {
+		for vv := GvRew; vv < GvUSneg; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlbV(ctx, di, vv)
 		}
-		for vv := GvVtaDA; vv < GvUSneg; vv++ {
-			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
-			vals[key] = GlbVTA(ctx, di, GvVtaVals, vv)
-		}
-		for ui := uint32(0); ui < ctx.PVLV.Drive.NNegUSs; ui++ {
-			key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, "USneg", ui)
-			vals[key] = GlbUSneg(ctx, di, ui)
+		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
+				vals[key] = GlbUSneg(ctx, di, vv, ui)
+			}
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
-			for ui := uint32(0); ui < ctx.PVLV.Drive.NActive; ui++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlbDrvV(ctx, di, ui, vv)
+				vals[key] = GlbUSposV(ctx, di, vv, ui)
 			}
 		}
 	}
@@ -761,8 +757,8 @@ func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
 // access strides for this network -- must be set properly -- see SetCtxStrides.
 func (nt *NetworkBase) Build(simCtx *Context) error {
 	nt.UseGPUOrder = true // todo: set externally
-	if simCtx.PVLV.Drive.NActive <= 0 {
-		simCtx.PVLV.Defaults()
+	if nt.PVLV.NPosUSs == 0 {
+		nt.PVLV.SetNUSs(simCtx, 1, 1)
 	}
 	ctx := &nt.Ctx
 	*ctx = *simCtx
@@ -999,6 +995,8 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx.NetIdxs.NNeurons = nt.NNeurons
 	ctx.NetIdxs.NPools = uint32(totPools)
 	ctx.NetIdxs.NSyns = nt.NSyns
+	ctx.NetIdxs.PVLVNPosUSs = nt.PVLV.NPosUSs
+	ctx.NetIdxs.PVLVNNegUSs = nt.PVLV.NNegUSs
 	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)

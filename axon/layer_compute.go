@@ -169,17 +169,18 @@ func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) 
 }
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32) {
-	ly.Params.SpikeFmG(ctx, ni, di)
+func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32, lpl *Pool) {
+	ly.Params.SpikeFmG(ctx, ni, di, lpl)
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 // Called directly by Network, iterates over data.
 func (ly *Layer) CycleNeuron(ctx *Context, ni uint32) {
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		lpl := ly.Pool(0, di)
 		pl := ly.SubPool(ctx, ni, di)
 		ly.GInteg(ctx, ni, di, pl, ly.LayerVals(di))
-		ly.SpikeFmG(ctx, ni, di)
+		ly.SpikeFmG(ctx, ni, di, lpl)
 	}
 }
 
@@ -329,8 +330,9 @@ func (ly *Layer) NewState(ctx *Context) {
 			if NrnIsOff(ctx, ni) {
 				continue
 			}
+			pl := ly.SubPool(ctx, ni, di)
 			// note: this calls the basic neuron-level DecayState
-			ly.Params.NewStateNeuron(ctx, ni, di, vals)
+			ly.Params.NewStateNeuron(ctx, ni, di, vals, pl)
 		}
 	}
 
@@ -356,8 +358,9 @@ func (ly *Layer) NewStateNeurons(ctx *Context) {
 		vals := ly.LayerVals(di)
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
+			pl := ly.SubPool(ctx, ni, di)
 			// note: this calls the basic neuron-level DecayState
-			ly.Params.NewStateNeuron(ctx, ni, di, vals)
+			ly.Params.NewStateNeuron(ctx, ni, di, vals, pl)
 		}
 	}
 }
@@ -539,10 +542,21 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
+	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposUSPT" {
+		np := ly.NPools
+		for pi := uint32(1); pi < np; pi++ {
+			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+				pl := ly.Pool(pi, di)
+				val := pl.AvgMax.CaSpkD.Cycle.Avg
+				SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, uint32(pi-1), val)
+			}
+		}
+	}
+
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			hasRew := (GlbV(ctx, di, GvHasRew) > 0)
-			giveUp := (GlbV(ctx, di, GvLHbGiveUp) > 0)
+			giveUp := (GlbV(ctx, di, GvGiveUp) > 0)
 			if hasRew || giveUp {
 				ly.DecayState(ctx, di, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 			}
