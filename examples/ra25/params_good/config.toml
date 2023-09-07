@@ -1,12 +1,12 @@
-GUI = true
+GUI = false
 Debug = false
 
 [Params]
   Sheet = ""
-  File = ""
   Tag = ""
   Note = ""
-  SaveAll = true
+  File = ""
+  SaveAll = false
   Good = true
   [Params.Hidden1Size]
     X = 10
@@ -18,7 +18,7 @@ Debug = false
 [Run]
   GPU = true
   NData = 16
-  Threads = 0
+  NThreads = 0
   Run = 0
   NRuns = 5
   NEpochs = 100

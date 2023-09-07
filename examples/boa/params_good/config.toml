@@ -1,5 +1,6 @@
-GUI = true
+GUI = false
 Debug = false
+OpenWts = ""
 
 [Env]
   NDrives = 4

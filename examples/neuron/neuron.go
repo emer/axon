@@ -149,7 +149,7 @@ func (ss *Sim) New() {
 }
 
 func (ss *Sim) Defaults() {
-	econfig.Config(&ss.Config, "config.toml")
+	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

@@ -76,7 +76,7 @@
   Desc = "std"
   [Base.Params]
     "Prjn.Com.PFail" = "0.0"
-    "Prjn.Learn.LRate.Base" = "0.002"
+    "Prjn.Learn.LRate.Base" = "0.005"
     "Prjn.Learn.Trace.SubMean" = "0"
     "Prjn.Learn.Trace.Tau" = "2"
     "Prjn.SWts.Adapt.LRate" = "0.0001"

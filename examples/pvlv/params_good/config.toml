@@ -1,8 +1,10 @@
-GUI = true
+GUI = false
 Debug = false
 
 [Env]
-  RunName = "PosAcq_A100B50"
+  RunName = "NegAcq_D100"
+  SetNBlocks = true
+  NBlocks = 50
 
 [Params]
   Sheet = ""
@@ -11,9 +13,11 @@ Debug = false
   File = ""
   SaveAll = false
   Good = true
+  [Params.PVLV]
+    "Urgency.U50" = 10
 
 [Run]
-  GPU = true
+  GPU = false
   NThreads = 2
   Run = 0
   NRuns = 1

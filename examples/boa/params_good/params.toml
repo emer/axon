@@ -34,26 +34,26 @@
     "Layer.Inhib.ActAvg.Nominal" = "0.1"
 
 [[Base]]
-  Sel = "#OFCus"
+  Sel = "#OFCposUS"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.Pool.Gi" = "1"
 
 [[Base]]
-  Sel = "#OFCusPT"
+  Sel = "#OFCposUSPT"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.2"
     "Layer.Inhib.Pool.Gi" = "3.0"
 
 [[Base]]
-  Sel = "#OFCusPTp"
+  Sel = "#OFCposUSPTp"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.Pool.Gi" = "1.4"
 
 [[Base]]
-  Sel = "#OFCval"
+  Sel = "#OFCposVal"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.Pool.Gi" = "1"
@@ -80,10 +80,12 @@
   [Base.Params]
     "Layer.Inhib.Pool.FB" = "0"
     "Layer.Inhib.Pool.Gi" = "0.5"
-    "Layer.Learn.NeuroMod.DipGain" = "0.01"
-    "Layer.VSPatch.Gain" = "30"
-    "Layer.VSPatch.ThrInit" = "0.4"
-    "Layer.VSPatch.ThrLRate" = "0.001"
+    "Layer.Learn.NeuroMod.DipGain" = "1"
+    "Layer.Learn.RLRate.SigmoidMin" = "0.01"
+    "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
+    "Layer.VSPatch.Gain" = "3"
+    "Layer.VSPatch.ThrInit" = "0.2"
+    "Layer.VSPatch.ThrLRate" = "0.002"
     "Layer.VSPatch.ThrNonRew" = "10"
 
 [[Base]]
@@ -96,7 +98,7 @@
   Sel = "#SC"
   Desc = ""
   [Base.Params]
-    "Layer.Acts.KNa.Slow.Max" = "0.2"
+    "Layer.Acts.KNa.Slow.Max" = "0.05"
 
 [[Base]]
   Sel = ".PFCPrjn"
@@ -112,25 +114,25 @@
     "Prjn.PrjnScale.Abs" = "6"
 
 [[Base]]
-  Sel = "#BLAPosAcqD1ToOFCus"
+  Sel = "#BLAPosAcqD1ToOFCposUS"
   Desc = "stronger"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1.5"
 
 [[Base]]
-  Sel = "#OFCusToOFCval"
+  Sel = "#OFCposUSToOFCposVal"
   Desc = "stronger"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "3"
 
 [[Base]]
-  Sel = "#ACCcostToACCutil"
+  Sel = "#ACCnegValToACCutil"
   Desc = "stronger"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "3"
 
 [[Base]]
-  Sel = "#OFCvalToACCutil"
+  Sel = "#OFCposValToACCutil"
   Desc = "not good to make this stronger"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1"
@@ -176,7 +178,7 @@
   Sel = ".BLAExtPrjn"
   Desc = "ext learns relatively fast"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.02"
+    "Prjn.Learn.LRate.Base" = "0.005"
 
 [[Base]]
   Sel = ".BLAAcqToGo"
@@ -184,6 +186,12 @@
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "3"
     "Prjn.PrjnScale.Rel" = "1"
+
+[[Base]]
+  Sel = ".BLAExtToAcq"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0.5"
 
 [[Base]]
   Sel = ".PFCToVSMtx"
@@ -195,7 +203,7 @@
   Sel = ".VSPatchPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.01"
+    "Prjn.Learn.LRate.Base" = "0.05"
     "Prjn.PrjnScale.Abs" = "2"
 
 [[Base]]
@@ -205,7 +213,7 @@
     "Prjn.PrjnScale.Abs" = "1"
 
 [[Base]]
-  Sel = "#OFCusPTpToVsPatch"
+  Sel = "#OFCposUSPTpToVsPatch"
   Desc = ""
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "5"
@@ -229,7 +237,7 @@
     "Prjn.PrjnScale.Abs" = "0.5"
 
 [[Base]]
-  Sel = "#ACCcostToACCcostMD"
+  Sel = "#ACCnegValToACCnegValMD"
   Desc = ""
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "3"
@@ -244,4 +252,4 @@
   Sel = "#UrgencyToVsMtxGo"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "0"
+    "Prjn.PrjnScale.Abs" = "4"

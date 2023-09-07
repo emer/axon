@@ -1,5 +1,5 @@
 RW = false
-GUI = true
+GUI = false
 Debug = false
 
 [Env]

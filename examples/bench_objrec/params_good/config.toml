@@ -1,4 +1,4 @@
-GUI = true
+GUI = false
 Debug = false
 
 [Env]
@@ -6,9 +6,9 @@ Debug = false
 
 [Params]
   Sheet = ""
-  File = ""
   Tag = ""
   Note = ""
+  File = ""
   SaveAll = false
   Good = true
   [Params.V1V4Prjn]
@@ -64,4 +64,3 @@ Debug = false
   TestEpoch = false
   TestTrial = false
   NetData = false
-  Testing = false

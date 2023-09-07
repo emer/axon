@@ -3,6 +3,7 @@ GPi.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
 GPi.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
 GPi.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 GPi.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+GPi.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 GPi.GPeInToGPi.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 GPi.GPeInToGPi.SWts.Init.Sym: false // [Def: true] <br>
 GPi.GPeInToGPi.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
@@ -21,6 +22,7 @@ GPeOut.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
 GPeOut.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
 GPeOut.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 GPeOut.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+GPeOut.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 GPeOut.MtxGoToGPeOut.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 GPeOut.MtxGoToGPeOut.SWts.Init.Sym: false // [Def: true] <br>
 GPeOut.MtxGoToGPeOut.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
@@ -33,6 +35,7 @@ GPeIn.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
 GPeIn.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
 GPeIn.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 GPeIn.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+GPeIn.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 GPeIn.MtxNoToGPeIn.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 GPeIn.MtxNoToGPeIn.SWts.Init.Sym: false // [Def: true] <br>
 GPeIn.MtxNoToGPeIn.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
@@ -48,6 +51,7 @@ GPeTA.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
 GPeTA.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
 GPeTA.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 GPeTA.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+GPeTA.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 GPeTA.GPeInToGPeTA.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 GPeTA.GPeInToGPeTA.SWts.Init.Sym: false // [Def: true] <br>
 GPeTA.GPeInToGPeTA.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
@@ -58,6 +62,7 @@ STNp.Acts.Decay.LearnCa: 1 // [Def: 0] <br>
 STNp.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 STNp.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
 STNp.Learn.NeuroMod.AChDisInhib: 2 // [Def: 0,5] <br>
+STNp.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 STNp.GPeInToSTNp.PrjnScale.Abs: 0.1 // [Def: 1] <br>
 STNp.GPeInToSTNp.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 STNp.GPeInToSTNp.SWts.Init.Sym: false // [Def: true] <br>
@@ -70,6 +75,7 @@ STNs.Acts.Decay.LearnCa: 1 // [Def: 0] <br>
 STNs.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 STNs.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
 STNs.Learn.NeuroMod.AChDisInhib: 2 // [Def: 0,5] <br>
+STNs.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 STNs.PFCToSTNs.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 STNs.PFCToSTNs.SWts.Init.Sym: false // [Def: true] <br>
 STNs.PFCToSTNs.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
@@ -78,6 +84,7 @@ MtxGo.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 MtxGo.Inhib.Layer.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
 MtxGo.Inhib.Pool.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
 MtxGo.Learn.RLRate.On: false // [Def: true] <br>
+MtxGo.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 MtxGo.GPeTAToMtxGo.PrjnScale.Abs: 2 // [Def: 1] <br>
 MtxGo.GPeTAToMtxGo.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 MtxGo.GPeTAToMtxGo.SWts.Init.Var: 0 // [Def: 0.25] <br>
@@ -106,6 +113,7 @@ MtxNo.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 MtxNo.Inhib.Layer.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
 MtxNo.Inhib.Pool.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
 MtxNo.Learn.RLRate.On: false // [Def: true] <br>
+MtxNo.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 MtxNo.GPeTAToMtxNo.PrjnScale.Abs: 2 // [Def: 1] <br>
 MtxNo.GPeTAToMtxNo.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 MtxNo.GPeTAToMtxNo.SWts.Init.Var: 0 // [Def: 0.25] <br>
@@ -125,26 +133,35 @@ MtxNo.ACCPosToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
 MtxNo.ACCPosToMtxNo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
 MtxNo.ACCPosToMtxNo.Matrix.NoGateLRate: 1 // [Def: 0.01] <br>
 SNc.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+SNc.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 Urgency.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 Urgency.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 Urgency.Acts.PopCode.MinAct: 0 // [Def: 1,0.5] <br>
 Urgency.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
+Urgency.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 ACCPos.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+ACCPos.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 ACCNeg.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+ACCNeg.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 In.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+In.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 InP.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+InP.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 PFC.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
+PFC.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 PFCCT.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 PFCCT.Acts.Sahp.Gbar: 1 // [Def: 0.05,0.1] <br>
 PFCCT.Acts.NMDA.Gbar: 0.008 // [Def: 0,0.006,0.007] <br>
 PFCCT.Acts.GabaB.Gbar: 0.009 // [Def: 0,0.012,0.015] <br>
 PFCCT.Inhib.Layer.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
 PFCCT.Inhib.Pool.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
+PFCCT.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 PFCPT.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 PFCPT.Acts.Sahp.Gbar: 0.01 // [Def: 0.05,0.1] <br>
 PFCPT.Acts.GabaB.Gbar: 0.01 // [Def: 0,0.012,0.015] <br>
 PFCPT.Inhib.Layer.Gi: 3.2 // [Def: 1,1.1,0.75,0.9] <br>
 PFCPT.Inhib.Pool.Gi: 3.2 // [Def: 1,1.1,0.75,0.9] <br>
+PFCPT.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 PFCPT.PFCVMToPFCPT.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
 PFCPT.PFCVMToPFCPT.SWts.Init.Var: 0 // [Def: 0.25] <br>
 PFCPT.PFCToPFCPT.PrjnScale.Abs: 0.5 // [Def: 1] <br>
@@ -157,6 +174,7 @@ PFCVM.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
 PFCVM.Inhib.Layer.Gi: 0.6 // [Def: 1,1.1,0.75,0.9] <br>
 PFCVM.Inhib.Pool.Gi: 0.6 // [Def: 1,1.1,0.75,0.9] <br>
 PFCVM.Learn.NeuroMod.AChDisInhib: 1 // [Def: 0,5] <br>
+PFCVM.VSPatch.ThrInit: 0.15 // [Def: 0.25] <br>
 PFCVM.PFCPTToPFCVM.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 PFCVM.PFCPTToPFCVM.SWts.Init.Var: 0 // [Def: 0.25] <br>
 PFCVM.PFCPTToPFCVM.SWts.Init.Sym: false // [Def: true] <br>

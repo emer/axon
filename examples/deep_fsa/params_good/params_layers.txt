@@ -7,9 +7,9 @@
         Targets		Nominal:	  0.15	Params: .InLay: 0.15 | Layer: 0.15
 						Layer.Gi:	  0.90	Params: .InLay: 0.9 | Layer: 1.0
 
-         Hidden		Nominal:	  0.15	Params: Base:Layer: 0.15
+         Hidden		Nominal:	  0.15	Params: Layer: 0.15
 						Layer.Gi:	  1.00	Params: Layer: 1.0
 
-       HiddenCT		Nominal:	  0.15	Params: Layer: 0.15
+       HiddenCT		Nominal:	  0.15	Params: Base:Layer: 0.15
 						Layer.Gi:	  2.20	Params: .CTLayer: 2.2 | Layer: 1.0
 

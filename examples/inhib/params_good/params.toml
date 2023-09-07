@@ -74,14 +74,6 @@
   [Base.Params]
     "Prjn.Com.Delay" = "1"
 
-[[Base]]
-  Sel = ".RndSc"
-  Desc = "random shortcut"
-  [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.001"
-    "Prjn.PrjnScale.Rel" = "0.5"
-    "Prjn.SWts.Adapt.On" = "false"
-
 [[FSFFFB]]
   Sel = "Layer"
   Desc = "use FSFFFB computed inhibition"

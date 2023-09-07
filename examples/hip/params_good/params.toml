@@ -8,13 +8,6 @@
     "Prjn.SWts.Init.Var" = "0"
 
 [[Base]]
-  Sel = ".EcCa1Prjn"
-  Desc = "encoder projections -- Abs only affecting ec3toca1 and ec5toca1, not ca1toec5"
-  [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.2"
-    "Prjn.PrjnScale.Abs" = "0.1"
-
-[[Base]]
   Sel = ".HippoCHL"
   Desc = "hippo CHL projections -- no norm, moment, but YES wtbal = sig better"
   [Base.Params]

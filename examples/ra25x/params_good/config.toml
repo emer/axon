@@ -1,11 +1,11 @@
-GUI = true
+GUI = false
 Debug = false
 
 [Params]
   Sheet = ""
-  File = ""
   Tag = ""
   Note = ""
+  File = ""
   SaveAll = false
   Good = true
   [Params.Hidden1Size]
