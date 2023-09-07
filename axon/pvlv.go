@@ -410,8 +410,8 @@ func LogisticFun(v, gain float32) float32 {
 
 func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
 	prob := LogisticFun(pvDiff, gp.Gain)
-	giveUp := erand.BoolP32(prob, -1, rnd)
-	return prob, giveUp
+	// giveUp := erand.BoolP32(prob, -1, rnd)
+	return prob, false // giveUp
 }
 
 //////////////////////////////////////////////////////////
