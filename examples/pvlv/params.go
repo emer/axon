@@ -28,7 +28,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain":     "1",    // controls extinction -- reduce to slow
+				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
 				"Layer.VSPatch.Gain":               "3",
 				"Layer.VSPatch.ThrInit":            "0.15",
