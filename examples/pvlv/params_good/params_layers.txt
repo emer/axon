@@ -117,7 +117,7 @@
 
     OFCposUSPTp		Nominal:	  0.10	
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.40	
+						Pool.Gi: 	  1.00	Params: #OFCposUSPTp: 1.0
 
        NotMaint		Nominal:	  0.20	
 						Layer.Gi:	  0.50	

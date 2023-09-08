@@ -3958,7 +3958,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.2 DecayTau: 0
+  GeGain: 0.4 DecayTau: 0
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposUSPTToNotMaint

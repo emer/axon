@@ -117,7 +117,7 @@ Layer: VsPatch
 	   ACCnegValPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.17
 								    Abs Params: Base:.VSPatchPrjn: 2
 	         Drives	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
-								    Abs Params: .VSPatchPrjn: 2
+								    Abs Params: Base:.VSPatchPrjn: 2
 	    OFCposUSPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.17
 								    Abs Params: Base:.VSPatchPrjn: 2
 	   OFCposValPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.17
@@ -125,7 +125,7 @@ Layer: VsPatch
 	    OFCnegUSPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.17
 								    Abs Params: Base:.VSPatchPrjn: 2
 	   ACCnegValPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.17
-								    Abs Params: .VSPatchPrjn: 2
+								    Abs Params: Base:.VSPatchPrjn: 2
 	     ACCutilPTp	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.17
 								    Abs Params: Base:.VSPatchPrjn: 2
 

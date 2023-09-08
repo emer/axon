@@ -2064,7 +2064,7 @@ Learn: {
   NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 VSPatch: {
-  Gain: 3 ThrInit: 0.12 ThrLRate: 0.002 ThrNonRew: 10
+  Gain: 5 ThrInit: 0.2 ThrLRate: 0.002 ThrNonRew: 10
 }
 ///////////////////////////////////////////////////
 Prjn: ACCnegValPTpToVsPatch
@@ -2072,7 +2072,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }
@@ -2092,7 +2092,7 @@ Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: false }
@@ -2112,7 +2112,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }
@@ -2132,7 +2132,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }
@@ -2152,7 +2152,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }
@@ -2172,7 +2172,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 6
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }
@@ -3511,7 +3511,7 @@ Com: {
   GType: MaintG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 4
+  Rel: 1 Abs: 5
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.5  Sym: true }
@@ -3655,7 +3655,7 @@ Act: {
 Inhib: {
   ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
-  Pool: {  On: true  Gi: 1.4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -3668,7 +3668,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.1 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposUSPTToOFCposUSPTp
@@ -3892,7 +3892,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.2 DecayTau: 0
+  GeGain: 0.4 DecayTau: 0
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposUSPTToNotMaint
@@ -4626,7 +4626,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.1 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: OFCnegUSPTToOFCnegUSPTp
@@ -5300,7 +5300,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.1 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposValPTToOFCposValPTp
@@ -5954,7 +5954,7 @@ Learn: {
   NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.1 DecayTau: 50
+  GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
 Prjn: ACCnegValPTToACCnegValPTp

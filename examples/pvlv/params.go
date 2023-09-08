@@ -28,10 +28,10 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
-				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
-				"Layer.VSPatch.Gain":               "3",
-				"Layer.VSPatch.ThrInit":            "0.12",
+				"Layer.Learn.NeuroMod.DipGain":     "1",     // boa requires balanced..
+				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.05 def
+				"Layer.VSPatch.Gain":               "5",     // 3 def
+				"Layer.VSPatch.ThrInit":            "0.2",   // thr .2
 				"Layer.VSPatch.ThrLRate":           "0.002", // .001",
 				"Layer.VSPatch.ThrNonRew":          "10",
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
@@ -47,11 +47,15 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
-				"Layer.CT.GeGain": "0.1", // stronger ptp
+				"Layer.CT.GeGain": "0.05", // stronger ptp
+			}},
+		{Sel: "#OFCposUSPTp", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Pool.Gi": "1.0",
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.2", // .1 still enough to shut off -- was .2
+				"Layer.Acts.KNa.Slow.Max": "0.05", // .1 still enough to shut off -- was .2
 			}},
 		//////////////////////////////////////////////////
 		// required custom params for this project
@@ -75,6 +79,10 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.LRate.Base":  "0.005", // 0.02 allows .5 CS for B50
 				"Prjn.BLA.NegDeltaLRate": "1",
 			}},
+		{Sel: ".BLAExtToAcq", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1",
+			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leaks with supertothal 4
@@ -93,15 +101,15 @@ var ParamSets = netparams.Sets{
 				"Prjn.PrjnScale.Abs": "1.0", // key param for efficacy of inhibition
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
-			Params: params.Params{ // todo: expt with these more..
-				"Prjn.PrjnScale.Abs":        "2",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs":        "6",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.2 to speed up
+				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
 			}},
-		// {Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
-		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
-		// 	}},
+		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
+			}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2",

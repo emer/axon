@@ -433,7 +433,7 @@ OFCposUSPTp.DistToOFCposUSPTp.Learn.LRate.Base: 0.01 // [Def: 0.04,0.1,0.2] <br>
 NotMaint.Acts.Init.GeBase: 1.2 // [Def: 0] <br>
 NotMaint.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
 NotMaint.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
-NotMaint.CT.GeGain: 0.2 // [Def: 0.05,0.1,1,2] <br>
+NotMaint.CT.GeGain: 0.4 // [Def: 0.05,0.1,1,2] <br>
 NotMaint.OFCposUSPTToNotMaint.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
 NotMaint.OFCposUSPTToNotMaint.SWts.Init.Var: 0 // [Def: 0.25] <br>
 NotMaint.OFCposUSPTToNotMaint.SWts.Init.Sym: false // [Def: true] <br>
