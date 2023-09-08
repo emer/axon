@@ -40,8 +40,8 @@ func TestPVLVAcqExt(t *testing.T) {
 	sim.Config.GUI = false
 	sim.Config.Run.GPU = false // for CI
 	sim.Config.Run.NRuns = 1
-	sim.Config.Log.Block = false
-	sim.Config.Log.Cond = false
+	sim.Config.Log.Block = true // false
+	sim.Config.Log.Cond = true  // false
 	sim.Config.Log.Trial = false
 	sim.Config.Env.RunName = "PosAcqExt_A100B50_A0B0" // acquire then extinguish
 
