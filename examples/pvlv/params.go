@@ -49,6 +49,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.CT.GeGain": "0.1", // stronger ptp
 			}},
+		{Sel: "#SC", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.KNa.Slow.Max": "0.2", // .1 still enough to shut off -- was .2
+			}},
 		//////////////////////////////////////////////////
 		// required custom params for this project
 		{Sel: "#ContextInToBLAPosExtD2", Desc: "specific to this project",

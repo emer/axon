@@ -212,7 +212,7 @@ func (ly *Layer) PTNotMaintDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.CT.GeGain = 0.2
+	ly.Params.CT.GeGain = 0.4
 	ly.Params.CT.DecayTau = 0
 	ly.Params.CT.Update()
 
