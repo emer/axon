@@ -28,11 +28,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain":     "1",     // boa requires balanced..
-				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.05 def
-				"Layer.VSPatch.Gain":               "5",     // 3 def
-				"Layer.VSPatch.ThrInit":            "0.2",   // thr .2
-				"Layer.VSPatch.ThrLRate":           "0.002", // .001",
+				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
+				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
+				"Layer.VSPatch.Gain":               "5",    // 3 def
+				"Layer.VSPatch.ThrInit":            "0.2",  // thr .2
+				"Layer.VSPatch.ThrLRate":           "0",    // .001",
 				"Layer.VSPatch.ThrNonRew":          "10",
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
 			}},
@@ -68,7 +68,8 @@ var ParamSets = netparams.Sets{
 		// current experimental settings
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate": "0.0", // 1 default, 0 needed b/c no actual contingency in pavlovian
+				"Prjn.Matrix.NoGateLRate":   "0.0", // 1 default, 0 needed b/c no actual contingency in pavlovian
+				"Prjn.Learn.Trace.LearnThr": "0.0", // important to be 0 to enable recovery of gating after extinction
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
@@ -85,7 +86,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leaks with supertothal 4
+				"Prjn.PrjnScale.Abs": "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
 			}},
 		{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 			Params: params.Params{

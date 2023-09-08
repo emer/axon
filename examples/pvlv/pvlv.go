@@ -466,6 +466,7 @@ func (ss *Sim) NewRun() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetString("Debug", "") // special debug notes per trial
+	ss.Stats.SetString("Cond", "")
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -478,6 +479,7 @@ func (ss *Sim) StatCounters() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
+	ss.Stats.SetString("Cond", ev.CondName)
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
@@ -534,6 +536,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial, etime.Cycle)
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "Cond")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialType")

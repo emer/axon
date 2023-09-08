@@ -88,15 +88,15 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi":              "0.5",   // 0.5 ok?
-				"Layer.Inhib.Pool.FB":              "0",     // only fb
-				"Layer.Learn.NeuroMod.DipGain":     "1",     // if < 1, overshoots, more -DA
-				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.01 > 0.05 def
-				"Layer.VSPatch.Gain":               "3",     // 3 smoother than higher
-				"Layer.VSPatch.ThrInit":            "0.15",  // could be a bit lower
-				"Layer.VSPatch.ThrLRate":           "0.002", // 0.002 good
-				"Layer.VSPatch.ThrNonRew":          "10",    // 10 to prevent creeping up NR
-				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",   // 0.2 gets too diffuse
+				"Layer.Inhib.Pool.Gi":              "0.5",  // 0.5 ok?
+				"Layer.Inhib.Pool.FB":              "0",    // only fb
+				"Layer.Learn.NeuroMod.DipGain":     "1",    // if < 1, overshoots, more -DA
+				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.01 > 0.05 def
+				"Layer.VSPatch.Gain":               "3",    // 3 smoother than higher
+				"Layer.VSPatch.ThrInit":            "0.15", // could be a bit lower
+				"Layer.VSPatch.ThrLRate":           "0",    // 0.002 def
+				"Layer.VSPatch.ThrNonRew":          "10",   // 10 to prevent creeping up NR
+				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",  // 0.2 gets too diffuse
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -150,7 +150,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate": "1", // this is KEY for robustness when failing initially!
+				"Prjn.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!
+				"Prjn.Learn.Trace.LearnThr": "0.0",
 			}},
 		{Sel: ".ToSC", Desc: "",
 			Params: params.Params{

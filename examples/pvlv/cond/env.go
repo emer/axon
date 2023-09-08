@@ -40,6 +40,9 @@ type CondEnv struct {
 	// description of current run
 	RunDesc string `desc:"description of current run"`
 
+	// name of current condition
+	CondName string `desc:"name of current condition"`
+
 	// description of current condition
 	CondDesc string `desc:"description of current condition"`
 
@@ -133,6 +136,7 @@ func (ev *CondEnv) InitCond() {
 	run := AllRuns[ev.RunName]
 	run.Name = ev.RunName
 	cnm, cond := run.Cond(ev.Condition.Cur)
+	ev.CondName = cnm
 	ev.CondDesc = cond.Desc
 	ev.Block.Init()
 	ev.Block.Max = cond.NBlocks

@@ -60,6 +60,32 @@ func TestPosAcqExtA100B50_A0B0(t *testing.T) {
 	RunTest(t, "PosAcqExt_A100B50_A0B0", expects)
 }
 
+// A100, 50, 0 cycling
+func TestPosAcq_ACycle100_50_0(t *testing.T) {
+	if os.Getenv("TEST_LONG") != "true" {
+		t.Skip("Set TEST_LONG=true env var to run longer-running tests")
+	}
+
+	expects := []Expect{
+		{"C0_CS_DA", 0, .8, GT, "100% CS DA"},
+		{"C0_CS_DA", 1, .5, GT, "50%  CS DA"},
+		{"C0_CS_DA", 2, .2, LT, "0%   CS DA"},
+		{"C0_CS_DA", 3, .4, GT, "50%  CS DA"},
+		{"C0_CS_DA", 4, .8, GT, "100% CS DA"},
+
+		{"C0_US_VSPatch", 0, .4, GT, "100% US VSPatch"},
+		{"C0_US_VSPatch", 1, 0, GT, "50%  US VSPatch"},
+		{"C0_US_VSPatch", 2, .1, LT, "0%   US VSPatch"},
+		{"C0_US_VSPatch", 3, 0, GT, "50%  US VSPatch"},
+		{"C0_US_VSPatch", 4, .3, GT, "100% US VSPatch"},
+	}
+
+	RunTest(t, "PosAcq_ACycle100_50_0", expects)
+}
+
+/////////////////////////////////////////////////////////////
+// Testing infra:
+
 const (
 	LT = false
 	GT = true
