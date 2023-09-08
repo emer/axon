@@ -53,13 +53,21 @@ var AllRuns = map[string]*Run{
 		Desc:  "A = 50%",
 		Cond1: "PosAcq_A50",
 	},
-	"PosAcq_ACycle100_50_0": {
+	"PosAcq_ACycle100_50_0_Blk10": {
 		Desc:  "A transitions: 100%, 50%, 0%, 50%, 100% for 10 blocks each",
 		Cond1: "PosAcq_A100",
 		Cond2: "PosAcq_A50_Blk10",
 		Cond3: "PosExt_A0_Blk10",
 		Cond4: "PosAcq_A50_Blk10",
 		Cond5: "PosAcq_A100_Blk10",
+	},
+	"PosAcq_ACycle100_50_0_Blk20": {
+		Desc:  "A transitions: 100%, 50%, 0%, 50%, 100% for 20 blocks each",
+		Cond1: "PosAcq_A100",
+		Cond2: "PosAcq_A50_Blk20",
+		Cond3: "PosExt_A0_Blk20",
+		Cond4: "PosAcq_A50_Blk20",
+		Cond5: "PosAcq_A100_Blk20",
 	},
 	"PosAcqExt_A100B50_A0B0": {
 		Desc:  "positive valence acquisition A=100%, B=50%, then extinguish A, B = 0%",

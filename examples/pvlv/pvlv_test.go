@@ -74,13 +74,14 @@ func TestPosAcq_ACycle100_50_0(t *testing.T) {
 		{"C0_CS_DA", 4, .8, GT, "100% CS DA"},
 
 		{"C0_US_VSPatch", 0, .4, GT, "100% US VSPatch"},
-		{"C0_US_VSPatch", 1, 0, GT, "50%  US VSPatch"},
+		{"C0_US_VSPatch", 1, .1, GT, "50%  US VSPatch"},
 		{"C0_US_VSPatch", 2, .1, LT, "0%   US VSPatch"},
 		{"C0_US_VSPatch", 3, 0, GT, "50%  US VSPatch"},
 		{"C0_US_VSPatch", 4, .3, GT, "100% US VSPatch"},
 	}
 
-	RunTest(t, "PosAcq_ACycle100_50_0", expects)
+	// RunTest(t, "PosAcq_ACycle100_50_0_Blk10", expects)
+	RunTest(t, "PosAcq_ACycle100_50_0_Blk20", expects) // more reliable with 20
 }
 
 /////////////////////////////////////////////////////////////
