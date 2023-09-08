@@ -21,14 +21,14 @@ type LDTParams struct {
 	// [def: 0.05] threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
 	SrcThr float32 `def:"0.05" desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
 
-	// use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
-	Rew slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
+	// [def: true] use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
+	Rew slbool.Bool `def:"true" desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
 
-	// extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
-	MaintInhib float32 `desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
+	// [def: 2] extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
+	MaintInhib float32 `def:"2" desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
 
-	// maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
-	NotMaintMax float32 `desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
+	// [def: 0.4] maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
+	NotMaintMax float32 `def:"0.4" desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
 	SrcLay1Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
@@ -222,13 +222,13 @@ func (ly *Layer) BLADefaults() {
 	lp.Acts.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
 	if isAcq {
-		lp.Inhib.Layer.Gi = 2.2 // acq has more input
+		lp.Inhib.Layer.Gi = 2.4 // acq has more input
 	} else {
 		lp.Inhib.Layer.Gi = 1.8
 		lp.Acts.Gbar.L = 0.25 // needed to not be active at start
 	}
 	lp.Inhib.Pool.On.SetBool(true)
-	lp.Inhib.Pool.Gi = 0.9
+	lp.Inhib.Pool.Gi = 1
 	lp.Inhib.ActAvg.Nominal = 0.025
 	lp.Learn.RLRate.SigmoidMin = 1.0
 	lp.Learn.TrgAvgAct.On.SetBool(false)

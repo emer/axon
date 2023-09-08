@@ -220,49 +220,54 @@ func PVLVNormFun(raw float32) float32 {
 // weighted and integrated to compute an overall PV primary value.
 type USParams struct {
 
-	// threshold for a negative US increment, _after_ multiplying by the NegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)
-	NegUSOutcomeThr float32 `desc:"threshold for a negative US increment, _after_ multiplying by the NegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)"`
+	// [def: 0.5] threshold for a negative US increment, _after_ multiplying by the USnegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)
+	NegUSOutcomeThr float32 `def:"0.5" desc:"threshold for a negative US increment, _after_ multiplying by the USnegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)"`
 
-	// gain factor for sum of positive USs, multiplied prior to 1/(1+x) normalization in computing PVPos.
-	PVPosGain float32 `desc:"gain factor for sum of positive USs, multiplied prior to 1/(1+x) normalization in computing PVPos."`
+	// [def: 2] gain factor applied to sum of weighted, drive-scaled positive USs to compute PVpos primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust the overall scaling of PVpos reward within 0-1 normalized range (see also PVnegGain).  Each USpos is assumed to be in 0-1 range, default 1.
+	PVposGain float32 `def:"2" desc:"gain factor applied to sum of weighted, drive-scaled positive USs to compute PVpos primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust the overall scaling of PVpos reward within 0-1 normalized range (see also PVnegGain).  Each USpos is assumed to be in 0-1 range, default 1."`
 
-	// gain factor for sum of negative USs, multiplied prior to 1/(1+x) normalization in computing PVNeg.
-	PVNegGain float32 `desc:"gain factor for sum of negative USs, multiplied prior to 1/(1+x) normalization in computing PVNeg."`
+	// [def: 1] gain factor applied to sum of weighted negative USs to compute PVneg primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust overall scaling of PVneg within 0-1 normalized range (see also PVposGain).
+	PVnegGain float32 `def:"1" desc:"gain factor applied to sum of weighted negative USs to compute PVneg primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust overall scaling of PVneg within 0-1 normalized range (see also PVposGain)."`
 
-	// gain factor for each negative US, multiplied prior to 1/(1+x) normalization of each term for activating the NegUS value.
-	NegGains []float32 `desc:"gain factor for each negative US, multiplied prior to 1/(1+x) normalization of each term for activating the NegUS value."`
+	// gain factor for each individual negative US, multiplied prior to 1/(1+x) normalization of each term for activating the OFCnegUS pools.  These gains are _not_ applied in computing summary PVneg value (see PVnegWts), and generally must be larger than the weights to leverage the dynamic range within each US pool.
+	USnegGains []float32 `desc:"gain factor for each individual negative US, multiplied prior to 1/(1+x) normalization of each term for activating the OFCnegUS pools.  These gains are _not_ applied in computing summary PVneg value (see PVnegWts), and generally must be larger than the weights to leverage the dynamic range within each US pool."`
 
-	// weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each pos US is also multiplied by its dynamic Drive factor as well
-	PVPosWts []float32 `desc:"weight factor for each positive US, multiplied prior to 1/(1+x) normalization of the sum.  Each pos US is also multiplied by its dynamic Drive factor as well"`
+	// weight factor applied to each separate positive US on the way to computing the overall PVpos summary value, to control the weighting of each US relative to the others. Each pos US is also multiplied by its dynamic Drive factor as well.  Use PVposGain to control the overall scaling of the PVpos value.
+	PVposWts []float32 `desc:"weight factor applied to each separate positive US on the way to computing the overall PVpos summary value, to control the weighting of each US relative to the others. Each pos US is also multiplied by its dynamic Drive factor as well.  Use PVposGain to control the overall scaling of the PVpos value."`
 
-	// weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum.
-	PVNegWts []float32 `desc:"weight factor for each negative US, multiplied prior to 1/(1+x) normalization of the sum."`
+	// weight factor applied to each separate negative US on the way to computing the overall PVneg summary value, to control the weighting of each US relative to the others.  The first pool is Time, second is Effort, and these are typically weighted lower (.02) than salient simulation-specific USs (1).
+	PVnegWts []float32 `desc:"weight factor applied to each separate negative US on the way to computing the overall PVneg summary value, to control the weighting of each US relative to the others.  The first pool is Time, second is Effort, and these are typically weighted lower (.02) than salient simulation-specific USs (1)."`
 
-	// estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst
-	USposEst []float32 `desc:"estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst"`
+	// computed estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst
+	USposEst []float32 `inactive:"+" desc:"computed estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst"`
 }
 
 func (us *USParams) Alloc(nPos, nNeg int) {
-	if len(us.PVPosWts) != nPos {
-		us.PVPosWts = make([]float32, nPos)
+	if len(us.PVposWts) != nPos {
+		us.PVposWts = make([]float32, nPos)
 		us.USposEst = make([]float32, nPos)
 	}
-	if len(us.PVNegWts) != nNeg {
-		us.NegGains = make([]float32, nNeg)
-		us.PVNegWts = make([]float32, nNeg)
+	if len(us.PVnegWts) != nNeg {
+		us.USnegGains = make([]float32, nNeg)
+		us.PVnegWts = make([]float32, nNeg)
 	}
 }
 
 func (us *USParams) Defaults() {
 	us.NegUSOutcomeThr = 0.5
-	us.PVPosGain = 5
-	us.PVNegGain = 0.02
-	for i := range us.PVPosWts {
-		us.PVPosWts[i] = 1
+	us.PVposGain = 2
+	us.PVnegGain = 1
+	for i := range us.PVposWts {
+		us.PVposWts[i] = 1
 	}
-	for i := range us.NegGains {
-		us.NegGains[i] = 0.02
-		us.PVNegWts[i] = 1
+	for i := range us.USnegGains {
+		if i < 2 { // time, effort
+			us.USnegGains[i] = 0.1
+			us.PVnegWts[i] = 0.02
+		} else { // other sim-specific USs
+			us.USnegGains[i] = 2
+			us.PVnegWts[i] = 1
+		}
 	}
 }
 
@@ -271,7 +276,7 @@ func (us *USParams) Update() {
 
 // USnegFromRaw sets normalized NegUS values from Raw values
 func (us *USParams) USnegFromRaw(ctx *Context, di uint32) {
-	for i, ng := range us.NegGains {
+	for i, ng := range us.USnegGains {
 		raw := GlbUSneg(ctx, di, GvUSnegRaw, uint32(i))
 		norm := PVLVNormFun(ng * raw)
 		SetGlbUSneg(ctx, di, GvUSneg, uint32(i), norm)
@@ -281,7 +286,7 @@ func (us *USParams) USnegFromRaw(ctx *Context, di uint32) {
 
 // USnegToZero sets all values of USneg, USNegRaw to zero
 func (us *USParams) USnegToZero(ctx *Context, di uint32) {
-	for i := range us.NegGains {
+	for i := range us.USnegGains {
 		SetGlbUSneg(ctx, di, GvUSneg, uint32(i), 0)
 		SetGlbUSneg(ctx, di, GvUSnegRaw, uint32(i), 0)
 	}
@@ -289,7 +294,7 @@ func (us *USParams) USnegToZero(ctx *Context, di uint32) {
 
 // USposToZero sets all values of USpos to zero
 func (us *USParams) USposToZero(ctx *Context, di uint32) {
-	for i := range us.PVPosWts {
+	for i := range us.PVposWts {
 		SetGlbUSposV(ctx, di, GvUSpos, uint32(i), 0)
 	}
 }
@@ -298,7 +303,7 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 // is sufficient to drive a full-blown outcome event, clearing goals, driving DA etc.
 // usIdx is actual index (0 = effort)
 func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32) bool {
-	gmag := us.NegGains[usIdx] * mag
+	gmag := us.USnegGains[usIdx] * mag
 	if gmag > us.NegUSOutcomeThr {
 		SetGlbV(ctx, di, GvNegUSOutcome, 1)
 		return true
@@ -344,28 +349,39 @@ func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvLHbPVDA, 0)
 }
 
-// DAforUS computes the overall LHb Dip or Burst (one is always 0),
-// and PVDA ~= Burst - Dip, for case when there is a primary
-// positive reward value or a give-up state has triggered.
-func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) {
+// DAFmPVs computes the overall PV DA in terms of LHb burst and dip
+// activity from given pvPos, pvNeg, and vsPatchPos values.
+// Also returns the net "reward" value as the discounted PV value,
+// separate from the vsPatchPos prediction error factor.
+func (lh *LHbParams) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
 	thr := lh.NegThr * pvNeg
-	burst := float32(0)
-	dip := float32(0)
 	net := pvPos - thr // if > 0, net positive outcome; else net negative (not worth it)
 	if net > 0 {       // worth it
-		pr := lh.BurstGain * pvPos * (1 - pvNeg) // positive reward value: pos with mult neg discount factor
-		rpe := pr - vsPatchPos                   // prediction error relative to pos reward value
+		rew = lh.BurstGain * pvPos * (1 - pvNeg) // positive reward value: pos with mult neg discount factor
+		rpe := rew - vsPatchPos                  // prediction error relative to pos reward value
 		if rpe < 0 {
 			dip = -rpe // positive dip = negative value
 		} else {
 			burst = rpe
 		}
 	} else { // not worth it: net negative but moderated (discounted) by strength of positive
-		dip = lh.DipGain * pvNeg * (1 - pvPos)
+		rew = lh.DipGain * pvNeg * (1 - pvPos)
+		dip = rew
 	}
+	da = burst - dip
+	return
+}
+
+// DAforUS computes the overall LHb Dip or Burst (one is always 0),
+// and PVDA ~= Burst - Dip, for case when there is a primary
+// positive reward value or a give-up state has triggered.
+// Returns the overall net reward magnitude, prior to VSPatch discounting.
+func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) float32 {
+	burst, dip, da, rew := lh.DAFmPVs(pvPos, pvNeg, vsPatchPos)
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
-	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
+	SetGlbV(ctx, di, GvLHbPVDA, da)
+	return rew
 }
 
 // DAforNoUS computes the overall LHb Dip = vsPatchPos,
@@ -373,12 +389,14 @@ func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos f
 // positive reward value or a give-up state.
 // In this case, inhibition of VS via ACh is assumed to prevent activity of PVneg
 // (and there is no PVpos), so only vsPatchPos is operative.
-func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) {
+// Returns net dopamine which is -vsPatchPos.
+func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) float32 {
 	burst := float32(0)
 	dip := vsPatchPos // dip is entirely mis-prediction of positive outcome
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
+	return burst - dip
 }
 
 //////////////////////////////////////////////////////////
@@ -572,7 +590,7 @@ func (pp *PVLV) TimeEffortReset(ctx *Context, di uint32) {
 // what the PVLV code itself will compute -- see LHbPVDA
 // todo: this is not very meaningful anymore
 // func (pp *PVLV) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
-// 	return usValue * drive * (1 - PVLVNormFun(pp.USs.PVNegWts[0]*effort))
+// 	return usValue * drive * (1 - PVLVNormFun(pp.USs.PVnegWts[0]*effort))
 // }
 
 // PVLVSetDrive sets given Drive to given value
@@ -712,14 +730,14 @@ func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
 // current positive US state, where each US is multiplied by
 // its current drive and weighting factor (pvPosSum),
 // and the normalized version of this sum (PVpos = overall positive PV)
-// as 1 / (1 + (PVPosGain * pvPosSum))
+// as 1 / (1 + (PVposGain * pvPosSum))
 func (pp *PVLV) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 	nd := pp.NPosUSs
-	wts := pp.USs.PVPosWts
+	wts := pp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
 		pvPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * pp.Drive.EffectiveDrive(ctx, di, i)
 	}
-	pvPos = PVLVNormFun(pp.USs.PVPosGain * pvPosSum)
+	pvPos = PVLVNormFun(pp.USs.PVposGain * pvPosSum)
 	return
 }
 
@@ -727,14 +745,14 @@ func (pp *PVLV) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 // of current negative US state, where each US
 // is multiplied by a weighting factor and summed (usNegSum)
 // and the normalized version of this sum (PVneg = overall negative PV)
-// as 1 / (1 + (PVNegGain * PVNegSum))
+// as 1 / (1 + (PVnegGain * PVnegSum))
 func (pp *PVLV) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
 	nn := pp.NNegUSs
-	wts := pp.USs.PVNegWts
+	wts := pp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
 		pvNegSum += wts[i] * GlbUSneg(ctx, di, GvUSnegRaw, i)
 	}
-	pvNeg = PVLVNormFun(pp.USs.PVNegGain * pvNegSum)
+	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvNegSum)
 	return
 }
 
@@ -798,13 +816,49 @@ func (pp *PVLV) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosSum,
 	if len(uss) < int(nd) {
 		nd = uint32(len(uss))
 	}
-	wts := pp.USs.PVPosWts
+	wts := pp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		us := uss[i]
-		pvPosSum += wts[i] * us * pp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * uss[i] * pp.Drive.EffectiveDrive(ctx, di, i)
 	}
-	pvPos = PVLVNormFun(pp.USs.PVPosGain * pvPosSum)
+	pvPos = PVLVNormFun(pp.USs.PVposGain * pvPosSum)
 	return
+}
+
+// PVposEstFmUSsDrives returns the estimated positive PV value
+// based on given externally-provided drives and US values.
+// This can be used to compute estimates to compare network performance.
+func (pp *PVLV) PVposEstFmUSsDrives(uss, drives []float32) (pvPosSum, pvPos float32) {
+	nd := pp.NPosUSs
+	if len(uss) < int(nd) {
+		nd = uint32(len(uss))
+	}
+	wts := pp.USs.PVposWts
+	for i := uint32(0); i < nd; i++ {
+		pvPosSum += wts[i] * uss[i] * drives[i]
+	}
+	pvPos = PVLVNormFun(pp.USs.PVposGain * pvPosSum)
+	return
+}
+
+// PVnegEstFmUSs returns the estimated negative PV value
+// based on given externally-provided US values.
+// This can be used to compute estimates to compare network performance.
+func (pp *PVLV) PVnegEstFmUSs(uss []float32) (pvNegSum, pvNeg float32) {
+	nn := pp.NNegUSs
+	wts := pp.USs.PVnegWts
+	for i := uint32(0); i < nn; i++ {
+		pvNegSum += wts[i] * uss[i]
+	}
+	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvNegSum)
+	return
+}
+
+// DAFmPVs computes the overall PV DA in terms of LHb burst and dip
+// activity from given pvPos, pvNeg, and vsPatchPos values.
+// Also returns the net "reward" value as the discounted PV value,
+// separate from the vsPatchPos prediction error factor.
+func (pp *PVLV) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
+	return pp.LHb.DAFmPVs(pvPos, pvNeg, vsPatchPos)
 }
 
 // GiveUpFmPV determines whether to give up on current goal
@@ -845,17 +899,17 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 
 	if hasRew {
 		pp.ResetGiveUp(ctx, di)
-		pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
-		SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
+		rew := pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+		SetGlbV(ctx, di, GvRew, rew)
 		return
 	}
 
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
 		giveUp := pp.GiveUpFmPV(ctx, di, pvNeg, rnd)
 		if giveUp {
-			SetGlbV(ctx, di, GvHasRew, 1)                     // key for triggering reset
-			pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
-			SetGlbV(ctx, di, GvRew, pvPos-pvNeg)              // primary value diff
+			SetGlbV(ctx, di, GvHasRew, 1)                            // key for triggering reset
+			rew := pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+			SetGlbV(ctx, di, GvRew, rew)
 			return
 		}
 	}

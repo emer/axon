@@ -2,7 +2,7 @@ GUI = false
 Debug = false
 
 [Env]
-  RunName = "NegAcq_D100"
+  RunName = "PosAcq_A100"
   SetNBlocks = true
   NBlocks = 50
 

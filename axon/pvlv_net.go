@@ -35,13 +35,16 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 		d2 := net.AddLayer4D(prefix+"BLANegAcqD2", 1, nUs, nNeurY, nNeurX, BLALayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
 		d2.SetBuildConfig("Valence", "Negative")
+		d2.DefParams = params.Params{
+			"Layer.Inhib.Layer.Gi": "1.2", // weaker
+		}
 		acq = d2
 		ext = d1
 	}
 
 	pj := net.ConnectLayers(ext, acq, prjn.NewPoolOneToOne(), InhibPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "0.4", // key param for efficacy of inhibition -- may need to tweak
+		"Prjn.PrjnScale.Abs": "0.5", // key param for efficacy of inhibition -- may need to tweak
 	}
 	pj.SetClass("BLAExtToAcq")
 
@@ -161,7 +164,7 @@ func (net *Network) ConnectCSToBLAPos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *
 	toAcq = net.ConnectLayers(cs, blaAcq, prjn.NewFull(), BLAPrjn)
 	toAcq.DefParams = params.Params{ // stronger..
 		"Prjn.PrjnScale.Abs":     "1.5",
-		"Prjn.Learn.LRate.Base":  "0.02",
+		"Prjn.Learn.LRate.Base":  "0.1",  // faster learning
 		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
 		"Prjn.BLA.NegDeltaLRate": "0.01", // slow for acq -- could be 0
 	}
@@ -348,7 +351,7 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		"Layer.Acts.Decay.LearnCa":   "1.0", // uses CaSpkD as a readout -- clear
 		"Layer.Acts.Decay.OnRew":     "true",
 		"Layer.Acts.KNa.TrialSlow":   "true",
-		"Layer.Acts.KNa.Slow.Max":    "2", // 1 not strong enough!
+		"Layer.Acts.KNa.Slow.Max":    "0.05", // 0.1 enough to fully inhibit over several trials
 	}
 	sc.SetClass("SC")
 	return sc
@@ -503,8 +506,9 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
 	return
 }
@@ -516,9 +520,12 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCnegUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
+	ofc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	ofc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
 	return
 }
@@ -638,7 +645,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
 	pj.DefParams = params.Params{
 		"Prjn.Learn.Learn":    "false",
-		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.PrjnScale.Abs":  "1",
 		"Prjn.PrjnScale.Rel":  "1",
 		"Prjn.SWts.Init.SPct": "0",
 		"Prjn.SWts.Init.Mean": "0.8",
@@ -744,7 +751,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj = net.ConnectToMatrix(urgency, vSmtxGo, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel":  "0.1", // don't dilute from others
-		"Prjn.PrjnScale.Abs":  "20",  // but make it strong
+		"Prjn.PrjnScale.Abs":  "4",   // but make it strong
 		"Prjn.SWts.Init.SPct": "0",
 		"Prjn.SWts.Init.Mean": "0.5",
 		"Prjn.SWts.Init.Var":  "0.4",

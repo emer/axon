@@ -189,9 +189,10 @@ func (ly *Layer) PTMaintDefaults() {
 	if ly.Is4D() {
 		ly.Params.Inhib.ActAvg.Nominal = 0.05
 	}
-	ly.Params.Inhib.Layer.Gi = 3.2
-	ly.Params.Inhib.Pool.Gi = 3.2
+	ly.Params.Inhib.Layer.Gi = 2.4
+	ly.Params.Inhib.Pool.Gi = 2.4
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Params.Learn.NeuroMod.AChDisInhib = 0
 
 	for _, pj := range ly.RcvPrjns {
 		slay := pj.Send
@@ -211,7 +212,7 @@ func (ly *Layer) PTNotMaintDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.CT.GeGain = 0.2
+	ly.Params.CT.GeGain = 0.4
 	ly.Params.CT.DecayTau = 0
 	ly.Params.CT.Update()
 
@@ -229,7 +230,7 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.Acts.KNa.Slow.Max = 0.2 // todo: more?
 	ly.Inhib.Layer.Gi = 0.8
 	ly.Inhib.Pool.Gi = 0.8
-	ly.CT.GeGain = 0.1
+	ly.CT.GeGain = 0.05
 	ly.CT.DecayTau = 50
 
 	// regular:

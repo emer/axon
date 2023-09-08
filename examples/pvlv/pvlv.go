@@ -152,15 +152,16 @@ func (ss *Sim) ConfigPVLV() {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=negUS
 	pv.Defaults()
-	pv.USs.PVPosGain = 2
-	pv.USs.PVNegGain = 1
+	pv.USs.PVposGain = 2
+	pv.USs.PVnegGain = 1
 
-	pv.USs.PVNegWts[0] = 0.01
-	pv.USs.PVNegWts[1] = 0.01
-	pv.USs.PVNegWts[2] = 2
+	pv.USs.PVnegWts[0] = 0.02
+	pv.USs.PVnegWts[1] = 0.02
+	pv.USs.PVnegWts[2] = 1
 
-	pv.USs.NegGains[2] = 2 // big salient input!
-	pv.Urgency.U50 = 50    // no pressure during regular trials
+	pv.USs.USnegGains[2] = 2 // big salient input!
+
+	pv.Urgency.U50 = 50 // no pressure during regular trials
 	if ss.Config.Params.PVLV != nil {
 		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
 	}

@@ -26,18 +26,17 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.Gi":             "2.4",
 				"Layer.Inhib.Pool.Gi":              "2.4",
 				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",   // todo: explore!  might be bad..
+				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.1",
-				"Layer.CT.GeGain":            "0.05", // 0.05 key for stronger activity
-				"Layer.CT.DecayTau":          "50",
-				// 		"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
+				"Layer.Inhib.ActAvg.Nominal":       "0.1",
+				"Layer.CT.GeGain":                  "0.05", // 0.05 key for stronger activity
+				"Layer.CT.DecayTau":                "50",
+				"Layer.Learn.NeuroMod.AChDisInhib": "0", // 0.2, 0.5 not much diff
 			}},
 		{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 			Params: params.Params{
-				// "Layer.Inhib.Layer.Gi":  "1.0", // 1.0 for CSP, 0.9 for CS -- should be higher for CSPerDrive > 1
 				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 			}},
 		{Sel: "#OFCposUS", Desc: "",
@@ -53,6 +52,20 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1.4",
 			}},
+		{Sel: "#OFCnegUS", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.ActAvg.Nominal": "0.1",
+				"Layer.Inhib.Layer.Gi":       "1.2", // weaker in general so needs to be lower
+			}},
+		{Sel: "#OFCnegUSPT", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.ActAvg.Nominal": "0.2",
+				"Layer.Inhib.Pool.Gi":        "3.0",
+			}},
+		{Sel: "#OFCnegUSPTp", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Pool.Gi": "1.4",
+			}},
 		{Sel: "#OFCposVal", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1",
@@ -62,24 +75,28 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On":    "false", // todo: explore -- could be bad for gating
 				"Layer.Inhib.Pool.Gi":     "0.3",   // go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":     "1",
-				"Layer.Acts.Dend.ModGain": "1", // todo: try with lower drive
+				"Layer.Acts.Dend.ModGain": "1", // todo: 2 is default
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "2.4", // 2.2 not enough to knock out novelty
 				"Layer.Inhib.Pool.Gi":  "1",
 			}},
+		{Sel: "#BLANegAcqD2", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "1.2", // weaker
+			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":              "0.5",   // 0.5 ok?
 				"Layer.Inhib.Pool.FB":              "0",     // only fb
 				"Layer.Learn.NeuroMod.DipGain":     "1",     // if < 1, overshoots, more -DA
-				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.05 def
+				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.01 > 0.05 def
 				"Layer.VSPatch.Gain":               "3",     // 3 smoother than higher
-				"Layer.VSPatch.ThrInit":            "0.2",   // could be a bit lower
+				"Layer.VSPatch.ThrInit":            "0.15",  // could be a bit lower
 				"Layer.VSPatch.ThrLRate":           "0.002", // 0.002 good
 				"Layer.VSPatch.ThrNonRew":          "10",    // 10 to prevent creeping up NR
-				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
+				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",   // 0.2 gets too diffuse
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -164,14 +181,6 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":    "2",    // 3 orig
 				"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
-			}},
-		{Sel: ".DrivesToVSPatch", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 3 orig
-			}},
-		{Sel: "#OFCposUSPTpToVsPatch", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // 3 orig
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
 			Params: params.Params{
