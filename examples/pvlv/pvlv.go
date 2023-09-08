@@ -628,7 +628,8 @@ func (ss *Sim) ConfigLogItems() []string {
 						etime.Scope(etime.AllModes, etime.Block): func(ctx *elog.Context) {
 							ctx.SetFloat64(ctx.Stats.FloatDi(statName, ci))
 						}, etime.Scope(etime.AllModes, etime.Condition): func(ctx *elog.Context) {
-							ctx.SetAgg(ctx.Mode, etime.Block, agg.AggMean)
+							ix := ctx.LastNRows(ctx.Mode, etime.Block, 5) // cached
+							ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 						}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 							ctx.SetAgg(ctx.Mode, etime.Condition, agg.AggMean)
 						}}})
@@ -849,9 +850,9 @@ func (ss *Sim) RunNoGUI() {
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 	netName := ss.Net.Name()
 
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Block, etime.Train, etime.Block, "blk", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Cond, etime.Train, etime.Condition, "cnd", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Block, etime.Train, etime.Block, "blk", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Cond, etime.Train, etime.Condition, "cnd", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
 
 	netdata := ss.Config.Log.NetData
 	if netdata {

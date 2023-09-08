@@ -4,9 +4,12 @@
 
 package cond
 
+// Conventions:
+// 50 blocks by default
+// 4 trials per condition type
+
 var AllConditions = map[string]*Condition{
 	"PosAcq_A100": {
-		Name:      "PosAcq_A100",
 		Desc:      "Standard positive valence acquisition: A = 100%",
 		Block:     "PosAcq_A100",
 		FixedProb: true,
@@ -14,8 +17,15 @@ var AllConditions = map[string]*Condition{
 		NTrials:   4,
 		Permute:   true,
 	},
+	"PosAcq_A100_Blk10": {
+		Desc:      "Standard positive valence acquisition: A = 100% -- 10 blocks",
+		Block:     "PosAcq_A100",
+		FixedProb: true,
+		NBlocks:   10,
+		NTrials:   4,
+		Permute:   true,
+	},
 	"PosAcq_A100B50": {
-		Name:      "PosAcq_A100B50",
 		Desc:      "Standard positive valence acquisition: A = 100%, B = 50%",
 		Block:     "PosAcq_A100B50",
 		FixedProb: true,
@@ -24,43 +34,30 @@ var AllConditions = map[string]*Condition{
 		Permute:   true,
 	},
 	"PosAcq_A50": {
-		Name:      "PosAcq_A50",
 		Desc:      "Positive valence acquisition: A = 50%",
 		Block:     "PosAcq_A50",
 		FixedProb: true,
 		NBlocks:   50,
-		NTrials:   10,
+		NTrials:   8,
+		Permute:   true,
+	},
+	"PosAcq_A50_Blk10": {
+		Desc:      "Positive valence acquisition: A = 50% -- 10 blocks",
+		Block:     "PosAcq_A50",
+		FixedProb: true,
+		NBlocks:   10,
+		NTrials:   8,
 		Permute:   true,
 	},
 	"US0": {
-		Name:      "US0",
 		Desc:      "No US at all",
 		Block:     "US0",
 		FixedProb: true,
-		NBlocks:   5,
-		NTrials:   100,
-		Permute:   true,
-	},
-	"PosAcqPreSecondOrder": {
-		Name:      "PosAcqPreSecondOrder",
-		Desc:      "Positive valence acquisition: A_R_Pos, B at 50%",
-		Block:     "PosAcqPreSecondOrder",
-		FixedProb: true,
 		NBlocks:   50,
-		NTrials:   8,
-		Permute:   true,
-	},
-	"PosReAcq_A100B50": {
-		Name:      "PosReAcq_A100B50",
-		Desc:      "Positive valence acquisition: A_R_Pos, B at 50% reinf, tags further learning as reacq",
-		Block:     "PosReAcq_A100B50",
-		FixedProb: true,
-		NBlocks:   50,
-		NTrials:   8,
+		NTrials:   4,
 		Permute:   true,
 	},
 	"PosAcq_A100B100": {
-		Name:      "PosAcq_A100B100",
 		Desc:      "Positive valence acquisition: A_R_Pos, B at 100%",
 		Block:     "PosAcq_A100B100",
 		FixedProb: true,
@@ -69,7 +66,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   true,
 	},
 	"PosAcqEarlyUS_test": {
-		Name:      "PosAcqEarlyUS_test",
 		Desc:      "Testing session: after pos_acq trng, deliver US early or late",
 		Block:     "PosAcqEarlyUS_test",
 		FixedProb: true,
@@ -78,7 +74,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosAcq_A100B25": {
-		Name:      "PosAcq_A100B25",
 		Desc:      "Positive valence acquisition: A_R_Pos 100%, B at 25%",
 		Block:     "PosAcq_A100B25",
 		FixedProb: true,
@@ -87,7 +82,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   true,
 	},
 	"PosAcq_A100B0": {
-		Name:      "PosAcq_A100B0",
 		Desc:      "Positive valence acquisition: A_R_Pos 100%, B at 0%",
 		Block:     "PosAcq_A100B0",
 		FixedProb: true,
@@ -96,16 +90,22 @@ var AllConditions = map[string]*Condition{
 		Permute:   true,
 	},
 	"PosExt_A0": {
-		Name:      "PosExt_A0",
 		Desc:      "Pavlovian extinction: A_NR_Pos, A = 0%",
 		Block:     "PosExt_A0",
 		FixedProb: false,
 		NBlocks:   50,
-		NTrials:   8,
+		NTrials:   4,
+		Permute:   true,
+	},
+	"PosExt_A0_Blk10": {
+		Desc:      "Pavlovian extinction: A_NR_Pos, A = 0% -- 10 blocks",
+		Block:     "PosExt_A0",
+		FixedProb: false,
+		NBlocks:   10,
+		NTrials:   4,
 		Permute:   true,
 	},
 	"PosExt_A0B0": {
-		Name:      "PosExt_A0B0",
 		Desc:      "Pavlovian extinction: A_NR_Pos, B_NR_Pos",
 		Block:     "PosExt_A0B0",
 		FixedProb: false,
@@ -113,107 +113,55 @@ var AllConditions = map[string]*Condition{
 		NTrials:   8,
 		Permute:   true,
 	},
-	"PosCondInhib": {
-		Name:      "PosCondInhib",
-		Desc:      "conditioned inhibition training: AX_NR_Pos, A_R_Pos interleaved",
-		Block:     "PosCondInhib",
-		FixedProb: false,
-		NBlocks:   10,
-		NTrials:   8,
-		Permute:   true,
-	},
-	"PosSecondOrderCond": {
-		Name:      "PosSecondOrderCond",
-		Desc:      "second order conditioning training: AB_NR_Pos, A_R_Pos interleaved; A = 1st order, F = 2nd order CS",
-		Block:     "PosSecondOrderCond",
-		FixedProb: false,
-		NBlocks:   10,
-		NTrials:   20,
-		Permute:   true,
-	},
-	"PosCondInhib_test": {
-		Name:      "PosCondInhib_test",
-		Desc:      "Testing session: A_NR_Pos, AX_NR_Pos, and X_NR_Pos cases",
-		Block:     "PosCondInhib_test",
-		FixedProb: false,
-		NBlocks:   5,
-		NTrials:   6,
-		Permute:   false,
-	},
 	"NegAcq_D100": {
-		Name:      "NegAcq_D100",
 		Desc:      "Pavlovian conditioning w/ negatively-valenced US: D_R_NEG",
 		Block:     "NegAcq_D100",
 		FixedProb: false,
 		NBlocks:   50,
-		NTrials:   10,
+		NTrials:   4,
 		Permute:   true,
 	},
 	"NegAcq_D100E25": {
-		Name:      "NegAcq_D100E25",
 		Desc:      "Pavlovian conditioning w/ negatively-valenced US: D_R_NEG, E 25%",
 		Block:     "NegAcq_D100E25",
 		FixedProb: false,
 		NBlocks:   50,
-		NTrials:   10,
-		Permute:   true,
-	},
-	"NegAcqFixedProb": {
-		Name:      "NegAcqFixedProb",
-		Desc:      "Pavlovian conditioning w/ negatively-valenced US: A_R_NEG",
-		Block:     "NegAcq_D100",
-		FixedProb: true,
-		NBlocks:   50,
-		NTrials:   8,
-		Permute:   false,
-	},
-	"PosAcqOmit": {
-		Name:      "PosAcqOmit",
-		Desc:      "Positive valence acquisition: A_R_Pos, A_NR_Pos trials, interleaved",
-		Block:     "PosAcqOmit",
-		FixedProb: false,
-		NBlocks:   10,
 		NTrials:   8,
 		Permute:   true,
-	},
-	"NegCondInh": {
-		Name:      "NegCondInh",
-		Desc:      "condition inhibition w/ negatively-valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
-		Block:     "NegCondInhib",
-		FixedProb: false,
-		NBlocks:   75,
-		NTrials:   10,
-		Permute:   true,
-	},
-	"NegCondInh_test": {
-		Name:      "NegCondInh_test",
-		Desc:      "condition inhibition w/ negatively-valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
-		Block:     "NegCondInhib_test",
-		FixedProb: false,
-		NBlocks:   5,
-		NTrials:   6,
-		Permute:   false,
 	},
 	"NegExt_D0": {
-		Name:      "NegExt_D0",
 		Desc:      "Pavlovian conditioning w/ negatively-valenced US: A_R_NEG",
 		Block:     "NegExt_D0",
 		FixedProb: false,
-		NBlocks:   75,
+		NBlocks:   50,
 		NTrials:   8,
 		Permute:   true,
 	},
 	"NegExt_D0E0": {
-		Name:      "NegExt_D0E0",
 		Desc:      "Pavlovian conditioning w/ negatively-valenced US: A_R_NEG",
 		Block:     "NegExt_D0E0",
 		FixedProb: false,
-		NBlocks:   75,
+		NBlocks:   50,
+		NTrials:   8,
+		Permute:   true,
+	},
+	"PosAcqPreSecondOrder": {
+		Desc:      "Positive valence acquisition: A_R_Pos, B at 50%",
+		Block:     "PosAcqPreSecondOrder",
+		FixedProb: true,
+		NBlocks:   50,
+		NTrials:   8,
+		Permute:   true,
+	},
+	"PosReAcq_A100B50": {
+		Desc:      "Positive valence acquisition: A_R_Pos, B at 50% reinf, tags further learning as reacq",
+		Block:     "PosReAcq_A100B50",
+		FixedProb: true,
+		NBlocks:   50,
 		NTrials:   8,
 		Permute:   true,
 	},
 	"PosAcq_cxA": {
-		Name:      "PosAcq_cxA",
 		Desc:      "Positive valence acquisition: A_R_Pos, A_R_Pos_omit trials, interleaved",
 		Block:     "PosAcq_cxA",
 		FixedProb: false,
@@ -222,7 +170,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosExtinct_cxB": {
-		Name:      "PosExtinct_cxB",
 		Desc:      "Positive valence acquisition: A_R_Pos, A_R_Pos_omit trials, interleaved",
 		Block:     "PosExtinct_cxB",
 		FixedProb: false,
@@ -230,8 +177,15 @@ var AllConditions = map[string]*Condition{
 		NTrials:   10,
 		Permute:   false,
 	},
+	"PosAcqOmit": {
+		Desc:      "Positive valence acquisition: A_R_Pos, A_NR_Pos trials, interleaved",
+		Block:     "PosAcqOmit",
+		FixedProb: false,
+		NBlocks:   10,
+		NTrials:   8,
+		Permute:   true,
+	},
 	"PosRenewal_cxA": {
-		Name:      "PosRenewal_cxA",
 		Desc:      "Positive valence acquisition: A_R_Pos, A_R_Pos_omit trials, interleaved",
 		Block:     "PosRenewal_cxA",
 		FixedProb: false,
@@ -240,7 +194,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosBlocking_A_train": {
-		Name:      "PosBlocking_A_train",
 		Desc:      "Blocking experiment",
 		Block:     "PosBlocking_A_train",
 		FixedProb: false,
@@ -249,7 +202,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosBlocking": {
-		Name:      "PosBlocking",
 		Desc:      "Blocking experiment",
 		Block:     "PosBlocking",
 		FixedProb: false,
@@ -258,7 +210,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosBlocking_test": {
-		Name:      "PosBlocking_test",
 		Desc:      "Blocking experiment",
 		Block:     "PosBlocking_test",
 		FixedProb: false,
@@ -267,7 +218,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosBlocking2_test": {
-		Name:      "PosBlocking2_test",
 		Desc:      "Blocking experiment",
 		Block:     "PosBlocking2_test",
 		FixedProb: false,
@@ -276,7 +226,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegBlocking_E_train": {
-		Name:      "NegBlocking_E_train",
 		Desc:      "Blocking experiment",
 		Block:     "NegBlocking_E_train",
 		FixedProb: false,
@@ -285,7 +234,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegBlocking": {
-		Name:      "NegBlocking",
 		Desc:      "Blocking experiment",
 		Block:     "NegBlocking",
 		FixedProb: false,
@@ -294,7 +242,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegBlocking_test": {
-		Name:      "NegBlocking_test",
 		Desc:      "Blocking experiment",
 		Block:     "NegBlocking_test",
 		FixedProb: false,
@@ -303,7 +250,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosAcqMag": {
-		Name:      "PosAcqMag",
 		Desc:      "Magnitude experiment",
 		Block:     "PosAcqMagnitude",
 		FixedProb: false,
@@ -312,7 +258,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosSumAcq": {
-		Name:      "PosSumAcq",
 		Desc:      "Conditioned Inhibition - A+, C+",
 		Block:     "PosSumAcq",
 		FixedProb: false,
@@ -321,7 +266,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosSumCondInhib": {
-		Name:      "PosSumCondInhib",
 		Desc:      "Conditioned Inhibition - AX-, A+",
 		Block:     "PosCondInhib_BY",
 		FixedProb: false,
@@ -330,7 +274,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosSum_test": {
-		Name:      "PosSum_test",
 		Desc:      "Conditioned Inhibition Summation Test",
 		Block:     "PosSumCondInhib_test",
 		FixedProb: false,
@@ -339,7 +282,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegSumAcq": {
-		Name:      "NegSumAcq",
 		Desc:      "Conditioned Inhibition - D-, E-",
 		Block:     "NegSumAcq",
 		FixedProb: false,
@@ -348,7 +290,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegSumCondInhib": {
-		Name:      "NegSumCondInhib",
 		Desc:      "Conditioned Inhibition - DU, D-",
 		Block:     "NegCondInhib_FV",
 		FixedProb: false,
@@ -357,7 +298,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegSum_test": {
-		Name:      "NegSum_test",
 		Desc:      "Conditioned Inhibition Summation Test",
 		Block:     "NegSumCondInhib_test",
 		FixedProb: false,
@@ -366,7 +306,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"Unblocking_train": {
-		Name:      "Unblocking_train",
 		Desc:      "A+++,B+++,C+",
 		Block:     "Unblocking_train",
 		FixedProb: false,
@@ -375,7 +314,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"UnblockingValue": {
-		Name:      "UnblockingValue",
 		Desc:      "AX+++,CZ+++",
 		Block:     "UnblockingValue",
 		FixedProb: false,
@@ -384,7 +322,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"UnblockingValue_test": {
-		Name:      "UnblockingValue_test",
 		Desc:      "A,X,C,Z",
 		Block:     "UnblockingValue_test",
 		FixedProb: false,
@@ -393,7 +330,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"Unblocking_trainUS": {
-		Name:      "Unblocking_trainUS",
 		Desc:      "A+++ (water) ,B+++ (food)",
 		Block:     "Unblocking_trainUS",
 		FixedProb: false,
@@ -402,7 +338,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"UnblockingIdentity": {
-		Name:      "UnblockingIdentity",
 		Desc:      "AX+++(water),BY+++(water)",
 		Block:     "UnblockingIdentity",
 		FixedProb: false,
@@ -411,7 +346,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"UnblockingIdentity_test": {
-		Name:      "UnblockingIdentity_test",
 		Desc:      "A,X,B,Y",
 		Block:     "UnblockingIdentity_test",
 		FixedProb: false,
@@ -420,7 +354,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosAcqMagChange": {
-		Name:      "PosAcqMagChange",
 		Desc:      "Magnitude experiment",
 		Block:     "PosAcqMagnitudeChange",
 		FixedProb: false,
@@ -429,7 +362,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegAcqMag": {
-		Name:      "NegAcqMag",
 		Desc:      "Magnitude experiment",
 		Block:     "NegAcqMagnitude",
 		FixedProb: false,
@@ -438,7 +370,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"NegAcqMagChange": {
-		Name:      "NegAcqMagChange",
 		Desc:      "Magnitude experiment",
 		Block:     "NegAcqMagnitudeChange",
 		FixedProb: false,
@@ -447,7 +378,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"Overexpect_train": {
-		Name:      "Overexpect_train",
 		Desc:      "Overexpectation training (A+, B+, C+, X+, Y-)",
 		Block:     "Overexpectation_train",
 		FixedProb: false,
@@ -456,7 +386,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"OverexpectCompound": {
-		Name:      "OverexpectCompound",
 		Desc:      "Overexpectation compound training (AX+, BY-, CX+, X+, Y-)",
 		Block:     "OverexpectationCompound",
 		FixedProb: false,
@@ -465,7 +394,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"Overexpect_test": {
-		Name:      "Overexpect_test",
 		Desc:      "Overexpectation test ( A-, B-, C-, X-)",
 		Block:     "Overexpectation_test",
 		FixedProb: false,
@@ -474,7 +402,6 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosNeg": {
-		Name:      "PosNeg",
 		Desc:      "Positive negative test - W equally reinforced with reward + punishment",
 		Block:     "PosNeg",
 		FixedProb: false,
@@ -483,12 +410,51 @@ var AllConditions = map[string]*Condition{
 		Permute:   false,
 	},
 	"PosOrNegAcq": {
-		Name:      "PosOrNegAcq",
 		Desc:      "Positive negative acquisition - with reward or punishment on interleaved trials according to user-set probabilities",
 		Block:     "PosOrNegAcq",
 		FixedProb: false,
 		NBlocks:   150,
 		NTrials:   6,
 		Permute:   true,
+	},
+	"NegCondInh": {
+		Desc:      "condition inhibition w/ negatively-valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
+		Block:     "NegCondInhib",
+		FixedProb: false,
+		NBlocks:   75,
+		NTrials:   10,
+		Permute:   true,
+	},
+	"NegCondInh_test": {
+		Desc:      "condition inhibition w/ negatively-valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
+		Block:     "NegCondInhib_test",
+		FixedProb: false,
+		NBlocks:   5,
+		NTrials:   6,
+		Permute:   false,
+	},
+	"PosCondInhib": {
+		Desc:      "conditioned inhibition training: AX_NR_Pos, A_R_Pos interleaved",
+		Block:     "PosCondInhib",
+		FixedProb: false,
+		NBlocks:   10,
+		NTrials:   8,
+		Permute:   true,
+	},
+	"PosSecondOrderCond": {
+		Desc:      "second order conditioning training: AB_NR_Pos, A_R_Pos interleaved; A = 1st order, F = 2nd order CS",
+		Block:     "PosSecondOrderCond",
+		FixedProb: false,
+		NBlocks:   10,
+		NTrials:   20,
+		Permute:   true,
+	},
+	"PosCondInhib_test": {
+		Desc:      "Testing session: A_NR_Pos, AX_NR_Pos, and X_NR_Pos cases",
+		Block:     "PosCondInhib_test",
+		FixedProb: false,
+		NBlocks:   5,
+		NTrials:   6,
+		Permute:   false,
 	},
 }

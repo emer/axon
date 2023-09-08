@@ -56,8 +56,8 @@ type RunConfig struct {
 	// [def: false] use the GPU for computation -- only for testing in this model -- not faster
 	GPU bool `def:"false" desc:"use the GPU for computation -- only for testing in this model -- not faster"`
 
-	// [def: 2] number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `def:"2" desc:"number of parallel threads for CPU computation -- 0 = use default"`
+	// [def: 0] number of parallel threads for CPU computation -- 0 = use default
+	NThreads int `def:"0" desc:"number of parallel threads for CPU computation -- 0 = use default"`
 
 	// [def: 0] starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
 	Run int `def:"0" desc:"starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"`

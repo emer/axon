@@ -131,6 +131,7 @@ func (ev *CondEnv) InitCond() {
 		ev.RunName = "PosAcq_A100B50"
 	}
 	run := AllRuns[ev.RunName]
+	run.Name = ev.RunName
 	cnm, cond := run.Cond(ev.Condition.Cur)
 	ev.CondDesc = cond.Desc
 	ev.Block.Init()
