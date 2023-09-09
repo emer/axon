@@ -94,7 +94,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01",  // 0.01 > 0.05 def
 				"Layer.VSPatch.Gain":               "3",     // 3 smoother than higher
 				"Layer.VSPatch.ThrInit":            "0.15",  // could be a bit lower
-				"Layer.VSPatch.ThrLRate":           "0.002", // 0.002 good
+				"Layer.VSPatch.ThrLRate":           "0.001", // 0.001 or 0.002 good -- needed to preventing NR activity
 				"Layer.VSPatch.ThrNonRew":          "10",    // 10 to prevent creeping up NR
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",   // 0.2 gets too diffuse
 			}},
@@ -150,7 +150,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate": "1", // this is KEY for robustness when failing initially!
+				"Prjn.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!
+				"Prjn.Learn.Trace.LearnThr": "0.0",
 			}},
 		{Sel: ".ToSC", Desc: "",
 			Params: params.Params{

@@ -111,6 +111,7 @@ func (cd *Block) Append(trl *Trial) {
 func GenerateTrials(condNm string) []*Trial {
 	var trls []*Trial
 	cond := AllConditions[condNm]
+	cond.Name = condNm
 	block := AllBlocks[cond.Block]
 	for _, trl := range block {
 		if trl.Context == "" {

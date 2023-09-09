@@ -585,8 +585,8 @@ func (ss *Sim) RunNoGUI() {
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 	netName := ss.Net.Name()
 
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Test, etime.Epoch, "epc", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Test, etime.Epoch, "epc", netName, runName)
 
 	netdata := ss.Config.Log.NetData
 	if netdata {

@@ -466,6 +466,7 @@ func (ss *Sim) NewRun() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetString("Debug", "") // special debug notes per trial
+	ss.Stats.SetString("Cond", "")
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -478,6 +479,7 @@ func (ss *Sim) StatCounters() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
+	ss.Stats.SetString("Cond", ev.CondName)
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
@@ -534,6 +536,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial, etime.Cycle)
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "Cond")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialType")
@@ -628,7 +631,8 @@ func (ss *Sim) ConfigLogItems() []string {
 						etime.Scope(etime.AllModes, etime.Block): func(ctx *elog.Context) {
 							ctx.SetFloat64(ctx.Stats.FloatDi(statName, ci))
 						}, etime.Scope(etime.AllModes, etime.Condition): func(ctx *elog.Context) {
-							ctx.SetAgg(ctx.Mode, etime.Block, agg.AggMean)
+							ix := ctx.LastNRows(ctx.Mode, etime.Block, 5) // cached
+							ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 						}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 							ctx.SetAgg(ctx.Mode, etime.Condition, agg.AggMean)
 						}}})
@@ -849,9 +853,9 @@ func (ss *Sim) RunNoGUI() {
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 	netName := ss.Net.Name()
 
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Block, etime.Train, etime.Block, "blk", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Cond, etime.Train, etime.Condition, "cnd", netName, runName)
-	econfig.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Block, etime.Train, etime.Block, "blk", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Cond, etime.Train, etime.Condition, "cnd", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Test, etime.Trial, "trl", netName, runName)
 
 	netdata := ss.Config.Log.NetData
 	if netdata {
