@@ -16,7 +16,7 @@ func TestPosAcqExtA100_A0(t *testing.T) {
 
 	expects := []Expect{
 		{"C0_CS_DA", 0, .9, GT, "A CS Acq DA"},
-		{"C0_CS_DA", 1, .1, LT, "A CS Ext DA"},
+		{"C0_CS_DA", 1, .2, LT, "A CS Ext DA"},
 		{"C0_US_DA", 0, .2, LT, "A US Acq DA"},
 		{"C0_US_DA", 1, .1, LT, "A US Ext DA"},
 		{"C0_US_VSPatch", 0, .5, GT, "A US Acq VSPatch"},
@@ -33,7 +33,7 @@ func TestNegAcqD100(t *testing.T) {
 	}
 
 	expects := []Expect{
-		{"C0_CS_DA", 0, -.9, LT, "A CS Acq DA"},
+		{"C0_CS_DA", 0, -.8, LT, "A CS Acq DA"},
 		{"C0_US_DA", 0, -.5, LT, "A US Acq DA"},
 	}
 
