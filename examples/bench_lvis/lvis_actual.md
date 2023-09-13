@@ -2,6 +2,67 @@
 
 Results from: `http://github.com/ccnlab/lvis/sims/lvis_cu3d100_te16deg_axon`
 
+# 1.8.18 Config update, bench run with 64 trials per 1 epoch
+
+Command (use -no-gpu to turn off gpu):
+
+```bash
+./lvis_cu3d100_te16deg_axon -no-gui -bench -gpu -ndata=8
+```
+
+or to run the whole slate of GPU and CPU for various ndata levels:
+
+```
+go test -v -bench Benchmark -run not
+```
+
+
+## 1.8.18 Macbook Pro M1
+
+Results are total secs and per-trl-msec.  CPU using 10 threads (GOMAXPROCS default)
+
+* GPU, NData 1:    109    1708
+* GPU, NData 2:     80    1245
+* GPU, NData 4:     58     906
+* GPU, NData 8:     48     753 <- sweet spot -- 6.5gb ram
+* GPU, NData 16:    58     906
+
+* CPU, NData 1:    129    2015
+* CPU, NData 4:    124    1934
+* CPU, NData 8:    122    1906
+* CPU, NData 16:   130    2031
+
+## 1.8.18: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU 40GB
+
+32 threads default
+
+* GPU, NData 1:    110    1718
+* GPU, NData 4:     83    1303
+* GPU, NData 8:     72    1137
+* GPU, NData 16:    67    1053  <- just slightly faster
+
+* CPU, NData 1:    155    2415
+* CPU, NData 2:    134    2096
+* CPU, NData 4:    127    1980
+* CPU, NData 8:    113    1764
+* CPU, NData 16:   105    1646
+
+### MPI
+
+Note: runs 512 trials per epoch to get better data. Command:
+
+`mpirun -np 4 ./lvis_cu3d100_te16deg_axon -no-gui -bench -mpi -gpu -ndata=8`
+
+* MPI 4, GPU, NData 8:      197   384    vs 1137/4 = 284 for linear 4x; vs 450 for long run
+* MPI 4, GPU, NData 16:     160   313    vs 1053/4 = 263 for linear 4x; vs 350 for long run
+
+Replication run of full sim running on cluster is also now significantly faster -- the MPI seems to "warm up" over time and does better than the benchmark.
+ 
+* ndata=16,mpi=4 = 64x dp = 285 pertrlmsec
+
+
+# 1.8.0 Memory reorganization
+
 Run: `./lvis_cu3d100_te16deg_axon -bench -epochs 1 -tag bench` -- runs 10 epochs.
 
 Default network size:
@@ -10,8 +71,6 @@ Default network size:
 Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 ```
 
-# 1.8.0 Memory reorganization
-
 ## 1.8.0: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
 ### GPU
@@ -19,7 +78,10 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 * ndata=2, mpi=4 = 8x   dp = 880
 * ndata=4, mpi=4 = 16x  dp = 570
 * ndata=8, mpi=4 = 32x  dp = 450 -- significant speedup
-* ndata=16,mpi=4 = 64x  dp = 350 -- even better..
+* ndata=16,mpi=4 = 64x  dp = 350 -- 1403 ran all the way -- same perf as baseline
+
+* ndata=20,mpi=4 = 96x  dp = 315 -- sig slower learning than ndata=16, mpi=4
+* ndata=24,mpi=4 = 96x  dp = 270 -- doesn't learn at all
 * ndata=32,mpi=4 = 128x dp = 250 -- super fast, but doesn't learn - too much parallel!
 
 ### CPU
@@ -37,17 +99,18 @@ These are all PerTrlMSec for 512 trial epochs running on the cluster:
 * ndata=1, mpi=16 node=4, 8th   = 550  -- no further gains from more threads
 
 * ndata=2, mpi=8, node=1-8, 8th = 1000 -- splitting across nodes makes no diff
-
+* ndata=4, mpi=4, node=1, 8th   = 1950 -- too many threads per node = bad
 
 32x data parallel:
 
 * ndata=2, mpi=16, node=1, 4th  = 540  -- 
 * ndata=2, mpi=16, node=4, 8th  = 500  -- 
+* ndata=8,  mpi=4, node=1, 8th  = 1980 -- slow!!  too many threads per node
 
 64x data parallel:
 
-* ndata=4, mpi=16, node=2, 8th = 64x = 500
-
+* ndata=4,  mpi=16, node=2, 8th = 64x = 500
+* ndata=16, mpi=4, node=1, 32th = 64x = 2000 -- terrible!  all threads on 1 node = bad
 
 
 # 1.7.24 Sender-based Synapses

@@ -23,8 +23,6 @@ $ make
 
 otherwise it builds with a dummy version of mpi that doesn't actually do anything (convenient for enabling both MPI and non-MPI support in one codebase).  Always ensure that your code does something reasonable when mpi.WorldSize() == 1 -- that is what the dummy code returns.
 
-Also you should check the `ss.Args.Bool("mpi")`, set by the `-mpi` command line arg, to do different things depending -- e.g., don't try to aggregate DWts if not using MPI, as it will waste a lot of time and accomplish nothing.
-
 To run, do something like this:
 
 ```bash
@@ -48,17 +46,6 @@ Here are the main diffs that transform the ra25.go example into this mpi version
 
 * Most of the changes are the bottom of the file.
 
-## ConfigArgs
-
-For args that have major early impact on configuring things, like mpi, process them right away in the `ConfigArgs` method, which is called in `Sim.New()` before any other configuration takes place.  These lines do the mpi init:
-
-```go
-	if ss.Args.Bool("mpi") {
-		ss.MPIInit()
-	}
-}
-```
-
 ## Sim struct
 
 There are some other things added but they are just more of what is already there -- these are the uniquely MPI parts, at end of Sim struct type:
@@ -66,7 +53,6 @@ There are some other things added but they are just more of what is already ther
 ```go
 	Comm    *mpi.Comm `view:"-" desc:"mpi communicator"`
 	AllDWts []float32 `view:"-" desc:"buffer of all dwt weight changes -- for mpi sharing"`
-	SumDWts []float32 `view:"-" desc:"buffer of MPI summed dwt weight changes"`
 ```
 
 ## Allocating Patterns Across Nodes
@@ -75,7 +61,7 @@ In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to diffe
 
 ```go
 	ss.TrainEnv.Table = etable.NewIdxView(ss.Pats)
-	if ss.UseMPI {
+	if ss.Config.Run.MPI {
 		st, ed, _ := empi.AllocN(ss.Pats.Rows)
 		ss.TrainEnv.Table.Idxs = ss.TrainEnv.Table.Idxs[st:ed]
 	}
@@ -104,7 +90,7 @@ In most cases, the trial log is reset at the start of the new epoch, so the aggr
 Here's the relevant code in the `Log()` method:
 
 ```go
-	if ss.Args.Bool("mpi") && time == etime.Epoch { // gather data for trial level at epoch
+	if ss.Config.Run.MPI {
 		ss.Logs.MPIGatherTableRows(mode, etime.Trial, ss.Comm)
 	}
 ```
@@ -112,16 +98,12 @@ Here's the relevant code in the `Log()` method:
 To record the trial log data for each MPI processor, you need to set log files for each (by default log files are only saved for the 0 rank):
 
 ```go
-	if ss.Args.Bool("triallog") && mpi.WorldRank() > 0 {
-		fnm := ecmd.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), ss.Net.Name(), ss.Params.RunName(ss.Args.Int("run")))
+	if ss.Config.Log.Trial {
+		fnm := elog.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), ss.Net.Name(), ss.Params.RunName(ss.Config.Run.Run))
 		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
 	}
 ```
 
-
-## CmdArgs
-
-At the end, CmdArgs has quite a bit of MPI-specific logic in it, which we don't reproduce here -- see `ra25.go` code and look for mpi.
 
 We use `mpi.Printf` instead of `fmt.Printf` to have it only print on the root node, so you don't get a bunch of duplicated messages.
 
@@ -138,6 +120,7 @@ func (ss *Sim) MPIInit() {
 	ss.Comm, err = mpi.NewComm(nil) // use all procs
 	if err != nil {
 		log.Println(err)
+		ss.Config.Run.MPI = false
 	} else {
 		mpi.Printf("MPI running on %d procs\n", mpi.WorldSize())
 	}
@@ -145,15 +128,9 @@ func (ss *Sim) MPIInit() {
 
 // MPIFinalize finalizes MPI
 func (ss *Sim) MPIFinalize() {
-	if ss.Args.Bool("mpi") {
+	if ss.Config.Run.MPI {
 		mpi.Finalize()
 	}
-}
-
-// CollectDWts collects the weight changes from all synapses into AllDWts
-// includes all other long adapting factors too: DTrgAvg, ActAvg, etc
-func (ss *Sim) CollectDWts(net *axon.Network) {
-	net.CollectDWts(&ss.AllDWts)
 }
 
 // MPIWtFmDWt updates weights from weight changes, using MPI to integrate
@@ -161,14 +138,10 @@ func (ss *Sim) CollectDWts(net *axon.Network) {
 // sequences of inputs.
 func (ss *Sim) MPIWtFmDWt() {
 	ctx := &ss.Context
-	if ss.Args.Bool("mpi") {
-		ss.CollectDWts(ss.Net)
-		ndw := len(ss.AllDWts)
-		if len(ss.SumDWts) != ndw {
-			ss.SumDWts = make([]float32, ndw)
-		}
-		ss.Comm.AllReduceF32(mpi.OpSum, ss.SumDWts, ss.AllDWts)
-		ss.Net.SetDWts(ctx, ss.SumDWts, mpi.WorldSize())
+	if ss.Config.Run.MPI {
+		ss.Net.CollectDWts(ctx, &ss.AllDWts)
+		ss.Comm.AllReduceF32(mpi.OpSum, ss.AllDWts, nil) // in place
+		ss.Net.SetDWts(ctx, ss.AllDWts, mpi.WorldSize())
 	}
 	ss.Net.WtFmDWt(ctx)
 }

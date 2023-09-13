@@ -12,7 +12,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -213,9 +212,6 @@ type Sim struct {
 
 	// [view: -] buffer of all dwt weight changes -- for mpi sharing
 	AllDWts []float32 `view:"-" desc:"buffer of all dwt weight changes -- for mpi sharing"`
-
-	// [view: -] buffer of MPI summed dwt weight changes
-	SumDWts []float32 `view:"-" desc:"buffer of MPI summed dwt weight changes"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -395,7 +391,11 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Replace("UpdateWeights", func() {
 		ss.Net.DWt(&ss.Context)
-		ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
+		if ss.ViewUpdt.IsViewingSynapse() {
+			ss.Net.GPU.SyncSynapsesFmGPU()
+			ss.Net.GPU.SyncSynCaFmGPU() // note: only time we call this
+			ss.ViewUpdt.RecordSyns()    // note: critical to update weights here so DWt is visible
+		}
 		ss.MPIWtFmDWt()
 	})
 
@@ -788,11 +788,11 @@ func (ss *Sim) RunNoGUI() {
 	}
 	// Special cases for mpi per-node saving of trial data
 	if ss.Config.Log.Trial {
-		fnm := ecmd.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), netName, runName)
+		fnm := elog.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), netName, runName)
 		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
 	}
 	if ss.Config.Log.TestTrial {
-		fnm := ecmd.LogFileName(fmt.Sprintf("tst_trl_%d", mpi.WorldRank()), netName, runName)
+		fnm := elog.LogFileName(fmt.Sprintf("tst_trl_%d", mpi.WorldRank()), netName, runName)
 		ss.Logs.SetLogFile(etime.Test, etime.Trial, fnm)
 	}
 
@@ -834,6 +834,7 @@ func (ss *Sim) MPIInit() {
 	ss.Comm, err = mpi.NewComm(nil) // use all procs
 	if err != nil {
 		log.Println(err)
+		ss.Config.Run.MPI = false
 	} else {
 		mpi.Printf("MPI running on %d procs\n", mpi.WorldSize())
 	}
@@ -846,25 +847,15 @@ func (ss *Sim) MPIFinalize() {
 	}
 }
 
-// CollectDWts collects the weight changes from all synapses into AllDWts
-// includes all other long adapting factors too: DTrgAvg, ActAvg, etc
-func (ss *Sim) CollectDWts(net *axon.Network) {
-	net.CollectDWts(&ss.Context, &ss.AllDWts)
-}
-
 // MPIWtFmDWt updates weights from weight changes, using MPI to integrate
 // DWt changes across parallel nodes, each of which are learning on different
 // sequences of inputs.
 func (ss *Sim) MPIWtFmDWt() {
 	ctx := &ss.Context
 	if ss.Config.Run.MPI {
-		ss.CollectDWts(ss.Net)
-		ndw := len(ss.AllDWts)
-		if len(ss.SumDWts) != ndw {
-			ss.SumDWts = make([]float32, ndw)
-		}
-		ss.Comm.AllReduceF32(mpi.OpSum, ss.SumDWts, ss.AllDWts)
-		ss.Net.SetDWts(ctx, ss.SumDWts, mpi.WorldSize())
+		ss.Net.CollectDWts(ctx, &ss.AllDWts)
+		ss.Comm.AllReduceF32(mpi.OpSum, ss.AllDWts, nil) // in place
+		ss.Net.SetDWts(ctx, ss.AllDWts, mpi.WorldSize())
 	}
 	ss.Net.WtFmDWt(ctx)
 }

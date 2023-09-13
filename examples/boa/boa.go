@@ -737,18 +737,22 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("DA", nan)
 	ss.Stats.SetFloat("RewPred", nan)
 	ss.Stats.SetFloat("Rew", nan)
+	ss.Stats.SetFloat("HasRew", nan)
 	ss.Stats.SetFloat("DA_NR", nan)
 	ss.Stats.SetFloat("RewPred_NR", nan)
+	ss.Stats.SetFloat("DA_GiveUp", nan)
 	if pv.HasPosUS(ctx, diu) {
 		ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
 		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
+		ss.Stats.SetFloat("HasRew", 1)
 	} else {
 		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 || axon.GlbV(ctx, diu, axon.GvNegUSOutcome) > 0 {
 			ss.Stats.SetFloat32("DA_GiveUp", axon.GlbV(ctx, diu, axon.GvDA))
 		} else {
 			ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
 			ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
+			ss.Stats.SetFloat("HasRew", 0)
 		}
 	}
 
