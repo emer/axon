@@ -9,17 +9,26 @@ import "github.com/emer/etable/minmax"
 // Params are misc environment parameters
 type Params struct {
 
+	// [def: {'Min':0.5, 'Max':0.5}] effort for turning
+	TurnEffort minmax.F32 `def:"{'Min':0.5, 'Max':0.5}" desc:"effort for turning"`
+
+	// [def: {'Min':0.5, 'Max':0.5}] effort for consuming US
+	ConsumeEffort minmax.F32 `def:"{'Min':0.5, 'Max':0.5}" desc:"effort for consuming US"`
+
 	// [def: true] always turn left -- zoolander style -- reduces degrees of freedom in evaluating behavior
 	AlwaysLeft bool `def:"true" desc:"always turn left -- zoolander style -- reduces degrees of freedom in evaluating behavior"`
-
-	// [def: 4] number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets
-	NYReps int `def:"4" desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
 
 	// [def: true] after running down an Arm, a new random starting location is selected (otherwise same arm as last run)
 	RandomStart bool `def:"true" desc:"after running down an Arm, a new random starting location is selected (otherwise same arm as last run)"`
 
-	// [def: {'Min':0, 'Max::0'}] [view: inline] strength of inactive inputs (e.g., Drives in Approach paradigm)
-	Inactive minmax.F32 `def:"{'Min':0, 'Max::0'}" view:"inline" desc:"strength of inactive inputs (e.g., Drives in Approach paradigm)"`
+	// [def: true] if true, allow movement between arms just by going Left or Right -- otherwise once past the start, no switching is allowed
+	OpenArms bool `def:"true" desc:"if true, allow movement between arms just by going Left or Right -- otherwise once past the start, no switching is allowed"`
+
+	// [def: {'Min':0, 'Max':0}] [view: inline] strength of inactive inputs (e.g., Drives in Approach paradigm)
+	Inactive minmax.F32 `def:"{'Min':0, 'Max':0}" view:"inline" desc:"strength of inactive inputs (e.g., Drives in Approach paradigm)"`
+
+	// [def: 4] number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets
+	NYReps int `def:"4" desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
 }
 
 // Config has environment configuration

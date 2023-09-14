@@ -26,7 +26,7 @@ var KiT_Paradigms = kit.Enums.AddEnum(ParadigmsN, kit.NotBitFlag, nil)
 // Approach
 
 // ConfigApproach does initial config for Approach paradigm
-func (ev *Maze) ConfigApproach() {
+func (ev *Env) ConfigApproach() {
 	if ev.Config.NArms < ev.Config.NUSs {
 		ev.Config.NArms = ev.Config.NUSs
 	}
@@ -36,17 +36,19 @@ func (ev *Maze) ConfigApproach() {
 }
 
 // StartApproach does new start state setting for Approach
-func (ev *Maze) StartApproach() {
+// Selects a new TrgDrive at random, sets that to 1,
+// others to inactive levels
+func (ev *Env) StartApproach() {
 	ev.TrgDrive = ev.Rand.Intn(ev.NDrives, -1)
-	var armOpts []int
-	for i, arm := range ev.Arms {
-		if arm.US == ev.TrgDrive {
-			armOpts = append(armOpts, i)
+	for i := range ev.Drives {
+		if i == ev.TrgDrive {
+			ev.Drives[i] = 1
+		} else {
+			ev.Drives[i] = ev.InactiveVal()
 		}
 	}
-	// todo: select arm from opts, with error if none
 }
 
-func (ev *Maze) StepApproach() {
+func (ev *Env) StepApproach() {
 
 }

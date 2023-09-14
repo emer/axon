@@ -13,8 +13,8 @@ import "github.com/emer/etable/minmax"
 // actually delivering reward or punishment.
 type Arm struct {
 
-	// distance from CS start to US end for this arm
-	Dist float32 `desc:"distance from CS start to US end for this arm"`
+	// length of arm: distance from CS start to US end for this arm
+	Length int `desc:"length of arm: distance from CS start to US end for this arm"`
 
 	// range of different effort levels per step (uniformly randomly sampled per step) for going down this arm
 	Effort minmax.F32 `desc:"range of different effort levels per step (uniformly randomly sampled per step) for going down this arm"`
@@ -27,7 +27,7 @@ type Arm struct {
 }
 
 func (arm *Arm) Defaults() {
-	arm.Dist = 4
+	arm.Length = 4
 	arm.Effort.Set(1, 1)
 	arm.Empty()
 }
