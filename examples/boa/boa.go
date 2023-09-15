@@ -170,8 +170,8 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, trn.NDrives, 1)
 	pv.Defaults()
-	pv.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
-	pv.USs.PVnegGain = 1 // global scaling of PV neg level
+	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
+	pv.USs.PVnegGain = .1 // global scaling of PV neg level -- was 1
 
 	pv.USs.USnegGains[0] = 0.1 // time: if USneg pool is saturating, reduce
 	pv.USs.USnegGains[1] = 0.1 // effort: if USneg pool is saturating, reduce
@@ -342,7 +342,8 @@ func (ss *Sim) ApplyParams() {
 	bla := net.AxonLayerByName("BLAPosAcqD1")
 	pji, _ := bla.SendNameTry("BLANovelCS")
 	pj := pji.(*axon.Prjn)
-	pj.Params.PrjnScale.Abs = 2.0 + (float32(nCSTot) / 8.0)
+	// pj.Params.PrjnScale.Abs = 2.0 + (float32(nCSTot) / 8.0)
+	pj.Params.PrjnScale.Abs = float32(math.Min(float64(2.3+(float32(nCSTot)/10.0)), 3.0))
 
 	// then apply config-set params.
 	if ss.Config.Params.Network != nil {
