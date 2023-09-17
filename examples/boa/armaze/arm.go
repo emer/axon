@@ -19,11 +19,27 @@ type Arm struct {
 	// range of different effort levels per step (uniformly randomly sampled per step) for going down this arm
 	Effort minmax.F32 `desc:"range of different effort levels per step (uniformly randomly sampled per step) for going down this arm"`
 
+	// todo: later
+	// indexes of US[s] present at the end of this arm -- nil if none
+	// USs []int `desc:"indexes of US[s] present at the end of this arm -- nil if none"`
+
 	// index of US present at the end of this arm -- -1 if none
 	US int `desc:"index of US present at the end of this arm -- -1 if none"`
 
 	// index of CS visible at the start of this arm, -1 if none
 	CS int `desc:"index of CS visible at the start of this arm, -1 if none"`
+
+	// current expected value = US.Prob * US.Mag * Drives[US] -- computed at start of new approach
+	ExValue float32 `inactive:"+" desc:"current expected value = US.Prob * US.Mag * Drives[US] -- computed at start of new approach"`
+
+	// current expected PVpos value = normalized ExValue -- computed at start of new approach
+	ExPVpos float32 `inactive:"+" desc:"current expected PVpos value = normalized ExValue -- computed at start of new approach"`
+
+	// current expected PVneg value = normalized time and effort costs
+	ExPVneg float32 `inactive:"+" desc:"current expected PVneg value = normalized time and effort costs"`
+
+	// current expected utility = effort discounted version of ExPVpos -- computed at start of new approach
+	ExUtil float32 `inactive:"+" desc:"current expected utility = effort discounted version of ExPVpos -- computed at start of new approach"`
 }
 
 func (arm *Arm) Defaults() {
@@ -36,6 +52,8 @@ func (arm *Arm) Defaults() {
 func (arm *Arm) Empty() {
 	arm.US = -1
 	arm.CS = -1
+	arm.ExValue = 0
+	arm.ExUtil = 0
 }
 
 // USParams has parameters for different USs

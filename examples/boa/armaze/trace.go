@@ -7,7 +7,6 @@ package armaze
 import (
 	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
 )
 
 // TraceStates is a list of mutually exclusive states
@@ -55,8 +54,11 @@ type TraceRec struct {
 	// trial counter
 	Trial int `desc:"trial counter"`
 
-	// position
-	Pos mat32.Vec2 `desc:"position"`
+	// current arm
+	Arm int `desc:"current arm"`
+
+	// position in arm
+	Pos int `desc:"position in arm"`
 
 	// behavioral / internal state summary
 	State TraceStates `desc:"behavioral / internal state summary"`
@@ -70,12 +72,12 @@ type StateTrace []*TraceRec
 
 // AddRec adds a record with data from given sources
 func (tr *StateTrace) AddRec(ctx *axon.Context, di uint32, ev *Env, net *axon.Network, state TraceStates) *TraceRec {
-	rec := &TraceRec{Pos: ev.PosF, State: state}
-	rec.Drives = make([]float32, ev.NDrives)
+	rec := &TraceRec{Arm: ev.Arm, Pos: ev.Pos, State: state}
+	rec.Drives = make([]float32, ev.Config.NDrives)
 	if ctx != nil {
 		rec.Time = ctx.Time
 		rec.Trial = int(ctx.TrialsTotal)
-		for i := 0; i < ev.NDrives; i++ {
+		for i := 0; i < ev.Config.NDrives; i++ {
 			rec.Drives[i] = axon.GlbUSposV(ctx, di, axon.GvDrives, uint32(1+i))
 		}
 	}

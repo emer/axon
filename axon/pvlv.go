@@ -365,8 +365,8 @@ func (lh *LHbParams) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, 
 			burst = rpe
 		}
 	} else { // not worth it: net negative but moderated (discounted) by strength of positive
-		rew = lh.DipGain * pvNeg * (1 - pvPos)
-		dip = rew
+		rew = -lh.DipGain * pvNeg * (1 - pvPos)
+		dip = -rew // magnitude
 	}
 	da = burst - dip
 	return
@@ -599,16 +599,14 @@ func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
 }
 
 // SetDrives is used when directly controlling drive levels externally.
-// It resets all drives to baseline (default 0)
-// and then sets given drive indexes (0 based) to given magnitude,
-// and first curiosity drive to given level.
-// Drive indexes are 0 based, but 0 is the curiosity drive,
-// so 1 is added automatically when setting drives from indexes.
-func (pp *PVLV) SetDrives(ctx *Context, di uint32, curiosity, magnitude float32, drives ...int) {
+// curiosity sets the strength for the curiosity drive
+// and drives are strengths of the remaining sim-specified drives, in order.
+// any drives not so specified are at the InitDrives baseline level.
+func (pp *PVLV) SetDrives(ctx *Context, di uint32, curiosity float32, drives ...float32) {
 	pp.InitDrives(ctx, di)
 	pp.SetDrive(ctx, di, 0, curiosity)
-	for _, i := range drives {
-		pp.SetDrive(ctx, di, uint32(1+i), magnitude)
+	for i, v := range drives {
+		pp.SetDrive(ctx, di, uint32(1+i), v)
 	}
 }
 

@@ -39,7 +39,7 @@ func (ev *Env) ConfigApproach() {
 // Selects a new TrgDrive at random, sets that to 1,
 // others to inactive levels
 func (ev *Env) StartApproach() {
-	ev.TrgDrive = ev.Rand.Intn(ev.NDrives, -1)
+	ev.TrgDrive = ev.Rand.Intn(ev.Config.NDrives, -1)
 	for i := range ev.Drives {
 		if i == ev.TrgDrive {
 			ev.Drives[i] = 1

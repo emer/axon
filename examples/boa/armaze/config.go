@@ -54,6 +54,9 @@ type Config struct {
 
 	// number of different CSs -- typically at least a unique CS per US -- relationship is determined in the US params
 	NCSs int `desc:"number of different CSs -- typically at least a unique CS per US -- relationship is determined in the US params"`
+
+	// [view: add-fields] misc params
+	Params Params `view:"add-fields" desc:"misc params"`
 }
 
 func (cfg *Config) Defaults() {
