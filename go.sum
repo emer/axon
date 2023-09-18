@@ -60,8 +60,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.8.1 h1:6Lcdwya6GjPUNsBct8Lg/yRPwMhABj269AAzdGSiR+0=
 github.com/dlclark/regexp2 v1.8.1/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent v1.4.29 h1:ZdM2NQOv2Y+l0gYYH4SDhDDBwKg2GZ0yxx8DaitxJ7s=
-github.com/emer/emergent v1.4.29/go.mod h1:ILxelktdMeqzAHj4wVf7jLc1j91hPuEK72XZCDPxPS8=
+github.com/emer/emergent v1.4.31-0.20230918190815-bbdd12cb842d h1:2op/awubuthLsxVID24jf6q0QoOC8VACfSiBtLBPdi8=
+github.com/emer/emergent v1.4.31-0.20230918190815-bbdd12cb842d/go.mod h1:ILxelktdMeqzAHj4wVf7jLc1j91hPuEK72XZCDPxPS8=
 github.com/emer/empi v1.0.22 h1:FPrM68LNQYydODqgs6ZddVEGRBOdFOrbUrLhIsn3eL8=
 github.com/emer/empi v1.0.22/go.mod h1:wr0eFV/S2/sAyowA7/8jGmK5AjiWW4saT5QMQuw87GY=
 github.com/emer/etable v1.1.24 h1:lxcZFalEERTQJpbAR0nNfyM4+K/ku2H+Nl6y4cmDHyE=

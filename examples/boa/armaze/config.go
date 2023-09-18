@@ -18,6 +18,12 @@ type Params struct {
 	// [def: true] always turn left -- zoolander style -- reduces degrees of freedom in evaluating behavior
 	AlwaysLeft bool `def:"true" desc:"always turn left -- zoolander style -- reduces degrees of freedom in evaluating behavior"`
 
+	// [def: false] permute the order of USs prior to applying them to arms -- having this off makes it easier to visually determine match between Drive and arm approach, and shouldn't make any difference to behavior (model doesn't know about this ordering).
+	PermuteUSs bool `def:"false" desc:"permute the order of USs prior to applying them to arms -- having this off makes it easier to visually determine match between Drive and arm approach, and shouldn't make any difference to behavior (model doesn't know about this ordering)."`
+
+	// [def: true] evenly distribute CSs among the USs.  Otherwise the configuration must explicitly assign probabilities within each US for each CS.
+	EvenCSs bool `def:"true" desc:"evenly distribute CSs among the USs.  Otherwise the configuration must explicitly assign probabilities within each US for each CS."`
+
 	// [def: true] after running down an Arm, a new random starting location is selected (otherwise same arm as last run)
 	RandomStart bool `def:"true" desc:"after running down an Arm, a new random starting location is selected (otherwise same arm as last run)"`
 

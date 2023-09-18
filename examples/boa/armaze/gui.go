@@ -156,8 +156,11 @@ type GUI struct {
 	// [view: -] emer group
 	Emery *eve.Group `view:"-" desc:"emer group"`
 
-	// [view: -] mats group
-	Mats *eve.Group `view:"-" desc:"mats group"`
+	// [view: -] arms group
+	Arms *eve.Group `view:"-" desc:"arms group"`
+
+	// [view: -] stims group
+	Stims *eve.Group `view:"-" desc:"stims group"`
 
 	// [view: -] Right eye of emery
 	EyeR eve.Body `view:"-" desc:"Right eye of emery"`
@@ -189,7 +192,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Window {
 		"TrGiveUp":      "black",
 		"TrBumping":     "red",
 	}
-	vw.MatColors = []string{"lightgrey", "black", "blue", "orange", "red", "violet", "navy", "brown", "pink", "purple"}
+	vw.MatColors = []string{"blue", "orange", "red", "violet", "navy", "brown", "pink", "purple", "olive", "chartreuse", "cyan", "magenta", "salmon", "goldenrod", "SykBlue"}
 
 	width := 1600
 	height := 1200
@@ -412,11 +415,8 @@ func (vw *GUI) ConfigWorld() {
 	vw.Geom.Config(ev.Config.NArms, ev.MaxLength)
 
 	vw.AddFloor(vw.World, "floor")
-	for i, arm := range ev.Arms {
-		anm := fmt.Sprintf("arm_%d\n", i)
-		vw.AddArm(vw.World, anm, i, arm)
-	}
-	// vw.Mats = vw.ConfigMats(vw.World, "mats", .9, .1)
+	vw.Arms = vw.ConfigArms(vw.World)
+	vw.Stims = vw.ConfigStims(vw.World, "stims", .9, .1)
 
 	vw.Emery = vw.ConfigEmery(vw.World, 1)
 	vw.EyeR = vw.Emery.ChildByName("head", 1).ChildByName("eye-r", 2).(eve.Body)
@@ -429,30 +429,80 @@ func (vw *GUI) ConfigWorld() {
 // AddFloor adds a floor
 func (vw *GUI) AddFloor(par *eve.Group, name string) *eve.Group {
 	ge := &vw.Geom
-	dp := ge.Depth + 2*ge.LengthScale
+	dp := ge.Depth + 3*ge.LengthScale
 	rm := eve.AddNewGroup(par, name)
 	floor := eve.AddNewBox(rm, "floor", mat32.Vec3{0, -ge.Thick / 2, -ge.Depth/2 - ge.LengthScale}, mat32.Vec3{ge.Width, ge.Thick, dp})
 	floor.Color = "grey"
 	return rm
 }
 
-// AddArm adds an arm
-func (vw *GUI) AddArm(par *eve.Group, name string, idx int, arm *Arm) *eve.Group {
+// ConfigArms adds all the arms
+func (vw *GUI) ConfigArms(par *eve.Group) *eve.Group {
+	ev := vw.Env
+	rm := eve.AddNewGroup(par, "arms")
 	ge := &vw.Geom
 	exln := ge.LengthScale
-	ln := ge.LengthScale * float32(arm.Length)
 	halfarm := .5 * ge.ArmWidth
-	halflen := .5*ln + exln
 	halfht := .5 * ge.Height
-	x, _ := ge.Pos(idx, 0)
-	rm := eve.AddNewGroup(par, name)
-	bwall := eve.AddNewBox(rm, "back-wall", mat32.Vec3{x, halfht, -ln - exln}, mat32.Vec3{ge.ArmWidth, ge.Height, ge.Thick})
-	bwall.Color = "blue"
-	lwall := eve.AddNewBox(rm, "left-wall", mat32.Vec3{x - halfarm, halfht, -halflen}, mat32.Vec3{ge.Thick, ge.Height, ln})
-	lwall.Color = "red"
-	rwall := eve.AddNewBox(rm, "right-wall", mat32.Vec3{x + halfarm, halfht, -halflen}, mat32.Vec3{ge.Thick, ge.Height, ln})
-	rwall.Color = "green"
+	for i, arm := range ev.Arms {
+		anm := fmt.Sprintf("arm_%d\n", i)
+		agp := eve.AddNewGroup(rm, anm)
+		x, _ := ge.Pos(i, 0)
+		ln := ge.LengthScale * float32(arm.Length)
+		halflen := .5*ln + exln
+		// bwall := eve.AddNewBox(agp, "back-wall", mat32.Vec3{x, halfht, -ln - exln}, mat32.Vec3{ge.ArmWidth, ge.Height, ge.Thick})
+		// bwall.Color = "blue"
+		lwall := eve.AddNewBox(agp, "left-wall", mat32.Vec3{x - halfarm, halfht, -halflen}, mat32.Vec3{ge.Thick, ge.Height, ln})
+		lwall.Color = "black" // "red"
+		rwall := eve.AddNewBox(agp, "right-wall", mat32.Vec3{x + halfarm, halfht, -halflen}, mat32.Vec3{ge.Thick, ge.Height, ln})
+		rwall.Color = "black" // "green"
+	}
 	return rm
+}
+
+// ConfigStims constructs stimuli: CSs, USs
+func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *eve.Group {
+	ev := vw.Env
+	ge := &vw.Geom
+	stms := eve.AddNewGroup(par, name)
+	exln := ge.LengthScale
+	// halfarm := .5 * ge.ArmWidth
+	usHt := ge.Height
+	usDp := 0.2 * ge.LengthScale
+	csHt := ge.LengthScale
+
+	for i, arm := range ev.Arms {
+		x, _ := ge.Pos(i, 0)
+		ln := ge.LengthScale * float32(arm.Length)
+		usnm := fmt.Sprintf("us_%d\n", i)
+		csnm := fmt.Sprintf("cs_%d\n", i)
+		uso := eve.AddNewBox(stms, usnm, mat32.Vec3{float32(x), 0.5 * usHt, -ln - exln}, mat32.Vec3{ge.ArmWidth, usHt, usDp})
+		uso.Color = vw.MatColors[arm.US]
+		cso := eve.AddNewBox(stms, csnm, mat32.Vec3{float32(x), usHt + .5*csHt, -ln - 2*exln}, mat32.Vec3{ge.ArmWidth, csHt, ge.Thick})
+		cso.Color = vw.MatColors[arm.CS]
+	}
+	return stms
+}
+
+func (vw *GUI) UpdateStims() {
+	var updts []string
+	ev := vw.Env
+	stms := *vw.Stims.Children()
+	for i, moi := range stms {
+		mo := moi.(*eve.Box)
+		if i%2 == 1 { // CS
+			armi := i / 2
+			arm := ev.Arms[armi]
+			clr := vw.MatColors[arm.CS]
+			if mo.Color != clr {
+				mo.Color = clr
+				updts = append(updts, mo.Name())
+			}
+		}
+	}
+	if len(updts) > 0 {
+		vw.View3D.UpdateBodyView(updts)
+	}
 }
 
 // ConfigEmery constructs a new Emery virtual hamster
@@ -481,35 +531,10 @@ func (vw *GUI) ConfigEmery(par *eve.Group, length float32) *eve.Group {
 	// note: centering this in head for now to get straight-on view
 	eyer := eve.AddNewBox(hgp, "eye-r", mat32.Vec3{0, headsz * .1, -(hhsz + eyesz*.3)}, mat32.Vec3{eyesz, eyesz * .5, eyesz * .2})
 	eyer.Color = "green"
-	eyer.Initial.Quat.SetFromEuler(mat32.Vec3{-0.1, 0, 0}) // look a bit down
+	eyer.Initial.Quat.SetFromEuler(mat32.Vec3{-0.02, 0, 0}) // look a bit down
 	eyer.SetDynamic()
 	return emr
 }
-
-/*
-// ConfigMats constructs materials in the room
-func (vw *GUI) ConfigMats(par *eve.Group, name string, width, height float32) *eve.Group {
-	ev := vw.Env
-	mts := eve.AddNewGroup(par, name)
-	halfSize := mat32.Vec2{float32((vw.Env.Config.Size.X-1)/2) + width/2, float32((vw.Env.Config.Size.Y-1)/2) + width/2}
-	halfHt := height / 2
-
-	for y := 0; y < ev.Config.Size.Y; y++ {
-		for x := 0; x < ev.Config.Size.X; x++ {
-			mat := ev.World.Value([]int{y, x})
-			if !ev.MatsUSRange.InRange(mat) {
-				continue
-			}
-			nm := fmt.Sprintf("%s_%02d_%02d", ev.Mats[mat], x, y)
-			mo := eve.AddNewBox(mts, nm, mat32.Vec3{float32(x) - halfSize.X, halfHt, -(float32(y) - halfSize.Y)}, mat32.Vec3{width, height, width})
-			mo.Color = vw.MatColors[mat]
-			mo.SetProp("coord", evec.Vec2i{x, y})
-			mo.SetProp("was", false) // active
-		}
-	}
-	return mts
-}
-*/
 
 // ConfigView3D makes the 3D view
 func (vw *GUI) ConfigView3D(sc *gi3d.Scene) {
@@ -657,41 +682,13 @@ func (vw *GUI) SetEmeryPose() {
 	bod.Color = vw.StateColors[vw.State.String()]
 }
 
-/*
-func (vw *GUI) UpdateMats() {
-	var updts []string
-	ev := vw.Env
-	mts := *vw.Mats.Children()
-	for _, moi := range mts {
-		mo := moi.(*eve.Box)
-		mc := mo.Prop("coord").(evec.Vec2i)
-		mat := ev.World.Value([]int{mc.Y, mc.X})
-		was := mo.Prop("was").(bool)
-		wwas := mat > ev.MatsUSRange.Max
-		if was != wwas {
-			updts = append(updts, mo.Name())
-			mo.SetProp("was", wwas)
-			mo.Color = vw.MatColors[mat]
-			if wwas {
-				mo.Size.Y = 0.02
-			} else {
-				mo.Size.Y = 0.1
-			}
-		}
-	}
-	if len(updts) > 0 {
-		vw.View3D.UpdateBodyView(updts)
-	}
-}
-*/
-
 func (vw *GUI) UpdateWorldGUI() {
 	if vw.WorldWin == nil || !vw.Disp {
 		return
 	}
 	// update state:
 	vw.SetEmeryPose()
-	// vw.UpdateMats()
+	vw.UpdateStims()
 	vw.World.WorldRelToAbs()
 	vw.View3D.UpdatePose()
 	vw.View3D.UpdateBodyView([]string{"body"})

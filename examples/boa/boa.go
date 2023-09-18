@@ -226,7 +226,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accUtilPTp := net.AxonLayerByName("ACCutilPTp")
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
-	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength, space)
+	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
 	arm := net.AddLayer2D("Arm", ny, narm, axon.InputLayer) // irrelevant here
 
 	///////////////////////////////////////////
@@ -335,8 +335,9 @@ func (ss *Sim) ApplyParams() {
 	ss.Params.SetAll() // first hard-coded defaults
 
 	// params that vary as number of CSs
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 
-	nCSTot := ss.Config.Env.CSPerDrive * ss.Config.Env.NDrives
+	nCSTot := ev.Config.NCSs
 
 	cs := net.AxonLayerByName("CS")
 	cs.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
@@ -345,7 +346,10 @@ func (ss *Sim) ApplyParams() {
 	bla := net.AxonLayerByName("BLAPosAcqD1")
 	pji, _ := bla.SendNameTry("BLANovelCS")
 	pj := pji.(*axon.Prjn)
-	// pj.Params.PrjnScale.Abs = 2.0 + (float32(nCSTot) / 8.0)
+
+	// this is very sensitive param to get right
+	// too little and the hamster does not try CSs at the beginning,
+	// too high and it gets stuck trying the same location over and over
 	pj.Params.PrjnScale.Abs = float32(math.Min(float64(2.3+(float32(nCSTot)/10.0)), 3.0))
 
 	// then apply config-set params.
@@ -365,7 +369,7 @@ func (ss *Sim) Init() {
 	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed(0)
-	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
+	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
@@ -510,10 +514,18 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 			deciding = false // can't keep deciding!
 		}
 		ss.Stats.SetFloat32Di("Deciding", di, bools.ToFloat32(deciding))
+
+		trSt := armaze.TrSearching
+		if hasGated {
+			trSt = armaze.TrApproaching
+		}
+
 		if csGated || deciding {
 			act := "CSGated"
+			trSt = armaze.TrJustEngaged
 			if !csGated {
 				act = "Deciding"
+				trSt = armaze.TrDeciding
 			}
 			ss.Stats.SetStringDi("Debug", di, act)
 			ev.Action("None", nil)
@@ -543,7 +555,20 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 			ev.Action(actAct.String(), nil)
 			ss.ApplyAction(di)
+
+			switch {
+			case pv.HasPosUS(ctx, diu):
+				trSt = armaze.TrRewarded
+			case actAct == armaze.Consume:
+				trSt = armaze.TrConsuming
+			}
 		}
+		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 {
+			trSt = armaze.TrGiveUp
+		}
+		ss.Stats.SetIntDi("TraceStateInt", di, int(trSt))
+		ss.Stats.SetStringDi("TraceState", di, trSt.String())
+
 	}
 	ss.Net.ApplyExts(ctx)
 	ss.Net.GPU.SyncPoolsToGPU()
@@ -577,12 +602,15 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*armaze.Env)
+		giveUp := axon.GlbV(ctx, di, axon.GvGiveUp) > 0
+		if giveUp {
+			ev.JustConsumed = true // triggers a new start -- we just consumed the giving up feeling :)
+		}
 		ev.Step()
-
-		// todo: NewStart logic and signal
-		// if ev.Time == 0 {
-		// 	ss.Stats.SetFloat32Di("CortexDriving", int(di), bools.ToFloat32(erand.BoolP32(ss.Config.Env.PctCortex, -1)))
-		// }
+		if ev.Tick == 0 {
+			ss.Stats.SetFloat32Di("CortexDriving", int(di), bools.ToFloat32(erand.BoolP32(ss.Config.Env.PctCortex, -1)))
+			ev.ExValueUtil(&ss.Net.PVLV, ctx)
+		}
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
 			itsr := ev.State(lnm)
@@ -643,6 +671,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetString("NetAction", "")
 	ss.Stats.SetString("Instinct", "")
 	ss.Stats.SetString("ActAction", "")
+	ss.Stats.SetString("TraceState", "")
+	ss.Stats.SetInt("TraceStateInt", 0)
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
 
@@ -835,6 +865,8 @@ func (ss *Sim) ActionStatsDi(di int) {
 	ss.Stats.SetString("Instinct", ss.Stats.StringDi("Instinct", di))
 	ss.Stats.SetFloat("ActMatch", ss.Stats.FloatDi("ActMatch", di))
 	ss.Stats.SetString("ActAction", ss.Stats.StringDi("ActAction", di))
+	ss.Stats.SetString("TraceState", ss.Stats.StringDi("TraceState", di))
+	ss.Stats.SetInt("TraceStateInt", ss.Stats.IntDi("TraceStateInt", di))
 }
 
 // GatedStats updates the gated states
@@ -943,7 +975,7 @@ func (ss *Sim) ConfigLogs() {
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "US", "HasRew")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction", "TraceState")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
