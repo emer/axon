@@ -392,7 +392,9 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 			pv.SetUS(ctx, di, axon.Negative, trl.US, trl.USMag) // adds to neg us
 		}
 	}
-	pv.SetDrives(ctx, di, 1, 1, trl.US)
+	drvs := make([]float32, cond.NUSs)
+	drvs[trl.US] = 1
+	pv.SetDrives(ctx, di, 1, drvs...)
 	pv.Step(ctx, di, &ss.Net.Rand)
 }
 
