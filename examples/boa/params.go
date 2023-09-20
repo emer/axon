@@ -168,7 +168,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "1",
-				"Prjn.PrjnScale.Abs": "3",
+				"Prjn.PrjnScale.Abs": "2",
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{

@@ -6,16 +6,17 @@ require (
 	github.com/alecthomas/assert/v2 v2.3.0
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.4.29
+	github.com/emer/emergent v1.4.31-0.20230918190815-bbdd12cb842d
 	github.com/emer/empi v1.0.22
 	github.com/emer/etable v1.1.24
+	github.com/emer/eve v0.9.3
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
 	github.com/goki/gi v1.3.22
 	github.com/goki/gosl v1.0.16
 	github.com/goki/ki v1.1.15
 	github.com/goki/kigen v1.0.2
-	github.com/goki/mat32 v1.0.15
+	github.com/goki/mat32 v1.0.17
 	github.com/goki/vgpu v1.0.33
 	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.4
@@ -63,11 +64,11 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
-	golang.org/x/image v0.6.0 // indirect
+	golang.org/x/image v0.11.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect

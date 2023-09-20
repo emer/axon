@@ -17,9 +17,6 @@ type EnvConfig struct {
 	// [def: 4] number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
 	NDrives int `def:"4" desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
 
-	// [def: 1] number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer
-	CSPerDrive int `def:"1" desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
-
 	// [def: 10] epoch when PctCortex starts increasing
 	PctCortexStEpc int `def:"10" desc:"epoch when PctCortex starts increasing"`
 
