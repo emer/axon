@@ -126,8 +126,9 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Config.Defaults()
-	ss.Config.Hip.EC5ClampTest = false // key to be off for cmp stats on completion region
 	econfig.Config(&ss.Config, "config.toml")
+	ss.Config.Hip.EC5Clamp = true      // must be true in hip.go to have a target layer
+	ss.Config.Hip.EC5ClampTest = false // key to be off for cmp stats on completion region
 
 	ss.Net = &axon.Network{}
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
