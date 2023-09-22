@@ -67,6 +67,9 @@ type HipConfig struct {
 	// [def: 1] high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
 	ThetaHigh float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
 
+	// [def: true] flag for clamping the EC5 from EC5ClampSrc
+	EC5Clamp bool `def:"true" desc:"flag for clamping the EC5 from EC5ClampSrc"`
+
 	// [def: EC3] source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available
 	EC5ClampSrc string `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
 
@@ -102,6 +105,7 @@ func (hip *HipConfig) Defaults() {
 	hip.ThetaLow = 0.9
 	hip.ThetaHigh = 1
 
+	hip.EC5Clamp = true
 	hip.EC5ClampSrc = "EC3"
 	hip.EC5ClampTest = true
 	hip.EC5ClampThr = 0.1
@@ -124,7 +128,11 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	ec3.SetRepIdxsShape(emer.CenterPoolIdxs(ec3, 2), emer.CenterPoolShape(ec3, 2))
 	ca1 = net.AddLayer4D("CA1", hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X, SuperLayer)
 	ca1.SetRepIdxsShape(emer.CenterPoolIdxs(ca1, 2), emer.CenterPoolShape(ca1, 2))
-	ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, TargetLayer) // clamped in plus phase
+	if hip.EC5Clamp {
+		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, TargetLayer) // clamped in plus phase
+	} else {
+		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
+	}
 	ec5.SetClass("EC")
 	ec5.SetRepIdxsShape(emer.CenterPoolIdxs(ec5, 2), emer.CenterPoolShape(ec5, 2))
 
@@ -244,13 +252,15 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
 		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
 		// clamp EC5 from clamp source (EC3 typically)
-		if mode != etime.Test || hip.EC5ClampTest {
-			for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-				clampSrc.UnitVals(&tmpVals, "Act", int(di))
-				if hip.EC5ClampThr > 0 {
-					norm.Binarize32(tmpVals, hip.EC5ClampThr, 1, 0)
+		if hip.EC5Clamp {
+			if mode != etime.Test || hip.EC5ClampTest {
+				for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+					clampSrc.UnitVals(&tmpVals, "Act", int(di))
+					if hip.EC5ClampThr > 0 {
+						norm.Binarize32(tmpVals, hip.EC5ClampThr, 1, 0)
+					}
+					ec5.ApplyExt1D32(ctx, di, tmpVals)
 				}
-				ec5.ApplyExt1D32(ctx, di, tmpVals)
 			}
 		}
 		net.InitGScale(ctx) // update computed scaling factors
