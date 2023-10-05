@@ -65,12 +65,6 @@ type Env struct {
 	// current drive strength for each of Config.NDrives in normalized 0-1 units of each drive: 0 = first sim drive, not curiosity
 	Drives []float32 `desc:"current drive strength for each of Config.NDrives in normalized 0-1 units of each drive: 0 = first sim drive, not curiosity"`
 
-	// parameters associated with each US.  The first NDrives are positive USs, and beyond that are negative USs
-	USs []*USParams `desc:"parameters associated with each US.  The first NDrives are positive USs, and beyond that are negative USs"`
-
-	// state of each arm: dist, effort, US, CS
-	Arms []*Arm `desc:"state of each arm: dist, effort, US, CS"`
-
 	// arm-wise location: either facing (Pos=0) or in (Pos > 0)
 	Arm int `inactive:"+" desc:"arm-wise location: either facing (Pos=0) or in (Pos > 0)"`
 
@@ -181,8 +175,8 @@ func (ev *Env) ConfigEnv(di int) {
 	cfg.Update()
 
 	ev.Drives = make([]float32, cfg.NDrives)
-	ev.USs = make([]*USParams, cfg.NUSs)
-	ev.Arms = make([]*Arm, cfg.NDrives)
+	ev.Config.USs = make([]*USParams, cfg.NUSs)
+	ev.Config.Arms = make([]*Arm, cfg.NDrives)
 
 	// defaults
 	usorder := make([]int, cfg.NUSs)
@@ -190,16 +184,16 @@ func (ev *Env) ConfigEnv(di int) {
 	if ev.Config.Params.PermuteUSs {
 		erand.PermuteInts(usorder, &ev.Rand)
 	}
-	for i := range ev.Arms {
+	for i := range ev.Config.Arms {
 		arm := &Arm{Length: 4, US: usorder[i%cfg.NUSs]}
-		ev.Arms[i] = arm
+		ev.Config.Arms[i] = arm
 		arm.Effort.Set(1, 1)
 	}
 
 	// defaults
-	for i := range ev.USs {
+	for i := range ev.Config.USs {
 		us := &USParams{Prob: 1}
-		ev.USs[i] = us
+		ev.Config.USs[i] = us
 		if i < cfg.NDrives {
 			us.Negative = false
 		} else {
@@ -228,7 +222,7 @@ func (ev *Env) Init(run int) {
 	cfg := &ev.Config
 
 	if cfg.Params.EvenCSs {
-		for i, us := range ev.USs {
+		for i, us := range ev.Config.USs {
 			us.CSProbs = make([]float32, cfg.NCSs)
 			for j := range us.CSProbs {
 				us.CSProbs[j] = bools.ToFloat32(i == j%cfg.NUSs)
@@ -259,7 +253,7 @@ func (ev *Env) State(el string) etensor.Tensor {
 // NewStart starts a new approach run
 func (ev *Env) NewStart() {
 	if ev.Config.Params.RandomStart {
-		ev.Arm = ev.Rand.Intn(len(ev.Arms), -1)
+		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms), -1)
 	}
 	ev.Pos = 0
 	ev.Tick = 0
@@ -283,8 +277,8 @@ func (ev *Env) ExValueUtil(pv *axon.PVLV, ctx *axon.Context) {
 	ev.ArmsNeg = nil
 	usPos := make([]float32, pv.NPosUSs)
 	usNeg := make([]float32, pv.NNegUSs)
-	for i, arm := range ev.Arms {
-		us := ev.USs[arm.US]
+	for i, arm := range ev.Config.Arms {
+		us := ev.Config.USs[arm.US]
 		if us.Negative {
 			ev.ArmsNeg = append(ev.ArmsNeg, i)
 			continue
@@ -319,7 +313,7 @@ func (ev *Env) ExValueUtil(pv *axon.PVLV, ctx *axon.Context) {
 	ev.MaxUtil = maxutil
 	ev.ArmsMaxValue = nil
 	ev.ArmsMaxUtil = nil
-	for i, arm := range ev.Arms {
+	for i, arm := range ev.Config.Arms {
 		if arm.ExValue == maxval {
 			ev.ArmsMaxValue = append(ev.ArmsMaxValue, i)
 		}
@@ -452,7 +446,7 @@ func (ev *Env) Action(action string, nop etensor.Tensor) {
 
 func (ev *Env) TakeAct(act Actions) {
 	narms := ev.Config.NArms
-	arm := ev.Arms[ev.Arm]
+	arm := ev.Config.Arms[ev.Arm]
 	switch act {
 	case Forward:
 		ev.Effort = ev.ForwardEffort(arm) // pay effort regardless
@@ -492,7 +486,7 @@ func (ev *Env) TakeAct(act Actions) {
 
 // ConsumeUS implements the consume action at current position in given arm
 func (ev *Env) ConsumeUS(arm *Arm) {
-	us := ev.USs[arm.US]
+	us := ev.Config.USs[arm.US]
 	mag := MinMaxRand(us.Mag, ev.Rand)
 	got := erand.BoolP32(us.Prob, -1, &ev.Rand)
 	if got {
@@ -532,7 +526,7 @@ func (ev *Env) InstinctAct(justGated, hasGated bool) Actions {
 
 // CurArm returns current Arm
 func (ev *Env) CurArm() *Arm {
-	return ev.Arms[ev.Arm]
+	return ev.Config.Arms[ev.Arm]
 }
 
 // CurCS returns current CS from current Arm
@@ -570,12 +564,12 @@ func (ev *Env) ConsumeEffort() float32 {
 
 func (ev *Env) UpdateMaxLength() {
 	ev.MaxLength = 0
-	for _, arm := range ev.Arms {
+	for _, arm := range ev.Config.Arms {
 		if arm.Length > ev.MaxLength {
 			ev.MaxLength = arm.Length
 		}
 	}
-	for _, us := range ev.USs {
+	for _, us := range ev.Config.USs {
 		norm.DivNorm32(us.CSProbs, norm.Sum32) // normalize so sum = 1
 	}
 }
@@ -583,8 +577,8 @@ func (ev *Env) UpdateMaxLength() {
 // ChooseCSs selects new CSs for each Arm as function of US CSProbs
 // This must be called
 func (ev *Env) ChooseCSs() {
-	for _, arm := range ev.Arms {
-		us := ev.USs[arm.US]
+	for _, arm := range ev.Config.Arms {
+		us := ev.Config.USs[arm.US]
 		arm.CS = erand.PChoose32(us.CSProbs, -1, &ev.Rand) // choose by dist
 	}
 }

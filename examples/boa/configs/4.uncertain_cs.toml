@@ -2,9 +2,10 @@
 # At one location, it has P(reward) = 1, at the other P(reward) = 0.5.
 
 [Env.Env]
-	NArms = 8
+	NArms = 4
 	NDrives = 4
 	NCSs = 8
+	USs = [{"Mag.Min" = 0.2}, {"Mag.Min" = 0.4}, {"Mag.Min" = 1}, {"Mag.Min" = 1]
 
 [Env.Config.Params]
 	ProbReward = true

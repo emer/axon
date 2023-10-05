@@ -152,11 +152,11 @@ func (ss *Sim) ConfigEnv() {
 		if !ss.Config.Env.SameSeed {
 			trn.RndSeed += int64(di) * 73
 		}
-		if ss.Config.Env.Env != nil {
-			params.ApplyMap(&trn.Config, ss.Config.Env.Env, ss.Config.Debug)
-		}
 		trn.Config.NDrives = ss.Config.Env.NDrives
 		trn.ConfigEnv(di)
+		if ss.Config.Env.Config != "" {
+			econfig.Config(&trn.Config, ss.Config.Env.Config)
+		}
 		trn.Validate()
 
 		trn.Init(0)

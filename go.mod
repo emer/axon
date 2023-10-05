@@ -14,7 +14,7 @@ require (
 	github.com/emer/vision v1.1.18
 	github.com/goki/gi v1.3.22
 	github.com/goki/gosl v1.0.16
-	github.com/goki/ki v1.1.15
+	github.com/goki/ki v1.1.17
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.17
 	github.com/goki/vgpu v1.0.33
