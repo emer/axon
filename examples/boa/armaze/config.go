@@ -35,6 +35,12 @@ type Params struct {
 
 	// [def: 4] number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets
 	NYReps int `def:"4" desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
+
+	// [def: false] if true, the reward becomes stochastic
+	ProbReward bool `def:"false" desc:"if true, the reward becomes stochastic"`
+
+	// [def: false] if true, each CS awards multiple USs (def 2)
+	MultiUS bool `def:"false" desc:"if true, each CS awards multiple USs (def 2)"`
 }
 
 // Config has environment configuration

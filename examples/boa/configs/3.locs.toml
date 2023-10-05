@@ -1,0 +1,6 @@
+# 4 drives, 8 locations, each gets one of 4 CSs randomly after each consumption.
+
+[Env.Env]
+	NArms = 8
+	NDrives = 4
+	NCSs = 4

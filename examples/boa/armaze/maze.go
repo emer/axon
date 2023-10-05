@@ -206,6 +206,9 @@ func (ev *Env) ConfigEnv(di int) {
 			us.Negative = true
 		}
 		us.Mag.Set(1, 1)
+		if ev.Config.Params.ProbReward {
+			us.Mag.Set(0, 1)
+		}
 		us.CSProbs = make([]float32, cfg.NCSs)
 		for j := range us.CSProbs {
 			us.CSProbs[j] = bools.ToFloat32(i == j%cfg.NUSs)

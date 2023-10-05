@@ -1,0 +1,7 @@
+# TODO:
+
+[Env.Env]
+	NArms = 8
+	NDrives = 4
+	NCSs = 4
+	NNegUSs = 1

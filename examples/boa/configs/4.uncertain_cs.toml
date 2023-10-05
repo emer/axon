@@ -1,0 +1,10 @@
+# Each CS is assigned to 2 locations.
+# At one location, it has P(reward) = 1, at the other P(reward) = 0.5.
+
+[Env.Env]
+	NArms = 8
+	NDrives = 4
+	NCSs = 8
+
+[Env.Config.Params]
+	ProbReward = true

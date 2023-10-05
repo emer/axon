@@ -1,0 +1,6 @@
+# agent must choose between various CSs that satisfy the same drive but are at different distances.
+
+[Env.Env]
+	NArms = 8
+	NDrives = 4
+	NCSs = 4

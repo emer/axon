@@ -1,0 +1,7 @@
+# can want multiple USs at the same time
+# TODO: aren't they all multidrive?
+
+[Env.Env]
+	NArms = 4
+	NDrives = 4
+	NCSs = 4
