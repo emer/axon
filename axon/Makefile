@@ -18,7 +18,7 @@ clean:
 	$(GOCLEAN)
 
 # NOTE: MUST update version number here prior to running 'make release'
-VERS=v1.8.18
+VERS=v1.8.19
 PACKAGE=axon
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 GIT_COMMIT=`git rev-parse --short HEAD`
