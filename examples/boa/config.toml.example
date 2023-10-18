@@ -1,0 +1,9 @@
+GUI = false
+Debug = true
+
+[Env]
+    Config = "2.multi_cs.toml"
+
+[Run]
+    GPU = false
+    NData = 1
