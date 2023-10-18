@@ -1,7 +1,6 @@
 # one US gives negative reward
 
-[Env.Env]
-	NArms = 6
-	NDrives = 4
-	NCSs = 4
-	NNegUSs = 1
+NArms = 5
+NDrives = 4
+NCSs = 4
+NNegUSs = 1

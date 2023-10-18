@@ -6,26 +6,17 @@ NCSs = 6
 # CS1 is 50/50 for US 2 / 3
 # CS2..5 are 100% for USs 0..3
 
-[Params]
-	EvenCSs = false # key for allowing CSProbs to be specified below
-
 # note: number of USs must match NArms + NNegUSs
 
 [[USs]]
 	Prob = 0.5
-	CSProbs = [0.5, 0.0, 0.5, 0.0, 0.0, 0.0]
 	
 [[USs]]
 	Mag.Min = 0.3
-	CSProbs = [0.5, 0.0, 0.0, 0.5, 0.0, 0.0]  # CS0 ambiguous for US0 vs. 1
 
 [[USs]]
 	Prob = 0.7
-	CSProbs = [0.0, 0.5, 0.0, 0.0, 0.5, 0.0]
 
 [[USs]]
 	Mag.Min = 0.4
 	Mag.Max = 0.8
-	CSProbs = [0.0, 0.5, 0.0, 0.0, 0.0, 0.5] # CS1 ambig for 3 vs. 4
-
-	

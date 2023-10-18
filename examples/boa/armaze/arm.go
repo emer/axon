@@ -69,5 +69,5 @@ type USParams struct {
 	Prob float32 `desc:"probability of delivering the US"`
 
 	// probabilities of each CS being active for this US
-	CSProbs []float32 `desc:"probabilities of each CS being active for this US"`
+	// CSProbs []float32 `desc:"probabilities of each CS being active for this US"`
 }

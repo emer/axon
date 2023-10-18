@@ -110,6 +110,8 @@ type Sim struct {
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	econfig.Config(&ss.Config, "config.toml")
+	// TODO: remove debug logs
+	log.Printf("config: %+v", ss.Config)
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
@@ -153,12 +155,11 @@ func (ss *Sim) ConfigEnv() {
 			trn.RndSeed += int64(di) * 73
 		}
 		trn.Config.NDrives = ss.Config.Env.NDrives
-		trn.ConfigEnv(di)
 		if ss.Config.Env.Config != "" {
 			econfig.Config(&trn.Config, ss.Config.Env.Config)
 		}
+		trn.ConfigEnv(di)
 		trn.Validate()
-
 		trn.Init(0)
 
 		// note: names must be in place when adding

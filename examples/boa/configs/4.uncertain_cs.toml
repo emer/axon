@@ -1,11 +1,31 @@
 # Each CS is assigned to 2 locations.
 # At one location, it has P(reward) = 1, at the other P(reward) = 0.5.
 
-[Env.Env]
-	NArms = 4
-	NDrives = 4
-	NCSs = 8
-	USs = [{"Mag.Min" = 0.2}, {"Mag.Min" = 0.4}, {"Mag.Min" = 1}, {"Mag.Min" = 1]
+NArms = 4
+NDrives = 4
+NCSs = 8
+NUSs = 8
 
-[Env.Config.Params]
-	ProbReward = true
+[[USs]]
+	Prob = 1.0
+
+[[USs]]
+	Prob = 1.0
+
+[[USs]]
+	Prob = 1.0
+
+[[USs]]
+	Prob = 1.0
+
+[[USs]]
+	Prob = 0.5
+
+[[USs]]
+	Prob = 0.5
+
+[[USs]]
+	Prob = 0.5
+
+[[USs]]
+	Prob = 0.5

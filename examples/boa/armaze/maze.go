@@ -14,14 +14,14 @@
 package armaze
 
 import (
+	"log"
+
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/econfig"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
-	"github.com/emer/etable/norm"
-	"github.com/goki/ki/bools"
 	"github.com/goki/ki/kit"
 )
 
@@ -176,16 +176,19 @@ func (ev *Env) ConfigEnv(di int) {
 
 	ev.Drives = make([]float32, cfg.NDrives)
 	ev.Config.USs = make([]*USParams, cfg.NUSs)
-	ev.Config.Arms = make([]*Arm, cfg.NDrives)
+	ev.Config.Arms = make([]*Arm, cfg.NArms)
+
+	log.Printf("drives: %d, USs: %d, CSs: %d", cfg.NDrives, cfg.NUSs, cfg.NCSs)
+	log.Printf("max arm length: %d", cfg.MaxArmLength)
 
 	// defaults
-	usorder := make([]int, cfg.NUSs)
-	erand.SequentialInts(usorder, 0)
-	if ev.Config.Params.PermuteUSs {
-		erand.PermuteInts(usorder, &ev.Rand)
-	}
 	for i := range ev.Config.Arms {
-		arm := &Arm{Length: 4, US: usorder[i%cfg.NUSs]}
+		// TODO: if we permute CSs do we also want to keep the USs aligned?
+		length := 4
+		if ev.Config.MaxArmLength > 0 {
+			length = length + ev.Rand.Intn(ev.Config.MaxArmLength, -1)
+		}
+		arm := &Arm{Length: length, CS: i % cfg.NCSs, US: i % cfg.NUSs}
 		ev.Config.Arms[i] = arm
 		arm.Effort.Set(1, 1)
 	}
@@ -200,10 +203,6 @@ func (ev *Env) ConfigEnv(di int) {
 			us.Negative = true
 		}
 		us.Mag.Set(1, 1)
-		us.CSProbs = make([]float32, cfg.NCSs)
-		for j := range us.CSProbs {
-			us.CSProbs[j] = bools.ToFloat32(i == j%cfg.NUSs)
-		}
 	}
 
 	ev.UpdateMaxLength()
@@ -217,15 +216,6 @@ func (ev *Env) Validate() error {
 // so updates everything except broad overall config stuff.
 func (ev *Env) Init(run int) {
 	cfg := &ev.Config
-
-	if cfg.Params.EvenCSs {
-		for i, us := range ev.Config.USs {
-			us.CSProbs = make([]float32, cfg.NCSs)
-			for j := range us.CSProbs {
-				us.CSProbs[j] = bools.ToFloat32(i == j%cfg.NUSs)
-			}
-		}
-	}
 
 	ev.UpdateMaxLength()
 
@@ -249,6 +239,10 @@ func (ev *Env) State(el string) etensor.Tensor {
 
 // NewStart starts a new approach run
 func (ev *Env) NewStart() {
+	arm := ev.Config.Arms[ev.Arm]
+	// choose a new CS that maps to the same US
+	arm.CS = (arm.CS + ev.Config.NCSs) % ev.Config.NCSs
+
 	if ev.Config.Params.RandomStart {
 		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms), -1)
 	}
@@ -259,7 +253,6 @@ func (ev *Env) NewStart() {
 	ev.USConsumed = -1
 	ev.USValue = 0
 	ev.JustConsumed = false
-	ev.ChooseCSs()
 
 	switch ev.Config.Paradigm {
 	case Approach:
@@ -565,17 +558,5 @@ func (ev *Env) UpdateMaxLength() {
 		if arm.Length > ev.MaxLength {
 			ev.MaxLength = arm.Length
 		}
-	}
-	for _, us := range ev.Config.USs {
-		norm.DivNorm32(us.CSProbs, norm.Sum32) // normalize so sum = 1
-	}
-}
-
-// ChooseCSs selects new CSs for each Arm as function of US CSProbs
-// This must be called
-func (ev *Env) ChooseCSs() {
-	for _, arm := range ev.Config.Arms {
-		us := ev.Config.USs[arm.US]
-		arm.CS = erand.PChoose32(us.CSProbs, -1, &ev.Rand) // choose by dist
 	}
 }
