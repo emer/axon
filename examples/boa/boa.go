@@ -110,8 +110,6 @@ type Sim struct {
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	econfig.Config(&ss.Config, "config.toml")
-	// TODO: remove debug logs
-	log.Printf("config: %+v", ss.Config)
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
