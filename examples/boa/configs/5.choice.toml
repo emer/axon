@@ -1,0 +1,8 @@
+# agent must choose between various CSs that satisfy the same drive but are at different distances.
+
+# TODO: is distance a function of the arm or the CS or both?
+
+NArms = 8
+NDrives = 4
+NCSs = 8
+MaxArmLength = 8

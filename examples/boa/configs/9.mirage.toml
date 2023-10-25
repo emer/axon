@@ -1,0 +1,7 @@
+# After each step, the CS at a location may randomly be replaced with another.
+# TODO:
+
+NArms = 6
+NDrives = 4
+NCSs = 4
+NNegUSs = 1

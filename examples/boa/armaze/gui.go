@@ -444,7 +444,7 @@ func (vw *GUI) ConfigArms(par *eve.Group) *eve.Group {
 	exln := ge.LengthScale
 	halfarm := .5 * ge.ArmWidth
 	halfht := .5 * ge.Height
-	for i, arm := range ev.Arms {
+	for i, arm := range ev.Config.Arms {
 		anm := fmt.Sprintf("arm_%d\n", i)
 		agp := eve.AddNewGroup(rm, anm)
 		x, _ := ge.Pos(i, 0)
@@ -471,7 +471,7 @@ func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *
 	usDp := 0.2 * ge.LengthScale
 	csHt := ge.LengthScale
 
-	for i, arm := range ev.Arms {
+	for i, arm := range ev.Config.Arms {
 		x, _ := ge.Pos(i, 0)
 		ln := ge.LengthScale * float32(arm.Length)
 		usnm := fmt.Sprintf("us_%d\n", i)
@@ -492,7 +492,7 @@ func (vw *GUI) UpdateStims() {
 		mo := moi.(*eve.Box)
 		if i%2 == 1 { // CS
 			armi := i / 2
-			arm := ev.Arms[armi]
+			arm := ev.Config.Arms[armi]
 			clr := vw.MatColors[arm.CS]
 			if mo.Color != clr {
 				mo.Color = clr

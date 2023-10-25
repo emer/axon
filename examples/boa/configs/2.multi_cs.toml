@@ -1,8 +1,8 @@
 # CSs auto-mapped to the 4 USs
+# 4 locations
+# After each consumption, a random CS is assigned to the location.
+# TODO: since we start in a random location after consume does this env still make sense?
 
-[Env.Env]
-	NArms = 4
-	NDrives = 4
-	NCSs = 12
-
-
+NArms = 4
+NDrives = 4
+NCSs = 12

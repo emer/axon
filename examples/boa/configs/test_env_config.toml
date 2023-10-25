@@ -1,0 +1,22 @@
+NArms = 4
+NDrives = 4
+NCSs = 6
+
+# CS0 is 50/50 for US 0 / 1
+# CS1 is 50/50 for US 2 / 3
+# CS2..5 are 100% for USs 0..3
+
+# note: number of USs must match NArms + NNegUSs
+
+[[USs]]
+	Prob = 0.5
+	
+[[USs]]
+	Mag.Min = 0.3
+
+[[USs]]
+	Prob = 0.7
+
+[[USs]]
+	Mag.Min = 0.4
+	Mag.Max = 0.8
