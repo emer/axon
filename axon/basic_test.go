@@ -17,13 +17,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/mat32/v2"
 	"golang.org/x/exp/maps"
 )
 

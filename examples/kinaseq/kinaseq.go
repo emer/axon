@@ -12,16 +12,16 @@ import (
 	"math/rand"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
+	"github.com/emer/emergent/v2/emer"
 	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/agg"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -42,95 +42,95 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: no-inline] the sending neuron
-	SendNeur *axon.Neuron `view:"no-inline" desc:"the sending neuron"`
+	// the sending neuron
+	SendNeur *axon.Neuron `view:"no-inline"`
 
-	// [view: no-inline] the receiving neuron
-	RecvNeur *axon.Neuron `view:"no-inline" desc:"the receiving neuron"`
+	// the receiving neuron
+	RecvNeur *axon.Neuron `view:"no-inline"`
 
-	// [view: no-inline] prjn-level parameters -- for intializing synapse -- other params not used
-	Prjn *axon.Prjn `view:"no-inline" desc:"prjn-level parameters -- for intializing synapse -- other params not used"`
+	// prjn-level parameters -- for intializing synapse -- other params not used
+	Prjn *axon.Prjn `view:"no-inline"`
 
-	// [view: no-inline] extra neuron state
-	NeuronEx NeuronEx `view:"no-inline" desc:"extra neuron state"`
+	// extra neuron state
+	NeuronEx NeuronEx `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.Params `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.Params `view:"inline"`
 
 	// multiplier on product factor to equate to SynC
-	PGain float32 `desc:"multiplier on product factor to equate to SynC"`
+	PGain float32
 
 	// spike multiplier for display purposes
-	SpikeDisp float32 `desc:"spike multiplier for display purposes"`
+	SpikeDisp float32
 
 	// use current Ge clamping for recv neuron -- otherwise spikes driven externally
-	RGeClamp bool `desc:"use current Ge clamping for recv neuron -- otherwise spikes driven externally"`
+	RGeClamp bool
 
 	// gain multiplier for RGe clamp
-	RGeGain float32 `desc:"gain multiplier for RGe clamp"`
+	RGeGain float32
 
 	// baseline recv Ge level
-	RGeBase float32 `desc:"baseline recv Ge level"`
+	RGeBase float32
 
 	// baseline recv Gi level
-	RGiBase float32 `desc:"baseline recv Gi level"`
+	RGiBase float32
 
 	// number of repetitions -- if > 1 then only final @ end of Dur shown
-	NTrials int `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
+	NTrials int
 
 	// number of msec in minus phase
-	MinusMsec int `desc:"number of msec in minus phase"`
+	MinusMsec int
 
 	// number of msec in plus phase
-	PlusMsec int `desc:"number of msec in plus phase"`
+	PlusMsec int
 
 	// quiet space between spiking
-	ISIMsec int `desc:"quiet space between spiking"`
+	ISIMsec int
 
-	// [view: -] total trial msec: minus, plus isi
-	TrialMsec int `view:"-" desc:"total trial msec: minus, plus isi"`
+	// total trial msec: minus, plus isi
+	TrialMsec int `view:"-"`
 
 	// minus phase firing frequency
-	MinusHz int `desc:"minus phase firing frequency"`
+	MinusHz int
 
 	// plus phase firing frequency
-	PlusHz int `desc:"plus phase firing frequency"`
+	PlusHz int
 
 	// additive difference in sending firing frequency relative to recv (recv has basic minus, plus)
-	SendDiffHz int `desc:"additive difference in sending firing frequency relative to recv (recv has basic minus, plus)"`
+	SendDiffHz int
 
-	// [view: no-inline] synapse state values, NST_ in log
-	SynNeurTheta axon.Synapse `view:"no-inline" desc:"synapse state values, NST_ in log"`
+	// synapse state values, NST_ in log
+	SynNeurTheta axon.Synapse `view:"no-inline"`
 
-	// [view: no-inline] synapse state values, SST_ in log
-	SynSpkTheta axon.Synapse `view:"no-inline" desc:"synapse state values, SST_ in log"`
+	// synapse state values, SST_ in log
+	SynSpkTheta axon.Synapse `view:"no-inline"`
 
-	// [view: no-inline] synapse state values, SSC_ in log
-	SynSpkCont axon.Synapse `view:"no-inline" desc:"synapse state values, SSC_ in log"`
+	// synapse state values, SSC_ in log
+	SynSpkCont axon.Synapse `view:"no-inline"`
 
-	// [view: no-inline] synapse state values, SNC_ in log
-	SynNMDACont axon.Synapse `view:"no-inline" desc:"synapse state values, SNC_ in log"`
+	// synapse state values, SNC_ in log
+	SynNMDACont axon.Synapse `view:"no-inline"`
 
 	// axon time recording
-	Context axon.Context `desc:"axon time recording"`
+	Context axon.Context
 
-	// [view: no-inline] all logs
-	Logs map[string]*etable.Table `view:"no-inline" desc:"all logs"`
+	// all logs
+	Logs map[string]*etable.Table `view:"no-inline"`
 
-	// [view: -] all plots
-	Plots map[string]*eplot.Plot2D `view:"-" desc:"all plots"`
+	// all plots
+	Plots map[string]*eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 
-	// [view: -] stop button
-	StopNow bool `view:"-" desc:"stop button"`
+	// stop button
+	StopNow bool `view:"-"`
 }
 
 // TheSim is the overall state for this simulation

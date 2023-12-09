@@ -7,7 +7,7 @@ package axon
 import (
 	"fmt"
 
-	"github.com/emer/emergent/netview"
+	"github.com/emer/emergent/v2/netview"
 	"github.com/goki/ki/kit"
 )
 

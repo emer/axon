@@ -15,26 +15,26 @@ import (
 	"strings"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/patgen"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/metric"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/ki/bools"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/patgen"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/empi/v2/mpi"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/metric"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/glop/bools"
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -60,67 +60,67 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.NetParams `view:"inline"`
 
-	// [view: no-inline] contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
+	// contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline"`
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
 	// Contains all the logs and information about the logs.'
-	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+	Logs elog.Logs
 
 	// if true, run in pretrain mode
-	PretrainMode bool `desc:"if true, run in pretrain mode"`
+	PretrainMode bool
 
-	// [view: no-inline] pool patterns vocabulary
-	PoolVocab patgen.Vocab `view:"no-inline" desc:"pool patterns vocabulary"`
+	// pool patterns vocabulary
+	PoolVocab patgen.Vocab `view:"no-inline"`
 
-	// [view: no-inline] AB training patterns to use
-	TrainAB *etable.Table `view:"no-inline" desc:"AB training patterns to use"`
+	// AB training patterns to use
+	TrainAB *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] AC training patterns to use
-	TrainAC *etable.Table `view:"no-inline" desc:"AC training patterns to use"`
+	// AC training patterns to use
+	TrainAC *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] AB testing patterns to use
-	TestAB *etable.Table `view:"no-inline" desc:"AB testing patterns to use"`
+	// AB testing patterns to use
+	TestAB *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] AC testing patterns to use
-	TestAC *etable.Table `view:"no-inline" desc:"AC testing patterns to use"`
+	// AC testing patterns to use
+	TestAC *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] Lure pretrain patterns to use
-	PreTrainLure *etable.Table `view:"no-inline" desc:"Lure pretrain patterns to use"`
+	// Lure pretrain patterns to use
+	PreTrainLure *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] Lure testing patterns to use
-	TestLure *etable.Table `view:"no-inline" desc:"Lure testing patterns to use"`
+	// Lure testing patterns to use
+	TestLure *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] all training patterns -- for pretrain
-	TrainAll *etable.Table `view:"no-inline" desc:"all training patterns -- for pretrain"`
+	// all training patterns -- for pretrain
+	TrainAll *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] TestAB + TestAC
-	TestABAC *etable.Table `view:"no-inline" desc:"TestAB + TestAC"`
+	// TestAB + TestAC
+	TestABAC *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] Environments
-	Envs env.Envs `view:"no-inline" desc:"Environments"`
+	// Environments
+	Envs env.Envs `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
-	// [view: inline] netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+	// netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline"`
 
-	// [view: -] manages all the gui elements
-	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+	// manages all the gui elements
+	GUI egui.GUI `view:"-"`
 
-	// [view: -] a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+	// a list of random seeds to use for each run
+	RndSeeds erand.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults

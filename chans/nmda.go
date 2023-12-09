@@ -4,7 +4,7 @@
 
 package chans
 
-import "github.com/goki/mat32"
+import "goki.dev/mat32/v2"
 
 //gosl: start chans
 
@@ -15,29 +15,29 @@ import "github.com/goki/mat32"
 // increments
 type NMDAParams struct {
 
-	// [def: 0,0.006,0.007] overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.
-	Gbar float32 `def:"0,0.006,0.007" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance."`
+	// overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.
+	Gbar float32 `def:"0,0.006,0.007"`
 
-	// [def: 30,50,100,200,300] [viewif: Gbar>0] decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far.
-	Tau float32 `viewif:"Gbar>0" def:"30,50,100,200,300" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far."`
+	// decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far.
+	Tau float32 `viewif:"Gbar>0" def:"30,50,100,200,300"`
 
-	// [def: 1,100] [viewif: Gbar>0] decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism.
-	ITau float32 `viewif:"Gbar>0" def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism."`
+	// decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism.
+	ITau float32 `viewif:"Gbar>0" def:"1,100"`
 
-	// [def: 1:1.5] [viewif: Gbar>0] magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets.
-	MgC float32 `viewif:"Gbar>0" def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets."`
+	// magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets.
+	MgC float32 `viewif:"Gbar>0" def:"1:1.5"`
 
-	// [def: 0] [viewif: Gbar>0] offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model. 5 was used before in a buggy version of NMDA equation -- 0 is new default.
-	Voff float32 `viewif:"Gbar>0" def:"0" desc:"offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model. 5 was used before in a buggy version of NMDA equation -- 0 is new default."`
+	// offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model. 5 was used before in a buggy version of NMDA equation -- 0 is new default.
+	Voff float32 `viewif:"Gbar>0" def:"0"`
 
-	// [view: -] rate = 1 / tau
-	Dt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	Dt float32 `view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	IDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	IDt float32 `view:"-" json:"-" xml:"-"`
 
-	// [view: -] MgFact = MgC / 3.57
-	MgFact float32 `view:"-" json:"-" xml:"-" desc:"MgFact = MgC / 3.57"`
+	// MgFact = MgC / 3.57
+	MgFact float32 `view:"-" json:"-" xml:"-"`
 }
 
 func (np *NMDAParams) Defaults() {

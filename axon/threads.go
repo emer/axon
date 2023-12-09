@@ -11,7 +11,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/emer/emergent/timer"
+	"github.com/emer/emergent/v2/timer"
 	"github.com/goki/ki/atomctr"
 	"github.com/goki/ki/ints"
 )

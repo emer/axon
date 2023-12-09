@@ -18,24 +18,24 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/evec"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/split"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/evec"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/relpos"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/agg"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/split"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/mat32/v2"
 )
 
 // this is the stub main for gogi that calls our actual mainrun function, at end of file
@@ -216,89 +216,89 @@ var ParamSets = params.Sets{
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
 
-	// [def: 200] number of cycles per trial
-	Cycles int `def:"200" desc:"number of cycles per trial"`
+	// number of cycles per trial
+	Cycles int `def:"200"`
 
-	// [def: 10] number of runs to run to collect stats
-	Runs int `def:"10" desc:"number of runs to run to collect stats"`
+	// number of runs to run to collect stats
+	Runs int `def:"10"`
 
-	// [def: true] sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time
-	KNaAdapt bool `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
+	// sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time
+	KNaAdapt bool `def:"true"`
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: Standard same-to-same size topographic projection]
+	//
 	Prjn3x3Skp1 *prjn.PoolTile `view:"Standard same-to-same size topographic projection"`
 
-	// [view: Standard same-to-same size topographic projection]
+	//
 	Prjn5x5Skp1 *prjn.PoolTile `view:"Standard same-to-same size topographic projection"`
 
 	// select which type of test (input patterns) to use
-	Test TestType `desc:"select which type of test (input patterns) to use"`
+	Test TestType
 
-	// [view: no-inline] testing trial-level log data -- click to see record of network's response to each input
-	TstTrlLog *etable.Table `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
+	// testing trial-level log data -- click to see record of network's response to each input
+	TstTrlLog *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] aggregated testing data
-	TstRunLog *etable.Table `view:"no-inline" desc:"aggregated testing data"`
+	// aggregated testing data
+	TstRunLog *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] aggregate stats on testing data
-	TstStats *etable.Table `view:"no-inline" desc:"aggregate stats on testing data"`
+	// aggregate stats on testing data
+	TstStats *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] full collection of param sets -- not really interesting for this model
-	Params params.Sets `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
+	// full collection of param sets -- not really interesting for this model
+	Params params.Sets `view:"no-inline"`
 
 	// Testing environment -- manages iterating over testing
-	TestEnv AttnEnv `desc:"Testing environment -- manages iterating over testing"`
+	TestEnv AttnEnv
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
 	// whether to update the network view while running
-	ViewOn bool `desc:"whether to update the network view while running"`
+	ViewOn bool
 
 	// at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster
-	ViewUpdt axon.TimeScales `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
+	ViewUpdt axon.TimeScales
 
 	// layer to measure attentional effects on
-	AttnLay string `desc:"layer to measure attentional effects on"`
+	AttnLay string
 
 	// names of layers to record activations etc of during testing
-	TstRecLays []string `desc:"names of layers to record activations etc of during testing"`
+	TstRecLays []string
 
 	// max activation in center of stimulus 1 (attended, stronger)
-	S1Act float32 `desc:"max activation in center of stimulus 1 (attended, stronger)"`
+	S1Act float32
 
 	// max activation in center of stimulus 2 (ignored, weaker)
-	S2Act float32 `desc:"max activation in center of stimulus 2 (ignored, weaker)"`
+	S2Act float32
 
 	// percent modulation = (S1Act - S2Act) / S1Act
-	PctMod float32 `desc:"percent modulation = (S1Act - S2Act) / S1Act"`
+	PctMod float32
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the network viewer
-	NetView *netview.NetView `view:"-" desc:"the network viewer"`
+	// the network viewer
+	NetView *netview.NetView `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 
-	// [view: -] the test-trial plot
-	TstTrlPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
+	// the test-trial plot
+	TstTrlPlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] the test-trial plot
-	TstRunPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
+	// the test-trial plot
+	TstRunPlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] for holding layer values
-	ValsTsrs map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
+	// for holding layer values
+	ValsTsrs map[string]*etensor.Float32 `view:"-"`
 
-	// [view: -] true if sim is running
-	IsRunning bool `view:"-" desc:"true if sim is running"`
+	// true if sim is running
+	IsRunning bool `view:"-"`
 
-	// [view: -] flag to stop running
-	StopNow bool `view:"-" desc:"flag to stop running"`
+	// flag to stop running
+	StopNow bool `view:"-"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,

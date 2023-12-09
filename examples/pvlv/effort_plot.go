@@ -10,17 +10,17 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/emer/etable/minmax"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/giv"
-	"github.com/goki/ki/bools"
+	"github.com/emer/emergent/v2/erand"
 	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/glop/bools"
+	"goki.dev/mat32/v2"
 )
 
 func DriveEffortGUI() {
@@ -37,40 +37,40 @@ const LogPrec = 4
 type DrEffPlot struct {
 
 	// context just for plotting
-	Context axon.Context `desc:"context just for plotting"`
+	Context axon.Context
 
 	// PVLV params
-	PVLV axon.PVLV `desc:"PVLV params"`
+	PVLV axon.PVLV
 
 	// total number of time steps to simulate
-	TimeSteps int `desc:"total number of time steps to simulate"`
+	TimeSteps int
 
 	// range for number of time steps between US receipt
-	USTime minmax.Int `desc:"range for number of time steps between US receipt"`
+	USTime minmax.Int
 
 	// range for random effort per step
-	Effort minmax.F32 `desc:"range for random effort per step"`
+	Effort minmax.F32
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 
-	// [view: -] random number generator
-	Rand erand.SysRand `view:"-" desc:"random number generator"`
+	// random number generator
+	Rand erand.SysRand `view:"-"`
 }
 
 // Config configures all the elements using the standard functions

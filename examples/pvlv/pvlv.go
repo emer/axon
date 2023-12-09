@@ -15,30 +15,30 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/examples/pvlv/cond"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
-	"github.com/emer/etable/split"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/empi/v2/mpi"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/agg"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/etable/v2/split"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -62,37 +62,37 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.NetParams `view:"inline"`
 
-	// [view: no-inline] contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
+	// contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline"`
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
 	// Contains all the logs and information about the logs.'
-	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+	Logs elog.Logs
 
-	// [view: no-inline] Environments
-	Envs env.Envs `view:"no-inline" desc:"Environments"`
+	// Environments
+	Envs env.Envs `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
-	// [view: inline] netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+	// netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline"`
 
-	// [view: -] manages all the gui elements
-	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+	// manages all the gui elements
+	GUI egui.GUI `view:"-"`
 
-	// [view: -] a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+	// a list of random seeds to use for each run
+	RndSeeds erand.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults

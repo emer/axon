@@ -5,79 +5,79 @@
 package axon
 
 import (
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/evec"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/norm"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/evec"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/prjn"
+	"goki.dev/etable/v2/norm"
 )
 
 // HipConfig have the hippocampus size and connectivity parameters
 type HipConfig struct {
 
 	// size of EC2
-	EC2Size evec.Vec2i `nest:"+" desc:"size of EC2"`
+	EC2Size evec.Vec2i `nest:"+"`
 
 	// number of EC3 pools (outer dimension)
-	EC3NPool evec.Vec2i `nest:"+" desc:"number of EC3 pools (outer dimension)"`
+	EC3NPool evec.Vec2i `nest:"+"`
 
 	// number of neurons in one EC3 pool
-	EC3NNrn evec.Vec2i `nest:"+" desc:"number of neurons in one EC3 pool"`
+	EC3NNrn evec.Vec2i `nest:"+"`
 
 	// number of neurons in one CA1 pool
-	CA1NNrn evec.Vec2i `nest:"+" desc:"number of neurons in one CA1 pool"`
+	CA1NNrn evec.Vec2i `nest:"+"`
 
 	// size of CA3
-	CA3Size evec.Vec2i `nest:"+" desc:"size of CA3"`
+	CA3Size evec.Vec2i `nest:"+"`
 
-	// [def: 2.236] size of DG / CA3
-	DGRatio float32 `def:"2.236" desc:"size of DG / CA3"`
+	// size of DG / CA3
+	DGRatio float32 `def:"2.236"`
 
-	// [def: 0.1] percent connectivity from EC3 to EC2
-	EC3ToEC2PCon float32 `def:"0.1" desc:"percent connectivity from EC3 to EC2"`
+	// percent connectivity from EC3 to EC2
+	EC3ToEC2PCon float32 `def:"0.1"`
 
-	// [def: 0.25] percent connectivity from EC2 to DG
-	EC2ToDGPCon float32 `def:"0.25" desc:"percent connectivity from EC2 to DG"`
+	// percent connectivity from EC2 to DG
+	EC2ToDGPCon float32 `def:"0.25"`
 
-	// [def: 0.25] percent connectivity from EC2 to CA3
-	EC2ToCA3PCon float32 `def:"0.25" desc:"percent connectivity from EC2 to CA3"`
+	// percent connectivity from EC2 to CA3
+	EC2ToCA3PCon float32 `def:"0.25"`
 
-	// [def: 0.25] percent connectivity from CA3 to CA1
-	CA3ToCA1PCon float32 `def:"0.25" desc:"percent connectivity from CA3 to CA1"`
+	// percent connectivity from CA3 to CA1
+	CA3ToCA1PCon float32 `def:"0.25"`
 
-	// [def: 0.02] percent connectivity into CA3 from DG
-	DGToCA3PCon float32 `def:"0.02" desc:"percent connectivity into CA3 from DG"`
+	// percent connectivity into CA3 from DG
+	DGToCA3PCon float32 `def:"0.02"`
 
 	// lateral radius of connectivity in EC2
-	EC2LatRadius int `desc:"lateral radius of connectivity in EC2"`
+	EC2LatRadius int
 
 	// lateral gaussian sigma in EC2 for how quickly weights fall off with distance
-	EC2LatSigma float32 `desc:"lateral gaussian sigma in EC2 for how quickly weights fall off with distance"`
+	EC2LatSigma float32
 
-	// [def: 1] proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
-	MossyDelta float32 `def:"1" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
+	// proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
+	MossyDelta float32 `def:"1"`
 
-	// [def: 0.75] proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
-	MossyDeltaTest float32 `def:"0.75" desc:"proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc"`
+	// proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
+	MossyDeltaTest float32 `def:"0.75"`
 
-	// [def: 0.9] low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
-	ThetaLow float32 `def:"0.9" desc:"low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
+	// low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
+	ThetaLow float32 `def:"0.9"`
 
-	// [def: 1] high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
-	ThetaHigh float32 `def:"1" desc:"high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model"`
+	// high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
+	ThetaHigh float32 `def:"1"`
 
-	// [def: true] flag for clamping the EC5 from EC5ClampSrc
-	EC5Clamp bool `def:"true" desc:"flag for clamping the EC5 from EC5ClampSrc"`
+	// flag for clamping the EC5 from EC5ClampSrc
+	EC5Clamp bool `def:"true"`
 
-	// [def: EC3] source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available
-	EC5ClampSrc string `def:"EC3" desc:"source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available"`
+	// source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available
+	EC5ClampSrc string `def:"EC3"`
 
-	// [def: true] clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there
-	EC5ClampTest bool `def:"true" desc:"clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there"`
+	// clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there
+	EC5ClampTest bool `def:"true"`
 
-	// [def: 0.1] threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization.
-	EC5ClampThr float32 `def:"0.1" desc:"threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization."`
+	// threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization.
+	EC5ClampThr float32 `def:"0.1"`
 }
 
 func (hip *HipConfig) Defaults() {

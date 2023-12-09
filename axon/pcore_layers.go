@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/goki/gosl/slbool"
-	"github.com/goki/ki/bools"
 	"github.com/goki/ki/kit"
+	"goki.dev/glop/num"
 )
 
 //gosl: start pcore_layers
@@ -23,32 +23,32 @@ import (
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
 
-	// [def: 0.05] threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated
-	GateThr float32 `def:"0.05" desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
+	// threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated
+	GateThr float32 `def:"0.05"`
 
 	// is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the Global state, and used for updating effort and other factors.
-	IsVS slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the Global state, and used for updating effort and other factors."`
+	IsVS slbool.Bool
 
 	// index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName
-	OtherMatrixIdx int32 `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
+	OtherMatrixIdx int32 `inactive:"+"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
-	ThalLay1Idx int32 `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
+	ThalLay1Idx int32 `inactive:"+"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used
-	ThalLay2Idx int32 `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used"`
+	ThalLay2Idx int32 `inactive:"+"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used
-	ThalLay3Idx int32 `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used"`
+	ThalLay3Idx int32 `inactive:"+"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used
-	ThalLay4Idx int32 `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used"`
+	ThalLay4Idx int32 `inactive:"+"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used
-	ThalLay5Idx int32 `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used"`
+	ThalLay5Idx int32 `inactive:"+"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used
-	ThalLay6Idx int32 `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used"`
+	ThalLay6Idx int32 `inactive:"+"`
 
 	pad, pad1, pad2 int32
 }
@@ -87,8 +87,8 @@ const (
 // Typically just a single unit per Pool representing a given stripe.
 type GPParams struct {
 
-	// [view: inline] [viewif: LayType=GPLayer] type of GP Layer -- must set during config using SetBuildConfig of GPType.
-	GPType GPLayerTypes `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer -- must set during config using SetBuildConfig of GPType."`
+	// type of GP Layer -- must set during config using SetBuildConfig of GPType.
+	GPType GPLayerTypes `viewif:"LayType=GPLayer" view:"inline"`
 
 	pad, pad1, pad2 uint32
 }
@@ -164,7 +164,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 			}
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-			SetGlbV(ctx, di, GvVSMatrixJustGated, bools.ToFloat32(mtxGated))
+			SetGlbV(ctx, di, GvVSMatrixJustGated, num.FromBool[float32](mtxGated))
 			if mtxGated {
 				SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, uint32(poolIdx), 1)
 			}

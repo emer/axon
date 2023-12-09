@@ -9,7 +9,7 @@ package nxx1
 import (
 	"testing"
 
-	"github.com/goki/mat32"
+	"goki.dev/mat32/v2"
 )
 
 // TOLERANCE is the numerical difference tolerance for comparing vs. target values

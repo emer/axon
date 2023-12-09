@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/v2/emer"
 )
 
 // AxonNetwork defines the essential algorithmic API for Axon, at the network level.

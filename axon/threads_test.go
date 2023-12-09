@@ -11,14 +11,14 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/patgen"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/patgen"
+	"github.com/emer/emergent/v2/prjn"
 	"github.com/goki/ki/ints"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
 )
 
 const (

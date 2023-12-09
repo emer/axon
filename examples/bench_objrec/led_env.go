@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/env"
 	"github.com/emer/vision/vfilter"
 	"github.com/emer/vision/vxform"
+	"goki.dev/etable/v2/etensor"
 )
 
 // LEDEnv generates images of old-school "LED" style "letters" composed of a set of horizontal
@@ -20,52 +20,52 @@ import (
 type LEDEnv struct {
 
 	// name of this environment
-	Nm string `desc:"name of this environment"`
+	Nm string
 
 	// description of this environment
-	Dsc string `desc:"description of this environment"`
+	Dsc string
 
 	// draws LEDs onto image
-	Draw LEDraw `desc:"draws LEDs onto image"`
+	Draw LEDraw
 
 	// visual processing params
-	Vis Vis `desc:"visual processing params"`
+	Vis Vis
 
 	// number of output units per LED item -- spiking benefits from replication
-	NOutPer int `desc:"number of output units per LED item -- spiking benefits from replication"`
+	NOutPer int
 
-	// [min: 0] [max: 19] minimum LED number to draw (0-19)
-	MinLED int `min:"0" max:"19" desc:"minimum LED number to draw (0-19)"`
+	// minimum LED number to draw (0-19)
+	MinLED int `min:"0" max:"19"`
 
-	// [min: 0] [max: 19] maximum LED number to draw (0-19)
-	MaxLED int `min:"0" max:"19" desc:"maximum LED number to draw (0-19)"`
+	// maximum LED number to draw (0-19)
+	MaxLED int `min:"0" max:"19"`
 
 	// current LED number that was drawn
-	CurLED int `inactive:"+" desc:"current LED number that was drawn"`
+	CurLED int `inactive:"+"`
 
 	// previous LED number that was drawn
-	PrvLED int `inactive:"+" desc:"previous LED number that was drawn"`
+	PrvLED int `inactive:"+"`
 
 	// random transform parameters
-	XFormRand vxform.Rand `desc:"random transform parameters"`
+	XFormRand vxform.Rand
 
 	// current -- prev transforms
-	XForm vxform.XForm `desc:"current -- prev transforms"`
+	XForm vxform.XForm
 
-	// [view: inline] current run of model as provided during Init
-	Run env.Ctr `view:"inline" desc:"current run of model as provided during Init"`
+	// current run of model as provided during Init
+	Run env.Ctr `view:"inline"`
 
-	// [view: inline] number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline" desc:"number of times through Seq.Max number of sequences"`
+	// number of times through Seq.Max number of sequences
+	Epoch env.Ctr `view:"inline"`
 
-	// [view: inline] trial is the step counter within epoch
-	Trial env.Ctr `view:"inline" desc:"trial is the step counter within epoch"`
+	// trial is the step counter within epoch
+	Trial env.Ctr `view:"inline"`
 
 	// original image prior to random transforms
-	OrigImg etensor.Float32 `desc:"original image prior to random transforms"`
+	OrigImg etensor.Float32
 
 	// CurLED one-hot output tensor
-	Output etensor.Float32 `desc:"CurLED one-hot output tensor"`
+	Output etensor.Float32
 }
 
 func (ev *LEDEnv) Name() string { return ev.Nm }

@@ -8,99 +8,99 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/evec"
-	"github.com/emer/emergent/popcode"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/evec"
+	"github.com/emer/emergent/v2/popcode"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/mat32/v2"
 )
 
 // MoveEnv is a flat-world grid-based environment
 type MoveEnv struct {
 
 	// name of this environment
-	Nm string `desc:"name of this environment"`
+	Nm string
 
 	// update display -- turn off to make it faster
-	Disp bool `desc:"update display -- turn off to make it faster"`
+	Disp bool
 
 	// size of 2D world
-	Size evec.Vec2i `desc:"size of 2D world"`
+	Size evec.Vec2i
 
-	// [view: no-inline] 2D grid world, each cell is a material (mat)
-	World *etensor.Int `view:"no-inline" desc:"2D grid world, each cell is a material (mat)"`
+	// 2D grid world, each cell is a material (mat)
+	World *etensor.Int `view:"no-inline"`
 
 	// list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible
-	Acts []string `desc:"list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible"`
+	Acts []string
 
 	// action map of action names to indexes
-	ActMap map[string]int `desc:"action map of action names to indexes"`
+	ActMap map[string]int
 
 	// field of view in degrees, e.g., 180, must be even multiple of AngInc
-	FOV int `desc:"field of view in degrees, e.g., 180, must be even multiple of AngInc"`
+	FOV int
 
 	// angle increment for rotation, in degrees -- defaults to 15
-	AngInc int `desc:"angle increment for rotation, in degrees -- defaults to 15"`
+	AngInc int
 
 	// total number of rotation angles in a circle
-	NRotAngles int `inactive:"+" desc:"total number of rotation angles in a circle"`
+	NRotAngles int `inactive:"+"`
 
 	// total number of FOV rays that are traced
-	NFOVRays int `inactive:"+" desc:"total number of FOV rays that are traced"`
+	NFOVRays int `inactive:"+"`
 
 	// number of units in depth population codes
-	DepthSize int `inactive:"+" desc:"number of units in depth population codes"`
+	DepthSize int `inactive:"+"`
 
 	// population code for depth, in normalized units
-	DepthCode popcode.OneD `desc:"population code for depth, in normalized units"`
+	DepthCode popcode.OneD
 
 	// angle population code values, in normalized units
-	AngCode popcode.Ring `desc:"angle population code values, in normalized units"`
+	AngCode popcode.Ring
 
 	// number of units per localist value
-	UnitsPer int `desc:"number of units per localist value"`
+	UnitsPer int
 
 	// print debug messages
-	Debug bool `desc:"print debug messages"`
+	Debug bool
 
 	// proportion of times that a blank input is generated -- for testing pulvinar behavior with blank inputs
-	PctBlank float32 `desc:"proportion of times that a blank input is generated -- for testing pulvinar behavior with blank inputs"`
+	PctBlank float32
 
 	// current location of agent, floating point
-	PosF mat32.Vec2 `inactive:"+" desc:"current location of agent, floating point"`
+	PosF mat32.Vec2 `inactive:"+"`
 
 	// current location of agent, integer
-	PosI evec.Vec2i `inactive:"+" desc:"current location of agent, integer"`
+	PosI evec.Vec2i `inactive:"+"`
 
 	// current angle, in degrees
-	Angle int `inactive:"+" desc:"current angle, in degrees"`
+	Angle int `inactive:"+"`
 
 	// angle that we just rotated -- drives vestibular
-	RotAng int `inactive:"+" desc:"angle that we just rotated -- drives vestibular"`
+	RotAng int `inactive:"+"`
 
 	// last action taken
-	Act int `inactive:"+" desc:"last action taken"`
+	Act int `inactive:"+"`
 
 	// depth for each angle (NFOVRays), raw
-	Depths []float32 `desc:"depth for each angle (NFOVRays), raw"`
+	Depths []float32
 
 	// depth for each angle (NFOVRays), normalized log
-	DepthLogs []float32 `desc:"depth for each angle (NFOVRays), normalized log"`
+	DepthLogs []float32
 
 	// current rendered state tensors -- extensible map
-	CurStates map[string]*etensor.Float32 `desc:"current rendered state tensors -- extensible map"`
+	CurStates map[string]*etensor.Float32
 
 	// next rendered state tensors -- updated from actions
-	NextStates map[string]*etensor.Float32 `desc:"next rendered state tensors -- updated from actions"`
+	NextStates map[string]*etensor.Float32
 
-	// [view: -] random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
-	Rand erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this -- set seed here for weight initialization values"`
+	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
+	Rand erand.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `inactive:"+" desc:"random seed"`
+	RndSeed int64 `inactive:"+"`
 }
 
 var KiT_MoveEnv = kit.Types.AddType(&MoveEnv{}, nil)

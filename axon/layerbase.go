@@ -12,14 +12,14 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/relpos"
-	"github.com/emer/emergent/weights"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/gi/giv"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/relpos"
+	"github.com/emer/emergent/v2/weights"
 	"github.com/goki/ki/indent"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/mat32/v2"
 )
 
 // LayerBase manages the structural elements of the layer, which are common
@@ -30,77 +30,77 @@ import (
 // accessed via the AxonLay field.
 type LayerBase struct {
 
-	// [view: -] we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonLay AxonLayer `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	// we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary.
+	AxonLay AxonLayer `copy:"-" json:"-" xml:"-" view:"-"`
 
-	// [view: -] our parent network, in case we need to use it to find other layers etc -- set when added by network
-	Network *Network `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
+	// our parent network, in case we need to use it to find other layers etc -- set when added by network
+	Network *Network `copy:"-" json:"-" xml:"-" view:"-"`
 
 	// Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name
-	Nm string `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
+	Nm string
 
 	// Class is for applying parameter styles, can be space separated multple tags
-	Cls string `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Cls string
 
 	// inactivate this layer -- allows for easy experimentation
-	Off bool `desc:"inactivate this layer -- allows for easy experimentation"`
+	Off bool
 
 	// shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools
-	Shp etensor.Shape `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
+	Shp etensor.Shape
 
 	// type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)
-	Typ LayerTypes `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
+	Typ LayerTypes
 
-	// [view: inline] [tableview: -] Spatial relationship to other layer, determines positioning
-	Rel relpos.Rel `tableview:"-" view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
+	// Spatial relationship to other layer, determines positioning
+	Rel relpos.Rel `tableview:"-" view:"inline"`
 
-	// [tableview: -] position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.
-	Ps mat32.Vec3 `tableview:"-" desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
+	// position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.
+	Ps mat32.Vec3 `tableview:"-"`
 
-	// [view: -] a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.
-	Idx int `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
+	// a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.
+	Idx int `view:"-" inactive:"-"`
 
-	// [view: -] number of neurons in the layer
-	NNeurons uint32 `view:"-" desc:"number of neurons in the layer"`
+	// number of neurons in the layer
+	NNeurons uint32 `view:"-"`
 
-	// [view: -] starting index of neurons for this layer within the global Network list
-	NeurStIdx uint32 `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
+	// starting index of neurons for this layer within the global Network list
+	NeurStIdx uint32 `view:"-" inactive:"-"`
 
-	// [view: -] number of pools based on layer shape -- at least 1 for layer pool + 4D subpools
-	NPools uint32 `view:"-" desc:"number of pools based on layer shape -- at least 1 for layer pool + 4D subpools"`
+	// number of pools based on layer shape -- at least 1 for layer pool + 4D subpools
+	NPools uint32 `view:"-"`
 
-	// [view: -] maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Vals storage is allocated to hold this amount.
-	MaxData uint32 `view:"-" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Vals storage is allocated to hold this amount."`
+	// maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Vals storage is allocated to hold this amount.
+	MaxData uint32 `view:"-"`
 
-	// [view: -] indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp
-	RepIxs []int `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
+	// indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp
+	RepIxs []int `view:"-"`
 
-	// [view: -] shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape
-	RepShp etensor.Shape `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
+	// shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape
+	RepShp etensor.Shape `view:"-"`
 
 	// list of receiving projections into this layer from other layers
-	RcvPrjns AxonPrjns `desc:"list of receiving projections into this layer from other layers"`
+	RcvPrjns AxonPrjns
 
 	// list of sending projections from this layer to other layers
-	SndPrjns AxonPrjns `desc:"list of sending projections from this layer to other layers"`
+	SndPrjns AxonPrjns
 
 	// layer-level state values that are updated during computation -- one for each data parallel -- is a sub-slice of network full set
-	Vals []LayerVals `desc:"layer-level state values that are updated during computation -- one for each data parallel -- is a sub-slice of network full set"`
+	Vals []LayerVals
 
 	// computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D) * 1 per data parallel (inner loop).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values.
-	Pools []Pool `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D) * 1 per data parallel (inner loop).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
+	Pools []Pool
 
-	// [view: -] [Neurons][Data] external input values for this layer, allocated from network global Exts slice
-	Exts []float32 `view:"-" desc:"[Neurons][Data] external input values for this layer, allocated from network global Exts slice"`
+	// external input values for this layer, allocated from network global Exts slice
+	Exts []float32 `view:"-"`
 
-	// [tableview: -] configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,
-	BuildConfig map[string]string `tableview:"-" desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
+	// configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,
+	BuildConfig map[string]string `tableview:"-"`
 
-	// [tableview: -] default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
-	DefParams params.Params `tableview:"-" desc:"default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map."`
+	// default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
+	DefParams params.Params `tableview:"-"`
 
-	// [tableview: -] provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
+	// provides a history of parameters applied to the layer
+	ParamsHistory params.HistoryImpl `tableview:"-"`
 }
 
 // emer.Layer interface methods

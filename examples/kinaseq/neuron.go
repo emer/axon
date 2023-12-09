@@ -12,12 +12,12 @@ import (
 	"strings"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
 )
 
 // ParamSets for basic parameters
@@ -81,22 +81,22 @@ var ParamSets = params.Sets{
 type NeuronEx struct {
 
 	// time of last sending spike
-	SCaUpT int `desc:"time of last sending spike"`
+	SCaUpT int
 
 	// time of last recv spike
-	RCaUpT int `desc:"time of last recv spike"`
+	RCaUpT int
 
 	// sending poisson firing probability accumulator
-	Sp float32 `desc:"sending poisson firing probability accumulator"`
+	Sp float32
 
 	// recv poisson firing probability accumulator
-	Rp float32 `desc:"recv poisson firing probability accumulator"`
+	Rp float32
 
 	// NMDA mg-based blocking conductance
-	NMDAGmg float32 `desc:"NMDA mg-based blocking conductance"`
+	NMDAGmg float32
 
 	// when 0, it is time to learn according to theta cycle, otherwise increments up unless still -1 from init
-	LearnNow float32 `desc:"when 0, it is time to learn according to theta cycle, otherwise increments up unless still -1 from init"`
+	LearnNow float32
 }
 
 func (nex *NeuronEx) Init() {

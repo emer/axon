@@ -5,9 +5,9 @@
 package axon
 
 import (
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/relpos"
 )
 
 // AddLDTLayer adds a LDTLayer

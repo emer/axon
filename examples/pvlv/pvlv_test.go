@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/emer/emergent/etime"
+	"github.com/emer/emergent/v2/etime"
 )
 
 // basic pos acq, ext

@@ -15,29 +15,29 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/examples/boa/armaze"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/timer"
-	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
-	"github.com/emer/etable/split"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/ki/bools"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/timer"
+	"github.com/emer/empi/v2/mpi"
+	"goki.dev/etable/v2/agg"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/etable/v2/split"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/glop/bools"
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -61,49 +61,49 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
 	// if true, stop running at end of a sequence (for NetView Di data parallel index)
-	StopOnSeq bool `desc:"if true, stop running at end of a sequence (for NetView Di data parallel index)"`
+	StopOnSeq bool
 
 	// if true, stop running when an error programmed into the code occurs
-	StopOnErr bool `desc:"if true, stop running when an error programmed into the code occurs"`
+	StopOnErr bool
 
-	// [view: inline] network parameter management
-	Params emer.NetParams `view:"inline" desc:"network parameter management"`
+	// network parameter management
+	Params emer.NetParams `view:"inline"`
 
-	// [view: no-inline] contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
+	// contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline"`
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
 	// Contains all the logs and information about the logs.'
-	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+	Logs elog.Logs
 
-	// [view: no-inline] Environments
-	Envs env.Envs `view:"no-inline" desc:"Environments"`
+	// Environments
+	Envs env.Envs `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
-	// [view: inline] netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+	// netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline"`
 
-	// [view: -] manages all the gui elements
-	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+	// manages all the gui elements
+	GUI egui.GUI `view:"-"`
 
-	// [view: -] gui for viewing env
-	EnvGUI *armaze.GUI `view:"-" desc:"gui for viewing env"`
+	// gui for viewing env
+	EnvGUI *armaze.GUI `view:"-"`
 
-	// [view: -] a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+	// a list of random seeds to use for each run
+	RndSeeds erand.Seeds `view:"-"`
 
-	// [view: -] testing data, from -test arg
-	TestData map[string]float32 `view:"-" desc:"testing data, from -test arg"`
+	// testing data, from -test arg
+	TestData map[string]float32 `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults

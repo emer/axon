@@ -8,74 +8,74 @@ import (
 	"image"
 
 	"github.com/anthonynsimon/bild/transform"
-	"github.com/emer/etable/etensor"
 	"github.com/emer/leabra/fffb"
 	"github.com/emer/vision/gabor"
 	"github.com/emer/vision/kwta"
 	"github.com/emer/vision/v1complex"
 	"github.com/emer/vision/vfilter"
 	"github.com/goki/ki/kit"
+	"goki.dev/etable/v2/etensor"
 )
 
 // Vis encapsulates specific visual processing pipeline for V1 filtering
 type Vis struct {
 
 	// V1 simple gabor filter parameters
-	V1sGabor gabor.Filter `desc:"V1 simple gabor filter parameters"`
+	V1sGabor gabor.Filter
 
-	// [view: inline] geometry of input, output for V1 simple-cell processing
-	V1sGeom vfilter.Geom `inactive:"+" view:"inline" desc:"geometry of input, output for V1 simple-cell processing"`
+	// geometry of input, output for V1 simple-cell processing
+	V1sGeom vfilter.Geom `inactive:"+" view:"inline"`
 
 	// neighborhood inhibition for V1s -- each unit gets inhibition from same feature in nearest orthogonal neighbors -- reduces redundancy of feature code
-	V1sNeighInhib kwta.NeighInhib `desc:"neighborhood inhibition for V1s -- each unit gets inhibition from same feature in nearest orthogonal neighbors -- reduces redundancy of feature code"`
+	V1sNeighInhib kwta.NeighInhib
 
 	// kwta parameters for V1s
-	V1sKWTA kwta.KWTA `desc:"kwta parameters for V1s"`
+	V1sKWTA kwta.KWTA
 
 	// target image size to use -- images will be rescaled to this size
-	ImgSize image.Point `desc:"target image size to use -- images will be rescaled to this size"`
+	ImgSize image.Point
 
-	// [view: no-inline] V1 simple gabor filter tensor
-	V1sGaborTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter tensor"`
+	// V1 simple gabor filter tensor
+	V1sGaborTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] input image as tensor
-	ImgTsr etensor.Float32 `view:"no-inline" desc:"input image as tensor"`
+	// input image as tensor
+	ImgTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: -] current input image
-	Img image.Image `view:"-" desc:"current input image"`
+	// current input image
+	Img image.Image `view:"-"`
 
-	// [view: no-inline] V1 simple gabor filter output tensor
-	V1sTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter output tensor"`
+	// V1 simple gabor filter output tensor
+	V1sTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 simple extra Gi from neighbor inhibition tensor
-	V1sExtGiTsr etensor.Float32 `view:"no-inline" desc:"V1 simple extra Gi from neighbor inhibition tensor"`
+	// V1 simple extra Gi from neighbor inhibition tensor
+	V1sExtGiTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 simple gabor filter output, kwta output tensor
-	V1sKwtaTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter output, kwta output tensor"`
+	// V1 simple gabor filter output, kwta output tensor
+	V1sKwtaTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 simple gabor filter output, max-pooled 2x2 of V1sKwta tensor
-	V1sPoolTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter output, max-pooled 2x2 of V1sKwta tensor"`
+	// V1 simple gabor filter output, max-pooled 2x2 of V1sKwta tensor
+	V1sPoolTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 simple gabor filter output, un-max-pooled 2x2 of V1sPool tensor
-	V1sUnPoolTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter output, un-max-pooled 2x2 of V1sPool tensor"`
+	// V1 simple gabor filter output, un-max-pooled 2x2 of V1sPool tensor
+	V1sUnPoolTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 simple gabor filter output, angle-only features tensor
-	V1sAngOnlyTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter output, angle-only features tensor"`
+	// V1 simple gabor filter output, angle-only features tensor
+	V1sAngOnlyTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 simple gabor filter output, max-pooled 2x2 of AngOnly tensor
-	V1sAngPoolTsr etensor.Float32 `view:"no-inline" desc:"V1 simple gabor filter output, max-pooled 2x2 of AngOnly tensor"`
+	// V1 simple gabor filter output, max-pooled 2x2 of AngOnly tensor
+	V1sAngPoolTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 complex length sum filter output tensor
-	V1cLenSumTsr etensor.Float32 `view:"no-inline" desc:"V1 complex length sum filter output tensor"`
+	// V1 complex length sum filter output tensor
+	V1cLenSumTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] V1 complex end stop filter output tensor
-	V1cEndStopTsr etensor.Float32 `view:"no-inline" desc:"V1 complex end stop filter output tensor"`
+	// V1 complex end stop filter output tensor
+	V1cEndStopTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] Combined V1 output tensor with V1s simple as first two rows, then length sum, then end stops = 5 rows total
-	V1AllTsr etensor.Float32 `view:"no-inline" desc:"Combined V1 output tensor with V1s simple as first two rows, then length sum, then end stops = 5 rows total"`
+	// Combined V1 output tensor with V1s simple as first two rows, then length sum, then end stops = 5 rows total
+	V1AllTsr etensor.Float32 `view:"no-inline"`
 
-	// [view: no-inline] inhibition values for V1s KWTA
-	V1sInhibs fffb.Inhibs `view:"no-inline" desc:"inhibition values for V1s KWTA"`
+	// inhibition values for V1s KWTA
+	V1sInhibs fffb.Inhibs `view:"no-inline"`
 }
 
 var KiT_Vis = kit.Types.AddType(&Vis{}, nil)

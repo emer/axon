@@ -7,8 +7,8 @@ package main
 import (
 	"image"
 
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/girl"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/girl"
 )
 
 // LEDraw renders old-school "LED" style "letters" composed of a set of horizontal
@@ -16,29 +16,29 @@ import (
 // Renders using SVG.
 type LEDraw struct {
 
-	// [def: 4] line width of LEDraw as percent of display size
-	Width float32 `def:"4" desc:"line width of LEDraw as percent of display size"`
+	// line width of LEDraw as percent of display size
+	Width float32 `def:"4"`
 
-	// [def: 0.6] size of overall LED as proportion of overall image size
-	Size float32 `def:"0.6" desc:"size of overall LED as proportion of overall image size"`
+	// size of overall LED as proportion of overall image size
+	Size float32 `def:"0.6"`
 
 	// color name for drawing lines
-	LineColor gi.ColorName `desc:"color name for drawing lines"`
+	LineColor gi.ColorName
 
 	// color name for background
-	BgColor gi.ColorName `desc:"color name for background"`
+	BgColor gi.ColorName
 
 	// size of image to render
-	ImgSize image.Point `desc:"size of image to render"`
+	ImgSize image.Point
 
-	// [view: -] rendered image
-	Image *image.RGBA `view:"-" desc:"rendered image"`
+	// rendered image
+	Image *image.RGBA `view:"-"`
 
-	// [view: +] painter object
-	Paint girl.Paint `view:"+" desc:"painter object"`
+	// painter object
+	Paint girl.Paint `view:"+"`
 
-	// [view: -] rendering state
-	Render girl.State `view:"-" desc:"rendering state"`
+	// rendering state
+	Render girl.State `view:"-"`
 }
 
 func (ld *LEDraw) Defaults() {

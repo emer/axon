@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
 )
 
 // Note: subsequent params applied after Base

@@ -3,7 +3,7 @@ package axon
 import (
 	"testing"
 
-	"github.com/emer/emergent/prjn"
+	"github.com/emer/emergent/v2/prjn"
 	"github.com/stretchr/testify/assert"
 )
 

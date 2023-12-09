@@ -10,11 +10,11 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/emer/emergent/erand"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/erand"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
+	"goki.dev/etable/v2/etensor"
 )
 
 // index naming:
@@ -27,7 +27,7 @@ type Layer struct {
 	LayerBase
 
 	// all layer-level parameters -- these must remain constant once configured
-	Params *LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
+	Params *LayerParams
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)

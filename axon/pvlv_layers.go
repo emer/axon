@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/goki/gosl/slbool"
-	"github.com/goki/mat32"
+	"goki.dev/mat32/v2"
 )
 
 //gosl: start pvlv_layers
@@ -18,29 +18,29 @@ import (
 // as a function of the MAX activation of its inputs.
 type LDTParams struct {
 
-	// [def: 0.05] threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
-	SrcThr float32 `def:"0.05" desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+	// threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
+	SrcThr float32 `def:"0.05"`
 
-	// [def: true] use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
-	Rew slbool.Bool `def:"true" desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
+	// use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
+	Rew slbool.Bool `def:"true"`
 
-	// [def: 2] extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
-	MaintInhib float32 `def:"2" desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
+	// extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
+	MaintInhib float32 `def:"2"`
 
-	// [def: 0.4] maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
-	NotMaintMax float32 `def:"0.4" desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
+	// maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
+	NotMaintMax float32 `def:"0.4"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
-	SrcLay1Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
+	SrcLay1Idx int32 `inactive:"+"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used
-	SrcLay2Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
+	SrcLay2Idx int32 `inactive:"+"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used
-	SrcLay3Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
+	SrcLay3Idx int32 `inactive:"+"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used
-	SrcLay4Idx int32 `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
+	SrcLay4Idx int32 `inactive:"+"`
 }
 
 func (lp *LDTParams) Defaults() {
@@ -109,17 +109,17 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 // VSPatchParams parameters for VSPatch learning
 type VSPatchParams struct {
 
-	// [def: 3] multiplier applied after Thr threshold
-	Gain float32 `def:"3" desc:"multiplier applied after Thr threshold"`
+	// multiplier applied after Thr threshold
+	Gain float32 `def:"3"`
 
-	// [def: 0.15] initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
-	ThrInit float32 `def:"0.15" desc:"initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr"`
+	// initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
+	ThrInit float32 `def:"0.15"`
 
-	// [def: 0,0.002] learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `def:"0,0.002" desc:"learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning"`
+	// learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
+	ThrLRate float32 `def:"0,0.002"`
 
-	// [def: 10] extra gain factor for non-reward trials, which is the most critical
-	ThrNonRew float32 `def:"10" desc:"extra gain factor for non-reward trials, which is the most critical"`
+	// extra gain factor for non-reward trials, which is the most critical
+	ThrNonRew float32 `def:"10"`
 }
 
 func (vp *VSPatchParams) Defaults() {
@@ -149,11 +149,11 @@ func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
 // every cycle.
 type VTAParams struct {
 
-	// [def: 0.75] gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
-	CeMGain float32 `def:"0.75" desc:"gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values"`
+	// gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
+	CeMGain float32 `def:"0.75"`
 
-	// [def: 1.25] gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
-	LHbGain float32 `def:"1.25" desc:"gain on computed LHb DA (Burst - Dip) -- for controlling DA levels"`
+	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
+	LHbGain float32 `def:"1.25"`
 
 	pad, pad1 float32
 }

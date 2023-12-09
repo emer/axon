@@ -5,7 +5,7 @@ package axon
 import (
 	"testing"
 
-	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/v2/emer"
 	"github.com/stretchr/testify/assert"
 )
 

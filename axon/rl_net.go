@@ -5,8 +5,8 @@
 package axon
 
 import (
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/relpos"
 )
 
 // AddRewLayer adds a RewLayer of given name

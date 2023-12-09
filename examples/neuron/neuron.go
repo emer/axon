@@ -15,28 +15,28 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/netparams"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/emer/etable/minmax"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
+	"github.com/emer/emergent/v2/ecmd"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/netparams"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/empi/v2/mpi"
 	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -79,7 +79,7 @@ var ParamSets = netparams.Sets{
 type NeuronEx struct {
 
 	// input ISI countdown for spiking mode -- counts up
-	InISI float32 `desc:"input ISI countdown for spiking mode -- counts up"`
+	InISI float32
 }
 
 func (nrn *NeuronEx) Init() {
@@ -94,49 +94,49 @@ func (nrn *NeuronEx) Init() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: no-inline] extra neuron state for additional channels: VGCC, AK
-	NeuronEx NeuronEx `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	// extra neuron state for additional channels: VGCC, AK
+	NeuronEx NeuronEx `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
-	// [view: no-inline] logging
-	Logs elog.Logs `view:"no-inline" desc:"logging"`
+	// logging
+	Logs elog.Logs `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.NetParams `view:"inline"`
 
 	// current cycle of updating
-	Cycle int `inactive:"+" desc:"current cycle of updating"`
+	Cycle int `inactive:"+"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the network viewer
-	NetView *netview.NetView `view:"-" desc:"the network viewer"`
+	// the network viewer
+	NetView *netview.NetView `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 
-	// [view: -] the test-trial plot
-	TstCycPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
+	// the test-trial plot
+	TstCycPlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] map of values for detailed debugging / testing
-	ValMap map[string]float32 `view:"-" desc:"map of values for detailed debugging / testing"`
+	// map of values for detailed debugging / testing
+	ValMap map[string]float32 `view:"-"`
 
-	// [view: -] true if sim is running
-	IsRunning bool `view:"-" desc:"true if sim is running"`
+	// true if sim is running
+	IsRunning bool `view:"-"`
 
-	// [view: -] flag to stop running
-	StopNow bool `view:"-" desc:"flag to stop running"`
+	// flag to stop running
+	StopNow bool `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults

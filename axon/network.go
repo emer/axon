@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/prjn"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
+	"goki.dev/etable/v2/etensor"
 )
 
 // axon.Network implements the Axon spiking model,

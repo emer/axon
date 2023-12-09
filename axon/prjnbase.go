@@ -8,13 +8,13 @@ import (
 	"errors"
 	"log"
 
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
-	"github.com/goki/gi/giv"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/mat32/v2"
 )
 
 // index naming:
@@ -31,68 +31,68 @@ import (
 // accessed via the AxonPrj field.
 type PrjnBase struct {
 
-	// [view: -] we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonPrj AxonPrjn `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	// we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary.
+	AxonPrj AxonPrjn `copy:"-" json:"-" xml:"-" view:"-"`
 
 	// inactivate this projection -- allows for easy experimentation
-	Off bool `desc:"inactivate this projection -- allows for easy experimentation"`
+	Off bool
 
 	// Class is for applying parameter styles, can be space separated multple tags
-	Cls string `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Cls string
 
 	// can record notes about this projection here
-	Notes string `desc:"can record notes about this projection here"`
+	Notes string
 
 	// sending layer for this projection
-	Send *Layer `desc:"sending layer for this projection"`
+	Send *Layer
 
 	// receiving layer for this projection
-	Recv *Layer `desc:"receiving layer for this projection"`
+	Recv *Layer
 
-	// [tableview: -] pattern of connectivity
-	Pat prjn.Pattern `tableview:"-" desc:"pattern of connectivity"`
+	// pattern of connectivity
+	Pat prjn.Pattern `tableview:"-"`
 
 	// type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)
-	Typ PrjnTypes `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
+	Typ PrjnTypes
 
-	// [tableview: -] default parameters that are applied prior to user-set parameters -- these are useful for specific functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a prjn type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
-	DefParams params.Params `tableview:"-" desc:"default parameters that are applied prior to user-set parameters -- these are useful for specific functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a prjn type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map."`
+	// default parameters that are applied prior to user-set parameters -- these are useful for specific functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a prjn type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
+	DefParams params.Params `tableview:"-"`
 
-	// [tableview: -] provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
+	// provides a history of parameters applied to the layer
+	ParamsHistory params.HistoryImpl `tableview:"-"`
 
-	// [view: inline] [tableview: -] average and maximum number of recv connections in the receiving layer
-	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
+	// average and maximum number of recv connections in the receiving layer
+	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline"`
 
-	// [view: inline] [tableview: -] average and maximum number of sending connections in the sending layer
-	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
+	// average and maximum number of sending connections in the sending layer
+	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline"`
 
-	// [view: -] start index into global Synapse array: [Layer][SendPrjns][Synapses]
-	SynStIdx uint32 `view:"-" desc:"start index into global Synapse array: [Layer][SendPrjns][Synapses]"`
+	// start index into global Synapse array:
+	SynStIdx uint32 `view:"-"`
 
-	// [view: -] number of synapses in this projection
-	NSyns uint32 `view:"-" desc:"number of synapses in this projection"`
+	// number of synapses in this projection
+	NSyns uint32 `view:"-"`
 
-	// [view: -] [RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage.
-	RecvCon []StartN `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage."`
+	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage.
+	RecvCon []StartN `view:"-"`
 
-	// [view: -] [SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list
-	RecvSynIdx []uint32 `view:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
+	// index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list
+	RecvSynIdx []uint32 `view:"-"`
 
-	// [view: -] [RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
-	RecvConIdx []uint32 `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
+	// for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
+	RecvConIdx []uint32 `view:"-"`
 
-	// [view: -] [SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage.
-	SendCon []StartN `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage."`
+	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage.
+	SendCon []StartN `view:"-"`
 
-	// [view: -] [SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
-	SendConIdx []uint32 `view:"-" desc:"[SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
+	// index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
+	SendConIdx []uint32 `view:"-"`
 
-	// [view: -] [RecvNeurons][Params.Com.MaxDelay][MaxData] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration
-	GBuf []int32 `view:"-" desc:"[RecvNeurons][Params.Com.MaxDelay][MaxData] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration"`
+	// Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration
+	GBuf []int32 `view:"-"`
 
-	// [view: -] [RecvNeurons][MaxData] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn.
-	GSyns []float32 `view:"-" desc:"[RecvNeurons][MaxData] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn."`
+	// projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn.
+	GSyns []float32 `view:"-"`
 }
 
 // emer.Prjn interface
