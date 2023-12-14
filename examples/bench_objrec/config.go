@@ -9,7 +9,7 @@ import "github.com/emer/emergent/v2/prjn"
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
-type EnvConfig struct {
+type EnvConfig struct { //gti:add
 
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
@@ -19,7 +19,7 @@ type EnvConfig struct {
 }
 
 // ParamConfig has config parameters related to sim params
-type ParamConfig struct {
+type ParamConfig struct { //gti:add
 
 	// network parameters
 	Network map[string]any
@@ -59,7 +59,7 @@ func (cfg *ParamConfig) Defaults() {
 }
 
 // RunConfig has config parameters related to running the sim
-type RunConfig struct {
+type RunConfig struct { //gti:add
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
 	GPU bool `def:"true"`
@@ -90,7 +90,7 @@ type RunConfig struct {
 }
 
 // LogConfig has config parameters related to logging data
-type LogConfig struct {
+type LogConfig struct { //gti:add
 
 	// if true, save final weights after each run
 	SaveWts bool
@@ -115,7 +115,7 @@ type LogConfig struct {
 }
 
 // Config is a standard Sim config -- use as a starting point.
-type Config struct {
+type Config struct { //gti:add
 
 	// specify include files here, and after configuration, it contains list of include files added
 	Includes []string

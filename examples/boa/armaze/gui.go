@@ -28,32 +28,32 @@ import (
 // Geom is overall geometry of the space
 type Geom struct {
 
-	// [def: 2] width of arm -- emery rodent is 1 unit wide
-	ArmWidth float32 `def:"2" desc:"width of arm -- emery rodent is 1 unit wide"`
+	// width of arm -- emery rodent is 1 unit wide
+	ArmWidth float32 `def:"2"`
 
-	// [def: 1] total space between arms, ends up being divided on either side
-	ArmSpace float32 `def:"1" desc:"total space between arms, ends up being divided on either side"`
+	// total space between arms, ends up being divided on either side
+	ArmSpace float32 `def:"1"`
 
-	// [def: 2] multiplier per unit arm length -- keep square with width
-	LengthScale float32 `def:"2" desc:"multiplier per unit arm length -- keep square with width"`
+	// multiplier per unit arm length -- keep square with width
+	LengthScale float32 `def:"2"`
 
-	// [def: 0.1] thickness of walls, floor
-	Thick float32 `def:"0.1" desc:"thickness of walls, floor"`
+	// thickness of walls, floor
+	Thick float32 `def:"0.1"`
 
-	// [def: 0.2] height of walls
-	Height float32 `def:"0.2" desc:"height of walls"`
+	// height of walls
+	Height float32 `def:"0.2"`
 
 	// width + space
-	ArmWidthTot float32 `inactive:"+" desc:"width + space"`
+	ArmWidthTot float32 `inactive:"+"`
 
 	// computed total depth, starts at 0 goes deep
-	Depth float32 `inactive:"+" desc:"computed total depth, starts at 0 goes deep"`
+	Depth float32 `inactive:"+"`
 
 	// computed total width
-	Width float32 `inactive:"+" desc:"computed total width"`
+	Width float32 `inactive:"+"`
 
 	// half width for centering on 0 X
-	HalfWidth float32 `inactive:"+" desc:"half width for centering on 0 X"`
+	HalfWidth float32 `inactive:"+"`
 }
 
 func (ge *Geom) Config(nArms int, maxLen int) {
@@ -79,97 +79,97 @@ func (ge *Geom) Pos(arm, pos int) (x, y float32) {
 type GUI struct {
 
 	// update display -- turn off to make it faster
-	Disp bool `desc:"update display -- turn off to make it faster"`
+	Disp bool
 
 	// the env being visualized
-	Env *Env `desc:"the env being visualized"`
+	Env *Env
 
 	// name of current env -- number is NData index
-	EnvName string `desc:"name of current env -- number is NData index"`
+	EnvName string
 
 	// list of material colors
-	MatColors []string `desc:"list of material colors"`
+	MatColors []string
 
 	// internal state colors
-	StateColors map[string]string `desc:"internal state colors"`
+	StateColors map[string]string
 
 	// thickness (X) and height (Y) of walls
-	WallSize mat32.Vec2 `desc:"thickness (X) and height (Y) of walls"`
+	WallSize mat32.Vec2
 
 	// current internal / behavioral state
-	State TraceStates `desc:"current internal / behavioral state"`
+	State TraceStates
 
 	// trace record of recent activity
-	Trace StateTrace `desc:"trace record of recent activity"`
+	Trace StateTrace
 
-	// [view: -] view of the gui obj
-	StructView *giv.StructView `view:"-" desc:"view of the gui obj"`
+	// view of the gui obj
+	StructView *giv.StructView `view:"-"`
 
-	// [view: -] ArmMaze GUI window
-	WorldWin *gi.Window `view:"-" desc:"ArmMaze GUI window"`
+	// ArmMaze GUI window
+	WorldWin *gi.Window `view:"-"`
 
-	// [view: -] ArmMaze TabView
-	WorldTabs *gi.TabView `view:"-" desc:"ArmMaze TabView"`
+	// ArmMaze TabView
+	WorldTabs *gi.TabView `view:"-"`
 
-	// [view: -] ArmMaze is running
-	IsRunning bool `view:"-" desc:"ArmMaze is running"`
+	// ArmMaze is running
+	IsRunning bool `view:"-"`
 
 	// current depth map
-	DepthVals []float32 `desc:"current depth map"`
+	DepthVals []float32
 
 	// offscreen render camera settings
-	Camera evev.Camera `desc:"offscreen render camera settings"`
+	Camera evev.Camera
 
 	// color map to use for rendering depth map
-	DepthMap giv.ColorMapName `desc:"color map to use for rendering depth map"`
+	DepthMap giv.ColorMapName
 
-	// [view: -] first-person right-eye full field view
-	EyeRFullImg *gi.Bitmap `view:"-" desc:"first-person right-eye full field view"`
+	// first-person right-eye full field view
+	EyeRFullImg *gi.Bitmap `view:"-"`
 
-	// [view: -] first-person right-eye fovea view
-	EyeRFovImg *gi.Bitmap `view:"-" desc:"first-person right-eye fovea view"`
+	// first-person right-eye fovea view
+	EyeRFovImg *gi.Bitmap `view:"-"`
 
-	// [view: -] depth map bitmap view
-	DepthImg *gi.Bitmap `view:"-" desc:"depth map bitmap view"`
+	// depth map bitmap view
+	DepthImg *gi.Bitmap `view:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
-	USposPlot *eplot.Plot2D `desc:"plot of positive valence drives, active OFC US state, and reward"`
+	USposPlot *eplot.Plot2D
 
 	// data for USPlot
-	USposData *etable.Table `desc:"data for USPlot"`
+	USposData *etable.Table
 
 	// plot of negative valence active OFC US state, and outcomes
-	USnegPlot *eplot.Plot2D `desc:"plot of negative valence active OFC US state, and outcomes"`
+	USnegPlot *eplot.Plot2D
 
 	// data for USPlot
-	USnegData *etable.Table `desc:"data for USPlot"`
+	USnegData *etable.Table
 
 	// geometry of world
-	Geom Geom `desc:"geometry of world"`
+	Geom Geom
 
 	// world
-	World *eve.Group `desc:"world"`
+	World *eve.Group
 
-	// [view: -] 3D view of world
-	View3D *evev.View `view:"-" desc:"3D view of world"`
+	// 3D view of world
+	View3D *evev.View `view:"-"`
 
-	// [view: -] emer group
-	Emery *eve.Group `view:"-" desc:"emer group"`
+	// emer group
+	Emery *eve.Group `view:"-"`
 
-	// [view: -] arms group
-	Arms *eve.Group `view:"-" desc:"arms group"`
+	// arms group
+	Arms *eve.Group `view:"-"`
 
-	// [view: -] stims group
-	Stims *eve.Group `view:"-" desc:"stims group"`
+	// stims group
+	Stims *eve.Group `view:"-"`
 
-	// [view: -] Right eye of emery
-	EyeR eve.Body `view:"-" desc:"Right eye of emery"`
+	// Right eye of emery
+	EyeR eve.Body `view:"-"`
 
-	// [view: -] contacts from last step, for body
-	Contacts eve.Contacts `view:"-" desc:"contacts from last step, for body"`
+	// contacts from last step, for body
+	Contacts eve.Contacts `view:"-"`
 
-	// [view: -] gui window
-	Win *gi.Window `view:"-" desc:"gui window"`
+	// gui window
+	Win *gi.Window `view:"-"`
 }
 
 // ConfigWorldGUI configures all the world view GUI elements

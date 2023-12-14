@@ -40,41 +40,41 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 
-	// [view: inline] Ca time constants
-	CaDt  kinase.CaParams `view:"inline" desc:"Ca time constants"`
+	// Ca time constants
+	CaDt  kinase.CaParams `view:"inline"`
 	Minit float64
 	Pinit float64
 	Dinit float64
 
-	// [def: 0,0.11] adjustment to dt to account for discrete time updating
-	MdtAdj float64 `def:"0,0.11" desc:"adjustment to dt to account for discrete time updating"`
+	// adjustment to dt to account for discrete time updating
+	MdtAdj float64 `def:"0,0.11"`
 
-	// [def: 0.0.03] adjustment to dt to account for discrete time updating
-	PdtAdj float64 `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
+	// adjustment to dt to account for discrete time updating
+	PdtAdj float64 `def:"0.0.03"`
 
-	// [def: 0.0.03] adjustment to dt to account for discrete time updating
-	DdtAdj float64 `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
+	// adjustment to dt to account for discrete time updating
+	DdtAdj float64 `def:"0.0.03"`
 
 	// number of time steps
-	TimeSteps int `desc:"number of time steps"`
+	TimeSteps int
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 }
 
 // TheSim is the overall state for this simulation

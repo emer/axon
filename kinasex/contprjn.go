@@ -15,19 +15,19 @@ import (
 type KinContParams struct {
 
 	// which learning rule to use -- can select std SynSpkTheta or Cont variants that are only supported in this specialized Prjn
-	Rule kinase.Rules `desc:"which learning rule to use -- can select std SynSpkTheta or Cont variants that are only supported in this specialized Prjn"`
+	Rule kinase.Rules
 
-	// [def: 0.8] gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values.
-	NMDAG float32 `def:"0.8" desc:"gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values."`
+	// gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values.
+	NMDAG float32 `def:"0.8"`
 
 	// number of msec (cycles) after either a pre or postsynaptic spike, when the competitive binding of CaMKII vs. DAPK1 to NMDA N2B takes place, generating the provisional weight change value that can then turn into the actual weight change DWt
-	TWindow int `desc:"number of msec (cycles) after either a pre or postsynaptic spike, when the competitive binding of CaMKII vs. DAPK1 to NMDA N2B takes place, generating the provisional weight change value that can then turn into the actual weight change DWt"`
+	TWindow int
 
-	// [def: 0.5] proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes
-	DMaxPct float32 `def:"0.5" desc:"proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes"`
+	// proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes
+	DMaxPct float32 `def:"0.5"`
 
-	// [def: 1,0.93,1.05] scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)
-	DScale float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)"`
+	// scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)
+	DScale float32 `def:"1,0.93,1.05"`
 }
 
 func (kp *KinContParams) Defaults() {
@@ -87,11 +87,11 @@ func (kp *KinContParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
 type ContPrjn struct {
 	axon.Prjn // access as .Prjn
 
-	// [view: inline] kinase continuous learning rule params
-	Cont KinContParams `view:"inline" desc:"kinase continuous learning rule params"`
+	// kinase continuous learning rule params
+	Cont KinContParams `view:"inline"`
 
 	// continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array
-	ContSyns []ContSyn `desc:"continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
+	ContSyns []ContSyn
 }
 
 func (pj *ContPrjn) Defaults() {

@@ -49,22 +49,22 @@ var KiT_TraceStates = kit.Enums.AddEnum(TraceStatesN, kit.NotBitFlag, nil)
 type TraceRec struct {
 
 	// absolute time
-	Time float32 `desc:"absolute time"`
+	Time float32
 
 	// trial counter
-	Trial int `desc:"trial counter"`
+	Trial int
 
 	// current arm
-	Arm int `desc:"current arm"`
+	Arm int
 
 	// position in arm
-	Pos int `desc:"position in arm"`
+	Pos int
 
 	// behavioral / internal state summary
-	State TraceStates `desc:"behavioral / internal state summary"`
+	State TraceStates
 
 	// NDrives current drive state level
-	Drives []float32 `desc:"NDrives current drive state level"`
+	Drives []float32
 }
 
 // StateTrace holds trace records

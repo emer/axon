@@ -24,49 +24,49 @@ import "github.com/goki/gosl/slbool"
 type GiParams struct {
 
 	// enable this level of inhibition
-	On slbool.Bool `desc:"enable this level of inhibition"`
+	On slbool.Bool
 
-	// [def: 1,1.1,0.75,0.9] [viewif: On] [min: 0] [0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly
-	Gi float32 `viewif:"On" min:"0" def:"1,1.1,0.75,0.9" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
+	// overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly
+	Gi float32 `viewif:"On" min:"0" def:"1,1.1,0.75,0.9"`
 
-	// [def: 0.5,1,4] [viewif: On] [min: 0] amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels.
-	FB float32 `viewif:"On" min:"0" def:"0.5,1,4" desc:"amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels."`
+	// amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels.
+	FB float32 `viewif:"On" min:"0" def:"0.5,1,4"`
 
-	// [def: 6] [viewif: On] [min: 0] fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
-	FSTau float32 `viewif:"On" min:"0" def:"6" desc:"fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
+	// fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	FSTau float32 `viewif:"On" min:"0" def:"6"`
 
-	// [def: 30] [viewif: On] [min: 0] multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1
-	SS float32 `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
+	// multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1
+	SS float32 `viewif:"On" min:"0" def:"30"`
 
-	// [def: 20] [viewif: On] [min: 0] slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
-	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
+	// slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	SSfTau float32 `viewif:"On" min:"0" def:"20"`
 
-	// [def: 50] [viewif: On] [min: 0] slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
-	SSiTau float32 `viewif:"On" min:"0" def:"50" desc:"slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
+	// slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	SSiTau float32 `viewif:"On" min:"0" def:"50"`
 
-	// [def: 0.1] [viewif: On] fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi
-	FS0 float32 `viewif:"On" def:"0.1" desc:"fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi"`
+	// fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi
+	FS0 float32 `viewif:"On" def:"0.1"`
 
-	// [def: 50] [viewif: On] time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv
-	FFAvgTau float32 `viewif:"On" def:"50" desc:"time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv"`
+	// time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv
+	FFAvgTau float32 `viewif:"On" def:"50"`
 
-	// [def: 0] [viewif: On] proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time.
-	FFPrv float32 `viewif:"On" def:"0" desc:"proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time."`
+	// proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time.
+	FFPrv float32 `viewif:"On" def:"0"`
 
-	// [def: 0.05] [viewif: On] minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used.
-	ClampExtMin float32 `viewif:"On" def:"0.05" desc:"minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used."`
+	// minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used.
+	ClampExtMin float32 `viewif:"On" def:"0.05"`
 
-	// [view: -] rate = 1 / tau
-	FSDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	FSDt float32 `inactive:"+" view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	SSfDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	SSfDt float32 `inactive:"+" view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	SSiDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	SSiDt float32 `inactive:"+" view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	FFAvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	FFAvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-"`
 
 	pad float32
 }

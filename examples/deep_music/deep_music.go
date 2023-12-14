@@ -595,8 +595,8 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	title := "DeepAxon Music Prediction"
 	ss.GUI.MakeWindow(ss, "DeepMusic", title, `This demonstrates a basic DeepAxon model on music prediction. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
@@ -610,7 +610,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
@@ -620,7 +620,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test Init",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Test Init",
 		Icon:    "reset",
 		Tooltip: "restart testing",
 		Active:  egui.ActiveAlways,
@@ -630,8 +630,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("log")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset RunLog",
+	gi.NewSeparator(tb)"log")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
 		Icon:    "reset",
 		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 		Active:  egui.ActiveAlways,
@@ -641,8 +641,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("misc")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "New Seed",
+	gi.NewSeparator(tb)"misc")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
 		Icon:    "new",
 		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 		Active:  egui.ActiveAlways,
@@ -650,7 +650,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.RndSeeds.NewSeeds()
 		},
 	})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
 		Icon:    "file-markdown",
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
@@ -670,7 +670,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
+	win := ss.ConfigGUI()
 	win.StartEventLoop()
 }
 

@@ -41,43 +41,43 @@ const LogPrec = 4
 type Sim struct {
 
 	// SKCa params
-	SKCa chans.SKCaParams `desc:"SKCa params"`
+	SKCa chans.SKCaParams
 
 	// time constants for integrating Ca from spiking across M, P and D cascading levels
-	CaParams kinase.CaParams `desc:"time constants for integrating Ca from spiking across M, P and D cascading levels"`
+	CaParams kinase.CaParams
 
-	// [def: 0.5] threshold of SK M gating factor above which the neuron cannot spike
-	NoSpikeThr float32 `def:"0.5" desc:"threshold of SK M gating factor above which the neuron cannot spike"`
+	// threshold of SK M gating factor above which the neuron cannot spike
+	NoSpikeThr float32 `def:"0.5"`
 
-	// [def: 0.05] Ca conc increment for M gating func plot
-	CaStep float32 `def:"0.05" desc:"Ca conc increment for M gating func plot"`
+	// Ca conc increment for M gating func plot
+	CaStep float32 `def:"0.05"`
 
 	// number of time steps
-	TimeSteps int `desc:"number of time steps"`
+	TimeSteps int
 
 	// do spiking instead of Ca conc ramp
-	TimeSpike bool `desc:"do spiking instead of Ca conc ramp"`
+	TimeSpike bool
 
 	// spiking frequency
-	SpikeFreq float32 `desc:"spiking frequency"`
+	SpikeFreq float32
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 }
 
 // TheSim is the overall state for this simulation

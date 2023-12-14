@@ -40,49 +40,49 @@ const LogPrec = 4
 type Sim struct {
 
 	// VGCC function
-	VGCC chans.VGCCParams `desc:"VGCC function"`
+	VGCC chans.VGCCParams
 
-	// [def: -90] starting voltage
-	Vstart float32 `def:"-90" desc:"starting voltage"`
+	// starting voltage
+	Vstart float32 `def:"-90"`
 
-	// [def: 0] ending voltage
-	Vend float32 `def:"0" desc:"ending voltage"`
+	// ending voltage
+	Vend float32 `def:"0"`
 
-	// [def: 1] voltage increment
-	Vstep float32 `def:"1" desc:"voltage increment"`
+	// voltage increment
+	Vstep float32 `def:"1"`
 
 	// number of time steps
-	TimeSteps int `desc:"number of time steps"`
+	TimeSteps int
 
 	// do spiking instead of voltage ramp
-	TimeSpike bool `desc:"do spiking instead of voltage ramp"`
+	TimeSpike bool
 
 	// spiking frequency
-	SpikeFreq float32 `desc:"spiking frequency"`
+	SpikeFreq float32
 
 	// time-run starting membrane potential
-	TimeVstart float32 `desc:"time-run starting membrane potential"`
+	TimeVstart float32
 
 	// time-run ending membrane potential
-	TimeVend float32 `desc:"time-run ending membrane potential"`
+	TimeVend float32
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 }
 
 // TheSim is the overall state for this simulation

@@ -14,32 +14,32 @@ import "github.com/emer/etable/minmax"
 type Arm struct {
 
 	// length of arm: distance from CS start to US end for this arm
-	Length int `desc:"length of arm: distance from CS start to US end for this arm"`
+	Length int
 
 	// range of different effort levels per step (uniformly randomly sampled per step) for going down this arm
-	Effort minmax.F32 `desc:"range of different effort levels per step (uniformly randomly sampled per step) for going down this arm"`
+	Effort minmax.F32
 
 	// todo: later
 	// indexes of US[s] present at the end of this arm -- nil if none
 	// USs []int `desc:"indexes of US[s] present at the end of this arm -- nil if none"`
 
 	// index of US present at the end of this arm -- -1 if none
-	US int `desc:"index of US present at the end of this arm -- -1 if none"`
+	US int
 
 	// index of CS visible at the start of this arm, -1 if none
-	CS int `desc:"index of CS visible at the start of this arm, -1 if none"`
+	CS int
 
-	// current expected value = US.Prob * US.Mag * Drives[US] -- computed at start of new approach
-	ExValue float32 `inactive:"+" desc:"current expected value = US.Prob * US.Mag * Drives[US] -- computed at start of new approach"`
+	// current expected value = US.Prob * US.Mag * Drives-- computed at start of new approach
+	ExValue float32 `inactive:"+"`
 
 	// current expected PVpos value = normalized ExValue -- computed at start of new approach
-	ExPVpos float32 `inactive:"+" desc:"current expected PVpos value = normalized ExValue -- computed at start of new approach"`
+	ExPVpos float32 `inactive:"+"`
 
 	// current expected PVneg value = normalized time and effort costs
-	ExPVneg float32 `inactive:"+" desc:"current expected PVneg value = normalized time and effort costs"`
+	ExPVneg float32 `inactive:"+"`
 
 	// current expected utility = effort discounted version of ExPVpos -- computed at start of new approach
-	ExUtil float32 `inactive:"+" desc:"current expected utility = effort discounted version of ExPVpos -- computed at start of new approach"`
+	ExUtil float32 `inactive:"+"`
 }
 
 func (arm *Arm) Defaults() {
@@ -60,11 +60,11 @@ func (arm *Arm) Empty() {
 type USParams struct {
 
 	// if true is a negative valence US -- these are after the first NDrives USs
-	Negative bool `desc:"if true is a negative valence US -- these are after the first NDrives USs"`
+	Negative bool
 
 	// range of different magnitudes (uniformly sampled)
-	Mag minmax.F32 `desc:"range of different magnitudes (uniformly sampled)"`
+	Mag minmax.F32
 
 	// probability of delivering the US
-	Prob float32 `desc:"probability of delivering the US"`
+	Prob float32
 }

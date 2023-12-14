@@ -9,8 +9,8 @@ import (
 	"math/rand"
 
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/vision/vfilter"
-	"github.com/emer/vision/vxform"
+	"github.com/emer/vision/v2/vfilter"
+	"github.com/emer/vision/v2/vxform"
 	"goki.dev/etable/v2/etensor"
 )
 

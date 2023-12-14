@@ -59,10 +59,10 @@ const (
 type SynapseVarStrides struct {
 
 	// synapse level
-	Synapse uint32 `desc:"synapse level"`
+	Synapse uint32
 
 	// variable level
-	Var uint32 `desc:"variable level"`
+	Var uint32
 
 	pad, pad1 uint32
 }
@@ -126,10 +126,10 @@ const (
 type SynapseCaStrides struct {
 
 	// synapse level
-	Synapse uint64 `desc:"synapse level"`
+	Synapse uint64
 
 	// variable level
-	Var uint64 `desc:"variable level"`
+	Var uint64
 }
 
 // Idx returns the index into network float32 array for given synapse, data, and variable
@@ -176,10 +176,10 @@ const (
 type SynapseIdxStrides struct {
 
 	// synapse level
-	Synapse uint32 `desc:"synapse level"`
+	Synapse uint32
 
 	// index value level
-	Index uint32 `desc:"index value level"`
+	Index uint32
 
 	pad, pad1 uint32
 }

@@ -41,61 +41,61 @@ const LogPrec = 4
 type Sim struct {
 
 	// standard NMDA implementation in chans
-	NMDAStd chans.NMDAParams `desc:"standard NMDA implementation in chans"`
+	NMDAStd chans.NMDAParams
 
-	// [def: 0.062] multiplier on NMDA as function of voltage
-	NMDAv float64 `def:"0.062" desc:"multiplier on NMDA as function of voltage"`
+	// multiplier on NMDA as function of voltage
+	NMDAv float64 `def:"0.062"`
 
 	// magnesium ion concentration -- somewhere between 1 and 1.5
-	MgC float64 `desc:"magnesium ion concentration -- somewhere between 1 and 1.5"`
+	MgC float64
 
-	// [def: 3.57] denominator of NMDA function
-	NMDAd float64 `def:"3.57" desc:"denominator of NMDA function"`
+	// denominator of NMDA function
+	NMDAd float64 `def:"3.57"`
 
-	// [def: 0] NMDA reversal / driving potential
-	NMDAerev float64 `def:"0" desc:"NMDA reversal / driving potential"`
+	// NMDA reversal / driving potential
+	NMDAerev float64 `def:"0"`
 
 	// for old buggy NMDA: voff value to use
-	BugVoff float64 `desc:"for old buggy NMDA: voff value to use"`
+	BugVoff float64
 
-	// [def: -90] starting voltage
-	Vstart float64 `def:"-90" desc:"starting voltage"`
+	// starting voltage
+	Vstart float64 `def:"-90"`
 
-	// [def: 10] ending voltage
-	Vend float64 `def:"10" desc:"ending voltage"`
+	// ending voltage
+	Vend float64 `def:"10"`
 
-	// [def: 1] voltage increment
-	Vstep float64 `def:"1" desc:"voltage increment"`
+	// voltage increment
+	Vstep float64 `def:"1"`
 
-	// [def: 100] decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential
-	Tau float64 `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
+	// decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential
+	Tau float64 `def:"100"`
 
 	// number of time steps
-	TimeSteps int `desc:"number of time steps"`
+	TimeSteps int
 
 	// voltage for TimeRun
-	TimeV float64 `desc:"voltage for TimeRun"`
+	TimeV float64
 
 	// NMDA Gsyn current input at every time step
-	TimeGin float64 `desc:"NMDA Gsyn current input at every time step"`
+	TimeGin float64
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 }
 
 // TheSim is the overall state for this simulation

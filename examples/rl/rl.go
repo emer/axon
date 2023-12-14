@@ -401,8 +401,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	title := "Reinforcement Learning"
 	ss.GUI.MakeWindow(ss, "rl", title, `rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
@@ -418,7 +418,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
@@ -429,7 +429,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset Trial Log", Icon: "update",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Trial Log", Icon: "update",
 		Tooltip: "reset trial log .",
 		Func: func() {
 			ss.Logs.ResetLog(etime.Train, etime.Trial)
@@ -437,7 +437,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
 		Icon:    "file-markdown",
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
@@ -457,7 +457,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
+	win := ss.ConfigGUI()
 	win.StartEventLoop()
 }
 

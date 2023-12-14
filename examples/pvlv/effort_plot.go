@@ -26,7 +26,7 @@ import (
 func DriveEffortGUI() {
 	ep := &DrEffPlot{}
 	ep.Config()
-	win := ep.ConfigGui()
+	win := ep.ConfigGUI()
 	win.StartEventLoop()
 }
 
@@ -231,8 +231,8 @@ func (ss *DrEffPlot) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.
 	return plt
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *DrEffPlot) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *DrEffPlot) ConfigGUI() *gi.Window {
 	width := 1600
 	height := 1200
 

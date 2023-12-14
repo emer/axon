@@ -397,8 +397,8 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	width := 1600
 	height := 1200
 
@@ -521,7 +521,7 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
+	win := ss.ConfigGUI()
 	win.StartEventLoop()
 }
 

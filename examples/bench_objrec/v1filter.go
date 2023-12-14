@@ -8,17 +8,16 @@ import (
 	"image"
 
 	"github.com/anthonynsimon/bild/transform"
-	"github.com/emer/leabra/fffb"
-	"github.com/emer/vision/gabor"
-	"github.com/emer/vision/kwta"
-	"github.com/emer/vision/v1complex"
-	"github.com/emer/vision/vfilter"
-	"github.com/goki/ki/kit"
+	"github.com/emer/vision/v2/fffb"
+	"github.com/emer/vision/v2/gabor"
+	"github.com/emer/vision/v2/kwta"
+	"github.com/emer/vision/v2/v1complex"
+	"github.com/emer/vision/v2/vfilter"
 	"goki.dev/etable/v2/etensor"
 )
 
 // Vis encapsulates specific visual processing pipeline for V1 filtering
-type Vis struct {
+type Vis struct { //gti:add
 
 	// V1 simple gabor filter parameters
 	V1sGabor gabor.Filter
@@ -77,8 +76,6 @@ type Vis struct {
 	// inhibition values for V1s KWTA
 	V1sInhibs fffb.Inhibs `view:"no-inline"`
 }
-
-var KiT_Vis = kit.Types.AddType(&Vis{}, nil)
 
 func (vi *Vis) Defaults() {
 	vi.V1sGabor.Defaults()

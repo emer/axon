@@ -651,8 +651,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() {
 	title := "Axon Random Associator"
 	ss.GUI.MakeBody(ss, "ra25", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
@@ -722,7 +722,7 @@ func (ss *Sim) ConfigGui() {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	ss.ConfigGui()
+	ss.ConfigGUI()
 	ss.GUI.Body.NewWindow().Run().Wait()
 }
 

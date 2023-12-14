@@ -646,8 +646,8 @@ func (ss *Sim) TestStats() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	title := "PCore Test"
 	ss.GUI.MakeWindow(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
@@ -673,7 +673,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	plt.Params.XAxisCol = "Trial"
 	plt.SetTable(tstst)
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
@@ -683,7 +683,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "TestInit", Icon: "update",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "TestInit", Icon: "update",
 		Tooltip: "reinitialize the testing control so it re-runs.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
@@ -693,8 +693,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("log")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset RunLog",
+	gi.NewSeparator(tb)"log")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
 		Icon:    "reset",
 		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 		Active:  egui.ActiveAlways,
@@ -704,8 +704,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("misc")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "New Seed",
+	gi.NewSeparator(tb)"misc")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
 		Icon:    "new",
 		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 		Active:  egui.ActiveAlways,
@@ -713,7 +713,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.RndSeeds.NewSeeds()
 		},
 	})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
 		Icon:    "file-markdown",
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
@@ -734,7 +734,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
+	win := ss.ConfigGUI()
 	win.StartEventLoop()
 }
 

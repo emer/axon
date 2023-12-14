@@ -8,13 +8,13 @@ import (
 	"image"
 
 	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/girl"
+	"goki.dev/girl/paint"
 )
 
 // LEDraw renders old-school "LED" style "letters" composed of a set of horizontal
 // and vertical elements.  All possible such combinations of 3 out of 6 line segments are created.
 // Renders using SVG.
-type LEDraw struct {
+type LEDraw struct { //gti:add
 
 	// line width of LEDraw as percent of display size
 	Width float32 `def:"4"`
@@ -38,7 +38,7 @@ type LEDraw struct {
 	Paint girl.Paint `view:"+"`
 
 	// rendering state
-	Render girl.State `view:"-"`
+	Render paint.State `view:"-"`
 }
 
 func (ld *LEDraw) Defaults() {

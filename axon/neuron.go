@@ -347,10 +347,10 @@ const (
 type NeuronVarStrides struct {
 
 	// neuron level
-	Neuron uint32 `desc:"neuron level"`
+	Neuron uint32
 
 	// variable level
-	Var uint32 `desc:"variable level"`
+	Var uint32
 
 	pad, pad1 uint32
 }
@@ -412,10 +412,10 @@ const (
 type NeuronAvgVarStrides struct {
 
 	// neuron level
-	Neuron uint32 `desc:"neuron level"`
+	Neuron uint32
 
 	// variable level
-	Var uint32 `desc:"variable level"`
+	Var uint32
 
 	pad, pad1 uint32
 }
@@ -469,10 +469,10 @@ const (
 type NeuronIdxStrides struct {
 
 	// neuron level
-	Neuron uint32 `desc:"neuron level"`
+	Neuron uint32
 
 	// index value level
-	Index uint32 `desc:"index value level"`
+	Index uint32
 
 	pad, pad1 uint32
 }

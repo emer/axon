@@ -9,16 +9,16 @@ package fffb
 type Bg struct {
 
 	// enable adaptive layer inhibition gain as stored in layer GiCur value
-	On bool `desc:"enable adaptive layer inhibition gain as stored in layer GiCur value"`
+	On bool
 
-	// [def: .1] [viewif: On=true] level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition
-	Gi float32 `def:".1" viewif:"On=true" desc:"level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition"`
+	// level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition
+	Gi float32 `def:".1" viewif:"On=true"`
 
-	// [def: 10] [viewif: On=true] time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
-	Tau float32 `def:"10" viewif:"On=true" desc:"time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)"`
+	// time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
+	Tau float32 `def:"10" viewif:"On=true"`
 
-	// [view: -] rate = 1 / tau
-	Dt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	Dt float32 `inactive:"+" view:"-" json:"-" xml:"-"`
 }
 
 func (bg *Bg) Update() {

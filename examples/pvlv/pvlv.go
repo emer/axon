@@ -724,8 +724,8 @@ func (ss *Sim) BlockStats() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	title := "Axon PVLV"
 	ss.GUI.MakeWindow(ss, "pvlv", title, `This is the PVLV test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
@@ -768,7 +768,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		ss.InitEnvRun()
 	})
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
@@ -779,8 +779,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
 
-	ss.GUI.ToolBar.AddSeparator("wts")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Save Wts", Icon: "file-save",
+	gi.NewSeparator(tb)"wts")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: "file-save",
 		Tooltip: "Save weights for the current condition name.",
 		Active:  egui.ActiveStopped,
 		Func: func() {
@@ -790,8 +790,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("log")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset RunLog",
+	gi.NewSeparator(tb)"log")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
 		Icon:    "reset",
 		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 		Active:  egui.ActiveAlways,
@@ -801,8 +801,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("misc")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "New Seed",
+	gi.NewSeparator(tb)"misc")
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
 		Icon:    "new",
 		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 		Active:  egui.ActiveAlways,
@@ -810,7 +810,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.RndSeeds.NewSeeds()
 		},
 	})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Plot Drive & Effort",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
 		Icon:    "play",
 		Tooltip: "Opens a new window to plot PVLV Drive and Effort dynamics.",
 		Active:  egui.ActiveAlways,
@@ -818,7 +818,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			go DriveEffortGUI()
 		},
 	})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
+	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
 		Icon:    "file-markdown",
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
@@ -840,7 +840,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
+	win := ss.ConfigGUI()
 	win.StartEventLoop()
 }
 

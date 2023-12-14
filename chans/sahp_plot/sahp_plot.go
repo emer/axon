@@ -39,44 +39,44 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 
-	// [view: inline] sAHP function
-	Sahp chans.SahpParams `view:"inline" desc:"sAHP function"`
+	// sAHP function
+	Sahp chans.SahpParams `view:"inline"`
 
-	// [def: 0] starting calcium
-	CaStart float32 `def:"0" desc:"starting calcium"`
+	// starting calcium
+	CaStart float32 `def:"0"`
 
-	// [def: 1.5] ending calcium
-	CaEnd float32 `def:"1.5" desc:"ending calcium"`
+	// ending calcium
+	CaEnd float32 `def:"1.5"`
 
-	// [def: 0.01] calcium increment
-	CaStep float32 `def:"0.01" desc:"calcium increment"`
+	// calcium increment
+	CaStep float32 `def:"0.01"`
 
 	// number of time steps
-	TimeSteps int `desc:"number of time steps"`
+	TimeSteps int
 
 	// time-run starting calcium
-	TimeCaStart float32 `desc:"time-run starting calcium"`
+	TimeCaStart float32
 
 	// time-run CaD value at end of each theta cycle
-	TimeCaD float32 `desc:"time-run CaD value at end of each theta cycle"`
+	TimeCaD float32
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// main GUI window
+	Win *gi.Window `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the master toolbar
+	ToolBar *gi.ToolBar `view:"-"`
 }
 
 // TheSim is the overall state for this simulation
