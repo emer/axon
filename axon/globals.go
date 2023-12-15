@@ -4,20 +4,11 @@
 
 package axon
 
-import "github.com/goki/ki/kit"
-
-//go:generate stringer -type=GlobalVars
-
-var KiT_GlobalVars = kit.Enums.AddEnum(GlobalVarsN, kit.NotBitFlag, nil)
-
-func (ev GlobalVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *GlobalVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
 //gosl: start globals
 
 // GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc
 // including the state for the PVLV phasic dopamine model.
-type GlobalVars int32
+type GlobalVars int32 //enums:enum
 
 const (
 	/////////////////////////////////////////
@@ -229,7 +220,13 @@ const (
 	// this is reset after last goal accomplished -- records gating since then.
 	GvVSMatrixPoolGated
 
-	GlobalVarsN
+	// IMPORTANT: if GvVSMatrixPoolGated is not the last, need to update gosl defn below
 )
 
+//gosl: end globals
+
+//gosl: hlsl globals
+/*
+static const GlobalVars GlobalVarsN = GvVSMatrixPoolGated + 1;
+*/
 //gosl: end globals

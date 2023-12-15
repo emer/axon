@@ -14,7 +14,6 @@ import (
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/goki/ki/ints"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"goki.dev/etable/v2/etable"
@@ -318,7 +317,7 @@ func generateRandomPatterns(nPats int, seed int64) *etable.Table {
 		{Name: "Input", Type: etensor.FLOAT32, CellShape: shape, DimNames: []string{"Y", "X"}},
 		{Name: "Output", Type: etensor.FLOAT32, CellShape: shape, DimNames: []string{"Y", "X"}},
 	}, nPats)
-	numOn := ints.MaxInt((shape[0]*shape[1])/4, 1) // ensure min at least 1
+	numOn := max((shape[0]*shape[1])/4, 1) // ensure min at least 1
 	patgen.PermutedBinaryRows(pats.Cols[1], numOn, 1, 0)
 	patgen.PermutedBinaryRows(pats.Cols[2], numOn, 1, 0)
 	// fmt.Printf("%v\n", pats.Cols[1].(*etensor.Float32).Values)

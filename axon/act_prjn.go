@@ -8,24 +8,15 @@ import (
 	"log"
 
 	"github.com/emer/emergent/v2/erand"
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/ki/ints"
-	"github.com/goki/ki/kit"
+	"goki.dev/gosl/v2/slbool"
 	"goki.dev/mat32/v2"
 )
-
-//go:generate stringer -type=PrjnGTypes
-
-var KiT_PrjnGTypes = kit.Enums.AddEnum(PrjnGTypesN, kit.NotBitFlag, nil)
-
-func (ev PrjnGTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *PrjnGTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 //gosl: start act_prjn
 
 // PrjnGTypes represents the conductance (G) effects of a given projection,
 // including excitatory, inhibitory, and modulatory.
-type PrjnGTypes int32
+type PrjnGTypes int32 //enums:enum
 
 // The projection conductance types
 const (
@@ -49,8 +40,6 @@ const (
 	// Context projections are for inputs to CT layers, which update
 	// only at the end of the plus phase, and send to CtxtGe.
 	ContextG
-
-	PrjnGTypesN
 )
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -251,16 +240,16 @@ func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 	}
 	semExtra := 2
 	slayActN := int(mat32.Round(savg * snu)) // sending layer actual # active
-	slayActN = ints.MaxInt(slayActN, 1)
+	slayActN = max(slayActN, 1)
 	var sc float32
 	if ncon == snu {
 		sc = 1 / float32(slayActN)
 	} else {
 		maxActN := int(mat32.Min(ncon, float32(slayActN))) // max number we could get
 		avgActN := int(mat32.Round(savg * ncon))           // recv average actual # active if uniform
-		avgActN = ints.MaxInt(avgActN, 1)
+		avgActN = max(avgActN, 1)
 		expActN := avgActN + semExtra // expected
-		expActN = ints.MinInt(expActN, maxActN)
+		expActN = min(expActN, maxActN)
 		sc = 1 / float32(expActN)
 	}
 	return sc

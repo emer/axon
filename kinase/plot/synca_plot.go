@@ -11,15 +11,15 @@ import (
 
 	"github.com/emer/axon/kinase"
 	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
-	_ "github.com/goki/gosl/slboolview" // ditto
 	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/vv2iew" // include to get gui views
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	_ "goki.dev/gosl/v2/slboolview" // ditto
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 }
 
 func guirun() {
-	win := TheSim.ConfigGui()
+	win := TheSim.ConfigGUI()
 	win.StartEventLoop()
 }
 
@@ -256,8 +256,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	width := 1600
 	height := 1200
 

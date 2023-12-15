@@ -5,7 +5,7 @@
 package kinase
 
 import (
-	"github.com/goki/gosl/slbool"
+	"goki.dev/gosl/v2/slbool"
 	"goki.dev/mat32/v2"
 )
 
@@ -14,7 +14,7 @@ import (
 // CaDtParams has rate constants for integrating Ca calcium
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
-type CaDtParams struct {
+type CaDtParams struct { //gti:add
 
 	// CaM (calmodulin) time constant in cycles (msec) -- for synaptic-level integration this integrates on top of Ca signal from send->CaSyn * recv->CaSyn, each of which are typically integrated with a 30 msec Tau.
 	MTau float32 `def:"2,5" min:"1"`
@@ -107,7 +107,7 @@ func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
 // CaParams has rate constants for integrating spike-driven Ca calcium
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
-type CaParams struct {
+type CaParams struct { //gti:add
 
 	// spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate.
 	SpikeG float32 `def:"12"`

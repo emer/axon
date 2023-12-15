@@ -188,8 +188,8 @@ func (pj *Prjn) SWtFmWt(ctx *Context) {
 	if rlay.Params.IsTarget() {
 		return
 	}
-	max := pj.Params.SWts.Limit.Max
-	min := pj.Params.SWts.Limit.Min
+	mx := pj.Params.SWts.Limit.Max
+	mn := pj.Params.SWts.Limit.Min
 	lr := pj.Params.SWts.Adapt.LRate
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		syIdxs := pj.RecvSynIdxs(lni)
@@ -202,9 +202,9 @@ func (pj *Prjn) SWtFmWt(ctx *Context) {
 			syni := pj.SynStIdx + syi
 			swt := SynV(ctx, syni, SWt)
 			if SynV(ctx, syni, DSWt) >= 0 { // softbound for SWt
-				MulSynV(ctx, syni, DSWt, (max - swt))
+				MulSynV(ctx, syni, DSWt, (mx - swt))
 			} else {
-				MulSynV(ctx, syni, DSWt, (swt - min))
+				MulSynV(ctx, syni, DSWt, (swt - mn))
 			}
 			avgDWt += SynV(ctx, syni, DSWt)
 		}

@@ -8,9 +8,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/ki/kit"
 	"goki.dev/glop/num"
+	"goki.dev/gosl/v2/slbool"
 )
 
 //gosl: start pcore_layers
@@ -61,7 +60,7 @@ func (mp *MatrixParams) Update() {
 }
 
 // GPLayerTypes is a GPLayer axon-specific layer type enum.
-type GPLayerTypes int32
+type GPLayerTypes int32 //enums:enum
 
 // The GPLayer types
 const (
@@ -78,8 +77,6 @@ const (
 	// GPi is the inner globus pallidus, functionally equivalent to SNr,
 	// receiving from MtxGo and GPeIn, and sending inhibition to VThal
 	GPi
-
-	GPLayerTypesN
 )
 
 // GPLayer represents a globus pallidus layer, including:
@@ -263,7 +260,7 @@ func (ly *Layer) MatrixPostBuild() {
 
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
-		err = ly.Params.Learn.NeuroMod.DAMod.FromString(dm)
+		err = ly.Params.Learn.NeuroMod.DAMod.SetString(dm)
 		if err != nil {
 			log.Println(err)
 		}
@@ -341,17 +338,10 @@ func (ly *Layer) GPiDefaults() {
 	}
 }
 
-//go:generate stringer -type=GPLayerTypes
-
-var KiT_GPLayerTypes = kit.Enums.AddEnum(GPLayerTypesN, kit.NotBitFlag, nil)
-
-func (ev GPLayerTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *GPLayerTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
 func (ly *Layer) GPPostBuild() {
 	gpnm, err := ly.BuildConfigByName("GPType")
 	if err == nil {
-		err = ly.Params.GP.GPType.FromString(gpnm)
+		err = ly.Params.GP.GPType.SetString(gpnm)
 		if err != nil {
 			log.Println(err)
 		}

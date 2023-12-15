@@ -29,9 +29,9 @@ import (
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/emergent/v2/weights"
-	"github.com/goki/ki/indent"
-	"github.com/goki/kigen/dedupe"
 	"goki.dev/gi/v2/gi"
+	"goki.dev/glop/dedupe"
+	"goki.dev/glop/indent"
 	"goki.dev/mat32/v2"
 )
 

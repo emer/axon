@@ -21,8 +21,8 @@ import (
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/goki/ki/kit"
 	"goki.dev/etable/v2/etensor"
+	"goki.dev/laser"
 	"goki.dev/mat32/v2"
 	"golang.org/x/exp/maps"
 )
@@ -260,7 +260,7 @@ func TestSpikeProp(t *testing.T) {
 
 // StructVals adds field vals to given vals map
 func StructVals(obj any, vals map[string]float32, key string) {
-	v := kit.NonPtrValue(reflect.ValueOf(obj))
+	v := laser.NonPtrValue(reflect.ValueOf(obj))
 	typ := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		ft := typ.Field(i)
@@ -269,7 +269,7 @@ func StructVals(obj any, vals map[string]float32, key string) {
 		}
 		fv := v.Field(i)
 		kk := key + fmt.Sprintf("\t%s", ft.Name)
-		vals[kk], _ = kit.ToFloat32(fv.Interface())
+		vals[kk], _ = laser.ToFloat32(fv.Interface())
 	}
 }
 

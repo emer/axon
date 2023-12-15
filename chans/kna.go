@@ -4,7 +4,7 @@
 
 package chans
 
-import "github.com/goki/gosl/slbool"
+import "goki.dev/gosl/v2/slbool"
 
 //gosl: start chans
 

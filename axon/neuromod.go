@@ -5,21 +5,14 @@
 package axon
 
 import (
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/ki/kit"
+	"goki.dev/gosl/v2/slbool"
 	"goki.dev/mat32/v2"
 )
-
-//go:generate stringer -type=DAModTypes
-//go:generate stringer -type=ValenceTypes
-
-var KiT_DAModTypes = kit.Enums.AddEnum(DAModTypesN, kit.NotBitFlag, nil)
-var KiT_ValenceTypes = kit.Enums.AddEnum(ValenceTypesN, kit.NotBitFlag, nil)
 
 //gosl: start neuromod
 
 // DAModTypes are types of dopamine modulation of neural activity.
-type DAModTypes int32
+type DAModTypes int32 //enums:enum
 
 const (
 	// NoDAMod means there is no effect of dopamine on neural activity
@@ -40,12 +33,10 @@ const (
 	// There are a subset of DA neurons that send increased DA for
 	// both negative and positive outcomes, targeting frontal neurons.
 	D1AbsMod
-
-	DAModTypesN
 )
 
 // ValenceTypes are types of valence coding: positive or negative.
-type ValenceTypes int32
+type ValenceTypes int32 //enums:enum
 
 const (
 	// Positive valence codes for outcomes aligned with drives / goals.
@@ -53,8 +44,6 @@ const (
 
 	// Negative valence codes for harmful or aversive outcomes.
 	Negative
-
-	ValenceTypesN
 )
 
 // NeuroModParams specifies the effects of neuromodulators on neural

@@ -12,8 +12,7 @@ import (
 	"sync"
 
 	"github.com/emer/emergent/v2/timer"
-	"github.com/goki/ki/atomctr"
-	"github.com/goki/ki/ints"
+	"goki.dev/glop/atomctr"
 )
 
 // Maps the given function across the [0, total) range of items, using
@@ -81,7 +80,7 @@ func (nt *NetworkBase) SetNThreads(nthr int) {
 			nthr = 1
 		}
 	}
-	nt.NThreads = ints.MinInt(maxProcs, nthr)
+	nt.NThreads = min(maxProcs, nthr)
 }
 
 // PrjnMapSeq applies function of given name to all projections sequentially.

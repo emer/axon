@@ -13,7 +13,7 @@ active at any time, where k is typically 10-20 percent of N.
 */
 package fsfffb
 
-import "github.com/goki/gosl/slbool"
+import "goki.dev/gosl/v2/slbool"
 
 //gosl: start fsfffb
 

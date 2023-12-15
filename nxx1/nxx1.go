@@ -19,6 +19,8 @@ overall values.
 */
 package nxx1
 
+//go:generate goki generate -add-types
+
 import (
 	"goki.dev/mat32/v2"
 )

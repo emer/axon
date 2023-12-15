@@ -7,8 +7,8 @@ package axon
 import (
 	"github.com/emer/axon/chans"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/goki/gosl/slbool"
 	"goki.dev/etable/v2/minmax"
+	"goki.dev/gosl/v2/slbool"
 	"goki.dev/mat32/v2"
 )
 

@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/goki/gosl/slbool"
+	"goki.dev/gosl/v2/slbool"
 	"goki.dev/mat32/v2"
 )
 
@@ -261,14 +261,14 @@ func (ly *Layer) BLADefaults() {
 func (ly *Layer) PVLVPostBuild() {
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
-		err = ly.Params.Learn.NeuroMod.DAMod.FromString(dm)
+		err = ly.Params.Learn.NeuroMod.DAMod.SetString(dm)
 		if err != nil {
 			log.Println(err)
 		}
 	}
 	vl, err := ly.BuildConfigByName("Valence")
 	if err == nil {
-		err = ly.Params.Learn.NeuroMod.Valence.FromString(vl)
+		err = ly.Params.Learn.NeuroMod.Valence.SetString(vl)
 		if err != nil {
 			log.Println(err)
 		}

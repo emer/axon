@@ -5,32 +5,30 @@
 // mahp_plot plots an equation updating over time in a etable.Table and Plot2D.
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"strconv"
 
 	"github.com/emer/axon/chans"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
-	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/icons"
 )
 
-func main() {
-	TheSim.Config()
-	gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-		guirun()
-	})
-}
+func main() { gimain.Run(app) }
 
-func guirun() {
-	TheSim.VmRun()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
+func app() {
+	sim := &Sim{}
+	sim.Config()
+	sim.VmRun()
+	b := sim.ConfigGUI()
+	b.NewWindow().Run().Wait()
 }
 
 // LogPrec is precision for saving float values in logs
@@ -77,16 +75,7 @@ type Sim struct {
 
 	// the plot
 	TimePlot *eplot.Plot2D `view:"-"`
-
-	// main GUI window
-	Win *gi.Window `view:"-"`
-
-	// the master toolbar
-	ToolBar *gi.ToolBar `view:"-"`
 }
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
@@ -112,7 +101,7 @@ func (ss *Sim) Update() {
 }
 
 // VmRun plots the equation as a function of V
-func (ss *Sim) VmRun() {
+func (ss *Sim) VmRun() { //gti:add
 	ss.Update()
 	dt := ss.Table
 
@@ -129,7 +118,9 @@ func (ss *Sim) VmRun() {
 		dt.SetCellFloat("Ninf", vi, float64(ninf))
 		dt.SetCellFloat("Tau", vi, float64(tau))
 	}
-	ss.Plot.Update()
+	if ss.Plot != nil {
+		ss.Plot.UpdatePlot()
+	}
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
@@ -159,7 +150,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 /////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() {
+func (ss *Sim) TimeRun() { //gti:add
 	ss.Update()
 	dt := ss.TimeTable
 
@@ -210,7 +201,9 @@ func (ss *Sim) TimeRun() {
 		}
 		n += dn
 	}
-	ss.TimePlot.Update()
+	if ss.TimePlot != nil {
+		ss.TimePlot.UpdatePlot()
+	}
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
@@ -247,73 +240,28 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
-	width := 1600
-	height := 1200
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Body {
+	b := gi.NewAppBody("mahp_plot").SetTitle("Plotting Equations")
 
-	// gi.WinEventTrace = true
-
-	gi.SetAppName("mahp_plot")
-	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
-
-	win := gi.NewMainWindow("mahp_plot", "Plotting Equations", width, height)
-	ss.Win = win
-
-	vp := win.WinViewport2D()
-	updt := vp.UpdateStart()
-
-	mfr := win.SetMainFrame()
-
-	tbar := gi.AddNewToolBar(mfr, "tbar")
-	tbar.SetStretchMaxWidth()
-	ss.ToolBar = tbar
-
-	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
-	split.SetStretchMax()
-
-	sv := giv.AddNewStructView(split, "sv")
+	split := gi.NewSplits(b, "split")
+	sv := giv.NewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.AddNewTabView(split, "tv")
+	tv := gi.NewTabs(split, "tv")
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "V-G Plot").(*eplot.Plot2D)
-	ss.Plot = ss.ConfigPlot(plt, ss.Table)
+	ss.Plot = eplot.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TimePlot").(*eplot.Plot2D)
-	ss.TimePlot = ss.ConfigTimePlot(plt, ss.TimeTable)
+	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "V-G Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.VmRun()
-		vp.SetNeedsFullRender()
+	b.AddAppBar(func(tb *gi.Toolbar) {
+		giv.NewFuncButton(tb, ss.VmRun).SetIcon(icons.PlayArrow)
+		giv.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Time Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.TimeRun()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/mahp_plot/README.md")
-		})
-
-	vp.UpdateEndNoSig(updt)
-
-	// main menu
-	appnm := gi.AppName()
-	mmen := win.MainMenu
-	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
-
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
-	amen.Menu.AddAppMenu(win)
-
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
-	emen.Menu.AddCopyCutPaste(win)
-
-	win.MainMenuUpdated()
-	return win
+	return b
 }

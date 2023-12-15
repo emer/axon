@@ -4,18 +4,11 @@
 
 package kinase
 
-import "github.com/goki/ki/kit"
+//go:generate goki generate -add-types
 
 // Rules are different options for Kinase-based learning rules
 // These are now implemented using separate Prjn types in kinasex
-type Rules int32
-
-//go:generate stringer -type=Rules
-
-var KiT_Rules = kit.Enums.AddEnum(RulesN, kit.NotBitFlag, nil)
-
-func (ev Rules) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *Rules) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+type Rules int32 //enums:enum
 
 // The different versions of Kinase learning rules
 const (
@@ -54,6 +47,4 @@ const (
 	// It exhibits strong sensitivity to final spikes and thus
 	// high levels of variance.
 	NeurSpkTheta
-
-	RulesN
 )
