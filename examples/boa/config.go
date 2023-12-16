@@ -11,8 +11,8 @@ import "github.com/emer/empi/v2/mpi"
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
 
-	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
-	Env map[string]any
+	// name of config file that loads into Env.Config for setting environment parameters directly
+	Config string `desc:"name of config file that loads into Env.Config for setting environment parameters directly"`
 
 	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
 	NDrives int `def:"4"`

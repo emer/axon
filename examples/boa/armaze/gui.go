@@ -6,23 +6,27 @@ package armaze
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/etview"
-	"github.com/emer/eve/eve"
-	"github.com/emer/eve/evev"
-	"github.com/goki/gi/colormap"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gi3d"
-	"github.com/goki/gi/gist"
-	"github.com/goki/gi/giv"
-	"github.com/goki/gi/svg"
-	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"github.com/emer/eve/v2/eve"
+	"github.com/emer/eve/v2/evev"
+	"goki.dev/colors"
+	"goki.dev/colors/colormap"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/etview"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/gi/v2/xyzv"
+	"goki.dev/girl/styles"
+	"goki.dev/goosi/events"
+	"goki.dev/grr"
+	"goki.dev/icons"
+	"goki.dev/mat32/v2"
+	"goki.dev/xyz"
 )
 
 // Geom is overall geometry of the space
@@ -87,6 +91,12 @@ type GUI struct {
 	// name of current env -- number is NData index
 	EnvName string
 
+	// 3D visualization of the Scene
+	Scene3D *xyzv.Scene3D
+
+	// 2D visualization of the Scene
+	Scene2D *gi.SVG
+
 	// list of material colors
 	MatColors []string
 
@@ -105,11 +115,8 @@ type GUI struct {
 	// view of the gui obj
 	StructView *giv.StructView `view:"-"`
 
-	// ArmMaze GUI window
-	WorldWin *gi.Window `view:"-"`
-
 	// ArmMaze TabView
-	WorldTabs *gi.TabView `view:"-"`
+	WorldTabs *gi.Tabs `view:"-"`
 
 	// ArmMaze is running
 	IsRunning bool `view:"-"`
@@ -124,13 +131,13 @@ type GUI struct {
 	DepthMap giv.ColorMapName
 
 	// first-person right-eye full field view
-	EyeRFullImg *gi.Bitmap `view:"-"`
+	EyeRFullImg *gi.Image `view:"-"`
 
 	// first-person right-eye fovea view
-	EyeRFovImg *gi.Bitmap `view:"-"`
+	EyeRFovImg *gi.Image `view:"-"`
 
 	// depth map bitmap view
-	DepthImg *gi.Bitmap `view:"-"`
+	DepthImg *gi.Image `view:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
 	USposPlot *eplot.Plot2D
@@ -167,14 +174,11 @@ type GUI struct {
 
 	// contacts from last step, for body
 	Contacts eve.Contacts `view:"-"`
-
-	// gui window
-	Win *gi.Window `view:"-"`
 }
 
 // ConfigWorldGUI configures all the world view GUI elements
 // pass an initial env to use for configuring
-func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Window {
+func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	vw.Disp = true
 	vw.Env = ev
 	vw.EnvName = ev.Nm
@@ -194,215 +198,104 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Window {
 	}
 	vw.MatColors = []string{"blue", "orange", "red", "violet", "navy", "brown", "pink", "purple", "olive", "chartreuse", "cyan", "magenta", "salmon", "goldenrod", "SykBlue"}
 
-	width := 1600
-	height := 1200
+	b := gi.NewBody("armaze").SetTitle("Arm Maze")
 
-	win := gi.NewMainWindow("armaze", "Arm Maze", width, height)
-	vw.WorldWin = win
+	split := gi.NewSplits(b, "split")
 
-	vp := win.WinViewport2D()
-	updt := vp.UpdateStart()
+	svfr := gi.NewFrame(split, "svfr")
+	svfr.Style(func(s *styles.Style) {
+		s.Direction = styles.Column
+	})
 
-	mfr := win.SetMainFrame()
+	vw.StructView = giv.NewStructView(svfr, "sv").SetStruct(vw)
+	imfr := gi.NewFrame(svfr).Style(func(s *styles.Style) {
+		s.Display = styles.Grid
+		s.Columns = 2
+	})
+	gi.NewLabel(imfr).SetText("Eye-View, Fovea:")
+	gi.NewLabel(imfr).SetText("Full Field:")
 
-	tbar := gi.AddNewToolBar(mfr, "tbar")
-	tbar.SetStretchMaxWidth()
-
-	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
-	split.SetStretchMax()
-
-	svfr := gi.AddNewFrame(split, "svfr", gi.LayoutVert)
-	svfr.SetStretchMax()
-	svfr.SetReRenderAnchor()
-
-	sv := giv.AddNewStructView(svfr, "sv")
-	sv.SetStruct(vw)
-	vw.StructView = sv
-
-	imgLay := gi.AddNewLayout(svfr, "img-lay", gi.LayoutGrid)
-	imgLay.SetProp("columns", 2)
-	imgLay.SetProp("spacing", 8)
-
-	gi.AddNewLabel(imgLay, "lab-img-fov", "Eye-View, Fovea:")
-	gi.AddNewLabel(imgLay, "lab-img-full", "Full Field:")
-
-	vw.EyeRFovImg = gi.AddNewBitmap(imgLay, "eye-r-fov-img")
+	vw.EyeRFovImg = gi.NewImage(imfr, "eye-r-fov-img")
 	vw.EyeRFovImg.SetSize(vw.Camera.Size)
-	vw.EyeRFovImg.LayoutToImgSize()
-	// vw.EyeRFovImg.SetProp("vertical-align", gist.AlignTop)
 
-	vw.EyeRFullImg = gi.AddNewBitmap(imgLay, "eye-r-full-img")
+	vw.EyeRFullImg = gi.NewImage(imfr, "eye-r-full-img")
 	vw.EyeRFullImg.SetSize(vw.Camera.Size)
-	vw.EyeRFullImg.LayoutToImgSize()
-	// vw.EyeRFullImg.SetProp("vertical-align", gist.AlignTop)
 
-	// gi.AddNewLabel(imfr, "lab-depth", "Right Eye Depth:")
-	// vw.DepthImg = gi.AddNewBitmap(imfr, "depth-img")
-	// vw.DepthImg.SetSize(vw.Camera.Size)
-	// vw.DepthImg.LayoutToImgSize()
-	// vw.DepthImg.SetProp("vertical-align", gist.AlignTop)
+	wd := float32(700)
+	ht := float32(160)
+	vw.USposPlot = eplot.NewPlot2D(svfr, "us-pos")
+	vw.USposPlot.Style(func(s *styles.Style) {
+		s.Max.X.Px(wd)
+		s.Max.Y.Px(ht)
+	})
 
-	vw.USposPlot = eplot.AddNewPlot2D(svfr, "us-pos")
-	vw.USnegPlot = eplot.AddNewPlot2D(svfr, "us-neg")
-	wd := 700
-	vw.USposPlot.SetProp("max-width", wd)
-	vw.USnegPlot.SetProp("max-width", wd)
-	ht := 160
-	vw.USposPlot.SetProp("max-height", ht)
-	vw.USnegPlot.SetProp("max-height", ht)
-	vw.USposPlot.SetProp("height", ht)
-	vw.USnegPlot.SetProp("height", ht)
+	vw.USnegPlot = eplot.NewPlot2D(svfr, "us-neg")
+	vw.USnegPlot.Style(func(s *styles.Style) {
+		s.Max.X.Px(wd)
+		s.Max.Y.Px(ht)
+	})
 	vw.ConfigUSPlots()
 
-	tv := gi.AddNewTabView(split, "tv")
+	tv := gi.NewTabs(split)
 	vw.WorldTabs = tv
 
-	scfr := tv.AddNewTab(gi.KiT_Frame, "3D View").(*gi.Frame)
-	twofr := tv.AddNewTab(gi.KiT_Frame, "2D View").(*gi.Frame)
-
-	scfr.SetStretchMax()
-	twofr.SetStretchMax()
+	scfr := tv.NewTab("3D View")
+	twofr := tv.NewTab("2D View")
 
 	//////////////////////////////////////////
 	//    3D Scene
 
 	vw.ConfigWorld()
 
-	scvw := gi3d.AddNewSceneView(scfr, "sceneview")
-	scvw.SetStretchMax()
-	scvw.Config()
-	sc := scvw.Scene()
+	vw.Scene3D = xyzv.NewScene3D(scfr, "sceneview")
+	se := vw.Scene3D.Scene
+	vw.ConfigView3D(se)
 
-	// first, add lights, set camera
-	sc.BgColor.SetUInt8(230, 230, 255, 255) // sky blue-ish
-	gi3d.AddNewAmbientLight(sc, "ambient", 0.3, gi3d.DirectSun)
+	se.Camera.Pose.Pos = mat32.Vec3{0, 29, -4}
+	se.Camera.LookAt(mat32.Vec3{0, 4, -5}, mat32.Vec3Y)
+	se.SaveCamera("2")
 
-	dir := gi3d.AddNewDirLight(sc, "dir", 1, gi3d.DirectSun)
-	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
-
-	vw.ConfigView3D(sc)
-
-	// grtx := gi3d.AddNewTextureFile(sc, "ground", "ground.png")
-	// wdtx := gi3d.AddNewTextureFile(sc, "wood", "wood.png")
-
-	// floorp := gi3d.AddNewPlane(sc, "floor-plane", 100, 100)
-	// floor := gi3d.AddNewSolid(sc, sc, "floor", floorp.Name())
-	// floor.Pose.Pos.Set(0, -5, 0)
-	// // floor.Mat.Color.SetName("tan")
-	// // floor.Mat.Emissive.SetName("brown")
-	// floor.Mat.Bright = 2 // .5 for wood / brown
-	// floor.Mat.SetTexture(sc, grtx)
-	// floor.Mat.Tiling.Reveat.Set(40, 40)
-
-	// sc.Camera.Pose.Pos = mat32.Vec3{0, 100, 0}
-	// sc.Camera.LookAt(mat32.Vec3{0, 5, 0}, mat32.Vec3Y)
-	// sc.SaveCamera("3")
-
-	sc.Camera.Pose.Pos = mat32.Vec3{0, 29, -4}
-	sc.Camera.LookAt(mat32.Vec3{0, 4, -5}, mat32.Vec3Y)
-	sc.SaveCamera("2")
-
-	sc.Camera.Pose.Pos = mat32.Vec3{0, 17, 21}
-	sc.Camera.LookAt(mat32.Vec3{0, 3.6, 0}, mat32.Vec3Y)
-	sc.SaveCamera("1")
-	sc.SaveCamera("default")
+	se.Camera.Pose.Pos = mat32.Vec3{0, 17, 21}
+	se.Camera.LookAt(mat32.Vec3{0, 3.6, 0}, mat32.Vec3Y)
+	se.SaveCamera("1")
+	se.SaveCamera("default")
 
 	//////////////////////////////////////////
 	//    2D Scene
 
-	twov := svg.AddNewEditor(twofr, "sceneview")
-	twov.Fill = true
-	twov.SetProp("background-color", "lightgrey")
-	twov.SetStretchMax()
-	twov.InitScale()
-	twov.Trans.Set(620, 560)
-	twov.Scale = 20
-	twov.SetTransform()
+	twov := gi.NewSVG(twofr, "sceneview")
+	twov.Style(func(s *styles.Style) {
+		twov.SVG.Fill = true
+		twov.SVG.Norm = true
+		twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
+		twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
+		twov.SetReadOnly(false)
+	})
 
 	//////////////////////////////////////////
 	//    Toolbar
 
 	split.SetSplits(.4, .6)
 
-	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: "reset", Tooltip: "Init env.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!vw.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		vw.Env.Init(0)
-		vp.SetFullReRender()
+	b.AddAppBar(func(tb *gi.Toolbar) {
+		gi.NewButton(tb).SetText("Init").SetIcon(icons.ClearAll).
+			SetTooltip("Init env").
+			OnClick(func(e events.Event) {
+				vw.Env.Init(0)
+			})
+		gi.NewButton(tb).SetText("Reset Trace").SetIcon(icons.Undo).
+			SetTooltip("Reset trace of position, etc, shown in 2D View").
+			OnClick(func(e events.Event) {
+				vw.Trace = nil
+			})
+		giv.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
+		giv.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
+		giv.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
+		giv.NewFuncButton(tb, vw.Right).SetText("Consume").SetIcon(icons.FoodBank)
+
+		gi.NewSeparator(tb)
 	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Reset Trace", Icon: "reset", Tooltip: "Reset the trace of position, state etc, shown in the 2D View", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!vw.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		vw.Trace = nil
-		vp.SetFullReRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Left", Icon: "wedge-left", Tooltip: "Rotate Left", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!vw.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		vw.Left()
-		vp.SetFullReRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Right", Icon: "wedge-right", Tooltip: "Rotate Right", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!vw.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		vw.Right()
-		vp.SetFullReRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Forward", Icon: "wedge-up", Tooltip: "Step Forward", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!vw.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		vw.Forward()
-		vp.SetFullReRender()
-	})
-
-	// tbar.AddAction(gi.ActOpts{Label: "Backward", Icon: "wedge-down", Tooltip: "Step Backward", UpdateFunc: func(act *gi.Action) {
-	// 	act.SetActiveStateUpdt(!vw.IsRunning)
-	// }}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-	// 	vw.Backward()
-	// 	vp.SetFullReRender()
-	// })
-
-	tbar.AddAction(gi.ActOpts{Label: "Consume", Icon: "svg", Tooltip: "Consume item -- only if directly in front", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!vw.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		vw.Consume()
-		vp.SetFullReRender()
-	})
-
-	tbar.AddSeparator("sep-file")
-
-	// tbar.AddAction(gi.ActOpts{Label: "Open Pats", Icon: "file-open", Tooltip: "Open bit patterns from .json file", UpdateFunc: func(act *gi.Action) {
-	// 	act.SetActiveStateUpdt(!vw.IsRunning)
-	// }}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-	// 	giv.CallMethod(vw.Env, "OpenPats", vp)
-	// })
-	//
-	// tbar.AddAction(gi.ActOpts{Label: "Save Pats", Icon: "file-save", Tooltip: "Save bit patterns to .json file", UpdateFunc: func(act *gi.Action) {
-	// 	act.SetActiveStateUpdt(!vw.IsRunning)
-	// }}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-	// 	giv.CallMethod(vw.Env, "SavePats", vp)
-	// })
-
-	vp.UpdateEndNoSig(updt)
-
-	// main menu
-	appnm := gi.AppName()
-	mmen := win.MainMenu
-	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
-
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
-	amen.Menu.AddAppMenu(win)
-
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
-	emen.Menu.AddCopyCutPaste(win)
-
-	win.MainMenuUpdated()
-	return win
+	return b
 }
 
 // ConfigWorld constructs a new virtual physics world for flat world
@@ -430,32 +323,32 @@ func (vw *GUI) ConfigWorld() {
 func (vw *GUI) AddFloor(par *eve.Group, name string) *eve.Group {
 	ge := &vw.Geom
 	dp := ge.Depth + 3*ge.LengthScale
-	rm := eve.AddNewGroup(par, name)
-	floor := eve.AddNewBox(rm, "floor", mat32.Vec3{0, -ge.Thick / 2, -ge.Depth/2 - ge.LengthScale}, mat32.Vec3{ge.Width, ge.Thick, dp})
-	floor.Color = "grey"
+	rm := eve.NewGroup(par, name)
+	eve.NewBox(rm, "floor").SetSize(mat32.Vec3{ge.Width, ge.Thick, dp}).
+		SetColor("grey").SetInitPos(mat32.Vec3{0, -ge.Thick / 2, -ge.Depth/2 - ge.LengthScale})
 	return rm
 }
 
 // ConfigArms adds all the arms
 func (vw *GUI) ConfigArms(par *eve.Group) *eve.Group {
 	ev := vw.Env
-	rm := eve.AddNewGroup(par, "arms")
+	rm := eve.NewGroup(par, "arms")
 	ge := &vw.Geom
 	exln := ge.LengthScale
 	halfarm := .5 * ge.ArmWidth
 	halfht := .5 * ge.Height
 	for i, arm := range ev.Config.Arms {
 		anm := fmt.Sprintf("arm_%d\n", i)
-		agp := eve.AddNewGroup(rm, anm)
+		agp := eve.NewGroup(rm, anm)
 		x, _ := ge.Pos(i, 0)
 		ln := ge.LengthScale * float32(arm.Length)
 		halflen := .5*ln + exln
-		// bwall := eve.AddNewBox(agp, "back-wall", mat32.Vec3{x, halfht, -ln - exln}, mat32.Vec3{ge.ArmWidth, ge.Height, ge.Thick})
-		// bwall.Color = "blue"
-		lwall := eve.AddNewBox(agp, "left-wall", mat32.Vec3{x - halfarm, halfht, -halflen}, mat32.Vec3{ge.Thick, ge.Height, ln})
-		lwall.Color = "black" // "red"
-		rwall := eve.AddNewBox(agp, "right-wall", mat32.Vec3{x + halfarm, halfht, -halflen}, mat32.Vec3{ge.Thick, ge.Height, ln})
-		rwall.Color = "black" // "green"
+
+		eve.NewBox(agp, "left-wall").SetSize(mat32.Vec3{ge.Thick, ge.Height, ln}).
+			SetColor("black").SetInitPos(mat32.Vec3{x - halfarm, halfht, -halflen})
+
+		eve.NewBox(agp, "right-wall").SetSize(mat32.Vec3{ge.Thick, ge.Height, ln}).
+			SetColor("black").SetInitPos(mat32.Vec3{x + halfarm, halfht, -halflen})
 	}
 	return rm
 }
@@ -464,7 +357,7 @@ func (vw *GUI) ConfigArms(par *eve.Group) *eve.Group {
 func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *eve.Group {
 	ev := vw.Env
 	ge := &vw.Geom
-	stms := eve.AddNewGroup(par, name)
+	stms := eve.NewGroup(par, name)
 	exln := ge.LengthScale
 	// halfarm := .5 * ge.ArmWidth
 	usHt := ge.Height
@@ -476,10 +369,12 @@ func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *
 		ln := ge.LengthScale * float32(arm.Length)
 		usnm := fmt.Sprintf("us_%d\n", i)
 		csnm := fmt.Sprintf("cs_%d\n", i)
-		uso := eve.AddNewBox(stms, usnm, mat32.Vec3{float32(x), 0.5 * usHt, -ln - exln}, mat32.Vec3{ge.ArmWidth, usHt, usDp})
-		uso.Color = vw.MatColors[arm.US]
-		cso := eve.AddNewBox(stms, csnm, mat32.Vec3{float32(x), usHt + .5*csHt, -ln - 2*exln}, mat32.Vec3{ge.ArmWidth, csHt, ge.Thick})
-		cso.Color = vw.MatColors[arm.CS]
+
+		eve.NewBox(stms, usnm).SetSize(mat32.Vec3{ge.ArmWidth, usHt, usDp}).
+			SetColor(vw.MatColors[arm.US]).SetInitPos(mat32.Vec3{x, 0.5 * usHt, -ln - 1.1*exln})
+
+		eve.NewBox(stms, csnm).SetSize(mat32.Vec3{ge.ArmWidth, csHt, ge.Thick}).
+			SetColor(vw.MatColors[arm.CS]).SetInitPos(mat32.Vec3{x, usHt + 0.5*csHt, -ln - 2*exln})
 	}
 	return stms
 }
@@ -507,40 +402,46 @@ func (vw *GUI) UpdateStims() {
 
 // ConfigEmery constructs a new Emery virtual hamster
 func (vw *GUI) ConfigEmery(par *eve.Group, length float32) *eve.Group {
-	emr := eve.AddNewGroup(par, "emery")
+	emr := eve.NewGroup(par, "emery")
 	height := length / 2
 	width := height
-	body := eve.AddNewBox(emr, "body", mat32.Vec3{0, height / 2, 0}, mat32.Vec3{width, height, length})
-	// body := eve.AddNewCapsule(emr, "body", mat32.Vec3{0, height / 2, 0}, height, width/2)
-	// body := eve.AddNewCylinder(emr, "body", mat32.Vec3{0, height / 2, 0}, height, width/2)
-	body.Color = "purple"
-	body.SetDynamic()
+
+	eve.NewBox(emr, "body").SetSize(mat32.Vec3{width, height, length}).
+		SetColor("purple").SetDynamic().
+		SetInitPos(mat32.Vec3{0, height / 2, 0})
 
 	headsz := height * 0.75
 	hhsz := .5 * headsz
-	hgp := eve.AddNewGroup(emr, "head")
-	hgp.Initial.Pos = mat32.Vec3{0, hhsz, -(length/2 + hhsz)}
+	hgp := eve.NewGroup(emr, "head").SetInitPos(mat32.Vec3{0, hhsz, -(length/2 + hhsz)})
 
-	head := eve.AddNewBox(hgp, "head", mat32.Vec3{0, 0, 0}, mat32.Vec3{headsz, headsz, headsz})
-	head.Color = "tan"
-	head.SetDynamic()
+	eve.NewBox(hgp, "head").SetSize(mat32.Vec3{headsz, headsz, headsz}).
+		SetColor("tan").SetDynamic().SetInitPos(mat32.Vec3{0, 0, 0})
+
 	eyesz := headsz * .2
-	eyel := eve.AddNewBox(hgp, "eye-l", mat32.Vec3{-hhsz * .6, headsz * .1, -(hhsz + eyesz*.3)}, mat32.Vec3{eyesz, eyesz * .5, eyesz * .2})
-	eyel.Color = "green"
-	eyel.SetDynamic()
+
+	eve.NewBox(hgp, "eye-l").SetSize(mat32.Vec3{eyesz, eyesz * .5, eyesz * .2}).
+		SetColor("green").SetDynamic().
+		SetInitPos(mat32.Vec3{-hhsz * .6, headsz * .1, -(hhsz + eyesz*.3)})
+
 	// note: centering this in head for now to get straight-on view
-	eyer := eve.AddNewBox(hgp, "eye-r", mat32.Vec3{0, headsz * .1, -(hhsz + eyesz*.3)}, mat32.Vec3{eyesz, eyesz * .5, eyesz * .2})
-	eyer.Color = "green"
-	eyer.Initial.Quat.SetFromEuler(mat32.Vec3{-0.02, 0, 0}) // look a bit down
-	eyer.SetDynamic()
+	eve.NewBox(hgp, "eye-r").SetSize(mat32.Vec3{eyesz, eyesz * .5, eyesz * .2}).
+		SetColor("green").SetDynamic().
+		SetInitPos(mat32.Vec3{0, headsz * .1, -(hhsz + eyesz*.3)})
+
 	return emr
 }
 
 // ConfigView3D makes the 3D view
-func (vw *GUI) ConfigView3D(sc *gi3d.Scene) {
+func (vw *GUI) ConfigView3D(se *xyz.Scene) {
+	se.BackgroundColor = colors.FromRGB(230, 230, 255) // sky blue-ish
+	xyz.NewAmbientLight(se, "ambient", 0.3, xyz.DirectSun)
+
+	dir := xyz.NewDirLight(se, "dir", 1, xyz.DirectSun)
+	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
+
 	// sc.MultiSample = 1 // we are using depth grab so we need this = 1
-	wgp := gi3d.AddNewGroup(sc, sc, "world")
-	vw.View3D = evev.NewView(vw.World, sc, wgp)
+	wgp := xyz.NewGroup(se, "world")
+	vw.View3D = evev.NewView(vw.World, se, wgp)
 	vw.View3D.InitLibrary() // this makes a basic library based on body shapes, sizes
 	// at this point the library can be updated to configure custom visualizations
 	// for any of the named bodies.
@@ -600,7 +501,7 @@ func (vw *GUI) GrabEyeImg() {
 	}
 	img, err := vw.View3D.Image()
 	if err == nil && img != nil {
-		vw.EyeRFullImg.SetImage(img, 0, 0)
+		vw.EyeRFullImg.SetImage(img)
 	} else {
 		log.Println(err)
 	}
@@ -613,7 +514,7 @@ func (vw *GUI) GrabEyeImg() {
 	}
 	img, err = vw.View3D.Image()
 	if err == nil && img != nil {
-		vw.EyeRFovImg.SetImage(img, 0, 0)
+		vw.EyeRFovImg.SetImage(img)
 	} else {
 		log.Println(err)
 	}
@@ -623,8 +524,6 @@ func (vw *GUI) GrabEyeImg() {
 	// 	vw.DepthVals = depth
 	// 	vw.ViewDepth(depth)
 	// }
-	vw.View3D.Scene.Render2D()
-	vw.View3D.Scene.DirectWinUpload()
 }
 
 // ViewDepth updates depth bitmap with depth data
@@ -632,7 +531,6 @@ func (vw *GUI) ViewDepth(depth []float32) {
 	cmap := colormap.AvailMaps[string(vw.DepthMap)]
 	vw.DepthImg.SetSize(vw.Camera.Size)
 	evev.DepthImage(vw.DepthImg.Pixels, depth, cmap, &vw.Camera)
-	vw.DepthImg.UpdateSig()
 }
 
 func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
@@ -644,23 +542,22 @@ func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
 		cm.Name = cnm
 		cm.Indexed = true
 		nc := ev.Config.NCSs
-		cm.Colors = make([]gist.Color, nc)
-		cm.NoColor = gist.Black
+		cm.Colors = make([]color.RGBA, nc)
+		cm.NoColor = colors.Black
 		for i, cnm := range vw.MatColors {
-			cm.Colors[i].SetString(cnm, nil)
+			cm.Colors[i] = grr.Log1(colors.FromString(cnm))
 		}
 		colormap.AvailMaps[cnm] = cm
 	}
 	tg.Disp.Defaults()
 	tg.Disp.ColorMap = giv.ColorMapName(cnm)
 	tg.Disp.GridFill = 1
-	tg.SetStretchMax()
 }
 
 func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state TraceStates) {
 	vw.State = state
 	vw.Trace.AddRec(ctx, uint32(ev.Di), ev, net, state)
-	if vw.WorldWin == nil || !vw.Disp {
+	if vw.Scene3D == nil || !vw.Disp {
 		return
 	}
 
@@ -668,7 +565,7 @@ func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state 
 		vw.Env = ev
 		vw.EnvName = ev.Nm
 		vw.Trace = nil
-		vw.StructView.UpdateSig()
+		vw.StructView.UpdateFields()
 	}
 
 	vw.UpdateWorldGUI()
@@ -683,19 +580,28 @@ func (vw *GUI) SetEmeryPose() {
 }
 
 func (vw *GUI) UpdateWorldGUI() {
-	if vw.WorldWin == nil || !vw.Disp {
+	if vw.Scene3D == nil || !vw.Disp {
 		return
 	}
+	updt := vw.Scene3D.Sc.UpdateStartAsync()
+	defer vw.Scene3D.Sc.UpdateEndAsyncRender(updt)
+
 	// update state:
 	vw.SetEmeryPose()
 	vw.UpdateStims()
 	vw.World.WorldRelToAbs()
 	vw.View3D.UpdatePose()
 	vw.View3D.UpdateBodyView([]string{"body"})
+	// vw.View2D.UpdatePose()
 
 	// update views:
 	vw.GrabEyeImg()
-	vw.View3D.Scene.UpdateSig()
+	if vw.Scene3D.IsVisible() {
+		vw.Scene3D.SetNeedsRender(true)
+	}
+	// if vw.Scene2D.IsVisible() {
+	// 	vw.Scene2D.SetNeedsRender(true)
+	// }
 }
 
 func (vw *GUI) Left() {

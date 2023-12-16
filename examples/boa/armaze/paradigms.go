@@ -4,23 +4,15 @@
 
 package armaze
 
-import "github.com/goki/ki/kit"
-
 // Paradigms is a list of experimental paradigms that
 // govern the configuration and updating of environment
 // state over time and the appropriate evaluation criteria.
-type Paradigms int
+type Paradigms int32 //enums:enum
 
 const (
 	// Approach is a basic case where one Drive (chosen at random each trial) is fully active and others are at InactiveDrives levels -- goal is to approach the CS associated with the Drive-satisfying US, and avoid negative any negative USs.  USs are always placed in same Arms (NArms must be >= NUSs -- any additional Arms are filled at random with additional US copies)
 	Approach Paradigms = iota
-
-	ParadigmsN
 )
-
-//go:generate stringer -type=Paradigms
-
-var KiT_Paradigms = kit.Enums.AddEnum(ParadigmsN, kit.NotBitFlag, nil)
 
 ///////////////////////////////////////////////
 // Approach

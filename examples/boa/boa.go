@@ -7,6 +7,8 @@ boa: This project tests BG, OFC & ACC learning in a CS-driven approach task.
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 	"log"
@@ -36,7 +38,7 @@ import (
 	"goki.dev/etable/v2/split"
 	"goki.dev/gi/v2/gi"
 	"goki.dev/gi/v2/gimain"
-	"goki.dev/glop/bools"
+	"goki.dev/glop/num"
 	"goki.dev/mat32/v2"
 )
 
@@ -45,7 +47,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -508,11 +510,11 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ev.InstinctAct(justGated, hasGated)
 		csGated := (justGated && !pv.HasPosUS(ctx, diu))
 		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
-		wasDeciding := bools.FromFloat32(ss.Stats.Float32Di("Deciding", di))
+		wasDeciding := num.ToBool(ss.Stats.Float32Di("Deciding", di))
 		if wasDeciding {
 			deciding = false // can't keep deciding!
 		}
-		ss.Stats.SetFloat32Di("Deciding", di, bools.ToFloat32(deciding))
+		ss.Stats.SetFloat32Di("Deciding", di, num.FromBool[float32](deciding))
 
 		trSt := armaze.TrSearching
 		if hasGated {
@@ -607,7 +609,7 @@ func (ss *Sim) ApplyInputs() {
 		}
 		ev.Step()
 		if ev.Tick == 0 {
-			ss.Stats.SetFloat32Di("CortexDriving", int(di), bools.ToFloat32(erand.BoolP32(ss.Config.Env.PctCortex, -1)))
+			ss.Stats.SetFloat32Di("CortexDriving", int(di), num.FromBool[float32](erand.BoolP32(ss.Config.Env.PctCortex, -1)))
 			ev.ExValueUtil(&ss.Net.PVLV, ctx)
 		}
 		for _, lnm := range lays {
@@ -880,9 +882,9 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
 	ss.ActionStatsDi(di)
 
-	ss.Stats.SetFloat32("JustGated", bools.ToFloat32(justGated))
-	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
-	ss.Stats.SetFloat32("HasGated", bools.ToFloat32(hasGated))
+	ss.Stats.SetFloat32("JustGated", num.FromBool[float32](justGated))
+	ss.Stats.SetFloat32("Should", num.FromBool[float32](ev.ShouldGate))
+	ss.Stats.SetFloat32("HasGated", num.FromBool[float32](hasGated))
 	ss.Stats.SetFloat32("GateUS", nan)
 	ss.Stats.SetFloat32("GateCS", nan)
 	ss.Stats.SetFloat32("GatedEarly", nan)
@@ -893,19 +895,19 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("AChShouldnt", nan)
 	hasPos := pv.HasPosUS(ctx, diu)
 	if justGated {
-		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(!ev.ArmIsMaxUtil(ev.Arm)))
+		ss.Stats.SetFloat32("WrongCSGate", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
 	}
 	if ev.ShouldGate {
 		if hasPos {
-			ss.Stats.SetFloat32("GateUS", bools.ToFloat32(justGated))
+			ss.Stats.SetFloat32("GateUS", num.FromBool[float32](justGated))
 		} else {
-			ss.Stats.SetFloat32("GateCS", bools.ToFloat32(justGated))
+			ss.Stats.SetFloat32("GateCS", num.FromBool[float32](justGated))
 		}
 	} else {
 		if hasGated {
-			ss.Stats.SetFloat32("GatedAgain", bools.ToFloat32(justGated))
+			ss.Stats.SetFloat32("GatedAgain", num.FromBool[float32](justGated))
 		} else { // !should gate means early..
-			ss.Stats.SetFloat32("GatedEarly", bools.ToFloat32(justGated))
+			ss.Stats.SetFloat32("GatedEarly", num.FromBool[float32](justGated))
 		}
 	}
 	// We get get ACh when new CS or Rew
@@ -952,13 +954,13 @@ func (ss *Sim) MaintStats(di int) {
 		ss.Stats.SetFloat32(fnm, mat32.NaN())
 		if isFwd {
 			ss.Stats.SetFloat32(mnm, mact)
-			ss.Stats.SetFloat32(fnm, bools.ToFloat32(!overThr))
+			ss.Stats.SetFloat32(fnm, num.FromBool[float32](!overThr))
 		} else if !isCons {
-			ss.Stats.SetFloat32(pnm, bools.ToFloat32(overThr))
+			ss.Stats.SetFloat32(pnm, num.FromBool[float32](overThr))
 		}
 	}
 	if hasMaint {
-		ss.Stats.SetFloat32("MaintEarly", bools.ToFloat32(!ev.ArmIsMaxUtil(ev.Arm)))
+		ss.Stats.SetFloat32("MaintEarly", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
 	}
 }
 
@@ -1202,14 +1204,14 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		dn.SetCellFloat("USin", int(i), float64(us))
 		dn.SetCellFloat("OFC", int(i), float64(ofc))
 	}
-	ss.EnvGUI.USposPlot.Update()
+	ss.EnvGUI.USposPlot.GoUpdatePlot()
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() {
 	title := "BOA = BG, OFC ACC"
-	ss.GUI.MakeWindow(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -1229,45 +1231,47 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"log")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all NRuns, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"misc")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-		Icon:    "new",
-		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.RndSeeds.NewSeeds()
-		},
-	})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/boa/README.md")
-		},
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+			Icon:    "reset",
+			Tooltip: "Reset the accumulated log of all NRuns, which are tagged with the ParamSet used",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Run)
+				ss.GUI.UpdatePlot(etime.Train, etime.Run)
+			},
+		})
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+			Icon:    "new",
+			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.RndSeeds.NewSeeds()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/boa/README.md")
+			},
+		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
@@ -1276,17 +1280,16 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGUI()
+	ss.ConfigGUI()
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
-	fwin := ss.EnvGUI.ConfigWorldGUI(ev)
-	fwin.GoStartEventLoop()
-	win.StartEventLoop()
+	eb := ss.EnvGUI.ConfigWorldGUI(ev)
+	eb.NewWindow().Run()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 // RecordTestData returns key testing data from the network

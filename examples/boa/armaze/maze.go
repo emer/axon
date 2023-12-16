@@ -13,21 +13,22 @@
 // only allow switching at the start.
 package armaze
 
+//go:generate goki generate -add-types
+
 import (
 	"log"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
-	"github.com/goki/ki/kit"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/minmax"
 )
 
 // Actions is a list of mutually exclusive states
 // for tracing the behavior and internal state of Emery
-type Actions int
+type Actions int32 //enums:enum
 
 const (
 	Forward Actions = iota
@@ -35,12 +36,7 @@ const (
 	Right
 	Consume
 	None
-	ActionsN
 )
-
-//go:generate stringer -type=Actions
-
-var KiT_Actions = kit.Enums.AddEnum(ActionsN, kit.NotBitFlag, nil)
 
 // General note on US / Drive indexes:
 // The env does _not_ represent any built-in drives or USs (curiosity, effort, urgency)
@@ -428,7 +424,7 @@ func (ev *Env) DecodeLocalist(vt *etensor.Float32) int {
 // update the state accordingly.
 func (ev *Env) Action(action string, nop etensor.Tensor) {
 	act := None
-	act.FromString(action)
+	act.SetString(action)
 	ev.LastAct = act
 	ev.RenderAction(act) // plus phase input is action
 	// note: action not taken via TakeAct until start of trial in Step()
