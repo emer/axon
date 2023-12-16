@@ -10,7 +10,7 @@ input images.
 */
 package main
 
-//go:generate goki generate
+//go:generate goki generate -add-types
 
 import (
 	"fmt"
@@ -62,7 +62,7 @@ func main() {
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
-type Sim struct { //gti:add
+type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
@@ -351,10 +351,10 @@ func (ss *Sim) ConfigLoops() {
 			}
 		})
 		man.GetLoop(etime.Train, etime.Trial).OnStart.Add("UpdtImage", func() {
-			ss.GUI.Grid("Image").UpdateSig()
+			ss.GUI.Grid("Image").SetNeedsRender(true)
 		})
 		man.GetLoop(etime.Test, etime.Trial).OnStart.Add("UpdtImage", func() {
-			ss.GUI.Grid("Image").UpdateSig()
+			ss.GUI.Grid("Image").SetNeedsRender(true)
 		})
 
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
@@ -661,9 +661,9 @@ func (ss *Sim) ConfigActRFs() {
 // 		Gui
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Body {
+func (ss *Sim) ConfigGUI() {
 	title := "Object Recognition"
-	ss.GUI.MakeWindow(ss, "objrec", title, `This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images. See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch6/objrec/README.md">README.md on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "objrec", title, `This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images. See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch6/objrec/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -680,10 +680,9 @@ func (ss *Sim) ConfigGUI() *gi.Body {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	tg := ss.GUI.TabView.AddNewTab(etview.KiT_TensorGrid, "Image").(*etview.TensorGrid)
-	tg.SetStretchMax()
+	tg := etview.NewTensorGrid(ss.GUI.Tabs.NewTab("Image")).
+		SetTensor(&ss.Envs.ByMode(etime.Train).(*LEDEnv).Vis.ImgTsr)
 	ss.GUI.SetGrid("Image", tg)
-	tg.SetTensor(&ss.Envs.ByMode(etime.Train).(*LEDEnv).Vis.ImgTsr)
 
 	ss.GUI.AddActRFGridTabs(&ss.Stats.ActRFs)
 
@@ -706,7 +705,7 @@ func (ss *Sim) ConfigGUI() *gi.Body {
 			Func: func() {
 				if !ss.GUI.IsRunning {
 					ss.GUI.IsRunning = true
-					ss.GUI.ToolBar.UpdateActions()
+					ss.GUI.UpdateWindow()
 					go ss.RunTestAll()
 				}
 			},
@@ -750,13 +749,12 @@ func (ss *Sim) ConfigGUI() *gi.Body {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Body
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGUI()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

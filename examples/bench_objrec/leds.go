@@ -6,8 +6,9 @@ package main
 
 import (
 	"image"
+	"image/color"
 
-	"goki.dev/gi/v2/gi"
+	"goki.dev/colors"
 	"goki.dev/girl/paint"
 )
 
@@ -23,10 +24,10 @@ type LEDraw struct { //gti:add
 	Size float32 `def:"0.6"`
 
 	// color name for drawing lines
-	LineColor gi.ColorName
+	LineColor color.RGBA
 
 	// color name for background
-	BgColor gi.ColorName
+	BgColor color.RGBA
 
 	// size of image to render
 	ImgSize image.Point
@@ -34,19 +35,16 @@ type LEDraw struct { //gti:add
 	// rendered image
 	Image *image.RGBA `view:"-"`
 
-	// painter object
-	Paint girl.Paint `view:"+"`
-
-	// rendering state
-	Render paint.State `view:"-"`
+	// painting context object
+	Paint *paint.Context `view:"-"`
 }
 
 func (ld *LEDraw) Defaults() {
 	ld.ImgSize = image.Point{120, 120}
 	ld.Width = 4
 	ld.Size = 0.6
-	ld.LineColor = "white"
-	ld.BgColor = "black"
+	ld.LineColor = colors.White
+	ld.BgColor = colors.Black
 }
 
 // Init ensures that the image is created and of the right size, and renderer is initialized
@@ -63,11 +61,10 @@ func (ld *LEDraw) Init() {
 	if ld.Image == nil {
 		ld.Image = image.NewRGBA(image.Rectangle{Max: ld.ImgSize})
 	}
-	ld.Render.Init(ld.ImgSize.X, ld.ImgSize.Y, ld.Image)
-	ld.Paint.Defaults()
-	ld.Paint.StrokeStyle.Width.SetPct(ld.Width)
-	ld.Paint.StrokeStyle.Color.SetName(string(ld.LineColor))
-	ld.Paint.FillStyle.Color.SetName(string(ld.BgColor))
+	ld.Paint = paint.NewContextFromImage(ld.Image)
+	ld.Paint.StrokeStyle.Width.Pw(ld.Width)
+	ld.Paint.StrokeStyle.Color.SetSolid(ld.LineColor)
+	ld.Paint.FillStyle.Color.SetSolid(ld.BgColor)
 	ld.Paint.SetUnitContextExt(ld.ImgSize)
 }
 
@@ -76,12 +73,11 @@ func (ld *LEDraw) Clear() {
 	if ld.Image == nil {
 		ld.Init()
 	}
-	ld.Paint.Clear(&ld.Render)
+	ld.Paint.Clear()
 }
 
 // DrawSeg draws one segment
 func (ld *LEDraw) DrawSeg(seg LEDSegs) {
-	rs := &ld.Render
 	ctrX := float32(ld.ImgSize.X) * 0.5
 	ctrY := float32(ld.ImgSize.Y) * 0.5
 	szX := ctrX * ld.Size
@@ -89,19 +85,19 @@ func (ld *LEDraw) DrawSeg(seg LEDSegs) {
 	// note: top-zero coordinates
 	switch seg {
 	case Bottom:
-		ld.Paint.DrawLine(rs, ctrX-szX, ctrY+szY, ctrX+szX, ctrY+szY)
+		ld.Paint.DrawLine(ctrX-szX, ctrY+szY, ctrX+szX, ctrY+szY)
 	case Left:
-		ld.Paint.DrawLine(rs, ctrX-szX, ctrY-szY, ctrX-szX, ctrY+szY)
+		ld.Paint.DrawLine(ctrX-szX, ctrY-szY, ctrX-szX, ctrY+szY)
 	case Right:
-		ld.Paint.DrawLine(rs, ctrX+szX, ctrY-szY, ctrX+szX, ctrY+szY)
+		ld.Paint.DrawLine(ctrX+szX, ctrY-szY, ctrX+szX, ctrY+szY)
 	case Top:
-		ld.Paint.DrawLine(rs, ctrX-szX, ctrY-szY, ctrX+szX, ctrY-szY)
+		ld.Paint.DrawLine(ctrX-szX, ctrY-szY, ctrX+szX, ctrY-szY)
 	case CenterH:
-		ld.Paint.DrawLine(rs, ctrX-szX, ctrY, ctrX+szX, ctrY)
+		ld.Paint.DrawLine(ctrX-szX, ctrY, ctrX+szX, ctrY)
 	case CenterV:
-		ld.Paint.DrawLine(rs, ctrX, ctrY-szY, ctrX, ctrY+szY)
+		ld.Paint.DrawLine(ctrX, ctrY-szY, ctrX, ctrY+szY)
 	}
-	ld.Paint.Stroke(rs)
+	ld.Paint.Stroke()
 }
 
 // DrawLED draws one LED of given number, based on LEDdata

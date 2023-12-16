@@ -8,7 +8,7 @@
 // defined over 5x5 input / output layers (i.e., 25 units)
 package main
 
-//go:generate goki generate
+//go:generate goki generate -add-types
 
 import (
 	"log"
@@ -50,7 +50,7 @@ func main() {
 // see params.go for params
 
 // ParamConfig has config parameters related to sim params
-type ParamConfig struct { //gti:add
+type ParamConfig struct {
 
 	// network parameters
 	Network map[string]any
@@ -81,7 +81,7 @@ type ParamConfig struct { //gti:add
 }
 
 // RunConfig has config parameters related to running the sim
-type RunConfig struct { //gti:add
+type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
 	GPU bool `def:"true"`
@@ -118,7 +118,7 @@ type RunConfig struct { //gti:add
 }
 
 // LogConfig has config parameters related to logging data
-type LogConfig struct { //gti:add
+type LogConfig struct {
 
 	// if true, save final weights after each run
 	SaveWts bool
@@ -143,7 +143,7 @@ type LogConfig struct { //gti:add
 }
 
 // Config is a standard Sim config -- use as a starting point.
-type Config struct { //gti:add
+type Config struct {
 
 	// specify include files here, and after configuration, it contains list of include files added
 	Includes []string
@@ -171,7 +171,7 @@ func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
-type Sim struct { //gti:add
+type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
