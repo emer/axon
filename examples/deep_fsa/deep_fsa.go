@@ -6,7 +6,7 @@
 // finite state automaton problem.
 package main
 
-//go:generate goki generate
+//go:generate goki generate -add-types
 
 import (
 	"log"
@@ -52,7 +52,7 @@ func main() {
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
-type Sim struct { //gti:add
+type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
@@ -611,7 +611,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 }
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Body {
+func (ss *Sim) ConfigGUI() {
 	title := "DeepAxon Finite State Automaton"
 	ss.GUI.MakeBody(ss, "DeepFSA", title, `This demonstrates a basic DeepAxon model on the Finite State Automaton problem (e.g., the Reber grammar). See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
@@ -674,13 +674,12 @@ func (ss *Sim) ConfigGUI() *gi.Body {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Body
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	b := ss.ConfigGUI()
-	b.NewWindow().Run().Wait()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

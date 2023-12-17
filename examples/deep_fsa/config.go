@@ -7,7 +7,7 @@ package main
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
-type EnvConfig struct { //gti:add
+type EnvConfig struct {
 
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
@@ -34,7 +34,7 @@ func (cfg *EnvConfig) InitNameMap() {
 }
 
 // ParamConfig has config parameters related to sim params
-type ParamConfig struct { //gti:add
+type ParamConfig struct {
 
 	// network parameters
 	Network map[string]any
@@ -59,7 +59,7 @@ type ParamConfig struct { //gti:add
 }
 
 // RunConfig has config parameters related to running the sim
-type RunConfig struct { //gti:add
+type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
 	GPU bool `def:"true"`

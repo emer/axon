@@ -4,12 +4,13 @@
 
 package cond
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/ki/ints"
+	"github.com/emer/emergent/v2/env"
+	"goki.dev/etable/v2/etensor"
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
@@ -223,9 +224,9 @@ func (ev *CondEnv) RenderTrial(trli, tick int) {
 	}
 	minStart := trl.CSStart
 	if trl.CS2Start > 0 {
-		minStart = ints.MinInt(minStart, trl.CS2Start)
+		minStart = min(minStart, trl.CS2Start)
 	}
-	maxEnd := ints.MaxInt(trl.CSEnd, trl.CS2End)
+	maxEnd := max(trl.CSEnd, trl.CS2End)
 
 	if tick >= minStart && tick <= maxEnd {
 		SetContext(ctxt, ev.NYReps, trl.Context)

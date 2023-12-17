@@ -9,6 +9,8 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 	"math/rand"
@@ -41,7 +43,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -345,10 +347,10 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Context.Mode.String())
+	ctx := &ss.Context
+	mode := ctx.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
-	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
@@ -511,9 +513,9 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // 		Gui
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() {
 	title := "Axon Inhibition Test"
-	ss.GUI.MakeWindow(ss, "inhib", title, `This tests inhibition based on interneurons and inhibition functions. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "inhib", title, `This tests inhibition based on interneurons and inhibition functions. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -527,54 +529,55 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Test})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Test})
 
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"log")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"misc")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-		Icon:    "new",
-		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.RndSeeds.NewSeeds()
-		},
-	})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/inhib/README.md")
-		},
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+			Icon:    "reset",
+			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Run)
+				ss.GUI.UpdatePlot(etime.Train, etime.Run)
+			},
+		})
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+			Icon:    "new",
+			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.RndSeeds.NewSeeds()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/inhib/README.md")
+			},
+		})
 	})
 	ss.GUI.FinalizeGUI(false)
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGUI()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

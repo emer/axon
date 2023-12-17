@@ -7,26 +7,17 @@ package cond
 import (
 	"math/rand"
 
-	"github.com/emer/emergent/erand"
-	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/mat32/v2"
 )
 
-//go:generate stringer -type=Valence
-
 // Valence
-type Valence int32
+type Valence int32 //enums:enum
 
 const (
 	Pos Valence = iota
 	Neg
-	ValenceN
 )
-
-var KiT_Valence = kit.Enums.AddEnum(ValenceN, kit.NotBitFlag, nil)
-
-func (ev Valence) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *Valence) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 // Trial represents one behavioral trial, unfolding over
 // NTicks individual time steps, with one or more CS's (conditioned stimuli)

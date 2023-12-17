@@ -8,6 +8,8 @@ in the amygdala, ventral striatum and associated areas.
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 	"log"
@@ -28,7 +30,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
-	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"goki.dev/etable/v2/agg"
 	"goki.dev/etable/v2/eplot"
@@ -38,6 +39,7 @@ import (
 	"goki.dev/etable/v2/split"
 	"goki.dev/gi/v2/gi"
 	"goki.dev/gi/v2/gimain"
+	"goki.dev/goosi/events"
 	"goki.dev/mat32/v2"
 )
 
@@ -46,7 +48,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -717,7 +719,7 @@ func (ss *Sim) BlockStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
 		plt.SetTable(dt)
-		plt.Update()
+		plt.GoUpdatePlot()
 	}
 }
 
@@ -725,9 +727,9 @@ func (ss *Sim) BlockStats() {
 // 		Gui
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() {
 	title := "Axon PVLV"
-	ss.GUI.MakeWindow(ss, "pvlv", title, `This is the PVLV test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "pvlv", title, `This is the PVLV test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -746,85 +748,87 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	stnm := "BlockByType"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, stnm+" Plot").(*eplot.Plot2D)
+	plt := eplot.NewPlot2D(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
 	plt.Params.XAxisCol = "TrialType"
 
 	plt.SetTable(dt)
 
-	cb := gi.AddNewComboBox(ss.GUI.ToolBar, "runs")
-	cb.ItemsFromStringList(cond.RunNames, false, 50)
-	ri := 0
-	for i, rn := range cond.RunNames {
-		if rn == ss.Config.Env.RunName {
-			ri = i
-			break
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		cb := gi.NewChooser(tb, "runs")
+		cb.SetStrings(cond.RunNames, false, 50)
+		ri := 0
+		for i, rn := range cond.RunNames {
+			if rn == ss.Config.Env.RunName {
+				ri = i
+				break
+			}
 		}
-	}
-	cb.SelectItem(ri)
-	cb.ComboSig.Connect(ss.GUI.Win.This(), func(recv, send ki.Ki, sig int64, data any) {
-		ss.Config.Env.RunName = data.(string)
-		ss.InitEnvRun()
-	})
+		cb.SelectItem(ri)
+		cb.OnChange(func(e events.Event) {
+			ss.Config.Env.RunName = cb.CurVal.(string)
+			ss.InitEnvRun()
+		})
 
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
-	gi.NewSeparator(tb)"wts")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: "file-save",
-		Tooltip: "Save weights for the current condition name.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.SaveCondWeights()
-			// ss.GUI.UpdateWindow()
-		},
-	})
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: "file-save",
+			Tooltip: "Save weights for the current condition name.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.SaveCondWeights()
+				// ss.GUI.UpdateWindow()
+			},
+		})
 
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"log")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"misc")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-		Icon:    "new",
-		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.RndSeeds.NewSeeds()
-		},
-	})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
-		Icon:    "play",
-		Tooltip: "Opens a new window to plot PVLV Drive and Effort dynamics.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			go DriveEffortGUI()
-		},
-	})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
-		},
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+			Icon:    "reset",
+			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Run)
+				ss.GUI.UpdatePlot(etime.Train, etime.Run)
+			},
+		})
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+			Icon:    "new",
+			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.RndSeeds.NewSeeds()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
+			Icon:    "play",
+			Tooltip: "Opens a new window to plot PVLV Drive and Effort dynamics.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				go DriveEffortGUI()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
+			},
+		})
 	})
 
 	ss.GUI.FinalizeGUI(false)
@@ -835,13 +839,12 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGUI()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

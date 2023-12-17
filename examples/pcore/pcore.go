@@ -7,6 +7,8 @@ pcore: This project simulates the inhibitory dynamics in the STN and GPe leading
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 	"os"
@@ -33,7 +35,7 @@ import (
 	"goki.dev/etable/v2/split"
 	"goki.dev/gi/v2/gi"
 	"goki.dev/gi/v2/gimain"
-	"goki.dev/glop/bools"
+	"goki.dev/glop/num"
 	"goki.dev/mat32/v2"
 )
 
@@ -42,7 +44,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -531,9 +533,9 @@ func (ss *Sim) TrialStats(di int) {
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
 	ss.Stats.SetFloat32("ACCPos", ev.ACCPos)
 	ss.Stats.SetFloat32("ACCNeg", ev.ACCNeg)
-	ss.Stats.SetFloat32("Gated", bools.ToFloat32(ev.Gated))
-	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.Should))
-	ss.Stats.SetFloat32("Match", bools.ToFloat32(ev.Match))
+	ss.Stats.SetFloat32("Gated", num.FromBool[float32](ev.Gated))
+	ss.Stats.SetFloat32("Should", num.FromBool[float32](ev.Should))
+	ss.Stats.SetFloat32("Match", num.FromBool[float32](ev.Match))
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 	ss.Stats.SetFloat32("PFCVM_RT", ss.Stats.Float32Di("PFCVM_RT", di))
 	ss.Stats.SetFloat32("PFCVM_ActAvg", ss.Stats.Float32Di("PFCVM_ActAvg", di))
@@ -647,9 +649,9 @@ func (ss *Sim) TestStats() {
 // 		Gui
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() {
 	title := "PCore Test"
-	ss.GUI.MakeWindow(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -667,59 +669,61 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, tststnm+" Plot").(*eplot.Plot2D)
+	plt := eplot.NewPlot2D(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Params.Title = tststnm
 	plt.Params.XAxisCol = "Trial"
 	plt.SetTable(tstst)
 
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "TestInit", Icon: "update",
-		Tooltip: "reinitialize the testing control so it re-runs.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Loops.ResetCountersByMode(etime.Test)
-			ss.GUI.UpdateWindow()
-		},
-	})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train, etime.Test})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "TestInit", Icon: "update",
+			Tooltip: "reinitialize the testing control so it re-runs.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Loops.ResetCountersByMode(etime.Test)
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"log")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"misc")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-		Icon:    "new",
-		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.RndSeeds.NewSeeds()
-		},
-	})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
-		},
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+			Icon:    "reset",
+			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Run)
+				ss.GUI.UpdatePlot(etime.Train, etime.Run)
+			},
+		})
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+			Icon:    "new",
+			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.RndSeeds.NewSeeds()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
+			},
+		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
@@ -729,13 +733,12 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGUI()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

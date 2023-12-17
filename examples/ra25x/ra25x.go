@@ -8,6 +8,8 @@
 // defined over 5x5 input / output layers (i.e., 25 units)
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"log"
 	"os"
@@ -41,7 +43,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -615,9 +617,9 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // 		Gui
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() {
 	title := "Axon Random Associator"
-	ss.GUI.MakeWindow(ss, "ra25x", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "ra25x", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -631,45 +633,47 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train, etime.Test})
 
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"log")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	gi.NewSeparator(tb)"misc")
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-		Icon:    "new",
-		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.RndSeeds.NewSeeds()
-		},
-	})
-	ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25x/README.md")
-		},
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+			Icon:    "reset",
+			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Run)
+				ss.GUI.UpdatePlot(etime.Train, etime.Run)
+			},
+		})
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+			Icon:    "new",
+			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.RndSeeds.NewSeeds()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25x/README.md")
+			},
+		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
@@ -679,13 +683,12 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGUI()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {
