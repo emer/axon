@@ -1205,12 +1205,13 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		dn.SetCellFloat("OFC", int(i), float64(ofc))
 	}
 	ss.EnvGUI.USposPlot.GoUpdatePlot()
+	ss.EnvGUI.USnegPlot.GoUpdatePlot()
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGUI() {
-	title := "BOA = BG, OFC ACC"
+	title := "BOA: BG, OFC ACC"
 	ss.GUI.MakeBody(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
@@ -1288,6 +1289,7 @@ func (ss *Sim) RunGUI() {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
 	eb := ss.EnvGUI.ConfigWorldGUI(ev)
+	eb.Sc.App = ss.GUI.Body.Sc.App
 	eb.NewWindow().Run()
 	ss.GUI.Body.NewWindow().Run().Wait()
 }

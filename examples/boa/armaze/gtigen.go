@@ -117,6 +117,7 @@ var _ = gti.AddType(&gti.Type{
 		{"Env", &gti.Field{Name: "Env", Type: "*github.com/emer/axon/examples/boa/armaze.Env", LocalType: "*Env", Doc: "the env being visualized", Directives: gti.Directives{}, Tag: ""}},
 		{"EnvName", &gti.Field{Name: "EnvName", Type: "string", LocalType: "string", Doc: "name of current env -- number is NData index", Directives: gti.Directives{}, Tag: ""}},
 		{"Scene3D", &gti.Field{Name: "Scene3D", Type: "*goki.dev/gi/v2/xyzv.Scene3D", LocalType: "*xyzv.Scene3D", Doc: "3D visualization of the Scene", Directives: gti.Directives{}, Tag: ""}},
+		{"Scene2D", &gti.Field{Name: "Scene2D", Type: "*goki.dev/gi/v2/gi.SVG", LocalType: "*gi.SVG", Doc: "2D visualization of the Scene", Directives: gti.Directives{}, Tag: ""}},
 		{"MatColors", &gti.Field{Name: "MatColors", Type: "[]string", LocalType: "[]string", Doc: "list of material colors", Directives: gti.Directives{}, Tag: ""}},
 		{"StateColors", &gti.Field{Name: "StateColors", Type: "map[string]string", LocalType: "map[string]string", Doc: "internal state colors", Directives: gti.Directives{}, Tag: ""}},
 		{"WallSize", &gti.Field{Name: "WallSize", Type: "goki.dev/mat32/v2.Vec2", LocalType: "mat32.Vec2", Doc: "thickness (X) and height (Y) of walls", Directives: gti.Directives{}, Tag: ""}},
@@ -131,9 +132,9 @@ var _ = gti.AddType(&gti.Type{
 		{"EyeRFullImg", &gti.Field{Name: "EyeRFullImg", Type: "*goki.dev/gi/v2/gi.Image", LocalType: "*gi.Image", Doc: "first-person right-eye full field view", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"EyeRFovImg", &gti.Field{Name: "EyeRFovImg", Type: "*goki.dev/gi/v2/gi.Image", LocalType: "*gi.Image", Doc: "first-person right-eye fovea view", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"DepthImg", &gti.Field{Name: "DepthImg", Type: "*goki.dev/gi/v2/gi.Image", LocalType: "*gi.Image", Doc: "depth map bitmap view", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"USposPlot", &gti.Field{Name: "USposPlot", Type: "*github.com/emer/etable/eplot.Plot2D", LocalType: "*eplot.Plot2D", Doc: "plot of positive valence drives, active OFC US state, and reward", Directives: gti.Directives{}, Tag: ""}},
+		{"USposPlot", &gti.Field{Name: "USposPlot", Type: "*goki.dev/etable/v2/eplot.Plot2D", LocalType: "*eplot.Plot2D", Doc: "plot of positive valence drives, active OFC US state, and reward", Directives: gti.Directives{}, Tag: ""}},
 		{"USposData", &gti.Field{Name: "USposData", Type: "*goki.dev/etable/v2/etable.Table", LocalType: "*etable.Table", Doc: "data for USPlot", Directives: gti.Directives{}, Tag: ""}},
-		{"USnegPlot", &gti.Field{Name: "USnegPlot", Type: "*github.com/emer/etable/eplot.Plot2D", LocalType: "*eplot.Plot2D", Doc: "plot of negative valence active OFC US state, and outcomes", Directives: gti.Directives{}, Tag: ""}},
+		{"USnegPlot", &gti.Field{Name: "USnegPlot", Type: "*goki.dev/etable/v2/eplot.Plot2D", LocalType: "*eplot.Plot2D", Doc: "plot of negative valence active OFC US state, and outcomes", Directives: gti.Directives{}, Tag: ""}},
 		{"USnegData", &gti.Field{Name: "USnegData", Type: "*goki.dev/etable/v2/etable.Table", LocalType: "*etable.Table", Doc: "data for USPlot", Directives: gti.Directives{}, Tag: ""}},
 		{"Geom", &gti.Field{Name: "Geom", Type: "github.com/emer/axon/examples/boa/armaze.Geom", LocalType: "Geom", Doc: "geometry of world", Directives: gti.Directives{}, Tag: ""}},
 		{"World", &gti.Field{Name: "World", Type: "*github.com/emer/eve/v2/eve.Group", LocalType: "*eve.Group", Doc: "world", Directives: gti.Directives{}, Tag: ""}},
@@ -144,8 +145,21 @@ var _ = gti.AddType(&gti.Type{
 		{"EyeR", &gti.Field{Name: "EyeR", Type: "github.com/emer/eve/v2/eve.Body", LocalType: "eve.Body", Doc: "Right eye of emery", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"Contacts", &gti.Field{Name: "Contacts", Type: "github.com/emer/eve/v2/eve.Contacts", LocalType: "eve.Contacts", Doc: "contacts from last step, for body", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
+	Embeds: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
+	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{
+		{"Left", &gti.Method{Name: "Left", Doc: "", Directives: gti.Directives{
+			&gti.Directive{Tool: "gti", Directive: "add", Args: []string{}},
+		}, Args: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}), Returns: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{})}},
+		{"Right", &gti.Method{Name: "Right", Doc: "", Directives: gti.Directives{
+			&gti.Directive{Tool: "gti", Directive: "add", Args: []string{}},
+		}, Args: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}), Returns: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{})}},
+		{"Forward", &gti.Method{Name: "Forward", Doc: "", Directives: gti.Directives{
+			&gti.Directive{Tool: "gti", Directive: "add", Args: []string{}},
+		}, Args: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}), Returns: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{})}},
+		{"Consume", &gti.Method{Name: "Consume", Doc: "", Directives: gti.Directives{
+			&gti.Directive{Tool: "gti", Directive: "add", Args: []string{}},
+		}, Args: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}), Returns: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{})}},
+	}),
 })
 
 var _ = gti.AddType(&gti.Type{
@@ -192,7 +206,7 @@ var _ = gti.AddType(&gti.Type{
 		{"HasGated", &gti.Field{Name: "HasGated", Type: "bool", LocalType: "bool", Doc: "has gated at some point during sequence -- set by sim -- used for instinct", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"States", &gti.Field{Name: "States", Type: "map[string]*goki.dev/etable/v2/etensor.Float32", LocalType: "map[string]*etensor.Float32", Doc: "named states -- e.g., USs, CSs, etc", Directives: gti.Directives{}, Tag: ""}},
 		{"MaxLength", &gti.Field{Name: "MaxLength", Type: "int", LocalType: "int", Doc: "maximum length of any arm", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
-		{"Rand", &gti.Field{Name: "Rand", Type: "github.com/emer/emergent/erand.SysRand", LocalType: "erand.SysRand", Doc: "random number generator for the env -- all random calls must use this", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"Rand", &gti.Field{Name: "Rand", Type: "github.com/emer/emergent/v2/erand.SysRand", LocalType: "erand.SysRand", Doc: "random number generator for the env -- all random calls must use this", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RndSeed", &gti.Field{Name: "RndSeed", Type: "int64", LocalType: "int64", Doc: "random seed", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),

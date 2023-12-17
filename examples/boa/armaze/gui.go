@@ -211,6 +211,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	imfr := gi.NewFrame(svfr).Style(func(s *styles.Style) {
 		s.Display = styles.Grid
 		s.Columns = 2
+		s.Grow.Set(0, 0)
 	})
 	gi.NewLabel(imfr).SetText("Eye-View, Fovea:")
 	gi.NewLabel(imfr).SetText("Full Field:")
@@ -221,18 +222,20 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	vw.EyeRFullImg = gi.NewImage(imfr, "eye-r-full-img")
 	vw.EyeRFullImg.SetSize(vw.Camera.Size)
 
-	wd := float32(700)
-	ht := float32(160)
+	wd := float32(300)
+	ht := float32(100)
 	vw.USposPlot = eplot.NewPlot2D(svfr, "us-pos")
 	vw.USposPlot.Style(func(s *styles.Style) {
-		s.Max.X.Px(wd)
-		s.Max.Y.Px(ht)
+		s.Min.X.Px(wd)
+		s.Min.Y.Px(ht)
+		s.Grow.Set(0, 0)
 	})
 
 	vw.USnegPlot = eplot.NewPlot2D(svfr, "us-neg")
 	vw.USnegPlot.Style(func(s *styles.Style) {
-		s.Max.X.Px(wd)
-		s.Max.Y.Px(ht)
+		s.Min.X.Px(wd)
+		s.Min.Y.Px(ht)
+		s.Grow.Set(0, 0)
 	})
 	vw.ConfigUSPlots()
 
@@ -604,7 +607,7 @@ func (vw *GUI) UpdateWorldGUI() {
 	// }
 }
 
-func (vw *GUI) Left() {
+func (vw *GUI) Left() { //gti:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Left", nil)
@@ -612,7 +615,7 @@ func (vw *GUI) Left() {
 	vw.UpdateWorldGUI()
 }
 
-func (vw *GUI) Right() {
+func (vw *GUI) Right() { //gti:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Right", nil)
@@ -620,7 +623,7 @@ func (vw *GUI) Right() {
 	vw.UpdateWorldGUI()
 }
 
-func (vw *GUI) Forward() {
+func (vw *GUI) Forward() { //gti:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Forward", nil)
@@ -628,7 +631,7 @@ func (vw *GUI) Forward() {
 	vw.UpdateWorldGUI()
 }
 
-func (vw *GUI) Consume() {
+func (vw *GUI) Consume() { //gti:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Consume", nil)
