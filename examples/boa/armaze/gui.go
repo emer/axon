@@ -92,7 +92,7 @@ type GUI struct {
 	EnvName string
 
 	// 3D visualization of the Scene
-	Scene3D *xyzv.Scene3D
+	SceneView *xyzv.SceneView
 
 	// 2D visualization of the Scene
 	Scene2D *gi.SVG
@@ -250,16 +250,17 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 
 	vw.ConfigWorld()
 
-	vw.Scene3D = xyzv.NewScene3D(scfr, "sceneview")
-	se := vw.Scene3D.Scene
+	vw.SceneView = xyzv.NewSceneView(scfr, "sceneview")
+	vw.SceneView.Config()
+	se := vw.SceneView.SceneXYZ()
 	vw.ConfigView3D(se)
 
 	se.Camera.Pose.Pos = mat32.Vec3{0, 29, -4}
-	se.Camera.LookAt(mat32.Vec3{0, 4, -5}, mat32.Vec3Y)
+	se.Camera.LookAt(mat32.Vec3{0, 4, -5}, mat32.V3(0, 1, 0))
 	se.SaveCamera("2")
 
 	se.Camera.Pose.Pos = mat32.Vec3{0, 17, 21}
-	se.Camera.LookAt(mat32.Vec3{0, 3.6, 0}, mat32.Vec3Y)
+	se.Camera.LookAt(mat32.Vec3{0, 3.6, 0}, mat32.V3(0, 1, 0))
 	se.SaveCamera("1")
 	se.SaveCamera("default")
 
@@ -560,7 +561,7 @@ func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
 func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state TraceStates) {
 	vw.State = state
 	vw.Trace.AddRec(ctx, uint32(ev.Di), ev, net, state)
-	if vw.Scene3D == nil || !vw.Disp {
+	if vw.SceneView == nil || !vw.Disp {
 		return
 	}
 
@@ -583,11 +584,11 @@ func (vw *GUI) SetEmeryPose() {
 }
 
 func (vw *GUI) UpdateWorldGUI() {
-	if vw.Scene3D == nil || !vw.Disp {
+	if vw.SceneView == nil || !vw.Disp {
 		return
 	}
-	updt := vw.Scene3D.Sc.UpdateStartAsync()
-	defer vw.Scene3D.Sc.UpdateEndAsyncRender(updt)
+	updt := vw.SceneView.Sc.UpdateStartAsync()
+	defer vw.SceneView.Sc.UpdateEndAsyncRender(updt)
 
 	// update state:
 	vw.SetEmeryPose()
@@ -599,8 +600,8 @@ func (vw *GUI) UpdateWorldGUI() {
 
 	// update views:
 	vw.GrabEyeImg()
-	if vw.Scene3D.IsVisible() {
-		vw.Scene3D.SetNeedsRender(true)
+	if vw.SceneView.IsVisible() {
+		vw.SceneView.SetNeedsRender(true)
 	}
 	// if vw.Scene2D.IsVisible() {
 	// 	vw.Scene2D.SetNeedsRender(true)

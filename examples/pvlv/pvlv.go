@@ -739,8 +739,8 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	nv.Scene().Camera.Pose.Pos.Set(0, 1.4, 2.6)
-	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.4, 2.6)
+	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

@@ -29,7 +29,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/etable/v2/eplot"
 	"goki.dev/etable/v2/etable"
 	"goki.dev/etable/v2/etensor"
 	_ "goki.dev/etable/v2/etview" // include to get gui views
@@ -122,9 +121,6 @@ type Sim struct {
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
 
-	// the test-trial plot
-	TstCycPlot *eplot.Plot2D `view:"-"`
-
 	// map of values for detailed debugging / testing
 	ValMap map[string]float32 `view:"-"`
 }
@@ -201,7 +197,7 @@ func (ss *Sim) Counters() string {
 }
 
 func (ss *Sim) UpdateView() {
-	ss.TstCycPlot.UpdatePlot()
+	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
 	ss.GUI.ViewUpdt.Text = ss.Counters()
 	ss.GUI.ViewUpdt.UpdateCycle(int(ss.Context.Cycle))
 }
@@ -373,7 +369,7 @@ func (ss *Sim) ConfigLogItems() {
 
 func (ss *Sim) ResetTstCycPlot() {
 	ss.Logs.ResetLog(etime.Test, etime.Cycle)
-	ss.TstCycPlot.GoUpdatePlot()
+	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -396,11 +392,12 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	plt := eplot.NewPlot2D(ss.GUI.Tabs.NewTab("TstCycPlot"))
-	key := etime.Scope(etime.Test, etime.Cycle)
-	plt.SetTable(ss.Logs.Table(etime.Test, etime.Cycle))
-	egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
-	ss.TstCycPlot = plt
+	ss.GUI.AddPlots(title, &ss.Logs)
+	// key := etime.Scope(etime.Test, etime.Cycle)
+	// plt := ss.GUI.NewPlot(key, ss.GUI.Tabs.NewTab("TstCycPlot"))
+	// plt.SetTable(ss.Logs.Table(etime.Test, etime.Cycle))
+	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
+	// ss.TstCycPlot = plt
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",

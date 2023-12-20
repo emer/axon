@@ -672,7 +672,7 @@ func (ss *Sim) ConfigGUI() {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
-	cam := &(nv.Scene().Camera)
+	cam := &(nv.SceneXYZ().Camera)
 	cam.Pose.Pos.Set(0.0, 1.733, 2.3)
 	cam.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 

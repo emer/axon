@@ -342,8 +342,8 @@ func (nt *NetworkBase) Layout() {
 
 // BoundsUpdt updates the Min / Max display bounds for 3D display
 func (nt *NetworkBase) BoundsUpdt() {
-	mn := mat32.NewVec3Scalar(mat32.Infinity)
-	mx := mat32.Vec3Zero
+	mn := mat32.V3Scalar(mat32.Infinity)
+	mx := mat32.Vec3{}
 	for _, ly := range nt.Layers {
 		ps := ly.Pos()
 		sz := ly.Size()

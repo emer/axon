@@ -790,8 +790,8 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
+	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
