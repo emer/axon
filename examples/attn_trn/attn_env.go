@@ -34,7 +34,7 @@ type Stim struct {
 
 // PosXY returns XY position projected into size of grid
 func (st *Stim) PosXY(size evec.Vec2i) mat32.Vec2 {
-	return mat32.Vec2{st.Pos.X * float32(size.X-1), st.Pos.Y * float32(size.Y-1)}
+	return mat32.V2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
 }
 
 // StimSet is a set of stimuli to be presented together

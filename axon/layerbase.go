@@ -247,12 +247,12 @@ func (ly *LayerBase) Size() mat32.Vec2 {
 	var sz mat32.Vec2
 	switch {
 	case ly.Is2D():
-		sz = mat32.Vec2{float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))} // Y, X
+		sz = mat32.V2(float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))) // Y, X
 	case ly.Is4D():
 		// note: pool spacing is handled internally in display and does not affect overall size
-		sz = mat32.Vec2{float32(ly.Shp.Dim(1) * ly.Shp.Dim(3)), float32(ly.Shp.Dim(0) * ly.Shp.Dim(2))} // Y, X
+		sz = mat32.V2(float32(ly.Shp.Dim(1)*ly.Shp.Dim(3)), float32(ly.Shp.Dim(0)*ly.Shp.Dim(2))) // Y, X
 	default:
-		sz = mat32.Vec2{float32(ly.Shp.Len()), 1}
+		sz = mat32.V2(float32(ly.Shp.Len()), 1)
 	}
 	return sz.MulScalar(ly.Rel.Scale)
 }

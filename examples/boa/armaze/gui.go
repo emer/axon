@@ -255,12 +255,12 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	se := vw.SceneView.SceneXYZ()
 	vw.ConfigView3D(se)
 
-	se.Camera.Pose.Pos = mat32.Vec3{0, 29, -4}
-	se.Camera.LookAt(mat32.Vec3{0, 4, -5}, mat32.V3(0, 1, 0))
+	se.Camera.Pose.Pos = mat32.V3(0, 29, -4)
+	se.Camera.LookAt(mat32.V3(0, 4, -5), mat32.V3(0, 1, 0))
 	se.SaveCamera("2")
 
-	se.Camera.Pose.Pos = mat32.Vec3{0, 17, 21}
-	se.Camera.LookAt(mat32.Vec3{0, 3.6, 0}, mat32.V3(0, 1, 0))
+	se.Camera.Pose.Pos = mat32.V3(0, 17, 21)
+	se.Camera.LookAt(mat32.V3(0, 3.6, 0), mat32.V3(0, 1, 0))
 	se.SaveCamera("1")
 	se.SaveCamera("default")
 
@@ -328,8 +328,8 @@ func (vw *GUI) AddFloor(par *eve.Group, name string) *eve.Group {
 	ge := &vw.Geom
 	dp := ge.Depth + 3*ge.LengthScale
 	rm := eve.NewGroup(par, name)
-	eve.NewBox(rm, "floor").SetSize(mat32.Vec3{ge.Width, ge.Thick, dp}).
-		SetColor("grey").SetInitPos(mat32.Vec3{0, -ge.Thick / 2, -ge.Depth/2 - ge.LengthScale})
+	eve.NewBox(rm, "floor").SetSize(mat32.V3(ge.Width, ge.Thick, dp)).
+		SetColor("grey").SetInitPos(mat32.V3(0, -ge.Thick/2, -ge.Depth/2-ge.LengthScale))
 	return rm
 }
 
@@ -348,11 +348,11 @@ func (vw *GUI) ConfigArms(par *eve.Group) *eve.Group {
 		ln := ge.LengthScale * float32(arm.Length)
 		halflen := .5*ln + exln
 
-		eve.NewBox(agp, "left-wall").SetSize(mat32.Vec3{ge.Thick, ge.Height, ln}).
-			SetColor("black").SetInitPos(mat32.Vec3{x - halfarm, halfht, -halflen})
+		eve.NewBox(agp, "left-wall").SetSize(mat32.V3(ge.Thick, ge.Height, ln)).
+			SetColor("black").SetInitPos(mat32.V3(x-halfarm, halfht, -halflen))
 
-		eve.NewBox(agp, "right-wall").SetSize(mat32.Vec3{ge.Thick, ge.Height, ln}).
-			SetColor("black").SetInitPos(mat32.Vec3{x + halfarm, halfht, -halflen})
+		eve.NewBox(agp, "right-wall").SetSize(mat32.V3(ge.Thick, ge.Height, ln)).
+			SetColor("black").SetInitPos(mat32.V3(x+halfarm, halfht, -halflen))
 	}
 	return rm
 }
@@ -374,11 +374,11 @@ func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *
 		usnm := fmt.Sprintf("us_%d\n", i)
 		csnm := fmt.Sprintf("cs_%d\n", i)
 
-		eve.NewBox(stms, usnm).SetSize(mat32.Vec3{ge.ArmWidth, usHt, usDp}).
-			SetColor(vw.MatColors[arm.US]).SetInitPos(mat32.Vec3{x, 0.5 * usHt, -ln - 1.1*exln})
+		eve.NewBox(stms, usnm).SetSize(mat32.V3(ge.ArmWidth, usHt, usDp)).
+			SetColor(vw.MatColors[arm.US]).SetInitPos(mat32.V3(x, 0.5*usHt, -ln-1.1*exln))
 
-		eve.NewBox(stms, csnm).SetSize(mat32.Vec3{ge.ArmWidth, csHt, ge.Thick}).
-			SetColor(vw.MatColors[arm.CS]).SetInitPos(mat32.Vec3{x, usHt + 0.5*csHt, -ln - 2*exln})
+		eve.NewBox(stms, csnm).SetSize(mat32.V3(ge.ArmWidth, csHt, ge.Thick)).
+			SetColor(vw.MatColors[arm.CS]).SetInitPos(mat32.V3(x, usHt+0.5*csHt, -ln-2*exln))
 	}
 	return stms
 }
@@ -410,27 +410,27 @@ func (vw *GUI) ConfigEmery(par *eve.Group, length float32) *eve.Group {
 	height := length / 2
 	width := height
 
-	eve.NewBox(emr, "body").SetSize(mat32.Vec3{width, height, length}).
+	eve.NewBox(emr, "body").SetSize(mat32.V3(width, height, length)).
 		SetColor("purple").SetDynamic().
-		SetInitPos(mat32.Vec3{0, height / 2, 0})
+		SetInitPos(mat32.V3(0, height/2, 0))
 
 	headsz := height * 0.75
 	hhsz := .5 * headsz
-	hgp := eve.NewGroup(emr, "head").SetInitPos(mat32.Vec3{0, hhsz, -(length/2 + hhsz)})
+	hgp := eve.NewGroup(emr, "head").SetInitPos(mat32.V3(0, hhsz, -(length/2 + hhsz)))
 
-	eve.NewBox(hgp, "head").SetSize(mat32.Vec3{headsz, headsz, headsz}).
-		SetColor("tan").SetDynamic().SetInitPos(mat32.Vec3{0, 0, 0})
+	eve.NewBox(hgp, "head").SetSize(mat32.V3(headsz, headsz, headsz)).
+		SetColor("tan").SetDynamic().SetInitPos(mat32.V3(0, 0, 0))
 
 	eyesz := headsz * .2
 
-	eve.NewBox(hgp, "eye-l").SetSize(mat32.Vec3{eyesz, eyesz * .5, eyesz * .2}).
+	eve.NewBox(hgp, "eye-l").SetSize(mat32.V3(eyesz, eyesz*.5, eyesz*.2)).
 		SetColor("green").SetDynamic().
-		SetInitPos(mat32.Vec3{-hhsz * .6, headsz * .1, -(hhsz + eyesz*.3)})
+		SetInitPos(mat32.V3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3)))
 
 	// note: centering this in head for now to get straight-on view
-	eve.NewBox(hgp, "eye-r").SetSize(mat32.Vec3{eyesz, eyesz * .5, eyesz * .2}).
+	eve.NewBox(hgp, "eye-r").SetSize(mat32.V3(eyesz, eyesz*.5, eyesz*.2)).
 		SetColor("green").SetDynamic().
-		SetInitPos(mat32.Vec3{0, headsz * .1, -(hhsz + eyesz*.3)})
+		SetInitPos(mat32.V3(0, headsz*.1, -(hhsz + eyesz*.3)))
 
 	return emr
 }

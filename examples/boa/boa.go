@@ -1222,7 +1222,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.4, 2.6)
-	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{X: 0, Y: 0, Z: 0}, mat32.Vec3{X: 0, Y: 1, Z: 0})
+	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{}, mat32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 

@@ -933,7 +933,7 @@ func (ss *Sim) ConfigTstRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 	nv.Scene().Camera.Pose.Pos.Set(0, 1.14, 2.13)
-	nv.Scene().Camera.LookAt(mat32.Vec3{0, -0.14, 0}, mat32.Vec3{0, 1, 0})
+	nv.Scene().Camera.LookAt(mat32.V3(0, -0.14, 0), mat32.V3(0, 1, 0))
 	// nv.SetMaxRecs(300)
 }
 

@@ -208,7 +208,7 @@ func AngMod(ang int) int {
 // such that the largest value is 1.
 func AngVec(ang int) mat32.Vec2 {
 	a := mat32.DegToRad(float32(AngMod(ang)))
-	v := mat32.Vec2{mat32.Cos(a), mat32.Sin(a)}
+	v := mat32.V2(mat32.Cos(a), mat32.Sin(a))
 	return NormVecLine(v)
 }
 
