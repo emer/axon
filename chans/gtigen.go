@@ -8,7 +8,7 @@ import (
 )
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/chans.AKParams",
+	Name:       "github.com/emer/axon/v2/chans.AKParams",
 	ShortName:  "chans.AKParams",
 	IDName:     "ak-params",
 	Doc:        "AKParams control an A-type K channel, which is voltage gated with maximal\nactivation around -37 mV.  It has two state variables, M (v-gated opening)\nand H (v-gated closing), which integrate with fast and slow time constants,\nrespectively.  H relatively quickly hits an asymptotic level of inactivation\nfor sustained activity patterns.\nIt is particularly important for counteracting the excitatory effects of\nvoltage gated calcium channels which can otherwise drive runaway excitatory currents.\nSee AKsParams for a much simpler version that works fine when full AP-like spikes are\nnot simulated, as in our standard axon models.",
@@ -27,7 +27,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.AKsParams",
+	Name:      "github.com/emer/axon/v2/chans.AKsParams",
 	ShortName: "chans.AKsParams",
 	IDName:    "a-ks-params",
 	Doc:       "AKsParams provides a highly simplified stateless A-type K channel\nthat only has the voltage-gated activation (M) dynamic with a cutoff\nthat ends up capturing a close approximation to the much more complex AK function.\nThis is voltage gated with maximal activation around -37 mV.\nIt is particularly important for counteracting the excitatory effects of\nvoltage gated calcium channels which can otherwise drive runaway excitatory currents.",
@@ -47,7 +47,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.Chans",
+	Name:      "github.com/emer/axon/v2/chans.Chans",
 	ShortName: "chans.Chans",
 	IDName:    "chans",
 	Doc:       "Chans are ion channels used in computing point-neuron activation function",
@@ -68,7 +68,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.GABABParams",
+	Name:      "github.com/emer/axon/v2/chans.GABABParams",
 	ShortName: "chans.GABABParams",
 	IDName:    "gabab-params",
 	Doc:       "GABABParams control the GABAB dynamics in PFC Maint neurons,\nbased on Brunel & Wang (2001) parameters.",
@@ -92,7 +92,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.KNaParams",
+	Name:      "github.com/emer/axon/v2/chans.KNaParams",
 	ShortName: "chans.KNaParams",
 	IDName:    "k-na-params",
 	Doc:       "KNaParams implements sodium (Na) gated potassium (K) currents\nthat drive adaptation (accommodation) in neural firing.\nAs neurons spike, driving an influx of Na, this activates\nthe K channels, which, like leak channels, pull the membrane\npotential back down toward rest (or even below).",
@@ -112,7 +112,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/chans.KNaMedSlow",
+	Name:       "github.com/emer/axon/v2/chans.KNaMedSlow",
 	ShortName:  "chans.KNaMedSlow",
 	IDName:     "k-na-med-slow",
 	Doc:        "KNaMedSlow describes sodium-gated potassium channel adaptation mechanism.\nEvidence supports 2 different time constants:\nSlick (medium) and Slack (slow)",
@@ -121,15 +121,15 @@ var _ = gti.AddType(&gti.Type{
 		{"On", &gti.Field{Name: "On", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if On, apply K-Na adaptation", Directives: gti.Directives{}, Tag: ""}},
 		{"TrialSlow", &gti.Field{Name: "TrialSlow", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation", Directives: gti.Directives{}, Tag: ""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Med", &gti.Field{Name: "Med", Type: "github.com/emer/axon/chans.KNaParams", LocalType: "KNaParams", Doc: "medium time-scale adaptation", Directives: gti.Directives{}, Tag: "viewif:\"On\" view:\"inline\""}},
-		{"Slow", &gti.Field{Name: "Slow", Type: "github.com/emer/axon/chans.KNaParams", LocalType: "KNaParams", Doc: "slow time-scale adaptation", Directives: gti.Directives{}, Tag: "viewif:\"On\" view:\"inline\""}},
+		{"Med", &gti.Field{Name: "Med", Type: "github.com/emer/axon/v2/chans.KNaParams", LocalType: "KNaParams", Doc: "medium time-scale adaptation", Directives: gti.Directives{}, Tag: "viewif:\"On\" view:\"inline\""}},
+		{"Slow", &gti.Field{Name: "Slow", Type: "github.com/emer/axon/v2/chans.KNaParams", LocalType: "KNaParams", Doc: "slow time-scale adaptation", Directives: gti.Directives{}, Tag: "viewif:\"On\" view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.MahpParams",
+	Name:      "github.com/emer/axon/v2/chans.MahpParams",
 	ShortName: "chans.MahpParams",
 	IDName:    "mahp-params",
 	Doc:       "MahpParams implements an M-type medium afterhyperpolarizing (mAHP) channel,\nwhere m also stands for muscarinic due to the ACh inactivation of this channel.\nIt has a slow activation and deactivation time constant, and opens at a lowish\nmembrane potential.\nThere is one gating variable n updated over time with a tau that is also voltage dependent.\nThe infinite-time value of n is voltage dependent according to a logistic function\nof the membrane potential, centered at Voff with slope Vslope.",
@@ -150,7 +150,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.NMDAParams",
+	Name:      "github.com/emer/axon/v2/chans.NMDAParams",
 	ShortName: "chans.NMDAParams",
 	IDName:    "nmda-params",
 	Doc:       "NMDAParams control the NMDA dynamics, based on Jahr & Stevens (1990) equations\nwhich are widely used in models, from Brunel & Wang (2001) to Sanders et al. (2013).\nThe overall conductance is a function of a voltage-dependent postsynaptic factor based\non Mg ion blockage, and presynaptic Glu-based opening, which in a simple model just\nincrements",
@@ -172,7 +172,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.SahpParams",
+	Name:      "github.com/emer/axon/v2/chans.SahpParams",
 	ShortName: "chans.SahpParams",
 	IDName:    "sahp-params",
 	Doc:       "SahpParams implements a slow afterhyperpolarizing (sAHP) channel,\nIt has a slowly accumulating calcium value, aggregated at the\ntheta cycle level, that then drives the logistic gating function,\nso that it only activates after a significant accumulation.\nAfter which point it decays.\nFor the theta-cycle updating, the normal m-type tau is all within\nthe scope of a single theta cycle, so we just omit the time integration\nof the n gating value, but tau is computed in any case.",
@@ -194,7 +194,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.SKCaParams",
+	Name:      "github.com/emer/axon/v2/chans.SKCaParams",
 	ShortName: "chans.SKCaParams",
 	IDName:    "sk-ca-params",
 	Doc:       "SKCaParams describes the small-conductance calcium-activated potassium channel,\nactivated by intracellular stores in a way that drives pauses in firing,\nand can require inactivity to recharge the Ca available for release.\nThese intracellular stores can release quickly, have a slow decay once released,\nand the stores can take a while to rebuild, leading to rapidly triggered,\nlong-lasting pauses that don't recur until stores have rebuilt, which is the\nobserved pattern of firing of STNp pausing neurons.\nCaIn = intracellular stores available for release; CaR = released amount from stores\nCaM = K channel conductance gating factor driven by CaR binding,\ncomputed using the Hill equations described in Fujita et al (2012), Gunay et al (2008)\n(also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4 (hard coded)",
@@ -220,7 +220,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/chans.VGCCParams",
+	Name:      "github.com/emer/axon/v2/chans.VGCCParams",
 	ShortName: "chans.VGCCParams",
 	IDName:    "vgcc-params",
 	Doc:       "VGCCParams control the standard L-type Ca channel\nAll functions based on Urakubo et al (2008).\nSource code available at http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/Urakubo2008.tar.gz.\nIn particular look at the file MODEL/Poirazi_cell/CaL.g.",

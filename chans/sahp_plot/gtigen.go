@@ -14,7 +14,7 @@ var _ = gti.AddType(&gti.Type{
 	Doc:        "Sim holds the params, table, etc",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Sahp", &gti.Field{Name: "Sahp", Type: "github.com/emer/axon/chans.SahpParams", LocalType: "chans.SahpParams", Doc: "sAHP function", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Sahp", &gti.Field{Name: "Sahp", Type: "github.com/emer/axon/v2/chans.SahpParams", LocalType: "chans.SahpParams", Doc: "sAHP function", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 		{"CaStart", &gti.Field{Name: "CaStart", Type: "float32", LocalType: "float32", Doc: "starting calcium", Directives: gti.Directives{}, Tag: "def:\"0\""}},
 		{"CaEnd", &gti.Field{Name: "CaEnd", Type: "float32", LocalType: "float32", Doc: "ending calcium", Directives: gti.Directives{}, Tag: "def:\"1.5\""}},
 		{"CaStep", &gti.Field{Name: "CaStep", Type: "float32", LocalType: "float32", Doc: "calcium increment", Directives: gti.Directives{}, Tag: "def:\"0.01\""}},

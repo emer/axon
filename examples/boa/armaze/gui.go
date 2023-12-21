@@ -9,7 +9,7 @@ import (
 	"image/color"
 	"log"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/eve/v2/eve"
 	"github.com/emer/eve/v2/evev"
 	"goki.dev/colors"

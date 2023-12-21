@@ -8,7 +8,7 @@ import (
 )
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/kinase.CaDtParams",
+	Name:      "github.com/emer/axon/v2/kinase.CaDtParams",
 	ShortName: "kinase.CaDtParams",
 	IDName:    "ca-dt-params",
 	Doc:       "CaDtParams has rate constants for integrating Ca calcium\nat different time scales, including final CaP = CaMKII and CaD = DAPK1\ntimescales for LTP potentiation vs. LTD depression factors.",
@@ -34,7 +34,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/kinase.CaParams",
+	Name:      "github.com/emer/axon/v2/kinase.CaParams",
 	ShortName: "kinase.CaParams",
 	IDName:    "ca-params",
 	Doc:       "CaParams has rate constants for integrating spike-driven Ca calcium\nat different time scales, including final CaP = CaMKII and CaD = DAPK1\ntimescales for LTP potentiation vs. LTD depression factors.",
@@ -45,14 +45,14 @@ var _ = gti.AddType(&gti.Type{
 		{"SpikeG", &gti.Field{Name: "SpikeG", Type: "float32", LocalType: "float32", Doc: "spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate.", Directives: gti.Directives{}, Tag: "def:\"12\""}},
 		{"MaxISI", &gti.Field{Name: "MaxISI", Type: "int32", LocalType: "int32", Doc: "maximum ISI for integrating in Opt mode -- above that just set to 0", Directives: gti.Directives{}, Tag: "def:\"100\""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/kinase.CaDtParams", LocalType: "CaDtParams", Doc: "time constants for integrating at M, P, and D cascading levels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/v2/kinase.CaDtParams", LocalType: "CaDtParams", Doc: "time constants for integrating at M, P, and D cascading levels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/kinase.Rules",
+	Name:      "github.com/emer/axon/v2/kinase.Rules",
 	ShortName: "kinase.Rules",
 	IDName:    "rules",
 	Doc:       "Rules are different options for Kinase-based learning rules\nThese are now implemented using separate Prjn types in kinasex",

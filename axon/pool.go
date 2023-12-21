@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/emer/axon/fsfffb"
+	"github.com/emer/axon/v2/fsfffb"
 	"goki.dev/gosl/v2/slbool"
 	"goki.dev/mat32/v2"
 )

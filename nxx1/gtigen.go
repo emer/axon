@@ -8,7 +8,7 @@ import (
 )
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/nxx1.Params",
+	Name:       "github.com/emer/axon/v2/nxx1.Params",
 	ShortName:  "nxx1.Params",
 	IDName:     "params",
 	Doc:        "Params are the Noisy X/(X+1) rate-coded activation function parameters.\nThis function well-characterizes the neural response function empirically,\nas a saturating sigmoid-like nonlinear response with an initial largely-linear regime.\nThe basic x/(x+1) sigmoid function is convolved with a gaussian noise kernel to produce\na better approximation of the effects of noise on neural firing -- the main effect is\nto create a continuous graded early level of firing even slightly below threshold, softening\nthe otherwise hard transition to firing at threshold.\nA hand-optimized piece-wise function approximation is used to generate the NXX1 function\ninstead of requiring a lookup table of the gaussian convolution.  This is much easier\nto use across a range of computational platforms including GPU's, and produces very similar\noverall values.  abc.",

@@ -18,7 +18,7 @@ package armaze
 import (
 	"log"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"

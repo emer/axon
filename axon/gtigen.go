@@ -8,7 +8,7 @@ import (
 )
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.SpikeParams",
+	Name:      "github.com/emer/axon/v2/axon.SpikeParams",
 	ShortName: "axon.SpikeParams",
 	IDName:    "spike-params",
 	Doc:       "SpikeParams contains spiking activation function params.\nImplements a basic thresholded Vm model, and optionally\nthe AdEx adaptive exponential function (adapt is KNaAdapt)",
@@ -36,7 +36,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.DendParams",
+	Name:       "github.com/emer/axon/v2/axon.DendParams",
 	ShortName:  "axon.DendParams",
 	IDName:     "dend-params",
 	Doc:        "DendParams are the parameters for updating dendrite-specific dynamics",
@@ -55,7 +55,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.ActInitParams",
+	Name:       "github.com/emer/axon/v2/axon.ActInitParams",
 	ShortName:  "axon.ActInitParams",
 	IDName:     "act-init-params",
 	Doc:        "ActInitParams are initial values for key network state variables.\nInitialized in InitActs called by InitWts, and provides target values for DecayState.",
@@ -74,7 +74,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.DecayParams",
+	Name:      "github.com/emer/axon/v2/axon.DecayParams",
 	ShortName: "axon.DecayParams",
 	IDName:    "decay-params",
 	Doc:       "DecayParams control the decay of activation state in the DecayState function\ncalled in NewState when a new state is to be processed.",
@@ -94,7 +94,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.DtParams",
+	Name:       "github.com/emer/axon/v2/axon.DtParams",
 	ShortName:  "axon.DtParams",
 	IDName:     "dt-params",
 	Doc:        "DtParams are time and rate constants for temporal derivatives in Axon (Vm, G)",
@@ -122,7 +122,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.SpikeNoiseParams",
+	Name:       "github.com/emer/axon/v2/axon.SpikeNoiseParams",
 	ShortName:  "axon.SpikeNoiseParams",
 	IDName:     "spike-noise-params",
 	Doc:        "SpikeNoiseParams parameterizes background spiking activity impinging on the neuron,\nsimulated using a poisson spiking process.",
@@ -142,7 +142,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.ClampParams",
+	Name:       "github.com/emer/axon/v2/axon.ClampParams",
 	ShortName:  "axon.ClampParams",
 	IDName:     "clamp-params",
 	Doc:        "ClampParams specify how external inputs drive excitatory conductances\n(like a current clamp) -- either adds or overwrites existing conductances.\nNoise is added in either case.",
@@ -160,7 +160,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.AttnParams",
+	Name:       "github.com/emer/axon/v2/axon.AttnParams",
 	ShortName:  "axon.AttnParams",
 	IDName:     "attn-params",
 	Doc:        "AttnParams determine how the Attn modulates Ge",
@@ -176,7 +176,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PopCodeParams",
+	Name:       "github.com/emer/axon/v2/axon.PopCodeParams",
 	ShortName:  "axon.PopCodeParams",
 	IDName:     "pop-code-params",
 	Doc:        "PopCodeParams provides an encoding of scalar value using population code,\nwhere a single continuous (scalar) value is encoded as a gaussian bump\nacross a population of neurons (1 dimensional).\nIt can also modulate rate code and number of neurons active according to the value.\nThis is for layers that represent values as in the PVLV system (from Context.PVLV).\nBoth normalized activation values (1 max) and Ge conductance values can be generated.",
@@ -196,40 +196,40 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.ActParams",
+	Name:       "github.com/emer/axon/v2/axon.ActParams",
 	ShortName:  "axon.ActParams",
 	IDName:     "act-params",
 	Doc:        "axon.ActParams contains all the activation computation params and functions\nfor basic Axon, at the neuron level .\nThis is included in axon.Layer to drive the computation.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Spikes", &gti.Field{Name: "Spikes", Type: "github.com/emer/axon/axon.SpikeParams", LocalType: "SpikeParams", Doc: "Spiking function parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Dend", &gti.Field{Name: "Dend", Type: "github.com/emer/axon/axon.DendParams", LocalType: "DendParams", Doc: "dendrite-specific parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Init", &gti.Field{Name: "Init", Type: "github.com/emer/axon/axon.ActInitParams", LocalType: "ActInitParams", Doc: "initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Decay", &gti.Field{Name: "Decay", Type: "github.com/emer/axon/axon.DecayParams", LocalType: "DecayParams", Doc: "amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/axon.DtParams", LocalType: "DtParams", Doc: "time and rate constants for temporal derivatives / updating of activation state", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Gbar", &gti.Field{Name: "Gbar", Type: "github.com/emer/axon/chans.Chans", LocalType: "chans.Chans", Doc: "maximal conductances levels for channels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Erev", &gti.Field{Name: "Erev", Type: "github.com/emer/axon/chans.Chans", LocalType: "chans.Chans", Doc: "reversal potentials for each channel", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Clamp", &gti.Field{Name: "Clamp", Type: "github.com/emer/axon/axon.ClampParams", LocalType: "ClampParams", Doc: "how external inputs drive neural activations", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Noise", &gti.Field{Name: "Noise", Type: "github.com/emer/axon/axon.SpikeNoiseParams", LocalType: "SpikeNoiseParams", Doc: "how, where, when, and how much noise to add", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Spikes", &gti.Field{Name: "Spikes", Type: "github.com/emer/axon/v2/axon.SpikeParams", LocalType: "SpikeParams", Doc: "Spiking function parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Dend", &gti.Field{Name: "Dend", Type: "github.com/emer/axon/v2/axon.DendParams", LocalType: "DendParams", Doc: "dendrite-specific parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Init", &gti.Field{Name: "Init", Type: "github.com/emer/axon/v2/axon.ActInitParams", LocalType: "ActInitParams", Doc: "initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Decay", &gti.Field{Name: "Decay", Type: "github.com/emer/axon/v2/axon.DecayParams", LocalType: "DecayParams", Doc: "amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/v2/axon.DtParams", LocalType: "DtParams", Doc: "time and rate constants for temporal derivatives / updating of activation state", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Gbar", &gti.Field{Name: "Gbar", Type: "github.com/emer/axon/v2/chans.Chans", LocalType: "chans.Chans", Doc: "maximal conductances levels for channels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Erev", &gti.Field{Name: "Erev", Type: "github.com/emer/axon/v2/chans.Chans", LocalType: "chans.Chans", Doc: "reversal potentials for each channel", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Clamp", &gti.Field{Name: "Clamp", Type: "github.com/emer/axon/v2/axon.ClampParams", LocalType: "ClampParams", Doc: "how external inputs drive neural activations", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Noise", &gti.Field{Name: "Noise", Type: "github.com/emer/axon/v2/axon.SpikeNoiseParams", LocalType: "SpikeNoiseParams", Doc: "how, where, when, and how much noise to add", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 		{"VmRange", &gti.Field{Name: "VmRange", Type: "goki.dev/etable/v2/minmax.F32", LocalType: "minmax.F32", Doc: "range for Vm membrane potential -- -- important to keep just at extreme range of reversal potentials to prevent numerical instability", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Mahp", &gti.Field{Name: "Mahp", Type: "github.com/emer/axon/chans.MahpParams", LocalType: "chans.MahpParams", Doc: "M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Sahp", &gti.Field{Name: "Sahp", Type: "github.com/emer/axon/chans.SahpParams", LocalType: "chans.SahpParams", Doc: "slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"KNa", &gti.Field{Name: "KNa", Type: "github.com/emer/axon/chans.KNaMedSlow", LocalType: "chans.KNaMedSlow", Doc: "sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"NMDA", &gti.Field{Name: "NMDA", Type: "github.com/emer/axon/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"MaintNMDA", &gti.Field{Name: "MaintNMDA", Type: "github.com/emer/axon/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"GabaB", &gti.Field{Name: "GabaB", Type: "github.com/emer/axon/chans.GABABParams", LocalType: "chans.GABABParams", Doc: "GABA-B / GIRK channel parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"VGCC", &gti.Field{Name: "VGCC", Type: "github.com/emer/axon/chans.VGCCParams", LocalType: "chans.VGCCParams", Doc: "voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"AK", &gti.Field{Name: "AK", Type: "github.com/emer/axon/chans.AKsParams", LocalType: "chans.AKsParams", Doc: "A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"SKCa", &gti.Field{Name: "SKCa", Type: "github.com/emer/axon/chans.SKCaParams", LocalType: "chans.SKCaParams", Doc: "small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"AttnMod", &gti.Field{Name: "AttnMod", Type: "github.com/emer/axon/axon.AttnParams", LocalType: "AttnParams", Doc: "Attentional modulation parameters: how Attn modulates Ge", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"PopCode", &gti.Field{Name: "PopCode", Type: "github.com/emer/axon/axon.PopCodeParams", LocalType: "PopCodeParams", Doc: "provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Mahp", &gti.Field{Name: "Mahp", Type: "github.com/emer/axon/v2/chans.MahpParams", LocalType: "chans.MahpParams", Doc: "M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Sahp", &gti.Field{Name: "Sahp", Type: "github.com/emer/axon/v2/chans.SahpParams", LocalType: "chans.SahpParams", Doc: "slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"KNa", &gti.Field{Name: "KNa", Type: "github.com/emer/axon/v2/chans.KNaMedSlow", LocalType: "chans.KNaMedSlow", Doc: "sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"NMDA", &gti.Field{Name: "NMDA", Type: "github.com/emer/axon/v2/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"MaintNMDA", &gti.Field{Name: "MaintNMDA", Type: "github.com/emer/axon/v2/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"GabaB", &gti.Field{Name: "GabaB", Type: "github.com/emer/axon/v2/chans.GABABParams", LocalType: "chans.GABABParams", Doc: "GABA-B / GIRK channel parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"VGCC", &gti.Field{Name: "VGCC", Type: "github.com/emer/axon/v2/chans.VGCCParams", LocalType: "chans.VGCCParams", Doc: "voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"AK", &gti.Field{Name: "AK", Type: "github.com/emer/axon/v2/chans.AKsParams", LocalType: "chans.AKsParams", Doc: "A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"SKCa", &gti.Field{Name: "SKCa", Type: "github.com/emer/axon/v2/chans.SKCaParams", LocalType: "chans.SKCaParams", Doc: "small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"AttnMod", &gti.Field{Name: "AttnMod", Type: "github.com/emer/axon/v2/axon.AttnParams", LocalType: "AttnParams", Doc: "Attentional modulation parameters: how Attn modulates Ge", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"PopCode", &gti.Field{Name: "PopCode", Type: "github.com/emer/axon/v2/axon.PopCodeParams", LocalType: "PopCodeParams", Doc: "provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.PrjnGTypes",
+	Name:      "github.com/emer/axon/v2/axon.PrjnGTypes",
 	ShortName: "axon.PrjnGTypes",
 	IDName:    "prjn-g-types",
 	Doc:       "PrjnGTypes represents the conductance (G) effects of a given projection,\nincluding excitatory, inhibitory, and modulatory.",
@@ -242,13 +242,13 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.SynComParams",
+	Name:       "github.com/emer/axon/v2/axon.SynComParams",
 	ShortName:  "axon.SynComParams",
 	IDName:     "syn-com-params",
 	Doc:        "SynComParams are synaptic communication parameters:\nused in the Prjn parameters.  Includes delay and\nprobability of failure, and Inhib for inhibitory connections,\nand modulatory projections that have multiplicative-like effects.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"GType", &gti.Field{Name: "GType", Type: "github.com/emer/axon/axon.PrjnGTypes", LocalType: "PrjnGTypes", Doc: "type of conductance (G) communicated by this projection", Directives: gti.Directives{}, Tag: ""}},
+		{"GType", &gti.Field{Name: "GType", Type: "github.com/emer/axon/v2/axon.PrjnGTypes", LocalType: "PrjnGTypes", Doc: "type of conductance (G) communicated by this projection", Directives: gti.Directives{}, Tag: ""}},
 		{"Delay", &gti.Field{Name: "Delay", Type: "uint32", LocalType: "uint32", Doc: "additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value.", Directives: gti.Directives{}, Tag: "min:\"0\" def:\"2\""}},
 		{"MaxDelay", &gti.Field{Name: "MaxDelay", Type: "uint32", LocalType: "uint32", Doc: "maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network.", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"PFail", &gti.Field{Name: "PFail", Type: "float32", LocalType: "float32", Doc: "probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)", Directives: gti.Directives{}, Tag: ""}},
@@ -261,7 +261,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.PrjnScaleParams",
+	Name:      "github.com/emer/axon/v2/axon.PrjnScaleParams",
 	ShortName: "axon.PrjnScaleParams",
 	IDName:    "prjn-scale-params",
 	Doc:       "PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,\nusing both absolute and relative factors.",
@@ -278,7 +278,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.AvgMaxI32",
+	Name:      "github.com/emer/axon/v2/axon.AvgMaxI32",
 	ShortName: "axon.AvgMaxI32",
 	IDName:    "avg-max-i-32",
 	Doc:       "AvgMaxI32 holds average and max statistics for float32,\nand values used for computing them incrementally,\nusing a fixed precision int32 based float representation\nthat can be used with GPU-based atomic add and max functions.\nThis ONLY works for positive values with averages around 1, and\nthe N must be set IN ADVANCE to the correct number of items.\nOnce Calc() is called, the incremental values are reset\nvia Init() so it is always ready for updating without a separate\nInit() pass.",
@@ -298,7 +298,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.AxonNetwork",
+	Name:       "github.com/emer/axon/v2/axon.AxonNetwork",
 	ShortName:  "axon.AxonNetwork",
 	IDName:     "axon-network",
 	Doc:        "AxonNetwork defines the essential algorithmic API for Axon, at the network level.\nThese are the methods that the user calls in their Sim code:\n* NewState\n* Cycle\n* NewPhase\n* DWt\n* WtFmDwt\nBecause we don't want to have to force the user to use the interface cast in calling\nthese methods, we provide Impl versions here that are the implementations\nwhich the user-facing method calls through the interface cast.\nSpecialized algorithms should thus only change the Impl version, which is what\nis exposed here in this interface.\n\nThere is now a strong constraint that all Cycle level computation takes place\nin one pass at the Layer level, which greatly improves threading efficiency.\n\nAll of the structural API is in emer.Network, which this interface also inherits for\nconvenience.",
@@ -308,7 +308,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.AxonLayer",
+	Name:       "github.com/emer/axon/v2/axon.AxonLayer",
 	ShortName:  "axon.AxonLayer",
 	IDName:     "axon-layer",
 	Doc:        "AxonLayer defines the essential algorithmic API for Axon, at the layer level.\nThese are the methods that the axon.Network calls on its layers at each step\nof processing.  Other Layer types can selectively re-implement (override) these methods\nto modify the computation, while inheriting the basic behavior for non-overridden methods.\n\nAll of the structural API is in emer.Layer, which this interface also inherits for\nconvenience.",
@@ -318,7 +318,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.AxonPrjn",
+	Name:       "github.com/emer/axon/v2/axon.AxonPrjn",
 	ShortName:  "axon.AxonPrjn",
 	IDName:     "axon-prjn",
 	Doc:        "AxonPrjn defines the essential algorithmic API for Axon, at the projection level.\nThese are the methods that the axon.Layer calls on its prjns at each step\nof processing.  Other Prjn types can selectively re-implement (override) these methods\nto modify the computation, while inheriting the basic behavior for non-overridden methods.\n\nAll of the structural API is in emer.Prjn, which this interface also inherits for\nconvenience.",
@@ -328,7 +328,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.AxonPrjns",
+	Name:       "github.com/emer/axon/v2/axon.AxonPrjns",
 	ShortName:  "axon.AxonPrjns",
 	IDName:     "axon-prjns",
 	Doc:        "",
@@ -338,7 +338,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.NetIdxs",
+	Name:      "github.com/emer/axon/v2/axon.NetIdxs",
 	ShortName: "axon.NetIdxs",
 	IDName:    "net-idxs",
 	Doc:       "NetIdxs are indexes and sizes for processing network",
@@ -371,7 +371,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.Context",
+	Name:       "github.com/emer/axon/v2/axon.Context",
 	ShortName:  "axon.Context",
 	IDName:     "context",
 	Doc:        "Context contains all of the global context state info\nthat is shared across every step of the computation.\nIt is passed around to all relevant computational functions,\nand is updated on the CPU and synced to the GPU after every cycle.\nIt is the *only* mechanism for communication from CPU to GPU.\nIt contains timing, Testing vs. Training mode, random number context,\nglobal neuromodulation, etc.",
@@ -392,13 +392,13 @@ var _ = gti.AddType(&gti.Type{
 		{"SlowCtr", &gti.Field{Name: "SlowCtr", Type: "int32", LocalType: "int32", Doc: "counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter.", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"SynCaCtr", &gti.Field{Name: "SynCaCtr", Type: "float32", LocalType: "float32", Doc: "synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset.", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"pad", &gti.Field{Name: "pad", Type: "float32", LocalType: "float32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"NetIdxs", &gti.Field{Name: "NetIdxs", Type: "github.com/emer/axon/axon.NetIdxs", LocalType: "NetIdxs", Doc: "indexes and sizes of current network", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"NeuronVars", &gti.Field{Name: "NeuronVars", Type: "github.com/emer/axon/axon.NeuronVarStrides", LocalType: "NeuronVarStrides", Doc: "stride offsets for accessing neuron variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"NeuronAvgVars", &gti.Field{Name: "NeuronAvgVars", Type: "github.com/emer/axon/axon.NeuronAvgVarStrides", LocalType: "NeuronAvgVarStrides", Doc: "stride offsets for accessing neuron average variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"NeuronIdxs", &gti.Field{Name: "NeuronIdxs", Type: "github.com/emer/axon/axon.NeuronIdxStrides", LocalType: "NeuronIdxStrides", Doc: "stride offsets for accessing neuron indexes", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"SynapseVars", &gti.Field{Name: "SynapseVars", Type: "github.com/emer/axon/axon.SynapseVarStrides", LocalType: "SynapseVarStrides", Doc: "stride offsets for accessing synapse variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"SynapseCaVars", &gti.Field{Name: "SynapseCaVars", Type: "github.com/emer/axon/axon.SynapseCaStrides", LocalType: "SynapseCaStrides", Doc: "stride offsets for accessing synapse Ca variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"SynapseIdxs", &gti.Field{Name: "SynapseIdxs", Type: "github.com/emer/axon/axon.SynapseIdxStrides", LocalType: "SynapseIdxStrides", Doc: "stride offsets for accessing synapse indexes", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"NetIdxs", &gti.Field{Name: "NetIdxs", Type: "github.com/emer/axon/v2/axon.NetIdxs", LocalType: "NetIdxs", Doc: "indexes and sizes of current network", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"NeuronVars", &gti.Field{Name: "NeuronVars", Type: "github.com/emer/axon/v2/axon.NeuronVarStrides", LocalType: "NeuronVarStrides", Doc: "stride offsets for accessing neuron variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"NeuronAvgVars", &gti.Field{Name: "NeuronAvgVars", Type: "github.com/emer/axon/v2/axon.NeuronAvgVarStrides", LocalType: "NeuronAvgVarStrides", Doc: "stride offsets for accessing neuron average variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"NeuronIdxs", &gti.Field{Name: "NeuronIdxs", Type: "github.com/emer/axon/v2/axon.NeuronIdxStrides", LocalType: "NeuronIdxStrides", Doc: "stride offsets for accessing neuron indexes", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"SynapseVars", &gti.Field{Name: "SynapseVars", Type: "github.com/emer/axon/v2/axon.SynapseVarStrides", LocalType: "SynapseVarStrides", Doc: "stride offsets for accessing synapse variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"SynapseCaVars", &gti.Field{Name: "SynapseCaVars", Type: "github.com/emer/axon/v2/axon.SynapseCaStrides", LocalType: "SynapseCaStrides", Doc: "stride offsets for accessing synapse Ca variables", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"SynapseIdxs", &gti.Field{Name: "SynapseIdxs", Type: "github.com/emer/axon/v2/axon.SynapseIdxStrides", LocalType: "SynapseIdxStrides", Doc: "stride offsets for accessing synapse indexes", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RandCtr", &gti.Field{Name: "RandCtr", Type: "goki.dev/gosl/v2/slrand.Counter", LocalType: "slrand.Counter", Doc: "random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
@@ -406,7 +406,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.BurstParams",
+	Name:      "github.com/emer/axon/v2/axon.BurstParams",
 	ShortName: "axon.BurstParams",
 	IDName:    "burst-params",
 	Doc:       "BurstParams determine how the 5IB Burst activation is computed from\nCaSpkP integrated spiking values in Super layers -- thresholded.",
@@ -423,7 +423,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.CTParams",
+	Name:       "github.com/emer/axon/v2/axon.CTParams",
 	ShortName:  "axon.CTParams",
 	IDName:     "ct-params",
 	Doc:        "CTParams control the CT corticothalamic neuron special behavior",
@@ -439,7 +439,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PulvParams",
+	Name:       "github.com/emer/axon/v2/axon.PulvParams",
 	ShortName:  "axon.PulvParams",
 	IDName:     "pulv-params",
 	Doc:        "PulvParams provides parameters for how the plus-phase (outcome)\nstate of Pulvinar thalamic relay cell neurons is computed from\nthe corresponding driver neuron Burst activation (or CaSpkP if not Super)",
@@ -455,7 +455,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.GlobalVars",
+	Name:      "github.com/emer/axon/v2/axon.GlobalVars",
 	ShortName: "axon.GlobalVars",
 	IDName:    "global-vars",
 	Doc:       "GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc\nincluding the state for the PVLV phasic dopamine model.",
@@ -468,7 +468,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PushOff",
+	Name:       "github.com/emer/axon/v2/axon.PushOff",
 	ShortName:  "axon.PushOff",
 	IDName:     "push-off",
 	Doc:        "PushOff has push constants for setting offset into compute shader",
@@ -482,7 +482,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.GPU",
+	Name:       "github.com/emer/axon/v2/axon.GPU",
 	ShortName:  "axon.GPU",
 	IDName:     "gpu",
 	Doc:        "GPU manages all of the GPU-based computation for a given Network.\nLives within the network.",
@@ -517,7 +517,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.HipConfig",
+	Name:       "github.com/emer/axon/v2/axon.HipConfig",
 	ShortName:  "axon.HipConfig",
 	IDName:     "hip-config",
 	Doc:        "HipConfig have the hippocampus size and connectivity parameters",
@@ -550,7 +550,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.HipPrjnParams",
+	Name:      "github.com/emer/axon/v2/axon.HipPrjnParams",
 	ShortName: "axon.HipPrjnParams",
 	IDName:    "hip-prjn-params",
 	Doc:       "HipPrjnParams define behavior of hippocampus prjns, which have special learning rules",
@@ -570,7 +570,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.ActAvgParams",
+	Name:      "github.com/emer/axon/v2/axon.ActAvgParams",
 	ShortName: "axon.ActAvgParams",
 	IDName:    "act-avg-params",
 	Doc:       "ActAvgParams represents the nominal average activity levels in the layer\nand parameters for adapting the computed Gi inhibition levels to maintain\naverage activity within a target range.",
@@ -593,7 +593,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.TopoInhibParams",
+	Name:       "github.com/emer/axon/v2/axon.TopoInhibParams",
 	ShortName:  "axon.TopoInhibParams",
 	IDName:     "topo-inhib-params",
 	Doc:        "TopoInhibParams provides for topographic gaussian inhibition integrating over neighborhood.\nTODO: not currently being used",
@@ -615,22 +615,22 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.InhibParams",
+	Name:       "github.com/emer/axon/v2/axon.InhibParams",
 	ShortName:  "axon.InhibParams",
 	IDName:     "inhib-params",
 	Doc:        "axon.InhibParams contains all the inhibition computation params and functions for basic Axon\nThis is included in axon.Layer to support computation.\nThis also includes other misc layer-level params such as expected average activation in the layer\nwhich is used for Ge rescaling and potentially for adapting inhibition over time",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"ActAvg", &gti.Field{Name: "ActAvg", Type: "github.com/emer/axon/axon.ActAvgParams", LocalType: "ActAvgParams", Doc: "layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Layer", &gti.Field{Name: "Layer", Type: "github.com/emer/axon/fsfffb.GiParams", LocalType: "fsfffb.GiParams", Doc: "inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers.  If the layer has sub-pools (4D shape) then this is effectively between-pool inhibition.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Pool", &gti.Field{Name: "Pool", Type: "github.com/emer/axon/fsfffb.GiParams", LocalType: "fsfffb.GiParams", Doc: "inhibition within sub-pools of units, for layers with 4D shape -- almost always need this if the layer has pools.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"ActAvg", &gti.Field{Name: "ActAvg", Type: "github.com/emer/axon/v2/axon.ActAvgParams", LocalType: "ActAvgParams", Doc: "layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Layer", &gti.Field{Name: "Layer", Type: "github.com/emer/axon/v2/fsfffb.GiParams", LocalType: "fsfffb.GiParams", Doc: "inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers.  If the layer has sub-pools (4D shape) then this is effectively between-pool inhibition.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Pool", &gti.Field{Name: "Pool", Type: "github.com/emer/axon/v2/fsfffb.GiParams", LocalType: "fsfffb.GiParams", Doc: "inhibition within sub-pools of units, for layers with 4D shape -- almost always need this if the layer has pools.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.Layer",
+	Name:       "github.com/emer/axon/v2/axon.Layer",
 	ShortName:  "axon.Layer",
 	IDName:     "layer",
 	Doc:        "axon.Layer implements the basic Axon spiking activation function,\nand manages learning in the projections.",
@@ -639,25 +639,25 @@ var _ = gti.AddType(&gti.Type{
 		{"Params", &gti.Field{Name: "Params", Type: "*github.com/emer/axon/axon.LayerParams", LocalType: "*LayerParams", Doc: "all layer-level parameters -- these must remain constant once configured", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"LayerBase", &gti.Field{Name: "LayerBase", Type: "github.com/emer/axon/axon.LayerBase", LocalType: "LayerBase", Doc: "", Directives: gti.Directives{}, Tag: ""}},
+		{"LayerBase", &gti.Field{Name: "LayerBase", Type: "github.com/emer/axon/v2/axon.LayerBase", LocalType: "LayerBase", Doc: "", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LayerBase",
+	Name:       "github.com/emer/axon/v2/axon.LayerBase",
 	ShortName:  "axon.LayerBase",
 	IDName:     "layer-base",
 	Doc:        "LayerBase manages the structural elements of the layer, which are common\nto any Layer type.\nThe Base does not have algorithm-specific methods and parameters, so it can be easily\nreused for different algorithms, and cleanly separates the algorithm-specific code.\nAny dependency on the algorithm-level Layer can be captured in the AxonLayer interface,\naccessed via the AxonLay field.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"AxonLay", &gti.Field{Name: "AxonLay", Type: "github.com/emer/axon/axon.AxonLayer", LocalType: "AxonLayer", Doc: "we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary.", Directives: gti.Directives{}, Tag: "copy:\"-\" json:\"-\" xml:\"-\" view:\"-\""}},
+		{"AxonLay", &gti.Field{Name: "AxonLay", Type: "github.com/emer/axon/v2/axon.AxonLayer", LocalType: "AxonLayer", Doc: "we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary.", Directives: gti.Directives{}, Tag: "copy:\"-\" json:\"-\" xml:\"-\" view:\"-\""}},
 		{"Network", &gti.Field{Name: "Network", Type: "*github.com/emer/axon/axon.Network", LocalType: "*Network", Doc: "our parent network, in case we need to use it to find other layers etc -- set when added by network", Directives: gti.Directives{}, Tag: "copy:\"-\" json:\"-\" xml:\"-\" view:\"-\""}},
 		{"Nm", &gti.Field{Name: "Nm", Type: "string", LocalType: "string", Doc: "Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name", Directives: gti.Directives{}, Tag: ""}},
 		{"Cls", &gti.Field{Name: "Cls", Type: "string", LocalType: "string", Doc: "Class is for applying parameter styles, can be space separated multple tags", Directives: gti.Directives{}, Tag: ""}},
 		{"Off", &gti.Field{Name: "Off", Type: "bool", LocalType: "bool", Doc: "inactivate this layer -- allows for easy experimentation", Directives: gti.Directives{}, Tag: ""}},
 		{"Shp", &gti.Field{Name: "Shp", Type: "goki.dev/etable/v2/etensor.Shape", LocalType: "etensor.Shape", Doc: "shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools", Directives: gti.Directives{}, Tag: ""}},
-		{"Typ", &gti.Field{Name: "Typ", Type: "github.com/emer/axon/axon.LayerTypes", LocalType: "LayerTypes", Doc: "type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)", Directives: gti.Directives{}, Tag: ""}},
+		{"Typ", &gti.Field{Name: "Typ", Type: "github.com/emer/axon/v2/axon.LayerTypes", LocalType: "LayerTypes", Doc: "type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)", Directives: gti.Directives{}, Tag: ""}},
 		{"Rel", &gti.Field{Name: "Rel", Type: "github.com/emer/emergent/v2/relpos.Rel", LocalType: "relpos.Rel", Doc: "Spatial relationship to other layer, determines positioning", Directives: gti.Directives{}, Tag: "tableview:\"-\" view:\"inline\""}},
 		{"Ps", &gti.Field{Name: "Ps", Type: "goki.dev/mat32/v2.Vec3", LocalType: "mat32.Vec3", Doc: "position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.", Directives: gti.Directives{}, Tag: "tableview:\"-\""}},
 		{"Idx", &gti.Field{Name: "Idx", Type: "int", LocalType: "int", Doc: "a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.", Directives: gti.Directives{}, Tag: "view:\"-\" inactive:\"-\""}},
@@ -667,8 +667,8 @@ var _ = gti.AddType(&gti.Type{
 		{"MaxData", &gti.Field{Name: "MaxData", Type: "uint32", LocalType: "uint32", Doc: "maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Vals storage is allocated to hold this amount.", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RepIxs", &gti.Field{Name: "RepIxs", Type: "[]int", LocalType: "[]int", Doc: "indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RepShp", &gti.Field{Name: "RepShp", Type: "goki.dev/etable/v2/etensor.Shape", LocalType: "etensor.Shape", Doc: "shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"RcvPrjns", &gti.Field{Name: "RcvPrjns", Type: "github.com/emer/axon/axon.AxonPrjns", LocalType: "AxonPrjns", Doc: "list of receiving projections into this layer from other layers", Directives: gti.Directives{}, Tag: ""}},
-		{"SndPrjns", &gti.Field{Name: "SndPrjns", Type: "github.com/emer/axon/axon.AxonPrjns", LocalType: "AxonPrjns", Doc: "list of sending projections from this layer to other layers", Directives: gti.Directives{}, Tag: ""}},
+		{"RcvPrjns", &gti.Field{Name: "RcvPrjns", Type: "github.com/emer/axon/v2/axon.AxonPrjns", LocalType: "AxonPrjns", Doc: "list of receiving projections into this layer from other layers", Directives: gti.Directives{}, Tag: ""}},
+		{"SndPrjns", &gti.Field{Name: "SndPrjns", Type: "github.com/emer/axon/v2/axon.AxonPrjns", LocalType: "AxonPrjns", Doc: "list of sending projections from this layer to other layers", Directives: gti.Directives{}, Tag: ""}},
 		{"Vals", &gti.Field{Name: "Vals", Type: "[]github.com/emer/axon/axon.LayerVals", LocalType: "[]LayerVals", Doc: "layer-level state values that are updated during computation -- one for each data parallel -- is a sub-slice of network full set", Directives: gti.Directives{}, Tag: ""}},
 		{"Pools", &gti.Field{Name: "Pools", Type: "[]github.com/emer/axon/axon.Pool", LocalType: "[]Pool", Doc: "computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D) * 1 per data parallel (inner loop).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values.", Directives: gti.Directives{}, Tag: ""}},
 		{"Exts", &gti.Field{Name: "Exts", Type: "[]float32", LocalType: "[]float32", Doc: "external input values for this layer, allocated from network global Exts slice", Directives: gti.Directives{}, Tag: "view:\"-\""}},
@@ -681,7 +681,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.LayerIdxs",
+	Name:      "github.com/emer/axon/v2/axon.LayerIdxs",
 	ShortName: "axon.LayerIdxs",
 	IDName:    "layer-idxs",
 	Doc:       "LayerIdxs contains index access into network global arrays for GPU.",
@@ -712,7 +712,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LayerInhibIdxs",
+	Name:       "github.com/emer/axon/v2/axon.LayerInhibIdxs",
 	ShortName:  "axon.LayerInhibIdxs",
 	IDName:     "layer-inhib-idxs",
 	Doc:        "LayerInhibIdxs contains indexes of layers for between-layer inhibition",
@@ -728,38 +728,38 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LayerParams",
+	Name:       "github.com/emer/axon/v2/axon.LayerParams",
 	ShortName:  "axon.LayerParams",
 	IDName:     "layer-params",
 	Doc:        "LayerParams contains all of the layer parameters.\nThese values must remain constant over the course of computation.\nOn the GPU, they are loaded into a uniform.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"LayType", &gti.Field{Name: "LayType", Type: "github.com/emer/axon/axon.LayerTypes", LocalType: "LayerTypes", Doc: "functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Typ value", Directives: gti.Directives{}, Tag: ""}},
+		{"LayType", &gti.Field{Name: "LayType", Type: "github.com/emer/axon/v2/axon.LayerTypes", LocalType: "LayerTypes", Doc: "functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Typ value", Directives: gti.Directives{}, Tag: ""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Acts", &gti.Field{Name: "Acts", Type: "github.com/emer/axon/axon.ActParams", LocalType: "ActParams", Doc: "Activation parameters and methods for computing activations", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"Inhib", &gti.Field{Name: "Inhib", Type: "github.com/emer/axon/axon.InhibParams", LocalType: "InhibParams", Doc: "Inhibition parameters and methods for computing layer-level inhibition", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"LayInhib", &gti.Field{Name: "LayInhib", Type: "github.com/emer/axon/axon.LayerInhibIdxs", LocalType: "LayerInhibIdxs", Doc: "indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Learn", &gti.Field{Name: "Learn", Type: "github.com/emer/axon/axon.LearnNeurParams", LocalType: "LearnNeurParams", Doc: "Learning parameters and methods that operate at the neuron level", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"Bursts", &gti.Field{Name: "Bursts", Type: "github.com/emer/axon/axon.BurstParams", LocalType: "BurstParams", Doc: "BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=SuperLayer\" view:\"inline\""}},
-		{"CT", &gti.Field{Name: "CT", Type: "github.com/emer/axon/axon.CTParams", LocalType: "CTParams", Doc: "] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace", Directives: gti.Directives{}, Tag: "viewif:\"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]\" view:\"inline\""}},
-		{"Pulv", &gti.Field{Name: "Pulv", Type: "github.com/emer/axon/axon.PulvParams", LocalType: "PulvParams", Doc: "provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)", Directives: gti.Directives{}, Tag: "viewif:\"LayType=PulvinarLayer\" view:\"inline\""}},
-		{"Matrix", &gti.Field{Name: "Matrix", Type: "github.com/emer/axon/axon.MatrixParams", LocalType: "MatrixParams", Doc: "parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=MatrixLayer\" view:\"inline\""}},
-		{"GP", &gti.Field{Name: "GP", Type: "github.com/emer/axon/axon.GPParams", LocalType: "GPParams", Doc: "type of GP Layer.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=GPLayer\" view:\"inline\""}},
-		{"VSPatch", &gti.Field{Name: "VSPatch", Type: "github.com/emer/axon/axon.VSPatchParams", LocalType: "VSPatchParams", Doc: "parameters for VSPatch learning", Directives: gti.Directives{}, Tag: "viewif:\"LayType=VSPatchLayer\" view:\"inline\""}},
-		{"LDT", &gti.Field{Name: "LDT", Type: "github.com/emer/axon/axon.LDTParams", LocalType: "LDTParams", Doc: "parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition", Directives: gti.Directives{}, Tag: "viewif:\"LayType=LDTLayer\" view:\"inline\""}},
-		{"VTA", &gti.Field{Name: "VTA", Type: "github.com/emer/axon/axon.VTAParams", LocalType: "VTAParams", Doc: "parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=VTALayer\" view:\"inline\""}},
-		{"RWPred", &gti.Field{Name: "RWPred", Type: "github.com/emer/axon/axon.RWPredParams", LocalType: "RWPredParams", Doc: "parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).", Directives: gti.Directives{}, Tag: "viewif:\"LayType=RWPredLayer\" view:\"inline\""}},
-		{"RWDa", &gti.Field{Name: "RWDa", Type: "github.com/emer/axon/axon.RWDaParams", LocalType: "RWDaParams", Doc: "parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).", Directives: gti.Directives{}, Tag: "viewif:\"LayType=RWDaLayer\" view:\"inline\""}},
-		{"TDInteg", &gti.Field{Name: "TDInteg", Type: "github.com/emer/axon/axon.TDIntegParams", LocalType: "TDIntegParams", Doc: "parameterizes TD reward integration layer", Directives: gti.Directives{}, Tag: "viewif:\"LayType=TDIntegLayer\" view:\"inline\""}},
-		{"TDDa", &gti.Field{Name: "TDDa", Type: "github.com/emer/axon/axon.TDDaParams", LocalType: "TDDaParams", Doc: "parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=TDDaLayer\" view:\"inline\""}},
-		{"Idxs", &gti.Field{Name: "Idxs", Type: "github.com/emer/axon/axon.LayerIdxs", LocalType: "LayerIdxs", Doc: "recv and send projection array access info", Directives: gti.Directives{}, Tag: ""}},
+		{"Acts", &gti.Field{Name: "Acts", Type: "github.com/emer/axon/v2/axon.ActParams", LocalType: "ActParams", Doc: "Activation parameters and methods for computing activations", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
+		{"Inhib", &gti.Field{Name: "Inhib", Type: "github.com/emer/axon/v2/axon.InhibParams", LocalType: "InhibParams", Doc: "Inhibition parameters and methods for computing layer-level inhibition", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
+		{"LayInhib", &gti.Field{Name: "LayInhib", Type: "github.com/emer/axon/v2/axon.LayerInhibIdxs", LocalType: "LayerInhibIdxs", Doc: "indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Learn", &gti.Field{Name: "Learn", Type: "github.com/emer/axon/v2/axon.LearnNeurParams", LocalType: "LearnNeurParams", Doc: "Learning parameters and methods that operate at the neuron level", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
+		{"Bursts", &gti.Field{Name: "Bursts", Type: "github.com/emer/axon/v2/axon.BurstParams", LocalType: "BurstParams", Doc: "BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=SuperLayer\" view:\"inline\""}},
+		{"CT", &gti.Field{Name: "CT", Type: "github.com/emer/axon/v2/axon.CTParams", LocalType: "CTParams", Doc: "] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace", Directives: gti.Directives{}, Tag: "viewif:\"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]\" view:\"inline\""}},
+		{"Pulv", &gti.Field{Name: "Pulv", Type: "github.com/emer/axon/v2/axon.PulvParams", LocalType: "PulvParams", Doc: "provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)", Directives: gti.Directives{}, Tag: "viewif:\"LayType=PulvinarLayer\" view:\"inline\""}},
+		{"Matrix", &gti.Field{Name: "Matrix", Type: "github.com/emer/axon/v2/axon.MatrixParams", LocalType: "MatrixParams", Doc: "parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=MatrixLayer\" view:\"inline\""}},
+		{"GP", &gti.Field{Name: "GP", Type: "github.com/emer/axon/v2/axon.GPParams", LocalType: "GPParams", Doc: "type of GP Layer.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=GPLayer\" view:\"inline\""}},
+		{"VSPatch", &gti.Field{Name: "VSPatch", Type: "github.com/emer/axon/v2/axon.VSPatchParams", LocalType: "VSPatchParams", Doc: "parameters for VSPatch learning", Directives: gti.Directives{}, Tag: "viewif:\"LayType=VSPatchLayer\" view:\"inline\""}},
+		{"LDT", &gti.Field{Name: "LDT", Type: "github.com/emer/axon/v2/axon.LDTParams", LocalType: "LDTParams", Doc: "parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition", Directives: gti.Directives{}, Tag: "viewif:\"LayType=LDTLayer\" view:\"inline\""}},
+		{"VTA", &gti.Field{Name: "VTA", Type: "github.com/emer/axon/v2/axon.VTAParams", LocalType: "VTAParams", Doc: "parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=VTALayer\" view:\"inline\""}},
+		{"RWPred", &gti.Field{Name: "RWPred", Type: "github.com/emer/axon/v2/axon.RWPredParams", LocalType: "RWPredParams", Doc: "parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).", Directives: gti.Directives{}, Tag: "viewif:\"LayType=RWPredLayer\" view:\"inline\""}},
+		{"RWDa", &gti.Field{Name: "RWDa", Type: "github.com/emer/axon/v2/axon.RWDaParams", LocalType: "RWDaParams", Doc: "parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).", Directives: gti.Directives{}, Tag: "viewif:\"LayType=RWDaLayer\" view:\"inline\""}},
+		{"TDInteg", &gti.Field{Name: "TDInteg", Type: "github.com/emer/axon/v2/axon.TDIntegParams", LocalType: "TDIntegParams", Doc: "parameterizes TD reward integration layer", Directives: gti.Directives{}, Tag: "viewif:\"LayType=TDIntegLayer\" view:\"inline\""}},
+		{"TDDa", &gti.Field{Name: "TDDa", Type: "github.com/emer/axon/v2/axon.TDDaParams", LocalType: "TDDaParams", Doc: "parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=TDDaLayer\" view:\"inline\""}},
+		{"Idxs", &gti.Field{Name: "Idxs", Type: "github.com/emer/axon/v2/axon.LayerIdxs", LocalType: "LayerIdxs", Doc: "recv and send projection array access info", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.LayerTypes",
+	Name:      "github.com/emer/axon/v2/axon.LayerTypes",
 	ShortName: "axon.LayerTypes",
 	IDName:    "layer-types",
 	Doc:       "LayerTypes is an axon-specific layer type enum,\nthat encompasses all the different algorithm types supported.\nClass parameter styles automatically key off of these types.\nThe first entries must be kept synchronized with the emer.LayerType,\nalthough we replace Hidden -> Super.",
@@ -772,7 +772,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.ActAvgVals",
+	Name:      "github.com/emer/axon/v2/axon.ActAvgVals",
 	ShortName: "axon.ActAvgVals",
 	IDName:    "act-avg-vals",
 	Doc:       "ActAvgVals are long-running-average activation levels stored in the LayerVals,\nfor monitoring and adapting inhibition and possibly scaling parameters.\nAll of these integrate over NData within a network, so are the same across them.",
@@ -793,7 +793,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.CorSimStats",
+	Name:       "github.com/emer/axon/v2/axon.CorSimStats",
 	ShortName:  "axon.CorSimStats",
 	IDName:     "cor-sim-stats",
 	Doc:        "CorSimStats holds correlation similarity (centered cosine aka normalized dot product)\nstatistics at the layer level",
@@ -809,7 +809,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LaySpecialVals",
+	Name:       "github.com/emer/axon/v2/axon.LaySpecialVals",
 	ShortName:  "axon.LaySpecialVals",
 	IDName:     "lay-special-vals",
 	Doc:        "LaySpecialVals holds special values used to communicate to other layers\nbased on neural values, used for special algorithms such as RL where\nsome of the computation is done algorithmically.",
@@ -825,7 +825,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LayerVals",
+	Name:       "github.com/emer/axon/v2/axon.LayerVals",
 	ShortName:  "axon.LayerVals",
 	IDName:     "layer-vals",
 	Doc:        "LayerVals holds extra layer state that is updated per layer.\nIt is sync'd down from the GPU to the CPU after every Cycle.",
@@ -835,16 +835,16 @@ var _ = gti.AddType(&gti.Type{
 		{"DataIdx", &gti.Field{Name: "DataIdx", Type: "uint32", LocalType: "uint32", Doc: "data index for these vals", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RT", &gti.Field{Name: "RT", Type: "float32", LocalType: "float32", Doc: "reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold", Directives: gti.Directives{}, Tag: "inactive:\"-\""}},
 		{"pad", &gti.Field{Name: "pad", Type: "uint32", LocalType: "uint32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"ActAvg", &gti.Field{Name: "ActAvg", Type: "github.com/emer/axon/axon.ActAvgVals", LocalType: "ActAvgVals", Doc: "running-average activation levels used for adaptive inhibition, and other adapting values", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"CorSim", &gti.Field{Name: "CorSim", Type: "github.com/emer/axon/axon.CorSimStats", LocalType: "CorSimStats", Doc: "correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states", Directives: gti.Directives{}, Tag: ""}},
-		{"Special", &gti.Field{Name: "Special", Type: "github.com/emer/axon/axon.LaySpecialVals", LocalType: "LaySpecialVals", Doc: "special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"ActAvg", &gti.Field{Name: "ActAvg", Type: "github.com/emer/axon/v2/axon.ActAvgVals", LocalType: "ActAvgVals", Doc: "running-average activation levels used for adaptive inhibition, and other adapting values", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"CorSim", &gti.Field{Name: "CorSim", Type: "github.com/emer/axon/v2/axon.CorSimStats", LocalType: "CorSimStats", Doc: "correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states", Directives: gti.Directives{}, Tag: ""}},
+		{"Special", &gti.Field{Name: "Special", Type: "github.com/emer/axon/v2/axon.LaySpecialVals", LocalType: "LaySpecialVals", Doc: "special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.CaLrnParams",
+	Name:      "github.com/emer/axon/v2/axon.CaLrnParams",
 	ShortName: "axon.CaLrnParams",
 	IDName:    "ca-lrn-params",
 	Doc:       "CaLrnParams parameterizes the neuron-level calcium signals driving learning:\nCaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or\nuse the more complex and dynamic VGCC channel directly.\nCaLrn is then integrated in a cascading manner at multiple time scales:\nCaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).",
@@ -858,7 +858,7 @@ var _ = gti.AddType(&gti.Type{
 		{"SpkVGCC", &gti.Field{Name: "SpkVGCC", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike", Directives: gti.Directives{}, Tag: "def:\"true\""}},
 		{"SpkVgccCa", &gti.Field{Name: "SpkVgccCa", Type: "float32", LocalType: "float32", Doc: "multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode", Directives: gti.Directives{}, Tag: "def:\"35\""}},
 		{"VgccTau", &gti.Field{Name: "VgccTau", Type: "float32", LocalType: "float32", Doc: "time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn", Directives: gti.Directives{}, Tag: "def:\"10\""}},
-		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/kinase.CaDtParams", LocalType: "kinase.CaDtParams", Doc: "time constants for integrating CaLrn across M, P and D cascading levels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/v2/kinase.CaDtParams", LocalType: "kinase.CaDtParams", Doc: "time constants for integrating CaLrn across M, P and D cascading levels", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 		{"UpdtThr", &gti.Field{Name: "UpdtThr", Type: "float32", LocalType: "float32", Doc: "Threshold on CaSpkP CaSpkD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default.", Directives: gti.Directives{}, Tag: "def:\"0.01,0.02,0.5\""}},
 		{"VgccDt", &gti.Field{Name: "VgccDt", Type: "float32", LocalType: "float32", Doc: "rate = 1 / tau", Directives: gti.Directives{}, Tag: "view:\"-\" json:\"-\" xml:\"-\" inactive:\"+\""}},
 		{"NormInv", &gti.Field{Name: "NormInv", Type: "float32", LocalType: "float32", Doc: "= 1 / Norm", Directives: gti.Directives{}, Tag: "view:\"-\" json:\"-\" xml:\"-\" inactive:\"+\""}},
@@ -869,7 +869,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.CaSpkParams",
+	Name:       "github.com/emer/axon/v2/axon.CaSpkParams",
 	ShortName:  "axon.CaSpkParams",
 	IDName:     "ca-spk-params",
 	Doc:        "CaSpkParams parameterizes the neuron-level spike-driven calcium\nsignals, starting with CaSyn that is integrated at the neuron level\nand drives synapse-level, pre * post Ca integration, which provides the Tr\ntrace that multiplies error signals, and drives learning directly for Target layers.\nCaSpk* values are integrated separately at the Neuron level and used for UpdtThr\nand RLRate as a proxy for the activation (spiking) based learning signal.",
@@ -879,14 +879,14 @@ var _ = gti.AddType(&gti.Type{
 		{"SynTau", &gti.Field{Name: "SynTau", Type: "float32", LocalType: "float32", Doc: "time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PrjnParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)", Directives: gti.Directives{}, Tag: "def:\"30\" min:\"1\""}},
 		{"SynDt", &gti.Field{Name: "SynDt", Type: "float32", LocalType: "float32", Doc: "rate = 1 / tau", Directives: gti.Directives{}, Tag: "view:\"-\" json:\"-\" xml:\"-\" inactive:\"+\""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/kinase.CaDtParams", LocalType: "kinase.CaDtParams", Doc: "time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Dt", &gti.Field{Name: "Dt", Type: "github.com/emer/axon/v2/kinase.CaDtParams", LocalType: "kinase.CaDtParams", Doc: "time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.TrgAvgActParams",
+	Name:       "github.com/emer/axon/v2/axon.TrgAvgActParams",
 	ShortName:  "axon.TrgAvgActParams",
 	IDName:     "trg-avg-act-params",
 	Doc:        "TrgAvgActParams govern the target and actual long-term average activity in neurons.\nTarget value is adapted by neuron-wise error and difference in actual vs. target.\ndrives synaptic scaling at a slow timescale (Network.SlowInterval).",
@@ -907,7 +907,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.RLRateParams",
+	Name:       "github.com/emer/axon/v2/axon.RLRateParams",
 	ShortName:  "axon.RLRateParams",
 	IDName:     "rl-rate-params",
 	Doc:        "RLRateParams are recv neuron learning rate modulation parameters.\nHas two factors: the derivative of the sigmoid based on CaSpkD\nactivity levels, and based on the phase-wise differences in activity (Diff).",
@@ -926,25 +926,25 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LearnNeurParams",
+	Name:       "github.com/emer/axon/v2/axon.LearnNeurParams",
 	ShortName:  "axon.LearnNeurParams",
 	IDName:     "learn-neur-params",
 	Doc:        "axon.LearnNeurParams manages learning-related parameters at the neuron-level.\nThis is mainly the running average activations that drive learning",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"CaLearn", &gti.Field{Name: "CaLearn", Type: "github.com/emer/axon/axon.CaLrnParams", LocalType: "CaLrnParams", Doc: "parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"CaSpk", &gti.Field{Name: "CaSpk", Type: "github.com/emer/axon/axon.CaSpkParams", LocalType: "CaSpkParams", Doc: "parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdtThr and RLRate as a proxy for the activation (spiking) based learning signal.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"LrnNMDA", &gti.Field{Name: "LrnNMDA", Type: "github.com/emer/axon/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"TrgAvgAct", &gti.Field{Name: "TrgAvgAct", Type: "github.com/emer/axon/axon.TrgAvgActParams", LocalType: "TrgAvgActParams", Doc: "synaptic scaling parameters for regulating overall average activity compared to neuron's own target level", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"RLRate", &gti.Field{Name: "RLRate", Type: "github.com/emer/axon/axon.RLRateParams", LocalType: "RLRateParams", Doc: "recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |CaSpkP - CaSpkD| / Max(CaSpkP, CaSpkD)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"NeuroMod", &gti.Field{Name: "NeuroMod", Type: "github.com/emer/axon/axon.NeuroModParams", LocalType: "NeuroModParams", Doc: "neuromodulation effects on learning rate and activity, as a function of layer-level DA and ACh values, which are updated from global Context values, and computed from reinforcement learning algorithms", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"CaLearn", &gti.Field{Name: "CaLearn", Type: "github.com/emer/axon/v2/axon.CaLrnParams", LocalType: "CaLrnParams", Doc: "parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"CaSpk", &gti.Field{Name: "CaSpk", Type: "github.com/emer/axon/v2/axon.CaSpkParams", LocalType: "CaSpkParams", Doc: "parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdtThr and RLRate as a proxy for the activation (spiking) based learning signal.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"LrnNMDA", &gti.Field{Name: "LrnNMDA", Type: "github.com/emer/axon/v2/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"TrgAvgAct", &gti.Field{Name: "TrgAvgAct", Type: "github.com/emer/axon/v2/axon.TrgAvgActParams", LocalType: "TrgAvgActParams", Doc: "synaptic scaling parameters for regulating overall average activity compared to neuron's own target level", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"RLRate", &gti.Field{Name: "RLRate", Type: "github.com/emer/axon/v2/axon.RLRateParams", LocalType: "RLRateParams", Doc: "recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |CaSpkP - CaSpkD| / Max(CaSpkP, CaSpkD)", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"NeuroMod", &gti.Field{Name: "NeuroMod", Type: "github.com/emer/axon/v2/axon.NeuroModParams", LocalType: "NeuroModParams", Doc: "neuromodulation effects on learning rate and activity, as a function of layer-level DA and ACh values, which are updated from global Context values, and computed from reinforcement learning algorithms", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.SWtInitParams",
+	Name:       "github.com/emer/axon/v2/axon.SWtInitParams",
 	ShortName:  "axon.SWtInitParams",
 	IDName:     "s-wt-init-params",
 	Doc:        "SWtInitParams for initial SWt values",
@@ -960,7 +960,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.SWtAdaptParams",
+	Name:       "github.com/emer/axon/v2/axon.SWtAdaptParams",
 	ShortName:  "axon.SWtAdaptParams",
 	IDName:     "s-wt-adapt-params",
 	Doc:        "SWtAdaptParams manages adaptation of SWt values",
@@ -976,7 +976,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.SWtParams",
+	Name:      "github.com/emer/axon/v2/axon.SWtParams",
 	ShortName: "axon.SWtParams",
 	IDName:    "s-wt-params",
 	Doc:       "SWtParams manages structural, slowly adapting weight values (SWt),\nin terms of initialization and updating over course of learning.\nSWts impose initial and slowly adapting constraints on neuron connectivity\nto encourage differentiation of neuron representations and overall good behavior\nin terms of not hogging the representational space.\nThe TrgAvg activity constraint is not enforced through SWt -- it needs to be\nmore dynamic and supported by the regular learned weights.",
@@ -984,8 +984,8 @@ var _ = gti.AddType(&gti.Type{
 		&gti.Directive{Tool: "gosl", Directive: "start", Args: []string{"learn"}},
 	},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Init", &gti.Field{Name: "Init", Type: "github.com/emer/axon/axon.SWtInitParams", LocalType: "SWtInitParams", Doc: "initialization of SWt values", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Adapt", &gti.Field{Name: "Adapt", Type: "github.com/emer/axon/axon.SWtAdaptParams", LocalType: "SWtAdaptParams", Doc: "adaptation of SWt values in response to LWt learning", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Init", &gti.Field{Name: "Init", Type: "github.com/emer/axon/v2/axon.SWtInitParams", LocalType: "SWtInitParams", Doc: "initialization of SWt values", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Adapt", &gti.Field{Name: "Adapt", Type: "github.com/emer/axon/v2/axon.SWtAdaptParams", LocalType: "SWtAdaptParams", Doc: "adaptation of SWt values in response to LWt learning", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 		{"Limit", &gti.Field{Name: "Limit", Type: "goki.dev/etable/v2/minmax.F32", LocalType: "minmax.F32", Doc: "range limits for SWt values", Directives: gti.Directives{}, Tag: "def:\"{'Min':0.2,'Max':0.8}\" view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
@@ -993,7 +993,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.LRateParams",
+	Name:      "github.com/emer/axon/v2/axon.LRateParams",
 	ShortName: "axon.LRateParams",
 	IDName:    "l-rate-params",
 	Doc:       "LRateParams manages learning rate parameters",
@@ -1011,7 +1011,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.TraceParams",
+	Name:       "github.com/emer/axon/v2/axon.TraceParams",
 	ShortName:  "axon.TraceParams",
 	IDName:     "trace-params",
 	Doc:        "TraceParams manages learning rate parameters",
@@ -1027,7 +1027,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LRateMod",
+	Name:       "github.com/emer/axon/v2/axon.LRateMod",
 	ShortName:  "axon.LRateMod",
 	IDName:     "l-rate-mod",
 	Doc:        "LRateMod implements global learning rate modulation, based on a performance-based\nfactor, for example error.  Increasing levels of the factor = higher learning rate.\nThis can be added to a Sim and called prior to DWt() to dynamically change lrate\nbased on overall network performance.",
@@ -1043,7 +1043,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.LearnSynParams",
+	Name:      "github.com/emer/axon/v2/axon.LearnSynParams",
 	ShortName: "axon.LearnSynParams",
 	IDName:    "learn-syn-params",
 	Doc:       "LearnSynParams manages learning-related parameters at the synapse-level.",
@@ -1053,29 +1053,29 @@ var _ = gti.AddType(&gti.Type{
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
 		{"Learn", &gti.Field{Name: "Learn", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "enable learning for this projection", Directives: gti.Directives{}, Tag: ""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"LRate", &gti.Field{Name: "LRate", Type: "github.com/emer/axon/axon.LRateParams", LocalType: "LRateParams", Doc: "learning rate parameters, supporting two levels of modulation on top of base learning rate.", Directives: gti.Directives{}, Tag: "viewif:\"Learn\""}},
-		{"Trace", &gti.Field{Name: "Trace", Type: "github.com/emer/axon/axon.TraceParams", LocalType: "TraceParams", Doc: "trace-based learning parameters", Directives: gti.Directives{}, Tag: "viewif:\"Learn\""}},
-		{"KinaseCa", &gti.Field{Name: "KinaseCa", Type: "github.com/emer/axon/kinase.CaParams", LocalType: "kinase.CaParams", Doc: "kinase calcium Ca integration parameters", Directives: gti.Directives{}, Tag: "viewif:\"Learn\" view:\"inline\""}},
+		{"LRate", &gti.Field{Name: "LRate", Type: "github.com/emer/axon/v2/axon.LRateParams", LocalType: "LRateParams", Doc: "learning rate parameters, supporting two levels of modulation on top of base learning rate.", Directives: gti.Directives{}, Tag: "viewif:\"Learn\""}},
+		{"Trace", &gti.Field{Name: "Trace", Type: "github.com/emer/axon/v2/axon.TraceParams", LocalType: "TraceParams", Doc: "trace-based learning parameters", Directives: gti.Directives{}, Tag: "viewif:\"Learn\""}},
+		{"KinaseCa", &gti.Field{Name: "KinaseCa", Type: "github.com/emer/axon/v2/kinase.CaParams", LocalType: "kinase.CaParams", Doc: "kinase calcium Ca integration parameters", Directives: gti.Directives{}, Tag: "viewif:\"Learn\" view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.Network",
+	Name:       "github.com/emer/axon/v2/axon.Network",
 	ShortName:  "axon.Network",
 	IDName:     "network",
 	Doc:        "axon.Network implements the Axon spiking model,\nbuilding on the algorithm-independent NetworkBase that manages\nall the infrastructure.",
 	Directives: gti.Directives{},
 	Fields:     ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Embeds: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"NetworkBase", &gti.Field{Name: "NetworkBase", Type: "github.com/emer/axon/axon.NetworkBase", LocalType: "NetworkBase", Doc: "", Directives: gti.Directives{}, Tag: ""}},
+		{"NetworkBase", &gti.Field{Name: "NetworkBase", Type: "github.com/emer/axon/v2/axon.NetworkBase", LocalType: "NetworkBase", Doc: "", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.NetworkBase",
+	Name:       "github.com/emer/axon/v2/axon.NetworkBase",
 	ShortName:  "axon.NetworkBase",
 	IDName:     "network-base",
 	Doc:        "NetworkBase manages the basic structural components of a network (layers).\nThe main Network then can just have the algorithm-specific code.",
@@ -1084,7 +1084,7 @@ var _ = gti.AddType(&gti.Type{
 		{"EmerNet", &gti.Field{Name: "EmerNet", Type: "github.com/emer/emergent/v2/emer.Network", LocalType: "emer.Network", Doc: "we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary.", Directives: gti.Directives{}, Tag: "copy:\"-\" json:\"-\" xml:\"-\" view:\"-\""}},
 		{"Nm", &gti.Field{Name: "Nm", Type: "string", LocalType: "string", Doc: "overall name of network -- helps discriminate if there are multiple", Directives: gti.Directives{}, Tag: ""}},
 		{"WtsFile", &gti.Field{Name: "WtsFile", Type: "string", LocalType: "string", Doc: "filename of last weights file loaded or saved", Directives: gti.Directives{}, Tag: ""}},
-		{"PVLV", &gti.Field{Name: "PVLV", Type: "github.com/emer/axon/axon.PVLV", LocalType: "PVLV", Doc: "PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.", Directives: gti.Directives{}, Tag: ""}},
+		{"PVLV", &gti.Field{Name: "PVLV", Type: "github.com/emer/axon/v2/axon.PVLV", LocalType: "PVLV", Doc: "PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.", Directives: gti.Directives{}, Tag: ""}},
 		{"LayMap", &gti.Field{Name: "LayMap", Type: "map[string]*github.com/emer/axon/axon.Layer", LocalType: "map[string]*Layer", Doc: "map of name to layers -- layer names must be unique", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"LayClassMap", &gti.Field{Name: "LayClassMap", Type: "map[string][]string", LocalType: "map[string][]string", Doc: "map of layer classes -- made during Build", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"MinPos", &gti.Field{Name: "MinPos", Type: "goki.dev/mat32/v2.Vec3", LocalType: "mat32.Vec3", Doc: "minimum display position in network", Directives: gti.Directives{}, Tag: "view:\"-\""}},
@@ -1116,11 +1116,11 @@ var _ = gti.AddType(&gti.Type{
 		{"RecvPrjnIdxs", &gti.Field{Name: "RecvPrjnIdxs", Type: "[]uint32", LocalType: "[]uint32", Doc: "indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU.", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RecvSynIdxs", &gti.Field{Name: "RecvSynIdxs", Type: "[]uint32", LocalType: "[]uint32", Doc: "indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access.", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"Exts", &gti.Field{Name: "Exts", Type: "[]float32", LocalType: "[]float32", Doc: "external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method.", Directives: gti.Directives{}, Tag: ""}},
-		{"Ctx", &gti.Field{Name: "Ctx", Type: "github.com/emer/axon/axon.Context", LocalType: "Context", Doc: "context used only for accessing neurons for display -- NetIdxs.NData in here is copied from active context in NewState", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"Ctx", &gti.Field{Name: "Ctx", Type: "github.com/emer/axon/v2/axon.Context", LocalType: "Context", Doc: "context used only for accessing neurons for display -- NetIdxs.NData in here is copied from active context in NewState", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"Rand", &gti.Field{Name: "Rand", Type: "github.com/emer/emergent/v2/erand.SysRand", LocalType: "erand.SysRand", Doc: "random number generator for the network -- all random calls must use this -- set seed here for weight initialization values", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RndSeed", &gti.Field{Name: "RndSeed", Type: "int64", LocalType: "int64", Doc: "random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"NThreads", &gti.Field{Name: "NThreads", Type: "int", LocalType: "int", Doc: "number of threads to use for parallel processing", Directives: gti.Directives{}, Tag: ""}},
-		{"GPU", &gti.Field{Name: "GPU", Type: "github.com/emer/axon/axon.GPU", LocalType: "GPU", Doc: "GPU implementation", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"GPU", &gti.Field{Name: "GPU", Type: "github.com/emer/axon/v2/axon.GPU", LocalType: "GPU", Doc: "GPU implementation", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 		{"RecFunTimes", &gti.Field{Name: "RecFunTimes", Type: "bool", LocalType: "bool", Doc: "record function timer information", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"FunTimes", &gti.Field{Name: "FunTimes", Type: "map[string]*github.com/emer/emergent/v2/timer.Time", LocalType: "map[string]*timer.Time", Doc: "timers for each major function (step of processing)", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 	}),
@@ -1129,7 +1129,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.DAModTypes",
+	Name:      "github.com/emer/axon/v2/axon.DAModTypes",
 	ShortName: "axon.DAModTypes",
 	IDName:    "da-mod-types",
 	Doc:       "DAModTypes are types of dopamine modulation of neural activity.",
@@ -1142,7 +1142,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.ValenceTypes",
+	Name:      "github.com/emer/axon/v2/axon.ValenceTypes",
 	ShortName: "axon.ValenceTypes",
 	IDName:    "valence-types",
 	Doc:       "ValenceTypes are types of valence coding: positive or negative.",
@@ -1154,14 +1154,14 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.NeuroModParams",
+	Name:       "github.com/emer/axon/v2/axon.NeuroModParams",
 	ShortName:  "axon.NeuroModParams",
 	IDName:     "neuro-mod-params",
 	Doc:        "NeuroModParams specifies the effects of neuromodulators on neural\nactivity and learning rate.  These can apply to any neuron type,\nand are applied in the core cycle update equations.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"DAMod", &gti.Field{Name: "DAMod", Type: "github.com/emer/axon/axon.DAModTypes", LocalType: "DAModTypes", Doc: "dopamine receptor-based effects of dopamine modulation on excitatory and inhibitory conductances: D1 is excitatory, D2 is inhibitory as a function of increasing dopamine", Directives: gti.Directives{}, Tag: ""}},
-		{"Valence", &gti.Field{Name: "Valence", Type: "github.com/emer/axon/axon.ValenceTypes", LocalType: "ValenceTypes", Doc: "valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently", Directives: gti.Directives{}, Tag: ""}},
+		{"DAMod", &gti.Field{Name: "DAMod", Type: "github.com/emer/axon/v2/axon.DAModTypes", LocalType: "DAModTypes", Doc: "dopamine receptor-based effects of dopamine modulation on excitatory and inhibitory conductances: D1 is excitatory, D2 is inhibitory as a function of increasing dopamine", Directives: gti.Directives{}, Tag: ""}},
+		{"Valence", &gti.Field{Name: "Valence", Type: "github.com/emer/axon/v2/axon.ValenceTypes", LocalType: "ValenceTypes", Doc: "valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently", Directives: gti.Directives{}, Tag: ""}},
 		{"DAModGain", &gti.Field{Name: "DAModGain", Type: "float32", LocalType: "float32", Doc: "multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor", Directives: gti.Directives{}, Tag: "viewif:\"DAMod!=NoDAMod\""}},
 		{"DALRateSign", &gti.Field{Name: "DALRateSign", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "modulate the sign of the learning rate factor according to the DA sign, taking into account the DAMod sign reversal for D2Mod, also using BurstGain and DipGain to modulate DA value -- otherwise, only the magnitude of the learning rate is modulated as a function of raw DA magnitude according to DALRateMod (without additional gain factors)", Directives: gti.Directives{}, Tag: ""}},
 		{"DALRateMod", &gti.Field{Name: "DALRateMod", Type: "float32", LocalType: "float32", Doc: "if not using DALRateSign, this is the proportion of maximum learning rate that Abs(DA) magnitude can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%", Directives: gti.Directives{}, Tag: "min:\"0\" max:\"1\" viewif:\"!DALRateSign\""}},
@@ -1176,7 +1176,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.NeuronFlags",
+	Name:      "github.com/emer/axon/v2/axon.NeuronFlags",
 	ShortName: "axon.NeuronFlags",
 	IDName:    "neuron-flags",
 	Doc:       "NeuronFlags are bit-flags encoding relevant binary state for neurons",
@@ -1189,7 +1189,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.NeuronVars",
+	Name:      "github.com/emer/axon/v2/axon.NeuronVars",
 	ShortName: "axon.NeuronVars",
 	IDName:    "neuron-vars",
 	Doc:       "NeuronVars are the neuron variables representing current active state,\nspecific to each input data state.\nSee NeuronAvgVars for vars shared across data.",
@@ -1201,7 +1201,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.NeuronAvgVars",
+	Name:      "github.com/emer/axon/v2/axon.NeuronAvgVars",
 	ShortName: "axon.NeuronAvgVars",
 	IDName:    "neuron-avg-vars",
 	Doc:       "NeuronAvgVars are mostly neuron variables involved in longer-term average activity\nwhich is aggregated over time and not specific to each input data state,\nalong with any other state that is not input data specific.",
@@ -1213,7 +1213,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.NeuronIdxs",
+	Name:      "github.com/emer/axon/v2/axon.NeuronIdxs",
 	ShortName: "axon.NeuronIdxs",
 	IDName:    "neuron-idxs",
 	Doc:       "NeuronIdxs are the neuron indexes and other uint32 values.\nThere is only one of these per neuron -- not data parallel.\nnote: Flags are encoded in Vars because they are data parallel and\nwritable, whereas indexes are read-only.",
@@ -1225,7 +1225,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.NeuronVarStrides",
+	Name:      "github.com/emer/axon/v2/axon.NeuronVarStrides",
 	ShortName: "axon.NeuronVarStrides",
 	IDName:    "neuron-var-strides",
 	Doc:       "NeuronVarStrides encodes the stride offsets for neuron variable access\ninto network float32 array.  Data is always the inner-most variable.",
@@ -1245,7 +1245,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.NeuronAvgVarStrides",
+	Name:       "github.com/emer/axon/v2/axon.NeuronAvgVarStrides",
 	ShortName:  "axon.NeuronAvgVarStrides",
 	IDName:     "neuron-avg-var-strides",
 	Doc:        "NeuronAvgVarStrides encodes the stride offsets for neuron variable access\ninto network float32 array.  Data is always the inner-most variable.",
@@ -1260,7 +1260,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.NeuronIdxStrides",
+	Name:       "github.com/emer/axon/v2/axon.NeuronIdxStrides",
 	ShortName:  "axon.NeuronIdxStrides",
 	IDName:     "neuron-idx-strides",
 	Doc:        "NeuronIdxStrides encodes the stride offsets for neuron index access\ninto network uint32 array.",
@@ -1275,7 +1275,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.MatrixParams",
+	Name:      "github.com/emer/axon/v2/axon.MatrixParams",
 	ShortName: "axon.MatrixParams",
 	IDName:    "matrix-params",
 	Doc:       "MatrixParams has parameters for BG Striatum Matrix MSN layers\nThese are the main Go / NoGo gating units in BG.\nDA, ACh learning rate modulation is pre-computed on the recv neuron\nRLRate variable via NeuroMod.  Also uses Pool.Gated for InvertNoGate,\nupdated in PlusPhase prior to DWt call.\nMust set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig(\"DAMod\").",
@@ -1299,7 +1299,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.GPLayerTypes",
+	Name:      "github.com/emer/axon/v2/axon.GPLayerTypes",
 	ShortName: "axon.GPLayerTypes",
 	IDName:    "gp-layer-types",
 	Doc:       "GPLayerTypes is a GPLayer axon-specific layer type enum.",
@@ -1311,13 +1311,13 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.GPParams",
+	Name:       "github.com/emer/axon/v2/axon.GPParams",
 	ShortName:  "axon.GPParams",
 	IDName:     "gp-params",
 	Doc:        "GPLayer represents a globus pallidus layer, including:\nGPeOut, GPeIn, GPeTA (arkypallidal), and GPi (see GPType for type).\nTypically just a single unit per Pool representing a given stripe.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"GPType", &gti.Field{Name: "GPType", Type: "github.com/emer/axon/axon.GPLayerTypes", LocalType: "GPLayerTypes", Doc: "type of GP Layer -- must set during config using SetBuildConfig of GPType.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=GPLayer\" view:\"inline\""}},
+		{"GPType", &gti.Field{Name: "GPType", Type: "github.com/emer/axon/v2/axon.GPLayerTypes", LocalType: "GPLayerTypes", Doc: "type of GP Layer -- must set during config using SetBuildConfig of GPType.", Directives: gti.Directives{}, Tag: "viewif:\"LayType=GPLayer\" view:\"inline\""}},
 		{"pad", &gti.Field{Name: "pad", Type: "uint32", LocalType: "uint32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
@@ -1325,7 +1325,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.MatrixPrjnParams",
+	Name:      "github.com/emer/axon/v2/axon.MatrixPrjnParams",
 	ShortName: "axon.MatrixPrjnParams",
 	IDName:    "matrix-prjn-params",
 	Doc:       "MatrixPrjnParams for trace-based learning in the MatrixPrjn.\nA trace of synaptic co-activity is formed, and then modulated by dopamine\nwhenever it occurs.  This bridges the temporal gap between gating activity\nand subsequent activity, and is based biologically on synaptic tags.\nTrace is applied to DWt and reset at the time of reward.",
@@ -1341,7 +1341,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.AvgMaxPhases",
+	Name:      "github.com/emer/axon/v2/axon.AvgMaxPhases",
 	ShortName: "axon.AvgMaxPhases",
 	IDName:    "avg-max-phases",
 	Doc:       "AvgMaxPhases contains the average and maximum values over a Pool of neurons,\nat different time scales within a standard ThetaCycle of updating.\nIt is much more efficient on the GPU to just grab everything in one pass at\nthe cycle level, and then take snapshots from there.\nAll of the cycle level values are updated at the *start* of the cycle\nbased on values from the prior cycle -- thus are 1 cycle behind in general.",
@@ -1351,35 +1351,35 @@ var _ = gti.AddType(&gti.Type{
 		&gti.Directive{Tool: "gosl", Directive: "start", Args: []string{"pool"}},
 	},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Cycle", &gti.Field{Name: "Cycle", Type: "github.com/emer/axon/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "updated every cycle -- this is the source of all subsequent time scales", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Minus", &gti.Field{Name: "Minus", Type: "github.com/emer/axon/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "at the end of the minus phase", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Plus", &gti.Field{Name: "Plus", Type: "github.com/emer/axon/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "at the end of the plus phase", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Prev", &gti.Field{Name: "Prev", Type: "github.com/emer/axon/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "at the end of the previous plus phase", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Cycle", &gti.Field{Name: "Cycle", Type: "github.com/emer/axon/v2/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "updated every cycle -- this is the source of all subsequent time scales", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Minus", &gti.Field{Name: "Minus", Type: "github.com/emer/axon/v2/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "at the end of the minus phase", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Plus", &gti.Field{Name: "Plus", Type: "github.com/emer/axon/v2/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "at the end of the plus phase", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Prev", &gti.Field{Name: "Prev", Type: "github.com/emer/axon/v2/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "at the end of the previous plus phase", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PoolAvgMax",
+	Name:       "github.com/emer/axon/v2/axon.PoolAvgMax",
 	ShortName:  "axon.PoolAvgMax",
 	IDName:     "pool-avg-max",
 	Doc:        "PoolAvgMax contains the average and maximum values over a Pool of neurons\nfor different variables of interest, at Cycle, Minus and Plus phase timescales.\nAll of the cycle level values are updated at the *start* of the cycle\nbased on values from the prior cycle -- thus are 1 cycle behind in general.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"CaSpkP", &gti.Field{Name: "CaSpkP", Type: "github.com/emer/axon/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
-		{"CaSpkD", &gti.Field{Name: "CaSpkD", Type: "github.com/emer/axon/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
-		{"SpkMax", &gti.Field{Name: "SpkMax", Type: "github.com/emer/axon/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
-		{"Act", &gti.Field{Name: "Act", Type: "github.com/emer/axon/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum Act firing rate value", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
-		{"GeInt", &gti.Field{Name: "GeInt", Type: "github.com/emer/axon/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum GeInt integrated running-average excitatory conductance value", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
-		{"GiInt", &gti.Field{Name: "GiInt", Type: "github.com/emer/axon/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum GiInt integrated running-average inhibitory conductance value", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"CaSpkP", &gti.Field{Name: "CaSpkP", Type: "github.com/emer/axon/v2/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"CaSpkD", &gti.Field{Name: "CaSpkD", Type: "github.com/emer/axon/v2/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"SpkMax", &gti.Field{Name: "SpkMax", Type: "github.com/emer/axon/v2/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"Act", &gti.Field{Name: "Act", Type: "github.com/emer/axon/v2/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum Act firing rate value", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"GeInt", &gti.Field{Name: "GeInt", Type: "github.com/emer/axon/v2/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum GeInt integrated running-average excitatory conductance value", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"GiInt", &gti.Field{Name: "GiInt", Type: "github.com/emer/axon/v2/axon.AvgMaxPhases", LocalType: "AvgMaxPhases", Doc: "avg and maximum GiInt integrated running-average inhibitory conductance value", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.Pool",
+	Name:      "github.com/emer/axon/v2/axon.Pool",
 	ShortName: "axon.Pool",
 	IDName:    "pool",
 	Doc:       "Pool contains computed values for FS-FFFB inhibition,\nand various other state values for layers\nand pools (unit groups) that can be subject to inhibition",
@@ -1397,16 +1397,16 @@ var _ = gti.AddType(&gti.Type{
 		{"IsLayPool", &gti.Field{Name: "IsLayPool", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"Gated", &gti.Field{Name: "Gated", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"pad", &gti.Field{Name: "pad", Type: "uint32", LocalType: "uint32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Inhib", &gti.Field{Name: "Inhib", Type: "github.com/emer/axon/fsfffb.Inhib", LocalType: "fsfffb.Inhib", Doc: "fast-slow FFFB inhibition values", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
-		{"AvgMax", &gti.Field{Name: "AvgMax", Type: "github.com/emer/axon/axon.PoolAvgMax", LocalType: "PoolAvgMax", Doc: "average and max values for relevant variables in this pool, at different time scales", Directives: gti.Directives{}, Tag: ""}},
-		{"AvgDif", &gti.Field{Name: "AvgDif", Type: "github.com/emer/axon/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
+		{"Inhib", &gti.Field{Name: "Inhib", Type: "github.com/emer/axon/v2/fsfffb.Inhib", LocalType: "fsfffb.Inhib", Doc: "fast-slow FFFB inhibition values", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
+		{"AvgMax", &gti.Field{Name: "AvgMax", Type: "github.com/emer/axon/v2/axon.PoolAvgMax", LocalType: "PoolAvgMax", Doc: "average and max values for relevant variables in this pool, at different time scales", Directives: gti.Directives{}, Tag: ""}},
+		{"AvgDif", &gti.Field{Name: "AvgDif", Type: "github.com/emer/axon/v2/axon.AvgMaxI32", LocalType: "AvgMaxI32", Doc: "absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.Prjn",
+	Name:       "github.com/emer/axon/v2/axon.Prjn",
 	ShortName:  "axon.Prjn",
 	IDName:     "prjn",
 	Doc:        "axon.Prjn is a basic Axon projection with synaptic learning parameters",
@@ -1415,26 +1415,26 @@ var _ = gti.AddType(&gti.Type{
 		{"Params", &gti.Field{Name: "Params", Type: "*github.com/emer/axon/axon.PrjnParams", LocalType: "*PrjnParams", Doc: "all prjn-level parameters -- these must remain constant once configured", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"PrjnBase", &gti.Field{Name: "PrjnBase", Type: "github.com/emer/axon/axon.PrjnBase", LocalType: "PrjnBase", Doc: "", Directives: gti.Directives{}, Tag: ""}},
+		{"PrjnBase", &gti.Field{Name: "PrjnBase", Type: "github.com/emer/axon/v2/axon.PrjnBase", LocalType: "PrjnBase", Doc: "", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PrjnBase",
+	Name:       "github.com/emer/axon/v2/axon.PrjnBase",
 	ShortName:  "axon.PrjnBase",
 	IDName:     "prjn-base",
 	Doc:        "PrjnBase contains the basic structural information for specifying a projection of synaptic\nconnections between two layers, and maintaining all the synaptic connection-level data.\nThe same struct token is added to the Recv and Send layer prjn lists, and it manages everything\nabout the connectivity, and methods on the Prjn handle all the relevant computation.\nThe Base does not have algorithm-specific methods and parameters, so it can be easily\nreused for different algorithms, and cleanly separates the algorithm-specific code.\nAny dependency on the algorithm-level Prjn can be captured in the AxonPrjn interface,\naccessed via the AxonPrj field.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"AxonPrj", &gti.Field{Name: "AxonPrj", Type: "github.com/emer/axon/axon.AxonPrjn", LocalType: "AxonPrjn", Doc: "we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary.", Directives: gti.Directives{}, Tag: "copy:\"-\" json:\"-\" xml:\"-\" view:\"-\""}},
+		{"AxonPrj", &gti.Field{Name: "AxonPrj", Type: "github.com/emer/axon/v2/axon.AxonPrjn", LocalType: "AxonPrjn", Doc: "we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary.", Directives: gti.Directives{}, Tag: "copy:\"-\" json:\"-\" xml:\"-\" view:\"-\""}},
 		{"Off", &gti.Field{Name: "Off", Type: "bool", LocalType: "bool", Doc: "inactivate this projection -- allows for easy experimentation", Directives: gti.Directives{}, Tag: ""}},
 		{"Cls", &gti.Field{Name: "Cls", Type: "string", LocalType: "string", Doc: "Class is for applying parameter styles, can be space separated multple tags", Directives: gti.Directives{}, Tag: ""}},
 		{"Notes", &gti.Field{Name: "Notes", Type: "string", LocalType: "string", Doc: "can record notes about this projection here", Directives: gti.Directives{}, Tag: ""}},
 		{"Send", &gti.Field{Name: "Send", Type: "*github.com/emer/axon/axon.Layer", LocalType: "*Layer", Doc: "sending layer for this projection", Directives: gti.Directives{}, Tag: ""}},
 		{"Recv", &gti.Field{Name: "Recv", Type: "*github.com/emer/axon/axon.Layer", LocalType: "*Layer", Doc: "receiving layer for this projection", Directives: gti.Directives{}, Tag: ""}},
 		{"Pat", &gti.Field{Name: "Pat", Type: "github.com/emer/emergent/v2/prjn.Pattern", LocalType: "prjn.Pattern", Doc: "pattern of connectivity", Directives: gti.Directives{}, Tag: "tableview:\"-\""}},
-		{"Typ", &gti.Field{Name: "Typ", Type: "github.com/emer/axon/axon.PrjnTypes", LocalType: "PrjnTypes", Doc: "type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)", Directives: gti.Directives{}, Tag: ""}},
+		{"Typ", &gti.Field{Name: "Typ", Type: "github.com/emer/axon/v2/axon.PrjnTypes", LocalType: "PrjnTypes", Doc: "type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)", Directives: gti.Directives{}, Tag: ""}},
 		{"DefParams", &gti.Field{Name: "DefParams", Type: "github.com/emer/emergent/v2/params.Params", LocalType: "params.Params", Doc: "default parameters that are applied prior to user-set parameters -- these are useful for specific functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a prjn type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.", Directives: gti.Directives{}, Tag: "tableview:\"-\""}},
 		{"ParamsHistory", &gti.Field{Name: "ParamsHistory", Type: "github.com/emer/emergent/v2/params.HistoryImpl", LocalType: "params.HistoryImpl", Doc: "provides a history of parameters applied to the layer", Directives: gti.Directives{}, Tag: "tableview:\"-\""}},
 		{"RecvConNAvgMax", &gti.Field{Name: "RecvConNAvgMax", Type: "goki.dev/etable/v2/minmax.AvgMax32", LocalType: "minmax.AvgMax32", Doc: "average and maximum number of recv connections in the receiving layer", Directives: gti.Directives{}, Tag: "tableview:\"-\" inactive:\"+\" view:\"inline\""}},
@@ -1454,7 +1454,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.StartN",
+	Name:      "github.com/emer/axon/v2/axon.StartN",
 	ShortName: "axon.StartN",
 	IDName:    "start-n",
 	Doc:       "StartN holds a starting offset index and a number of items\narranged from Start to Start+N (exclusive).\nThis is not 16 byte padded and only for use on CPU side.",
@@ -1473,7 +1473,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PrjnIdxs",
+	Name:       "github.com/emer/axon/v2/axon.PrjnIdxs",
 	ShortName:  "axon.PrjnIdxs",
 	IDName:     "prjn-idxs",
 	Doc:        "PrjnIdxs contains prjn-level index information into global memory arrays",
@@ -1499,7 +1499,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.GScaleVals",
+	Name:       "github.com/emer/axon/v2/axon.GScaleVals",
 	ShortName:  "axon.GScaleVals",
 	IDName:     "g-scale-vals",
 	Doc:        "GScaleVals holds the conductance scaling values.\nThese are computed once at start and remain constant thereafter,\nand therefore belong on Params and not on PrjnVals.",
@@ -1514,31 +1514,31 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PrjnParams",
+	Name:       "github.com/emer/axon/v2/axon.PrjnParams",
 	ShortName:  "axon.PrjnParams",
 	IDName:     "prjn-params",
 	Doc:        "PrjnParams contains all of the prjn parameters.\nThese values must remain constant over the course of computation.\nOn the GPU, they are loaded into a uniform.",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"PrjnType", &gti.Field{Name: "PrjnType", Type: "github.com/emer/axon/axon.PrjnTypes", LocalType: "PrjnTypes", Doc: "functional type of prjn -- determines functional code path for specialized layer types, and is synchronized with the Prjn.Typ value", Directives: gti.Directives{}, Tag: ""}},
+		{"PrjnType", &gti.Field{Name: "PrjnType", Type: "github.com/emer/axon/v2/axon.PrjnTypes", LocalType: "PrjnTypes", Doc: "functional type of prjn -- determines functional code path for specialized layer types, and is synchronized with the Prjn.Typ value", Directives: gti.Directives{}, Tag: ""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Idxs", &gti.Field{Name: "Idxs", Type: "github.com/emer/axon/axon.PrjnIdxs", LocalType: "PrjnIdxs", Doc: "recv and send neuron-level projection index array access info", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"Com", &gti.Field{Name: "Com", Type: "github.com/emer/axon/axon.SynComParams", LocalType: "SynComParams", Doc: "synaptic communication parameters: delay, probability of failure", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"PrjnScale", &gti.Field{Name: "PrjnScale", Type: "github.com/emer/axon/axon.PrjnScaleParams", LocalType: "PrjnScaleParams", Doc: "projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"SWts", &gti.Field{Name: "SWts", Type: "github.com/emer/axon/axon.SWtParams", LocalType: "SWtParams", Doc: "slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"Learn", &gti.Field{Name: "Learn", Type: "github.com/emer/axon/axon.LearnSynParams", LocalType: "LearnSynParams", Doc: "synaptic-level learning parameters for learning in the fast LWt values.", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"GScale", &gti.Field{Name: "GScale", Type: "github.com/emer/axon/axon.GScaleVals", LocalType: "GScaleVals", Doc: "conductance scaling values", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"RLPred", &gti.Field{Name: "RLPred", Type: "github.com/emer/axon/axon.RLPredPrjnParams", LocalType: "RLPredPrjnParams", Doc: "] Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=[RWPrjn,TDPredPrjn]\" view:\"inline\""}},
-		{"Matrix", &gti.Field{Name: "Matrix", Type: "github.com/emer/axon/axon.MatrixPrjnParams", LocalType: "MatrixPrjnParams", Doc: "for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=MatrixPrjn\" view:\"inline\""}},
-		{"BLA", &gti.Field{Name: "BLA", Type: "github.com/emer/axon/axon.BLAPrjnParams", LocalType: "BLAPrjnParams", Doc: "Basolateral Amygdala projection parameters.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=BLAPrjn\" view:\"inline\""}},
-		{"Hip", &gti.Field{Name: "Hip", Type: "github.com/emer/axon/axon.HipPrjnParams", LocalType: "HipPrjnParams", Doc: "Hip bench parameters.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=HipPrjn\" view:\"inline\""}},
+		{"Idxs", &gti.Field{Name: "Idxs", Type: "github.com/emer/axon/v2/axon.PrjnIdxs", LocalType: "PrjnIdxs", Doc: "recv and send neuron-level projection index array access info", Directives: gti.Directives{}, Tag: "view:\"-\""}},
+		{"Com", &gti.Field{Name: "Com", Type: "github.com/emer/axon/v2/axon.SynComParams", LocalType: "SynComParams", Doc: "synaptic communication parameters: delay, probability of failure", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"PrjnScale", &gti.Field{Name: "PrjnScale", Type: "github.com/emer/axon/v2/axon.PrjnScaleParams", LocalType: "PrjnScaleParams", Doc: "projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"SWts", &gti.Field{Name: "SWts", Type: "github.com/emer/axon/v2/axon.SWtParams", LocalType: "SWtParams", Doc: "slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
+		{"Learn", &gti.Field{Name: "Learn", Type: "github.com/emer/axon/v2/axon.LearnSynParams", LocalType: "LearnSynParams", Doc: "synaptic-level learning parameters for learning in the fast LWt values.", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
+		{"GScale", &gti.Field{Name: "GScale", Type: "github.com/emer/axon/v2/axon.GScaleVals", LocalType: "GScaleVals", Doc: "conductance scaling values", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"RLPred", &gti.Field{Name: "RLPred", Type: "github.com/emer/axon/v2/axon.RLPredPrjnParams", LocalType: "RLPredPrjnParams", Doc: "] Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=[RWPrjn,TDPredPrjn]\" view:\"inline\""}},
+		{"Matrix", &gti.Field{Name: "Matrix", Type: "github.com/emer/axon/v2/axon.MatrixPrjnParams", LocalType: "MatrixPrjnParams", Doc: "for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=MatrixPrjn\" view:\"inline\""}},
+		{"BLA", &gti.Field{Name: "BLA", Type: "github.com/emer/axon/v2/axon.BLAPrjnParams", LocalType: "BLAPrjnParams", Doc: "Basolateral Amygdala projection parameters.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=BLAPrjn\" view:\"inline\""}},
+		{"Hip", &gti.Field{Name: "Hip", Type: "github.com/emer/axon/v2/axon.HipPrjnParams", LocalType: "HipPrjnParams", Doc: "Hip bench parameters.", Directives: gti.Directives{}, Tag: "viewif:\"PrjnType=HipPrjn\" view:\"inline\""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.PrjnTypes",
+	Name:      "github.com/emer/axon/v2/axon.PrjnTypes",
 	ShortName: "axon.PrjnTypes",
 	IDName:    "prjn-types",
 	Doc:       "PrjnTypes is an axon-specific prjn type enum,\nthat encompasses all the different algorithm types supported.\nClass parameter styles automatically key off of these types.\nThe first entries must be kept synchronized with the emer.PrjnType.",
@@ -1551,7 +1551,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.DriveParams",
+	Name:       "github.com/emer/axon/v2/axon.DriveParams",
 	ShortName:  "axon.DriveParams",
 	IDName:     "drive-params",
 	Doc:        "DriveParams manages the drive parameters for computing and updating drive state.\nMost of the params are for optional case where drives are automatically\nupdated based on US consumption (which satisfies drives) and time passing\n(which increases drives).",
@@ -1568,7 +1568,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.UrgencyParams",
+	Name:       "github.com/emer/axon/v2/axon.UrgencyParams",
 	ShortName:  "axon.UrgencyParams",
 	IDName:     "urgency-params",
 	Doc:        "UrgencyParams has urgency (increasing pressure to do something)\nand parameters for updating it.\nRaw urgency integrates effort when _not_ goal engaged\nwhile effort (negative US 0) integrates when a goal _is_ engaged.",
@@ -1583,7 +1583,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.USParams",
+	Name:       "github.com/emer/axon/v2/axon.USParams",
 	ShortName:  "axon.USParams",
 	IDName:     "us-params",
 	Doc:        "USParams control how positive and negative USs are\nweighted and integrated to compute an overall PV primary value.",
@@ -1602,7 +1602,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.LHbParams",
+	Name:       "github.com/emer/axon/v2/axon.LHbParams",
 	ShortName:  "axon.LHbParams",
 	IDName:     "l-hb-params",
 	Doc:        "LHbParams has values for computing LHb & RMTg which drives dips / pauses in DA firing.\nLHb handles all US-related (PV = primary value) processing.\nPositive net LHb activity drives dips / pauses in VTA DA activity,\ne.g., when predicted pos > actual or actual neg > predicted.\nNegative net LHb activity drives bursts in VTA DA activity,\ne.g., when actual pos > predicted (redundant with LV / Amygdala)\nor \"relief\" burst when actual neg < predicted.",
@@ -1617,7 +1617,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.GiveUpParams",
+	Name:       "github.com/emer/axon/v2/axon.GiveUpParams",
 	ShortName:  "axon.GiveUpParams",
 	IDName:     "give-up-params",
 	Doc:        "GiveUpParams are parameters for computing when to give up",
@@ -1632,7 +1632,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.PVLV",
+	Name:       "github.com/emer/axon/v2/axon.PVLV",
 	ShortName:  "axon.PVLV",
 	IDName:     "pvlv",
 	Doc:        "PVLV represents the core brainstem-level (hypothalamus) bodily drives\nand resulting dopamine from US (unconditioned stimulus) inputs,\nas computed by the PVLV model of primary value (PV)\nand learned value (LV), describing the functions of the Amygala,\nVentral Striatum, VTA and associated midbrain nuclei (LDT, LHb, RMTg).\nCore LHb (lateral habenula) and VTA (ventral tegmental area) dopamine\nare computed in equations using inputs from specialized network layers\n(LDTLayer driven by BLA, CeM layers, VSPatchLayer).\nThe Drives, Effort, US and resulting LHb PV dopamine computation all happens at the\nat the start of each trial (NewState, Step).  The LV / CS dopamine is computed\ncycle-by-cycle by the VTA layer using parameters set by the VTA layer.\nRenders USLayer, PVLayer, DrivesLayer representations based on state updated here.",
@@ -1640,18 +1640,18 @@ var _ = gti.AddType(&gti.Type{
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
 		{"NPosUSs", &gti.Field{Name: "NPosUSs", Type: "uint32", LocalType: "uint32", Doc: "number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"NNegUSs", &gti.Field{Name: "NNegUSs", Type: "uint32", LocalType: "uint32", Doc: "number of possible negative US states -- is reserved for accumulated time, the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
-		{"Drive", &gti.Field{Name: "Drive", Type: "github.com/emer/axon/axon.DriveParams", LocalType: "DriveParams", Doc: "parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.", Directives: gti.Directives{}, Tag: ""}},
-		{"Urgency", &gti.Field{Name: "Urgency", Type: "github.com/emer/axon/axon.UrgencyParams", LocalType: "UrgencyParams", Doc: "urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"USs", &gti.Field{Name: "USs", Type: "github.com/emer/axon/axon.USParams", LocalType: "USParams", Doc: "controls how positive and negative USs are weighted and integrated to compute an overall PV primary value.", Directives: gti.Directives{}, Tag: ""}},
-		{"LHb", &gti.Field{Name: "LHb", Type: "github.com/emer/axon/axon.LHbParams", LocalType: "LHbParams", Doc: "lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"GiveUp", &gti.Field{Name: "GiveUp", Type: "github.com/emer/axon/axon.GiveUpParams", LocalType: "GiveUpParams", Doc: "parameters for giving up based on PV pos - neg difference", Directives: gti.Directives{}, Tag: ""}},
+		{"Drive", &gti.Field{Name: "Drive", Type: "github.com/emer/axon/v2/axon.DriveParams", LocalType: "DriveParams", Doc: "parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.", Directives: gti.Directives{}, Tag: ""}},
+		{"Urgency", &gti.Field{Name: "Urgency", Type: "github.com/emer/axon/v2/axon.UrgencyParams", LocalType: "UrgencyParams", Doc: "urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"USs", &gti.Field{Name: "USs", Type: "github.com/emer/axon/v2/axon.USParams", LocalType: "USParams", Doc: "controls how positive and negative USs are weighted and integrated to compute an overall PV primary value.", Directives: gti.Directives{}, Tag: ""}},
+		{"LHb", &gti.Field{Name: "LHb", Type: "github.com/emer/axon/v2/axon.LHbParams", LocalType: "LHbParams", Doc: "lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"GiveUp", &gti.Field{Name: "GiveUp", Type: "github.com/emer/axon/v2/axon.GiveUpParams", LocalType: "GiveUpParams", Doc: "parameters for giving up based on PV pos - neg difference", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.LDTParams",
+	Name:      "github.com/emer/axon/v2/axon.LDTParams",
 	ShortName: "axon.LDTParams",
 	IDName:    "ldt-params",
 	Doc:       "LDTParams compute reward salience as ACh global neuromodulatory signal\nas a function of the MAX activation of its inputs.",
@@ -1673,7 +1673,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.VSPatchParams",
+	Name:       "github.com/emer/axon/v2/axon.VSPatchParams",
 	ShortName:  "axon.VSPatchParams",
 	IDName:     "vs-patch-params",
 	Doc:        "VSPatchParams parameters for VSPatch learning",
@@ -1689,7 +1689,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.VTAParams",
+	Name:       "github.com/emer/axon/v2/axon.VTAParams",
 	ShortName:  "axon.VTAParams",
 	IDName:     "vta-params",
 	Doc:        "VTAParams are for computing overall VTA DA based on LHb PVDA\n(primary value -- at US time, computed at start of each trial\nand stored in LHbPVDA global value)\nand Amygdala (CeM) CS / learned value (LV) activations, which update\nevery cycle.",
@@ -1704,7 +1704,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.BLAPrjnParams",
+	Name:      "github.com/emer/axon/v2/axon.BLAPrjnParams",
 	ShortName: "axon.BLAPrjnParams",
 	IDName:    "bla-prjn-params",
 	Doc:       "BLAPrjnParams has parameters for basolateral amygdala learning.\nLearning is driven by the Tr trace as function of ACh * Send Act\nrecorded prior to US, and at US, recv unit delta: CaSpkP - SpkPrv\ntimes normalized GeIntNorm for recv unit credit assignment.\nThe Learn.Trace.Tau time constant determines trace updating over trials\nwhen ACh is above threshold -- this determines strength of second-order\nconditioning -- default of 1 means none, but can be increased as needed.",
@@ -1722,7 +1722,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.RandFunIdx",
+	Name:      "github.com/emer/axon/v2/axon.RandFunIdx",
 	ShortName: "axon.RandFunIdx",
 	IDName:    "rand-fun-idx",
 	Doc:       "",
@@ -1736,7 +1736,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.RWPredParams",
+	Name:      "github.com/emer/axon/v2/axon.RWPredParams",
 	ShortName: "axon.RWPredParams",
 	IDName:    "rw-pred-params",
 	Doc:       "RWPredParams parameterizes reward prediction for a simple Rescorla-Wagner\nlearning dynamic (i.e., PV learning in the PVLV framework).",
@@ -1751,7 +1751,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.RWDaParams",
+	Name:       "github.com/emer/axon/v2/axon.RWDaParams",
 	ShortName:  "axon.RWDaParams",
 	IDName:     "rw-da-params",
 	Doc:        "RWDaParams computes a dopamine (DA) signal using simple Rescorla-Wagner\nlearning dynamic (i.e., PV learning in the PVLV framework).",
@@ -1766,7 +1766,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.TDIntegParams",
+	Name:       "github.com/emer/axon/v2/axon.TDIntegParams",
 	ShortName:  "axon.TDIntegParams",
 	IDName:     "td-integ-params",
 	Doc:        "TDIntegParams are params for reward integrator layer",
@@ -1782,7 +1782,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.TDDaParams",
+	Name:       "github.com/emer/axon/v2/axon.TDDaParams",
 	ShortName:  "axon.TDDaParams",
 	IDName:     "td-da-params",
 	Doc:        "TDDaParams are params for dopamine (DA) signal as the temporal difference (TD)\nbetween the TDIntegLayer activations in the minus and plus phase.",
@@ -1797,7 +1797,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.RLPredPrjnParams",
+	Name:      "github.com/emer/axon/v2/axon.RLPredPrjnParams",
 	ShortName: "axon.RLPredPrjnParams",
 	IDName:    "rl-pred-prjn-params",
 	Doc:       "RLPredPrjnParams does dopamine-modulated learning for reward prediction: Da * Send.Act\nUsed by RWPrjn and TDPredPrjn within corresponding RWPredLayer or TDPredLayer\nto generate reward predictions based on its incoming weights, using linear activation\nfunction. Has no weight bounds or limits on sign etc.",
@@ -1814,7 +1814,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.SynapseVars",
+	Name:      "github.com/emer/axon/v2/axon.SynapseVars",
 	ShortName: "axon.SynapseVars",
 	IDName:    "synapse-vars",
 	Doc:       "SynapseVars are the neuron variables representing current synaptic state,\nspecifically weights.",
@@ -1827,7 +1827,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.SynapseCaVars",
+	Name:      "github.com/emer/axon/v2/axon.SynapseCaVars",
 	ShortName: "axon.SynapseCaVars",
 	IDName:    "synapse-ca-vars",
 	Doc:       "SynapseCaVars are synapse variables for calcium involved in learning,\nwhich are data parallel input specific.",
@@ -1839,7 +1839,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.SynapseIdxs",
+	Name:      "github.com/emer/axon/v2/axon.SynapseIdxs",
 	ShortName: "axon.SynapseIdxs",
 	IDName:    "synapse-idxs",
 	Doc:       "SynapseIdxs are the neuron indexes and other uint32 values (flags, etc).\nThere is only one of these per neuron -- not data parallel.",
@@ -1851,7 +1851,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/axon.SynapseVarStrides",
+	Name:      "github.com/emer/axon/v2/axon.SynapseVarStrides",
 	ShortName: "axon.SynapseVarStrides",
 	IDName:    "synapse-var-strides",
 	Doc:       "SynapseVarStrides encodes the stride offsets for synapse variable access\ninto network float32 array.",
@@ -1871,7 +1871,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.SynapseCaStrides",
+	Name:       "github.com/emer/axon/v2/axon.SynapseCaStrides",
 	ShortName:  "axon.SynapseCaStrides",
 	IDName:     "synapse-ca-strides",
 	Doc:        "SynapseCaStrides encodes the stride offsets for synapse variable access\ninto network float32 array.  Data is always the inner-most variable.",
@@ -1885,7 +1885,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/axon.SynapseIdxStrides",
+	Name:       "github.com/emer/axon/v2/axon.SynapseIdxStrides",
 	ShortName:  "axon.SynapseIdxStrides",
 	IDName:     "synapse-idx-strides",
 	Doc:        "SynapseIdxStrides encodes the stride offsets for synapse index access\ninto network uint32 array.",

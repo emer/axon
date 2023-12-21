@@ -8,7 +8,7 @@ import (
 )
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/fffb.Bg",
+	Name:       "github.com/emer/axon/v2/fffb.Bg",
 	ShortName:  "fffb.Bg",
 	IDName:     "bg",
 	Doc:        "Bg has parameters for a slower, low level of background inhibition\nbased on main FFFB computed inhibition.",
@@ -24,7 +24,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/fffb.Params",
+	Name:      "github.com/emer/axon/v2/fffb.Params",
 	ShortName: "fffb.Params",
 	IDName:    "params",
 	Doc:       "Params parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)\nbased on average (or maximum) Ge (FF) and activation (FB)",
@@ -48,7 +48,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/fffb.Inhib",
+	Name:       "github.com/emer/axon/v2/fffb.Inhib",
 	ShortName:  "fffb.Inhib",
 	IDName:     "inhib",
 	Doc:        "Inhib contains state values for computed FFFB inhibition",
@@ -67,7 +67,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/fffb.Inhibs",
+	Name:       "github.com/emer/axon/v2/fffb.Inhibs",
 	ShortName:  "fffb.Inhibs",
 	IDName:     "inhibs",
 	Doc:        "Inhibs is a slice of Inhib records",

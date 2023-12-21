@@ -4,7 +4,7 @@
 
 package main
 
-import "github.com/emer/axon/axon"
+import "github.com/emer/axon/v2/axon"
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {

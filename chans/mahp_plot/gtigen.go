@@ -14,7 +14,7 @@ var _ = gti.AddType(&gti.Type{
 	Doc:        "Sim holds the params, table, etc",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Mahp", &gti.Field{Name: "Mahp", Type: "github.com/emer/axon/chans.MahpParams", LocalType: "chans.MahpParams", Doc: "mAHP function", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
+		{"Mahp", &gti.Field{Name: "Mahp", Type: "github.com/emer/axon/v2/chans.MahpParams", LocalType: "chans.MahpParams", Doc: "mAHP function", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
 		{"Vstart", &gti.Field{Name: "Vstart", Type: "float32", LocalType: "float32", Doc: "starting voltage", Directives: gti.Directives{}, Tag: "def:\"-100\""}},
 		{"Vend", &gti.Field{Name: "Vend", Type: "float32", LocalType: "float32", Doc: "ending voltage", Directives: gti.Directives{}, Tag: "def:\"100\""}},
 		{"Vstep", &gti.Field{Name: "Vstep", Type: "float32", LocalType: "float32", Doc: "voltage increment", Directives: gti.Directives{}, Tag: "def:\"1\""}},

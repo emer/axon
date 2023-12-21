@@ -8,7 +8,7 @@ import (
 )
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/fsfffb.GiParams",
+	Name:      "github.com/emer/axon/v2/fsfffb.GiParams",
 	ShortName: "fsfffb.GiParams",
 	IDName:    "gi-params",
 	Doc:       "GiParams parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)\nbased on incoming spikes (FF) and outgoing spikes (FB)\nacross Fast (PV+) and Slow (SST+) timescales.\nFF -> PV -> FS fast spikes, FB -> SST -> SS slow spikes (slow to get going)",
@@ -38,7 +38,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/fsfffb.Inhib",
+	Name:      "github.com/emer/axon/v2/fsfffb.Inhib",
 	ShortName: "fsfffb.Inhib",
 	IDName:    "inhib",
 	Doc:       "Inhib contains state values for computed FFFB inhibition",
@@ -72,7 +72,7 @@ var _ = gti.AddType(&gti.Type{
 })
 
 var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/fsfffb.Inhibs",
+	Name:      "github.com/emer/axon/v2/fsfffb.Inhibs",
 	ShortName: "fsfffb.Inhibs",
 	IDName:    "inhibs",
 	Doc:       "Inhibs is a slice of Inhib records",

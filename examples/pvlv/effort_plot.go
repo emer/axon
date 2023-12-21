@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
 	"goki.dev/etable/v2/eplot"
 	"goki.dev/etable/v2/etable"

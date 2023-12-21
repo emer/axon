@@ -14,7 +14,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"

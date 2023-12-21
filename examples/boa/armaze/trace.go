@@ -5,7 +5,7 @@
 package armaze
 
 import (
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 )
 
 // TraceStates is a list of mutually exclusive states

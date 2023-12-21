@@ -14,7 +14,7 @@ var _ = gti.AddType(&gti.Type{
 	Doc:        "Sim holds the params, table, etc",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"NMDAStd", &gti.Field{Name: "NMDAStd", Type: "github.com/emer/axon/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "standard NMDA implementation in chans", Directives: gti.Directives{}, Tag: ""}},
+		{"NMDAStd", &gti.Field{Name: "NMDAStd", Type: "github.com/emer/axon/v2/chans.NMDAParams", LocalType: "chans.NMDAParams", Doc: "standard NMDA implementation in chans", Directives: gti.Directives{}, Tag: ""}},
 		{"NMDAv", &gti.Field{Name: "NMDAv", Type: "float64", LocalType: "float64", Doc: "multiplier on NMDA as function of voltage", Directives: gti.Directives{}, Tag: "def:\"0.062\""}},
 		{"MgC", &gti.Field{Name: "MgC", Type: "float64", LocalType: "float64", Doc: "magnesium ion concentration -- somewhere between 1 and 1.5", Directives: gti.Directives{}, Tag: ""}},
 		{"NMDAd", &gti.Field{Name: "NMDAd", Type: "float64", LocalType: "float64", Doc: "denominator of NMDA function", Directives: gti.Directives{}, Tag: "def:\"3.57\""}},

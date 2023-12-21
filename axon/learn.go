@@ -5,8 +5,8 @@
 package axon
 
 import (
-	"github.com/emer/axon/chans"
-	"github.com/emer/axon/kinase"
+	"github.com/emer/axon/v2/chans"
+	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/erand"
 	"goki.dev/etable/v2/minmax"
 	"goki.dev/gosl/v2/slbool"

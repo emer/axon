@@ -10,8 +10,8 @@ package main
 import (
 	"strconv"
 
-	"github.com/emer/axon/chans"
-	"github.com/emer/axon/kinase"
+	"github.com/emer/axon/v2/chans"
+	"github.com/emer/axon/v2/kinase"
 	"goki.dev/etable/v2/eplot"
 	"goki.dev/etable/v2/etable"
 	"goki.dev/etable/v2/etensor"
