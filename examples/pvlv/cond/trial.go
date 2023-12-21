@@ -7,26 +7,17 @@ package cond
 import (
 	"math/rand"
 
-	"github.com/emer/emergent/erand"
-	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/mat32/v2"
 )
 
-//go:generate stringer -type=Valence
-
 // Valence
-type Valence int32
+type Valence int32 //enums:enum
 
 const (
 	Pos Valence = iota
 	Neg
-	ValenceN
 )
-
-var KiT_Valence = kit.Enums.AddEnum(ValenceN, kit.NotBitFlag, nil)
-
-func (ev Valence) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *Valence) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 // Trial represents one behavioral trial, unfolding over
 // NTicks individual time steps, with one or more CS's (conditioned stimuli)
@@ -34,61 +25,61 @@ func (ev *Valence) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(
 type Trial struct {
 
 	// conventional suffixes: _R = reward, _NR = non-reward; _test = test trial (no learning)
-	Name string `desc:"conventional suffixes: _R = reward, _NR = non-reward; _test = test trial (no learning)"`
+	Name string
 
 	// true if testing only -- no learning
-	Test bool `desc:"true if testing only -- no learning"`
+	Test bool
 
 	// Percent of all trials for this type
-	Pct float32 `desc:"Percent of all trials for this type"`
+	Pct float32
 
 	// Positive or negative reward valence
-	Valence Valence `desc:"Positive or negative reward valence"`
+	Valence Valence
 
 	// Probability of US
-	USProb float32 `desc:"Probability of US"`
+	USProb float32
 
 	// Mixed US set?
-	MixedUS bool `desc:"Mixed US set?"`
+	MixedUS bool
 
 	// US magnitude
-	USMag float32 `desc:"US magnitude"`
+	USMag float32
 
 	// Number of ticks for a trial
-	NTicks int `desc:"Number of ticks for a trial"`
+	NTicks int
 
 	// Conditioned stimulus
-	CS string `desc:"Conditioned stimulus"`
+	CS string
 
 	// Tick of CS start
-	CSStart int `desc:"Tick of CS start"`
+	CSStart int
 
 	// Tick of CS end
-	CSEnd int `desc:"Tick of CS end"`
+	CSEnd int
 
 	// Tick of CS2 start: -1 for none
-	CS2Start int `desc:"Tick of CS2 start: -1 for none"`
+	CS2Start int
 
 	// Tick of CS2 end: -1 for none
-	CS2End int `desc:"Tick of CS2 end: -1 for none"`
+	CS2End int
 
 	// Unconditioned stimulus
-	US int `desc:"Unconditioned stimulus"`
+	US int
 
 	// Tick for start of US presentation
-	USStart int `desc:"Tick for start of US presentation"`
+	USStart int
 
 	// Tick for end of US presentation
-	USEnd int `desc:"Tick for end of US presentation"`
+	USEnd int
 
 	// Context -- typically same as CS -- if blank CS will be copied -- different in certain extinguishing contexts
-	Context string `desc:"Context -- typically same as CS -- if blank CS will be copied -- different in certain extinguishing contexts"`
+	Context string
 
 	// for rendered trials, true if US active
-	USOn bool `desc:"for rendered trials, true if US active"`
+	USOn bool
 
 	// for rendered trials, true if CS active
-	CSOn bool `desc:"for rendered trials, true if CS active"`
+	CSOn bool
 }
 
 // Block represents a set of trial types

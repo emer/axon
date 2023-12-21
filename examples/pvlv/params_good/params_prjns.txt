@@ -99,15 +99,15 @@ Layer: VsPatch
 	   ACCnegValPTp	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.30	Rel:  0.20
 								    Abs Params: Base:.VSPatchPrjn: 6
 	         Drives	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  6.00	Rel:  1.00
-								    Abs Params: Base:.VSPatchPrjn: 6
+								    Abs Params: .VSPatchPrjn: 6
 	    OFCposUSPTp	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.20	Rel:  0.20
 								    Abs Params: Base:.VSPatchPrjn: 6
 	   OFCposValPTp	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.30	Rel:  0.20
 								    Abs Params: Base:.VSPatchPrjn: 6
 	    OFCnegUSPTp	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.20
-								    Abs Params: Base:.VSPatchPrjn: 6
-	   ACCnegValPTp	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.30	Rel:  0.20
 								    Abs Params: .VSPatchPrjn: 6
+	   ACCnegValPTp	    VSPatchPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.30	Rel:  0.20
+								    Abs Params: Base:.VSPatchPrjn: 6
 
 Layer: SC
 	             CS	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
@@ -183,8 +183,8 @@ Layer: OFCposUSMD
 	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 	       OFCposUS	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
 								    Abs Params: Base:.SuperToThal: 4.0
-	          VsGPi	      InhibPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
-								    Abs Params: Base:.GPiToBGThal: 2
+	          VsGPi	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+								    Abs Params: Base:.GPiToBGThal: 3
 
 Layer: OFCposUSPTp
 	     OFCposUSPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.15	Rel:  0.22
@@ -234,8 +234,8 @@ Layer: OFCnegUSMD
 	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 	       OFCnegUS	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
 								    Abs Params: Base:.SuperToThal: 4.0
-	          VsGPi	      InhibPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
-								    Abs Params: Base:.GPiToBGThal: 2
+	          VsGPi	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+								    Abs Params: Base:.GPiToBGThal: 3
 
 Layer: OFCnegUSPTp
 	     OFCnegUSPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.15	Rel:  0.23
@@ -271,8 +271,8 @@ Layer: OFCposValMD
 	    OFCposValPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 	      OFCposVal	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
 								    Abs Params: Base:.SuperToThal: 4.0
-	          VsGPi	      InhibPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
-								    Abs Params: Base:.GPiToBGThal: 2
+	          VsGPi	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+								    Abs Params: Base:.GPiToBGThal: 3
 
 Layer: OFCposValPTp
 	    OFCposValPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.13	Rel:  0.23
@@ -307,8 +307,8 @@ Layer: ACCnegValMD
 	    ACCnegValPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 	      ACCnegVal	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
 								    Abs Params: Base:.SuperToThal: 4.0
-	          VsGPi	      InhibPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
-								    Abs Params: Base:.GPiToBGThal: 2
+	          VsGPi	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+								    Abs Params: Base:.GPiToBGThal: 3
 
 Layer: ACCnegValPTp
 	    ACCnegValPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.13	Rel:  0.23

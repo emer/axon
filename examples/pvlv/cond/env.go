@@ -4,12 +4,13 @@
 
 package cond
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/ki/ints"
+	"github.com/emer/emergent/v2/env"
+	"goki.dev/etable/v2/etensor"
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
@@ -26,61 +27,61 @@ import (
 type CondEnv struct {
 
 	// name of this environment
-	Nm string `desc:"name of this environment"`
+	Nm string
 
 	// description of this environment
-	Dsc string `desc:"description of this environment"`
+	Dsc string
 
 	// number of Y repetitions for localist reps
-	NYReps int `desc:"number of Y repetitions for localist reps"`
+	NYReps int
 
 	// current run name
-	RunName string `desc:"current run name"`
+	RunName string
 
 	// description of current run
-	RunDesc string `desc:"description of current run"`
+	RunDesc string
 
 	// name of current condition
-	CondName string `desc:"name of current condition"`
+	CondName string
 
 	// description of current condition
-	CondDesc string `desc:"description of current condition"`
+	CondDesc string
 
-	// [view: inline] counter over runs
-	Run env.Ctr `inactive:"+" view:"inline" desc:"counter over runs"`
+	// counter over runs
+	Run env.Ctr `inactive:"+" view:"inline"`
 
-	// [view: inline] counter over Condition within a run -- Max depends on number of conditions specified in given Run
-	Condition env.Ctr `inactive:"+" view:"inline" desc:"counter over Condition within a run -- Max depends on number of conditions specified in given Run"`
+	// counter over Condition within a run -- Max depends on number of conditions specified in given Run
+	Condition env.Ctr `inactive:"+" view:"inline"`
 
-	// [view: inline] counter over full blocks of all trial types within a Condition -- like an Epoch
-	Block env.Ctr `inactive:"+" view:"inline" desc:"counter over full blocks of all trial types within a Condition -- like an Epoch"`
+	// counter over full blocks of all trial types within a Condition -- like an Epoch
+	Block env.Ctr `inactive:"+" view:"inline"`
 
-	// [view: inline] counter of behavioral trials within a Block
-	Trial env.Ctr `inactive:"+" view:"inline" desc:"counter of behavioral trials within a Block"`
+	// counter of behavioral trials within a Block
+	Trial env.Ctr `inactive:"+" view:"inline"`
 
-	// [view: inline] counter of discrete steps within a behavioral trial -- typically maps onto Alpha / Theta cycle in network
-	Tick env.Ctr `inactive:"+" view:"inline" desc:"counter of discrete steps within a behavioral trial -- typically maps onto Alpha / Theta cycle in network"`
+	// counter of discrete steps within a behavioral trial -- typically maps onto Alpha / Theta cycle in network
+	Tick env.Ctr `inactive:"+" view:"inline"`
 
 	// name of current trial step
-	TrialName string `inactive:"+" desc:"name of current trial step"`
+	TrialName string `inactive:"+"`
 
 	// type of current trial step
-	TrialType string `inactive:"+" desc:"type of current trial step"`
+	TrialType string `inactive:"+"`
 
 	// decoded value of USTimeIn
-	USTimeInStr string `inactive:"+" desc:"decoded value of USTimeIn"`
+	USTimeInStr string `inactive:"+"`
 
 	// current generated set of trials per Block
-	Trials []*Trial `desc:"current generated set of trials per Block"`
+	Trials []*Trial
 
 	// copy of current run parameters
-	CurRun Run `desc:"copy of current run parameters"`
+	CurRun Run
 
 	// copy of info for current trial
-	CurTrial Trial `desc:"copy of info for current trial"`
+	CurTrial Trial
 
 	// current rendered state tensors -- extensible map
-	CurStates map[string]*etensor.Float32 `desc:"current rendered state tensors -- extensible map"`
+	CurStates map[string]*etensor.Float32
 }
 
 func (ev *CondEnv) Name() string { return ev.Nm }
@@ -223,9 +224,9 @@ func (ev *CondEnv) RenderTrial(trli, tick int) {
 	}
 	minStart := trl.CSStart
 	if trl.CS2Start > 0 {
-		minStart = ints.MinInt(minStart, trl.CS2Start)
+		minStart = min(minStart, trl.CS2Start)
 	}
-	maxEnd := ints.MaxInt(trl.CSEnd, trl.CS2End)
+	maxEnd := max(trl.CSEnd, trl.CS2End)
 
 	if tick >= minStart && tick <= maxEnd {
 		SetContext(ctxt, ev.NYReps, trl.Context)

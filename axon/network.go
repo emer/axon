@@ -9,11 +9,9 @@ import (
 	"strings"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/ki/ki"
-	"github.com/goki/ki/kit"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/prjn"
+	"goki.dev/etable/v2/etensor"
 )
 
 // axon.Network implements the Axon spiking model,
@@ -22,8 +20,6 @@ import (
 type Network struct {
 	NetworkBase
 }
-
-var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
 // InitName MUST be called to initialize the network's pointer to itself as an emer.Network
 // which enables the proper interface methods to be called.  Also sets the name,
@@ -695,6 +691,7 @@ func (nt *Network) SizeReport(detail bool) string {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Network props for gui
 
+/*
 var NetworkProps = ki.Props{
 	"ToolBar": ki.PropSlice{
 		{"SaveWtsJSON", ki.Props{
@@ -774,3 +771,4 @@ var NetworkProps = ki.Props{
 		}},
 	},
 }
+*/

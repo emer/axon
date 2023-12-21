@@ -7,9 +7,9 @@ package axon
 import (
 	"fmt"
 
-	"github.com/emer/emergent/ecmd"
-	"github.com/emer/empi/mpi"
-	"github.com/goki/gi/gi"
+	"github.com/emer/emergent/v2/ecmd"
+	"github.com/emer/empi/v2/mpi"
+	"goki.dev/gi/v2/gi"
 )
 
 ////////////////////////////////////////////////////

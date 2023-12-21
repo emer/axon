@@ -7,91 +7,91 @@ package main
 import (
 	"math/rand"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/popcode"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/popcode"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/mat32/v2"
 )
 
 // GoNoEnv implements simple Go vs. NoGo input patterns to test BG learning.
 type GoNoEnv struct {
 
 	// name of environment -- Train or Test
-	Nm string `desc:"name of environment -- Train or Test"`
+	Nm string
 
 	// training or testing env?
-	Mode etime.Modes `desc:"training or testing env?"`
+	Mode etime.Modes
 
 	// trial counter -- set by caller for testing
-	Trial env.Ctr `desc:"trial counter -- set by caller for testing"`
+	Trial env.Ctr
 
 	// activation of ACC positive valence -- drives go
-	ACCPos float32 `desc:"activation of ACC positive valence -- drives go"`
+	ACCPos float32
 
 	// activation of ACC neg valence -- drives nogo
-	ACCNeg float32 `desc:"activation of ACC neg valence -- drives nogo"`
+	ACCNeg float32
 
 	// threshold on diff between ACCPos - ACCNeg for counting as a Go trial
-	PosNegThr float32 `desc:"threshold on diff between ACCPos - ACCNeg for counting as a Go trial"`
+	PosNegThr float32
 
 	// ACCPos and Neg are set manually -- do not generate random vals for training or auto-increment ACCPos / Neg values during test
-	ManualVals bool `desc:"ACCPos and Neg are set manually -- do not generate random vals for training or auto-increment ACCPos / Neg values during test"`
+	ManualVals bool
 
 	// increment in testing activation for test all
-	TestInc float32 `desc:"increment in testing activation for test all"`
+	TestInc float32
 
 	// number of repetitions per testing level
-	TestReps int `desc:"number of repetitions per testing level"`
+	TestReps int
 
-	// [view: -] number of pools for representing multiple different options to be evaluated in parallel, vs. 1 pool with a simple go nogo overall choice -- currently tested / configured for the 1 pool case
-	NPools int `view:"-" desc:"number of pools for representing multiple different options to be evaluated in parallel, vs. 1 pool with a simple go nogo overall choice -- currently tested / configured for the 1 pool case"`
+	// number of pools for representing multiple different options to be evaluated in parallel, vs. 1 pool with a simple go nogo overall choice -- currently tested / configured for the 1 pool case
+	NPools int `view:"-"`
 
 	// for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%
-	ACCPosInc float32 `desc:"for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
+	ACCPosInc float32
 
 	// for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%
-	ACCNegInc float32 `desc:"for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
+	ACCNegInc float32
 
-	// [view: -] number of units within each pool, Y
-	NUnitsY int `view:"-" desc:"number of units within each pool, Y"`
+	// number of units within each pool, Y
+	NUnitsY int `view:"-"`
 
-	// [view: -] number of units within each pool, X
-	NUnitsX int `view:"-" desc:"number of units within each pool, X"`
+	// number of units within each pool, X
+	NUnitsX int `view:"-"`
 
-	// [view: -] total number of units within each pool
-	NUnits int `view:"-" desc:"total number of units within each pool"`
+	// total number of units within each pool
+	NUnits int `view:"-"`
 
 	// number of different values for PFC to learn in input layer -- gives PFC network something to do
-	InN int `desc:"number of different values for PFC to learn in input layer -- gives PFC network something to do"`
+	InN int
 
 	// pop code the values in ACCPos and Neg
-	PopCode popcode.OneD `desc:"pop code the values in ACCPos and Neg"`
+	PopCode popcode.OneD
 
-	// [view: -] random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
+	// random number generator for the env -- all random calls must use this
+	Rand erand.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `inactive:"+" desc:"random seed"`
+	RndSeed int64 `inactive:"+"`
 
 	// named states: ACCPos, ACCNeg
-	States map[string]*etensor.Float32 `desc:"named states: ACCPos, ACCNeg"`
+	States map[string]*etensor.Float32
 
 	// true if Pos - Neg > Thr
-	Should bool `inactive:"+" desc:"true if Pos - Neg > Thr"`
+	Should bool `inactive:"+"`
 
 	// true if model gated on this trial
-	Gated bool `inactive:"+" desc:"true if model gated on this trial"`
+	Gated bool `inactive:"+"`
 
 	// true if gated == should
-	Match bool `inactive:"+" desc:"true if gated == should"`
+	Match bool `inactive:"+"`
 
 	// reward based on match between Should vs. Gated
-	Rew float32 `inactive:"+" desc:"reward based on match between Should vs. Gated"`
+	Rew float32 `inactive:"+"`
 
 	// input counter -- gives PFC network something to do
-	InCtr int `inactive:"+" desc:"input counter -- gives PFC network something to do"`
+	InCtr int `inactive:"+"`
 }
 
 func (ev *GoNoEnv) Name() string {

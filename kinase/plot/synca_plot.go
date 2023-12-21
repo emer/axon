@@ -5,33 +5,32 @@
 // synca_plot plots kinase SynCa update equations
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"math"
 	"strconv"
 
 	"github.com/emer/axon/kinase"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
-	_ "github.com/goki/gosl/slboolview" // ditto
-	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	_ "goki.dev/gosl/v2/slboolview" // ditto
+	"goki.dev/icons"
 )
 
-func main() {
-	TheSim.Config()
-	gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-		guirun()
-	})
-}
+func main() { gimain.Run(app) }
 
-func guirun() {
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
+func app() {
+	sim := &Sim{}
+	sim.Config()
+	sim.Run()
+	b := sim.ConfigGUI()
+	b.NewWindow().Run().Wait()
 }
 
 // LogPrec is precision for saving float values in logs
@@ -40,45 +39,36 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 
-	// [view: inline] Ca time constants
-	CaDt  kinase.CaParams `view:"inline" desc:"Ca time constants"`
+	// Ca time constants
+	CaDt  kinase.CaParams `view:"inline"`
 	Minit float64
 	Pinit float64
 	Dinit float64
 
-	// [def: 0,0.11] adjustment to dt to account for discrete time updating
-	MdtAdj float64 `def:"0,0.11" desc:"adjustment to dt to account for discrete time updating"`
+	// adjustment to dt to account for discrete time updating
+	MdtAdj float64 `def:"0,0.11"`
 
-	// [def: 0.0.03] adjustment to dt to account for discrete time updating
-	PdtAdj float64 `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
+	// adjustment to dt to account for discrete time updating
+	PdtAdj float64 `def:"0.0.03"`
 
-	// [def: 0.0.03] adjustment to dt to account for discrete time updating
-	DdtAdj float64 `def:"0.0.03" desc:"adjustment to dt to account for discrete time updating"`
+	// adjustment to dt to account for discrete time updating
+	DdtAdj float64 `def:"0.0.03"`
 
 	// number of time steps
-	TimeSteps int `desc:"number of time steps"`
+	TimeSteps int
 
-	// [view: no-inline] table for plot
-	Table *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	Table *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	Plot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	Plot *eplot.Plot2D `view:"-"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
-
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
-
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 }
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
@@ -102,7 +92,7 @@ func (ss *Sim) Update() {
 }
 
 // Run runs the equation.
-func (ss *Sim) Run() {
+func (ss *Sim) Run() { //gti:add
 	ss.Update()
 	dt := ss.Table
 
@@ -161,7 +151,9 @@ func (ss *Sim) Run() {
 		di += float64(ss.CaDt.Dt.DDt) * (pi - di)
 
 	}
-	ss.Plot.Update()
+	if ss.Plot != nil {
+		ss.Plot.UpdatePlot()
+	}
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
@@ -205,7 +197,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 /////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() {
+func (ss *Sim) TimeRun() { //gti:add
 	ss.Update()
 	/*
 		dt := ss.TimeTable
@@ -256,73 +248,28 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
-	width := 1600
-	height := 1200
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Body {
+	b := gi.NewAppBody("synca_plot").SetTitle("Plotting Equations")
 
-	// gi.WinEventTrace = true
-
-	gi.SetAppName("synca_plot")
-	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
-
-	win := gi.NewMainWindow("syncaplot", "Plotting Equations", width, height)
-	ss.Win = win
-
-	vp := win.WinViewport2D()
-	updt := vp.UpdateStart()
-
-	mfr := win.SetMainFrame()
-
-	tbar := gi.AddNewToolBar(mfr, "tbar")
-	tbar.SetStretchMaxWidth()
-	ss.ToolBar = tbar
-
-	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
-	split.SetStretchMax()
-
-	sv := giv.AddNewStructView(split, "sv")
+	split := gi.NewSplits(b, "split")
+	sv := giv.NewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.AddNewTabView(split, "tv")
+	tv := gi.NewTabs(split, "tv")
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "T Exp Plot").(*eplot.Plot2D)
-	ss.Plot = ss.ConfigPlot(plt, ss.Table)
+	ss.Plot = eplot.NewSubPlot(tv.NewTab("T Exp Plot"))
+	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TimePlot").(*eplot.Plot2D)
-	ss.TimePlot = ss.ConfigTimePlot(plt, ss.TimeTable)
+	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "T Exp Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.Run()
-		vp.SetNeedsFullRender()
+	b.AddAppBar(func(tb *gi.Toolbar) {
+		giv.NewFuncButton(tb, ss.Run).SetIcon(icons.PlayArrow)
+		giv.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Time Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.TimeRun()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/synca_plot/README.md")
-		})
-
-	vp.UpdateEndNoSig(updt)
-
-	// main menu
-	appnm := gi.AppName()
-	mmen := win.MainMenu
-	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
-
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
-	amen.Menu.AddAppMenu(win)
-
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
-	emen.Menu.AddCopyCutPaste(win)
-
-	win.MainMenuUpdated()
-	return win
+	return b
 }

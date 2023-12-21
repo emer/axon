@@ -6,34 +6,13 @@ package axon
 
 import (
 	"fmt"
-
-	"github.com/goki/ki/kit"
 )
-
-//go:generate stringer -type=SynapseVars
-//go:generate stringer -type=SynapseCaVars
-//go:generate stringer -type=SynapseIdxs
-
-var KiT_SynapseVars = kit.Enums.AddEnum(SynapseVarsN, kit.NotBitFlag, nil)
-
-func (ev SynapseVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *SynapseVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-var KiT_SynapseCaVars = kit.Enums.AddEnum(SynapseCaVarsN, kit.NotBitFlag, nil)
-
-func (ev SynapseCaVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *SynapseCaVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-var KiT_SynapseIdxs = kit.Enums.AddEnum(SynapseIdxsN, kit.NotBitFlag, nil)
-
-func (ev SynapseIdxs) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *SynapseIdxs) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 //gosl: start synapse
 
 // SynapseVars are the neuron variables representing current synaptic state,
 // specifically weights.
-type SynapseVars int32
+type SynapseVars int32 //enums:enum
 
 const (
 	// Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
@@ -51,18 +30,79 @@ const (
 	// DSWt is change in SWt slow synaptic weight -- accumulates DWt
 	DSWt
 
-	SynapseVarsN
+	// IMPORTANT: if DSWt is not the last, need to update gosl defn below
 )
+
+// SynapseCaVars are synapse variables for calcium involved in learning,
+// which are data parallel input specific.
+type SynapseCaVars int32 //enums:enum
+
+const (
+	// CaM is first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
+	CaM SynapseCaVars = iota
+
+	// CaP is shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
+	CaP
+
+	// CaD is longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
+	CaD
+
+	// CaUpT is time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
+	CaUpT
+
+	// Tr is trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
+	Tr
+
+	// DTr is delta (change in) Tr trace of synaptic activity over time
+	DTr
+
+	// DiDWt is delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values
+	DiDWt
+
+	// IMPORTANT: if DiDWt is not the last, need to update gosl defn below
+)
+
+// SynapseIdxs are the neuron indexes and other uint32 values (flags, etc).
+// There is only one of these per neuron -- not data parallel.
+type SynapseIdxs int32 //enums:enum
+
+const (
+	// SynRecvIdx is receiving neuron index in network's global list of neurons
+	SynRecvIdx SynapseIdxs = iota
+
+	// SynSendIdx is sending neuron index in network's global list of neurons
+	SynSendIdx
+
+	// SynPrjnIdx is projection index in global list of projections organized as [Layers][RecvPrjns]
+	SynPrjnIdx
+
+	// IMPORTANT: if SynPrjnIdx is not the last, need to update gosl defn below
+)
+
+//gosl: end synapse
+
+//gosl: hlsl synapse
+/*
+static const SynapseVars SynapseVarsN = DSWt + 1;
+static const SynapseCaVars SynapseCaVarsN = DiDWt + 1;
+static const SynapseIdxs SynapseIdxsN = SynPrjnIdx + 1;
+*/
+//gosl: end synapse
+
+//gosl: start synapse
+
+////////////////////////////////////////////////
+// 	Strides
 
 // SynapseVarStrides encodes the stride offsets for synapse variable access
 // into network float32 array.
 type SynapseVarStrides struct {
 
 	// synapse level
-	Synapse uint32 `desc:"synapse level"`
+	Synapse uint32
 
 	// variable level
-	Var uint32 `desc:"variable level"`
+	Var uint32
 
 	pad, pad1 uint32
 }
@@ -92,44 +132,15 @@ func (ns *SynapseVarStrides) SetVarOuter(nsyn int) {
 ////////////////////////////////////////////////
 // 	SynapseCaVars
 
-// SynapseCaVars are synapse variables for calcium involved in learning,
-// which are data parallel input specific.
-type SynapseCaVars int32
-
-const (
-	// CaM is first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
-	CaM SynapseCaVars = iota
-
-	// CaP is shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
-	CaP
-
-	// CaD is longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
-	CaD
-
-	// CaUpT is time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
-	CaUpT
-
-	// Tr is trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
-	Tr
-
-	// DTr is delta (change in) Tr trace of synaptic activity over time
-	DTr
-
-	// DiDWt is delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values
-	DiDWt
-
-	SynapseCaVarsN
-)
-
 // SynapseCaStrides encodes the stride offsets for synapse variable access
 // into network float32 array.  Data is always the inner-most variable.
 type SynapseCaStrides struct {
 
 	// synapse level
-	Synapse uint64 `desc:"synapse level"`
+	Synapse uint64
 
 	// variable level
-	Var uint64 `desc:"variable level"`
+	Var uint64
 }
 
 // Idx returns the index into network float32 array for given synapse, data, and variable
@@ -154,32 +165,15 @@ func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
 ////////////////////////////////////////////////
 // 	Idxs
 
-// SynapseIdxs are the neuron indexes and other uint32 values (flags, etc).
-// There is only one of these per neuron -- not data parallel.
-type SynapseIdxs int32
-
-const (
-	// SynRecvIdx is receiving neuron index in network's global list of neurons
-	SynRecvIdx SynapseIdxs = iota
-
-	// SynSendIdx is sending neuron index in network's global list of neurons
-	SynSendIdx
-
-	// SynPrjnIdx is projection index in global list of projections organized as [Layers][RecvPrjns]
-	SynPrjnIdx
-
-	SynapseIdxsN
-)
-
 // SynapseIdxStrides encodes the stride offsets for synapse index access
 // into network uint32 array.
 type SynapseIdxStrides struct {
 
 	// synapse level
-	Synapse uint32 `desc:"synapse level"`
+	Synapse uint32
 
 	// index value level
-	Index uint32 `desc:"index value level"`
+	Index uint32
 
 	pad, pad1 uint32
 }

@@ -11,13 +11,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -37,7 +37,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 VTA: {
   CeMGain: 0.75 LHbGain: 1.25
@@ -55,13 +55,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -81,7 +81,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: LDT
@@ -96,13 +96,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -122,7 +122,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 LDT: {
   SrcThr: 0.05 Rew: true MaintInhib: 2 NotMaintMax: 0.4 SrcLay1Idx: 24 SrcLay2Idx: -1 SrcLay3Idx: -1 SrcLay4Idx: -1
@@ -140,13 +140,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -166,7 +166,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: USneg
@@ -181,13 +181,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -207,7 +207,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 2  Valence: 1  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: USposP
@@ -222,13 +222,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -248,7 +248,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 3
@@ -306,13 +306,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -332,7 +332,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 4
@@ -390,13 +390,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -416,7 +416,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: PVneg
@@ -431,13 +431,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -457,7 +457,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 2  Valence: 1  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: PVposP
@@ -472,13 +472,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -498,7 +498,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 7
@@ -616,13 +616,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -642,7 +642,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 8
@@ -760,13 +760,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -786,7 +786,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: DrivesP
@@ -801,13 +801,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -827,7 +827,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 11
@@ -885,13 +885,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -911,7 +911,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VsGPi
@@ -926,13 +926,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -952,7 +952,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPi
@@ -1050,13 +1050,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -1076,7 +1076,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPeOut
@@ -1134,13 +1134,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -1160,7 +1160,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPeIn
@@ -1238,13 +1238,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -1264,7 +1264,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPeTA
@@ -1322,13 +1322,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 3  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -1348,7 +1348,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 2  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 2  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: VsGPeInToVsSTNp
@@ -1423,13 +1423,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 3  C50: 0.4  ActTau: 15  DeTau: 30  KCaR: 0.4  CaRDecayTau: 200  CaInThr: 0.01  CaInTau: 50 }
@@ -1449,7 +1449,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 2  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 2  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: BLAPosAcqD1ToVsSTNs
@@ -1504,13 +1504,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -1530,7 +1530,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: false  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 1  AChDisInhib: 5  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 1  AChDisInhib: 5  BurstGain: 1  DipGain: 1 }
 }
 Matrix:  {
   GateThr: 0.05 IsVS: true OtherMatrixIdx: 21 ThalLay1Idx: 35 ThalLay2Idx: 41 ThalLay3Idx: 46 ThalLay4Idx: 51 ThalLay5Idx: 58 ThalLay6Idx: -1
@@ -1591,7 +1591,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1604,7 +1604,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 3
+  Rel: 1 Abs: 2
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -1614,7 +1614,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1637,7 +1637,7 @@ SWt: {
 Learn: {
   Learn: false
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1660,7 +1660,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1683,7 +1683,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1706,7 +1706,7 @@ SWt: {
 Learn: {
   Learn: false
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1729,7 +1729,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1749,13 +1749,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -1775,7 +1775,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: false  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 2  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 1  AChDisInhib: 5  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 1  AChDisInhib: 5  BurstGain: 1  DipGain: 1 }
 }
 Matrix:  {
   GateThr: 0.05 IsVS: true OtherMatrixIdx: 20 ThalLay1Idx: 35 ThalLay2Idx: 41 ThalLay3Idx: 46 ThalLay4Idx: 51 ThalLay5Idx: 58 ThalLay6Idx: -1
@@ -1836,7 +1836,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1849,7 +1849,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 3
+  Rel: 1 Abs: 2
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -1859,7 +1859,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1882,7 +1882,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1905,7 +1905,7 @@ SWt: {
 Learn: {
   Learn: false
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1928,7 +1928,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1951,7 +1951,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1974,7 +1974,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -1997,7 +1997,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -2020,7 +2020,7 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.75 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
@@ -2040,13 +2040,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2066,7 +2066,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VsPatch
@@ -2081,13 +2081,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2107,10 +2107,10 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0.5  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.01  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 VSPatch: {
-  Gain: 3 ThrInit: 0.15 ThrLRate: 0.002 ThrNonRew: 10
+  Gain: 3 ThrInit: 0.15 ThrLRate: 0.001 ThrNonRew: 10
 }
 ///////////////////////////////////////////////////
 Prjn: ACCnegValPTpToVsPatch
@@ -2265,13 +2265,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: true  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.05   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2291,7 +2291,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -2329,13 +2329,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2355,7 +2355,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -2386,7 +2386,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 0.1 Abs: 2.5
+  Rel: 0.1 Abs: 3
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: true }
@@ -2459,13 +2459,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2485,7 +2485,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: 2  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -2589,13 +2589,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2615,7 +2615,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 1  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -2696,13 +2696,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2722,7 +2722,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: 2  Valence: 1  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -2806,13 +2806,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2832,7 +2832,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: BLAPosAcqD1ToCeMPos
@@ -2887,13 +2887,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2913,7 +2913,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 2  Valence: 1  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: BLANegAcqD2ToCeMNeg
@@ -2968,13 +2968,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -2994,7 +2994,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -3035,13 +3035,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -3061,7 +3061,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -3267,7 +3267,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToOFCposUS
+Prjn: PosToOFCposUS
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -3287,7 +3287,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCposUS
+Prjn: PosPToOFCposUS
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -3319,13 +3319,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.008  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -3345,7 +3345,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -3471,7 +3471,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCposUSCT
+Prjn: PosPToOFCposUSCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -3503,13 +3503,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.01  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -3529,7 +3529,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposUSMDToOFCposUSPT
@@ -3604,13 +3604,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -3630,7 +3630,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposUSPTToOFCposUSMD
@@ -3705,13 +3705,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -3731,7 +3731,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50
@@ -3877,7 +3877,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCposUSPTp
+Prjn: PosPToOFCposUSPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -3897,7 +3897,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToOFCposUSPTp
+Prjn: PosToOFCposUSPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -3929,13 +3929,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -3955,7 +3955,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.4 DecayTau: 0
@@ -4073,13 +4073,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4099,7 +4099,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -4225,7 +4225,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToOFCnegUS
+Prjn: PosToOFCnegUS
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4245,7 +4245,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCnegUS
+Prjn: PosPToOFCnegUS
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4277,13 +4277,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.008  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4303,7 +4303,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -4389,7 +4389,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCnegUSCT
+Prjn: PosPToOFCnegUSCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4421,13 +4421,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.01  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4447,7 +4447,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: OFCnegUSMDToOFCnegUSPT
@@ -4522,13 +4522,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4548,7 +4548,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: OFCnegUSPTToOFCnegUSMD
@@ -4623,13 +4623,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4649,7 +4649,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50
@@ -4735,7 +4735,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToOFCnegUSPTp
+Prjn: PosToOFCnegUSPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4755,7 +4755,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCnegUSPTp
+Prjn: PosPToOFCnegUSPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4787,13 +4787,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4813,7 +4813,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -4899,7 +4899,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToOFCposVal
+Prjn: PosToOFCposVal
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4919,7 +4919,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCposVal
+Prjn: PosPToOFCposVal
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -4951,13 +4951,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.008  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -4977,7 +4977,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -5043,7 +5043,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCposValCT
+Prjn: PosPToOFCposValCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -5075,13 +5075,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.01  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5101,7 +5101,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposValMDToOFCposValPT
@@ -5176,13 +5176,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5202,7 +5202,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: OFCposValPTToOFCposValMD
@@ -5277,13 +5277,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5303,7 +5303,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50
@@ -5409,7 +5409,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToOFCposValPTp
+Prjn: PosPToOFCposValPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -5429,7 +5429,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToOFCposValPTp
+Prjn: PosToOFCposValPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -5461,13 +5461,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5487,7 +5487,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -5573,7 +5573,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToACCnegVal
+Prjn: PosToACCnegVal
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -5593,7 +5593,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToACCnegVal
+Prjn: PosPToACCnegVal
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -5625,13 +5625,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.008  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5651,7 +5651,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -5717,7 +5717,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToACCnegValCT
+Prjn: PosPToACCnegValCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -5749,13 +5749,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.01  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5775,7 +5775,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: ACCnegValMDToACCnegValPT
@@ -5850,13 +5850,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5876,7 +5876,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: ACCnegValPTToACCnegValMD
@@ -5951,13 +5951,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -5977,7 +5977,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50
@@ -6083,7 +6083,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToACCnegValPTp
+Prjn: PosToACCnegValPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6103,7 +6103,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToACCnegValPTp
+Prjn: PosPToACCnegValPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6135,13 +6135,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6161,7 +6161,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 43
@@ -6219,13 +6219,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6245,7 +6245,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 48
@@ -6303,13 +6303,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6329,7 +6329,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -6427,13 +6427,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.008  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6453,7 +6453,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -6551,13 +6551,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.01  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6577,7 +6577,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: ACCutilMDToACCutilPT
@@ -6652,13 +6652,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6678,7 +6678,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: ACCutilPTToACCutilMD
@@ -6753,13 +6753,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6779,7 +6779,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50
@@ -6917,13 +6917,13 @@ Act: {
   Clamp: {  IsInput: true  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6931,7 +6931,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.08  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.04  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -6943,7 +6943,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: CSP
@@ -6958,13 +6958,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -6972,7 +6972,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.08  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.04  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -6984,7 +6984,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 60
@@ -7030,7 +7030,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: Dist
+Layer: Pos
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: false  ModGain: 1  ModBase: 0 }
@@ -7042,13 +7042,13 @@ Act: {
   Clamp: {  IsInput: true  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7068,10 +7068,10 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
-Layer: DistP
+Layer: PosP
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: false  ModGain: 1  ModBase: 0 }
@@ -7083,13 +7083,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7109,13 +7109,13 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 62
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToDistP
+Prjn: OFCposUSCTToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7135,7 +7135,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToDistP
+Prjn: OFCposUSPTpToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7155,7 +7155,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposValCTToDistP
+Prjn: OFCposValCTToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7175,7 +7175,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposValPTpToDistP
+Prjn: OFCposValPTpToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7195,7 +7195,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSCTToDistP
+Prjn: OFCnegUSCTToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7215,7 +7215,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToDistP
+Prjn: OFCnegUSPTpToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7235,7 +7235,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegValCTToDistP
+Prjn: ACCnegValCTToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7255,7 +7255,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegValPTpToDistP
+Prjn: ACCnegValPTpToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7275,7 +7275,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ALMCTToDistP
+Prjn: ALMCTToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7295,7 +7295,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ALMPTpToDistP
+Prjn: ALMPTpToPosP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7315,7 +7315,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: Pos
+Layer: Arm
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: false  ModGain: 1  ModBase: 0 }
@@ -7327,13 +7327,13 @@ Act: {
   Clamp: {  IsInput: true  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7353,7 +7353,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: Act
@@ -7368,13 +7368,13 @@ Act: {
   Clamp: {  IsInput: true  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7394,7 +7394,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VL
@@ -7409,13 +7409,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7435,7 +7435,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 65
@@ -7553,13 +7553,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7579,7 +7579,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -7625,7 +7625,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToM1
+Prjn: PosToM1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7697,13 +7697,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7723,7 +7723,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 1 DecayTau: 50
@@ -7781,13 +7781,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7807,7 +7807,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 67
@@ -7865,13 +7865,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -7891,7 +7891,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -7957,7 +7957,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToALM
+Prjn: PosToALM
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7977,7 +7977,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToALM
+Prjn: PosPToALM
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -8029,13 +8029,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.008  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.009  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -8055,7 +8055,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -8141,7 +8141,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToALMCT
+Prjn: PosPToALMCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -8173,13 +8173,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.01  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.01  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -8199,7 +8199,7 @@ Learn: {
   TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: ALMMDToALMPT
@@ -8274,13 +8274,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -8300,7 +8300,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: ALMPTToALMMD
@@ -8375,13 +8375,13 @@ Act: {
   Clamp: {  IsInput: false  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
-  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.2093637  DtMax: 0.001 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
   KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
   } }
   NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
-  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758  RiseDt: 0.022222223  DecayDt: 0.02 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
@@ -8401,7 +8401,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 0  Valence: 0  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50
@@ -8507,7 +8507,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistToALMPTp
+Prjn: PosToALMPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -8527,7 +8527,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: DistPToALMPTp
+Prjn: PosPToALMPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }

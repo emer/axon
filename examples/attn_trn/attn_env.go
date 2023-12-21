@@ -9,42 +9,42 @@ package main
 import (
 	"fmt"
 
-	"github.com/emer/emergent/efuns"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/evec"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/efuns"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/evec"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/mat32/v2"
 )
 
 // Stim describes a single stimulus
 type Stim struct {
 
 	// position in normalized coordintes
-	Pos mat32.Vec2 `desc:"position in normalized coordintes"`
+	Pos mat32.Vec2
 
 	// feature number: 0-3 for V1 input, -1 for LIP attn
-	Feat int `desc:"feature number: 0-3 for V1 input, -1 for LIP attn"`
+	Feat int
 
 	// normalized width
-	Width float32 `desc:"normalized width"`
+	Width float32
 
 	// normalized contrast level
-	Contrast float32 `desc:"normalized contrast level"`
+	Contrast float32
 }
 
 // PosXY returns XY position projected into size of grid
 func (st *Stim) PosXY(size evec.Vec2i) mat32.Vec2 {
-	return mat32.Vec2{st.Pos.X * float32(size.X-1), st.Pos.Y * float32(size.Y-1)}
+	return mat32.V2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
 }
 
 // StimSet is a set of stimuli to be presented together
 type StimSet struct {
 
 	// description of set
-	Name string `desc:"description of set"`
+	Name string
 
 	// stims to present
-	Stims []Stim `desc:"stims to present"`
+	Stims []Stim
 }
 
 // Stims is a list of a set of stimuli to present
@@ -57,52 +57,52 @@ type Stims []StimSet
 type AttnEnv struct {
 
 	// name of this environment
-	Nm string `desc:"name of this environment"`
+	Nm string
 
 	// description of this environment
-	Dsc string `desc:"description of this environment"`
+	Dsc string
 
 	// multiplier on contrast function
-	ContrastMult float32 `desc:"multiplier on contrast function"`
+	ContrastMult float32
 
 	// gain on contrast function inside exponential
-	ContrastGain float32 `desc:"gain on contrast function inside exponential"`
+	ContrastGain float32
 
 	// offset on contrast function
-	ContrastOff float32 `desc:"offset on contrast function"`
+	ContrastOff float32
 
 	// use gaussian for LIP -- otherwise fixed circle
-	LIPGauss bool `desc:"use gaussian for LIP -- otherwise fixed circle"`
+	LIPGauss bool
 
 	// a list of stimuli to present
-	Stims Stims `desc:"a list of stimuli to present"`
+	Stims Stims
 
 	// current stimuli presented
-	CurStim *StimSet `inactive:"+" desc:"current stimuli presented"`
+	CurStim *StimSet `inactive:"+"`
 
 	// activation level (midpoint) -- feature is incremented, rest decremented relative to this
-	Act float32 `desc:"activation level (midpoint) -- feature is incremented, rest decremented relative to this"`
+	Act float32
 
 	// size of V1 Pools
-	V1Pools evec.Vec2i `desc:"size of V1 Pools"`
+	V1Pools evec.Vec2i
 
 	// size of V1 features per pool
-	V1Feats evec.Vec2i `desc:"size of V1 features per pool"`
+	V1Feats evec.Vec2i
 
 	// V1 rendered input state, 4D Size x Size
-	V1 etensor.Float32 `desc:"V1 rendered input state, 4D Size x Size"`
+	V1 etensor.Float32
 
 	// LIP top-down attention
-	LIP etensor.Float32 `desc:"LIP top-down attention"`
+	LIP etensor.Float32
 
-	// [view: inline] current run of model as provided during Init
-	Run env.Ctr `view:"inline" desc:"current run of model as provided during Init"`
+	// current run of model as provided during Init
+	Run env.Ctr `view:"inline"`
 
-	// [view: inline] number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline" desc:"number of times through Seq.Max number of sequences"`
+	// number of times through Seq.Max number of sequences
+	Epoch env.Ctr `view:"inline"`
 
-	// [view: inline] trial increments over input states -- could add Event as a lower level
-	Trial env.Ctr `view:"inline" desc:"trial increments over input states -- could add Event as a lower level"`
+	// trial increments over input states -- could add Event as a lower level
+	Trial env.Ctr `view:"inline"`
 }
 
 func (ev *AttnEnv) Name() string { return ev.Nm }

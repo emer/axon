@@ -5,11 +5,11 @@
 package axon
 
 import (
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/netview"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
 )
 
 // LooperStdPhases adds the minus and plus phases of the theta cycle,

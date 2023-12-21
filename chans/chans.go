@@ -10,6 +10,8 @@ Includes excitatory, leak, inhibition, and dynamic potassium channels.
 */
 package chans
 
+//go:generate goki generate -add-types
+
 //gosl: hlsl chans
 // #include "fastexp.hlsl"
 //gosl: end chans
@@ -20,16 +22,16 @@ package chans
 type Chans struct {
 
 	// excitatory sodium (Na) AMPA channels activated by synaptic glutamate
-	E float32 `desc:"excitatory sodium (Na) AMPA channels activated by synaptic glutamate"`
+	E float32
 
 	// constant leak (potassium, K+) channels -- determines resting potential (typically higher than resting potential of K)
-	L float32 `desc:"constant leak (potassium, K+) channels -- determines resting potential (typically higher than resting potential of K)"`
+	L float32
 
 	// inhibitory chloride (Cl-) channels activated by synaptic GABA
-	I float32 `desc:"inhibitory chloride (Cl-) channels activated by synaptic GABA"`
+	I float32
 
 	// gated / active potassium channels -- typically hyperpolarizing relative to leak / rest
-	K float32 `desc:"gated / active potassium channels -- typically hyperpolarizing relative to leak / rest"`
+	K float32
 }
 
 // SetAll sets all the values

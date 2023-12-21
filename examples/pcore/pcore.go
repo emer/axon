@@ -7,34 +7,36 @@ pcore: This project simulates the inhibitory dynamics in the STN and GPe leading
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/split"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/ki/bools"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/ecmd"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/empi/v2/mpi"
+	"goki.dev/etable/v2/agg"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/split"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/glop/num"
+	"goki.dev/mat32/v2"
 )
 
 func main() {
@@ -42,7 +44,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -58,37 +60,37 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.NetParams `view:"inline"`
 
-	// [view: no-inline] contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
+	// contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline"`
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
 	// Contains all the logs and information about the logs.'
-	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+	Logs elog.Logs
 
-	// [view: no-inline] Environments
-	Envs env.Envs `view:"no-inline" desc:"Environments"`
+	// Environments
+	Envs env.Envs `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
-	// [view: inline] netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+	// netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline"`
 
-	// [view: -] manages all the gui elements
-	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+	// manages all the gui elements
+	GUI egui.GUI `view:"-"`
 
-	// [view: -] a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+	// a list of random seeds to use for each run
+	RndSeeds erand.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -531,9 +533,9 @@ func (ss *Sim) TrialStats(di int) {
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
 	ss.Stats.SetFloat32("ACCPos", ev.ACCPos)
 	ss.Stats.SetFloat32("ACCNeg", ev.ACCNeg)
-	ss.Stats.SetFloat32("Gated", bools.ToFloat32(ev.Gated))
-	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.Should))
-	ss.Stats.SetFloat32("Match", bools.ToFloat32(ev.Match))
+	ss.Stats.SetFloat32("Gated", num.FromBool[float32](ev.Gated))
+	ss.Stats.SetFloat32("Should", num.FromBool[float32](ev.Should))
+	ss.Stats.SetFloat32("Match", num.FromBool[float32](ev.Match))
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 	ss.Stats.SetFloat32("PFCVM_RT", ss.Stats.Float32Di("PFCVM_RT", di))
 	ss.Stats.SetFloat32("PFCVM_ActAvg", ss.Stats.Float32Di("PFCVM_ActAvg", di))
@@ -646,10 +648,10 @@ func (ss *Sim) TestStats() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() {
 	title := "PCore Test"
-	ss.GUI.MakeWindow(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -659,7 +661,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
 	// nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
-	// nv.Scene().Camera.LookAt(mat32.Vec3{0.00030842167, 0.045156803, -0.039506555}, mat32.Vec3{0, 1, 0})
+	// nv.Scene().Camera.LookAt(mat32.V3(0.00030842167, 0.045156803, -0.039506555), mat32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
@@ -667,59 +669,61 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, tststnm+" Plot").(*eplot.Plot2D)
+	plt := eplot.NewPlot2D(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Params.Title = tststnm
 	plt.Params.XAxisCol = "Trial"
 	plt.SetTable(tstst)
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "TestInit", Icon: "update",
-		Tooltip: "reinitialize the testing control so it re-runs.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Loops.ResetCountersByMode(etime.Test)
-			ss.GUI.UpdateWindow()
-		},
-	})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train, etime.Test})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "TestInit", Icon: "update",
+			Tooltip: "reinitialize the testing control so it re-runs.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Loops.ResetCountersByMode(etime.Test)
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("log")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset RunLog",
-		Icon:    "reset",
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Run)
-			ss.GUI.UpdatePlot(etime.Train, etime.Run)
-		},
-	})
-	////////////////////////////////////////////////
-	ss.GUI.ToolBar.AddSeparator("misc")
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "New Seed",
-		Icon:    "new",
-		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			ss.RndSeeds.NewSeeds()
-		},
-	})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
-		},
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+			Icon:    "reset",
+			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Run)
+				ss.GUI.UpdatePlot(etime.Train, etime.Run)
+			},
+		})
+		////////////////////////////////////////////////
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+			Icon:    "new",
+			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				ss.RndSeeds.NewSeeds()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
+			},
+		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
@@ -729,13 +733,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

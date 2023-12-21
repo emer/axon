@@ -5,9 +5,9 @@
 package axon
 
 import (
-	"github.com/emer/emergent/erand"
-	"github.com/goki/ki/bools"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/glop/num"
+	"goki.dev/mat32/v2"
 )
 
 // DriveParams manages the drive parameters for computing and updating drive state.
@@ -17,19 +17,19 @@ import (
 type DriveParams struct {
 
 	// minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline.
-	DriveMin float32 `desc:"minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline."`
+	DriveMin float32
 
 	// baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range).
-	Base []float32 `desc:"baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range)."`
+	Base []float32
 
 	// time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update.
-	Tau []float32 `desc:"time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update."`
+	Tau []float32
 
 	// decrement in drive value when US is consumed, thus partially satisfying the drive -- positive values are subtracted from current Drive value.
-	Satisfaction []float32 `desc:"decrement in drive value when US is consumed, thus partially satisfying the drive -- positive values are subtracted from current Drive value."`
+	Satisfaction []float32
 
-	// [view: -] 1/Tau
-	Dt []float32 `view:"-" desc:"1/Tau"`
+	// 1/Tau
+	Dt []float32 `view:"-"`
 }
 
 func (dp *DriveParams) Alloc(nDrives int) {
@@ -151,13 +151,13 @@ func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32
 type UrgencyParams struct {
 
 	// value of raw urgency where the urgency activation level is 50%
-	U50 float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
+	U50 float32
 
-	// [def: 4] exponent on the urge factor -- valid numbers are 1,2,4,6
-	Power int32 `def:"4" desc:"exponent on the urge factor -- valid numbers are 1,2,4,6"`
+	// exponent on the urge factor -- valid numbers are 1,2,4,6
+	Power int32 `def:"4"`
 
-	// [def: 0.2] threshold for urge -- cuts off small baseline values
-	Thr float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
+	// threshold for urge -- cuts off small baseline values
+	Thr float32 `def:"0.2"`
 }
 
 func (ur *UrgencyParams) Defaults() {
@@ -220,26 +220,26 @@ func PVLVNormFun(raw float32) float32 {
 // weighted and integrated to compute an overall PV primary value.
 type USParams struct {
 
-	// [def: 0.5] threshold for a negative US increment, _after_ multiplying by the USnegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)
-	NegUSOutcomeThr float32 `def:"0.5" desc:"threshold for a negative US increment, _after_ multiplying by the USnegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)"`
+	// threshold for a negative US increment, _after_ multiplying by the USnegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)
+	NegUSOutcomeThr float32 `def:"0.5"`
 
-	// [def: 2] gain factor applied to sum of weighted, drive-scaled positive USs to compute PVpos primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust the overall scaling of PVpos reward within 0-1 normalized range (see also PVnegGain).  Each USpos is assumed to be in 0-1 range, default 1.
-	PVposGain float32 `def:"2" desc:"gain factor applied to sum of weighted, drive-scaled positive USs to compute PVpos primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust the overall scaling of PVpos reward within 0-1 normalized range (see also PVnegGain).  Each USpos is assumed to be in 0-1 range, default 1."`
+	// gain factor applied to sum of weighted, drive-scaled positive USs to compute PVpos primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust the overall scaling of PVpos reward within 0-1 normalized range (see also PVnegGain).  Each USpos is assumed to be in 0-1 range, default 1.
+	PVposGain float32 `def:"2"`
 
-	// [def: 1] gain factor applied to sum of weighted negative USs to compute PVneg primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust overall scaling of PVneg within 0-1 normalized range (see also PVposGain).
-	PVnegGain float32 `def:"1" desc:"gain factor applied to sum of weighted negative USs to compute PVneg primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust overall scaling of PVneg within 0-1 normalized range (see also PVposGain)."`
+	// gain factor applied to sum of weighted negative USs to compute PVneg primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust overall scaling of PVneg within 0-1 normalized range (see also PVposGain).
+	PVnegGain float32 `def:"1"`
 
 	// gain factor for each individual negative US, multiplied prior to 1/(1+x) normalization of each term for activating the OFCnegUS pools.  These gains are _not_ applied in computing summary PVneg value (see PVnegWts), and generally must be larger than the weights to leverage the dynamic range within each US pool.
-	USnegGains []float32 `desc:"gain factor for each individual negative US, multiplied prior to 1/(1+x) normalization of each term for activating the OFCnegUS pools.  These gains are _not_ applied in computing summary PVneg value (see PVnegWts), and generally must be larger than the weights to leverage the dynamic range within each US pool."`
+	USnegGains []float32
 
 	// weight factor applied to each separate positive US on the way to computing the overall PVpos summary value, to control the weighting of each US relative to the others. Each pos US is also multiplied by its dynamic Drive factor as well.  Use PVposGain to control the overall scaling of the PVpos value.
-	PVposWts []float32 `desc:"weight factor applied to each separate positive US on the way to computing the overall PVpos summary value, to control the weighting of each US relative to the others. Each pos US is also multiplied by its dynamic Drive factor as well.  Use PVposGain to control the overall scaling of the PVpos value."`
+	PVposWts []float32
 
 	// weight factor applied to each separate negative US on the way to computing the overall PVneg summary value, to control the weighting of each US relative to the others.  The first pool is Time, second is Effort, and these are typically weighted lower (.02) than salient simulation-specific USs (1).
-	PVnegWts []float32 `desc:"weight factor applied to each separate negative US on the way to computing the overall PVneg summary value, to control the weighting of each US relative to the others.  The first pool is Time, second is Effort, and these are typically weighted lower (.02) than salient simulation-specific USs (1)."`
+	PVnegWts []float32
 
 	// computed estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst
-	USposEst []float32 `inactive:"+" desc:"computed estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst"`
+	USposEst []float32 `inactive:"+"`
 }
 
 func (us *USParams) Alloc(nPos, nNeg int) {
@@ -323,14 +323,14 @@ func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32
 // or "relief" burst when actual neg < predicted.
 type LHbParams struct {
 
-	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
-	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
+	// threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
+	NegThr float32 `def:"1"`
 
-	// [def: 1] gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	BurstGain float32 `def:"1" desc:"gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	// gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	BurstGain float32 `def:"1"`
 
-	// [def: 1] gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	DipGain float32 `def:"1" desc:"gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)"`
+	// gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	DipGain float32 `def:"1"`
 }
 
 func (lh *LHbParams) Defaults() {
@@ -405,14 +405,14 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) floa
 // GiveUpParams are parameters for computing when to give up
 type GiveUpParams struct {
 
-	// [def: 1] threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
-	NegThr float32 `def:"1" desc:"threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward"`
+	// threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
+	NegThr float32 `def:"1"`
 
-	// [def: 10] multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
-	Gain float32 `def:"10" desc:"multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold"`
+	// multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
+	Gain float32 `def:"10"`
 
 	// minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen.
-	MinPVposEst float32 `desc:"minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen."`
+	MinPVposEst float32
 }
 
 func (gp *GiveUpParams) Defaults() {
@@ -450,25 +450,25 @@ func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
 type PVLV struct {
 
 	// number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
-	NPosUSs uint32 `inactive:"+" desc:"number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
+	NPosUSs uint32 `inactive:"+"`
 
-	// number of possible negative US states -- [0] is reserved for accumulated time, [1] the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
-	NNegUSs uint32 `inactive:"+" desc:"number of possible negative US states -- [0] is reserved for accumulated time, [1] the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters."`
+	// number of possible negative US states -- is reserved for accumulated time, the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
+	NNegUSs uint32 `inactive:"+"`
 
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
-	Drive DriveParams `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+	Drive DriveParams
 
-	// [view: inline] urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.
-	Urgency UrgencyParams `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
+	// urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US.
+	Urgency UrgencyParams `view:"inline"`
 
 	// controls how positive and negative USs are weighted and integrated to compute an overall PV primary value.
-	USs USParams `desc:"controls how positive and negative USs are weighted and integrated to compute an overall PV primary value."`
+	USs USParams
 
-	// [view: inline] lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing
-	LHb LHbParams `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+	// lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing
+	LHb LHbParams `view:"inline"`
 
 	// parameters for giving up based on PV pos - neg difference
-	GiveUp GiveUpParams `desc:"parameters for giving up based on PV pos - neg difference"`
+	GiveUp GiveUpParams
 }
 
 func (pp *PVLV) Defaults() {
@@ -682,7 +682,7 @@ func (pp *PVLV) ResetGiveUp(ctx *Context, di uint32) {
 // after reward.
 func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	hadRewF := GlbV(ctx, di, GvHasRew)
-	hadRew := bools.FromFloat32(hadRewF)
+	hadRew := num.ToBool(hadRewF)
 	SetGlbV(ctx, di, GvHadRew, hadRewF)
 	SetGlbV(ctx, di, GvHadPosUS, GlbV(ctx, di, GvHasPosUS))
 	SetGlbV(ctx, di, GvHadNegUSOutcome, GlbV(ctx, di, GvNegUSOutcome))
@@ -760,7 +760,7 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 	pvPosSum, pvPos := pp.PVpos(ctx, di)
 	SetGlbV(ctx, di, GvPVposSum, pvPosSum)
 	SetGlbV(ctx, di, GvPVpos, pvPos)
-	SetGlbV(ctx, di, GvHasPosUS, bools.ToFloat32(pp.HasPosUS(ctx, di)))
+	SetGlbV(ctx, di, GvHasPosUS, num.FromBool[float32](pp.HasPosUS(ctx, di)))
 
 	pvNegSum, pvNeg := pp.PVneg(ctx, di)
 	SetGlbV(ctx, di, GvPVnegSum, pvNegSum)
@@ -876,7 +876,7 @@ func (pp *PVLV) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Ran
 	SetGlbV(ctx, di, GvPVposEstDisc, posDisc)
 	SetGlbV(ctx, di, GvGiveUpDiff, diff)
 	SetGlbV(ctx, di, GvGiveUpProb, prob)
-	SetGlbV(ctx, di, GvGiveUp, bools.ToFloat32(giveUp))
+	SetGlbV(ctx, di, GvGiveUp, num.FromBool[float32](giveUp))
 	return giveUp
 }
 

@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/emer/emergent/prjn"
+	"github.com/emer/emergent/v2/prjn"
 )
 
 // AddBG adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,

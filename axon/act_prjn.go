@@ -7,25 +7,16 @@ package axon
 import (
 	"log"
 
-	"github.com/emer/emergent/erand"
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/ki/ints"
-	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/gosl/v2/slbool"
+	"goki.dev/mat32/v2"
 )
-
-//go:generate stringer -type=PrjnGTypes
-
-var KiT_PrjnGTypes = kit.Enums.AddEnum(PrjnGTypesN, kit.NotBitFlag, nil)
-
-func (ev PrjnGTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *PrjnGTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 //gosl: start act_prjn
 
 // PrjnGTypes represents the conductance (G) effects of a given projection,
 // including excitatory, inhibitory, and modulatory.
-type PrjnGTypes int32
+type PrjnGTypes int32 //enums:enum
 
 // The projection conductance types
 const (
@@ -49,8 +40,6 @@ const (
 	// Context projections are for inputs to CT layers, which update
 	// only at the end of the plus phase, and send to CtxtGe.
 	ContextG
-
-	PrjnGTypesN
 )
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -63,22 +52,22 @@ const (
 type SynComParams struct {
 
 	// type of conductance (G) communicated by this projection
-	GType PrjnGTypes `desc:"type of conductance (G) communicated by this projection"`
+	GType PrjnGTypes
 
-	// [def: 2] [min: 0] additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value.
-	Delay uint32 `min:"0" def:"2" desc:"additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value."`
+	// additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value.
+	Delay uint32 `min:"0" def:"2"`
 
 	// maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network.
-	MaxDelay uint32 `inactive:"+" desc:"maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network."`
+	MaxDelay uint32 `inactive:"+"`
 
 	// probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)
-	PFail float32 `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
+	PFail float32
 
 	// if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))
-	PFailSWt slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
+	PFailSWt slbool.Bool
 
-	// [view: -] delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed
-	DelLen uint32 `view:"-" desc:"delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed"`
+	// delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed
+	DelLen uint32 `view:"-"`
 
 	pad, pad1 float32
 }
@@ -222,11 +211,11 @@ func (sc *SynComParams) Fail(ctx *Context, syni uint32, swt float32) {
 // using both absolute and relative factors.
 type PrjnScaleParams struct {
 
-	// [min: 0] [Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling
-	Rel float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling"`
+	// relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling
+	Rel float32 `min:"0"`
 
-	// [def: 1] [min: 0] absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value
-	Abs float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
+	// absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value
+	Abs float32 `def:"1" min:"0"`
 
 	pad, pad1 float32
 }
@@ -251,16 +240,16 @@ func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 	}
 	semExtra := 2
 	slayActN := int(mat32.Round(savg * snu)) // sending layer actual # active
-	slayActN = ints.MaxInt(slayActN, 1)
+	slayActN = max(slayActN, 1)
 	var sc float32
 	if ncon == snu {
 		sc = 1 / float32(slayActN)
 	} else {
 		maxActN := int(mat32.Min(ncon, float32(slayActN))) // max number we could get
 		avgActN := int(mat32.Round(savg * ncon))           // recv average actual # active if uniform
-		avgActN = ints.MaxInt(avgActN, 1)
+		avgActN = max(avgActN, 1)
 		expActN := avgActN + semExtra // expected
-		expActN = ints.MinInt(expActN, maxActN)
+		expActN = min(expActN, maxActN)
 		sc = 1 / float32(expActN)
 	}
 	return sc

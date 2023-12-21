@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/goki/ki/ints"
 )
 
 func TestCSContext(t *testing.T) {
@@ -22,7 +20,7 @@ func TestCSContext(t *testing.T) {
 			css[trl.CS] = cnt + 1
 			cnt = ctxs[trl.Context]
 			ctxs[trl.Context] = cnt + 1
-			maxTicks = ints.MaxInt(maxTicks, trl.NTicks)
+			maxTicks = max(maxTicks, trl.NTicks)
 
 			if trl.CS == "" {
 				t.Errorf("CS is empty: %s   in block: %s  trial: %s\n", trl.CS, blnm, trl.Name)

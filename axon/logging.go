@@ -7,19 +7,19 @@ package axon
 import (
 	"strconv"
 
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/metric"
-	"github.com/emer/etable/minmax"
-	"github.com/emer/etable/norm"
-	"github.com/emer/etable/split"
-	"github.com/emer/etable/tsragg"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"goki.dev/etable/v2/agg"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/metric"
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/etable/v2/norm"
+	"goki.dev/etable/v2/split"
+	"goki.dev/etable/v2/tsragg"
 )
 
 // LogTestErrors records all errors made across TestTrials, at Test Epoch scope
@@ -627,11 +627,13 @@ func LayerActsLogRecReset(lg *elog.Logs) {
 
 // LayerActsLogConfigGUI configures GUI for LayerActsLog Plot and LayerActs Avg Plot
 func LayerActsLogConfigGUI(lg *elog.Logs, gui *egui.GUI) {
-	plt := gui.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Plot").(*eplot.Plot2D)
+	pt := gui.Tabs.NewTab("LayerActs Plot")
+	plt := eplot.NewPlot2D(pt)
 	gui.Plots["LayerActs"] = plt
 	plt.SetTable(lg.MiscTables["LayerActs"])
 
-	plt = gui.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Avg Plot").(*eplot.Plot2D)
+	pt = gui.Tabs.NewTab("LayerActs Avg Plot")
+	plt = eplot.NewPlot2D(pt)
 	gui.Plots["LayerActsAvg"] = plt
 	plt.SetTable(lg.MiscTables["LayerActsAvg"])
 }

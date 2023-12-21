@@ -7,8 +7,8 @@ package fsfffb
 import (
 	"log"
 
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/mat32"
+	"goki.dev/gosl/v2/slbool"
+	"goki.dev/mat32/v2"
 )
 
 //gosl: start fsfffb
@@ -17,64 +17,64 @@ import (
 type Inhib struct {
 
 	// all feedforward incoming spikes into neurons in this pool -- raw aggregation
-	FFsRaw float32 `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
+	FFsRaw float32
 
 	// all feedback outgoing spikes generated from neurons in this pool -- raw aggregation
-	FBsRaw float32 `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
+	FBsRaw float32
 
 	// all extra GeExt conductances added to neurons
-	GeExtRaw float32 `desc:"all extra GeExt conductances added to neurons"`
+	GeExtRaw float32
 
 	// all feedforward incoming spikes into neurons in this pool, normalized by pool size
-	FFs float32 `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
+	FFs float32
 
 	// all feedback outgoing spikes generated from neurons in this pool, normalized by pool size
-	FBs float32 `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
+	FBs float32
 
 	// all extra GeExt conductances added to neurons, normalized by pool size
-	GeExts float32 `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
+	GeExts float32
 
 	// if true, this layer is hard-clamped and should use GeExts exclusively for PV
-	Clamped slbool.Bool `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
+	Clamped slbool.Bool
 
 	// fast spiking PV+ fast integration of FFs feedforward spikes
-	FSi float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
+	FSi float32
 
 	// slow spiking SST+ integration of FBs feedback spikes
-	SSi float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
+	SSi float32
 
 	// slow spiking facilitation factor, representing facilitating effects of recent activity
-	SSf float32 `desc:"slow spiking facilitation factor, representing facilitating effects of recent activity"`
+	SSf float32
 
 	// overall fast-spiking inhibitory conductance
-	FSGi float32 `desc:"overall fast-spiking inhibitory conductance"`
+	FSGi float32
 
 	// overall slow-spiking inhibitory conductance
-	SSGi float32 `desc:"overall slow-spiking inhibitory conductance"`
+	SSGi float32
 
 	// overall inhibitory conductance = FSGi + SSGi
-	Gi float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
+	Gi float32
 
 	// original value of the inhibition (before pool or other effects)
-	GiOrig float32 `desc:"original value of the inhibition (before pool or other effects)"`
+	GiOrig float32
 
 	// for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition
-	LayGi float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+	LayGi float32
 
 	// longer time scale running average FF drive -- used for FFAvgPrv
-	FFAvg float32 `desc:"longer time scale running average FF drive -- used for FFAvgPrv"`
+	FFAvg float32
 
 	// previous theta cycle FFAvg value -- for FFPrv factor -- updated in Decay function that is called at start of new ThetaCycle
-	FFAvgPrv float32 `desc:"previous theta cycle FFAvg value -- for FFPrv factor -- updated in Decay function that is called at start of new ThetaCycle"`
+	FFAvgPrv float32
 
 	// int32 atomic add compatible integration of FFsRaw
-	FFsRawInt int32 `desc:"int32 atomic add compatible integration of FFsRaw"`
+	FFsRawInt int32
 
 	// int32 atomic add compatible integration of FBsRaw
-	FBsRawInt int32 `desc:"int32 atomic add compatible integration of FBsRaw"`
+	FBsRawInt int32
 
 	// int32 atomic add compatible integration of GeExtRaw
-	GeExtRawInt int32 `desc:"int32 atomic add compatible integration of GeExtRaw"`
+	GeExtRawInt int32
 }
 
 func (fi *Inhib) Init() {

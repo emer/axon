@@ -4,7 +4,7 @@
 
 package cond
 
-import "github.com/emer/etable/etensor"
+import "goki.dev/etable/v2/etensor"
 
 var (
 	NUSs = 4

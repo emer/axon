@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/emer/emergent/netparams"
-	"github.com/emer/emergent/params"
+	"github.com/emer/emergent/v2/netparams"
+	"github.com/emer/emergent/v2/params"
 )
 
 // ParamSets sets the minimal non-default params

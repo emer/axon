@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"github.com/alecthomas/assert/v2"
-	"github.com/emer/emergent/etime"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/etime"
+	"goki.dev/mat32/v2"
 	"golang.org/x/exp/maps"
 )
 

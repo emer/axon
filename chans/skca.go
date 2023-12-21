@@ -5,7 +5,7 @@
 package chans
 
 import (
-	"github.com/goki/mat32"
+	"goki.dev/mat32/v2"
 )
 
 //gosl: start chans
@@ -23,41 +23,41 @@ import (
 // (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4 (hard coded)
 type SKCaParams struct {
 
-	// [def: 0,2,3] overall strength of sKCa current -- inactive if 0
-	Gbar float32 `def:"0,2,3" desc:"overall strength of sKCa current -- inactive if 0"`
+	// overall strength of sKCa current -- inactive if 0
+	Gbar float32 `def:"0,2,3"`
 
-	// [def: 0.4,0.5] [viewif: Gbar>0] 50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR
-	C50 float32 `viewif:"Gbar>0" def:"0.4,0.5" desc:"50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR"`
+	// 50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR
+	C50 float32 `viewif:"Gbar>0" def:"0.4,0.5"`
 
-	// [def: 15] [viewif: Gbar>0] K channel gating factor activation time constant -- roughly 5-15 msec in literature
-	ActTau float32 `viewif:"Gbar>0" def:"15" desc:"K channel gating factor activation time constant -- roughly 5-15 msec in literature"`
+	// K channel gating factor activation time constant -- roughly 5-15 msec in literature
+	ActTau float32 `viewif:"Gbar>0" def:"15"`
 
-	// [def: 30] [viewif: Gbar>0] K channel gating factor deactivation time constant -- roughly 30-50 msec in literature
-	DeTau float32 `viewif:"Gbar>0" def:"30" desc:"K channel gating factor deactivation time constant -- roughly 30-50 msec in literature"`
+	// K channel gating factor deactivation time constant -- roughly 30-50 msec in literature
+	DeTau float32 `viewif:"Gbar>0" def:"30"`
 
-	// [def: 0.4,0.8] [viewif: Gbar>0] proportion of CaIn intracellular stores that are released per spike, going into CaR
-	KCaR float32 `viewif:"Gbar>0" def:"0.4,0.8" desc:"proportion of CaIn intracellular stores that are released per spike, going into CaR"`
+	// proportion of CaIn intracellular stores that are released per spike, going into CaR
+	KCaR float32 `viewif:"Gbar>0" def:"0.4,0.8"`
 
-	// [def: 150,200] [viewif: Gbar>0] SKCaR released calcium decay time constant
-	CaRDecayTau float32 `viewif:"Gbar>0" def:"150,200" desc:"SKCaR released calcium decay time constant"`
+	// SKCaR released calcium decay time constant
+	CaRDecayTau float32 `viewif:"Gbar>0" def:"150,200"`
 
-	// [def: 0.01] [viewif: Gbar>0] level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge.
-	CaInThr float32 `viewif:"Gbar>0" def:"0.01" desc:"level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge."`
+	// level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge.
+	CaInThr float32 `viewif:"Gbar>0" def:"0.01"`
 
-	// [def: 50] [viewif: Gbar>0] time constant in msec for storing CaIn when activity is below CaInThr
-	CaInTau float32 `viewif:"Gbar>0" def:"50" desc:"time constant in msec for storing CaIn when activity is below CaInThr"`
+	// time constant in msec for storing CaIn when activity is below CaInThr
+	CaInTau float32 `viewif:"Gbar>0" def:"50"`
 
-	// [view: -] rate = 1 / tau
-	ActDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	ActDt float32 `view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	DeDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	DeDt float32 `view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	CaRDecayDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	CaRDecayDt float32 `view:"-" json:"-" xml:"-"`
 
-	// [view: -] rate = 1 / tau
-	CaInDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	// rate = 1 / tau
+	CaInDt float32 `view:"-" json:"-" xml:"-"`
 }
 
 func (sp *SKCaParams) Defaults() {

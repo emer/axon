@@ -2,7 +2,30 @@
 
 results are PerTrlMSec
 
-## MacBook Pro M1
+## MacBook Pro M3 Max
+
+```
+GPU:
+* NData  1:
+* NData  2:
+* NData  4:
+* NData  8: 130
+* NData 16: 80
+* NData 32: 50 <- much faster than CPU
+```
+
+```
+CPU:
+* NData  1:
+* NData  2:
+* NData  4:
+* NData  8: 86 <- much faster than GPU
+* NData 16: 86
+* NData 32: 90
+```
+
+
+## MacBook Pro M1 Max
 
 using default number of threads
 

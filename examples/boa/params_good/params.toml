@@ -112,7 +112,7 @@
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
     "Layer.VSPatch.Gain" = "3"
     "Layer.VSPatch.ThrInit" = "0.15"
-    "Layer.VSPatch.ThrLRate" = "0.002"
+    "Layer.VSPatch.ThrLRate" = "0.001"
     "Layer.VSPatch.ThrNonRew" = "10"
 
 [[Base]]
@@ -187,6 +187,7 @@
   Sel = ".MatrixPrjn"
   Desc = ""
   [Base.Params]
+    "Prjn.Learn.Trace.LearnThr" = "0.0"
     "Prjn.Matrix.NoGateLRate" = "1"
 
 [[Base]]
@@ -211,7 +212,7 @@
   Sel = ".BLAAcqToGo"
   Desc = "must dominate"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3"
+    "Prjn.PrjnScale.Abs" = "2"
     "Prjn.PrjnScale.Rel" = "1"
 
 [[Base]]

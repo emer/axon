@@ -7,34 +7,13 @@ package axon
 import (
 	"fmt"
 
-	"github.com/emer/emergent/netview"
-	"github.com/goki/ki/kit"
+	"github.com/emer/emergent/v2/netview"
 )
-
-//go:generate stringer -type=NeuronFlags
-//go:generate stringer -type=NeuronVars
-//go:generate stringer -type=NeuronAvgVars
-//go:generate stringer -type=NeuronIdxs
-
-var KiT_NeuronVars = kit.Enums.AddEnum(NeuronVarsN, kit.NotBitFlag, nil)
-
-func (ev NeuronVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeuronVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-var KiT_NeuronAvgVars = kit.Enums.AddEnum(NeuronAvgVarsN, kit.NotBitFlag, nil)
-
-func (ev NeuronAvgVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeuronAvgVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-var KiT_NeuronIdxs = kit.Enums.AddEnum(NeuronIdxsN, kit.NotBitFlag, nil)
-
-func (ev NeuronIdxs) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeuronIdxs) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 //gosl: start neuron
 
 // NeuronFlags are bit-flags encoding relevant binary state for neurons
-type NeuronFlags int32
+type NeuronFlags int32 //enums:enum
 
 // The neuron flags
 const (
@@ -55,7 +34,7 @@ const (
 // NeuronVars are the neuron variables representing current active state,
 // specific to each input data state.
 // See NeuronAvgVars for vars shared across data.
-type NeuronVars int32
+type NeuronVars int32 //enums:enum
 
 const (
 	/////////////////////////////////////////
@@ -339,18 +318,85 @@ const (
 	// and are writable (indexes are read only).
 	NrnFlags
 
-	NeuronVarsN
+	// IMPORTANT: if NrnFlags is not the last, need to update gosl defn below
 )
+
+// NeuronAvgVars are mostly neuron variables involved in longer-term average activity
+// which is aggregated over time and not specific to each input data state,
+// along with any other state that is not input data specific.
+type NeuronAvgVars int32 //enums:enum
+
+const (
+	// ActAvg is average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
+	ActAvg NeuronAvgVars = iota
+
+	// AvgPct is ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
+	AvgPct
+
+	// TrgAvg is neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
+	TrgAvg
+
+	// DTrgAvg is change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
+	DTrgAvg
+
+	// AvgDif is AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
+	AvgDif
+
+	// GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability
+	GeBase
+
+	// GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability
+	GiBase
+
+	// IMPORTANT: if GiBase is not the last, need to update gosl defn below
+)
+
+// NeuronIdxs are the neuron indexes and other uint32 values.
+// There is only one of these per neuron -- not data parallel.
+// note: Flags are encoded in Vars because they are data parallel and
+// writable, whereas indexes are read-only.
+type NeuronIdxs int32 //enums:enum
+
+const (
+	// NrnNeurIdx is the index of this neuron within its owning layer
+	NrnNeurIdx NeuronIdxs = iota
+
+	// NrnLayIdx is the index of the layer that this neuron belongs to,
+	// needed for neuron-level parallel code.
+	NrnLayIdx
+
+	// NrnSubPool is the index of the sub-level inhibitory pool for this neuron
+	// (only for 4D shapes, the pool (unit-group / hypercolumn) structure level).
+	// Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
+	NrnSubPool
+
+	// IMPORTANT: if NrnSubPool is not the last, need to update gosl defn below
+)
+
+//gosl: end neuron
+
+//gosl: hlsl neuron
+/*
+static const NeuronVars NeuronVarsN = NrnFlags + 1;
+static const NeuronAvgVars NeuronAvgVarsN = GiBase + 1;
+static const NeuronIdxs NeuronIdxsN = NrnSubPool + 1;
+*/
+//gosl: end neuron
+
+//gosl: start neuron
+
+////////////////////////////////////////////////
+// 	Strides
 
 // NeuronVarStrides encodes the stride offsets for neuron variable access
 // into network float32 array.  Data is always the inner-most variable.
 type NeuronVarStrides struct {
 
 	// neuron level
-	Neuron uint32 `desc:"neuron level"`
+	Neuron uint32
 
 	// variable level
-	Var uint32 `desc:"variable level"`
+	Var uint32
 
 	pad, pad1 uint32
 }
@@ -377,45 +423,15 @@ func (ns *NeuronVarStrides) SetVarOuter(nneur, ndata int) {
 ////////////////////////////////////////////////
 // 	NeuronAvgVars
 
-// NeuronAvgVars are mostly neuron variables involved in longer-term average activity
-// which is aggregated over time and not specific to each input data state,
-// along with any other state that is not input data specific.
-type NeuronAvgVars int32
-
-const (
-	// ActAvg is average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
-	ActAvg NeuronAvgVars = iota
-
-	// AvgPct is ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
-	AvgPct
-
-	// TrgAvg is neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
-	TrgAvg
-
-	// DTrgAvg is change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
-	DTrgAvg
-
-	// AvgDif is AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
-	AvgDif
-
-	// GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability
-	GeBase
-
-	// GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability
-	GiBase
-
-	NeuronAvgVarsN
-)
-
 // NeuronAvgVarStrides encodes the stride offsets for neuron variable access
 // into network float32 array.  Data is always the inner-most variable.
 type NeuronAvgVarStrides struct {
 
 	// neuron level
-	Neuron uint32 `desc:"neuron level"`
+	Neuron uint32
 
 	// variable level
-	Var uint32 `desc:"variable level"`
+	Var uint32
 
 	pad, pad1 uint32
 }
@@ -442,37 +458,15 @@ func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
 ////////////////////////////////////////////////
 // 	Idxs
 
-// NeuronIdxs are the neuron indexes and other uint32 values.
-// There is only one of these per neuron -- not data parallel.
-// note: Flags are encoded in Vars because they are data parallel and
-// writable, whereas indexes are read-only.
-type NeuronIdxs int32
-
-const (
-	// NrnNeurIdx is the index of this neuron within its owning layer
-	NrnNeurIdx NeuronIdxs = iota
-
-	// NrnLayIdx is the index of the layer that this neuron belongs to,
-	// needed for neuron-level parallel code.
-	NrnLayIdx
-
-	// NrnSubPool is the index of the sub-level inhibitory pool for this neuron
-	// (only for 4D shapes, the pool (unit-group / hypercolumn) structure level).
-	// Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
-	NrnSubPool
-
-	NeuronIdxsN
-)
-
 // NeuronIdxStrides encodes the stride offsets for neuron index access
 // into network uint32 array.
 type NeuronIdxStrides struct {
 
 	// neuron level
-	Neuron uint32 `desc:"neuron level"`
+	Neuron uint32
 
 	// index value level
-	Index uint32 `desc:"index value level"`
+	Index uint32
 
 	pad, pad1 uint32
 }
@@ -499,6 +493,9 @@ func (ns *NeuronIdxStrides) SetIdxOuter(nneur int) {
 }
 
 //gosl: end neuron
+
+////////////////////////////////////////////////
+// 	Props
 
 // NeuronVarProps has all of the display properties for neuron variables, including desc tooltips
 var NeuronVarProps = map[string]string{

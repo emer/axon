@@ -5,21 +5,14 @@
 package axon
 
 import (
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"goki.dev/gosl/v2/slbool"
+	"goki.dev/mat32/v2"
 )
-
-//go:generate stringer -type=DAModTypes
-//go:generate stringer -type=ValenceTypes
-
-var KiT_DAModTypes = kit.Enums.AddEnum(DAModTypesN, kit.NotBitFlag, nil)
-var KiT_ValenceTypes = kit.Enums.AddEnum(ValenceTypesN, kit.NotBitFlag, nil)
 
 //gosl: start neuromod
 
 // DAModTypes are types of dopamine modulation of neural activity.
-type DAModTypes int32
+type DAModTypes int32 //enums:enum
 
 const (
 	// NoDAMod means there is no effect of dopamine on neural activity
@@ -40,12 +33,10 @@ const (
 	// There are a subset of DA neurons that send increased DA for
 	// both negative and positive outcomes, targeting frontal neurons.
 	D1AbsMod
-
-	DAModTypesN
 )
 
 // ValenceTypes are types of valence coding: positive or negative.
-type ValenceTypes int32
+type ValenceTypes int32 //enums:enum
 
 const (
 	// Positive valence codes for outcomes aligned with drives / goals.
@@ -53,8 +44,6 @@ const (
 
 	// Negative valence codes for harmful or aversive outcomes.
 	Negative
-
-	ValenceTypesN
 )
 
 // NeuroModParams specifies the effects of neuromodulators on neural
@@ -63,31 +52,31 @@ const (
 type NeuroModParams struct {
 
 	// dopamine receptor-based effects of dopamine modulation on excitatory and inhibitory conductances: D1 is excitatory, D2 is inhibitory as a function of increasing dopamine
-	DAMod DAModTypes `desc:"dopamine receptor-based effects of dopamine modulation on excitatory and inhibitory conductances: D1 is excitatory, D2 is inhibitory as a function of increasing dopamine"`
+	DAMod DAModTypes
 
 	// valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently
-	Valence ValenceTypes `desc:"valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently"`
+	Valence ValenceTypes
 
-	// [viewif: DAMod!=NoDAMod] multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor
-	DAModGain float32 `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
+	// multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor
+	DAModGain float32 `viewif:"DAMod!=NoDAMod"`
 
 	// modulate the sign of the learning rate factor according to the DA sign, taking into account the DAMod sign reversal for D2Mod, also using BurstGain and DipGain to modulate DA value -- otherwise, only the magnitude of the learning rate is modulated as a function of raw DA magnitude according to DALRateMod (without additional gain factors)
-	DALRateSign slbool.Bool `desc:"modulate the sign of the learning rate factor according to the DA sign, taking into account the DAMod sign reversal for D2Mod, also using BurstGain and DipGain to modulate DA value -- otherwise, only the magnitude of the learning rate is modulated as a function of raw DA magnitude according to DALRateMod (without additional gain factors)"`
+	DALRateSign slbool.Bool
 
-	// [viewif: !DALRateSign] [min: 0] [max: 1] if not using DALRateSign, this is the proportion of maximum learning rate that Abs(DA) magnitude can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%
-	DALRateMod float32 `min:"0" max:"1" viewif:"!DALRateSign" desc:"if not using DALRateSign, this is the proportion of maximum learning rate that Abs(DA) magnitude can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
+	// if not using DALRateSign, this is the proportion of maximum learning rate that Abs(DA) magnitude can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%
+	DALRateMod float32 `min:"0" max:"1" viewif:"!DALRateSign"`
 
-	// [min: 0] [max: 1] proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%
-	AChLRateMod float32 `min:"0" max:"1" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
+	// proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%
+	AChLRateMod float32 `min:"0" max:"1"`
 
-	// [def: 0,5] [min: 0] amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory
-	AChDisInhib float32 `min:"0" def:"0,5" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
+	// amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory
+	AChDisInhib float32 `min:"0" def:"0,5"`
 
-	// [def: 1] [min: 0] multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!
-	BurstGain float32 `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
+	// multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!
+	BurstGain float32 `min:"0" def:"1"`
 
-	// [def: 1] [min: 0] multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext
-	DipGain float32 `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
+	// multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext
+	DipGain float32 `min:"0" def:"1"`
 
 	pad, pad1, pad2 float32
 }

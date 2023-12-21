@@ -12,22 +12,22 @@ package axon
 type ActAvgVals struct {
 
 	// running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level
-	ActMAvg float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
+	ActMAvg float32 `inactive:"+"`
 
 	// running-average plus-phase activity integrated at Dt.LongAvgTau
-	ActPAvg float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
+	ActPAvg float32 `inactive:"+"`
 
 	// running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau"`
+	AvgMaxGeM float32 `inactive:"+"`
 
 	// running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau"`
+	AvgMaxGiM float32 `inactive:"+"`
 
 	// multiplier on inhibition -- adapted to maintain target activity level
-	GiMult float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	GiMult float32 `inactive:"+"`
 
 	// adaptive threshold -- only used for specialized layers, e.g., VSPatch
-	AdaptThr float32 `inactive:"+" desc:"adaptive threshold -- only used for specialized layers, e.g., VSPatch"`
+	AdaptThr float32 `inactive:"+"`
 
 	pad, pad1 float32
 }
@@ -46,13 +46,13 @@ func (lv *ActAvgVals) Init() {
 type CorSimStats struct {
 
 	// correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase
-	Cor float32 `inactive:"+" desc:"correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase"`
+	Cor float32 `inactive:"+"`
 
 	// running average of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase
-	Avg float32 `inactive:"+" desc:"running average of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
+	Avg float32 `inactive:"+"`
 
 	// running variance of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase
-	Var float32 `inactive:"+" desc:"running variance of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
+	Var float32 `inactive:"+"`
 
 	pad float32
 }
@@ -69,16 +69,16 @@ func (cd *CorSimStats) Init() {
 type LaySpecialVals struct {
 
 	// one value
-	V1 float32 `inactive:"+" desc:"one value"`
+	V1 float32 `inactive:"+"`
 
 	// one value
-	V2 float32 `inactive:"+" desc:"one value"`
+	V2 float32 `inactive:"+"`
 
 	// one value
-	V3 float32 `inactive:"+" desc:"one value"`
+	V3 float32 `inactive:"+"`
 
 	// one value
-	V4 float32 `inactive:"+" desc:"one value"`
+	V4 float32 `inactive:"+"`
 }
 
 func (lv *LaySpecialVals) Init() {
@@ -92,24 +92,24 @@ func (lv *LaySpecialVals) Init() {
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
 
-	// [view: -] layer index for these vals
-	LayIdx uint32 `view:"-" desc:"layer index for these vals"`
+	// layer index for these vals
+	LayIdx uint32 `view:"-"`
 
-	// [view: -] data index for these vals
-	DataIdx uint32 `view:"-" desc:"data index for these vals"`
+	// data index for these vals
+	DataIdx uint32 `view:"-"`
 
 	// reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold
-	RT  float32 `inactive:"-" desc:"reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold"`
+	RT  float32 `inactive:"-"`
 	pad uint32
 
-	// [view: inline] running-average activation levels used for adaptive inhibition, and other adapting values
-	ActAvg ActAvgVals `view:"inline" desc:"running-average activation levels used for adaptive inhibition, and other adapting values"`
+	// running-average activation levels used for adaptive inhibition, and other adapting values
+	ActAvg ActAvgVals `view:"inline"`
 
 	// correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states
-	CorSim CorSimStats `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
+	CorSim CorSimStats
 
-	// [view: inline] special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc
-	Special LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
+	// special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc
+	Special LaySpecialVals `view:"inline"`
 }
 
 func (lv *LayerVals) Init() {

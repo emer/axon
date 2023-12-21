@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/emer/emergent/netparams"
-	"github.com/emer/emergent/params"
+	"github.com/emer/emergent/v2/netparams"
+	"github.com/emer/emergent/v2/params"
 )
 
 // ParamSets is the default set of parameters -- Base is always applied,
@@ -33,8 +33,9 @@ var ParamSets = netparams.Sets{
 		// Prjns
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate": "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
-				"Prjn.Learn.LRate.Base":   "0.02", // .02 default
+				"Prjn.Matrix.NoGateLRate":   "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
+				"Prjn.Learn.LRate.Base":     "0.02", // .02 default
+				"Prjn.Learn.Trace.LearnThr": "0.75",
 			}},
 		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{

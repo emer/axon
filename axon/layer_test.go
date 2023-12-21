@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/prjn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"goki.dev/etable/v2/etensor"
 )
 
 func TestLayer(t *testing.T) {

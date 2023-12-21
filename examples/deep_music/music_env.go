@@ -10,14 +10,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
+	"github.com/emer/emergent/v2/env"
 	"github.com/goki/ki/ints"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/etable/v2/minmax"
 )
 
 // MusicEnv reads in a midi SMF file and presents it as a sequence of notes.
@@ -26,55 +26,55 @@ import (
 type MusicEnv struct {
 
 	// name of this environment
-	Nm string `desc:"name of this environment"`
+	Nm string
 
 	// emit debugging messages about the music file
-	Debug bool `desc:"emit debugging messages about the music file"`
+	Debug bool
 
 	// use only 1 octave of 12 notes for everything -- keeps it consistent
-	WrapNotes bool `desc:"use only 1 octave of 12 notes for everything -- keeps it consistent"`
+	WrapNotes bool
 
-	// [def: 120] number of time ticks per row in table -- note transitions that are faster than this will be lost
-	TicksPer int `def:"120" desc:"number of time ticks per row in table -- note transitions that are faster than this will be lost"`
+	// number of time ticks per row in table -- note transitions that are faster than this will be lost
+	TicksPer int `def:"120"`
 
 	// which track to process
-	Track int `desc:"which track to process"`
+	Track int
 
 	// play output as it steps
-	Play bool `desc:"play output as it steps"`
+	Play bool
 
 	// limit song length to given number of steps, if > 0
-	MaxSteps int `desc:"limit song length to given number of steps, if > 0"`
+	MaxSteps int
 
 	// time offset for data parallel = Song.Rows / (NData+1)
-	DiOffset int `inactive:"+" desc:"time offset for data parallel = Song.Rows / (NData+1)"`
+	DiOffset int `inactive:"+"`
 
 	// number of units per localist note value
-	UnitsPer int `desc:"number of units per localist note value"`
+	UnitsPer int
 
 	// range of notes in given track
-	NoteRange minmax.Int `desc:"range of notes in given track"`
+	NoteRange minmax.Int
 
 	// number of notes
-	NNotes int `desc:"number of notes"`
+	NNotes int
 
 	// the song encoded into 200 msec increments, with columns as tracks
-	Song etable.Table `desc:"the song encoded into 200 msec increments, with columns as tracks"`
+	Song etable.Table
 
-	// [view: inline] current time step
-	Time env.Ctr `view:"inline" desc:"current time step"`
+	// current time step
+	Time env.Ctr `view:"inline"`
 
-	// current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]
-	Note etensor.Float32 `desc:"current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]"`
+	// current note, rendered as a 4D tensor with shape:
+	Note etensor.Float32
 
 	// current note index
-	NoteIdx int `desc:"current note index"`
+	NoteIdx int
 
-	// [view: -] the function for playing midi
-	Player func(msg midi.Message) error `view:"-" desc:"the function for playing midi"`
+	// the function for playing midi
+	Player func(msg midi.Message) error `view:"-"`
 
-	// [view: -] for playing notes
-	LastNotePlayed int `view:"-" desc:"for playing notes"`
+	// for playing notes
+	LastNotePlayed int `view:"-"`
 }
 
 func (ev *MusicEnv) Name() string { return ev.Nm }

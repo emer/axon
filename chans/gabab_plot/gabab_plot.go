@@ -5,34 +5,33 @@
 // gabab_plot plots an equation updating over time in a etable.Table and Plot2D.
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"math"
 	"strconv"
 
 	"github.com/emer/axon/chans"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
-	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"goki.dev/etable/v2/eplot"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
+	"goki.dev/gi/v2/giv"
+	"goki.dev/icons"
+	"goki.dev/mat32/v2"
 )
 
-func main() {
-	TheSim.Config()
-	gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-		guirun()
-	})
-}
+func main() { gimain.Run(app) }
 
-func guirun() {
-	TheSim.VGRun()
-	TheSim.SGRun()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
+func app() {
+	sim := &Sim{}
+	sim.Config()
+	sim.VGRun()
+	sim.SGRun()
+	b := sim.ConfigGUI()
+	b.NewWindow().Run().Wait()
 }
 
 // LogPrec is precision for saving float values in logs
@@ -42,77 +41,68 @@ const LogPrec = 4
 type Sim struct {
 
 	// standard chans version of GABAB
-	GABAstd chans.GABABParams `desc:"standard chans version of GABAB"`
+	GABAstd chans.GABABParams
 
-	// [def: 0.1] multiplier on GABAb as function of voltage
-	GABAbv float64 `def:"0.1" desc:"multiplier on GABAb as function of voltage"`
+	// multiplier on GABAb as function of voltage
+	GABAbv float64 `def:"0.1"`
 
-	// [def: 10] offset of GABAb function
-	GABAbo float64 `def:"10" desc:"offset of GABAb function"`
+	// offset of GABAb function
+	GABAbo float64 `def:"10"`
 
-	// [def: -90] GABAb reversal / driving potential
-	GABAberev float64 `def:"-90" desc:"GABAb reversal / driving potential"`
+	// GABAb reversal / driving potential
+	GABAberev float64 `def:"-90"`
 
-	// [def: -90] starting voltage
-	Vstart float64 `def:"-90" desc:"starting voltage"`
+	// starting voltage
+	Vstart float64 `def:"-90"`
 
-	// [def: 0] ending voltage
-	Vend float64 `def:"0" desc:"ending voltage"`
+	// ending voltage
+	Vend float64 `def:"0"`
 
-	// [def: 1] voltage increment
-	Vstep float64 `def:"1" desc:"voltage increment"`
+	// voltage increment
+	Vstep float64 `def:"1"`
 
-	// [def: 15] max number of spikes
-	Smax int `def:"15" desc:"max number of spikes"`
+	// max number of spikes
+	Smax int `def:"15"`
 
 	// rise time constant
-	RiseTau float64 `desc:"rise time constant"`
+	RiseTau float64
 
 	// decay time constant -- must NOT be same as RiseTau
-	DecayTau float64 `desc:"decay time constant -- must NOT be same as RiseTau"`
+	DecayTau float64
 
 	// initial value of GsX driving variable at point of synaptic input onset -- decays expoentially from this start
-	GsXInit float64 `desc:"initial value of GsX driving variable at point of synaptic input onset -- decays expoentially from this start"`
+	GsXInit float64
 
 	// time when peak conductance occurs, in TimeInc units
-	MaxTime float64 `inactive:"+" desc:"time when peak conductance occurs, in TimeInc units"`
+	MaxTime float64 `inactive:"+"`
 
 	// time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))
-	TauFact float64 `inactive:"+" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
+	TauFact float64 `inactive:"+"`
 
 	// total number of time steps to take
-	TimeSteps int `desc:"total number of time steps to take"`
+	TimeSteps int
 
 	// time increment per step
-	TimeInc float64 `desc:"time increment per step"`
+	TimeInc float64
 
-	// [view: no-inline] table for plot
-	VGTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	VGTable *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] table for plot
-	SGTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	SGTable *etable.Table `view:"no-inline"`
 
-	// [view: no-inline] table for plot
-	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
+	// table for plot
+	TimeTable *etable.Table `view:"no-inline"`
 
-	// [view: -] the plot
-	VGPlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	VGPlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] the plot
-	SGPlot *eplot.Plot2D `view:"-" desc:"the plot"`
+	// the plot
+	SGPlot *eplot.Plot2D `view:"-"`
 
-	// [view: -] the plot
-	TimePlot *eplot.Plot2D `view:"-" desc:"the plot"`
-
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
-
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
+	// the plot
+	TimePlot *eplot.Plot2D `view:"-"`
 }
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
@@ -149,7 +139,7 @@ func (ss *Sim) Update() {
 }
 
 // VGRun runs the V-G equation.
-func (ss *Sim) VGRun() {
+func (ss *Sim) VGRun() { //gti:add
 	ss.Update()
 	dt := ss.VGTable
 
@@ -169,7 +159,9 @@ func (ss *Sim) VGRun() {
 		dt.SetCellFloat("GgabaB_std", vi, float64(gs))
 		dt.SetCellFloat("GgabaB_bug", vi, float64(gbug))
 	}
-	ss.VGPlot.Update()
+	if ss.VGPlot != nil {
+		ss.VGPlot.UpdatePlot()
+	}
 }
 
 func (ss *Sim) ConfigVGTable(dt *etable.Table) {
@@ -200,7 +192,7 @@ func (ss *Sim) ConfigVGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 //////////////////////////////////////////////////
 
 // SGRun runs the spike-g equation.
-func (ss *Sim) SGRun() {
+func (ss *Sim) SGRun() { //gti:add
 	ss.Update()
 	dt := ss.SGTable
 
@@ -217,7 +209,9 @@ func (ss *Sim) SGRun() {
 		dt.SetCellFloat("GgabaB_max", si, g)
 		dt.SetCellFloat("GgabaBstd_max", si, float64(gs))
 	}
-	ss.SGPlot.Update()
+	if ss.SGPlot != nil {
+		ss.SGPlot.UpdatePlot()
+	}
 }
 
 func (ss *Sim) ConfigSGTable(dt *etable.Table) {
@@ -247,7 +241,7 @@ func (ss *Sim) ConfigSGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 //////////////////////////////////////////////////
 
 // TimeRun runs the equation.
-func (ss *Sim) TimeRun() {
+func (ss *Sim) TimeRun() { //gti:add
 	ss.Update()
 	dt := ss.TimeTable
 
@@ -281,7 +275,9 @@ func (ss *Sim) TimeRun() {
 
 		time += ss.TimeInc
 	}
-	ss.TimePlot.Update()
+	if ss.TimePlot != nil {
+		ss.TimePlot.UpdatePlot()
+	}
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
@@ -314,81 +310,32 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
-	width := 1600
-	height := 1200
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Body {
+	b := gi.NewAppBody("gabab_plot").SetTitle("Plotting Equations")
 
-	// gi.WinEventTrace = true
-
-	gi.SetAppName("gabab_plot")
-	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
-
-	win := gi.NewMainWindow("gababplot", "Plotting Equations", width, height)
-	ss.Win = win
-
-	vp := win.WinViewport2D()
-	updt := vp.UpdateStart()
-
-	mfr := win.SetMainFrame()
-
-	tbar := gi.AddNewToolBar(mfr, "tbar")
-	tbar.SetStretchMaxWidth()
-	ss.ToolBar = tbar
-
-	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
-	split.SetStretchMax()
-
-	sv := giv.AddNewStructView(split, "sv")
+	split := gi.NewSplits(b, "split")
+	sv := giv.NewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.AddNewTabView(split, "tv")
+	tv := gi.NewTabs(split, "tv")
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "VGPlot").(*eplot.Plot2D)
-	ss.VGPlot = ss.ConfigVGPlot(plt, ss.VGTable)
+	ss.VGPlot = eplot.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.ConfigVGPlot(ss.VGPlot, ss.VGTable)
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "SGPlot").(*eplot.Plot2D)
-	ss.SGPlot = ss.ConfigSGPlot(plt, ss.SGTable)
+	ss.SGPlot = eplot.NewSubPlot(tv.NewTab("S-G Plot"))
+	ss.ConfigSGPlot(ss.SGPlot, ss.SGTable)
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TimePlot").(*eplot.Plot2D)
-	ss.TimePlot = ss.ConfigTimePlot(plt, ss.TimeTable)
+	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "Run VG", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.VGRun()
-		vp.SetNeedsFullRender()
+	b.AddAppBar(func(tb *gi.Toolbar) {
+		giv.NewFuncButton(tb, ss.VGRun).SetIcon(icons.PlayArrow)
+		giv.NewFuncButton(tb, ss.SGRun).SetIcon(icons.PlayArrow)
+		giv.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Run SG", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.SGRun()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Run Time", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.TimeRun()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/gabab_plot/README.md")
-		})
-
-	vp.UpdateEndNoSig(updt)
-
-	// main menu
-	appnm := gi.AppName()
-	mmen := win.MainMenu
-	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
-
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
-	amen.Menu.AddAppMenu(win)
-
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
-	emen.Menu.AddCopyCutPaste(win)
-
-	win.MainMenuUpdated()
-	return win
+	return b
 }

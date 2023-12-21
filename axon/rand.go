@@ -1,7 +1,7 @@
 package axon
 
 import (
-	"github.com/goki/gosl/slrand"
+	"goki.dev/gosl/v2/slrand"
 )
 
 //gosl: hlsl axonrand

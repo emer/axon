@@ -9,12 +9,10 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/weights"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/ki/indent"
-	"github.com/goki/ki/ki"
-	"github.com/goki/ki/kit"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/weights"
+	"goki.dev/etable/v2/etensor"
+	"goki.dev/glop/indent"
 )
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
@@ -28,10 +26,8 @@ type Prjn struct {
 	PrjnBase
 
 	// all prjn-level parameters -- these must remain constant once configured
-	Params *PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
+	Params *PrjnParams
 }
-
-var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
 
 // Object returns the object with parameters to be set by emer.Params
 func (pj *Prjn) Object() any {
@@ -537,8 +533,4 @@ func (pj *Prjn) InitGBuffs() {
 	for ri := range pj.GSyns {
 		pj.GSyns[ri] = 0
 	}
-}
-
-var PrjnProps = ki.Props{
-	"EnumType:Typ": KiT_PrjnTypes, // uses our PrjnTypes for GUI
 }

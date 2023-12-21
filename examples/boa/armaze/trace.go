@@ -6,12 +6,11 @@ package armaze
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/goki/ki/kit"
 )
 
 // TraceStates is a list of mutually exclusive states
 // for tracing the behavior and internal state of Emery
-type TraceStates int
+type TraceStates int32 //enums:enum
 
 const (
 	// Searching is not yet goal engaged, looking for a goal
@@ -37,34 +36,28 @@ const (
 
 	// Bumping is bumping into a wall
 	TrBumping
-
-	TraceStatesN
 )
-
-//go:generate stringer -type=TraceStates
-
-var KiT_TraceStates = kit.Enums.AddEnum(TraceStatesN, kit.NotBitFlag, nil)
 
 // TraceRec holds record of info for tracing behavior, state
 type TraceRec struct {
 
 	// absolute time
-	Time float32 `desc:"absolute time"`
+	Time float32
 
 	// trial counter
-	Trial int `desc:"trial counter"`
+	Trial int
 
 	// current arm
-	Arm int `desc:"current arm"`
+	Arm int
 
 	// position in arm
-	Pos int `desc:"position in arm"`
+	Pos int
 
 	// behavioral / internal state summary
-	State TraceStates `desc:"behavioral / internal state summary"`
+	State TraceStates
 
 	// NDrives current drive state level
-	Drives []float32 `desc:"NDrives current drive state level"`
+	Drives []float32
 }
 
 // StateTrace holds trace records

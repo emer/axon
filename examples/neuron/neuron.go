@@ -9,34 +9,32 @@ influences (including leak and synaptic inhibition).
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/ecmd"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/netparams"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/eplot"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/emer/etable/minmax"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
-	"github.com/goki/gi/giv"
-	"github.com/goki/ki/ki"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/v2/ecmd"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/netparams"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/empi/v2/mpi"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
+	_ "goki.dev/etable/v2/etview" // include to get gui views
+	"goki.dev/etable/v2/minmax"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
 )
 
 func main() {
@@ -44,7 +42,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -79,7 +77,7 @@ var ParamSets = netparams.Sets{
 type NeuronEx struct {
 
 	// input ISI countdown for spiking mode -- counts up
-	InISI float32 `desc:"input ISI countdown for spiking mode -- counts up"`
+	InISI float32
 }
 
 func (nrn *NeuronEx) Init() {
@@ -94,49 +92,37 @@ func (nrn *NeuronEx) Init() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: no-inline] extra neuron state for additional channels: VGCC, AK
-	NeuronEx NeuronEx `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	// extra neuron state for additional channels: VGCC, AK
+	NeuronEx NeuronEx `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
-	// [view: no-inline] logging
-	Logs elog.Logs `view:"no-inline" desc:"logging"`
+	// logging
+	Logs elog.Logs `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.NetParams `view:"inline"`
 
 	// current cycle of updating
-	Cycle int `inactive:"+" desc:"current cycle of updating"`
+	Cycle int `inactive:"+"`
 
-	// [view: -] main GUI window
-	Win *gi.Window `view:"-" desc:"main GUI window"`
+	// netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline"`
 
-	// [view: -] the network viewer
-	NetView *netview.NetView `view:"-" desc:"the network viewer"`
+	// manages all the gui elements
+	GUI egui.GUI `view:"-"`
 
-	// [view: -] the master toolbar
-	ToolBar *gi.ToolBar `view:"-" desc:"the master toolbar"`
-
-	// [view: -] the test-trial plot
-	TstCycPlot *eplot.Plot2D `view:"-" desc:"the test-trial plot"`
-
-	// [view: -] map of values for detailed debugging / testing
-	ValMap map[string]float32 `view:"-" desc:"map of values for detailed debugging / testing"`
-
-	// [view: -] true if sim is running
-	IsRunning bool `view:"-" desc:"true if sim is running"`
-
-	// [view: -] flag to stop running
-	StopNow bool `view:"-" desc:"flag to stop running"`
+	// map of values for detailed debugging / testing
+	ValMap map[string]float32 `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -199,9 +185,8 @@ func (ss *Sim) Init() {
 	ss.Context.Reset()
 	ss.InitWts(ss.Net)
 	ss.NeuronEx.Init()
-	ss.StopNow = false
+	ss.GUI.StopNow = false
 	ss.SetParams("", false) // all sheets
-	ss.UpdateView()
 }
 
 // Counters returns a string of the current counter state
@@ -212,12 +197,9 @@ func (ss *Sim) Counters() string {
 }
 
 func (ss *Sim) UpdateView() {
-	ss.TstCycPlot.UpdatePlot()
-	if ss.NetView != nil && ss.NetView.IsVisible() {
-		ss.NetView.Record(ss.Counters(), int(ss.Context.Cycle))
-		// note: essential to use Go version of update when called from another goroutine
-		ss.NetView.GoUpdate() // note: using counters is significantly slower..
-	}
+	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
+	ss.GUI.ViewUpdt.Text = ss.Counters()
+	ss.GUI.ViewUpdt.UpdateCycle(int(ss.Context.Cycle))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -227,7 +209,7 @@ func (ss *Sim) UpdateView() {
 func (ss *Sim) RunCycles() {
 	ctx := &ss.Context
 	ss.Init()
-	ss.StopNow = false
+	ss.GUI.StopNow = false
 	ss.Net.InitActs(ctx)
 	ctx.NewState(etime.Train)
 	ss.SetParams("", false)
@@ -249,7 +231,7 @@ func (ss *Sim) RunCycles() {
 			ss.UpdateView()
 		}
 		ss.Context.CycleInc()
-		if ss.StopNow {
+		if ss.GUI.StopNow {
 			break
 		}
 	}
@@ -314,7 +296,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 
 // Stop tells the sim to stop running
 func (ss *Sim) Stop() {
-	ss.StopNow = true
+	ss.GUI.StopNow = true
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -387,7 +369,7 @@ func (ss *Sim) ConfigLogItems() {
 
 func (ss *Sim) ResetTstCycPlot() {
 	ss.Logs.ResetLog(etime.Test, etime.Cycle)
-	ss.TstCycPlot.Update()
+	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -397,116 +379,84 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
-	width := 1600
-	height := 1200
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() {
+	title := "Neuron"
+	ss.GUI.MakeBody(ss, "neuron", title, `This simulation illustrates the basic properties of neural spiking and rate-code activation, reflecting a balance of excitatory and inhibitory influences (including leak and synaptic inhibition). See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
+	ss.GUI.CycleUpdateInterval = 10
 
-	gi.SetAppName("neuron")
-	gi.SetAppAbout(`This simulation illustrates the basic properties of neural spiking and
-rate-code activation, reflecting a balance of excitatory and inhibitory
-influences (including leak and synaptic inhibition).
-See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
-
-	win := gi.NewMainWindow("neuron", "Neuron", width, height)
-	ss.Win = win
-
-	vp := win.WinViewport2D()
-	updt := vp.UpdateStart()
-
-	mfr := win.SetMainFrame()
-
-	tbar := gi.AddNewToolBar(mfr, "tbar")
-	tbar.SetStretchMaxWidth()
-	ss.ToolBar = tbar
-
-	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
-	split.SetStretchMaxWidth()
-	split.SetStretchMaxHeight()
-
-	sv := giv.AddNewStructView(split, "sv")
-	sv.SetStruct(ss)
-
-	tv := gi.AddNewTabView(split, "tv")
-
-	nv := tv.AddNewTab(netview.KiT_NetView, "NetView").(*netview.NetView)
+	nv := ss.GUI.AddNetView("NetView")
 	nv.Var = "Act"
 	nv.SetNet(ss.Net)
-	ss.NetView = nv
 	ss.ConfigNetView(nv) // add labels etc
+	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "TstCycPlot").(*eplot.Plot2D)
-	key := etime.Scope(etime.Test, etime.Cycle)
-	plt.SetTable(ss.Logs.Table(etime.Test, etime.Cycle))
-	egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
-	ss.TstCycPlot = plt
+	ss.GUI.AddPlots(title, &ss.Logs)
+	// key := etime.Scope(etime.Test, etime.Cycle)
+	// plt := ss.GUI.NewPlot(key, ss.GUI.Tabs.NewTab("TstCycPlot"))
+	// plt.SetTable(ss.Logs.Table(etime.Test, etime.Cycle))
+	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
+	// ss.TstCycPlot = plt
 
-	split.SetSplits(.2, .8)
-
-	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: "update", Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.Init()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Stop", Icon: "stop", Tooltip: "Interrupts running.  Hitting Train again will pick back up where it left off.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.Stop()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Run Cycles", Icon: "step-fwd", Tooltip: "Runs neuron updating over NCycles.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		if !ss.IsRunning {
-			ss.IsRunning = true
-			ss.RunCycles()
-			ss.IsRunning = false
-			vp.SetNeedsFullRender()
-		}
-	})
-
-	tbar.AddSeparator("run-sep")
-
-	tbar.AddAction(gi.ActOpts{Label: "Reset Plot", Icon: "update", Tooltip: "Reset TstCycPlot.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		if !ss.IsRunning {
-			ss.ResetTstCycPlot()
-		}
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Defaults", Icon: "update", Tooltip: "Restore initial default parameters.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.Defaults()
-		ss.Init()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Stop", Icon: "stop",
+			Tooltip: "Stops running.",
+			Active:  egui.ActiveRunning,
+			Func: func() {
+				ss.Stop()
+				ss.GUI.UpdateWindow()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Cycles", Icon: "step-fwd",
+			Tooltip: "Runs neuron updating over NCycles.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				if !ss.GUI.IsRunning {
+					ss.GUI.IsRunning = true
+					ss.RunCycles()
+					ss.GUI.IsRunning = false
+					ss.GUI.UpdateWindow()
+				}
+			},
+		})
+		gi.NewSeparator(tb)
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: "update",
+			Tooltip: "Reset TstCycPlot.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.ResetTstCycPlot()
+				ss.GUI.UpdateWindow()
+			},
 		})
 
-	vp.UpdateEndNoSig(updt)
-
-	// main menu
-	appnm := gi.AppName()
-	mmen := win.MainMenu
-	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
-
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
-	amen.Menu.AddAppMenu(win)
-
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
-	emen.Menu.AddCopyCutPaste(win)
-
-	win.SetCloseCleanFunc(func(w *gi.Window) {
-		go gi.Quit() // once main window is closed, quit
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Defaults", Icon: "update",
+			Tooltip: "Restore initial default parameters.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Defaults()
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+			},
+		})
 	})
+	ss.GUI.FinalizeGUI(false)
 
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
@@ -514,15 +464,12 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 			ss.Net.GPU.Destroy()
 		})
 	}
-
-	win.MainMenuUpdated()
-	return win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

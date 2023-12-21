@@ -15,14 +15,14 @@ import (
 	"math/rand"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/patgen"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/timer"
-	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/patgen"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/timer"
+	"goki.dev/etable/v2/etable"
+	"goki.dev/etable/v2/etensor"
 )
 
 // note: with 2 hidden layers, this simple test case converges to perfect performance:

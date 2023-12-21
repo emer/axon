@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/relpos"
 	"golang.org/x/exp/maps"
 )
 

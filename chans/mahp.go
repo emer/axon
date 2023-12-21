@@ -4,7 +4,7 @@
 
 package chans
 
-import "github.com/goki/mat32"
+import "goki.dev/mat32/v2"
 
 //gosl: start chans
 
@@ -18,22 +18,22 @@ import "github.com/goki/mat32"
 type MahpParams struct {
 
 	// strength of mAHP current
-	Gbar float32 `desc:"strength of mAHP current"`
+	Gbar float32
 
-	// [def: -30] [viewif: Gbar>0] voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength
-	Voff float32 `viewif:"Gbar>0" def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
+	// voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength
+	Voff float32 `viewif:"Gbar>0" def:"-30"`
 
-	// [def: 9] [viewif: Gbar>0] slope of the arget (infinite time) gating function
-	Vslope float32 `viewif:"Gbar>0" def:"9" desc:"slope of the arget (infinite time) gating function"`
+	// slope of the arget (infinite time) gating function
+	Vslope float32 `viewif:"Gbar>0" def:"9"`
 
-	// [def: 1000] [viewif: Gbar>0] maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
-	TauMax float32 `viewif:"Gbar>0" def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
+	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
+	TauMax float32 `viewif:"Gbar>0" def:"1000"`
 
-	// [view: -] [viewif: Gbar>0] temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
-	Tadj float32 `viewif:"Gbar>0" view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
+	// temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
+	Tadj float32 `viewif:"Gbar>0" view:"-" inactive:"+"`
 
-	// [view: -] 1/Tau
-	DtMax float32 `view:"-" inactive:"+" desc:"1/Tau"`
+	// 1/Tau
+	DtMax float32 `view:"-" inactive:"+"`
 
 	pad, pad2 int32
 }

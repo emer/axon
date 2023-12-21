@@ -10,11 +10,8 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/emer/emergent/erand"
-	"github.com/emer/etable/etensor"
-	"github.com/goki/ki/ints"
-	"github.com/goki/ki/ki"
-	"github.com/goki/ki/kit"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/etable/v2/etensor"
 )
 
 // index naming:
@@ -27,10 +24,8 @@ type Layer struct {
 	LayerBase
 
 	// all layer-level parameters -- these must remain constant once configured
-	Params *LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
+	Params *LayerParams
 }
-
-var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
 // Object returns the object with parameters to be set by emer.Params
 func (ly *Layer) Object() any {
@@ -507,8 +502,8 @@ func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
 // ApplyExt2D applies 2D tensor external input
 func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext etensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ymx := ints.MinInt(ext.Dim(0), ly.Shp.Dim(0))
-	xmx := ints.MinInt(ext.Dim(1), ly.Shp.Dim(1))
+	ymx := min(ext.Dim(0), ly.Shp.Dim(0))
+	xmx := min(ext.Dim(1), ly.Shp.Dim(1))
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
@@ -524,8 +519,8 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext etensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	lNy, lNx, _, _ := etensor.Prjn2DShape(&ly.Shp, false)
 
-	ymx := ints.MinInt(ext.Dim(0), lNy)
-	xmx := ints.MinInt(ext.Dim(1), lNx)
+	ymx := min(ext.Dim(0), lNy)
+	xmx := min(ext.Dim(1), lNx)
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
@@ -539,10 +534,10 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext etensor.Tensor) {
 // ApplyExt4D applies 4D tensor external input
 func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext etensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ypmx := ints.MinInt(ext.Dim(0), ly.Shp.Dim(0))
-	xpmx := ints.MinInt(ext.Dim(1), ly.Shp.Dim(1))
-	ynmx := ints.MinInt(ext.Dim(2), ly.Shp.Dim(2))
-	xnmx := ints.MinInt(ext.Dim(3), ly.Shp.Dim(3))
+	ypmx := min(ext.Dim(0), ly.Shp.Dim(0))
+	xpmx := min(ext.Dim(1), ly.Shp.Dim(1))
+	ynmx := min(ext.Dim(2), ly.Shp.Dim(2))
+	xnmx := min(ext.Dim(3), ly.Shp.Dim(3))
 	for yp := 0; yp < ypmx; yp++ {
 		for xp := 0; xp < xpmx; xp++ {
 			for yn := 0; yn < ynmx; yn++ {
@@ -562,7 +557,7 @@ func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext etensor.Tensor) {
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1DTsr(ctx *Context, di uint32, ext etensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	mx := uint32(ints.MinInt(ext.Len(), int(ly.NNeurons)))
+	mx := uint32(min(ext.Len(), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
 		val := float32(ext.FloatVal1D(int(lni)))
 		ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
@@ -574,7 +569,7 @@ func (ly *Layer) ApplyExt1DTsr(ctx *Context, di uint32, ext etensor.Tensor) {
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1D(ctx *Context, di uint32, ext []float64) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	mx := uint32(ints.MinInt(len(ext), int(ly.NNeurons)))
+	mx := uint32(min(len(ext), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
 		val := float32(ext[lni])
 		ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
@@ -586,7 +581,7 @@ func (ly *Layer) ApplyExt1D(ctx *Context, di uint32, ext []float64) {
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1D32(ctx *Context, di uint32, ext []float32) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	mx := uint32(ints.MinInt(len(ext), int(ly.NNeurons)))
+	mx := uint32(min(len(ext), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
 		val := ext[lni]
 		ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
@@ -895,6 +890,7 @@ func (ly *Layer) LesionNeurons(prop float32) int {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Layer props for gui
 
+/*
 var LayerProps = ki.Props{
 	"EnumType:Typ": KiT_LayerTypes, // uses our LayerTypes for GUI
 	"ToolBar": ki.PropSlice{
@@ -926,3 +922,4 @@ var LayerProps = ki.Props{
 		}},
 	},
 }
+*/

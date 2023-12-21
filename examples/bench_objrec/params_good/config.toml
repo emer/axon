@@ -47,7 +47,7 @@ Debug = false
 
 [Run]
   GPU = true
-  NData = 16
+  NData = 32
   NThreads = 0
   Run = 0
   NRuns = 1

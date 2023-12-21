@@ -4,15 +4,13 @@
 
 package axon
 
-import "github.com/goki/ki/kit"
-
 //gosl: start prjntypes
 
 // PrjnTypes is an axon-specific prjn type enum,
 // that encompasses all the different algorithm types supported.
 // Class parameter styles automatically key off of these types.
 // The first entries must be kept synchronized with the emer.PrjnType.
-type PrjnTypes int32
+type PrjnTypes int32 //enums:enum
 
 // The projection types
 const (
@@ -80,15 +78,6 @@ const (
 	// and subsequent outcomes, and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
 	MatrixPrjn
-
-	PrjnTypesN
 )
 
 //gosl: end prjntypes
-
-//go:generate stringer -type=PrjnTypes
-
-var KiT_PrjnTypes = kit.Enums.AddEnum(PrjnTypesN, kit.NotBitFlag, nil)
-
-func (ev PrjnTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *PrjnTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }

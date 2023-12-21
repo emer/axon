@@ -8,37 +8,37 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/etable/etensor"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"goki.dev/etable/v2/etensor"
 )
 
 // OnOff represents stimulus On / Off timing
 type OnOff struct {
 
 	// is this stimulus active -- use it?
-	Act bool `desc:"is this stimulus active -- use it?"`
+	Act bool
 
 	// when stimulus turns on
-	On int `desc:"when stimulus turns on"`
+	On int
 
 	// when stimulu turns off
-	Off int `desc:"when stimulu turns off"`
+	Off int
 
 	// probability of being active on any given trial
-	P float32 `desc:"probability of being active on any given trial"`
+	P float32
 
 	// variability in onset timing (max number of trials before/after On that it could start)
-	OnVar int `desc:"variability in onset timing (max number of trials before/after On that it could start)"`
+	OnVar int
 
 	// variability in offset timing (max number of trials before/after Off that it could end)
-	OffVar int `desc:"variability in offset timing (max number of trials before/after Off that it could end)"`
+	OffVar int
 
-	// [view: -] current active status based on P probability
-	CurAct bool `view:"-" desc:"current active status based on P probability"`
+	// current active status based on P probability
+	CurAct bool `view:"-"`
 
-	// [view: -] current on / off values using Var variability
-	CurOn, CurOff int `view:"-" desc:"current on / off values using Var variability"`
+	// current on / off values using Var variability
+	CurOn, CurOff int `view:"-"`
 }
 
 func (oo *OnOff) Set(act bool, on, off int) {
@@ -68,52 +68,52 @@ func (oo *OnOff) IsOn(tm int) bool {
 type CondEnv struct {
 
 	// name of this environment
-	Nm string `desc:"name of this environment"`
+	Nm string
 
 	// description of this environment
-	Dsc string `desc:"description of this environment"`
+	Dsc string
 
 	// total time for trial
-	TotTime int `desc:"total time for trial"`
+	TotTime int
 
-	// [view: inline] Conditioned stimulus A (e.g., Tone)
-	CSA OnOff `view:"inline" desc:"Conditioned stimulus A (e.g., Tone)"`
+	// Conditioned stimulus A (e.g., Tone)
+	CSA OnOff `view:"inline"`
 
-	// [view: inline] Conditioned stimulus B (e.g., Light)
-	CSB OnOff `view:"inline" desc:"Conditioned stimulus B (e.g., Light)"`
+	// Conditioned stimulus B (e.g., Light)
+	CSB OnOff `view:"inline"`
 
-	// [view: inline] Conditioned stimulus C
-	CSC OnOff `view:"inline" desc:"Conditioned stimulus C"`
+	// Conditioned stimulus C
+	CSC OnOff `view:"inline"`
 
-	// [view: inline] Unconditioned stimulus -- reward
-	US OnOff `view:"inline" desc:"Unconditioned stimulus -- reward"`
+	// Unconditioned stimulus -- reward
+	US OnOff `view:"inline"`
 
 	// value for reward
-	RewVal float32 `desc:"value for reward"`
+	RewVal float32
 
 	// value for non-reward
-	NoRewVal float32 `desc:"value for non-reward"`
+	NoRewVal float32
 
 	// one-hot input representation of current option
-	Input etensor.Float64 `desc:"one-hot input representation of current option"`
+	Input etensor.Float64
 
 	// single reward value
-	Reward etensor.Float64 `desc:"single reward value"`
+	Reward etensor.Float64
 
 	// true if a US reward value was set
-	HasRew bool `desc:"true if a US reward value was set"`
+	HasRew bool
 
-	// [view: inline] current run of model as provided during Init
-	Run env.Ctr `view:"inline" desc:"current run of model as provided during Init"`
+	// current run of model as provided during Init
+	Run env.Ctr `view:"inline"`
 
-	// [view: inline] number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline" desc:"number of times through Seq.Max number of sequences"`
+	// number of times through Seq.Max number of sequences
+	Epoch env.Ctr `view:"inline"`
 
-	// [view: inline] one trial is a pass through all TotTime Events
-	Trial env.Ctr `view:"inline" desc:"one trial is a pass through all TotTime Events"`
+	// one trial is a pass through all TotTime Events
+	Trial env.Ctr `view:"inline"`
 
-	// [view: inline] event is one time step within Trial -- e.g., CS turning on, etc
-	Event env.Ctr `view:"inline" desc:"event is one time step within Trial -- e.g., CS turning on, etc"`
+	// event is one time step within Trial -- e.g., CS turning on, etc
+	Event env.Ctr `view:"inline"`
 }
 
 func (ev *CondEnv) Name() string { return ev.Nm }

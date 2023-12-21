@@ -4,10 +4,6 @@
 
 package axon
 
-import (
-	"github.com/goki/ki/kit"
-)
-
 //gosl: start layertypes
 
 // LayerTypes is an axon-specific layer type enum,
@@ -15,7 +11,7 @@ import (
 // Class parameter styles automatically key off of these types.
 // The first entries must be kept synchronized with the emer.LayerType,
 // although we replace Hidden -> Super.
-type LayerTypes int32
+type LayerTypes int32 //enums:enum
 
 // note: we need to add the Layer extension to avoid naming
 // conflicts between layer, projection and other things.
@@ -236,8 +232,6 @@ const (
 	// between the TDIntegLayer activations in the minus and plus phase.
 	// These are retrieved from Special LayerVals.
 	TDDaLayer
-
-	LayerTypesN
 )
 
 // IsExtLayerType returns true if the layer type deals with external input:
@@ -259,10 +253,3 @@ func (lt LayerTypes) IsExt() bool {
 	}
 	return false
 }
-
-//go:generate stringer -type=LayerTypes
-
-var KiT_LayerTypes = kit.Enums.AddEnum(LayerTypesN, kit.NotBitFlag, nil)
-
-func (ev LayerTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *LayerTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }

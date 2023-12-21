@@ -7,26 +7,28 @@ rl_cond explores the temporal differences (TD) and Rescorla-Wagner reinforcement
 */
 package main
 
+//go:generate goki generate -add-types
+
 import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/econfig"
-	"github.com/emer/emergent/egui"
-	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/estats"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
-	"github.com/emer/empi/mpi"
-	"github.com/goki/gi/gi"
-	"github.com/goki/gi/gimain"
+	"github.com/emer/emergent/v2/econfig"
+	"github.com/emer/emergent/v2/egui"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/estats"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/relpos"
+	"github.com/emer/empi/v2/mpi"
+	"goki.dev/gi/v2/gi"
+	"goki.dev/gi/v2/gimain"
 )
 
 func main() {
@@ -34,7 +36,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Main(sim.RunGUI)
+		gimain.Run(sim.RunGUI)
 	} else {
 		sim.RunNoGUI()
 	}
@@ -50,37 +52,37 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `desc:"simulation configuration parameters -- set by .toml config file and / or args"`
+	Config Config
 
-	// [view: no-inline] the network -- click to view / edit parameters for layers, prjns, etc
-	Net *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	// the network -- click to view / edit parameters for layers, prjns, etc
+	Net *axon.Network `view:"no-inline"`
 
-	// [view: inline] all parameter management
-	Params emer.NetParams `view:"inline" desc:"all parameter management"`
+	// all parameter management
+	Params emer.NetParams `view:"inline"`
 
-	// [view: no-inline] contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline" desc:"contains looper control loops for running sim"`
+	// contains looper control loops for running sim
+	Loops *looper.Manager `view:"no-inline"`
 
 	// contains computed statistic values
-	Stats estats.Stats `desc:"contains computed statistic values"`
+	Stats estats.Stats
 
 	// Contains all the logs and information about the logs.'
-	Logs elog.Logs `desc:"Contains all the logs and information about the logs.'"`
+	Logs elog.Logs
 
-	// [view: no-inline] Environments
-	Envs env.Envs `view:"no-inline" desc:"Environments"`
+	// Environments
+	Envs env.Envs `view:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context `desc:"axon timing parameters and state"`
+	Context axon.Context
 
-	// [view: inline] netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
+	// netview update parameters
+	ViewUpdt netview.ViewUpdt `view:"inline"`
 
-	// [view: -] manages all the gui elements
-	GUI egui.GUI `view:"-" desc:"manages all the gui elements"`
+	// manages all the gui elements
+	GUI egui.GUI `view:"-"`
 
-	// [view: -] a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
+	// a list of random seeds to use for each run
+	RndSeeds erand.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -401,10 +403,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the GoGi gui interface for this simulation,
+func (ss *Sim) ConfigGUI() {
 	title := "Reinforcement Learning"
-	ss.GUI.MakeWindow(ss, "rl", title, `rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "rl", title, `rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -414,36 +416,38 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	// nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	// nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+	// nv.Scene().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				ss.Init()
+				ss.GUI.UpdateWindow()
+			},
+		})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
+		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset Trial Log", Icon: "update",
-		Tooltip: "reset trial log .",
-		Func: func() {
-			ss.Logs.ResetLog(etime.Train, etime.Trial)
-			ss.GUI.UpdatePlot(etime.Train, etime.Trial)
-		},
-	})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Trial Log", Icon: "update",
+			Tooltip: "reset trial log .",
+			Func: func() {
+				ss.Logs.ResetLog(etime.Train, etime.Trial)
+				ss.GUI.UpdatePlot(etime.Train, etime.Trial)
+			},
+		})
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
-		Icon:    "file-markdown",
-		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
-		},
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+			Icon:    "file-markdown",
+			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+			Active:  egui.ActiveAlways,
+			Func: func() {
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
+			},
+		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
@@ -452,13 +456,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.Net.GPU.Destroy()
 		})
 	}
-	return ss.GUI.Win
 }
 
 func (ss *Sim) RunGUI() {
 	ss.Init()
-	win := ss.ConfigGui()
-	win.StartEventLoop()
+	ss.ConfigGUI()
+	ss.GUI.Body.NewWindow().Run().Wait()
 }
 
 func (ss *Sim) RunNoGUI() {

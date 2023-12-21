@@ -7,10 +7,10 @@ package axon
 import (
 	"math"
 
-	"github.com/emer/emergent/etime"
-	"github.com/goki/gosl/slbool"
-	"github.com/goki/gosl/slrand"
-	"github.com/goki/ki/bools"
+	"github.com/emer/emergent/v2/etime"
+	"goki.dev/glop/num"
+	"goki.dev/gosl/v2/slbool"
+	"goki.dev/gosl/v2/slrand"
 )
 
 var (
@@ -244,50 +244,50 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 // NetIdxs are indexes and sizes for processing network
 type NetIdxs struct {
 
-	// [min: 1] number of data parallel items to process currently
-	NData uint32 `min:"1" desc:"number of data parallel items to process currently"`
+	// number of data parallel items to process currently
+	NData uint32 `min:"1"`
 
 	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
-	NetIdx uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	NetIdx uint32 `inactive:"+"`
 
 	// maximum amount of data parallel
-	MaxData uint32 `inactive:"+" desc:"maximum amount of data parallel"`
+	MaxData uint32 `inactive:"+"`
 
 	// number of layers in the network
-	NLayers uint32 `inactive:"+" desc:"number of layers in the network"`
+	NLayers uint32 `inactive:"+"`
 
 	// total number of neurons
-	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
+	NNeurons uint32 `inactive:"+"`
 
 	// total number of pools excluding * MaxData factor
-	NPools uint32 `inactive:"+" desc:"total number of pools excluding * MaxData factor"`
+	NPools uint32 `inactive:"+"`
 
 	// total number of synapses
-	NSyns uint32 `inactive:"+" desc:"total number of synapses"`
+	NSyns uint32 `inactive:"+"`
 
 	// maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access
-	GPUMaxBuffFloats uint32 `inactive:"+" desc:"maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access"`
+	GPUMaxBuffFloats uint32 `inactive:"+"`
 
 	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
-	GPUSynCaBanks uint32 `inactive:"+" desc:"total number of SynCa banks of GPUMaxBufferBytes arrays in GPU"`
+	GPUSynCaBanks uint32 `inactive:"+"`
 
 	// total number of PVLV Drives / positive USs
-	PVLVNPosUSs uint32 `inactive:"+" desc:"total number of PVLV Drives / positive USs"`
+	PVLVNPosUSs uint32 `inactive:"+"`
 
 	// total number of PVLV Negative USs
-	PVLVNNegUSs uint32 `inactive:"+" desc:"total number of PVLV Negative USs"`
+	PVLVNNegUSs uint32 `inactive:"+"`
 
 	// offset into GlobalVars for USneg values
-	GvUSnegOff uint32 `inactive:"+" desc:"offset into GlobalVars for USneg values"`
+	GvUSnegOff uint32 `inactive:"+"`
 
 	// stride into GlobalVars for USneg values
-	GvUSnegStride uint32 `inactive:"+" desc:"stride into GlobalVars for USneg values"`
+	GvUSnegStride uint32 `inactive:"+"`
 
 	// offset into GlobalVars for USpos, Drive, VSPatch values values
-	GvUSposOff uint32 `inactive:"+" desc:"offset into GlobalVars for USpos, Drive, VSPatch values values"`
+	GvUSposOff uint32 `inactive:"+"`
 
 	// stride into GlobalVars for USpos, Drive, VSPatch values
-	GvUSposStride uint32 `inactive:"+" desc:"stride into GlobalVars for USpos, Drive, VSPatch values"`
+	GvUSposStride uint32 `inactive:"+"`
 
 	pad uint32
 }
@@ -349,72 +349,72 @@ func (ctx *NetIdxs) SynIdxIsValid(si uint32) bool {
 type Context struct {
 
 	// current evaluation mode, e.g., Train, Test, etc
-	Mode etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
+	Mode etime.Modes
 
 	// if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train
-	Testing slbool.Bool `inactive:"+" desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train"`
+	Testing slbool.Bool `inactive:"+"`
 
 	// phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms
-	Phase int32 `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
+	Phase int32
 
 	// true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase
-	PlusPhase slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
+	PlusPhase slbool.Bool
 
 	// cycle within current phase -- minus or plus
-	PhaseCycle int32 `desc:"cycle within current phase -- minus or plus"`
+	PhaseCycle int32
 
 	// cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState
-	Cycle int32 `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
+	Cycle int32
 
-	// [def: 200] length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn).
-	ThetaCycles int32 `def:"200" desc:"length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn)."`
+	// length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn).
+	ThetaCycles int32 `def:"200"`
 
 	// total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time
-	CyclesTotal int32 `desc:"total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
+	CyclesTotal int32
 
 	// accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds
-	Time float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
+	Time float32
 
 	// total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes
-	TrialsTotal int32 `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
+	TrialsTotal int32
 
-	// [def: 0.001] amount of time to increment per cycle
-	TimePerCycle float32 `def:"0.001" desc:"amount of time to increment per cycle"`
+	// amount of time to increment per cycle
+	TimePerCycle float32 `def:"0.001"`
 
-	// [def: 100] how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models.
-	SlowInterval int32 `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models."`
+	// how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models.
+	SlowInterval int32 `def:"100"`
 
 	// counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter.
-	SlowCtr int32 `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter."`
+	SlowCtr int32 `inactive:"+"`
 
 	// synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset.
-	SynCaCtr float32 `inactive:"+" desc:"synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset."`
+	SynCaCtr float32 `inactive:"+"`
 
 	pad, pad1 float32
 
-	// [view: inline] indexes and sizes of current network
-	NetIdxs NetIdxs `view:"inline" desc:"indexes and sizes of current network"`
+	// indexes and sizes of current network
+	NetIdxs NetIdxs `view:"inline"`
 
-	// [view: -] stride offsets for accessing neuron variables
-	NeuronVars NeuronVarStrides `view:"-" desc:"stride offsets for accessing neuron variables"`
+	// stride offsets for accessing neuron variables
+	NeuronVars NeuronVarStrides `view:"-"`
 
-	// [view: -] stride offsets for accessing neuron average variables
-	NeuronAvgVars NeuronAvgVarStrides `view:"-" desc:"stride offsets for accessing neuron average variables"`
+	// stride offsets for accessing neuron average variables
+	NeuronAvgVars NeuronAvgVarStrides `view:"-"`
 
-	// [view: -] stride offsets for accessing neuron indexes
-	NeuronIdxs NeuronIdxStrides `view:"-" desc:"stride offsets for accessing neuron indexes"`
+	// stride offsets for accessing neuron indexes
+	NeuronIdxs NeuronIdxStrides `view:"-"`
 
-	// [view: -] stride offsets for accessing synapse variables
-	SynapseVars SynapseVarStrides `view:"-" desc:"stride offsets for accessing synapse variables"`
+	// stride offsets for accessing synapse variables
+	SynapseVars SynapseVarStrides `view:"-"`
 
-	// [view: -] stride offsets for accessing synapse Ca variables
-	SynapseCaVars SynapseCaStrides `view:"-" desc:"stride offsets for accessing synapse Ca variables"`
+	// stride offsets for accessing synapse Ca variables
+	SynapseCaVars SynapseCaStrides `view:"-"`
 
-	// [view: -] stride offsets for accessing synapse indexes
-	SynapseIdxs SynapseIdxStrides `view:"-" desc:"stride offsets for accessing synapse indexes"`
+	// stride offsets for accessing synapse indexes
+	SynapseIdxs SynapseIdxStrides `view:"-"`
 
 	// random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.
-	RandCtr slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	RandCtr slrand.Counter
 }
 
 // Defaults sets default values
@@ -742,7 +742,7 @@ func GlobalsReset(ctx *Context) {
 // GlobalSetRew is a convenience function for setting the external reward
 // state in Globals variables
 func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
-	SetGlbV(ctx, di, GvHasRew, bools.ToFloat32(hasRew))
+	SetGlbV(ctx, di, GvHasRew, num.FromBool[float32](hasRew))
 	if hasRew {
 		SetGlbV(ctx, di, GvRew, rew)
 	} else {
