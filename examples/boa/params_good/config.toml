@@ -3,14 +3,12 @@ Debug = false
 OpenWts = ""
 
 [Env]
+  Config = "4.uncertain_cs.toml"
   NDrives = 4
-  CSPerDrive = 1
   PctCortexStEpc = 10
   PctCortexNEpc = 1
   PctCortex = 0.0
   SameSeed = false
-  [Env.Env]
-    NYReps = 4
 
 [Params]
   Sheet = ""
@@ -21,8 +19,8 @@ OpenWts = ""
   Good = true
 
 [Run]
-  GPU = true
-  NData = 16
+  GPU = false
+  NData = 1
   NThreads = 0
   Run = 0
   NRuns = 5

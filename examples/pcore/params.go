@@ -33,8 +33,9 @@ var ParamSets = netparams.Sets{
 		// Prjns
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate": "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
-				"Prjn.Learn.LRate.Base":   "0.02", // .02 default
+				"Prjn.Matrix.NoGateLRate":   "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
+				"Prjn.Learn.LRate.Base":     "0.02", // .02 default
+				"Prjn.Learn.Trace.LearnThr": "0.75",
 			}},
 		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{

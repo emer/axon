@@ -20,8 +20,9 @@ Debug = false
   MossyDeltaTest = 0.75
   ThetaLow = 0.9
   ThetaHigh = 1.0
+  EC5Clamp = true
   EC5ClampSrc = "EC3"
-  EC5ClampTest = true
+  EC5ClampTest = false
   EC5ClampThr = 0.1
   [Hip.EC2Size]
     X = 21

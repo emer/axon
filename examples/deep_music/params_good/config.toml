@@ -1,5 +1,5 @@
 Includes = ["30notes.toml"]
-GUI = true
+GUI = false
 Debug = false
 
 [Env]

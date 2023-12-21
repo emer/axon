@@ -191,19 +191,19 @@
      ACCutilPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
-             CS		Nominal:	  0.08	Params: .CS: 0.1
+             CS		Nominal:	  0.04	Params: .CS: 0.1
 						Layer.Gi:	  0.90	
 
-            CSP		Nominal:	  0.08	Params: .CS: 0.1
-						Layer.Gi:	  1.00	
-
-           Dist		Nominal:	  0.10	
-						Layer.Gi:	  0.90	
-
-          DistP		Nominal:	  0.10	
+            CSP		Nominal:	  0.04	Params: .CS: 0.1
 						Layer.Gi:	  1.00	
 
             Pos		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+           PosP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            Arm		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
             Act		Nominal:	  0.10	

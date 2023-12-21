@@ -198,6 +198,7 @@ VsPatch.Inhib.Pool.FB: 0 // [Def: 0.5,1,4] <br>
 VsPatch.Learn.RLRate.SigmoidMin: 0.01 // [Def: 0.05,1] <br>
 VsPatch.VSPatch.Gain: 5 // [Def: 3] <br>
 VsPatch.VSPatch.ThrInit: 0.2 // [Def: 0.15] <br>
+VsPatch.VSPatch.ThrLRate: 0.0001 // [Def: 0,0.002] <br>
 VsPatch.ACCnegValPTpToVsPatch.PrjnScale.Abs: 6 // [Def: 1] <br>
 VsPatch.ACCnegValPTpToVsPatch.SWts.Init.Mean: 0.1 // [Def: 0.5,0.4] <br>
 VsPatch.ACCnegValPTpToVsPatch.SWts.Init.Var: 0.05 // [Def: 0.25] <br>
@@ -374,7 +375,7 @@ OFCposUSMD.OFCposUSToOFCposUSMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 OFCposUSMD.OFCposUSToOFCposUSMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCposUSMD.OFCposUSToOFCposUSMD.SWts.Init.Sym: false // [Def: true] <br>
 OFCposUSMD.OFCposUSToOFCposUSMD.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-OFCposUSMD.VsGPiToOFCposUSMD.PrjnScale.Abs: 2 // [Def: 1] <br>
+OFCposUSMD.VsGPiToOFCposUSMD.PrjnScale.Abs: 3 // [Def: 1] <br>
 OFCposUSMD.VsGPiToOFCposUSMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 OFCposUSMD.VsGPiToOFCposUSMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCposUSMD.VsGPiToOFCposUSMD.SWts.Init.Sym: false // [Def: true] <br>
@@ -435,7 +436,7 @@ OFCnegUSMD.OFCnegUSToOFCnegUSMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 OFCnegUSMD.OFCnegUSToOFCnegUSMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCnegUSMD.OFCnegUSToOFCnegUSMD.SWts.Init.Sym: false // [Def: true] <br>
 OFCnegUSMD.OFCnegUSToOFCnegUSMD.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-OFCnegUSMD.VsGPiToOFCnegUSMD.PrjnScale.Abs: 2 // [Def: 1] <br>
+OFCnegUSMD.VsGPiToOFCnegUSMD.PrjnScale.Abs: 3 // [Def: 1] <br>
 OFCnegUSMD.VsGPiToOFCnegUSMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 OFCnegUSMD.VsGPiToOFCnegUSMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCnegUSMD.VsGPiToOFCnegUSMD.SWts.Init.Sym: false // [Def: true] <br>
@@ -475,7 +476,7 @@ OFCposValMD.OFCposValToOFCposValMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 OFCposValMD.OFCposValToOFCposValMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCposValMD.OFCposValToOFCposValMD.SWts.Init.Sym: false // [Def: true] <br>
 OFCposValMD.OFCposValToOFCposValMD.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-OFCposValMD.VsGPiToOFCposValMD.PrjnScale.Abs: 2 // [Def: 1] <br>
+OFCposValMD.VsGPiToOFCposValMD.PrjnScale.Abs: 3 // [Def: 1] <br>
 OFCposValMD.VsGPiToOFCposValMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 OFCposValMD.VsGPiToOFCposValMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 OFCposValMD.VsGPiToOFCposValMD.SWts.Init.Sym: false // [Def: true] <br>
@@ -515,7 +516,7 @@ ACCnegValMD.ACCnegValToACCnegValMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 ACCnegValMD.ACCnegValToACCnegValMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 ACCnegValMD.ACCnegValToACCnegValMD.SWts.Init.Sym: false // [Def: true] <br>
 ACCnegValMD.ACCnegValToACCnegValMD.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-ACCnegValMD.VsGPiToACCnegValMD.PrjnScale.Abs: 2 // [Def: 1] <br>
+ACCnegValMD.VsGPiToACCnegValMD.PrjnScale.Abs: 3 // [Def: 1] <br>
 ACCnegValMD.VsGPiToACCnegValMD.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
 ACCnegValMD.VsGPiToACCnegValMD.SWts.Init.Var: 0 // [Def: 0.25] <br>
 ACCnegValMD.VsGPiToACCnegValMD.SWts.Init.Sym: false // [Def: true] <br>

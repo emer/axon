@@ -26,7 +26,7 @@
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0.5"
     "Layer.VSPatch.Gain" = "5"
     "Layer.VSPatch.ThrInit" = "0.2"
-    "Layer.VSPatch.ThrLRate" = "0.002"
+    "Layer.VSPatch.ThrLRate" = "0.0001"
     "Layer.VSPatch.ThrNonRew" = "10"
 
 [[Base]]
@@ -71,6 +71,7 @@
   Sel = ".MatrixPrjn"
   Desc = ""
   [Base.Params]
+    "Prjn.Learn.Trace.LearnThr" = "0.0"
     "Prjn.Matrix.NoGateLRate" = "0.0"
 
 [[Base]]
@@ -96,7 +97,7 @@
   Sel = ".GPiToBGThal"
   Desc = "inhibition from GPi to MD"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
+    "Prjn.PrjnScale.Abs" = "3"
 
 [[Base]]
   Sel = ".PTpToBLAExt"

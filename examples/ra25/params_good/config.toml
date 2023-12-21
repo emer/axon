@@ -16,8 +16,8 @@ Debug = false
     Y = 10
 
 [Run]
-  GPU = true
-  NData = 16
+  GPU = false
+  NData = 1
   NThreads = 0
   Run = 0
   NRuns = 5

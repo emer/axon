@@ -3,8 +3,8 @@ Debug = false
 
 [Env]
   RunName = "PosAcq_A100"
-  SetNBlocks = true
-  NBlocks = 50
+  SetNBlocks = false
+  NBlocks = 0
 
 [Params]
   Sheet = ""
@@ -18,7 +18,7 @@ Debug = false
 
 [Run]
   GPU = false
-  NThreads = 2
+  NThreads = 0
   Run = 0
   NRuns = 1
 

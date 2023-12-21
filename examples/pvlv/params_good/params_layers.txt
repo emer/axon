@@ -77,8 +77,8 @@
 						Pool.Gi: 	  1.00	
 
     BLAPosExtD2		Nominal:	  0.03	
-						Layer.Gi:	  1.80	Params: Base:#BLAPosExtD2: 1.8
-						Pool.Gi: 	  1.00	Params: #BLAPosExtD2: 1.0
+						Layer.Gi:	  1.80	Params: #BLAPosExtD2: 1.8
+						Pool.Gi: 	  1.00	Params: Base:#BLAPosExtD2: 1.0
 
     BLANegExtD1		Nominal:	  0.03	
 						Layer.Gi:	  1.80	
