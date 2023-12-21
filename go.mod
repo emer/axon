@@ -5,36 +5,36 @@ go 1.21
 require (
 	github.com/alecthomas/assert/v2 v2.2.1
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
+	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/emer/emergent v1.3.49
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.2
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.4
 	github.com/emer/empi/v2 v2.0.0-dev0.0.2
 	github.com/emer/etable v1.1.19
-	github.com/emer/eve/v2 v2.0.0-dev0.0.1.0.20231216082813-f792ee727590
-	github.com/emer/vision/v2 v2.0.0-dev0.0.2
+	github.com/emer/eve/v2 v2.0.0-dev0.0.2
+	github.com/emer/vision/v2 v2.0.0-dev0.0.4
 	github.com/goki/ki v1.1.17
 	github.com/goki/mat32 v1.0.18
 	github.com/goki/vgpu v1.0.34
 	github.com/goki/vulkan v1.0.7
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/gomidi/midi/v2 v2.0.30
-	goki.dev/colors v0.8.41
-	goki.dev/enums v0.9.52
-	goki.dev/etable/v2 v2.0.0-dev0.0.9
-	goki.dev/gi/v2 v2.0.0-dev0.0.25
-	goki.dev/girl v0.0.32
-	goki.dev/glop v0.1.9-0.20231215195749-0ece7c1642b7
-	goki.dev/goosi v0.0.22
-	goki.dev/gosl/v2 v2.0.0-dev0.0.3.0.20231216082948-11455e26c72b
-	goki.dev/grr v0.0.9
-	goki.dev/gti v0.1.28
-	goki.dev/icons v0.0.14
-	goki.dev/laser v0.1.30
-	goki.dev/mat32/v2 v2.0.0-dev0.0.24
-	goki.dev/ordmap v0.5.8
-	goki.dev/vgpu/v2 v2.0.0-dev0.0.26
-	goki.dev/xyz v0.5.17
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
+	goki.dev/colors v0.8.43
+	goki.dev/enums v0.9.55
+	goki.dev/etable/v2 v2.0.0-dev0.0.11
+	goki.dev/gi/v2 v2.0.0-dev0.0.27
+	goki.dev/girl v0.0.35
+	goki.dev/glop v0.1.9
+	goki.dev/goosi v0.0.24
+	goki.dev/gosl/v2 v2.0.0-dev0.0.5
+	goki.dev/grr v0.0.11
+	goki.dev/gti v0.1.31
+	goki.dev/icons v0.0.16
+	goki.dev/laser v0.1.33
+	goki.dev/mat32/v2 v2.0.0-dev0.0.27
+	goki.dev/ordmap v0.5.9
+	goki.dev/vgpu/v2 v2.0.0-dev0.0.29
+	goki.dev/xyz v0.5.19
+	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 )
 
 require (
@@ -54,6 +54,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
+	github.com/chewxy/math32 v1.10.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/emer/empi v1.0.17 // indirect
@@ -89,17 +90,17 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
-	goki.dev/cam v0.9.46 // indirect
-	goki.dev/cursors v0.0.29 // indirect
-	goki.dev/fi v0.1.16 // indirect
-	goki.dev/grog v0.0.24 // indirect
-	goki.dev/grows v0.3.27 // indirect
-	goki.dev/ki/v2 v2.0.0-dev0.0.30 // indirect
-	goki.dev/pi/v2 v2.0.0-dev0.0.23 // indirect
+	goki.dev/cam v0.9.48 // indirect
+	goki.dev/cursors v0.0.31 // indirect
+	goki.dev/fi v0.1.18 // indirect
+	goki.dev/grog v0.0.26 // indirect
+	goki.dev/grows v0.3.30 // indirect
+	goki.dev/ki/v2 v2.0.0-dev0.0.32 // indirect
+	goki.dev/pi/v2 v2.0.0-dev0.0.25 // indirect
 	goki.dev/prof/v2 v2.0.0-dev0.0.4 // indirect
-	goki.dev/spell v0.1.12 // indirect
-	goki.dev/svg v0.1.25 // indirect
-	goki.dev/vci/v2 v2.0.0-dev0.0.28 // indirect
+	goki.dev/spell v0.1.14 // indirect
+	goki.dev/svg v0.1.27 // indirect
+	goki.dev/vci/v2 v2.0.0-dev0.0.31 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
