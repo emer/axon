@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/stretchr/testify/require"
 	"goki.dev/etable/v2/etable"
 	"goki.dev/etable/v2/etensor"

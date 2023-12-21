@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
 	"goki.dev/etable/v2/etable"
 	"goki.dev/gi/v2/gi"

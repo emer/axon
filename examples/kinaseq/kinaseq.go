@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/goki/ki/ki"
 	"goki.dev/etable/v2/agg"

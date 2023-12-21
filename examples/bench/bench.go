@@ -14,7 +14,7 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/emer/axon/axon"
+	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
