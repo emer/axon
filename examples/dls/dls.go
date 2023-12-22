@@ -16,7 +16,7 @@ import (
 	"os"
 
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/axon/v2/examples/boa/armaze"
+	"github.com/emer/axon/v2/examples/dls/armaze"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
@@ -195,7 +195,7 @@ func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
-	net.InitName(net, "Boa")
+	net.InitName(net, "Dls")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
@@ -204,12 +204,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuCtxY := 6
 	nuCtxX := 6
 	nAct := int(armaze.ActionsN)
-	popY := 4
-	popX := 4
+	// popY := 4
+	// popX := 4
 	space := float32(2)
 
 	pone2one := prjn.NewPoolOneToOne()
-	one2one := prjn.NewOneToOne()
+	// one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 	mtxRndPrjn := prjn.NewPoolUnifRnd()
 	mtxRndPrjn.PCon = 0.75
@@ -220,15 +220,24 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accUtil, sc, notMaint := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-	_, _ = accUtil, urgency
-	_, _ = ofcNegUSCT, ofcNegUSPTp
-
-	accUtilPTp := net.AxonLayerByName("ACCutilPTp")
-
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
 	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
-	arm := net.AddLayer2D("Arm", ny, narm, axon.InputLayer) // irrelevant here
+	arm := net.AddLayer2D("Arm", ny, narm, axon.InputLayer)
+
+	vSgpi := net.AddLayer2D("VSgpi", nuBgY, nuBgX, axon.InputLayer) // fake ventral BG
+
+	///////////////////////////////////////////
+	// 	Dorsal lateral Striatum / BG
+
+	dSMtxGo, dSMtxNo, _, dSSTNP, dSSTNS, dSGPi := net.AddBG("Ds", 1, 4, nuBgY, nuBgX, nuBgY, nuBgX, space)
+	dSMtxGo.SetClass("DLSMatrixLayer")
+	dSMtxNo.SetClass("DLSMatrixLayer")
+
+	// Spiral the BG loops so that goal selection influencces action selection.
+	// vSSTNp := ss.Net.AxonLayerByName("VsSTNp")
+	// vSSTNs := ss.Net.AxonLayerByName("VsSTNs")
+	// net.ConnectLayers(vSSTNp, dSGPi, full, axon.ForwardPrjn).SetClass(vSSTNp.SndPrjns[0].Cls)
+	// net.ConnectLayers(vSSTNs, dSGPi, full, axon.ForwardPrjn).SetClass(vSSTNs.SndPrjns[0].Cls)
 
 	///////////////////////////////////////////
 	// M1, VL, ALM
@@ -237,92 +246,59 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", act.Name())
 
-	m1, m1CT := net.AddSuperCT2D("M1", "PFCPrjn", nuCtxY, nuCtxX, space, one2one)
+	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, space)
 	m1P := net.AddPulvForSuper(m1, space)
 
 	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
 	_ = almPT
 
 	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPrjn)
-	// net.ConnectToMatrix(alm, vSmtxGo, full) // todo: explore
-	// net.ConnectToMatrix(alm, vSmtxNo, full)
 
 	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPTp, full) // alm predicts m1
 
 	// vl is a predictive thalamus but we don't have direct access to its source
 	net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
-	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts m1
+	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts vl
 
 	// sensory inputs guiding action
 	// note: alm gets effort, pos via predictive coding below
 
 	net.ConnectLayers(pos, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-
-	// shortcut: not needed
-	// net.ConnectLayers(pos, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
-	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
+	// alm predicts cs, pos etc
+	net.ConnectToPFCBack(cs, csP, alm, almCT, almPTp, full)
+	net.ConnectToPFCBack(pos, posP, alm, almCT, almPTp, full)
 
-	///////////////////////////////////////////
-	// CS -> BLA, OFC
-
-	net.ConnectToSC1to1(cs, sc)
-
-	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
-	net.ConnectToBLAExt(cs, blaPosExt, full)
-
-	net.ConnectToBLAAcq(cs, blaNegAcq, full)
-	net.ConnectToBLAExt(cs, blaNegExt, full)
-
-	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-
-	///////////////////////////////////////////
-	// OFC, ACC, ALM predicts pos
-
-	// todo: a more dynamic US rep is needed to drive predictions in OFC
-	// using distance and effort here in the meantime
-	net.ConnectToPFCBack(pos, posP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(pos, posP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
-
-	net.ConnectToPFC(pos, posP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
-	net.ConnectToPFC(pos, posP, accNegVal, accNegValCT, accNegValPTp, full)
-
-	//	alm predicts all effort, cost, sensory state vars
-	net.ConnectToPFC(pos, posP, alm, almCT, almPTp, full)
-
-	///////////////////////////////////////////
-	// ALM, M1 <-> OFC, ACC
-
-	// action needs to know if maintaining a goal or not
-	// using accUtil as main summary "driver" input to action system
-	// PTp provides good notmaint signal for action.
-	net.ConnectLayers(accUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	net.ConnectLayers(accUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-
-	// note: in Obelisk this helps with the Consume action
-	// but here in this example it produces some instability
-	// at later time points -- todo: investigate later.
-	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(dSGPi, m1VM, full, axon.InhibPrjn)
+	// m1 and all of its inputs go to DS.
+	for _, dSLy := range []*axon.Layer{dSMtxGo, dSMtxNo, dSSTNP, dSSTNS} {
+		net.ConnectToMatrix(m1, dSLy, full)
+		net.ConnectToMatrix(m1PT, dSLy, full)
+		net.ConnectToMatrix(m1PTp, dSLy, full)
+		net.ConnectToMatrix(alm, dSLy, full)
+		net.ConnectToMatrix(almPT, dSLy, full)
+		net.ConnectToMatrix(almPTp, dSLy, full)
+	}
 
 	////////////////////////////////////////////////
 	// position
 
-	cs.PlaceRightOf(pvPos, space)
 	pos.PlaceRightOf(cs, space)
 	arm.PlaceRightOf(pos, space)
+	vSgpi.PlaceBehind(csP, space)
+	vl.PlaceRightOf(vSgpi, space)
+	act.PlaceRightOf(vl, space)
 
-	m1.PlaceRightOf(arm, space)
+	dSGPi.PlaceRightOf(arm, space)
+	dSMtxNo.PlaceBehind(dSMtxGo, space)
+
+	m1.PlaceAbove(dSGPi)
+	m1P.PlaceBehind(m1VM, space)
 	alm.PlaceRightOf(m1, space)
-	vl.PlaceBehind(m1P, space)
-	act.PlaceBehind(vl, space)
-
-	notMaint.PlaceRightOf(alm, space)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -344,14 +320,6 @@ func (ss *Sim) ApplyParams() {
 	cs.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 	csp := net.AxonLayerByName("CSP")
 	csp.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
-	bla := net.AxonLayerByName("BLAPosAcqD1")
-	pji, _ := bla.SendNameTry("BLANovelCS")
-	pj := pji.(*axon.Prjn)
-
-	// this is very sensitive param to get right
-	// too little and the hamster does not try CSs at the beginning,
-	// too high and it gets stuck trying the same location over and over
-	pj.Params.PrjnScale.Abs = float32(math.Min(float64(2.3+(float32(nCSTot)/10.0)), 3.0))
 
 	// then apply config-set params.
 	if ss.Config.Params.Network != nil {
@@ -1211,8 +1179,8 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGUI() {
-	title := "BOA: BG, OFC ACC"
-	ss.GUI.MakeBody(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	title := "DLS: Dorsal Lateral Striatum motor learning"
+	ss.GUI.MakeBody(ss, "dls", title, `This project tests motor sequence learning in the DLS dorsal lateral striatum and associated motor cortex. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -1270,7 +1238,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/boa/README.md")
+				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/dls/README.md")
 			},
 		})
 	})
