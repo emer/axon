@@ -24,6 +24,7 @@ import (
 	"github.com/emer/emergent/v2/erand"
 	"goki.dev/etable/v2/etensor"
 	"goki.dev/etable/v2/minmax"
+	"goki.dev/glop/num"
 )
 
 // Actions is a list of mutually exclusive states
@@ -220,6 +221,8 @@ func (ev *Env) Init(run int) {
 	ev.States["Pos"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
 	ev.States["Arm"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.Config.NArms}, nil, nil)
 	ev.States["Action"] = etensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
+	ev.States["VSgpi"] = etensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
+	ev.States["OFC"] = etensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
@@ -366,7 +369,7 @@ func (ev *Env) Step() bool {
 func (ev *Env) RenderLocalist(name string, val int) {
 	st := ev.States[name]
 	st.SetZeros()
-	if val >= st.Dim(1) {
+	if val >= st.Dim(1) || val < 0 {
 		return
 	}
 	for y := 0; y < ev.Config.Params.NYReps; y++ {
@@ -388,6 +391,10 @@ func (ev *Env) RenderState() {
 	ev.RenderLocalist("CS", ev.CurCS())
 	ev.RenderLocalist("Pos", ev.Pos)
 	ev.RenderLocalist("Arm", ev.Arm)
+	ofcn := 2 * num.FromBool[int](ev.HasGated)
+	ev.RenderLocalist("OFC", ofcn)
+	vsn := 2 * (num.FromBool[int](ev.JustGated) - 1)
+	ev.RenderLocalist("VSgpi", vsn)
 }
 
 // RenderAction renders the action
@@ -456,7 +463,7 @@ func (ev *Env) TakeAct(act Actions) {
 			ev.Arm++
 		}
 		if ev.Arm >= narms {
-			ev.Arm += narms
+			ev.Arm -= narms
 		}
 	case Consume:
 		ev.Effort = ev.ConsumeEffort()
@@ -501,7 +508,7 @@ func (ev *Env) InstinctAct(justGated, hasGated bool) Actions {
 	if ev.LastAct == Left || ev.LastAct == Right {
 		return ev.LastAct
 	}
-	if ev.Config.Params.AlwaysLeft || erand.BoolP(.5, -1, &ev.Rand) {
+	if erand.BoolP(.5, -1, &ev.Rand) {
 		return Left
 	}
 	return Right

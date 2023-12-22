@@ -15,9 +15,6 @@ type Params struct {
 	// effort for consuming US
 	ConsumeEffort minmax.F32 `nest:"+" def:"{'Min':0.5, 'Max':0.5}"`
 
-	// always turn left -- zoolander style -- reduces degrees of freedom in evaluating behavior
-	AlwaysLeft bool `def:"true"`
-
 	// permute the order of CSs prior to applying them to arms -- having this off makes it easier to visually determine match between Drive and arm approach, and shouldn't make any difference to behavior (model doesn't know about this ordering).
 	PermuteCSs bool `def:"false"`
 

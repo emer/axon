@@ -38,7 +38,6 @@ import (
 	"goki.dev/etable/v2/split"
 	"goki.dev/gi/v2/gi"
 	"goki.dev/gi/v2/gimain"
-	"goki.dev/glop/num"
 	"goki.dev/mat32/v2"
 )
 
@@ -208,13 +207,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// popX := 4
 	space := float32(2)
 
-	pone2one := prjn.NewPoolOneToOne()
-	// one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
-	mtxRndPrjn := prjn.NewPoolUnifRnd()
-	mtxRndPrjn.PCon = 0.75
-	_ = mtxRndPrjn
-	_ = pone2one
 	prjnClass := "PFCPrjn"
 
 	ny := ev.Config.Params.NYReps
@@ -222,9 +215,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
 	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
-	arm := net.AddLayer2D("Arm", ny, narm, axon.InputLayer)
+	arm, armP := net.AddInputPulv2D("Arm", ny, narm, space)
 
 	vSgpi := net.AddLayer2D("VSgpi", nuBgY, nuBgX, axon.InputLayer) // fake ventral BG
+	ofc := net.AddLayer2D("OFC", nuBgY, nuBgX, axon.InputLayer)     // fake OFC
 
 	///////////////////////////////////////////
 	// 	Dorsal lateral Striatum / BG
@@ -263,8 +257,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// sensory inputs guiding action
 	// note: alm gets effort, pos via predictive coding below
 
-	net.ConnectLayers(pos, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).SetClass("ToVL")
@@ -272,8 +264,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// alm predicts cs, pos etc
 	net.ConnectToPFCBack(cs, csP, alm, almCT, almPTp, full)
 	net.ConnectToPFCBack(pos, posP, alm, almCT, almPTp, full)
+	net.ConnectToPFCBack(arm, armP, alm, almCT, almPTp, full)
+
+	net.ConnectToPFCBack(cs, csP, m1, m1CT, m1PTp, full)
+	net.ConnectToPFCBack(pos, posP, m1, m1CT, m1PTp, full)
+	net.ConnectToPFCBack(arm, armP, m1, m1CT, m1PTp, full)
 
 	net.ConnectLayers(dSGPi, m1VM, full, axon.InhibPrjn)
+
 	// m1 and all of its inputs go to DS.
 	for _, dSLy := range []*axon.Layer{dSMtxGo, dSMtxNo, dSSTNP, dSSTNS} {
 		net.ConnectToMatrix(m1, dSLy, full)
@@ -289,9 +287,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	pos.PlaceRightOf(cs, space)
 	arm.PlaceRightOf(pos, space)
-	vSgpi.PlaceBehind(csP, space)
-	vl.PlaceRightOf(vSgpi, space)
+
+	vl.PlaceBehind(csP, space)
 	act.PlaceRightOf(vl, space)
+
+	vSgpi.PlaceAbove(cs)
+	ofc.PlaceRightOf(vSgpi, space)
 
 	dSGPi.PlaceRightOf(arm, space)
 	dSMtxNo.PlaceBehind(dSMtxGo, space)
@@ -431,11 +432,6 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		ss.Config.Env.CurPctCortex(trnEpc)
-	})
-
 	////////////////////////////////////////////
 	// GUI
 
@@ -467,70 +463,36 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
 	pv := &ss.Net.PVLV
-	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
-	vlly := ss.Net.AxonLayerByName("VL")
-	threshold := float32(0.1)
+	// vlly := ss.Net.AxonLayerByName("VL")
 	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
-		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: pv.VSMatrix.JustGated.IsTrue()
-		hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
-		ev.InstinctAct(justGated, hasGated)
-		csGated := (justGated && !pv.HasPosUS(ctx, diu))
-		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
-		wasDeciding := num.ToBool(ss.Stats.Float32Di("Deciding", di))
-		if wasDeciding {
-			deciding = false // can't keep deciding!
-		}
-		ss.Stats.SetFloat32Di("Deciding", di, num.FromBool[float32](deciding))
-
+		justGated := false
+		hasGated := true
 		trSt := armaze.TrSearching
 		if hasGated {
 			trSt = armaze.TrApproaching
 		}
-
-		if csGated || deciding {
-			act := "CSGated"
-			trSt = armaze.TrJustEngaged
-			if !csGated {
-				act = "Deciding"
-				trSt = armaze.TrDeciding
-			}
-			ss.Stats.SetStringDi("Debug", di, act)
-			ev.Action("None", nil)
-			ss.ApplyAction(di)
-			ss.Stats.SetStringDi("ActAction", di, "None")
-			ss.Stats.SetStringDi("Instinct", di, "None")
-			ss.Stats.SetStringDi("NetAction", di, act)
-			ss.Stats.SetFloatDi("ActMatch", di, 1)                // whatever it is, it is ok
-			vlly.Pool(0, uint32(di)).Inhib.Clamped.SetBool(false) // not clamped this trial
+		netAct := ss.DecodeAct(ev, di)
+		genAct := ev.InstinctAct(justGated, hasGated)
+		ss.Stats.SetStringDi("NetAction", di, netAct.String())
+		ss.Stats.SetStringDi("Instinct", di, genAct.String())
+		if netAct == genAct {
+			ss.Stats.SetFloatDi("ActMatch", di, 1)
 		} else {
-			ss.Stats.SetStringDi("Debug", di, "acting")
-			netAct := ss.DecodeAct(ev, di)
-			genAct := ev.InstinctAct(justGated, hasGated)
-			ss.Stats.SetStringDi("NetAction", di, netAct.String())
-			ss.Stats.SetStringDi("Instinct", di, genAct.String())
-			if netAct == genAct {
-				ss.Stats.SetFloatDi("ActMatch", di, 1)
-			} else {
-				ss.Stats.SetFloatDi("ActMatch", di, 0)
-			}
+			ss.Stats.SetFloatDi("ActMatch", di, 0)
+		}
+		actAct := netAct // net always driving
+		ss.Stats.SetStringDi("ActAction", di, actAct.String())
 
-			actAct := genAct
-			if ss.Stats.FloatDi("CortexDriving", di) > 0 {
-				actAct = netAct
-			}
-			ss.Stats.SetStringDi("ActAction", di, actAct.String())
+		ev.Action(actAct.String(), nil)
+		ss.ApplyAction(di)
 
-			ev.Action(actAct.String(), nil)
-			ss.ApplyAction(di)
-
-			switch {
-			case pv.HasPosUS(ctx, diu):
-				trSt = armaze.TrRewarded
-			case actAct == armaze.Consume:
-				trSt = armaze.TrConsuming
-			}
+		switch {
+		case pv.HasPosUS(ctx, diu):
+			trSt = armaze.TrRewarded
+		case actAct == armaze.Consume:
+			trSt = armaze.TrConsuming
 		}
 		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 {
 			trSt = armaze.TrGiveUp
@@ -577,7 +539,6 @@ func (ss *Sim) ApplyInputs() {
 		}
 		ev.Step()
 		if ev.Tick == 0 {
-			ss.Stats.SetFloat32Di("CortexDriving", int(di), num.FromBool[float32](erand.BoolP32(ss.Config.Env.PctCortex, -1)))
 			ev.ExValueUtil(&ss.Net.PVLV, ctx)
 		}
 		for _, lnm := range lays {
@@ -613,7 +574,6 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Config.Env.PctCortex = 0
 	ss.Net.InitWts(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
@@ -631,7 +591,6 @@ func (ss *Sim) NewRun() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetInt("Di", 0)
-	ss.Stats.SetFloat("PctCortex", 0)
 	ss.Stats.SetFloat("Pos", 0)
 	ss.Stats.SetFloat("Drive", 0)
 	ss.Stats.SetFloat("CS", 0)
@@ -643,26 +602,13 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetString("TraceState", "")
 	ss.Stats.SetInt("TraceStateInt", 0)
 	ss.Stats.SetFloat("ActMatch", 0)
-	ss.Stats.SetFloat("AllGood", 0)
 
-	ss.Stats.SetFloat("JustGated", 0)
-	ss.Stats.SetFloat("Should", 0)
-	ss.Stats.SetFloat("GateUS", 0)
-	ss.Stats.SetFloat("GateCS", 0)
-	ss.Stats.SetFloat("Deciding", 0)
-	ss.Stats.SetFloat("GatedEarly", 0)
-	ss.Stats.SetFloat("MaintEarly", 0)
-	ss.Stats.SetFloat("GatedAgain", 0)
-	ss.Stats.SetFloat("WrongCSGate", 0)
-	ss.Stats.SetFloat("AChShould", 0)
-	ss.Stats.SetFloat("AChShouldnt", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetFloat("DA", 0)
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
 	ss.Stats.SetFloat("DA_GiveUp", 0)
-	ss.Stats.SetFloat("VSPatchThr", 0)
 
 	ss.Stats.SetFloat("Time", 0)
 	ss.Stats.SetFloat("Effort", 0)
@@ -678,20 +624,6 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("GiveUpProb", 0)
 	ss.Stats.SetFloat("GiveUp", 0)
 
-	ss.Stats.SetFloat("LHbDip", 0)
-	ss.Stats.SetFloat("LHbBurst", 0)
-	ss.Stats.SetFloat("LHbDA", 0)
-
-	ss.Stats.SetFloat("CeMpos", 0)
-	ss.Stats.SetFloat("CeMneg", 0)
-	ss.Stats.SetFloat("SC", 0)
-
-	lays := ss.Net.LayersByType(axon.PTMaintLayer)
-	for _, lnm := range lays {
-		ss.Stats.SetFloat("Maint"+lnm, 0)
-		ss.Stats.SetFloat("MaintFail"+lnm, 0)
-		ss.Stats.SetFloat("PreAct"+lnm, 0)
-	}
 	ss.Stats.SetString("Debug", "") // special debug notes per trial
 }
 
@@ -709,7 +641,6 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
-	ss.Stats.SetFloat32("PctCortex", ss.Config.Env.PctCortex)
 	ss.Stats.SetFloat32("Pos", float32(ev.Pos))
 	ss.Stats.SetFloat32("Arm", float32(ev.Arm))
 	// ss.Stats.SetFloat32("Drive", float32(ev.Drive))
@@ -734,9 +665,6 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
-	ss.GatedStats(di)
-	ss.MaintStats(di)
-
 	diu := uint32(di)
 	ctx := &ss.Context
 	pv := &ss.Net.PVLV
@@ -763,9 +691,6 @@ func (ss *Sim) TrialStats(di int) {
 		}
 	}
 
-	vsLy := ss.Net.AxonLayerByName("VsPatch")
-	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
-
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
 	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
 	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
@@ -780,48 +705,8 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
 
-	ss.Stats.SetFloat32("LHbDip", axon.GlbV(ctx, diu, axon.GvLHbDip))
-	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbBurst))
-	ss.Stats.SetFloat32("LHbDA", axon.GlbV(ctx, diu, axon.GvLHbPVDA))
-
-	ss.Stats.SetFloat32("CeMpos", axon.GlbV(ctx, diu, axon.GvCeMpos))
-	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))
-
-	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
-
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
 	ss.Stats.SetFloat32("AChRaw", axon.GlbV(ctx, diu, axon.GvAChRaw))
-
-	var allGood float64
-	agN := 0
-	if fv := ss.Stats.Float("GateUS"); !math.IsNaN(fv) {
-		allGood += fv
-		agN++
-	}
-	if fv := ss.Stats.Float("GateCS"); !math.IsNaN(fv) {
-		allGood += fv
-		agN++
-	}
-	if fv := ss.Stats.Float("ActMatch"); !math.IsNaN(fv) {
-		allGood += fv
-		agN++
-	}
-	if fv := ss.Stats.Float("GatedEarly"); !math.IsNaN(fv) {
-		allGood += 1 - fv
-		agN++
-	}
-	if fv := ss.Stats.Float("GatedAgain"); !math.IsNaN(fv) {
-		allGood += 1 - fv
-		agN++
-	}
-	if fv := ss.Stats.Float("WrongCSGate"); !math.IsNaN(fv) {
-		allGood += 1 - fv
-		agN++
-	}
-	if agN > 0 {
-		allGood /= float64(agN)
-	}
-	ss.Stats.SetFloat("AllGood", allGood)
 }
 
 // ActionStatsDi copies the action info from given data parallel index
@@ -838,100 +723,6 @@ func (ss *Sim) ActionStatsDi(di int) {
 	ss.Stats.SetInt("TraceStateInt", ss.Stats.IntDi("TraceStateInt", di))
 }
 
-// GatedStats updates the gated states
-func (ss *Sim) GatedStats(di int) {
-	ctx := &ss.Context
-	pv := &ss.Net.PVLV
-	diu := uint32(di)
-	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
-	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
-	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
-	nan := mat32.NaN()
-	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
-	ss.ActionStatsDi(di)
-
-	ss.Stats.SetFloat32("JustGated", num.FromBool[float32](justGated))
-	ss.Stats.SetFloat32("Should", num.FromBool[float32](ev.ShouldGate))
-	ss.Stats.SetFloat32("HasGated", num.FromBool[float32](hasGated))
-	ss.Stats.SetFloat32("GateUS", nan)
-	ss.Stats.SetFloat32("GateCS", nan)
-	ss.Stats.SetFloat32("GatedEarly", nan)
-	ss.Stats.SetFloat32("MaintEarly", nan)
-	ss.Stats.SetFloat32("GatedAgain", nan)
-	ss.Stats.SetFloat32("WrongCSGate", nan)
-	ss.Stats.SetFloat32("AChShould", nan)
-	ss.Stats.SetFloat32("AChShouldnt", nan)
-	hasPos := pv.HasPosUS(ctx, diu)
-	if justGated {
-		ss.Stats.SetFloat32("WrongCSGate", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
-	}
-	if ev.ShouldGate {
-		if hasPos {
-			ss.Stats.SetFloat32("GateUS", num.FromBool[float32](justGated))
-		} else {
-			ss.Stats.SetFloat32("GateCS", num.FromBool[float32](justGated))
-		}
-	} else {
-		if hasGated {
-			ss.Stats.SetFloat32("GatedAgain", num.FromBool[float32](justGated))
-		} else { // !should gate means early..
-			ss.Stats.SetFloat32("GatedEarly", num.FromBool[float32](justGated))
-		}
-	}
-	// We get get ACh when new CS or Rew
-	if hasPos || ev.LastCS != ev.CurCS() {
-		ss.Stats.SetFloat32("AChShould", axon.GlbV(ctx, diu, axon.GvACh))
-	} else {
-		ss.Stats.SetFloat32("AChShouldnt", axon.GlbV(ctx, diu, axon.GvACh))
-	}
-}
-
-// MaintStats updates the PFC maint stats
-func (ss *Sim) MaintStats(di int) {
-	ctx := &ss.Context
-	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
-	// should be maintaining while going forward
-	isFwd := ev.LastAct == armaze.Forward
-	isCons := ev.LastAct == armaze.Consume
-	actThr := float32(0.05) // 0.1 too high
-	net := ss.Net
-	lays := net.LayersByType(axon.PTMaintLayer)
-	hasMaint := false
-	for _, lnm := range lays {
-		mnm := "Maint" + lnm
-		fnm := "MaintFail" + lnm
-		pnm := "PreAct" + lnm
-		ptly := net.AxonLayerByName(lnm)
-		var mact float32
-		if ptly.Is4D() {
-			for pi := uint32(1); pi < ptly.NPools; pi++ {
-				avg := ptly.Pool(pi, uint32(di)).AvgMax.Act.Plus.Avg
-				if avg > mact {
-					mact = avg
-				}
-			}
-		} else {
-			mact = ptly.Pool(0, uint32(di)).AvgMax.Act.Plus.Avg
-		}
-		overThr := mact > actThr
-		if overThr {
-			hasMaint = true
-		}
-		ss.Stats.SetFloat32(pnm, mat32.NaN())
-		ss.Stats.SetFloat32(mnm, mat32.NaN())
-		ss.Stats.SetFloat32(fnm, mat32.NaN())
-		if isFwd {
-			ss.Stats.SetFloat32(mnm, mact)
-			ss.Stats.SetFloat32(fnm, num.FromBool[float32](!overThr))
-		} else if !isCons {
-			ss.Stats.SetFloat32(pnm, num.FromBool[float32](overThr))
-		}
-	}
-	if hasMaint {
-		ss.Stats.SetFloat32("MaintEarly", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // 		Logging
 
@@ -942,8 +733,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
-	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
-	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "US", "HasRew")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction", "TraceState")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
@@ -961,7 +750,7 @@ func (ss *Sim) ConfigLogs() {
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "RewPred_NR", "MaintEarly")
+	ss.Logs.PlotItems("ActMatch", "Rew", "RewPred")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -976,19 +765,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ss.Logs.AddStatAggItem("AllGood", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("ActMatch", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("JustGated", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateUS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateCS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Deciding", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GatedEarly", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("MaintEarly", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GatedAgain", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
 
 	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
@@ -1006,7 +783,6 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA_GiveUp", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Epoch, etime.Trial)
@@ -1021,14 +797,6 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("GiveUpDiff", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddStatAggItem("LHbDip", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("LHbDA", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddStatAggItem("CeMpos", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("CeMneg", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("SC", etime.Run, etime.Epoch, etime.Trial)
 
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion
@@ -1068,16 +836,6 @@ func (ss *Sim) ConfigLogItems() {
 						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}
 				}}})
-	}
-
-	lays := ss.Net.LayersByType(axon.PTMaintLayer)
-	for _, lnm := range lays {
-		nm := "Maint" + lnm
-		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
-		nm = "MaintFail" + lnm
-		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
-		nm = "PreAct" + lnm
-		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
 	}
 }
 
@@ -1144,36 +902,34 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	di := ss.GUI.ViewUpdt.View.Di
-	diu := uint32(di)
+	// diu := uint32(di)
 	ev := ss.Envs.ByModeDi(mode, di).(*armaze.Env)
 	ctx := &ss.Context
 	net := ss.Net
-	pv := &net.PVLV
-	dp := ss.EnvGUI.USposData
-	ofcPosUS := net.AxonLayerByName("OFCposUSPT")
-	ofcmul := float32(1)
-	np := pv.NPosUSs
-	for i := uint32(0); i < np; i++ {
-		drv := axon.GlbUSposV(ctx, diu, axon.GvDrives, i)
-		us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
-		ofcP := ofcPosUS.Pool(i+1, diu)
-		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
-		dp.SetCellFloat("Drive", int(i), float64(drv))
-		dp.SetCellFloat("USin", int(i), float64(us))
-		dp.SetCellFloat("OFC", int(i), float64(ofc))
-	}
-	dn := ss.EnvGUI.USnegData
-	ofcNegUS := net.AxonLayerByName("OFCnegUSPT")
-	nn := pv.NNegUSs
-	for i := uint32(0); i < nn; i++ {
-		us := axon.GlbUSneg(ctx, diu, axon.GvUSneg, i)
-		ofcP := ofcNegUS.Pool(i+1, diu)
-		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
-		dn.SetCellFloat("USin", int(i), float64(us))
-		dn.SetCellFloat("OFC", int(i), float64(ofc))
-	}
-	ss.EnvGUI.USposPlot.GoUpdatePlot()
-	ss.EnvGUI.USnegPlot.GoUpdatePlot()
+	/*
+		pv := &net.PVLV
+		dp := ss.EnvGUI.USposData
+		for i := uint32(0); i < np; i++ {
+			drv := axon.GlbUSposV(ctx, diu, axon.GvDrives, i)
+			us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
+			ofcP := ofcPosUS.Pool(i+1, diu)
+			ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
+			dp.SetCellFloat("Drive", int(i), float64(drv))
+			dp.SetCellFloat("USin", int(i), float64(us))
+			dp.SetCellFloat("OFC", int(i), float64(ofc))
+		}
+		dn := ss.EnvGUI.USnegData
+		nn := pv.NNegUSs
+		for i := uint32(0); i < nn; i++ {
+			us := axon.GlbUSneg(ctx, diu, axon.GvUSneg, i)
+			ofcP := ofcNegUS.Pool(i+1, diu)
+			ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
+			dn.SetCellFloat("USin", int(i), float64(us))
+			dn.SetCellFloat("OFC", int(i), float64(ofc))
+		}
+		ss.EnvGUI.USposPlot.GoUpdatePlot()
+		ss.EnvGUI.USnegPlot.GoUpdatePlot()
+	*/
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
@@ -1189,7 +945,7 @@ func (ss *Sim) ConfigGUI() {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.4, 2.6)
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.3, 1.8)
 	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{}, mat32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
