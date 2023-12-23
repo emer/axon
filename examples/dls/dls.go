@@ -29,6 +29,7 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/empi/v2/mpi"
 	"goki.dev/etable/v2/agg"
@@ -203,8 +204,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuCtxY := 6
 	nuCtxX := 6
 	nAct := int(armaze.ActionsN)
-	// popY := 4
-	// popX := 4
+	popY := 4
+	popX := 4
 	space := float32(2)
 
 	full := prjn.NewFull()
@@ -213,12 +214,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
+	vta, _, _ := net.AddVTALHbLDTLayers(relpos.Behind, space)
+	usPos, usNeg := net.AddUSLayers(popY, popX, relpos.Behind, space)
+	pvPos, _ := net.AddPVLayers(popY, popX, relpos.Behind, space)
+	drv := net.AddDrivesLayer(ctx, popY, popX)
+
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
 	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
 	arm, armP := net.AddInputPulv2D("Arm", ny, narm, space)
 
-	vSgpi := net.AddLayer2D("VSgpi", nuBgY, nuBgX, axon.InputLayer) // fake ventral BG
-	ofc := net.AddLayer2D("OFC", nuBgY, nuBgX, axon.InputLayer)     // fake OFC
+	vSgpi := net.AddLayer2D("VSgpi", ny, nuBgX, axon.InputLayer) // fake ventral BG
+	ofc := net.AddLayer2D("OFC", ny, nuBgX, axon.InputLayer)     // fake OFC
 
 	///////////////////////////////////////////
 	// 	Dorsal lateral Striatum / BG
@@ -286,16 +292,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	////////////////////////////////////////////////
 	// position
 
+	usPos.PlaceRightOf(vta, space)
+	pvPos.PlaceRightOf(usPos, space)
+	drv.PlaceBehind(usNeg, space)
+
+	cs.PlaceAbove(vta)
 	pos.PlaceRightOf(cs, space)
 	arm.PlaceRightOf(pos, space)
 
-	vl.PlaceBehind(csP, space)
-	act.PlaceRightOf(vl, space)
+	vl.PlaceRightOf(arm, space)
+	act.PlaceBehind(vl, space)
 
-	vSgpi.PlaceAbove(cs)
+	vSgpi.PlaceBehind(csP, space)
 	ofc.PlaceRightOf(vSgpi, space)
 
-	dSGPi.PlaceRightOf(arm, space)
+	dSGPi.PlaceRightOf(pvPos, space)
 	dSMtxNo.PlaceBehind(dSMtxGo, space)
 
 	m1.PlaceAbove(dSGPi)
@@ -482,6 +493,9 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 			ss.Stats.SetFloatDi("ActMatch", di, 0)
 		}
 		actAct := netAct // net always driving
+		if ev.USConsumed >= 0 {
+			actAct = armaze.Consume // have to do it 2x to reset -- just a random timing thing
+		}
 		ss.Stats.SetStringDi("ActAction", di, actAct.String())
 
 		ev.Action(actAct.String(), nil)
