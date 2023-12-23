@@ -208,7 +208,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	space := float32(2)
 
 	full := prjn.NewFull()
-	prjnClass := "PFCPrjn"
+	// prjnClass := "PFCPrjn"
 
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
@@ -251,7 +251,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPTp, full) // alm predicts m1
 
 	// vl is a predictive thalamus but we don't have direct access to its source
-	net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
+	// net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
+	net.ConnectToPFC(nil, vl, m1, m1CT, m1PTp, full)    // m1 predicts vl
 	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts vl
 
 	// sensory inputs guiding action
@@ -467,14 +468,12 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
-		justGated := false
-		hasGated := true
+		netAct := ss.DecodeAct(ev, di)
+		genAct := ev.InstinctAct()
 		trSt := armaze.TrSearching
-		if hasGated {
+		if ev.HasGated {
 			trSt = armaze.TrApproaching
 		}
-		netAct := ss.DecodeAct(ev, di)
-		genAct := ev.InstinctAct(justGated, hasGated)
 		ss.Stats.SetStringDi("NetAction", di, netAct.String())
 		ss.Stats.SetStringDi("Instinct", di, genAct.String())
 		if netAct == genAct {
@@ -507,8 +506,28 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *armaze.Env, di int) armaze.Actions {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaSpkP", di) // was "Act"
-	return ev.DecodeAct(vt)
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaSpkD", di) // was "Act"
+	return armaze.Actions(ss.SoftMaxChoose(ev, vt))
+}
+
+func (ss *Sim) SoftMaxChoose(ev *armaze.Env, vt *etensor.Float32) int {
+	dx := vt.Dim(1)
+	var tot float32
+	probs := make([]float32, dx)
+	for i := range probs {
+		var sum float32
+		for j := 0; j < ev.Config.Params.NYReps; j++ {
+			sum += vt.Value([]int{j, i})
+		}
+		p := mat32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		probs[i] = p
+		tot += p
+	}
+	for i, p := range probs {
+		probs[i] = p / tot
+	}
+	chs := erand.PChoose32(probs, -1)
+	return chs
 }
 
 func (ss *Sim) ApplyAction(di int) {
@@ -528,7 +547,7 @@ func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	ss.Stats.SetString("Debug", "") // start clear
 	net := ss.Net
-	lays := []string{"Pos", "Arm", "CS"}
+	lays := []string{"Pos", "Arm", "CS", "VSgpi", "OFC"}
 
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
@@ -941,7 +960,7 @@ func (ss *Sim) ConfigGUI() {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
-	nv.Params.LayNmSize = 0.02
+	nv.Params.LayNmSize = 0.04
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 

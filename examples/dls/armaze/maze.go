@@ -110,9 +110,6 @@ type Env struct {
 	// last US -- previous trial
 	LastUS int `inactive:"+"`
 
-	// true if looking at correct CS for first time
-	ShouldGate bool `inactive:"+"`
-
 	// just gated on this trial -- set by sim-- used for instinct
 	JustGated bool `inactive:"+"`
 
@@ -492,12 +489,14 @@ func (ev *Env) ConsumeUS(arm *Arm) {
 }
 
 // InstinctAct returns an "instinctive" action that implements a basic policy
-func (ev *Env) InstinctAct(justGated, hasGated bool) Actions {
-	ev.JustGated = justGated
-	ev.HasGated = hasGated
-	ev.ShouldGate = ((hasGated && ev.USConsumed >= 0) || // To clear the goal after US
-		(!hasGated && ev.ArmIsMaxUtil(ev.Arm))) // looking at correct, haven't yet gated
-
+func (ev *Env) InstinctAct() Actions {
+	ev.JustGated = !ev.HasGated && ev.ArmIsMaxUtil(ev.Arm)
+	if ev.JustGated {
+		ev.HasGated = true
+	}
+	if ev.HasGated && ev.USConsumed >= 0 { // gate at consume
+		ev.JustGated = true
+	}
 	arm := ev.CurArm()
 	if ev.Pos >= arm.Length {
 		return Consume

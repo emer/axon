@@ -14,6 +14,9 @@ type EnvConfig struct {
 	// name of config file that loads into Env.Config for setting environment parameters directly
 	Config string `desc:"name of config file that loads into Env.Config for setting environment parameters directly"`
 
+	// gain on the softmax for choosing actions: lower values are more noisy
+	ActSoftMaxGain float32 `def:"1"`
+
 	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
 	NDrives int `def:"4"`
 
