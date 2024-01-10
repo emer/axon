@@ -28,7 +28,6 @@ import (
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/empi/v2/mpi"
 	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
 )
 
 func main() {
@@ -36,7 +35,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Run(sim.RunGUI)
+		sim.RunGUI()
 	} else {
 		sim.RunNoGUI()
 	}
