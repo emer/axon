@@ -12,8 +12,8 @@ import (
 	"github.com/emer/emergent/v2/efuns"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/evec"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/etensor"
+	"goki.dev/mat32"
 )
 
 // Stim describes a single stimulus

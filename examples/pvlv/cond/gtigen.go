@@ -51,7 +51,7 @@ var _ = gti.AddType(&gti.Type{
 		{"Trials", &gti.Field{Name: "Trials", Type: "[]*github.com/emer/axon/examples/pvlv/cond.Trial", LocalType: "[]*Trial", Doc: "current generated set of trials per Block", Directives: gti.Directives{}, Tag: ""}},
 		{"CurRun", &gti.Field{Name: "CurRun", Type: "github.com/emer/axon/examples/pvlv/cond.Run", LocalType: "Run", Doc: "copy of current run parameters", Directives: gti.Directives{}, Tag: ""}},
 		{"CurTrial", &gti.Field{Name: "CurTrial", Type: "github.com/emer/axon/examples/pvlv/cond.Trial", LocalType: "Trial", Doc: "copy of info for current trial", Directives: gti.Directives{}, Tag: ""}},
-		{"CurStates", &gti.Field{Name: "CurStates", Type: "map[string]*goki.dev/etable/v2/etensor.Float32", LocalType: "map[string]*etensor.Float32", Doc: "current rendered state tensors -- extensible map", Directives: gti.Directives{}, Tag: ""}},
+		{"CurStates", &gti.Field{Name: "CurStates", Type: "map[string]*github.com/emer/etable/v2/etensor.Float32", LocalType: "map[string]*etensor.Float32", Doc: "current rendered state tensors -- extensible map", Directives: gti.Directives{}, Tag: ""}},
 	}),
 	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
 	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),

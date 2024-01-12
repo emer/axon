@@ -8,7 +8,7 @@ import (
 	"math/rand"
 
 	"github.com/emer/emergent/v2/erand"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 // Valence

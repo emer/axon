@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
 	"github.com/goki/ki/ints"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/minmax"
 )
 
 // MusicEnv reads in a midi SMF file and presents it as a sequence of notes.

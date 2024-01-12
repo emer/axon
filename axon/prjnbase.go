@@ -11,10 +11,10 @@ import (
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/minmax"
-	"goki.dev/gi/v2/giv"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
+	"goki.dev/giv"
+	"goki.dev/mat32"
 )
 
 // index naming:

@@ -15,9 +15,9 @@ import (
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
 )
 
 // ParamSets for basic parameters

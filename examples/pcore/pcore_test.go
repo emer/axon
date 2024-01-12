@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"goki.dev/etable/v2/tsragg"
+	"github.com/emer/etable/v2/tsragg"
 )
 
 func TestPCore(t *testing.T) {

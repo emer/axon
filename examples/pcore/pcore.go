@@ -29,13 +29,13 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/etable/v2/agg"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/split"
-	"goki.dev/gi/v2/gi"
+	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/split"
+	"goki.dev/gi"
 	"goki.dev/glop/num"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 func main() {

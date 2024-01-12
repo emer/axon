@@ -11,7 +11,7 @@ import (
 
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/weights"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/etensor"
 	"goki.dev/glop/indent"
 )
 

@@ -8,12 +8,12 @@ import (
 	"image"
 
 	"github.com/anthonynsimon/bild/transform"
+	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/vision/v2/fffb"
 	"github.com/emer/vision/v2/gabor"
 	"github.com/emer/vision/v2/kwta"
 	"github.com/emer/vision/v2/v1complex"
 	"github.com/emer/vision/v2/vfilter"
-	"goki.dev/etable/v2/etensor"
 )
 
 // Vis encapsulates specific visual processing pipeline for V1 filtering

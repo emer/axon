@@ -29,10 +29,10 @@ import (
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/emergent/v2/weights"
-	"goki.dev/gi/v2/gi"
+	"goki.dev/gi"
 	"goki.dev/glop/dedupe"
 	"goki.dev/glop/indent"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 // NetworkBase manages the basic structural components of a network (layers).

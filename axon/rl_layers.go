@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"goki.dev/etable/v2/minmax"
+	"github.com/emer/etable/v2/minmax"
 )
 
 //gosl: start rl_layers

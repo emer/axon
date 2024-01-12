@@ -12,13 +12,13 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/v2/kinase"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	_ "goki.dev/etable/v2/etview" // include to get gui views
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
-	"goki.dev/gi/v2/giv"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	_ "github.com/emer/etable/v2/etview" // include to get gui views
+	"goki.dev/gi"
+	"goki.dev/gimain"
+	"goki.dev/giv"
 	_ "goki.dev/gosl/v2/slboolview" // ditto
 	"goki.dev/icons"
 )

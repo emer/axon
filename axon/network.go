@@ -11,7 +11,7 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/prjn"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/etensor"
 )
 
 // axon.Network implements the Axon spiking model,

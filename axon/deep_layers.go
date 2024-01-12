@@ -6,7 +6,7 @@ package axon
 
 import (
 	"github.com/emer/emergent/v2/params"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 //gosl: start deep_layers

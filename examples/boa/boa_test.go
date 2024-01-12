@@ -14,7 +14,7 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/emer/emergent/v2/etime"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 	"golang.org/x/exp/maps"
 )
 

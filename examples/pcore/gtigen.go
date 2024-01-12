@@ -125,7 +125,7 @@ var _ = gti.AddType(&gti.Type{
 		{"PopCode", &gti.Field{Name: "PopCode", Type: "github.com/emer/emergent/v2/popcode.OneD", LocalType: "popcode.OneD", Doc: "pop code the values in ACCPos and Neg", Directives: gti.Directives{}, Tag: ""}},
 		{"Rand", &gti.Field{Name: "Rand", Type: "github.com/emer/emergent/v2/erand.SysRand", LocalType: "erand.SysRand", Doc: "random number generator for the env -- all random calls must use this", Directives: gti.Directives{}, Tag: "view:\"-\""}},
 		{"RndSeed", &gti.Field{Name: "RndSeed", Type: "int64", LocalType: "int64", Doc: "random seed", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
-		{"States", &gti.Field{Name: "States", Type: "map[string]*goki.dev/etable/v2/etensor.Float32", LocalType: "map[string]*etensor.Float32", Doc: "named states: ACCPos, ACCNeg", Directives: gti.Directives{}, Tag: ""}},
+		{"States", &gti.Field{Name: "States", Type: "map[string]*github.com/emer/etable/v2/etensor.Float32", LocalType: "map[string]*etensor.Float32", Doc: "named states: ACCPos, ACCNeg", Directives: gti.Directives{}, Tag: ""}},
 		{"Should", &gti.Field{Name: "Should", Type: "bool", LocalType: "bool", Doc: "true if Pos - Neg > Thr", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"Gated", &gti.Field{Name: "Gated", Type: "bool", LocalType: "bool", Doc: "true if model gated on this trial", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
 		{"Match", &gti.Field{Name: "Match", Type: "bool", LocalType: "bool", Doc: "true if gated == should", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},

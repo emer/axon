@@ -4,7 +4,7 @@
 
 package armaze
 
-import "goki.dev/etable/v2/minmax"
+import "github.com/emer/etable/v2/minmax"
 
 // Arm represents the properties of a given arm of the N-maze.
 // Arms have characteristic distance and effort factors for getting

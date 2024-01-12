@@ -29,10 +29,10 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"goki.dev/gi"
+	"goki.dev/mat32"
 )
 
 func main() {

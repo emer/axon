@@ -21,8 +21,8 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/timer"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
 )
 
 // note: with 2 hidden layers, this simple test case converges to perfect performance:

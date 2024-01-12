@@ -6,7 +6,7 @@ package axon
 
 import (
 	"goki.dev/gosl/v2/slbool"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 //gosl: start neuromod

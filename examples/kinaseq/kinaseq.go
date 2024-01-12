@@ -13,15 +13,15 @@ import (
 
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	_ "github.com/emer/etable/v2/etview" // include to get gui views
 	"github.com/goki/ki/ki"
-	"goki.dev/etable/v2/agg"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	_ "goki.dev/etable/v2/etview" // include to get gui views
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
-	"goki.dev/gi/v2/giv"
-	"goki.dev/mat32/v2"
+	"goki.dev/gi"
+	"goki.dev/gimain"
+	"goki.dev/giv"
+	"goki.dev/mat32"
 )
 
 func main() {

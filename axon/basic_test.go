@@ -21,9 +21,9 @@ import (
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/etensor"
 	"goki.dev/laser"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 	"golang.org/x/exp/maps"
 )
 

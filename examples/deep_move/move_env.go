@@ -12,10 +12,10 @@ import (
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/popcode"
+	"github.com/emer/etable/v2/etensor"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 // MoveEnv is a flat-world grid-based environment

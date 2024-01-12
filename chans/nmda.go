@@ -4,7 +4,7 @@
 
 package chans
 
-import "goki.dev/mat32/v2"
+import "goki.dev/mat32"
 
 //gosl: start chans
 

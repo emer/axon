@@ -9,9 +9,9 @@ import (
 	"math/rand"
 
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/vision/v2/vfilter"
 	"github.com/emer/vision/v2/vxform"
-	"goki.dev/etable/v2/etensor"
 )
 
 // LEDEnv generates images of old-school "LED" style "letters" composed of a set of horizontal

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 	"golang.org/x/exp/maps"
 )
 

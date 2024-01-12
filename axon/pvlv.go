@@ -7,7 +7,7 @@ package axon
 import (
 	"github.com/emer/emergent/v2/erand"
 	"goki.dev/glop/num"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 // DriveParams manages the drive parameters for computing and updating drive state.

@@ -10,7 +10,7 @@ import (
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/prjn"
-	"goki.dev/etable/v2/norm"
+	"github.com/emer/etable/v2/norm"
 )
 
 // HipConfig have the hippocampus size and connectivity parameters

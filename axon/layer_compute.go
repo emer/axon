@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"log"
 
-	"goki.dev/etable/v2/minmax"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/minmax"
+	"goki.dev/mat32"
 )
 
 // index naming:

@@ -9,7 +9,7 @@ import (
 
 	"github.com/emer/emergent/v2/erand"
 	"goki.dev/gosl/v2/slbool"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 //gosl: start act_prjn

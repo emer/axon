@@ -4,7 +4,7 @@
 
 package armaze
 
-import "goki.dev/etable/v2/minmax"
+import "github.com/emer/etable/v2/minmax"
 
 // Params are misc environment parameters
 type Params struct {
