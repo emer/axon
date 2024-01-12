@@ -40,7 +40,7 @@ import (
 	"github.com/emer/etable/v2/tsragg"
 	"goki.dev/gi"
 	"goki.dev/mat32"
-	"goki.dev/vgpu/v2/vgpu"
+	"goki.dev/vgpu"
 )
 
 func main() {

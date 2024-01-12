@@ -9,7 +9,7 @@ import (
 	"image/color"
 
 	"goki.dev/colors"
-	"goki.dev/girl/paint"
+	"goki.dev/paint"
 )
 
 // LEDraw renders old-school "LED" style "letters" composed of a set of horizontal

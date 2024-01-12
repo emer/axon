@@ -15,7 +15,7 @@ package fsfffb
 
 //go:generate goki generate -add-types
 
-import "goki.dev/gosl/v2/slbool"
+import "github.com/emer/gosl/v2/slbool"
 
 //gosl: start fsfffb
 

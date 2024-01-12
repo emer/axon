@@ -8,7 +8,7 @@ import (
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/minmax"
-	"goki.dev/gosl/v2/slbool"
+	"github.com/emer/gosl/v2/slbool"
 	"goki.dev/mat32"
 )
 

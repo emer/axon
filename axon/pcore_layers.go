@@ -8,8 +8,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/emer/gosl/v2/slbool"
 	"goki.dev/glop/num"
-	"goki.dev/gosl/v2/slbool"
 )
 
 //gosl: start pcore_layers

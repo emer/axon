@@ -16,7 +16,7 @@ var _ = gti.AddType(&gti.Type{
 		&gti.Directive{Tool: "gosl", Directive: "start", Args: []string{"fsfffb"}},
 	},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"On", &gti.Field{Name: "On", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "enable this level of inhibition", Directives: gti.Directives{}, Tag: ""}},
+		{"On", &gti.Field{Name: "On", Type: "github.com/emer/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "enable this level of inhibition", Directives: gti.Directives{}, Tag: ""}},
 		{"Gi", &gti.Field{Name: "Gi", Type: "float32", LocalType: "float32", Doc: "overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"1,1.1,0.75,0.9\""}},
 		{"FB", &gti.Field{Name: "FB", Type: "float32", LocalType: "float32", Doc: "amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels.", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"0.5,1,4\""}},
 		{"FSTau", &gti.Field{Name: "FSTau", Type: "float32", LocalType: "float32", Doc: "fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"6\""}},
@@ -52,7 +52,7 @@ var _ = gti.AddType(&gti.Type{
 		{"FFs", &gti.Field{Name: "FFs", Type: "float32", LocalType: "float32", Doc: "all feedforward incoming spikes into neurons in this pool, normalized by pool size", Directives: gti.Directives{}, Tag: ""}},
 		{"FBs", &gti.Field{Name: "FBs", Type: "float32", LocalType: "float32", Doc: "all feedback outgoing spikes generated from neurons in this pool, normalized by pool size", Directives: gti.Directives{}, Tag: ""}},
 		{"GeExts", &gti.Field{Name: "GeExts", Type: "float32", LocalType: "float32", Doc: "all extra GeExt conductances added to neurons, normalized by pool size", Directives: gti.Directives{}, Tag: ""}},
-		{"Clamped", &gti.Field{Name: "Clamped", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if true, this layer is hard-clamped and should use GeExts exclusively for PV", Directives: gti.Directives{}, Tag: ""}},
+		{"Clamped", &gti.Field{Name: "Clamped", Type: "github.com/emer/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if true, this layer is hard-clamped and should use GeExts exclusively for PV", Directives: gti.Directives{}, Tag: ""}},
 		{"FSi", &gti.Field{Name: "FSi", Type: "float32", LocalType: "float32", Doc: "fast spiking PV+ fast integration of FFs feedforward spikes", Directives: gti.Directives{}, Tag: ""}},
 		{"SSi", &gti.Field{Name: "SSi", Type: "float32", LocalType: "float32", Doc: "slow spiking SST+ integration of FBs feedback spikes", Directives: gti.Directives{}, Tag: ""}},
 		{"SSf", &gti.Field{Name: "SSf", Type: "float32", LocalType: "float32", Doc: "slow spiking facilitation factor, representing facilitating effects of recent activity", Directives: gti.Directives{}, Tag: ""}},

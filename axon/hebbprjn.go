@@ -8,7 +8,7 @@ package axon
 
 todo: for GPU, must have this in base case
 
-import "goki.dev/gosl/v2/slbool"
+import "github.com/emer/gosl/v2/slbool"
 
 // HebbPrjn is a simple hebbian learning projection, using the CPCA Hebbian rule.
 // Note: when used with inhibitory projections, requires Learn.Trace.SubMean = 1

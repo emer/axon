@@ -8,9 +8,9 @@ import (
 	"math"
 
 	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/gosl/v2/slbool"
+	"github.com/emer/gosl/v2/slrand"
 	"goki.dev/glop/num"
-	"goki.dev/gosl/v2/slbool"
-	"goki.dev/gosl/v2/slrand"
 )
 
 var (

@@ -37,8 +37,8 @@ import (
 	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/etable/v2/split"
 	"github.com/goki/ki/kit"
+	"goki.dev/events"
 	"goki.dev/gi"
-	"goki.dev/goosi/events"
 	"goki.dev/mat32"
 )
 

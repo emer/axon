@@ -22,7 +22,7 @@ require (
 	goki.dev/girl v0.0.35
 	goki.dev/glop v0.1.9
 	goki.dev/goosi v0.0.24
-	goki.dev/gosl/v2 v2.0.0-dev0.0.5
+	github.com/emer/gosl/v2 v2.0.0-dev0.0.5
 	goki.dev/grr v0.0.11
 	goki.dev/gti v0.1.31
 	goki.dev/icons v0.0.16
