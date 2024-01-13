@@ -13,8 +13,6 @@ import (
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/popcode"
 	"github.com/emer/etable/v2/etensor"
-	"github.com/goki/ki/ints"
-	"github.com/goki/ki/kit"
 	"goki.dev/mat32"
 )
 
@@ -102,8 +100,6 @@ type MoveEnv struct {
 	// random seed
 	RndSeed int64 `inactive:"+"`
 }
-
-var KiT_MoveEnv = kit.Types.AddType(&MoveEnv{}, nil)
 
 func (ev *MoveEnv) Name() string { return ev.Nm }
 func (ev *MoveEnv) Desc() string { return "" }
@@ -387,8 +383,8 @@ var _ env.Env = (*MoveEnv)(nil)
 
 // WorldLineHoriz draw horizontal line
 func (ev *MoveEnv) WorldLineHoriz(st, ed evec.Vec2i, mat int) {
-	sx := ints.MinInt(st.X, ed.X)
-	ex := ints.MaxInt(st.X, ed.X)
+	sx := min(st.X, ed.X)
+	ex := max(st.X, ed.X)
 	for x := sx; x <= ex; x++ {
 		ev.World.Set([]int{st.Y, x}, mat)
 	}
@@ -396,8 +392,8 @@ func (ev *MoveEnv) WorldLineHoriz(st, ed evec.Vec2i, mat int) {
 
 // WorldLineVert draw vertical line
 func (ev *MoveEnv) WorldLineVert(st, ed evec.Vec2i, mat int) {
-	sy := ints.MinInt(st.Y, ed.Y)
-	ey := ints.MaxInt(st.Y, ed.Y)
+	sy := min(st.Y, ed.Y)
+	ey := max(st.Y, ed.Y)
 	for y := sy; y <= ey; y++ {
 		ev.World.Set([]int{y, st.X}, mat)
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
-	"github.com/goki/ki/ints"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
@@ -140,7 +139,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 			continue
 		}
 		tslice = append(tslice, no)
-		ticks = ints.MaxInt(ticks, tick)
+		ticks = max(ticks, tick)
 		sch = append(sch, etable.Column{name, etensor.INT64, nil, nil})
 	}
 

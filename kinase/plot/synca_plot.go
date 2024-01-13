@@ -15,17 +15,14 @@ import (
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
-	_ "github.com/emer/etable/v2/etview" // include to get gui views
+	_ "github.com/emer/etable/v2/etview"   // include to get gui views
+	_ "github.com/emer/gosl/v2/slboolview" // ditto
 	"goki.dev/gi"
-	"goki.dev/gimain"
 	"goki.dev/giv"
-	_ "goki.dev/gosl/v2/slboolview" // ditto
 	"goki.dev/icons"
 )
 
-func main() { gimain.Run(app) }
-
-func app() {
+func main() {
 	sim := &Sim{}
 	sim.Config()
 	sim.Run()

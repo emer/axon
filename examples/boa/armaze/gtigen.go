@@ -116,7 +116,7 @@ var _ = gti.AddType(&gti.Type{
 		{"Disp", &gti.Field{Name: "Disp", Type: "bool", LocalType: "bool", Doc: "update display -- turn off to make it faster", Directives: gti.Directives{}, Tag: ""}},
 		{"Env", &gti.Field{Name: "Env", Type: "*github.com/emer/axon/v2/examples/boa/armaze.Env", LocalType: "*Env", Doc: "the env being visualized", Directives: gti.Directives{}, Tag: ""}},
 		{"EnvName", &gti.Field{Name: "EnvName", Type: "string", LocalType: "string", Doc: "name of current env -- number is NData index", Directives: gti.Directives{}, Tag: ""}},
-		{"SceneView", &gti.Field{Name: "SceneView", Type: "*goki.dev/gi/v2/xyzv.SceneView", LocalType: "*xyzv.SceneView", Doc: "3D visualization of the Scene", Directives: gti.Directives{}, Tag: ""}},
+		{"SceneView", &gti.Field{Name: "SceneView", Type: "*goki.dev/xyzv.SceneView", LocalType: "*xyzv.SceneView", Doc: "3D visualization of the Scene", Directives: gti.Directives{}, Tag: ""}},
 		{"Scene2D", &gti.Field{Name: "Scene2D", Type: "*goki.dev/gi.SVG", LocalType: "*gi.SVG", Doc: "2D visualization of the Scene", Directives: gti.Directives{}, Tag: ""}},
 		{"MatColors", &gti.Field{Name: "MatColors", Type: "[]string", LocalType: "[]string", Doc: "list of material colors", Directives: gti.Directives{}, Tag: ""}},
 		{"StateColors", &gti.Field{Name: "StateColors", Type: "map[string]string", LocalType: "map[string]string", Doc: "internal state colors", Directives: gti.Directives{}, Tag: ""}},

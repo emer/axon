@@ -38,7 +38,6 @@ import (
 	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/etable/v2/split"
 	"goki.dev/gi"
-	"goki.dev/gimain"
 	"goki.dev/mat32"
 )
 
@@ -47,7 +46,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Run(sim.RunGUI)
+		sim.RunGUI()
 	} else {
 		sim.RunNoGUI()
 	}

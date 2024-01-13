@@ -11,9 +11,9 @@ import (
 	"unsafe"
 
 	"github.com/emer/empi/v2/mpi"
-	"github.com/goki/vgpu/vgpu"
 	vk "github.com/goki/vulkan"
 	"goki.dev/goosi"
+	"goki.dev/vgpu"
 )
 
 //go:embed shaders/*.spv

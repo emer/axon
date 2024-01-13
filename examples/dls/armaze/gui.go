@@ -18,15 +18,15 @@ import (
 	"github.com/emer/eve/v2/evev"
 	"goki.dev/colors"
 	"goki.dev/colors/colormap"
+	"goki.dev/events"
 	"goki.dev/gi"
-	"goki.dev/gi/v2/xyzv"
-	"goki.dev/girl/styles"
 	"goki.dev/giv"
-	"goki.dev/goosi/events"
 	"goki.dev/grr"
 	"goki.dev/icons"
 	"goki.dev/mat32"
+	"goki.dev/styles"
 	"goki.dev/xyz"
+	"goki.dev/xyzv"
 )
 
 // Geom is overall geometry of the space

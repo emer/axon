@@ -17,21 +17,14 @@ import (
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	_ "github.com/emer/etable/v2/etview" // include to get gui views
-	"github.com/goki/ki/ki"
 	"goki.dev/gi"
-	"goki.dev/gimain"
 	"goki.dev/giv"
+	"goki.dev/ki"
 	"goki.dev/mat32"
 )
 
 func main() {
 	TheSim.Config()
-	gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-		guirun()
-	})
-}
-
-func guirun() {
 	win := TheSim.ConfigGUI()
 	win.StartEventLoop()
 }
