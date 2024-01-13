@@ -25,17 +25,15 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/goki/ki/ki"
-	"github.com/goki/ki/kit"
-	"goki.dev/etable/v2/agg"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/split"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
-	"goki.dev/gi/v2/giv"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/split"
+	"goki.dev/gi"
+	"goki.dev/giv
+	"goki.dev/ki"
+	"goki.dev/mat32"
 )
 
 // this is the stub main for gogi that calls our actual mainrun function, at end of file
@@ -49,14 +47,7 @@ func main() {
 const LogPrec = 4
 
 // TestType is the type of testing patterns
-type TestType int32
-
-//go:generate stringer -type=TestType
-
-var KiT_TestType = kit.Enums.AddEnum(TestTypeN, kit.NotBitFlag, nil)
-
-func (ev TestType) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *TestType) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+type TestType int32 //enums:enum
 
 const (
 	// AttnSize tests effects of attentional spotlight relative to stimulus size
@@ -300,10 +291,6 @@ type Sim struct {
 	// flag to stop running
 	StopNow bool `view:"-"`
 }
-
-// this registers this Sim Type and gives it properties that e.g.,
-// prompt for filename for save methods.
-var KiT_Sim = kit.Types.AddType(&Sim{}, SimProps)
 
 // TheSim is the overall state for this simulation
 var TheSim Sim

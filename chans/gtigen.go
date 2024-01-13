@@ -105,7 +105,7 @@ var _ = gti.AddType(&gti.Type{
 		&gti.Directive{Tool: "gosl", Directive: "start", Args: []string{"chans"}},
 	},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"On", &gti.Field{Name: "On", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if On, use this component of K-Na adaptation", Directives: gti.Directives{}, Tag: ""}},
+		{"On", &gti.Field{Name: "On", Type: "github.com/emer/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if On, use this component of K-Na adaptation", Directives: gti.Directives{}, Tag: ""}},
 		{"Rise", &gti.Field{Name: "Rise", Type: "float32", LocalType: "float32", Doc: "Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate", Directives: gti.Directives{}, Tag: "viewif:\"On\""}},
 		{"Max", &gti.Field{Name: "Max", Type: "float32", LocalType: "float32", Doc: "Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here", Directives: gti.Directives{}, Tag: "viewif:\"On\""}},
 		{"Tau", &gti.Field{Name: "Tau", Type: "float32", LocalType: "float32", Doc: "time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)", Directives: gti.Directives{}, Tag: "viewif:\"On\""}},
@@ -125,8 +125,8 @@ var _ = gti.AddType(&gti.Type{
 	Doc:        "KNaMedSlow describes sodium-gated potassium channel adaptation mechanism.\nEvidence supports 2 different time constants:\nSlick (medium) and Slack (slow)",
 	Directives: gti.Directives{},
 	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"On", &gti.Field{Name: "On", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if On, apply K-Na adaptation", Directives: gti.Directives{}, Tag: ""}},
-		{"TrialSlow", &gti.Field{Name: "TrialSlow", Type: "goki.dev/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation", Directives: gti.Directives{}, Tag: ""}},
+		{"On", &gti.Field{Name: "On", Type: "github.com/emer/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "if On, apply K-Na adaptation", Directives: gti.Directives{}, Tag: ""}},
+		{"TrialSlow", &gti.Field{Name: "TrialSlow", Type: "github.com/emer/gosl/v2/slbool.Bool", LocalType: "slbool.Bool", Doc: "engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation", Directives: gti.Directives{}, Tag: ""}},
 		{"pad", &gti.Field{Name: "pad", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
 		{"pad1", &gti.Field{Name: "pad1", Type: "int32", LocalType: "int32", Doc: "", Directives: gti.Directives{}, Tag: ""}},
 		{"Med", &gti.Field{Name: "Med", Type: "github.com/emer/axon/chans.KNaParams", LocalType: "KNaParams", Doc: "medium time-scale adaptation", Directives: gti.Directives{}, Tag: "viewif:\"On\" view:\"inline\""}},

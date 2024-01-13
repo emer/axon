@@ -27,12 +27,11 @@ import (
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/etable/v2/etable"
-	_ "goki.dev/etable/v2/etview" // _ = include to get gui views
-	"goki.dev/etable/v2/metric"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/etable"
+	_ "github.com/emer/etable/v2/etview" // _ = include to get gui views
+	"github.com/emer/etable/v2/metric"
+	"goki.dev/gi"
+	"goki.dev/mat32"
 )
 
 func main() {
@@ -40,7 +39,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Run(sim.RunGUI)
+		sim.RunGUI()
 	} else {
 		sim.RunNoGUI()
 	}

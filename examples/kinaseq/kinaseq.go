@@ -13,25 +13,18 @@ import (
 
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/goki/ki/ki"
-	"goki.dev/etable/v2/agg"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	_ "goki.dev/etable/v2/etview" // include to get gui views
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
-	"goki.dev/gi/v2/giv"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	_ "github.com/emer/etable/v2/etview" // include to get gui views
+	"goki.dev/gi"
+	"goki.dev/giv"
+	"goki.dev/ki"
+	"goki.dev/mat32"
 )
 
 func main() {
 	TheSim.Config()
-	gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-		guirun()
-	})
-}
-
-func guirun() {
 	win := TheSim.ConfigGUI()
 	win.StartEventLoop()
 }

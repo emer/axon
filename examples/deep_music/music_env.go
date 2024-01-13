@@ -11,13 +11,12 @@ import (
 	"time"
 
 	"github.com/emer/emergent/v2/env"
-	"github.com/goki/ki/ints"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/minmax"
 )
 
 // MusicEnv reads in a midi SMF file and presents it as a sequence of notes.
@@ -140,7 +139,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 			continue
 		}
 		tslice = append(tslice, no)
-		ticks = ints.MaxInt(ticks, tick)
+		ticks = max(ticks, tick)
 		sch = append(sch, etable.Column{name, etensor.INT64, nil, nil})
 	}
 

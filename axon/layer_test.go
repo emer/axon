@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/etable/v2/etensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"goki.dev/etable/v2/etensor"
 )
 
 func TestLayer(t *testing.T) {

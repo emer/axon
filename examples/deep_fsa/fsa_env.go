@@ -9,7 +9,7 @@ import (
 
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/etensor"
 )
 
 // FSAEnv generates states in a finite state automaton (FSA) which is a

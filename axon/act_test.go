@@ -9,7 +9,7 @@ package axon
 import (
 	"testing"
 
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 // TOLERANCE is the numerical difference tolerance for comparing vs. target values

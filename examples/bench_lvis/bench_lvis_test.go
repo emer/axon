@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
 	"github.com/stretchr/testify/require"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
 )
 
 var gpu = flag.Bool("gpu", false, "whether to run gpu or not")

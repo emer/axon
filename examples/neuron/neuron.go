@@ -29,12 +29,12 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	_ "goki.dev/etable/v2/etview" // include to get gui views
-	"goki.dev/etable/v2/minmax"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	_ "github.com/emer/etable/v2/etview" // include to get gui views
+	"github.com/emer/etable/v2/minmax"
+	"goki.dev/gi"
+	"goki.dev/icons"
 )
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Run(sim.RunGUI)
+		sim.RunGUI()
 	} else {
 		sim.RunNoGUI()
 	}
@@ -400,7 +400,7 @@ func (ss *Sim) ConfigGUI() {
 	// ss.TstCycPlot = plt
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -408,7 +408,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Stop", Icon: "stop",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
 			Tooltip: "Stops running.",
 			Active:  egui.ActiveRunning,
 			Func: func() {
@@ -416,7 +416,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Cycles", Icon: "step-fwd",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Cycles", Icon: icons.PlayArrow,
 			Tooltip: "Runs neuron updating over NCycles.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -429,7 +429,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		gi.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
 			Tooltip: "Reset TstCycPlot.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -438,7 +438,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Defaults", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
 			Tooltip: "Restore initial default parameters.",
 			Active:  egui.ActiveStopped,
 			Func: func() {

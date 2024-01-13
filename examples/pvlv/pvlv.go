@@ -30,17 +30,16 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
-	"github.com/goki/ki/kit"
-	"goki.dev/etable/v2/agg"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/minmax"
-	"goki.dev/etable/v2/split"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
-	"goki.dev/goosi/events"
-	"goki.dev/mat32/v2"
+	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
+	"github.com/emer/etable/v2/split"
+	"goki.dev/events"
+	"goki.dev/gi"
+	"goki.dev/laser"
+	"goki.dev/mat32"
 )
 
 func main() {
@@ -48,7 +47,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Run(sim.RunGUI)
+		sim.RunGUI()
 	} else {
 		sim.RunNoGUI()
 	}
@@ -368,7 +367,7 @@ func (ss *Sim) ApplyInputs() {
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
-		if !kit.IfaceIsNil(pats) {
+		if !laser.AnyIsNil(pats) {
 			ly.ApplyExt(ctx, 0, pats)
 		}
 		switch lnm {

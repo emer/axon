@@ -7,8 +7,8 @@ package fsfffb
 import (
 	"log"
 
-	"goki.dev/gosl/v2/slbool"
-	"goki.dev/mat32/v2"
+	"github.com/emer/gosl/v2/slbool"
+	"goki.dev/mat32"
 )
 
 //gosl: start fsfffb

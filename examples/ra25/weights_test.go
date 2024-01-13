@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/v2/etime"
-	"goki.dev/gi/v2/gi"
+	"goki.dev/gi"
 )
 
 func TestWeightsSave(t *testing.T) {

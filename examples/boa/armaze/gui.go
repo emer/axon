@@ -10,23 +10,23 @@ import (
 	"log"
 
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/etable/v2/eplot"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/etview"
 	"github.com/emer/eve/v2/eve"
 	"github.com/emer/eve/v2/evev"
 	"goki.dev/colors"
 	"goki.dev/colors/colormap"
-	"goki.dev/etable/v2/eplot"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/etview"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/giv"
-	"goki.dev/gi/v2/xyzv"
-	"goki.dev/girl/styles"
-	"goki.dev/goosi/events"
+	"goki.dev/events"
+	"goki.dev/gi"
+	"goki.dev/giv"
 	"goki.dev/grr"
 	"goki.dev/icons"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
+	"goki.dev/styles"
 	"goki.dev/xyz"
+	"goki.dev/xyzv"
 )
 
 // Geom is overall geometry of the space
@@ -295,7 +295,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 		giv.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
 		giv.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
 		giv.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
-		giv.NewFuncButton(tb, vw.Right).SetText("Consume").SetIcon(icons.FoodBank)
+		giv.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
 
 		gi.NewSeparator(tb)
 	})

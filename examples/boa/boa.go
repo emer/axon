@@ -31,15 +31,14 @@ import (
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/etable/v2/agg"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/etable/v2/etensor"
-	"goki.dev/etable/v2/minmax"
-	"goki.dev/etable/v2/split"
-	"goki.dev/gi/v2/gi"
-	"goki.dev/gi/v2/gimain"
+	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
+	"github.com/emer/etable/v2/split"
+	"goki.dev/gi"
 	"goki.dev/glop/num"
-	"goki.dev/mat32/v2"
+	"goki.dev/mat32"
 )
 
 func main() {
@@ -47,7 +46,7 @@ func main() {
 	sim.New()
 	sim.ConfigAll()
 	if sim.Config.GUI {
-		gimain.Run(sim.RunGUI)
+		sim.RunGUI()
 	} else {
 		sim.RunNoGUI()
 	}

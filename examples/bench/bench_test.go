@@ -11,8 +11,8 @@ import (
 
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
-	"goki.dev/etable/v2/etable"
-	"goki.dev/gi/v2/gi"
+	"github.com/emer/etable/v2/etable"
+	"goki.dev/gi"
 )
 
 func init() {

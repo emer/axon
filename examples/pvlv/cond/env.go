@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/emer/emergent/v2/env"
-	"goki.dev/etable/v2/etensor"
+	"github.com/emer/etable/v2/etensor"
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
