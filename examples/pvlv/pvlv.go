@@ -38,6 +38,7 @@ import (
 	"github.com/emer/etable/v2/split"
 	"goki.dev/events"
 	"goki.dev/gi"
+	"goki.dev/laser"
 	"goki.dev/mat32"
 )
 
@@ -366,7 +367,7 @@ func (ss *Sim) ApplyInputs() {
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
-		if !laser.IfaceIsNil(pats) {
+		if !laser.AnyIsNil(pats) {
 			ly.ApplyExt(ctx, 0, pats)
 		}
 		switch lnm {

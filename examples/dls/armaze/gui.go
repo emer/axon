@@ -295,7 +295,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 		giv.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
 		giv.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
 		giv.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
-		giv.NewFuncButton(tb, vw.Right).SetText("Consume").SetIcon(icons.FoodBank)
+		giv.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
 
 		gi.NewSeparator(tb)
 	})
