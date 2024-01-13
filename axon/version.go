@@ -4,9 +4,9 @@ package axon
 
 const (
 	// Version is the version of this package being used
-	Version = "v2.0.0-dev0.0.2"
+	Version = "v2.0.0-dev0.0.3"
 	// GitCommit is the commit just before the latest version commit
-	GitCommit = "997f761d"
+	GitCommit = "2294a94c"
 	// VersionDate is the date-time of the latest version commit in UTC (in the format 'YYYY-MM-DD HH:MM', which is the Go format '2006-01-02 15:04')
-	VersionDate = "2023-12-21 10:17"
+	VersionDate = "2024-01-13 07:25"
 )
