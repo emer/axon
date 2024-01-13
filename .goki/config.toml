@@ -1,7 +1,7 @@
 Name = "axon"
 ID = "com.axon.v2"
 Desc = ""
-Version = "v2.0.0-dev0.0.3"
+Version = "v2.0.0-dev0.0.4"
 Type = "Library"
 
 [Build]
