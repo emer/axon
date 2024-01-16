@@ -423,7 +423,7 @@ func (ss *Sim) LoadCondWeights(cond string) {
 		return
 	}
 	wfn := "wts/" + cond + ".wts.gz"
-	err := ss.Net.OpenWtsJSON(gi.FileName(wfn))
+	err := ss.Net.OpenWtsJSON(gi.Filename(wfn))
 	if err != nil {
 		log.Println(err)
 	}
@@ -437,7 +437,7 @@ func (ss *Sim) SaveCondWeights() {
 		return
 	}
 	wfn := "wts/" + cnm + ".wts.gz"
-	err := ss.Net.SaveWtsJSON(gi.FileName(wfn))
+	err := ss.Net.SaveWtsJSON(gi.Filename(wfn))
 	if err != nil {
 		log.Println(err)
 	} else {

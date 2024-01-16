@@ -4,74 +4,12 @@ package fffb
 
 import (
 	"goki.dev/gti"
-	"goki.dev/ordmap"
 )
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/fffb.Bg",
-	ShortName:  "fffb.Bg",
-	IDName:     "bg",
-	Doc:        "Bg has parameters for a slower, low level of background inhibition\nbased on main FFFB computed inhibition.",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"On", &gti.Field{Name: "On", Type: "bool", LocalType: "bool", Doc: "enable adaptive layer inhibition gain as stored in layer GiCur value", Directives: gti.Directives{}, Tag: ""}},
-		{"Gi", &gti.Field{Name: "Gi", Type: "float32", LocalType: "float32", Doc: "level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition", Directives: gti.Directives{}, Tag: "def:\".1\" viewif:\"On=true\""}},
-		{"Tau", &gti.Field{Name: "Tau", Type: "float32", LocalType: "float32", Doc: "time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)", Directives: gti.Directives{}, Tag: "def:\"10\" viewif:\"On=true\""}},
-		{"Dt", &gti.Field{Name: "Dt", Type: "float32", LocalType: "float32", Doc: "rate = 1 / tau", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"-\" json:\"-\" xml:\"-\""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "github.com/emer/axon/v2/fffb.Bg", IDName: "bg", Doc: "Bg has parameters for a slower, low level of background inhibition\nbased on main FFFB computed inhibition.", Fields: []gti.Field{{Name: "On", Doc: "enable adaptive layer inhibition gain as stored in layer GiCur value"}, {Name: "Gi", Doc: "level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition"}, {Name: "Tau", Doc: "time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)"}, {Name: "Dt", Doc: "rate = 1 / tau"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:      "github.com/emer/axon/fffb.Params",
-	ShortName: "fffb.Params",
-	IDName:    "params",
-	Doc:       "Params parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)\nbased on average (or maximum) Ge (FF) and activation (FB)",
-	Directives: gti.Directives{
-		&gti.Directive{Tool: "go", Directive: "generate", Args: []string{"goki", "generate", "-add-types"}},
-	},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"On", &gti.Field{Name: "On", Type: "bool", LocalType: "bool", Doc: "enable this level of inhibition", Directives: gti.Directives{}, Tag: ""}},
-		{"Gi", &gti.Field{Name: "Gi", Type: "float32", LocalType: "float32", Doc: "overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the ff and fb factors uniformly", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"1.1\""}},
-		{"FF", &gti.Field{Name: "FF", Type: "float32", LocalType: "float32", Doc: "overall inhibitory contribution from feedforward inhibition -- multiplies average Ge (i.e., synaptic drive into layer) -- this anticipates upcoming changes in excitation, but if set too high, it can make activity slow to emerge -- see also ff0 for a zero-point for this value", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"1\""}},
-		{"FB", &gti.Field{Name: "FB", Type: "float32", LocalType: "float32", Doc: "overall inhibitory contribution from feedback inhibition -- multiplies average activation -- this reacts to layer activation levels and works more like a thermostat (turning up when the 'heat' in the layer is too high)", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"1\""}},
-		{"FBTau", &gti.Field{Name: "FBTau", Type: "float32", LocalType: "float32", Doc: "time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) for integrating feedback inhibitory values -- prevents oscillations that otherwise occur -- the fast default of 1.4 should be used for most cases but sometimes a slower value (3 or higher) can be more robust, especially when inhibition is strong or inputs are more rapidly changing", Directives: gti.Directives{}, Tag: "viewif:\"On\" min:\"0\" def:\"1.4,3,5\""}},
-		{"MaxVsAvg", &gti.Field{Name: "MaxVsAvg", Type: "float32", LocalType: "float32", Doc: "what proportion of the maximum vs. average Ge to use in the feedforward inhibition computation -- 0 = all average, 1 = all max, and values in between = proportional mix between average and max (ff_netin = avg + ff_max_vs_avg * (max - avg)) -- including more max can be beneficial especially in situations where the average can vary significantly but the activity should not -- max is more robust in many situations but less flexible and sensitive to the overall distribution -- max is better for cases more closely approximating single or strictly fixed winner-take-all behavior -- 0.5 is a good compromise in many cases and generally requires a reduction of .1 or slightly more (up to .3-.5) from the gi value for 0", Directives: gti.Directives{}, Tag: "viewif:\"On\" def:\"0,0.5,1\""}},
-		{"FF0", &gti.Field{Name: "FF0", Type: "float32", LocalType: "float32", Doc: "feedforward zero point for average Ge -- below this level, no FF inhibition is computed based on avg Ge, and this value is subtraced from the ff inhib contribution above this value -- the 0.1 default should be good for most cases (and helps FF_FB produce k-winner-take-all dynamics), but if average Ges are lower than typical, you may need to lower it", Directives: gti.Directives{}, Tag: "viewif:\"On\" def:\"0.1\""}},
-		{"FFEx", &gti.Field{Name: "FFEx", Type: "float32", LocalType: "float32", Doc: "extra feedforward inhibition applied when average Ge exceeds a higher threshold -- produces a nonlinear inhibition effect that is consistent with a wide range of neuroscience data, including popout and the Reynolds & Heeger, 2009 attention model", Directives: gti.Directives{}, Tag: "viewif:\"On\" def:\"0,0.05\""}},
-		{"FFEx0", &gti.Field{Name: "FFEx0", Type: "float32", LocalType: "float32", Doc: "point of average Ge at which extra inhibition based on feedforward level starts", Directives: gti.Directives{}, Tag: "viewif:\"On\" def:\"0.15\""}},
-		{"FBDt", &gti.Field{Name: "FBDt", Type: "float32", LocalType: "float32", Doc: "rate = 1 / tau", Directives: gti.Directives{}, Tag: "inactive:\"+\" view:\"-\" json:\"-\" xml:\"-\""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "github.com/emer/axon/v2/fffb.Params", IDName: "params", Doc: "Params parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)\nbased on average (or maximum) Ge (FF) and activation (FB)", Directives: []gti.Directive{{Tool: "go", Directive: "generate", Args: []string{"goki", "generate", "-add-types"}}}, Fields: []gti.Field{{Name: "On", Doc: "enable this level of inhibition"}, {Name: "Gi", Doc: "overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the ff and fb factors uniformly"}, {Name: "FF", Doc: "overall inhibitory contribution from feedforward inhibition -- multiplies average Ge (i.e., synaptic drive into layer) -- this anticipates upcoming changes in excitation, but if set too high, it can make activity slow to emerge -- see also ff0 for a zero-point for this value"}, {Name: "FB", Doc: "overall inhibitory contribution from feedback inhibition -- multiplies average activation -- this reacts to layer activation levels and works more like a thermostat (turning up when the 'heat' in the layer is too high)"}, {Name: "FBTau", Doc: "time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) for integrating feedback inhibitory values -- prevents oscillations that otherwise occur -- the fast default of 1.4 should be used for most cases but sometimes a slower value (3 or higher) can be more robust, especially when inhibition is strong or inputs are more rapidly changing"}, {Name: "MaxVsAvg", Doc: "what proportion of the maximum vs. average Ge to use in the feedforward inhibition computation -- 0 = all average, 1 = all max, and values in between = proportional mix between average and max (ff_netin = avg + ff_max_vs_avg * (max - avg)) -- including more max can be beneficial especially in situations where the average can vary significantly but the activity should not -- max is more robust in many situations but less flexible and sensitive to the overall distribution -- max is better for cases more closely approximating single or strictly fixed winner-take-all behavior -- 0.5 is a good compromise in many cases and generally requires a reduction of .1 or slightly more (up to .3-.5) from the gi value for 0"}, {Name: "FF0", Doc: "feedforward zero point for average Ge -- below this level, no FF inhibition is computed based on avg Ge, and this value is subtraced from the ff inhib contribution above this value -- the 0.1 default should be good for most cases (and helps FF_FB produce k-winner-take-all dynamics), but if average Ges are lower than typical, you may need to lower it"}, {Name: "FFEx", Doc: "extra feedforward inhibition applied when average Ge exceeds a higher threshold -- produces a nonlinear inhibition effect that is consistent with a wide range of neuroscience data, including popout and the Reynolds & Heeger, 2009 attention model"}, {Name: "FFEx0", Doc: "point of average Ge at which extra inhibition based on feedforward level starts"}, {Name: "FBDt", Doc: "rate = 1 / tau"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/fffb.Inhib",
-	ShortName:  "fffb.Inhib",
-	IDName:     "inhib",
-	Doc:        "Inhib contains state values for computed FFFB inhibition",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"FFi", &gti.Field{Name: "FFi", Type: "float32", LocalType: "float32", Doc: "computed feedforward inhibition", Directives: gti.Directives{}, Tag: ""}},
-		{"FBi", &gti.Field{Name: "FBi", Type: "float32", LocalType: "float32", Doc: "computed feedback inhibition (total)", Directives: gti.Directives{}, Tag: ""}},
-		{"Gi", &gti.Field{Name: "Gi", Type: "float32", LocalType: "float32", Doc: "overall value of the FFFB computed inhibition -- this is what is added into the unit Gi inhibition level (along with  GiBg and any synaptic unit-driven inhibition)", Directives: gti.Directives{}, Tag: ""}},
-		{"GiOrig", &gti.Field{Name: "GiOrig", Type: "float32", LocalType: "float32", Doc: "original value of the inhibition (before pool or other effects)", Directives: gti.Directives{}, Tag: ""}},
-		{"LayGi", &gti.Field{Name: "LayGi", Type: "float32", LocalType: "float32", Doc: "for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition", Directives: gti.Directives{}, Tag: ""}},
-		{"Ge", &gti.Field{Name: "Ge", Type: "github.com/emer/etable/v2/minmax.AvgMax32", LocalType: "minmax.AvgMax32", Doc: "average and max Ge excitatory conductance values, which drive FF inhibition", Directives: gti.Directives{}, Tag: ""}},
-		{"Act", &gti.Field{Name: "Act", Type: "github.com/emer/etable/v2/minmax.AvgMax32", LocalType: "minmax.AvgMax32", Doc: "average and max Act activation values, which drive FB inhibition", Directives: gti.Directives{}, Tag: ""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "github.com/emer/axon/v2/fffb.Inhib", IDName: "inhib", Doc: "Inhib contains state values for computed FFFB inhibition", Fields: []gti.Field{{Name: "FFi", Doc: "computed feedforward inhibition"}, {Name: "FBi", Doc: "computed feedback inhibition (total)"}, {Name: "Gi", Doc: "overall value of the FFFB computed inhibition -- this is what is added into the unit Gi inhibition level (along with  GiBg and any synaptic unit-driven inhibition)"}, {Name: "GiOrig", Doc: "original value of the inhibition (before pool or other effects)"}, {Name: "LayGi", Doc: "for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"}, {Name: "Ge", Doc: "average and max Ge excitatory conductance values, which drive FF inhibition"}, {Name: "Act", Doc: "average and max Act activation values, which drive FB inhibition"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "github.com/emer/axon/fffb.Inhibs",
-	ShortName:  "fffb.Inhibs",
-	IDName:     "inhibs",
-	Doc:        "Inhibs is a slice of Inhib records",
-	Directives: gti.Directives{},
-
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "github.com/emer/axon/v2/fffb.Inhibs", IDName: "inhibs", Doc: "Inhibs is a slice of Inhib records"})

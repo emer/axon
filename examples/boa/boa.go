@@ -650,7 +650,7 @@ func (ss *Sim) NewRun() {
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	if ss.Config.OpenWts != "" {
-		ss.Net.OpenWtsJSON(gi.FileName(ss.Config.OpenWts))
+		ss.Net.OpenWtsJSON(gi.Filename(ss.Config.OpenWts))
 		log.Println("Opened weights:", ss.Config.OpenWts)
 	}
 }

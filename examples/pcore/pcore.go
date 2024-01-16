@@ -783,8 +783,8 @@ func (ss *Sim) RunNoGUI() {
 
 	if ss.Config.Log.TestEpoch {
 		dt := ss.Logs.MiscTable("TestTrialStats")
-		fnm := ecmd.LogFileName("tst_epc", netName, runName)
-		dt.SaveCSV(gi.FileName(fnm), etable.Tab, etable.Headers)
+		fnm := ecmd.LogFilename("tst_epc", netName, runName)
+		dt.SaveCSV(gi.Filename(fnm), etable.Tab, etable.Headers)
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU

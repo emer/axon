@@ -99,7 +99,7 @@ To record the trial log data for each MPI processor, you need to set log files f
 
 ```go
 	if ss.Config.Log.Trial {
-		fnm := elog.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), ss.Net.Name(), ss.Params.RunName(ss.Config.Run.Run))
+		fnm := elog.LogFilename(fmt.Sprintf("trl_%d", mpi.WorldRank()), ss.Net.Name(), ss.Params.RunName(ss.Config.Run.Run))
 		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
 	}
 ```

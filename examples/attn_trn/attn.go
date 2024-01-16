@@ -646,7 +646,7 @@ func (ss *Sim) Stopped() {
 
 // SaveWts saves the network weights -- when called with giv.CallMethod
 // it will auto-prompt for filename
-func (ss *Sim) SaveWts(filename gi.FileName) {
+func (ss *Sim) SaveWts(filename gi.Filename) {
 	ss.Net.SaveWtsJSON(filename)
 }
 

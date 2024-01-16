@@ -790,11 +790,11 @@ func (ss *Sim) RunNoGUI() {
 	}
 	// Special cases for mpi per-node saving of trial data
 	if ss.Config.Log.Trial {
-		fnm := elog.LogFileName(fmt.Sprintf("trl_%d", mpi.WorldRank()), netName, runName)
+		fnm := elog.LogFilename(fmt.Sprintf("trl_%d", mpi.WorldRank()), netName, runName)
 		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
 	}
 	if ss.Config.Log.TestTrial {
-		fnm := elog.LogFileName(fmt.Sprintf("tst_trl_%d", mpi.WorldRank()), netName, runName)
+		fnm := elog.LogFilename(fmt.Sprintf("tst_trl_%d", mpi.WorldRank()), netName, runName)
 		ss.Logs.SetLogFile(etime.Test, etime.Trial, fnm)
 	}
 

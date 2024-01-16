@@ -720,7 +720,7 @@ func (ss *Sim) RunNoGUI() {
 
 	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
 		ss.Loops.Step(etime.Train, 1, etime.Trial) // get past NewRun
-		ss.Net.OpenWtsJSON(gi.FileName(ss.Config.Run.StartWts))
+		ss.Net.OpenWtsJSON(gi.Filename(ss.Config.Run.StartWts))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
 	}
 

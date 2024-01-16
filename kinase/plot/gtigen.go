@@ -4,36 +4,6 @@ package main
 
 import (
 	"goki.dev/gti"
-	"goki.dev/ordmap"
 )
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.Sim",
-	ShortName:  "main.Sim",
-	IDName:     "sim",
-	Doc:        "Sim holds the params, table, etc",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"CaDt", &gti.Field{Name: "CaDt", Type: "invalid type", LocalType: "kinase.CaParams", Doc: "Ca time constants", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Minit", &gti.Field{Name: "Minit", Type: "float64", LocalType: "float64", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Pinit", &gti.Field{Name: "Pinit", Type: "float64", LocalType: "float64", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"Dinit", &gti.Field{Name: "Dinit", Type: "float64", LocalType: "float64", Doc: "", Directives: gti.Directives{}, Tag: ""}},
-		{"MdtAdj", &gti.Field{Name: "MdtAdj", Type: "float64", LocalType: "float64", Doc: "adjustment to dt to account for discrete time updating", Directives: gti.Directives{}, Tag: "def:\"0,0.11\""}},
-		{"PdtAdj", &gti.Field{Name: "PdtAdj", Type: "float64", LocalType: "float64", Doc: "adjustment to dt to account for discrete time updating", Directives: gti.Directives{}, Tag: "def:\"0.0.03\""}},
-		{"DdtAdj", &gti.Field{Name: "DdtAdj", Type: "float64", LocalType: "float64", Doc: "adjustment to dt to account for discrete time updating", Directives: gti.Directives{}, Tag: "def:\"0.0.03\""}},
-		{"TimeSteps", &gti.Field{Name: "TimeSteps", Type: "int", LocalType: "int", Doc: "number of time steps", Directives: gti.Directives{}, Tag: ""}},
-		{"Table", &gti.Field{Name: "Table", Type: "*github.com/emer/etable/v2/etable.Table", LocalType: "*etable.Table", Doc: "table for plot", Directives: gti.Directives{}, Tag: "view:\"no-inline\""}},
-		{"Plot", &gti.Field{Name: "Plot", Type: "*github.com/emer/etable/v2/eplot.Plot2D", LocalType: "*eplot.Plot2D", Doc: "the plot", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"TimeTable", &gti.Field{Name: "TimeTable", Type: "*github.com/emer/etable/v2/etable.Table", LocalType: "*etable.Table", Doc: "table for plot", Directives: gti.Directives{}, Tag: "view:\"no-inline\""}},
-		{"TimePlot", &gti.Field{Name: "TimePlot", Type: "*github.com/emer/etable/v2/eplot.Plot2D", LocalType: "*eplot.Plot2D", Doc: "the plot", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-	}),
-	Embeds: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{
-		{"Run", &gti.Method{Name: "Run", Doc: "Run runs the equation.", Directives: gti.Directives{
-			&gti.Directive{Tool: "gti", Directive: "add", Args: []string{}},
-		}, Args: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}), Returns: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{})}},
-		{"TimeRun", &gti.Method{Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: gti.Directives{
-			&gti.Directive{Tool: "gti", Directive: "add", Args: []string{}},
-		}, Args: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}), Returns: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{})}},
-	}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.Sim", IDName: "sim", Doc: "Sim holds the params, table, etc", Methods: []gti.Method{{Name: "VmRun", Doc: "VmRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "VGRun", Doc: "VGRun runs the V-G equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "SGRun", Doc: "SGRun runs the spike-g equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "VmRun", Doc: "VmRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "Run", Doc: "Run runs the equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "CaRun", Doc: "CaRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "CamRun", Doc: "CamRun plots the equation as a function of Ca", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "VmRun", Doc: "VmRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "Run", Doc: "Run runs the equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}}, Fields: []gti.Field{{Name: "CaDt", Doc: "Ca time constants"}, {Name: "Minit"}, {Name: "Pinit"}, {Name: "Dinit"}, {Name: "MdtAdj", Doc: "adjustment to dt to account for discrete time updating"}, {Name: "PdtAdj", Doc: "adjustment to dt to account for discrete time updating"}, {Name: "DdtAdj", Doc: "adjustment to dt to account for discrete time updating"}, {Name: "TimeSteps", Doc: "number of time steps"}, {Name: "Table", Doc: "table for plot"}, {Name: "Plot", Doc: "the plot"}, {Name: "TimeTable", Doc: "table for plot"}, {Name: "TimePlot", Doc: "the plot"}}})

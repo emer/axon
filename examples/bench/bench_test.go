@@ -62,7 +62,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)
-		err := epcLog.SaveCSV(gi.FileName(filename), ',', etable.Headers)
+		err := epcLog.SaveCSV(gi.Filename(filename), ',', etable.Headers)
 		if err != nil {
 			b.Log(err)
 		}

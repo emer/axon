@@ -30,14 +30,14 @@ func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 /////////////////////////////////////////////
 // Weights files
 
-// WeightsFileName returns default current weights file name,
+// WeightsFilename returns default current weights file name,
 // using train run and epoch counters from looper
 // and the RunName string identifying tag, parameters and starting run,
-func WeightsFileName(net *Network, ctrString, runName string) string {
+func WeightsFilename(net *Network, ctrString, runName string) string {
 	return net.Name() + "_" + runName + "_" + ctrString + ".wts.gz"
 }
 
-// SaveWeights saves network weights to filename with WeightsFileName information
+// SaveWeights saves network weights to filename with WeightsFilename information
 // to identify the weights.
 // only for 0 rank MPI if running mpi
 // Returns the name of the file saved to, or empty if not saved.
@@ -45,14 +45,14 @@ func SaveWeights(net *Network, ctrString, runName string) string {
 	if mpi.WorldRank() > 0 {
 		return ""
 	}
-	fnm := WeightsFileName(net, ctrString, runName)
+	fnm := WeightsFilename(net, ctrString, runName)
 	fmt.Printf("Saving Weights to: %s\n", fnm)
-	net.SaveWtsJSON(gi.FileName(fnm))
+	net.SaveWtsJSON(gi.Filename(fnm))
 	return fnm
 }
 
 // SaveWeightsIfArgSet saves network weights if the "wts" arg has been set to true.
-// uses WeightsFileName information to identify the weights.
+// uses WeightsFilename information to identify the weights.
 // only for 0 rank MPI if running mpi
 // Returns the name of the file saved to, or empty if not saved.
 func SaveWeightsIfArgSet(net *Network, args *ecmd.Args, ctrString, runName string) string {
@@ -64,7 +64,7 @@ func SaveWeightsIfArgSet(net *Network, args *ecmd.Args, ctrString, runName strin
 
 // SaveWeightsIfConfigSet saves network weights if the given config
 // bool value has been set to true.
-// uses WeightsFileName information to identify the weights.
+// uses WeightsFilename information to identify the weights.
 // only for 0 rank MPI if running mpi
 // Returns the name of the file saved to, or empty if not saved.
 func SaveWeightsIfConfigSet(net *Network, cfgWts bool, ctrString, runName string) string {

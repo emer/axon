@@ -500,8 +500,8 @@ func (ss *Sim) RunNoGUI() {
 
 	if ss.Config.Log.Cycle {
 		dt := ss.Logs.Table(etime.Test, etime.Cycle)
-		fnm := ecmd.LogFileName("cyc", netName, runName)
-		dt.SaveCSV(gi.FileName(fnm), etable.Tab, etable.Headers)
+		fnm := ecmd.LogFilename("cyc", netName, runName)
+		dt.SaveCSV(gi.Filename(fnm), etable.Tab, etable.Headers)
 	}
 
 	// if netdata {

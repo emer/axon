@@ -4,128 +4,16 @@ package main
 
 import (
 	"goki.dev/gti"
-	"goki.dev/ordmap"
 )
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.Sim",
-	ShortName:  "main.Sim",
-	IDName:     "sim",
-	Doc:        "Sim encapsulates the entire simulation model, and we define all the\nfunctionality as methods on this struct.  This structure keeps all relevant\nstate information organized and available without having to pass everything around\nas arguments to methods, and provides the core GUI interface (note the view tags\nfor the fields which provide hints to how things should be displayed).",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Config", &gti.Field{Name: "Config", Type: "github.com/emer/axon/examples/boa.Config", LocalType: "Config", Doc: "simulation configuration parameters -- set by .toml config file and / or args", Directives: gti.Directives{}, Tag: ""}},
-		{"Net", &gti.Field{Name: "Net", Type: "*invalid type", LocalType: "*axon.Network", Doc: "the network -- click to view / edit parameters for layers, prjns, etc", Directives: gti.Directives{}, Tag: "view:\"no-inline\""}},
-		{"StopOnSeq", &gti.Field{Name: "StopOnSeq", Type: "bool", LocalType: "bool", Doc: "if true, stop running at end of a sequence (for NetView Di data parallel index)", Directives: gti.Directives{}, Tag: ""}},
-		{"StopOnErr", &gti.Field{Name: "StopOnErr", Type: "bool", LocalType: "bool", Doc: "if true, stop running when an error programmed into the code occurs", Directives: gti.Directives{}, Tag: ""}},
-		{"Params", &gti.Field{Name: "Params", Type: "github.com/emer/emergent/v2/emer.NetParams", LocalType: "emer.NetParams", Doc: "network parameter management", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"Loops", &gti.Field{Name: "Loops", Type: "*github.com/emer/emergent/v2/looper.Manager", LocalType: "*looper.Manager", Doc: "contains looper control loops for running sim", Directives: gti.Directives{}, Tag: "view:\"no-inline\""}},
-		{"Stats", &gti.Field{Name: "Stats", Type: "github.com/emer/emergent/v2/estats.Stats", LocalType: "estats.Stats", Doc: "contains computed statistic values", Directives: gti.Directives{}, Tag: ""}},
-		{"Logs", &gti.Field{Name: "Logs", Type: "github.com/emer/emergent/v2/elog.Logs", LocalType: "elog.Logs", Doc: "Contains all the logs and information about the logs.'", Directives: gti.Directives{}, Tag: ""}},
-		{"Envs", &gti.Field{Name: "Envs", Type: "github.com/emer/emergent/v2/env.Envs", LocalType: "env.Envs", Doc: "Environments", Directives: gti.Directives{}, Tag: "view:\"no-inline\""}},
-		{"Context", &gti.Field{Name: "Context", Type: "invalid type", LocalType: "axon.Context", Doc: "axon timing parameters and state", Directives: gti.Directives{}, Tag: ""}},
-		{"ViewUpdt", &gti.Field{Name: "ViewUpdt", Type: "github.com/emer/emergent/v2/netview.ViewUpdt", LocalType: "netview.ViewUpdt", Doc: "netview update parameters", Directives: gti.Directives{}, Tag: "view:\"inline\""}},
-		{"GUI", &gti.Field{Name: "GUI", Type: "github.com/emer/emergent/v2/egui.GUI", LocalType: "egui.GUI", Doc: "manages all the gui elements", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"EnvGUI", &gti.Field{Name: "EnvGUI", Type: "*invalid type", LocalType: "*armaze.GUI", Doc: "gui for viewing env", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"RndSeeds", &gti.Field{Name: "RndSeeds", Type: "github.com/emer/emergent/v2/erand.Seeds", LocalType: "erand.Seeds", Doc: "a list of random seeds to use for each run", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-		{"TestData", &gti.Field{Name: "TestData", Type: "map[string]float32", LocalType: "map[string]float32", Doc: "testing data, from -test arg", Directives: gti.Directives{}, Tag: "view:\"-\""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.Sim", IDName: "sim", Doc: "Sim encapsulates the entire simulation model, and we define all the\nfunctionality as methods on this struct.  This structure keeps all relevant\nstate information organized and available without having to pass everything around\nas arguments to methods, and provides the core GUI interface (note the view tags\nfor the fields which provide hints to how things should be displayed).", Methods: []gti.Method{{Name: "VmRun", Doc: "VmRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "VGRun", Doc: "VGRun runs the V-G equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "SGRun", Doc: "SGRun runs the spike-g equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "VmRun", Doc: "VmRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "Run", Doc: "Run runs the equation.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "CaRun", Doc: "CaRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "CamRun", Doc: "CamRun plots the equation as a function of Ca", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "VmRun", Doc: "VmRun plots the equation as a function of V", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}, {Name: "TimeRun", Doc: "TimeRun runs the equation over time.", Directives: []gti.Directive{{Tool: "gti", Directive: "add"}}}}, Fields: []gti.Field{{Name: "Config", Doc: "simulation configuration parameters -- set by .toml config file and / or args"}, {Name: "Net", Doc: "the network -- click to view / edit parameters for layers, prjns, etc"}, {Name: "StopOnSeq", Doc: "if true, stop running at end of a sequence (for NetView Di data parallel index)"}, {Name: "StopOnErr", Doc: "if true, stop running when an error programmed into the code occurs"}, {Name: "Params", Doc: "network parameter management"}, {Name: "Loops", Doc: "contains looper control loops for running sim"}, {Name: "Stats", Doc: "contains computed statistic values"}, {Name: "Logs", Doc: "Contains all the logs and information about the logs.'"}, {Name: "Envs", Doc: "Environments"}, {Name: "Context", Doc: "axon timing parameters and state"}, {Name: "ViewUpdt", Doc: "netview update parameters"}, {Name: "GUI", Doc: "manages all the gui elements"}, {Name: "EnvGUI", Doc: "gui for viewing env"}, {Name: "RndSeeds", Doc: "a list of random seeds to use for each run"}, {Name: "TestData", Doc: "testing data, from -test arg"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.EnvConfig",
-	ShortName:  "main.EnvConfig",
-	IDName:     "env-config",
-	Doc:        "EnvConfig has config params for environment\nnote: only adding fields for key Env params that matter for both Network and Env\nother params are set via the Env map data mechanism.",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Config", &gti.Field{Name: "Config", Type: "string", LocalType: "string", Doc: "name of config file that loads into Env.Config for setting environment parameters directly", Directives: gti.Directives{}, Tag: "desc:\"name of config file that loads into Env.Config for setting environment parameters directly\""}},
-		{"NDrives", &gti.Field{Name: "NDrives", Type: "int", LocalType: "int", Doc: "number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome", Directives: gti.Directives{}, Tag: "def:\"4\""}},
-		{"PctCortexStEpc", &gti.Field{Name: "PctCortexStEpc", Type: "int", LocalType: "int", Doc: "epoch when PctCortex starts increasing", Directives: gti.Directives{}, Tag: "def:\"10\""}},
-		{"PctCortexNEpc", &gti.Field{Name: "PctCortexNEpc", Type: "int", LocalType: "int", Doc: "number of epochs over which PctCortexMax is reached", Directives: gti.Directives{}, Tag: "def:\"1\""}},
-		{"PctCortex", &gti.Field{Name: "PctCortex", Type: "float32", LocalType: "float32", Doc: "proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical", Directives: gti.Directives{}, Tag: "inactive:\"+\""}},
-		{"SameSeed", &gti.Field{Name: "SameSeed", Type: "bool", LocalType: "bool", Doc: "for testing, force each env to use same seed", Directives: gti.Directives{}, Tag: ""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.EnvConfig", IDName: "env-config", Doc: "EnvConfig has config params for environment\nnote: only adding fields for key Env params that matter for both Network and Env\nother params are set via the Env map data mechanism.", Fields: []gti.Field{{Name: "Config", Doc: "name of config file that loads into Env.Config for setting environment parameters directly"}, {Name: "NDrives", Doc: "number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"}, {Name: "PctCortexStEpc", Doc: "epoch when PctCortex starts increasing"}, {Name: "PctCortexNEpc", Doc: "number of epochs over which PctCortexMax is reached"}, {Name: "PctCortex", Doc: "proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"}, {Name: "SameSeed", Doc: "for testing, force each env to use same seed"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.ParamConfig",
-	ShortName:  "main.ParamConfig",
-	IDName:     "param-config",
-	Doc:        "ParamConfig has config parameters related to sim params",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"PVLV", &gti.Field{Name: "PVLV", Type: "map[string]any", LocalType: "map[string]any", Doc: "PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting", Directives: gti.Directives{}, Tag: ""}},
-		{"Network", &gti.Field{Name: "Network", Type: "map[string]any", LocalType: "map[string]any", Doc: "network parameters", Directives: gti.Directives{}, Tag: ""}},
-		{"Sheet", &gti.Field{Name: "Sheet", Type: "string", LocalType: "string", Doc: "Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params", Directives: gti.Directives{}, Tag: ""}},
-		{"Tag", &gti.Field{Name: "Tag", Type: "string", LocalType: "string", Doc: "extra tag to add to file names and logs saved from this run", Directives: gti.Directives{}, Tag: ""}},
-		{"Note", &gti.Field{Name: "Note", Type: "string", LocalType: "string", Doc: "user note -- describe the run params etc -- like a git commit message for the run", Directives: gti.Directives{}, Tag: ""}},
-		{"File", &gti.Field{Name: "File", Type: "string", LocalType: "string", Doc: "Name of the JSON file to input saved parameters from.", Directives: gti.Directives{}, Tag: "nest:\"+\""}},
-		{"SaveAll", &gti.Field{Name: "SaveAll", Type: "bool", LocalType: "bool", Doc: "Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params", Directives: gti.Directives{}, Tag: "nest:\"+\""}},
-		{"Good", &gti.Field{Name: "Good", Type: "bool", LocalType: "bool", Doc: "for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time.", Directives: gti.Directives{}, Tag: "nest:\"+\""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.ParamConfig", IDName: "param-config", Doc: "ParamConfig has config parameters related to sim params", Fields: []gti.Field{{Name: "PVLV", Doc: "PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting"}, {Name: "Network", Doc: "network parameters"}, {Name: "Sheet", Doc: "Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params"}, {Name: "Tag", Doc: "extra tag to add to file names and logs saved from this run"}, {Name: "Note", Doc: "user note -- describe the run params etc -- like a git commit message for the run"}, {Name: "File", Doc: "Name of the JSON file to input saved parameters from."}, {Name: "SaveAll", Doc: "Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params"}, {Name: "Good", Doc: "for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time."}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.RunConfig",
-	ShortName:  "main.RunConfig",
-	IDName:     "run-config",
-	Doc:        "RunConfig has config parameters related to running the sim",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"GPU", &gti.Field{Name: "GPU", Type: "bool", LocalType: "bool", Doc: "use the GPU for computation -- generally faster even for small models if NData ~16", Directives: gti.Directives{}, Tag: "def:\"true\""}},
-		{"NData", &gti.Field{Name: "NData", Type: "int", LocalType: "int", Doc: "number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.", Directives: gti.Directives{}, Tag: "def:\"16\" min:\"1\""}},
-		{"NThreads", &gti.Field{Name: "NThreads", Type: "int", LocalType: "int", Doc: "number of parallel threads for CPU computation -- 0 = use default", Directives: gti.Directives{}, Tag: "def:\"0\""}},
-		{"Run", &gti.Field{Name: "Run", Type: "int", LocalType: "int", Doc: "starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1", Directives: gti.Directives{}, Tag: "def:\"0\""}},
-		{"NRuns", &gti.Field{Name: "NRuns", Type: "int", LocalType: "int", Doc: "total number of runs to do when running Train", Directives: gti.Directives{}, Tag: "def:\"5\" min:\"1\""}},
-		{"NEpochs", &gti.Field{Name: "NEpochs", Type: "int", LocalType: "int", Doc: "total number of epochs per run", Directives: gti.Directives{}, Tag: "def:\"100\""}},
-		{"NTrials", &gti.Field{Name: "NTrials", Type: "int", LocalType: "int", Doc: "total number of trials per epoch.  Should be an even multiple of NData.", Directives: gti.Directives{}, Tag: "def:\"128\""}},
-		{"PCAInterval", &gti.Field{Name: "PCAInterval", Type: "int", LocalType: "int", Doc: "how frequently (in epochs) to compute PCA on hidden representations to measure variance?", Directives: gti.Directives{}, Tag: "def:\"10\""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.RunConfig", IDName: "run-config", Doc: "RunConfig has config parameters related to running the sim", Fields: []gti.Field{{Name: "GPU", Doc: "use the GPU for computation -- generally faster even for small models if NData ~16"}, {Name: "NData", Doc: "number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning."}, {Name: "NThreads", Doc: "number of parallel threads for CPU computation -- 0 = use default"}, {Name: "Run", Doc: "starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1"}, {Name: "NRuns", Doc: "total number of runs to do when running Train"}, {Name: "NEpochs", Doc: "total number of epochs per run"}, {Name: "NTrials", Doc: "total number of trials per epoch.  Should be an even multiple of NData."}, {Name: "PCAInterval", Doc: "how frequently (in epochs) to compute PCA on hidden representations to measure variance?"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.LogConfig",
-	ShortName:  "main.LogConfig",
-	IDName:     "log-config",
-	Doc:        "LogConfig has config parameters related to logging data",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"SaveWts", &gti.Field{Name: "SaveWts", Type: "bool", LocalType: "bool", Doc: "if true, save final weights after each run", Directives: gti.Directives{}, Tag: ""}},
-		{"Epoch", &gti.Field{Name: "Epoch", Type: "bool", LocalType: "bool", Doc: "if true, save train epoch log to file, as .epc.tsv typically", Directives: gti.Directives{}, Tag: "def:\"true\" nest:\"+\""}},
-		{"Run", &gti.Field{Name: "Run", Type: "bool", LocalType: "bool", Doc: "if true, save run log to file, as .run.tsv typically", Directives: gti.Directives{}, Tag: "def:\"true\" nest:\"+\""}},
-		{"Trial", &gti.Field{Name: "Trial", Type: "bool", LocalType: "bool", Doc: "if true, save train trial log to file, as .trl.tsv typically. May be large.", Directives: gti.Directives{}, Tag: "def:\"false\" nest:\"+\""}},
-		{"NetData", &gti.Field{Name: "NetData", Type: "bool", LocalType: "bool", Doc: "if true, save network activation etc data from testing trials, for later viewing in netview", Directives: gti.Directives{}, Tag: ""}},
-		{"Testing", &gti.Field{Name: "Testing", Type: "bool", LocalType: "bool", Doc: "activates testing mode -- records detailed data for Go CI tests (not the same as running test mode on network, via Looper)", Directives: gti.Directives{}, Tag: ""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.LogConfig", IDName: "log-config", Doc: "LogConfig has config parameters related to logging data", Fields: []gti.Field{{Name: "SaveWts", Doc: "if true, save final weights after each run"}, {Name: "Epoch", Doc: "if true, save train epoch log to file, as .epc.tsv typically"}, {Name: "Run", Doc: "if true, save run log to file, as .run.tsv typically"}, {Name: "Trial", Doc: "if true, save train trial log to file, as .trl.tsv typically. May be large."}, {Name: "NetData", Doc: "if true, save network activation etc data from testing trials, for later viewing in netview"}, {Name: "Testing", Doc: "activates testing mode -- records detailed data for Go CI tests (not the same as running test mode on network, via Looper)"}}})
 
-var _ = gti.AddType(&gti.Type{
-	Name:       "main.Config",
-	ShortName:  "main.Config",
-	IDName:     "config",
-	Doc:        "Config is a standard Sim config -- use as a starting point.",
-	Directives: gti.Directives{},
-	Fields: ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{
-		{"Includes", &gti.Field{Name: "Includes", Type: "[]string", LocalType: "[]string", Doc: "specify include files here, and after configuration, it contains list of include files added", Directives: gti.Directives{}, Tag: ""}},
-		{"GUI", &gti.Field{Name: "GUI", Type: "bool", LocalType: "bool", Doc: "open the GUI -- does not automatically run -- if false, then runs automatically and quits", Directives: gti.Directives{}, Tag: "def:\"true\""}},
-		{"Debug", &gti.Field{Name: "Debug", Type: "bool", LocalType: "bool", Doc: "log debugging information", Directives: gti.Directives{}, Tag: ""}},
-		{"OpenWts", &gti.Field{Name: "OpenWts", Type: "string", LocalType: "string", Doc: "if set, open given weights file at start of training", Directives: gti.Directives{}, Tag: ""}},
-		{"Env", &gti.Field{Name: "Env", Type: "github.com/emer/axon/examples/boa.EnvConfig", LocalType: "EnvConfig", Doc: "environment configuration options", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"Params", &gti.Field{Name: "Params", Type: "github.com/emer/axon/examples/boa.ParamConfig", LocalType: "ParamConfig", Doc: "parameter related configuration options", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"Run", &gti.Field{Name: "Run", Type: "github.com/emer/axon/examples/boa.RunConfig", LocalType: "RunConfig", Doc: "sim running related configuration options", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-		{"Log", &gti.Field{Name: "Log", Type: "github.com/emer/axon/examples/boa.LogConfig", LocalType: "LogConfig", Doc: "data logging related configuration options", Directives: gti.Directives{}, Tag: "view:\"add-fields\""}},
-	}),
-	Embeds:  ordmap.Make([]ordmap.KeyVal[string, *gti.Field]{}),
-	Methods: ordmap.Make([]ordmap.KeyVal[string, *gti.Method]{}),
-})
+var _ = gti.AddType(&gti.Type{Name: "main.Config", IDName: "config", Doc: "Config is a standard Sim config -- use as a starting point.", Fields: []gti.Field{{Name: "Includes", Doc: "specify include files here, and after configuration, it contains list of include files added"}, {Name: "GUI", Doc: "open the GUI -- does not automatically run -- if false, then runs automatically and quits"}, {Name: "Debug", Doc: "log debugging information"}, {Name: "OpenWts", Doc: "if set, open given weights file at start of training"}, {Name: "Env", Doc: "environment configuration options"}, {Name: "Params", Doc: "parameter related configuration options"}, {Name: "Run", Doc: "sim running related configuration options"}, {Name: "Log", Doc: "data logging related configuration options"}}})

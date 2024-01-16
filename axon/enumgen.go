@@ -130,7 +130,7 @@ func (i PrjnGTypes) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *PrjnGTypes) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("PrjnGTypes.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -479,7 +479,7 @@ func (i GlobalVars) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *GlobalVars) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("GlobalVars.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -733,7 +733,7 @@ func (i LayerTypes) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *LayerTypes) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("LayerTypes.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -852,7 +852,7 @@ func (i DAModTypes) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *DAModTypes) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("DAModTypes.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -961,7 +961,7 @@ func (i ValenceTypes) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *ValenceTypes) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("ValenceTypes.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -1080,7 +1080,7 @@ func (i NeuronFlags) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *NeuronFlags) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("NeuronFlags.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -1579,7 +1579,7 @@ func (i NeuronVars) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *NeuronVars) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("NeuronVars.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -1713,7 +1713,7 @@ func (i NeuronAvgVars) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *NeuronAvgVars) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("NeuronAvgVars.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -1827,7 +1827,7 @@ func (i NeuronIdxs) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *NeuronIdxs) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("NeuronIdxs.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -1946,7 +1946,7 @@ func (i GPLayerTypes) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *GPLayerTypes) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("GPLayerTypes.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -2100,7 +2100,7 @@ func (i PrjnTypes) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *PrjnTypes) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("PrjnTypes.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -2224,7 +2224,7 @@ func (i SynapseVars) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *SynapseVars) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("SynapseVars.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -2358,7 +2358,7 @@ func (i SynapseCaVars) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *SynapseCaVars) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("SynapseCaVars.UnmarshalText:", err)
 	}
 	return nil
 }
@@ -2472,7 +2472,7 @@ func (i SynapseIdxs) MarshalText() ([]byte, error) {
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *SynapseIdxs) UnmarshalText(text []byte) error {
 	if err := i.SetString(string(text)); err != nil {
-		log.Println(err)
+		log.Println("SynapseIdxs.UnmarshalText:", err)
 	}
 	return nil
 }
