@@ -12,14 +12,14 @@ import (
 	"math"
 	"strconv"
 
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/glop/indent"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/weights"
 	"github.com/emer/etable/v2/etensor"
-	"goki.dev/giv"
-	"goki.dev/glop/indent"
-	"goki.dev/mat32"
 )
 
 // LayerBase manages the structural elements of the layer, which are common

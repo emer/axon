@@ -5,19 +5,19 @@
 // vgcc_plot plots an equation updating over time in a etable.Table and Plot2D.
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"strconv"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	_ "github.com/emer/etable/v2/etview" // include to get gui views
-	"goki.dev/gi"
-	"goki.dev/giv"
-	"goki.dev/icons"
 )
 
 func main() {

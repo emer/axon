@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// mahp_plot plots an equation updating over time in a etable.Table and Plot2D.
+// kir_plot plots an equation updating over time in a etable.Table and Plot2D.
 package main
 
 //go:generate core generate -add-types
@@ -34,8 +34,8 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 
-	// mAHP function
-	Mahp chans.MahpParams `view:"inline"`
+	// kIR function
+	Kir chans.KirParams `view:"inline"`
 
 	// starting voltage
 	Vstart float32 `def:"-100"`
@@ -76,8 +76,8 @@ type Sim struct {
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	ss.Mahp.Defaults()
-	ss.Mahp.Gbar = 1
+	ss.Kir.Defaults()
+	ss.Kir.Gbar = 1
 	ss.Vstart = -100
 	ss.Vend = 100
 	ss.Vstep = 1
@@ -102,7 +102,7 @@ func (ss *Sim) VmRun() { //gti:add
 	ss.Update()
 	dt := ss.Table
 
-	mp := &ss.Mahp
+	mp := &ss.Kir
 
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
@@ -121,7 +121,7 @@ func (ss *Sim) VmRun() { //gti:add
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "mAHPplotTable")
+	dt.SetMetaData("name", "kIRplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
@@ -134,7 +134,7 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "mAHP V Function Plot"
+	plt.Params.Title = "kIR V Function Plot"
 	plt.Params.XAxisCol = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
@@ -151,7 +151,7 @@ func (ss *Sim) TimeRun() { //gti:add
 	ss.Update()
 	dt := ss.TimeTable
 
-	mp := &ss.Mahp
+	mp := &ss.Kir
 
 	var n, tau float32
 	mp.NinfTauFmV(ss.TimeVstart, &n, &tau)
@@ -170,11 +170,11 @@ func (ss *Sim) TimeRun() { //gti:add
 		var ninf, tau float32
 		mp.NinfTauFmV(v, &ninf, &tau)
 		dn := mp.DNFmV(vnorm, n)
-		g := mp.GmAHP(n)
+		g := mp.GkIR(n)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))
-		dt.SetCellFloat("GmAHP", ti, float64(g))
+		dt.SetCellFloat("GkIR", ti, float64(g))
 		dt.SetCellFloat("N", ti, float64(n))
 		dt.SetCellFloat("dN", ti, float64(dn))
 		dt.SetCellFloat("Ninf", ti, float64(ninf))
@@ -204,14 +204,14 @@ func (ss *Sim) TimeRun() { //gti:add
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
-	dt.SetMetaData("name", "mAHPplotTable")
+	dt.SetMetaData("name", "kIRplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
 		{"V", etensor.FLOAT64, nil, nil},
-		{"GmAHP", etensor.FLOAT64, nil, nil},
+		{"GkIR", etensor.FLOAT64, nil, nil},
 		{"N", etensor.FLOAT64, nil, nil},
 		{"dN", etensor.FLOAT64, nil, nil},
 		{"Ninf", etensor.FLOAT64, nil, nil},
@@ -228,7 +228,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GmAHP", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GkIR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("N", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("dN", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Ninf", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
@@ -239,7 +239,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 
 // ConfigGUI configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Body {
-	b := gi.NewAppBody("mahp_plot").SetTitle("Plotting Equations")
+	b := gi.NewAppBody("kir_plot").SetTitle("Plotting Equations")
 
 	split := gi.NewSplits(b, "split")
 	sv := giv.NewStructView(split, "sv")

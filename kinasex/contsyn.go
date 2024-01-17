@@ -4,7 +4,7 @@
 
 package kinasex
 
-import "goki.dev/mat32"
+import "cogentcore.org/core/mat32"
 
 // ContSyn holds extra synaptic state for continuous learning
 type ContSyn struct {

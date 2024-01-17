@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"log"
 
+	"cogentcore.org/core/mat32"
 	"github.com/emer/etable/v2/minmax"
-	"goki.dev/mat32"
 )
 
 // index naming:

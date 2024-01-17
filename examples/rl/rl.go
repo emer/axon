@@ -7,11 +7,12 @@ rl_cond explores the temporal differences (TD) and Rescorla-Wagner reinforcement
 */
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"os"
 
+	"cogentcore.org/core/gi"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -27,7 +28,6 @@ import (
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/empi/v2/mpi"
-	"goki.dev/gi"
 )
 
 func main() {

@@ -8,13 +8,13 @@ import (
 	"errors"
 	"log"
 
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
-	"goki.dev/giv"
-	"goki.dev/mat32"
 )
 
 // index naming:

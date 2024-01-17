@@ -9,13 +9,15 @@ influences (including leak and synaptic inhibition).
 */
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"fmt"
 	"log"
 	"os"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -33,8 +35,6 @@ import (
 	"github.com/emer/etable/v2/etensor"
 	_ "github.com/emer/etable/v2/etview" // include to get gui views
 	"github.com/emer/etable/v2/minmax"
-	"goki.dev/gi"
-	"goki.dev/icons"
 )
 
 func main() {

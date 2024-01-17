@@ -11,8 +11,8 @@ import (
 	"sort"
 	"sync"
 
+	"cogentcore.org/core/glop/atomctr"
 	"github.com/emer/emergent/v2/timer"
-	"goki.dev/glop/atomctr"
 )
 
 // Maps the given function across the [0, total) range of items, using

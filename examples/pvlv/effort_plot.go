@@ -9,6 +9,10 @@ import (
 	"math/rand"
 	"strconv"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/eplot"
@@ -16,10 +20,6 @@ import (
 	"github.com/emer/etable/v2/etensor"
 	_ "github.com/emer/etable/v2/etview" // include to get gui views
 	"github.com/emer/etable/v2/minmax"
-	"goki.dev/gi"
-	"goki.dev/giv"
-	"goki.dev/glop/num"
-	"goki.dev/icons"
 )
 
 func DriveEffortGUI() {

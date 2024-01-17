@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"goki.dev/mat32"
+	"cogentcore.org/core/mat32"
 )
 
 //gosl: hlsl prjnparams

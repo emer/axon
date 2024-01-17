@@ -8,8 +8,8 @@ import (
 	"log"
 	"strings"
 
+	"cogentcore.org/core/glop/num"
 	"github.com/emer/gosl/v2/slbool"
-	"goki.dev/glop/num"
 )
 
 //gosl: start pcore_layers

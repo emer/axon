@@ -19,10 +19,10 @@ overall values.
 */
 package nxx1
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
-	"goki.dev/mat32"
+	"cogentcore.org/core/mat32"
 )
 
 // Params are the Noisy X/(X+1) rate-coded activation function parameters.

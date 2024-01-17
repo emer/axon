@@ -10,7 +10,7 @@ Includes excitatory, leak, inhibition, and dynamic potassium channels.
 */
 package chans
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 //gosl: hlsl chans
 // #include "fastexp.hlsl"

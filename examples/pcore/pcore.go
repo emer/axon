@@ -7,13 +7,16 @@ pcore: This project simulates the inhibitory dynamics in the STN and GPe leading
 */
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"fmt"
 	"os"
 	"strconv"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -33,9 +36,6 @@ import (
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/split"
-	"goki.dev/gi"
-	"goki.dev/glop/num"
-	"goki.dev/mat32"
 )
 
 func main() {

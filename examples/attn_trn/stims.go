@@ -6,7 +6,7 @@
 
 package main
 
-import "goki.dev/mat32"
+import "cogentcore.org/core/mat32"
 
 // StimAttnSize is a list of stimuli manipulating the size of stimuli vs. attention
 // it is the primary test of Reynolds & Heeger 2009 attentional dynamics.

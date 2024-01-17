@@ -4,7 +4,7 @@
 
 package axon
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"github.com/emer/emergent/v2/emer"

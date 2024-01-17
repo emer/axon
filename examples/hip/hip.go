@@ -5,7 +5,7 @@
 // hip runs a hippocampus model for testing parameters and new learning ideas
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"fmt"
@@ -16,6 +16,9 @@ import (
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -33,9 +36,6 @@ import (
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/metric"
-	"goki.dev/gi"
-	"goki.dev/glop/num"
-	"goki.dev/mat32"
 )
 
 func main() {

@@ -13,18 +13,18 @@
 // only allow switching at the start.
 package armaze
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"log"
 
+	"cogentcore.org/core/glop/num"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
-	"goki.dev/glop/num"
 )
 
 // Actions is a list of mutually exclusive states

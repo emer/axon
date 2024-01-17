@@ -7,10 +7,10 @@ package axon
 import (
 	"math"
 
+	"cogentcore.org/core/glop/num"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/gosl/v2/slbool"
 	"github.com/emer/gosl/v2/slrand"
-	"goki.dev/glop/num"
 )
 
 var (

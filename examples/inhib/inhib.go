@@ -9,13 +9,15 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 */
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"fmt"
 	"math/rand"
 	"os"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -33,8 +35,6 @@ import (
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	_ "github.com/emer/etable/v2/etview" // include to get gui views
-	"goki.dev/gi"
-	"goki.dev/mat32"
 )
 
 func main() {

@@ -5,9 +5,9 @@
 package axon
 
 import (
+	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/erand"
-	"goki.dev/glop/num"
-	"goki.dev/mat32"
 )
 
 // DriveParams manages the drive parameters for computing and updating drive state.

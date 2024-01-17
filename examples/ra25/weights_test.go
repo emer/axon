@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
+	"cogentcore.org/core/gi"
 	"github.com/emer/emergent/v2/etime"
-	"goki.dev/gi"
 )
 
 func TestWeightsSave(t *testing.T) {

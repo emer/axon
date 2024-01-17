@@ -5,12 +5,13 @@
 package chans
 
 import (
-	"goki.dev/mat32"
+	"cogentcore.org/core/mat32"
 )
 
 //gosl: start chans
 
-// KirParams control the Kir potassium inwardly rectifying current
+// KirParams control the Kir potassium inwardly rectifying current,
+// based on the equations from Lindroos et al (2018).
 type KirParams struct {
 
 	// overall strength multiplier of Kir current.

@@ -7,7 +7,7 @@ dls: This project tests Dorsal Lateral Striatum Motor Action Learning.
 */
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"fmt"
@@ -15,6 +15,8 @@ import (
 	"math"
 	"os"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/dls/armaze"
 	"github.com/emer/emergent/v2/econfig"
@@ -37,8 +39,6 @@ import (
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/etable/v2/split"
-	"goki.dev/gi"
-	"goki.dev/mat32"
 )
 
 func main() {

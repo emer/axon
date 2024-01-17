@@ -6,11 +6,13 @@
 // on visual inputs.
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"os"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -30,8 +32,6 @@ import (
 	"github.com/emer/etable/v2/etable"
 	_ "github.com/emer/etable/v2/etview" // _ = include to get gui views
 	"github.com/emer/etable/v2/metric"
-	"goki.dev/gi"
-	"goki.dev/mat32"
 )
 
 func main() {

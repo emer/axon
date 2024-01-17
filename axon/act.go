@@ -5,11 +5,11 @@
 package axon
 
 import (
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/gosl/v2/slbool"
-	"goki.dev/mat32"
 )
 
 ///////////////////////////////////////////////////////////////////////

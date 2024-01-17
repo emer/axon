@@ -5,8 +5,8 @@
 package axon
 
 import (
+	"cogentcore.org/core/mat32"
 	"github.com/emer/gosl/v2/slbool"
-	"goki.dev/mat32"
 )
 
 //gosl: start neuromod

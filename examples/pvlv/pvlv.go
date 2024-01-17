@@ -8,13 +8,17 @@ in the amygdala, ventral striatum and associated areas.
 */
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"fmt"
 	"log"
 	"os"
 
+	"cogentcore.org/core/events"
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/laser"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/pvlv/cond"
 	"github.com/emer/emergent/v2/econfig"
@@ -36,10 +40,6 @@ import (
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/etable/v2/split"
-	"goki.dev/events"
-	"goki.dev/gi"
-	"goki.dev/laser"
-	"goki.dev/mat32"
 )
 
 func main() {

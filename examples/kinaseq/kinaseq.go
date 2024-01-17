@@ -11,16 +11,16 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/ki"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/etable/v2/agg"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	_ "github.com/emer/etable/v2/etview" // include to get gui views
-	"goki.dev/gi"
-	"goki.dev/giv"
-	"goki.dev/ki"
-	"goki.dev/mat32"
 )
 
 func main() {

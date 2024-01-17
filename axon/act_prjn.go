@@ -7,9 +7,9 @@ package axon
 import (
 	"log"
 
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/gosl/v2/slbool"
-	"goki.dev/mat32"
 )
 
 //gosl: start act_prjn

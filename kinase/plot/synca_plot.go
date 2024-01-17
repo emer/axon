@@ -5,21 +5,21 @@
 // synca_plot plots kinase SynCa update equations
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"math"
 	"strconv"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	_ "github.com/emer/etable/v2/etview"   // include to get gui views
 	_ "github.com/emer/gosl/v2/slboolview" // ditto
-	"goki.dev/gi"
-	"goki.dev/giv"
-	"goki.dev/icons"
 )
 
 func main() {

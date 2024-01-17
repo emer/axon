@@ -9,10 +9,10 @@ import (
 	"io"
 	"strconv"
 
+	"cogentcore.org/core/glop/indent"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/weights"
 	"github.com/emer/etable/v2/etensor"
-	"goki.dev/glop/indent"
 )
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff

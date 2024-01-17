@@ -7,7 +7,7 @@ package axon
 import (
 	"encoding/json"
 
-	"goki.dev/mat32"
+	"cogentcore.org/core/mat32"
 )
 
 //gosl: hlsl layerparams

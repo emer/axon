@@ -30,10 +30,10 @@ import (
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/split"
-	"goki.dev/gi"
-	"goki.dev/giv
-	"goki.dev/ki"
-	"goki.dev/mat32"
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv
+	"cogentcore.org/core/ki"
+	"cogentcore.org/core/mat32"
 )
 
 // this is the stub main for gogi that calls our actual mainrun function, at end of file

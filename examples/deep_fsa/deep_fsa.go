@@ -6,12 +6,14 @@
 // finite state automaton problem.
 package main
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import (
 	"log"
 	"os"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -31,8 +33,6 @@ import (
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/etable/v2/tsragg"
-	"goki.dev/gi"
-	"goki.dev/mat32"
 )
 
 func main() {

@@ -13,7 +13,7 @@ active at any time, where k is typically 10-20 percent of N.
 */
 package fsfffb
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 import "github.com/emer/gosl/v2/slbool"
 

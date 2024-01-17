@@ -7,12 +7,12 @@ package main
 import (
 	"math/rand"
 
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/popcode"
 	"github.com/emer/etable/v2/etensor"
-	"goki.dev/mat32"
 )
 
 // GoNoEnv implements simple Go vs. NoGo input patterns to test BG learning.

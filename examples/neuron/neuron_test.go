@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"goki.dev/mat32"
+	"cogentcore.org/core/mat32"
 	"golang.org/x/exp/maps"
 )
 

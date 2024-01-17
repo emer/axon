@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/popcode"
 	"github.com/emer/etable/v2/etensor"
-	"goki.dev/mat32"
 )
 
 // MoveEnv is a flat-world grid-based environment

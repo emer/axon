@@ -20,6 +20,10 @@ import (
 	"strings"
 	"time"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/glop/dedupe"
+	"cogentcore.org/core/glop/indent"
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/erand"
@@ -29,10 +33,6 @@ import (
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/emergent/v2/weights"
-	"goki.dev/gi"
-	"goki.dev/glop/dedupe"
-	"goki.dev/glop/indent"
-	"goki.dev/mat32"
 )
 
 // NetworkBase manages the basic structural components of a network (layers).

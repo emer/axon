@@ -7,8 +7,8 @@ package cond
 import (
 	"math/rand"
 
+	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/erand"
-	"goki.dev/mat32"
 )
 
 // Valence

@@ -8,8 +8,8 @@ import (
 	"image"
 	"image/color"
 
-	"goki.dev/colors"
-	"goki.dev/paint"
+	"cogentcore.org/core/colors"
+	"cogentcore.org/core/paint"
 )
 
 // LEDraw renders old-school "LED" style "letters" composed of a set of horizontal

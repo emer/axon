@@ -4,7 +4,7 @@
 
 package kinase
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 // Rules are different options for Kinase-based learning rules
 // These are now implemented using separate Prjn types in kinasex

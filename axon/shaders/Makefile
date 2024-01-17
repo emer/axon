@@ -2,7 +2,7 @@
 # The go generate command does this automatically.
 
 all: 
-	cd ../; gosl -exclude=Update,UpdateParams,Defaults,AllParams goki.dev/mat32/v2/fastexp.go goki.dev/etable/v2/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go hip_prjns.go gpu_hlsl
+	cd ../; gosl -exclude=Update,UpdateParams,Defaults,AllParams cogentcore.org/core/mat32/v2/fastexp.go cogentcore.org/core/etable/v2/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go hip_prjns.go gpu_hlsl
 
 # note: gosl automatically compiles the hlsl files using this command:
 %.spv : %.hlsl

@@ -12,7 +12,7 @@ active at any time, where k is typically 10-20 percent of N.
 */
 package fffb
 
-//go:generate goki generate -add-types
+//go:generate core generate -add-types
 
 // Params parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)
 // based on average (or maximum) Ge (FF) and activation (FB)
