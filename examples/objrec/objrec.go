@@ -744,7 +744,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		vgpu.Debug = ss.Config.Debug
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.SetQuitCleanFunc(func() {
+		gi.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

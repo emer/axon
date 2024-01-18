@@ -8,7 +8,7 @@ To add GPU support to an existing simulation, add these lines to the end of the 
 	ss.GUI.FinalizeGUI(false) // existing -- insert below vvv
 	if GPU { // GPU is global bool var flag at top -- or true if always using
 		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
-		gi.SetQuitCleanFunc(func() {
+		gi.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

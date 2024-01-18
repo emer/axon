@@ -1033,7 +1033,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.SetQuitCleanFunc(func() {
+		gi.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

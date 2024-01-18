@@ -460,7 +460,7 @@ func (ss *Sim) ConfigGUI() {
 
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.SetQuitCleanFunc(func() {
+		gi.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
