@@ -7,12 +7,12 @@ require (
 	github.com/alecthomas/assert/v2 v2.2.1
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.6
-	github.com/emer/empi/v2 v2.0.0-dev0.0.3
-	github.com/emer/etable/v2 v2.0.0-dev0.0.13
-	github.com/emer/eve/v2 v2.0.0-dev0.0.3
-	github.com/emer/gosl/v2 v2.0.0-dev0.0.8
-	github.com/emer/vision/v2 v2.0.0-dev0.0.5
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.8
+	github.com/emer/empi/v2 v2.0.0-dev0.0.4
+	github.com/emer/etable/v2 v2.0.0-dev0.0.14
+	github.com/emer/eve/v2 v2.0.0-dev0.0.4
+	github.com/emer/gosl/v2 v2.0.0-dev0.0.9
+	github.com/emer/vision/v2 v2.0.0-dev0.0.6
 	github.com/goki/vulkan v1.0.7
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/gomidi/midi/v2 v2.0.30
@@ -21,7 +21,6 @@ require (
 
 require (
 	git.sr.ht/~sbinet/gg v0.5.0 // indirect
-	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/akutz/sortfold v0.2.1 // indirect
@@ -60,7 +59,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	goki.dev v0.0.1 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
