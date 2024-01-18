@@ -35,7 +35,7 @@ const LogPrec = 4
 type Sim struct {
 
 	// kIR function
-	Kir chans.KirParams `view:"inline"`
+	Kir chans.KirParams
 
 	// starting voltage
 	Vstart float32 `def:"-100"`
@@ -79,7 +79,7 @@ func (ss *Sim) Config() {
 	ss.Kir.Defaults()
 	ss.Kir.Gbar = 1
 	ss.Vstart = -100
-	ss.Vend = 100
+	ss.Vend = 0
 	ss.Vstep = 1
 	ss.TimeSteps = 300
 	ss.TimeSpike = true
@@ -106,14 +106,19 @@ func (ss *Sim) VmRun() { //gti:add
 
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
+	m := mp.Minf(-70)
 	for vi := 0; vi < nv; vi++ {
 		vbio := ss.Vstart + float32(vi)*ss.Vstep
-		var ninf, tau float32
-		mp.NinfTauFmV(vbio, &ninf, &tau)
+		v := chans.VFmBio(vbio)
+		g := mp.Gkir(v, &m)
+		var minf, mtau float32
+		mp.MRates(vbio, &minf, &mtau)
 
 		dt.SetCellFloat("V", vi, float64(vbio))
-		dt.SetCellFloat("Ninf", vi, float64(ninf))
-		dt.SetCellFloat("Tau", vi, float64(tau))
+		dt.SetCellFloat("GkIR", vi, float64(g))
+		dt.SetCellFloat("M", vi, float64(m))
+		dt.SetCellFloat("Minf", vi, float64(minf))
+		dt.SetCellFloat("Mtau", vi, float64(mtau))
 	}
 	if ss.Plot != nil {
 		ss.Plot.UpdatePlot()
@@ -127,8 +132,10 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 
 	sch := etable.Schema{
 		{"V", etensor.FLOAT64, nil, nil},
-		{"Ninf", etensor.FLOAT64, nil, nil},
-		{"Tau", etensor.FLOAT64, nil, nil},
+		{"GkIR", etensor.FLOAT64, nil, nil},
+		{"M", etensor.FLOAT64, nil, nil},
+		{"Minf", etensor.FLOAT64, nil, nil},
+		{"Mtau", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -139,8 +146,10 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ninf", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Tau", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("GkIR", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Minf", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Mtau", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 
@@ -153,9 +162,7 @@ func (ss *Sim) TimeRun() { //gti:add
 
 	mp := &ss.Kir
 
-	var n, tau float32
-	mp.NinfTauFmV(ss.TimeVstart, &n, &tau)
-	kna := float32(0)
+	m := mp.Minf(-70)
 	msdt := float32(0.001)
 	v := ss.TimeVstart
 	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)
@@ -167,28 +174,23 @@ func (ss *Sim) TimeRun() { //gti:add
 		vnorm := chans.VFmBio(v)
 		t := float32(ti) * msdt
 
-		var ninf, tau float32
-		mp.NinfTauFmV(v, &ninf, &tau)
-		dn := mp.DNFmV(vnorm, n)
-		g := mp.GkIR(n)
+		g := mp.Gkir(vnorm, &m)
+		var minf, mtau float32
+		mp.MRates(v, &minf, &mtau)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))
 		dt.SetCellFloat("GkIR", ti, float64(g))
-		dt.SetCellFloat("N", ti, float64(n))
-		dt.SetCellFloat("dN", ti, float64(dn))
-		dt.SetCellFloat("Ninf", ti, float64(ninf))
-		dt.SetCellFloat("Tau", ti, float64(tau))
-		dt.SetCellFloat("Kna", ti, float64(kna))
+		dt.SetCellFloat("M", ti, float64(m))
+		dt.SetCellFloat("Minf", ti, float64(minf))
+		dt.SetCellFloat("Mtau", ti, float64(mtau))
 
 		if ss.TimeSpike {
 			si := ti % isi
 			if si == 0 {
 				v = ss.TimeVend
-				kna += 0.05 * (1 - kna)
 			} else {
 				v = ss.TimeVstart + (float32(si)/float32(isi))*(ss.TimeVend-ss.TimeVstart)
-				kna -= kna / 50
 			}
 		} else {
 			v += vinc
@@ -196,7 +198,6 @@ func (ss *Sim) TimeRun() { //gti:add
 				v = ss.TimeVend
 			}
 		}
-		n += dn
 	}
 	if ss.TimePlot != nil {
 		ss.TimePlot.UpdatePlot()
@@ -212,11 +213,9 @@ func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
 		{"Time", etensor.FLOAT64, nil, nil},
 		{"V", etensor.FLOAT64, nil, nil},
 		{"GkIR", etensor.FLOAT64, nil, nil},
-		{"N", etensor.FLOAT64, nil, nil},
-		{"dN", etensor.FLOAT64, nil, nil},
-		{"Ninf", etensor.FLOAT64, nil, nil},
-		{"Tau", etensor.FLOAT64, nil, nil},
-		{"Kna", etensor.FLOAT64, nil, nil},
+		{"M", etensor.FLOAT64, nil, nil},
+		{"Minf", etensor.FLOAT64, nil, nil},
+		{"Mtau", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -229,11 +228,9 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("GkIR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dN", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ninf", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Tau", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Kna", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Minf", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Mtau", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 
