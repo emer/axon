@@ -367,7 +367,7 @@ type Context struct {
 	Cycle int32
 
 	// length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn).
-	ThetaCycles int32 `def:"200"`
+	ThetaCycles int32 `default:"200"`
 
 	// total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time
 	CyclesTotal int32
@@ -379,10 +379,10 @@ type Context struct {
 	TrialsTotal int32
 
 	// amount of time to increment per cycle
-	TimePerCycle float32 `def:"0.001"`
+	TimePerCycle float32 `default:"0.001"`
 
 	// how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation, associated in the brain with sleep, in the SlowAdapt method.  This should be long enough for meaningful changes to accumulate -- 100 is default but could easily be longer in larger models.  Because SlowCtr is incremented by NData, high NData cases (e.g. 16) likely need to increase this value -- e.g., 400 seems to produce overall consistent results in various models.
-	SlowInterval int32 `def:"100"`
+	SlowInterval int32 `default:"100"`
 
 	// counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter.
 	SlowCtr int32 `inactive:"+"`

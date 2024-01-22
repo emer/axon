@@ -15,16 +15,16 @@ type EnvConfig struct {
 	Config string `desc:"name of config file that loads into Env.Config for setting environment parameters directly"`
 
 	// gain on the softmax for choosing actions: lower values are more noisy
-	ActSoftMaxGain float32 `def:"1"`
+	ActSoftMaxGain float32 `default:"1"`
 
 	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
-	NDrives int `def:"4"`
+	NDrives int `default:"4"`
 
 	// epoch when PctCortex starts increasing
-	PctCortexStEpc int `def:"10"`
+	PctCortexStEpc int `default:"10"`
 
 	// number of epochs over which PctCortexMax is reached
-	PctCortexNEpc int `def:"1"`
+	PctCortexNEpc int `default:"1"`
 
 	// proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical
 	PctCortex float32 `inactive:"+"`
@@ -78,28 +78,28 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `def:"true"`
+	GPU bool `default:"true"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `def:"16" min:"1"`
+	NData int `default:"16" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `def:"0"`
+	NThreads int `default:"0"`
 
 	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
-	Run int `def:"0"`
+	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `def:"5" min:"1"`
+	NRuns int `default:"5" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `def:"100"`
+	NEpochs int `default:"100"`
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
-	NTrials int `def:"128"`
+	NTrials int `default:"128"`
 
 	// how frequently (in epochs) to compute PCA on hidden representations to measure variance?
-	PCAInterval int `def:"10"`
+	PCAInterval int `default:"10"`
 }
 
 // LogConfig has config parameters related to logging data
@@ -109,13 +109,13 @@ type LogConfig struct {
 	SaveWts bool
 
 	// if true, save train epoch log to file, as .epc.tsv typically
-	Epoch bool `def:"true" nest:"+"`
+	Epoch bool `default:"true" nest:"+"`
 
 	// if true, save run log to file, as .run.tsv typically
-	Run bool `def:"true" nest:"+"`
+	Run bool `default:"true" nest:"+"`
 
 	// if true, save train trial log to file, as .trl.tsv typically. May be large.
-	Trial bool `def:"false" nest:"+"`
+	Trial bool `default:"false" nest:"+"`
 
 	// if true, save network activation etc data from testing trials, for later viewing in netview
 	NetData bool
@@ -131,7 +131,7 @@ type Config struct {
 	Includes []string
 
 	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
-	GUI bool `def:"true"`
+	GUI bool `default:"true"`
 
 	// log debugging information
 	Debug bool

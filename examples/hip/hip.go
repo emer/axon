@@ -775,7 +775,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() {
 	title := "Axon Hippocampus"
 	ss.GUI.MakeBody(ss, "hip", title, `Benchmarking`)

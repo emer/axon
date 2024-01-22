@@ -10,19 +10,19 @@ package axon
 type HipPrjnParams struct {
 
 	// Hebbian learning proportion
-	Hebb float32 `def:"0"`
+	Hebb float32 `default:"0"`
 
 	// EDL proportion
-	Err float32 `def:"1"`
+	Err float32 `default:"1"`
 
 	// proportion of correction to apply to sending average activation for hebbian learning component (0=none, 1=all, .5=half, etc)
-	SAvgCor float32 `def:"0.4:0.8" min:"0" max:"1"`
+	SAvgCor float32 `default:"0.4:0.8" min:"0" max:"1"`
 
 	// threshold of sending average activation below which learning does not occur (prevents learning when there is no input)
-	SAvgThr float32 `def:"0.01" min:"0"`
+	SAvgThr float32 `default:"0.01" min:"0"`
 
 	// sending layer Nominal (need to manually set it to be the same as the sending layer)
-	SNominal float32 `def:"0.1" min:"0"`
+	SNominal float32 `default:"0.1" min:"0"`
 
 	pad, pad1, pad2 float32
 }

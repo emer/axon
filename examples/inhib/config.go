@@ -15,7 +15,7 @@ type EnvConfig struct {
 	Env map[string]any
 
 	// percent of active units in input layer (literally number of active units, because input has 100 units total)
-	InputPct float32 `def:"15" min:"5" max:"50" step:"1"`
+	InputPct float32 `default:"15" min:"5" max:"50" step:"1"`
 }
 
 // ParamConfig has config parameters related to sim params
@@ -25,10 +25,10 @@ type ParamConfig struct {
 	Network map[string]any
 
 	// number of hidden layers to add
-	NLayers int `def:"2" min:"1"`
+	NLayers int `default:"2" min:"1"`
 
 	// size of hidden layers
-	HidSize evec.Vec2i `def:"{'X':10,'Y':10}"`
+	HidSize evec.Vec2i `default:"{'X':10,'Y':10}"`
 
 	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
 	Sheet string
@@ -53,17 +53,17 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `def:"true"`
+	GPU bool `default:"true"`
 }
 
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
 
 	// if true, save train epoch log to file, as .epc.tsv typically
-	Epoch bool `def:"true" nest:"+"`
+	Epoch bool `default:"true" nest:"+"`
 
 	// if true, save train trial log to file, as .trl.tsv typically. May be large.
-	Trial bool `def:"false" nest:"+"`
+	Trial bool `default:"false" nest:"+"`
 
 	// if true, save network activation etc data from testing trials, for later viewing in netview
 	NetData bool
@@ -76,7 +76,7 @@ type Config struct {
 	Includes []string
 
 	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
-	GUI bool `def:"true"`
+	GUI bool `default:"true"`
 
 	// log debugging information
 	Debug bool

@@ -332,7 +332,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 	}
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Window {
 	width := 1600
 	height := 1200

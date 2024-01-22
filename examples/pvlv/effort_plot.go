@@ -224,7 +224,7 @@ func (ss *DrEffPlot) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.
 	return plt
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *DrEffPlot) ConfigGUI() *gi.Body {
 	b := gi.NewAppBody("dreffa_plot").SetTitle("Drive / Effort / Urgency Plotting")
 

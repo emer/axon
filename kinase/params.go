@@ -17,13 +17,13 @@ import (
 type CaDtParams struct { //gti:add
 
 	// CaM (calmodulin) time constant in cycles (msec) -- for synaptic-level integration this integrates on top of Ca signal from send->CaSyn * recv->CaSyn, each of which are typically integrated with a 30 msec Tau.
-	MTau float32 `def:"2,5" min:"1"`
+	MTau float32 `default:"2,5" min:"1"`
 
 	// LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information.
-	PTau float32 `def:"39" min:"1"`
+	PTau float32 `default:"39" min:"1"`
 
 	// LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome).  For integration equations, this cannot be identical to PTau.
-	DTau float32 `def:"41" min:"1"`
+	DTau float32 `default:"41" min:"1"`
 
 	// if true, adjust dt time constants when using exponential integration equations to compensate for difference between discrete and continuous integration
 	ExpAdj slbool.Bool
@@ -110,10 +110,10 @@ func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
 type CaParams struct { //gti:add
 
 	// spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate.
-	SpikeG float32 `def:"12"`
+	SpikeG float32 `default:"12"`
 
 	// maximum ISI for integrating in Opt mode -- above that just set to 0
-	MaxISI int32 `def:"100"`
+	MaxISI int32 `default:"100"`
 
 	pad, pad1 int32
 

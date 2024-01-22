@@ -12,10 +12,10 @@ type Bg struct {
 	On bool
 
 	// level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition
-	Gi float32 `def:".1" viewif:"On=true"`
+	Gi float32 `default:".1" viewif:"On=true"`
 
 	// time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
-	Tau float32 `def:"10" viewif:"On=true"`
+	Tau float32 `default:"10" viewif:"On=true"`
 
 	// rate = 1 / tau
 	Dt float32 `inactive:"+" view:"-" json:"-" xml:"-"`

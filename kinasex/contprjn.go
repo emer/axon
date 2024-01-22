@@ -18,16 +18,16 @@ type KinContParams struct {
 	Rule kinase.Rules
 
 	// gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values.
-	NMDAG float32 `def:"0.8"`
+	NMDAG float32 `default:"0.8"`
 
 	// number of msec (cycles) after either a pre or postsynaptic spike, when the competitive binding of CaMKII vs. DAPK1 to NMDA N2B takes place, generating the provisional weight change value that can then turn into the actual weight change DWt
 	TWindow int
 
 	// proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes
-	DMaxPct float32 `def:"0.5"`
+	DMaxPct float32 `default:"0.5"`
 
 	// scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)
-	DScale float32 `def:"1,0.93,1.05"`
+	DScale float32 `default:"1,0.93,1.05"`
 }
 
 func (kp *KinContParams) Defaults() {

@@ -15,19 +15,19 @@ import (
 type GABABParams struct {
 
 	// overall strength multiplier of GABA-B current. The 0.015 default is a high value that works well in smaller networks -- larger networks may benefit from lower levels (e.g., 0.012).
-	Gbar float32 `def:"0,0.012,0.015"`
+	Gbar float32 `default:"0,0.012,0.015"`
 
 	// rise time for bi-exponential time dynamics of GABA-B
-	RiseTau float32 `viewif:"Gbar>0" def:"45"`
+	RiseTau float32 `viewif:"Gbar>0" default:"45"`
 
 	// decay time for bi-exponential time dynamics of GABA-B
-	DecayTau float32 `viewif:"Gbar>0" def:"50"`
+	DecayTau float32 `viewif:"Gbar>0" default:"50"`
 
 	// baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)
-	Gbase float32 `viewif:"Gbar>0" def:"0.2"`
+	Gbase float32 `viewif:"Gbar>0" default:"0.2"`
 
 	// multiplier for converting Gi to equivalent GABA spikes
-	GiSpike float32 `viewif:"Gbar>0" def:"10"`
+	GiSpike float32 `viewif:"Gbar>0" default:"10"`
 
 	// time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau
 	MaxTime float32 `viewif:"Gbar>0" inactive:"+"`

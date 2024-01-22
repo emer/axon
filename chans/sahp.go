@@ -19,19 +19,19 @@ import "cogentcore.org/core/mat32"
 type SahpParams struct {
 
 	// strength of sAHP current
-	Gbar float32 `def:"0.05,0.1"`
+	Gbar float32 `default:"0.05,0.1"`
 
 	// time constant for integrating Ca across theta cycles
-	CaTau float32 `viewif:"Gbar>0" def:"5,10"`
+	CaTau float32 `viewif:"Gbar>0" default:"5,10"`
 
 	// integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength
-	Off float32 `viewif:"Gbar>0" def:"0.8"`
+	Off float32 `viewif:"Gbar>0" default:"0.8"`
 
 	// slope of the infinite time logistic gating function
-	Slope float32 `viewif:"Gbar>0" def:"0.02"`
+	Slope float32 `viewif:"Gbar>0" default:"0.02"`
 
 	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
-	TauMax float32 `viewif:"Gbar>0" def:"1"`
+	TauMax float32 `viewif:"Gbar>0" default:"1"`
 
 	// 1/Tau
 	CaDt float32 `view:"-" inactive:"+"`

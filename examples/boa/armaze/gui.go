@@ -33,19 +33,19 @@ import (
 type Geom struct {
 
 	// width of arm -- emery rodent is 1 unit wide
-	ArmWidth float32 `def:"2"`
+	ArmWidth float32 `default:"2"`
 
 	// total space between arms, ends up being divided on either side
-	ArmSpace float32 `def:"1"`
+	ArmSpace float32 `default:"1"`
 
 	// multiplier per unit arm length -- keep square with width
-	LengthScale float32 `def:"2"`
+	LengthScale float32 `default:"2"`
 
 	// thickness of walls, floor
-	Thick float32 `def:"0.1"`
+	Thick float32 `default:"0.1"`
 
 	// height of walls
-	Height float32 `def:"0.2"`
+	Height float32 `default:"0.2"`
 
 	// width + space
 	ArmWidthTot float32 `inactive:"+"`
@@ -270,7 +270,6 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	twov := gi.NewSVG(twofr, "sceneview")
 	twov.Style(func(s *styles.Style) {
 		twov.SVG.Fill = true
-		twov.SVG.Norm = true
 		twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
 		twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
 		twov.SetReadOnly(false)
@@ -587,8 +586,8 @@ func (vw *GUI) UpdateWorldGUI() {
 	if vw.SceneView == nil || !vw.Disp {
 		return
 	}
-	updt := vw.SceneView.Sc.UpdateStartAsync()
-	defer vw.SceneView.Sc.UpdateEndAsyncRender(updt)
+	updt := vw.SceneView.Scene.UpdateStartAsync()
+	defer vw.SceneView.Scene.UpdateEndAsyncRender(updt)
 
 	// update state:
 	vw.SetEmeryPose()

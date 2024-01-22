@@ -13,7 +13,7 @@ type EnvConfig struct { //gti:add
 	Env map[string]any
 
 	// number of units per localist output unit
-	UnitsPer int `def:"4"`
+	UnitsPer int `default:"4"`
 }
 
 // ParamConfig has config parameters related to sim params
@@ -48,31 +48,31 @@ type ParamConfig struct { //gti:add
 type RunConfig struct { //gti:add
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `def:"true"`
+	GPU bool `default:"true"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `def:"16" min:"1"`
+	NData int `default:"16" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `def:"0"`
+	NThreads int `default:"0"`
 
 	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
-	Run int `def:"0"`
+	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `def:"5" min:"1"`
+	NRuns int `default:"5" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `def:"100"`
+	NEpochs int `default:"100"`
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
-	NTrials int `def:"196"`
+	NTrials int `default:"196"`
 
 	// how frequently (in epochs) to compute PCA on hidden representations to measure variance?
-	PCAInterval int `def:"5"`
+	PCAInterval int `default:"5"`
 
 	// how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing
-	TestInterval int `def:"-1"`
+	TestInterval int `default:"-1"`
 }
 
 // LogConfig has config parameters related to logging data
@@ -82,19 +82,19 @@ type LogConfig struct { //gti:add
 	SaveWts bool
 
 	// if true, save train epoch log to file, as .epc.tsv typically
-	Epoch bool `def:"true" nest:"+"`
+	Epoch bool `default:"true" nest:"+"`
 
 	// if true, save run log to file, as .run.tsv typically
-	Run bool `def:"true" nest:"+"`
+	Run bool `default:"true" nest:"+"`
 
 	// if true, save train trial log to file, as .trl.tsv typically. May be large.
-	Trial bool `def:"false" nest:"+"`
+	Trial bool `default:"false" nest:"+"`
 
 	// if true, save testing epoch log to file, as .tst_epc.tsv typically.  In general it is better to copy testing items over to the training epoch log and record there.
-	TestEpoch bool `def:"false" nest:"+"`
+	TestEpoch bool `default:"false" nest:"+"`
 
 	// if true, save testing trial log to file, as .tst_trl.tsv typically. May be large.
-	TestTrial bool `def:"false" nest:"+"`
+	TestTrial bool `default:"false" nest:"+"`
 
 	// if true, save network activation etc data from testing trials, for later viewing in netview
 	NetData bool
@@ -107,7 +107,7 @@ type Config struct { //gti:add
 	Includes []string
 
 	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
-	GUI bool `def:"true"`
+	GUI bool `default:"true"`
 
 	// log debugging information
 	Debug bool

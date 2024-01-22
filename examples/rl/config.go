@@ -42,41 +42,41 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- only for testing in this model -- not faster
-	GPU bool `def:"false"`
+	GPU bool `default:"false"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `def:"2"`
+	NThreads int `default:"2"`
 
 	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
-	Run int `def:"0"`
+	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `def:"1" min:"1"`
+	NRuns int `default:"1" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `def:"100"`
+	NEpochs int `default:"100"`
 
 	// total number of trials per epoch -- should be number of ticks in env.
-	NTrials int `def:"20"`
+	NTrials int `default:"20"`
 }
 
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
 
 	// ] stats to aggregate at higher levels
-	AggStats []string `def:"['DA','VSPatch']"`
+	AggStats []string `default:"['DA','VSPatch']"`
 
 	// if true, save final weights after each run
 	SaveWts bool
 
 	// if true, save train epoch log to file, as .epc.tsv typically
-	Epoch bool `def:"true" nest:"+"`
+	Epoch bool `default:"true" nest:"+"`
 
 	// if true, save run log to file, as .run.tsv typically
-	Run bool `def:"true" nest:"+"`
+	Run bool `default:"true" nest:"+"`
 
 	// if true, save train trial log to file, as .trl.tsv typically. May be large.
-	Trial bool `def:"false" nest:"+"`
+	Trial bool `default:"false" nest:"+"`
 
 	// if true, save network activation etc data from testing trials, for later viewing in netview
 	NetData bool
@@ -92,7 +92,7 @@ type Config struct {
 	RW bool
 
 	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
-	GUI bool `def:"true"`
+	GUI bool `default:"true"`
 
 	// log debugging information
 	Debug bool

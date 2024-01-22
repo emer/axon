@@ -42,10 +42,10 @@ type Sim struct {
 	CaParams kinase.CaParams
 
 	// threshold of SK M gating factor above which the neuron cannot spike
-	NoSpikeThr float32 `def:"0.5"`
+	NoSpikeThr float32 `default:"0.5"`
 
 	// Ca conc increment for M gating func plot
-	CaStep float32 `def:"0.05"`
+	CaStep float32 `default:"0.05"`
 
 	// number of time steps
 	TimeSteps int
@@ -217,7 +217,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Body {
 	b := gi.NewAppBody("skca_plot").SetTitle("Plotting Equations")
 

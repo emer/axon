@@ -154,10 +154,10 @@ type UrgencyParams struct {
 	U50 float32
 
 	// exponent on the urge factor -- valid numbers are 1,2,4,6
-	Power int32 `def:"4"`
+	Power int32 `default:"4"`
 
 	// threshold for urge -- cuts off small baseline values
-	Thr float32 `def:"0.2"`
+	Thr float32 `default:"0.2"`
 }
 
 func (ur *UrgencyParams) Defaults() {
@@ -221,13 +221,13 @@ func PVLVNormFun(raw float32) float32 {
 type USParams struct {
 
 	// threshold for a negative US increment, _after_ multiplying by the USnegGains factor for that US (to allow for normalized input magnitudes that may translate into different magnitude of effects), to drive a phasic ACh response and associated VSMatrix gating and dopamine firing -- i.e., a full negative US outcome event (global NegUSOutcome flag is set)
-	NegUSOutcomeThr float32 `def:"0.5"`
+	NegUSOutcomeThr float32 `default:"0.5"`
 
 	// gain factor applied to sum of weighted, drive-scaled positive USs to compute PVpos primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust the overall scaling of PVpos reward within 0-1 normalized range (see also PVnegGain).  Each USpos is assumed to be in 0-1 range, default 1.
-	PVposGain float32 `def:"2"`
+	PVposGain float32 `default:"2"`
 
 	// gain factor applied to sum of weighted negative USs to compute PVneg primary value summary -- multiplied prior to 1/(1+x) normalization.  Use this to adjust overall scaling of PVneg within 0-1 normalized range (see also PVposGain).
-	PVnegGain float32 `def:"1"`
+	PVnegGain float32 `default:"1"`
 
 	// gain factor for each individual negative US, multiplied prior to 1/(1+x) normalization of each term for activating the OFCnegUS pools.  These gains are _not_ applied in computing summary PVneg value (see PVnegWts), and generally must be larger than the weights to leverage the dynamic range within each US pool.
 	USnegGains []float32
@@ -324,13 +324,13 @@ func (us *USParams) NegUSOutcome(ctx *Context, di uint32, usIdx int, mag float32
 type LHbParams struct {
 
 	// threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
-	NegThr float32 `def:"1"`
+	NegThr float32 `default:"1"`
 
 	// gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	BurstGain float32 `def:"1"`
+	BurstGain float32 `default:"1"`
 
 	// gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
-	DipGain float32 `def:"1"`
+	DipGain float32 `default:"1"`
 }
 
 func (lh *LHbParams) Defaults() {
@@ -406,10 +406,10 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) floa
 type GiveUpParams struct {
 
 	// threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
-	NegThr float32 `def:"1"`
+	NegThr float32 `default:"1"`
 
 	// multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
-	Gain float32 `def:"10"`
+	Gain float32 `default:"10"`
 
 	// minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen.
 	MinPVposEst float32

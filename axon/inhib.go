@@ -31,16 +31,16 @@ type ActAvgParams struct {
 	AdaptGi slbool.Bool
 
 	// offset to add to Nominal for the target average activity that drives adaptation of Gi for this layer.  Typically the Nominal level is good, but sometimes Nominal must be adjusted up or down to achieve desired Ge scaling, so this Offset can compensate accordingly.
-	Offset float32 `def:"0" min:"0" step:"0.01" viewif:"AdaptGi"`
+	Offset float32 `default:"0" min:"0" step:"0.01" viewif:"AdaptGi"`
 
 	// tolerance for higher than Target target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted.
-	HiTol float32 `def:"0" viewif:"AdaptGi"`
+	HiTol float32 `default:"0" viewif:"AdaptGi"`
 
 	// tolerance for lower than Target target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted.
-	LoTol float32 `def:"0.8" viewif:"AdaptGi"`
+	LoTol float32 `default:"0.8" viewif:"AdaptGi"`
 
 	// rate of Gi adaptation as function of AdaptRate * (Target - ActMAvg) / Target -- occurs at spaced intervals determined by Network.SlowInterval value -- slower values such as 0.01 may be needed for large networks and sparse layers.
-	AdaptRate float32 `def:"0.1" viewif:"AdaptGi"`
+	AdaptRate float32 `default:"0.1" viewif:"AdaptGi"`
 
 	pad, pad1 float32
 }

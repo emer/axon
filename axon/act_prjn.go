@@ -55,7 +55,7 @@ type SynComParams struct {
 	GType PrjnGTypes
 
 	// additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value.
-	Delay uint32 `min:"0" def:"2"`
+	Delay uint32 `min:"0" default:"2"`
 
 	// maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network.
 	MaxDelay uint32 `inactive:"+"`
@@ -215,7 +215,7 @@ type PrjnScaleParams struct {
 	Rel float32 `min:"0"`
 
 	// absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value
-	Abs float32 `def:"1" min:"0"`
+	Abs float32 `default:"1" min:"0"`
 
 	pad, pad1 float32
 }

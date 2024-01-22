@@ -41,13 +41,13 @@ type Sim struct {
 	AKs chans.AKsParams
 
 	// starting voltage
-	Vstart float32 `def:"-100"`
+	Vstart float32 `default:"-100"`
 
 	// ending voltage
-	Vend float32 `def:"100"`
+	Vend float32 `default:"100"`
 
 	// voltage increment
-	Vstep float32 `def:"1"`
+	Vstep float32 `default:"1"`
 
 	// number of time steps
 	TimeSteps int
@@ -292,7 +292,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Body {
 	b := gi.NewAppBody("ak_plot").SetTitle("Plotting Equations")
 

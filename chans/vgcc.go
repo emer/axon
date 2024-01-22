@@ -17,10 +17,10 @@ import (
 type VGCCParams struct {
 
 	// strength of VGCC current -- 0.12 value is from Urakubo et al (2008) model -- best fits actual model behavior using axon equations (1.5 nominal in that model), 0.02 works better in practice for not getting stuck in high plateau firing
-	Gbar float32 `def:"0.02,0.12"`
+	Gbar float32 `default:"0.02,0.12"`
 
 	// calcium from conductance factor -- important for learning contribution of VGCC
-	Ca float32 `viewif:"Gbar>0" def:"25"`
+	Ca float32 `viewif:"Gbar>0" default:"25"`
 
 	pad, pad1 int32
 }

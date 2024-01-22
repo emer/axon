@@ -23,7 +23,7 @@ import (
 type MatrixParams struct {
 
 	// threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated
-	GateThr float32 `def:"0.05"`
+	GateThr float32 `default:"0.05"`
 
 	// is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the Global state, and used for updating effort and other factors.
 	IsVS slbool.Bool

@@ -39,34 +39,34 @@ import (
 type Params struct {
 
 	// threshold value Theta (Q) for firing output activation (.5 is more accurate value based on AdEx biological parameters and normalization
-	Thr float32 `def:"0.5"`
+	Thr float32 `default:"0.5"`
 
 	// gain (gamma) of the rate-coded activation functions -- 100 is default, 80 works better for larger models, and 20 is closer to the actual spiking behavior of the AdEx model -- use lower values for more graded signals, generally in lower input/sensory layers of the network
-	Gain float32 `def:"80,100,40,20" min:"0"`
+	Gain float32 `default:"80,100,40,20" min:"0"`
 
 	// variance of the Gaussian noise kernel for convolving with XX1 in NOISY_XX1 and NOISY_LINEAR -- determines the level of curvature of the activation function near the threshold -- increase for more graded responding there -- note that this is not actual stochastic noise, just constant convolved gaussian smoothness to the activation function
-	NVar float32 `def:"0.005,0.01" min:"0"`
+	NVar float32 `default:"0.005,0.01" min:"0"`
 
 	// threshold on activation below which the direct vm - act.thr is used -- this should be low -- once it gets active should use net - g_e_thr ge-linear dynamics (gelin)
-	VmActThr float32 `def:"0.01"`
+	VmActThr float32 `default:"0.01"`
 
 	// multiplier on sigmoid used for computing values for net < thr
-	SigMult float32 `def:"0.33" view:"-" json:"-" xml:"-"`
+	SigMult float32 `default:"0.33" view:"-" json:"-" xml:"-"`
 
 	// power for computing sig_mult_eff as function of gain * nvar
-	SigMultPow float32 `def:"0.8" view:"-" json:"-" xml:"-"`
+	SigMultPow float32 `default:"0.8" view:"-" json:"-" xml:"-"`
 
 	// gain multipler on (net - thr) for sigmoid used for computing values for net < thr
-	SigGain float32 `def:"3" view:"-" json:"-" xml:"-"`
+	SigGain float32 `default:"3" view:"-" json:"-" xml:"-"`
 
 	// interpolation range above zero to use interpolation
-	InterpRange float32 `def:"0.01" view:"-" json:"-" xml:"-"`
+	InterpRange float32 `default:"0.01" view:"-" json:"-" xml:"-"`
 
 	// range in units of nvar over which to apply gain correction to compensate for convolution
-	GainCorRange float32 `def:"10" view:"-" json:"-" xml:"-"`
+	GainCorRange float32 `default:"10" view:"-" json:"-" xml:"-"`
 
 	// gain correction multiplier -- how much to correct gains
-	GainCor float32 `def:"0.1" view:"-" json:"-" xml:"-"`
+	GainCor float32 `default:"0.1" view:"-" json:"-" xml:"-"`
 
 	// sig_gain / nvar
 	SigGainNVar float32 `view:"-" json:"-" xml:"-"`

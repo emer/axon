@@ -38,13 +38,13 @@ type Sim struct {
 	Sahp chans.SahpParams `view:"inline"`
 
 	// starting calcium
-	CaStart float32 `def:"0"`
+	CaStart float32 `default:"0"`
 
 	// ending calcium
-	CaEnd float32 `def:"1.5"`
+	CaEnd float32 `default:"1.5"`
 
 	// calcium increment
-	CaStep float32 `def:"0.01"`
+	CaStep float32 `default:"0.01"`
 
 	// number of time steps
 	TimeSteps int
@@ -208,7 +208,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Body {
 	b := gi.NewAppBody("sahp_plot").SetTitle("Plotting Equations")
 

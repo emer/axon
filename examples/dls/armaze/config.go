@@ -10,25 +10,25 @@ import "github.com/emer/etable/v2/minmax"
 type Params struct {
 
 	// effort for turning
-	TurnEffort minmax.F32 `nest:"+" def:"{'Min':0.5, 'Max':0.5}"`
+	TurnEffort minmax.F32 `nest:"+" default:"{'Min':0.5, 'Max':0.5}"`
 
 	// effort for consuming US
-	ConsumeEffort minmax.F32 `nest:"+" def:"{'Min':0.5, 'Max':0.5}"`
+	ConsumeEffort minmax.F32 `nest:"+" default:"{'Min':0.5, 'Max':0.5}"`
 
 	// permute the order of CSs prior to applying them to arms -- having this off makes it easier to visually determine match between Drive and arm approach, and shouldn't make any difference to behavior (model doesn't know about this ordering).
-	PermuteCSs bool `def:"false"`
+	PermuteCSs bool `default:"false"`
 
 	// after running down an Arm, a new random starting location is selected (otherwise same arm as last run)
-	RandomStart bool `def:"true"`
+	RandomStart bool `default:"true"`
 
 	// if true, allow movement between arms just by going Left or Right -- otherwise once past the start, no switching is allowed
-	OpenArms bool `def:"true"`
+	OpenArms bool `default:"true"`
 
 	// strength of inactive inputs (e.g., Drives in Approach paradigm)
-	Inactive minmax.F32 `nest:"+" def:"{'Min':0, 'Max':0}" view:"inline"`
+	Inactive minmax.F32 `nest:"+" default:"{'Min':0, 'Max':0}" view:"inline"`
 
 	// number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets
-	NYReps int `def:"4"`
+	NYReps int `default:"4"`
 }
 
 // Config has environment configuration

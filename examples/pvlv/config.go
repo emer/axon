@@ -13,7 +13,7 @@ type EnvConfig struct {
 	Env map[string]any
 
 	// environment run name
-	RunName string `def:"PosAcq_A100B50"`
+	RunName string `default:"PosAcq_A100B50"`
 
 	// override the default number of blocks to run conditions with NBlocks
 	SetNBlocks bool
@@ -54,35 +54,35 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- only for testing in this model -- not faster
-	GPU bool `def:"false"`
+	GPU bool `default:"false"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `def:"0"`
+	NThreads int `default:"0"`
 
 	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
-	Run int `def:"0"`
+	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `def:"1" min:"1"`
+	NRuns int `default:"1" min:"1"`
 }
 
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
 
 	// ] stats to aggregate at higher levels
-	AggStats []string `def:"['DA','VSPatch']"`
+	AggStats []string `default:"['DA','VSPatch']"`
 
 	// if true, save final weights after each run
 	SaveWts bool
 
 	// if true, save block log to file, as .blk.tsv typically
-	Block bool `def:"true" nest:"+"`
+	Block bool `default:"true" nest:"+"`
 
 	// if true, save condition log to file, as .cnd.tsv typically
-	Cond bool `def:"true" nest:"+"`
+	Cond bool `default:"true" nest:"+"`
 
 	// if true, save trial log to file, as .trl.tsv typically
-	Trial bool `def:"false" nest:"+"`
+	Trial bool `default:"false" nest:"+"`
 
 	// if true, save network activation etc data from testing trials, for later viewing in netview
 	NetData bool
@@ -95,7 +95,7 @@ type Config struct {
 	Includes []string
 
 	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
-	GUI bool `def:"true"`
+	GUI bool `default:"true"`
 
 	// log debugging information
 	Debug bool

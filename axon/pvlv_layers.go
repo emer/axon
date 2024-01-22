@@ -19,16 +19,16 @@ import (
 type LDTParams struct {
 
 	// threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
-	SrcThr float32 `def:"0.05"`
+	SrcThr float32 `default:"0.05"`
 
 	// use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
-	Rew slbool.Bool `def:"true"`
+	Rew slbool.Bool `default:"true"`
 
 	// extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
-	MaintInhib float32 `def:"2"`
+	MaintInhib float32 `default:"2"`
 
 	// maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
-	NotMaintMax float32 `def:"0.4"`
+	NotMaintMax float32 `default:"0.4"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
 	SrcLay1Idx int32 `inactive:"+"`
@@ -110,16 +110,16 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 type VSPatchParams struct {
 
 	// multiplier applied after Thr threshold
-	Gain float32 `def:"3"`
+	Gain float32 `default:"3"`
 
 	// initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
-	ThrInit float32 `def:"0.15"`
+	ThrInit float32 `default:"0.15"`
 
 	// learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `def:"0,0.002"`
+	ThrLRate float32 `default:"0,0.002"`
 
 	// extra gain factor for non-reward trials, which is the most critical
-	ThrNonRew float32 `def:"10"`
+	ThrNonRew float32 `default:"10"`
 }
 
 func (vp *VSPatchParams) Defaults() {
@@ -150,10 +150,10 @@ func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
 type VTAParams struct {
 
 	// gain on CeM activity difference (CeMPos - CeMNeg) for generating LV CS-driven dopamine values
-	CeMGain float32 `def:"0.75"`
+	CeMGain float32 `default:"0.75"`
 
 	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
-	LHbGain float32 `def:"1.25"`
+	LHbGain float32 `default:"1.25"`
 
 	pad, pad1 float32
 }

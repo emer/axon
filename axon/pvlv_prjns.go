@@ -16,13 +16,13 @@ package axon
 type BLAPrjnParams struct {
 
 	// use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier
-	NegDeltaLRate float32 `def:"0.01,1"`
+	NegDeltaLRate float32 `default:"0.01,1"`
 
 	// threshold on this layer's ACh level for trace learning updates
-	AChThr float32 `def:"0.1"`
+	AChThr float32 `default:"0.1"`
 
 	// proportion of US time stimulus activity to use for the trace component of
-	USTrace float32 `def:"0,0.5"`
+	USTrace float32 `default:"0,0.5"`
 
 	pad float32
 }

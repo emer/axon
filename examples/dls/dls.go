@@ -965,7 +965,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() {
 	title := "DLS: Dorsal Lateral Striatum motor learning"
 	ss.GUI.MakeBody(ss, "dls", title, `This project tests motor sequence learning in the DLS dorsal lateral striatum and associated motor cortex. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)

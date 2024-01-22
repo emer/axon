@@ -16,10 +16,10 @@ import (
 type BurstParams struct {
 
 	// Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds.
-	ThrRel float32 `max:"1" def:"0.1"`
+	ThrRel float32 `max:"1" default:"0.1"`
 
 	// Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  Overall effective threshold is MAX of relative and absolute thresholds.
-	ThrAbs float32 `min:"0" max:"1" def:"0.1"`
+	ThrAbs float32 `min:"0" max:"1" default:"0.1"`
 
 	pad, pad1 float32
 }
@@ -43,10 +43,10 @@ func (bp *BurstParams) ThrFmAvgMax(avg, mx float32) float32 {
 type CTParams struct {
 
 	// gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
-	GeGain float32 `def:"0.05,0.1,1,2"`
+	GeGain float32 `default:"0.05,0.1,1,2"`
 
 	// decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50
-	DecayTau float32 `def:"0,50"`
+	DecayTau float32 `default:"0,50"`
 
 	// 1 / tau
 	DecayDt float32 `view:"-" json:"-" xml:"-"`
@@ -74,10 +74,10 @@ func (cp *CTParams) Defaults() {
 type PulvParams struct {
 
 	// multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit.
-	DriveScale float32 `def:"0.1" min:"0.0"`
+	DriveScale float32 `default:"0.1" min:"0.0"`
 
 	// Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning.
-	FullDriveAct float32 `def:"0.6" min:"0.01"`
+	FullDriveAct float32 `default:"0.6" min:"0.01"`
 
 	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
 	DriveLayIdx int32 `inactive:"+"`

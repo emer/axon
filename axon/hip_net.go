@@ -32,22 +32,22 @@ type HipConfig struct {
 	CA3Size evec.Vec2i `nest:"+"`
 
 	// size of DG / CA3
-	DGRatio float32 `def:"2.236"`
+	DGRatio float32 `default:"2.236"`
 
 	// percent connectivity from EC3 to EC2
-	EC3ToEC2PCon float32 `def:"0.1"`
+	EC3ToEC2PCon float32 `default:"0.1"`
 
 	// percent connectivity from EC2 to DG
-	EC2ToDGPCon float32 `def:"0.25"`
+	EC2ToDGPCon float32 `default:"0.25"`
 
 	// percent connectivity from EC2 to CA3
-	EC2ToCA3PCon float32 `def:"0.25"`
+	EC2ToCA3PCon float32 `default:"0.25"`
 
 	// percent connectivity from CA3 to CA1
-	CA3ToCA1PCon float32 `def:"0.25"`
+	CA3ToCA1PCon float32 `default:"0.25"`
 
 	// percent connectivity into CA3 from DG
-	DGToCA3PCon float32 `def:"0.02"`
+	DGToCA3PCon float32 `default:"0.02"`
 
 	// lateral radius of connectivity in EC2
 	EC2LatRadius int
@@ -56,28 +56,28 @@ type HipConfig struct {
 	EC2LatSigma float32
 
 	// proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
-	MossyDelta float32 `def:"1"`
+	MossyDelta float32 `default:"1"`
 
 	// proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
-	MossyDeltaTest float32 `def:"0.75"`
+	MossyDeltaTest float32 `default:"0.75"`
 
 	// low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
-	ThetaLow float32 `def:"0.9"`
+	ThetaLow float32 `default:"0.9"`
 
 	// high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
-	ThetaHigh float32 `def:"1"`
+	ThetaHigh float32 `default:"1"`
 
 	// flag for clamping the EC5 from EC5ClampSrc
-	EC5Clamp bool `def:"true"`
+	EC5Clamp bool `default:"true"`
 
 	// source layer for EC5 clamping activations in the plus phase -- biologically it is EC3 but can use an Input layer if available
-	EC5ClampSrc string `def:"EC3"`
+	EC5ClampSrc string `default:"EC3"`
 
 	// clamp the EC5 from EC5ClampSrc during testing as well as training -- this will overwrite any target values that might be used in stats (e.g., in the basic hip example), so it must be turned off there
-	EC5ClampTest bool `def:"true"`
+	EC5ClampTest bool `default:"true"`
 
 	// threshold for binarizing EC5 clamp values -- any value above this is clamped to 1, else 0 -- helps produce a cleaner learning signal.  Set to 0 to not perform any binarization.
-	EC5ClampThr float32 `def:"0.1"`
+	EC5ClampThr float32 `default:"0.1"`
 }
 
 func (hip *HipConfig) Defaults() {

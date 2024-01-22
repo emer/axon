@@ -31,22 +31,22 @@ import (
 type CaLrnParams struct {
 
 	// denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance
-	Norm float32 `def:"80"`
+	Norm float32 `default:"80"`
 
 	// use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike
-	SpkVGCC slbool.Bool `def:"true"`
+	SpkVGCC slbool.Bool `default:"true"`
 
 	// multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode
-	SpkVgccCa float32 `def:"35"`
+	SpkVgccCa float32 `default:"35"`
 
 	// time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn
-	VgccTau float32 `def:"10"`
+	VgccTau float32 `default:"10"`
 
 	// time constants for integrating CaLrn across M, P and D cascading levels
 	Dt kinase.CaDtParams `view:"inline"`
 
 	// Threshold on CaSpkP CaSpkD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default.
-	UpdtThr float32 `def:"0.01,0.02,0.5"`
+	UpdtThr float32 `default:"0.01,0.02,0.5"`
 
 	// rate = 1 / tau
 	VgccDt float32 `view:"-" json:"-" xml:"-" inactive:"+"`
@@ -105,10 +105,10 @@ func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
 type CaSpkParams struct {
 
 	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
-	SpikeG float32 `def:"8,12"`
+	SpikeG float32 `default:"8,12"`
 
 	// time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PrjnParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)
-	SynTau float32 `def:"30" min:"1"`
+	SynTau float32 `default:"30" min:"1"`
 
 	// rate = 1 / tau
 	SynDt float32 `view:"-" json:"-" xml:"-" inactive:"+"`
@@ -155,16 +155,16 @@ type TrgAvgActParams struct {
 	GiBaseInit float32
 
 	// learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference.
-	ErrLRate float32 `viewif:"On" def:"0.02"`
+	ErrLRate float32 `viewif:"On" default:"0.02"`
 
 	// rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity -- this determines the effective strength of the constraint, and larger models may need more than the weaker default value.
-	SynScaleRate float32 `viewif:"On" def:"0.005,0.0002"`
+	SynScaleRate float32 `viewif:"On" default:"0.005,0.0002"`
 
 	// amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point.
-	SubMean float32 `viewif:"On" def:"0,1"`
+	SubMean float32 `viewif:"On" default:"0,1"`
 
 	// permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used
-	Permute slbool.Bool `viewif:"On" def:"true"`
+	Permute slbool.Bool `viewif:"On" default:"true"`
 
 	// use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool
 	Pool slbool.Bool `viewif:"On"`
@@ -172,7 +172,7 @@ type TrgAvgActParams struct {
 	pad int32
 
 	// range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range.
-	TrgRange minmax.F32 `viewif:"On" def:"{'Min':0.5,'Max':2}"`
+	TrgRange minmax.F32 `viewif:"On" default:"{'Min':0.5,'Max':2}"`
 }
 
 func (ta *TrgAvgActParams) Update() {
@@ -198,22 +198,22 @@ func (ta *TrgAvgActParams) Defaults() {
 type RLRateParams struct {
 
 	// use learning rate modulation
-	On slbool.Bool `def:"true"`
+	On slbool.Bool `default:"true"`
 
 	// minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers.
-	SigmoidMin float32 `viewif:"On" def:"0.05,1"`
+	SigmoidMin float32 `viewif:"On" default:"0.05,1"`
 
 	// modulate learning rate as a function of plus - minus differences
 	Diff slbool.Bool `viewif:"On"`
 
 	// threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero
-	SpkThr float32 `viewif:"On&&Diff" def:"0.1"`
+	SpkThr float32 `viewif:"On&&Diff" default:"0.1"`
 
 	// threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value
-	DiffThr float32 `viewif:"On&&Diff" def:"0.02"`
+	DiffThr float32 `viewif:"On&&Diff" default:"0.02"`
 
 	// for Diff component, minimum learning rate value when below ActDiffThr
-	Min float32 `viewif:"On&&Diff" def:"0.001"`
+	Min float32 `viewif:"On&&Diff" default:"0.001"`
 
 	pad, pad1 int32
 }
@@ -420,16 +420,16 @@ func SigInvFun61(w float32) float32 {
 type SWtInitParams struct {
 
 	// how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values.  1 gives the strongest initial biasing effect, for larger models that need more structural support. 0.5 should work for most models where stronger constraints are not needed.
-	SPct float32 `min:"0" max:"1" def:"0,1,0.5"`
+	SPct float32 `min:"0" max:"1" default:"0,1,0.5"`
 
 	// target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value.  some projections may benefit from lower mean of .4
-	Mean float32 `def:"0.5,0.4"`
+	Mean float32 `default:"0.5,0.4"`
 
 	// initial variance in weight values, prior to constraints.
-	Var float32 `def:"0.25"`
+	Var float32 `default:"0.25"`
 
 	// symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections
-	Sym slbool.Bool `def:"true"`
+	Sym slbool.Bool `default:"true"`
 }
 
 func (sp *SWtInitParams) Defaults() {
@@ -449,13 +449,13 @@ type SWtAdaptParams struct {
 	On slbool.Bool
 
 	// learning rate multiplier on the accumulated DWt values (which already have fast LRate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models.
-	LRate float32 `viewif:"On" def:"0.1,0.01,0.001,0.0002"`
+	LRate float32 `viewif:"On" default:"0.1,0.01,0.001,0.0002"`
 
 	// amount of mean to subtract from SWt delta when updating -- generally best to set to 1
-	SubMean float32 `viewif:"On" def:"1"`
+	SubMean float32 `viewif:"On" default:"1"`
 
 	// gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values
-	SigGain float32 `viewif:"On" def:"6"`
+	SigGain float32 `viewif:"On" default:"6"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
@@ -499,7 +499,7 @@ type SWtParams struct {
 	Adapt SWtAdaptParams `view:"inline"`
 
 	// range limits for SWt values
-	Limit minmax.F32 `def:"{'Min':0.2,'Max':0.8}" view:"inline"`
+	Limit minmax.F32 `default:"{'Min':0.2,'Max':0.8}" view:"inline"`
 }
 
 func (sp *SWtParams) Defaults() {
@@ -634,7 +634,7 @@ func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean,
 type LRateParams struct {
 
 	// base learning rate for this projection -- can be modulated by other factors below -- for larger networks, use slower rates such as 0.04, smaller networks can use faster 0.2.
-	Base float32 `def:"0.04,0.1,0.2"`
+	Base float32 `default:"0.04,0.1,0.2"`
 
 	// scheduled learning rate multiplier, simulating reduction in plasticity over aging
 	Sched float32
@@ -672,10 +672,10 @@ func (ls *LRateParams) Init() {
 type TraceParams struct {
 
 	// time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace
-	Tau float32 `def:"1,2,4"`
+	Tau float32 `default:"1,2,4"`
 
 	// amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always
-	SubMean float32 `def:"0,1"`
+	SubMean float32 `default:"0,1"`
 
 	// threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntNorm value -- setting this relatively high encourages sparser representations
 	LearnThr float32

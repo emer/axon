@@ -16,28 +16,28 @@ import (
 type KirParams struct {
 
 	// overall strength multiplier of Kir current.
-	Gbar float32 `def:"0,0.012,0.015"`
+	Gbar float32 `default:"0,0.012,0.015"`
 
 	// Q10 is the 10 degree temperature correction factor
-	Q10 float32 `def:"3"`
+	Q10 float32 `default:"3"`
 
 	// Asymptotic gating factor M, offset
-	MinfOff float32 `def:"-102"`
+	MinfOff float32 `default:"-102"`
 
 	// Asymptotic gating factor M, time constant
-	MinfTau float32 `def:"13"`
+	MinfTau float32 `default:"13"`
 
 	// Rise time constant as a function of voltage, offset
-	RiseOff float32 `def:"-60"`
+	RiseOff float32 `default:"-60"`
 
 	// Rise time constant as a function of voltage, time constant factor
-	RiseTau float32 `def:"14"`
+	RiseTau float32 `default:"14"`
 
 	// Decay time constant as a function of voltage, offset
-	DecayOff float32 `def:"-31"`
+	DecayOff float32 `default:"-31"`
 
 	// Decay time constant as a function of voltage, time constant factor
-	DecayTau float32 `def:"23"`
+	DecayTau float32 `default:"23"`
 }
 
 func (kp *KirParams) Defaults() {

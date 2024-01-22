@@ -21,13 +21,13 @@ type MahpParams struct {
 	Gbar float32
 
 	// voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength
-	Voff float32 `viewif:"Gbar>0" def:"-30"`
+	Voff float32 `viewif:"Gbar>0" default:"-30"`
 
 	// slope of the arget (infinite time) gating function
-	Vslope float32 `viewif:"Gbar>0" def:"9"`
+	Vslope float32 `viewif:"Gbar>0" default:"9"`
 
 	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
-	TauMax float32 `viewif:"Gbar>0" def:"1000"`
+	TauMax float32 `viewif:"Gbar>0" default:"1000"`
 
 	// temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
 	Tadj float32 `viewif:"Gbar>0" view:"-" inactive:"+"`

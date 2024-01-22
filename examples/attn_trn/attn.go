@@ -208,13 +208,13 @@ var ParamSets = params.Sets{
 type Sim struct {
 
 	// number of cycles per trial
-	Cycles int `def:"200"`
+	Cycles int `default:"200"`
 
 	// number of runs to run to collect stats
-	Runs int `def:"10"`
+	Runs int `default:"10"`
 
 	// sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time
-	KNaAdapt bool `def:"true"`
+	KNaAdapt bool `default:"true"`
 
 	// the network -- click to view / edit parameters for layers, prjns, etc
 	Net *axon.Network `view:"no-inline"`
@@ -924,8 +924,8 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	// nv.SetMaxRecs(300)
 }
 
-// ConfigGui configures the GoGi gui interface for this simulation,
-func (ss *Sim) ConfigGui() *gi.Window {
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
+func (ss *Sim) ConfigGUI() *gi.Window {
 	width := 1600
 	height := 1200
 
@@ -1120,6 +1120,6 @@ func mainrun() {
 	TheSim.Config()
 
 	TheSim.Init()
-	win := TheSim.ConfigGui()
+	win := TheSim.ConfigGUI()
 	win.StartEventLoop()
 }

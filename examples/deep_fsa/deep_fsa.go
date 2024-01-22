@@ -609,7 +609,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	}
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() {
 	title := "DeepAxon Finite State Automaton"
 	ss.GUI.MakeBody(ss, "DeepFSA", title, `This demonstrates a basic DeepAxon model on the Finite State Automaton problem (e.g., the Reber grammar). See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)

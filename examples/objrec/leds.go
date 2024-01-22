@@ -18,10 +18,10 @@ import (
 type LEDraw struct { //gti:add
 
 	// line width of LEDraw as percent of display size
-	Width float32 `def:"4"`
+	Width float32 `default:"4"`
 
 	// size of overall LED as proportion of overall image size
-	Size float32 `def:"0.6"`
+	Size float32 `default:"0.6"`
 
 	// color name for drawing lines
 	LineColor color.RGBA

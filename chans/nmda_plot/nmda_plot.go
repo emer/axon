@@ -40,31 +40,31 @@ type Sim struct {
 	NMDAStd chans.NMDAParams
 
 	// multiplier on NMDA as function of voltage
-	NMDAv float64 `def:"0.062"`
+	NMDAv float64 `default:"0.062"`
 
 	// magnesium ion concentration -- somewhere between 1 and 1.5
 	MgC float64
 
 	// denominator of NMDA function
-	NMDAd float64 `def:"3.57"`
+	NMDAd float64 `default:"3.57"`
 
 	// NMDA reversal / driving potential
-	NMDAerev float64 `def:"0"`
+	NMDAerev float64 `default:"0"`
 
 	// for old buggy NMDA: voff value to use
 	BugVoff float64
 
 	// starting voltage
-	Vstart float64 `def:"-90"`
+	Vstart float64 `default:"-90"`
 
 	// ending voltage
-	Vend float64 `def:"10"`
+	Vend float64 `default:"10"`
 
 	// voltage increment
-	Vstep float64 `def:"1"`
+	Vstep float64 `default:"1"`
 
 	// decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential
-	Tau float64 `def:"100"`
+	Tau float64 `default:"100"`
 
 	// number of time steps
 	TimeSteps int
@@ -240,7 +240,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Body {
 	b := gi.NewAppBody("nmda_plot").SetTitle("Plotting Equations")
 

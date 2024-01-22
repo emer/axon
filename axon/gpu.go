@@ -160,7 +160,7 @@ type GPU struct {
 	Semaphores map[string]vk.Semaphore `view:"-"`
 
 	// number of warp threads -- typically 64 -- must update all hlsl files if changed!
-	NThreads int `view:"-" inactive:"-" def:"64"`
+	NThreads int `view:"-" inactive:"-" default:"64"`
 
 	// maximum number of bytes per individual storage buffer element, from GPUProps.Limits.MaxStorageBufferRange
 	MaxBufferBytes uint32 `view:"-"`

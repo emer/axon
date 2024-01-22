@@ -70,13 +70,13 @@ type NeuroModParams struct {
 	AChLRateMod float32 `min:"0" max:"1"`
 
 	// amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory
-	AChDisInhib float32 `min:"0" def:"0,5"`
+	AChDisInhib float32 `min:"0" default:"0,5"`
 
 	// multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!
-	BurstGain float32 `min:"0" def:"1"`
+	BurstGain float32 `min:"0" default:"1"`
 
 	// multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext
-	DipGain float32 `min:"0" def:"1"`
+	DipGain float32 `min:"0" default:"1"`
 
 	pad, pad1, pad2 float32
 }

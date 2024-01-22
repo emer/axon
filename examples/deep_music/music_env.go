@@ -34,7 +34,7 @@ type MusicEnv struct {
 	WrapNotes bool
 
 	// number of time ticks per row in table -- note transitions that are faster than this will be lost
-	TicksPer int `def:"120"`
+	TicksPer int `default:"120"`
 
 	// which track to process
 	Track int

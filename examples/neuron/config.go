@@ -33,19 +33,19 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- only for testing in this model -- not faster
-	GPU bool `def:"false"`
+	GPU bool `default:"false"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
-	NThreads int `def:"2"`
+	NThreads int `default:"2"`
 
 	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
-	Run int `def:"0"`
+	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `def:"1" min:"1"`
+	NRuns int `default:"1" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `def:"1"`
+	NEpochs int `default:"1"`
 }
 
 // LogConfig has config parameters related to logging data
@@ -55,7 +55,7 @@ type LogConfig struct {
 	SaveWts bool
 
 	// if true, save cycle log to file, as .cyc.tsv typically
-	Cycle bool `def:"true" nest:"+"`
+	Cycle bool `default:"true" nest:"+"`
 
 	// if true, save network activation etc data from testing trials, for later viewing in netview
 	NetData bool
@@ -65,61 +65,61 @@ type LogConfig struct {
 type Config struct {
 
 	// clamp constant Ge value -- otherwise drive discrete spiking input
-	GeClamp bool `def:"true"`
+	GeClamp bool `default:"true"`
 
 	// frequency of input spiking for !GeClamp mode
-	SpikeHz float32 `def:"50"`
+	SpikeHz float32 `default:"50"`
 
 	// Raw synaptic excitatory conductance
-	Ge float32 `min:"0" step:"0.01" def:"0.1"`
+	Ge float32 `min:"0" step:"0.01" default:"0.1"`
 
 	// Inhibitory conductance
-	Gi float32 `min:"0" step:"0.01" def:"0.1"`
+	Gi float32 `min:"0" step:"0.01" default:"0.1"`
 
 	// excitatory reversal (driving) potential -- determines where excitation pushes Vm up to
-	ErevE float32 `min:"0" max:"1" step:"0.01" def:"1"`
+	ErevE float32 `min:"0" max:"1" step:"0.01" default:"1"`
 
 	// leak reversal (driving) potential -- determines where excitation pulls Vm down to
-	ErevI float32 `min:"0" max:"1" step:"0.01" def:"0.3"`
+	ErevI float32 `min:"0" max:"1" step:"0.01" default:"0.3"`
 
 	// the variance parameter for Gaussian noise added to unit activations on every cycle
 	Noise float32 `min:"0" step:"0.01"`
 
 	// apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time
-	KNaAdapt bool `def:"true"`
+	KNaAdapt bool `default:"true"`
 
 	// strength of mAHP M-type channel -- used to be implemented by KNa but now using the more standard M-type channel mechanism
-	MahpGbar float32 `def:"0.05"`
+	MahpGbar float32 `default:"0.05"`
 
 	// strength of NMDA current -- 0.006 default for posterior cortex
-	NMDAGbar float32 `def:"0.006"`
+	NMDAGbar float32 `default:"0.006"`
 
 	// strength of GABAB current -- 0.015 default for posterior cortex
-	GABABGbar float32 `def:"0.015"`
+	GABABGbar float32 `default:"0.015"`
 
 	// strength of VGCC voltage gated calcium current -- only activated during spikes -- this is now an essential part of Ca-driven learning to reflect recv spiking in the Ca signal -- but if too strong leads to runaway excitatory bursting.
-	VGCCGbar float32 `def:"0.02"`
+	VGCCGbar float32 `default:"0.02"`
 
 	// strength of A-type potassium channel -- this is only active at high (depolarized) membrane potentials -- only during spikes -- useful to counteract VGCC's
-	AKGbar float32 `def:"0.1"`
+	AKGbar float32 `default:"0.1"`
 
 	// total number of cycles to run
-	NCycles int `min:"10" def:"200"`
+	NCycles int `min:"10" default:"200"`
 
 	// when does excitatory input into neuron come on?
-	OnCycle int `min:"0" def:"10"`
+	OnCycle int `min:"0" default:"10"`
 
 	// when does excitatory input into neuron go off?
-	OffCycle int `min:"0" def:"160"`
+	OffCycle int `min:"0" default:"160"`
 
 	// how often to update display (in cycles)
-	UpdtInterval int `min:"1" def:"10" `
+	UpdtInterval int `min:"1" default:"10" `
 
 	// specify include files here, and after configuration, it contains list of include files added
 	Includes []string
 
 	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
-	GUI bool `def:"true"`
+	GUI bool `default:"true"`
 
 	// log debugging information
 	Debug bool

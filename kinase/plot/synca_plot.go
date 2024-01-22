@@ -43,13 +43,13 @@ type Sim struct {
 	Dinit float64
 
 	// adjustment to dt to account for discrete time updating
-	MdtAdj float64 `def:"0,0.11"`
+	MdtAdj float64 `default:"0,0.11"`
 
 	// adjustment to dt to account for discrete time updating
-	PdtAdj float64 `def:"0.0.03"`
+	PdtAdj float64 `default:"0.0.03"`
 
 	// adjustment to dt to account for discrete time updating
-	DdtAdj float64 `def:"0.0.03"`
+	DdtAdj float64 `default:"0.0.03"`
 
 	// number of time steps
 	TimeSteps int
@@ -245,7 +245,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGUI configures the GoGi gui interface for this simulation,
+// ConfigGUI configures the Cogent Core gui interface for this simulation,
 func (ss *Sim) ConfigGUI() *gi.Body {
 	b := gi.NewAppBody("synca_plot").SetTitle("Plotting Equations")
 

@@ -18,22 +18,22 @@ import "cogentcore.org/core/mat32"
 type AKParams struct {
 
 	// strength of AK current
-	Gbar float32 `def:"1,0.1,0.01"`
+	Gbar float32 `default:"1,0.1,0.01"`
 
 	// multiplier for the beta term; 0.01446 for distal, 0.02039 for proximal dendrites
-	Beta float32 `viewif:"Gbar>0" def:"0.01446,02039"`
+	Beta float32 `viewif:"Gbar>0" default:"0.01446,02039"`
 
 	// Dm factor: 0.5 for distal, 0.25 for proximal
-	Dm float32 `viewif:"Gbar>0" def:"0.5,0.25"`
+	Dm float32 `viewif:"Gbar>0" default:"0.5,0.25"`
 
 	// offset for K, 1.8 for distal, 1.5 for proximal
-	Koff float32 `viewif:"Gbar>0" def:"1.8,1.5"`
+	Koff float32 `viewif:"Gbar>0" default:"1.8,1.5"`
 
 	// voltage offset for alpha and beta functions: 1 for distal, 11 for proximal
-	Voff float32 `viewif:"Gbar>0" def:"1,11"`
+	Voff float32 `viewif:"Gbar>0" default:"1,11"`
 
 	// h multiplier factor, 0.1133 for distal, 0.1112 for proximal
-	Hf float32 `viewif:"Gbar>0" def:"0.1133,0.1112"`
+	Hf float32 `viewif:"Gbar>0" default:"0.1133,0.1112"`
 
 	pad, pad1 float32
 }
@@ -140,16 +140,16 @@ func (ap *AKParams) Gak(m, h float32) float32 {
 type AKsParams struct {
 
 	// strength of AK current
-	Gbar float32 `def:"2,0.1,0.01"`
+	Gbar float32 `default:"2,0.1,0.01"`
 
 	// H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength
-	Hf float32 `viewif:"Gbar>0" def:"0.076"`
+	Hf float32 `viewif:"Gbar>0" default:"0.076"`
 
 	// multiplier for M -- determines slope of function
-	Mf float32 `viewif:"Gbar>0" def:"0.075"`
+	Mf float32 `viewif:"Gbar>0" default:"0.075"`
 
 	// voltage offset in biological units for M function
-	Voff float32 `viewif:"Gbar>0" def:"2"`
+	Voff float32 `viewif:"Gbar>0" default:"2"`
 
 	//
 	Vmax float32 `viewif:"Gbar>0" def:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
