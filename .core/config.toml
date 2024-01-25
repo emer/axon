@@ -1,7 +1,7 @@
 ID = 'com.emer.axon.v2'
 Name = 'axon'
 Type = 'Library'
-Version = 'v2.0.0-dev0.0.5'
+Version = 'v2.0.0-dev0.0.6'
 
 [Generate]
   [Generate.Enumgen]
