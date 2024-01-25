@@ -10,6 +10,9 @@ import (
 	"math/rand"
 	"strings"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/icons"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/etensor"
 )
@@ -32,7 +35,7 @@ func (ly *Layer) Object() any {
 	return ly.Params
 }
 
-func (ly *Layer) Defaults() {
+func (ly *Layer) Defaults() { //gti:add
 	if ly.Params != nil {
 		ly.Params.LayType = ly.LayerType()
 		ly.Params.Defaults()
@@ -217,7 +220,7 @@ func (ly *Layer) AllParams() string {
 
 // InitWts initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
-func (ly *Layer) InitWts(ctx *Context, nt *Network) {
+func (ly *Layer) InitWts(ctx *Context, nt *Network) { //gti:add
 	ly.UpdateParams()
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
 	for di := uint32(0); di < ly.MaxData; di++ {
@@ -356,7 +359,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 }
 
 // InitActs fully initializes activation state -- only called automatically during InitWts
-func (ly *Layer) InitActs(ctx *Context) {
+func (ly *Layer) InitActs(ctx *Context) { //gti:add
 	ly.Params.Acts.Clamp.IsInput.SetBool(ly.Params.IsInput())
 	ly.Params.Acts.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	nn := ly.NNeurons
@@ -847,7 +850,7 @@ func (ly *Layer) TestVals(ctrKey string, vals map[string]float32) {
 //  Lesion
 
 // UnLesionNeurons unlesions (clears the Off flag) for all neurons in the layer
-func (ly *Layer) UnLesionNeurons() {
+func (ly *Layer) UnLesionNeurons() { //gti:add
 	ctx := &ly.Network.Ctx
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
@@ -861,7 +864,7 @@ func (ly *Layer) UnLesionNeurons() {
 // LesionNeurons lesions (sets the Off flag) for given proportion (0-1) of neurons in layer
 // returns number of neurons lesioned.  Emits error if prop > 1 as indication that percent
 // might have been passed
-func (ly *Layer) LesionNeurons(prop float32) int {
+func (ly *Layer) LesionNeurons(prop float32) int { //gti:add
 	ctx := &ly.Network.Ctx
 	ly.UnLesionNeurons()
 	if prop > 1 {
@@ -887,39 +890,11 @@ func (ly *Layer) LesionNeurons(prop float32) int {
 	return nl
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Layer props for gui
-
-/*
-var LayerProps = ki.Props{
-	"EnumType:Typ": KiT_LayerTypes, // uses our LayerTypes for GUI
-	"ToolBar": ki.PropSlice{
-		{"Defaults", ki.Props{
-			"icon": "reset",
-			"desc": "return all parameters to their intial default values",
-		}},
-		{"InitWts", ki.Props{
-			"icon": "update",
-			"desc": "initialize the layer's weight values according to prjn parameters, for all *sending* projections out of this layer",
-		}},
-		{"InitActs", ki.Props{
-			"icon": "update",
-			"desc": "initialize the layer's activation values",
-		}},
-		{"sep-act", ki.BlankProp{}},
-		{"LesionNeurons", ki.Props{
-			"icon": "close",
-			"desc": "Lesion (set the Off flag) for given proportion of neurons in the layer (number must be 0 -- 1, NOT percent!)",
-			"Args": ki.PropSlice{
-				{"Proportion", ki.Props{
-					"desc": "proportion (0 -- 1) of neurons to lesion",
-				}},
-			},
-		}},
-		{"UnLesionNeurons", ki.Props{
-			"icon": "reset",
-			"desc": "Un-Lesion (reset the Off flag) for all neurons in the layer",
-		}},
-	},
+func (ly *Layer) ConfigToolbar(tb *gi.Toolbar) {
+	giv.NewFuncButton(tb, ly.Defaults).SetIcon(icons.Reset)
+	giv.NewFuncButton(tb, ly.InitWts).SetIcon(icons.Reset)
+	giv.NewFuncButton(tb, ly.InitActs).SetIcon(icons.Reset)
+	gi.NewSeparator(tb)
+	giv.NewFuncButton(tb, ly.LesionNeurons).SetIcon(icons.Cut)
+	giv.NewFuncButton(tb, ly.UnLesionNeurons).SetIcon(icons.Cut)
 }
-*/
