@@ -17,6 +17,7 @@ import (
 
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/gi"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/laser"
 	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
@@ -756,7 +757,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
 		cb := gi.NewChooser(tb, "runs")
-		cb.SetStrings(cond.RunNames, false, 50)
+		cb.SetStrings(cond.RunNames, false)
 		ri := 0
 		for i, rn := range cond.RunNames {
 			if rn == ss.Config.Env.RunName {
@@ -770,7 +771,7 @@ func (ss *Sim) ConfigGUI() {
 			ss.InitEnvRun()
 		})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -782,7 +783,7 @@ func (ss *Sim) ConfigGUI() {
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
 		gi.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: "file-save",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
 			Tooltip: "Save weights for the current condition name.",
 			Active:  egui.ActiveStopped,
 			Func: func() {

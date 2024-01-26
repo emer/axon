@@ -17,6 +17,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/boa/armaze"
@@ -1232,7 +1233,7 @@ func (ss *Sim) ConfigGUI() {
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {

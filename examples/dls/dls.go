@@ -16,6 +16,7 @@ import (
 	"os"
 
 	"cogentcore.org/core/gi"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/dls/armaze"
@@ -989,7 +990,7 @@ func (ss *Sim) ConfigGUI() {
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -1045,7 +1046,7 @@ func (ss *Sim) RunGUI() {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
 	eb := ss.EnvGUI.ConfigWorldGUI(ev)
-	eb.Sc.App = ss.GUI.Body.Sc.App
+	eb.Scene.App = ss.GUI.Body.Scene.App
 	eb.NewWindow().Run()
 	ss.GUI.Body.NewWindow().Run().Wait()
 }

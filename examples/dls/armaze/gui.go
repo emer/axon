@@ -270,7 +270,6 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	twov := gi.NewSVG(twofr, "sceneview")
 	twov.Style(func(s *styles.Style) {
 		twov.SVG.Fill = true
-		twov.SVG.Norm = true
 		twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
 		twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
 		twov.SetReadOnly(false)
@@ -587,8 +586,8 @@ func (vw *GUI) UpdateWorldGUI() {
 	if vw.SceneView == nil || !vw.Disp {
 		return
 	}
-	updt := vw.SceneView.Sc.UpdateStartAsync()
-	defer vw.SceneView.Sc.UpdateEndAsyncRender(updt)
+	updt := vw.SceneView.Scene.UpdateStartAsync()
+	defer vw.SceneView.Scene.UpdateEndAsyncRender(updt)
 
 	// update state:
 	vw.SetEmeryPose()

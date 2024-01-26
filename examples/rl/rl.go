@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"cogentcore.org/core/gi"
+	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -420,7 +421,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.AddPlots(title, &ss.Logs)
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -431,7 +432,7 @@ func (ss *Sim) ConfigGUI() {
 
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Trial Log", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Trial Log", Icon: icons.Update,
 			Tooltip: "reset trial log .",
 			Func: func() {
 				ss.Logs.ResetLog(etime.Train, etime.Trial)

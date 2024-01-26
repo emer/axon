@@ -18,6 +18,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
@@ -793,7 +794,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.AddPlots(title, &ss.Logs)
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -802,7 +803,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Test Init", Icon: "update",
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Test Init", Icon: icons.Update,
 			Tooltip: "Call ResetCountersByMode with test mode and update GUI.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
