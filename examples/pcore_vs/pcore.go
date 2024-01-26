@@ -232,7 +232,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToMatrix(urge, mtxGo, full)
 
-	snc.PlaceRightOf(gpi, space)
+	pfcVM.PlaceRightOf(gpi, space)
+	snc.PlaceRightOf(pfcVM, space)
 	urge.PlaceRightOf(snc, space)
 	gpeAk.PlaceAbove(gpi)
 	stn.PlaceRightOf(gpePr, space)
@@ -243,7 +244,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pfc.PlaceRightOf(inly, space)
 	pfcCT.PlaceRightOf(pfc, space)
 	pfcPT.PlaceBehind(pfc, space)
-	pfcVM.PlaceRightOf(pfcPT, space)
 
 	net.Build(ctx)
 	net.Defaults()

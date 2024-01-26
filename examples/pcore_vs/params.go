@@ -21,8 +21,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.On":  "false",
 				"Layer.Inhib.Pool.Gi":  "0.3",
-				"Layer.Inhib.Pool.FB":  "1",
+				"Layer.Inhib.Pool.FB":  "0",
 				"Layer.Matrix.GateThr": "0.05", // .05 default
+				"Layer.Acts.Kir.Gbar":  "0.5",
+			}},
+		{Sel: ".STNLayer", Desc: "all STN",
+			Params: params.Params{
+				"Layer.Acts.Kir.Gbar":  "0.5",
+				"Layer.Acts.SKCa.Gbar": "1", // 2 def
+				"Layer.Inhib.Layer.FB": "0", // was 1
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -54,6 +61,51 @@ var ParamSets = netparams.Sets{
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
+			}},
+		// All the BG connections:
+		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2",
+			}},
+		{Sel: "#GPeAkToMtxNo", Desc: "nonspecific gating activity surround inhibition -- wta",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2", // old: must be relatively weak to prevent oscillations
+			}},
+		{Sel: "#GPePrToSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.1", // not big diff
+			}},
+		{Sel: "#STNToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // was 0.5
+			}},
+		{Sel: "#STNToGPeAk", Desc: "this is weak biologically -- could try 0",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.1",
+			}},
+		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1",
+			}},
+		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": ".5", // old: was .7 then .9 -- 1 better match
+			}},
+		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // was 0.8, 1 is fine
+			}},
+		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
+			}},
+		{Sel: "#STNToGPi", Desc: "strong initial phasic activation",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1",
+			}},
+		{Sel: "#GPiToPFCVM", Desc: "final inhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2", // 2 default
 			}},
 	},
 }

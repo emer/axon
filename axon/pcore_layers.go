@@ -82,7 +82,7 @@ const (
 type GPParams struct {
 
 	// type of GP Layer -- must set during config using SetBuildConfig of GPType.
-	GPType GPLayerTypes `viewif:"LayType=GPLayer" view:"inline"`
+	GPType GPLayerTypes
 
 	pad, pad1, pad2 uint32
 }
@@ -350,7 +350,10 @@ func (ly *Layer) GPPostBuild() {
 
 func (ly *Layer) STNDefaults() {
 	// STN is tonically self-active and has no FFFB inhibition
-	ly.Params.Acts.SKCa.Gbar = 2
+	ly.Params.Acts.Init.GeBase = 0.3
+	ly.Params.Acts.Init.GeVar = 0.1
+	ly.Params.Acts.Init.GiVar = 0.1
+	ly.Params.Acts.SKCa.Gbar = 3
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
@@ -362,8 +365,6 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
 	ly.Params.Learn.NeuroMod.AChDisInhib = 2
-
-	ly.Params.Acts.SKCa.Gbar = 3
 	// otherwise defaults are set to STNp
 	// } else {
 	// 	ly.Params.Acts.SKCa.Gbar = 3
