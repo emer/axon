@@ -32,6 +32,7 @@ func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeu
 
 	net.ConnectLayers(mtxNo, gpePr, full, InhibPrjn)
 
+	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).SetClass("BgFixed")
 	net.ConnectLayers(gpePr, gpeAk, full, InhibPrjn).SetClass("BgFixed")
 	net.ConnectLayers(gpePr, stn, full, InhibPrjn).SetClass("BgFixed")
 
@@ -86,6 +87,7 @@ func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpN
 
 	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPrjn)
 
+	net.ConnectLayers(gpePr, gpePr, p1to1, InhibPrjn).SetClass("BgFixed")
 	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPrjn).SetClass("BgFixed")
 	net.ConnectLayers(gpePr, stn, p1to1, InhibPrjn).SetClass("BgFixed")
 

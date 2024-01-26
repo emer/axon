@@ -19,22 +19,36 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":  "false",
-				"Layer.Inhib.Pool.Gi":  "0.3",
-				"Layer.Inhib.Pool.FB":  "0",
-				"Layer.Matrix.GateThr": "0.05", // .05 default
-				"Layer.Acts.Kir.Gbar":  "0.5",
+				"Layer.Inhib.Pool.On":   "false",
+				"Layer.Inhib.Layer.Gi":  ".5",
+				"Layer.Inhib.Layer.FB":  "0",
+				"Layer.Matrix.GateThr":  "0.05", // .05 default
+				"Layer.Acts.Kir.Gbar":   "10",
+				"Layer.Acts.GabaB.Gbar": "0",
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
-				"Layer.Acts.Kir.Gbar":  "0.5",
-				"Layer.Acts.SKCa.Gbar": "1", // 2 def
-				"Layer.Inhib.Layer.FB": "0", // was 1
+				"Layer.Acts.Init.GeBase":           "0.1",
+				"Layer.Acts.Kir.Gbar":              "5",     // 5 enhances pause
+				"Layer.Acts.SKCa.Gbar":             "2",     // 2 def
+				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all GPePr
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			}},
+		{Sel: "#GPePr", Desc: "prototypical",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.4",
+				"Layer.Acts.Init.GeVar":  "0.2",
+			}},
+		{Sel: "#GPi", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.2",
+				"Layer.Acts.Init.GeVar":  "0.1",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
 				"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
+				"Layer.Acts.Kir.Gbar":     "2",
 			}},
 		////////////////////////////////////////////
 		// Prjns
@@ -60,24 +74,24 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
+				"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
 			}},
 		// All the BG connections:
 		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Prjn.PrjnScale.Abs": "5",
 			}},
-		{Sel: "#GPeAkToMtxNo", Desc: "nonspecific gating activity surround inhibition -- wta",
+		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // old: must be relatively weak to prevent oscillations
+				"Prjn.PrjnScale.Abs": ".4", // stronger = more binary
 			}},
 		{Sel: "#GPePrToSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.1", // not big diff
+				"Prjn.PrjnScale.Abs": "0.5",
 			}},
 		{Sel: "#STNToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was 0.5
+				"Prjn.PrjnScale.Abs": "0.5", // was 0.5
 			}},
 		{Sel: "#STNToGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
@@ -85,15 +99,19 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Abs": ".5",
+			}},
+		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "5",
 			}},
 		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // old: was .7 then .9 -- 1 better match
+				"Prjn.PrjnScale.Abs": "1",
 			}},
 		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was 0.8, 1 is fine
+				"Prjn.PrjnScale.Abs": "4",
 			}},
 		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
@@ -110,6 +128,7 @@ var ParamSets = netparams.Sets{
 	},
 }
 
+/*
 // ParamSetsDefs contains the full set of parameters, many of which are at default values
 // and have informed the default values in the first place.
 var ParamSetsDefs = netparams.Sets{
@@ -437,3 +456,4 @@ var ParamSetsDefs = netparams.Sets{
 			}},
 	},
 }
+*/

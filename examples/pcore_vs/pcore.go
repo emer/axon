@@ -567,7 +567,8 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
+	// ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
+	ss.Logs.PlotItems("Gated", "Should", "Match", "Rew")
 
 	ss.Logs.CreateTables()
 
@@ -658,8 +659,8 @@ func (ss *Sim) ConfigGUI() {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
-	// nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
-	// nv.Scene().Camera.LookAt(mat32.V3(0.00030842167, 0.045156803, -0.039506555), mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.3, 2.4)
+	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, -0.03, 0.02), mat32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
@@ -719,7 +720,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
 			},
 		})
 	})
@@ -727,7 +728,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
