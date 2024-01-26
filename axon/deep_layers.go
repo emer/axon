@@ -80,7 +80,7 @@ type PulvParams struct {
 	FullDriveAct float32 `default:"0.6" min:"0.01"`
 
 	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
-	DriveLayIdx int32 `inactive:"+"`
+	DriveLayIdx int32 `edit:"-"`
 
 	pad float32
 }

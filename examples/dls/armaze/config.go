@@ -47,7 +47,7 @@ type Config struct {
 	NNegUSs int
 
 	// total number of USs = NDrives + NNegUSs
-	NUSs int `inactive:"+"`
+	NUSs int `edit:"-"`
 
 	// number of different arms
 	NArms int

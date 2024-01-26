@@ -189,9 +189,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.75
 	_ = mtxRndPrjn
 
-	mtxGo, mtxNo, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	_ = gpeTA
-	gpeOut := net.AxonLayerByName("GPeOut")
+	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
+	_, _ = gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
 	_ = snc
@@ -214,8 +213,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(inly, pfc, pone2one, axon.ForwardPrjn)
 	net.ConnectToPulv(pfc, pfcCT, inP, pone2one, pone2one, "PFCPrjn")
 
-	net.ConnectLayers(pfc, stnp, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(pfc, stns, pone2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfc, stn, pone2one, axon.ForwardPrjn)
 
 	net.ConnectLayers(gpi, pfcVM, pone2one, axon.InhibPrjn).SetClass("BgFixed")
 
@@ -236,9 +234,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	snc.PlaceRightOf(gpi, space)
 	urge.PlaceRightOf(snc, space)
-	gpeOut.PlaceAbove(gpi)
-	stnp.PlaceRightOf(gpeTA, space)
-	mtxGo.PlaceAbove(gpeOut)
+	gpeAk.PlaceAbove(gpi)
+	stn.PlaceRightOf(gpePr, space)
+	mtxGo.PlaceAbove(gpeAk)
 	accpos.PlaceAbove(mtxGo)
 	accneg.PlaceRightOf(accpos, space)
 	inly.PlaceRightOf(accneg, space)
@@ -698,7 +696,7 @@ func (ss *Sim) ConfigGUI() {
 		////////////////////////////////////////////////
 		gi.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-			Icon:    "reset",
+			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 			Active:  egui.ActiveAlways,
 			Func: func() {
@@ -709,7 +707,7 @@ func (ss *Sim) ConfigGUI() {
 		////////////////////////////////////////////////
 		gi.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-			Icon:    "new",
+			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {

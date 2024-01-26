@@ -48,16 +48,16 @@ type Geom struct {
 	Height float32 `default:"0.2"`
 
 	// width + space
-	ArmWidthTot float32 `inactive:"+"`
+	ArmWidthTot float32 `edit:"-"`
 
 	// computed total depth, starts at 0 goes deep
-	Depth float32 `inactive:"+"`
+	Depth float32 `edit:"-"`
 
 	// computed total width
-	Width float32 `inactive:"+"`
+	Width float32 `edit:"-"`
 
 	// half width for centering on 0 X
-	HalfWidth float32 `inactive:"+"`
+	HalfWidth float32 `edit:"-"`
 }
 
 func (ge *Geom) Config(nArms int, maxLen int) {

@@ -108,11 +108,11 @@ const (
 	// STNs are more weakly driven and thus more slowly activate KCa, resulting in
 	// a longer period of activation, during which the GPi is inhibited to prevent
 	// premature gating based only MtxGo inhibition -- gating only occurs when
-	// GPeIn signal has had a chance to integrate its MtxNo inputs.
+	// GPePr signal has had a chance to integrate its MtxNo inputs.
 	STNLayer
 
 	// GPLayer represents a globus pallidus layer in the BG, including:
-	// GPeOut, GPeIn, GPeTA (arkypallidal), and GPi.
+	// GPeOut, GPePr, GPeAk (arkypallidal), and GPi.
 	// Typically just a single unit per Pool representing a given stripe.
 	GPLayer
 

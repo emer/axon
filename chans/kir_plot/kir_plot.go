@@ -106,7 +106,7 @@ func (ss *Sim) VmRun() { //gti:add
 
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
-	m := mp.Minf(-70)
+	m := mp.MinfRest()
 	for vi := 0; vi < nv; vi++ {
 		vbio := ss.Vstart + float32(vi)*ss.Vstep
 		v := chans.VFmBio(vbio)
@@ -162,7 +162,7 @@ func (ss *Sim) TimeRun() { //gti:add
 
 	mp := &ss.Kir
 
-	m := mp.Minf(-70)
+	m := mp.MinfRest()
 	msdt := float32(0.001)
 	v := ss.TimeVstart
 	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)

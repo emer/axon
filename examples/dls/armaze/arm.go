@@ -30,16 +30,16 @@ type Arm struct {
 	CS int
 
 	// current expected value = US.Prob * US.Mag * Drives-- computed at start of new approach
-	ExValue float32 `inactive:"+"`
+	ExValue float32 `edit:"-"`
 
 	// current expected PVpos value = normalized ExValue -- computed at start of new approach
-	ExPVpos float32 `inactive:"+"`
+	ExPVpos float32 `edit:"-"`
 
 	// current expected PVneg value = normalized time and effort costs
-	ExPVneg float32 `inactive:"+"`
+	ExPVneg float32 `edit:"-"`
 
 	// current expected utility = effort discounted version of ExPVpos -- computed at start of new approach
-	ExUtil float32 `inactive:"+"`
+	ExUtil float32 `edit:"-"`
 }
 
 func (arm *Arm) Defaults() {

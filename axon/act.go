@@ -134,7 +134,7 @@ type DendParams struct {
 	SSGi float32 `default:"0,2"`
 
 	// set automatically based on whether this layer has any recv projections that have a GType conductance type of Modulatory -- if so, then multiply GeSyn etc by GModSyn
-	HasMod slbool.Bool `inactive:"+"`
+	HasMod slbool.Bool `edit:"-"`
 
 	// multiplicative gain factor on the total modulatory input -- this can also be controlled by the PrjnScale.Abs factor on ModulatoryG inputs, but it is convenient to be able to control on the layer as well.
 	ModGain float32
@@ -237,7 +237,7 @@ type DecayParams struct {
 	// proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime.
 	Glong float32 `default:"0,0.6" max:"1" min:"0"`
 
-	// decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa -- has a separate decay because often useful to have this not decay at all even if decay is on.
+	// decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa, Kir -- has a separate decay because often useful to have this not decay at all even if decay is on.
 	AHP float32 `default:"0" max:"1" min:"0"`
 
 	// decay of Ca variables driven by spiking activity used in learning: CaSpk* and Ca* variables. These are typically not decayed but may need to be in some situations.
@@ -460,10 +460,10 @@ func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni uint32) float32 {
 type ClampParams struct {
 
 	// is this a clamped input layer?  set automatically based on layer type at initialization
-	IsInput slbool.Bool `inactive:"+"`
+	IsInput slbool.Bool `edit:"-"`
 
 	// is this a target layer?  set automatically based on layer type at initialization
-	IsTarget slbool.Bool `inactive:"+"`
+	IsTarget slbool.Bool `edit:"-"`
 
 	// amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers
 	Ge float32 `default:"0.8,1.5"`
@@ -674,6 +674,12 @@ type ActParams struct {
 	// sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)
 	KNa chans.KNaMedSlow `view:"inline"`
 
+	// potassium (K) inwardly rectifying (ir) current, which is similar to GABAB
+	// (which is a GABA modulated Kir channel).  This channel is off by default
+	// but plays a critical role in making medium spiny neurons (MSNs) relatively
+	// quiet in the striatum.
+	Kir chans.KirParams `view:"inline"`
+
 	// NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.
 	NMDA chans.NMDAParams `view:"inline"`
 
@@ -717,6 +723,8 @@ func (ac *ActParams) Defaults() {
 	ac.Sahp.CaTau = 5
 	ac.KNa.Defaults()
 	ac.KNa.On.SetBool(true)
+	ac.Kir.Defaults()
+	ac.Kir.Gbar = 0
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.006
 	ac.MaintNMDA.Defaults()
@@ -747,6 +755,7 @@ func (ac *ActParams) Update() {
 	ac.Mahp.Update()
 	ac.Sahp.Update()
 	ac.KNa.Update()
+	ac.Kir.Update()
 	ac.NMDA.Update()
 	ac.MaintNMDA.Update()
 	ac.GabaB.Update()
@@ -792,10 +801,15 @@ func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
 // by given factor (typically Decay.AHP)
 func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 	AddNrnV(ctx, ni, di, MahpN, -decay*NrnV(ctx, ni, di, MahpN))
+	AddNrnV(ctx, ni, di, Gmahp, -decay*NrnV(ctx, ni, di, Gmahp))
 	AddNrnV(ctx, ni, di, SahpCa, -decay*NrnV(ctx, ni, di, SahpCa))
 	AddNrnV(ctx, ni, di, SahpN, -decay*NrnV(ctx, ni, di, SahpN))
+	AddNrnV(ctx, ni, di, Gsahp, -decay*NrnV(ctx, ni, di, Gsahp))
 	AddNrnV(ctx, ni, di, GknaMed, -decay*NrnV(ctx, ni, di, GknaMed))
 	AddNrnV(ctx, ni, di, GknaSlow, -decay*NrnV(ctx, ni, di, GknaSlow))
+	kirMrest := ac.Kir.Mrest
+	AddNrnV(ctx, ni, di, KirM, decay*(kirMrest-NrnV(ctx, ni, di, KirM)))
+	AddNrnV(ctx, ni, di, Gkir, -decay*NrnV(ctx, ni, di, Gkir))
 }
 
 // DecayState decays the activation state toward initial values
@@ -906,10 +920,14 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, GiInt, 0)
 
 	SetNrnV(ctx, ni, di, MahpN, 0)
+	SetNrnV(ctx, ni, di, Gmahp, 0)
 	SetNrnV(ctx, ni, di, SahpCa, 0)
 	SetNrnV(ctx, ni, di, SahpN, 0)
+	SetNrnV(ctx, ni, di, Gsahp, 0)
 	SetNrnV(ctx, ni, di, GknaMed, 0)
 	SetNrnV(ctx, ni, di, GknaSlow, 0)
+	SetNrnV(ctx, ni, di, KirM, ac.Kir.Mrest)
+	SetNrnV(ctx, ni, di, Gkir, 0)
 
 	SetNrnV(ctx, ni, di, GnmdaSyn, 0)
 	SetNrnV(ctx, ni, di, Gnmda, 0)
@@ -1011,18 +1029,33 @@ func (ac *ActParams) GvgccFmVm(ctx *Context, ni, di uint32) {
 
 // GkFmVm updates all the Gk-based conductances: Mahp, KNa, Gak
 func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
-	dn := ac.Mahp.DNFmV(NrnV(ctx, ni, di, Vm), NrnV(ctx, ni, di, MahpN))
-	AddNrnV(ctx, ni, di, MahpN, dn)
-	SetNrnV(ctx, ni, di, Gak, ac.AK.Gak(NrnV(ctx, ni, di, VmDend)))
-	SetNrnV(ctx, ni, di, Gk, NrnV(ctx, ni, di, Gak)+ac.Mahp.GmAHP(NrnV(ctx, ni, di, MahpN))+ac.Sahp.GsAHP(NrnV(ctx, ni, di, SahpN)))
+	vm := NrnV(ctx, ni, di, Vm)
+	vmd := NrnV(ctx, ni, di, VmDend)
+	mahpN := NrnV(ctx, ni, di, MahpN)
+	gmahp := ac.Mahp.GmAHP(vm, &mahpN)
+	SetNrnV(ctx, ni, di, Gmahp, gmahp)
+
+	gsahp := ac.Sahp.GsAHP(NrnV(ctx, ni, di, SahpN)) // SahpN updated in plus phase (trial level)
+	SetNrnV(ctx, ni, di, Gsahp, gsahp)
+
+	gak := ac.AK.Gak(vmd)
+	SetNrnV(ctx, ni, di, Gak, gak)
+
+	nrnKirM := NrnV(ctx, ni, di, KirM)
+	gkir := ac.Kir.Gkir(vm, &nrnKirM)
+	SetNrnV(ctx, ni, di, Gkir, gkir)
+	SetNrnV(ctx, ni, di, KirM, nrnKirM)
+
+	gktot := gmahp + gsahp + gak + gkir
 	if ac.KNa.On.IsTrue() {
 		gknaMed := NrnV(ctx, ni, di, GknaMed)
 		gknaSlow := NrnV(ctx, ni, di, GknaSlow)
 		ac.KNa.GcFmSpike(&gknaMed, &gknaSlow, NrnV(ctx, ni, di, Spike) > .5)
 		SetNrnV(ctx, ni, di, GknaMed, gknaMed)
 		SetNrnV(ctx, ni, di, GknaSlow, gknaSlow)
-		AddNrnV(ctx, ni, di, Gk, NrnV(ctx, ni, di, GknaMed)+NrnV(ctx, ni, di, GknaSlow))
+		gktot += gknaMed + gknaSlow
 	}
+	SetNrnV(ctx, ni, di, Gk, gktot)
 }
 
 // KNaNewState does TrialSlow version of KNa during NewState if option is set

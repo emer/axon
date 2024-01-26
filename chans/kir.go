@@ -18,9 +18,6 @@ type KirParams struct {
 	// overall strength multiplier of Kir current.
 	Gbar float32 `default:"0,0.012,0.015"`
 
-	// Q10 is the 10 degree temperature correction factor
-	Q10 float32 `default:"3"`
-
 	// Asymptotic gating factor M, offset
 	MinfOff float32 `default:"-102"`
 
@@ -38,11 +35,13 @@ type KirParams struct {
 
 	// Decay time constant as a function of voltage, time constant factor
 	DecayTau float32 `default:"23"`
+
+	// Mrest is Minf at resting membrane potential of -70, computed from other params
+	Mrest float32 `edit:"-"`
 }
 
 func (kp *KirParams) Defaults() {
 	kp.Gbar = 0.0
-	kp.Q10 = 3
 	kp.MinfOff = -102
 	kp.MinfTau = 13
 	kp.RiseOff = -60
@@ -53,20 +52,26 @@ func (kp *KirParams) Defaults() {
 }
 
 func (kp *KirParams) Update() {
+	kp.Mrest = kp.MinfRest()
 }
 
-// DM computes the change in M gating parameter, updating m
-func (kp *KirParams) DM(vbio float32, m *float32) float32 {
+// DM computes the change in M gating parameter
+func (kp *KirParams) DM(vbio, m float32) float32 {
 	var minf, mtau float32
 	kp.MRates(vbio, &minf, &mtau)
-	dm := (minf - *m) / (mtau * kp.Q10)
-	*m += dm
+	dm := (minf - m) / (mtau * 3) // 3 = Q10
 	return dm
 }
 
-// MRates returns minf and mtau as a function of bio voltage
+// MRates returns Minf as a function of bio voltage
 func (kp *KirParams) Minf(vbio float32) float32 {
 	return 1.0 / (1 + mat32.FastExp((vbio-(kp.MinfOff))/kp.MinfTau))
+}
+
+// MinfRest returns Minf at nominal resting membrane potential of -70mV
+// which serves as the initial value
+func (kp *KirParams) MinfRest() float32 {
+	return kp.Minf(-70)
 }
 
 // MRates returns minf and mtau as a function of bio voltage
@@ -79,11 +84,13 @@ func (kp *KirParams) MRates(vbio float32, minf, mtau *float32) {
 	return
 }
 
-// Gkir returns the overall net Kir conductance, and updates the m gating parameter
+// Gkir returns the overall net Kir conductance, and updates the m gating parameter,
+// as a function of given normalized voltage
 func (kp *KirParams) Gkir(v float32, m *float32) float32 {
 	vbio := VToBio(v)
 	g := kp.Gbar * *m
-	kp.DM(vbio, m)
+	dm := kp.DM(vbio, *m)
+	*m += dm
 	return g
 }
 

@@ -8,23 +8,20 @@ import (
 	"github.com/emer/emergent/v2/prjn"
 )
 
-// AddBG adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
-// with given optional prefix. Doesn't return GPeOut, GpeIn which are purely internal.
+// AddBG adds MtxGo, MtxNo, GPePr, GPeAk, STN, GPi layers,
+// with given optional prefix.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
 // elements where matches need to be detected.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical).
-func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeTA, stnp, stns, gpi *Layer) {
+func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi *Layer) {
 	gpi = net.AddGPiLayer2D(prefix+"GPi", gpNeurY, gpNeurX)
-	gpeOut := net.AddGPeLayer2D(prefix+"GPeOut", gpNeurY, gpNeurX)
-	gpeOut.SetBuildConfig("GPType", "GPeOut")
-	gpeIn := net.AddGPeLayer2D(prefix+"GPeIn", gpNeurY, gpNeurX)
-	gpeIn.SetBuildConfig("GPType", "GPeIn")
-	gpeTA = net.AddGPeLayer2D(prefix+"GPeTA", gpNeurY, gpNeurX)
-	gpeTA.SetBuildConfig("GPType", "GPeTA")
-	stnp = net.AddSTNLayer2D(prefix+"STNp", gpNeurY, gpNeurX)
-	stns = net.AddSTNLayer2D(prefix+"STNs", gpNeurY, gpNeurX)
+	gpePr = net.AddGPeLayer2D(prefix+"GPePr", gpNeurY, gpNeurX)
+	gpePr.SetBuildConfig("GPType", "GPePr")
+	gpeAk = net.AddGPeLayer2D(prefix+"GPeAk", gpNeurY, gpNeurX)
+	gpeAk.SetBuildConfig("GPType", "GPeAk")
+	stn = net.AddSTNLayer2D(prefix+"STN", gpNeurY, gpNeurX)
 	mtxGo = net.AddMatrixLayer(prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = net.AddMatrixLayer(prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
@@ -33,47 +30,36 @@ func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeu
 
 	full := prjn.NewFull()
 
-	net.ConnectLayers(mtxGo, gpeOut, full, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(mtxNo, gpePr, full, InhibPrjn)
 
-	net.ConnectLayers(mtxNo, gpeIn, full, InhibPrjn)
-	net.ConnectLayers(gpeOut, gpeIn, full, InhibPrjn)
-
-	net.ConnectLayers(gpeIn, gpeTA, full, InhibPrjn).SetClass("BgFixed")
-	net.ConnectLayers(gpeIn, stnp, full, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpePr, gpeAk, full, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpePr, stn, full, InhibPrjn).SetClass("BgFixed")
 
 	// note: this projection exists in bio, but does weird things with Ca dynamics in STNs..
-	// nt.ConnectLayers(gpeIn, stns, full, InhibPrjn).SetClass("BgFixed")
+	// nt.ConnectLayers(gpePr, stns, full, InhibPrjn).SetClass("BgFixed")
 
-	net.ConnectLayers(gpeIn, gpi, full, InhibPrjn)
+	net.ConnectLayers(gpePr, gpi, full, InhibPrjn)
 	net.ConnectLayers(mtxGo, gpi, full, InhibPrjn)
 
-	net.ConnectLayers(stnp, gpeOut, full, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpeIn, full, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpeTA, full, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpi, full, ForwardPrjn).SetClass("FmSTNp")
+	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).SetClass("STNToGPePr")
+	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).SetClass("STNToGPeAk")
+	net.ConnectLayers(stn, gpi, full, ForwardPrjn).SetClass("STNToGPi")
 
-	net.ConnectLayers(stns, gpi, full, ForwardPrjn).SetClass("FmSTNs")
+	net.ConnectLayers(mtxGo, gpeAk, full, InhibPrjn).SetClass("MtxToGPeAk")
+	net.ConnectLayers(gpeAk, mtxGo, full, InhibPrjn).SetClass("GPeAkToMtx")
+	net.ConnectLayers(gpeAk, mtxNo, full, InhibPrjn).SetClass("GPeAkToMtx")
 
-	net.ConnectLayers(gpeTA, mtxGo, full, InhibPrjn).SetClass("GPeTAToMtx")
-	net.ConnectLayers(gpeTA, mtxNo, full, InhibPrjn).SetClass("GPeTAToMtx")
-
-	net.ConnectLayers(gpeIn, mtxGo, full, InhibPrjn).SetClass("GPeInToMtx")
-	net.ConnectLayers(gpeIn, mtxNo, full, InhibPrjn).SetClass("GPeInToMtx")
-
-	gpeOut.PlaceBehind(gpi, space)
-	gpeIn.PlaceRightOf(gpeOut, space)
-	gpeTA.PlaceRightOf(gpeIn, space)
-	stnp.PlaceRightOf(gpi, space)
-	stns.PlaceRightOf(stnp, space)
-
-	mtxGo.PlaceBehind(gpeOut, space)
+	gpeAk.PlaceBehind(gpi, space)
+	gpePr.PlaceRightOf(gpeAk, space)
+	stn.PlaceRightOf(gpi, space)
+	mtxGo.PlaceBehind(gpePr, space)
 	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return
 }
 
-// AddBG4D adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
-// with given optional prefix. Doesn't return GPeOut, GpeIn which are purely internal.
+// AddBG4D adds MtxGo, MtxNo, GPePr, GPeAk, STN, GPi layers,
+// with given optional prefix.
 // This version makes 4D pools throughout the GP layers,
 // with Pools representing separable gating domains.
 // All GP / STN layers have gpNeur neurons.
@@ -81,18 +67,14 @@ func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeu
 // space is the spacing between layers (2 typical)
 // A CIN or more widely used RSalienceLayer should be added and
 // project ACh to the MtxGo, No layers.
-func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeTA, stnp, stns, gpi *Layer) {
+func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi *Layer) {
 	gpi = net.AddGPiLayer4D(prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeOut := net.AddGPeLayer4D(prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeOut.SetBuildConfig("GPType", "GPeOut")
-	gpeIn := net.AddGPeLayer4D(prefix+"GPeIn", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeIn.SetBuildConfig("GPType", "GPeIn")
-	gpeTA = net.AddGPeLayer4D(prefix+"GPeTA", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeTA.SetBuildConfig("GPType", "GPeTA")
-	stnp = net.AddSTNLayer4D(prefix+"STNp", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	stnp.SetClass("STNp")
-	stns = net.AddSTNLayer4D(prefix+"STNs", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	stns.SetClass("STNs")
+	gpePr = net.AddGPeLayer4D(prefix+"GPePr", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpePr.SetBuildConfig("GPType", "GPePr")
+	gpeAk = net.AddGPeLayer4D(prefix+"GPeAk", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpeAk.SetBuildConfig("GPType", "GPeAk")
+	stn = net.AddSTNLayer4D(prefix+"STN", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	stn.SetClass("STN")
 	mtxGo = net.AddMatrixLayer(prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = net.AddMatrixLayer(prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
@@ -102,40 +84,30 @@ func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpN
 	p1to1 := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
 
-	net.ConnectLayers(mtxGo, gpeOut, p1to1, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPrjn)
 
-	net.ConnectLayers(mtxNo, gpeIn, p1to1, InhibPrjn)
-	net.ConnectLayers(gpeOut, gpeIn, p1to1, InhibPrjn)
-
-	net.ConnectLayers(gpeIn, gpeTA, p1to1, InhibPrjn).SetClass("BgFixed")
-	net.ConnectLayers(gpeIn, stnp, p1to1, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpePr, stn, p1to1, InhibPrjn).SetClass("BgFixed")
 
 	// note: this projection exists in bio, but does weird things with Ca dynamics in STNs..
-	// nt.ConnectLayers(gpeIn, stns, p1to1, InhibPrjn).SetClass("BgFixed")
+	// nt.ConnectLayers(gpePr, stns, p1to1, InhibPrjn).SetClass("BgFixed")
 
-	net.ConnectLayers(gpeIn, gpi, p1to1, InhibPrjn)
+	net.ConnectLayers(gpePr, gpi, p1to1, InhibPrjn)
 	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPrjn)
 
-	net.ConnectLayers(stnp, gpeOut, p1to1, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpeIn, p1to1, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpeTA, full, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpi, p1to1, ForwardPrjn).SetClass("FmSTNp")
+	net.ConnectLayers(stn, gpePr, p1to1, ForwardPrjn).SetClass("STNToGPePr")
+	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).SetClass("STNToGPeAk")
+	net.ConnectLayers(stn, gpi, p1to1, ForwardPrjn).SetClass("STNToGPi")
 
-	net.ConnectLayers(stns, gpi, p1to1, ForwardPrjn).SetClass("FmSTNs")
+	net.ConnectLayers(mtxGo, gpeAk, full, InhibPrjn).SetClass("MtxToGPeAk")
+	net.ConnectLayers(gpeAk, mtxGo, full, InhibPrjn).SetClass("GPeAkToMtx")
+	net.ConnectLayers(gpeAk, mtxNo, full, InhibPrjn).SetClass("GPeAkToMtx")
 
-	net.ConnectLayers(gpeTA, mtxGo, full, InhibPrjn).SetClass("GPeTAToMtx")
-	net.ConnectLayers(gpeTA, mtxNo, full, InhibPrjn).SetClass("GPeTAToMtx")
+	gpePr.PlaceBehind(gpi, space)
+	gpeAk.PlaceRightOf(gpePr, space)
+	stn.PlaceRightOf(gpi, space)
 
-	net.ConnectLayers(gpeIn, mtxGo, full, InhibPrjn).SetClass("GPeInToMtx")
-	net.ConnectLayers(gpeIn, mtxNo, full, InhibPrjn).SetClass("GPeInToMtx")
-
-	gpeOut.PlaceBehind(gpi, space)
-	gpeIn.PlaceRightOf(gpeOut, space)
-	gpeTA.PlaceRightOf(gpeIn, space)
-	stnp.PlaceRightOf(gpi, space)
-	stns.PlaceRightOf(stnp, space)
-
-	mtxGo.PlaceBehind(gpeOut, space)
+	mtxGo.PlaceBehind(gpePr, space)
 	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return

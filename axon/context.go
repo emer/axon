@@ -248,46 +248,46 @@ type NetIdxs struct {
 	NData uint32 `min:"1"`
 
 	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
-	NetIdx uint32 `inactive:"+"`
+	NetIdx uint32 `edit:"-"`
 
 	// maximum amount of data parallel
-	MaxData uint32 `inactive:"+"`
+	MaxData uint32 `edit:"-"`
 
 	// number of layers in the network
-	NLayers uint32 `inactive:"+"`
+	NLayers uint32 `edit:"-"`
 
 	// total number of neurons
-	NNeurons uint32 `inactive:"+"`
+	NNeurons uint32 `edit:"-"`
 
 	// total number of pools excluding * MaxData factor
-	NPools uint32 `inactive:"+"`
+	NPools uint32 `edit:"-"`
 
 	// total number of synapses
-	NSyns uint32 `inactive:"+"`
+	NSyns uint32 `edit:"-"`
 
 	// maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access
-	GPUMaxBuffFloats uint32 `inactive:"+"`
+	GPUMaxBuffFloats uint32 `edit:"-"`
 
 	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
-	GPUSynCaBanks uint32 `inactive:"+"`
+	GPUSynCaBanks uint32 `edit:"-"`
 
 	// total number of PVLV Drives / positive USs
-	PVLVNPosUSs uint32 `inactive:"+"`
+	PVLVNPosUSs uint32 `edit:"-"`
 
 	// total number of PVLV Negative USs
-	PVLVNNegUSs uint32 `inactive:"+"`
+	PVLVNNegUSs uint32 `edit:"-"`
 
 	// offset into GlobalVars for USneg values
-	GvUSnegOff uint32 `inactive:"+"`
+	GvUSnegOff uint32 `edit:"-"`
 
 	// stride into GlobalVars for USneg values
-	GvUSnegStride uint32 `inactive:"+"`
+	GvUSnegStride uint32 `edit:"-"`
 
 	// offset into GlobalVars for USpos, Drive, VSPatch values values
-	GvUSposOff uint32 `inactive:"+"`
+	GvUSposOff uint32 `edit:"-"`
 
 	// stride into GlobalVars for USpos, Drive, VSPatch values
-	GvUSposStride uint32 `inactive:"+"`
+	GvUSposStride uint32 `edit:"-"`
 
 	pad uint32
 }
@@ -352,7 +352,7 @@ type Context struct {
 	Mode etime.Modes
 
 	// if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior.  Is automatically updated based on Mode != Train
-	Testing slbool.Bool `inactive:"+"`
+	Testing slbool.Bool `edit:"-"`
 
 	// phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms
 	Phase int32
@@ -385,10 +385,10 @@ type Context struct {
 	SlowInterval int32 `default:"100"`
 
 	// counter for how long it has been since last SlowAdapt step.  Note that this is incremented by NData to maintain consistency across different values of this parameter.
-	SlowCtr int32 `inactive:"+"`
+	SlowCtr int32 `edit:"-"`
 
 	// synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset.
-	SynCaCtr float32 `inactive:"+"`
+	SynCaCtr float32 `edit:"-"`
 
 	pad, pad1 float32
 

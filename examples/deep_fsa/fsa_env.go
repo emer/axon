@@ -60,7 +60,7 @@ type FSAEnv struct {
 	Rand erand.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `inactive:"+"`
+	RndSeed int64 `edit:"-"`
 }
 
 func (ev *FSAEnv) Name() string { return ev.Nm }

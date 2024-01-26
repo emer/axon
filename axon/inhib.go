@@ -109,7 +109,7 @@ type TopoInhibParams struct {
 	FF0 float32 `viewif:"On"`
 
 	// weight value at width -- to assess the value of Sigma
-	WidthWt float32 `inactive:"+"`
+	WidthWt float32 `edit:"-"`
 
 	pad, pad1, pad2 float32
 }

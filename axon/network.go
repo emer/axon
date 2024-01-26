@@ -732,7 +732,7 @@ var NetworkProps = ki.Props{
 		{"sep-act", ki.BlankProp{}},
 		{"AddLayer", ki.Props{
 			"label": "Add Layer...",
-			"icon":  "new",
+			"icon":  icons.Add,
 			"desc":  "add a new layer to network",
 			"Args": ki.PropSlice{
 				{"Layer Name", ki.Props{}},
@@ -746,7 +746,7 @@ var NetworkProps = ki.Props{
 		}},
 		{"ConnectLayerNames", ki.Props{
 			"label": "Connect Layers...",
-			"icon":  "new",
+			"icon":  icons.Add,
 			"desc":  "add a new connection between layers in the network",
 			"Args": ki.PropSlice{
 				{"Send Layer Name", ki.Props{}},

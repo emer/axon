@@ -33,7 +33,7 @@ type RWDaParams struct {
 	TonicGe float32
 
 	// idx of RWPredLayer to get reward prediction from -- set during Build from BuildConfig RWPredLayName
-	RWPredLayIdx int32 `inactive:"+"`
+	RWPredLayIdx int32 `edit:"-"`
 
 	pad, pad1 uint32
 }
@@ -64,7 +64,7 @@ type TDIntegParams struct {
 	PredGain float32
 
 	// idx of TDPredLayer to get reward prediction from -- set during Build from BuildConfig TDPredLayName
-	TDPredLayIdx int32 `inactive:"+"`
+	TDPredLayIdx int32 `edit:"-"`
 
 	pad uint32
 }
@@ -85,7 +85,7 @@ type TDDaParams struct {
 	TonicGe float32
 
 	// idx of TDIntegLayer to get reward prediction from -- set during Build from BuildConfig TDIntegLayName
-	TDIntegLayIdx int32 `inactive:"+"`
+	TDIntegLayIdx int32 `edit:"-"`
 
 	pad, pad1 uint32
 }

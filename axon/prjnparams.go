@@ -77,10 +77,10 @@ func (pi *PrjnIdxs) SendNIdxToLayIdx(ni uint32) uint32 {
 type GScaleVals struct {
 
 	// scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params
-	Scale float32 `inactive:"+"`
+	Scale float32 `edit:"-"`
 
 	// normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)
-	Rel float32 `inactive:"+"`
+	Rel float32 `edit:"-"`
 
 	pad, pad1 float32
 }

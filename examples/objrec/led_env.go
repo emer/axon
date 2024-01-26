@@ -41,10 +41,10 @@ type LEDEnv struct {
 	MaxLED int `min:"0" max:"19"`
 
 	// current LED number that was drawn
-	CurLED int `inactive:"+"`
+	CurLED int `edit:"-"`
 
 	// previous LED number that was drawn
-	PrvLED int `inactive:"+"`
+	PrvLED int `edit:"-"`
 
 	// random transform parameters
 	XFormRand vxform.Rand

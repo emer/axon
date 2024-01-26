@@ -29,46 +29,46 @@ import (
 type LayerIdxs struct {
 
 	// layer index
-	LayIdx uint32 `inactive:"+"`
+	LayIdx uint32 `edit:"-"`
 
 	// maximum number of data parallel elements
-	MaxData uint32 `inactive:"+"`
+	MaxData uint32 `edit:"-"`
 
 	// start of pools for this layer -- first one is always the layer-wide pool
-	PoolSt uint32 `inactive:"+"`
+	PoolSt uint32 `edit:"-"`
 
 	// start of neurons for this layer in global array (same as Layer.NeurStIdx)
-	NeurSt uint32 `inactive:"+"`
+	NeurSt uint32 `edit:"-"`
 
 	// number of neurons in layer
-	NeurN uint32 `inactive:"+"`
+	NeurN uint32 `edit:"-"`
 
 	// start index into RecvPrjns global array
-	RecvSt uint32 `inactive:"+"`
+	RecvSt uint32 `edit:"-"`
 
 	// number of recv projections
-	RecvN uint32 `inactive:"+"`
+	RecvN uint32 `edit:"-"`
 
 	// start index into RecvPrjns global array
-	SendSt uint32 `inactive:"+"`
+	SendSt uint32 `edit:"-"`
 
 	// number of recv projections
-	SendN uint32 `inactive:"+"`
+	SendN uint32 `edit:"-"`
 
 	// starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types
-	ExtsSt uint32 `inactive:"+"`
+	ExtsSt uint32 `edit:"-"`
 
 	// layer shape Pools Y dimension -- 1 for 2D
-	ShpPlY int32 `inactive:"+"`
+	ShpPlY int32 `edit:"-"`
 
 	// layer shape Pools X dimension -- 1 for 2D
-	ShpPlX int32 `inactive:"+"`
+	ShpPlX int32 `edit:"-"`
 
 	// layer shape Units Y dimension
-	ShpUnY int32 `inactive:"+"`
+	ShpUnY int32 `edit:"-"`
 
 	// layer shape Units X dimension
-	ShpUnX int32 `inactive:"+"`
+	ShpUnX int32 `edit:"-"`
 
 	pad, pad1 uint32
 }
@@ -95,16 +95,16 @@ func (lx *LayerIdxs) ExtIdx(ni, di uint32) uint32 {
 type LayerInhibIdxs struct {
 
 	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used
-	Idx1 int32 `inactive:"+"`
+	Idx1 int32 `edit:"-"`
 
 	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used
-	Idx2 int32 `inactive:"+"`
+	Idx2 int32 `edit:"-"`
 
 	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used
-	Idx3 int32 `inactive:"+"`
+	Idx3 int32 `edit:"-"`
 
 	// idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used
-	Idx4 int32 `inactive:"+"`
+	Idx4 int32 `edit:"-"`
 }
 
 // note: the following must appear above LayerParams for GPU usage which is order sensitive
@@ -638,12 +638,13 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *Laye
 			SetNrnV(ctx, ni, di, SSGiDend, ly.Acts.Dend.SSGi*pl.Inhib.SSGi)
 		}
 	}
+	vm := NrnV(ctx, ni, di, VmDend)
 	nrnGABAB := NrnV(ctx, ni, di, GABAB)
 	nrnGABABx := NrnV(ctx, ni, di, GABABx)
 	ly.Acts.GabaB.GABAB(gi, &nrnGABAB, &nrnGABABx)
 	SetNrnV(ctx, ni, di, GABAB, nrnGABAB)
 	SetNrnV(ctx, ni, di, GABABx, nrnGABABx)
-	nrnGgabaB := ly.Acts.GabaB.GgabaB(nrnGABAB, NrnV(ctx, ni, di, VmDend))
+	nrnGgabaB := ly.Acts.GabaB.GgabaB(nrnGABAB, vm)
 	SetNrnV(ctx, ni, di, GgabaB, nrnGgabaB)
 	AddNrnV(ctx, ni, di, Gk, nrnGgabaB) // Gk was already init
 }
@@ -1005,10 +1006,12 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	}
 	SetNrnV(ctx, ni, di, RLRate, mlr*dlr*modlr)
 	var tau float32
-	nrnSahpN := NrnV(ctx, ni, di, SahpN)
-	ly.Acts.Sahp.NinfTauFmCa(NrnV(ctx, ni, di, SahpCa), &nrnSahpN, &tau)
-	SetNrnV(ctx, ni, di, SahpN, nrnSahpN)
-	SetNrnV(ctx, ni, di, SahpCa, ly.Acts.Sahp.CaInt(NrnV(ctx, ni, di, SahpCa), nrnCaSpkD))
+	sahpN := NrnV(ctx, ni, di, SahpN)
+	nrnSaphCa := NrnV(ctx, ni, di, SahpCa)
+	ly.Acts.Sahp.NinfTauFmCa(nrnSaphCa, &sahpN, &tau)
+	nrnSaphCa = ly.Acts.Sahp.CaInt(nrnSaphCa, nrnCaSpkD)
+	SetNrnV(ctx, ni, di, SahpN, sahpN)
+	SetNrnV(ctx, ni, di, SahpCa, nrnSaphCa)
 }
 
 //gosl: end layerparams

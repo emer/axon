@@ -648,7 +648,7 @@ func (ss *Sim) ConfigGUI() {
 		////////////////////////////////////////////////
 		gi.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
-			Icon:    "reset",
+			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 			Active:  egui.ActiveAlways,
 			Func: func() {
@@ -659,7 +659,7 @@ func (ss *Sim) ConfigGUI() {
 		////////////////////////////////////////////////
 		gi.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
-			Icon:    "new",
+			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {

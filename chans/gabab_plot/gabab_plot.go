@@ -71,10 +71,10 @@ type Sim struct {
 	GsXInit float64
 
 	// time when peak conductance occurs, in TimeInc units
-	MaxTime float64 `inactive:"+"`
+	MaxTime float64 `edit:"-"`
 
 	// time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))
-	TauFact float64 `inactive:"+"`
+	TauFact float64 `edit:"-"`
 
 	// total number of time steps to take
 	TimeSteps int

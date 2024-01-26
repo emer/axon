@@ -449,7 +449,7 @@ func (net *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
 // vSmtxGo and No have VSMatrixLayer class set and default params
 // appropriate for multi-pool etc
 func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch, vSgated *Layer) {
-	vSmtxGo, vSmtxNo, vSgpeTA, vSstnp, vSstns, vSgpi := net.AddBG("Vs", 1, nUSs, nNeurY, nNeurX, nNeurY, nNeurX, space)
+	vSmtxGo, vSmtxNo, vSgpeAk, vSstnp, vSstns, vSgpi := net.AddBG("Vs", 1, nUSs, nNeurY, nNeurX, nNeurY, nNeurX, space)
 
 	mp := params.Params{
 		"Layer.Matrix.IsVS":          "true",
@@ -464,7 +464,7 @@ func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo,
 	vSgated = net.AddVSGatedLayer("", nY)
 	vSpatch = net.AddVSPatchLayer("", nUSs, nNeurY, nNeurX)
 	vSpatch.PlaceRightOf(vSstns, space)
-	vSgated.PlaceRightOf(vSgpeTA, space)
+	vSgated.PlaceRightOf(vSgpeAk, space)
 	return
 }
 

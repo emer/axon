@@ -315,47 +315,47 @@ var ParamSetsDefs = netparams.Sets{
 			}},
 	},
 	"WtScales": {
-		{Sel: ".GPeTAToMtx", Desc: "nonspecific gating activity surround inhibition -- wta",
+		{Sel: ".GPeAkToMtx", Desc: "nonspecific gating activity surround inhibition -- wta",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // this is key param to control WTA selectivity!
 			}},
-		{Sel: "#GPeTAToMtxNo", Desc: "nonspecific gating activity surround inhibition -- wta",
+		{Sel: "#GPeAkToMtxNo", Desc: "nonspecific gating activity surround inhibition -- wta",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // must be relatively weak to prevent oscillations
 			}},
-		{Sel: ".GPeInToMtx", Desc: "provides weak counterbalance for GPeTA -> Mtx to reduce oscillations",
+		{Sel: ".GPePrToMtx", Desc: "provides weak counterbalance for GPeAk -> Mtx to reduce oscillations",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
 			}},
-		{Sel: "#GPeOutToGPeIn", Desc: "just enough to (dis)inhibit GPeIn",
+		{Sel: "#GPeOutToGPePr", Desc: "just enough to (dis)inhibit GPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def, was 0.3 -- no dif really
 			}},
-		{Sel: "#GPeInToSTNp", Desc: "not very relevant -- pause knocks out anyway -- if too much higher than this, causes oscillations.",
+		{Sel: "#GPePrToSTNp", Desc: "not very relevant -- pause knocks out anyway -- if too much higher than this, causes oscillations.",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.1", // not big diff
 			}},
-		// {Sel: "#GPeInToSTNs", Desc: "NOT currently used -- interferes with threshold-based Ca self-inhib dynamics",
+		// {Sel: "#GPePrToSTNs", Desc: "NOT currently used -- interferes with threshold-based Ca self-inhib dynamics",
 		// 	Params: params.Params{
 		// 		"Prjn.PrjnScale.Abs": "0.1",
 		// 	}},
-		{Sel: "#STNpToGPeIn", Desc: "stronger STN -> GPeIn to kick it high at start",
+		{Sel: "#STNpToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // was 0.5
 			}},
-		{Sel: "#STNpToGPeOut", Desc: "opposes STNpToGPeIn -- weaker",
+		{Sel: "#STNpToGPeOut", Desc: "opposes STNpToGPePr -- weaker",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.1",
 			}},
-		{Sel: "#STNpToGPeTA", Desc: "GPeTA reacts later to GPeIn disinhib, not this first STN wave",
+		{Sel: "#STNpToGPeAk", Desc: "GPeAk reacts later to GPePr disinhib, not this first STN wave",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // was .1
 			}},
-		{Sel: "#MtxNoToGPeIn", Desc: "primary classical NoGo pathway",
+		{Sel: "#MtxNoToGPePr", Desc: "primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			}},
-		{Sel: "#GPeInToGPeTA", Desc: "just enough to knock down in baseline state",
+		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // was .7 then .9 -- 1 better match
 			}},
@@ -363,15 +363,15 @@ var ParamSetsDefs = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 gives better match
 			}},
-		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPeIn",
+		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // was 0.8, 1 is fine
 			}},
-		{Sel: "#GPeInToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
+		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
 			}},
-		{Sel: "#STNsToGPi", Desc: "keeps GPi active until GPeIn signal has been integrated a bit -- hold-your-horses",
+		{Sel: "#STNsToGPi", Desc: "keeps GPi active until GPePr signal has been integrated a bit -- hold-your-horses",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".5", // .5 > .3 for RT, spurious gating
 			}},

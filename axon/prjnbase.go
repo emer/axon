@@ -62,10 +62,10 @@ type PrjnBase struct {
 	ParamsHistory params.HistoryImpl `tableview:"-"`
 
 	// average and maximum number of recv connections in the receiving layer
-	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline"`
+	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" edit:"-" view:"inline"`
 
 	// average and maximum number of sending connections in the sending layer
-	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline"`
+	SendConNAvgMax minmax.AvgMax32 `tableview:"-" edit:"-" view:"inline"`
 
 	// start index into global Synapse array:
 	SynStIdx uint32 `view:"-"`

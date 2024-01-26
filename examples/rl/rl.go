@@ -433,7 +433,7 @@ func (ss *Sim) ConfigGUI() {
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Trial Log", Icon: icons.Update,
-			Tooltip: "reset trial log .",
+			Tooltip: icons.Reset trial log .",
 			Func: func() {
 				ss.Logs.ResetLog(etime.Train, etime.Trial)
 				ss.GUI.UpdatePlot(etime.Train, etime.Trial)

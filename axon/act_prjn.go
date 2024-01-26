@@ -58,7 +58,7 @@ type SynComParams struct {
 	Delay uint32 `min:"0" default:"2"`
 
 	// maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network.
-	MaxDelay uint32 `inactive:"+"`
+	MaxDelay uint32 `edit:"-"`
 
 	// probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)
 	PFail float32

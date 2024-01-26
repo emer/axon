@@ -78,7 +78,7 @@ type AttnEnv struct {
 	Stims Stims
 
 	// current stimuli presented
-	CurStim *StimSet `inactive:"+"`
+	CurStim *StimSet `edit:"-"`
 
 	// activation level (midpoint) -- feature is incremented, rest decremented relative to this
 	Act float32

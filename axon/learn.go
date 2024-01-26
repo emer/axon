@@ -49,10 +49,10 @@ type CaLrnParams struct {
 	UpdtThr float32 `default:"0.01,0.02,0.5"`
 
 	// rate = 1 / tau
-	VgccDt float32 `view:"-" json:"-" xml:"-" inactive:"+"`
+	VgccDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
 
 	// = 1 / Norm
-	NormInv float32 `view:"-" json:"-" xml:"-" inactive:"+"`
+	NormInv float32 `view:"-" json:"-" xml:"-" edit:"-"`
 
 	pad int32
 }
@@ -111,7 +111,7 @@ type CaSpkParams struct {
 	SynTau float32 `default:"30" min:"1"`
 
 	// rate = 1 / tau
-	SynDt float32 `view:"-" json:"-" xml:"-" inactive:"+"`
+	SynDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
 
 	pad int32
 
@@ -643,7 +643,7 @@ type LRateParams struct {
 	Mod float32
 
 	// effective actual learning rate multiplier used in computing DWt: Eff = eMod * Sched * Base
-	Eff float32 `inactive:"+"`
+	Eff float32 `edit:"-"`
 }
 
 func (ls *LRateParams) Defaults() {
@@ -681,7 +681,7 @@ type TraceParams struct {
 	LearnThr float32
 
 	// rate = 1 / tau
-	Dt float32 `view:"-" json:"-" xml:"-" inactive:"+"`
+	Dt float32 `view:"-" json:"-" xml:"-" edit:"-"`
 }
 
 func (tp *TraceParams) Defaults() {

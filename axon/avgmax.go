@@ -37,19 +37,19 @@ func SetAvgMaxFloatFromIntErr(fun func()) {
 type AvgMaxI32 struct {
 
 	// Average, from Calc when last computed as Sum / N
-	Avg float32 `inactive:"+"`
+	Avg float32 `edit:"-"`
 
 	// Maximum value, copied from CurMax in Calc
-	Max float32 `inactive:"+"`
+	Max float32 `edit:"-"`
 
 	// sum for computing average -- incremented in UpdateVal, reset in Calc
-	Sum int32 `inactive:"+"`
+	Sum int32 `edit:"-"`
 
 	// current maximum value, updated via UpdateVal, reset in Calc
-	CurMax int32 `inactive:"+"`
+	CurMax int32 `edit:"-"`
 
 	// number of items in the sum -- this must be set in advance to a known value and it is used in computing the float <-> int conversion factor to maximize precision.
-	N int32 `inactive:"+"`
+	N int32 `edit:"-"`
 
 	pad, pad1, pad2 int32
 }

@@ -48,28 +48,28 @@ type CondEnv struct {
 	CondDesc string
 
 	// counter over runs
-	Run env.Ctr `inactive:"+" view:"inline"`
+	Run env.Ctr `edit:"-" view:"inline"`
 
 	// counter over Condition within a run -- Max depends on number of conditions specified in given Run
-	Condition env.Ctr `inactive:"+" view:"inline"`
+	Condition env.Ctr `edit:"-" view:"inline"`
 
 	// counter over full blocks of all trial types within a Condition -- like an Epoch
-	Block env.Ctr `inactive:"+" view:"inline"`
+	Block env.Ctr `edit:"-" view:"inline"`
 
 	// counter of behavioral trials within a Block
-	Trial env.Ctr `inactive:"+" view:"inline"`
+	Trial env.Ctr `edit:"-" view:"inline"`
 
 	// counter of discrete steps within a behavioral trial -- typically maps onto Alpha / Theta cycle in network
-	Tick env.Ctr `inactive:"+" view:"inline"`
+	Tick env.Ctr `edit:"-" view:"inline"`
 
 	// name of current trial step
-	TrialName string `inactive:"+"`
+	TrialName string `edit:"-"`
 
 	// type of current trial step
-	TrialType string `inactive:"+"`
+	TrialType string `edit:"-"`
 
 	// decoded value of USTimeIn
-	USTimeInStr string `inactive:"+"`
+	USTimeInStr string `edit:"-"`
 
 	// current generated set of trials per Block
 	Trials []*Trial

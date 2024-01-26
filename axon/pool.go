@@ -68,22 +68,22 @@ func (am *AvgMaxPhases) Zero() {
 type PoolAvgMax struct {
 
 	// avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity
-	CaSpkP AvgMaxPhases `inactive:"+" view:"inline"`
+	CaSpkP AvgMaxPhases `edit:"-" view:"inline"`
 
 	// avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer
-	CaSpkD AvgMaxPhases `inactive:"+" view:"inline"`
+	CaSpkD AvgMaxPhases `edit:"-" view:"inline"`
 
 	// avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle
-	SpkMax AvgMaxPhases `inactive:"+" view:"inline"`
+	SpkMax AvgMaxPhases `edit:"-" view:"inline"`
 
 	// avg and maximum Act firing rate value
-	Act AvgMaxPhases `inactive:"+" view:"inline"`
+	Act AvgMaxPhases `edit:"-" view:"inline"`
 
 	// avg and maximum GeInt integrated running-average excitatory conductance value
-	GeInt AvgMaxPhases `inactive:"+" view:"inline"`
+	GeInt AvgMaxPhases `edit:"-" view:"inline"`
 
 	// avg and maximum GiInt integrated running-average inhibitory conductance value
-	GiInt AvgMaxPhases `inactive:"+" view:"inline"`
+	GiInt AvgMaxPhases `edit:"-" view:"inline"`
 }
 
 // SetN sets the N for aggregation
@@ -177,7 +177,7 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 type Pool struct {
 
 	// starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool
-	StIdx, EdIdx uint32 `inactive:"+"`
+	StIdx, EdIdx uint32 `edit:"-"`
 
 	// layer index in global layer list
 	LayIdx uint32 `view:"-"`
@@ -189,21 +189,21 @@ type Pool struct {
 	PoolIdx uint32 `view:"-"`
 
 	// is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer
-	IsLayPool slbool.Bool `inactive:"+"`
+	IsLayPool slbool.Bool `edit:"-"`
 
 	// for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated
-	Gated slbool.Bool `inactive:"+"`
+	Gated slbool.Bool `edit:"-"`
 
 	pad uint32
 
 	// fast-slow FFFB inhibition values
-	Inhib fsfffb.Inhib `inactive:"+"`
+	Inhib fsfffb.Inhib `edit:"-"`
 
 	// average and max values for relevant variables in this pool, at different time scales
 	AvgMax PoolAvgMax
 
 	// absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg
-	AvgDif AvgMaxI32 `inactive:"+" view:"inline"`
+	AvgDif AvgMaxI32 `edit:"-" view:"inline"`
 }
 
 // Init is callled during InitActs

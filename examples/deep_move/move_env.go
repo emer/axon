@@ -44,13 +44,13 @@ type MoveEnv struct {
 	AngInc int
 
 	// total number of rotation angles in a circle
-	NRotAngles int `inactive:"+"`
+	NRotAngles int `edit:"-"`
 
 	// total number of FOV rays that are traced
-	NFOVRays int `inactive:"+"`
+	NFOVRays int `edit:"-"`
 
 	// number of units in depth population codes
-	DepthSize int `inactive:"+"`
+	DepthSize int `edit:"-"`
 
 	// population code for depth, in normalized units
 	DepthCode popcode.OneD
@@ -68,19 +68,19 @@ type MoveEnv struct {
 	PctBlank float32
 
 	// current location of agent, floating point
-	PosF mat32.Vec2 `inactive:"+"`
+	PosF mat32.Vec2 `edit:"-"`
 
 	// current location of agent, integer
-	PosI evec.Vec2i `inactive:"+"`
+	PosI evec.Vec2i `edit:"-"`
 
 	// current angle, in degrees
-	Angle int `inactive:"+"`
+	Angle int `edit:"-"`
 
 	// angle that we just rotated -- drives vestibular
-	RotAng int `inactive:"+"`
+	RotAng int `edit:"-"`
 
 	// last action taken
-	Act int `inactive:"+"`
+	Act int `edit:"-"`
 
 	// depth for each angle (NFOVRays), raw
 	Depths []float32
@@ -98,7 +98,7 @@ type MoveEnv struct {
 	Rand erand.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `inactive:"+"`
+	RndSeed int64 `edit:"-"`
 }
 
 func (ev *MoveEnv) Name() string { return ev.Nm }

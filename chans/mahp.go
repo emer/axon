@@ -30,10 +30,10 @@ type MahpParams struct {
 	TauMax float32 `viewif:"Gbar>0" default:"1000"`
 
 	// temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
-	Tadj float32 `viewif:"Gbar>0" view:"-" inactive:"+"`
+	Tadj float32 `viewif:"Gbar>0" view:"-" edit:"-"`
 
 	// 1/Tau
-	DtMax float32 `view:"-" inactive:"+"`
+	DtMax float32 `view:"-" edit:"-"`
 
 	pad, pad2 int32
 }
@@ -95,8 +95,11 @@ func (mp *MahpParams) DNFmV(v, n float32) float32 {
 }
 
 // GmAHP returns the conductance as a function of n
-func (mp *MahpParams) GmAHP(n float32) float32 {
-	return mp.Tadj * mp.Gbar * n
+func (mp *MahpParams) GmAHP(v float32, n *float32) float32 {
+	g := mp.Tadj * mp.Gbar * *n
+	dn := mp.DNFmV(v, *n)
+	*n += dn
+	return g
 }
 
 //gosl: end chans

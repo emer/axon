@@ -29,25 +29,25 @@ type MatrixParams struct {
 	IsVS slbool.Bool
 
 	// index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName
-	OtherMatrixIdx int32 `inactive:"+"`
+	OtherMatrixIdx int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
-	ThalLay1Idx int32 `inactive:"+"`
+	ThalLay1Idx int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used
-	ThalLay2Idx int32 `inactive:"+"`
+	ThalLay2Idx int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used
-	ThalLay3Idx int32 `inactive:"+"`
+	ThalLay3Idx int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used
-	ThalLay4Idx int32 `inactive:"+"`
+	ThalLay4Idx int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used
-	ThalLay5Idx int32 `inactive:"+"`
+	ThalLay5Idx int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used
-	ThalLay6Idx int32 `inactive:"+"`
+	ThalLay6Idx int32 `edit:"-"`
 
 	pad, pad1, pad2 int32
 }
@@ -64,23 +64,20 @@ type GPLayerTypes int32 //enums:enum
 
 // The GPLayer types
 const (
-	// GPeOut is Outer layer of GPe neurons, receiving inhibition from MtxGo
-	GPeOut GPLayerTypes = iota
+	// GPePr is the set of prototypical GPe neurons, mediating classical NoGo
+	GPePr GPLayerTypes = iota
 
-	// GPeIn is Inner layer of GPe neurons, receiving inhibition from GPeOut and MtxNo
-	GPeIn
-
-	// GPeTA is arkypallidal layer of GPe neurons, receiving inhibition from GPeIn
+	// GPeAk is arkypallidal layer of GPe neurons, receiving inhibition from GPePr
 	// and projecting inhibition to Mtx
-	GPeTA
+	GPeAk
 
 	// GPi is the inner globus pallidus, functionally equivalent to SNr,
-	// receiving from MtxGo and GPeIn, and sending inhibition to VThal
+	// receiving from MtxGo and GPePr, and sending inhibition to VThal
 	GPi
 )
 
 // GPLayer represents a globus pallidus layer, including:
-// GPeOut, GPeIn, GPeTA (arkypallidal), and GPi (see GPType for type).
+// GPePr, GPeAk (arkypallidal), and GPi (see GPType for type).
 // Typically just a single unit per Pool representing a given stripe.
 type GPParams struct {
 
@@ -234,14 +231,14 @@ func (ly *Layer) MatrixDefaults() {
 			pj.Params.PrjnScale.Abs = 1
 			pj.Params.SWts.Init.Mean = 0.75
 			pj.Params.SWts.Init.Var = 0.0
-			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
-				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
-			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
+			if strings.HasSuffix(pj.Send.Name(), "GPePr") { // GPePrToMtx
+				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeAk to reduce oscillations
+			} else if strings.HasSuffix(pj.Send.Name(), "GPeAk") { // GPeAkToMtx
 				if strings.HasSuffix(ly.Nm, "MtxGo") {
 					pj.Params.PrjnScale.Abs = 2 // was .8
 				} else {
 					pj.Params.PrjnScale.Abs = 2
-					// was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
+					// was .3 GPeAkToMtxNo must be weaker to prevent oscillations, even with GPePr offset
 				}
 			}
 		}
@@ -283,6 +280,10 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
+	if ly.Params.GP.GPType == GPeAk {
+		ly.Params.Acts.Init.GeBase = 0.2 // definitely lower in bio data
+	}
+
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
@@ -290,24 +291,20 @@ func (ly *Layer) GPDefaults() {
 		if pj.Send.LayerType() == MatrixLayer {
 			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 slightly better gating
 		} else if pj.Send.LayerType() == STNLayer {
-			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
+			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeAk -- weaker to not oppose GPePr surge
 		}
 		switch ly.Params.GP.GPType {
-		case GPeIn:
-			if pj.Send.LayerType() == MatrixLayer { // MtxNoToGPeIn -- primary NoGo pathway
+		case GPePr:
+			if pj.Send.LayerType() == MatrixLayer { // MtxNoToGPePr -- primary NoGo pathway
 				pj.Params.PrjnScale.Abs = 1
-			} else if pj.Send.LayerType() == GPLayer { // GPeOutToGPeIn
+			} else if pj.Send.LayerType() == GPLayer { // GPeOutToGPePr
 				pj.Params.PrjnScale.Abs = 0.5 // orig 0.3; 0.5 good
 			}
-			if pj.Send.LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
+			if pj.Send.LayerType() == STNLayer { // STNpToGPePr -- stronger to drive burst of activity
 				pj.Params.PrjnScale.Abs = 1 // was 0.5, 1 or 1.2 in boa -- 1 > 0.5
 			}
-		case GPeOut:
-			if pj.Send.LayerType() == STNLayer { // STNpToGPeOut
-				pj.Params.PrjnScale.Abs = 0.1 // 0.1 orig -- old boa had 1.2 -- much lower gating
-			}
-		case GPeTA:
-			if pj.Send.LayerType() == GPLayer { // GPeInToGPeTA
+		case GPeAk:
+			if pj.Send.LayerType() == GPLayer { // GPePrTo
 				pj.Params.PrjnScale.Abs = 1 // was 0.7 orig 0.9 -- just enough to knock down to near-zero at baseline
 			}
 		}
@@ -328,7 +325,7 @@ func (ly *Layer) GPiDefaults() {
 		pj.Params.SWts.Init.Var = 0.25          // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			pj.Params.PrjnScale.Abs = 1 // 0.8 orig; 1 is fine
-		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
+		} else if pj.Send.LayerType() == GPLayer { // GPePrToGPi
 			pj.Params.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
 		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
 			pj.Params.PrjnScale.Abs = 1
@@ -366,33 +363,31 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
 	ly.Params.Learn.NeuroMod.AChDisInhib = 2
 
-	if strings.HasSuffix(ly.Nm, "STNp") {
-		ly.Params.Acts.SKCa.Gbar = 3
-		// otherwise defaults are set to STNp
-	} else {
-		ly.Params.Acts.SKCa.Gbar = 3
-		ly.Params.Acts.SKCa.C50 = 0.4
-		ly.Params.Acts.SKCa.KCaR = 0.4
-		ly.Params.Acts.SKCa.CaRDecayTau = 200
-	}
+	ly.Params.Acts.SKCa.Gbar = 3
+	// otherwise defaults are set to STNp
+	// } else {
+	// 	ly.Params.Acts.SKCa.Gbar = 3
+	// 	ly.Params.Acts.SKCa.C50 = 0.4
+	// 	ly.Params.Acts.SKCa.KCaR = 0.4
+	// 	ly.Params.Acts.SKCa.CaRDecayTau = 200
+	// }
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.25
-		if strings.HasSuffix(ly.Nm, "STNp") {
-			if pj.Send.LayerType() == GPLayer { // GPeInToSTNp
-				pj.Params.PrjnScale.Abs = 0.1
-			} else {
-				pj.Params.PrjnScale.Abs = 2.0 // pfc inputs
-			}
-		} else { // STNs
-			if pj.Send.LayerType() == GPLayer { // GPeInToSTNs
-				pj.Params.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
-			} else {
-				pj.Params.PrjnScale.Abs = 1.0
-			}
+		if pj.Send.LayerType() == GPLayer { // GPePrToSTN
+			pj.Params.PrjnScale.Abs = 0.1
+		} else {
+			pj.Params.PrjnScale.Abs = 2.0 // pfc inputs
 		}
+		// } else { // STNs
+		// 	if pj.Send.LayerType() == GPLayer { // GPePrToSTNs
+		// 		pj.Params.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
+		// 	} else {
+		// 		pj.Params.PrjnScale.Abs = 1.0
+		// 	}
+		// }
 	}
 }
 

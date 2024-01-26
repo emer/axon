@@ -220,17 +220,30 @@ const (
 	// MahpN is accumulating voltage-gated gating value for the medium time scale AHP
 	MahpN
 
+	// Gmahp is medium time scale AHP conductance
+	Gmahp
+
 	// SahpCa is slowly accumulating calcium value that drives the slow AHP
 	SahpCa
 
-	// SahpN is sAHP gating value
+	// SahpN is the sAHP gating value
 	SahpN
 
-	// GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing
+	// Gsahp is slow time scale AHP conductance
+	Gsahp
+
+	// GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick), which produces accommodation / adaptation of firing
 	GknaMed
 
-	// GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing
+	// GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack), which produces accommodation / adaptation of firing
 	GknaSlow
+
+	// KirM is the Kir potassium (K) inwardly rectifying gating value
+	KirM
+
+	// Gkir is the conductance of the potassium (K) inwardly rectifying channel,
+	// which is strongest at low membrane potentials.  Can be modulated by DA.
+	Gkir
 
 	/////////////////////////////////////////
 	// NMDA channels
@@ -588,6 +601,8 @@ var NeuronVarProps = map[string]string{
 	"SahpN":    `desc:"sAHP gating value"`,
 	"GknaMed":  `auto-scale:"+" desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`,
 	"GknaSlow": `auto-scale:"+" desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`,
+	"KirM":     `desc:"the Kir gating value"`,
+	"Gkir":     `desc:"the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials.  Can be modulated by DA."`,
 
 	/////////////////////////////////////////
 	// NMDA channels

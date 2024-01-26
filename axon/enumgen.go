@@ -604,8 +604,8 @@ var _LayerTypesDescMap = map[LayerTypes]string{
 	8:  `PTPredLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that combine modulatory input from PTMaintLayer sustained maintenance and CTLayer dynamic predictive learning that helps to predict state changes during the period of active goal maintenance. This layer provides the primary input to VSPatch US-timing prediction layers, and other layers that require predictive dynamic`,
 	9:  `PTNotMaintLayer implements a tonically active layer that is inhibited by the PTMaintLayer, thereby providing an active representation of the *absence* of maintained PT activity, which is useful for driving appropriate actions (e.g., exploration) when not in goal-engaged mode.`,
 	10: `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`,
-	11: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPeIn signal has had a chance to integrate its MtxNo inputs.`,
-	12: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPeIn, GPeTA (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`,
+	11: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`,
+	12: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`,
 	13: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory projection from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`,
 	14: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`,
 	15: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`,
@@ -1085,11 +1085,11 @@ func (i *NeuronFlags) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _NeuronVarsValues = []NeuronVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79}
+var _NeuronVarsValues = []NeuronVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83}
 
 // NeuronVarsN is the highest valid value
 // for type NeuronVars, plus one.
-const NeuronVarsN NeuronVars = 80
+const NeuronVarsN NeuronVars = 84
 
 // An "invalid array index" compiler error signifies that the constant values have changed.
 // Re-run the enumgen command to generate them again.
@@ -1148,33 +1148,37 @@ func _NeuronVarsNoOp() {
 	_ = x[SSGiDend-(50)]
 	_ = x[Gak-(51)]
 	_ = x[MahpN-(52)]
-	_ = x[SahpCa-(53)]
-	_ = x[SahpN-(54)]
-	_ = x[GknaMed-(55)]
-	_ = x[GknaSlow-(56)]
-	_ = x[GnmdaSyn-(57)]
-	_ = x[Gnmda-(58)]
-	_ = x[GnmdaMaint-(59)]
-	_ = x[GnmdaLrn-(60)]
-	_ = x[NmdaCa-(61)]
-	_ = x[GgabaB-(62)]
-	_ = x[GABAB-(63)]
-	_ = x[GABABx-(64)]
-	_ = x[Gvgcc-(65)]
-	_ = x[VgccM-(66)]
-	_ = x[VgccH-(67)]
-	_ = x[VgccCa-(68)]
-	_ = x[VgccCaInt-(69)]
-	_ = x[SKCaIn-(70)]
-	_ = x[SKCaR-(71)]
-	_ = x[SKCaM-(72)]
-	_ = x[Gsk-(73)]
-	_ = x[Burst-(74)]
-	_ = x[BurstPrv-(75)]
-	_ = x[CtxtGe-(76)]
-	_ = x[CtxtGeRaw-(77)]
-	_ = x[CtxtGeOrig-(78)]
-	_ = x[NrnFlags-(79)]
+	_ = x[Gmahp-(53)]
+	_ = x[SahpCa-(54)]
+	_ = x[SahpN-(55)]
+	_ = x[Gsahp-(56)]
+	_ = x[GknaMed-(57)]
+	_ = x[GknaSlow-(58)]
+	_ = x[KirM-(59)]
+	_ = x[Gkir-(60)]
+	_ = x[GnmdaSyn-(61)]
+	_ = x[Gnmda-(62)]
+	_ = x[GnmdaMaint-(63)]
+	_ = x[GnmdaLrn-(64)]
+	_ = x[NmdaCa-(65)]
+	_ = x[GgabaB-(66)]
+	_ = x[GABAB-(67)]
+	_ = x[GABABx-(68)]
+	_ = x[Gvgcc-(69)]
+	_ = x[VgccM-(70)]
+	_ = x[VgccH-(71)]
+	_ = x[VgccCa-(72)]
+	_ = x[VgccCaInt-(73)]
+	_ = x[SKCaIn-(74)]
+	_ = x[SKCaR-(75)]
+	_ = x[SKCaM-(76)]
+	_ = x[Gsk-(77)]
+	_ = x[Burst-(78)]
+	_ = x[BurstPrv-(79)]
+	_ = x[CtxtGe-(80)]
+	_ = x[CtxtGeRaw-(81)]
+	_ = x[CtxtGeOrig-(82)]
+	_ = x[NrnFlags-(83)]
 }
 
 var _NeuronVarsNameToValueMap = map[string]NeuronVars{
@@ -1284,60 +1288,68 @@ var _NeuronVarsNameToValueMap = map[string]NeuronVars{
 	`gak`:        51,
 	`MahpN`:      52,
 	`mahpn`:      52,
-	`SahpCa`:     53,
-	`sahpca`:     53,
-	`SahpN`:      54,
-	`sahpn`:      54,
-	`GknaMed`:    55,
-	`gknamed`:    55,
-	`GknaSlow`:   56,
-	`gknaslow`:   56,
-	`GnmdaSyn`:   57,
-	`gnmdasyn`:   57,
-	`Gnmda`:      58,
-	`gnmda`:      58,
-	`GnmdaMaint`: 59,
-	`gnmdamaint`: 59,
-	`GnmdaLrn`:   60,
-	`gnmdalrn`:   60,
-	`NmdaCa`:     61,
-	`nmdaca`:     61,
-	`GgabaB`:     62,
-	`ggabab`:     62,
-	`GABAB`:      63,
-	`gabab`:      63,
-	`GABABx`:     64,
-	`gababx`:     64,
-	`Gvgcc`:      65,
-	`gvgcc`:      65,
-	`VgccM`:      66,
-	`vgccm`:      66,
-	`VgccH`:      67,
-	`vgcch`:      67,
-	`VgccCa`:     68,
-	`vgccca`:     68,
-	`VgccCaInt`:  69,
-	`vgcccaint`:  69,
-	`SKCaIn`:     70,
-	`skcain`:     70,
-	`SKCaR`:      71,
-	`skcar`:      71,
-	`SKCaM`:      72,
-	`skcam`:      72,
-	`Gsk`:        73,
-	`gsk`:        73,
-	`Burst`:      74,
-	`burst`:      74,
-	`BurstPrv`:   75,
-	`burstprv`:   75,
-	`CtxtGe`:     76,
-	`ctxtge`:     76,
-	`CtxtGeRaw`:  77,
-	`ctxtgeraw`:  77,
-	`CtxtGeOrig`: 78,
-	`ctxtgeorig`: 78,
-	`NrnFlags`:   79,
-	`nrnflags`:   79,
+	`Gmahp`:      53,
+	`gmahp`:      53,
+	`SahpCa`:     54,
+	`sahpca`:     54,
+	`SahpN`:      55,
+	`sahpn`:      55,
+	`Gsahp`:      56,
+	`gsahp`:      56,
+	`GknaMed`:    57,
+	`gknamed`:    57,
+	`GknaSlow`:   58,
+	`gknaslow`:   58,
+	`KirM`:       59,
+	`kirm`:       59,
+	`Gkir`:       60,
+	`gkir`:       60,
+	`GnmdaSyn`:   61,
+	`gnmdasyn`:   61,
+	`Gnmda`:      62,
+	`gnmda`:      62,
+	`GnmdaMaint`: 63,
+	`gnmdamaint`: 63,
+	`GnmdaLrn`:   64,
+	`gnmdalrn`:   64,
+	`NmdaCa`:     65,
+	`nmdaca`:     65,
+	`GgabaB`:     66,
+	`ggabab`:     66,
+	`GABAB`:      67,
+	`gabab`:      67,
+	`GABABx`:     68,
+	`gababx`:     68,
+	`Gvgcc`:      69,
+	`gvgcc`:      69,
+	`VgccM`:      70,
+	`vgccm`:      70,
+	`VgccH`:      71,
+	`vgcch`:      71,
+	`VgccCa`:     72,
+	`vgccca`:     72,
+	`VgccCaInt`:  73,
+	`vgcccaint`:  73,
+	`SKCaIn`:     74,
+	`skcain`:     74,
+	`SKCaR`:      75,
+	`skcar`:      75,
+	`SKCaM`:      76,
+	`skcam`:      76,
+	`Gsk`:        77,
+	`gsk`:        77,
+	`Burst`:      78,
+	`burst`:      78,
+	`BurstPrv`:   79,
+	`burstprv`:   79,
+	`CtxtGe`:     80,
+	`ctxtge`:     80,
+	`CtxtGeRaw`:  81,
+	`ctxtgeraw`:  81,
+	`CtxtGeOrig`: 82,
+	`ctxtgeorig`: 82,
+	`NrnFlags`:   83,
+	`nrnflags`:   83,
 }
 
 var _NeuronVarsDescMap = map[NeuronVars]string{
@@ -1394,33 +1406,37 @@ var _NeuronVarsDescMap = map[NeuronVars]string{
 	50: `SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)`,
 	51: `Gak is conductance of A-type K potassium channels`,
 	52: `MahpN is accumulating voltage-gated gating value for the medium time scale AHP`,
-	53: `SahpCa is slowly accumulating calcium value that drives the slow AHP`,
-	54: `SahpN is sAHP gating value`,
-	55: `GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing`,
-	56: `GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing`,
-	57: `GnmdaSyn is integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant`,
-	58: `Gnmda is net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`,
-	59: `GnmdaMaint is net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`,
-	60: `GnmdaLrn is learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning`,
-	61: `NmdaCa is NMDA calcium computed from GnmdaLrn, drives learning via CaM`,
-	62: `GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.`,
-	63: `GABAB is GABA-B / GIRK activation -- time-integrated value with rise and decay time constants`,
-	64: `GABABx is GABA-B / GIRK internal drive variable -- gets the raw activation and decays`,
-	65: `Gvgcc is conductance (via Ca) for VGCC voltage gated calcium channels`,
-	66: `VgccM is activation gate of VGCC channels`,
-	67: `VgccH inactivation gate of VGCC channels`,
-	68: `VgccCa is instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc`,
-	69: `VgccCaInt time-integrated VGCC calcium flux -- this is actually what drives learning`,
-	70: `SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold`,
-	71: `SKCaR released amount of intracellular calcium, from SKCaIn, as a function of spiking events. this can bind to SKCa channels and drive K currents.`,
-	72: `SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.`,
-	73: `Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.`,
-	74: `Burst is 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers`,
-	75: `BurstPrv is previous Burst bursting activation from prior time step -- used for context-based learning`,
-	76: `CtxtGe is context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`,
-	77: `CtxtGeRaw is raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`,
-	78: `CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.`,
-	79: `NrnFlags are bit flags for binary state variables, which are converted to / from uint32. These need to be in Vars because they can be differential per data (for ext inputs) and are writable (indexes are read only).`,
+	53: `Gmahp is medium time scale AHP conductance`,
+	54: `SahpCa is slowly accumulating calcium value that drives the slow AHP`,
+	55: `SahpN is the sAHP gating value`,
+	56: `Gsahp is slow time scale AHP conductance`,
+	57: `GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick), which produces accommodation / adaptation of firing`,
+	58: `GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack), which produces accommodation / adaptation of firing`,
+	59: `KirM is the Kir potassium (K) inwardly rectifying gating value`,
+	60: `Gkir is the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials. Can be modulated by DA.`,
+	61: `GnmdaSyn is integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant`,
+	62: `Gnmda is net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`,
+	63: `GnmdaMaint is net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`,
+	64: `GnmdaLrn is learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning`,
+	65: `NmdaCa is NMDA calcium computed from GnmdaLrn, drives learning via CaM`,
+	66: `GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.`,
+	67: `GABAB is GABA-B / GIRK activation -- time-integrated value with rise and decay time constants`,
+	68: `GABABx is GABA-B / GIRK internal drive variable -- gets the raw activation and decays`,
+	69: `Gvgcc is conductance (via Ca) for VGCC voltage gated calcium channels`,
+	70: `VgccM is activation gate of VGCC channels`,
+	71: `VgccH inactivation gate of VGCC channels`,
+	72: `VgccCa is instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc`,
+	73: `VgccCaInt time-integrated VGCC calcium flux -- this is actually what drives learning`,
+	74: `SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold`,
+	75: `SKCaR released amount of intracellular calcium, from SKCaIn, as a function of spiking events. this can bind to SKCa channels and drive K currents.`,
+	76: `SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.`,
+	77: `Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.`,
+	78: `Burst is 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers`,
+	79: `BurstPrv is previous Burst bursting activation from prior time step -- used for context-based learning`,
+	80: `CtxtGe is context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`,
+	81: `CtxtGeRaw is raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`,
+	82: `CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.`,
+	83: `NrnFlags are bit flags for binary state variables, which are converted to / from uint32. These need to be in Vars because they can be differential per data (for ext inputs) and are writable (indexes are read only).`,
 }
 
 var _NeuronVarsMap = map[NeuronVars]string{
@@ -1477,33 +1493,37 @@ var _NeuronVarsMap = map[NeuronVars]string{
 	50: `SSGiDend`,
 	51: `Gak`,
 	52: `MahpN`,
-	53: `SahpCa`,
-	54: `SahpN`,
-	55: `GknaMed`,
-	56: `GknaSlow`,
-	57: `GnmdaSyn`,
-	58: `Gnmda`,
-	59: `GnmdaMaint`,
-	60: `GnmdaLrn`,
-	61: `NmdaCa`,
-	62: `GgabaB`,
-	63: `GABAB`,
-	64: `GABABx`,
-	65: `Gvgcc`,
-	66: `VgccM`,
-	67: `VgccH`,
-	68: `VgccCa`,
-	69: `VgccCaInt`,
-	70: `SKCaIn`,
-	71: `SKCaR`,
-	72: `SKCaM`,
-	73: `Gsk`,
-	74: `Burst`,
-	75: `BurstPrv`,
-	76: `CtxtGe`,
-	77: `CtxtGeRaw`,
-	78: `CtxtGeOrig`,
-	79: `NrnFlags`,
+	53: `Gmahp`,
+	54: `SahpCa`,
+	55: `SahpN`,
+	56: `Gsahp`,
+	57: `GknaMed`,
+	58: `GknaSlow`,
+	59: `KirM`,
+	60: `Gkir`,
+	61: `GnmdaSyn`,
+	62: `Gnmda`,
+	63: `GnmdaMaint`,
+	64: `GnmdaLrn`,
+	65: `NmdaCa`,
+	66: `GgabaB`,
+	67: `GABAB`,
+	68: `GABABx`,
+	69: `Gvgcc`,
+	70: `VgccM`,
+	71: `VgccH`,
+	72: `VgccCa`,
+	73: `VgccCaInt`,
+	74: `SKCaIn`,
+	75: `SKCaR`,
+	76: `SKCaM`,
+	77: `Gsk`,
+	78: `Burst`,
+	79: `BurstPrv`,
+	80: `CtxtGe`,
+	81: `CtxtGeRaw`,
+	82: `CtxtGeOrig`,
+	83: `NrnFlags`,
 }
 
 // String returns the string representation
@@ -1832,45 +1852,40 @@ func (i *NeuronIdxs) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _GPLayerTypesValues = []GPLayerTypes{0, 1, 2, 3}
+var _GPLayerTypesValues = []GPLayerTypes{0, 1, 2}
 
 // GPLayerTypesN is the highest valid value
 // for type GPLayerTypes, plus one.
-const GPLayerTypesN GPLayerTypes = 4
+const GPLayerTypesN GPLayerTypes = 3
 
 // An "invalid array index" compiler error signifies that the constant values have changed.
 // Re-run the enumgen command to generate them again.
 func _GPLayerTypesNoOp() {
 	var x [1]struct{}
-	_ = x[GPeOut-(0)]
-	_ = x[GPeIn-(1)]
-	_ = x[GPeTA-(2)]
-	_ = x[GPi-(3)]
+	_ = x[GPePr-(0)]
+	_ = x[GPeAk-(1)]
+	_ = x[GPi-(2)]
 }
 
 var _GPLayerTypesNameToValueMap = map[string]GPLayerTypes{
-	`GPeOut`: 0,
-	`gpeout`: 0,
-	`GPeIn`:  1,
-	`gpein`:  1,
-	`GPeTA`:  2,
-	`gpeta`:  2,
-	`GPi`:    3,
-	`gpi`:    3,
+	`GPePr`: 0,
+	`gpepr`: 0,
+	`GPeAk`: 1,
+	`gpeak`: 1,
+	`GPi`:   2,
+	`gpi`:   2,
 }
 
 var _GPLayerTypesDescMap = map[GPLayerTypes]string{
-	0: `GPeOut is Outer layer of GPe neurons, receiving inhibition from MtxGo`,
-	1: `GPeIn is Inner layer of GPe neurons, receiving inhibition from GPeOut and MtxNo`,
-	2: `GPeTA is arkypallidal layer of GPe neurons, receiving inhibition from GPeIn and projecting inhibition to Mtx`,
-	3: `GPi is the inner globus pallidus, functionally equivalent to SNr, receiving from MtxGo and GPeIn, and sending inhibition to VThal`,
+	0: `GPePr is the set of prototypical GPe neurons, mediating classical NoGo`,
+	1: `GPeAk is arkypallidal layer of GPe neurons, receiving inhibition from GPePr and projecting inhibition to Mtx`,
+	2: `GPi is the inner globus pallidus, functionally equivalent to SNr, receiving from MtxGo and GPePr, and sending inhibition to VThal`,
 }
 
 var _GPLayerTypesMap = map[GPLayerTypes]string{
-	0: `GPeOut`,
-	1: `GPeIn`,
-	2: `GPeTA`,
-	3: `GPi`,
+	0: `GPePr`,
+	1: `GPeAk`,
+	2: `GPi`,
 }
 
 // String returns the string representation

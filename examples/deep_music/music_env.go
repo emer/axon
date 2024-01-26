@@ -46,7 +46,7 @@ type MusicEnv struct {
 	MaxSteps int
 
 	// time offset for data parallel = Song.Rows / (NData+1)
-	DiOffset int `inactive:"+"`
+	DiOffset int `edit:"-"`
 
 	// number of units per localist note value
 	UnitsPer int

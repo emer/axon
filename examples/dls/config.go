@@ -27,7 +27,7 @@ type EnvConfig struct {
 	PctCortexNEpc int `default:"1"`
 
 	// proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical
-	PctCortex float32 `inactive:"+"`
+	PctCortex float32 `edit:"-"`
 
 	// for testing, force each env to use same seed
 	SameSeed bool

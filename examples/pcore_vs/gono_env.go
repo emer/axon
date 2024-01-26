@@ -73,25 +73,25 @@ type GoNoEnv struct {
 	Rand erand.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `inactive:"+"`
+	RndSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
 	States map[string]*etensor.Float32
 
 	// true if Pos - Neg > Thr
-	Should bool `inactive:"+"`
+	Should bool `edit:"-"`
 
 	// true if model gated on this trial
-	Gated bool `inactive:"+"`
+	Gated bool `edit:"-"`
 
 	// true if gated == should
-	Match bool `inactive:"+"`
+	Match bool `edit:"-"`
 
 	// reward based on match between Should vs. Gated
-	Rew float32 `inactive:"+"`
+	Rew float32 `edit:"-"`
 
 	// input counter -- gives PFC network something to do
-	InCtr int `inactive:"+"`
+	InCtr int `edit:"-"`
 }
 
 func (ev *GoNoEnv) Name() string {

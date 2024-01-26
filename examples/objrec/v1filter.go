@@ -23,7 +23,7 @@ type Vis struct { //gti:add
 	V1sGabor gabor.Filter
 
 	// geometry of input, output for V1 simple-cell processing
-	V1sGeom vfilter.Geom `inactive:"+" view:"inline"`
+	V1sGeom vfilter.Geom `edit:"-" view:"inline"`
 
 	// neighborhood inhibition for V1s -- each unit gets inhibition from same feature in nearest orthogonal neighbors -- reduces redundancy of feature code
 	V1sNeighInhib kwta.NeighInhib

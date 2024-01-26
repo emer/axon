@@ -113,7 +113,7 @@ type Sim struct {
 	Params emer.NetParams `view:"inline"`
 
 	// current cycle of updating
-	Cycle int `inactive:"+"`
+	Cycle int `edit:"-"`
 
 	// netview update parameters
 	ViewUpdt netview.ViewUpdt `view:"inline"`

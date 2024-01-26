@@ -239,7 +239,7 @@ type USParams struct {
 	PVnegWts []float32
 
 	// computed estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst
-	USposEst []float32 `inactive:"+"`
+	USposEst []float32 `edit:"-"`
 }
 
 func (us *USParams) Alloc(nPos, nNeg int) {
@@ -450,10 +450,10 @@ func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
 type PVLV struct {
 
 	// number of possible positive US states and corresponding drives -- the first is always reserved for novelty / curiosity.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
-	NPosUSs uint32 `inactive:"+"`
+	NPosUSs uint32 `edit:"-"`
 
 	// number of possible negative US states -- is reserved for accumulated time, the accumulated effort cost.  Must be set programmatically via SetNUSs method, which allocates corresponding parameters.
-	NNegUSs uint32 `inactive:"+"`
+	NNegUSs uint32 `edit:"-"`
 
 	// parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst.
 	Drive DriveParams

@@ -169,14 +169,12 @@ func (ss *Sim) TimeRun() { //gti:add
 
 		var ninf, tau float32
 		mp.NinfTauFmV(v, &ninf, &tau)
-		dn := mp.DNFmV(vnorm, n)
-		g := mp.GmAHP(n)
+		g := mp.GmAHP(vnorm, &n)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))
 		dt.SetCellFloat("GmAHP", ti, float64(g))
 		dt.SetCellFloat("N", ti, float64(n))
-		dt.SetCellFloat("dN", ti, float64(dn))
 		dt.SetCellFloat("Ninf", ti, float64(ninf))
 		dt.SetCellFloat("Tau", ti, float64(tau))
 		dt.SetCellFloat("Kna", ti, float64(kna))
@@ -196,7 +194,6 @@ func (ss *Sim) TimeRun() { //gti:add
 				v = ss.TimeVend
 			}
 		}
-		n += dn
 	}
 	if ss.TimePlot != nil {
 		ss.TimePlot.UpdatePlot()
@@ -213,7 +210,6 @@ func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
 		{"V", etensor.FLOAT64, nil, nil},
 		{"GmAHP", etensor.FLOAT64, nil, nil},
 		{"N", etensor.FLOAT64, nil, nil},
-		{"dN", etensor.FLOAT64, nil, nil},
 		{"Ninf", etensor.FLOAT64, nil, nil},
 		{"Tau", etensor.FLOAT64, nil, nil},
 		{"Kna", etensor.FLOAT64, nil, nil},
@@ -230,7 +226,6 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("GmAHP", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("N", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dN", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Ninf", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Tau", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Kna", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)

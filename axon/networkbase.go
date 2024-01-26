@@ -67,22 +67,22 @@ type NetworkBase struct {
 	MetaData map[string]string
 
 	// if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called.
-	UseGPUOrder bool `inactive:"+"`
+	UseGPUOrder bool `edit:"-"`
 
 	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
 	NetIdx uint32 `view:"-"`
 
 	// maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer.
-	MaxDelay uint32 `inactive:"+" view:"-"`
+	MaxDelay uint32 `edit:"-" view:"-"`
 
 	// maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount during Build process, and this value reflects that.
-	MaxData uint32 `inactive:"+"`
+	MaxData uint32 `edit:"-"`
 
 	// total number of neurons
-	NNeurons uint32 `inactive:"+"`
+	NNeurons uint32 `edit:"-"`
 
 	// total number of synapses
-	NSyns uint32 `inactive:"+"`
+	NSyns uint32 `edit:"-"`
 
 	// storage for global vars
 	Globals []float32 `view:"-"`
@@ -151,7 +151,7 @@ type NetworkBase struct {
 	Rand erand.SysRand `view:"-"`
 
 	// random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights
-	RndSeed int64 `inactive:"+"`
+	RndSeed int64 `edit:"-"`
 
 	// number of threads to use for parallel processing
 	NThreads int
