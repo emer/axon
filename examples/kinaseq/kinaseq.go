@@ -333,7 +333,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 	}
 }
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() *gi.Window {
 	width := 1600
 	height := 1200
@@ -400,7 +400,7 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
+			gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

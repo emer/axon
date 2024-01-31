@@ -379,7 +379,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 }
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Neuron"
 	ss.GUI.MakeBody(ss, "neuron", title, `This simulation illustrates the basic properties of neural spiking and rate-code activation, reflecting a balance of excitatory and inhibitory influences (including leak and synaptic inhibition). See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
@@ -452,7 +452,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
 			},
 		})
 	})
@@ -460,7 +460,7 @@ func (ss *Sim) ConfigGUI() {
 
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

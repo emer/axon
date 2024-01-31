@@ -966,7 +966,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "DLS: Dorsal Lateral Striatum motor learning"
 	ss.GUI.MakeBody(ss, "dls", title, `This project tests motor sequence learning in the DLS dorsal lateral striatum and associated motor cortex. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
@@ -1027,14 +1027,14 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/dls/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/dls/README.md")
 			},
 		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
@@ -1046,7 +1046,6 @@ func (ss *Sim) RunGUI() {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
 	eb := ss.EnvGUI.ConfigWorldGUI(ev)
-	eb.Scene.App = ss.GUI.Body.Scene.App
 	eb.NewWindow().Run()
 	ss.GUI.Body.NewWindow().Run().Wait()
 }

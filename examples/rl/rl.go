@@ -403,7 +403,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Reinforcement Learning"
 	ss.GUI.MakeBody(ss, "rl", title, `rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
@@ -433,7 +433,6 @@ func (ss *Sim) ConfigGUI() {
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Trial Log", Icon: icons.Update,
-			Tooltip: icons.Reset trial log .",
 			Func: func() {
 				ss.Logs.ResetLog(etime.Train, etime.Trial)
 				ss.GUI.UpdatePlot(etime.Train, etime.Trial)
@@ -445,14 +444,14 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
 			},
 		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

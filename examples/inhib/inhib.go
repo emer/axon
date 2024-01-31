@@ -512,7 +512,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Axon Inhibition Test"
 	ss.GUI.MakeBody(ss, "inhib", title, `This tests inhibition based on interneurons and inhibition functions. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
@@ -567,7 +567,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/inhib/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/inhib/README.md")
 			},
 		})
 	})

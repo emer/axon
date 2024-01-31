@@ -776,7 +776,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Axon Hippocampus"
 	ss.GUI.MakeBody(ss, "hip", title, `Benchmarking`)
@@ -840,7 +840,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/hip/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/hip/README.md")
 			},
 		})
 	})
@@ -848,7 +848,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

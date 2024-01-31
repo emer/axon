@@ -616,7 +616,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Axon Random Associator"
 	ss.GUI.MakeBody(ss, "ra25x", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
@@ -671,7 +671,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25x/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25x/README.md")
 			},
 		})
 	})
@@ -679,7 +679,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

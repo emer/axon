@@ -605,7 +605,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))
 }
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "DeepAxon Move Prediction"
 	ss.GUI.MakeBody(ss, "DeepMove", title, `This demonstrates a basic DeepAxon model on move prediction. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
@@ -666,14 +666,14 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/deep_move/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/deep_move/README.md")
 			},
 		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

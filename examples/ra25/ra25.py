@@ -127,7 +127,7 @@ def NewRndSeedCB(recv, send, sig, data):
     TheSim.NewRndSeed()
 
 def ReadmeCB(recv, send, sig, data):
-    gi.OpenURL("https://github.com/emer/leabra/blob/master/examples/ra25/README.md")
+    gi.TheApp.OpenURL("https://github.com/emer/leabra/blob/master/examples/ra25/README.md")
 
 def FilterSSE(et, row):
     return etable.Table(handle=et).CellFloat("SSE", row) > 0 # include error trials    

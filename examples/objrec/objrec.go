@@ -660,7 +660,7 @@ func (ss *Sim) ConfigActRFs() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Object Recognition"
 	ss.GUI.MakeBody(ss, "objrec", title, `This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images. See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch6/objrec/README.md">README.md on GitHub</a>.</p>`)
@@ -737,7 +737,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/bench_objrec/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/bench_objrec/README.md")
 			},
 		})
 	})
@@ -745,7 +745,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		vgpu.Debug = ss.Config.Debug
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

@@ -217,9 +217,9 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() *gi.Body {
-	b := gi.NewAppBody("skca_plot").SetTitle("Plotting Equations")
+	b := gi.NewBody("Skca Plot")
 
 	split := gi.NewSplits(b, "split")
 	sv := giv.NewStructView(split, "sv")

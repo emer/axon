@@ -726,7 +726,7 @@ func (ss *Sim) BlockStats() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-// ConfigGUI configures the Cogent Core gui interface for this simulation,
+// ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Axon PVLV"
 	ss.GUI.MakeBody(ss, "pvlv", title, `This is the PVLV test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
@@ -757,7 +757,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
 		cb := gi.NewChooser(tb, "runs")
-		cb.SetStrings(cond.RunNames, false)
+		cb.SetStrings(cond.RunNames)
 		ri := 0
 		for i, rn := range cond.RunNames {
 			if rn == ss.Config.Env.RunName {
@@ -767,7 +767,7 @@ func (ss *Sim) ConfigGUI() {
 		}
 		cb.SelectItem(ri)
 		cb.OnChange(func(e events.Event) {
-			ss.Config.Env.RunName = cb.CurVal.(string)
+			ss.Config.Env.RunName = cb.CurrentItem.Value.(string)
 			ss.InitEnvRun()
 		})
 
@@ -826,7 +826,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
 			},
 		})
 	})
@@ -835,7 +835,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.AddQuitCleanFunc(func() {
+		gi.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
