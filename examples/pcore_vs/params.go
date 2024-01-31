@@ -74,12 +74,16 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+				"Prjn.PrjnScale.Abs": "3.0", // was 4
 			}},
 		// All the BG connections:
+		{Sel: ".ACCToMtx", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2",
+			}},
 		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5",
+				"Prjn.PrjnScale.Abs": "3",
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
@@ -111,7 +115,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
+				"Prjn.PrjnScale.Abs": "3",
 			}},
 		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{

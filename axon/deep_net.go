@@ -336,7 +336,11 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 
 	net.ConnectPTMaintSelf(pt, ptSelf, prjnClass)
 
-	pt.PlaceBehind(ct, space)
+	if ct != nil {
+		pt.PlaceBehind(ct, space)
+	} else {
+		pt.PlaceBehind(super, space)
+	}
 	thal.PlaceBehind(pt, space)
 
 	return

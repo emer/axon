@@ -14,9 +14,6 @@ type EnvConfig struct {
 
 	// test with no ACC activity at all -- params need to prevent gating in this situation too
 	ZeroTest bool
-
-	// number of pools in BG / PFC -- if > 1 then does selection among options presented in parallel (not yet supported / tested) -- otherwise does go / no on a single optoin (default)
-	NPools int `default:"1"`
 }
 
 // ParamConfig has config parameters related to sim params

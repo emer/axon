@@ -140,7 +140,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
-		trn.Config(etime.Train, ss.Config.Env.NPools, 73+int64(di)*73)
+		trn.Config(etime.Train, 73+int64(di)*73)
 		trn.Validate()
 
 		tst.Nm = env.ModeDi(etime.Test, di)
@@ -148,7 +148,7 @@ func (ss *Sim) ConfigEnv() {
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 		}
-		tst.Config(etime.Test, ss.Config.Env.NPools, 181+int64(di)*181)
+		tst.Config(etime.Test, 181+int64(di)*181)
 		tst.Validate()
 
 		trn.Init(0)
@@ -176,12 +176,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	np := ev.NPools
+	np := 1
 	nuY := ev.NUnitsY
 	nuX := ev.NUnitsX
 	space := float32(2)
 
-	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 	_ = full
@@ -198,52 +197,36 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	urge := net.AddUrgencyLayer(5, 4)
 	_ = urge
 
-	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
-	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
+	accPos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
+	accNeg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
 
-	inly, inP := net.AddInputPulv4D("In", 1, np, nuY, nuX, space)
+	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, space)
+	_ = accPosPT
 
-	pfc, pfcCT := net.AddSuperCT4D("PFC", "PFCPrjn", 1, np, nuY, nuX, space, one2one)
-	// prjns are: super->PT, PT self, CT-> thal
-	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", "PFCPrjn", one2one, pone2one, space)
-	_ = pfcPT
-	pfcCT.SetClass("PFC CTCopy")
-	pfcCT.CTDefParamsMedium() // FSA
+	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn)
+	net.ConnectLayers(accNeg, stn, full, axon.ForwardPrjn)
 
-	net.ConnectLayers(inly, pfc, pone2one, axon.ForwardPrjn)
-	net.ConnectToPulv(pfc, pfcCT, inP, pone2one, pone2one, "PFCPrjn")
+	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPrjn).SetClass("BgFixed")
 
-	net.ConnectLayers(pfc, stn, pone2one, axon.ForwardPrjn)
+	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
+	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
 
-	net.ConnectLayers(gpi, pfcVM, pone2one, axon.InhibPrjn).SetClass("BgFixed")
-
-	mtxGo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
-	mtxNo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
-
-	net.ConnectToMatrix(accpos, mtxGo, pone2one).SetClass("ACCPosToGo")
-	net.ConnectToMatrix(accneg, mtxNo, pone2one).SetClass("ACCNegToNo")
+	net.ConnectToMatrix(accPos, mtxGo, full).SetClass("ACCToMtx")
+	net.ConnectToMatrix(accNeg, mtxNo, full).SetClass("ACCToMtx")
 	// cross connections:
-	net.ConnectToMatrix(accpos, mtxNo, pone2one).SetClass("ACCPosToNo")
-	net.ConnectToMatrix(accneg, mtxGo, pone2one).SetClass("ACCNegToGo")
-
-	// pfc just has irrelevant info:
-	// net.ConnectToMatrix(pfc, mtxGo, pone2one)
-	// net.ConnectToMatrix(pfc, mtxNo, pone2one)
+	net.ConnectToMatrix(accPos, mtxNo, full).SetClass("ACCToMtx")
+	net.ConnectToMatrix(accNeg, mtxGo, full).SetClass("ACCToMtx")
 
 	net.ConnectToMatrix(urge, mtxGo, full)
 
-	pfcVM.PlaceRightOf(gpi, space)
-	snc.PlaceRightOf(pfcVM, space)
+	accPosVM.PlaceRightOf(gpi, space)
+	snc.PlaceRightOf(accPosVM, space)
 	urge.PlaceRightOf(snc, space)
 	gpeAk.PlaceAbove(gpi)
 	stn.PlaceRightOf(gpePr, space)
 	mtxGo.PlaceAbove(gpeAk)
-	accpos.PlaceAbove(mtxGo)
-	accneg.PlaceRightOf(accpos, space)
-	inly.PlaceRightOf(accneg, space)
-	pfc.PlaceRightOf(inly, space)
-	pfcCT.PlaceRightOf(pfc, space)
-	pfcPT.PlaceBehind(pfc, space)
+	accPos.PlaceAbove(mtxGo)
+	accNeg.PlaceRightOf(accPos, space)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -373,9 +356,9 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 	net := ss.Net
 	ss.Net.InitExt(ctx)
 
-	lays := []string{"ACCPos", "ACCNeg", "In"} // , "SNc"}
+	lays := []string{"ACCPos", "ACCNeg"} // , "SNc"}
 	if ss.Config.Env.ZeroTest {
-		lays = []string{"In"}
+		lays = nil
 	}
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
@@ -384,11 +367,12 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 		ev.Trial.Set(idx)
 		if trial == 0 {
 			ev.Step()
-		}
-		for _, lnm := range lays {
-			ly := net.AxonLayerByName(lnm)
-			itsr := ev.State(lnm)
-			ly.ApplyExt(ctx, uint32(di), itsr)
+		} else {
+			for _, lnm := range lays {
+				ly := net.AxonLayerByName(lnm)
+				itsr := ev.State(lnm)
+				ly.ApplyExt(ctx, uint32(di), itsr)
+			}
 		}
 		ss.ApplyPVLV(ev, trial, uint32(di))
 	}
@@ -441,7 +425,7 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 func (ss *Sim) GatedAction() {
 	ctx := &ss.Context
 	mtxly := ss.Net.AxonLayerByName("MtxGo")
-	vmly := ss.Net.AxonLayerByName("PFCVM")
+	vmly := ss.Net.AxonLayerByName("ACCPosVM")
 	nan := mat32.NaN()
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
@@ -453,11 +437,11 @@ func (ss *Sim) GatedAction() {
 		ev.Action(action, nil)
 		rt := vmly.LayerVals(uint32(di)).RT
 		if rt > 0 {
-			ss.Stats.SetFloat32Di("PFCVM_RT", di, rt/200)
+			ss.Stats.SetFloat32Di("ACCPosVM_RT", di, rt/200)
 		} else {
-			ss.Stats.SetFloat32Di("PFCVM_RT", di, nan)
+			ss.Stats.SetFloat32Di("ACCPosVM_RT", di, nan)
 		}
-		ss.Stats.SetFloat32Di("PFCVM_ActAvg", di, vmly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
+		ss.Stats.SetFloat32Di("ACCPosVM_ActAvg", di, vmly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
 		ss.Stats.SetFloat32Di("MtxGo_ActAvg", di, mtxly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
 	}
 }
@@ -490,8 +474,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("Match", 0)
 	ss.Stats.SetFloat("Rew", 0)
-	ss.Stats.SetFloat("PFCVM_RT", 0.0)
-	ss.Stats.SetFloat("PFCVM_ActAvg", 0.0)
+	ss.Stats.SetFloat("ACCPosVM_RT", 0.0)
+	ss.Stats.SetFloat("ACCPosVM_ActAvg", 0.0)
 	ss.Stats.SetFloat("MtxGo_ActAvg", 0.0)
 	ss.Stats.SetFloat("ACCPos", 0.0)
 	ss.Stats.SetFloat("ACCNeg", 0.0)
@@ -535,8 +519,8 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("Should", num.FromBool[float32](ev.Should))
 	ss.Stats.SetFloat32("Match", num.FromBool[float32](ev.Match))
 	ss.Stats.SetFloat32("Rew", ev.Rew)
-	ss.Stats.SetFloat32("PFCVM_RT", ss.Stats.Float32Di("PFCVM_RT", di))
-	ss.Stats.SetFloat32("PFCVM_ActAvg", ss.Stats.Float32Di("PFCVM_ActAvg", di))
+	ss.Stats.SetFloat32("ACCPosVM_RT", ss.Stats.Float32Di("ACCPosVM_RT", di))
+	ss.Stats.SetFloat32("ACCPosVM_ActAvg", ss.Stats.Float32Di("ACCPosVM_ActAvg", di))
 	ss.Stats.SetFloat32("MtxGo_ActAvg", ss.Stats.Float32Di("MtxGo_ActAvg", di))
 }
 
@@ -558,8 +542,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("Gated", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("Should", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("Match", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("PFCVM_RT", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("PFCVM_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("ACCPosVM_RT", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("ACCPosVM_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("MtxGo_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
 	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
@@ -567,7 +551,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
-	// ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
+	// ss.Logs.PlotItems("MtxGo_ActAvg", "ACCPosVM_ActAvg", "ACCPosVM_RT", "Gated", "Should", "Match", "Rew")
 	ss.Logs.PlotItems("Gated", "Should", "Match", "Rew")
 
 	ss.Logs.CreateTables()
