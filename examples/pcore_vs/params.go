@@ -19,12 +19,13 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":   "false",
-				"Layer.Inhib.Layer.Gi":  ".5",
-				"Layer.Inhib.Layer.FB":  "0",
-				"Layer.Matrix.GateThr":  "0.05", // .05 default
-				"Layer.Acts.Kir.Gbar":   "10",
-				"Layer.Acts.GabaB.Gbar": "0",
+				"Layer.Inhib.Pool.On":               "false",
+				"Layer.Inhib.Layer.Gi":              ".5",
+				"Layer.Inhib.Layer.FB":              "0",
+				"Layer.Matrix.GateThr":              "0.05", // .05 default
+				"Layer.Acts.Kir.Gbar":               "10",
+				"Layer.Acts.GabaB.Gbar":             "0",
+				"Layer.Learn.NeuroMod.AChLRate.Mod": "0",
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
@@ -41,7 +42,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#GPi", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.2",
+				"Layer.Acts.Init.GeBase": "0.3",
 				"Layer.Acts.Init.GeVar":  "0.1",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
@@ -52,11 +53,11 @@ var ParamSets = netparams.Sets{
 			}},
 		////////////////////////////////////////////
 		// Prjns
-		{Sel: ".MatrixPrjn", Desc: "",
+		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.Matrix.NoGateLRate":   "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
 				"Prjn.Learn.LRate.Base":     "0.02", // .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.75",
+				"Prjn.Learn.Trace.LearnThr": "0.05",
 			}},
 		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{
@@ -79,7 +80,7 @@ var ParamSets = netparams.Sets{
 		// All the BG connections:
 		{Sel: ".ACCToMtx", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Prjn.PrjnScale.Abs": "1.5", // 1.5 min -- 1 too low
 			}},
 		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
 			Params: params.Params{
@@ -103,7 +104,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5",
+				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
 			}},
 		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
@@ -115,7 +116,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3",
+				"Prjn.PrjnScale.Abs": ".2", // .1 too weak
 			}},
 		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
@@ -123,11 +124,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#STNToGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Abs": ".2",
 			}},
-		{Sel: "#GPiToPFCVM", Desc: "final inhibition",
+		{Sel: "#GPiToACCPosVM", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2 default
+				"Prjn.PrjnScale.Abs": "5", // needs to be very strong -- 5
 			}},
 	},
 }

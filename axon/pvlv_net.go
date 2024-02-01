@@ -603,7 +603,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	}
 
 	// neg val goes to nogo
-	pj = net.ConnectToMatrix(accNegVal, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(accNegVal, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
@@ -660,12 +660,12 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectToVSPatch(accNegValPTp, vSpatch, full)
 
 	// same prjns to stn as mtxgo
-	pj = net.ConnectToMatrix(usPos, vSmtxGo, p1to1)
+	pj = net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "2", // strong
 		"Prjn.PrjnScale.Rel": ".2",
 	}
-	pj = net.ConnectToMatrix(blaPosAcq, vSmtxGo, p1to1)
+	pj = net.ConnectToVSMatrix(blaPosAcq, vSmtxGo, p1to1)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4", // key strength driver
 		"Prjn.PrjnScale.Rel": "1",
@@ -674,12 +674,12 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// The usPos version is needed for US gating to clear goal.
 	// it is not clear that direct usNeg should drive nogo directly.
-	// pj = net.ConnectToMatrix(usNeg, vSmtxNo, full)
+	// pj = net.ConnectToVSMatrix(usNeg, vSmtxNo, full)
 	// pj.DefParams = params.Params{
 	// 	"Prjn.PrjnScale.Abs": "2", // strong
 	// 	"Prjn.PrjnScale.Rel": ".2",
 	// }
-	pj = net.ConnectToMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
+	pj = net.ConnectToVSMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4",
 		"Prjn.PrjnScale.Rel": "1",
@@ -693,13 +693,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// todo: ofc -> STN?
 
-	pj = net.ConnectToMatrix(blaPosExt, vSmtxNo, p1to1)
+	pj = net.ConnectToVSMatrix(blaPosExt, vSmtxNo, p1to1)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
 		"Prjn.PrjnScale.Rel": "1",
 	}
 	pj.SetClass("BLAExtToNo")
-	// pj = net.ConnectToMatrix(blaNegExt, vSmtxGo, full) // no neg -> go
+	// pj = net.ConnectToVSMatrix(blaNegExt, vSmtxGo, full) // no neg -> go
 	// Note: this impairs perf in basic examples/boa, and is questionable functionally
 	// pj.DefParams = params.Params{
 	// 	"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
@@ -717,38 +717,38 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 		"Prjn.SWts.Init.Var":  "0.0",
 		"Prjn.Com.GType":      "ModulatoryG",
 	}
-	pj = net.ConnectToMatrix(drives, vSmtxGo, p1to1)
+	pj = net.ConnectToVSMatrix(drives, vSmtxGo, p1to1)
 	pj.DefParams = d2m
 	pj.SetClass("DrivesToMtx")
-	pj = net.ConnectToMatrix(drives, vSmtxNo, p1to1)
+	pj = net.ConnectToVSMatrix(drives, vSmtxNo, p1to1)
 	pj.DefParams = d2m
 	pj.SetClass("DrivesToMtx")
 
-	pj = net.ConnectToMatrix(ofcPosUS, vSmtxGo, p1to1)
+	pj = net.ConnectToVSMatrix(ofcPosUS, vSmtxGo, p1to1)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToMatrix(ofcPosUS, vSmtxNo, p1to1)
-	pj.DefParams = pfc2m
-	pj.SetClass("PFCToVSMtx")
-
-	pj = net.ConnectToMatrix(ofcPosVal, vSmtxGo, full)
-	pj.DefParams = pfc2m
-	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToMatrix(ofcPosVal, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(ofcPosUS, vSmtxNo, p1to1)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	// pj = net.ConnectToMatrix(ofcNegUS, vSmtxGo, full) // skip for now
+	pj = net.ConnectToVSMatrix(ofcPosVal, vSmtxGo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToVSMatrix(ofcPosVal, vSmtxNo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+
+	// pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxGo, full) // skip for now
 	// pj.DefParams = pfc2m
 	// pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToMatrix(ofcNegUS, vSmtxNo, full) // definitely
+	pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxNo, full) // definitely
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToMatrix(accNegVal, vSmtxNo, full) // definitely
+	pj = net.ConnectToVSMatrix(accNegVal, vSmtxNo, full) // definitely
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	pj = net.ConnectToMatrix(urgency, vSmtxGo, full)
+	pj = net.ConnectToVSMatrix(urgency, vSmtxGo, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel":  "0.1", // don't dilute from others
 		"Prjn.PrjnScale.Abs":  "4",   // but make it strong
@@ -900,11 +900,11 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)
 	net.ConnectPTNotMaint(accUtilPT, notMaint, full)
 
-	pj = net.ConnectToMatrix(accUtil, vSmtxGo, full)
+	pj = net.ConnectToVSMatrix(accUtil, vSmtxGo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	pj = net.ConnectToMatrix(accUtil, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(accUtil, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 

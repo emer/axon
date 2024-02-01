@@ -71,13 +71,23 @@ const (
 	// Y = receiving activity factor, and ACh provides overall modulation.
 	VSPatchPrjn
 
-	// MatrixPrjn supports trace-based learning, where an initial
+	// VSMatrixPrjn is for ventral striatum matrix (SPN / MSN) neurons
+	// supporting trace-based learning, where an initial
 	// trace of synaptic co-activity is formed, and then modulated
 	// by subsequent phasic dopamine & ACh when an outcome occurs.
 	// This bridges the temporal gap between gating activity
 	// and subsequent outcomes, and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
-	MatrixPrjn
+	VSMatrixPrjn
+
+	// DSMatrixPrjn is for dorsal striatum matrix (SPN / MSN) neurons
+	// supporting trace-based learning, where an initial
+	// trace of synaptic co-activity is formed, and then modulated
+	// by subsequent phasic dopamine & ACh when an outcome occurs.
+	// This bridges the temporal gap between gating activity
+	// and subsequent outcomes, and is based biologically on synaptic tags.
+	// Trace is reset at time of reward based on ACh level (from CINs in biology).
+	DSMatrixPrjn
 )
 
 //gosl: end prjntypes

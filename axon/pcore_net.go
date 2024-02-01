@@ -143,9 +143,14 @@ func (net *Network) AddMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	return ly
 }
 
-// ConnectToMatrix adds a MatrixPrjn from given sending layer to a matrix layer
-func (net *Network) ConnectToMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return net.ConnectLayers(send, recv, pat, MatrixPrjn)
+// ConnectToVSMatrix adds a VSMatrixPrjn from given sending layer to a matrix layer
+func (net *Network) ConnectToVSMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return net.ConnectLayers(send, recv, pat, VSMatrixPrjn)
+}
+
+// ConnectToDSMatrix adds a DSMatrixPrjn from given sending layer to a matrix layer
+func (net *Network) ConnectToDSMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return net.ConnectLayers(send, recv, pat, DSMatrixPrjn)
 }
 
 // AddGPLayer2D adds a GPLayer of given size, with given name.

@@ -90,7 +90,8 @@ type GScaleVals struct {
 // On the GPU, they are loaded into a uniform.
 type PrjnParams struct {
 
-	// functional type of prjn -- determines functional code path for specialized layer types, and is synchronized with the Prjn.Typ value
+	// functional type of prjn, which determines functional code path
+	// for specialized layer types, and is synchronized with the Prjn.Typ value
 	PrjnType PrjnTypes
 
 	pad, pad1, pad2 int32
@@ -101,10 +102,13 @@ type PrjnParams struct {
 	// synaptic communication parameters: delay, probability of failure
 	Com SynComParams `view:"inline"`
 
-	// projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances
+	// projection scaling parameters for computing GScale:
+	// modulates overall strength of projection, using both
+	// absolute and relative factors, with adaptation option to maintain target max conductances
 	PrjnScale PrjnScaleParams `view:"inline"`
 
-	// slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments
+	// slowly adapting, structural weight value parameters,
+	// which control initial weight values and slower outer-loop adjustments
 	SWts SWtParams `view:"add-fields"`
 
 	// synaptic-level learning parameters for learning in the fast LWt values.
@@ -113,11 +117,20 @@ type PrjnParams struct {
 	// conductance scaling values
 	GScale GScaleVals `view:"inline"`
 
-	// ] Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only.
+	// Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning
+	// for reward prediction: Da * Send activity.
+	// Use in RWPredLayer or TDPredLayer typically to generate reward predictions.
+	// If the Da sign is positive, the first recv unit learns fully; for negative,
+	// second one learns fully.
+	// Lower lrate applies for opposite cases.  Weights are positive-only.
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline"`
 
-	// for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs.
-	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline"`
+	// for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity
+	// is formed, and then modulated by dopamine whenever it occurs.
+	// This bridges the temporal gap between gating activity and subsequent activity,
+	// and is based biologically on synaptic tags.
+	// Trace is reset at time of reward based on ACh level from CINs.
+	Matrix MatrixPrjnParams `viewif:"PrjnType=[VSMatrixPrjn,DSMatrixPrjn]" view:"inline"`
 
 	// Basolateral Amygdala projection parameters.
 	BLA BLAPrjnParams `viewif:"PrjnType=BLAPrjn" view:"inline"`
@@ -167,7 +180,7 @@ func (pj *PrjnParams) AllParams() string {
 	case RWPrjn, TDPredPrjn:
 		b, _ = json.MarshalIndent(&pj.RLPred, "", " ")
 		str += "RLPred: {\n " + JsonToParams(b)
-	case MatrixPrjn:
+	case VSMatrixPrjn, DSMatrixPrjn:
 		b, _ = json.MarshalIndent(&pj.Matrix, "", " ")
 		str += "Matrix: {\n " + JsonToParams(b)
 	case BLAPrjn:
@@ -249,7 +262,8 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32,
 // DoSynCa returns false if should not do synaptic-level calcium updating.
 // Done by default in Cortex, not for some other special projection types.
 func (pj *PrjnParams) DoSynCa() bool {
-	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn { // || pj.PrjnType == HipPrjn {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == VSMatrixPrjn ||
+		pj.PrjnType == DSMatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn {
 		return false
 	}
 	return true
@@ -286,8 +300,10 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 		pj.DWtSynRWPred(ctx, syni, si, ri, di, layPool, subPool)
 	case TDPredPrjn:
 		pj.DWtSynTDPred(ctx, syni, si, ri, di, layPool, subPool)
-	case MatrixPrjn:
-		pj.DWtSynMatrix(ctx, syni, si, ri, di, layPool, subPool)
+	case VSMatrixPrjn:
+		pj.DWtSynVSMatrix(ctx, syni, si, ri, di, layPool, subPool)
+	case DSMatrixPrjn:
+		pj.DWtSynDSMatrix(ctx, syni, si, ri, di, layPool, subPool)
 	case VSPatchPrjn:
 		pj.DWtSynVSPatch(ctx, syni, si, ri, di, layPool, subPool)
 	case BLAPrjn:
@@ -497,9 +513,33 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	SetSynCaV(ctx, syni, di, DiDWt, eff_lr*dwt)
 }
 
-// DWtSynMatrix computes the weight change (learning) at given synapse,
-// for the MatrixPrjn type.
-func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+// DWtSynVSMatrix computes the weight change (learning) at given synapse,
+// for the VSMatrixPrjn type.
+func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+
+	ach := GlbV(ctx, di, GvACh)
+	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
+		dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * SynCaV(ctx, syni, di, Tr)
+		SetSynCaV(ctx, syni, di, DiDWt, dwt)
+		SetSynCaV(ctx, syni, di, Tr, 0.0)
+		SetSynCaV(ctx, syni, di, DTr, 0.0)
+	} else if ach > 0.1 {
+		ract := NrnV(ctx, ri, di, CaSpkD)
+		if ract < pj.Learn.Trace.LearnThr {
+			ract = 0
+		}
+		dtr := ach * NrnV(ctx, si, di, CaSpkD) * ract
+		SetSynCaV(ctx, syni, di, DTr, dtr)
+		AddSynCaV(ctx, syni, di, Tr, dtr)
+	} else {
+		SetSynCaV(ctx, syni, di, DTr, 0.0)
+	}
+}
+
+// DWtSynDSMatrix computes the weight change (learning) at given synapse,
+// for the DSMatrixPrjn type.
+func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	ract := float32(0)

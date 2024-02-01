@@ -1966,11 +1966,11 @@ func (i *GPLayerTypes) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _PrjnTypesValues = []PrjnTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+var _PrjnTypesValues = []PrjnTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
 // PrjnTypesN is the highest valid value
 // for type PrjnTypes, plus one.
-const PrjnTypesN PrjnTypes = 11
+const PrjnTypesN PrjnTypes = 12
 
 // An "invalid array index" compiler error signifies that the constant values have changed.
 // Re-run the enumgen command to generate them again.
@@ -1986,32 +1986,35 @@ func _PrjnTypesNoOp() {
 	_ = x[BLAPrjn-(7)]
 	_ = x[HipPrjn-(8)]
 	_ = x[VSPatchPrjn-(9)]
-	_ = x[MatrixPrjn-(10)]
+	_ = x[VSMatrixPrjn-(10)]
+	_ = x[DSMatrixPrjn-(11)]
 }
 
 var _PrjnTypesNameToValueMap = map[string]PrjnTypes{
-	`ForwardPrjn`: 0,
-	`forwardprjn`: 0,
-	`BackPrjn`:    1,
-	`backprjn`:    1,
-	`LateralPrjn`: 2,
-	`lateralprjn`: 2,
-	`InhibPrjn`:   3,
-	`inhibprjn`:   3,
-	`CTCtxtPrjn`:  4,
-	`ctctxtprjn`:  4,
-	`RWPrjn`:      5,
-	`rwprjn`:      5,
-	`TDPredPrjn`:  6,
-	`tdpredprjn`:  6,
-	`BLAPrjn`:     7,
-	`blaprjn`:     7,
-	`HipPrjn`:     8,
-	`hipprjn`:     8,
-	`VSPatchPrjn`: 9,
-	`vspatchprjn`: 9,
-	`MatrixPrjn`:  10,
-	`matrixprjn`:  10,
+	`ForwardPrjn`:  0,
+	`forwardprjn`:  0,
+	`BackPrjn`:     1,
+	`backprjn`:     1,
+	`LateralPrjn`:  2,
+	`lateralprjn`:  2,
+	`InhibPrjn`:    3,
+	`inhibprjn`:    3,
+	`CTCtxtPrjn`:   4,
+	`ctctxtprjn`:   4,
+	`RWPrjn`:       5,
+	`rwprjn`:       5,
+	`TDPredPrjn`:   6,
+	`tdpredprjn`:   6,
+	`BLAPrjn`:      7,
+	`blaprjn`:      7,
+	`HipPrjn`:      8,
+	`hipprjn`:      8,
+	`VSPatchPrjn`:  9,
+	`vspatchprjn`:  9,
+	`VSMatrixPrjn`: 10,
+	`vsmatrixprjn`: 10,
+	`DSMatrixPrjn`: 11,
+	`dsmatrixprjn`: 11,
 }
 
 var _PrjnTypesDescMap = map[PrjnTypes]string{
@@ -2025,7 +2028,8 @@ var _PrjnTypesDescMap = map[PrjnTypes]string{
 	7:  `BLAPrjn implements the PVLV BLA learning rule: dW = ACh * X_t-1 * (Y_t - Y_t-1) The recv delta is across trials, where the US should activate on trial boundary, to enable sufficient time for gating through to OFC, so BLA initially learns based on US present - US absent. It can also learn based on CS onset if there is a prior CS that predicts that.`,
 	8:  ``,
 	9:  `VSPatchPrjn implements the VSPatch learning rule: dW = ACh * DA * X * Y where DA is D1 vs. D2 modulated DA level, X = sending activity factor, Y = receiving activity factor, and ACh provides overall modulation.`,
-	10: `MatrixPrjn supports trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`,
+	10: `VSMatrixPrjn is for ventral striatum matrix (SPN / MSN) neurons supporting trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`,
+	11: `DSMatrixPrjn is for dorsal striatum matrix (SPN / MSN) neurons supporting trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`,
 }
 
 var _PrjnTypesMap = map[PrjnTypes]string{
@@ -2039,7 +2043,8 @@ var _PrjnTypesMap = map[PrjnTypes]string{
 	7:  `BLAPrjn`,
 	8:  `HipPrjn`,
 	9:  `VSPatchPrjn`,
-	10: `MatrixPrjn`,
+	10: `VSMatrixPrjn`,
+	11: `DSMatrixPrjn`,
 }
 
 // String returns the string representation

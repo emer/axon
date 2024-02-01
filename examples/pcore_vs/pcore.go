@@ -211,13 +211,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
 
-	net.ConnectToMatrix(accPos, mtxGo, full).SetClass("ACCToMtx")
-	net.ConnectToMatrix(accNeg, mtxNo, full).SetClass("ACCToMtx")
+	net.ConnectToVSMatrix(accPos, mtxGo, full).SetClass("ACCToMtx")
+	net.ConnectToVSMatrix(accNeg, mtxNo, full).SetClass("ACCToMtx")
 	// cross connections:
-	net.ConnectToMatrix(accPos, mtxNo, full).SetClass("ACCToMtx")
-	net.ConnectToMatrix(accNeg, mtxGo, full).SetClass("ACCToMtx")
+	net.ConnectToVSMatrix(accPos, mtxNo, full).SetClass("ACCToMtx")
+	net.ConnectToVSMatrix(accNeg, mtxGo, full).SetClass("ACCToMtx")
 
-	net.ConnectToMatrix(urge, mtxGo, full)
+	net.ConnectToVSMatrix(urge, mtxGo, full)
 
 	accPosVM.PlaceRightOf(gpi, space)
 	snc.PlaceRightOf(accPosVM, space)

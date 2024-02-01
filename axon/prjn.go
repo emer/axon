@@ -69,7 +69,9 @@ func (pj *Prjn) Defaults() {
 		pj.Params.HipDefaults()
 	case VSPatchPrjn:
 		pj.Params.VSPatchDefaults()
-	case MatrixPrjn:
+	case VSMatrixPrjn:
+		pj.Params.MatrixDefaults()
+	case DSMatrixPrjn:
 		pj.Params.MatrixDefaults()
 	}
 	pj.ApplyDefParams()
