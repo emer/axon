@@ -185,7 +185,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	full := prjn.NewFull()
 	_ = full
 	mtxRndPrjn := prjn.NewPoolUnifRnd()
-	mtxRndPrjn.PCon = 0.75
+	mtxRndPrjn.PCon = 0.5
 	_ = mtxRndPrjn
 
 	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
@@ -652,7 +652,7 @@ func (ss *Sim) ConfigGUI() {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := eplot.NewPlot2D(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
+	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Params.Title = tststnm
 	plt.Params.XAxisCol = "Trial"

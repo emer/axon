@@ -19,13 +19,13 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":               "false",
-				"Layer.Inhib.Layer.Gi":              ".5",
-				"Layer.Inhib.Layer.FB":              "0",
-				"Layer.Matrix.GateThr":              "0.05", // .05 default
-				"Layer.Acts.Kir.Gbar":               "10",
-				"Layer.Acts.GabaB.Gbar":             "0",
-				"Layer.Learn.NeuroMod.AChLRate.Mod": "0",
+				"Layer.Inhib.Pool.On":              "false",
+				"Layer.Inhib.Layer.Gi":             ".5",
+				"Layer.Inhib.Layer.FB":             "0",
+				"Layer.Matrix.GateThr":             "0.05", // .05 default
+				"Layer.Acts.Kir.Gbar":              "10",
+				"Layer.Acts.GabaB.Gbar":            "0",
+				"Layer.Learn.NeuroMod.AChLRateMod": "0",
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
@@ -56,13 +56,13 @@ var ParamSets = netparams.Sets{
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.Matrix.NoGateLRate":   "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
-				"Prjn.Learn.LRate.Base":     "0.02", // .02 default
+				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
 				"Prjn.Learn.Trace.LearnThr": "0.05",
 			}},
 		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
-				"Prjn.PrjnScale.Abs": "20",
+				"Prjn.PrjnScale.Abs": "0",
 				"Prjn.Learn.Learn":   "false",
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",

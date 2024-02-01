@@ -520,7 +520,9 @@ func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 
 	ach := GlbV(ctx, di, GvACh)
 	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
-		dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * SynCaV(ctx, syni, di, Tr)
+		rlr := NrnV(ctx, ri, di, RLRate)
+		tr := SynCaV(ctx, syni, di, Tr)
+		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)

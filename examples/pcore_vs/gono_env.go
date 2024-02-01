@@ -187,14 +187,14 @@ func (ev *GoNoEnv) Action(action string, nop etensor.Tensor) {
 	var rew float32
 	switch {
 	case should && didGate:
-		rew = 1
+		rew = 0
 		match = true
 	case should && !didGate:
-		rew = -1
+		rew = 1
 	case !should && didGate:
 		rew = -1
 	case !should && !didGate:
-		rew = 1
+		rew = 0
 		match = true
 	}
 	ev.Should = should
