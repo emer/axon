@@ -11,6 +11,7 @@ import (
 
 	"cogentcore.org/core/glop/indent"
 	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/weights"
 	"github.com/emer/etable/v2/etensor"
 )
@@ -99,6 +100,12 @@ func (pj *Prjn) UpdateParams() {
 func (pj *Prjn) AllParams() string {
 	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n" + pj.Params.AllParams()
 	return str
+}
+
+// SetParam sets parameter at given path to given value.
+// returns error if path not found or value cannot be set.
+func (pj *Prjn) SetParam(path, val string) error {
+	return params.SetParam(pj.Params, path, val)
 }
 
 // SetSynVal sets value of given variable name on the synapse

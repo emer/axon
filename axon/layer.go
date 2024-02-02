@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/core/giv"
 	"cogentcore.org/core/icons"
 	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/params"
 	"github.com/emer/etable/v2/etensor"
 )
 
@@ -139,6 +140,12 @@ func (ly *Layer) UpdateParams() {
 	for _, pj := range ly.RcvPrjns {
 		pj.UpdateParams()
 	}
+}
+
+// SetParam sets parameter at given path to given value.
+// returns error if path not found or value cannot be set.
+func (ly *Layer) SetParam(path, val string) error {
+	return params.SetParam(ly.Params, path, val)
 }
 
 // PostBuild performs special post-Build() configuration steps for specific algorithms,

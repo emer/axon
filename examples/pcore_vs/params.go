@@ -23,45 +23,51 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.Gi":             ".5",
 				"Layer.Inhib.Layer.FB":             "0",
 				"Layer.Matrix.GateThr":             "0.05", // .05 default
-				"Layer.Acts.Kir.Gbar":              "10",
+				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5 > 20
 				"Layer.Acts.GabaB.Gbar":            "0",
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
-				"Layer.Learn.NeuroMod.BurstGain":   "0.1", // key lrate modulator
+				"Layer.Learn.NeuroMod.BurstGain":   "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 			},
 			Hypers: params.Hypers{
-				"Layer.Learn.NeuroMod.BurstGain": {"Test": "true"},
-				"Layer.Acts.Kir.Gbar":            {"Test": "true"},
+				"Layer.Learn.NeuroMod.BurstGain": {"Test": "false"},
+				"Layer.Acts.Kir.Gbar":            {"Test": "false"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase":           "0.1",
-				"Layer.Acts.Kir.Gbar":              "5",     // 5 enhances pause
-				"Layer.Acts.SKCa.Gbar":             "2",     // 2 def
+				"Layer.Acts.Kir.Gbar":              "10",    // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":             "2",     // 2 > 5 >> 1 (for Kir = 10)
 				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all GPePr
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Kir.Gbar":  {"Test": "true"},
-				"Layer.Acts.SKCa.Gbar": {"Test": "true"},
+				"Layer.Acts.Kir.Gbar":  {"Test": "false"},
+				"Layer.Acts.SKCa.Gbar": {"Test": "false"},
 			}},
 		{Sel: "#GPePr", Desc: "prototypical",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.4",
+				"Layer.Acts.Init.GeBase": "0.4", // 0.4 > 0.3, 0.5
 				"Layer.Acts.Init.GeVar":  "0.2",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Test": "false"},
 			}},
 		{Sel: "#GPi", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.3",
+				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
 				"Layer.Acts.Init.GeVar":  "0.1",
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Test": "true"},
+				"Layer.Acts.Init.GeBase": {"Test": "false"},
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
 				"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
 				"Layer.Acts.Kir.Gbar":     "2",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Kir.Gbar": {"Test": "false"},
 			}},
 		////////////////////////////////////////////
 		// Prjns
@@ -70,6 +76,9 @@ var ParamSets = netparams.Sets{
 				"Prjn.Matrix.NoGateLRate":   "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
 				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
 				"Prjn.Learn.Trace.LearnThr": "0.05",
+			},
+			Hypers: params.Hypers{
+				"Prjn.Learn.LRate.Base": {"Test": "false"},
 			}},
 		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{
@@ -96,51 +105,87 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3",
+				"Prjn.PrjnScale.Abs": "3", // 3 >= 2, 4
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "false"},
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".4", // stronger = more binary
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "incr"},
 			}},
 		{Sel: "#GPePrToSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#STNToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5", // was 0.5
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#STNToGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.1",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2", // .1 too weak
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#STNToGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 		{Sel: "#GPiToACCPosVM", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5", // needs to be very strong -- 5
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
 			}},
 	},
 }

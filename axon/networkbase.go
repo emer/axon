@@ -219,6 +219,27 @@ func (nt *NetworkBase) MakeLayMap() {
 	}
 }
 
+// AxonPrjnByName returns a Prjn by looking it up by name in the list of projections
+// (nil if not found).
+func (nt *NetworkBase) AxonPrjnByName(name string) *Prjn {
+	for _, pj := range nt.Prjns {
+		if pj.Name() == name {
+			return pj
+		}
+	}
+	return nil
+}
+
+// PrjnByNameTry returns a Prjn by looking it up by name in the list of projections
+// (nil if not found).
+func (nt *NetworkBase) PrjnByNameTry(name string) (emer.Prjn, error) {
+	pj := nt.AxonPrjnByName(name)
+	if pj != nil {
+		return pj, nil
+	}
+	return nil, fmt.Errorf("Projection named: %q not found", name)
+}
+
 // LayersByType returns a list of layer names by given layer types.
 // Lists are compiled when network Build() function called.
 // The layer Type is always included as a Class, along with any other
