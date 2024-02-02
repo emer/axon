@@ -36,7 +36,9 @@ import (
 	"github.com/emer/etable/v2/agg"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/split"
+	"github.com/emer/etable/v2/tsragg"
 )
 
 func main() {
@@ -45,6 +47,8 @@ func main() {
 	sim.ConfigAll()
 	if sim.Config.GUI {
 		sim.RunGUI()
+	} else if sim.Config.Params.Test {
+		sim.RunParamTest()
 	} else {
 		sim.RunNoGUI()
 	}
@@ -327,6 +331,10 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
+	man.GetLoop(etime.Train, etime.Run).Main.Add("TestAll", func() {
+		ss.Loops.Run(etime.Test)
+	})
+
 	////////////////////////////////////////////
 	// GUI
 
@@ -549,6 +557,15 @@ func (ss *Sim) ConfigLogs() {
 	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 
+	ss.Logs.AddItem(&elog.Item{
+		Name: "TestMatch",
+		Type: etensor.FLOAT64,
+		Write: elog.WriteMap{
+			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+				tstrl := ctx.Logs.MiscTable("TestTrialStats")
+				ctx.SetFloat64(tsragg.Mean(tstrl.ColByName("Match")))
+			}}})
+
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
 	// ss.Logs.PlotItems("MtxGo_ActAvg", "ACCPosVM_ActAvg", "ACCPosVM_RT", "Gated", "Should", "Match", "Rew")
@@ -618,6 +635,7 @@ func (ss *Sim) TestStats() {
 	tstst := spl.AggsToTable(etable.ColNameOnly)
 	tstst.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	ss.Logs.MiscTables[tststnm] = tstst
+
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
 		plt.SetTable(tstst)
@@ -625,6 +643,7 @@ func (ss *Sim) TestStats() {
 		plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 		plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 		plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.GoUpdatePlot()
 	}
 }
 
@@ -757,7 +776,6 @@ func (ss *Sim) RunNoGUI() {
 	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
 	ss.Loops.Run(etime.Train)
-	ss.Loops.Run(etime.Test) // test all
 
 	ss.Logs.CloseLogFiles()
 

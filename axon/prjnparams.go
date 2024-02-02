@@ -516,7 +516,7 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 // DWtSynVSMatrix computes the weight change (learning) at given synapse,
 // for the VSMatrixPrjn type.
 func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
-	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+	// note: rn.RLRate already has BurstGain * ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	ach := GlbV(ctx, di, GvACh)
 	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity

@@ -26,6 +26,10 @@ type GoNoEnv struct {
 	// trial counter -- set by caller for testing
 	Trial env.Ctr
 
+	// if true, ACCPos and Neg are set manually for testing specific cases;
+	// do not generate random vals for training or auto-increment ACCPos / Neg values during test
+	ManualVals bool
+
 	// activation of ACC positive valence -- drives go
 	ACCPos float32
 
@@ -35,20 +39,26 @@ type GoNoEnv struct {
 	// threshold on diff between ACCPos - ACCNeg for counting as a Go trial
 	PosNegThr float32
 
-	// ACCPos and Neg are set manually -- do not generate random vals for training or auto-increment ACCPos / Neg values during test
-	ManualVals bool
+	// reward value for case where it gated and it should have:
+	// nominally 1 but can lead to over-learning, RPE would decrease over time
+	GatedShould float32
+
+	// reward value for case where it did not gate and it should have:
+	// in real case, would not get anything for this, but 1 is a cheat to improve perf
+	NoGatedShould float32
+
+	// reward value for case where it gated and it should not have.  should be -1
+	GatedShouldnt float32
+
+	// reward value for case where it did not gate and it should not have:
+	// should be 0
+	NoGatedShouldnt float32
 
 	// increment in testing activation for test all
 	TestInc float32
 
 	// number of repetitions per testing level
 	TestReps int
-
-	// for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%
-	ACCPosInc float32
-
-	// for case with multiple pools evaluated in parallel (not currently used), this is the across-pools multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%
-	ACCNegInc float32
 
 	// number of units within each pool, Y
 	NUnitsY int `view:"-"`
@@ -98,9 +108,11 @@ func (ev *GoNoEnv) Defaults() {
 	ev.NUnitsY = 5
 	ev.NUnitsX = 5
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
-	ev.ACCPosInc = 0.8
-	ev.ACCNegInc = 1.1
-	ev.PosNegThr = 0 // todo: was 0.1?
+	ev.PosNegThr = 0     // todo: was 0.1?
+	ev.GatedShould = 1   // todo: try lower
+	ev.NoGatedShould = 0 // todo: try 0
+	ev.GatedShouldnt = -1
+	ev.NoGatedShouldnt = 0
 	ev.PopCode.Defaults()
 	ev.PopCode.SetRange(-0.2, 1.2, 0.1)
 }
@@ -136,8 +148,8 @@ func (ev *GoNoEnv) State(el string) etensor.Tensor {
 	return ev.States[el]
 }
 
-// RenderACC renders the given value in ACC popcode, across pools
-func (ev *GoNoEnv) RenderACC(name string, val, inc float32) {
+// RenderACC renders the given value in ACC popcode
+func (ev *GoNoEnv) RenderACC(name string, val float32) {
 	st := ev.States[name]
 	ev.PopCode.Encode(&st.Values, val, ev.NUnits, false)
 }
@@ -150,8 +162,8 @@ func (ev *GoNoEnv) RenderLayer(name string, val float32) {
 
 // RenderState renders the current state
 func (ev *GoNoEnv) RenderState() {
-	ev.RenderACC("ACCPos", ev.ACCPos, ev.ACCPosInc)
-	ev.RenderACC("ACCNeg", ev.ACCNeg, ev.ACCNegInc)
+	ev.RenderACC("ACCPos", ev.ACCPos)
+	ev.RenderACC("ACCNeg", ev.ACCNeg)
 }
 
 // Step does one step -- must set Trial.Cur first if doing testing
@@ -187,14 +199,14 @@ func (ev *GoNoEnv) Action(action string, nop etensor.Tensor) {
 	var rew float32
 	switch {
 	case should && didGate:
-		rew = 0
+		rew = ev.GatedShould
 		match = true
 	case should && !didGate:
-		rew = 1
+		rew = ev.NoGatedShould
 	case !should && didGate:
-		rew = -1
+		rew = ev.GatedShouldnt
 	case !should && !didGate:
-		rew = 0
+		rew = ev.NoGatedShouldnt
 		match = true
 	}
 	ev.Should = should

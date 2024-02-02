@@ -26,6 +26,11 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":              "10",
 				"Layer.Acts.GabaB.Gbar":            "0",
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
+				"Layer.Learn.NeuroMod.BurstGain":   "0.1", // key lrate modulator
+			},
+			Hypers: params.Hypers{
+				"Layer.Learn.NeuroMod.BurstGain": {"Test": "true"},
+				"Layer.Acts.Kir.Gbar":            {"Test": "true"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
@@ -34,6 +39,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.SKCa.Gbar":             "2",     // 2 def
 				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all GPePr
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Kir.Gbar":  {"Test": "true"},
+				"Layer.Acts.SKCa.Gbar": {"Test": "true"},
 			}},
 		{Sel: "#GPePr", Desc: "prototypical",
 			Params: params.Params{
@@ -44,6 +53,9 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.3",
 				"Layer.Acts.Init.GeVar":  "0.1",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Test": "true"},
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
