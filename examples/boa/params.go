@@ -148,9 +148,8 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .1, but 3 needed for .03
 			}},
-		{Sel: ".MatrixPrjn", Desc: "",
+		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!
 				"Prjn.Learn.Trace.LearnThr": "0.0",
 			}},
 		{Sel: ".ToSC", Desc: "",
@@ -168,7 +167,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "1",
-				"Prjn.PrjnScale.Abs": "2",
+				"Prjn.PrjnScale.Abs": "6",
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
@@ -178,9 +177,14 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // 0.1 def
 			}},
+		{Sel: ".VSMatrixPatchPrjn", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs":    "4",    // 3 orig
+				"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
+			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "2",    // 3 orig
+				"Prjn.PrjnScale.Abs":    "4",    // 3 orig
 				"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
