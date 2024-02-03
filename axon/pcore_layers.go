@@ -205,13 +205,15 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Acts.Decay.Act = 1
 	ly.Params.Acts.Decay.Glong = 1  // prevent carryover of NMDA
 	ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
-	// ly.Params.Acts.NMDA.Gbar = 0    // Matrix needs nmda
+	ly.Params.Acts.Kir.Gbar = 10
+	ly.Params.Acts.GabaB.Gbar = 0 // Kir replaces GabaB
+	// ly.Params.Acts.NMDA.Gbar = 0    // Matrix needs nmda, default is fine
 	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.FB = 1 // pure FF
-	ly.Params.Inhib.Layer.Gi = 0.3
-	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer!
-	ly.Params.Inhib.Pool.FB = 1           // pure FF
-	ly.Params.Inhib.Pool.Gi = 0.3
+	ly.Params.Inhib.Layer.FB = 0 // pure FF
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer if has pools
+	ly.Params.Inhib.Pool.FB = 0           // pure FF
+	ly.Params.Inhib.Pool.Gi = 0.5
 	ly.Params.Inhib.ActAvg.Nominal = 0.25 // pooled should be lower
 	ly.Params.Learn.RLRate.On.SetBool(false)
 
@@ -220,27 +222,18 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 1
 	ly.Params.Learn.NeuroMod.AChDisInhib = 5
+	ly.Params.Learn.NeuroMod.BurstGain = 0.1
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SWts.Init.SPct = 0
-		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
+		if pj.Send.LayerType() == GPLayer { // GPeAkToMtx
 			pj.Params.SetFixedWts()
-			pj.Params.PrjnScale.Abs = 1
+			pj.Params.PrjnScale.Abs = 3
 			pj.Params.SWts.Init.Mean = 0.75
 			pj.Params.SWts.Init.Var = 0.0
-			if strings.HasSuffix(pj.Send.Name(), "GPePr") { // GPePrToMtx
-				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeAk to reduce oscillations
-			} else if strings.HasSuffix(pj.Send.Name(), "GPeAk") { // GPeAkToMtx
-				if strings.HasSuffix(ly.Nm, "MtxGo") {
-					pj.Params.PrjnScale.Abs = 2 // was .8
-				} else {
-					pj.Params.PrjnScale.Abs = 2
-					// was .3 GPeAkToMtxNo must be weaker to prevent oscillations, even with GPePr offset
-				}
-			}
 		}
 	}
 }
@@ -269,8 +262,9 @@ func (ly *Layer) MatrixPostBuild() {
 
 func (ly *Layer) GPDefaults() {
 	// GP is tonically self-active and has no FFFB inhibition
-	ly.Params.Acts.Init.GeBase = 0.3
-	ly.Params.Acts.Init.GeVar = 0.1
+	// Defaults are for GPePr, Ak has special values below
+	ly.Params.Acts.Init.GeBase = 0.4
+	ly.Params.Acts.Init.GeVar = 0.2
 	ly.Params.Acts.Init.GiVar = 0.1
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 1
@@ -281,31 +275,32 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
 	if ly.Params.GP.GPType == GPeAk {
-		ly.Params.Acts.Init.GeBase = 0.2 // definitely lower in bio data
+		ly.Params.Acts.Init.GeBase = 0.2 // definitely lower in bio data, necessary
+		ly.Params.Acts.Init.GeVar = 0.1
 	}
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
 		pj.Params.SWts.Init.Var = 0.25  // 0.25
-		if pj.Send.LayerType() == MatrixLayer {
-			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 slightly better gating
-		} else if pj.Send.LayerType() == STNLayer {
-			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeAk -- weaker to not oppose GPePr surge
-		}
 		switch ly.Params.GP.GPType {
 		case GPePr:
-			if pj.Send.LayerType() == MatrixLayer { // MtxNoToGPePr -- primary NoGo pathway
-				pj.Params.PrjnScale.Abs = 1
-			} else if pj.Send.LayerType() == GPLayer { // GPeOutToGPePr
-				pj.Params.PrjnScale.Abs = 0.5 // orig 0.3; 0.5 good
-			}
-			if pj.Send.LayerType() == STNLayer { // STNpToGPePr -- stronger to drive burst of activity
-				pj.Params.PrjnScale.Abs = 1 // was 0.5, 1 or 1.2 in boa -- 1 > 0.5
+			switch pj.Send.LayerType() {
+			case MatrixLayer:
+				pj.Params.PrjnScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
+			case GPLayer:
+				pj.Params.PrjnScale.Abs = 5 // // GPePrToGPePr -- must be very strong
+			case STNLayer:
+				pj.Params.PrjnScale.Abs = 0.5 // STNToGPePr
 			}
 		case GPeAk:
-			if pj.Send.LayerType() == GPLayer { // GPePrTo
-				pj.Params.PrjnScale.Abs = 1 // was 0.7 orig 0.9 -- just enough to knock down to near-zero at baseline
+			switch pj.Send.LayerType() {
+			case MatrixLayer:
+				pj.Params.PrjnScale.Abs = 0.4 // MtxGoToGPeAk
+			case GPLayer:
+				pj.Params.PrjnScale.Abs = 1 // GPePrToGPeAk
+			case STNLayer:
+				pj.Params.PrjnScale.Abs = 0.1 // STNToGPAk
 			}
 		}
 	}
@@ -316,7 +311,9 @@ func (ly *Layer) GPDefaults() {
 }
 
 func (ly *Layer) GPiDefaults() {
-	ly.Params.Acts.Init.GeBase = 0.5
+	ly.Params.Acts.Init.GeBase = 0.3
+	ly.Params.Acts.Init.GeVar = 0.1
+	ly.Params.Acts.Init.GiVar = 0.1
 	// note: GPLayer took care of STN input prjns
 
 	for _, pj := range ly.RcvPrjns {
@@ -324,13 +321,11 @@ func (ly *Layer) GPiDefaults() {
 		pj.Params.SWts.Init.Mean = 0.75         // 0.75  see above
 		pj.Params.SWts.Init.Var = 0.25          // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
-			pj.Params.PrjnScale.Abs = 1 // 0.8 orig; 1 is fine
+			pj.Params.PrjnScale.Abs = 0.2
 		} else if pj.Send.LayerType() == GPLayer { // GPePrToGPi
-			pj.Params.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
-		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
 			pj.Params.PrjnScale.Abs = 1
-		} else if strings.HasSuffix(pj.Send.Name(), "STNs") { // STNsToGPi
-			pj.Params.PrjnScale.Abs = 0.5 // 0.5 slightly better than .3
+		} else if pj.Send.LayerType() == STNLayer { // STNToGPi
+			pj.Params.PrjnScale.Abs = 0.2
 		}
 	}
 }
@@ -350,45 +345,31 @@ func (ly *Layer) GPPostBuild() {
 
 func (ly *Layer) STNDefaults() {
 	// STN is tonically self-active and has no FFFB inhibition
-	ly.Params.Acts.Init.GeBase = 0.3
+	ly.Params.Acts.Init.GeBase = 0.1 // was 0.3
 	ly.Params.Acts.Init.GeVar = 0.1
 	ly.Params.Acts.Init.GiVar = 0.1
-	ly.Params.Acts.SKCa.Gbar = 3
+	ly.Params.Acts.SKCa.Gbar = 2
+	ly.Params.Acts.Kir.Gbar = 10 // 10 > 5 -- key for pause
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
 	ly.Params.Acts.Dend.SSGi = 0
 	ly.Params.Acts.NMDA.Gbar = 0 // fine with 0
 	ly.Params.Acts.GabaB.Gbar = 0
-	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
-	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Layer.On.SetBool(false) // todo: was important, test in boa
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
-	ly.Params.Learn.NeuroMod.AChDisInhib = 2
-	// otherwise defaults are set to STNp
-	// } else {
-	// 	ly.Params.Acts.SKCa.Gbar = 3
-	// 	ly.Params.Acts.SKCa.C50 = 0.4
-	// 	ly.Params.Acts.SKCa.KCaR = 0.4
-	// 	ly.Params.Acts.SKCa.CaRDecayTau = 200
-	// }
+	ly.Params.Learn.NeuroMod.AChDisInhib = 0 // was 2,
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.25
 		if pj.Send.LayerType() == GPLayer { // GPePrToSTN
-			pj.Params.PrjnScale.Abs = 0.1
+			pj.Params.PrjnScale.Abs = 0.5
 		} else {
 			pj.Params.PrjnScale.Abs = 2.0 // pfc inputs
 		}
-		// } else { // STNs
-		// 	if pj.Send.LayerType() == GPLayer { // GPePrToSTNs
-		// 		pj.Params.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
-		// 	} else {
-		// 		pj.Params.PrjnScale.Abs = 1.0
-		// 	}
-		// }
 	}
 }
 

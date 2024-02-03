@@ -108,9 +108,9 @@ func (ev *GoNoEnv) Defaults() {
 	ev.NUnitsY = 5
 	ev.NUnitsX = 5
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
-	ev.PosNegThr = 0     // todo: was 0.1?
-	ev.GatedShould = 1   // todo: try lower
-	ev.NoGatedShould = 0 // todo: try 0
+	ev.PosNegThr = 0
+	ev.GatedShould = 1   // note: works; BurstGain = 0.1 helps prevent overlearning
+	ev.NoGatedShould = 0 // note: works fine here -- much more realistic
 	ev.GatedShouldnt = -1
 	ev.NoGatedShouldnt = 0
 	ev.PopCode.Defaults()

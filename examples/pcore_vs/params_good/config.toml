@@ -1,15 +1,16 @@
+Includes = []
 GUI = false
 Debug = false
 
 [Env]
   ZeroTest = false
-  NPools = 1
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Tweak = false
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 

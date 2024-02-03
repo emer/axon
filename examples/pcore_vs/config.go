@@ -18,8 +18,8 @@ type EnvConfig struct {
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
-	// If true, perform automated parameter testing for parameters marked Hypers Test = true
-	Test bool
+	// If true, perform automated parameter tweaking for parameters marked Hypers Tweak = log,incr, or [vals]
+	Tweak bool
 
 	// network parameters
 	Network map[string]any

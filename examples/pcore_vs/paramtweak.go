@@ -14,7 +14,7 @@ import (
 	"github.com/emer/empi/v2/mpi"
 )
 
-func (ss *Sim) RunParamTest() {
+func (ss *Sim) RunParamTweak() {
 	ss.Config.Run.NRuns = 1
 	ss.Config.Log.Run = true
 

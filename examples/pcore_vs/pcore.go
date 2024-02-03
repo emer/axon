@@ -47,8 +47,8 @@ func main() {
 	sim.ConfigAll()
 	if sim.Config.GUI {
 		sim.RunGUI()
-	} else if sim.Config.Params.Test {
-		sim.RunParamTest()
+	} else if sim.Config.Params.Tweak {
+		sim.RunParamTweak()
 	} else {
 		sim.RunNoGUI()
 	}

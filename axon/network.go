@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"strings"
 
+	"cogentcore.org/core/gi"
+	"cogentcore.org/core/giv"
+	"cogentcore.org/core/icons"
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/prjn"
@@ -285,7 +288,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
-func (nt *Network) InitWts(ctx *Context) {
+func (nt *Network) InitWts(ctx *Context) { //gti:add
 	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		nt.PVLV.Reset(ctx, di)
 	}
@@ -412,7 +415,7 @@ func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, lay
 }
 
 // InitActs fully initializes activation state -- not automatically called
-func (nt *Network) InitActs(ctx *Context) {
+func (nt *Network) InitActs(ctx *Context) { //gti:add
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -688,87 +691,14 @@ func (nt *Network) SizeReport(detail bool) string {
 	return b.String()
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Network props for gui
-
-/*
-var NetworkProps = ki.Props{
-	"ToolBar": ki.PropSlice{
-		{"SaveWtsJSON", ki.Props{
-			"label": "Save Wts...",
-			"icon":  "file-save",
-			"desc":  "Save json-formatted weights",
-			"Args": ki.PropSlice{
-				{"Weights File Name", ki.Props{
-					"default-field": "WtsFile",
-					"ext":           ".wts,.wts.gz",
-				}},
-			},
-		}},
-		{"OpenWtsJSON", ki.Props{
-			"label": "Open Wts...",
-			"icon":  "file-open",
-			"desc":  "Open json-formatted weights",
-			"Args": ki.PropSlice{
-				{"Weights File Name", ki.Props{
-					"default-field": "WtsFile",
-					"ext":           ".wts,.wts.gz",
-				}},
-			},
-		}},
-		{"sep-file", ki.BlankProp{}},
-		{"Build", ki.Props{
-			"icon": "update",
-			"desc": "build the network's neurons and synapses according to current params",
-		}},
-		{"InitWts", ki.Props{
-			"icon": "update",
-			"desc": "initialize the network weight values according to prjn parameters",
-		}},
-		{"InitActs", ki.Props{
-			"icon": "update",
-			"desc": "initialize the network activation values",
-		}},
-		{"sep-act", ki.BlankProp{}},
-		{"AddLayer", ki.Props{
-			"label": "Add Layer...",
-			"icon":  icons.Add,
-			"desc":  "add a new layer to network",
-			"Args": ki.PropSlice{
-				{"Layer Name", ki.Props{}},
-				{"Layer Shape", ki.Props{
-					"desc": "shape of layer, typically 2D (Y, X) or 4D (Pools Y, Pools X, Units Y, Units X)",
-				}},
-				{"Layer Type", ki.Props{
-					"desc": "type of layer -- used for determining how inputs are applied",
-				}},
-			},
-		}},
-		{"ConnectLayerNames", ki.Props{
-			"label": "Connect Layers...",
-			"icon":  icons.Add,
-			"desc":  "add a new connection between layers in the network",
-			"Args": ki.PropSlice{
-				{"Send Layer Name", ki.Props{}},
-				{"Recv Layer Name", ki.Props{}},
-				{"Pattern", ki.Props{
-					"desc": "pattern to connect with",
-				}},
-				{"Prjn Type", ki.Props{
-					"desc": "type of projection -- direction, or other more specialized factors",
-				}},
-			},
-		}},
-		{"AllGlobals", ki.Props{
-			"icon":        "file-sheet",
-			"desc":        "Shows the values of all network Global variables, for debugging purposes",
-			"show-return": true,
-		}},
-		{"AllPrjnScales", ki.Props{
-			"icon":        "file-sheet",
-			"desc":        "AllPrjnScales returns a listing of all PrjnScale parameters in the Network in all Layers, Recv projections.  These are among the most important and numerous of parameters (in larger networks) -- this helps keep track of what they all are set to.",
-			"show-return": true,
-		}},
-	},
+func (nt *Network) ConfigToolbar(tb *gi.Toolbar) {
+	giv.NewFuncButton(tb, nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
+	fb := giv.NewFuncButton(tb, nt.SaveWtsJSON).SetText("Save Weights").SetIcon(icons.Save)
+	fb.Args[0].SetTag("ext", ".wts,.wts.gz")
+	fb = giv.NewFuncButton(tb, nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
+	fb.Args[0].SetTag("ext", ".wts,.wts.gz")
+	gi.NewSeparator(tb)
+	giv.NewFuncButton(tb, nt.Build).SetIcon(icons.Reset)
+	giv.NewFuncButton(tb, nt.InitWts).SetIcon(icons.Reset)
+	giv.NewFuncButton(tb, nt.InitActs).SetIcon(icons.Reset)
 }
-*/

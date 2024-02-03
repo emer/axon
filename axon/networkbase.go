@@ -24,6 +24,7 @@ import (
 	"cogentcore.org/core/glop/dedupe"
 	"cogentcore.org/core/glop/indent"
 	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/texteditor"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/erand"
@@ -601,6 +602,12 @@ func (nt *NetworkBase) AllGlobals() string {
 	return str
 }
 
+// ShowAllGlobals shows a listing of all Global variables and values.
+func (nt *NetworkBase) ShowAllGlobals() { //gti:add
+	agv := nt.AllGlobals()
+	texteditor.TextDialog(nil, "All Global Vars: "+nt.Name(), agv)
+}
+
 // AllGlobalVals adds to map of all Global variables and values.
 // ctrKey is a key of counters to contextualize values.
 func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
@@ -776,7 +783,7 @@ func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
 // on final network size.  Must set UseGPUOrder properly prior to calling.
 // Configures the given Context object used in the simulation with the memory
 // access strides for this network -- must be set properly -- see SetCtxStrides.
-func (nt *NetworkBase) Build(simCtx *Context) error {
+func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	nt.UseGPUOrder = true // todo: set externally
 	if nt.PVLV.NPosUSs == 0 {
 		nt.PVLV.SetNUSs(simCtx, 1, 1)
@@ -1111,7 +1118,7 @@ func (nt *NetworkBase) DeleteAll() {
 
 // SaveWtsJSON saves network weights (and any other state that adapts with learning)
 // to a JSON-formatted file.  If filename has .gz extension, then file is gzip compressed.
-func (nt *NetworkBase) SaveWtsJSON(filename gi.Filename) error {
+func (nt *NetworkBase) SaveWtsJSON(filename gi.Filename) error { //gti:add
 	fp, err := os.Create(string(filename))
 	defer fp.Close()
 	if err != nil {
@@ -1133,7 +1140,7 @@ func (nt *NetworkBase) SaveWtsJSON(filename gi.Filename) error {
 
 // OpenWtsJSON opens network weights (and any other state that adapts with learning)
 // from a JSON-formatted file.  If filename has .gz extension, then file is gzip uncompressed.
-func (nt *NetworkBase) OpenWtsJSON(filename gi.Filename) error {
+func (nt *NetworkBase) OpenWtsJSON(filename gi.Filename) error { //gti:add
 	fp, err := os.Open(string(filename))
 	defer fp.Close()
 	if err != nil {

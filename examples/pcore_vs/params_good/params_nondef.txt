@@ -1,168 +1,153 @@
-GPi.Acts.Init.GeBase: 0.5 // [Def: 0] <br>
-GPi.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
-GPi.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
-GPi.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-GPi.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-GPi.GPeInToGPi.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPi.GPeInToGPi.SWts.Init.Sym: false // [Def: true] <br>
-GPi.GPeInToGPi.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPi.MtxGoToGPi.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPi.MtxGoToGPi.SWts.Init.Sym: false // [Def: true] <br>
-GPi.MtxGoToGPi.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPi.STNpToGPi.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPi.STNpToGPi.SWts.Init.Sym: false // [Def: true] <br>
-GPi.STNpToGPi.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPi.STNsToGPi.PrjnScale.Abs: 0.5 // [Def: 1] <br>
-GPi.STNsToGPi.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPi.STNsToGPi.SWts.Init.Sym: false // [Def: true] <br>
-GPi.STNsToGPi.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeOut.Acts.Init.GeBase: 0.3 // [Def: 0] <br>
-GPeOut.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
-GPeOut.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
-GPeOut.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-GPeOut.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-GPeOut.MtxGoToGPeOut.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeOut.MtxGoToGPeOut.SWts.Init.Sym: false // [Def: true] <br>
-GPeOut.MtxGoToGPeOut.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeOut.STNpToGPeOut.PrjnScale.Abs: 0.1 // [Def: 1] <br>
-GPeOut.STNpToGPeOut.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeOut.STNpToGPeOut.SWts.Init.Sym: false // [Def: true] <br>
-GPeOut.STNpToGPeOut.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeIn.Acts.Init.GeBase: 0.3 // [Def: 0] <br>
-GPeIn.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
-GPeIn.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
-GPeIn.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-GPeIn.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-GPeIn.MtxNoToGPeIn.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeIn.MtxNoToGPeIn.SWts.Init.Sym: false // [Def: true] <br>
-GPeIn.MtxNoToGPeIn.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeIn.GPeOutToGPeIn.PrjnScale.Abs: 0.5 // [Def: 1] <br>
-GPeIn.GPeOutToGPeIn.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeIn.GPeOutToGPeIn.SWts.Init.Sym: false // [Def: true] <br>
-GPeIn.GPeOutToGPeIn.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeIn.STNpToGPeIn.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeIn.STNpToGPeIn.SWts.Init.Sym: false // [Def: true] <br>
-GPeIn.STNpToGPeIn.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeTA.Acts.Init.GeBase: 0.3 // [Def: 0] <br>
-GPeTA.Acts.Init.GeVar: 0.1 // [Def: 0] <br>
-GPeTA.Acts.Init.GiVar: 0.1 // [Def: 0] <br>
-GPeTA.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-GPeTA.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-GPeTA.GPeInToGPeTA.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeTA.GPeInToGPeTA.SWts.Init.Sym: false // [Def: true] <br>
-GPeTA.GPeInToGPeTA.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-GPeTA.STNpToGPeTA.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-GPeTA.STNpToGPeTA.SWts.Init.Sym: false // [Def: true] <br>
-GPeTA.STNpToGPeTA.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-STNp.Acts.Decay.LearnCa: 1 // [Def: 0] <br>
-STNp.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-STNp.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
-STNp.Learn.NeuroMod.AChDisInhib: 2 // [Def: 0,5] <br>
-STNp.GPeInToSTNp.PrjnScale.Abs: 0.1 // [Def: 1] <br>
-STNp.GPeInToSTNp.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-STNp.GPeInToSTNp.SWts.Init.Sym: false // [Def: true] <br>
-STNp.GPeInToSTNp.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-STNp.PFCToSTNp.PrjnScale.Abs: 2 // [Def: 1] <br>
-STNp.PFCToSTNp.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-STNp.PFCToSTNp.SWts.Init.Sym: false // [Def: true] <br>
-STNp.PFCToSTNp.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-STNs.Acts.Decay.LearnCa: 1 // [Def: 0] <br>
-STNs.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-STNs.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
-STNs.Learn.NeuroMod.AChDisInhib: 2 // [Def: 0,5] <br>
-STNs.PFCToSTNs.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-STNs.PFCToSTNs.SWts.Init.Sym: false // [Def: true] <br>
-STNs.PFCToSTNs.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-MtxGo.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-MtxGo.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-MtxGo.Inhib.Layer.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
-MtxGo.Inhib.Pool.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
-MtxGo.Learn.RLRate.On: false // [Def: true] <br>
-MtxGo.GPeTAToMtxGo.PrjnScale.Abs: 2 // [Def: 1] <br>
-MtxGo.GPeTAToMtxGo.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-MtxGo.GPeTAToMtxGo.SWts.Init.Var: 0 // [Def: 0.25] <br>
-MtxGo.GPeTAToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
-MtxGo.GPeTAToMtxGo.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-MtxGo.GPeInToMtxGo.PrjnScale.Abs: 0.5 // [Def: 1] <br>
-MtxGo.GPeInToMtxGo.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-MtxGo.GPeInToMtxGo.SWts.Init.Var: 0 // [Def: 0.25] <br>
-MtxGo.GPeInToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
-MtxGo.GPeInToMtxGo.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-MtxGo.ACCPosToMtxGo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
-MtxGo.ACCPosToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
-MtxGo.ACCPosToMtxGo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxGo.ACCNegToMtxGo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
-MtxGo.ACCNegToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
-MtxGo.ACCNegToMtxGo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxGo.UrgencyToMtxGo.PrjnScale.Abs: 20 // [Def: 1] <br>
-MtxGo.UrgencyToMtxGo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
-MtxGo.UrgencyToMtxGo.SWts.Init.Sym: false // [Def: true] <br>
-MtxGo.UrgencyToMtxGo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxNo.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-MtxNo.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-MtxNo.Inhib.Layer.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
-MtxNo.Inhib.Pool.Gi: 0.3 // [Def: 1,1.1,0.75,0.9] <br>
-MtxNo.Learn.RLRate.On: false // [Def: true] <br>
-MtxNo.GPeTAToMtxNo.PrjnScale.Abs: 2 // [Def: 1] <br>
-MtxNo.GPeTAToMtxNo.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-MtxNo.GPeTAToMtxNo.SWts.Init.Var: 0 // [Def: 0.25] <br>
-MtxNo.GPeTAToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
-MtxNo.GPeTAToMtxNo.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-MtxNo.GPeInToMtxNo.PrjnScale.Abs: 0.5 // [Def: 1] <br>
-MtxNo.GPeInToMtxNo.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-MtxNo.GPeInToMtxNo.SWts.Init.Var: 0 // [Def: 0.25] <br>
-MtxNo.GPeInToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
-MtxNo.GPeInToMtxNo.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-MtxNo.ACCNegToMtxNo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
-MtxNo.ACCNegToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
-MtxNo.ACCNegToMtxNo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-MtxNo.ACCPosToMtxNo.SWts.Init.Var: 0.4 // [Def: 0.25] <br>
-MtxNo.ACCPosToMtxNo.SWts.Init.Sym: false // [Def: true] <br>
-MtxNo.ACCPosToMtxNo.Learn.LRate.Base: 0.02 // [Def: 0.04,0.1,0.2] <br>
-SNc.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-Urgency.Acts.Decay.Glong: 1 // [Def: 0,0.6] <br>
-Urgency.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-Urgency.Acts.PopCode.MinAct: 0 // [Def: 1,0.5] <br>
-Urgency.Inhib.Layer.Gi: 0.5 // [Def: 1,1.1,0.75,0.9] <br>
-ACCPos.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-ACCNeg.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-In.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-InP.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-PFC.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-PFCCT.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-PFCCT.Acts.Sahp.Gbar: 1 // [Def: 0.05,0.1] <br>
-PFCCT.Acts.NMDA.Gbar: 0.008 // [Def: 0,0.006,0.007] <br>
-PFCCT.Acts.GabaB.Gbar: 0.009 // [Def: 0,0.012,0.015] <br>
-PFCCT.Inhib.Layer.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
-PFCCT.Inhib.Pool.Gi: 2.2 // [Def: 1,1.1,0.75,0.9] <br>
-PFCPT.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-PFCPT.Acts.Sahp.Gbar: 0.01 // [Def: 0.05,0.1] <br>
-PFCPT.Acts.GabaB.Gbar: 0.01 // [Def: 0,0.012,0.015] <br>
-PFCPT.Inhib.Layer.Gi: 3.2 // [Def: 1,1.1,0.75,0.9] <br>
-PFCPT.Inhib.Pool.Gi: 2.4 // [Def: 1,1.1,0.75,0.9] <br>
-PFCPT.PFCVMToPFCPT.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
-PFCPT.PFCVMToPFCPT.SWts.Init.Var: 0 // [Def: 0.25] <br>
-PFCPT.PFCToPFCPT.PrjnScale.Abs: 0.5 // [Def: 1] <br>
-PFCPT.PFCToPFCPT.SWts.Init.Mean: 0.8 // [Def: 0.5,0.4] <br>
-PFCPT.PFCToPFCPT.SWts.Init.Var: 0 // [Def: 0.25] <br>
-PFCPT.PFCPTToPFCPT.PrjnScale.Abs: 4 // [Def: 1] <br>
-PFCPT.PFCPTToPFCPT.SWts.Init.Var: 0.5 // [Def: 0.25] <br>
-PFCPT.PFCPTToPFCPT.Learn.LRate.Base: 0.0001 // [Def: 0.04,0.1,0.2] <br>
-PFCVM.Acts.Clamp.Ge: 1 // [Def: 0.8,1.5] <br>
-PFCVM.Inhib.Layer.Gi: 0.6 // [Def: 1,1.1,0.75,0.9] <br>
-PFCVM.Inhib.Pool.Gi: 0.6 // [Def: 1,1.1,0.75,0.9] <br>
-PFCVM.Learn.NeuroMod.AChDisInhib: 1 // [Def: 0,5] <br>
-PFCVM.PFCPTToPFCVM.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-PFCVM.PFCPTToPFCVM.SWts.Init.Var: 0 // [Def: 0.25] <br>
-PFCVM.PFCPTToPFCVM.SWts.Init.Sym: false // [Def: true] <br>
-PFCVM.PFCPTToPFCVM.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-PFCVM.PFCToPFCVM.PrjnScale.Abs: 4 // [Def: 1] <br>
-PFCVM.PFCToPFCVM.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-PFCVM.PFCToPFCVM.SWts.Init.Var: 0 // [Def: 0.25] <br>
-PFCVM.PFCToPFCVM.SWts.Init.Sym: false // [Def: true] <br>
-PFCVM.PFCToPFCVM.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
-PFCVM.GPiToPFCVM.PrjnScale.Abs: 5 // [Def: 1] <br>
-PFCVM.GPiToPFCVM.SWts.Init.Mean: 0.75 // [Def: 0.5,0.4] <br>
-PFCVM.GPiToPFCVM.SWts.Init.Var: 0 // [Def: 0.25] <br>
-PFCVM.GPiToPFCVM.SWts.Init.Sym: false // [Def: true] <br>
-PFCVM.GPiToPFCVM.SWts.Adapt.SigGain: 1 // [Def: 6] <br>
+GPi.Acts.Init.GeBase: 0.3 // [Default: 0]<br>
+GPi.Acts.Init.GeVar: 0.1 // [Default: 0]<br>
+GPi.Acts.Init.GiVar: 0.1 // [Default: 0]<br>
+GPi.Acts.Decay.Glong: 1 // [Default: 0,0.6]<br>
+GPi.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+GPi.GPePrToGPi.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPi.GPePrToGPi.SWts.Init.Sym: false // [Default: true]<br>
+GPi.GPePrToGPi.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPi.MtxGoToGPi.PrjnScale.Abs: 0.2 // [Default: 1]<br>
+GPi.MtxGoToGPi.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPi.MtxGoToGPi.SWts.Init.Sym: false // [Default: true]<br>
+GPi.MtxGoToGPi.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPi.STNToGPi.PrjnScale.Abs: 0.2 // [Default: 1]<br>
+GPi.STNToGPi.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPi.STNToGPi.SWts.Init.Sym: false // [Default: true]<br>
+GPi.STNToGPi.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPePr.Acts.Init.GeBase: 0.4 // [Default: 0]<br>
+GPePr.Acts.Init.GeVar: 0.2 // [Default: 0]<br>
+GPePr.Acts.Init.GiVar: 0.1 // [Default: 0]<br>
+GPePr.Acts.Decay.Glong: 1 // [Default: 0,0.6]<br>
+GPePr.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+GPePr.MtxNoToGPePr.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPePr.MtxNoToGPePr.SWts.Init.Sym: false // [Default: true]<br>
+GPePr.MtxNoToGPePr.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPePr.GPePrToGPePr.PrjnScale.Abs: 5 // [Default: 1]<br>
+GPePr.GPePrToGPePr.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPePr.GPePrToGPePr.SWts.Init.Sym: false // [Default: true]<br>
+GPePr.GPePrToGPePr.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPePr.STNToGPePr.PrjnScale.Abs: 0.5 // [Default: 1]<br>
+GPePr.STNToGPePr.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPePr.STNToGPePr.SWts.Init.Sym: false // [Default: true]<br>
+GPePr.STNToGPePr.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPeAk.Acts.Init.GeBase: 0.2 // [Default: 0]<br>
+GPeAk.Acts.Init.GeVar: 0.1 // [Default: 0]<br>
+GPeAk.Acts.Init.GiVar: 0.1 // [Default: 0]<br>
+GPeAk.Acts.Decay.Glong: 1 // [Default: 0,0.6]<br>
+GPeAk.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+GPeAk.GPePrToGPeAk.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPeAk.GPePrToGPeAk.SWts.Init.Sym: false // [Default: true]<br>
+GPeAk.GPePrToGPeAk.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPeAk.STNToGPeAk.PrjnScale.Abs: 0.1 // [Default: 1]<br>
+GPeAk.STNToGPeAk.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPeAk.STNToGPeAk.SWts.Init.Sym: false // [Default: true]<br>
+GPeAk.STNToGPeAk.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+GPeAk.MtxGoToGPeAk.PrjnScale.Abs: 0.4 // [Default: 1]<br>
+GPeAk.MtxGoToGPeAk.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+GPeAk.MtxGoToGPeAk.SWts.Init.Sym: false // [Default: true]<br>
+GPeAk.MtxGoToGPeAk.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+STN.Acts.Init.GeBase: 0.1 // [Default: 0]<br>
+STN.Acts.Init.GeVar: 0.1 // [Default: 0]<br>
+STN.Acts.Init.GiVar: 0.1 // [Default: 0]<br>
+STN.Acts.Decay.LearnCa: 1 // [Default: 0]<br>
+STN.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+STN.Acts.Kir.Gbar: 10 // [Default: 0,0.012,0.015]<br>
+STN.GPePrToSTN.PrjnScale.Abs: 0.5 // [Default: 1]<br>
+STN.GPePrToSTN.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+STN.GPePrToSTN.SWts.Init.Sym: false // [Default: true]<br>
+STN.GPePrToSTN.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+STN.ACCPosToSTN.PrjnScale.Abs: 2 // [Default: 1]<br>
+STN.ACCPosToSTN.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+STN.ACCPosToSTN.SWts.Init.Sym: false // [Default: true]<br>
+STN.ACCPosToSTN.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+STN.ACCNegToSTN.PrjnScale.Abs: 2 // [Default: 1]<br>
+STN.ACCNegToSTN.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+STN.ACCNegToSTN.SWts.Init.Sym: false // [Default: true]<br>
+STN.ACCNegToSTN.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+MtxGo.Acts.Decay.Glong: 1 // [Default: 0,0.6]<br>
+MtxGo.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+MtxGo.Acts.Kir.Gbar: 10 // [Default: 0,0.012,0.015]<br>
+MtxGo.Inhib.Layer.Gi: 0.5 // [Default: 1,1.1,0.75,0.9]<br>
+MtxGo.Inhib.Layer.FB: 0 // [Default: 0.5,1,4]<br>
+MtxGo.Inhib.Pool.Gi: 0.5 // [Default: 1,1.1,0.75,0.9]<br>
+MtxGo.Inhib.Pool.FB: 0 // [Default: 0.5,1,4]<br>
+MtxGo.Learn.RLRate.On: false // [Default: true]<br>
+MtxGo.Learn.NeuroMod.BurstGain: 0.1 // [Default: 1]<br>
+MtxGo.GPeAkToMtxGo.PrjnScale.Abs: 3 // [Default: 1]<br>
+MtxGo.GPeAkToMtxGo.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+MtxGo.GPeAkToMtxGo.SWts.Init.Var: 0 // [Default: 0.25]<br>
+MtxGo.GPeAkToMtxGo.SWts.Init.Sym: false // [Default: true]<br>
+MtxGo.GPeAkToMtxGo.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+MtxGo.ACCPosToMtxGo.PrjnScale.Abs: 1.5 // [Default: 1]<br>
+MtxGo.ACCPosToMtxGo.SWts.Init.Var: 0.4 // [Default: 0.25]<br>
+MtxGo.ACCPosToMtxGo.SWts.Init.Sym: false // [Default: true]<br>
+MtxGo.ACCPosToMtxGo.Learn.LRate.Base: 0.01 // [Default: 0.04,0.1,0.2]<br>
+MtxGo.ACCNegToMtxGo.PrjnScale.Abs: 1.5 // [Default: 1]<br>
+MtxGo.ACCNegToMtxGo.SWts.Init.Var: 0.4 // [Default: 0.25]<br>
+MtxGo.ACCNegToMtxGo.SWts.Init.Sym: false // [Default: true]<br>
+MtxGo.ACCNegToMtxGo.Learn.LRate.Base: 0.01 // [Default: 0.04,0.1,0.2]<br>
+MtxGo.UrgencyToMtxGo.PrjnScale.Abs: 0 // [Default: 1]<br>
+MtxGo.UrgencyToMtxGo.SWts.Init.Var: 0.4 // [Default: 0.25]<br>
+MtxGo.UrgencyToMtxGo.SWts.Init.Sym: false // [Default: true]<br>
+MtxGo.UrgencyToMtxGo.Learn.LRate.Base: 0.01 // [Default: 0.04,0.1,0.2]<br>
+MtxNo.Acts.Decay.Glong: 1 // [Default: 0,0.6]<br>
+MtxNo.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+MtxNo.Acts.Kir.Gbar: 10 // [Default: 0,0.012,0.015]<br>
+MtxNo.Inhib.Layer.Gi: 0.5 // [Default: 1,1.1,0.75,0.9]<br>
+MtxNo.Inhib.Layer.FB: 0 // [Default: 0.5,1,4]<br>
+MtxNo.Inhib.Pool.Gi: 0.5 // [Default: 1,1.1,0.75,0.9]<br>
+MtxNo.Inhib.Pool.FB: 0 // [Default: 0.5,1,4]<br>
+MtxNo.Learn.RLRate.On: false // [Default: true]<br>
+MtxNo.Learn.NeuroMod.BurstGain: 0.1 // [Default: 1]<br>
+MtxNo.GPeAkToMtxNo.PrjnScale.Abs: 3 // [Default: 1]<br>
+MtxNo.GPeAkToMtxNo.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+MtxNo.GPeAkToMtxNo.SWts.Init.Var: 0 // [Default: 0.25]<br>
+MtxNo.GPeAkToMtxNo.SWts.Init.Sym: false // [Default: true]<br>
+MtxNo.GPeAkToMtxNo.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+MtxNo.ACCNegToMtxNo.PrjnScale.Abs: 1.5 // [Default: 1]<br>
+MtxNo.ACCNegToMtxNo.SWts.Init.Var: 0.4 // [Default: 0.25]<br>
+MtxNo.ACCNegToMtxNo.SWts.Init.Sym: false // [Default: true]<br>
+MtxNo.ACCNegToMtxNo.Learn.LRate.Base: 0.01 // [Default: 0.04,0.1,0.2]<br>
+MtxNo.ACCPosToMtxNo.PrjnScale.Abs: 1.5 // [Default: 1]<br>
+MtxNo.ACCPosToMtxNo.SWts.Init.Var: 0.4 // [Default: 0.25]<br>
+MtxNo.ACCPosToMtxNo.SWts.Init.Sym: false // [Default: true]<br>
+MtxNo.ACCPosToMtxNo.Learn.LRate.Base: 0.01 // [Default: 0.04,0.1,0.2]<br>
+SNc.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+Urgency.Acts.Decay.Glong: 1 // [Default: 0,0.6]<br>
+Urgency.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+Urgency.Acts.PopCode.MinAct: 0 // [Default: 1,0.5]<br>
+Urgency.Inhib.Layer.Gi: 0.5 // [Default: 1,1.1,0.75,0.9]<br>
+ACCPos.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+ACCNeg.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+ACCPosPT.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+ACCPosPT.Acts.Sahp.Gbar: 0.01 // [Default: 0.05,0.1]<br>
+ACCPosPT.Acts.Kir.Gbar: 2 // [Default: 0,0.012,0.015]<br>
+ACCPosPT.Acts.GabaB.Gbar: 0.01 // [Default: 0,0.012,0.015]<br>
+ACCPosPT.Inhib.Layer.Gi: 3.2 // [Default: 1,1.1,0.75,0.9]<br>
+ACCPosPT.Inhib.Pool.Gi: 2.4 // [Default: 1,1.1,0.75,0.9]<br>
+ACCPosPT.ACCPosVMToACCPosPT.SWts.Init.Mean: 0.8 // [Default: 0.5,0.4]<br>
+ACCPosPT.ACCPosVMToACCPosPT.SWts.Init.Var: 0 // [Default: 0.25]<br>
+ACCPosPT.ACCPosToACCPosPT.PrjnScale.Abs: 0.5 // [Default: 1]<br>
+ACCPosPT.ACCPosToACCPosPT.SWts.Init.Mean: 0.8 // [Default: 0.5,0.4]<br>
+ACCPosPT.ACCPosToACCPosPT.SWts.Init.Var: 0 // [Default: 0.25]<br>
+ACCPosPT.ACCPosPTToACCPosPT.PrjnScale.Abs: 4 // [Default: 1]<br>
+ACCPosPT.ACCPosPTToACCPosPT.SWts.Init.Var: 0.5 // [Default: 0.25]<br>
+ACCPosPT.ACCPosPTToACCPosPT.Learn.LRate.Base: 0.0001 // [Default: 0.04,0.1,0.2]<br>
+ACCPosVM.Acts.Clamp.Ge: 1 // [Default: 0.8,1.5]<br>
+ACCPosVM.Inhib.Layer.Gi: 0.6 // [Default: 1,1.1,0.75,0.9]<br>
+ACCPosVM.Inhib.Pool.Gi: 0.6 // [Default: 1,1.1,0.75,0.9]<br>
+ACCPosVM.Learn.NeuroMod.AChDisInhib: 1 // [Default: 0,5]<br>
+ACCPosVM.ACCPosPTToACCPosVM.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+ACCPosVM.ACCPosPTToACCPosVM.SWts.Init.Var: 0 // [Default: 0.25]<br>
+ACCPosVM.ACCPosPTToACCPosVM.SWts.Init.Sym: false // [Default: true]<br>
+ACCPosVM.ACCPosPTToACCPosVM.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+ACCPosVM.ACCPosToACCPosVM.PrjnScale.Abs: 3 // [Default: 1]<br>
+ACCPosVM.ACCPosToACCPosVM.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+ACCPosVM.ACCPosToACCPosVM.SWts.Init.Var: 0 // [Default: 0.25]<br>
+ACCPosVM.ACCPosToACCPosVM.SWts.Init.Sym: false // [Default: true]<br>
+ACCPosVM.ACCPosToACCPosVM.SWts.Adapt.SigGain: 1 // [Default: 6]<br>
+ACCPosVM.GPiToACCPosVM.PrjnScale.Abs: 5 // [Default: 1]<br>
+ACCPosVM.GPiToACCPosVM.SWts.Init.Mean: 0.75 // [Default: 0.5,0.4]<br>
+ACCPosVM.GPiToACCPosVM.SWts.Init.Var: 0 // [Default: 0.25]<br>
+ACCPosVM.GPiToACCPosVM.SWts.Init.Sym: false // [Default: true]<br>
+ACCPosVM.GPiToACCPosVM.SWts.Adapt.SigGain: 1 // [Default: 6]<br>

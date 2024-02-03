@@ -19,71 +19,30 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":              "false",
-				"Layer.Inhib.Layer.Gi":             ".5",
-				"Layer.Inhib.Layer.FB":             "0",
-				"Layer.Matrix.GateThr":             "0.05", // .05 default
-				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5 > 20
-				"Layer.Acts.GabaB.Gbar":            "0",
-				"Layer.Learn.NeuroMod.AChLRateMod": "0",
-				"Layer.Learn.NeuroMod.BurstGain":   "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-			},
-			Hypers: params.Hypers{
-				"Layer.Learn.NeuroMod.BurstGain": {"Test": "false"},
-				"Layer.Acts.Kir.Gbar":            {"Test": "false"},
-			}},
-		{Sel: ".STNLayer", Desc: "all STN",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase":           "0.1",
-				"Layer.Acts.Kir.Gbar":              "10",    // 10 > 5  > 2 -- key for pause
-				"Layer.Acts.SKCa.Gbar":             "2",     // 2 > 5 >> 1 (for Kir = 10)
-				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all GPePr
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",
-			},
-			Hypers: params.Hypers{
-				"Layer.Acts.Kir.Gbar":  {"Test": "false"},
-				"Layer.Acts.SKCa.Gbar": {"Test": "false"},
-			}},
-		{Sel: "#GPePr", Desc: "prototypical",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.4", // 0.4 > 0.3, 0.5
-				"Layer.Acts.Init.GeVar":  "0.2",
-			},
-			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Test": "false"},
-			}},
-		{Sel: "#GPi", Desc: "",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
-				"Layer.Acts.Init.GeVar":  "0.1",
-			},
-			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Test": "false"},
+				"Layer.Inhib.Pool.On": "false",
+				"Layer.Matrix.IsVS":   "true", // key for resetting urgency
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
 				"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
-				"Layer.Acts.Kir.Gbar":     "2",
-			},
-			Hypers: params.Hypers{
-				"Layer.Acts.Kir.Gbar": {"Test": "false"},
+				"Layer.Acts.Kir.Gbar":     "0",   // no real diff here over range 0-10
 			}},
 		////////////////////////////////////////////
 		// Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate":   "1",    // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
 				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.05",
+				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
 			},
 			Hypers: params.Hypers{
-				"Prjn.Learn.LRate.Base": {"Test": "false"},
+				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
+				"Prjn.Learn.Trace.LearnThr": {"Tweak": "-"},
 			}},
 		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
-				"Prjn.PrjnScale.Abs": "0",
+				"Prjn.PrjnScale.Abs": "0",   // todo: is misbehaving here
 				"Prjn.Learn.Learn":   "false",
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
@@ -98,424 +57,159 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // was 4
 			}},
-		// All the BG connections:
 		{Sel: ".ACCToMtx", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.5", // 1.5 min -- 1 too low
+				"Prjn.PrjnScale.Abs": "1.5", // 1.5 good; 1.8 causes some breakthrough
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+	},
+}
+
+// ParamSetsDefs contains the full set of parameters, many of which are at default values
+// and have informed the default values in the first place.
+var ParamSetsDefs = netparams.Sets{
+	"Defaults": {
+		{Sel: ".MatrixLayer", Desc: "all mtx",
+			Params: params.Params{
+				"Layer.Inhib.Pool.On":              "false",
+				"Layer.Inhib.Layer.Gi":             "0.5",
+				"Layer.Inhib.Layer.FB":             "0",
+				"Layer.Matrix.GateThr":             "0.05", // .05 default
+				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5 > 20
+				"Layer.Acts.GabaB.Gbar":            "0",
+				"Layer.Acts.NMDA.Gbar":             "0.006", // 0.006 default, necessary (0 very bad)
+				"Layer.Learn.NeuroMod.AChLRateMod": "1",     // no diff here -- always ACh
+				"Layer.Learn.NeuroMod.BurstGain":   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+			},
+			Hypers: params.Hypers{
+				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
+				"Layer.Acts.Kir.Gbar":            {"Tweak": "-"},
+				"Layer.Acts.NMDA.Gbar":           {"Tweak": "-"},
+				"Layer.Inhib.Layer.Gi":           {"Tweak": "-"},
+			}},
+		{Sel: ".STNLayer", Desc: "all STN",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase":           "0.1",
+				"Layer.Acts.Kir.Gbar":              "10",    // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":             "2",     // 2 > 5 >> 1 (for Kir = 10)
+				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all GPePr
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
+				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
+			}},
+		{Sel: "#GPePr", Desc: "prototypical",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.4", // 0.4 > 0.3, 0.5
+				"Layer.Acts.Init.GeVar":  "0.2",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+			}},
+		{Sel: "#GPeAk", Desc: "arkypallidal",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
+				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
+			}},
+		{Sel: "#GPi", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
+				"Layer.Acts.Init.GeVar":  "0.1",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 			}},
 		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 >= 2, 4
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "false"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".4", // stronger = more binary
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPePrToSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#STNToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // was 0.5
+				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#STNToGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2", // .1 too weak
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#STNToGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPiToACCPosVM", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5", // needs to be very strong -- 5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Test": "log,incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 	},
 }
-
-/*
-// ParamSetsDefs contains the full set of parameters, many of which are at default values
-// and have informed the default values in the first place.
-var ParamSetsDefs = netparams.Sets{
-	"Base": {
-		{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
-			Params: params.Params{
-				"Layer.Acts.Decay.Act":   "0.0",
-				"Layer.Acts.Decay.Glong": "0.0",
-				"Layer.Acts.Clamp.Ge":    "0.8", // 1.5 is def, was 0.6 (too low) -- makes big diff on gating
-			}},
-		{Sel: "#PFC", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "1.0",
-			}},
-		{Sel: "#ACCNeg", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "1.1",
-				"Layer.Acts.Clamp.Ge":  "0.6",
-			}},
-		{Sel: "#ACCPos", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "1.1",
-				"Layer.Acts.Clamp.Ge":  "0.6",
-			}},
-		// {Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
-		// 	Params: params.Params{}},
-		{Sel: "#STNp", Desc: "Pausing STN",
-			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal":       "0.15",
-				"Layer.Inhib.Layer.On":             "true",
-				"Layer.Inhib.Layer.Gi":             "0.5",
-				"Layer.Acts.Decay.LearnCa":         "1.0", // key
-				"Layer.Acts.SKCa.Gbar":             "3",
-				"Layer.Acts.SKCa.C50":              "0.5",
-				"Layer.Acts.SKCa.KCaR":             "0.8",
-				"Layer.Acts.SKCa.CaRDecayTau":      "150",
-				"Layer.Acts.SKCa.CaInThr":          "0.01",
-				"Layer.Acts.SKCa.CaInTau":          "50",
-				"Layer.Learn.NeuroMod.AChDisInhib": "2",
-			}},
-		{Sel: "#STNs", Desc: "Sustained STN",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase":           "0.0",
-				"Layer.Acts.Init.GeVar":            "0.0",
-				"Layer.Acts.Decay.LearnCa":         "1.0", // key
-				"Layer.Inhib.ActAvg.Nominal":       "0.15",
-				"Layer.Inhib.Layer.On":             "true",
-				"Layer.Inhib.Layer.Gi":             "0.8", // was 0.8 - todo: 0.5?  lower?
-				"Layer.Acts.SKCa.Gbar":             "3",
-				"Layer.Acts.SKCa.C50":              "0.4",
-				"Layer.Acts.SKCa.KCaR":             "0.4",
-				"Layer.Acts.SKCa.CaRDecayTau":      "200",
-				"Layer.Acts.SKCa.CaInThr":          "0.01",
-				"Layer.Acts.SKCa.CaInTau":          "50",
-				"Layer.Learn.NeuroMod.AChDisInhib": "2", // 2 is plenty to turn off, 1 sometimes not
-			}},
-		{Sel: ".GPLayer", Desc: "all gp",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase":     "0.3",
-				"Layer.Acts.Init.GeVar":      "0.1",
-				"Layer.Acts.Init.GiVar":      "0.1",
-				"Layer.Inhib.ActAvg.Nominal": "1",
-			}},
-		{Sel: "#GPi", Desc: "",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.5", // todo: 0.6 in params
-			}},
-		{Sel: ".MatrixLayer", Desc: "all mtx",
-			Params: params.Params{
-				"Layer.Matrix.GateThr":             "0.01", // .05 default -- doesn't work..  todo..
-				"Layer.Learn.NeuroMod.AChDisInhib": "5",
-				"Layer.Inhib.Layer.On":             "true",
-				"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 > 0.4
-				"Layer.Inhib.Layer.FB":             "0.0",
-			}},
-		{Sel: ".CTLayer", Desc: "corticothalamic context -- using FSA-based params -- intermediate",
-			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.12",
-				"Layer.CT.GeGain":            "1.0",
-				"Layer.CT.DecayTau":          "50",
-				"Layer.Inhib.Layer.Gi":       "2.2",
-				"Layer.Inhib.Pool.Gi":        "2.2",
-				"Layer.Acts.GabaB.Gbar":      "0.25",
-				"Layer.Acts.NMDA.Gbar":       "0.25",
-				"Layer.Acts.NMDA.Tau":        "200",
-				"Layer.Acts.Decay.Act":       "0.0",
-				"Layer.Acts.Decay.Glong":     "0.0",
-				"Layer.Acts.Sahp.Gbar":       "1.0",
-			}},
-		{Sel: ".PTMaintLayer", Desc: "time integration params",
-			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":    "1.8", // was 1.0
-				"Layer.Inhib.Pool.Gi":     "1.8", // was 1.8
-				"Layer.Acts.GabaB.Gbar":   "0.3",
-				"Layer.Acts.NMDA.Gbar":    "0.3", // 0.3 enough..
-				"Layer.Acts.NMDA.Tau":     "300",
-				"Layer.Acts.Decay.Act":    "0.0",
-				"Layer.Acts.Decay.Glong":  "0.0",
-				"Layer.Acts.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-				"Layer.Acts.Dend.ModGain": "10",   // 10?
-			}},
-		{Sel: ".BGThalLayer", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "true",
-				"Layer.Inhib.Layer.Gi": "0.6",
-				"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
-			}},
-		// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
-		// 	Params: params.Params{
-		// 	}},
-		{Sel: ".MatrixPrjn", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "1.0", // not stronger
-				"Prjn.SWts.Adapt.On":        "true",
-				"Prjn.SWts.Init.Mean":       "0.5",
-				"Prjn.SWts.Init.Var":        "0.25",
-				"Prjn.Matrix.NoGateLRate":   "0.01", // 0.01 seems fine actually
-				"Prjn.Learn.Learn":          "true",
-				"Prjn.Learn.LRate.Base":     "0.05",
-				"Prjn.Learn.Trace.LearnThr": "0.75",
-			}},
-		{Sel: ".ACCPosToGo", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":  "1.0", // 1.5 = faster go
-				"Prjn.SWts.Init.Mean": "0.7",
-			}},
-		{Sel: ".ACCPosToNo", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0",
-			}},
-		{Sel: ".ACCNegToNo", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0",
-			}},
-		{Sel: ".ACCNegToGo", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0",
-			}},
-		{Sel: ".BgFixed", Desc: "fixed, non-learning params",
-			Params: params.Params{
-				"Prjn.SWts.Init.SPct": "0",
-				"Prjn.SWts.Init.Mean": "0.8",
-				"Prjn.SWts.Init.Var":  "0.0",
-				"Prjn.Learn.Learn":    "false",
-			}},
-		{Sel: "#PFCVMToPFC", Desc: "usually uniform weights",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.9",
-				"Prjn.SWts.Init.Var":  "0.0",
-				"Prjn.SWts.Init.Sym":  "false",
-				"Prjn.Learn.Learn":    "false",
-				"Prjn.PrjnScale.Abs":  ".5", // modulatory
-			}},
-		{Sel: "#PFCToMtxGo", Desc: "weaker closed loop",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":  "0.1",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
-			}},
-		{Sel: "#PFCToMtxNo", Desc: "weaker closed loop",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":  "0.1",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
-			}},
-		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":  "0.1", // don't dilute from others
-				"Prjn.PrjnScale.Abs":  "20",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
-				"Prjn.Learn.Learn":    "false",
-			}},
-		{Sel: "#PFCToSTNp", Desc: "strong pfc to stn",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":  "2",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
-			}},
-		{Sel: "#PFCToSTNs", Desc: "strong pfc to stn",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":  "2",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
-			}},
-		{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":  "1",    // keep this constant -- only self vs. this -- thal is modulatory
-				"Prjn.PrjnScale.Abs":  "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
-				"Prjn.Learn.Learn":    "false",
-				"Prjn.SWts.Init.Mean": "0.8",
-				"Prjn.SWts.Init.Var":  "0.0",
-			}},
-		{Sel: ".PTSelfMaint", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
-				"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
-				"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
-				"Prjn.SWts.Init.Mean":   "0.5",
-				"Prjn.SWts.Init.Var":    "0.5", // high variance so not just spreading out over time
-			}},
-		{Sel: ".SuperToThal", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":  "1.0",
-				"Prjn.PrjnScale.Abs":  "2.0", // if this is too strong, it gates to the wrong CS
-				"Prjn.Learn.Learn":    "false",
-				"Prjn.SWts.Init.Mean": "0.8",
-				"Prjn.SWts.Init.Var":  "0.0",
-			}},
-		{Sel: ".ThalToPT", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Rel":  "1.0",
-				"Prjn.Com.GType":      "ModulatoryG", // this marks as modulatory with extra ModGain factor
-				"Prjn.Learn.Learn":    "false",
-				"Prjn.SWts.Init.Mean": "0.8",
-				"Prjn.SWts.Init.Var":  "0.0",
-			}},
-		{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
-			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
-				"Prjn.Learn.Trace.Tau":     "1",    // 2 > 1
-				"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
-			}},
-	},
-	"NoTrainMtx": {
-		{Sel: "MatrixPrjn", Desc: "learning in mtx",
-			Params: params.Params{
-				"Prjn.Learn.Learn": "false",
-			}},
-	},
-	"LearnWts": {
-		{Sel: "#ACCPosToMtxGo", Desc: "trained wts",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.8",
-			}},
-		{Sel: "#ACCNegToMtxGo", Desc: "trained wts",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.40",
-			}},
-		{Sel: "#PFCToMtxGo", Desc: "trained wts",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.8",
-			}},
-		{Sel: "#ACCPosToMtxNo", Desc: "trained wts",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.12",
-			}},
-		{Sel: "#ACCNegToMtxNo", Desc: "trained wts",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.8",
-			}},
-		{Sel: "#PFCToMtxNo", Desc: "trained wts",
-			Params: params.Params{
-				"Prjn.SWts.Init.Mean": "0.75",
-			}},
-	},
-	"WtScales": {
-		{Sel: ".GPeAkToMtx", Desc: "nonspecific gating activity surround inhibition -- wta",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // this is key param to control WTA selectivity!
-			}},
-		{Sel: "#GPeAkToMtxNo", Desc: "nonspecific gating activity surround inhibition -- wta",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // must be relatively weak to prevent oscillations
-			}},
-		{Sel: ".GPePrToMtx", Desc: "provides weak counterbalance for GPeAk -> Mtx to reduce oscillations",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
-			}},
-		{Sel: "#GPeOutToGPePr", Desc: "just enough to (dis)inhibit GPePr",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def, was 0.3 -- no dif really
-			}},
-		{Sel: "#GPePrToSTNp", Desc: "not very relevant -- pause knocks out anyway -- if too much higher than this, causes oscillations.",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.1", // not big diff
-			}},
-		// {Sel: "#GPePrToSTNs", Desc: "NOT currently used -- interferes with threshold-based Ca self-inhib dynamics",
-		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "0.1",
-		// 	}},
-		{Sel: "#STNpToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was 0.5
-			}},
-		{Sel: "#STNpToGPeOut", Desc: "opposes STNpToGPePr -- weaker",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.1",
-			}},
-		{Sel: "#STNpToGPeAk", Desc: "GPeAk reacts later to GPePr disinhib, not this first STN wave",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was .1
-			}},
-		{Sel: "#MtxNoToGPePr", Desc: "primary classical NoGo pathway",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
-			}},
-		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was .7 then .9 -- 1 better match
-			}},
-		{Sel: "#MtxGoToGPeOut", Desc: "This is key driver of Go threshold, along with to GPi",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 gives better match
-			}},
-		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was 0.8, 1 is fine
-			}},
-		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
-			}},
-		{Sel: "#STNsToGPi", Desc: "keeps GPi active until GPePr signal has been integrated a bit -- hold-your-horses",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // .5 > .3 for RT, spurious gating
-			}},
-		{Sel: "#STNpToGPi", Desc: "strong initial phasic activation",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
-			}},
-		{Sel: "#GPiToPFCVM", Desc: "final inhibition",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2 default
-			}},
-	},
-}
-*/
