@@ -32,7 +32,7 @@ import (
 type PrjnBase struct {
 
 	// we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonPrj AxonPrjn `copy:"-" json:"-" xml:"-" view:"-"`
+	AxonPrj AxonPrjn `copier:"-" json:"-" xml:"-" view:"-"`
 
 	// inactivate this projection -- allows for easy experimentation
 	Off bool

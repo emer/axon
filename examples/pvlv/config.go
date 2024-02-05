@@ -19,7 +19,16 @@ type EnvConfig struct {
 	SetNBlocks bool
 
 	// number of blocks to run if SetNBlocks is true
-	NBlocks int `viewif:"SetNBlocks"`
+	NBlocks int
+}
+
+func (ec *EnvConfig) ShouldShow(field string) bool {
+	switch field {
+	case "NBlocks":
+		return ec.SetNBlocks
+	default:
+		return true
+	}
 }
 
 // ParamConfig has config parameters related to sim params

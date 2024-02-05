@@ -22,16 +22,16 @@ type SahpParams struct {
 	Gbar float32 `default:"0.05,0.1"`
 
 	// time constant for integrating Ca across theta cycles
-	CaTau float32 `viewif:"Gbar>0" default:"5,10"`
+	CaTau float32 `default:"5,10"`
 
 	// integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength
-	Off float32 `viewif:"Gbar>0" default:"0.8"`
+	Off float32 `default:"0.8"`
 
 	// slope of the infinite time logistic gating function
-	Slope float32 `viewif:"Gbar>0" default:"0.02"`
+	Slope float32 `default:"0.02"`
 
 	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
-	TauMax float32 `viewif:"Gbar>0" default:"1"`
+	TauMax float32 `default:"1"`
 
 	// 1/Tau
 	CaDt float32 `view:"-" edit:"-"`
@@ -55,6 +55,15 @@ func (mp *SahpParams) Defaults() {
 func (mp *SahpParams) Update() {
 	mp.DtMax = 1.0 / mp.TauMax
 	mp.CaDt = 1.0 / mp.CaTau
+}
+
+func (mp *SahpParams) ShouldShow(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return mp.Gbar > 0
+	}
 }
 
 // EFun handles singularities in an elegant way -- from Mainen impl

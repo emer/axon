@@ -31,10 +31,10 @@ import (
 type LayerBase struct {
 
 	// we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonLay AxonLayer `copy:"-" json:"-" xml:"-" view:"-"`
+	AxonLay AxonLayer `copier:"-" json:"-" xml:"-" view:"-"`
 
 	// our parent network, in case we need to use it to find other layers etc -- set when added by network
-	Network *Network `copy:"-" json:"-" xml:"-" view:"-"`
+	Network *Network `copier:"-" json:"-" xml:"-" view:"-"`
 
 	// Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name
 	Nm string

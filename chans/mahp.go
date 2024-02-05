@@ -21,16 +21,16 @@ type MahpParams struct {
 	Gbar float32
 
 	// voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength
-	Voff float32 `viewif:"Gbar>0" default:"-30"`
+	Voff float32 `default:"-30"`
 
 	// slope of the arget (infinite time) gating function
-	Vslope float32 `viewif:"Gbar>0" default:"9"`
+	Vslope float32 `default:"9"`
 
 	// maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp
-	TauMax float32 `viewif:"Gbar>0" default:"1000"`
+	TauMax float32 `default:"1000"`
 
 	// temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C
-	Tadj float32 `viewif:"Gbar>0" view:"-" edit:"-"`
+	Tadj float32 `view:"-" edit:"-"`
 
 	// 1/Tau
 	DtMax float32 `view:"-" edit:"-"`
@@ -50,6 +50,15 @@ func (mp *MahpParams) Defaults() {
 
 func (mp *MahpParams) Update() {
 	mp.DtMax = 1.0 / mp.TauMax
+}
+
+func (mp *MahpParams) ShouldShow(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return mp.Gbar > 0
+	}
 }
 
 // EFun handles singularities in an elegant way -- from Mainen impl

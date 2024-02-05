@@ -151,40 +151,40 @@ type LayerParams struct {
 	Learn LearnNeurParams `view:"add-fields"`
 
 	// BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.
-	Bursts BurstParams `viewif:"LayType=SuperLayer" view:"inline"`
+	Bursts BurstParams `view:"inline"`
 
 	// ] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace
-	CT CTParams `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]" view:"inline"`
+	CT CTParams `view:"inline"`
 
 	// provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)
-	Pulv PulvParams `viewif:"LayType=PulvinarLayer" view:"inline"`
+	Pulv PulvParams `view:"inline"`
 
 	// parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
-	Matrix MatrixParams `viewif:"LayType=MatrixLayer" view:"inline"`
+	Matrix MatrixParams `view:"inline"`
 
 	// type of GP Layer.
-	GP GPParams `viewif:"LayType=GPLayer" view:"inline"`
+	GP GPParams `view:"inline"`
 
 	// parameters for VSPatch learning
-	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline"`
+	VSPatch VSPatchParams `view:"inline"`
 
 	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
-	LDT LDTParams `viewif:"LayType=LDTLayer" view:"inline"`
+	LDT LDTParams `view:"inline"`
 
 	// parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.
-	VTA VTAParams `viewif:"LayType=VTALayer" view:"inline"`
+	VTA VTAParams `view:"inline"`
 
 	// parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
-	RWPred RWPredParams `viewif:"LayType=RWPredLayer" view:"inline"`
+	RWPred RWPredParams `view:"inline"`
 
 	// parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
-	RWDa RWDaParams `viewif:"LayType=RWDaLayer" view:"inline"`
+	RWDa RWDaParams `view:"inline"`
 
 	// parameterizes TD reward integration layer
-	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline"`
+	TDInteg TDIntegParams `view:"inline"`
 
 	// parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
-	TDDa TDDaParams `viewif:"LayType=TDDaLayer" view:"inline"`
+	TDDa TDDaParams `view:"inline"`
 
 	// recv and send projection array access info
 	Idxs LayerIdxs
@@ -235,6 +235,37 @@ func (ly *LayerParams) Defaults() {
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
+}
+
+func (ly *LayerParams) ShouldShow(field string) bool {
+	switch field {
+	case "Bursts":
+		return ly.LayType == SuperLayer
+	case "CT":
+		return ly.LayType == CTLayer || ly.LayType == PTPredLayer || ly.LayType == PTNotMaintLayer || ly.LayType == BLALayer
+	case "Pulv":
+		return ly.LayType == PulvinarLayer
+	case "Matrix":
+		return ly.LayType == MatrixLayer
+	case "GP":
+		return ly.LayType == GPLayer
+	case "VSPatch":
+		return ly.LayType == VSPatchLayer
+	case "LDT":
+		return ly.LayType == LDTLayer
+	case "VTA":
+		return ly.LayType == VTALayer
+	case "RWPred":
+		return ly.LayType == RWPredLayer
+	case "RWDa":
+		return ly.LayType == RWDaLayer
+	case "TDInteg":
+		return ly.LayType == TDIntegLayer
+	case "TDDa":
+		return ly.LayType == TDDaLayer
+	default:
+		return true
+	}
 }
 
 // AllParams returns a listing of all parameters in the Layer

@@ -222,7 +222,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	vw.EyeRFullImg = gi.NewImage(imfr, "eye-r-full-img")
 	vw.EyeRFullImg.SetSize(vw.Camera.Size)
 
-	wd := float32(300)
+	wd := float32(200)
 	ht := float32(100)
 	vw.USposPlot = eplot.NewPlot2D(svfr, "us-pos")
 	vw.USposPlot.Style(func(s *styles.Style) {

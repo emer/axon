@@ -41,7 +41,7 @@ import (
 type NetworkBase struct {
 
 	// we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	EmerNet emer.Network `copy:"-" json:"-" xml:"-" view:"-"`
+	EmerNet emer.Network `copier:"-" json:"-" xml:"-" view:"-"`
 
 	// overall name of network -- helps discriminate if there are multiple
 	Nm string

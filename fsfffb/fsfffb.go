@@ -29,34 +29,34 @@ type GiParams struct {
 	On slbool.Bool
 
 	// overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly
-	Gi float32 `viewif:"On" min:"0" default:"1,1.1,0.75,0.9"`
+	Gi float32 `min:"0" default:"1,1.1,0.75,0.9"`
 
 	// amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels.
-	FB float32 `viewif:"On" min:"0" default:"0.5,1,4"`
+	FB float32 `min:"0" default:"0.5,1,4"`
 
 	// fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
-	FSTau float32 `viewif:"On" min:"0" default:"6"`
+	FSTau float32 `min:"0" default:"6"`
 
 	// multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1
-	SS float32 `viewif:"On" min:"0" default:"30"`
+	SS float32 `min:"0" default:"30"`
 
 	// slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
-	SSfTau float32 `viewif:"On" min:"0" default:"20"`
+	SSfTau float32 `min:"0" default:"20"`
 
 	// slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
-	SSiTau float32 `viewif:"On" min:"0" default:"50"`
+	SSiTau float32 `min:"0" default:"50"`
 
 	// fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi
-	FS0 float32 `viewif:"On" default:"0.1"`
+	FS0 float32 `default:"0.1"`
 
 	// time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv
-	FFAvgTau float32 `viewif:"On" default:"50"`
+	FFAvgTau float32 `default:"50"`
 
 	// proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time.
-	FFPrv float32 `viewif:"On" default:"0"`
+	FFPrv float32 `default:"0"`
 
 	// minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used.
-	ClampExtMin float32 `viewif:"On" default:"0.05"`
+	ClampExtMin float32 `default:"0.05"`
 
 	// rate = 1 / tau
 	FSDt float32 `edit:"-" view:"-" json:"-" xml:"-"`
@@ -92,6 +92,15 @@ func (fb *GiParams) Defaults() {
 	fb.FFPrv = 0
 	fb.ClampExtMin = 0.05
 	fb.Update()
+}
+
+func (fb *GiParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return fb.On.IsTrue()
+	}
 }
 
 // FSiFmFFs updates fast-spiking inhibition from FFs spikes

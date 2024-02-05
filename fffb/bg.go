@@ -12,10 +12,10 @@ type Bg struct {
 	On bool
 
 	// level of inhibition as proporition of FFFB Gi value -- will need to reduce FFFB level to compensate for this additional source of inhibition
-	Gi float32 `default:".1" viewif:"On=true"`
+	Gi float32 `default:".1"`
 
 	// time constant for integrating background inhibition (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
-	Tau float32 `default:"10" viewif:"On=true"`
+	Tau float32 `default:"10"`
 
 	// rate = 1 / tau
 	Dt float32 `edit:"-" view:"-" json:"-" xml:"-"`
@@ -30,6 +30,15 @@ func (bg *Bg) Defaults() {
 	bg.Gi = 0.1
 	bg.Tau = 10
 	bg.Update()
+}
+
+func (bg *Bg) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return bg.On
+	}
 }
 
 // GiBg updates the gi background value from Gi FFFB computed value

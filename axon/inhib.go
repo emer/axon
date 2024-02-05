@@ -31,16 +31,16 @@ type ActAvgParams struct {
 	AdaptGi slbool.Bool
 
 	// offset to add to Nominal for the target average activity that drives adaptation of Gi for this layer.  Typically the Nominal level is good, but sometimes Nominal must be adjusted up or down to achieve desired Ge scaling, so this Offset can compensate accordingly.
-	Offset float32 `default:"0" min:"0" step:"0.01" viewif:"AdaptGi"`
+	Offset float32 `default:"0" min:"0" step:"0.01"`
 
 	// tolerance for higher than Target target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted.
-	HiTol float32 `default:"0" viewif:"AdaptGi"`
+	HiTol float32 `default:"0"`
 
 	// tolerance for lower than Target target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted.
-	LoTol float32 `default:"0.8" viewif:"AdaptGi"`
+	LoTol float32 `default:"0.8"`
 
 	// rate of Gi adaptation as function of AdaptRate * (Target - ActMAvg) / Target -- occurs at spaced intervals determined by Network.SlowInterval value -- slower values such as 0.01 may be needed for large networks and sparse layers.
-	AdaptRate float32 `default:"0.1" viewif:"AdaptGi"`
+	AdaptRate float32 `default:"0.1"`
 
 	pad, pad1 float32
 }
@@ -55,6 +55,15 @@ func (aa *ActAvgParams) Defaults() {
 	aa.LoTol = 0.8
 	aa.AdaptRate = 0.1
 	aa.Update()
+}
+
+func (aa *ActAvgParams) ShouldShow(field string) bool {
+	switch field {
+	case "Nominal", "AdaptGi":
+		return true
+	default:
+		return aa.AdaptGi.IsTrue()
+	}
 }
 
 // AvgFmAct updates the running-average activation given average activity level in layer
@@ -88,25 +97,25 @@ type TopoInhibParams struct {
 	On slbool.Bool
 
 	// half-width of topographic inhibition within layer
-	Width int32 `viewif:"On"`
+	Width int32
 
 	// normalized gaussian sigma as proportion of Width, for gaussian weighting
-	Sigma float32 `viewif:"On"`
+	Sigma float32
 
 	// half-width of topographic inhibition within layer
-	Wrap slbool.Bool `viewif:"On"`
+	Wrap slbool.Bool
 
 	// overall inhibition multiplier for topographic inhibition (generally <= 1)
-	Gi float32 `viewif:"On"`
+	Gi float32
 
 	// overall inhibitory contribution from feedforward inhibition -- multiplies average Ge from pools or Ge from neurons
-	FF float32 `viewif:"On"`
+	FF float32
 
 	// overall inhibitory contribution from feedback inhibition -- multiplies average activation from pools or Act from neurons
-	FB float32 `viewif:"On"`
+	FB float32
 
 	// feedforward zero point for Ge per neuron (summed Ge is compared to N * FF0) -- below this level, no FF inhibition is computed, above this it is FF * (Sum Ge - N * FF0)
-	FF0 float32 `viewif:"On"`
+	FF0 float32
 
 	// weight value at width -- to assess the value of Sigma
 	WidthWt float32 `edit:"-"`
@@ -129,6 +138,15 @@ func (ti *TopoInhibParams) Update() {
 	ssq := ti.Sigma * float32(ti.Width)
 	ssq *= ssq
 	ti.WidthWt = mat32.FastExp(-0.5 * float32(ti.Width) / ssq)
+}
+
+func (ti *TopoInhibParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return ti.On.IsTrue()
+	}
 }
 
 func (ti *TopoInhibParams) GiFmGeAct(ge, act, ff0 float32) float32 {

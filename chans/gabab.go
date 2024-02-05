@@ -18,19 +18,19 @@ type GABABParams struct {
 	Gbar float32 `default:"0,0.012,0.015"`
 
 	// rise time for bi-exponential time dynamics of GABA-B
-	RiseTau float32 `viewif:"Gbar>0" default:"45"`
+	RiseTau float32 `default:"45"`
 
 	// decay time for bi-exponential time dynamics of GABA-B
-	DecayTau float32 `viewif:"Gbar>0" default:"50"`
+	DecayTau float32 `default:"50"`
 
 	// baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)
-	Gbase float32 `viewif:"Gbar>0" default:"0.2"`
+	Gbase float32 `default:"0.2"`
 
 	// multiplier for converting Gi to equivalent GABA spikes
-	GiSpike float32 `viewif:"Gbar>0" default:"10"`
+	GiSpike float32 `default:"10"`
 
 	// time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau
-	MaxTime float32 `viewif:"Gbar>0" edit:"-"`
+	MaxTime float32 `edit:"-"`
 
 	// time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))
 	TauFact float32 `view:"-"`
@@ -58,6 +58,15 @@ func (gp *GABABParams) Update() {
 	gp.MaxTime = ((gp.RiseTau * gp.DecayTau) / (gp.DecayTau - gp.RiseTau)) * mat32.Log(gp.DecayTau/gp.RiseTau)
 	gp.RiseDt = 1.0 / gp.RiseTau
 	gp.DecayDt = 1.0 / gp.DecayTau
+}
+
+func (gp *GABABParams) ShouldShow(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return gp.Gbar > 0
+	}
 }
 
 // GFmV returns the GABA-B conductance as a function of normalized membrane potential

@@ -47,10 +47,10 @@ type SpikeParams struct {
 	Exp slbool.Bool `default:"true"`
 
 	// slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation
-	ExpSlope float32 `viewif:"Exp" default:"0.02"`
+	ExpSlope float32 `default:"0.02"`
 
 	// membrane potential threshold for actually triggering a spike when using the exponential mechanism
-	ExpThr float32 `viewif:"Exp" default:"0.9"`
+	ExpThr float32 `default:"0.9"`
 
 	// for translating spiking interval (rate) into rate-code activation equivalent, what is the maximum firing rate associated with a maximum activation value of 1
 	MaxHz float32 `default:"180" min:"1"`
@@ -86,6 +86,15 @@ func (sk *SpikeParams) Update() {
 	}
 	sk.ISIDt = 1 / sk.ISITau
 	sk.RDt = 1 / sk.RTau
+}
+
+func (sk *SpikeParams) ShouldShow(field string) bool {
+	switch field {
+	case "ExpSlope", "ExpThr":
+		return sk.Exp.IsTrue()
+	default:
+		return true
+	}
 }
 
 // ActToISI compute spiking interval from a given rate-coded activation,
@@ -396,16 +405,16 @@ type SpikeNoiseParams struct {
 	On slbool.Bool
 
 	// mean frequency of excitatory spikes -- typically 50Hz but multiple inputs increase rate -- poisson lambda parameter, also the variance
-	GeHz float32 `viewif:"On" default:"100"`
+	GeHz float32 `default:"100"`
 
 	// excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs
-	Ge float32 `viewif:"On" min:"0"`
+	Ge float32 `min:"0"`
 
 	// mean frequency of inhibitory spikes -- typically 100Hz fast spiking but multiple inputs increase rate -- poisson lambda parameter, also the variance
-	GiHz float32 `viewif:"On" default:"200"`
+	GiHz float32 `default:"200"`
 
 	// excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs
-	Gi float32 `viewif:"On" min:"0"`
+	Gi float32 `min:"0"`
 
 	// Exp(-Interval) which is the threshold for GeNoiseP as it is updated
 	GeExpInt float32 `view:"-" json:"-" xml:"-"`
@@ -427,6 +436,15 @@ func (an *SpikeNoiseParams) Defaults() {
 	an.GiHz = 200
 	an.Gi = 0.001
 	an.Update()
+}
+
+func (an *SpikeNoiseParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return an.On.IsTrue()
+	}
 }
 
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
@@ -495,7 +513,7 @@ type AttnParams struct {
 	On slbool.Bool
 
 	// minimum act multiplier if attention is 0
-	Min float32 `viewif:"On"`
+	Min float32
 
 	// threshold on CaSpkP for determining the reaction time for the Layer -- starts after MaxCycStart to ensure that prior trial activity has had a chance to dissipate.
 	RTThr float32
@@ -510,6 +528,15 @@ func (at *AttnParams) Defaults() {
 }
 
 func (at *AttnParams) Update() {
+}
+
+func (at *AttnParams) ShouldShow(field string) bool {
+	switch field {
+	case "On", "RTThr":
+		return true
+	default:
+		return at.On.IsTrue()
+	}
 }
 
 // ModVal returns the attn-modulated value -- attn must be between 1-0
@@ -538,25 +565,25 @@ type PopCodeParams struct {
 	On slbool.Bool
 
 	// Ge multiplier for driving excitatory conductance based on PopCode -- multiplies normalized activation values
-	Ge float32 `viewif:"On" default:"0.1"`
+	Ge float32 `default:"0.1"`
 
 	// minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode
-	Min float32 `viewif:"On" default:"-0.1"`
+	Min float32 `default:"-0.1"`
 
 	// maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode
-	Max float32 `viewif:"On" default:"1.1"`
+	Max float32 `default:"1.1"`
 
 	// activation multiplier for values at Min end of range, where values at Max end have an activation of 1 -- if this is &lt; 1, then there is a rate code proportional to the value in addition to the popcode pattern -- see also MinSigma, MaxSigma
-	MinAct float32 `viewif:"On" default:"1,0.5"`
+	MinAct float32 `default:"1,0.5"`
 
 	// sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma &lt; MaxSigma then more units are activated for Max values vs. Min values, proportionally
-	MinSigma float32 `viewif:"On" default:"0.1,0.08"`
+	MinSigma float32 `default:"0.1,0.08"`
 
 	// sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma &lt; MaxSigma then more units are activated for Max values vs. Min values, proportionally
-	MaxSigma float32 `viewif:"On" default:"0.1,0.12"`
+	MaxSigma float32 `default:"0.1,0.12"`
 
 	// ensure that encoded and decoded value remains within specified range
-	Clip slbool.Bool `viewif:"On"`
+	Clip slbool.Bool
 }
 
 func (pc *PopCodeParams) Defaults() {
@@ -570,6 +597,15 @@ func (pc *PopCodeParams) Defaults() {
 }
 
 func (pc *PopCodeParams) Update() {
+}
+
+func (pc *PopCodeParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return pc.On.IsTrue()
+	}
 }
 
 // SetRange sets the min, max and sigma values

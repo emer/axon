@@ -27,25 +27,25 @@ type SKCaParams struct {
 	Gbar float32 `default:"0,2,3"`
 
 	// 50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR
-	C50 float32 `viewif:"Gbar>0" default:"0.4,0.5"`
+	C50 float32 `default:"0.4,0.5"`
 
 	// K channel gating factor activation time constant -- roughly 5-15 msec in literature
-	ActTau float32 `viewif:"Gbar>0" default:"15"`
+	ActTau float32 `default:"15"`
 
 	// K channel gating factor deactivation time constant -- roughly 30-50 msec in literature
-	DeTau float32 `viewif:"Gbar>0" default:"30"`
+	DeTau float32 `default:"30"`
 
 	// proportion of CaIn intracellular stores that are released per spike, going into CaR
-	KCaR float32 `viewif:"Gbar>0" default:"0.4,0.8"`
+	KCaR float32 `default:"0.4,0.8"`
 
 	// SKCaR released calcium decay time constant
-	CaRDecayTau float32 `viewif:"Gbar>0" default:"150,200"`
+	CaRDecayTau float32 `default:"150,200"`
 
 	// level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge.
-	CaInThr float32 `viewif:"Gbar>0" default:"0.01"`
+	CaInThr float32 `default:"0.01"`
 
 	// time constant in msec for storing CaIn when activity is below CaInThr
-	CaInTau float32 `viewif:"Gbar>0" default:"50"`
+	CaInTau float32 `default:"50"`
 
 	// rate = 1 / tau
 	ActDt float32 `view:"-" json:"-" xml:"-"`
@@ -77,6 +77,15 @@ func (sp *SKCaParams) Update() {
 	sp.DeDt = 1.0 / sp.DeTau
 	sp.CaRDecayDt = 1.0 / sp.CaRDecayTau
 	sp.CaInDt = 1.0 / sp.CaInTau
+}
+
+func (sp *SKCaParams) ShouldShow(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return sp.Gbar > 0
+	}
 }
 
 // MAsympHill gives the asymptotic (driving) gating factor M as a function of CAi

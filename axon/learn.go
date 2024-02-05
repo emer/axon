@@ -155,24 +155,24 @@ type TrgAvgActParams struct {
 	GiBaseInit float32
 
 	// learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference.
-	ErrLRate float32 `viewif:"On" default:"0.02"`
+	ErrLRate float32 `default:"0.02"`
 
 	// rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity -- this determines the effective strength of the constraint, and larger models may need more than the weaker default value.
-	SynScaleRate float32 `viewif:"On" default:"0.005,0.0002"`
+	SynScaleRate float32 `default:"0.005,0.0002"`
 
 	// amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point.
-	SubMean float32 `viewif:"On" default:"0,1"`
+	SubMean float32 `default:"0,1"`
 
 	// permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used
-	Permute slbool.Bool `viewif:"On" default:"true"`
+	Permute slbool.Bool `default:"true"`
 
 	// use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool
-	Pool slbool.Bool `viewif:"On"`
+	Pool slbool.Bool
 
 	pad int32
 
 	// range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range.
-	TrgRange minmax.F32 `viewif:"On" default:"{'Min':0.5,'Max':2}"`
+	TrgRange minmax.F32 `default:"{'Min':0.5,'Max':2}"`
 }
 
 func (ta *TrgAvgActParams) Update() {
@@ -189,6 +189,15 @@ func (ta *TrgAvgActParams) Defaults() {
 	ta.Update()
 }
 
+func (ta *TrgAvgActParams) ShouldShow(field string) bool {
+	switch field {
+	case "On", "GiBaseInit":
+		return true
+	default:
+		return ta.On.IsTrue()
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  RLRateParams
 
@@ -201,19 +210,19 @@ type RLRateParams struct {
 	On slbool.Bool `default:"true"`
 
 	// minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers.
-	SigmoidMin float32 `viewif:"On" default:"0.05,1"`
+	SigmoidMin float32 `default:"0.05,1"`
 
 	// modulate learning rate as a function of plus - minus differences
-	Diff slbool.Bool `viewif:"On"`
+	Diff slbool.Bool
 
 	// threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero
-	SpkThr float32 `viewif:"On&&Diff" default:"0.1"`
+	SpkThr float32 `default:"0.1"`
 
 	// threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value
-	DiffThr float32 `viewif:"On&&Diff" default:"0.02"`
+	DiffThr float32 `default:"0.02"`
 
 	// for Diff component, minimum learning rate value when below ActDiffThr
-	Min float32 `viewif:"On&&Diff" default:"0.001"`
+	Min float32 `default:"0.001"`
 
 	pad, pad1 int32
 }
@@ -229,6 +238,17 @@ func (rl *RLRateParams) Defaults() {
 	rl.DiffThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
+}
+
+func (rl *RLRateParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	case "Diff", "SigmoidMin":
+		return rl.On.IsTrue()
+	default:
+		return rl.On.IsTrue() && rl.Diff.IsTrue()
+	}
 }
 
 // RLRateSigDeriv returns the sigmoid derivative learning rate
@@ -449,13 +469,13 @@ type SWtAdaptParams struct {
 	On slbool.Bool
 
 	// learning rate multiplier on the accumulated DWt values (which already have fast LRate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models.
-	LRate float32 `viewif:"On" default:"0.1,0.01,0.001,0.0002"`
+	LRate float32 `default:"0.1,0.01,0.001,0.0002"`
 
 	// amount of mean to subtract from SWt delta when updating -- generally best to set to 1
-	SubMean float32 `viewif:"On" default:"1"`
+	SubMean float32 `default:"1"`
 
 	// gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values
-	SigGain float32 `viewif:"On" default:"6"`
+	SigGain float32 `default:"6"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
@@ -467,6 +487,15 @@ func (sp *SWtAdaptParams) Defaults() {
 }
 
 func (sp *SWtAdaptParams) Update() {
+}
+
+func (sp *SWtAdaptParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return sp.On.IsTrue()
+	}
 }
 
 //gosl: end learn
@@ -715,12 +744,12 @@ type LRateMod struct {
 	On slbool.Bool
 
 	// baseline learning rate -- what you get for correct cases
-	Base float32 `viewif:"On" min:"0" max:"1"`
+	Base float32 `min:"0" max:"1"`
 
 	pad, pad1 int32
 
 	// defines the range over which modulation occurs for the modulator factor -- Min and below get the Base level of learning rate modulation, Max and above get a modulation of 1
-	Range minmax.F32 `viewif:"On"`
+	Range minmax.F32
 }
 
 func (lr *LRateMod) Defaults() {
@@ -730,6 +759,15 @@ func (lr *LRateMod) Defaults() {
 }
 
 func (lr *LRateMod) Update() {
+}
+
+func (lr *LRateMod) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return lr.On.IsTrue()
+	}
 }
 
 // Mod returns the learning rate modulation factor as a function
@@ -775,13 +813,13 @@ type LearnSynParams struct {
 	pad, pad1, pad2 int32
 
 	// learning rate parameters, supporting two levels of modulation on top of base learning rate.
-	LRate LRateParams `viewif:"Learn"`
+	LRate LRateParams
 
 	// trace-based learning parameters
-	Trace TraceParams `viewif:"Learn"`
+	Trace TraceParams
 
 	// kinase calcium Ca integration parameters
-	KinaseCa kinase.CaParams `viewif:"Learn" view:"inline"`
+	KinaseCa kinase.CaParams `view:"inline"`
 }
 
 func (ls *LearnSynParams) Update() {
@@ -795,6 +833,15 @@ func (ls *LearnSynParams) Defaults() {
 	ls.LRate.Defaults()
 	ls.Trace.Defaults()
 	ls.KinaseCa.Defaults()
+}
+
+func (ls *LearnSynParams) ShouldShow(field string) bool {
+	switch field {
+	case "Learn":
+		return true
+	default:
+		return ls.Learn.IsTrue()
+	}
 }
 
 // CHLdWt returns the error-driven weight change component for a

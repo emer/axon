@@ -123,20 +123,20 @@ type PrjnParams struct {
 	// If the Da sign is positive, the first recv unit learns fully; for negative,
 	// second one learns fully.
 	// Lower lrate applies for opposite cases.  Weights are positive-only.
-	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline"`
+	RLPred RLPredPrjnParams `view:"inline"`
 
 	// for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity
 	// is formed, and then modulated by dopamine whenever it occurs.
 	// This bridges the temporal gap between gating activity and subsequent activity,
 	// and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level from CINs.
-	Matrix MatrixPrjnParams `viewif:"PrjnType=[VSMatrixPrjn,DSMatrixPrjn]" view:"inline"`
+	Matrix MatrixPrjnParams `view:"inline"`
 
 	// Basolateral Amygdala projection parameters.
-	BLA BLAPrjnParams `viewif:"PrjnType=BLAPrjn" view:"inline"`
+	BLA BLAPrjnParams `view:"inline"`
 
 	// Hip bench parameters.
-	Hip HipPrjnParams `viewif:"PrjnType=HipPrjn" view:"inline"`
+	Hip HipPrjnParams `view:"inline"`
 }
 
 func (pj *PrjnParams) Defaults() {
@@ -162,6 +162,21 @@ func (pj *PrjnParams) Update() {
 
 	if pj.PrjnType == CTCtxtPrjn {
 		pj.Com.GType = ContextG
+	}
+}
+
+func (pj *PrjnParams) ShouldShow(field string) bool {
+	switch field {
+	case "RLPred":
+		return pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn
+	case "Matrix":
+		return pj.PrjnType == VSMatrixPrjn || pj.PrjnType == DSMatrixPrjn
+	case "BLA":
+		return pj.PrjnType == BLAPrjn
+	case "Hip":
+		return pj.PrjnType == HipPrjn
+	default:
+		return true
 	}
 }
 

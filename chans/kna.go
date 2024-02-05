@@ -19,13 +19,13 @@ type KNaParams struct {
 	On slbool.Bool
 
 	// Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate
-	Rise float32 `viewif:"On"`
+	Rise float32
 
 	// Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here
-	Max float32 `viewif:"On"`
+	Max float32
 
 	// time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)
-	Tau float32 `viewif:"On"`
+	Tau float32
 
 	// 1/Tau rate constant
 	Dt float32 `view:"-"`
@@ -43,6 +43,15 @@ func (ka *KNaParams) Defaults() {
 
 func (ka *KNaParams) Update() {
 	ka.Dt = 1 / ka.Tau
+}
+
+func (ka *KNaParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return ka.On.IsTrue()
+	}
 }
 
 // GcFmSpike updates the KNa conductance based on spike or not
@@ -72,10 +81,10 @@ type KNaMedSlow struct {
 	pad, pad1 int32
 
 	// medium time-scale adaptation
-	Med KNaParams `viewif:"On" view:"inline"`
+	Med KNaParams `view:"inline"`
 
 	// slow time-scale adaptation
-	Slow KNaParams `viewif:"On" view:"inline"`
+	Slow KNaParams `view:"inline"`
 }
 
 func (ka *KNaMedSlow) Defaults() {
@@ -93,6 +102,15 @@ func (ka *KNaMedSlow) Defaults() {
 func (ka *KNaMedSlow) Update() {
 	ka.Med.Update()
 	ka.Slow.Update()
+}
+
+func (ka *KNaMedSlow) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return ka.On.IsTrue()
+	}
 }
 
 // GcFmSpike updates med, slow time scales of KNa adaptation from spiking

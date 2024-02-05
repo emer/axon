@@ -20,7 +20,7 @@ type VGCCParams struct {
 	Gbar float32 `default:"0.02,0.12"`
 
 	// calcium from conductance factor -- important for learning contribution of VGCC
-	Ca float32 `viewif:"Gbar>0" default:"25"`
+	Ca float32 `default:"25"`
 
 	pad, pad1 int32
 }
@@ -31,6 +31,15 @@ func (np *VGCCParams) Defaults() {
 }
 
 func (np *VGCCParams) Update() {
+}
+
+func (np *VGCCParams) ShouldShow(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return np.Gbar > 0
+	}
 }
 
 // GFmV returns the VGCC conductance as a function of normalized membrane potential
