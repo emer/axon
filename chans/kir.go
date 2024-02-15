@@ -55,6 +55,15 @@ func (kp *KirParams) Update() {
 	kp.Mrest = kp.MinfRest()
 }
 
+func (kp *KirParams) ShouldShow(field string) bool {
+	switch field {
+	case "Gbar":
+		return true
+	default:
+		return kp.Gbar > 0
+	}
+}
+
 // DM computes the change in M gating parameter
 func (kp *KirParams) DM(vbio, m float32) float32 {
 	var minf, mtau float32

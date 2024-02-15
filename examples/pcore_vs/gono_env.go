@@ -60,13 +60,13 @@ type GoNoEnv struct {
 	// number of repetitions per testing level
 	TestReps int
 
-	// number of units within each pool, Y
+	// number of units, Y
 	NUnitsY int `view:"-"`
 
-	// number of units within each pool, X
+	// number of units, X
 	NUnitsX int `view:"-"`
 
-	// total number of units within each pool
+	// total number of units
 	NUnits int `view:"-"`
 
 	// pop code the values in ACCPos and Neg

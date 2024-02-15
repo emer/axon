@@ -559,29 +559,21 @@ func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	ract := float32(0)
-	if subPool.AvgMax.CaSpkD.Plus.Max > pj.Learn.Trace.LearnThr+0.1 {
-		ract = NrnV(ctx, ri, di, CaSpkD)
-	} else {
-		ract = NrnV(ctx, ri, di, GeIntNorm)
-	}
-	if ract < pj.Learn.Trace.LearnThr {
-		ract = 0
-	}
-
 	ach := GlbV(ctx, di, GvACh)
 	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
-		dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * SynCaV(ctx, syni, di, Tr) * ract
+		rlr := NrnV(ctx, ri, di, RLRate)
+		tr := SynCaV(ctx, syni, di, Tr)
+		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	} else if ach > 0.1 {
-		if layPool.Gated.IsTrue() { // our layer gated
-			SetSynCaV(ctx, syni, di, DTr, ach*NrnV(ctx, si, di, CaSpkD)*ract)
-		} else {
-			SetSynCaV(ctx, syni, di, DTr, -pj.Matrix.NoGateLRate*ach*NrnV(ctx, si, di, CaSpkD)*ract)
-		}
-		AddSynCaV(ctx, syni, di, Tr, SynCaV(ctx, syni, di, DTr))
+		rplus := NrnV(ctx, ri, di, CaSpkD)
+		rminus := NrnV(ctx, ri, di, CaSpkD)
+		// todo: need an SNr PF signal here!
+		dtr := NrnV(ctx, si, di, CaSpkD) * (rplus - rminus)
+		SetSynCaV(ctx, syni, di, DTr, dtr)
+		AddSynCaV(ctx, syni, di, Tr, dtr)
 	} else {
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	}
