@@ -16,6 +16,7 @@ import (
 // MotorSeqEnv implements simple motor sequencing patterns to test DS BG learning.
 // Simplest mode has sequential State inputs which require distinct motor actions.
 // Also implements simple reward prediction error for dopamine.
+// The first trial is blank, and the last trial has the reward.
 type MotorSeqEnv struct {
 
 	// name of environment -- Train or Test
@@ -120,7 +121,7 @@ func (ev *MotorSeqEnv) Validate() error {
 }
 
 func (ev *MotorSeqEnv) Init(run int) {
-	ev.Trial.Max = ev.SeqLen
+	ev.Trial.Max = ev.SeqLen + 2
 	ev.Trial.Init()
 	ev.NCorrect, ev.Rew, ev.RewPred, ev.RPE = 0, 0, 0, 0
 }
@@ -136,6 +137,12 @@ func (ev *MotorSeqEnv) State(el string) etensor.Tensor {
 	return ev.States[el]
 }
 
+// RenderBlank renders blank
+func (ev *MotorSeqEnv) RenderBlank(name string) {
+	av := ev.States[name]
+	av.SetZeros()
+}
+
 // RenderLocalist renders localist * NUnitsPer
 func (ev *MotorSeqEnv) RenderLocalist(name string, idx int) {
 	av := ev.States[name]
@@ -145,13 +152,27 @@ func (ev *MotorSeqEnv) RenderLocalist(name string, idx int) {
 	}
 }
 
+func (ev *MotorSeqEnv) IsRewTrial() bool {
+	return ev.Trial.Cur == ev.Trial.Max-1
+}
+
 // RenderState renders the current state
 func (ev *MotorSeqEnv) RenderState() {
-	st := ev.Trial.Cur
-	ev.Target = st // todo: starting with simple 1-to-1
-	ev.RenderLocalist("State", st)
-	ev.RenderLocalist("Target", ev.Target)
-	ev.RenderLocalist("PrevAction", ev.PrevAction)
+	trl := ev.Trial.Cur
+	if trl == 0 || ev.IsRewTrial() {
+		ev.PrevAction = 0
+		ev.RenderBlank("State")
+		ev.RenderBlank("Target")
+		ev.RenderBlank("PrevAction")
+	} else {
+		st := trl - 1
+		ev.Target = st // todo: starting with simple 1-to-1
+		ev.RenderLocalist("State", st)
+		ev.RenderLocalist("Target", ev.Target)
+		if trl > 1 {
+			ev.RenderLocalist("PrevAction", ev.PrevAction)
+		}
+	}
 }
 
 // Step does one step, advancing the Trial counter, rendering states
@@ -168,7 +189,7 @@ func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
 	if ev.CurAction == ev.Target {
 		ev.NCorrect++
 	}
-	if ev.Trial.Cur == ev.Trial.Max-1 {
+	if ev.Trial.Cur == ev.Trial.Max-2 {
 		ev.ComputeReward()
 	}
 }

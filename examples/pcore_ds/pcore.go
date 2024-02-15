@@ -225,6 +225,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn)
 	net.ConnectLayers(prevAct, stn, full, axon.ForwardPrjn)
 
+	net.ConnectLayers(state, m1, full, axon.ForwardPrjn)
+	net.ConnectLayers(prevAct, m1, full, axon.ForwardPrjn)
+
 	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("BgFixed")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
@@ -382,10 +385,8 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
-		inRew := trial == ev.SeqLen
-		if trial > 0 && !inRew {
-			ev.Step()
-		}
+		inRew := ev.IsRewTrial()
+		ev.Step()
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
 			itsr := ev.State(lnm)
@@ -436,9 +437,6 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	}
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*MotorSeqEnv)
-		if trial >= ev.SeqLen {
-			continue
-		}
 		netAct := ss.DecodeAct(ev, di)
 		ev.Action(fmt.Sprintf("%d", netAct), nil)
 	}
@@ -505,7 +503,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Correct"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Correct", "Rew", "RewPred", "RPE"})
 }
 
 // TrialStats records the trial-level statistics
