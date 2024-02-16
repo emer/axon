@@ -259,7 +259,7 @@ func (net *Network) ConnectPTNotMaint(ptMaint, ptNotMaint *Layer, pat prjn.Patte
 // Projections are made with given classes: SuperToPT, PTSelfMaint, PTtoThal, ThalToPT,
 // with optional extra class
 // The PT and BGThal layers are positioned behind the CT layer.
-func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnClass string, superToPT, ptSelf prjn.Pattern, space float32) (pt, thal *Layer) {
+func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnClass string, superToPT, ptSelf, ptThal prjn.Pattern, space float32) (pt, thal *Layer) {
 	if prjnClass != "" {
 		prjnClass = " " + prjnClass
 	}
@@ -277,9 +277,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	pt.SetClass(name)
 	thal.SetClass(name)
 
-	// full := prjn.NewFull()
-	one2one := prjn.NewOneToOne()
-	pthal, thalpt := net.BidirConnectLayers(pt, thal, one2one)
+	pthal, thalpt := net.BidirConnectLayers(pt, thal, ptThal)
 	pthal.SetClass("PTtoThal" + prjnClass)
 	thalpt.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel":  "1.0",
@@ -439,7 +437,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
-	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, space)
+	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, p1to1, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, p1to1, p1to1, prjnClass, space)
 	pfcPTp.SetClass(name)
 	pfcPT.AddClass(layClass)
@@ -511,7 +509,7 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
-	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, full, space)
+	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, full, full, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, full, full, prjnClass, space)
 	pfcPTp.SetClass(name)
 	pfcPT.AddClass(layClass)

@@ -203,18 +203,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
 	_ = snc
 
-	urge := net.AddUrgencyLayer(5, 4)
-	_ = urge
-
 	state := net.AddLayer4D("State", 1, np, nuPer, nAct, axon.InputLayer)
-	prevAct := net.AddLayer4D("PrevAction", 1, np, nuPer, nAct, axon.InputLayer)
+	s1 := net.AddLayer4D("S1", 1, np, nuPer, nAct, axon.InputLayer)
 
-	act := net.AddLayer2D("Act", nuPer, nAct, axon.InputLayer) // Action: what is actually done
-	vl := net.AddPulvLayer2D("VL", nuPer, nAct)                // VL predicts brainstem Action
-	vl.SetBuildConfig("DriveLayName", act.Name())
+	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
+
+	motor := net.AddLayer2D("MotorBS", nuPer, nAct, axon.TargetLayer)
+	pf := net.AddLayer2D("PF", nuPer, nAct, axon.SuperLayer)
+	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
+
+	vl := net.AddPulvLayer2D("VL", nuPer, nAct) // VL predicts brainstem Action
+	vl.SetBuildConfig("DriveLayName", motor.Name())
 
 	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, space)
 	_ = m1PT
+	// todo: M1PTp should be VL interconnected, prior to PT, not after it.
 
 	// vl is a predictive thalamus but we don't have direct access to its source
 	net.ConnectToPFC(nil, vl, m1, m1CT, m1PTp, full) // m1 predicts vl
@@ -222,35 +225,41 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
-	net.ConnectLayers(state, stn, full, axon.ForwardPrjn)
-	net.ConnectLayers(prevAct, stn, full, axon.ForwardPrjn)
+	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn) // motor output
+
+	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
+	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 
 	net.ConnectLayers(state, m1, full, axon.ForwardPrjn)
-	net.ConnectLayers(prevAct, m1, full, axon.ForwardPrjn)
+	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn)
 
 	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpi, pf, full, axon.InhibPrjn).SetClass("BgFixed")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 
-	net.ConnectToVSMatrix(state, mtxGo, full).SetClass("stateToMtx")
-	net.ConnectToVSMatrix(prevAct, mtxNo, full).SetClass("stateToMtx")
-	// cross connections:
-	net.ConnectToVSMatrix(state, mtxNo, full).SetClass("stateToMtx")
-	net.ConnectToVSMatrix(prevAct, mtxGo, full).SetClass("stateToMtx")
+	net.ConnectToDSMatrix(state, mtxGo, full).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(state, mtxNo, full).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(s1, mtxNo, full).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(s1, mtxGo, full).SetClass("StateToMtx")
 
-	net.ConnectToVSMatrix(urge, mtxGo, full)
+	net.ConnectToDSMatrix(m1, mtxGo, full).SetClass("M1ToMtx")
+	net.ConnectToDSMatrix(m1, mtxNo, full).SetClass("M1ToMtx")
+	net.ConnectToDSMatrix(pf, mtxGo, full).SetClass("PFToMtx")
+	net.ConnectToDSMatrix(pf, mtxNo, full).SetClass("PFToMtx")
 
 	m1VM.PlaceRightOf(gpi, space)
-	snc.PlaceRightOf(m1VM, space)
-	urge.PlaceRightOf(snc, space)
+	pf.PlaceRightOf(m1VM, space)
+	snc.PlaceRightOf(pf, space)
 	gpeAk.PlaceAbove(gpi)
 	stn.PlaceRightOf(gpePr, space)
 	mtxGo.PlaceAbove(gpeAk)
 	state.PlaceAbove(mtxGo)
-	prevAct.PlaceRightOf(state, space)
+	s1.PlaceRightOf(state, space)
 	vl.PlaceRightOf(mtxNo, space)
-	act.PlaceBehind(vl, space)
+	motor.PlaceBehind(vl, space)
+	targ.PlaceBehind(motor, space)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -300,22 +309,22 @@ func (ss *Sim) ConfigLoops() {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MotorSeqEnv)
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
-	nSeqTrials := ev.SeqLen + 2 // 1 at start and 1 at end
+	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, nSeqTrials).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, 300)
 
 	man.AddStack(etime.Test).
 		AddTime(etime.Epoch, 1).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, nSeqTrials).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, 300)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 250, 299)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
@@ -326,13 +335,14 @@ func (ss *Sim) ConfigLoops() {
 			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur
 			ss.ApplyInputs(mode, seq, trial)
 		})
-		plusPhase, _ := stack.Loops[etime.Cycle].EventByName("PlusPhase")
-		plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() {
-			// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
-			// because minus phase end has gated info, and plus phase start applies action input
-			ss.TakeAction(ss.Net)
-		})
 	}
+	// note: auto applies to all
+	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
+	plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() {
+		// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
+		// because minus phase end has gated info, and plus phase start applies action input
+		ss.TakeAction(ss.Net)
+	})
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
@@ -381,15 +391,17 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 	net := ss.Net
 	ss.Net.InitExt(ctx)
 
-	lays := []string{"State", "PrevAction"}
+	lays := []string{"State", "S1", "Target"}
+	states := []string{"State", "PrevAction", "Target"}
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
 		inRew := ev.IsRewTrial()
 		ev.Step()
-		for _, lnm := range lays {
+		for li, lnm := range lays {
+			snm := states[li]
 			ly := net.AxonLayerByName(lnm)
-			itsr := ev.State(lnm)
+			itsr := ev.State(snm)
 			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
 		ss.ApplyPVLV(ev, uint32(di), inRew)
@@ -402,9 +414,7 @@ func (ss *Sim) ApplyPVLV(ev *MotorSeqEnv, di uint32, inRew bool) {
 	ctx := &ss.Context
 	pv := &ss.Net.PVLV
 	pv.EffortUrgencyUpdt(ctx, di, 1)
-	if ctx.Mode == etime.Test {
-		pv.Urgency.Reset(ctx, di)
-	}
+	pv.Urgency.Reset(ctx, di)
 
 	if inRew {
 		axon.SetGlbV(ctx, di, axon.GvACh, 1)
@@ -431,21 +441,29 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 // Called at end of minus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
-	trial := ss.Loops.Stacks[ctx.Mode].Loops[etime.Trial].Counter.Cur
-	if trial == 0 {
-		return
-	}
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*MotorSeqEnv)
 		netAct := ss.DecodeAct(ev, di)
 		ev.Action(fmt.Sprintf("%d", netAct), nil)
+		if !ev.IsRewTrial() {
+			ss.ApplyAction(di)
+		}
 	}
 }
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *MotorSeqEnv, di int) int {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaSpkP", di) // was "Act"
+	vt := ss.Stats.SetLayerTensor(ss.Net, "MotorBS", "CaSpkPM", di)
 	return ev.DecodeAct(vt)
+}
+
+func (ss *Sim) ApplyAction(di int) {
+	ctx := &ss.Context
+	net := ss.Net
+	ev := ss.Envs.ByModeDi(ss.Context.Mode, di).(*MotorSeqEnv)
+	ap := ev.State("Action")
+	ly := net.AxonLayerByName("MotorBS")
+	ly.ApplyExt(ctx, uint32(di), ap)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -472,6 +490,8 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
+	ss.Stats.SetFloat("Action", 0)
+	ss.Stats.SetFloat("Target", 0)
 	ss.Stats.SetFloat("Correct", 0)
 	ss.Stats.SetFloat("NCorrect", 0)
 	ss.Stats.SetFloat("Rew", 0)
@@ -503,13 +523,15 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Correct", "Rew", "RewPred", "RPE"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Action", "Target", "Correct", "Rew", "RewPred", "RPE"})
 }
 
 // TrialStats records the trial-level statistics
 func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*MotorSeqEnv)
+	ss.Stats.SetFloat32("Action", float32(ev.CurAction))
+	ss.Stats.SetFloat32("Target", float32(ev.Target))
 	ss.Stats.SetFloat32("Correct", num.FromBool[float32](ev.Correct))
 	ss.Stats.SetFloat32("NCorrect", float32(ev.NCorrect))
 	ss.Stats.SetFloat32("RewPred", ev.RewPred)
@@ -637,7 +659,8 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
-	nv.Params.MaxRecs = 300
+	nv.Params.MaxRecs = 400
+	nv.Params.Raster.Max = 300
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)

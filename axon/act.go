@@ -148,10 +148,13 @@ type DendParams struct {
 	// multiplicative gain factor on the total modulatory input -- this can also be controlled by the PrjnScale.Abs factor on ModulatoryG inputs, but it is convenient to be able to control on the layer as well.
 	ModGain float32
 
+	// if true, modulatory signal also includes ACh multiplicative factor
+	ModACh slbool.Bool
+
 	// baseline modulatory level for modulatory effects -- net modulation is ModBase + ModGain * GModSyn
 	ModBase float32
 
-	pad, pad1 int32
+	pad int32
 }
 
 func (dp *DendParams) Defaults() {
@@ -163,6 +166,15 @@ func (dp *DendParams) Defaults() {
 }
 
 func (dp *DendParams) Update() {
+}
+
+func (dp *DendParams) ShouldShow(field string) bool {
+	switch field {
+	case "ModGain", "ModACh", "ModBase":
+		return dp.HasMod.IsTrue()
+	default:
+		return true
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

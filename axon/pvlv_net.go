@@ -507,6 +507,7 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
@@ -524,6 +525,7 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	ofc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
@@ -574,6 +576,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	accNegVal, accNegValCT, accNegValPT, accNegValPTp, accNegValMD := net.AddPFC2D("ACCnegVal", "MD", ofcY, ofcX, true, space)
 	_ = accNegValPT
+
+	ofcPosValPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
+	accNegValPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
 
 	p1to1 := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
@@ -899,6 +904,8 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	vSmtxNo.SetBuildConfig("ThalLay5Name", accUtilMD.Name())
 	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)
 	net.ConnectPTNotMaint(accUtilPT, notMaint, full)
+
+	accUtilPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
 
 	pj = net.ConnectToVSMatrix(accUtil, vSmtxGo, full)
 	pj.DefParams = pfc2m

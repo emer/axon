@@ -204,7 +204,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accPos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
 	accNeg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
 
-	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, space)
+	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, full, space)
 	_ = accPosPT
 
 	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn)

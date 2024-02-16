@@ -16,4 +16,9 @@ Training data shows close match between Gated and Should (high Match proportion)
 
 Testing data over ACC Pos (outer loop) and ACC Neg (inner loop) shows increasing probability of gating as Pos increases, and reduced firing, and slower RT, as Neg increases, closely matching the target `Should` behavior.  25 samples of each case are performed, so intermediate levels indicate probability of gating.  Model shows appropriate probabilistic behavior on the marginal cases.
 
+# TODO:
 
+* ACh needed for any learning!
+* DA, learning etc
+* PT_lower, PT_upper etc -- need to replace / rethink PTPred basically?
+* GPU mode doesn't currently make any sense

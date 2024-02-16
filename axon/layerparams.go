@@ -623,7 +623,11 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni, di uint32) {
 	nrnGModSyn := NrnV(ctx, ni, di, GModSyn)
 	switch ly.LayType {
 	case PTMaintLayer:
-		mod := ly.Acts.Dend.ModBase + GlbV(ctx, di, GvACh)*ly.Acts.Dend.ModGain*nrnGModSyn
+		mod := ly.Acts.Dend.ModGain * nrnGModSyn
+		if ly.Acts.Dend.ModACh.IsTrue() {
+			mod *= GlbV(ctx, di, GvACh)
+		}
+		mod += ly.Acts.Dend.ModBase
 		MulNrnV(ctx, ni, di, GeRaw, mod) // key: excluding GModMaint here, so active maintenance can persist
 		MulNrnV(ctx, ni, di, GeSyn, mod)
 		extraRaw = GlbV(ctx, di, GvACh) * ly.Acts.Dend.ModGain * nrnGModRaw

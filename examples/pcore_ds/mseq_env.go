@@ -37,6 +37,9 @@ type MotorSeqEnv struct {
 	// learning rate for reward prediction
 	RewPredLRate float32
 
+	// minimum rewpred value
+	RewPredMin float32
+
 	//	give reward in proportion to number of correct actions in sequence,
 	// otherwise only for perfect sequence
 	PartialCredit bool
@@ -83,7 +86,7 @@ type MotorSeqEnv struct {
 	// random seed
 	RndSeed int64 `edit:"-"`
 
-	// named states: State, Target, PrevAction
+	// named states: State, Target, PrevAction, Action
 	States map[string]*etensor.Float32
 }
 
@@ -98,6 +101,7 @@ func (ev *MotorSeqEnv) Desc() string {
 func (ev *MotorSeqEnv) Defaults() {
 	ev.SeqLen = 2
 	ev.RewPredLRate = 0.02
+	ev.RewPredMin = 0.1
 	ev.MaxSeqLen = 5
 	ev.NUnitsPer = 5
 	ev.NUnits = ev.NUnitsPer * ev.MaxSeqLen
@@ -111,6 +115,7 @@ func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.States = make(map[string]*etensor.Float32)
 	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
 	ev.States["Target"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
+	ev.States["Action"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
 	ev.States["PrevAction"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 	ev.States["SNc"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
@@ -121,9 +126,11 @@ func (ev *MotorSeqEnv) Validate() error {
 }
 
 func (ev *MotorSeqEnv) Init(run int) {
-	ev.Trial.Max = ev.SeqLen + 2
+	ev.Trial.Max = ev.SeqLen + 1 // rew
 	ev.Trial.Init()
-	ev.NCorrect, ev.Rew, ev.RewPred, ev.RPE = 0, 0, 0, 0
+	ev.Trial.Cur = -1 // first step goes to 0
+	ev.NCorrect, ev.Rew, ev.RPE = 0, 0, 0
+	ev.RewPred = ev.RewPredMin
 }
 
 func (ev *MotorSeqEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
@@ -159,18 +166,21 @@ func (ev *MotorSeqEnv) IsRewTrial() bool {
 // RenderState renders the current state
 func (ev *MotorSeqEnv) RenderState() {
 	trl := ev.Trial.Cur
-	if trl == 0 || ev.IsRewTrial() {
+	ev.RenderBlank("Action")
+	if ev.IsRewTrial() {
 		ev.PrevAction = 0
 		ev.RenderBlank("State")
 		ev.RenderBlank("Target")
 		ev.RenderBlank("PrevAction")
 	} else {
-		st := trl - 1
+		st := trl
 		ev.Target = st // todo: starting with simple 1-to-1
 		ev.RenderLocalist("State", st)
 		ev.RenderLocalist("Target", ev.Target)
-		if trl > 1 {
-			ev.RenderLocalist("PrevAction", ev.PrevAction)
+		if trl > 0 {
+			ev.RenderLocalist("PrevAction", 1+ev.PrevAction)
+		} else {
+			ev.RenderLocalist("PrevAction", 0)
 		}
 	}
 }
@@ -189,7 +199,8 @@ func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
 	if ev.CurAction == ev.Target {
 		ev.NCorrect++
 	}
-	if ev.Trial.Cur == ev.Trial.Max-2 {
+	ev.RenderLocalist("Action", ev.CurAction)
+	if ev.Trial.Cur == ev.Trial.Max-2 { // trial before reward trial
 		ev.ComputeReward()
 	}
 }
@@ -205,6 +216,9 @@ func (ev *MotorSeqEnv) ComputeReward() {
 	}
 	ev.RPE = ev.Rew - ev.RewPred
 	ev.RewPred += ev.RewPredLRate * (ev.Rew - ev.RewPred)
+	if ev.RewPred < ev.RewPredMin {
+		ev.RewPred = ev.RewPredMin
+	}
 	ev.PrevNCorrect = ev.NCorrect
 	ev.NCorrect = 0
 }
