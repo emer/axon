@@ -102,7 +102,7 @@ func (ev *MotorSeqEnv) Defaults() {
 	ev.SeqLen = 2            // 2 is doable, 3 is too long without mixing (probably)
 	ev.PartialCredit = false // actually better without -- otherwise just gets 1 right and is happy.
 	// todo: add option to vary sequence length before reward -- key!
-	ev.RewPredLRate = 0.001 // 0.001 is probably too slow
+	ev.RewPredLRate = 0.002 // 0.002 > 0.001 good; 0.01 too fast
 	ev.RewPredMin = 0.1     // 0.1 > 0.05?  needs more punishment?
 	ev.MaxSeqLen = 5
 	ev.NUnitsPer = 5

@@ -67,7 +67,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.PrjnScale.Abs":        "1.8",  // 1.5 good; 1.8 causes some breakthrough
 				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
 				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
-				"Prjn.Matrix.NonDelta":      "0.2",  // key param, must be >= 0.2, 0.3 -- with pf modulation
+				"Prjn.Matrix.NonDelta":      "0.3",  // key param, must be >= 0.2, 0.3 -- with pf modulation
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
