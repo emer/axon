@@ -18,7 +18,10 @@ Testing data over ACC Pos (outer loop) and ACC Neg (inner loop) shows increasing
 
 # TODO:
 
-* ACh needed for any learning!
+* logical issue: how can the BG DA learning contribute to correct performance if all it does is timing.   the "wait for another option to be suggested by someone else" strategy is just not sufficiently robust (or concretely realizable in simple circuits).
+
+* 26k SNr neurons is still plenty to code for specific actions.
+
 * DA, learning etc
 * PT_lower, PT_upper etc -- need to replace / rethink PTPred basically?
 * GPU mode doesn't currently make any sense

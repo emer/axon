@@ -100,7 +100,7 @@ func (ev *MotorSeqEnv) Desc() string {
 
 func (ev *MotorSeqEnv) Defaults() {
 	ev.SeqLen = 2
-	ev.RewPredLRate = 0.02
+	ev.RewPredLRate = 0.002
 	ev.RewPredMin = 0.1
 	ev.MaxSeqLen = 5
 	ev.NUnitsPer = 5
@@ -197,7 +197,10 @@ func (ev *MotorSeqEnv) Step() bool {
 func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
 	ev.CurAction, _ = strconv.Atoi(action)
 	if ev.CurAction == ev.Target {
+		ev.Correct = true
 		ev.NCorrect++
+	} else {
+		ev.Correct = false
 	}
 	ev.RenderLocalist("Action", ev.CurAction)
 	if ev.Trial.Cur == ev.Trial.Max-2 { // trial before reward trial

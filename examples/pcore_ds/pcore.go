@@ -396,8 +396,8 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
-		inRew := ev.IsRewTrial()
 		ev.Step()
+		inRew := ev.IsRewTrial()
 		for li, lnm := range lays {
 			snm := states[li]
 			ly := net.AxonLayerByName(lnm)
@@ -454,7 +454,30 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *MotorSeqEnv, di int) int {
 	vt := ss.Stats.SetLayerTensor(ss.Net, "MotorBS", "CaSpkPM", di)
-	return ev.DecodeAct(vt)
+	return ss.SoftMaxChoose(vt)
+}
+
+// SoftMaxChoose probabalistically selects column with most activity in layer,
+// using a softmax with Config.Env.ActSoftMaxGain gain factor
+func (ss *Sim) SoftMaxChoose(vt *etensor.Float32) int {
+	dy := vt.Dim(0)
+	dx := vt.Dim(1)
+	var tot float32
+	probs := make([]float32, dx)
+	for i := range probs {
+		var sum float32
+		for j := 0; j < dy; j++ {
+			sum += vt.Value([]int{j, i})
+		}
+		p := mat32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		probs[i] = p
+		tot += p
+	}
+	for i, p := range probs {
+		probs[i] = p / tot
+	}
+	chs := erand.PChoose32(probs, -1)
+	return chs
 }
 
 func (ss *Sim) ApplyAction(di int) {

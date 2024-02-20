@@ -568,7 +568,7 @@ func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	} else if ach > 0.1 {
-		rplus := NrnV(ctx, ri, di, CaSpkD)
+		rplus := NrnV(ctx, ri, di, CaSpkP)
 		rminus := NrnV(ctx, ri, di, CaSpkD)
 		// todo: need an SNr PF signal here!
 		dtr := NrnV(ctx, si, di, CaSpkD) * (rplus - rminus)

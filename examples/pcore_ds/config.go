@@ -14,6 +14,9 @@ type EnvConfig struct {
 
 	// sequence length to use
 	SeqLen int
+
+	// gain on the softmax for choosing actions: lower values are more noisy
+	ActSoftMaxGain float32 `default:"1"`
 }
 
 // ParamConfig has config parameters related to sim params
