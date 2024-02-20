@@ -13,15 +13,21 @@ package axon
 // Trace is applied to DWt and reset at the time of reward.
 type MatrixPrjnParams struct {
 
-	// proportion of trace activity driven by non-delta raw activity of receiving neuron.
-	// which provides a baseline of purely DA-driven learning.
-	NonDelta float32 `default:"0.1"`
+	// weight for trace activity that is a function of the minus-plus delta
+	// activity signal on the receiving MSN neuron, independent of PF modulation.
+	Delta float32 `default:"1"`
 
-	pad, pad1, pad2 float32
+	// proportion of trace activity driven by non-delta activity of receiving neuron,
+	// which is multiplied by the PF modulatotory inputs, for strong credit assignment
+	// learning of the rewarded action.
+	NonDelta float32 `default:"0.2"`
+
+	pad, pad1 float32
 }
 
 func (tp *MatrixPrjnParams) Defaults() {
-	tp.NonDelta = 0.1
+	tp.Delta = 1
+	tp.NonDelta = 0.2
 }
 
 func (tp *MatrixPrjnParams) Update() {

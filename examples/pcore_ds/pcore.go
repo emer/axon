@@ -211,7 +211,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
 
 	motor := net.AddLayer4D("MotorBS", 1, nAct, nuPer, 1, axon.TargetLayer)
-	pf := net.AddLayer2D("PF", nuPer, nAct, axon.SuperLayer)
+	pf := net.AddLayer4D("PF", 1, nAct, nuPer, 1, axon.SuperLayer)
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
@@ -230,6 +230,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPrjn)
 	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
 	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
+
+	net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
 
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
@@ -250,8 +252,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToDSMatrix(m1, mtxGo, full).SetClass("M1ToMtx")
 	net.ConnectToDSMatrix(m1, mtxNo, full).SetClass("M1ToMtx")
-	net.ConnectToDSMatrix(pf, mtxGo, full).SetClass("PFToMtx")
-	net.ConnectToDSMatrix(pf, mtxNo, full).SetClass("PFToMtx")
+
+	net.ConnectLayers(pf, mtxGo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
+	net.ConnectLayers(pf, mtxNo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
 
 	m1VM.PlaceRightOf(gpi, space)
 	pf.PlaceRightOf(m1VM, space)

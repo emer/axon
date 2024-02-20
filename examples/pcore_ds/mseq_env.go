@@ -99,9 +99,11 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 1
-	ev.RewPredLRate = 0.001
-	ev.RewPredMin = 0.1
+	ev.SeqLen = 2            // 2 is doable, 3 is too long without mixing (probably)
+	ev.PartialCredit = false // actually better without -- otherwise just gets 1 right and is happy.
+	// todo: add option to vary sequence length before reward -- key!
+	ev.RewPredLRate = 0.001 // 0.001 is probably too slow
+	ev.RewPredMin = 0.1     // 0.1 > 0.05?  needs more punishment?
 	ev.MaxSeqLen = 5
 	ev.NUnitsPer = 5
 	ev.NUnits = ev.NUnitsPer * ev.MaxSeqLen
@@ -131,7 +133,8 @@ func (ev *MotorSeqEnv) InitSeqMap() {
 	for i := 0; i < ev.SeqLen; i++ {
 		ev.SeqMap[i] = pord[i]
 	}
-	ev.SeqMap[0] = 4 // todo: cheating
+	// ev.SeqMap[0] = 4 // todo: cheating -- 4 is initial bias; 0 also learns quickly
+	// ev.SeqMap[0] = 3 // 3, 2 good test cases -- can learn but not initial bias -- 3 esp hard
 }
 
 func (ev *MotorSeqEnv) Init(run int) {

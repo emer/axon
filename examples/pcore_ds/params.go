@@ -24,6 +24,8 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.FB":              "0",
 				"Layer.Inhib.Pool.Gi":              "0.5",
 				"Layer.Matrix.IsVS":                "false",
+				"Layer.Acts.Dend.ModBase":          "1",
+				"Layer.Acts.Dend.ModGain":          "0.1", // todo: could be 0
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
@@ -65,7 +67,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.PrjnScale.Abs":        "1.8",  // 1.5 good; 1.8 causes some breakthrough
 				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
 				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
-				"Prjn.Matrix.NonDelta":      "0.02", // key param
+				"Prjn.Matrix.NonDelta":      "0.2",  // key param, must be >= 0.2, 0.3 -- with pf modulation
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
@@ -84,13 +86,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // was 4
 			}},
-		// {Sel: ".PFToMtx", Desc: "",
-		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "2", // 1.5 good; 1.8 causes some breakthrough
-		// 	},
-		// 	Hypers: params.Hypers{
-		// 		"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-		// 	}},
+		{Sel: ".PFToMtx", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.Learn":   "false",
+				"Prjn.Com.GType":     "ModulatoryG",
+				"Prjn.PrjnScale.Abs": "1",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
 		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
