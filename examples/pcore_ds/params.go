@@ -19,7 +19,10 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":              "false",
+				"Layer.Inhib.Layer.On":             "false",
+				"Layer.Inhib.Pool.On":              "true",
+				"Layer.Inhib.Pool.FB":              "0",
+				"Layer.Inhib.Pool.Gi":              "0.5",
 				"Layer.Matrix.IsVS":                "false",
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			}},
@@ -49,13 +52,20 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":       "0",     // no real diff here over range 0-10
 				"Layer.Acts.MaintNMDA.Gbar": "0.007", // 0.007 default
 			}},
+		{Sel: "#MotorBS", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "true",
+				"Layer.Inhib.Pool.On":  "false",
+				"Layer.Inhib.Layer.Gi": "0.2",
+			}},
 		////////////////////////////////////////////
 		// Prjns
 		{Sel: ".DSMatrixPrjn", Desc: "",
 			Params: params.Params{
+				"Prjn.PrjnScale.Abs":        "1.8",  // 1.5 good; 1.8 causes some breakthrough
 				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
 				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
-				"Prjn.PrjnScale.Abs":        "1.8",  // 1.5 good; 1.8 causes some breakthrough
+				"Prjn.Matrix.NonDelta":      "0.02", // key param
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
@@ -90,7 +100,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // .1 too weak
+				"Prjn.PrjnScale.Abs": "1", // .5 too weak
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -98,6 +108,20 @@ var ParamSets = netparams.Sets{
 		{Sel: "#GPiToM1VM", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // needs to be very strong -- 5
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#GPiToMotorBS", Desc: "final inhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "4",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: ".M1ToMotorBS", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "3", // needs to be very strong -- 5
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

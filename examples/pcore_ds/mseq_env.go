@@ -44,8 +44,8 @@ type MotorSeqEnv struct {
 	// otherwise only for perfect sequence
 	PartialCredit bool
 
-	// sequence map from sequential input state to target motor action
-	SeqMap map[int]int
+	// sequence map from sequence index to target motor action
+	SeqMap []int
 
 	// current target correct action according to the sequence
 	Target int `edit:"-"`
@@ -99,8 +99,8 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 2
-	ev.RewPredLRate = 0.002
+	ev.SeqLen = 1
+	ev.RewPredLRate = 0.001
 	ev.RewPredMin = 0.1
 	ev.MaxSeqLen = 5
 	ev.NUnitsPer = 5
@@ -125,10 +125,20 @@ func (ev *MotorSeqEnv) Validate() error {
 	return nil
 }
 
+func (ev *MotorSeqEnv) InitSeqMap() {
+	pord := ev.Rand.Perm(ev.MaxSeqLen, -1)
+	ev.SeqMap = make([]int, ev.SeqLen)
+	for i := 0; i < ev.SeqLen; i++ {
+		ev.SeqMap[i] = pord[i]
+	}
+	ev.SeqMap[0] = 4 // todo: cheating
+}
+
 func (ev *MotorSeqEnv) Init(run int) {
 	ev.Trial.Max = ev.SeqLen + 1 // rew
 	ev.Trial.Init()
-	ev.Trial.Cur = -1 // first step goes to 0
+	ev.Trial.Cur = 0
+	ev.InitSeqMap()
 	ev.NCorrect, ev.Rew, ev.RPE = 0, 0, 0
 	ev.RewPred = ev.RewPredMin
 }
@@ -163,6 +173,10 @@ func (ev *MotorSeqEnv) IsRewTrial() bool {
 	return ev.Trial.Cur == ev.Trial.Max-1
 }
 
+func (ev *MotorSeqEnv) IsRewTrialPostStep() bool {
+	return ev.Trial.Cur == 0
+}
+
 // RenderState renders the current state
 func (ev *MotorSeqEnv) RenderState() {
 	trl := ev.Trial.Cur
@@ -173,7 +187,7 @@ func (ev *MotorSeqEnv) RenderState() {
 		ev.RenderBlank("Target")
 		ev.RenderBlank("PrevAction")
 	} else {
-		st := trl
+		st := ev.SeqMap[trl]
 		ev.Target = st // todo: starting with simple 1-to-1
 		ev.RenderLocalist("State", st)
 		ev.RenderLocalist("Target", ev.Target)
@@ -187,8 +201,9 @@ func (ev *MotorSeqEnv) RenderState() {
 
 // Step does one step, advancing the Trial counter, rendering states
 func (ev *MotorSeqEnv) Step() bool {
-	ev.Trial.Incr()
+	// fmt.Println("\nstep:", ev.Trial.Cur)
 	ev.RenderState()
+	ev.Trial.Incr()
 	return true
 }
 
@@ -196,20 +211,24 @@ func (ev *MotorSeqEnv) Step() bool {
 // Computes Rew* at end of sequence
 func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
 	ev.CurAction, _ = strconv.Atoi(action)
+	// fmt.Println("act:", ev.Trial.Cur, action, ev.CurAction, ev.Target, ev.NCorrect)
 	if ev.CurAction == ev.Target {
 		ev.Correct = true
 		ev.NCorrect++
+		// fmt.Println("correct:", ev.NCorrect)
 	} else {
 		ev.Correct = false
+		// fmt.Println("incorrect:")
 	}
 	ev.RenderLocalist("Action", ev.CurAction)
-	if ev.Trial.Cur == ev.Trial.Max-2 { // trial before reward trial
+	if ev.Trial.Cur == ev.Trial.Max-1 { // trial before reward trial
 		ev.ComputeReward()
 	}
 }
 
 func (ev *MotorSeqEnv) ComputeReward() {
 	ev.Rew = 0
+	// fmt.Println("rew, ncor:", ev.NCorrect, ev.SeqLen)
 	if ev.PartialCredit {
 		ev.Rew = float32(ev.NCorrect) / float32(ev.SeqLen)
 	} else {
@@ -233,15 +252,15 @@ func (ev *MotorSeqEnv) DecodeAct(vt *etensor.Float32) int {
 
 func (ev *MotorSeqEnv) DecodeLocalist(vt *etensor.Float32) int {
 	dx := vt.Dim(1)
-	var max float32
+	var mx float32
 	var mxi int
 	for i := 0; i < dx; i++ {
 		var sum float32
 		for j := 0; j < ev.NUnitsPer; j++ {
 			sum += vt.Value([]int{j, i})
 		}
-		if sum > max {
-			max = sum
+		if sum > mx {
+			mx = sum
 			mxi = i
 		}
 	}

@@ -145,6 +145,7 @@ func (ss *Sim) ConfigEnv() {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
 		trn.Config(etime.Train, 73+int64(di)*73)
+		// trn.Config(etime.Train, int64(di))
 		trn.Validate()
 
 		tst.Nm = env.ModeDi(etime.Test, di)
@@ -189,6 +190,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuCtxX := 5
 	space := float32(2)
 
+	p1to1 := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 	_ = one2one
 	full := prjn.NewFull()
@@ -197,7 +199,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.5
 	_ = mtxRndPrjn
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
+	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddBG4D("", 1, nAct, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
@@ -208,11 +210,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
 
-	motor := net.AddLayer2D("MotorBS", nuPer, nAct, axon.TargetLayer)
+	motor := net.AddLayer4D("MotorBS", 1, nAct, nuPer, 1, axon.TargetLayer)
 	pf := net.AddLayer2D("PF", nuPer, nAct, axon.SuperLayer)
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
-	vl := net.AddPulvLayer2D("VL", nuPer, nAct) // VL predicts brainstem Action
+	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name())
 
 	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, space)
@@ -225,7 +227,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
-	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn) // motor output
+	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPrjn)
+	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
+	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
 
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
@@ -396,8 +400,8 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)
-		ev.Step()
 		inRew := ev.IsRewTrial()
+		ev.Step()
 		for li, lnm := range lays {
 			snm := states[li]
 			ly := net.AxonLayerByName(lnm)
@@ -443,9 +447,9 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*MotorSeqEnv)
-		netAct := ss.DecodeAct(ev, di)
-		ev.Action(fmt.Sprintf("%d", netAct), nil)
-		if !ev.IsRewTrial() {
+		if !ev.IsRewTrialPostStep() {
+			netAct := ss.DecodeAct(ev, di)
+			ev.Action(fmt.Sprintf("%d", netAct), nil)
 			ss.ApplyAction(di)
 		}
 	}
@@ -454,16 +458,17 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *MotorSeqEnv, di int) int {
 	vt := ss.Stats.SetLayerTensor(ss.Net, "MotorBS", "CaSpkPM", di)
-	return ss.SoftMaxChoose(vt)
+	return ss.SoftMaxChoose4D(vt)
+	// return ss.HardChoose4D(vt)
 }
 
-// SoftMaxChoose probabalistically selects column with most activity in layer,
+// SoftMaxChoose2D probabalistically selects column with most activity in layer,
 // using a softmax with Config.Env.ActSoftMaxGain gain factor
-func (ss *Sim) SoftMaxChoose(vt *etensor.Float32) int {
+func (ss *Sim) SoftMaxChoose2D(vt *etensor.Float32) int {
 	dy := vt.Dim(0)
-	dx := vt.Dim(1)
+	nact := vt.Dim(1)
 	var tot float32
-	probs := make([]float32, dx)
+	probs := make([]float32, nact)
 	for i := range probs {
 		var sum float32
 		for j := 0; j < dy; j++ {
@@ -478,6 +483,77 @@ func (ss *Sim) SoftMaxChoose(vt *etensor.Float32) int {
 	}
 	chs := erand.PChoose32(probs, -1)
 	return chs
+}
+
+// SoftMaxChoose4D probabalistically selects column with most activity in layer,
+// using a softmax with Config.Env.ActSoftMaxGain gain factor
+func (ss *Sim) SoftMaxChoose4D(vt *etensor.Float32) int {
+	nact := vt.Dim(1)
+	nuY := vt.Dim(2)
+	nuX := vt.Dim(3)
+	var tot float32
+	probs := make([]float32, nact)
+	for i := range probs {
+		var sum float32
+		for j := 0; j < nuY; j++ {
+			for k := 0; k < nuX; k++ {
+				sum += vt.Value([]int{0, i, j, k})
+			}
+		}
+		p := mat32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		probs[i] = p
+		tot += p
+	}
+	for i, p := range probs {
+		probs[i] = p / tot
+		// fmt.Println(i, p, probs[i])
+	}
+	chs := erand.PChoose32(probs, -1)
+	return chs
+}
+
+// HardChoose2D deterministically selects column with most activity in layer,
+func (ss *Sim) HardChoose2D(vt *etensor.Float32) int {
+	nact := vt.Dim(1)
+	nuY := vt.Dim(2)
+	nuX := vt.Dim(3)
+	var mx float32
+	var mxi int
+	for i := 0; i < nact; i++ {
+		var sum float32
+		for j := 0; j < nuY; j++ {
+			for k := 0; k < nuX; k++ {
+				sum += vt.Value([]int{0, i, j, k})
+			}
+		}
+		if sum > mx {
+			mx = sum
+			mxi = i
+		}
+	}
+	return mxi
+}
+
+// HardChoose4D deterministically selects column with most activity in layer,
+func (ss *Sim) HardChoose4D(vt *etensor.Float32) int {
+	nact := vt.Dim(1)
+	nuY := vt.Dim(2)
+	nuX := vt.Dim(3)
+	var mx float32
+	var mxi int
+	for i := 0; i < nact; i++ {
+		var sum float32
+		for j := 0; j < nuY; j++ {
+			for k := 0; k < nuX; k++ {
+				sum += vt.Value([]int{0, i, j, k})
+			}
+		}
+		if sum > mx {
+			mx = sum
+			mxi = i
+		}
+	}
+	return mxi
 }
 
 func (ss *Sim) ApplyAction(di int) {
@@ -556,7 +632,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("Action", float32(ev.CurAction))
 	ss.Stats.SetFloat32("Target", float32(ev.Target))
 	ss.Stats.SetFloat32("Correct", num.FromBool[float32](ev.Correct))
-	ss.Stats.SetFloat32("NCorrect", float32(ev.NCorrect))
+	ss.Stats.SetFloat32("NCorrect", float32(ev.PrevNCorrect))
 	ss.Stats.SetFloat32("RewPred", ev.RewPred)
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 	ss.Stats.SetFloat32("RPE", ev.RPE)

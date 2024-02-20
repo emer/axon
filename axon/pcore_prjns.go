@@ -13,14 +13,15 @@ package axon
 // Trace is applied to DWt and reset at the time of reward.
 type MatrixPrjnParams struct {
 
-	// learning rate for when ACh was elevated but no gating took place, in proportion to the level of ACh that indicates the salience of the event.  A low level of this learning prevents the highly maladaptive situation where the BG is not gating and thus no learning can occur.
-	NoGateLRate float32 `default:"1"`
+	// proportion of trace activity driven by non-delta raw activity of receiving neuron.
+	// which provides a baseline of purely DA-driven learning.
+	NonDelta float32 `default:"0.1"`
 
 	pad, pad1, pad2 float32
 }
 
 func (tp *MatrixPrjnParams) Defaults() {
-	tp.NoGateLRate = 1
+	tp.NonDelta = 0.1
 }
 
 func (tp *MatrixPrjnParams) Update() {

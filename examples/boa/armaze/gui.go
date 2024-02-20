@@ -269,7 +269,6 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 
 	twov := gi.NewSVG(twofr, "sceneview")
 	twov.Style(func(s *styles.Style) {
-		twov.SVG.Fill = true
 		twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
 		twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
 		twov.SetReadOnly(false)

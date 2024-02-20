@@ -559,7 +559,6 @@ func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	ach := GlbV(ctx, di, GvACh)
 	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
 		rlr := NrnV(ctx, ri, di, RLRate)
 		tr := SynCaV(ctx, syni, di, Tr)
@@ -567,15 +566,14 @@ func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
-	} else if ach > 0.1 {
+	} else {
 		rplus := NrnV(ctx, ri, di, CaSpkP)
 		rminus := NrnV(ctx, ri, di, CaSpkD)
+		sact := NrnV(ctx, si, di, CaSpkD)
 		// todo: need an SNr PF signal here!
-		dtr := NrnV(ctx, si, di, CaSpkD) * (rplus - rminus)
+		dtr := pj.Matrix.NonDelta*sact*rminus + sact*(rplus-rminus)
 		SetSynCaV(ctx, syni, di, DTr, dtr)
 		AddSynCaV(ctx, syni, di, Tr, dtr)
-	} else {
-		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	}
 }
 
