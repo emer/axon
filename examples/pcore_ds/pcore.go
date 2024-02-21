@@ -11,6 +11,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -37,8 +38,8 @@ import (
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/etable/v2/split"
-	"github.com/emer/etable/v2/tsragg"
 )
 
 func main() {
@@ -145,7 +146,6 @@ func (ss *Sim) ConfigEnv() {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
 		trn.Config(etime.Train, 73+int64(di)*73)
-		// trn.Config(etime.Train, int64(di))
 		trn.Validate()
 
 		tst.Nm = env.ModeDi(etime.Test, di)
@@ -319,6 +319,7 @@ func (ss *Sim) ConfigLoops() {
 	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
 	man.AddStack(etime.Train).
+		AddTime(etime.Expt, 1).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
@@ -353,6 +354,12 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
+	man.GetLoop(etime.Train, etime.Epoch).IsDone["StopCrit"] = func() bool {
+		rew := ss.Stats.Float("RewEpc")
+		stop := rew >= 0.98
+		return stop
+	}
+
 	/////////////////////////////////////////////
 	// Logging
 
@@ -365,9 +372,9 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
-	man.GetLoop(etime.Train, etime.Run).Main.Add("TestAll", func() {
-		ss.Loops.Run(etime.Test)
-	})
+	// man.GetLoop(etime.Train, etime.Run).Main.Add("TestAll", func() {
+	// 	ss.Loops.Run(etime.Test)
+	// })
 
 	////////////////////////////////////////////
 	// GUI
@@ -599,6 +606,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("RPE", 0)
+	ss.Stats.SetFloat("RewEpc", 0)
+	ss.Stats.SetFloat("EpochsToCrit", math.NaN())
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -647,28 +656,50 @@ func (ss *Sim) TrialStats(di int) {
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
-	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Sequence, etime.Trial, etime.Cycle)
+	ss.Logs.AddCounterItems(etime.Expt, etime.Run, etime.Epoch, etime.Sequence, etime.Trial, etime.Cycle)
 	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatStringItem(etime.Test, etime.Sequence, "TrialName")
 
-	ss.Logs.AddStatAggItem("NCorrect", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("RewPred", etime.Run, etime.Epoch, etime.Sequence)
-	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("NCorrect", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("RewPred", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
+	li := ss.Logs.AddStatAggItem("Rew", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("RPE", etime.Run, etime.Epoch, etime.Sequence)
+	li = ss.Logs.AddStatAggItem("RPE", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
-	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
 
 	ss.Logs.AddItem(&elog.Item{
-		Name: "TestRew",
-		Type: etensor.FLOAT64,
+		Name:  "EpochsToCrit",
+		Type:  etensor.FLOAT64,
+		Range: minmax.F64{Min: -1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-				tstrl := ctx.Logs.MiscTable("TestTrialStats")
-				ctx.SetFloat64(tsragg.Mean(tstrl.ColByName("Rew")))
+				elg := ss.Logs.Table(ctx.Mode, etime.Epoch)
+				epc := int(elg.CellFloat("Epoch", elg.Rows-1))
+				etc := math.NaN()
+				if epc < ss.Config.Run.NEpochs-1 {
+					etc = float64(epc)
+				}
+				ss.Stats.SetInt("EpochsToCrit", ss.Stats.Int("Epoch")) // only set if makes criterion
+				ctx.SetFloat64(etc)
+			},
+			etime.Scope(etime.Train, etime.Expt): func(ctx *elog.Context) {
+				ctx.SetAgg(ctx.Mode, etime.Run, agg.AggMean)
+			}}})
+	ss.Logs.AddItem(&elog.Item{
+		Name:  "NToCrit",
+		Type:  etensor.FLOAT64,
+		Range: minmax.F64{Min: -1},
+		Write: elog.WriteMap{
+			etime.Scope(etime.Train, etime.Expt): func(ctx *elog.Context) {
+				ix := ss.Logs.IdxView(etime.Train, etime.Run)
+				ix.Filter(func(et *etable.Table, row int) bool {
+					return !math.IsNaN(et.CellFloat("EpochsToCrit", row))
+				})
+				ctx.SetInt(len(ix.Idxs))
 			}}})
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
@@ -677,18 +708,13 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.CreateTables()
 
-	tsttrl := ss.Logs.Table(etime.Test, etime.Trial)
-	if tsttrl != nil {
-		tstst := tsttrl.Clone()
-		ss.Logs.MiscTables["TestTrialStats"] = tstst
-	}
-
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Train, etime.Trial)
 	ss.Logs.NoPlot(etime.Test, etime.Trial)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
+	ss.Logs.NoPlot(etime.Test, etime.Expt)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
@@ -724,6 +750,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
+
+	if time == etime.Epoch && mode == etime.Train {
+		rew := dt.CellFloat("Rew", dt.Rows-1)
+		ss.Stats.SetFloat("RewEpc", rew) // used for stopping criterion
+	}
 }
 
 func (ss *Sim) TestStats() {

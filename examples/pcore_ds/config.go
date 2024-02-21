@@ -24,6 +24,9 @@ type ParamConfig struct {
 	// If true, perform automated parameter tweaking for parameters marked Hypers Tweak = log,incr, or [vals]
 	Tweak bool
 
+	// for Tweak, if true, first run a baseline with current default params
+	Baseline bool
+
 	// network parameters
 	Network map[string]any
 
@@ -62,7 +65,7 @@ type RunConfig struct {
 	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `default:"10" min:"1"`
+	NRuns int `default:"5" min:"1"`
 
 	// total number of epochs per run
 	NEpochs int `default:"200"`
