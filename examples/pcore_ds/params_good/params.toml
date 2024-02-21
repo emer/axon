@@ -1,0 +1,157 @@
+[[Base]]
+  Sel = "Layer"
+  Desc = "clamp gain makes big diff on overall excitation, gating propensity"
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "1.0"
+
+[[Base]]
+  Sel = ".MatrixLayer"
+  Desc = "all mtx"
+  [Base.Params]
+    "Layer.Acts.Dend.ModBase" = "1"
+    "Layer.Acts.Dend.ModGain" = "0"
+    "Layer.Inhib.Layer.On" = "false"
+    "Layer.Inhib.Pool.FB" = "0"
+    "Layer.Inhib.Pool.Gi" = "0.5"
+    "Layer.Inhib.Pool.On" = "true"
+    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
+    "Layer.Matrix.IsVS" = "false"
+
+[[Base]]
+  Sel = ".STNLayer"
+  Desc = "all STN"
+  [Base.Params]
+    "Layer.Acts.Init.GeBase" = "0.1"
+    "Layer.Acts.Kir.Gbar" = "10"
+    "Layer.Acts.SKCa.Gbar" = "2"
+    "Layer.Inhib.Layer.FB" = "0"
+    "Layer.Inhib.Layer.Gi" = "0.5"
+    "Layer.Inhib.Layer.On" = "true"
+    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
+  [Base.Hypers]
+    [Base.Hypers."Layer.Acts.Init.GeBase"]
+      Tweak = "-"
+    [Base.Hypers."Layer.Acts.Kir.Gbar"]
+      Tweak = "-"
+    [Base.Hypers."Layer.Acts.SKCa.Gbar"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#M1VM"
+  Desc = "all mtx"
+  [Base.Params]
+    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
+
+[[Base]]
+  Sel = ".PTMaintLayer"
+  Desc = "time integration params"
+  [Base.Params]
+    "Layer.Acts.Dend.ModGain" = "1.0"
+    "Layer.Acts.Kir.Gbar" = "0"
+    "Layer.Acts.MaintNMDA.Gbar" = "0.007"
+    "Layer.Inhib.Layer.Gi" = "2.2"
+
+[[Base]]
+  Sel = "#MotorBS"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.Layer.Gi" = "0.2"
+    "Layer.Inhib.Layer.On" = "true"
+    "Layer.Inhib.Pool.On" = "false"
+
+[[Base]]
+  Sel = ".DSMatrixPrjn"
+  Desc = ""
+  [Base.Params]
+    "Prjn.Learn.LRate.Base" = "0.01"
+    "Prjn.Learn.Trace.LearnThr" = "0.1"
+    "Prjn.Matrix.Delta" = "0.5"
+    "Prjn.Matrix.NonDelta" = "0.3"
+    "Prjn.PrjnScale.Abs" = "1.8"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.Learn.LRate.Base"]
+      Tweak = "-"
+    [Base.Hypers."Prjn.Learn.Trace.LearnThr"]
+      Tweak = "-"
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = ".SuperToPT"
+  Desc = "one-to-one from super"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0.5"
+
+[[Base]]
+  Sel = ".PTSelfMaint"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+
+[[Base]]
+  Sel = ".SuperToThal"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "3.0"
+
+[[Base]]
+  Sel = ".ToM1"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+
+[[Base]]
+  Sel = ".PFToMtx"
+  Desc = ""
+  [Base.Params]
+    "Prjn.Com.GType" = "ModulatoryG"
+    "Prjn.Learn.Learn" = "false"
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#MtxNoToGPePr"
+  Desc = "proto = primary classical NoGo pathway"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#MtxGoToGPi"
+  Desc = "go influence on gating -- slightly weaker than integrated GPePr"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#GPiToM1VM"
+  Desc = "final inhibition"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#GPiToMotorBS"
+  Desc = "final inhibition"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = ".M1ToMotorBS"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "3"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"

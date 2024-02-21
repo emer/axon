@@ -247,7 +247,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 
 	toMtx := full
-	// toMtx := mtxRndPrjn
+	// toMtx := mtxRndPrjn // works, but not as reliably
 	net.ConnectToDSMatrix(state, mtxGo, toMtx).SetClass("StateToMtx")
 	net.ConnectToDSMatrix(state, mtxNo, toMtx).SetClass("StateToMtx")
 	net.ConnectToDSMatrix(s1, mtxNo, toMtx).SetClass("StateToMtx")
@@ -321,22 +321,24 @@ func (ss *Sim) ConfigLoops() {
 
 	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
+	nCycles := 300 // 300 > 250 > 200
+
 	man.AddStack(etime.Train).
 		AddTime(etime.Expt, 1).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, nSeqTrials).
-		AddTime(etime.Cycle, 300)
+		AddTime(etime.Cycle, nCycles)
 
 	man.AddStack(etime.Test).
 		AddTime(etime.Epoch, 1).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, nSeqTrials).
-		AddTime(etime.Cycle, 300)
+		AddTime(etime.Cycle, nCycles)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 250, 299)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, nCycles-50, nCycles-1) // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt)   // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures

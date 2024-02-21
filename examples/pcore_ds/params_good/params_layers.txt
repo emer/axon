@@ -1,0 +1,51 @@
+            GPi		Nominal:	  1.00	
+
+          GPePr		Nominal:	  1.00	
+
+          GPeAk		Nominal:	  1.00	
+
+            STN		Nominal:	  0.15	
+						Layer.Gi:	  0.50	Params: .STNLayer: 0.5
+
+          MtxGo		Nominal:	  0.25	
+						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
+
+          MtxNo		Nominal:	  0.25	
+						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
+
+            SNc		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+          State		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+             S1		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+         Target		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+        MotorBS		Nominal:	  0.10	
+						Layer.Gi:	  0.20	Params: #MotorBS: 0.2
+
+             PF		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+             VL		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+             M1		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+           M1CT		Nominal:	  0.10	
+						Layer.Gi:	  1.40	
+
+           M1PT		Nominal:	  0.30	
+						Layer.Gi:	  2.20	Params: .PTMaintLayer: 2.2
+
+           M1VM		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+
+          M1PTp		Nominal:	  0.10	
+						Layer.Gi:	  0.80	
+

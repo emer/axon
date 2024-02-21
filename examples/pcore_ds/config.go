@@ -12,10 +12,10 @@ type EnvConfig struct {
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
 
-	// sequence length to use
-	SeqLen int
+	// sequence length to use: 2 is initial testing target
+	SeqLen int `default:"2"`
 
-	// gain on the softmax for choosing actions: lower values are more noisy; 2 > 1
+	// gain on the softmax for choosing actions: lower values are more noisy; 2 > 3+ > 1>
 	ActSoftMaxGain float32 `default:"2"`
 }
 
@@ -67,8 +67,8 @@ type RunConfig struct {
 	// total number of runs to do when running Train
 	NRuns int `default:"5" min:"1"`
 
-	// total number of epochs per run
-	NEpochs int `default:"200"`
+	// total number of epochs per run -- can take as many as 50 epochs
+	NEpochs int `default:"50"`
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
 	NTrials int `default:"128"`

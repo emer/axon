@@ -1,0 +1,37 @@
+Includes = []
+GUI = true
+Debug = false
+
+[Env]
+  SeqLen = 2
+  ActSoftMaxGain = 2.0
+
+[Params]
+  Tweak = false
+  Baseline = false
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
+  SaveAll = false
+  Good = true
+
+[Run]
+  GPU = false
+  NData = 1
+  NThreads = 0
+  Run = 0
+  NRuns = 10
+  NEpochs = 50
+  NTrials = 128
+
+[Log]
+  SaveWts = false
+  Epoch = true
+  Run = true
+  Expt = true
+  Trial = false
+  TestEpoch = false
+  TestTrial = false
+  NetData = false
+  Testing = false
