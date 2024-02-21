@@ -55,6 +55,7 @@
   Sel = "#MotorBS"
   Desc = ""
   [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "2"
     "Layer.Inhib.Layer.Gi" = "0.2"
     "Layer.Inhib.Layer.On" = "true"
     "Layer.Inhib.Pool.On" = "false"
@@ -107,9 +108,6 @@
     "Prjn.Com.GType" = "ModulatoryG"
     "Prjn.Learn.Learn" = "false"
     "Prjn.PrjnScale.Abs" = "1"
-  [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
 
 [[Base]]
   Sel = "#MtxNoToGPePr"

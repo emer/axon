@@ -17,8 +17,8 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = false
-  NData = 1
+  GPU = true
+  NData = 16
   NThreads = 0
   Run = 0
   NRuns = 10

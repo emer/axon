@@ -481,6 +481,26 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
+Prjn: PFToMtxGo
+Com: {
+  GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PrjnScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+}
+///////////////////////////////////////////////////
 Prjn: StateToMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
@@ -549,26 +569,6 @@ Learn: {
 Matrix: {
   Delta: 1 NonDelta: 0.6
 }
-///////////////////////////////////////////////////
-Prjn: PFToMtxGo
-Com: {
-  GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: false
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
 /////////////////////////////////////////////////
 Layer: MtxNo
 Act: {
@@ -625,6 +625,26 @@ PrjnScale: {
 SWt: {
   Init: {  SPct: 0  Mean: 0.75  Var: 0  Sym: false }
   Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 1 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+}
+///////////////////////////////////////////////////
+Prjn: PFToMtxNo
+Com: {
+  GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PrjnScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
@@ -702,26 +722,6 @@ Learn: {
 }
 Matrix: {
   Delta: 1 NonDelta: 0.6
-}
-///////////////////////////////////////////////////
-Prjn: PFToMtxNo
-Com: {
-  GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: false
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
 }
 /////////////////////////////////////////////////
 Layer: SNc
@@ -901,7 +901,7 @@ Act: {
   Dt: {  Integ: 1  VmTau: 2.81  VmDendTau: 5  VmSteps: 2  GeTau: 5  GiTau: 7  IntTau: 40  LongAvgTau: 20  MaxCycStart: 10 }
   Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
   Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
-  Clamp: {  IsInput: false  IsTarget: true  Ge: 1  Add: false  ErrThr: 0.5 }
+  Clamp: {  IsInput: false  IsTarget: true  Ge: 2  Add: false  ErrThr: 0.5 }
   Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }

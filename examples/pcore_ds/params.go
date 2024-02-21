@@ -102,14 +102,14 @@ var ParamSets = netparams.Sets{
 				"Prjn.Com.GType":     "ModulatoryG",
 				"Prjn.PrjnScale.Abs": "1", // todo: try larger, just for visualization
 			}},
-		{Sel: ".CLToMtx", Desc: "",
-			Params: params.Params{
-				"Prjn.Learn.Learn":   "false",
-				"Prjn.PrjnScale.Abs": "0",
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
+		// {Sel: ".CLToMtx", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.Learn.Learn":   "false",
+		// 		"Prjn.PrjnScale.Rel": "0.001",
+		// 	},
+		// 	Hypers: params.Hypers{
+		// 		"Prjn.PrjnScale.Rel": {"Tweak": "-"},
+		// 	}},
 		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr

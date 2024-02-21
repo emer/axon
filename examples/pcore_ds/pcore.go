@@ -234,10 +234,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
 
-	// note: just using direct projections here -- theoretically through CL
-	// net.ConnectLayers(motor, mtxGo, p1to1, axon.ForwardPrjn).SetClass("CLToMtx")
-	// net.ConnectLayers(motor, mtxNo, p1to1, axon.ForwardPrjn).SetClass("CLToMtx")
-
 	net.ConnectLayers(pf, mtxGo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
 	net.ConnectLayers(pf, mtxNo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
 
@@ -262,6 +258,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToDSMatrix(m1, mtxGo, toMtx).SetClass("M1ToMtx")
 	net.ConnectToDSMatrix(m1, mtxNo, toMtx).SetClass("M1ToMtx")
+
+	// note: just using direct projections here -- theoretically through CL
+	// not working!
+	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).SetClass("CLToMtx")
+	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).SetClass("CLToMtx")
 
 	m1VM.PlaceRightOf(gpi, space)
 	pf.PlaceRightOf(m1VM, space)
@@ -326,6 +327,7 @@ func (ss *Sim) ConfigLoops() {
 	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
 	nCycles := 300 // 300 > 250 > 200
+	plusCycles := 50
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Expt, 1).
@@ -341,8 +343,8 @@ func (ss *Sim) ConfigLoops() {
 		AddTime(etime.Trial, nSeqTrials).
 		AddTime(etime.Cycle, nCycles)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, nCycles-50, nCycles-1) // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt)   // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, nCycles-plusCycles, nCycles-1) // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt)           // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
