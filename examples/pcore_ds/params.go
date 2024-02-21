@@ -59,7 +59,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On": "true",
 				"Layer.Inhib.Pool.On":  "false",
 				"Layer.Inhib.Layer.Gi": "0.2", // 0.2 def
-				"Layer.Acts.Clamp.Ge":  "2",   // 1 def
+				"Layer.Acts.Clamp.Ge":  "2",   // 2 >> 1 -- absolutely critical given GPi inhib
 			}},
 		////////////////////////////////////////////
 		// Prjns

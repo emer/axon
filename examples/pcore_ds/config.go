@@ -53,10 +53,10 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `default:"false"`
+	GPU bool `default:"true"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `default:"1" min:"1"`
+	NData int `default:"16" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `default:"0"`
@@ -65,10 +65,10 @@ type RunConfig struct {
 	Run int `default:"0"`
 
 	// total number of runs to do when running Train
-	NRuns int `default:"5" min:"1"`
+	NRuns int `default:"10" min:"1"`
 
 	// total number of epochs per run -- can take as many as 50 epochs
-	NEpochs int `default:"50"`
+	NEpochs int `default:"100"`
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
 	NTrials int `default:"128"`
