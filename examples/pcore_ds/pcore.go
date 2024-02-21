@@ -236,8 +236,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 
-	net.ConnectLayers(state, m1, full, axon.ForwardPrjn)
-	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn)
+	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
 	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("BgFixed")
 	net.ConnectLayers(gpi, pf, full, axon.InhibPrjn).SetClass("BgFixed")
@@ -669,7 +669,7 @@ func (ss *Sim) ConfigLogs() {
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("RPE", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
-	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Expt, etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 
 	ss.Logs.AddItem(&elog.Item{
 		Name:  "EpochsToCrit",
@@ -893,6 +893,7 @@ func (ss *Sim) RunNoGUI() {
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Run, etime.Train, etime.Run, "run", netName, runName)
+	elog.SetLogFile(&ss.Logs, ss.Config.Log.Expt, etime.Train, etime.Expt, "expt", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.TestTrial, etime.Test, etime.Trial, "tst_trl", netName, runName)
 
 	netdata := ss.Config.Log.NetData

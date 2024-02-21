@@ -22,10 +22,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On":             "false",
 				"Layer.Inhib.Pool.On":              "true",
 				"Layer.Inhib.Pool.FB":              "0",
-				"Layer.Inhib.Pool.Gi":              "0.5",
+				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 def
 				"Layer.Matrix.IsVS":                "false",
 				"Layer.Acts.Dend.ModBase":          "1",
-				"Layer.Acts.Dend.ModGain":          "0.1", // todo: could be 0
+				"Layer.Acts.Dend.ModGain":          "0", // has no effect
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
@@ -49,7 +49,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":      "2.2",   // 3.2 def
+				"Layer.Inhib.Layer.Gi":      "2.2",   // 2.2 def
 				"Layer.Acts.Dend.ModGain":   "1.0",   // 1.5 def
 				"Layer.Acts.Kir.Gbar":       "0",     // no real diff here over range 0-10
 				"Layer.Acts.MaintNMDA.Gbar": "0.007", // 0.007 default
@@ -58,16 +58,20 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Layer.On": "true",
 				"Layer.Inhib.Pool.On":  "false",
-				"Layer.Inhib.Layer.Gi": "0.2",
+				"Layer.Inhib.Layer.Gi": "0.2", // 0.2 def
 			}},
 		////////////////////////////////////////////
 		// Prjns
+		{Sel: "Prjn", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.LRate.Base": "0.04", // was .04 def
+			}},
 		{Sel: ".DSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "1.8",  // 1.5 good; 1.8 causes some breakthrough
-				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
+				"Prjn.PrjnScale.Abs":        "1.8",  // 1.8 > 2.0 > 1.5
+				"Prjn.Learn.LRate.Base":     "0.01", // .01 >= .02, .005
 				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
-				"Prjn.Matrix.NonDelta":      "0.3",  // key param, must be >= 0.2, 0.3 -- with pf modulation
+				"Prjn.Matrix.NonDelta":      "0.3",  // key param, 0.3 > 0.2, 0.5 with pf modulation
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
@@ -80,11 +84,15 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 4 def
+				"Prjn.PrjnScale.Abs": "1", // 1 def
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // was 4
+			}},
+		{Sel: ".ToM1", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2", // 2 > 1 key
 			}},
 		{Sel: ".PFToMtx", Desc: "",
 			Params: params.Params{
@@ -118,7 +126,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#GPiToMotorBS", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
+				"Prjn.PrjnScale.Abs": "4", // 4 > 3, 5
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

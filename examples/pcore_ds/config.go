@@ -15,8 +15,8 @@ type EnvConfig struct {
 	// sequence length to use
 	SeqLen int
 
-	// gain on the softmax for choosing actions: lower values are more noisy
-	ActSoftMaxGain float32 `default:"1"`
+	// gain on the softmax for choosing actions: lower values are more noisy; 2 > 1
+	ActSoftMaxGain float32 `default:"2"`
 }
 
 // ParamConfig has config parameters related to sim params
@@ -53,10 +53,10 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `default:"true"`
+	GPU bool `default:"false"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `default:"16" min:"1"`
+	NData int `default:"1" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `default:"0"`
@@ -85,6 +85,9 @@ type LogConfig struct {
 
 	// if true, save run log to file, as .run.tsv typically
 	Run bool `default:"true" nest:"+"`
+
+	// if true, save expt log to file, as .expt.tsv typically
+	Expt bool `default:"true" nest:"+"`
 
 	// if true, save train trial log to file, as .trl.tsv typically. May be large.
 	Trial bool `default:"false" nest:"+"`
