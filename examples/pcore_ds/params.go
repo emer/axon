@@ -59,6 +59,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On": "true",
 				"Layer.Inhib.Pool.On":  "false",
 				"Layer.Inhib.Layer.Gi": "0.2", // 0.2 def
+				"Layer.Acts.Clamp.Ge":  "2",   // 1 def
 			}},
 		////////////////////////////////////////////
 		// Prjns
@@ -99,7 +100,12 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.Learn.Learn":   "false",
 				"Prjn.Com.GType":     "ModulatoryG",
-				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Abs": "1", // todo: try larger, just for visualization
+			}},
+		{Sel: ".CLToMtx", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.Learn":   "false",
+				"Prjn.PrjnScale.Abs": "0",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

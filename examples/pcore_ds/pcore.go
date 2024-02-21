@@ -234,6 +234,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
 
+	// note: just using direct projections here -- theoretically through CL
+	// net.ConnectLayers(motor, mtxGo, p1to1, axon.ForwardPrjn).SetClass("CLToMtx")
+	// net.ConnectLayers(motor, mtxNo, p1to1, axon.ForwardPrjn).SetClass("CLToMtx")
+
+	net.ConnectLayers(pf, mtxGo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
+	net.ConnectLayers(pf, mtxNo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
+
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 
@@ -255,9 +262,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToDSMatrix(m1, mtxGo, toMtx).SetClass("M1ToMtx")
 	net.ConnectToDSMatrix(m1, mtxNo, toMtx).SetClass("M1ToMtx")
-
-	net.ConnectLayers(pf, mtxGo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
-	net.ConnectLayers(pf, mtxNo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
 
 	m1VM.PlaceRightOf(gpi, space)
 	pf.PlaceRightOf(m1VM, space)
@@ -468,6 +472,8 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 			ss.ApplyAction(di)
 		}
 	}
+	ss.Net.ApplyExts(ctx) // required!
+	ss.Net.GPU.SyncPoolsToGPU()
 }
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
