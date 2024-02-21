@@ -26,7 +26,7 @@ Layer: MtxGo
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: Base:.DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
@@ -35,13 +35,13 @@ Layer: MtxGo
 Layer: MtxNo
 	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
-	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: Base:.DSMatrixPrjn: 1.8
+	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
+								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
-								    Abs Params: .PFToMtx: 1
+								    Abs Params: Base:.PFToMtx: 1
 
 Layer: SNc
 

@@ -15,19 +15,21 @@ type MatrixPrjnParams struct {
 
 	// weight for trace activity that is a function of the minus-plus delta
 	// activity signal on the receiving MSN neuron, independent of PF modulation.
-	Delta float32 `default:"0.5"`
+	// This should always be 1 except for testing disabling: adjust NonDelta
+	// relative to it, and the overall learning rate.
+	Delta float32 `default:"1"`
 
 	// proportion of trace activity driven by non-delta activity of receiving neuron,
 	// which is multiplied by the PF modulatotory inputs, for strong credit assignment
 	// learning of the rewarded action.
-	NonDelta float32 `default:"0.2"`
+	NonDelta float32 `default:"0.6"`
 
 	pad, pad1 float32
 }
 
 func (tp *MatrixPrjnParams) Defaults() {
-	tp.Delta = 0.5
-	tp.NonDelta = 0.2
+	tp.Delta = 1
+	tp.NonDelta = 0.6
 }
 
 func (tp *MatrixPrjnParams) Update() {

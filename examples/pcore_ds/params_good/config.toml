@@ -22,7 +22,7 @@ Debug = false
   NThreads = 0
   Run = 0
   NRuns = 10
-  NEpochs = 50
+  NEpochs = 100
   NTrials = 128
 
 [Log]

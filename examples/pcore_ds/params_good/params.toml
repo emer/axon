@@ -63,10 +63,10 @@
   Sel = ".DSMatrixPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.01"
+    "Prjn.Learn.LRate.Base" = "0.005"
     "Prjn.Learn.Trace.LearnThr" = "0.1"
-    "Prjn.Matrix.Delta" = "0.5"
-    "Prjn.Matrix.NonDelta" = "0.3"
+    "Prjn.Matrix.Delta" = "1"
+    "Prjn.Matrix.NonDelta" = "0.6"
     "Prjn.PrjnScale.Abs" = "1.8"
   [Base.Hypers]
     [Base.Hypers."Prjn.Learn.LRate.Base"]

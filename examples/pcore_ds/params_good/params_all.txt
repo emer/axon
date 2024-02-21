@@ -495,13 +495,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Delta: 0.5 NonDelta: 0.3
+  Delta: 1 NonDelta: 0.6
 }
 ///////////////////////////////////////////////////
 Prjn: S1ToMtxGo
@@ -518,13 +518,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Delta: 0.5 NonDelta: 0.3
+  Delta: 1 NonDelta: 0.6
 }
 ///////////////////////////////////////////////////
 Prjn: M1ToMtxGo
@@ -541,13 +541,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Delta: 0.5 NonDelta: 0.3
+  Delta: 1 NonDelta: 0.6
 }
 ///////////////////////////////////////////////////
 Prjn: PFToMtxGo
@@ -649,13 +649,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Delta: 0.5 NonDelta: 0.3
+  Delta: 1 NonDelta: 0.6
 }
 ///////////////////////////////////////////////////
 Prjn: S1ToMtxNo
@@ -672,13 +672,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Delta: 0.5 NonDelta: 0.3
+  Delta: 1 NonDelta: 0.6
 }
 ///////////////////////////////////////////////////
 Prjn: M1ToMtxNo
@@ -695,13 +695,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Delta: 0.5 NonDelta: 0.3
+  Delta: 1 NonDelta: 0.6
 }
 ///////////////////////////////////////////////////
 Prjn: PFToMtxNo
