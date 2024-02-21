@@ -62,10 +62,10 @@ var ParamSets = netparams.Sets{
 			}},
 		////////////////////////////////////////////
 		// Prjns
-		{Sel: "Prjn", Desc: "",
-			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.04", // was .04 def
-			}},
+		// {Sel: "Prjn", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.Learn.LRate.Base": "0.02", // 0.04 > 0.02 probably
+		// 	}},
 		{Sel: ".DSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.8",  // 1.8 > 2.0 > 1.5

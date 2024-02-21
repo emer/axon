@@ -184,10 +184,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	np := 1
 	nuPer := ev.NUnitsPer
 	nAct := ev.MaxSeqLen
-	nuX := 5
-	nuY := 5
-	nuCtxY := 5
-	nuCtxX := 5
+	nuX := 6
+	nuY := 6
+	nuCtxY := 6
+	nuCtxX := 6
 	space := float32(2)
 
 	p1to1 := prjn.NewPoolOneToOne()
@@ -195,7 +195,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = one2one
 	full := prjn.NewFull()
 	_ = full
-	mtxRndPrjn := prjn.NewPoolUnifRnd()
+	mtxRndPrjn := prjn.NewUnifRnd()
 	mtxRndPrjn.PCon = 0.5
 	_ = mtxRndPrjn
 
@@ -229,6 +229,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPrjn)
 	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
+	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
 	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
 
 	net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
@@ -245,13 +246,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 
-	net.ConnectToDSMatrix(state, mtxGo, full).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(state, mtxNo, full).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(s1, mtxNo, full).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(s1, mtxGo, full).SetClass("StateToMtx")
+	toMtx := full
+	// toMtx := mtxRndPrjn
+	net.ConnectToDSMatrix(state, mtxGo, toMtx).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(state, mtxNo, toMtx).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(s1, mtxNo, toMtx).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(s1, mtxGo, toMtx).SetClass("StateToMtx")
 
-	net.ConnectToDSMatrix(m1, mtxGo, full).SetClass("M1ToMtx")
-	net.ConnectToDSMatrix(m1, mtxNo, full).SetClass("M1ToMtx")
+	net.ConnectToDSMatrix(m1, mtxGo, toMtx).SetClass("M1ToMtx")
+	net.ConnectToDSMatrix(m1, mtxNo, toMtx).SetClass("M1ToMtx")
 
 	net.ConnectLayers(pf, mtxGo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
 	net.ConnectLayers(pf, mtxNo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")

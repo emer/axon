@@ -128,10 +128,10 @@ func (ev *MotorSeqEnv) Validate() error {
 }
 
 func (ev *MotorSeqEnv) InitSeqMap() {
-	pord := ev.Rand.Perm(ev.MaxSeqLen, -1)
+	// pord := ev.Rand.Perm(ev.MaxSeqLen, -1)
 	ev.SeqMap = make([]int, ev.SeqLen)
 	for i := 0; i < ev.SeqLen; i++ {
-		ev.SeqMap[i] = pord[i]
+		ev.SeqMap[i] = i // no randomness!  otherwise doesn't work on gpu!
 	}
 	// ev.SeqMap[0] = 4 // todo: cheating -- 4 is initial bias; 0 also learns quickly
 	// ev.SeqMap[0] = 3 // 3, 2 good test cases -- can learn but not initial bias -- 3 esp hard
