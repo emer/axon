@@ -71,9 +71,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.8",   // 1.8 > 2.0 > 1.5
 				"Prjn.Learn.LRate.Base":     "0.005", // .005 > 0.01 > .02 (with nondelta = .6)
-				"Prjn.Learn.Trace.LearnThr": "0.1",   // 0.1 slightly > 0.05
-				"Prjn.Matrix.NonDelta":      "0.6",   // key param, 0.6 > 0.4, 1 with pf modulation
-				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
+				"Prjn.Learn.Trace.LearnThr": "0.1",   // not used at this point
+				"Prjn.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
+				"Prjn.Matrix.BasePF":        "0.005",
+				"Prjn.Matrix.Delta":         "1", // should always be 1 except for testing; adjust lrate to compensate
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},

@@ -567,11 +567,11 @@ func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	} else {
-		pfmod := NrnV(ctx, ri, di, GModSyn)
+		pfmod := pj.Matrix.BasePF + NrnV(ctx, ri, di, GModSyn)
 		rplus := NrnV(ctx, ri, di, CaSpkP)
 		rminus := NrnV(ctx, ri, di, CaSpkD)
 		sact := NrnV(ctx, si, di, CaSpkD)
-		dtr := pj.Matrix.NonDelta*pfmod*sact*rminus + pj.Matrix.Delta*sact*(rplus-rminus)
+		dtr := pj.Matrix.Delta*sact*(rplus-rminus) + pj.Matrix.Credit*pfmod*sact*rminus
 		SetSynCaV(ctx, syni, di, DTr, dtr)
 		AddSynCaV(ctx, syni, di, Tr, dtr)
 	}

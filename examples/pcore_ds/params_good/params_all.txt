@@ -521,7 +521,7 @@ Learn: {
   } }
 }
 Matrix: {
-  Delta: 1 NonDelta: 0.6
+  Credit: 0.6 BasePF: 0.005 Delta: 1
 }
 ///////////////////////////////////////////////////
 Prjn: S1ToMtxGo
@@ -544,7 +544,7 @@ Learn: {
   } }
 }
 Matrix: {
-  Delta: 1 NonDelta: 0.6
+  Credit: 0.6 BasePF: 0.005 Delta: 1
 }
 ///////////////////////////////////////////////////
 Prjn: M1ToMtxGo
@@ -567,7 +567,7 @@ Learn: {
   } }
 }
 Matrix: {
-  Delta: 1 NonDelta: 0.6
+  Credit: 0.6 BasePF: 0.005 Delta: 1
 }
 /////////////////////////////////////////////////
 Layer: MtxNo
@@ -675,7 +675,7 @@ Learn: {
   } }
 }
 Matrix: {
-  Delta: 1 NonDelta: 0.6
+  Credit: 0.6 BasePF: 0.005 Delta: 1
 }
 ///////////////////////////////////////////////////
 Prjn: S1ToMtxNo
@@ -698,7 +698,7 @@ Learn: {
   } }
 }
 Matrix: {
-  Delta: 1 NonDelta: 0.6
+  Credit: 0.6 BasePF: 0.005 Delta: 1
 }
 ///////////////////////////////////////////////////
 Prjn: M1ToMtxNo
@@ -721,7 +721,7 @@ Learn: {
   } }
 }
 Matrix: {
-  Delta: 1 NonDelta: 0.6
+  Credit: 0.6 BasePF: 0.005 Delta: 1
 }
 /////////////////////////////////////////////////
 Layer: SNc

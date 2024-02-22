@@ -41,8 +41,8 @@ type MotorSeqEnv struct {
 	RewPredMin float32
 
 	//	give reward in proportion to number of correct actions in sequence,
-	// otherwise only for perfect sequence
-	PartialCredit bool
+	// above given threshold.  If 0, don't use
+	PartialCreditAt int
 
 	// sequence map from sequence index to target motor action
 	SeqMap []int
@@ -99,11 +99,10 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 2            // 2 is doable, 3 is too long without mixing (probably)
-	ev.PartialCredit = false // actually better without -- otherwise just gets 1 right and is happy.
-	// todo: add option to vary sequence length before reward -- key!
-	ev.RewPredLRate = 0.002 // 0.002 > 0.001 > 0.005
-	ev.RewPredMin = 0.1     // 0.1 > 0.05 > 0.2
+	ev.SeqLen = 2 // 2 is easily solved, 3 is too long without mixing (probably)
+	ev.PartialCreditAt = 1
+	ev.RewPredLRate = 0.02 // GPU 16 0.02 > 0.05 > 0.1, 0.2 for partial, seq3
+	ev.RewPredMin = 0.1    // 0.1 > 0.05 > 0.2
 	ev.MaxSeqLen = 5
 	ev.NUnitsPer = 5
 	ev.NUnits = ev.NUnitsPer * ev.MaxSeqLen
@@ -232,8 +231,12 @@ func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
 func (ev *MotorSeqEnv) ComputeReward() {
 	ev.Rew = 0
 	// fmt.Println("rew, ncor:", ev.NCorrect, ev.SeqLen)
-	if ev.PartialCredit {
-		ev.Rew = float32(ev.NCorrect) / float32(ev.SeqLen)
+	if ev.PartialCreditAt > 0 {
+		prew := float32(ev.NCorrect) / float32(ev.SeqLen)
+		doRew := erand.BoolP32(prew, -1, &ev.Rand)
+		if doRew {
+			ev.Rew = 1
+		}
 	} else {
 		if ev.NCorrect == ev.SeqLen {
 			ev.Rew = 1
