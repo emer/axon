@@ -41,7 +41,7 @@ GPeAk.STNToGPeAk.PrjnScale.Abs: 0.1 // (Default: 1)<br>
 GPeAk.STNToGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 GPeAk.STNToGPeAk.SWts.Init.Sym: false // (Default: true)<br>
 GPeAk.STNToGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-GPeAk.MtxGoToGPeAk.PrjnScale.Abs: 0.4 // (Default: 1)<br>
+GPeAk.MtxGoToGPeAk.PrjnScale.Abs: 0.5 // (Default: 1)<br>
 GPeAk.MtxGoToGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 GPeAk.MtxGoToGPeAk.SWts.Init.Sym: false // (Default: true)<br>
 GPeAk.MtxGoToGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -70,7 +70,7 @@ MtxGo.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 MtxGo.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
 MtxGo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 MtxGo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
-MtxGo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
+MtxGo.Inhib.Pool.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
 MtxGo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
 MtxGo.Learn.RLRate.On: false // (Default: true)<br>
 MtxGo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
@@ -96,7 +96,7 @@ MtxNo.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 MtxNo.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
 MtxNo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 MtxNo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
-MtxNo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
+MtxNo.Inhib.Pool.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
 MtxNo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
 MtxNo.Learn.RLRate.On: false // (Default: true)<br>
 MtxNo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>

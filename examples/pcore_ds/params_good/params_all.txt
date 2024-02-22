@@ -299,7 +299,7 @@ Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 0.4
+  Rel: 1 Abs: 0.5
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.75  Var: 0.25  Sym: false }
@@ -445,7 +445,7 @@ Act: {
 Inhib: {
   ActAvg: {  Nominal: 0.25  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: false  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
-  Pool: {  On: true  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: true  Gi: 0.6  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }
@@ -599,7 +599,7 @@ Act: {
 Inhib: {
   ActAvg: {  Nominal: 0.25  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: false  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
-  Pool: {  On: true  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: true  Gi: 0.6  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdtThr: 0.01 }

@@ -8,10 +8,10 @@
 						Layer.Gi:	  0.50	Params: .STNLayer: 0.5
 
           MtxGo		Nominal:	  0.25	
-						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
+						Pool.Gi: 	  0.60	Params: .MatrixLayer: 0.6
 
           MtxNo		Nominal:	  0.25	
-						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
+						Pool.Gi: 	  0.60	Params: .MatrixLayer: 0.6
 
             SNc		Nominal:	  0.10	
 						Layer.Gi:	  0.90	

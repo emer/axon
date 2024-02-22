@@ -22,11 +22,14 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On":             "false",
 				"Layer.Inhib.Pool.On":              "true",
 				"Layer.Inhib.Pool.FB":              "0",
-				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 def
+				"Layer.Inhib.Pool.Gi":              "0.6", // 0.5 def -- try higher?
 				"Layer.Matrix.IsVS":                "false",
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0", // has no effect
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			},
+			Hypers: params.Hypers{
+				"Layer.Inhib.Pool.Gi": {"Tweak": "incr"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
@@ -73,8 +76,8 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.LRate.Base":     "0.005", // .005 > 0.01 > .02 (with nondelta = .6)
 				"Prjn.Learn.Trace.LearnThr": "0.1",   // not used at this point
 				"Prjn.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
-				"Prjn.Matrix.BasePF":        "0.005",
-				"Prjn.Matrix.Delta":         "1", // should always be 1 except for testing; adjust lrate to compensate
+				"Prjn.Matrix.BasePF":        "0.005", // 0.005 > 0.01, 0.002 etc
+				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
@@ -84,24 +87,36 @@ var ParamSets = netparams.Sets{
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 def
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // was 4
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
 			}},
 		{Sel: ".ToM1", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // 2 > 1 key
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
 			}},
 		{Sel: ".PFToMtx", Desc: "",
 			Params: params.Params{
 				"Prjn.Learn.Learn":   "false",
 				"Prjn.Com.GType":     "ModulatoryG",
-				"Prjn.PrjnScale.Abs": "1", // todo: try larger, just for visualization
+				"Prjn.PrjnScale.Abs": "1",
 			}},
 		// {Sel: ".CLToMtx", Desc: "",
 		// 	Params: params.Params{
@@ -142,6 +157,13 @@ var ParamSets = netparams.Sets{
 		{Sel: ".M1ToMotorBS", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // needs to be very strong -- 5
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": ".5", // // .5 > .4 orig > .6; stronger = more binary
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

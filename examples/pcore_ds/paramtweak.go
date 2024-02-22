@@ -17,7 +17,7 @@ import (
 )
 
 func (ss *Sim) RunParamTweak() {
-	ss.Config.Run.NRuns = 5
+	ss.Config.Run.NRuns = 10
 	ss.Config.Log.Run = true
 	ss.Config.Log.Epoch = true
 

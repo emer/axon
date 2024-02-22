@@ -14,7 +14,8 @@ Layer: GPePr
 Layer: GPeAk
 	          GPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
 	            STN	    ForwardPrjn	Abs:	  0.10	Rel:	  1.00	GScale:	  0.02	Rel:  1.00
-	          MtxGo	      InhibPrjn	Abs:	  0.40	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	          MtxGo	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+								    Abs Params: Base:.MtxToGPeAk: .5
 
 Layer: STN
 	          GPePr	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.00	Rel:  1.00
@@ -26,18 +27,18 @@ Layer: MtxGo
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
 								    Abs Params: .PFToMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 
 Layer: MtxNo
 	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
 								    Abs Params: .PFToMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
@@ -62,7 +63,7 @@ Layer: MotorBS
 Layer: PF
 	        MotorBS	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 	        MotorBS	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.50
-	            GPi	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  1.00
+	            GPi	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:  1.00
 
 Layer: VL
 	           M1CT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.33
