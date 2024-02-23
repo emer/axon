@@ -174,7 +174,7 @@ Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 5
+  Rel: 1 Abs: 4
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.75  Var: 0.25  Sym: false }
@@ -620,7 +620,7 @@ Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 1 Abs: 3
+  Rel: 1 Abs: 5
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.75  Var: 0  Sym: false }

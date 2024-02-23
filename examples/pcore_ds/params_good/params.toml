@@ -64,7 +64,19 @@
     "Layer.Inhib.Pool.On" = "false"
   [Base.Hypers]
     [Base.Hypers."Layer.Acts.Clamp.Ge"]
-      Tweak = "[1.5, 1.2]"
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#GPeAk"
+  Desc = "arkypallidal"
+  [Base.Params]
+    "Layer.Acts.Init.GeBase" = "0.2"
+    "Layer.Acts.Init.GeVar" = "0.1"
+  [Base.Hypers]
+    [Base.Hypers."Layer.Acts.Init.GeBase"]
+      Tweak = "-"
+    [Base.Hypers."Layer.Acts.Init.GeVar"]
+      Tweak = "-"
 
 [[Base]]
   Sel = ".DSMatrixPrjn"
@@ -171,7 +183,7 @@
     "Prjn.PrjnScale.Abs" = "3"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "[2.5,3.5]"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".M1ToMotorBS"
@@ -180,7 +192,7 @@
     "Prjn.PrjnScale.Abs" = "2"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "[1.5,2.5]"
+      Tweak = "-"
 
 [[Base]]
   Sel = "#M1PTToMotorBS"
@@ -189,7 +201,7 @@
     "Prjn.PrjnScale.Abs" = "2"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "[1.5,2.5]"
+      Tweak = "-"
 
 [[Base]]
   Sel = "#M1ToMotorBS"
@@ -198,13 +210,40 @@
     "Prjn.PrjnScale.Abs" = "1.5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "[1.5,2.5]"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".MtxToGPeAk"
   Desc = "go inhibition"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = ".5"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#GPePrToGPePr"
+  Desc = "self-inhib -- only source of self reg"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#GPeAkToMtxGo"
+  Desc = "go disinhibition"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "3"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#GPeAkToMtxNo"
+  Desc = "go disinhibition"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"

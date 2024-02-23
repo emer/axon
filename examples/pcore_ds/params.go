@@ -22,7 +22,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On":             "false",
 				"Layer.Inhib.Pool.On":              "true",
 				"Layer.Inhib.Pool.FB":              "0",
-				"Layer.Inhib.Pool.Gi":              "0.6", // 0.5 def -- try higher?
+				"Layer.Inhib.Pool.Gi":              "0.6", // 0.6 -- higher worse
 				"Layer.Matrix.IsVS":                "false",
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0", // has no effect
@@ -62,10 +62,19 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On": "true",
 				"Layer.Inhib.Pool.On":  "false",
 				"Layer.Inhib.Layer.Gi": "0.2", // 0.2 def
-				"Layer.Acts.Clamp.Ge":  "2",   // 2 >> 1 -- absolutely critical given GPi inhib
+				"Layer.Acts.Clamp.Ge":  "2",   // 2 > 1.5, >> 1 -- absolutely critical given GPi inhib
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Clamp.Ge": {"Tweak": "[1.5, 1.2]"},
+				"Layer.Acts.Clamp.Ge": {"Tweak": "-"},
+			}},
+		{Sel: "#GPeAk", Desc: "arkypallidal",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
+				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
 			}},
 		////////////////////////////////////////////
 		// Prjns
@@ -103,7 +112,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3.0", // was 4
+				"Prjn.PrjnScale.Abs": "3.0", // 3
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -166,31 +175,31 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#GPiToMotorBS", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3",
+				"Prjn.PrjnScale.Abs": "3", // 3 > 2.5, 3.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "[2.5,3.5]"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".M1ToMotorBS", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2
+				"Prjn.PrjnScale.Abs": "2", // 2 > 1.5, 2.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#M1PTToMotorBS", Desc: "PT to motor is strong, key",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // can be weaker now
+				"Prjn.PrjnScale.Abs": "2", // 2 > 1.5, 2.5 per above
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#M1ToMotorBS", Desc: "weaker; note: this is a proxy for cerebellum etc inputs",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.5", // can be weaker now
+				"Prjn.PrjnScale.Abs": "1.5", // 1.5 > 1, 2.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
@@ -199,8 +208,32 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
+		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "4", // 4 > 3 > 5 for full con
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#GPeAkToMtxGo", Desc: "go disinhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "3", // 3 > 2,>> 4
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#GPeAkToMtxNo", Desc: "go disinhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "5", // 5 >= 4, > 6 for full gpr
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
 	},
 }
+
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
 
 // ParamSetsDefs contains the full set of parameters, many of which are at default values
 // and have informed the default values in the first place.

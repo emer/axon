@@ -8,7 +8,8 @@ Layer: GPi
 Layer: GPePr
 	          MtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
 								    Abs Params: Base:#MtxNoToGPePr: 1
-	          GPePr	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.50
+	          GPePr	      InhibPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+								    Abs Params: Base:#GPePrToGPePr: 4
 	            STN	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.07	Rel:  1.00
 
 Layer: GPeAk
@@ -24,25 +25,27 @@ Layer: STN
 
 Layer: MtxGo
 	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.06	Rel:  1.00
+								    Abs Params: Base:#GPeAkToMtxGo: 3
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
 								    Abs Params: .PFToMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.30	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.30	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 
 Layer: MtxNo
-	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.06	Rel:  1.00
+	          GPeAk	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.10	Rel:  1.00
+								    Abs Params: Base:#GPeAkToMtxNo: 5
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
 								    Abs Params: .PFToMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.30	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.30	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
-	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
+	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 
 Layer: SNc
 

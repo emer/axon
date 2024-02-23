@@ -21,7 +21,7 @@ GPePr.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 GPePr.MtxNoToGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 GPePr.MtxNoToGPePr.SWts.Init.Sym: false // (Default: true)<br>
 GPePr.MtxNoToGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-GPePr.GPePrToGPePr.PrjnScale.Abs: 5 // (Default: 1)<br>
+GPePr.GPePrToGPePr.PrjnScale.Abs: 4 // (Default: 1)<br>
 GPePr.GPePrToGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 GPePr.GPePrToGPePr.SWts.Init.Sym: false // (Default: true)<br>
 GPePr.GPePrToGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -100,7 +100,7 @@ MtxNo.Inhib.Pool.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
 MtxNo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
 MtxNo.Learn.RLRate.On: false // (Default: true)<br>
 MtxNo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
-MtxNo.GPeAkToMtxNo.PrjnScale.Abs: 3 // (Default: 1)<br>
+MtxNo.GPeAkToMtxNo.PrjnScale.Abs: 5 // (Default: 1)<br>
 MtxNo.GPeAkToMtxNo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 MtxNo.GPeAkToMtxNo.SWts.Init.Var: 0 // (Default: 0.25)<br>
 MtxNo.GPeAkToMtxNo.SWts.Init.Sym: false // (Default: true)<br>
