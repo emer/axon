@@ -31,16 +31,16 @@ Layer: MtxGo
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 
 Layer: MtxNo
 	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
-								    Abs Params: .PFToMtx: 1
+								    Abs Params: Base:.PFToMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
-	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
+	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.15	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 
@@ -72,10 +72,10 @@ Layer: VL
 
 Layer: M1
 	             VL	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
-	          State	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.32	Rel:  0.48
-								    Abs Params: Base:.ToM1: 2
-	             S1	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.32	Rel:  0.48
-								    Abs Params: Base:.ToM1: 2
+	          State	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.48
+								    Abs Params: #StateToM1: 1 | Base:.ToM1: 1.5
+	             S1	    ForwardPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
+								    Abs Params: Base:.ToM1: 1.5
 
 Layer: M1CT
 	             M1	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.48	Rel:  0.48

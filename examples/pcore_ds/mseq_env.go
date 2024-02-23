@@ -99,11 +99,11 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 2 // 2x5 is easily solved, 3x5 is about 50% with partial credit
+	ev.SeqLen = 2    // 2x5 is easily solved, 3x5 is about 50% with partial credit
+	ev.MaxSeqLen = 6 // 2x6 is good; 2x7 is hard..
 	ev.PartialCreditAt = 1
 	ev.RewPredLRate = 0.02 // GPU 16 0.02 > 0.05 > 0.1, 0.2 for partial, seq3
 	ev.RewPredMin = 0.1    // 0.1 > 0.05 > 0.2
-	ev.MaxSeqLen = 6       // 2x6 is good; 2x7 is hard..
 	ev.NUnitsPer = 5
 	ev.NUnits = ev.NUnitsPer * ev.MaxSeqLen
 }

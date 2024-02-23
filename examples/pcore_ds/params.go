@@ -29,7 +29,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			},
 			Hypers: params.Hypers{
-				"Layer.Inhib.Pool.Gi": {"Tweak": "incr"},
+				"Layer.Inhib.Pool.Gi": {"Tweak": "-"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
@@ -89,28 +89,35 @@ var ParamSets = netparams.Sets{
 				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 def
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // was 4
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".ToM1", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2 > 1 key
+				"Prjn.PrjnScale.Abs": "1.5", // now 1.5 > 2 > 1 ..
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#StateToM1", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // 1 > 1.5, 2, 0.5 etc
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PFToMtx", Desc: "",
 			Params: params.Params{

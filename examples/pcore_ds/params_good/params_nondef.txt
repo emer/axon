@@ -129,8 +129,7 @@ MotorBS.M1ToMotorBS.PrjnScale.Abs: 3 // (Default: 1)<br>
 PF.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 VL.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 M1.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
-M1.StateToM1.PrjnScale.Abs: 2 // (Default: 1)<br>
-M1.S1ToM1.PrjnScale.Abs: 2 // (Default: 1)<br>
+M1.S1ToM1.PrjnScale.Abs: 1.5 // (Default: 1)<br>
 M1CT.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 M1CT.Acts.Sahp.Gbar: 1 // (Default: 0.05,0.1)<br>
 M1CT.Acts.NMDA.Gbar: 0.008 // (Default: 0,0.006,0.007)<br>

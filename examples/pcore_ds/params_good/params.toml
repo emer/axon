@@ -18,7 +18,7 @@
     "Layer.Matrix.IsVS" = "false"
   [Base.Hypers]
     [Base.Hypers."Layer.Inhib.Pool.Gi"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".STNLayer"
@@ -88,7 +88,7 @@
     "Prjn.PrjnScale.Abs" = "0.5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".PTSelfMaint"
@@ -97,7 +97,7 @@
     "Prjn.PrjnScale.Abs" = "1"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".SuperToThal"
@@ -106,16 +106,25 @@
     "Prjn.PrjnScale.Abs" = "3.0"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".ToM1"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
+    "Prjn.PrjnScale.Abs" = "1.5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#StateToM1"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
 
 [[Base]]
   Sel = ".PFToMtx"
