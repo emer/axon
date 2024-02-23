@@ -126,8 +126,10 @@ type PushOff struct {
 type GPU struct {
 
 	// if true, actually use the GPU
-	On          bool
-	RecFunTimes bool `desc:"if true, slower separate shader pipeline runs are used, with a CPU-sync Wait at the end, to enable timing information about each individual shader to be collected using the network FunTimer system.  otherwise, only aggregate information is available about the entire Cycle call.`
+	On bool
+
+	// if true, slower separate shader pipeline runs are used, with a CPU-sync Wait at the end, to enable timing information about each individual shader to be collected using the network FunTimer system.  otherwise, only aggregate information is available about the entire Cycle call.
+	RecFunTimes bool
 
 	// if true, process each cycle one at a time.  Otherwise, 10 cycles at a time are processed in one batch.
 	CycleByCycle bool
