@@ -23,7 +23,11 @@ func (ss *Sim) RunParamTweak() {
 
 	tstamp := time.Now().Format("2006-01-02-15-04")
 
-	ss.Params.Tag = tstamp // todo: date timestamp
+	ctag := ss.Params.Tag
+	ss.Params.Tag = tstamp
+	if ctag != "" {
+		ss.Params.Tag += "_" + ctag
+	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 	netName := ss.Net.Name()

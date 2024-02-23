@@ -63,6 +63,9 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.On":  "false",
 				"Layer.Inhib.Layer.Gi": "0.2", // 0.2 def
 				"Layer.Acts.Clamp.Ge":  "2",   // 2 >> 1 -- absolutely critical given GPi inhib
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Clamp.Ge": {"Tweak": "[1.5, 1.2]"},
 			}},
 		////////////////////////////////////////////
 		// Prjns
@@ -125,6 +128,13 @@ var ParamSets = netparams.Sets{
 				"Prjn.Com.GType":     "ModulatoryG",
 				"Prjn.PrjnScale.Abs": "1",
 			}},
+		// {Sel: ".StateToMtx", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs": "1.5", // 1.8 def
+		// 	},
+		// 	Hypers: params.Hypers{
+		// 		"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+		// 	}},
 		// {Sel: ".CLToMtx", Desc: "",
 		// 	Params: params.Params{
 		// 		"Prjn.Learn.Learn":   "false",
@@ -156,17 +166,17 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#GPiToMotorBS", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 > 3, 5
+				"Prjn.PrjnScale.Abs": "3",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "[2.5,3.5]"},
 			}},
 		{Sel: ".M1ToMotorBS", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // needs to be very strong -- 5
+				"Prjn.PrjnScale.Abs": "2", // can be weaker now
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{

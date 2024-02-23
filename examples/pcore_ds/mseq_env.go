@@ -40,9 +40,12 @@ type MotorSeqEnv struct {
 	// minimum rewpred value
 	RewPredMin float32
 
-	//	give reward in proportion to number of correct actions in sequence,
-	// above given threshold.  If 0, don't use
+	//	give reward with probability in proportion to number of
+	// correct actions in sequence, above given threshold.  If 0, don't use
 	PartialCreditAt int
+
+	//	if doing partial credit, also make the reward value graded (weaker for fewer)
+	PartialGraded bool
 
 	// sequence map from sequence index to target motor action
 	SeqMap []int
@@ -99,11 +102,12 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 2    // 2x5 is easily solved, 3x5 is about 50% with partial credit
-	ev.MaxSeqLen = 6 // 2x6 is good; 2x7 is hard..
+	ev.SeqLen = 3    // 2x5 is easily solved, 3x5 is about 50% with partial credit
+	ev.MaxSeqLen = 4 // 2x6 is 100%; 2x7 9/10 with 49u
 	ev.PartialCreditAt = 1
-	ev.RewPredLRate = 0.02 // GPU 16 0.02 > 0.05 > 0.1, 0.2 for partial, seq3
-	ev.RewPredMin = 0.1    // 0.1 > 0.05 > 0.2
+	ev.PartialGraded = true // not better for 2x7
+	ev.RewPredLRate = 0.02  // GPU 16 0.02 > 0.05 > 0.1, 0.2 for partial, seq3
+	ev.RewPredMin = 0.1     // 0.1 > 0.05 > 0.2
 	ev.NUnitsPer = 5
 	ev.NUnits = ev.NUnitsPer * ev.MaxSeqLen
 }
@@ -235,7 +239,11 @@ func (ev *MotorSeqEnv) ComputeReward() {
 		prew := float32(ev.NCorrect) / float32(ev.SeqLen)
 		doRew := erand.BoolP32(prew, -1, &ev.Rand)
 		if doRew {
-			ev.Rew = 1
+			if ev.PartialGraded {
+				ev.Rew = prew
+			} else {
+				ev.Rew = 1
+			}
 		}
 	} else {
 		if ev.NCorrect == ev.SeqLen {

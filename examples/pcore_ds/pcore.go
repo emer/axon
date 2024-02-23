@@ -184,10 +184,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	np := 1
 	nuPer := ev.NUnitsPer
 	nAct := ev.MaxSeqLen
-	nuX := 6
-	nuY := 6
-	nuCtxY := 6
-	nuCtxX := 6
+	nuX := 7
+	nuY := 7
+	nuCtxY := 7
+	nuCtxX := 7
 	space := float32(2)
 
 	p1to1 := prjn.NewPoolOneToOne()
@@ -253,8 +253,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// toMtx := mtxRndPrjn // works, but not as reliably
 	net.ConnectToDSMatrix(state, mtxGo, toMtx).SetClass("StateToMtx")
 	net.ConnectToDSMatrix(state, mtxNo, toMtx).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(s1, mtxNo, toMtx).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(s1, mtxGo, toMtx).SetClass("StateToMtx")
+	net.ConnectToDSMatrix(s1, mtxNo, toMtx).SetClass("S1ToMtx")
+	net.ConnectToDSMatrix(s1, mtxGo, toMtx).SetClass("S1ToMtx")
 
 	net.ConnectToDSMatrix(m1, mtxGo, toMtx).SetClass("M1ToMtx")
 	net.ConnectToDSMatrix(m1, mtxNo, toMtx).SetClass("M1ToMtx")
@@ -287,6 +287,15 @@ func (ss *Sim) ApplyParams() {
 	ss.Params.SetAll() // first hard-coded defaults
 	if ss.Config.Params.Network != nil {
 		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
+	}
+	// compensate for expected activity levels based on max seq len
+	return // not good
+	lnms := []string{"State", "S1", "MotorBS", "VL"}
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MotorSeqEnv)
+	for _, lnm := range lnms {
+		ly := ss.Net.AxonLayerByName(lnm)
+		// fmt.Println(ly.Params.Inhib.ActAvg.Nominal)
+		ly.Params.Inhib.ActAvg.Nominal = 0.7 / float32(ev.MaxSeqLen)
 	}
 }
 
