@@ -173,14 +173,28 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".M1ToMotorBS", Desc: "",
 			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2", // 2
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
+			}},
+		{Sel: "#M1PTToMotorBS", Desc: "PT to motor is strong, key",
+			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // can be weaker now
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
+			}},
+		{Sel: "#M1ToMotorBS", Desc: "weaker; note: this is a proxy for cerebellum etc inputs",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1.5", // can be weaker now
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "[1.5,2.5]"},
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // // .5 > .4 orig > .6; stronger = more binary
+				"Prjn.PrjnScale.Abs": ".5", // .5 > .4 orig > .6; stronger = more binary
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

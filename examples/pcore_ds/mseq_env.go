@@ -105,7 +105,7 @@ func (ev *MotorSeqEnv) Defaults() {
 	ev.SeqLen = 3    // 2x5 is easily solved, 3x5 is about 50% with partial credit
 	ev.MaxSeqLen = 4 // 2x6 is 100%; 2x7 9/10 with 49u
 	ev.PartialCreditAt = 1
-	ev.PartialGraded = true // not better for 2x7
+	ev.PartialGraded = true // key for seq 3
 	ev.RewPredLRate = 0.02  // GPU 16 0.02 > 0.05 > 0.1, 0.2 for partial, seq3
 	ev.RewPredMin = 0.1     // 0.1 > 0.05 > 0.2
 	ev.NUnitsPer = 5

@@ -62,6 +62,9 @@
     "Layer.Inhib.Layer.Gi" = "0.2"
     "Layer.Inhib.Layer.On" = "true"
     "Layer.Inhib.Pool.On" = "false"
+  [Base.Hypers]
+    [Base.Hypers."Layer.Acts.Clamp.Ge"]
+      Tweak = "[1.5, 1.2]"
 
 [[Base]]
   Sel = ".DSMatrixPrjn"
@@ -165,19 +168,37 @@
   Sel = "#GPiToMotorBS"
   Desc = "final inhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
+    "Prjn.PrjnScale.Abs" = "3"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "[2.5,3.5]"
 
 [[Base]]
   Sel = ".M1ToMotorBS"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3"
+    "Prjn.PrjnScale.Abs" = "2"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "[1.5,2.5]"
+
+[[Base]]
+  Sel = "#M1PTToMotorBS"
+  Desc = "PT to motor is strong, key"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "[1.5,2.5]"
+
+[[Base]]
+  Sel = "#M1ToMotorBS"
+  Desc = "weaker; note: this is a proxy for cerebellum etc inputs"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1.5"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "[1.5,2.5]"
 
 [[Base]]
   Sel = ".MtxToGPeAk"

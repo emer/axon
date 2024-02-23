@@ -123,9 +123,9 @@ S1.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 Target.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 MotorBS.Acts.Clamp.Ge: 2 // (Default: 0.8,1.5)<br>
 MotorBS.Inhib.Layer.Gi: 0.2 // (Default: 1,1.1,0.75,0.9)<br>
-MotorBS.GPiToMotorBS.PrjnScale.Abs: 4 // (Default: 1)<br>
-MotorBS.M1PTToMotorBS.PrjnScale.Abs: 3 // (Default: 1)<br>
-MotorBS.M1ToMotorBS.PrjnScale.Abs: 3 // (Default: 1)<br>
+MotorBS.GPiToMotorBS.PrjnScale.Abs: 3 // (Default: 1)<br>
+MotorBS.M1PTToMotorBS.PrjnScale.Abs: 2 // (Default: 1)<br>
+MotorBS.M1ToMotorBS.PrjnScale.Abs: 1.5 // (Default: 1)<br>
 PF.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 VL.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 M1.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
