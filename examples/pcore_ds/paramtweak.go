@@ -65,7 +65,7 @@ func (ss *Sim) RunParamTweak() {
 	for _, twk := range srch {
 		sv0 := twk.Search[0]
 		for i, val := range sv0.Values {
-			tag := fmt.Sprintf("%s_%s_%g", twk.Param, twk.Sel.Sel, val)
+			tag := fmt.Sprintf("%s_%s_%g", twk.Sel.Sel, twk.Param, val)
 			for _, sv := range twk.Search {
 				val := sv.Values[i] // should be the same
 				emer.SetFloatParam(ss.Net, sv.Name, sv.Type, sv.Path, val)

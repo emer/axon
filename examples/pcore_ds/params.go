@@ -27,8 +27,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0", // has no effect
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+				"Layer.Acts.Kir.Gbar":              "10", // 10 > 5 > 20
 			},
 			Hypers: params.Hypers{
+				"Layer.Acts.Kir.Gbar": {"Tweak": "[8,12]"},
 				"Layer.Inhib.Pool.Gi": {"Tweak": "incr"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
