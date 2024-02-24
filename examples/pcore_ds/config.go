@@ -27,6 +27,9 @@ type ParamConfig struct {
 	// for Tweak, if true, first run a baseline with current default params
 	Baseline bool
 
+	// for Tweak, if true, only print what would be done, don't run
+	DryRun bool
+
 	// network parameters
 	Network map[string]any
 

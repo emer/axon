@@ -17,7 +17,7 @@ import (
 )
 
 func (ss *Sim) RunParamTweak() {
-	ss.Config.Run.NRuns = 10
+	ss.Config.Run.NRuns = 25 // 10
 	ss.Config.Log.Run = true
 	ss.Config.Log.Epoch = true
 
@@ -32,19 +32,23 @@ func (ss *Sim) RunParamTweak() {
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 	netName := ss.Net.Name()
 
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
-	elog.SetLogFile(&ss.Logs, ss.Config.Log.Run, etime.Train, etime.Run, "run", netName, runName)
-	elog.SetLogFile(&ss.Logs, true, etime.Train, etime.Expt, "expt", netName, runName)
+	if !ss.Config.Params.DryRun {
+		elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
+		elog.SetLogFile(&ss.Logs, ss.Config.Log.Run, etime.Train, etime.Run, "run", netName, runName)
+		elog.SetLogFile(&ss.Logs, true, etime.Train, etime.Expt, "expt", netName, runName)
+	}
 
 	ss.Init()
 
-	srch := params.TweakFromHypers(ss.Params.NetHypers)
+	srch := params.TweaksFromHypers(ss.Params.NetHypers)
 	if len(srch) == 0 {
 		fmt.Println("no tweak items to search!")
 		return
 	}
 
-	fmt.Println("Searching:", laser.StringJSON(srch))
+	if ss.Config.Params.DryRun {
+		fmt.Println("Searching:", laser.StringJSON(srch))
+	}
 
 	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
 	if ss.Config.Run.GPU {
@@ -52,27 +56,34 @@ func (ss *Sim) RunParamTweak() {
 	}
 	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
 
-	if ss.Config.Params.Baseline {
-		// baseline
+	if !ss.Config.Params.DryRun && ss.Config.Params.Baseline {
 		fmt.Println("Running baseline")
 		ss.Loops.Run(etime.Train)
 		ss.Init() // start fresh next time
 	}
 
-	for _, sv := range srch {
-		for _, val := range sv.Values {
-			emer.SetFloatParam(ss.Net, sv.Name, sv.Type, sv.Path, val)
-			tag := fmt.Sprintf("%s_%s_%g", sv.Name, sv.Path, val)
+	for _, twk := range srch {
+		sv0 := twk.Search[0]
+		for i, val := range sv0.Values {
+			tag := fmt.Sprintf("%s_%s_%g", twk.Param, twk.Sel.Sel, val)
+			for _, sv := range twk.Search {
+				val := sv.Values[i] // should be the same
+				emer.SetFloatParam(ss.Net, sv.Name, sv.Type, sv.Path, val)
+			}
 			ss.Params.Tag = tag
 			runName := ss.Params.RunName(ss.Config.Run.Run)
 			ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 			fmt.Println("Running:", tag)
-			ss.Net.InitGScale(&ss.Net.Ctx)
-			ss.Net.GPU.SyncParamsToGPU() // critical!
-			ss.Loops.Run(etime.Train)
-			ss.Init() // start fresh next time -- param will be applied on top if this
+			if !ss.Config.Params.DryRun {
+				ss.Net.InitGScale(&ss.Net.Ctx)
+				ss.Net.GPU.SyncParamsToGPU() // critical!
+				ss.Loops.Run(etime.Train)
+				ss.Init() // start fresh next time -- param will be applied on top if this
+			}
 		}
-		emer.SetFloatParam(ss.Net, sv.Name, sv.Type, sv.Path, sv.Start) // restore
+		for _, sv := range twk.Search {
+			emer.SetFloatParam(ss.Net, sv.Name, sv.Type, sv.Path, sv.Start) // restore
+		}
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU
