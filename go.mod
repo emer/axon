@@ -3,13 +3,13 @@ module github.com/emer/axon/v2
 go 1.21
 
 require (
-	cogentcore.org/core v0.0.4
+	cogentcore.org/core v0.0.7-0.20240224002924-02e90b285442
 	github.com/alecthomas/assert/v2 v2.2.1
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.11
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.11.0.20240224003427-ad13f00b17d7
 	github.com/emer/empi/v2 v2.0.0-dev0.0.4
-	github.com/emer/etable/v2 v2.0.0-dev0.0.16
+	github.com/emer/etable/v2 v2.0.0-dev0.0.16.0.20240221174559-b1e0d7a0528c
 	github.com/emer/eve/v2 v2.0.0-dev0.0.5
 	github.com/emer/gosl/v2 v2.0.0-dev0.0.10
 	github.com/emer/vision/v2 v2.0.0-dev0.0.8
@@ -21,6 +21,8 @@ require (
 
 require (
 	git.sr.ht/~sbinet/gg v0.5.0 // indirect
+	github.com/Bios-Marcel/wastebasket v0.0.4-0.20240213135800-f26f1ae0a7c4 // indirect
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/alecthomas/chroma/v2 v2.12.0 // indirect
@@ -31,7 +33,6 @@ require (
 	github.com/chewxy/math32 v1.10.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
-	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-fonts/liberation v0.3.2 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20240118000515-a250818d05e3 // indirect
@@ -47,7 +48,6 @@ require (
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
