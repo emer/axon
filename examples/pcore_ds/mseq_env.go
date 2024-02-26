@@ -28,11 +28,14 @@ type MotorSeqEnv struct {
 	// trial counter for index into sequence
 	Trial env.Ctr
 
-	// current length of sequence to generate
+	// sequence length.
 	SeqLen int
 
-	// max sequence length that can be represented
-	MaxSeqLen int
+	// number of distinct actions represented: determines the difficulty
+	// of learning in terms of the size of the space that must be searched.
+	// effective size = NActions ^ SeqLen
+	// 4 ^ 3 = 64 or 7 ^2 = 49 are reliably solved
+	NActions int
 
 	// learning rate for reward prediction
 	RewPredLRate float32
@@ -80,7 +83,7 @@ type MotorSeqEnv struct {
 	// number of units per localist representation, in Y axis
 	NUnitsPer int `view:"-"`
 
-	// total number of units: MaxSeqLen * NUnitsPer
+	// total number of units: NActions * NUnitsPer
 	NUnits int `view:"-"`
 
 	// random number generator for the env -- all random calls must use this
@@ -102,14 +105,14 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 3    // 2x5 is easily solved, 3x4 is 100% with 49u
-	ev.MaxSeqLen = 4 // 2x6 is 100%; 2x7 100% with 25u
+	ev.SeqLen = 3   // 2x5 is easily solved, 3x4 is 100% with 49u
+	ev.NActions = 4 // 2x6 is 100%; 2x7 100% with 25u
 	ev.PartialCreditAt = 1
 	ev.PartialGraded = true // key for seq 3
 	ev.RewPredLRate = 0.02  // GPU 16 0.02 > 0.05 > 0.1, 0.2 for partial, seq3
 	ev.RewPredMin = 0.1     // 0.1 > 0.05 > 0.2
 	ev.NUnitsPer = 5
-	ev.NUnits = ev.NUnitsPer * ev.MaxSeqLen
+	ev.NUnits = ev.NUnitsPer * ev.NActions
 }
 
 // Config configures the world
@@ -118,10 +121,10 @@ func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
 	ev.States = make(map[string]*etensor.Float32)
-	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
-	ev.States["Target"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
-	ev.States["Action"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
-	ev.States["PrevAction"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.MaxSeqLen}, nil, []string{"Y", "X"})
+	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["Target"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["Action"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["PrevAction"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 	ev.States["SNc"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 }
@@ -131,7 +134,7 @@ func (ev *MotorSeqEnv) Validate() error {
 }
 
 func (ev *MotorSeqEnv) InitSeqMap() {
-	// pord := ev.Rand.Perm(ev.MaxSeqLen, -1)
+	// pord := ev.Rand.Perm(ev.NActions, -1)
 	ev.SeqMap = make([]int, ev.SeqLen)
 	for i := 0; i < ev.SeqLen; i++ {
 		ev.SeqMap[i] = i // no randomness!  otherwise doesn't work on gpu!

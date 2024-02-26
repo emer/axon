@@ -461,8 +461,9 @@ func (an *SpikeNoiseParams) ShouldShow(field string) bool {
 
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni uint32) float32 {
-	*p *= GetRandomNumber(ni, ctx.RandCtr, RandFunActPGe)
+func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32 {
+	ndi := di*ctx.NetIdxs.NNeurons + ni
+	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
 		return an.Ge
@@ -472,8 +473,9 @@ func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni uint32) float32 {
 
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni uint32) float32 {
-	*p *= GetRandomNumber(ni, ctx.RandCtr, RandFunActPGi)
+func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32 {
+	ndi := di*ctx.NetIdxs.NNeurons + ni
+	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
 		return an.Gi
@@ -1157,7 +1159,7 @@ func (ac *ActParams) AddGeNoise(ctx *Context, ni, di uint32) {
 		return
 	}
 	p := NrnV(ctx, ni, di, GeNoiseP)
-	ge := ac.Noise.PGe(ctx, &p, ni)
+	ge := ac.Noise.PGe(ctx, &p, ni, di)
 	SetNrnV(ctx, ni, di, GeNoiseP, p)
 	SetNrnV(ctx, ni, di, GeNoise, ac.Dt.GeSynFmRaw(NrnV(ctx, ni, di, GeNoise), ge))
 	AddNrnV(ctx, ni, di, Ge, NrnV(ctx, ni, di, GeNoise))
@@ -1169,7 +1171,7 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 		return
 	}
 	p := NrnV(ctx, ni, di, GiNoiseP)
-	gi := ac.Noise.PGi(ctx, &p, ni)
+	gi := ac.Noise.PGi(ctx, &p, ni, di)
 	SetNrnV(ctx, ni, di, GiNoiseP, p)
 	SetNrnV(ctx, ni, di, GiNoise, ac.Dt.GiSynFmRaw(NrnV(ctx, ni, di, GiNoise), gi))
 }

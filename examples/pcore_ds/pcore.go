@@ -142,6 +142,8 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Defaults()
+		trn.NActions = ss.Config.Env.NActions
+		trn.SeqLen = ss.Config.Env.SeqLen
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
@@ -150,6 +152,8 @@ func (ss *Sim) ConfigEnv() {
 
 		tst.Nm = env.ModeDi(etime.Test, di)
 		tst.Defaults()
+		tst.NActions = ss.Config.Env.NActions
+		tst.SeqLen = ss.Config.Env.SeqLen
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 		}
@@ -183,7 +187,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	np := 1
 	nuPer := ev.NUnitsPer
-	nAct := ev.MaxSeqLen
+	nAct := ev.NActions
 	nuX := 7
 	nuY := 7
 	nuCtxY := 7
@@ -289,14 +293,24 @@ func (ss *Sim) ApplyParams() {
 		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
 	}
 	// compensate for expected activity levels based on max seq len
-	return // not good
 	lnms := []string{"State", "S1", "MotorBS", "VL"}
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MotorSeqEnv)
 	for _, lnm := range lnms {
 		ly := ss.Net.AxonLayerByName(lnm)
 		// fmt.Println(ly.Params.Inhib.ActAvg.Nominal)
-		ly.Params.Inhib.ActAvg.Nominal = 0.7 / float32(ev.MaxSeqLen)
+		ly.Params.Inhib.ActAvg.Nominal = 0.5 / float32(ev.NActions)
 	}
+}
+
+func (ss *Sim) TurnOffTheNoise() {
+	return // not doing this now -- not better
+	mtxGo := ss.Net.AxonLayerByName("MtxGo")
+	if mtxGo.Params.Acts.Noise.On.IsFalse() {
+		return
+	}
+	ss.Params.SetAllSheet("NoiseOff")
+	ss.Net.GPU.SyncParamsToGPU()
+	fmt.Println("Turned noise off")
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -766,6 +780,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
 		}
+		// ss.TurnOffTheNoise()
 		return // don't do reg
 	case time == etime.Epoch && mode == etime.Test:
 		ss.TestStats()

@@ -12,8 +12,14 @@ type EnvConfig struct {
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
 
-	// sequence length to use: 2 is initial testing target
-	SeqLen int `default:"2"`
+	// sequence length.
+	SeqLen int `default:"3"`
+
+	// number of distinct actions represented: determines the difficulty
+	// of learning in terms of the size of the space that must be searched.
+	// effective size = NActions ^ SeqLen
+	// 4 ^ 3 = 64 or 7 ^2 = 49 are reliably solved
+	NActions int `default:"4"`
 
 	// gain on the softmax for choosing actions: lower values are more noisy; 2 > 3+ > 1>
 	ActSoftMaxGain float32 `default:"2"`
