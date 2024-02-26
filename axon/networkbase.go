@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
@@ -1388,4 +1389,106 @@ func (nt *NetworkBase) ResetRndSeed() {
 	} else {
 		nt.Rand.Seed(nt.RndSeed)
 	}
+}
+
+// CheckSameSize checks if this network is the same size as given other,
+// in terms of NNeurons, MaxData, and NSyns.  Returns error message if not.
+func (nt *NetworkBase) CheckSameSize(on *NetworkBase) error {
+	if nt.NNeurons != on.NNeurons {
+		err := fmt.Errorf("CheckSameSize: dest NNeurons: %d != src NNeurons: %d", nt.NNeurons, on.NNeurons)
+		return err
+	}
+	if nt.MaxData != on.MaxData {
+		err := fmt.Errorf("CheckSameSize: dest MaxData: %d != src MaxData: %d", nt.MaxData, on.MaxData)
+		return err
+	}
+	if nt.NSyns != on.NSyns {
+		err := fmt.Errorf("CheckSameSize: dest NSyns: %d != src NSyns: %d", nt.NSyns, on.NSyns)
+		return err
+	}
+	return nil
+}
+
+// CopyStateFrom copies entire network state from other network.
+// Other network must have identical configuration, as this just
+// does a literal copy of the state values.  This is checked
+// and errors are returned (and logged).
+// See also DiffFrom.
+func (nt *NetworkBase) CopyStateFrom(on *NetworkBase) error {
+	if err := nt.CheckSameSize(on); err != nil {
+		slog.Error(err.Error())
+		return err
+	}
+	copy(nt.Neurons, on.Neurons)
+	copy(nt.NeuronAvgs, on.NeuronAvgs)
+	copy(nt.Pools, on.Pools)
+	copy(nt.LayVals, on.LayVals)
+	copy(nt.Synapses, on.Synapses)
+	copy(nt.SynapseCas, on.SynapseCas)
+	return nil
+}
+
+// DiffFrom returns a string reporting differences between this network
+// and given other, up to given max number of differences (0 = all),
+// for each state value.
+func (nt *NetworkBase) DiffFrom(ctx *Context, on *NetworkBase, maxDiff int) string {
+	diffs := ""
+	ndif := 0
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for ni := uint32(0); ni < nt.NNeurons; ni++ {
+			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
+				nv := nt.Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
+				ov := on.Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
+				if nv != ov {
+					diffs += fmt.Sprintf("Neuron: di: %d\tni: %d\tvar: %s\tval: %g\toth: %g\n", di, ni, nvar.String(), nv, ov)
+					ndif++
+					if maxDiff > 0 && ndif >= maxDiff {
+						return diffs
+					}
+				}
+			}
+		}
+	}
+	for ni := uint32(0); ni < nt.NNeurons; ni++ {
+		for nvar := ActAvg; nvar < NeuronAvgVarsN; nvar++ {
+			nv := nt.NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
+			ov := on.NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
+			if nv != ov {
+				diffs += fmt.Sprintf("NeuronAvg: ni: %d\tvar: %s\tval: %g\toth: %g\n", ni, nvar.String(), nv, ov)
+				ndif++
+				if maxDiff > 0 && ndif >= maxDiff {
+					return diffs
+				}
+			}
+		}
+	}
+	for si := uint32(0); si < nt.NSyns; si++ {
+		for svar := Wt; svar < SynapseVarsN; svar++ {
+			sv := nt.Synapses[ctx.SynapseVars.Idx(si, svar)]
+			ov := on.Synapses[ctx.SynapseVars.Idx(si, svar)]
+			if sv != ov {
+				diffs += fmt.Sprintf("Synapse: si: %d\tvar: %s\tval: %g\toth: %g\n", si, svar.String(), sv, ov)
+				ndif++
+				if maxDiff > 0 && ndif >= maxDiff {
+					return diffs
+				}
+			}
+		}
+	}
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for si := uint32(0); si < nt.NSyns; si++ {
+			for svar := CaM; svar < SynapseCaVarsN; svar++ {
+				sv := nt.Synapses[ctx.SynapseCaVars.Idx(di, si, svar)]
+				ov := on.Synapses[ctx.SynapseCaVars.Idx(di, si, svar)]
+				if sv != ov {
+					diffs += fmt.Sprintf("SynapseCa: di: %d, si: %d\tvar: %s\tval: %g\toth: %g\n", di, si, svar.String(), sv, ov)
+					ndif++
+					if maxDiff > 0 && ndif >= maxDiff {
+						return diffs
+					}
+				}
+			}
+		}
+	}
+	return diffs
 }

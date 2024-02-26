@@ -324,7 +324,7 @@ func (ss *Sim) Init() {
 	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed(0)
-	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
+	ss.ConfigEnv() // note: critical -- must reset rewpred etc.
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()

@@ -17,15 +17,18 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Acts.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
 				"Layer.Acts.Noise.On": "true",
-				"Layer.Acts.Noise.Ge": "0.0001",
-				"Layer.Acts.Noise.Gi": "0.0001",
+				"Layer.Acts.Noise.Ge": "0",     // 0 perhaps better than higher; could just be noise ;)
+				"Layer.Acts.Noise.Gi": "0.001", // .001 perhaps better than others
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Noise.Ge": {"Tweak": "-"}, // "[0.0001,0.0002,0.0005]"},
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
 				"Layer.Inhib.Layer.On":             "false",
 				"Layer.Inhib.Pool.On":              "true",
 				"Layer.Inhib.Pool.FB":              "0",
-				"Layer.Inhib.Pool.Gi":              "0.6", // 0.6 -- higher worse
+				"Layer.Inhib.Pool.Gi":              "0.5", // 0.6 -- higher worse
 				"Layer.Matrix.IsVS":                "false",
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0", // has no effect
@@ -228,7 +231,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#GPeAkToMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 > 5, 6 for full gpr
+				"Prjn.PrjnScale.Abs": "5", // 4 > 5, 6 for full gpr
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
