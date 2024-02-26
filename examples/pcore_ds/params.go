@@ -18,6 +18,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
 				"Layer.Acts.Noise.On": "true",
 				"Layer.Acts.Noise.Ge": "0.0001",
+				"Layer.Acts.Noise.Gi": "0.0001",
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
@@ -29,10 +30,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0", // has no effect
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
-				"Layer.Acts.Kir.Gbar":              "10", // 10 > 5 > 20
+				"Layer.Acts.Kir.Gbar":              "10", // 10 > 5, 15 >> 20
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Kir.Gbar": {"Tweak": "[15,20]"},
+				"Layer.Acts.Kir.Gbar": {"Tweak": "-"},
 				"Layer.Inhib.Pool.Gi": {"Tweak": "incr"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
@@ -227,7 +228,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#GPeAkToMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 5 >= 4, > 6 for full gpr
+				"Prjn.PrjnScale.Abs": "4", // 4 > 5, 6 for full gpr
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},

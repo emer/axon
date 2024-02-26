@@ -3,12 +3,14 @@ GUI = true
 Debug = false
 
 [Env]
-  SeqLen = 2
+  SeqLen = 3
+  NActions = 4
   ActSoftMaxGain = 2.0
 
 [Params]
   Tweak = false
   Baseline = false
+  DryRun = false
   Sheet = ''
   Tag = ''
   Note = ''
@@ -21,7 +23,7 @@ Debug = false
   NData = 16
   NThreads = 0
   Run = 0
-  NRuns = 10
+  NRuns = 25
   NEpochs = 30
   NTrials = 128
 

@@ -16,22 +16,22 @@
             SNc		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-          State		Nominal:	  0.10	
+          State		Nominal:	  0.12	
 						Layer.Gi:	  0.90	
 
-             S1		Nominal:	  0.10	
+             S1		Nominal:	  0.12	
 						Layer.Gi:	  0.90	
 
          Target		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-        MotorBS		Nominal:	  0.10	
+        MotorBS		Nominal:	  0.12	
 						Layer.Gi:	  0.20	Params: #MotorBS: 0.2
 
              PF		Nominal:	  0.10	
 						Layer.Gi:	  1.00	
 
-             VL		Nominal:	  0.10	
+             VL		Nominal:	  0.12	
 						Layer.Gi:	  1.00	
 
              M1		Nominal:	  0.10	

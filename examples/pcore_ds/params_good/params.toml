@@ -3,6 +3,9 @@
   Desc = "clamp gain makes big diff on overall excitation, gating propensity"
   [Base.Params]
     "Layer.Acts.Clamp.Ge" = "1.0"
+    "Layer.Acts.Noise.Ge" = "0.0001"
+    "Layer.Acts.Noise.Gi" = "0.0001"
+    "Layer.Acts.Noise.On" = "true"
 
 [[Base]]
   Sel = ".MatrixLayer"
@@ -10,6 +13,7 @@
   [Base.Params]
     "Layer.Acts.Dend.ModBase" = "1"
     "Layer.Acts.Dend.ModGain" = "0"
+    "Layer.Acts.Kir.Gbar" = "10"
     "Layer.Inhib.Layer.On" = "false"
     "Layer.Inhib.Pool.FB" = "0"
     "Layer.Inhib.Pool.Gi" = "0.6"
@@ -17,8 +21,10 @@
     "Layer.Learn.NeuroMod.AChDisInhib" = "0"
     "Layer.Matrix.IsVS" = "false"
   [Base.Hypers]
-    [Base.Hypers."Layer.Inhib.Pool.Gi"]
+    [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"
+    [Base.Hypers."Layer.Inhib.Pool.Gi"]
+      Tweak = "incr"
 
 [[Base]]
   Sel = ".STNLayer"
@@ -91,10 +97,8 @@
   [Base.Hypers]
     [Base.Hypers."Prjn.Learn.LRate.Base"]
       Tweak = "-"
-    [Base.Hypers."Prjn.Learn.Trace.LearnThr"]
-      Tweak = "-"
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "incr"
 
 [[Base]]
   Sel = ".SuperToPT"
@@ -219,7 +223,7 @@
     "Prjn.PrjnScale.Abs" = ".5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "[0.3,0.4,0.6]"
 
 [[Base]]
   Sel = "#GPePrToGPePr"
@@ -228,7 +232,7 @@
     "Prjn.PrjnScale.Abs" = "4"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "incr"
 
 [[Base]]
   Sel = "#GPeAkToMtxGo"
@@ -237,13 +241,20 @@
     "Prjn.PrjnScale.Abs" = "3"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "incr"
 
 [[Base]]
   Sel = "#GPeAkToMtxNo"
   Desc = "go disinhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "5"
+    "Prjn.PrjnScale.Abs" = "4"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "incr"
+
+[[NoiseOff]]
+  Sel = "Layer"
+  Desc = "turn off noise"
+  [NoiseOff.Params]
+    "Layer.Acts.Noise.Ge" = "0"
+    "Layer.Acts.Noise.On" = "false"
