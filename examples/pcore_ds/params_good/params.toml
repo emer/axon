@@ -6,6 +6,9 @@
     "Layer.Acts.Noise.Ge" = "0.0001"
     "Layer.Acts.Noise.Gi" = "0.0001"
     "Layer.Acts.Noise.On" = "true"
+  [Base.Hypers]
+    [Base.Hypers."Layer.Acts.Noise.Ge"]
+      Tweak = "-"
 
 [[Base]]
   Sel = ".MatrixLayer"
@@ -16,7 +19,7 @@
     "Layer.Acts.Kir.Gbar" = "10"
     "Layer.Inhib.Layer.On" = "false"
     "Layer.Inhib.Pool.FB" = "0"
-    "Layer.Inhib.Pool.Gi" = "0.6"
+    "Layer.Inhib.Pool.Gi" = "0.5"
     "Layer.Inhib.Pool.On" = "true"
     "Layer.Learn.NeuroMod.AChDisInhib" = "0"
     "Layer.Matrix.IsVS" = "false"
@@ -24,7 +27,7 @@
     [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"
     [Base.Hypers."Layer.Inhib.Pool.Gi"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = ".STNLayer"
@@ -96,9 +99,9 @@
     "Prjn.PrjnScale.Abs" = "1.8"
   [Base.Hypers]
     [Base.Hypers."Prjn.Learn.LRate.Base"]
-      Tweak = "-"
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "incr"
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
 
 [[Base]]
   Sel = ".SuperToPT"
@@ -223,7 +226,7 @@
     "Prjn.PrjnScale.Abs" = ".5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "[0.3,0.4,0.6]"
+      Tweak = "-"
 
 [[Base]]
   Sel = "#GPePrToGPePr"
@@ -232,7 +235,7 @@
     "Prjn.PrjnScale.Abs" = "4"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = "#GPeAkToMtxGo"
@@ -241,20 +244,19 @@
     "Prjn.PrjnScale.Abs" = "3"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[Base]]
   Sel = "#GPeAkToMtxNo"
   Desc = "go disinhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
+    "Prjn.PrjnScale.Abs" = "6"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
+      Tweak = "-"
 
 [[NoiseOff]]
   Sel = "Layer"
   Desc = "turn off noise"
   [NoiseOff.Params]
-    "Layer.Acts.Noise.Ge" = "0"
     "Layer.Acts.Noise.On" = "false"

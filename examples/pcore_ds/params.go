@@ -1,7 +1,6 @@
 // Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package main
 
 import (
@@ -17,8 +16,8 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Acts.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
 				"Layer.Acts.Noise.On": "true",
-				"Layer.Acts.Noise.Ge": "0",     // 0 perhaps better than higher; could just be noise ;)
-				"Layer.Acts.Noise.Gi": "0.001", // .001 perhaps better than others
+				"Layer.Acts.Noise.Ge": "0.0001", // 0.0001 > others; could just be noise ;)
+				"Layer.Acts.Noise.Gi": "0.0001", // 0.0001 perhaps better than others
 			},
 			Hypers: params.Hypers{
 				"Layer.Acts.Noise.Ge": {"Tweak": "-"}, // "[0.0001,0.0002,0.0005]"},
@@ -28,7 +27,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.On":             "false",
 				"Layer.Inhib.Pool.On":              "true",
 				"Layer.Inhib.Pool.FB":              "0",
-				"Layer.Inhib.Pool.Gi":              "0.5", // 0.6 -- higher worse
+				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 > others
 				"Layer.Matrix.IsVS":                "false",
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0", // has no effect
@@ -37,7 +36,7 @@ var ParamSets = netparams.Sets{
 			},
 			Hypers: params.Hypers{
 				"Layer.Acts.Kir.Gbar": {"Tweak": "-"},
-				"Layer.Inhib.Pool.Gi": {"Tweak": "incr"},
+				"Layer.Inhib.Pool.Gi": {"Tweak": "-"},
 			}},
 		{Sel: ".STNLayer", Desc: "all STN",
 			Params: params.Params{
@@ -100,8 +99,8 @@ var ParamSets = netparams.Sets{
 				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
 			},
 			Hypers: params.Hypers{
-				"Prjn.Learn.LRate.Base": {"Tweak": "-"},
-				"Prjn.PrjnScale.Abs":    {"Tweak": "incr"},
+				"Prjn.Learn.LRate.Base": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs":    {"Tweak": "-"},
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
@@ -210,38 +209,37 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // .5 > .4 orig > .6; stronger = more binary
+				"Prjn.PrjnScale.Abs": ".5", // .5 > .4 > .6; stronger = more binary
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "[0.3,0.4,0.6]"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4", // 4 > 3 > 5 for full con
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPeAkToMtxGo", Desc: "go disinhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 > 2,>> 4
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#GPeAkToMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // 4 > 5, 6 for full gpr
+				"Prjn.PrjnScale.Abs": "6", // 6 > 5 for 3x4, but 5 > 6 for 2x7..
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 	},
 	"NoiseOff": {
 		{Sel: "Layer", Desc: "turn off noise",
 			Params: params.Params{
 				"Layer.Acts.Noise.On": "false",
-				"Layer.Acts.Noise.Ge": "0",
 			}},
 	},
 }

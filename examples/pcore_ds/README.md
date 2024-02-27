@@ -1,6 +1,10 @@
-# pcore
+# pcore_ds
 
-This is a simple test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function -- see link for details on the algorithm and expected behavior.
+This is a simple test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function, in the **Dorsal Striatum** (DS).  See [pcore_vs](../pcore_vs) for the Ventral Striatum (VS) model, which is optimized for making global Go vs. No decisions based on cost / benefit inputs (see also [BOA](../boa)).
+
+The DS is the input layer for the primary motor control part of the basal ganglia, and this model learns to execute a sequence of motor actions through reinforcement  learning (RL), getting positive reinforcement for correct actions and lack of reinforcement for incorrect ones.  Critically, there is no omnicient "teacher" input: the model has to discover the correct action sequence purely through trial and error, "online" learning (i.e., it learns on a trial-by-trial basis as it acts).  This is the only biologically / ecologically realistic form of RL.
+
+The model also has mechanisms to learn about the space of possible motor actions and their parameterization in the DS, which is 
 
 This test model has all of the standard PFC layers, which are kept busy by predicting a sequence of input values on the `In` layer, via the [deep](../../DEEP.md) predictive learning mechanism (`InP` is the pulvinar layer representing the prediction of `In`).  This prediction task is completely orthogonal from the gating decision made by the BG, which is driven by the `ACCPos` and `ACCNeg` layers.
 

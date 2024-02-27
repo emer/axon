@@ -268,17 +268,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).SetClass("CLToMtx")
 	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).SetClass("CLToMtx")
 
-	m1VM.PlaceRightOf(gpi, space)
-	pf.PlaceRightOf(m1VM, space)
-	snc.PlaceRightOf(pf, space)
-	gpeAk.PlaceAbove(gpi)
-	stn.PlaceRightOf(gpePr, space)
-	mtxGo.PlaceAbove(gpeAk)
-	state.PlaceAbove(mtxGo)
-	s1.PlaceRightOf(state, space)
-	vl.PlaceRightOf(mtxNo, space)
+	pf.PlaceRightOf(gpi, space)
+	snc.PlaceBehind(pf, space)
+	m1VM.PlaceRightOf(pf, space)
+	vl.PlaceRightOf(m1VM, space)
 	motor.PlaceBehind(vl, space)
 	targ.PlaceBehind(motor, space)
+
+	gpeAk.PlaceBehind(gpePr, space)
+	stn.PlaceRightOf(gpePr, space)
+	mtxGo.PlaceAbove(gpi)
+	mtxNo.PlaceBehind(mtxGo, space)
+	state.PlaceAbove(mtxGo)
+	s1.PlaceRightOf(state, space)
+
+	m1.PlaceRightOf(s1, space)
+	m1PT.PlaceRightOf(m1, space)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -835,7 +840,7 @@ func (ss *Sim) ConfigGUI() {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.3, 2.4)
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.6, 2.2)
 	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, -0.03, 0.02), mat32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
