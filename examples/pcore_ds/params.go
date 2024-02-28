@@ -74,7 +74,7 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Layer.Acts.Clamp.Ge": {"Tweak": "-"},
 			}},
-		{Sel: "#GPeAk", Desc: "arkypallidal",
+		{Sel: "#DGPeAk", Desc: "arkypallidal",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
 				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
@@ -99,8 +99,9 @@ var ParamSets = netparams.Sets{
 				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
 			},
 			Hypers: params.Hypers{
-				"Prjn.Learn.LRate.Base": {"Tweak": "incr"},
+				"Prjn.Learn.LRate.Base": {"Tweak": "-"},
 				"Prjn.PrjnScale.Abs":    {"Tweak": "-"},
+				"Prjn.Matrix.BasePF":    {"Tweak": "incr"},
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
@@ -137,20 +138,20 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".PFToMtx", Desc: "",
+		{Sel: ".PFToDMtx", Desc: "",
 			Params: params.Params{
 				"Prjn.Learn.Learn":   "false",
 				"Prjn.Com.GType":     "ModulatoryG",
 				"Prjn.PrjnScale.Abs": "1",
 			}},
-		// {Sel: ".StateToMtx", Desc: "",
+		// {Sel: ".StateToDMtx", Desc: "",
 		// 	Params: params.Params{
 		// 		"Prjn.PrjnScale.Abs": "1.5", // 1.8 def
 		// 	},
 		// 	Hypers: params.Hypers{
 		// 		"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 		// 	}},
-		// {Sel: ".CLToMtx", Desc: "",
+		// {Sel: ".CLToDMtx", Desc: "",
 		// 	Params: params.Params{
 		// 		"Prjn.Learn.Learn":   "false",
 		// 		"Prjn.PrjnScale.Rel": "0.001",
@@ -158,28 +159,28 @@ var ParamSets = netparams.Sets{
 		// 	Hypers: params.Hypers{
 		// 		"Prjn.PrjnScale.Rel": {"Tweak": "-"},
 		// 	}},
-		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
+		{Sel: "#DMtxNoToDGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
+		{Sel: "#DMtxGoToDGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // .5 too weak
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPiToM1VM", Desc: "final inhibition",
+		{Sel: "#DGPiToM1VM", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // 2
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPiToMotorBS", Desc: "final inhibition",
+		{Sel: "#DGPiToMotorBS", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 > 2.5, 3.5
 			},
@@ -207,28 +208,28 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
+		{Sel: "#DMtxGoToDGPeAk", Desc: "go inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".5", // .5 > .4 > .6; stronger = more binary
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
+		{Sel: "#DGPePrToDGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4", // 4 > 3 > 5 for full con
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPeAkToMtxGo", Desc: "go disinhibition",
+		{Sel: "#DGPeAkToDMtxGo", Desc: "go disinhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 > 2,>> 4
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPeAkToMtxNo", Desc: "go disinhibition",
+		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "6", // 6 > 5 for 3x4, but 5 > 6 for 2x7..
 			},
@@ -269,7 +270,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.NMDA.Gbar":           {"Tweak": "-"},
 				"Layer.Inhib.Layer.Gi":           {"Tweak": "-"},
 			}},
-		{Sel: "#GPePr", Desc: "prototypical",
+		{Sel: "#DGPePr", Desc: "prototypical",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.4", // 0.4 > 0.3, 0.5
 				"Layer.Acts.Init.GeVar":  "0.2",
@@ -277,7 +278,7 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 			}},
-		{Sel: "#GPeAk", Desc: "arkypallidal",
+		{Sel: "#DGPeAk", Desc: "arkypallidal",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
 				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
@@ -286,7 +287,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
 			}},
-		{Sel: "#GPi", Desc: "",
+		{Sel: "#DGPi", Desc: "",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
 				"Layer.Acts.Init.GeVar":  "0.1",
@@ -294,16 +295,23 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 			}},
-		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
+		{Sel: "#DGPeAkToDMtxGo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // 3 >= 2, 4
+				"Prjn.PrjnScale.Abs": "3",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
+		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".4", // stronger = more binary
+				"Prjn.PrjnScale.Abs": "6",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#DMtxGoToDGPeAk", Desc: "go inhibition",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": ".5", // stronger = more binary
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -315,49 +323,49 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
+		{Sel: "#DGPePrToDSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#STNToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
+		{Sel: "#DSTNToDGPePr", Desc: "stronger STN -> DGPePr to kick it high at start",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#STNToGPeAk", Desc: "this is weak biologically -- could try 0",
+		{Sel: "#DSTNToDGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.1",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
+		{Sel: "#DGPePrToDGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5",
+				"Prjn.PrjnScale.Abs": "4",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
+		{Sel: "#DGPePrToDGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
+		{Sel: "#DGPePrToDGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 >> 2
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#STNToGPi", Desc: "strong initial phasic activation",
+		{Sel: "#DSTNToDGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2",
 			},

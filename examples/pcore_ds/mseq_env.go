@@ -190,6 +190,8 @@ func (ev *MotorSeqEnv) IsRewTrialPostStep() bool {
 func (ev *MotorSeqEnv) RenderState() {
 	trl := ev.Trial.Cur
 	ev.RenderBlank("Action")
+	ev.States["SNc"].Set1D(0, ev.RPE)
+	ev.States["Rew"].Set1D(0, ev.Rew)
 	if ev.IsRewTrial() {
 		ev.PrevAction = 0
 		ev.RenderBlank("State")

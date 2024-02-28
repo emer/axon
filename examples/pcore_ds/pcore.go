@@ -203,7 +203,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.5
 	_ = mtxRndPrjn
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddBG4D("", 1, nAct, nuY, nuX, nuY, nuX, space)
+	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
@@ -215,7 +215,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
 
 	motor := net.AddLayer4D("MotorBS", 1, nAct, nuPer, 1, axon.TargetLayer)
-	pf := net.AddLayer4D("PF", 1, nAct, nuPer, 1, axon.SuperLayer)
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
@@ -238,17 +237,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
 
-	net.ConnectLayers(pf, mtxGo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
-	net.ConnectLayers(pf, mtxNo, p1to1, axon.ForwardPrjn).SetClass("PFToMtx")
-
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
-	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
-
 	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("BgFixed")
-	net.ConnectLayers(gpi, pf, full, axon.InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("DBGInhib")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
@@ -269,7 +263,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).SetClass("CLToMtx")
 
 	pf.PlaceRightOf(gpi, space)
-	snc.PlaceBehind(pf, space)
+	snc.PlaceBehind(stn, space)
 	m1VM.PlaceRightOf(pf, space)
 	vl.PlaceRightOf(m1VM, space)
 	motor.PlaceBehind(vl, space)
@@ -444,8 +438,8 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 	net := ss.Net
 	ss.Net.InitExt(ctx)
 
-	lays := []string{"State", "S1", "Target"}
-	states := []string{"State", "PrevAction", "Target"}
+	lays := []string{"State", "S1", "Target", "SNc"}
+	states := []string{"State", "PrevAction", "Target", "SNc"}
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(mode, di).(*MotorSeqEnv)

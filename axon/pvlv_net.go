@@ -443,31 +443,6 @@ func (net *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
 	return urge
 }
 
-// AddVS adds a Ventral Striatum (VS, mostly Nucleus Accumbens = NAcc) set of layers
-// including extensive Ventral Pallidum (VP) using the pcore BG framework,
-// via the AddBG method.  Also adds VSPatch and VSGated layers.
-// vSmtxGo and No have VSMatrixLayer class set and default params
-// appropriate for multi-pool etc
-func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch, vSgated *Layer) {
-	vSmtxGo, vSmtxNo, vSgpeAk, vSstnp, vSstns, vSgpi := net.AddBG("Vs", 1, nUSs, nNeurY, nNeurX, nNeurY, nNeurX, space)
-
-	mp := params.Params{
-		"Layer.Matrix.IsVS":          "true",
-		"Layer.Inhib.ActAvg.Nominal": ".03", // pooled, lower
-	}
-	vSmtxGo.DefParams = mp
-	vSmtxGo.SetClass("VSMatrixLayer")
-
-	vSmtxNo.DefParams = mp
-	vSmtxNo.SetClass("VSMatrixLayer")
-
-	vSgated = net.AddVSGatedLayer("", nY)
-	vSpatch = net.AddVSPatchLayer("", nUSs, nNeurY, nNeurX)
-	vSpatch.PlaceRightOf(vSstns, space)
-	vSgated.PlaceRightOf(vSgpeAk, space)
-	return
-}
-
 // AddPVLVPulvLayers adds PVLV layers for PV-related information visualizing
 // the internal states of the Global state, with Pulvinar prediction
 // layers for training PFC layers.
@@ -557,7 +532,12 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	drives, drivesP, urgency, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(ctx, nYneur, popY, popX, space)
 	_ = urgency
 
-	vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch, vSgated := net.AddVS(nUSpos, bgY, bgX, nYneur, space)
+	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := net.AddVBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
+	_ = vSgpePr
+	vSgated := net.AddVSGatedLayer("", nYneur)
+	vSpatch = net.AddVSPatchLayer("", nUSpos, bgY, bgX)
+	vSpatch.PlaceRightOf(vSstn, space)
+	vSgated.PlaceRightOf(vSgpeAk, space)
 
 	sc = net.AddSCLayer2D("", ofcY, ofcX)
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
@@ -691,10 +671,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	}
 	pj.SetClass("BLAAcqToGo")
 
-	net.ConnectLayers(blaPosAcq, vSstnp, full, ForwardPrjn)
-	net.ConnectLayers(blaPosAcq, vSstns, full, ForwardPrjn)
-	net.ConnectLayers(blaNegAcq, vSstnp, full, ForwardPrjn)
-	net.ConnectLayers(blaNegAcq, vSstns, full, ForwardPrjn)
+	net.ConnectLayers(blaPosAcq, vSstn, full, ForwardPrjn)
+	net.ConnectLayers(blaNegAcq, vSstn, full, ForwardPrjn)
 
 	// todo: ofc -> STN?
 

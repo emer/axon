@@ -76,7 +76,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#GPeAk"
+  Sel = "#DGPeAk"
   Desc = "arkypallidal"
   [Base.Params]
     "Layer.Acts.Init.GeBase" = "0.2"
@@ -99,6 +99,8 @@
     "Prjn.PrjnScale.Abs" = "1.8"
   [Base.Hypers]
     [Base.Hypers."Prjn.Learn.LRate.Base"]
+      Tweak = "-"
+    [Base.Hypers."Prjn.Matrix.BasePF"]
       Tweak = "incr"
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"
@@ -149,7 +151,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = ".PFToMtx"
+  Sel = ".PFToDMtx"
   Desc = ""
   [Base.Params]
     "Prjn.Com.GType" = "ModulatoryG"
@@ -157,7 +159,7 @@
     "Prjn.PrjnScale.Abs" = "1"
 
 [[Base]]
-  Sel = "#MtxNoToGPePr"
+  Sel = "#DMtxNoToDGPePr"
   Desc = "proto = primary classical NoGo pathway"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1"
@@ -166,7 +168,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#MtxGoToGPi"
+  Sel = "#DMtxGoToDGPi"
   Desc = "go influence on gating -- slightly weaker than integrated GPePr"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1"
@@ -175,7 +177,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#GPiToM1VM"
+  Sel = "#DGPiToM1VM"
   Desc = "final inhibition"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "2"
@@ -184,7 +186,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#GPiToMotorBS"
+  Sel = "#DGPiToMotorBS"
   Desc = "final inhibition"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "3"
@@ -220,7 +222,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = ".MtxToGPeAk"
+  Sel = "#DMtxGoToDGPeAk"
   Desc = "go inhibition"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = ".5"
@@ -229,7 +231,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#GPePrToGPePr"
+  Sel = "#DGPePrToDGPePr"
   Desc = "self-inhib -- only source of self reg"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "4"
@@ -238,7 +240,7 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#GPeAkToMtxGo"
+  Sel = "#DGPeAkToDMtxGo"
   Desc = "go disinhibition"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "3"
@@ -247,10 +249,10 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#GPeAkToMtxNo"
+  Sel = "#DGPeAkToDMtxNo"
   Desc = "go disinhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "5"
+    "Prjn.PrjnScale.Abs" = "6"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"
