@@ -100,7 +100,7 @@ MtxNo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 MtxNo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
 MtxNo.Learn.RLRate.On: false // (Default: true)<br>
 MtxNo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
-MtxNo.GPeAkToMtxNo.PrjnScale.Abs: 6 // (Default: 1)<br>
+MtxNo.GPeAkToMtxNo.PrjnScale.Abs: 5 // (Default: 1)<br>
 MtxNo.GPeAkToMtxNo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 MtxNo.GPeAkToMtxNo.SWts.Init.Var: 0 // (Default: 0.25)<br>
 MtxNo.GPeAkToMtxNo.SWts.Init.Sym: false // (Default: true)<br>

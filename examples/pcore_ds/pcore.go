@@ -264,7 +264,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToDSMatrix(m1, mtxNo, toMtx).SetClass("M1ToMtx")
 
 	// note: just using direct projections here -- theoretically through CL
-	// not working!
+	// not working! -- need to make these modulatory in the right way.
 	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).SetClass("CLToMtx")
 	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).SetClass("CLToMtx")
 
@@ -840,7 +840,7 @@ func (ss *Sim) ConfigGUI() {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
 
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.6, 2.2)
+	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.0, 2.5)
 	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, -0.03, 0.02), mat32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt

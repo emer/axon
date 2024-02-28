@@ -250,7 +250,7 @@
   Sel = "#GPeAkToMtxNo"
   Desc = "go disinhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "6"
+    "Prjn.PrjnScale.Abs" = "5"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"

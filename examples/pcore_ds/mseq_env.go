@@ -105,9 +105,9 @@ func (ev *MotorSeqEnv) Desc() string {
 }
 
 func (ev *MotorSeqEnv) Defaults() {
-	ev.SeqLen = 3   // 2x5 is easily solved, 3x4 is 100% with 49u
-	ev.NActions = 4 // 2x6 is 100%; 2x7 100% with 25u
-	ev.PartialCreditAt = 1
+	ev.SeqLen = 3           // 2x5 is easily solved, 3x4 is 100% with 49u
+	ev.NActions = 4         // 2x6 is 100%; 2x7 100% with 25u
+	ev.PartialCreditAt = 1  // 1 default: critical for seq len = 3
 	ev.PartialGraded = true // key for seq 3
 	ev.RewPredLRate = 0.01  // GPU 16 0.01 > 0.02 >> 0.05 > 0.1, 0.2 for partial, seq3
 	ev.RewPredMin = 0.1     // 0.1 > 0.05 > 0.2

@@ -75,6 +75,7 @@ func (ss *Sim) RunParamTweak() {
 			ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
 			fmt.Println("Running:", tag)
 			if !ss.Config.Params.DryRun {
+				ss.Net.UpdateParams()
 				ss.Net.InitGScale(&ss.Net.Ctx)
 				ss.Net.GPU.SyncParamsToGPU() // critical!
 				ss.Loops.Run(etime.Train)
