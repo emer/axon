@@ -34,3 +34,6 @@ The learned weights to the BG clearly show that it is disinhibiting the appropri
 
 * Local patch (striosome) learning modulation.  The striosomes clearly provide a direct modulation of SNc dopamine on a "regional" basis.  They receive input preferentially from BOA "limbic" areas, but also potentially some of the same inputs as the local matrix MSNs.  There is also some PF-based circuitry and cell types of relevance.  It is possible that these circuits could provide something like a local partial credit signal, or DA in proportion to whether an action is expected or unexpected.  There is evidence for considerable ongoing micro-fluctuations in local DA, which is related to subsequent action selection: **MarkowitzGillisJayEtAI23**. 
 
+* Learning in the other parts of the pcore circuit -- might help auto-adjust the parameters.  Need to figure out what logical learning rules would look like.
+
+

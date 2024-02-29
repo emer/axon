@@ -38,8 +38,8 @@ var ParamSets = netparams.Sets{
 		// Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
+				"Prjn.Learn.LRate.Base":     "0.015", // .02 default
+				"Prjn.Learn.Trace.LearnThr": "0.1",   // 0.1 slightly > 0.05
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},

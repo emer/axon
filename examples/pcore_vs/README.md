@@ -1,6 +1,6 @@
 # pcore
 
-This is a simple test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function -- see link for details on the algorithm and expected behavior.
+This is a simple test of the [pcore](../../PCORE_BG.md) model of basal ganglia (BG) function, in the **Ventral Striatum** (VS).  See [pcore_ds](../pcore_ds) for the Dorsal Striatum (DS) model, which is optimized for motor control via PFC gating and descending disinhibitory modulation.
 
 This test model has all of the standard PFC layers, which are kept busy by predicting a sequence of input values on the `In` layer, via the [deep](../../DEEP.md) predictive learning mechanism (`InP` is the pulvinar layer representing the prediction of `In`).  This prediction task is completely orthogonal from the gating decision made by the BG, which is driven by the `ACCPos` and `ACCNeg` layers.
 
@@ -14,6 +14,8 @@ Training data shows close match between Gated and Should (high Match proportion)
 
 <img src="results/fig_pcore_test_learned.png" width="800">
 
-Testing data over ACC Pos (outer loop) and ACC Neg (inner loop) shows increasing probability of gating as Pos increases, and reduced firing, and slower RT, as Neg increases, closely matching the target `Should` behavior.  25 samples of each case are performed, so intermediate levels indicate probability of gating.  Model shows appropriate probabilistic behavior on the marginal cases.
+Testing data over ACC Pos (outer loop) and ACC Neg (inner loop) (see fig below) shows increasing probability of gating as Pos increases, and reduced firing, and slower RT, as Neg increases, closely matching the target `Should` behavior.  25 samples of each case are performed, so intermediate levels indicate probability of gating.  Model shows appropriate probabilistic behavior on the marginal cases.
+
+<img src="results/fig_pcore_test_should.png" width="800">
 
 

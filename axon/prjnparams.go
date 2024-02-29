@@ -542,11 +542,16 @@ func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	} else if ach > 0.1 {
-		ract := NrnV(ctx, ri, di, CaSpkD)
-		if ract < pj.Learn.Trace.LearnThr {
-			ract = 0
-		}
-		dtr := ach * NrnV(ctx, si, di, CaSpkD) * ract
+		rplus := NrnV(ctx, ri, di, CaSpkP)
+		rminus := NrnV(ctx, ri, di, CaSpkD)
+		sact := NrnV(ctx, si, di, CaSpkD)
+		dtr := ach * (pj.Matrix.Delta*sact*(rplus-rminus) + pj.Matrix.Credit*sact*rminus)
+		// previous, basic credit version:
+		// ract := NrnV(ctx, ri, di, CaSpkD)
+		// if ract < pj.Learn.Trace.LearnThr {
+		// 	ract = 0
+		// }
+		// dtr := ach * sact * ract
 		SetSynCaV(ctx, syni, di, DTr, dtr)
 		AddSynCaV(ctx, syni, di, Tr, dtr)
 	} else {
