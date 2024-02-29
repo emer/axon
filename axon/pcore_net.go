@@ -27,9 +27,9 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	gpePr.SetBuildConfig("GPType", "GPePr")
 	gpeAk = net.AddGPeLayer2D(prefix+"VGPeAk", bglay, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
-	stn = net.AddSTNLayer2D(prefix+"VSTN", bglay, gpNeurY, gpNeurX)
-	mtxGo = net.AddMatrixLayer(prefix+"VMtxGo", "VSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
-	mtxNo = net.AddMatrixLayer(prefix+"VMtxNo", "VSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	stn = net.AddSTNLayer2D(prefix+"VSTN", "VSTNLayer", gpNeurY, gpNeurX)
+	mtxGo = net.AddVMatrixLayer(prefix+"VMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
+	mtxNo = net.AddVMatrixLayer(prefix+"VMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
@@ -85,10 +85,16 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	gpePr.SetBuildConfig("GPType", "GPePr")
 	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
-	stn = net.AddSTNLayer2D(prefix+"DSTN", bglay, gpNeurY, gpNeurX)
-	mtxGo = net.AddMatrixLayer(prefix+"DMtxGo", "DSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
-	mtxNo = net.AddMatrixLayer(prefix+"DMtxNo", "DSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	stn = net.AddSTNLayer2D(prefix+"DSTN", "DSTNLayer", gpNeurY, gpNeurX)
+	mtxGo = net.AddDMatrixLayer(prefix+"DMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
+	mtxNo = net.AddDMatrixLayer(prefix+"DMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+
+	pfp := params.Params{
+		"Layer.Inhib.Layer.On": "false",
+		"Layer.Inhib.Pool.On":  "false",
+	}
 	pf = net.AddLayer4D(prefix+"PF", nPoolsY, nPoolsX, nNeurY, 1, SuperLayer)
+	pf.DefParams = pfp
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
@@ -152,13 +158,23 @@ func (net *Network) AddBGThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	return ly
 }
 
-// AddMatrixLayer adds a MatrixLayer of given size, with given name.
+// AddVMatrixLayer adds a Ventral MatrixLayer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
-func (net *Network) AddMatrixLayer(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
+func (net *Network) AddVMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
 	ly.SetBuildConfig("DAMod", da.String())
-	ly.SetClass(class)
+	ly.SetClass("VSMatrixLayer")
+	return ly
+}
+
+// AddDMatrixLayer adds a Dorsal MatrixLayer of given size, with given name.
+// Assumes that a 4D structure will be used, with Pools representing separable gating domains.
+// da gives the DaReceptor type (D1R = Go, D2R = NoGo)
+func (net *Network) AddDMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
+	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
+	ly.SetBuildConfig("DAMod", da.String())
+	ly.SetClass("DSMatrixLayer")
 	return ly
 }
 

@@ -14,29 +14,23 @@
   Sel = ".MatrixLayer"
   Desc = "all mtx"
   [Base.Params]
-    "Layer.Acts.Dend.ModBase" = "1"
-    "Layer.Acts.Dend.ModGain" = "0"
-    "Layer.Acts.Kir.Gbar" = "10"
-    "Layer.Inhib.Layer.On" = "false"
-    "Layer.Inhib.Pool.FB" = "0"
     "Layer.Inhib.Pool.Gi" = "0.5"
-    "Layer.Inhib.Pool.On" = "true"
-    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
-    "Layer.Matrix.IsVS" = "false"
+    "Layer.Learn.NeuroMod.BurstGain" = "0.1"
   [Base.Hypers]
     [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"
     [Base.Hypers."Layer.Inhib.Pool.Gi"]
       Tweak = "-"
+    [Base.Hypers."Layer.Learn.NeuroMod.BurstGain"]
+      Tweak = "-"
 
 [[Base]]
-  Sel = ".STNLayer"
+  Sel = ".DSTNLayer"
   Desc = "all STN"
   [Base.Params]
     "Layer.Acts.Init.GeBase" = "0.1"
     "Layer.Acts.Kir.Gbar" = "10"
     "Layer.Acts.SKCa.Gbar" = "2"
-    "Layer.Inhib.Layer.FB" = "0"
     "Layer.Inhib.Layer.Gi" = "0.5"
     "Layer.Inhib.Layer.On" = "true"
     "Layer.Learn.NeuroMod.AChDisInhib" = "0"
@@ -101,7 +95,7 @@
     [Base.Hypers."Prjn.Learn.LRate.Base"]
       Tweak = "-"
     [Base.Hypers."Prjn.Matrix.BasePF"]
-      Tweak = "incr"
+      Tweak = "-"
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"
 
@@ -151,6 +145,24 @@
       Tweak = "-"
 
 [[Base]]
+  Sel = "#DGPiToPF"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0.4"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#MotorBSToPF"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
   Sel = ".PFToDMtx"
   Desc = ""
   [Base.Params]
@@ -159,22 +171,13 @@
     "Prjn.PrjnScale.Abs" = "1"
 
 [[Base]]
-  Sel = "#DMtxNoToDGPePr"
-  Desc = "proto = primary classical NoGo pathway"
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
-  [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
-
-[[Base]]
   Sel = "#DMtxGoToDGPi"
   Desc = "go influence on gating -- slightly weaker than integrated GPePr"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
+      Tweak = "incr"
 
 [[Base]]
   Sel = "#DGPiToM1VM"
@@ -222,37 +225,10 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#DMtxGoToDGPeAk"
-  Desc = "go inhibition"
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = ".5"
-  [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
-
-[[Base]]
   Sel = "#DGPePrToDGPePr"
   Desc = "self-inhib -- only source of self reg"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "4"
-  [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
-
-[[Base]]
-  Sel = "#DGPeAkToDMtxGo"
-  Desc = "go disinhibition"
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3"
-  [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "-"
-
-[[Base]]
-  Sel = "#DGPeAkToDMtxNo"
-  Desc = "go disinhibition"
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "6"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"

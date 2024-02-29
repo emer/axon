@@ -203,12 +203,10 @@ func (ly *Layer) AnyGated(di uint32) bool {
 
 func (ly *Layer) MatrixDefaults() {
 	ly.Params.Acts.Decay.Act = 1
-	ly.Params.Acts.Decay.Glong = 1  // prevent carryover of NMDA
-	ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	ly.Params.Acts.Decay.Glong = 1 // prevent carryover of NMDA
 	ly.Params.Acts.Kir.Gbar = 10
 	ly.Params.Acts.GabaB.Gbar = 0 // Kir replaces GabaB
 	// ly.Params.Acts.NMDA.Gbar = 0    // Matrix needs nmda, default is fine
-	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.FB = 0 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer if has pools
@@ -221,8 +219,21 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 1
-	ly.Params.Learn.NeuroMod.AChDisInhib = 5
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
+
+	if ly.Cls == "VSMatrixLayer" {
+		ly.Params.Inhib.Layer.On.SetBool(true)
+		ly.Params.Matrix.IsVS.SetBool(true)
+		ly.Params.Acts.Dend.ModBase = 0
+		ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+		ly.Params.Learn.NeuroMod.AChDisInhib = 5
+	} else {
+		ly.Params.Inhib.Layer.On.SetBool(false)
+		ly.Params.Matrix.IsVS.SetBool(false)
+		ly.Params.Acts.Dend.ModBase = 1
+		ly.Params.Acts.Dend.ModGain = 0
+		ly.Params.Learn.NeuroMod.AChDisInhib = 0
+	}
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
@@ -234,6 +245,11 @@ func (ly *Layer) MatrixDefaults() {
 			pj.Params.PrjnScale.Abs = 3
 			pj.Params.SWts.Init.Mean = 0.75
 			pj.Params.SWts.Init.Var = 0.0
+			if ly.Cls == "DSMatrixLayer" {
+				if strings.Contains(ly.Nm, "No") {
+					pj.Params.PrjnScale.Abs = 6
+				}
+			}
 		}
 	}
 }
@@ -296,7 +312,11 @@ func (ly *Layer) GPDefaults() {
 		case GPeAk:
 			switch pj.Send.LayerType() {
 			case MatrixLayer:
-				pj.Params.PrjnScale.Abs = 0.4 // MtxGoToGPeAk
+				if pj.Send.Cls == "VSMatrixLayer" {
+					pj.Params.PrjnScale.Abs = 0.4 // MtxGoToGPeAk
+				} else {
+					pj.Params.PrjnScale.Abs = 0.5 // MtxGoToGPeAk
+				}
 			case GPLayer:
 				pj.Params.PrjnScale.Abs = 1 // GPePrToGPeAk
 			case STNLayer:
@@ -321,7 +341,11 @@ func (ly *Layer) GPiDefaults() {
 		pj.Params.SWts.Init.Mean = 0.75         // 0.75  see above
 		pj.Params.SWts.Init.Var = 0.25          // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
-			pj.Params.PrjnScale.Abs = 0.2
+			if pj.Send.Cls == "VSMatrixLayer" {
+				pj.Params.PrjnScale.Abs = 0.2
+			} else {
+				pj.Params.PrjnScale.Abs = 1
+			}
 		} else if pj.Send.LayerType() == GPLayer { // GPePrToGPi
 			pj.Params.PrjnScale.Abs = 1
 		} else if pj.Send.LayerType() == STNLayer { // STNToGPi
@@ -356,10 +380,19 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Acts.Dend.SSGi = 0
 	ly.Params.Acts.NMDA.Gbar = 0 // fine with 0
 	ly.Params.Acts.GabaB.Gbar = 0
-	ly.Params.Inhib.Layer.On.SetBool(false) // todo: was important, test in boa
 	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Layer.FB = 0
+	ly.Params.Inhib.Pool.Gi = 0.5
+	ly.Params.Inhib.Pool.FB = 0
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0 // was 2,
+
+	if ly.Cls == "VSTNLayer" {
+		ly.Params.Inhib.Layer.On.SetBool(false)
+	} else {
+		ly.Params.Inhib.Layer.On.SetBool(true)
+	}
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()

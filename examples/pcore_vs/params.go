@@ -189,7 +189,7 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#VMtxGoToVGPi", Desc: "go influence on gating -- slightly weaker than integrated VGPePr",
+		{Sel: "#VMtxGoToVGPi", Desc: "go influence on gating",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2", // .1 too weak
 			},

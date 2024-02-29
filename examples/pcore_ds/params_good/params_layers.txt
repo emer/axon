@@ -5,7 +5,7 @@
          DGPeAk		Nominal:	  1.00	
 
            DSTN		Nominal:	  0.15	
-						Layer.Gi:	  0.50	Params: .STNLayer: 0.5
+						Layer.Gi:	  0.50	Params: .DSTNLayer: 0.5
 
          DMtxGo		Nominal:	  0.25	
 						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
@@ -14,24 +14,23 @@
 						Pool.Gi: 	  0.50	Params: .MatrixLayer: 0.5
 
              PF		Nominal:	  0.10	
-						Layer.Gi:	  1.00	
 
             SNc		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-          State		Nominal:	  0.12	
+          State		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-             S1		Nominal:	  0.12	
+             S1		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
          Target		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-        MotorBS		Nominal:	  0.12	
+        MotorBS		Nominal:	  0.10	
 						Layer.Gi:	  0.20	Params: #MotorBS: 0.2
 
-             VL		Nominal:	  0.12	
+             VL		Nominal:	  0.10	
 						Layer.Gi:	  1.00	
 
              M1		Nominal:	  0.10	

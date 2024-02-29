@@ -24,39 +24,22 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Layer.On":             "false",
-				"Layer.Inhib.Pool.On":              "true",
-				"Layer.Inhib.Pool.FB":              "0",
-				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 > others
-				"Layer.Matrix.IsVS":                "false",
-				"Layer.Acts.Dend.ModBase":          "1",
-				"Layer.Acts.Dend.ModGain":          "0", // has no effect
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",
-				"Layer.Acts.Kir.Gbar":              "10", // 10 > 5, 15 >> 20
+				"Layer.Inhib.Pool.Gi":            "0.5", // 0.5 > others
+				"Layer.Learn.NeuroMod.BurstGain": "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Kir.Gbar": {"Tweak": "-"},
-				"Layer.Inhib.Pool.Gi": {"Tweak": "-"},
+				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "[0.2,0.3]"},
+				"Layer.Acts.Kir.Gbar":            {"Tweak": "-"},
+				"Layer.Inhib.Pool.Gi":            {"Tweak": "-"},
 			}},
-		{Sel: ".STNLayer", Desc: "all STN",
+		{Sel: ".DSTNLayer", Desc: "all STN",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase":           "0.1",
 				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5  > 2 -- key for pause
 				"Layer.Acts.SKCa.Gbar":             "2",    // 2 > 5 >> 1 (for Kir = 10)
 				"Layer.Inhib.Layer.On":             "true", // actually needs this
 				"Layer.Inhib.Layer.Gi":             "0.5",
-				"Layer.Inhib.Layer.FB":             "0",
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
-			},
-			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
-				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
-				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
-			}},
-		{Sel: "#PF", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "false",
-				"Layer.Inhib.Pool.On":  "false",
 			},
 			Hypers: params.Hypers{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
@@ -183,19 +166,12 @@ var ParamSets = netparams.Sets{
 		// 	Hypers: params.Hypers{
 		// 		"Prjn.PrjnScale.Rel": {"Tweak": "-"},
 		// 	}},
-		{Sel: "#DMtxNoToDGPePr", Desc: "proto = primary classical NoGo pathway",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
 		{Sel: "#DMtxGoToDGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // .5 too weak
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
 			}},
 		{Sel: "#DGPiToM1VM", Desc: "final inhibition",
 			Params: params.Params{
@@ -232,30 +208,9 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#DMtxGoToDGPeAk", Desc: "go inhibition",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // .5 > .4 > .6; stronger = more binary
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
 		{Sel: "#DGPePrToDGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 > 3 > 5 for full con
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
-		{Sel: "#DGPeAkToDMtxGo", Desc: "go disinhibition",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // 3 > 2,>> 4
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
-		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "6", // 6 > 5 for 3x4, but 5 > 6 for 2x7..
+				"Prjn.PrjnScale.Abs": "4", // todo: how to make ds-specific?
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -278,21 +233,45 @@ var ParamSetsDefs = netparams.Sets{
 	"Defaults": {
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":              "false",
-				"Layer.Inhib.Layer.Gi":             "0.5",
-				"Layer.Inhib.Layer.FB":             "0",
+				"Layer.Inhib.Layer.On":             "true",
+				"Layer.Inhib.Pool.On":              "true",
+				"Layer.Inhib.Pool.FB":              "0",
+				"Layer.Inhib.Pool.Gi":              "0.5",  // 0.5 > others
 				"Layer.Matrix.GateThr":             "0.05", // .05 default
 				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5 > 20
 				"Layer.Acts.GabaB.Gbar":            "0",
 				"Layer.Acts.NMDA.Gbar":             "0.006", // 0.006 default, necessary (0 very bad)
-				"Layer.Learn.NeuroMod.AChLRateMod": "1",     // no diff here -- always ACh
-				"Layer.Learn.NeuroMod.BurstGain":   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				"Layer.Acts.Dend.ModBase":          "1",
+				"Layer.Acts.Dend.ModGain":          "0",   // has no effect
+				"Layer.Learn.NeuroMod.AChLRateMod": "1",   // no diff here -- always ACh
+				"Layer.Learn.NeuroMod.BurstGain":   "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			},
 			Hypers: params.Hypers{
 				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
 				"Layer.Acts.Kir.Gbar":            {"Tweak": "-"},
 				"Layer.Acts.NMDA.Gbar":           {"Tweak": "-"},
 				"Layer.Inhib.Layer.Gi":           {"Tweak": "-"},
+			}},
+		{Sel: ".DSTNLayer", Desc: "all STN",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase":           "0.1",
+				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":             "2",    // 2 > 5 >> 1 (for Kir = 10)
+				"Layer.Inhib.Layer.On":             "true", // actually needs this
+				"Layer.Inhib.Layer.Gi":             "0.5",
+				"Layer.Inhib.Layer.FB":             "0",
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
+				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
+			}},
+		{Sel: "#PF", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "false",
+				"Layer.Inhib.Pool.On":  "false",
 			}},
 		{Sel: "#DGPePr", Desc: "prototypical",
 			Params: params.Params{
@@ -336,6 +315,13 @@ var ParamSetsDefs = netparams.Sets{
 		{Sel: "#DMtxGoToDGPeAk", Desc: "go inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".5", // stronger = more binary
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#DMtxNoToDGPePr", Desc: "proto = primary classical NoGo pathway",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

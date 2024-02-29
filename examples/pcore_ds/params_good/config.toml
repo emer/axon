@@ -4,7 +4,7 @@ Debug = false
 
 [Env]
   SeqLen = 3
-  NActions = 4
+  NActions = 5
   ActSoftMaxGain = 2.0
 
 [Params]

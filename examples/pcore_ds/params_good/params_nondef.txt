@@ -53,6 +53,8 @@ DSTN.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 DSTN.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
 DSTN.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 DSTN.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
+DSTN.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
+DSTN.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
 DSTN.DGPePrToDSTN.PrjnScale.Abs: 0.5 // (Default: 1)<br>
 DSTN.DGPePrToDSTN.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 DSTN.DGPePrToDSTN.SWts.Init.Sym: false // (Default: true)<br>
@@ -118,6 +120,7 @@ DMtxNo.M1ToDMtxNo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
 DMtxNo.M1ToDMtxNo.SWts.Init.Sym: false // (Default: true)<br>
 DMtxNo.M1ToDMtxNo.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
 PF.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+PF.DGPiToPF.PrjnScale.Abs: 0.4 // (Default: 1)<br>
 SNc.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 State.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 S1.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
