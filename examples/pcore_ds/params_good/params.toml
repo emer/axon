@@ -163,23 +163,6 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = ".PFToDMtx"
-  Desc = ""
-  [Base.Params]
-    "Prjn.Com.GType" = "ModulatoryG"
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Abs" = "1"
-
-[[Base]]
-  Sel = "#DMtxGoToDGPi"
-  Desc = "go influence on gating -- slightly weaker than integrated GPePr"
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
-  [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
-      Tweak = "incr"
-
-[[Base]]
   Sel = "#DGPiToM1VM"
   Desc = "final inhibition"
   [Base.Params]
@@ -225,10 +208,10 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = "#DGPePrToDGPePr"
-  Desc = "self-inhib -- only source of self reg"
+  Sel = "#DGPeAkToDMtxNo"
+  Desc = "go disinhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
+    "Prjn.PrjnScale.Abs" = "6"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"

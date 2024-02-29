@@ -305,18 +305,14 @@ func (ly *Layer) GPDefaults() {
 			case MatrixLayer:
 				pj.Params.PrjnScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
 			case GPLayer:
-				pj.Params.PrjnScale.Abs = 5 // // GPePrToGPePr -- must be very strong
+				pj.Params.PrjnScale.Abs = 4 // 4 best for DS; GPePrToGPePr -- must be very strong
 			case STNLayer:
 				pj.Params.PrjnScale.Abs = 0.5 // STNToGPePr
 			}
 		case GPeAk:
 			switch pj.Send.LayerType() {
 			case MatrixLayer:
-				if pj.Send.Cls == "VSMatrixLayer" {
-					pj.Params.PrjnScale.Abs = 0.4 // MtxGoToGPeAk
-				} else {
-					pj.Params.PrjnScale.Abs = 0.5 // MtxGoToGPeAk
-				}
+				pj.Params.PrjnScale.Abs = 0.5 // MtxGoToGPeAk
 			case GPLayer:
 				pj.Params.PrjnScale.Abs = 1 // GPePrToGPeAk
 			case STNLayer:

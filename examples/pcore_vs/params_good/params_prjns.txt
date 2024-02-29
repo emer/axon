@@ -6,12 +6,12 @@ Layer: VGPi
 
 Layer: VGPePr
 	         VMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
-	         VGPePr	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+	         VGPePr	      InhibPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
 	           VSTN	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
 
 Layer: VGPeAk
 	         VGPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-	         VMtxGo	      InhibPrjn	Abs:	  0.40	Rel:	  1.00	GScale:	  0.03	Rel:  0.50
+	         VMtxGo	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
 	           VSTN	    ForwardPrjn	Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
 
 Layer: VSTN

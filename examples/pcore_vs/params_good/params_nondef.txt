@@ -22,7 +22,7 @@ VGPePr.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 VGPePr.VMtxNoToVGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPePr.VMtxNoToVGPePr.SWts.Init.Sym: false // (Default: true)<br>
 VGPePr.VMtxNoToVGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-VGPePr.VGPePrToVGPePr.PrjnScale.Abs: 5 // (Default: 1)<br>
+VGPePr.VGPePrToVGPePr.PrjnScale.Abs: 4 // (Default: 1)<br>
 VGPePr.VGPePrToVGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPePr.VGPePrToVGPePr.SWts.Init.Sym: false // (Default: true)<br>
 VGPePr.VGPePrToVGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -38,7 +38,7 @@ VGPeAk.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 VGPeAk.VGPePrToVGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPeAk.VGPePrToVGPeAk.SWts.Init.Sym: false // (Default: true)<br>
 VGPeAk.VGPePrToVGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-VGPeAk.VMtxGoToVGPeAk.PrjnScale.Abs: 0.4 // (Default: 1)<br>
+VGPeAk.VMtxGoToVGPeAk.PrjnScale.Abs: 0.5 // (Default: 1)<br>
 VGPeAk.VMtxGoToVGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPeAk.VMtxGoToVGPeAk.SWts.Init.Sym: false // (Default: true)<br>
 VGPeAk.VMtxGoToVGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -52,6 +52,10 @@ VSTN.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
 VSTN.Acts.Decay.LearnCa: 1 // (Default: 0)<br>
 VSTN.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 VSTN.Acts.Kir.Gbar: 10 // (Default: 0,0.012,0.015)<br>
+VSTN.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
+VSTN.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
+VSTN.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
+VSTN.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
 VSTN.VGPePrToVSTN.PrjnScale.Abs: 0.5 // (Default: 1)<br>
 VSTN.VGPePrToVSTN.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VSTN.VGPePrToVSTN.SWts.Init.Sym: false // (Default: true)<br>

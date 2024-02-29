@@ -18,15 +18,14 @@ Once the dust settles, a summary of the biology and implementation in the model 
 
 # Results
 
-As of 2024-02-28, the default parameters with 49 units (7x7) per layer result in:
+As of 2024-02-29, the default parameters with 49 units (7x7) per layer result in:
 
-* 25/25 learn on SeqLen=3, NActions=4, which has 4^3 = 64 total space to be searched
-* 20/25 for 5^3 = 125
-* 24/25 for 7^2 = 49, with GPeAkToMtxNo = 5 instead of 6 (somehow larger, sparser layer and shorter sequence works better with weaker version of this param).
+* 25/25 learn on SeqLen=3, NActions=5, which has 5^3 = 125 total space to be searched
+* 24/25 for 7^2 = 49, with DGPeAkToDMtxNo = 5 instead of 6 (somehow larger, sparser layer and shorter sequence works better with weaker version of this param).
 
 The params have been relatively thoroughly "tweaked" at this point: see paramtweak.go for tweaking code.
 
-The learned weights to the BG clearly show appropriate
+The learned weights to the BG clearly show that it is disinhibiting the appropriate action at each step in the sequence.
 
 # TODO:
 

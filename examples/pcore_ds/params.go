@@ -20,7 +20,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Noise.Gi": "0.0001", // 0.0001 perhaps better than others
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Noise.Ge": {"Tweak": "-"}, // "[0.0001,0.0002,0.0005]"},
+				"Layer.Acts.Noise.Ge": {"Tweak": "-"},
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
@@ -28,7 +28,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.BurstGain": "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 			},
 			Hypers: params.Hypers{
-				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "[0.2,0.3]"},
+				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
 				"Layer.Acts.Kir.Gbar":            {"Tweak": "-"},
 				"Layer.Inhib.Pool.Gi":            {"Tweak": "-"},
 			}},
@@ -145,12 +145,6 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".PFToDMtx", Desc: "",
-			Params: params.Params{
-				"Prjn.Learn.Learn":   "false",
-				"Prjn.Com.GType":     "ModulatoryG",
-				"Prjn.PrjnScale.Abs": "1",
-			}},
 		// {Sel: ".StateToDMtx", Desc: "",
 		// 	Params: params.Params{
 		// 		"Prjn.PrjnScale.Abs": "1.5", // 1.8 def
@@ -166,13 +160,6 @@ var ParamSets = netparams.Sets{
 		// 	Hypers: params.Hypers{
 		// 		"Prjn.PrjnScale.Rel": {"Tweak": "-"},
 		// 	}},
-		{Sel: "#DMtxGoToDGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // .5 too weak
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
-			}},
 		{Sel: "#DGPiToM1VM", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // 2
@@ -208,9 +195,9 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#DGPePrToDGPePr", Desc: "self-inhib -- only source of self reg",
+		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // todo: how to make ds-specific?
+				"Prjn.PrjnScale.Abs": "6",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -305,13 +292,6 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "6",
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
 		{Sel: "#DMtxGoToDGPeAk", Desc: "go inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".5", // stronger = more binary
@@ -326,9 +306,16 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".ToSTN", Desc: "excitatory inputs",
+		{Sel: ".ToDSTN", Desc: "excitatory inputs",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#DMtxGoToDGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // 1 > 1.1, .9 and lower (not huge diffs)
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -381,6 +368,12 @@ var ParamSetsDefs = netparams.Sets{
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: ".PFToDMtx", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.Learn":   "false",
+				"Prjn.Com.GType":     "ModulatoryG",
+				"Prjn.PrjnScale.Abs": "1",
 			}},
 	},
 }

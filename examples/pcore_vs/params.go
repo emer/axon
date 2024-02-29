@@ -140,9 +140,9 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".VMtxToVGPeAk", Desc: "go inhibition",
+		{Sel: "#VMtxGoToVGPeAk", Desc: "go inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".4", // stronger = more binary
+				"Prjn.PrjnScale.Abs": ".5", // stronger = more binary
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -177,7 +177,7 @@ var ParamSetsDefs = netparams.Sets{
 			}},
 		{Sel: "#VGPePrToVGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5",
+				"Prjn.PrjnScale.Abs": "4", // 4 best for DS
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

@@ -652,8 +652,8 @@ func (ss *Sim) TestStats() {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "PCore Test"
-	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	title := "PCore VS Test"
+	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the Ventral Basal Ganglia, starting with the Ventral Striatum, centered on the Pallidum Core (GPe) areas that drive Go vs. No engagement in a goal. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")

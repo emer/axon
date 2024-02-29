@@ -237,9 +237,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
-	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
+	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToDSTN")
 	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
+	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToDSTN")
 	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
 	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("DBGInhib")
@@ -348,7 +348,7 @@ func (ss *Sim) ConfigLoops() {
 
 	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
-	nCycles := 300 // 300 > 250 > 200
+	nCycles := 300 // 300 > 250 > 200 (for 3x5, 250 is sig worse)
 	plusCycles := 50
 
 	man.AddStack(etime.Train).
@@ -823,8 +823,8 @@ func (ss *Sim) TestStats() {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "PCore Test"
-	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	title := "PCore DS Test"
+	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the Dorsal Basal Ganglia, starting with the Dorsal Striatum, centered on the Pallidum Core (GPe) areas that drive disinhibitory motor plan selection in descending motor pathways. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")

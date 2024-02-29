@@ -2,13 +2,11 @@
 Layer: DGPi
 	         DGPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
 	         DMtxGo	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
-								    Abs Params: Base:#DMtxGoToDGPi: 1
 	           DSTN	    ForwardPrjn	Abs:	  0.20	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
 
 Layer: DGPePr
 	         DMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
 	         DGPePr	      InhibPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
-								    Abs Params: Base:#DGPePrToDGPePr: 4
 	           DSTN	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.07	Rel:  1.00
 
 Layer: DGPeAk
@@ -24,24 +22,23 @@ Layer: DSTN
 Layer: DMtxGo
 	         DGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.06	Rel:  1.00
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
-								    Abs Params: .PFToDMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 
 Layer: DMtxNo
 	         DGPeAk	      InhibPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+								    Abs Params: Base:#DGPeAkToDMtxNo: 6
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
-								    Abs Params: .PFToDMtx: 1
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 
 Layer: PF
 	           DGPi	      InhibPrjn	Abs:	  0.40	Rel:	  1.00	GScale:	  0.01	Rel:  1.00
