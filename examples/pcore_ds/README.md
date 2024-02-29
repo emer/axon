@@ -21,13 +21,14 @@ Once the dust settles, a summary of the biology and implementation in the model 
 As of 2024-02-29, the default parameters with 49 units (7x7) per layer result in:
 
 * 25/25 learn on SeqLen=3, NActions=5, which has 5^3 = 125 total space to be searched
-* 24/25 for 7^2 = 49, with DGPeAkToDMtxNo = 5 instead of 6 (somehow larger, sparser layer and shorter sequence works better with weaker version of this param).
 
 The params have been relatively thoroughly "tweaked" at this point: see paramtweak.go for tweaking code.
 
 The learned weights to the BG clearly show that it is disinhibiting the appropriate action at each step in the sequence.
 
 # TODO:
+
+* Set number of cycles per trial in terms of BG motor gating timing: constant offset from onset of VM gating timing, with a cutoff for "nothing happening" trials.
 
 * "CL" not beneficial (implemented as direct MotorBS -> Matrix projections): rel weight of 0.002 is OK but starts to actually impair above that.  Likely that a functional cerebellum is needed to make this useful.  Also, investigate other modulatory inputs to CL that might alter its signal.  Key ref for diffs between CL and PF: LaceyBolamMagill07: C. J. Lacey, J. P. Bolam, P. J. Magill, Novel and distinct operational principles of intralaminar thalamic neurons and their striatal projections. J. Neurosci. 27, 4374–4384 (2007).
 
