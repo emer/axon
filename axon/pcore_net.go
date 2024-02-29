@@ -5,6 +5,8 @@
 package axon
 
 import (
+	"fmt"
+
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 )
@@ -19,26 +21,26 @@ import (
 // Appropriate connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical).
 func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi *Layer) {
-	gpi = net.AddGPiLayer2D(prefix+"VGPi", gpNeurY, gpNeurX)
-	gpePr = net.AddGPeLayer2D(prefix+"VGPePr", gpNeurY, gpNeurX)
+	bglay := "VBG"
+	gpi = net.AddGPiLayer2D(prefix+"VGPi", bglay, gpNeurY, gpNeurX)
+	gpePr = net.AddGPeLayer2D(prefix+"VGPePr", bglay, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
-	gpeAk = net.AddGPeLayer2D(prefix+"VGPeAk", gpNeurY, gpNeurX)
+	gpeAk = net.AddGPeLayer2D(prefix+"VGPeAk", bglay, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
-	stn = net.AddSTNLayer2D(prefix+"VSTN", gpNeurY, gpNeurX)
-	mtxGo = net.AddMatrixLayer(prefix+"VMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
-	mtxNo = net.AddMatrixLayer(prefix+"VMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	stn = net.AddSTNLayer2D(prefix+"VSTN", bglay, gpNeurY, gpNeurX)
+	mtxGo = net.AddMatrixLayer(prefix+"VMtxGo", "VSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
+	mtxNo = net.AddMatrixLayer(prefix+"VMtxNo", "VSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
 
 	mp := params.Params{
 		"Layer.Matrix.IsVS":          "true",
-		"Layer.Inhib.ActAvg.Nominal": ".03", // pooled, lower
+		"Layer.Inhib.ActAvg.Nominal": fmt.Sprintf("%g", .1/float32(nPoolsX*nPoolsY)),
+		"Layer.Acts.Dend.ModACh":     "true",
 	}
 	mtxGo.DefParams = mp
-	mtxGo.SetClass("VSMatrixLayer")
 	mtxNo.DefParams = mp
-	mtxNo.SetClass("VSMatrixLayer")
 
 	full := prjn.NewFull()
 
@@ -77,14 +79,15 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 // Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
 func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf *Layer) {
-	gpi = net.AddGPiLayer4D(prefix+"DGPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	bglay := "DBG"
+	gpi = net.AddGPiLayer4D(prefix+"DGPi", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpePr = net.AddGPeLayer4D(prefix+"DGPePr", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpePr.SetBuildConfig("GPType", "GPePr")
-	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpeAk = net.AddGPeLayer4D(prefix+"DGPeAk", bglay, nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeAk.SetBuildConfig("GPType", "GPeAk")
-	stn = net.AddSTNLayer2D(prefix+"DSTN", gpNeurY, gpNeurX)
-	mtxGo = net.AddMatrixLayer(prefix+"DMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
-	mtxNo = net.AddMatrixLayer(prefix+"DMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
+	stn = net.AddSTNLayer2D(prefix+"DSTN", bglay, gpNeurY, gpNeurX)
+	mtxGo = net.AddMatrixLayer(prefix+"DMtxGo", "DSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
+	mtxNo = net.AddMatrixLayer(prefix+"DMtxNo", "DSMatrixLayer", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 	pf = net.AddLayer4D(prefix+"PF", nPoolsY, nPoolsX, nNeurY, 1, SuperLayer)
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
@@ -104,7 +107,7 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpi, pf, p1to1, InhibPrjn).SetClass(bgclass) // todo: was full!
+	net.ConnectLayers(gpi, pf, p1to1, InhibPrjn).SetClass(bgclass)
 
 	stnclass := "DSTNExcite"
 	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).SetClass(stnclass)
@@ -152,10 +155,10 @@ func (net *Network) AddBGThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 // AddMatrixLayer adds a MatrixLayer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
-func (net *Network) AddMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
+func (net *Network) AddMatrixLayer(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
 	ly.SetBuildConfig("DAMod", da.String())
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 
@@ -171,49 +174,49 @@ func (net *Network) ConnectToDSMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn
 
 // AddGPLayer2D adds a GPLayer of given size, with given name.
 // Must set the GPType BuildConfig setting to appropriate GPLayerType
-func (net *Network) AddGPeLayer2D(name string, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddGPeLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 
 // AddGPiLayer2D adds a GPiLayer of given size, with given name.
-func (net *Network) AddGPiLayer2D(name string, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddGPiLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
 	ly.SetBuildConfig("GPType", "GPi")
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 
 // AddSTNLayer2D adds a subthalamic nucleus Layer of given size, with given name.
-func (net *Network) AddSTNLayer2D(name string, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddSTNLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, STNLayer)
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 
 // AddGPLayer4D adds a GPLayer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
-func (net *Network) AddGPeLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddGPeLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 
 // AddGPiLayer4D adds a GPiLayer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
-func (net *Network) AddGPiLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddGPiLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
 	ly.SetBuildConfig("GPType", "GPi")
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 
 // AddSTNLayer4D adds a subthalamic nucleus Layer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
-func (net *Network) AddSTNLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddSTNLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, STNLayer)
-	ly.SetClass("BG")
+	ly.SetClass(class)
 	return ly
 }
 

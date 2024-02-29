@@ -1,52 +1,40 @@
 
-Layer: GPi
-	          GPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-								    Abs Params: Base:#GPePrToGPi: 1
-	          MtxGo	      InhibPrjn	Abs:	  0.20	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-								    Abs Params: Base:#MtxGoToGPi: .2
-	            STN	    ForwardPrjn	Abs:	  0.20	Rel:	  1.00	GScale:	  0.05	Rel:  1.00
-								    Abs Params: Base:#STNToGPi: .2
+Layer: VGPi
+	         VGPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	         VMtxGo	      InhibPrjn	Abs:	  0.20	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	           VSTN	    ForwardPrjn	Abs:	  0.20	Rel:	  1.00	GScale:	  0.05	Rel:  1.00
 
-Layer: GPePr
-	          MtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
-								    Abs Params: Base:#MtxNoToGPePr: 1
-	          GPePr	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
-								    Abs Params: Base:#GPePrToGPePr: 5
-	            STN	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
-								    Abs Params: Base:#STNToGPePr: 0.5
+Layer: VGPePr
+	         VMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
+	         VGPePr	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+	           VSTN	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
 
-Layer: GPeAk
-	          GPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
-								    Abs Params: Base:#GPePrToGPeAk: 1
-	            STN	    ForwardPrjn	Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
-								    Abs Params: Base:#STNToGPeAk: 0.1
-	          MtxGo	      InhibPrjn	Abs:	  0.40	Rel:	  1.00	GScale:	  0.03	Rel:  0.50
-								    Abs Params: Base:.MtxToGPeAk: .4
+Layer: VGPeAk
+	         VGPePr	      InhibPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	         VMtxGo	      InhibPrjn	Abs:	  0.40	Rel:	  1.00	GScale:	  0.03	Rel:  0.50
+	           VSTN	    ForwardPrjn	Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
 
-Layer: STN
-	          GPePr	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:  1.00
-								    Abs Params: Base:#GPePrToSTN: 0.5
+Layer: VSTN
+	         VGPePr	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.02	Rel:  1.00
 	         ACCPos	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
 	         ACCNeg	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
 
-Layer: MtxGo
-	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
-								    Abs Params: Base:.GPeAkToMtx: 3
+Layer: VMtxGo
+	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
 	         ACCPos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
-								    Abs Params: .ACCToMtx: 1.5
+								    Abs Params: .ACCToVMtx: 1.5
 	         ACCNeg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
-								    Abs Params: .ACCToMtx: 1.5
+								    Abs Params: .ACCToVMtx: 1.5
 	        Urgency	   VSMatrixPrjn	Abs:	  0.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.05
-								    Abs Params: #UrgencyToMtxGo: 0
-								    Rel Params: #UrgencyToMtxGo: 0.1
+								    Abs Params: #UrgencyToVMtxGo: 0
+								    Rel Params: #UrgencyToVMtxGo: 0.1
 
-Layer: MtxNo
-	          GPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
-								    Abs Params: Base:.GPeAkToMtx: 3
+Layer: VMtxNo
+	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
 	         ACCNeg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.25	Rel:  0.50
-								    Abs Params: .ACCToMtx: 1.5
+								    Abs Params: .ACCToVMtx: 1.5
 	         ACCPos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.25	Rel:  0.50
-								    Abs Params: .ACCToMtx: 1.5
+								    Abs Params: .ACCToVMtx: 1.5
 
 Layer: SNc
 
@@ -67,5 +55,4 @@ Layer: ACCPosVM
 	       ACCPosPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 	         ACCPos	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  1.50	Rel:  0.50
 								    Abs Params: Base:.SuperToThal: 3.0
-	            GPi	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
-								    Abs Params: Base:#GPiToACCPosVM: 5
+	           VGPi	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00

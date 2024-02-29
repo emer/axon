@@ -1,16 +1,16 @@
-            GPi		Nominal:	  1.00	
+           VGPi		Nominal:	  1.00	
 
-          GPePr		Nominal:	  1.00	
+         VGPePr		Nominal:	  1.00	
 
-          GPeAk		Nominal:	  1.00	
+         VGPeAk		Nominal:	  1.00	
 
-            STN		Nominal:	  0.15	
+           VSTN		Nominal:	  0.15	
 
-          MtxGo		Nominal:	  0.25	
-						Layer.Gi:	  0.50	Params: .MatrixLayer: 0.5
+         VMtxGo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
+						Layer.Gi:	  0.50	
 
-          MtxNo		Nominal:	  0.25	
-						Layer.Gi:	  0.50	Params: .MatrixLayer: 0.5
+         VMtxNo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
+						Layer.Gi:	  0.50	
 
             SNc		Nominal:	  0.10	
 						Layer.Gi:	  0.90	

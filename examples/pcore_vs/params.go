@@ -17,16 +17,22 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Acts.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
 			}},
+		{Sel: ".VBG", Desc: "all ModACh",
+			Params: params.Params{
+				"Layer.Acts.Dend.ModACh": "true",
+			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On": "false",
-				"Layer.Matrix.IsVS":   "true", // key for resetting urgency
+				"Layer.Inhib.Pool.On":        "false",
+				"Layer.Inhib.ActAvg.Nominal": "0.25",
+				"Layer.Matrix.IsVS":          "true", // key for resetting urgency
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
 				"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
 				"Layer.Acts.Kir.Gbar":     "0",   // no real diff here over range 0-10
+				"Layer.Acts.Dend.ModACh":  "true",
 			}},
 		////////////////////////////////////////////
 		// Prjns

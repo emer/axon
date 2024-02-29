@@ -1,1 +1,75 @@
-Base = [{Sel = 'Layer', Desc = 'clamp gain makes big diff on overall excitation, gating propensity', Params = {'Layer.Acts.Clamp.Ge' = '1.0'}}, {Sel = '.MatrixLayer', Desc = 'all mtx', Params = {'Layer.Acts.GabaB.Gbar' = '0', 'Layer.Acts.Kir.Gbar' = '10', 'Layer.Acts.NMDA.Gbar' = '0.006', 'Layer.Inhib.Layer.FB' = '0', 'Layer.Inhib.Layer.Gi' = '0.5', 'Layer.Inhib.Pool.On' = 'false', 'Layer.Learn.NeuroMod.AChLRateMod' = '1', 'Layer.Learn.NeuroMod.BurstGain' = '0.1', 'Layer.Matrix.GateThr' = '0.05'}, Hypers = {'Layer.Acts.Kir.Gbar' = {Tweak = 'false'}, 'Layer.Acts.NMDA.Gbar' = {Tweak = 'false'}, 'Layer.Inhib.Layer.Gi' = {Tweak = 'false'}, 'Layer.Learn.NeuroMod.BurstGain' = {Tweak = 'false'}}}, {Sel = '.STNLayer', Desc = 'all STN', Params = {'Layer.Acts.Init.GeBase' = '0.1', 'Layer.Acts.Kir.Gbar' = '10', 'Layer.Acts.SKCa.Gbar' = '2', 'Layer.Inhib.Layer.On' = 'false', 'Layer.Learn.NeuroMod.AChDisInhib' = '0'}, Hypers = {'Layer.Acts.Init.GeBase' = {Tweak = 'false'}, 'Layer.Acts.Kir.Gbar' = {Tweak = 'false'}, 'Layer.Acts.SKCa.Gbar' = {Tweak = 'false'}}}, {Sel = '#GPePr', Desc = 'prototypical', Params = {'Layer.Acts.Init.GeBase' = '0.4', 'Layer.Acts.Init.GeVar' = '0.2'}, Hypers = {'Layer.Acts.Init.GeBase' = {Tweak = 'false'}}}, {Sel = '#GPeAk', Desc = 'arkypallidal', Params = {'Layer.Acts.Init.GeBase' = '0.2', 'Layer.Acts.Init.GeVar' = '0.1'}, Hypers = {'Layer.Acts.Init.GeBase' = {Tweak = 'false'}, 'Layer.Acts.Init.GeVar' = {Tweak = 'false'}}}, {Sel = '#GPi', Desc = '', Params = {'Layer.Acts.Init.GeBase' = '0.3', 'Layer.Acts.Init.GeVar' = '0.1'}, Hypers = {'Layer.Acts.Init.GeBase' = {Tweak = 'false'}}}, {Sel = '.PTMaintLayer', Desc = 'time integration params', Params = {'Layer.Acts.Dend.ModGain' = '1.5', 'Layer.Acts.Kir.Gbar' = '2', 'Layer.Inhib.Layer.Gi' = '3.2'}, Hypers = {'Layer.Acts.Kir.Gbar' = {Tweak = 'false'}}}, {Sel = '.VSMatrixPrjn', Desc = '', Params = {'Prjn.Learn.LRate.Base' = '0.01', 'Prjn.Learn.Trace.LearnThr' = '0.1'}, Hypers = {'Prjn.Learn.LRate.Base' = {Tweak = 'false'}, 'Prjn.Learn.Trace.LearnThr' = {Tweak = 'false'}}}, {Sel = '#UrgencyToMtxGo', Desc = 'strong urgency factor', Params = {'Prjn.Learn.Learn' = 'false', 'Prjn.PrjnScale.Abs' = '0', 'Prjn.PrjnScale.Rel' = '0.1'}}, {Sel = '.SuperToPT', Desc = 'one-to-one from super', Params = {'Prjn.PrjnScale.Abs' = '0.5'}}, {Sel = '.PTSelfMaint', Desc = '', Params = {'Prjn.PrjnScale.Abs' = '4'}}, {Sel = '.SuperToThal', Desc = '', Params = {'Prjn.PrjnScale.Abs' = '3.0'}}, {Sel = '.ACCToMtx', Desc = '', Params = {'Prjn.PrjnScale.Abs' = '1.5'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = '[1.2, 1.8]'}}}, {Sel = '.GPeAkToMtx', Desc = 'go disinhibition', Params = {'Prjn.PrjnScale.Abs' = '3'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '.MtxToGPeAk', Desc = 'go inhibition', Params = {'Prjn.PrjnScale.Abs' = '.4'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#GPePrToSTN', Desc = 'enough to kick off the ping-pong dynamics for STN.', Params = {'Prjn.PrjnScale.Abs' = '0.5'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#STNToGPePr', Desc = 'stronger STN -> GPePr to kick it high at start', Params = {'Prjn.PrjnScale.Abs' = '0.5'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#STNToGPeAk', Desc = 'this is weak biologically -- could try 0', Params = {'Prjn.PrjnScale.Abs' = '0.1'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#MtxNoToGPePr', Desc = 'proto = primary classical NoGo pathway', Params = {'Prjn.PrjnScale.Abs' = '1'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#GPePrToGPePr', Desc = 'self-inhib -- only source of self reg', Params = {'Prjn.PrjnScale.Abs' = '5'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#GPePrToGPeAk', Desc = 'just enough to knock down in baseline state', Params = {'Prjn.PrjnScale.Abs' = '1'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#MtxGoToGPi', Desc = 'go influence on gating -- slightly weaker than integrated GPePr', Params = {'Prjn.PrjnScale.Abs' = '.2'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#GPePrToGPi', Desc = 'nogo influence on gating -- decreasing produces more graded function of Go', Params = {'Prjn.PrjnScale.Abs' = '1'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#STNToGPi', Desc = 'strong initial phasic activation', Params = {'Prjn.PrjnScale.Abs' = '.2'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}, {Sel = '#GPiToACCPosVM', Desc = 'final inhibition', Params = {'Prjn.PrjnScale.Abs' = '5'}, Hypers = {'Prjn.PrjnScale.Abs' = {Tweak = 'false'}}}]
+[[Base]]
+  Sel = "Layer"
+  Desc = "clamp gain makes big diff on overall excitation, gating propensity"
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "1.0"
+
+[[Base]]
+  Sel = ".VBG"
+  Desc = "all ModACh"
+  [Base.Params]
+    "Layer.Acts.Dend.ModACh" = "true"
+
+[[Base]]
+  Sel = ".MatrixLayer"
+  Desc = "all mtx"
+  [Base.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "0.25"
+    "Layer.Inhib.Pool.On" = "false"
+    "Layer.Matrix.IsVS" = "true"
+
+[[Base]]
+  Sel = ".PTMaintLayer"
+  Desc = "time integration params"
+  [Base.Params]
+    "Layer.Acts.Dend.ModACh" = "true"
+    "Layer.Acts.Dend.ModGain" = "1.5"
+    "Layer.Acts.Kir.Gbar" = "0"
+    "Layer.Inhib.Layer.Gi" = "3.2"
+
+[[Base]]
+  Sel = ".VSMatrixPrjn"
+  Desc = ""
+  [Base.Params]
+    "Prjn.Learn.LRate.Base" = "0.01"
+    "Prjn.Learn.Trace.LearnThr" = "0.1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.Learn.LRate.Base"]
+      Tweak = "-"
+    [Base.Hypers."Prjn.Learn.Trace.LearnThr"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#UrgencyToVMtxGo"
+  Desc = "strong urgency factor"
+  [Base.Params]
+    "Prjn.Learn.Learn" = "false"
+    "Prjn.PrjnScale.Abs" = "0"
+    "Prjn.PrjnScale.Rel" = "0.1"
+
+[[Base]]
+  Sel = ".SuperToPT"
+  Desc = "one-to-one from super"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0.5"
+
+[[Base]]
+  Sel = ".PTSelfMaint"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4"
+
+[[Base]]
+  Sel = ".SuperToThal"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "3.0"
+
+[[Base]]
+  Sel = ".ACCToVMtx"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1.5"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"

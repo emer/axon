@@ -111,7 +111,7 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base": {"Tweak": "-"},
 				"Prjn.PrjnScale.Abs":    {"Tweak": "-"},
-				"Prjn.Matrix.BasePF":    {"Tweak": "incr"},
+				"Prjn.Matrix.BasePF":    {"Tweak": "-"},
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
@@ -150,17 +150,17 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#DGPiToPF", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 1 >> 2
+				"Prjn.PrjnScale.Abs": "0.4", // 0.4 >= 0.5, 0.3, 0.2 >> higher
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#MotorBSToPF", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 >> 0.5
+				"Prjn.PrjnScale.Abs": "1", // 1 > 1.1 > 0.9 >> 0.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "log"},
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PFToDMtx", Desc: "",
 			Params: params.Params{
