@@ -205,6 +205,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
+	pf.Shp.SetShape([]int{1, nAct, nuPer, 1}, nil, nil)
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
 	_ = snc
@@ -215,7 +216,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
 
 	motor := net.AddLayer4D("MotorBS", 1, nAct, nuPer, 1, axon.TargetLayer)
-	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name())
@@ -235,7 +235,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
 	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
 
-	net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
+	// net.ConnectLayers(motor, pf, p1to1, axon.ForwardPrjn)
+	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
 	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToSTN")
 	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).SetClass("ToM1")

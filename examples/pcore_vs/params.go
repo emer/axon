@@ -39,7 +39,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
 				"Prjn.Learn.Trace.LearnThr": {"Tweak": "-"},
 			}},
-		{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
+		{Sel: "#UrgencyToVMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
 				"Prjn.PrjnScale.Abs": "0",   // todo: is misbehaving here
@@ -57,7 +57,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // was 4
 			}},
-		{Sel: ".ACCToMtx", Desc: "",
+		{Sel: ".ACCToVMtx", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1.5", // 1.5 good; 1.8 causes some breakthrough
 			},
@@ -89,12 +89,12 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.NMDA.Gbar":           {"Tweak": "-"},
 				"Layer.Inhib.Layer.Gi":           {"Tweak": "-"},
 			}},
-		{Sel: ".STNLayer", Desc: "all STN",
+		{Sel: ".VSTNLayer", Desc: "all VSTN",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase":           "0.1",
 				"Layer.Acts.Kir.Gbar":              "10",    // 10 > 5  > 2 -- key for pause
 				"Layer.Acts.SKCa.Gbar":             "2",     // 2 > 5 >> 1 (for Kir = 10)
-				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all GPePr
+				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all VGPePr
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			},
 			Hypers: params.Hypers{
@@ -102,7 +102,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
 				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
 			}},
-		{Sel: "#GPePr", Desc: "prototypical",
+		{Sel: "#VGPePr", Desc: "prototypical",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.4", // 0.4 > 0.3, 0.5
 				"Layer.Acts.Init.GeVar":  "0.2",
@@ -110,7 +110,7 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 			}},
-		{Sel: "#GPeAk", Desc: "arkypallidal",
+		{Sel: "#VGPeAk", Desc: "arkypallidal",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
 				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
@@ -119,7 +119,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
 			}},
-		{Sel: "#GPi", Desc: "",
+		{Sel: "#VGPi", Desc: "",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
 				"Layer.Acts.Init.GeVar":  "0.1",
@@ -127,84 +127,84 @@ var ParamSetsDefs = netparams.Sets{
 			Hypers: params.Hypers{
 				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
 			}},
-		{Sel: ".GPeAkToMtx", Desc: "go disinhibition",
+		{Sel: ".VGPeAkToVMtx", Desc: "go disinhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 >= 2, 4
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: ".MtxToGPeAk", Desc: "go inhibition",
+		{Sel: ".VMtxToVGPeAk", Desc: "go inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".4", // stronger = more binary
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
+		{Sel: "#VGPePrToVSTN", Desc: "enough to kick off the ping-pong dynamics for VSTN.",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#STNToGPePr", Desc: "stronger STN -> GPePr to kick it high at start",
+		{Sel: "#VSTNToVGPePr", Desc: "stronger VSTN -> VGPePr to kick it high at start",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#STNToGPeAk", Desc: "this is weak biologically -- could try 0",
+		{Sel: "#VSTNToVGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.1",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#MtxNoToGPePr", Desc: "proto = primary classical NoGo pathway",
+		{Sel: "#VMtxNoToVGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPePr", Desc: "self-inhib -- only source of self reg",
+		{Sel: "#VGPePrToVGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPeAk", Desc: "just enough to knock down in baseline state",
+		{Sel: "#VGPePrToVGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
+		{Sel: "#VMtxGoToVGPi", Desc: "go influence on gating -- slightly weaker than integrated VGPePr",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2", // .1 too weak
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPePrToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
+		{Sel: "#VGPePrToVGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#STNToGPi", Desc: "strong initial phasic activation",
+		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": ".2",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#GPiToACCPosVM", Desc: "final inhibition",
+		{Sel: "#VGPiToACCPosVM", Desc: "final inhibition",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5", // needs to be very strong -- 5
 			},

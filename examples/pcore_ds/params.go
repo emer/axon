@@ -53,6 +53,16 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
 				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
 			}},
+		{Sel: "#PF", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "false",
+				"Layer.Inhib.Pool.On":  "false",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
+				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
+			}},
 		{Sel: "#M1VM", Desc: "all mtx",
 			Params: params.Params{
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
@@ -137,6 +147,20 @@ var ParamSets = netparams.Sets{
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#DGPiToPF", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 1 >> 2
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "incr"},
+			}},
+		{Sel: "#MotorBSToPF", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // 1 >> 0.5
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "log"},
 			}},
 		{Sel: ".PFToDMtx", Desc: "",
 			Params: params.Params{

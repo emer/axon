@@ -192,7 +192,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.5
 	_ = mtxRndPrjn
 
-	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
+	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
@@ -432,7 +432,7 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 // so that the reward is present during the final trial when learning occurs.
 func (ss *Sim) GatedAction() {
 	ctx := &ss.Context
-	mtxly := ss.Net.AxonLayerByName("MtxGo")
+	mtxly := ss.Net.AxonLayerByName("VMtxGo")
 	vmly := ss.Net.AxonLayerByName("ACCPosVM")
 	nan := mat32.NaN()
 	for di := 0; di < ss.Config.Run.NData; di++ {
@@ -450,7 +450,7 @@ func (ss *Sim) GatedAction() {
 			ss.Stats.SetFloat32Di("ACCPosVM_RT", di, nan)
 		}
 		ss.Stats.SetFloat32Di("ACCPosVM_ActAvg", di, vmly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
-		ss.Stats.SetFloat32Di("MtxGo_ActAvg", di, mtxly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
+		ss.Stats.SetFloat32Di("VMtxGo_ActAvg", di, mtxly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
 	}
 }
 
@@ -484,7 +484,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetFloat("ACCPosVM_RT", 0.0)
 	ss.Stats.SetFloat("ACCPosVM_ActAvg", 0.0)
-	ss.Stats.SetFloat("MtxGo_ActAvg", 0.0)
+	ss.Stats.SetFloat("VMtxGo_ActAvg", 0.0)
 	ss.Stats.SetFloat("ACCPos", 0.0)
 	ss.Stats.SetFloat("ACCNeg", 0.0)
 }
@@ -529,7 +529,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 	ss.Stats.SetFloat32("ACCPosVM_RT", ss.Stats.Float32Di("ACCPosVM_RT", di))
 	ss.Stats.SetFloat32("ACCPosVM_ActAvg", ss.Stats.Float32Di("ACCPosVM_ActAvg", di))
-	ss.Stats.SetFloat32("MtxGo_ActAvg", ss.Stats.Float32Di("MtxGo_ActAvg", di))
+	ss.Stats.SetFloat32("VMtxGo_ActAvg", ss.Stats.Float32Di("VMtxGo_ActAvg", di))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -552,7 +552,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("Match", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("ACCPosVM_RT", etime.Run, etime.Epoch, etime.Sequence)
 	ss.Logs.AddStatAggItem("ACCPosVM_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
-	ss.Logs.AddStatAggItem("MtxGo_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
+	ss.Logs.AddStatAggItem("VMtxGo_ActAvg", etime.Run, etime.Epoch, etime.Sequence)
 	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Sequence)
 	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
@@ -568,7 +568,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
-	// ss.Logs.PlotItems("MtxGo_ActAvg", "ACCPosVM_ActAvg", "ACCPosVM_RT", "Gated", "Should", "Match", "Rew")
+	// ss.Logs.PlotItems("VMtxGo_ActAvg", "ACCPosVM_ActAvg", "ACCPosVM_RT", "Gated", "Should", "Match", "Rew")
 	ss.Logs.PlotItems("Gated", "Should", "Match", "Rew")
 
 	ss.Logs.CreateTables()

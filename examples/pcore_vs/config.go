@@ -21,6 +21,12 @@ type ParamConfig struct {
 	// If true, perform automated parameter tweaking for parameters marked Hypers Tweak = log,incr, or [vals]
 	Tweak bool
 
+	// for Tweak, if true, first run a baseline with current default params
+	Baseline bool
+
+	// for Tweak, if true, only print what would be done, don't run
+	DryRun bool
+
 	// network parameters
 	Network map[string]any
 
