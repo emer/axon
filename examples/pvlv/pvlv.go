@@ -292,16 +292,17 @@ func (ss *Sim) InitRndSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
+	nCycles := 200
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Condition, 1). // all these counters will be set from env
 		AddTime(etime.Block, 50).
 		AddTime(etime.Sequence, 8).
 		AddTime(etime.Trial, 5).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, nCycles)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, nCycles-50, nCycles-1) // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt)   // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -733,7 +734,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
-	nv.Params.MaxRecs = 300
+	nv.Params.MaxRecs = 400
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
@@ -748,7 +749,7 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "BlockByType"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := eplot.NewPlot2D(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
 	plt.Params.XAxisCol = "TrialType"
@@ -814,7 +815,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
-			Icon:    "play",
+			Icon:    icons.PlayArrow,
 			Tooltip: "Opens a new window to plot PVLV Drive and Effort dynamics.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
@@ -822,7 +823,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
-			Icon:    "file-markdown",
+			Icon:    icons.FileMarkdown,
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {

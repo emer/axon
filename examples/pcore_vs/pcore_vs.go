@@ -411,6 +411,7 @@ func (ss *Sim) ApplyPVLV(ev *GoNoEnv, trial int, di uint32) {
 
 // GatedRew applies reward input based on gating action and input
 func (ss *Sim) GatedRew(ev *GoNoEnv, di uint32) {
+	// note: not using RPE here at this point
 	rew := ev.Rew
 	ss.SetRew(rew, di)
 }

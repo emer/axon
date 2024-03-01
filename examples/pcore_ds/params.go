@@ -26,6 +26,8 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":            "0.5", // 0.5 > others
 				"Layer.Learn.NeuroMod.BurstGain": "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				"Layer.Learn.RLRate.On":          "true",
+				"Layer.Learn.RLRate.Diff":        "false",
 			},
 			Hypers: params.Hypers{
 				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
@@ -85,7 +87,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".DSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.8",   // 1.8 > others
-				"Prjn.Learn.LRate.Base":     "0.005", // .005 > 0.01 > .02 (with nondelta = .6)
+				"Prjn.Learn.LRate.Base":     "0.015", // .005 > 0.01 > .02 (with nondelta = .6)
 				"Prjn.Learn.Trace.LearnThr": "0.1",   // not used at this point
 				"Prjn.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
 				"Prjn.Matrix.BasePF":        "0.005", // 0.005 > 0.01, 0.002 etc

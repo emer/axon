@@ -26,6 +26,8 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.On":        "false",
 				"Layer.Inhib.ActAvg.Nominal": "0.25",
 				"Layer.Matrix.IsVS":          "true", // key for resetting urgency
+				"Layer.Learn.RLRate.On":      "true",
+				"Layer.Learn.RLRate.Diff":    "false",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -38,8 +40,8 @@ var ParamSets = netparams.Sets{
 		// Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":     "0.015", // .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.1",   // 0.1 slightly > 0.05
+				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
+				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
@@ -98,9 +100,9 @@ var ParamSetsDefs = netparams.Sets{
 		{Sel: ".VSTNLayer", Desc: "all VSTN",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase":           "0.1",
-				"Layer.Acts.Kir.Gbar":              "10",    // 10 > 5  > 2 -- key for pause
-				"Layer.Acts.SKCa.Gbar":             "2",     // 2 > 5 >> 1 (for Kir = 10)
-				"Layer.Inhib.Layer.On":             "false", // really no inhib neurons here.  all VGPePr
+				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":             "2",    // 2 > 5 >> 1 (for Kir = 10)
+				"Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			},
 			Hypers: params.Hypers{

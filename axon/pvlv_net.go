@@ -482,7 +482,7 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
-	ofcPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
+	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
@@ -500,7 +500,7 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	ofc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
-	ofcPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
+	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
@@ -533,11 +533,11 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	_ = urgency
 
 	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := net.AddVBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
-	_ = vSgpePr
+	_ = vSgpeAk
 	vSgated := net.AddVSGatedLayer("", nYneur)
 	vSpatch = net.AddVSPatchLayer("", nUSpos, bgY, bgX)
 	vSpatch.PlaceRightOf(vSstn, space)
-	vSgated.PlaceRightOf(vSgpeAk, space)
+	vSgated.PlaceRightOf(vSgpePr, space)
 
 	sc = net.AddSCLayer2D("", ofcY, ofcX)
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
@@ -557,10 +557,12 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	accNegVal, accNegValCT, accNegValPT, accNegValPTp, accNegValMD := net.AddPFC2D("ACCnegVal", "MD", ofcY, ofcX, true, space)
 	_ = accNegValPT
 
-	ofcPosValPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
-	accNegValPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
+	ofcPosValPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	accNegValPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
 	p1to1 := prjn.NewPoolOneToOne()
+	// p1to1rnd := prjn.NewPoolUnifRnd()
+	// p1to1rnd.PCon = 0.5
 	full := prjn.NewFull()
 	var pj, bpj *Prjn
 	prjnClass := "PFCPrjn"
@@ -584,7 +586,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectPTNotMaint(accNegValPT, notMaint, full)
 
 	pfc2m := params.Params{ // contextual, not driving -- weaker
-		"Prjn.PrjnScale.Rel": "0.1",
+		"Prjn.PrjnScale.Rel": "1", // 0.1", todo was
 	}
 
 	// neg val goes to nogo
@@ -645,17 +647,18 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectToVSPatch(accNegValPTp, vSpatch, full)
 
 	// same prjns to stn as mtxgo
-	pj = net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "2", // strong
-		"Prjn.PrjnScale.Rel": ".2",
-	}
-	pj = net.ConnectToVSMatrix(blaPosAcq, vSmtxGo, p1to1)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "4", // key strength driver
-		"Prjn.PrjnScale.Rel": "1",
-	}
-	pj.SetClass("BLAAcqToGo")
+	net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
+	// net.ConnectToVSMatrix(usPos, vSmtxNo, p1to1)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "2", // strong
+	// 	"Prjn.PrjnScale.Rel": ".2",
+	// }
+	net.ConnectToVSMatrix(blaPosAcq, vSmtxNo, p1to1)
+	net.ConnectToVSMatrix(blaPosAcq, vSmtxGo, p1to1).SetClass("BLAAcqToGo")
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "2", // key strength driver
+	// 	"Prjn.PrjnScale.Rel": "1",
+	// }
 
 	// The usPos version is needed for US gating to clear goal.
 	// it is not clear that direct usNeg should drive nogo directly.
@@ -664,12 +667,11 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	// 	"Prjn.PrjnScale.Abs": "2", // strong
 	// 	"Prjn.PrjnScale.Rel": ".2",
 	// }
-	pj = net.ConnectToVSMatrix(blaNegAcq, vSmtxNo, full) // neg -> nogo
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "4",
-		"Prjn.PrjnScale.Rel": "1",
-	}
-	pj.SetClass("BLAAcqToGo")
+	net.ConnectToVSMatrix(blaNegAcq, vSmtxNo, full).SetClass("BLAAcqToGo") // neg -> nogo
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "2",
+	// 	"Prjn.PrjnScale.Rel": "1",
+	// }
 
 	net.ConnectLayers(blaPosAcq, vSstn, full, ForwardPrjn)
 	net.ConnectLayers(blaNegAcq, vSstn, full, ForwardPrjn)
@@ -713,6 +715,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj = net.ConnectToVSMatrix(ofcPosUS, vSmtxNo, p1to1)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
+	net.ConnectLayers(ofcPosUS, vSstn, full, ForwardPrjn)
 
 	pj = net.ConnectToVSMatrix(ofcPosVal, vSmtxGo, full)
 	pj.DefParams = pfc2m
@@ -720,6 +723,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj = net.ConnectToVSMatrix(ofcPosVal, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
+	net.ConnectLayers(ofcPosVal, vSstn, full, ForwardPrjn)
 
 	// pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxGo, full) // skip for now
 	// pj.DefParams = pfc2m
@@ -883,7 +887,7 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)
 	net.ConnectPTNotMaint(accUtilPT, notMaint, full)
 
-	accUtilPT.DefParams["Layer.Act.Dend.ModACh"] = "true"
+	accUtilPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
 	pj = net.ConnectToVSMatrix(accUtil, vSmtxGo, full)
 	pj.DefParams = pfc2m

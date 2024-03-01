@@ -39,6 +39,12 @@ type GoNoEnv struct {
 	// threshold on diff between ACCPos - ACCNeg for counting as a Go trial
 	PosNegThr float32
 
+	// learning rate for reward prediction
+	RewPredLRate float32
+
+	// minimum rewpred value
+	RewPredMin float32
+
 	// reward value for case where it gated and it should have:
 	// nominally 1 but can lead to over-learning, RPE would decrease over time
 	GatedShould float32
@@ -92,6 +98,12 @@ type GoNoEnv struct {
 
 	// reward based on match between Should vs. Gated
 	Rew float32 `edit:"-"`
+
+	// reward prediction based on incremental learning: RewPredLRate * (Rew - RewPred)
+	RewPred float32 `edit:"-"`
+
+	// reward prediction error: Rew - RewPred
+	RPE float32 `edit:"-"`
 }
 
 func (ev *GoNoEnv) Name() string {
@@ -109,8 +121,10 @@ func (ev *GoNoEnv) Defaults() {
 	ev.NUnitsX = 5
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
 	ev.PosNegThr = 0
-	ev.GatedShould = 1   // note: works; BurstGain = 0.1 helps prevent overlearning
-	ev.NoGatedShould = 0 // note: works fine here -- much more realistic
+	ev.RewPredLRate = 0.01 // GPU 16 0.01 > 0.02 >> 0.05 > 0.1, 0.2 for partial, seq3
+	ev.RewPredMin = 0.1    // 0.1 > 0.05 > 0.2
+	ev.GatedShould = 1     // note: works; BurstGain = 0.1 helps prevent overlearning
+	ev.NoGatedShould = 0   // note: works fine here -- much more realistic
 	ev.GatedShouldnt = -1
 	ev.NoGatedShouldnt = 0
 	ev.PopCode.Defaults()
@@ -212,4 +226,13 @@ func (ev *GoNoEnv) Action(action string, nop etensor.Tensor) {
 	ev.Should = should
 	ev.Match = match
 	ev.Rew = rew
+	ev.ComputeDA(rew)
+}
+
+func (ev *GoNoEnv) ComputeDA(rew float32) {
+	ev.RPE = rew - ev.RewPred
+	ev.RewPred += ev.RewPredLRate * (rew - ev.RewPred)
+	if ev.RewPred < ev.RewPredMin {
+		ev.RewPred = ev.RewPredMin
+	}
 }

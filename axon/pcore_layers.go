@@ -376,19 +376,20 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Acts.Dend.SSGi = 0
 	ly.Params.Acts.NMDA.Gbar = 0 // fine with 0
 	ly.Params.Acts.GabaB.Gbar = 0
-	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Layer.FB = 0
+	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.Pool.Gi = 0.5
 	ly.Params.Inhib.Pool.FB = 0
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0 // was 2,
 
-	if ly.Cls == "VSTNLayer" {
-		ly.Params.Inhib.Layer.On.SetBool(false)
-	} else {
-		ly.Params.Inhib.Layer.On.SetBool(true)
-	}
+	// if ly.Cls == "VSTNLayer" {
+	// 	ly.Params.Inhib.Layer.On.SetBool(false)
+	// } else {
+	// 	ly.Params.Inhib.Layer.On.SetBool(true)
+	// }
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
