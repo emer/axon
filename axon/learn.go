@@ -211,7 +211,7 @@ type RLRateParams struct {
 
 	// use a linear sigmoid function: if act > .5: 1-act; else act
 	// otherwise use the actual sigmoid derivative which is squared: a(1-a)
-	SigmoidLinear slbool.Bool `default:"false"`
+	SigmoidLinear slbool.Bool `default:"true"`
 
 	// minimum learning rate multiplier for sigmoidal act (1-act) factor,
 	// which prevents lrate from going too low for extreme values.
@@ -252,7 +252,7 @@ func (rl *RLRateParams) ShouldShow(field string) bool {
 	switch field {
 	case "On":
 		return true
-	case "Diff", "SigmoidMin":
+	case "Diff", "SigmoidMin", "SigmoidLinear":
 		return rl.On.IsTrue()
 	default:
 		return rl.On.IsTrue() && rl.Diff.IsTrue()
@@ -269,7 +269,7 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 	if rl.On.IsFalse() || laymax == 0 {
 		return 1.0
 	}
-	ca := act / laymax
+	ca := min(act/laymax, 1)
 	var lr float32
 	if rl.SigmoidLinear.IsTrue() {
 		if ca < 0.5 {

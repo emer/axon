@@ -4,6 +4,8 @@
 
 package axon
 
+import "github.com/emer/gosl/v2/slbool"
+
 //gosl: start pcore_prjns
 
 // MatrixPrjnParams for trace-based learning in the MatrixPrjn.
@@ -31,13 +33,16 @@ type MatrixPrjnParams struct {
 	// relative to it, and the overall learning rate.
 	Delta float32 `default:"1"`
 
-	pad float32
+	// for ventral striatum, learn based on activity at time of reward.
+	// otherwise, only uses accumulated trace but doesn't include rew-time activity.
+	VSRewLearn slbool.Bool `default:"true"`
 }
 
 func (tp *MatrixPrjnParams) Defaults() {
 	tp.Credit = 0.6
 	tp.BasePF = 0.005
 	tp.Delta = 1
+	tp.VSRewLearn.SetBool(true)
 }
 
 func (tp *MatrixPrjnParams) Update() {

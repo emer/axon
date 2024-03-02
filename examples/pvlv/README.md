@@ -10,10 +10,6 @@
 
 * add dopamine-kir disinhib for more activity dynamics?
 
-* key problem: it doesn't learn at all based on activity at time of reward: add that! with flag.  this is essential for rescuing extinguished gating and in general for establishing gating etc.
-
-* key test case: acq, ext, acq -- do that with tweak to optimize params
-
 * why is nCycles == 300 not getting good DA?  where does it go?
 
 * BLA acq is very fast -- can we slow that down?  I guess part of that is baseline novelty

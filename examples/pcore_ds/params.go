@@ -86,14 +86,14 @@ var ParamSets = netparams.Sets{
 		{Sel: ".DSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.8",   // 1.8 > others
-				"Prjn.Learn.LRate.Base":     "0.01",  // .005 > 0.01 > .02 (with nondelta = .6)
+				"Prjn.Learn.LRate.Base":     "0.015", // rlr sig: .01 > 0.005 > .02 (with nondelta = .6)
 				"Prjn.Learn.Trace.LearnThr": "0.1",   // not used at this point
 				"Prjn.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
 				"Prjn.Matrix.BasePF":        "0.005", // 0.005 > 0.01, 0.002 etc
 				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
 			},
 			Hypers: params.Hypers{
-				"Prjn.Learn.LRate.Base": {"Tweak": "-"},
+				"Prjn.Learn.LRate.Base": {"Tweak": "[0.02,0.025]"},
 				"Prjn.PrjnScale.Abs":    {"Tweak": "-"},
 				"Prjn.Matrix.BasePF":    {"Tweak": "-"},
 			}},
@@ -195,6 +195,15 @@ var ParamSets = netparams.Sets{
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#DMtxNoToDMtxGo", Desc: "weakish no->go inhibition is beneficial",
+			Params: params.Params{
+				"Prjn.PrjnScale.Rel": "0.1",
+				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.Learn.Learn":   "false",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Rel": {"Tweak": "log"},
 			}},
 		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
 			Params: params.Params{

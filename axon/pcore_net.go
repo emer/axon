@@ -43,8 +43,14 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxNo.DefParams = mp
 
 	full := prjn.NewFull()
+	p1to1 := prjn.NewPoolOneToOne()
 
 	net.ConnectLayers(mtxNo, gpePr, full, InhibPrjn)
+	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Rel": "0.05",
+	}
 
 	bgclass := "VBGInhib"
 	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).SetClass(bgclass)
@@ -103,6 +109,11 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	full := prjn.NewFull()
 
 	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPrjn)
+	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Rel": "0.1",
+	}
 
 	bgclass := "DBGInhib"
 	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).SetClass(bgclass)
@@ -125,7 +136,7 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 		"Prjn.Com.GType":     "ModulatoryG",
 		"Prjn.PrjnScale.Abs": "1",
 	}
-	pj := net.ConnectLayers(pf, mtxGo, p1to1, ForwardPrjn).SetClass("PFToDMtx").(*Prjn)
+	pj = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPrjn).SetClass("PFToDMtx").(*Prjn)
 	pj.DefParams = pfm
 	pj = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPrjn).SetClass("PFToDMtx").(*Prjn)
 	pj.DefParams = pfm

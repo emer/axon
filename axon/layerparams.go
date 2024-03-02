@@ -1031,11 +1031,11 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case VSPatchLayer:
-		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // max is 1 due to norming of GeIntMod
+		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // note: don't have proper max here
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
-		if modlr < 0 { // for negative da, target the strongest
-			mlr = 1 - mlr
-		}
+		// if modlr < 0 { // for negative da, target the strongest
+		// 	mlr = 1 - mlr
+		// }
 	case MatrixLayer:
 		if GlbV(ctx, di, GvHasRew) > 0 { // reward time
 			mlr = 1 // don't use dig deriv
