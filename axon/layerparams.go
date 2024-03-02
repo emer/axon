@@ -1036,6 +1036,12 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 		if modlr < 0 { // for negative da, target the strongest
 			mlr = 1 - mlr
 		}
+	case MatrixLayer:
+		if GlbV(ctx, di, GvHasRew) > 0 { // reward time
+			mlr = 1 // don't use dig deriv
+		} else {
+			modlr = 1 // don't use mod
+		}
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
 	}

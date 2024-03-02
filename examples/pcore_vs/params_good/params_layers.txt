@@ -5,6 +5,7 @@
          VGPeAk		Nominal:	  1.00	
 
            VSTN		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
 
          VMtxGo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
 						Layer.Gi:	  0.50	

@@ -16,6 +16,7 @@
   [Base.Params]
     "Layer.Inhib.Pool.Gi" = "0.5"
     "Layer.Learn.NeuroMod.BurstGain" = "0.1"
+    "Layer.Learn.RLRate.On" = "true"
   [Base.Hypers]
     [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"
@@ -85,7 +86,7 @@
   Sel = ".DSMatrixPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.005"
+    "Prjn.Learn.LRate.Base" = "0.01"
     "Prjn.Learn.Trace.LearnThr" = "0.1"
     "Prjn.Matrix.BasePF" = "0.005"
     "Prjn.Matrix.Credit" = "0.6"

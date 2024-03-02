@@ -26,7 +26,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.On":        "false",
 				"Layer.Inhib.ActAvg.Nominal": "0.25",
 				"Layer.Matrix.IsVS":          "true", // key for resetting urgency
-				"Layer.Learn.RLRate.On":      "true",
+				"Layer.Learn.RLRate.On":      "true", // only used for non-rew trials -- key
 				"Layer.Learn.RLRate.Diff":    "false",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
@@ -40,8 +40,8 @@ var ParamSets = netparams.Sets{
 		// Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":     "0.01", // .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.1",  // 0.1 slightly > 0.05
+				"Prjn.Learn.LRate.Base":     "0.01", // 0.01, vs .02 default
+				"Prjn.Learn.Trace.LearnThr": "0.1",  // prevents learning below this thr: preserves low act
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},

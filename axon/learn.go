@@ -209,13 +209,20 @@ type RLRateParams struct {
 	// use learning rate modulation
 	On slbool.Bool `default:"true"`
 
-	// minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers.
+	// use a linear sigmoid function: if act > .5: 1-act; else act
+	// otherwise use the actual sigmoid derivative which is squared: a(1-a)
+	SigmoidLinear slbool.Bool `default:"false"`
+
+	// minimum learning rate multiplier for sigmoidal act (1-act) factor,
+	// which prevents lrate from going too low for extreme values.
+	// Set to 1 to disable Sigmoid derivative factor, which is default for Target layers.
 	SigmoidMin float32 `default:"0.05,1"`
 
 	// modulate learning rate as a function of plus - minus differences
 	Diff slbool.Bool
 
-	// threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero
+	// threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies.
+	// must be > 0 to prevent div by zero.
 	SpkThr float32 `default:"0.1"`
 
 	// threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value
@@ -224,7 +231,7 @@ type RLRateParams struct {
 	// for Diff component, minimum learning rate value when below ActDiffThr
 	Min float32 `default:"0.001"`
 
-	pad, pad1 int32
+	pad int32
 }
 
 func (rl *RLRateParams) Update() {
@@ -232,6 +239,7 @@ func (rl *RLRateParams) Update() {
 
 func (rl *RLRateParams) Defaults() {
 	rl.On.SetBool(true)
+	rl.SigmoidLinear.SetBool(true)
 	rl.SigmoidMin = 0.05
 	rl.Diff.SetBool(true)
 	rl.SpkThr = 0.1
@@ -254,7 +262,7 @@ func (rl *RLRateParams) ShouldShow(field string) bool {
 // RLRateSigDeriv returns the sigmoid derivative learning rate
 // factor as a function of spiking activity, with mid-range values having
 // full learning and extreme values a reduced learning rate:
-// deriv = act * (1 - act)
+// deriv = 4*act*(1-act) or linear: if act > .5: 2*(1-act); else 2*act
 // The activity should be CaSpkP and the layer maximum is used
 // to normalize that to a 0-1 range.
 func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
@@ -262,7 +270,16 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 		return 1.0
 	}
 	ca := act / laymax
-	lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
+	var lr float32
+	if rl.SigmoidLinear.IsTrue() {
+		if ca < 0.5 {
+			lr = 2 * ca
+		} else {
+			lr = 2 * (1 - ca)
+		}
+	} else {
+		lr = 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
+	}
 	if lr < rl.SigmoidMin {
 		lr = rl.SigmoidMin
 	}

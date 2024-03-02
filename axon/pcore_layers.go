@@ -212,8 +212,9 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer if has pools
 	ly.Params.Inhib.Pool.FB = 0           // pure FF
 	ly.Params.Inhib.Pool.Gi = 0.5
-	ly.Params.Inhib.ActAvg.Nominal = 0.25 // pooled should be lower
-	ly.Params.Learn.RLRate.On.SetBool(false)
+	ly.Params.Inhib.ActAvg.Nominal = 0.25   // pooled should be lower
+	ly.Params.Learn.RLRate.On.SetBool(true) // key: sig deriv used outside of rew trials
+	ly.Params.Learn.RLRate.Diff.SetBool(false)
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical

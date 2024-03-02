@@ -3,6 +3,7 @@ VGPi.Acts.Init.GeVar: 0.1 // (Default: 0)<br>
 VGPi.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
 VGPi.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
 VGPi.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+VGPi.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 VGPi.VGPePrToVGPi.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPi.VGPePrToVGPi.SWts.Init.Sym: false // (Default: true)<br>
 VGPi.VGPePrToVGPi.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -19,6 +20,7 @@ VGPePr.Acts.Init.GeVar: 0.2 // (Default: 0)<br>
 VGPePr.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
 VGPePr.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
 VGPePr.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+VGPePr.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 VGPePr.VMtxNoToVGPePr.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPePr.VMtxNoToVGPePr.SWts.Init.Sym: false // (Default: true)<br>
 VGPePr.VMtxNoToVGPePr.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -35,6 +37,7 @@ VGPeAk.Acts.Init.GeVar: 0.1 // (Default: 0)<br>
 VGPeAk.Acts.Init.GiVar: 0.1 // (Default: 0)<br>
 VGPeAk.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
 VGPeAk.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+VGPeAk.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 VGPeAk.VGPePrToVGPeAk.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VGPeAk.VGPePrToVGPeAk.SWts.Init.Sym: false // (Default: true)<br>
 VGPeAk.VGPePrToVGPeAk.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
@@ -56,6 +59,7 @@ VSTN.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VSTN.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 VSTN.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VSTN.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
+VSTN.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 VSTN.VGPePrToVSTN.PrjnScale.Abs: 0.5 // (Default: 1)<br>
 VSTN.VGPePrToVSTN.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 VSTN.VGPePrToVSTN.SWts.Init.Sym: false // (Default: true)<br>
@@ -75,7 +79,7 @@ VMtxGo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VMtxGo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 VMtxGo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VMtxGo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
-VMtxGo.Learn.RLRate.On: false // (Default: true)<br>
+VMtxGo.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 VMtxGo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
 VMtxGo.VGPeAkToVMtxGo.PrjnScale.Abs: 3 // (Default: 1)<br>
 VMtxGo.VGPeAkToVMtxGo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
@@ -101,7 +105,7 @@ VMtxNo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VMtxNo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 VMtxNo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VMtxNo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
-VMtxNo.Learn.RLRate.On: false // (Default: true)<br>
+VMtxNo.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 VMtxNo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
 VMtxNo.VGPeAkToVMtxNo.PrjnScale.Abs: 3 // (Default: 1)<br>
 VMtxNo.VGPeAkToVMtxNo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
@@ -117,17 +121,22 @@ VMtxNo.ACCPosToVMtxNo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
 VMtxNo.ACCPosToVMtxNo.SWts.Init.Sym: false // (Default: true)<br>
 VMtxNo.ACCPosToVMtxNo.Learn.LRate.Base: 0.01 // (Default: 0.04,0.1,0.2)<br>
 SNc.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+SNc.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 Urgency.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
 Urgency.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 Urgency.Acts.PopCode.MinAct: 0 // (Default: 1,0.5)<br>
 Urgency.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
+Urgency.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 ACCPos.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+ACCPos.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 ACCNeg.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
+ACCNeg.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 ACCPosPT.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 ACCPosPT.Acts.Sahp.Gbar: 0.01 // (Default: 0.05,0.1)<br>
 ACCPosPT.Acts.GabaB.Gbar: 0.01 // (Default: 0,0.012,0.015)<br>
 ACCPosPT.Inhib.Layer.Gi: 3.2 // (Default: 1,1.1,0.75,0.9)<br>
 ACCPosPT.Inhib.Pool.Gi: 2.4 // (Default: 1,1.1,0.75,0.9)<br>
+ACCPosPT.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 ACCPosPT.ACCPosVMToACCPosPT.SWts.Init.Mean: 0.8 // (Default: 0.5,0.4)<br>
 ACCPosPT.ACCPosVMToACCPosPT.SWts.Init.Var: 0 // (Default: 0.25)<br>
 ACCPosPT.ACCPosToACCPosPT.PrjnScale.Abs: 0.5 // (Default: 1)<br>
@@ -139,6 +148,7 @@ ACCPosPT.ACCPosPTToACCPosPT.Learn.LRate.Base: 0.0001 // (Default: 0.04,0.1,0.2)<
 ACCPosVM.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
 ACCPosVM.Inhib.Layer.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
 ACCPosVM.Inhib.Pool.Gi: 0.6 // (Default: 1,1.1,0.75,0.9)<br>
+ACCPosVM.Learn.RLRate.SigmoidLinear: true // (Default: false)<br>
 ACCPosVM.Learn.NeuroMod.AChDisInhib: 1 // (Default: 0,5)<br>
 ACCPosVM.ACCPosPTToACCPosVM.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
 ACCPosVM.ACCPosPTToACCPosVM.SWts.Init.Var: 0 // (Default: 0.25)<br>

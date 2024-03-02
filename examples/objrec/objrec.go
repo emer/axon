@@ -699,7 +699,7 @@ func (ss *Sim) ConfigGUI() {
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train, etime.Test})
 
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Test All",
-			Icon:    "step-fwd",
+			Icon:    icons.PlayArrow,
 			Tooltip: "Tests a large same of testing items and records ActRFs.",
 			Active:  egui.ActiveStopped,
 			Func: func() {

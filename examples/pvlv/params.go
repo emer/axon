@@ -38,8 +38,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Acts.Kir.Gbar":     "2", // 10 > 5  > 2 -- key for pause
-				"Layer.Learn.RLRate.On":   "true",
+				"Layer.Acts.Kir.Gbar":     "2",    // 10 > 5  > 2 -- key for pause
+				"Layer.Learn.RLRate.On":   "true", // only used for non-rew trials -- key
 				"Layer.Learn.RLRate.Diff": "false",
 			}},
 		{Sel: "#BLAPosExtD2", Desc: "",
@@ -79,7 +79,7 @@ var ParamSets = netparams.Sets{
 		// current experimental settings
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.Trace.LearnThr": "0.0", // important to be 0 to enable recovery of gating after extinction
+				"Prjn.Learn.Trace.LearnThr": "0.1", // prevents learning below this thr: preserves low act
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
@@ -119,7 +119,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "6",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.1", // 0.05 def
+				"Prjn.Learn.LRate.Base":     "0.2", // 0.05 def -- todo: needs faster
 			}},
 		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
 			Params: params.Params{

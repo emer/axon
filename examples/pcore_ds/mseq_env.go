@@ -124,7 +124,7 @@ func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
 	ev.States["Target"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
 	ev.States["Action"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
-	ev.States["PrevAction"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["PrevAction"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions + 1}, nil, []string{"Y", "X"})
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 	ev.States["SNc"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 }
@@ -193,7 +193,6 @@ func (ev *MotorSeqEnv) RenderState() {
 	ev.States["SNc"].Set1D(0, ev.RPE)
 	ev.States["Rew"].Set1D(0, ev.Rew)
 	if ev.IsRewTrial() {
-		ev.PrevAction = 0
 		ev.RenderBlank("State")
 		ev.RenderBlank("Target")
 		ev.RenderBlank("PrevAction")
@@ -221,6 +220,7 @@ func (ev *MotorSeqEnv) Step() bool {
 // Action records the current action taken by model, at end of minus phase
 // Computes Rew* at end of sequence
 func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
+	ev.PrevAction = ev.CurAction
 	ev.CurAction, _ = strconv.Atoi(action)
 	// fmt.Println("act:", ev.Trial.Cur, action, ev.CurAction, ev.Target, ev.NCorrect)
 	if ev.CurAction == ev.Target {

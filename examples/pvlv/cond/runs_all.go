@@ -85,6 +85,12 @@ var AllRuns = map[string]*Run{
 		Cond2: "PosExt_A0B0",
 		Cond3: "PosReAcq_A100B50",
 	},
+	"PosAcqExtAcq_A100_A0_A100": {
+		Desc:  "Full cycle: acq, ext, acq, A=100%, then extinguish, then acq again, marked as ReAcq",
+		Cond1: "PosAcq_A100",
+		Cond2: "PosExt_A0",
+		Cond3: "PosReAcq_A100",
+	},
 	"PosAcqExt_A100B100": {
 		Desc:  "",
 		Cond1: "PosAcq_A100B100",

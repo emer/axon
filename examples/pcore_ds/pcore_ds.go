@@ -210,7 +210,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = snc
 
 	state := net.AddLayer4D("State", 1, np, nuPer, nAct, axon.InputLayer)
-	s1 := net.AddLayer4D("S1", 1, np, nuPer, nAct, axon.InputLayer)
+	s1 := net.AddLayer4D("S1", 1, np, nuPer, nAct+1, axon.InputLayer)
 
 	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
 

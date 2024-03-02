@@ -1,9 +1,0 @@
-GUI = true
-Debug = false
-
-[Run]
-	GPU = true
-	NData = 32
-#	GPU = false
-#	NData = 1
-

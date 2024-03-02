@@ -533,28 +533,31 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has BurstGain * ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
+	hasRew := GlbV(ctx, di, GvHasRew) > 0
 	ach := GlbV(ctx, di, GvACh)
-	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
-		rlr := NrnV(ctx, ri, di, RLRate)
-		tr := SynCaV(ctx, syni, di, Tr)
+	if !hasRew && ach < 0.1 {
+		SetSynCaV(ctx, syni, di, DTr, 0.0)
+		return
+	}
+	rlr := NrnV(ctx, ri, di, RLRate)
+
+	rplus := NrnV(ctx, ri, di, CaSpkP)
+	rminus := NrnV(ctx, ri, di, CaSpkD)
+	sact := NrnV(ctx, si, di, CaSpkD)
+	dtr := ach * (pj.Matrix.Delta * sact * (rplus - rminus))
+	if rminus > pj.Learn.Trace.LearnThr { // key: prevents learning if < threshold
+		dtr += ach * (pj.Matrix.Credit * sact * rminus)
+	}
+	if hasRew {
+		tr := SynCaV(ctx, syni, di, Tr) + dtr
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
-	} else if ach > 0.1 {
-		rplus := NrnV(ctx, ri, di, CaSpkP)
-		rminus := NrnV(ctx, ri, di, CaSpkD)
-		sact := NrnV(ctx, si, di, CaSpkD)
-		dtr := ach * (pj.Matrix.Delta*sact*(rplus-rminus) + pj.Matrix.Credit*sact*rminus)
-		// previous, basic credit version:
-		// if rminus < pj.Learn.Trace.LearnThr {
-		// 	rminus = 0
-		// }
-		// dtr := ach * sact * rminus
+	} else {
+		dtr *= rlr
 		SetSynCaV(ctx, syni, di, DTr, dtr)
 		AddSynCaV(ctx, syni, di, Tr, dtr)
-	} else {
-		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	}
 }
 
@@ -563,8 +566,8 @@ func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
+	rlr := NrnV(ctx, ri, di, RLRate)
 	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
-		rlr := NrnV(ctx, ri, di, RLRate)
 		tr := SynCaV(ctx, syni, di, Tr)
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)
@@ -575,7 +578,10 @@ func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		rplus := NrnV(ctx, ri, di, CaSpkP)
 		rminus := NrnV(ctx, ri, di, CaSpkD)
 		sact := NrnV(ctx, si, di, CaSpkD)
-		dtr := pj.Matrix.Delta*sact*(rplus-rminus) + pj.Matrix.Credit*pfmod*sact*rminus
+		dtr := rlr * (pj.Matrix.Delta * sact * (rplus - rminus))
+		if rminus > pj.Learn.Trace.LearnThr { // key: prevents learning if < threshold
+			dtr += rlr * (pj.Matrix.Credit * pfmod * sact * rminus)
+		}
 		SetSynCaV(ctx, syni, di, DTr, dtr)
 		AddSynCaV(ctx, syni, di, Tr, dtr)
 	}

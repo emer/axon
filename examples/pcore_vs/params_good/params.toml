@@ -16,6 +16,8 @@
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.25"
     "Layer.Inhib.Pool.On" = "false"
+    "Layer.Learn.RLRate.Diff" = "false"
+    "Layer.Learn.RLRate.On" = "true"
     "Layer.Matrix.IsVS" = "true"
 
 [[Base]]

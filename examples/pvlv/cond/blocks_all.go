@@ -25,6 +25,26 @@ var AllBlocks = map[string]Block{
 			Context:  "A",
 		},
 	},
+	"PosReAcq_A100": {
+		{
+			Name:     "A_R_re",
+			Pct:      1,
+			Valence:  Pos,
+			USProb:   1,
+			MixedUS:  false,
+			USMag:    1,
+			NTicks:   5,
+			CS:       "A",
+			CSStart:  1,
+			CSEnd:    3,
+			CS2Start: -1,
+			CS2End:   -1,
+			US:       0,
+			USStart:  3,
+			USEnd:    3,
+			Context:  "A",
+		},
+	},
 	"PosAcq_A100B50": {
 		{
 			Name:     "A_R",
@@ -161,7 +181,7 @@ var AllBlocks = map[string]Block{
 			Context:  "A",
 		},
 		{
-			Name:     "B_R_reacq",
+			Name:     "B_R_re",
 			Pct:      0,
 			Valence:  Pos,
 			USProb:   0.5,
