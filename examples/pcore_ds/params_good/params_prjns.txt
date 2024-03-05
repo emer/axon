@@ -20,14 +20,16 @@ Layer: DSTN
 	             S1	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
 
 Layer: DMtxGo
-	         DGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.06	Rel:  1.00
+	         DMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.09
+								    Rel Params: Base:#DMtxNoToDMtxGo: 0.1
+	         DGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.91
 	             PF	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: .DSMatrixPrjn: 1.8
-	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: Base:.DSMatrixPrjn: 1.8
-	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
+	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
+	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
+								    Abs Params: Base:.DSMatrixPrjn: 1.8
 
 Layer: DMtxNo
 	         DGPeAk	      InhibPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
@@ -36,9 +38,9 @@ Layer: DMtxNo
 	          State	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
 								    Abs Params: .DSMatrixPrjn: 1.8
 	             S1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.20	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 	             M1	   DSMatrixPrjn	Abs:	  1.80	Rel:	  1.00	GScale:	  0.12	Rel:  0.33
-								    Abs Params: Base:.DSMatrixPrjn: 1.8
+								    Abs Params: .DSMatrixPrjn: 1.8
 
 Layer: PF
 	           DGPi	      InhibPrjn	Abs:	  0.40	Rel:	  1.00	GScale:	  0.01	Rel:  1.00

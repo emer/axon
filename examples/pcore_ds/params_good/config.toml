@@ -3,7 +3,7 @@ GUI = true
 Debug = false
 
 [Env]
-  SeqLen = 3
+  SeqLen = 4
   NActions = 5
   ActSoftMaxGain = 2.0
 
@@ -24,7 +24,7 @@ Debug = false
   NThreads = 0
   Run = 0
   NRuns = 25
-  NEpochs = 30
+  NEpochs = 50
   NTrials = 128
 
 [Log]

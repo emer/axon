@@ -461,6 +461,26 @@ Matrix:  {
   GateThr: 0.05 IsVS: false OtherMatrixIdx: 5 ThalLay1Idx: 16 ThalLay2Idx: -1 ThalLay3Idx: -1 ThalLay4Idx: -1 ThalLay5Idx: -1 ThalLay6Idx: -1
 }
 ///////////////////////////////////////////////////
+Prjn: DMtxNoToDMtxGo
+Com: {
+  GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PrjnScale: {
+  Rel: 0.1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+}
+///////////////////////////////////////////////////
 Prjn: DGPeAkToDMtxGo
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
@@ -515,13 +535,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1
+  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
 Prjn: S1ToDMtxGo
@@ -538,13 +558,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1
+  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
 Prjn: M1ToDMtxGo
@@ -561,13 +581,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1
+  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 /////////////////////////////////////////////////
 Layer: DMtxNo
@@ -669,13 +689,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1
+  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
 Prjn: S1ToDMtxNo
@@ -692,13 +712,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1
+  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
 Prjn: M1ToDMtxNo
@@ -715,13 +735,13 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
 }
 Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1
+  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 /////////////////////////////////////////////////
 Layer: PF

@@ -86,7 +86,7 @@
   Sel = ".DSMatrixPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.01"
+    "Prjn.Learn.LRate.Base" = "0.02"
     "Prjn.Learn.Trace.LearnThr" = "0.1"
     "Prjn.Matrix.BasePF" = "0.005"
     "Prjn.Matrix.Credit" = "0.6"
@@ -207,6 +207,16 @@
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"
+
+[[Base]]
+  Sel = "#DMtxNoToDMtxGo"
+  Desc = "weakish no->go inhibition is beneficial"
+  [Base.Params]
+    "Prjn.Learn.Learn" = "false"
+    "Prjn.PrjnScale.Rel" = "0.1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Rel"]
+      Tweak = "[0.02,0.01]"
 
 [[Base]]
   Sel = "#DGPeAkToDMtxNo"

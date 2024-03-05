@@ -2,19 +2,24 @@
 
 # TODO:
 
-* Overall: need an error-driven learning dynamic in primary credit assignment condition!
+* simplify / fix all the PTNotMaint stuff?  PL is "PFC of record" and key area for engaged goal -- has main descending prjns to raphe, ACh, etc.  Needed for proper feedback loop of learning at time of gating.
 
-* add No -> Go direct inhib
+* what is using slow weights in the BG, etc circuits?  expt.
 
-* vspatch needs better learning (still, again!)
+* Learn Tr at time of Rew in proportion to prior gating discounting of ACh: if 
+  already gated, then don't learn, but if didn't gate, then learn.  provides the
+  key robustness but learning at time of rew is generally not good.
 
+* vspatch needs better learning (still, again!): nonlinear DA learning (some mix of ACh and DA?)
+  such that lrate is higher until it actually matches.
+
+* Kir = 10 not working? but now working? what is the deal?
 * add dopamine-kir disinhib for more activity dynamics?
+- not well supported by data -- other channels involved.  maybe ACh modulates Kir tho?
 
 * why is nCycles == 300 not getting good DA?  where does it go?
 
 * BLA acq is very fast -- can we slow that down?  I guess part of that is baseline novelty
-
-* Kir = 10 not working? but now working? what is the deal?
 
 * MtxGo is over-active -- partial random looked good -- maybe go back to that.
 
