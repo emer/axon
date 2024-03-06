@@ -55,10 +55,6 @@ void CyclePostLDT(inout Context ctx, uint di, in LayerParams ly, inout LayerVals
 void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
 	ly.CyclePostLayer(ctx, di, lpl, vals);
 	switch (ly.LayType) {
-	case PTNotMaintLayer: {
-		ly.CyclePostPTNotMaintLayer(ctx, di, lpl);
-		break;
-	}
 	case CeMLayer: {
 		ly.CyclePostCeMLayer(ctx, di, lpl);
 		break;
@@ -133,9 +129,6 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	for (int li = 0; li < Ctx[0].NetIdxs.NLayers; li++) {
 		CyclePostAll(Ctx[0], Layers[li], li, di);
 		switch (Layers[li].LayType) {
-		case PTNotMaintLayer:
-			pnmi = li;
-			break;
 		case CeMLayer:
 			if (Layers[li].Learn.NeuroMod.Valence == Positive) {
 				cmpi = li;

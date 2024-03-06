@@ -551,7 +551,7 @@ func (pj *PrjnParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 	if hasRew {
 		tr := SynCaV(ctx, syni, di, Tr)
 		if pj.Matrix.VSRewLearn.IsTrue() {
-			tr += dtr
+			tr += (1 - GlbV(ctx, di, GvGoalMaint)) * dtr
 		}
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SetSynCaV(ctx, syni, di, DiDWt, dwt)

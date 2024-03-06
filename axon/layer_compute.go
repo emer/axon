@@ -267,8 +267,6 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		lpl := ly.Pool(0, di)
 		ly.Params.CyclePostLayer(ctx, di, lpl, vals)
 		switch ly.LayerType() {
-		case PTNotMaintLayer:
-			ly.Params.CyclePostPTNotMaintLayer(ctx, di, lpl)
 		case CeMLayer:
 			ly.Params.CyclePostCeMLayer(ctx, di, lpl)
 		case VSPatchLayer:
@@ -378,7 +376,7 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		// Note: synapse-level Ca decay happens in DWt
 		if ahp == 1 {
 			lt := ly.LayerType()
-			if lt == PTNotMaintLayer || lt == PTMaintLayer {
+			if lt == PTMaintLayer {
 				SetNrnV(ctx, ni, di, CtxtGe, 0)
 				SetNrnV(ctx, ni, di, CtxtGeRaw, 0)
 				SetNrnV(ctx, ni, di, CtxtGeOrig, 0)

@@ -7,35 +7,47 @@ package axon
 //gosl: start globals
 
 // GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc
-// including the state for the PVLV phasic dopamine model.
+// including the state for the PVLV phasic dopamine model. These are stored
+// in the Network.Globals float32 slice and corresponding global GPU slice.
 type GlobalVars int32 //enums:enum
 
 const (
 	/////////////////////////////////////////
 	// Reward
 
-	// Rew is reward value -- this is set here in the Context struct, and the RL Rew layer grabs it from there -- must also set HasRew flag when rew is set -- otherwise is ignored.
+	// Rew is the external reward value.  Must also set HasRew flag when Rew is set,
+	// otherwise it is ignored. This is computed by the PVLV algorithm from US
+	// inputs set by Net.PVLV methods, and can be directly set in simpler RL cases.
 	GvRew GlobalVars = iota
 
-	// HasRew must be set to true when a reward is present -- otherwise Rew is ignored.  Also set when PVLV BOA model gives up.  This drives ACh release in the PVLV model.
+	// HasRew must be set to true (1) when an external reward / US input is present,
+	// otherwise Rew is ignored.  This is also set when PVLV BOA model gives up.
+	// This drives ACh release in the PVLV model.
 	GvHasRew
 
-	// RewPred is reward prediction -- computed by a special reward prediction layer
+	// RewPred is the reward prediction, computed by a special reward prediction layer,
+	// e.g., the VSPatch layer in the PVLV algorithm.
 	GvRewPred
 
-	// PrevPred is previous time step reward prediction -- e.g., for TDPredLayer
+	// PrevPred is previous time step reward prediction, e.g., for TDPredLayer
 	GvPrevPred
 
-	// HadRew is HasRew state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial
+	// HadRew is HasRew state from the previous trial, copied from HasRew in NewState.
+	// Used for updating Effort, Urgency at start of new trial.
 	GvHadRew
 
 	/////////////////////////////////////////
 	// NeuroMod neuromodulators
 
-	// DA is dopamine -- represents reward prediction error, signaled as phasic increases or decreases in activity relative to a tonic baseline, which is represented by a value of 0.  Released by the VTA -- ventral tegmental area, or SNc -- substantia nigra pars compacta.
+	// DA is dopamine -- represents reward prediction error, signaled as phasic
+	// increases or decreases in activity relative to a tonic baseline, which is
+	// represented by a value of 0.  Released by the VTA (ventral tegmental area),
+	// or SNc (substantia nigra pars compacta).
 	GvDA
 
-	// ACh is acetylcholine -- activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS).  Driven by BLA -> PPtg that detects changes in BLA activity, via LDTLayer type
+	// ACh is acetylcholine, activated by salient events, particularly at the onset
+	// of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS).
+	// Driven by BLA -> PPtg that detects changes in BLA activity, via LDTLayer type.
 	GvACh
 
 	// NE is norepinepherine -- not yet in use
@@ -44,40 +56,47 @@ const (
 	// Ser is serotonin -- not yet in use
 	GvSer
 
-	// AChRaw is raw ACh value used in updating global ACh value by LDTLayer
+	// AChRaw is raw ACh value used in updating global ACh value by LDTLayer.
 	GvAChRaw
 
-	// NotMaint is activity of the PTNotMaintLayer -- drives top-down inhibition of LDT layer / ACh activity.
-	GvNotMaint
+	// GoalMaint is the normalized (0-1) goal maintenance activity,
+	// set in ApplyPVLV function at start of trial.
+	// Drives top-down inhibition of LDT layer / ACh activity.
+	GvGoalMaint
 
 	/////////////////////////////////////////
 	// VSMatrix gating and PVLV Rew flags
 
-	// VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US
+	// VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance
+	// in PFC areas), set at end of plus phase.  This excludes any gating
+	// happening at time of US.
 	GvVSMatrixJustGated
 
-	// VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received
+	// VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set
+	// (US outcome received or expected one failed to be received).
 	GvVSMatrixHasGated
 
-	// CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated -- this can change the giving up Effort.Max parameter.
+	// CuriosityPoolGated is true if VSMatrixJustGated and the first pool
+	// representing the curiosity / novelty drive gated. This can change the
+	// giving up Effort.Max parameter.
 	GvCuriosityPoolGated
 
 	/////////////////////////////////////////
 	// Time, Effort & Urgency
 
-	// Time is raw time counter, incrementing upward during goal engaged window.
+	// Time is the raw time counter, incrementing upward during goal engaged window.
 	// This is also copied directly into NegUS[0] which tracks time, but we maintain
 	// a separate effort value to make it clearer.
 	GvTime
 
-	// Effort is raw effort counter -- incrementing upward for each effort step
+	// Effort is the raw effort counter, incrementing upward for each effort step
 	// during goal engaged window.
 	// This is also copied directly into NegUS[1] which tracks effort, but we maintain
 	// a separate effort value to make it clearer.
 	GvEffort
 
-	// UrgencyRaw is raw effort for urgency -- incrementing upward from effort
-	// increments per step when _not_ goal engaged
+	// UrgencyRaw is the raw effort for urgency, incrementing upward from effort
+	// increments per step when _not_ goal engaged.
 	GvUrgencyRaw
 
 	// Urgency is the overall urgency activity level (normalized 0-1),
@@ -87,8 +106,8 @@ const (
 	/////////////////////////////////////////
 	// US / PV
 
-	// HasPosUS indicates has positive US on this trial -- drives goal accomplishment logic
-	// and gating.
+	// HasPosUS indicates has positive US on this trial,
+	// drives goal accomplishment logic and gating.
 	GvHasPosUS
 
 	// HadPosUS is state from the previous trial (copied from HasPosUS in NewState).
@@ -99,19 +118,24 @@ const (
 	// and phasic dopamine based on the outcome.
 	GvNegUSOutcome
 
-	// HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome in NewState)
+	// HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome
+	// in NewState)
 	GvHadNegUSOutcome
 
-	// PVposSum is total weighted positive valence primary value = sum of Weight * USpos * Drive
+	// PVposSum is total weighted positive valence primary value
+	// = sum of Weight * USpos * Drive
 	GvPVposSum
 
-	// PVpos is normalized positive valence primary value = (1 - 1/(1+PVposGain * PVposSum))
+	// PVpos is normalized positive valence primary value
+	// = (1 - 1/(1+PVposGain * PVposSum))
 	GvPVpos
 
-	// PVnegSum is total weighted negative valence primary value = sum of Weight * USneg
+	// PVnegSum is total weighted negative valence primary value
+	// = sum of Weight * USneg
 	GvPVnegSum
 
-	// PVpos is normalized negative valence primary value = (1 - 1/(1+PVnegGain * PVnegSum))
+	// PVpos is normalized negative valence primary value
+	// = (1 - 1/(1+PVnegGain * PVnegSum))
 	GvPVneg
 
 	// PVposEst is the estimated PVpos value based on OFCposUSPT and VSMatrix gating
@@ -164,19 +188,27 @@ const (
 	// or PVneg > PVpos
 	GvLHbDip
 
-	// LHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive > VSPatch pos prediction
+	// LHbBurst is computed LHb activity level that drives bursts of DA firing,
+	// when actual PV reward drive > VSPatch pos prediction
 	GvLHbBurst
 
-	// LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
+	// LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA,
+	// reflecting PV and VSPatch (PVi), but not the CS (LV) contributions
 	GvLHbPVDA
 
 	/////////////////////////////////////////
 	// Amygdala CS / LV variables
 
-	// CeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes
+	// CeMpos is positive valence central nucleus of the amygdala (CeM)
+	// LV (learned value) activity, reflecting
+	// |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.
+	// CeM sets Raw directly.  Note that a positive US onset even with no
+	// active Drive will be reflected here, enabling learning about unexpected outcomes.
 	GvCeMpos
 
-	// CeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly
+	// CeMneg is negative valence central nucleus of the amygdala (CeM)
+	// LV (learned value) activity, reflecting
+	// |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly
 	GvCeMneg
 
 	/////////////////////////////////////////
@@ -189,7 +221,7 @@ const (
 	// USneg is negative valence US
 	//   allocated for Nitems
 
-	// USneg are negative valence US outcomes -- normalized version of raw,
+	// USneg are negative valence US outcomes, normalized version of raw.
 	// NNegUSs of them
 	GvUSneg
 
@@ -200,20 +232,22 @@ const (
 	///////////////////////////////////////////////////////////
 	// USpos, VSPatch
 
-	// Drives is current drive state -- updated with optional homeostatic exponential return to baseline values
+	// Drives are current drive state, updated with optional homeostatic
+	// exponential return to baseline values.
 	GvDrives
 
-	// USpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)
+	// USpos are current positive-valence drive-satisfying input(s)
+	// (unconditioned stimuli = US)
 	GvUSpos
 
-	// VSPatch is current reward predicting VSPatch (PosD1) values
+	// VSPatch is current reward predicting VSPatch (PosD1) values.
 	GvVSPatch
 
-	// VSPatch is previous reward predicting VSPatch (PosD1) values
+	// VSPatch is previous reward predicting VSPatch (PosD1) values.
 	GvVSPatchPrev
 
 	// OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool
-	// used in anticipating potential USpos outcome value
+	// used in anticipating potential USpos outcome value.
 	GvOFCposUSPTMaint
 
 	// VSMatrixPoolGated indicates whether given VSMatrix pool gated

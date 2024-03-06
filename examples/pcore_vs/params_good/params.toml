@@ -18,6 +18,7 @@
     "Layer.Inhib.Pool.On" = "false"
     "Layer.Learn.RLRate.Diff" = "false"
     "Layer.Learn.RLRate.On" = "true"
+    "Layer.Learn.TrgAvgAct.On" = "true"
     "Layer.Matrix.IsVS" = "true"
 
 [[Base]]
@@ -35,6 +36,8 @@
   [Base.Params]
     "Prjn.Learn.LRate.Base" = "0.01"
     "Prjn.Learn.Trace.LearnThr" = "0.1"
+    "Prjn.Matrix.VSRewLearn" = "false"
+    "Prjn.SWts.Adapt.On" = "false"
   [Base.Hypers]
     [Base.Hypers."Prjn.Learn.LRate.Base"]
       Tweak = "-"
@@ -75,3 +78,14 @@
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"
+
+[[Base]]
+  Sel = "#VMtxNoToVMtxGo"
+  Desc = ""
+  [Base.Params]
+    "Prjn.Learn.Learn" = "false"
+    "Prjn.PrjnScale.Abs" = "1"
+    "Prjn.PrjnScale.Rel" = "0.05"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Rel"]
+      Tweak = "log"

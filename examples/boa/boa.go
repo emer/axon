@@ -220,7 +220,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accUtil, sc, notMaint := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, accUtil, sc, notMaint := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = accUtil, urgency
 	_, _ = ofcNegUSCT, ofcNegUSPTp
 
@@ -288,10 +288,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 	// using distance and effort here in the meantime
 	net.ConnectToPFCBack(pos, posP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(pos, posP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
+	net.ConnectToPFCBack(pos, posP, ilPos, ilPosCT, ilPosPTp, full)
 
 	net.ConnectToPFC(pos, posP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
-	net.ConnectToPFC(pos, posP, accNegVal, accNegValCT, accNegValPTp, full)
+	net.ConnectToPFC(pos, posP, ilNeg, ilNegCT, ilNegPTp, full)
 
 	//	alm predicts all effort, cost, sensory state vars
 	net.ConnectToPFC(pos, posP, alm, almCT, almPTp, full)
@@ -1296,7 +1296,7 @@ func (ss *Sim) RunGUI() {
 // RecordTestData returns key testing data from the network
 func (ss *Sim) RecordTestData() {
 	net := ss.Net
-	lays := net.LayersByType(axon.PTMaintLayer, axon.PTNotMaintLayer, axon.MatrixLayer, axon.STNLayer, axon.BLALayer, axon.CeMLayer, axon.VSPatchLayer, axon.LHbLayer, axon.LDTLayer, axon.VTALayer)
+	lays := net.LayersByType(axon.PTMaintLayer, axon.MatrixLayer, axon.STNLayer, axon.BLALayer, axon.CeMLayer, axon.VSPatchLayer, axon.LHbLayer, axon.LDTLayer, axon.VTALayer)
 
 	key := ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di"})
 

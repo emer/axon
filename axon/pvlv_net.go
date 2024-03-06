@@ -472,13 +472,9 @@ func (net *Network) AddPVLVPulvLayers(ctx *Context, nYneur, popY, popX int, spac
 
 // AddOFCposUS adds orbital frontal cortex positive US-coding layers,
 // for given number of pos US pools (first is novelty / curiosity pool),
-// with given number of units per pool.  Also adds a PTNotMaintLayer
-// called NotMaint with nY units.
-func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD, notMaint *Layer) {
+// with given number of units per pool.
+func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCposUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
-	notMaint = net.AddPTNotMaintLayer(ofcPT, nY, 1, space)
-	notMaint.Nm = "NotMaint"
-
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
@@ -508,8 +504,9 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 }
 
 // AddPVLVOFCus builds a complete PVLV network with OFCposUS
-// (orbital frontal cortex) US-coding layers, OFCposVal (overall value),
-// OFCnegUS for negative value inputs, and ACCnegVal layers.
+// (orbital frontal cortex) US-coding layers,
+// ILpos infralimbic abstract positive value,
+// OFCnegUS for negative value inputs, and ILneg value layers.
 // Uses the network PVLV.NPosUSs and NNegUSs for number of pools --
 // must be configured prior to calling this.  Calls:
 // * AddVTALHbLDTLayers
@@ -521,7 +518,7 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint *Layer) {
+func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc *Layer) {
 	nUSpos := int(net.PVLV.NPosUSs)
 	nUSneg := int(net.PVLV.NNegUSs)
 
@@ -545,20 +542,20 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, ofcY, ofcX, space)
 	_, _, _, _, _ = blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov
 
-	ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ofcPosUSMD, notMaint := net.AddOFCposUS(ctx, nUSpos, nYneur, ofcY, ofcX, space)
+	ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ofcPosUSMD := net.AddOFCposUS(ctx, nUSpos, nYneur, ofcY, ofcX, space)
 	_ = ofcPosUSPT
 
 	ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ofcNegUSMD := net.AddOFCnegUS(ctx, nUSneg, ofcY, ofcX, space)
 	_ = ofcNegUSPT
 
-	ofcPosVal, ofcPosValCT, ofcPosValPT, ofcPosValPTp, ofcPosValMD := net.AddPFC2D("OFCposVal", "MD", ofcY, ofcX, true, space)
-	_ = ofcPosValPT
+	ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD := net.AddPFC2D("ILpos", "MD", ofcY, ofcX, true, space)
+	_ = ilPosPT
 
-	accNegVal, accNegValCT, accNegValPT, accNegValPTp, accNegValMD := net.AddPFC2D("ACCnegVal", "MD", ofcY, ofcX, true, space)
-	_ = accNegValPT
+	ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD := net.AddPFC2D("ILneg", "MD", ofcY, ofcX, true, space)
+	_ = ilNegPT
 
-	ofcPosValPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
-	accNegValPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	ilPosPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	ilNegPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
 	p1to1 := prjn.NewPoolOneToOne()
 	// p1to1rnd := prjn.NewPoolUnifRnd()
@@ -575,26 +572,24 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	vSmtxNo.SetBuildConfig("ThalLay2Name", ofcNegUSMD.Name())
 	net.ConnectLayers(vSgpi, ofcNegUSMD, full, InhibPrjn)
 
-	vSmtxGo.SetBuildConfig("ThalLay3Name", ofcPosValMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay3Name", ofcPosValMD.Name())
-	net.ConnectLayers(vSgpi, ofcPosValMD, full, InhibPrjn)
+	vSmtxGo.SetBuildConfig("ThalLay3Name", ilPosMD.Name())
+	vSmtxNo.SetBuildConfig("ThalLay3Name", ilPosMD.Name())
+	net.ConnectLayers(vSgpi, ilPosMD, full, InhibPrjn)
 
-	vSmtxGo.SetBuildConfig("ThalLay4Name", accNegValMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay4Name", accNegValMD.Name())
-	net.ConnectLayers(vSgpi, accNegValMD, full, InhibPrjn) // BGThal configs
-
-	net.ConnectPTNotMaint(accNegValPT, notMaint, full)
+	vSmtxGo.SetBuildConfig("ThalLay4Name", ilNegMD.Name())
+	vSmtxNo.SetBuildConfig("ThalLay4Name", ilNegMD.Name())
+	net.ConnectLayers(vSgpi, ilNegMD, full, InhibPrjn) // BGThal configs
 
 	pfc2m := params.Params{ // contextual, not driving -- weaker
 		"Prjn.PrjnScale.Rel": "1", // 0.1", todo was
 	}
 
 	// neg val goes to nogo
-	pj = net.ConnectToVSMatrix(accNegVal, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(ilNeg, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	net.ConnectToVSPatch(accNegValPTp, vSpatch, full)
+	net.ConnectToVSPatch(ilNegPTp, vSpatch, full)
 
 	///////////////////////////////////////////
 	//  BLA
@@ -642,9 +637,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj.SetClass("DrivesToVSPatch")
 
 	net.ConnectToVSPatch(ofcPosUSPTp, vSpatch, p1to1)
-	net.ConnectToVSPatch(ofcPosValPTp, vSpatch, full)
+	net.ConnectToVSPatch(ilPosPTp, vSpatch, full)
 	net.ConnectToVSPatch(ofcNegUSPTp, vSpatch, full)
-	net.ConnectToVSPatch(accNegValPTp, vSpatch, full)
+	net.ConnectToVSPatch(ilNegPTp, vSpatch, full)
 
 	// same prjns to stn as mtxgo
 	net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
@@ -717,13 +712,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj.SetClass("PFCToVSMtx")
 	net.ConnectLayers(ofcPosUS, vSstn, full, ForwardPrjn)
 
-	pj = net.ConnectToVSMatrix(ofcPosVal, vSmtxGo, full)
+	pj = net.ConnectToVSMatrix(ilPos, vSmtxGo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToVSMatrix(ofcPosVal, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(ilPos, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	net.ConnectLayers(ofcPosVal, vSstn, full, ForwardPrjn)
+	net.ConnectLayers(ilPos, vSstn, full, ForwardPrjn)
 
 	// pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxGo, full) // skip for now
 	// pj.DefParams = pfc2m
@@ -731,7 +726,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxNo, full) // definitely
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToVSMatrix(accNegVal, vSmtxNo, full) // definitely
+	pj = net.ConnectToVSMatrix(ilNeg, vSmtxNo, full) // definitely
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
@@ -757,7 +752,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	}
 	pj.SetClass("DrivesToOFC " + prjnClass)
 
-	// net.ConnectCTSelf(ofcPosValCT, full, prjnClass) // todo: test
+	// net.ConnectCTSelf(ilPosCT, full, prjnClass) // todo: test
 
 	net.ConnectLayers(pvPos, ofcPosUS, full, BackPrjn).SetClass(prjnClass)
 	net.ConnectLayers(usPos, ofcPosUS, p1to1, BackPrjn).SetClass(prjnClass)
@@ -775,12 +770,11 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectPTPredToPulv(ofcPosUSPTp, pvPosP, p1to1, p1to1, prjnClass)
 
 	///////////////////////////////////////////
-	// OFCposVal
+	// ILpos
 
-	// net.ConnectCTSelf(ofcPosValCT, full, prjnClass) // todo: test
+	// net.ConnectCTSelf(ilPosCT, full, prjnClass) // todo: test
 
-	net.ConnectPTNotMaint(ofcPosValPT, notMaint, full)
-	pj, bpj = net.BidirConnectLayers(ofcPosUS, ofcPosVal, full)
+	pj, bpj = net.BidirConnectLayers(ofcPosUS, ilPos, full)
 	pj.SetClass(prjnClass)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "3", // val needs stronger input
@@ -789,9 +783,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
-	net.ConnectToPFC(pvPos, pvPosP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
+	net.ConnectToPFC(pvPos, pvPosP, ilPos, ilPosCT, ilPosPTp, full)
 
-	net.ConnectPTPredToPulv(ofcPosValPTp, pvPosP, full, full, prjnClass)
+	net.ConnectPTPredToPulv(ilPosPTp, pvPosP, full, full, prjnClass)
 
 	// note: not connecting deeper CT and PT layers to vSmtxGo at this point
 	// could explore that later
@@ -815,12 +809,11 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectPTPredToPulv(ofcNegUSPTp, pvNegP, full, full, prjnClass)
 
 	///////////////////////////////////////////
-	// ACCnegVal
+	// ILneg
 
-	// net.ConnectCTSelf(accNegValCT, full, prjnClass) // todo: test
+	// net.ConnectCTSelf(ilNegCT, full, prjnClass) // todo: test
 
-	net.ConnectPTNotMaint(accNegValPT, notMaint, full)
-	pj, bpj = net.BidirConnectLayers(ofcNegUS, accNegVal, full)
+	pj, bpj = net.BidirConnectLayers(ofcNegUS, ilNeg, full)
 	pj.SetClass(prjnClass)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "3", // val needs stronger input
@@ -829,9 +822,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
-	net.ConnectToPFC(pvNeg, pvNegP, accNegVal, accNegValCT, accNegValPTp, full)
+	net.ConnectToPFC(pvNeg, pvNegP, ilNeg, ilNegCT, ilNegPTp, full)
 
-	net.ConnectPTPredToPulv(accNegValPTp, pvNegP, full, full, prjnClass)
+	net.ConnectPTPredToPulv(ilNegPTp, pvNegP, full, full, prjnClass)
 
 	// note: not connecting deeper CT and PT layers to vSmtxGo at this point
 	// could explore that later
@@ -847,10 +840,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	usPos.PlaceAbove(vta)
 	blaPosAcq.PlaceAbove(usPos)
 	ofcPosUS.PlaceRightOf(blaPosAcq, space)
-	ofcPosVal.PlaceRightOf(ofcPosUS, space)
-	ofcNegUS.PlaceRightOf(ofcPosVal, 3*space)
-	accNegVal.PlaceRightOf(ofcNegUS, space)
-	notMaint.PlaceRightOf(accNegVal, space)
+	ilPos.PlaceRightOf(ofcPosUS, space)
+	ofcNegUS.PlaceRightOf(ilPos, 3*space)
+	ilNeg.PlaceRightOf(ofcNegUS, space)
 
 	return
 }
@@ -862,20 +854,20 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accUtil, sc, notMaint *Layer) {
+func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, accUtil, sc *Layer) {
 
 	full := prjn.NewFull()
 	var pj *Prjn
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
-	_, _, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ofcPosValCT, accNegValMD
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
+	_, _, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ilPosCT, ilNegMD
 	_, _ = blaNegAcq, blaNegExt
 
-	// OFCposValP is what ACCutil predicts, in order to learn about value (reward)
-	ofcPosValP := net.AddPulvForSuper(ofcPosVal, space)
+	// ILposP is what ACCutil predicts, in order to learn about value (reward)
+	ilPosP := net.AddPulvForSuper(ilPos, space)
 
-	// ACCnegValP is what ACCutil predicts, in order to learn about cost
-	accNegValP := net.AddPulvForSuper(accNegVal, space)
+	// ILnegP is what ACCutil predicts, in order to learn about cost
+	ilNegP := net.AddPulvForSuper(ilNeg, space)
 
 	pfc2m := params.Params{ // contextual, not driving -- weaker
 		"Prjn.PrjnScale.Rel": "0.1",
@@ -885,7 +877,6 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	vSmtxGo.SetBuildConfig("ThalLay5Name", accUtilMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay5Name", accUtilMD.Name())
 	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)
-	net.ConnectPTNotMaint(accUtilPT, notMaint, full)
 
 	accUtilPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
@@ -900,33 +891,33 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	net.ConnectToVSPatch(accUtilPTp, vSpatch, full)
 
 	///////////////////////////////////////////
-	// ACCnegVal
+	// ILneg
 
-	// net.ConnectCTSelf(accNegValCT, full) // todo: test
+	// net.ConnectCTSelf(ilNegCT, full) // todo: test
 	// todo: ofcNeg
-	// net.ConnectToPFC(effort, effortP, accNegVal, accNegValCT, accNegValPTp, full)
+	// net.ConnectToPFC(effort, effortP, ilNeg, ilNegCT, ilNegPTp, full)
 	// note: can provide input from *other* relevant inputs not otherwise being predicted
-	// net.ConnectLayers(dist, accNegValPTPred, full, ForwardPrjn).SetClass("ToPTPred")
+	// net.ConnectLayers(dist, ilNegPTPred, full, ForwardPrjn).SetClass("ToPTPred")
 
 	///////////////////////////////////////////
 	// ACCutil
 
 	// net.ConnectCTSelf(accUtilCT, full) // todo: test
 
-	// util predicts OFCval and ACCnegVal
-	pj, _ = net.ConnectToPFCBidir(ofcPosVal, ofcPosValP, accUtil, accUtilCT, accUtilPTp, full)
+	// util predicts OFCval and ILneg
+	pj, _ = net.ConnectToPFCBidir(ilPos, ilPosP, accUtil, accUtilCT, accUtilPTp, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "1", // not good to make this stronger actually
 	}
-	pj, _ = net.ConnectToPFCBidir(accNegVal, accNegValP, accUtil, accUtilCT, accUtilPTp, full)
+	pj, _ = net.ConnectToPFCBidir(ilNeg, ilNegP, accUtil, accUtilCT, accUtilPTp, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "3", // drive acc stronger -- only this one works well
 	}
 
-	ofcPosVal.PlaceRightOf(ofcPosUS, space)
-	ofcPosValP.PlaceBehind(ofcPosValMD, space)
-	accNegValP.PlaceBehind(accNegValMD, space)
-	accUtil.PlaceRightOf(accNegVal, 3*space)
+	ilPos.PlaceRightOf(ofcPosUS, space)
+	ilPosP.PlaceBehind(ilPosMD, space)
+	ilNegP.PlaceBehind(ilNegMD, space)
+	accUtil.PlaceRightOf(ilNeg, 3*space)
 
 	return
 }

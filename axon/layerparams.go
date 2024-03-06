@@ -242,7 +242,7 @@ func (ly *LayerParams) ShouldShow(field string) bool {
 	case "Bursts":
 		return ly.LayType == SuperLayer
 	case "CT":
-		return ly.LayType == CTLayer || ly.LayType == PTPredLayer || ly.LayType == PTNotMaintLayer || ly.LayType == BLALayer
+		return ly.LayType == CTLayer || ly.LayType == PTPredLayer || ly.LayType == BLALayer
 	case "Pulv":
 		return ly.LayType == PulvinarLayer
 	case "Matrix":
@@ -285,7 +285,7 @@ func (ly *LayerParams) AllParams() string {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Bursts, "", " ")
 		str += "Burst:   {\n " + JsonToParams(b)
-	case CTLayer, PTPredLayer, PTNotMaintLayer, BLALayer:
+	case CTLayer, PTPredLayer, BLALayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
 		str += "CT:      {\n " + JsonToParams(b)
 	case PulvinarLayer:
@@ -490,11 +490,6 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		ctxExt := ly.Acts.Dt.GeSynFmRawSteady(geCtxt)
 		AddNrnV(ctx, ni, di, GeSyn, ctxExt)
 		saveVal = ctxExt // used In PostGs to set nrn.GeExt
-	case PTNotMaintLayer:
-		giCtxt := ly.CT.GeGain * nrnCtxtGe
-		AddNrnV(ctx, ni, di, GiRaw, giCtxt)
-		ctxExt := ly.Acts.Dt.GiSynFmRawSteady(giCtxt)
-		AddNrnV(ctx, ni, di, GiSyn, ctxExt)
 	case PulvinarLayer:
 		if ctx.PlusPhase.IsFalse() {
 			break
@@ -734,8 +729,6 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	case CTLayer:
 		fallthrough
 	case PTPredLayer:
-		fallthrough
-	case PTNotMaintLayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			if ly.CT.DecayTau == 0 {
 				SetNrnV(ctx, ni, di, CtxtGe, NrnV(ctx, ni, di, CtxtGeRaw))
@@ -917,10 +910,6 @@ func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, di uint32, lpl *Pool) {
 	} else {
 		SetGlbV(ctx, di, GvCeMneg, lpl.AvgMax.CaSpkD.Cycle.Max)
 	}
-}
-
-func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, di uint32, lpl *Pool) {
-	SetGlbV(ctx, di, GvNotMaint, lpl.AvgMax.CaSpkD.Cycle.Max)
 }
 
 func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {

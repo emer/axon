@@ -21,8 +21,8 @@ Once the dust settles, a summary of the biology and implementation in the model 
 As of 2024-02-29, the default parameters with 49 units (7x7) per layer result in:
 
 * 22/25 learn on SeqLen=4, NActions=5, which has 5^4 = 625 total space to be searched
-* 23/25 learn 10^3 = 1000 total space (also with 36 units)
-* 25/25 learn on SeqLen=3, NActions=5, which has 5^3 = 125 total space to be searched, 
+* 24/25 learn 10^3 = 1000 total space
+* 25/25 learn on SeqLen=3, NActions=5 (5^3 = 125) with 25 units, very quickly and reliably (most in 3-5 epochs; ~5 avg).
 
 The params have been relatively thoroughly "tweaked" at this point: see paramtweak.go for tweaking code.
 

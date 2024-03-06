@@ -33,8 +33,13 @@ type MatrixPrjnParams struct {
 	// relative to it, and the overall learning rate.
 	Delta float32 `default:"1"`
 
-	// for ventral striatum, learn based on activity at time of reward.
-	// otherwise, only uses accumulated trace but doesn't include rew-time activity.
+	// for ventral striatum, learn based on activity at time of reward,
+	// in inverse proportion to the GoalMaint activity: i.e., if there was no
+	// goal maintenance, learn at reward to encourage goal engagement next time,
+	// but otherwise, do not further reinforce at time of reward, because the
+	// actual goal gating learning trace is a better learning signal.
+	// Otherwise, only uses accumulated trace but doesn't include rew-time activity,
+	// e.g., for testing cases that do not have GoalMaint.
 	VSRewLearn slbool.Bool `default:"true"`
 }
 

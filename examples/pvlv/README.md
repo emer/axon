@@ -4,7 +4,11 @@
 
 * simplify / fix all the PTNotMaint stuff?  PL is "PFC of record" and key area for engaged goal -- has main descending prjns to raphe, ACh, etc.  Needed for proper feedback loop of learning at time of gating.
 
-* what is using slow weights in the BG, etc circuits?  expt.
+* go full rodent: rename ACCUtil -> PL, ACCNegVal -> IL; reserve ACC for actual motor ACC.
+
+* pvlv function needs to set GoalMaint global activity, typically as function of PL activity but could be other proxies in other models.  Inhibits Ach.
+
+* what is using slow weights in the BG, etc circuits?  seems good.
 
 * Learn Tr at time of Rew in proportion to prior gating discounting of ACh: if 
   already gated, then don't learn, but if didn't gate, then learn.  provides the

@@ -233,25 +233,6 @@ func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass st
 	return pj
 }
 
-// AddPTNotMaintLayer adds a PTNotMaintLayer of given size, for given
-// PTMaintLayer -- places it to the right of this layer, and calls
-// ConnectPTNotMaint to connect the two, using full connectivity.
-func (net *Network) AddPTNotMaintLayer(ptMaint *Layer, nNeurY, nNeurX int, space float32) *Layer {
-	name := ptMaint.Name()
-	ly := net.AddLayer2D(name+"Not", nNeurY, nNeurX, PTNotMaintLayer)
-	net.ConnectPTNotMaint(ptMaint, ly, prjn.NewFull())
-	ly.PlaceRightOf(ptMaint, space)
-	return ly
-}
-
-// ConnectPTNotMaint adds a projection from PTMaintLayer to PTNotMaintLayer,
-// as fixed inhibitory connections, with class ToPTNotMaintInhib
-func (net *Network) ConnectPTNotMaint(ptMaint, ptNotMaint *Layer, pat prjn.Pattern) *Prjn {
-	pj := net.ConnectLayers(ptMaint, ptNotMaint, pat, CTCtxtPrjn)
-	pj.SetClass("ToPTNotMaintInhib")
-	return pj
-}
-
 // AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer
 // and a BG gated Thalamus layer for given superficial layer (SuperLayer)
 // and associated CT, with given thal suffix (e.g., MD, VM).

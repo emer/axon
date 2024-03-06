@@ -5,6 +5,9 @@
 package axon
 
 import (
+	"fmt"
+	"log/slog"
+
 	"cogentcore.org/core/glop/num"
 	"cogentcore.org/core/mat32"
 	"github.com/emer/emergent/v2/erand"
@@ -708,6 +711,29 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 // Calls PVDA which does all US, PV, LHb, GiveUp updating.
 func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
 	pp.PVDA(ctx, di, rnd)
+}
+
+// SetGoalMaintFromLayer sets the GoalMaint global state variable
+// from the average activity (CaSpkD) of the given layer name.
+// GoalMaintis normalized 0-1 based on the given max activity level,
+// with anything out of range clamped to 0-1 range.
+// Returns (and logs) an error if layer name not found.
+func (pp *PVLV) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, layName string, maxAct float32) error {
+	ly := net.AxonLayerByName(layName)
+	if ly == nil {
+		err := fmt.Errorf("SetGoalMaintFromLayer: layer named: %q not found", layName)
+		slog.Error(err.Error())
+		return err
+	}
+	act := ly.Pool(0, di).AvgMax.CaSpkD.Cycle.Avg
+	gm := float32(0)
+	if act > maxAct {
+		gm = 1
+	} else {
+		gm = act / maxAct
+	}
+	SetGlbV(ctx, di, GvGoalMaint, gm)
+	return nil
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

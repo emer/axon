@@ -87,12 +87,6 @@ const (
 	// prediction layers, and other layers that require predictive dynamic
 	PTPredLayer
 
-	// PTNotMaintLayer implements a tonically active layer that is inhibited
-	// by the PTMaintLayer, thereby providing an active representation of
-	// the *absence* of maintained PT activity, which is useful for driving
-	// appropriate actions (e.g., exploration) when not in goal-engaged mode.
-	PTNotMaintLayer
-
 	/////////////////////////////
 	// PCORE Basal Ganglia (BG)
 

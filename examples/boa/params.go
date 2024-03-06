@@ -66,7 +66,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1.4",
 			}},
-		{Sel: "#OFCposVal", Desc: "",
+		{Sel: "#ILpos", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1",
 			}},
@@ -121,15 +121,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later
 			}},
-		{Sel: "#OFCposUSToOFCposVal", Desc: "stronger",
+		{Sel: "#OFCposUSToILpos", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3",
 			}},
-		{Sel: "#ACCnegValToACCutil", Desc: "stronger",
+		{Sel: "#ILToPL", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // fairly sensitive to this param..
 			}},
-		{Sel: "#OFCposValToACCutil", Desc: "not good to make this stronger",
+		{Sel: "#ILposToPL", Desc: "not good to make this stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			}},
@@ -196,7 +196,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def
 			}},
-		{Sel: "#ACCnegValToACCnegValMD", Desc: "",
+		{Sel: "#ILToILMD", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // supertothal for us stronger
 			}},

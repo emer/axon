@@ -202,25 +202,6 @@ func (ly *Layer) PTMaintDefaults() {
 	}
 }
 
-func (ly *Layer) PTNotMaintDefaults() {
-	ly.Params.Acts.Decay.Act = 1
-	ly.Params.Acts.Decay.Glong = 1
-	ly.Params.Acts.Decay.OnRew.SetBool(true)
-	ly.Params.Acts.Init.GeBase = 1.2
-	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
-	ly.Params.Inhib.ActAvg.Nominal = 0.2
-	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.CT.GeGain = 0.4
-	ly.Params.CT.DecayTau = 0
-	ly.Params.CT.Update()
-
-	for _, pj := range ly.RcvPrjns {
-		pj.Params.SetFixedWts()
-	}
-}
-
 func (ly *LayerParams) PTPredDefaults() {
 	ly.Acts.Decay.Act = 0.12 // keep it dynamically changing
 	ly.Acts.Decay.Glong = 0.6

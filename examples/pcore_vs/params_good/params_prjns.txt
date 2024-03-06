@@ -20,7 +20,10 @@ Layer: VSTN
 	         ACCNeg	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
 
 Layer: VMtxGo
-	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
+	         VMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  0.05	GScale:	  0.01	Rel:  0.05
+								    Abs Params: #VMtxNoToVMtxGo: 1
+								    Rel Params: Base:#VMtxNoToVMtxGo: 0.05
+	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.95
 	         ACCPos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
 								    Abs Params: .ACCToVMtx: 1.5
 	         ACCNeg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48

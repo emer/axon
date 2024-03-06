@@ -15,7 +15,12 @@ import (
 //gosl: start pvlv_layers
 
 // LDTParams compute reward salience as ACh global neuromodulatory signal
-// as a function of the MAX activation of its inputs.
+// as a function of the MAX activation of its inputs from salience detecting
+// layers (e.g., the superior colliculus: SC), and whenever there is an external
+// US outcome input (signalled by the global GvHasRew flag).
+// ACh from salience inputs is discounted by GoalMaint activity,
+// reducing distraction when pursuing a goal, but US ACh activity is not so reduced.
+// ACh modulates excitability of goal-gating layers.
 type LDTParams struct {
 
 	// threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior
@@ -24,11 +29,9 @@ type LDTParams struct {
 	// use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component
 	Rew slbool.Bool `default:"true"`
 
-	// extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower.
-	MaintInhib float32 `default:"2"`
-
-	// maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0.
-	NotMaintMax float32 `default:"0.4"`
+	// extent to which active goal maintenance (via Global GoalMaint)
+	// inhibits ACh signals: when goal engaged, distractability is lower.
+	MaintInhib float32 `default:"0.5" max:"1" min:"0"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
 	SrcLay1Idx int32 `edit:"-"`
@@ -41,13 +44,14 @@ type LDTParams struct {
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used
 	SrcLay4Idx int32 `edit:"-"`
+
+	pad float32
 }
 
 func (lp *LDTParams) Defaults() {
 	lp.SrcThr = 0.05
 	lp.Rew.SetBool(true)
-	lp.MaintInhib = 2 // was 0.5
-	lp.NotMaintMax = 0.4
+	lp.MaintInhib = 0.5
 }
 
 func (lp *LDTParams) Update() {
@@ -75,15 +79,6 @@ func (lp *LDTParams) MaxSrcAct(maxSrcAct, srcLayAct float32) float32 {
 	return maxSrcAct
 }
 
-// MaintFmNotMaint returns a 0-1 value reflecting strength of active maintenance
-// based on the activity of the PTNotMaintLayer as recorded in NeuroMod.NotMaint.
-func (lp *LDTParams) MaintFmNotMaint(notMaint float32) float32 {
-	if notMaint > lp.NotMaintMax {
-		return 0
-	}
-	return (lp.NotMaintMax - notMaint) / lp.NotMaintMax // == 1 when notMaint = 0
-}
-
 // ACh returns the computed ACh salience value based on given
 // source layer activations and key values from the ctx Context.
 func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) float32 {
@@ -93,8 +88,9 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay3Act)
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
 
-	maint := lp.MaintFmNotMaint(GlbV(ctx, di, GvNotMaint))
-	maxSrcAct *= (1.0 - maint*lp.MaintInhib) // todo: should this affect everything, not just src?
+	maintInh := lp.MaintInhib * GlbV(ctx, di, GvGoalMaint)
+	maintInh = min(1, maintInh)
+	maxSrcAct *= (1.0 - maintInh)
 
 	ach := maxSrcAct
 

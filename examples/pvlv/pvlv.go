@@ -195,13 +195,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accNegVal, accNegValCT, accNegValPTp, accNegValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
-	_, _, _, _, _ = ofcPosVal, ofcPosValCT, ofcPosValPTp, ofcPosValMD, notMaint
+	_, _, _, _ = ilPos, ilPosCT, ilPosPTp, ilPosMD
 	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
-	_, _, _, _ = accNegVal, accNegValCT, accNegValPTp, accNegValMD
+	_, _, _, _ = ilNeg, ilNegCT, ilNegPTp, ilNegMD
 	// todo: connect more of above
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
@@ -235,10 +235,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
 	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(time, timeP, ofcPosVal, ofcPosValCT, ofcPosValPTp, full)
+	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPTp, full)
 
 	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
-	net.ConnectToPFCBack(time, timeP, accNegVal, accNegValCT, accNegValPTp, full)
+	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPTp, full)
 
 	////////////////////////////////////////////////
 	// position
@@ -387,6 +387,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	pv := &ss.Net.PVLV
 	di := uint32(0)                    // not doing NData here -- otherwise loop over
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
+	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "ILposPT", 0.3)
 	pv.EffortUrgencyUpdt(ctx, di, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
@@ -505,6 +506,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
 	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
 
+	ss.Stats.SetFloat32("GoalMaint", axon.GlbV(ctx, diu, axon.GvGoalMaint))
 	ss.Stats.SetFloat32("Gated", axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated))
 
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
@@ -592,6 +594,7 @@ func (ss *Sim) ConfigLogItems() []string {
 	ss.Logs.AddStatAggItem("HasRew", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
 
 	ss.Logs.AddStatAggItem("Gated", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
+	ss.Logs.AddStatAggItem("GoalMaint", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
 
 	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)

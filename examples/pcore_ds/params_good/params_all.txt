@@ -455,7 +455,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
 }
 Matrix:  {
   GateThr: 0.05 IsVS: false OtherMatrixIdx: 5 ThalLay1Idx: 16 ThalLay2Idx: -1 ThalLay3Idx: -1 ThalLay4Idx: -1 ThalLay5Idx: -1 ThalLay6Idx: -1
@@ -629,7 +629,7 @@ Learn: {
   TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
 }
 Matrix:  {
   GateThr: 0.05 IsVS: false OtherMatrixIdx: 4 ThalLay1Idx: 16 ThalLay2Idx: -1 ThalLay3Idx: -1 ThalLay4Idx: -1 ThalLay5Idx: -1 ThalLay6Idx: -1

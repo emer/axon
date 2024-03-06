@@ -17,6 +17,7 @@
     "Layer.Inhib.Pool.Gi" = "0.5"
     "Layer.Learn.NeuroMod.BurstGain" = "0.1"
     "Layer.Learn.RLRate.On" = "true"
+    "Layer.Learn.TrgAvgAct.On" = "true"
   [Base.Hypers]
     [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"
@@ -92,6 +93,7 @@
     "Prjn.Matrix.Credit" = "0.6"
     "Prjn.Matrix.Delta" = "1"
     "Prjn.PrjnScale.Abs" = "1.8"
+    "Prjn.SWts.Adapt.On" = "false"
   [Base.Hypers]
     [Base.Hypers."Prjn.Learn.LRate.Base"]
       Tweak = "-"
@@ -216,7 +218,7 @@
     "Prjn.PrjnScale.Rel" = "0.1"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Rel"]
-      Tweak = "[0.02,0.01]"
+      Tweak = "-"
 
 [[Base]]
   Sel = "#DGPeAkToDMtxNo"

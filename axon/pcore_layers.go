@@ -215,11 +215,12 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Inhib.ActAvg.Nominal = 0.25   // pooled should be lower
 	ly.Params.Learn.RLRate.On.SetBool(true) // key: sig deriv used outside of rew trials
 	ly.Params.Learn.RLRate.Diff.SetBool(false)
+	ly.Params.Learn.TrgAvgAct.On.SetBool(false) // major effect
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
-	ly.Params.Learn.NeuroMod.AChLRateMod = 1
+	ly.Params.Learn.NeuroMod.AChLRateMod = 0
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
 
 	if ly.Cls == "VSMatrixLayer" {

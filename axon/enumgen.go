@@ -145,7 +145,7 @@ func _GlobalVarsNoOp() {
 	_ = x[GvNE-(7)]
 	_ = x[GvSer-(8)]
 	_ = x[GvAChRaw-(9)]
-	_ = x[GvNotMaint-(10)]
+	_ = x[GvGoalMaint-(10)]
 	_ = x[GvVSMatrixJustGated-(11)]
 	_ = x[GvVSMatrixHasGated-(12)]
 	_ = x[GvCuriosityPoolGated-(13)]
@@ -198,7 +198,7 @@ var _GlobalVarsNameToValueMap = map[string]GlobalVars{
 	`GvNE`:                 7,
 	`GvSer`:                8,
 	`GvAChRaw`:             9,
-	`GvNotMaint`:           10,
+	`GvGoalMaint`:          10,
 	`GvVSMatrixJustGated`:  11,
 	`GvVSMatrixHasGated`:   12,
 	`GvCuriosityPoolGated`: 13,
@@ -241,25 +241,25 @@ var _GlobalVarsNameToValueMap = map[string]GlobalVars{
 }
 
 var _GlobalVarsDescMap = map[GlobalVars]string{
-	0:  `Rew is reward value -- this is set here in the Context struct, and the RL Rew layer grabs it from there -- must also set HasRew flag when rew is set -- otherwise is ignored.`,
-	1:  `HasRew must be set to true when a reward is present -- otherwise Rew is ignored. Also set when PVLV BOA model gives up. This drives ACh release in the PVLV model.`,
-	2:  `RewPred is reward prediction -- computed by a special reward prediction layer`,
-	3:  `PrevPred is previous time step reward prediction -- e.g., for TDPredLayer`,
-	4:  `HadRew is HasRew state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial`,
-	5:  `DA is dopamine -- represents reward prediction error, signaled as phasic increases or decreases in activity relative to a tonic baseline, which is represented by a value of 0. Released by the VTA -- ventral tegmental area, or SNc -- substantia nigra pars compacta.`,
-	6:  `ACh is acetylcholine -- activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS). Driven by BLA -&gt; PPtg that detects changes in BLA activity, via LDTLayer type`,
+	0:  `Rew is the external reward value. Must also set HasRew flag when Rew is set, otherwise it is ignored. This is computed by the PVLV algorithm from US inputs set by Net.PVLV methods, and can be directly set in simpler RL cases.`,
+	1:  `HasRew must be set to true (1) when an external reward / US input is present, otherwise Rew is ignored. This is also set when PVLV BOA model gives up. This drives ACh release in the PVLV model.`,
+	2:  `RewPred is the reward prediction, computed by a special reward prediction layer, e.g., the VSPatch layer in the PVLV algorithm.`,
+	3:  `PrevPred is previous time step reward prediction, e.g., for TDPredLayer`,
+	4:  `HadRew is HasRew state from the previous trial, copied from HasRew in NewState. Used for updating Effort, Urgency at start of new trial.`,
+	5:  `DA is dopamine -- represents reward prediction error, signaled as phasic increases or decreases in activity relative to a tonic baseline, which is represented by a value of 0. Released by the VTA (ventral tegmental area), or SNc (substantia nigra pars compacta).`,
+	6:  `ACh is acetylcholine, activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS). Driven by BLA -&gt; PPtg that detects changes in BLA activity, via LDTLayer type.`,
 	7:  `NE is norepinepherine -- not yet in use`,
 	8:  `Ser is serotonin -- not yet in use`,
-	9:  `AChRaw is raw ACh value used in updating global ACh value by LDTLayer`,
-	10: `NotMaint is activity of the PTNotMaintLayer -- drives top-down inhibition of LDT layer / ACh activity.`,
-	11: `VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US`,
-	12: `VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received`,
-	13: `CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated -- this can change the giving up Effort.Max parameter.`,
-	14: `Time is raw time counter, incrementing upward during goal engaged window. This is also copied directly into NegUS[0] which tracks time, but we maintain a separate effort value to make it clearer.`,
-	15: `Effort is raw effort counter -- incrementing upward for each effort step during goal engaged window. This is also copied directly into NegUS[1] which tracks effort, but we maintain a separate effort value to make it clearer.`,
-	16: `UrgencyRaw is raw effort for urgency -- incrementing upward from effort increments per step when _not_ goal engaged`,
+	9:  `AChRaw is raw ACh value used in updating global ACh value by LDTLayer.`,
+	10: `GoalMaint is the normalized (0-1) goal maintenance activity, set in ApplyPVLV function at start of trial. Drives top-down inhibition of LDT layer / ACh activity.`,
+	11: `VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase. This excludes any gating happening at time of US.`,
+	12: `VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received).`,
+	13: `CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated. This can change the giving up Effort.Max parameter.`,
+	14: `Time is the raw time counter, incrementing upward during goal engaged window. This is also copied directly into NegUS[0] which tracks time, but we maintain a separate effort value to make it clearer.`,
+	15: `Effort is the raw effort counter, incrementing upward for each effort step during goal engaged window. This is also copied directly into NegUS[1] which tracks effort, but we maintain a separate effort value to make it clearer.`,
+	16: `UrgencyRaw is the raw effort for urgency, incrementing upward from effort increments per step when _not_ goal engaged.`,
 	17: `Urgency is the overall urgency activity level (normalized 0-1), computed from logistic function of GvUrgencyRaw`,
-	18: `HasPosUS indicates has positive US on this trial -- drives goal accomplishment logic and gating.`,
+	18: `HasPosUS indicates has positive US on this trial, drives goal accomplishment logic and gating.`,
 	19: `HadPosUS is state from the previous trial (copied from HasPosUS in NewState).`,
 	20: `NegUSOutcome indicates that a strong negative US stimulus was experienced, driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any), and phasic dopamine based on the outcome.`,
 	21: `HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome in NewState)`,
@@ -280,16 +280,16 @@ var _GlobalVarsDescMap = map[GlobalVars]string{
 	36: `computed LHb activity level that drives dipping / pausing of DA firing, when VSPatch pos prediction &gt; actual PV reward drive or PVneg &gt; PVpos`,
 	37: `LHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive &gt; VSPatch pos prediction`,
 	38: `LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions`,
-	39: `CeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes`,
+	39: `CeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes.`,
 	40: `CeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified. CeM sets Raw directly`,
 	41: `VtaDA is overall dopamine value reflecting all of the different inputs`,
-	42: `USneg are negative valence US outcomes -- normalized version of raw, NNegUSs of them`,
+	42: `USneg are negative valence US outcomes, normalized version of raw. NNegUSs of them`,
 	43: `USnegRaw are raw, linearly incremented negative valence US outcomes, this value is also integrated together with all US vals for PVneg`,
-	44: `Drives is current drive state -- updated with optional homeostatic exponential return to baseline values`,
-	45: `USpos is current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
-	46: `VSPatch is current reward predicting VSPatch (PosD1) values`,
-	47: `VSPatch is previous reward predicting VSPatch (PosD1) values`,
-	48: `OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool used in anticipating potential USpos outcome value`,
+	44: `Drives are current drive state, updated with optional homeostatic exponential return to baseline values.`,
+	45: `USpos are current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`,
+	46: `VSPatch is current reward predicting VSPatch (PosD1) values.`,
+	47: `VSPatch is previous reward predicting VSPatch (PosD1) values.`,
+	48: `OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool used in anticipating potential USpos outcome value.`,
 	49: `VSMatrixPoolGated indicates whether given VSMatrix pool gated this is reset after last goal accomplished -- records gating since then.`,
 }
 
@@ -304,7 +304,7 @@ var _GlobalVarsMap = map[GlobalVars]string{
 	7:  `GvNE`,
 	8:  `GvSer`,
 	9:  `GvAChRaw`,
-	10: `GvNotMaint`,
+	10: `GvGoalMaint`,
 	11: `GvVSMatrixJustGated`,
 	12: `GvVSMatrixHasGated`,
 	13: `GvCuriosityPoolGated`,
@@ -420,11 +420,11 @@ func (i *GlobalVars) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _LayerTypesValues = []LayerTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30}
+var _LayerTypesValues = []LayerTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
 
 // LayerTypesN is the highest valid value
 // for type LayerTypes, plus one.
-const LayerTypesN LayerTypes = 31
+const LayerTypesN LayerTypes = 30
 
 // An "invalid array index" compiler error signifies that the constant values have changed.
 // Re-run the enumgen command to generate them again.
@@ -439,62 +439,60 @@ func _LayerTypesNoOp() {
 	_ = x[TRNLayer-(6)]
 	_ = x[PTMaintLayer-(7)]
 	_ = x[PTPredLayer-(8)]
-	_ = x[PTNotMaintLayer-(9)]
-	_ = x[MatrixLayer-(10)]
-	_ = x[STNLayer-(11)]
-	_ = x[GPLayer-(12)]
-	_ = x[BGThalLayer-(13)]
-	_ = x[VSGatedLayer-(14)]
-	_ = x[BLALayer-(15)]
-	_ = x[CeMLayer-(16)]
-	_ = x[VSPatchLayer-(17)]
-	_ = x[LHbLayer-(18)]
-	_ = x[DrivesLayer-(19)]
-	_ = x[UrgencyLayer-(20)]
-	_ = x[USLayer-(21)]
-	_ = x[PVLayer-(22)]
-	_ = x[LDTLayer-(23)]
-	_ = x[VTALayer-(24)]
-	_ = x[RewLayer-(25)]
-	_ = x[RWPredLayer-(26)]
-	_ = x[RWDaLayer-(27)]
-	_ = x[TDPredLayer-(28)]
-	_ = x[TDIntegLayer-(29)]
-	_ = x[TDDaLayer-(30)]
+	_ = x[MatrixLayer-(9)]
+	_ = x[STNLayer-(10)]
+	_ = x[GPLayer-(11)]
+	_ = x[BGThalLayer-(12)]
+	_ = x[VSGatedLayer-(13)]
+	_ = x[BLALayer-(14)]
+	_ = x[CeMLayer-(15)]
+	_ = x[VSPatchLayer-(16)]
+	_ = x[LHbLayer-(17)]
+	_ = x[DrivesLayer-(18)]
+	_ = x[UrgencyLayer-(19)]
+	_ = x[USLayer-(20)]
+	_ = x[PVLayer-(21)]
+	_ = x[LDTLayer-(22)]
+	_ = x[VTALayer-(23)]
+	_ = x[RewLayer-(24)]
+	_ = x[RWPredLayer-(25)]
+	_ = x[RWDaLayer-(26)]
+	_ = x[TDPredLayer-(27)]
+	_ = x[TDIntegLayer-(28)]
+	_ = x[TDDaLayer-(29)]
 }
 
 var _LayerTypesNameToValueMap = map[string]LayerTypes{
-	`SuperLayer`:      0,
-	`InputLayer`:      1,
-	`TargetLayer`:     2,
-	`CompareLayer`:    3,
-	`CTLayer`:         4,
-	`PulvinarLayer`:   5,
-	`TRNLayer`:        6,
-	`PTMaintLayer`:    7,
-	`PTPredLayer`:     8,
-	`PTNotMaintLayer`: 9,
-	`MatrixLayer`:     10,
-	`STNLayer`:        11,
-	`GPLayer`:         12,
-	`BGThalLayer`:     13,
-	`VSGatedLayer`:    14,
-	`BLALayer`:        15,
-	`CeMLayer`:        16,
-	`VSPatchLayer`:    17,
-	`LHbLayer`:        18,
-	`DrivesLayer`:     19,
-	`UrgencyLayer`:    20,
-	`USLayer`:         21,
-	`PVLayer`:         22,
-	`LDTLayer`:        23,
-	`VTALayer`:        24,
-	`RewLayer`:        25,
-	`RWPredLayer`:     26,
-	`RWDaLayer`:       27,
-	`TDPredLayer`:     28,
-	`TDIntegLayer`:    29,
-	`TDDaLayer`:       30,
+	`SuperLayer`:    0,
+	`InputLayer`:    1,
+	`TargetLayer`:   2,
+	`CompareLayer`:  3,
+	`CTLayer`:       4,
+	`PulvinarLayer`: 5,
+	`TRNLayer`:      6,
+	`PTMaintLayer`:  7,
+	`PTPredLayer`:   8,
+	`MatrixLayer`:   9,
+	`STNLayer`:      10,
+	`GPLayer`:       11,
+	`BGThalLayer`:   12,
+	`VSGatedLayer`:  13,
+	`BLALayer`:      14,
+	`CeMLayer`:      15,
+	`VSPatchLayer`:  16,
+	`LHbLayer`:      17,
+	`DrivesLayer`:   18,
+	`UrgencyLayer`:  19,
+	`USLayer`:       20,
+	`PVLayer`:       21,
+	`LDTLayer`:      22,
+	`VTALayer`:      23,
+	`RewLayer`:      24,
+	`RWPredLayer`:   25,
+	`RWDaLayer`:     26,
+	`TDPredLayer`:   27,
+	`TDIntegLayer`:  28,
+	`TDDaLayer`:     29,
 }
 
 var _LayerTypesDescMap = map[LayerTypes]string{
@@ -507,28 +505,27 @@ var _LayerTypesDescMap = map[LayerTypes]string{
 	6:  `TRNLayer is thalamic reticular nucleus layer for inhibitory competition within the thalamus.`,
 	7:  `PTMaintLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that exhibit robust, stable maintenance of activity over the duration of a goal engaged window, modulated by basal ganglia (BG) disinhibitory gating, supported by strong MaintNMDA channels and recurrent excitation. The lateral PTSelfMaint projection uses MaintG to drive GMaintRaw input that feeds into the stronger, longer MaintNMDA channels, and the ThalToPT ModulatoryG projection from BGThalamus multiplicatively modulates the strength of other inputs, such that only at the time of BG gating are these strong enough to drive sustained active maintenance. Use Act.Dend.ModGain to parameterize.`,
 	8:  `PTPredLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that combine modulatory input from PTMaintLayer sustained maintenance and CTLayer dynamic predictive learning that helps to predict state changes during the period of active goal maintenance. This layer provides the primary input to VSPatch US-timing prediction layers, and other layers that require predictive dynamic`,
-	9:  `PTNotMaintLayer implements a tonically active layer that is inhibited by the PTMaintLayer, thereby providing an active representation of the *absence* of maintained PT activity, which is useful for driving appropriate actions (e.g., exploration) when not in goal-engaged mode.`,
-	10: `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`,
-	11: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`,
-	12: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`,
-	13: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory projection from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`,
-	14: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`,
-	15: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`,
-	16: `CeMLayer represents a central nucleus of the amygdala layer.`,
-	17: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`,
-	18: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`,
-	19: `DrivesLayer represents the Drives in PVLV framework. It tracks the Global Drives values for visualization and predictive learning purposes.`,
-	20: `UrgencyLayer represents the Urgency factor in PVLV framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`,
-	21: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in PVLV.`,
-	22: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`,
-	23: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`,
-	24: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from PVLV-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`,
-	25: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`,
-	26: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPrjn which does simple delta-rule learning on minus-plus.`,
-	27: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`,
-	28: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPrjn projection type for DA modulated learning.`,
-	29: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerVals from TDPredLayer.`,
-	30: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerVals.`,
+	9:  `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`,
+	10: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`,
+	11: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`,
+	12: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory projection from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`,
+	13: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`,
+	14: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`,
+	15: `CeMLayer represents a central nucleus of the amygdala layer.`,
+	16: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`,
+	17: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`,
+	18: `DrivesLayer represents the Drives in PVLV framework. It tracks the Global Drives values for visualization and predictive learning purposes.`,
+	19: `UrgencyLayer represents the Urgency factor in PVLV framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`,
+	20: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in PVLV.`,
+	21: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`,
+	22: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`,
+	23: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from PVLV-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`,
+	24: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`,
+	25: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPrjn which does simple delta-rule learning on minus-plus.`,
+	26: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`,
+	27: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPrjn projection type for DA modulated learning.`,
+	28: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerVals from TDPredLayer.`,
+	29: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerVals.`,
 }
 
 var _LayerTypesMap = map[LayerTypes]string{
@@ -541,28 +538,27 @@ var _LayerTypesMap = map[LayerTypes]string{
 	6:  `TRNLayer`,
 	7:  `PTMaintLayer`,
 	8:  `PTPredLayer`,
-	9:  `PTNotMaintLayer`,
-	10: `MatrixLayer`,
-	11: `STNLayer`,
-	12: `GPLayer`,
-	13: `BGThalLayer`,
-	14: `VSGatedLayer`,
-	15: `BLALayer`,
-	16: `CeMLayer`,
-	17: `VSPatchLayer`,
-	18: `LHbLayer`,
-	19: `DrivesLayer`,
-	20: `UrgencyLayer`,
-	21: `USLayer`,
-	22: `PVLayer`,
-	23: `LDTLayer`,
-	24: `VTALayer`,
-	25: `RewLayer`,
-	26: `RWPredLayer`,
-	27: `RWDaLayer`,
-	28: `TDPredLayer`,
-	29: `TDIntegLayer`,
-	30: `TDDaLayer`,
+	9:  `MatrixLayer`,
+	10: `STNLayer`,
+	11: `GPLayer`,
+	12: `BGThalLayer`,
+	13: `VSGatedLayer`,
+	14: `BLALayer`,
+	15: `CeMLayer`,
+	16: `VSPatchLayer`,
+	17: `LHbLayer`,
+	18: `DrivesLayer`,
+	19: `UrgencyLayer`,
+	20: `USLayer`,
+	21: `PVLayer`,
+	22: `LDTLayer`,
+	23: `VTALayer`,
+	24: `RewLayer`,
+	25: `RWPredLayer`,
+	26: `RWDaLayer`,
+	27: `TDPredLayer`,
+	28: `TDIntegLayer`,
+	29: `TDDaLayer`,
 }
 
 // String returns the string representation

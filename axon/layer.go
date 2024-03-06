@@ -67,8 +67,6 @@ func (ly *Layer) Defaults() { //gti:add
 		ly.PTMaintDefaults()
 	case PTPredLayer:
 		ly.Params.PTPredDefaults()
-	case PTNotMaintLayer:
-		ly.PTNotMaintDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 

@@ -28,6 +28,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Matrix.IsVS":          "true", // key for resetting urgency
 				"Layer.Learn.RLRate.On":      "true", // only used for non-rew trials -- key
 				"Layer.Learn.RLRate.Diff":    "false",
+				"Layer.Learn.TrgAvgAct.On":   "true",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -40,9 +41,10 @@ var ParamSets = netparams.Sets{
 		// Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":     "0.01", // 0.01, vs .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.0",  // prevents learning below this thr: preserves low act
-				"Prjn.Matrix.VSRewLearn":    "false",
+				"Prjn.Learn.LRate.Base":     "0.01",  // 0.01, vs .02 default
+				"Prjn.Learn.Trace.LearnThr": "0.1",   // prevents learning below this thr: preserves low act
+				"Prjn.Matrix.VSRewLearn":    "false", // significantly cleaner
+				"Prjn.SWts.Adapt.On":        "false", // not much diff: false >= true
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
@@ -98,7 +100,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5 > 20
 				"Layer.Acts.GabaB.Gbar":            "0",
 				"Layer.Acts.NMDA.Gbar":             "0.006", // 0.006 default, necessary (0 very bad)
-				"Layer.Learn.NeuroMod.AChLRateMod": "1",     // no diff here -- always ACh
+				"Layer.Learn.NeuroMod.AChLRateMod": "0",     // no diff here -- always ACh
 				"Layer.Learn.NeuroMod.BurstGain":   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 			},
 			Hypers: params.Hypers{

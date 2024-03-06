@@ -27,6 +27,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.Gi":            "0.5",  // 0.5 > others
 				"Layer.Learn.NeuroMod.BurstGain": "0.1",  // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 				"Layer.Learn.RLRate.On":          "true", // note: applied for tr update trials
+				"Layer.Learn.TrgAvgAct.On":       "true", // unclear if beneficial..
 			},
 			Hypers: params.Hypers{
 				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
@@ -87,10 +88,11 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.8",   // 1.8 > others
 				"Prjn.Learn.LRate.Base":     "0.02",  // rlr sig: .02 > .015 .025
-				"Prjn.Learn.Trace.LearnThr": "0.1",   // not used at this point
+				"Prjn.Learn.Trace.LearnThr": "0.1",   // 0.1 > 0 > 0.2
 				"Prjn.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
 				"Prjn.Matrix.BasePF":        "0.005", // 0.005 > 0.01, 0.002 etc
 				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
+				"Prjn.SWts.Adapt.On":        "false", // false > true here
 			},
 			Hypers: params.Hypers{
 				"Prjn.Learn.LRate.Base": {"Tweak": "-"},
@@ -202,7 +204,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.Learn":   "false", // no-learn better than learn
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Rel": {"Tweak": "[0.02,0.01]"},
+				"Prjn.PrjnScale.Rel": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
@@ -239,7 +241,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.NMDA.Gbar":             "0.006", // 0.006 default, necessary (0 very bad)
 				"Layer.Acts.Dend.ModBase":          "1",
 				"Layer.Acts.Dend.ModGain":          "0",   // has no effect
-				"Layer.Learn.NeuroMod.AChLRateMod": "1",   // no diff here -- always ACh
+				"Layer.Learn.NeuroMod.AChLRateMod": "0",   // dorsal should not use
 				"Layer.Learn.NeuroMod.BurstGain":   "0.1", // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
 			},
