@@ -184,18 +184,33 @@ func AddGlbV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalIdx(di, gvar)] += val
 }
 
+// GlbCost is the CPU version of the global Cost variable accessor
+func GlbCostV(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32) float32 {
+	return GlobalNetwork(ctx).Globals[ctx.GlobalCostIdx(di, gvar, negIdx)]
+}
+
+// SetGlbCost is the CPU version of the global Cost variable settor
+func SetGlbCostV(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalCostIdx(di, gvar, negIdx)] = val
+}
+
+// AddGlbCost is the CPU version of the global Cost variable addor
+func AddGlbCostV(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+	GlobalNetwork(ctx).Globals[ctx.GlobalCostIdx(di, gvar, negIdx)] += val
+}
+
 // GlbUSneg is the CPU version of the global USneg variable accessor
-func GlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32) float32 {
+func GlbUSnegV(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32) float32 {
 	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)]
 }
 
 // SetGlbUSneg is the CPU version of the global USneg variable settor
-func SetGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+func SetGlbUSnegV(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] = val
 }
 
 // AddGlbUSneg is the CPU version of the global USneg variable addor
-func AddGlbUSneg(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
+func AddGlbUSnegV(ctx *Context, di uint32, gvar GlobalVars, negIdx uint32, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val
 }
 
@@ -274,8 +289,17 @@ type NetIdxs struct {
 	// total number of PVLV Drives / positive USs
 	PVLVNPosUSs uint32 `edit:"-"`
 
+	// total number of PVLV Costs
+	PVLVNCosts uint32 `edit:"-"`
+
 	// total number of PVLV Negative USs
 	PVLVNNegUSs uint32 `edit:"-"`
+
+	// offset into GlobalVars for Cost values
+	GvCostOff uint32 `edit:"-"`
+
+	// stride into GlobalVars for Cost values
+	GvCostStride uint32 `edit:"-"`
 
 	// offset into GlobalVars for USneg values
 	GvUSnegOff uint32 `edit:"-"`
@@ -289,7 +313,7 @@ type NetIdxs struct {
 	// stride into GlobalVars for USpos, Drive, VSPatch values
 	GvUSposStride uint32 `edit:"-"`
 
-	pad uint32
+	pad, pad2 uint32
 }
 
 // ValsIdx returns the global network index for LayerVals
@@ -456,7 +480,9 @@ func (ctx *Context) SlowInc() bool {
 
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
-	ctx.NetIdxs.GvUSnegOff = ctx.GlobalIdx(0, GvUSneg)
+	ctx.NetIdxs.GvCostOff = ctx.GlobalIdx(0, GvCost)
+	ctx.NetIdxs.GvCostStride = uint32(ctx.NetIdxs.PVLVNCosts) * ctx.NetIdxs.MaxData
+	ctx.NetIdxs.GvUSnegOff = ctx.GlobalCostIdx(0, GvCostRaw, ctx.NetIdxs.PVLVNCosts)
 	ctx.NetIdxs.GvUSnegStride = uint32(ctx.NetIdxs.PVLVNNegUSs) * ctx.NetIdxs.MaxData
 	ctx.NetIdxs.GvUSposOff = ctx.GlobalUSnegIdx(0, GvUSnegRaw, ctx.NetIdxs.PVLVNNegUSs)
 	ctx.NetIdxs.GvUSposStride = uint32(ctx.NetIdxs.PVLVNPosUSs) * ctx.NetIdxs.MaxData
@@ -466,6 +492,11 @@ func (ctx *Context) SetGlobalStrides() {
 // before GvVtaDA
 func (ctx *Context) GlobalIdx(di uint32, gvar GlobalVars) uint32 {
 	return ctx.NetIdxs.MaxData*uint32(gvar) + di
+}
+
+// GlobalCostIdx returns index into Cost global variables
+func (ctx *Context) GlobalCostIdx(di uint32, gvar GlobalVars, negIdx uint32) uint32 {
+	return ctx.NetIdxs.GvCostOff + uint32(gvar-GvCost)*ctx.NetIdxs.GvCostStride + negIdx*ctx.NetIdxs.MaxData + di
 }
 
 // GlobalUSnegIdx returns index into USneg global variables
@@ -690,15 +721,27 @@ void AddGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
 	Globals[ctx.GlobalIdx(di, gvar)] += val;
 }
 
-float GlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx) {
+float GlbCostV(in Context ctx, uint di, GlobalVars gvar, uint negIdx) {
+	return Globals[ctx.GlobalCostIdx(di, gvar, negIdx)];
+}
+
+void SetGlbCostV(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+	Globals[ctx.GlobalCostIdx(di, gvar, negIdx)] = val;
+}
+
+void AddGlbCostV(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+	Globals[ctx.GlobalCostIdx(di, gvar, negIdx)] += val;
+}
+
+float GlbUSnegV(in Context ctx, uint di, GlobalVars gvar, uint negIdx) {
 	return Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)];
 }
 
-void SetGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+void SetGlbUSnegV(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
 	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] = val;
 }
 
-void AddGlbUSneg(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
+void AddGlbUSnegV(in Context ctx, uint di, GlobalVars gvar, uint negIdx, float val) {
 	Globals[ctx.GlobalUSnegIdx(di, gvar, negIdx)] += val;
 }
 
@@ -723,12 +766,17 @@ void AddGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIdx, float v
 // GlobalsReset resets all global values to 0, for all NData
 func GlobalsReset(ctx *Context) {
 	for di := uint32(0); di < ctx.NetIdxs.MaxData; di++ {
-		for vg := GvRew; vg < GvUSneg; vg++ {
+		for vg := GvRew; vg < GvCost; vg++ {
 			SetGlbV(ctx, di, vg, 0)
+		}
+		for vn := GvCost; vn <= GvCostRaw; vn++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNCosts; ui++ {
+				SetGlbCostV(ctx, di, vn, ui, 0)
+			}
 		}
 		for vn := GvUSneg; vn <= GvUSnegRaw; vn++ {
 			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
-				SetGlbUSneg(ctx, di, vn, ui, 0)
+				SetGlbUSnegV(ctx, di, vn, ui, 0)
 			}
 		}
 		for vp := GvDrives; vp < GlobalVarsN; vp++ {
@@ -751,16 +799,21 @@ func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 }
 
 // PVLVUSStimVal returns stimulus value for US at given index
-// and valence.  If US > 0.01, a full 1 US activation is returned.
+// and valence (includes Cost).  If US > 0.01, a full 1 US activation is returned.
 func PVLVUSStimVal(ctx *Context, di uint32, usIdx uint32, valence ValenceTypes) float32 {
 	us := float32(0)
-	if valence == Positive {
+	switch valence {
+	case Positive:
 		if usIdx < ctx.NetIdxs.PVLVNPosUSs {
 			us = GlbUSposV(ctx, di, GvUSpos, usIdx)
 		}
-	} else {
+	case Negative:
 		if usIdx < ctx.NetIdxs.PVLVNNegUSs {
-			us = GlbUSneg(ctx, di, GvUSneg, usIdx)
+			us = GlbUSnegV(ctx, di, GvUSneg, usIdx)
+		}
+	case Cost:
+		if usIdx < ctx.NetIdxs.PVLVNCosts {
+			us = GlbCostV(ctx, di, GvCost, usIdx)
 		}
 	}
 	return us

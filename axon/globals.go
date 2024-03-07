@@ -113,7 +113,7 @@ const (
 	// HadPosUS is state from the previous trial (copied from HasPosUS in NewState).
 	GvHadPosUS
 
-	// NegUSOutcome indicates that a strong negative US stimulus was experienced,
+	// NegUSOutcome indicates that a phasic negative US stimulus was experienced,
 	// driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any),
 	// and phasic dopamine based on the outcome.
 	GvNegUSOutcome
@@ -131,7 +131,7 @@ const (
 	GvPVpos
 
 	// PVnegSum is total weighted negative valence primary value
-	// = sum of Weight * USneg
+	// = sum of Weight * Cost + Weight * USneg
 	GvPVnegSum
 
 	// PVpos is normalized negative valence primary value
@@ -216,6 +216,17 @@ const (
 
 	// VtaDA is overall dopamine value reflecting all of the different inputs
 	GvVtaDA
+
+	/////////////////////////////////////////
+	// Cost is Time, Effort etc costs
+
+	// Cost are Time, Effort, etc costs, as normalized version of corresponding raw.
+	// NCosts of them
+	GvCost
+
+	// CostRaw are raw, linearly incremented negative valence US outcomes,
+	// this value is also integrated together with all US vals for PVneg
+	GvCostRaw
 
 	/////////////////////////////////////////
 	// USneg is negative valence US

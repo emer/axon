@@ -34,7 +34,8 @@ var ParamSets = netparams.Sets{
 				"Layer.VSPatch.ThrLRate":           "0.0001", // 0.0001 good for flexible cycle test
 				"Layer.VSPatch.ThrNonRew":          "10",
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
-				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.05 def
+				"Layer.Learn.RLRate.SigmoidMin":    "0.05", // 0.05 def
+				"Layer.Learn.NeuroMod.AChLRateMod": "0",
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
@@ -58,7 +59,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
-				"Layer.LDT.MaintInhib": "1.0",
+				"Layer.LDT.MaintInhib": "0.8",
 			}},
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
@@ -70,7 +71,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.05", // .1 still enough to shut off -- was .2
+				"Layer.Acts.KNa.Slow.Max": "0.5", // .5 needed to shut off
 			}},
 		//////////////////////////////////////////////////
 		// required custom params for this project
@@ -123,7 +124,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "6",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.2", // 0.05 def -- todo: needs faster
+				"Prjn.Learn.LRate.Base":     "0.1", // 0.05 def -- todo: needs faster
 			}},
 		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
 			Params: params.Params{

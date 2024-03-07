@@ -1198,7 +1198,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	ofcNegUS := net.AxonLayerByName("OFCnegUSPT")
 	nn := pv.NNegUSs
 	for i := uint32(0); i < nn; i++ {
-		us := axon.GlbUSneg(ctx, diu, axon.GvUSneg, i)
+		us := axon.GlbUSnegV(ctx, diu, axon.GvUSneg, i)
 		ofcP := ofcNegUS.Pool(i+1, diu)
 		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
 		dn.SetCellFloat("USin", int(i), float64(us))

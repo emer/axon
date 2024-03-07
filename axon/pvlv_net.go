@@ -213,21 +213,26 @@ func (net *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prj
 	return
 }
 
-// AddUSLayers adds USpos and USneg layers for positive or negative valence
+// AddUSLayers adds USpos, USneg, and Cost layers for positive or negative valence
 // unconditioned stimuli (USs), using a pop-code representation of US magnitude.
-// These track the Global USpos or USneg, for visualization and predictive learning.
+// These track the Global USpos, USneg, Cost for visualization and predictive learning.
 // Actual US inputs are set in PVLV.
-// Uses the network PVLV.NPosUSs and NNegUSs for number of pools --
+// Uses the network PVLV.NPosUSs, NNegUSs, and NCosts for number of pools --
 // must be configured prior to calling this.
-func (net *Network) AddUSLayers(popY, popX int, rel relpos.Relations, space float32) (usPos, usNeg *Layer) {
+func (net *Network) AddUSLayers(popY, popX int, rel relpos.Relations, space float32) (usPos, usNeg, cost *Layer) {
 	nUSpos := int(net.PVLV.NPosUSs)
 	nUSneg := int(net.PVLV.NNegUSs)
+	nCost := int(net.PVLV.NCosts)
 	usPos = net.AddLayer4D("USpos", 1, nUSpos, popY, popX, USLayer)
 	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	usPos.SetBuildConfig("Valence", "Positive")
 	usNeg = net.AddLayer4D("USneg", 1, nUSneg, popY, popX, USLayer)
 	usNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
 	usNeg.SetBuildConfig("Valence", "Negative")
+	cost = net.AddLayer4D("Cost", 1, nCost, popY, popX, USLayer)
+	cost.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+	cost.SetBuildConfig("Valence", "Cost")
+	cost.PlaceRightOf(usNeg, space)
 	if rel == relpos.Behind {
 		usNeg.PlaceBehind(usPos, space)
 	} else {
@@ -236,15 +241,19 @@ func (net *Network) AddUSLayers(popY, popX int, rel relpos.Relations, space floa
 	return
 }
 
-// AddUSPulvLayers adds USpos and USneg layers for positive or negative valence
+// AddUSPulvLayers adds USpos, USneg, and Cost layers for positive or negative valence
 // unconditioned stimuli (USs), using a pop-code representation of US magnitude.
-// These track the Global USpos or USneg, for visualization and predictive learning.
+// These track the Global USpos, USneg, Cost, for visualization and predictive learning.
 // Actual US inputs are set in PVLV.
 // Adds Pulvinar predictive layers for each.
-func (net *Network) AddUSPulvLayers(popY, popX int, rel relpos.Relations, space float32) (usPos, usNeg, usPosP, usNegP *Layer) {
-	usPos, usNeg = net.AddUSLayers(popY, popX, rel, space)
+func (net *Network) AddUSPulvLayers(popY, popX int, rel relpos.Relations, space float32) (usPos, usNeg, cost, usPosP, usNegP, costP *Layer) {
+	usPos, usNeg, cost = net.AddUSLayers(popY, popX, rel, space)
 	usPosP = net.AddPulvForLayer(usPos, space)
+	usPosP.SetBuildConfig("Valence", "Positive")
 	usNegP = net.AddPulvForLayer(usNeg, space)
+	usNegP.SetBuildConfig("Valence", "Negative")
+	costP = net.AddPulvForLayer(cost, space)
+	costP.SetBuildConfig("Valence", "Cost")
 	if rel == relpos.Behind {
 		usNeg.PlaceBehind(usPosP, space)
 	}
@@ -258,6 +267,8 @@ func (net *Network) AddUSPulvLayers(popY, popX int, rel relpos.Relations, space 
 	usPosP.SetClass("USLayer")
 	usNegP.DefParams = usParams
 	usNegP.SetClass("USLayer")
+	costP.DefParams = usParams
+	costP.SetClass("USLayer")
 	return
 }
 
@@ -446,20 +457,20 @@ func (net *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
 // AddPVLVPulvLayers adds PVLV layers for PV-related information visualizing
 // the internal states of the Global state, with Pulvinar prediction
 // layers for training PFC layers.
-// Uses the network PVLV.NPosUSs and NNegUSs for number of pools --
+// Uses the network PVLV.NPosUSs, NNegUSs, NCosts for number of pools --
 // must be configured prior to calling this.
 // * drives = popcode representation of drive strength (no activity for 0)
 // number of active drives comes from Context; popY, popX neurons per pool.
 // * urgency = popcode representation of urgency Go bias factor, popY, popX neurons.
-// * us = popcode per US, positive & negative
+// * us = popcode per US, positive & negative, cost
 // * pv = popcode representation of final primary value on positive and negative
 // valences -- this is what the dopamine value ends up conding (pos - neg).
 // Layers are organized in depth per type: USs in one column, PVs in the next,
 // with Drives in the back; urgency behind that.
-func (net *Network) AddPVLVPulvLayers(ctx *Context, nYneur, popY, popX int, space float32) (drives, drivesP, urgency, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+func (net *Network) AddPVLVPulvLayers(ctx *Context, nYneur, popY, popX int, space float32) (drives, drivesP, urgency, usPos, usNeg, cost, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
 	rel := relpos.Behind
 
-	usPos, usNeg, usPosP, usNegP = net.AddUSPulvLayers(popY, popX, rel, space)
+	usPos, usNeg, cost, usPosP, usNegP, costP = net.AddUSPulvLayers(popY, popX, rel, space)
 	pvPos, pvNeg, pvPosP, pvNegP = net.AddPVPulvLayers(popY, popX, rel, space)
 	drives, drivesP = net.AddDrivesPulvLayer(ctx, popY, popX, space)
 	urgency = net.AddUrgencyLayer(popY, popX)
@@ -486,8 +497,7 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 }
 
 // AddOFCnegUS adds orbital frontal cortex negative US-coding layers,
-// for given number of neg US pools (first is effort pool),
-// with given number of units per pool.
+// for given number of neg US pools with given number of units per pool.
 func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCnegUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
 
@@ -503,11 +513,30 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	return
 }
 
+// AddACCost adds anterior cingulate cost coding layers,
+// for given number of cost pools (typically 2: time, effort),
+// with given number of units per pool.
+func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float32) (acc, accCT, accPT, accPTp, accMD *Layer) {
+	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCnegUS", "MD", 1, nCosts, accY, accX, true, space)
+
+	acc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
+	acc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	acc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
+	accPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	accPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	accPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	accPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+
+	return
+}
+
 // AddPVLVOFCus builds a complete PVLV network with OFCposUS
 // (orbital frontal cortex) US-coding layers,
 // ILpos infralimbic abstract positive value,
-// OFCnegUS for negative value inputs, and ILneg value layers.
-// Uses the network PVLV.NPosUSs and NNegUSs for number of pools --
+// OFCnegUS for negative value inputs, and ILneg value layers,
+// and ACCost cost prediction layers.
+// Uses the network PVLV.NPosUSs, NNegUSs, NCosts for number of pools --
 // must be configured prior to calling this.  Calls:
 // * AddVTALHbLDTLayers
 // * AddPVLVPulvLayers
@@ -518,15 +547,16 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc *Layer) {
+func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc *Layer) {
 	nUSpos := int(net.PVLV.NPosUSs)
 	nUSneg := int(net.PVLV.NNegUSs)
+	nCosts := int(net.PVLV.NCosts)
 
 	vta, lhb, ldt := net.AddVTALHbLDTLayers(relpos.Behind, space)
 	_ = lhb
 	_ = ldt
 
-	drives, drivesP, urgency, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(ctx, nYneur, popY, popX, space)
+	drives, drivesP, urgency, usPos, usNeg, cost, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(ctx, nYneur, popY, popX, space)
 	_ = urgency
 
 	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := net.AddVBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
@@ -557,6 +587,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	ilPosPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	ilNegPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
+	accCost, accCostCT, accCostPT, accCostPTp, accCostMD := net.AddACCost(ctx, nCosts, ofcY, ofcX, space)
+	_ = accCostPT
+
 	p1to1 := prjn.NewPoolOneToOne()
 	// p1to1rnd := prjn.NewPoolUnifRnd()
 	// p1to1rnd.PCon = 0.5
@@ -579,6 +612,10 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	vSmtxGo.SetBuildConfig("ThalLay4Name", ilNegMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay4Name", ilNegMD.Name())
 	net.ConnectLayers(vSgpi, ilNegMD, full, InhibPrjn) // BGThal configs
+
+	vSmtxGo.SetBuildConfig("ThalLay5Name", accCostMD.Name())
+	vSmtxNo.SetBuildConfig("ThalLay5Name", accCostMD.Name())
+	net.ConnectLayers(vSgpi, accCostMD, full, InhibPrjn) // BGThal configs
 
 	pfc2m := params.Params{ // contextual, not driving -- weaker
 		"Prjn.PrjnScale.Rel": "1", // 0.1", todo was
@@ -640,6 +677,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectToVSPatch(ilPosPTp, vSpatch, full)
 	net.ConnectToVSPatch(ofcNegUSPTp, vSpatch, full)
 	net.ConnectToVSPatch(ilNegPTp, vSpatch, full)
+	net.ConnectToVSPatch(accCostPTp, vSpatch, full)
 
 	// same prjns to stn as mtxgo
 	net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
@@ -720,13 +758,24 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj.SetClass("PFCToVSMtx")
 	net.ConnectLayers(ilPos, vSstn, full, ForwardPrjn)
 
-	// pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxGo, full) // skip for now
-	// pj.DefParams = pfc2m
-	// pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxNo, full) // definitely
+	pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxGo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToVSMatrix(ilNeg, vSmtxNo, full) // definitely
+	pj = net.ConnectToVSMatrix(ofcNegUS, vSmtxNo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+
+	pj = net.ConnectToVSMatrix(ilNeg, vSmtxGo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToVSMatrix(ilNeg, vSmtxNo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+
+	pj = net.ConnectToVSMatrix(cost, vSmtxGo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToVSMatrix(cost, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
@@ -803,10 +852,16 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	net.ConnectToPulv(ofcNegUS, ofcNegUSCT, usNegP, p1to1, p1to1, prjnClass)
 	net.ConnectToPulv(ofcNegUS, ofcNegUSCT, pvNegP, full, full, prjnClass)
-
-	// note: newly trying this
 	net.ConnectPTPredToPulv(ofcNegUSPTp, usNegP, p1to1, p1to1, prjnClass)
 	net.ConnectPTPredToPulv(ofcNegUSPTp, pvNegP, full, full, prjnClass)
+
+	///////////////////////////////////////////
+	// Costs
+
+	net.ConnectToPulv(accCost, accCostCT, costP, p1to1, p1to1, prjnClass)
+	net.ConnectToPulv(accCost, accCostCT, costP, full, full, prjnClass)
+	net.ConnectPTPredToPulv(accCostPTp, costP, p1to1, p1to1, prjnClass)
+	net.ConnectPTPredToPulv(accCostPTp, costP, full, full, prjnClass)
 
 	///////////////////////////////////////////
 	// ILneg
@@ -820,10 +875,16 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	}
 	bpj.SetClass(prjnClass)
 
+	pj, bpj = net.BidirConnectLayers(accCost, ilNeg, full)
+	pj.SetClass(prjnClass)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "3", // val needs stronger input
+	}
+	bpj.SetClass(prjnClass)
+
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
 	net.ConnectToPFC(pvNeg, pvNegP, ilNeg, ilNegCT, ilNegPTp, full)
-
 	net.ConnectPTPredToPulv(ilNegPTp, pvNegP, full, full, prjnClass)
 
 	// note: not connecting deeper CT and PT layers to vSmtxGo at this point
@@ -840,9 +901,10 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	usPos.PlaceAbove(vta)
 	blaPosAcq.PlaceAbove(usPos)
 	ofcPosUS.PlaceRightOf(blaPosAcq, space)
-	ilPos.PlaceRightOf(ofcPosUS, space)
-	ofcNegUS.PlaceRightOf(ilPos, 3*space)
-	ilNeg.PlaceRightOf(ofcNegUS, space)
+	ofcNegUS.PlaceRightOf(ofcPosUS, space)
+	ilPos.PlaceRightOf(ofcNegUS, space)
+	ilNeg.PlaceRightOf(ilPos, space)
+	accCost.PlaceRightOf(ilNeg, space)
 
 	return
 }
@@ -859,8 +921,9 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	full := prjn.NewFull()
 	var pj *Prjn
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
 	_, _, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ilPosCT, ilNegMD
+	_, _, _ = accCost, accCostCT, accCostPTp
 	_, _ = blaNegAcq, blaNegExt
 
 	// ILposP is what ACCutil predicts, in order to learn about value (reward)

@@ -588,7 +588,7 @@ func (nt *NetworkBase) AllGlobals() string {
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
-				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSneg(ctx, di, vv, ui))
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSnegV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
@@ -621,7 +621,7 @@ func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlbUSneg(ctx, di, vv, ui)
+				vals[key] = GlbUSnegV(ctx, di, vv, ui)
 			}
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {

@@ -44,6 +44,9 @@ const (
 
 	// Negative valence codes for harmful or aversive outcomes.
 	Negative
+
+	// Cost codes for continous ongoing cost factors such as Time and Effort
+	Cost
 )
 
 // NeuroModParams specifies the effects of neuromodulators on neural

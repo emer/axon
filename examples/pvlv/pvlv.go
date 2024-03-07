@@ -157,11 +157,7 @@ func (ss *Sim) ConfigPVLV() {
 	pv.USs.PVposGain = 2
 	pv.USs.PVnegGain = 1
 
-	pv.USs.PVnegWts[0] = 0.02
-	pv.USs.PVnegWts[1] = 0.02
-	pv.USs.PVnegWts[2] = 1
-
-	pv.USs.USnegGains[2] = 2 // big salient input!
+	pv.USs.USnegGains[0] = 2 // big salient input!
 
 	pv.Urgency.U50 = 50 // no pressure during regular trials
 	if ss.Config.Params.PVLV != nil {
@@ -195,13 +191,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
 	_, _, _, _ = ilPos, ilPosCT, ilPosPTp, ilPosMD
 	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
 	_, _, _, _ = ilNeg, ilNegCT, ilNegPTp, ilNegMD
+	_, _, _ = accCost, accCostCT, accCostPTp
 	// todo: connect more of above
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)

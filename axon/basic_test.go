@@ -1448,7 +1448,7 @@ func TestGlobalIdxs(t *testing.T) {
 	for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 		for ui := uint32(0); ui < pv.NNegUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbUSneg(ctx, di, vv, ui, val)
+				SetGlbUSnegV(ctx, di, vv, ui, val)
 				val += 1
 			}
 		}

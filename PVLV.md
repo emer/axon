@@ -132,6 +132,14 @@ The first pool in the BLAPosAcq / PosExt layers is reserved for the "novelty" ca
 
 The delta learning rule for novelty extinction works via the same extinction logic as regular US pathways: if no US outcome occurs, and the maximum effort limit has been reached, then the LHb dip / reset dynamic is activated, triggering phasic ACh release as if an actual US had occurred.
 
+### BLANovelCS
+
+The first, novelty pool in the BLA requires a stimulus input to drive it when a novel CS comes on.  This is accomplished in a simple way in the model through a layer (`BLANovelCS`) with fixed (non-learning) synaptic weights from all CS inputs, such that any given CS will activate a particular activity pattern over this layer.  This layer projects into the first BLAPos pools, and drives activity there for novel CSs.  When a specific CS acquires a specific US outcome representation in the BLA, that pathway should out-compete the "default" BLANovelCS pathway.
+
+## CeM
+
+For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL.
+    
 # SC -> LDT ACh
 
 In the [Mollick et al. (2020)](#references) version, the PPTg (pedunculopontine tegmentum) directly computed a temporal derivative of amygdala inputs, to account for phasic DA firing only at the *onset* of a CS, when the BLA has sustained CS activity.  However, updated research shows that this is incorrect, and it is also causes problems functionally in the context of the BOA model.
@@ -144,15 +152,11 @@ The new model has:
 
 Our new model is that SC -> LDT -> VTA provides a *disinhibitory* signal for VTA bursting, such that the sustained CeM -> VTA drive for a learned CS only results in bursting at CS onset, when LDT ACh is elevated from CS -> SC novel input.  Furthermore, the OFC & ACC input to LDT serves to inhibit ACh salience signals when there is already an engaged goal, to reduce distraction.
 
-## CeM
-
-For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL.
-    
 ## SC
 
-The SC layer computes the temporal derivative of the CS inputs, based on the strength of feedforward inhibition on the previous ThetaCycle (trial) vs. the current one.  The strength of this factor is in this parameter:
+The SC layer has a relatively-strong trial scale adaptation current that causes activity to diminish over trials, using the sodium-driven potassium channel (KNa):
 ```
-"Layer.Inhib.Pool.FFPrv":     "10",
+"Layer.Acts.KNa.Slow.Max":     "0.5", // 0.5 to 1 generall works
 ```
 
 # VSPatch
@@ -166,6 +170,14 @@ The learning rule here is a standard "3 factor" dopamine-modulated learning, ver
 * `DWt = lr * DALr * Send_prv * (CaSpkP / Max)`
 
 where `Max` again normalizes the receiving activity because VSPatch also can start out very weakly active.
+
+# Negative USs and Costs
+
+There are two qualitatively-different types of negative outcome values, which require distinct pathways within the model:
+
+* `USneg`: Phasic, discrete "events", such as a shock or impact, that can be associated with a stimulus (CS) or action, and thereby potentially predicted and avoided in the future.  The BLA plays a well-established role here for establishing CS -- US associations (e.g., tone-shock in the widely-used fear conditioning paradigm), in the same way as in the positive valence case.
+
+* `Costs`: Continuous, inevitable costs, specifically Time and Effort, and lower-grade forms of pain, that animals are always seeking to minimize.  These are not associated with phasic CSs, but rather vary as a function of motor plans (e.g., climbing a steep hill vs. walking along a flat path).  These negative outcomes do not engage the BLA because they are not primarily CS-associated, and instead are predicted from motor-cingulate areas.
 
 # References
 

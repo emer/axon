@@ -2,21 +2,13 @@
 
 # TODO:
 
-* simplify / fix all the PTNotMaint stuff?  PL is "PFC of record" and key area for engaged goal -- has main descending prjns to raphe, ACh, etc.  Needed for proper feedback loop of learning at time of gating.
-
-* go full rodent: rename ACCUtil -> PL, ACCNegVal -> IL; reserve ACC for actual motor ACC.
-
-* pvlv function needs to set GoalMaint global activity, typically as function of PL activity but could be other proxies in other models.  Inhibits Ach.
-
-* what is using slow weights in the BG, etc circuits?  seems good.
-
-* Learn Tr at time of Rew in proportion to prior gating discounting of ACh: if 
-  already gated, then don't learn, but if didn't gate, then learn.  provides the
-  key robustness but learning at time of rew is generally not good.
-
 * vspatch needs better learning (still, again!): nonlinear DA learning (some mix of ACh and DA?)
   such that lrate is higher until it actually matches.
 
+    + ACh MaintInhib = .5 much better than 1 -- ach is inhibiting learning.  maybe just turn down / off?  
+
+* too bouncy on re-acq -- losing maint in neg guys -- makes sense actually.  but something else going on too?
+    
 * Kir = 10 not working? but now working? what is the deal?
 * add dopamine-kir disinhib for more activity dynamics?
 - not well supported by data -- other channels involved.  maybe ACh modulates Kir tho?
@@ -28,6 +20,23 @@
 * MtxGo is over-active -- partial random looked good -- maybe go back to that.
 
 * better at keeping No active -- add more scale there to balance better.
+
+# DONE
+
+* what is using slow weights in the BG, etc circuits?  seems good.  TrgActAvg is maybe faster but less reliable; slow wts also not clear big diff
+
+* simplify / fix all the PTNotMaint stuff?  PL is "PFC of record" and key area for engaged goal -- has main descending prjns to raphe, ACh, etc.  Needed for proper feedback loop of learning at time of gating.
+
+* Learn Tr at time of Rew in proportion to prior gating discounting of ACh: if 
+  already gated, then don't learn, but if didn't gate, then learn.  provides the
+  key robustness but learning at time of rew is generally not good.
+
+
+* go full rodent: rename ACCUtil -> PL, ACCNegVal -> IL; reserve ACC for actual motor ACC.
+
+* pvlv function needs to set GoalMaint global activity, typically as function of PL activity but could be other proxies in other models.  Inhibits Ach.
+
+
 
 # Overview
 
