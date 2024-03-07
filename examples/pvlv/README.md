@@ -2,10 +2,7 @@
 
 # TODO:
 
-* vspatch needs better learning (still, again!): nonlinear DA learning (some mix of ACh and DA?)
-  such that lrate is higher until it actually matches.
-
-    + ACh MaintInhib = .5 much better than 1 -- ach is inhibiting learning.  maybe just turn down / off?  
+* give up not happening in extinction -- maint staying active -- need to re-figure out these params, and document in the PVLV.md
 
 * too bouncy on re-acq -- losing maint in neg guys -- makes sense actually.  but something else going on too?
     
@@ -22,6 +19,12 @@
 * better at keeping No active -- add more scale there to balance better.
 
 # DONE
+
+* vspatch needs better learning (still, again!): nonlinear DA learning (some mix of ACh and DA?)
+  such that lrate is higher until it actually matches.
+
+    + ACh MaintInhib = .5 much better than 1 -- ach is inhibiting learning.  maybe just turn down / off?  
+
 
 * what is using slow weights in the BG, etc circuits?  seems good.  TrgActAvg is maybe faster but less reliable; slow wts also not clear big diff
 

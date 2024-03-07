@@ -772,10 +772,10 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	pj = net.ConnectToVSMatrix(cost, vSmtxGo, full)
+	pj = net.ConnectToVSMatrix(accCost, vSmtxGo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
-	pj = net.ConnectToVSMatrix(cost, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(accCost, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
@@ -858,10 +858,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	///////////////////////////////////////////
 	// Costs
 
+	net.ConnectLayers(pvNeg, accCost, full, BackPrjn).SetClass(prjnClass)
+	net.ConnectLayers(cost, accCost, p1to1, BackPrjn).SetClass(prjnClass)
+
 	net.ConnectToPulv(accCost, accCostCT, costP, p1to1, p1to1, prjnClass)
-	net.ConnectToPulv(accCost, accCostCT, costP, full, full, prjnClass)
+	net.ConnectToPulv(accCost, accCostCT, pvNegP, full, full, prjnClass)
 	net.ConnectPTPredToPulv(accCostPTp, costP, p1to1, p1to1, prjnClass)
-	net.ConnectPTPredToPulv(accCostPTp, costP, full, full, prjnClass)
+	net.ConnectPTPredToPulv(accCostPTp, pvNegP, full, full, prjnClass)
 
 	///////////////////////////////////////////
 	// ILneg

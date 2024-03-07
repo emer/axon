@@ -228,13 +228,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
 
-	// note: these should be predicted by ACC, not included in this sim
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
 	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
 	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPTp, full)
 
 	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, accCost, accCostCT, accCostPTp, full)
 	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPTp, full)
 
 	////////////////////////////////////////////////
