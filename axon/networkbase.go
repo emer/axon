@@ -582,8 +582,15 @@ func (nt *NetworkBase) AllGlobals() string {
 	str := ""
 	for di := uint32(0); di < nt.MaxData; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
-		for vv := GvRew; vv < GvUSneg; vv++ {
+		for vv := GvRew; vv < GvCost; vv++ {
 			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlbV(ctx, di, vv))
+		}
+		for vv := GvCost; vv <= GvCostRaw; vv++ {
+			str += fmt.Sprintf("%20s:\t", vv.String())
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNCosts; ui++ {
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbCostV(ctx, di, vv, ui))
+			}
+			str += "\n"
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
@@ -614,9 +621,15 @@ func (nt *NetworkBase) ShowAllGlobals() { //gti:add
 func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 	ctx := &nt.Ctx
 	for di := uint32(0); di < nt.MaxData; di++ {
-		for vv := GvRew; vv < GvUSneg; vv++ {
+		for vv := GvRew; vv < GvCost; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlbV(ctx, di, vv)
+		}
+		for vv := GvCost; vv <= GvCostRaw; vv++ {
+			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNCosts; ui++ {
+				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
+				vals[key] = GlbCostV(ctx, di, vv, ui)
+			}
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {

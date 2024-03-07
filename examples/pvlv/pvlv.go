@@ -106,6 +106,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
 	ss.Context.Defaults()
+	ss.Context.ThetaCycles = int32(ss.Config.Run.ThetaCycles)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,7 +290,7 @@ func (ss *Sim) InitRndSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	nCycles := 200
+	nCycles := ss.Config.Run.ThetaCycles
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Condition, 1). // all these counters will be set from env
@@ -735,6 +736,7 @@ func (ss *Sim) ConfigGUI() {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 400
+	nv.Params.Raster.Max = ss.Config.Run.ThetaCycles
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)

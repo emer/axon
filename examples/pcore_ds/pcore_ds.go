@@ -107,6 +107,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
 	ss.Context.Defaults()
+	ss.Context.ThetaCycles = int32(ss.Config.Run.ThetaCycles)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -348,7 +349,7 @@ func (ss *Sim) ConfigLoops() {
 
 	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
-	nCycles := 300 // 300 > 250 > 200 (for 3x5, 250 is sig worse)
+	nCycles := ss.Config.Run.ThetaCycles
 	plusCycles := 50
 
 	man.AddStack(etime.Train).
@@ -829,7 +830,7 @@ func (ss *Sim) ConfigGUI() {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 400
-	nv.Params.Raster.Max = 300
+	nv.Params.Raster.Max = ss.Config.Run.ThetaCycles
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)

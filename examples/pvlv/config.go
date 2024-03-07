@@ -68,6 +68,9 @@ type RunConfig struct {
 	// number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `default:"0"`
 
+	// number of cycles per Theta phase (trial) -- either 200 or 300 (latter needed for motor actions)
+	ThetaCycles int `default:"300"`
+
 	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
 	Run int `default:"0"`
 

@@ -4,21 +4,20 @@
 
 * give up not happening in extinction -- maint staying active -- need to re-figure out these params, and document in the PVLV.md
 
-* too bouncy on re-acq -- losing maint in neg guys -- makes sense actually.  but something else going on too?
-    
 * Kir = 10 not working? but now working? what is the deal?
 * add dopamine-kir disinhib for more activity dynamics?
 - not well supported by data -- other channels involved.  maybe ACh modulates Kir tho?
 
 * why is nCycles == 300 not getting good DA?  where does it go?
 
-* BLA acq is very fast -- can we slow that down?  I guess part of that is baseline novelty
-
 * MtxGo is over-active -- partial random looked good -- maybe go back to that.
 
 * better at keeping No active -- add more scale there to balance better.
 
 # DONE
+
+* BLA acq is very fast -- can we slow that down?  I guess part of that is baseline novelty
+
 
 * vspatch needs better learning (still, again!): nonlinear DA learning (some mix of ACh and DA?)
   such that lrate is higher until it actually matches.
