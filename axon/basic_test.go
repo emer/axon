@@ -1437,6 +1437,8 @@ func TestGlobalIdxs(t *testing.T) {
 	pv := &net.PVLV
 	val := float32(0)
 
+	// fmt.Println("NCosts:", pv.NCosts, "NNegUSs:", pv.NNegUSs, "NPosUSs:", pv.NPosUSs)
+
 	for vv := GvRew; vv < GvCost; vv++ {
 		for di := uint32(0); di < nData; di++ {
 			SetGlbV(ctx, di, vv, val)
