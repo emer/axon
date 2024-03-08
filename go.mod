@@ -1,9 +1,9 @@
 module github.com/emer/axon/v2
 
-go 1.21
+go 1.22
 
 require (
-	cogentcore.org/core v0.0.7-0.20240224002924-02e90b285442
+	cogentcore.org/core v0.0.8-0.20240307214857-ea8edef99371
 	github.com/alecthomas/assert/v2 v2.2.1
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
@@ -49,7 +49,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.1.2-0.20240227203013-2b69615b5d55 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
