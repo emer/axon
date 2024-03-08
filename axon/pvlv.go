@@ -717,6 +717,7 @@ func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
 	pp.Urgency.Reset(ctx, di)
 	pp.TimeEffortReset(ctx, di)
 	pp.USs.USnegToZero(ctx, di) // all negs restart
+	pp.USs.CostToZero(ctx, di)
 	pp.ResetGiveUp(ctx, di)
 	SetGlbV(ctx, di, GvVSPatchPos, 0)
 	SetGlbV(ctx, di, GvVSPatchPosPrev, 0)
@@ -938,6 +939,19 @@ func (pp *PVLV) PVnegEstFmUSs(uss []float32) (pvNegSum, pvNeg float32) {
 		pvNegSum += wts[i] * uss[i]
 	}
 	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvNegSum)
+	return
+}
+
+// PVcostEstFmUSs returns the estimated negative PV value
+// based on given externally-provided Cost values.
+// This can be used to compute estimates to compare network performance.
+func (pp *PVLV) PVcostEstFmCosts(costs []float32) (pvCostSum, pvNeg float32) {
+	nn := pp.NCosts
+	wts := pp.USs.PVcostWts
+	for i := uint32(0); i < nn; i++ {
+		pvCostSum += wts[i] * costs[i]
+	}
+	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvCostSum)
 	return
 }
 

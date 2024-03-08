@@ -76,6 +76,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.Gi":     "0.3",   // go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":     "1",
 				"Layer.Acts.Dend.ModGain": "1", // todo: 2 is default
+				"Layer.Acts.Kir.Gbar":     "2",
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
 			Params: params.Params{
@@ -204,7 +205,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
 			}},
-		{Sel: "#UrgencyToVsMtxGo", Desc: "",
+		{Sel: "#UrgencyToVMtxGo", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4", // 4 good -- 1,2 too weak
 			}},

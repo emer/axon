@@ -929,32 +929,32 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	_, _, _ = accCost, accCostCT, accCostPTp
 	_, _ = blaNegAcq, blaNegExt
 
-	// ILposP is what ACCutil predicts, in order to learn about value (reward)
+	// ILposP is what PLutil predicts, in order to learn about value (reward)
 	ilPosP := net.AddPulvForSuper(ilPos, space)
 
-	// ILnegP is what ACCutil predicts, in order to learn about cost
+	// ILnegP is what PLutil predicts, in order to learn about cost
 	ilNegP := net.AddPulvForSuper(ilNeg, space)
 
 	pfc2m := params.Params{ // contextual, not driving -- weaker
 		"Prjn.PrjnScale.Rel": "0.1",
 	}
 
-	accUtil, accUtilCT, accUtilPT, accUtilPTp, accUtilMD := net.AddPFC2D("ACCutil", "MD", pfcY, pfcX, true, space)
-	vSmtxGo.SetBuildConfig("ThalLay5Name", accUtilMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay5Name", accUtilMD.Name())
-	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)
+	plUtil, plUtilCT, plUtilPT, plUtilPTp, plUtilMD := net.AddPFC2D("PLutil", "MD", pfcY, pfcX, true, space)
+	vSmtxGo.SetBuildConfig("ThalLay5Name", plUtilMD.Name())
+	vSmtxNo.SetBuildConfig("ThalLay5Name", plUtilMD.Name())
+	net.ConnectLayers(vSgpi, plUtilMD, full, InhibPrjn)
 
-	accUtilPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	plUtilPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
-	pj = net.ConnectToVSMatrix(accUtil, vSmtxGo, full)
+	pj = net.ConnectToVSMatrix(plUtil, vSmtxGo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	pj = net.ConnectToVSMatrix(accUtil, vSmtxNo, full)
+	pj = net.ConnectToVSMatrix(plUtil, vSmtxNo, full)
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	net.ConnectToVSPatch(accUtilPTp, vSpatch, full)
+	net.ConnectToVSPatch(plUtilPTp, vSpatch, full)
 
 	///////////////////////////////////////////
 	// ILneg
@@ -966,24 +966,24 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	// net.ConnectLayers(dist, ilNegPTPred, full, ForwardPrjn).SetClass("ToPTPred")
 
 	///////////////////////////////////////////
-	// ACCutil
+	// PLutil
 
-	// net.ConnectCTSelf(accUtilCT, full) // todo: test
+	// net.ConnectCTSelf(plUtilCT, full) // todo: test
 
 	// util predicts OFCval and ILneg
-	pj, _ = net.ConnectToPFCBidir(ilPos, ilPosP, accUtil, accUtilCT, accUtilPTp, full)
+	pj, _ = net.ConnectToPFCBidir(ilPos, ilPosP, plUtil, plUtilCT, plUtilPTp, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "1", // not good to make this stronger actually
 	}
-	pj, _ = net.ConnectToPFCBidir(ilNeg, ilNegP, accUtil, accUtilCT, accUtilPTp, full)
+	pj, _ = net.ConnectToPFCBidir(ilNeg, ilNegP, plUtil, plUtilCT, plUtilPTp, full)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "3", // drive acc stronger -- only this one works well
 	}
 
-	ilPos.PlaceRightOf(ofcPosUS, space)
+	// ilPos.PlaceRightOf(ofcPosUS, space)
 	ilPosP.PlaceBehind(ilPosMD, space)
 	ilNegP.PlaceBehind(ilNegMD, space)
-	accUtil.PlaceRightOf(ilNeg, 3*space)
+	plUtil.PlaceRightOf(accCost, space)
 
 	return
 }

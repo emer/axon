@@ -262,7 +262,7 @@ func (ev *Env) ExValueUtil(pv *axon.PVLV, ctx *axon.Context) {
 	maxutil := float32(0)
 	ev.ArmsNeg = nil
 	usPos := make([]float32, pv.NPosUSs)
-	usNeg := make([]float32, pv.NNegUSs)
+	cost := make([]float32, pv.NCosts)
 	for i, arm := range ev.Config.Arms {
 		us := ev.Config.USs[arm.US]
 		if us.Negative {
@@ -274,15 +274,15 @@ func (ev *Env) ExValueUtil(pv *axon.PVLV, ctx *axon.Context) {
 		for j := range usPos { // reset
 			usPos[j] = 0
 		}
-		for j := range usNeg { // reset
-			usNeg[j] = 0
+		for j := range cost { // reset
+			cost[j] = 0
 		}
 		usPos[arm.US+1] = val
 		_, pvPos := pv.PVposEstFmUSs(ctx, uint32(ev.Di), usPos)
 		exTime := float32(arm.Length) + 1 // time
-		usNeg[0] = exTime
-		usNeg[1] = exTime * arm.Effort.Midpoint()
-		_, pvNeg := pv.PVnegEstFmUSs(usNeg)
+		cost[0] = exTime
+		cost[1] = exTime * arm.Effort.Midpoint()
+		_, pvNeg := pv.PVcostEstFmCosts(cost)
 		burst, dip, da, rew := pv.DAFmPVs(pvPos, pvNeg, 0)
 		_, _, _ = burst, dip, rew
 		arm.ExPVpos = pvPos

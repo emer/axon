@@ -177,13 +177,7 @@ func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
 	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
 	pv.USs.PVnegGain = .1 // global scaling of PV neg level -- was 1
 
-	pv.USs.USnegGains[0] = 0.1 // time: if USneg pool is saturating, reduce
-	pv.USs.USnegGains[1] = 0.1 // effort: if USneg pool is saturating, reduce
-	pv.USs.USnegGains[2] = 2   // big salient input!
-
-	pv.USs.PVnegWts[0] = 0.02 // time: controls overall PVneg -- if too high, not enough reward..
-	pv.USs.PVnegWts[1] = 0.02 // effort: controls overall PVneg -- if too high, not enough reward..
-	pv.USs.PVnegWts[2] = 1
+	pv.USs.USnegGains[0] = 2 // big salient input!
 
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
 	pv.Urgency.U50 = 10
@@ -220,11 +214,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, accUtil, sc, notMaint := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-	_, _ = accUtil, urgency
+	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, plUtil, sc := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	_, _ = plUtil, urgency
 	_, _ = ofcNegUSCT, ofcNegUSPTp
 
-	accUtilPTp := net.AxonLayerByName("ACCutilPTp")
+	plUtilPTp := net.AxonLayerByName("PLutilPTp")
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
 	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
@@ -300,10 +294,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// ALM, M1 <-> OFC, ACC
 
 	// action needs to know if maintaining a goal or not
-	// using accUtil as main summary "driver" input to action system
+	// using plUtil as main summary "driver" input to action system
 	// PTp provides good notmaint signal for action.
-	net.ConnectLayers(accUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	net.ConnectLayers(accUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(plUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	net.ConnectLayers(plUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
 	// note: in Obelisk this helps with the Consume action
 	// but here in this example it produces some instability
@@ -321,8 +315,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	alm.PlaceRightOf(m1, space)
 	vl.PlaceBehind(m1P, space)
 	act.PlaceBehind(vl, space)
-
-	notMaint.PlaceRightOf(alm, space)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -499,7 +491,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
 	pv := &ss.Net.PVLV
-	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
+	mtxLy := ss.Net.AxonLayerByName("VMtxGo")
 	vlly := ss.Net.AxonLayerByName("VL")
 	threshold := float32(0.1)
 	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
