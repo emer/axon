@@ -22,6 +22,15 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Layer.Acts.Noise.Ge": {"Tweak": "-"},
 			}},
+		{Sel: ".DBG", Desc: "all bg",
+			Params: params.Params{
+				"Layer.Acts.Mahp.Gbar": "0.0",
+				"Layer.Acts.Sahp.Gbar": "0.05", // note: Pr getting lots of Sahp
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Mahp.Gbar": {"Tweak": "-"},
+				"Layer.Acts.Sahp.Gbar": {"Tweak": "-"},
+			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":            "0.5",   // 0.5 > others
@@ -71,6 +80,21 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModGain":   "1.0",   // 1.5 def
 				"Layer.Acts.Kir.Gbar":       "0",     // no real diff here over range 0-10
 				"Layer.Acts.MaintNMDA.Gbar": "0.007", // 0.007 default
+				"Layer.Acts.Mahp.Gbar":      "0",     // 0.02 def
+				"Layer.Acts.Sahp.Gbar":      "0.05",  // 0.05 def
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Mahp.Gbar": {"Tweak": "[0.01,0.015,0.005]"},
+				"Layer.Acts.Sahp.Gbar": {"Tweak": "[0.04,0.03,0.02]"},
+			}},
+		{Sel: ".PTPredLayer", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.Mahp.Gbar": "0",    // 0.02 def
+				"Layer.Acts.Sahp.Gbar": "0.05", // 0.05 def
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Mahp.Gbar": {"Tweak": "[0.01,0.015,0.005]"},
+				"Layer.Acts.Sahp.Gbar": {"Tweak": "[0.04,0.03,0.02]"},
 			}},
 		{Sel: "#MotorBS", Desc: "",
 			Params: params.Params{

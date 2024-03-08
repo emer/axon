@@ -189,10 +189,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	np := 1
 	nuPer := ev.NUnitsPer
 	nAct := ev.NActions
-	nuX := 7
-	nuY := 7
-	nuCtxY := 7
-	nuCtxX := 7
+	nuX := 6
+	nuY := 6
+	nuCtxY := 6
+	nuCtxX := 6
 	space := float32(2)
 
 	p1to1 := prjn.NewPoolOneToOne()
