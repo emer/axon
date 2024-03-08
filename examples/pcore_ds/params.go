@@ -28,8 +28,8 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.BurstGain": "0.1",  // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
 				"Layer.Learn.RLRate.On":          "true", // note: applied for tr update trials
 				"Layer.Learn.TrgAvgAct.On":       "true", // true > false
-				"Layer.Acts.Mahp.Gbar":           "0.0",
-				"Layer.Acts.Sahp.Gbar":           "0.05", // todo test
+				"Layer.Acts.Mahp.Gbar":           "0.01",
+				"Layer.Acts.Sahp.Gbar":           "0.02", // todo test
 			},
 			Hypers: params.Hypers{
 				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
