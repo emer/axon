@@ -5,7 +5,7 @@ on: # yamllint disable-line rule:truthy
   pull_request:
   push:
     branches:
-      - "master"
+      - "main"
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
