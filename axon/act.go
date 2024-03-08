@@ -1084,9 +1084,9 @@ func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
 	mahpN := NrnV(ctx, ni, di, MahpN)
 	gmahp := ac.Mahp.GmAHP(vm, &mahpN)
 	SetNrnV(ctx, ni, di, Gmahp, gmahp)
+	SetNrnV(ctx, ni, di, MahpN, mahpN)
 
-	gsahp := ac.Sahp.GsAHP(NrnV(ctx, ni, di, SahpN)) // SahpN updated in plus phase (trial level)
-	SetNrnV(ctx, ni, di, Gsahp, gsahp)
+	gsahp := NrnV(ctx, ni, di, Gsahp)
 
 	gak := ac.AK.Gak(vmd)
 	SetNrnV(ctx, ni, di, Gak, gak)
@@ -1097,6 +1097,7 @@ func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, KirM, nrnKirM)
 
 	gktot := gmahp + gsahp + gak + gkir
+
 	if ac.KNa.On.IsTrue() {
 		gknaMed := NrnV(ctx, ni, di, GknaMed)
 		gknaSlow := NrnV(ctx, ni, di, GknaSlow)
@@ -1105,6 +1106,7 @@ func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
 		SetNrnV(ctx, ni, di, GknaSlow, gknaSlow)
 		gktot += gknaMed + gknaSlow
 	}
+
 	SetNrnV(ctx, ni, di, Gk, gktot)
 }
 

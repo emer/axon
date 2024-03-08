@@ -1042,6 +1042,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	nrnSaphCa = ly.Acts.Sahp.CaInt(nrnSaphCa, nrnCaSpkD)
 	SetNrnV(ctx, ni, di, SahpN, sahpN)
 	SetNrnV(ctx, ni, di, SahpCa, nrnSaphCa)
+	SetNrnV(ctx, ni, di, Gsahp, ly.Acts.Sahp.GsAHP(sahpN))
 }
 
 //gosl: end layerparams

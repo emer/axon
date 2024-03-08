@@ -105,9 +105,9 @@ func (mp *MahpParams) DNFmV(v, n float32) float32 {
 
 // GmAHP returns the conductance as a function of n
 func (mp *MahpParams) GmAHP(v float32, n *float32) float32 {
-	g := mp.Tadj * mp.Gbar * *n
 	dn := mp.DNFmV(v, *n)
 	*n += dn
+	g := mp.Tadj * mp.Gbar * *n
 	return g
 }
 

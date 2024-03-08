@@ -385,29 +385,31 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	}
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
-	qtr0HidGes := []float32{0.35385746, 0, 0, 0}
+	qtr0HidGes := []float32{0.35379207, 0, 0, 0}
 	qtr0HidGis := []float32{0.15478331, 0.15478331, 0.15478331, 0.15478331}
 	qtr0OutActs := []float32{0.5638285, 0, 0, 0}
-	qtr0OutGes := []float32{0.38044316, 0, 0, 0}
+	qtr0OutGes := []float32{0.3803822, 0, 0, 0}
 	qtr0OutGis := []float32{0.19012947, 0.19012947, 0.19012947, 0.19012947}
 
 	qtr3HidActs := []float32{0.56933826, 0, 0, 0}
-	qtr3HidGes := []float32{0.43080646, 0, 0, 0}
+	qtr3HidGes := []float32{0.4306289, 0, 0, 0}
 	qtr3HidGis := []float32{0.21780373, 0.21780373, 0.21780373, 0.21780373}
 	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0.48472303, 0.48472303, 0.48472303, 0.48472303}
 
 	p1qtr0HidActs := []float32{1.2795964e-10, 0.47059, 0, 0}
-	p1qtr0HidGes := []float32{0.011436448, 0.44748923, 0, 0}
+	p1qtr0HidGes := []float32{0.011436316, 0.4473957, 0, 0}
 	p1qtr0HidGis := []float32{0.19098659, 0.19098659, 0.19098659, 0.19098659}
 	p1qtr0OutActs := []float32{1.5607746e-10, 0, 0, 0}
-	p1qtr0OutGes := []float32{0.0136372205, 0.22609714, 0, 0}
+	p1qtr0OutGes := []float32{0.013632386, 0.22618769, 0, 0}
 	p1qtr0OutGis := []float32{0.089633144, 0.089633144, 0.089633144, 0.089633144}
 
 	p1qtr3HidActs := []float32{2.837341e-39, 0.5439926, 0, 0}
-	p1qtr3HidGes := []float32{0.002279978, 0.6443535, 0, 0}
-	p1qtr3HidGis := []float32{0.31420222, 0.31420222, 0.31420222, 0.31420222}
+
+	p1qtr3HidGes := []float32{0.002289371, 0.70306444, 0, 0}
+
+	p1qtr3HidGis := []float32{0.3315633, 0.3315633, 0.3315633, 0.3315633}
 	p1qtr3OutActs := []float32{3.460815e-39, 0.72627467, 0, 0}
 	p1qtr3OutGes := []float32{0, 0.8, 0, 0}
 	p1qtr3OutGis := []float32{0.4725598, 0.4725598, 0.4725598, 0.4725598}
@@ -716,19 +718,20 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
-	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.53701246, 0.5424112}
-	qtr3HidCaD := []float32{0.5214639, 0.49507806, 0.4991882, 0.50301147}
-	qtr3OutCaP := []float32{0.5834704, 0.5698636, 0.5796981, 0.5744664}
-	qtr3OutCaD := []float32{0.5047723, 0.46398377, 0.47836566, 0.47417372}
+
+	qtr3HidCaP := []float32{0.5490926, 0.54061866, 0.53693193, 0.5420067}
+	qtr3HidCaD := []float32{0.5213477, 0.49503344, 0.49910694, 0.5027576}
+	qtr3OutCaP := []float32{0.5834577, 0.569848, 0.57969385, 0.5744618}
+	qtr3OutCaD := []float32{0.5047518, 0.46395057, 0.47835463, 0.47416452}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
 	q3outCaP := make([]float32, 4*NLrnPars)
 	q3outCaD := make([]float32, 4*NLrnPars)
 
-	hidDwts := []float32{0.0015591943, 0.0024129525, 0.0018848473, 0.0019944084}
+	hidDwts := []float32{0.001558083, 0.00239495, 0.0018848843, 0.001986781}
 	outDwts := []float32{0.003556001, 0.008800001, 0.007058134, 0.0069709825}
-	hidWts := []float32{0.5093542, 0.5144739, 0.51130706, 0.5119643}
+	hidWts := []float32{0.5093473, 0.51436603, 0.51130736, 0.5119186}
 	outWts := []float32{0.5213235, 0.5526102, 0.54225075, 0.54173136}
 
 	hiddwt := make([]float32, 4*NLrnPars)
@@ -883,16 +886,16 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	printCycs := false
 	printQtrs := false
 
-	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00019181852, 0.0030487436, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00016288209, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00015015423, 0.002566926}
+	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.000101010846, 0.0030487436, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 8.505856e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 7.812922e-05, 0.002566926}
 
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
 
-	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.53701246, 0.5424112}
-	qtr3HidCaD := []float32{0.5214639, 0.49507806, 0.4991882, 0.50301147}
-	qtr3OutCaP := []float32{0.5834704, 0.5698636, 0.5796981, 0.5744664}
-	qtr3OutCaD := []float32{0.5047723, 0.46398377, 0.47836566, 0.47417372}
+	qtr3HidCaP := []float32{0.5490926, 0.54061866, 0.53693193, 0.5420067}
+	qtr3HidCaD := []float32{0.5213477, 0.49503344, 0.49910694, 0.5027576}
+	qtr3OutCaP := []float32{0.5834577, 0.569848, 0.57969385, 0.5744618}
+	qtr3OutCaD := []float32{0.5047518, 0.46395057, 0.47835463, 0.47416452}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
@@ -1316,14 +1319,14 @@ func TestInhibAct(t *testing.T) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.8761159, 0, 0, 0}
-	qtr0HidGes := []float32{0.90975666, 0, 0, 0}
+	qtr0HidGes := []float32{0.9094745, 0, 0, 0}
 	qtr0HidGis := []float32{0.0930098, 0, 0, 0}
 	qtr0OutActs := []float32{0.793471, 0, 0, 0}
-	qtr0OutGes := []float32{0.74590594, 0, 0, 0}
+	qtr0OutGes := []float32{0.7463464, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
 	qtr3HidActs := []float32{0.9202804, 0, 0, 0}
-	qtr3HidGes := []float32{1.1153994, 0, 0, 0}
+	qtr3HidGes := []float32{1.1153909, 0, 0, 0}
 	qtr3HidGis := []float32{0.09305161, 0, 0, 0}
 	qtr3OutActs := []float32{0.92592585, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
