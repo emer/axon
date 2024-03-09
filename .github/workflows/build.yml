@@ -1,4 +1,3 @@
----
 name: Build
 
 on: # yamllint disable-line rule:truthy
