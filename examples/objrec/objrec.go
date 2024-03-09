@@ -351,10 +351,10 @@ func (ss *Sim) ConfigLoops() {
 			}
 		})
 		man.GetLoop(etime.Train, etime.Trial).OnStart.Add("UpdtImage", func() {
-			ss.GUI.Grid("Image").SetNeedsRender(true)
+			ss.GUI.Grid("Image").NeedsRender()
 		})
 		man.GetLoop(etime.Test, etime.Trial).OnStart.Add("UpdtImage", func() {
-			ss.GUI.Grid("Image").SetNeedsRender(true)
+			ss.GUI.Grid("Image").NeedsRender()
 		})
 
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)

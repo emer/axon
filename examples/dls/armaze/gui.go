@@ -268,12 +268,9 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	//    2D Scene
 
 	twov := gi.NewSVG(twofr, "sceneview")
-	twov.Style(func(s *styles.Style) {
-		twov.SVG.Fill = true
-		twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
-		twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
-		twov.SetReadOnly(false)
-	})
+	twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
+	twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
+	twov.SetReadOnly(false)
 
 	//////////////////////////////////////////
 	//    Toolbar
@@ -586,8 +583,8 @@ func (vw *GUI) UpdateWorldGUI() {
 	if vw.SceneView == nil || !vw.Disp {
 		return
 	}
-	updt := vw.SceneView.Scene.UpdateStartAsync()
-	defer vw.SceneView.Scene.UpdateEndAsyncRender(updt)
+	vw.SceneView.AsyncLock()
+	defer vw.SceneView.AsyncUnlock()
 
 	// update state:
 	vw.SetEmeryPose()
@@ -600,7 +597,7 @@ func (vw *GUI) UpdateWorldGUI() {
 	// update views:
 	vw.GrabEyeImg()
 	if vw.SceneView.IsVisible() {
-		vw.SceneView.SetNeedsRender(true)
+		vw.SceneView.NeedsRender()
 	}
 	// if vw.Scene2D.IsVisible() {
 	// 	vw.Scene2D.SetNeedsRender(true)

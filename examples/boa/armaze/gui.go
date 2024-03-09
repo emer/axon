@@ -585,8 +585,8 @@ func (vw *GUI) UpdateWorldGUI() {
 	if vw.SceneView == nil || !vw.Disp {
 		return
 	}
-	updt := vw.SceneView.Scene.UpdateStartAsync()
-	defer vw.SceneView.Scene.UpdateEndAsyncRender(updt)
+	vw.SceneView.AsyncLock()
+	defer vw.SceneView.AsyncUnlock()
 
 	// update state:
 	vw.SetEmeryPose()
@@ -599,7 +599,7 @@ func (vw *GUI) UpdateWorldGUI() {
 	// update views:
 	vw.GrabEyeImg()
 	if vw.SceneView.IsVisible() {
-		vw.SceneView.SetNeedsRender(true)
+		vw.SceneView.NeedsRender()
 	}
 	// if vw.Scene2D.IsVisible() {
 	// 	vw.Scene2D.SetNeedsRender(true)
