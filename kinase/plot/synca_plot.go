@@ -27,7 +27,7 @@ func main() {
 	sim.Config()
 	sim.Run()
 	b := sim.ConfigGUI()
-	b.NewWindow().Run().Wait()
+	b.RunMainWindow()
 }
 
 // LogPrec is precision for saving float values in logs

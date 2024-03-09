@@ -26,7 +26,7 @@ func DriveEffortGUI() {
 	ep := &DrEffPlot{}
 	ep.Config()
 	b := ep.ConfigGUI()
-	b.NewWindow().Run().Wait()
+	b.RunMainWindow()
 }
 
 // LogPrec is precision for saving float values in logs

@@ -1047,7 +1047,7 @@ func (ss *Sim) RunGUI() {
 	ss.EnvGUI = &armaze.GUI{}
 	eb := ss.EnvGUI.ConfigWorldGUI(ev)
 	eb.NewWindow().Run()
-	ss.GUI.Body.NewWindow().Run().Wait()
+	ss.GUI.Body.RunMainWindow()
 }
 
 // RecordTestData returns key testing data from the network

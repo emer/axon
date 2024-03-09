@@ -679,7 +679,7 @@ func (ss *Sim) ConfigGUI() {
 func (ss *Sim) RunGUI() {
 	ss.Init()
 	ss.ConfigGUI()
-	ss.GUI.Body.NewWindow().Run().Wait()
+	ss.GUI.Body.RunMainWindow()
 }
 
 func (ss *Sim) RunNoGUI() {
