@@ -21,7 +21,6 @@ import (
 	"github.com/emer/etable/v2/agg"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
-	_ "github.com/emer/etable/v2/etview" // include to get gui views
 )
 
 func main() {
