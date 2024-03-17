@@ -37,6 +37,12 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":     "0",   // no real diff here over range 0-10
 				"Layer.Acts.Dend.ModACh":  "true",
 			}},
+		{Sel: ".ACC", Desc: "manipulate noise to see about integration over time",
+			Params: params.Params{
+				"Layer.Acts.Noise.On": "false",
+				"Layer.Acts.Noise.Ge": "0.1",  // 0.1 is visibly impactful
+				"Layer.Acts.Noise.Gi": "0.01", // 0.01 -- if to strong, rep becomes very weak
+			}},
 		////////////////////////////////////////////
 		// Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
