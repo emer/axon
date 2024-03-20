@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"log"
 
+	"cogentcore.org/core/abilities"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/colors/colormap"
 	"cogentcore.org/core/events"
@@ -290,10 +291,22 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 			OnClick(func(e events.Event) {
 				vw.Trace = nil
 			})
-		giv.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
-		giv.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
-		giv.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
-		giv.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
+		giv.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext).
+			Style(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
+		giv.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft).
+			Style(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
+		giv.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight).
+			Style(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
+		giv.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited).
+			Style(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
 
 		gi.NewSeparator(tb)
 	})
@@ -504,6 +517,7 @@ func (vw *GUI) GrabEyeImg() {
 	img, err := vw.View3D.Image()
 	if err == nil && img != nil {
 		vw.EyeRFullImg.SetImage(img)
+		vw.EyeRFullImg.NeedsRender()
 	} else {
 		log.Println(err)
 	}
