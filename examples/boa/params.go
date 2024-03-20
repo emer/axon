@@ -105,7 +105,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.05", // .1 still enough to shut off -- was .2
+				"Layer.Acts.KNa.Slow.Max": "0.2", // .1 still enough to shut off -- was .2
 			}},
 		////////////////////////////////////////////
 		// Cortical Prjns
