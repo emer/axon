@@ -760,7 +760,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
 		cb := gi.NewChooser(tb, "runs")
-		cb.SetStrings(cond.RunNames)
+		cb.SetStrings(cond.RunNames...)
 		ri := 0
 		for i, rn := range cond.RunNames {
 			if rn == ss.Config.Env.RunName {
