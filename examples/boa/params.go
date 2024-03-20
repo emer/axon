@@ -105,7 +105,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.2", // .1 still enough to shut off -- was .2
+				"Layer.Acts.KNa.Slow.Max": "0.8", // .8 reliable decreases -- could go higher
 			}},
 		////////////////////////////////////////////
 		// Cortical Prjns
@@ -178,8 +178,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "4",    // 3 orig
-				"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
+				"Prjn.PrjnScale.Abs":        "4", // 3 orig
+				"Prjn.Learn.Trace.LearnThr": "0",
+				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
 			Params: params.Params{
