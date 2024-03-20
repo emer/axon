@@ -46,7 +46,7 @@
 
 [[Base]]
   Sel = "#M1VM"
-  Desc = "all mtx"
+  Desc = ""
   [Base.Params]
     "Layer.Learn.NeuroMod.AChDisInhib" = "0"
 

@@ -107,7 +107,7 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.GabaB.Gbar":            "0",
 				"Layer.Acts.NMDA.Gbar":             "0.006", // 0.006 default, necessary (0 very bad)
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",     // no diff here -- always ACh
-				"Layer.Learn.NeuroMod.BurstGain":   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
+				"Layer.Learn.NeuroMod.BurstGain":   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5; only for weird rew case here; 1 def
 			},
 			Hypers: params.Hypers{
 				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},

@@ -22,6 +22,7 @@ Debug = false
   GPU = true
   NData = 16
   NThreads = 0
+  ThetaCycles = 300
   Run = 0
   NRuns = 25
   NEpochs = 50

@@ -126,13 +126,9 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3",
 			}},
-		{Sel: "#ILToPL", Desc: "stronger",
+		{Sel: "#ILposToPLutil", Desc: "not good to make this stronger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // fairly sensitive to this param..
-			}},
-		{Sel: "#ILposToPL", Desc: "not good to make this stronger",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Abs": "1", // todo: try 3?
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
@@ -196,10 +192,6 @@ var ParamSets = netparams.Sets{
 		{Sel: ".SuperToPT", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def
-			}},
-		{Sel: "#ILToILMD", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // supertothal for us stronger
 			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{

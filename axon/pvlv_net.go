@@ -905,7 +905,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	blaPosAcq.PlaceAbove(usPos)
 	ofcPosUS.PlaceRightOf(blaPosAcq, space)
 	ofcNegUS.PlaceRightOf(ofcPosUS, space)
-	ilPos.PlaceRightOf(ofcNegUS, space)
+	ilPos.PlaceRightOf(ofcNegUS, space*3)
 	ilNeg.PlaceRightOf(ilPos, space)
 	accCost.PlaceRightOf(ilNeg, space)
 
@@ -980,7 +980,6 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 		"Prjn.PrjnScale.Abs": "3", // drive acc stronger -- only this one works well
 	}
 
-	// ilPos.PlaceRightOf(ofcPosUS, space)
 	ilPosP.PlaceBehind(ilPosMD, space)
 	ilNegP.PlaceBehind(ilNegMD, space)
 	plUtil.PlaceRightOf(accCost, space)

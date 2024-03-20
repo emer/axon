@@ -229,6 +229,7 @@ func (ly *Layer) MatrixDefaults() {
 		ly.Params.Acts.Dend.ModBase = 0
 		ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
 		ly.Params.Learn.NeuroMod.AChDisInhib = 5
+		ly.Params.Learn.NeuroMod.BurstGain = 1
 	} else {
 		ly.Params.Inhib.Layer.On.SetBool(false)
 		ly.Params.Matrix.IsVS.SetBool(false)

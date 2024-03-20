@@ -275,6 +275,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// OFCus predicts cs
 	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
 
 	///////////////////////////////////////////
 	// OFC, ACC, ALM predicts pos
