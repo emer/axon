@@ -70,14 +70,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi": "1",
 			}},
-		{Sel: ".MatrixLayer", Desc: "all mtx",
+		{Sel: ".VSMatrixLayer", Desc: "vs mtx",
 			Params: params.Params{
 				"Layer.Inhib.Layer.On":           "false", // todo: explore -- could be bad for gating
-				"Layer.Inhib.Pool.Gi":            "0.6",   // go lower, get more inhib from elsewhere?
+				"Layer.Inhib.Pool.Gi":            "0.5",   // go lower, get more inhib from elsewhere?
 				"Layer.Inhib.Pool.FB":            "0",
 				"Layer.Acts.Dend.ModGain":        "1", // todo: 2 is default
 				"Layer.Acts.Kir.Gbar":            "2",
 				"Layer.Learn.NeuroMod.BurstGain": "0.5",
+				"Layer.Learn.RLRate.SigmoidMin":  "0.001", // 0.01 better than .05
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
 			Params: params.Params{

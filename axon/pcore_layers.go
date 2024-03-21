@@ -222,6 +222,7 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 0
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
+	ly.Params.Learn.RLRate.SigmoidMin = 0.001
 
 	if ly.Cls == "VSMatrixLayer" {
 		ly.Params.Inhib.Layer.On.SetBool(true)

@@ -23,13 +23,15 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":        "false",
-				"Layer.Inhib.Layer.Gi":       "0.5",
-				"Layer.Inhib.ActAvg.Nominal": "0.25",
-				"Layer.Matrix.IsVS":          "true", // key for resetting urgency
-				"Layer.Learn.RLRate.On":      "true", // only used for non-rew trials -- key
-				"Layer.Learn.RLRate.Diff":    "false",
-				"Layer.Learn.TrgAvgAct.On":   "true",
+				"Layer.Inhib.Pool.On":            "false",
+				"Layer.Inhib.Layer.Gi":           "0.5",
+				"Layer.Inhib.ActAvg.Nominal":     "0.25",
+				"Layer.Matrix.IsVS":              "true", // key for resetting urgency
+				"Layer.Learn.RLRate.On":          "true", // only used for non-rew trials -- key
+				"Layer.Learn.RLRate.Diff":        "false",
+				"Layer.Learn.RLRate.SigmoidMin":  "0.01", // 0.01 better than .05
+				"Layer.Learn.TrgAvgAct.On":       "true",
+				"Layer.Learn.NeuroMod.BurstGain": "0.1", // 1 def
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
