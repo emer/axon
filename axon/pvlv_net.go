@@ -591,8 +591,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	_ = accCostPT
 
 	p1to1 := prjn.NewPoolOneToOne()
-	// p1to1rnd := prjn.NewPoolUnifRnd()
-	// p1to1rnd.PCon = 0.5
+	p1to1rnd := prjn.NewPoolUnifRnd()
+	p1to1rnd.PCon = 0.5
 	full := prjn.NewFull()
 	var pj, bpj *Prjn
 	prjnClass := "PFCPrjn"
@@ -687,7 +687,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	// 	"Prjn.PrjnScale.Rel": ".2",
 	// }
 	net.ConnectToVSMatrix(blaPosAcq, vSmtxNo, p1to1)
-	net.ConnectToVSMatrix(blaPosAcq, vSmtxGo, p1to1).SetClass("BLAAcqToGo")
+	net.ConnectToVSMatrix(blaPosAcq, vSmtxGo, p1to1rnd).SetClass("BLAAcqToGo")
 	// pj.DefParams = params.Params{
 	// 	"Prjn.PrjnScale.Abs": "2", // key strength driver
 	// 	"Prjn.PrjnScale.Rel": "1",
@@ -711,7 +711,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// todo: ofc -> STN?
 
-	pj = net.ConnectToVSMatrix(blaPosExt, vSmtxNo, p1to1)
+	pj = net.ConnectToVSMatrix(blaPosExt, vSmtxNo, p1to1rnd)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
 		"Prjn.PrjnScale.Rel": "1",

@@ -24,6 +24,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
 				"Layer.Inhib.Pool.On":        "false",
+				"Layer.Inhib.Layer.Gi":       "0.5",
 				"Layer.Inhib.ActAvg.Nominal": "0.25",
 				"Layer.Matrix.IsVS":          "true", // key for resetting urgency
 				"Layer.Learn.RLRate.On":      "true", // only used for non-rew trials -- key

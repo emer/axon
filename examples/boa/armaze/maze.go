@@ -16,8 +16,6 @@ package armaze
 //go:generate core generate -add-types
 
 import (
-	"log"
-
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
@@ -174,8 +172,8 @@ func (ev *Env) ConfigEnv(di int) {
 	ev.Config.USs = make([]*USParams, cfg.NUSs)
 	ev.Config.Arms = make([]*Arm, cfg.NArms)
 
-	log.Printf("drives: %d, USs: %d, CSs: %d", cfg.NDrives, cfg.NUSs, cfg.NCSs)
-	log.Printf("max arm length: %d", cfg.MaxArmLength)
+	// log.Printf("drives: %d, USs: %d, CSs: %d", cfg.NDrives, cfg.NUSs, cfg.NCSs)
+	// log.Printf("max arm length: %d", cfg.MaxArmLength)
 
 	// defaults
 	for i := range ev.Config.Arms {
