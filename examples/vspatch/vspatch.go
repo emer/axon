@@ -447,7 +447,7 @@ func (ss *Sim) ConfigLogs() {
 	li = ss.Logs.AddStatAggItem("RewPred", etime.Run, etime.Epoch, etime.Sequence)
 	li.Range.Max = 1.2
 	li = ss.Logs.AddStatAggItem("RPE", etime.Run, etime.Epoch, etime.Sequence)
-	li.Range.Min = -1
+	li.Range.Min = -0.5
 	li.Range.Max = 1
 	li.FixMin = true
 	li.FixMax = true
