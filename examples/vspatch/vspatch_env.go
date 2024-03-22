@@ -69,8 +69,8 @@ type VSPatchEnv struct {
 	// reward prediction from model
 	RewPred float32 `edit:"-"`
 
-	// reward prediction error: Rew - RewPred
-	RPE float32 `edit:"-"`
+	// DA = reward prediction error: Rew - RewPred
+	DA float32 `edit:"-"`
 }
 
 func (ev *VSPatchEnv) Name() string {
