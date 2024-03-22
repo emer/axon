@@ -501,7 +501,7 @@ func (ss *Sim) TrialStats() {
 	diu := uint32(0)
 	ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
-	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
+	ss.Stats.SetFloat32("VSPatch", axon.GlbUSposV(ctx, diu, axon.GvRewPred, 0))
 	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
 
 	ss.Stats.SetFloat32("GoalMaint", axon.GlbV(ctx, diu, axon.GvGoalMaint))
