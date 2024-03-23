@@ -919,7 +919,11 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 // note: needs to iterate over sub-pools in layer!
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool, vals *LayerVals) {
 	val := ly.VSPatch.ThrVal(pl.AvgMax.CaSpkD.Cycle.Avg, vals.ActAvg.AdaptThr)
-	SetGlbUSposV(ctx, di, GvVSPatch, uint32(pi-1), val)
+	if ly.Learn.NeuroMod.DAMod == D1Mod {
+		SetGlbUSposV(ctx, di, GvVSPatchD1, uint32(pi-1), val)
+	} else {
+		SetGlbUSposV(ctx, di, GvVSPatchD2, uint32(pi-1), val)
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -1013,6 +1017,8 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
 	modlr := ly.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
 	dlr := float32(1)
+	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
+
 	switch ly.LayType {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, NrnV(ctx, ni, di, SpkPrv)) // delta on previous trial
@@ -1022,11 +1028,13 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	case VSPatchLayer:
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // note: don't have proper max here
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
+		// if hasRew {
+		// }
 		// if modlr < 0 { // for negative da, target the strongest
 		// 	mlr = 1 - mlr
 		// }
 	case MatrixLayer:
-		if GlbV(ctx, di, GvHasRew) > 0 { // reward time
+		if hasRew { // reward time
 			mlr = 1 // don't use dig deriv
 		} else {
 			modlr = 1 // don't use mod

@@ -192,9 +192,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
-	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
+	_, _, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
 	_, _, _, _ = ilPos, ilPosCT, ilPosPTp, ilPosMD
 	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
@@ -501,7 +501,7 @@ func (ss *Sim) TrialStats() {
 	diu := uint32(0)
 	ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
 	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
-	ss.Stats.SetFloat32("VSPatch", axon.GlbUSposV(ctx, diu, axon.GvRewPred, 0))
+	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
 	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
 
 	ss.Stats.SetFloat32("GoalMaint", axon.GlbV(ctx, diu, axon.GvGoalMaint))
@@ -530,7 +530,7 @@ func (ss *Sim) TrialStats() {
 
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 
-	vsLy := ss.Net.AxonLayerByName("VsPatch")
+	vsLy := ss.Net.AxonLayerByName("VsPatchD1")
 	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 }
 

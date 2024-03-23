@@ -252,9 +252,12 @@ const (
 	GvUSpos
 
 	// VSPatch is current reward predicting VSPatch (PosD1) values.
-	GvVSPatch
+	GvVSPatchD1
 
-	// VSPatch is previous reward predicting VSPatch (PosD1) values.
+	// VSPatch is current reward predicting VSPatch (PosD2) values.
+	GvVSPatchD2
+
+	// VSPatch is previous reward predicting VSPatch (D1-D2) values.
 	GvVSPatchPrev
 
 	// OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool

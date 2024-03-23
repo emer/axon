@@ -367,17 +367,27 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 // or "relief" burst when actual neg < predicted.
 type LHbParams struct {
 
-	// threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
+	// gain on the VSPatchD1 - D2 difference
+	VSPatchGain float32 `default:"2"`
+
+	// threshold factor that multiplies integrated pvNeg value
+	// to establish a threshold for whether the integrated pvPos value
+	// is good enough to drive overall net positive reward
 	NegThr float32 `default:"1"`
 
-	// gain multiplier on PVpos for purposes of generating bursts (not for  discounting negative dips) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	// gain multiplier on PVpos for purposes of generating bursts
+	// (not for discounting negative dips).
+	// 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
 	BurstGain float32 `default:"1"`
 
-	// gain multiplier on PVneg for purposes of generating dips (not for  discounting positive bursts) -- 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
+	// gain multiplier on PVneg for purposes of generating dips
+	// (not for discounting positive bursts).
+	// 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
 	DipGain float32 `default:"1"`
 }
 
 func (lh *LHbParams) Defaults() {
+	lh.VSPatchGain = 2
 	lh.NegThr = 1
 	lh.BurstGain = 1
 	lh.DipGain = 1
@@ -590,7 +600,8 @@ func (pp *PVLV) Reset(ctx *Context, di uint32) {
 	pp.Urgency.Reset(ctx, di)
 	pp.InitUS(ctx, di)
 	pp.LHb.Reset(ctx, di)
-	pp.Drive.VarToZero(ctx, di, GvVSPatch)
+	pp.Drive.VarToZero(ctx, di, GvVSPatchD1)
+	pp.Drive.VarToZero(ctx, di, GvVSPatchD2)
 	pp.ResetGoalState(ctx, di)
 	SetGlbV(ctx, di, GvVtaDA, 0)
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
@@ -866,15 +877,17 @@ func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
 	mx := float32(0)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		vs := GlbUSposV(ctx, di, GvVSPatch, i)
-		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
+		vsD1 := GlbUSposV(ctx, di, GvVSPatchD1, i)
+		vsD2 := GlbUSposV(ctx, di, GvVSPatchD2, i)
+		vs := pp.LHb.VSPatchGain * (vsD1 - vsD2)
 		if vs > mx {
 			mx = vs
 		}
+		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
 	}
 	SetGlbV(ctx, di, GvVSPatchPos, mx)
+	SetGlbV(ctx, di, GvRewPred, mx)
 	AddGlbV(ctx, di, GvVSPatchPosSum, mx)
-	SetGlbV(ctx, di, GvRewPred, GlbV(ctx, di, GvVSPatchPos))
 }
 
 // PVposEst returns the estimated positive PV value

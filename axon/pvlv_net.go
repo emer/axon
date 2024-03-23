@@ -316,17 +316,23 @@ func (net *Network) AddPVPulvLayers(nNeurY, nNeurX int, rel relpos.Relations, sp
 	return
 }
 
-// AddVSPatchLayer adds VSPatch (Pos, D1)
-func (net *Network) AddVSPatchLayer(prefix string, nUs, nNeurY, nNeurX int) *Layer {
-	d1 := net.AddLayer4D(prefix+"VsPatch", 1, nUs, nNeurY, nNeurX, VSPatchLayer)
+// AddVSPatchLayers adds VSPatch (Pos, D1, D2)
+func (net *Network) AddVSPatchLayers(prefix string, nUs, nNeurY, nNeurX int, space float32) (d1, d2 *Layer) {
+	d1 = net.AddLayer4D(prefix+"VsPatchD1", 1, nUs, nNeurY, nNeurX, VSPatchLayer)
 	d1.SetBuildConfig("DAMod", "D1Mod")
 	d1.SetBuildConfig("Valence", "Positive")
-	return d1
+	d2 = net.AddLayer4D(prefix+"VsPatchD2", 1, nUs, nNeurY, nNeurX, VSPatchLayer)
+	d2.SetBuildConfig("DAMod", "D2Mod")
+	d2.SetBuildConfig("Valence", "Positive")
+	d2.PlaceBehind(d1, space)
+	return
 }
 
-// ConnectToVSPatch adds a VSPatchPrjn from given sending layer to a VSPatch layer
-func (net *Network) ConnectToVSPatch(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return net.ConnectLayers(send, recv, pat, VSPatchPrjn)
+// ConnectToVSPatch adds a VSPatchPrjn from given sending layer to VSPatchD1, D2 layers
+func (net *Network) ConnectToVSPatch(send, vspD1, vspD2 *Layer, pat prjn.Pattern) (*Prjn, *Prjn) {
+	d1 := net.ConnectLayers(send, vspD1, pat, VSPatchPrjn)
+	d2 := net.ConnectLayers(send, vspD2, pat, VSPatchPrjn)
+	return d1, d2
 }
 
 // AddVTALHbLDTLayers adds VTA dopamine, LHb DA dipping, and LDT ACh layers
@@ -547,7 +553,7 @@ func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float3
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc *Layer) {
+func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc *Layer) {
 	nUSpos := int(net.PVLV.NPosUSs)
 	nUSneg := int(net.PVLV.NNegUSs)
 	nCosts := int(net.PVLV.NCosts)
@@ -560,13 +566,13 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	_ = urgency
 
 	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := net.AddVBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
-	_ = vSgpeAk
+	_, _ = vSgpeAk, vSgpePr
 	vSgated := net.AddVSGatedLayer("", nYneur)
-	vSpatch = net.AddVSPatchLayer("", nUSpos, bgY, bgX)
-	vSpatch.PlaceRightOf(vSstn, space)
-	vSgated.PlaceRightOf(vSgpePr, space)
+	vSpatchD1, vSpatchD2 = net.AddVSPatchLayers("", nUSpos, bgY, bgX, space)
+	vSpatchD1.PlaceRightOf(vSstn, space)
 
 	sc = net.AddSCLayer2D("", ofcY, ofcX)
+	vSgated.PlaceRightOf(sc, space)
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
 
 	blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, ofcY, ofcX, space)
@@ -626,7 +632,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	net.ConnectToVSPatch(ilNegPTp, vSpatch, full)
+	net.ConnectToVSPatch(ilNegPTp, vSpatchD1, vSpatchD2, full)
 
 	///////////////////////////////////////////
 	//  BLA
@@ -660,9 +666,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	///////////////////////////////////////////
 	// VS
 
-	pj = net.ConnectToVSPatch(drives, vSpatch, p1to1)
+	d1, d2 := net.ConnectToVSPatch(drives, vSpatchD1, vSpatchD2, p1to1)
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
-	pj.DefParams = params.Params{
+	driveToVsp := params.Params{
 		"Prjn.Learn.Learn":    "false",
 		"Prjn.PrjnScale.Abs":  "1",
 		"Prjn.PrjnScale.Rel":  "1",
@@ -671,13 +677,16 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 		"Prjn.SWts.Init.Var":  "0.0",
 		"Prjn.Com.GType":      "ModulatoryG",
 	}
-	pj.SetClass("DrivesToVSPatch")
+	d1.DefParams = driveToVsp
+	d2.DefParams = driveToVsp
+	d1.SetClass("DrivesToVSPatch")
+	d2.SetClass("DrivesToVSPatch")
 
-	net.ConnectToVSPatch(ofcPosUSPTp, vSpatch, p1to1)
-	net.ConnectToVSPatch(ilPosPTp, vSpatch, full)
-	net.ConnectToVSPatch(ofcNegUSPTp, vSpatch, full)
-	net.ConnectToVSPatch(ilNegPTp, vSpatch, full)
-	net.ConnectToVSPatch(accCostPTp, vSpatch, full)
+	net.ConnectToVSPatch(ofcPosUSPTp, vSpatchD1, vSpatchD2, p1to1)
+	net.ConnectToVSPatch(ilPosPTp, vSpatchD1, vSpatchD2, full)
+	net.ConnectToVSPatch(ofcNegUSPTp, vSpatchD1, vSpatchD2, full)
+	net.ConnectToVSPatch(ilNegPTp, vSpatchD1, vSpatchD2, full)
+	net.ConnectToVSPatch(accCostPTp, vSpatchD1, vSpatchD2, full)
 
 	// same prjns to stn as mtxgo
 	net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
@@ -899,8 +908,8 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	vSgpi.PlaceRightOf(vta, space)
 	drives.PlaceBehind(vSmtxGo, space)
 	drivesP.PlaceBehind(vSmtxNo, space)
-	blaNov.PlaceRightOf(vSgated, space*4)
-	sc.PlaceRightOf(vSpatch, space)
+	blaNov.PlaceBehind(vSgated, space)
+	sc.PlaceRightOf(vSpatchD1, space)
 	usPos.PlaceAbove(vta)
 	blaPosAcq.PlaceAbove(usPos)
 	ofcPosUS.PlaceRightOf(blaPosAcq, space)
@@ -924,7 +933,7 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	full := prjn.NewFull()
 	var pj *Prjn
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
 	_, _, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ilPosCT, ilNegMD
 	_, _, _ = accCost, accCostCT, accCostPTp
 	_, _ = blaNegAcq, blaNegExt
@@ -954,7 +963,7 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	pj.DefParams = pfc2m
 	pj.SetClass("PFCToVSMtx")
 
-	net.ConnectToVSPatch(plUtilPTp, vSpatch, full)
+	net.ConnectToVSPatch(plUtilPTp, vSpatchD1, vSpatchD2, full)
 
 	///////////////////////////////////////////
 	// ILneg

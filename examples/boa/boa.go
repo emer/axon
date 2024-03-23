@@ -788,7 +788,7 @@ func (ss *Sim) TrialStats(di int) {
 		}
 	}
 
-	vsLy := ss.Net.AxonLayerByName("VsPatch")
+	vsLy := ss.Net.AxonLayerByName("VsPatchD1")
 	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))

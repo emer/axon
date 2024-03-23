@@ -162,6 +162,7 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigPVLV(trn *VSPatchEnv) {
 	pv := &ss.Net.PVLV
 	pv.SetNUSs(&ss.Context, 2, 1)
+	pv.Defaults()
 	pv.Urgency.U50 = 20 // 20 def
 }
 
@@ -173,7 +174,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	// space := float32(2)
+	space := float32(2)
 	full := prjn.NewFull()
 
 	// mtxRndPrjn := prjn.NewPoolUnifRnd()
@@ -181,9 +182,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// _ = mtxRndPrjn
 
 	in := net.AddLayer2D("State", ev.NUnitsY, ev.NUnitsX, axon.InputLayer)
-	vspatch := net.AddVSPatchLayer("", 1, 6, 6)
+	vSpatchD1, vSpatchD2 := net.AddVSPatchLayers("", 1, 6, 6, space)
 
-	net.ConnectToVSPatch(in, vspatch, full)
+	net.ConnectToVSPatch(in, vSpatchD1, vSpatchD2, full)
 
 	net.Build(ctx)
 	net.Defaults()

@@ -59,6 +59,7 @@ func (nt *Network) NewPrjn() emer.Prjn {
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
+	nt.PVLV.Defaults()
 	nt.SetNThreads(0) // default
 	for _, ly := range nt.Layers {
 		ly.Defaults()

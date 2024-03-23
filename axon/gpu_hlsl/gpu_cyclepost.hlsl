@@ -120,7 +120,8 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	int cmpi = -1;
 	int cmni = -1;
 	int ldti = -1;
-	int vspi = -1;
+	int vspi1 = -1;
+	int vspi2 = -1;
 	int vtai = -1;
 	int rwdi = -1;
 	int tdpi = -1;
@@ -137,7 +138,11 @@ void main(uint3 idx : SV_DispatchThreadID) {
 			}
 			break;
 		case VSPatchLayer:
-			vspi = li;
+			if (Layers[li].Learn.NeuroMod.DAMod == D1Mod) {
+				vspi1 = li;
+			} else {
+				vspi2 = li;
+			}
 			break;
 		case LDTLayer:
 			ldti = li;
@@ -171,8 +176,11 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	if (ldti >= 0) { // depends on pn note:mi
 		CyclePost(Ctx[0], Layers[ldti], ldti, di);
 	}                                      
-	if (vspi >= 0) {                       
-		CyclePost(Ctx[0], Layers[vspi], vspi, di);
+	if (vspi1 >= 0) {                       
+		CyclePost(Ctx[0], Layers[vspi1], vspi1, di);
+	}                                      
+	if (vspi2 >= 0) {                       
+		CyclePost(Ctx[0], Layers[vspi2], vspi2, di);
 	}                                      
 	if (rwdi >= 0) {                       
 		CyclePost(Ctx[0], Layers[rwdi], rwdi, di);
