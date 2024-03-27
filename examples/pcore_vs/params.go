@@ -26,6 +26,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.On":            "false",
 				"Layer.Inhib.Layer.Gi":           "0.5",
 				"Layer.Inhib.ActAvg.Nominal":     "0.25",
+				"Layer.Matrix.GateThr":           "0.05", // todo: .01 should be new default
 				"Layer.Matrix.IsVS":              "true", // key for resetting urgency
 				"Layer.Learn.RLRate.On":          "true", // only used for non-rew trials -- key
 				"Layer.Learn.RLRate.Diff":        "false",
@@ -92,6 +93,21 @@ var ParamSets = netparams.Sets{
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Rel": {"Tweak": "log"},
+			}},
+		{Sel: "#VGPi", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
+				"Layer.Acts.Init.GeVar":  "0.1",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+			}},
+		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": ".2",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 	},
 }

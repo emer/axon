@@ -59,6 +59,8 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	net.ConnectLayers(gpePr, gpi, full, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(mtxGo, gpi, full, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(mtxGo, gpeAk, full, InhibPrjn).SetClass(bgclass)
+	// this doesn't make that much diff -- bit cleaner RT without:
+	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpeAk, mtxGo, full, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpeAk, mtxNo, full, InhibPrjn).SetClass(bgclass)
 
@@ -122,6 +124,8 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	net.ConnectLayers(gpePr, gpi, p1to1, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPrjn).SetClass(bgclass)
+	// not much diff with this: basically is an offset that can be learned
+	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPrjn).SetClass(bgclass)
 	net.ConnectLayers(gpi, pf, p1to1, InhibPrjn).SetClass(bgclass)
