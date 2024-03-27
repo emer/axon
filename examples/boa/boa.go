@@ -620,7 +620,8 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *armaze.Env, di uint32) {
 	pv := &ss.Net.PVLV
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.EffortUrgencyUpdt(ctx, di, 1)   // note: effort can vary with terrain!
+	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.3)
+	pv.EffortUrgencyUpdt(ctx, di, 1) // note: effort can vary with terrain!
 	if ev.USConsumed >= 0 {
 		pv.SetUS(ctx, di, axon.Positive, ev.USConsumed, ev.USValue)
 	}

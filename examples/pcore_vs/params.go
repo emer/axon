@@ -26,6 +26,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.On":            "false",
 				"Layer.Inhib.Layer.Gi":           "0.5",
 				"Layer.Inhib.ActAvg.Nominal":     "0.25",
+				"Layer.Matrix.GateThr":           "0.01", // .05 default
 				"Layer.Matrix.IsVS":              "true", // key for resetting urgency
 				"Layer.Learn.RLRate.On":          "true", // only used for non-rew trials -- key
 				"Layer.Learn.RLRate.Diff":        "false",
@@ -93,6 +94,72 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Rel": {"Tweak": "log"},
 			}},
+		{Sel: ".VSTNLayer", Desc: "all VSTN",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase":           "0.3",
+				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":             "0",    // 2 > 5 >> 1 (for Kir = 10)
+				"Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
+				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
+			}},
+		{Sel: "#VGPePr", Desc: "prototypical",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.5", // 0.4 > 0.3, 0.5
+				"Layer.Acts.Init.GeVar":  "0.2",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+			}},
+		{Sel: "#VGPeAk", Desc: "arkypallidal",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
+				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
+			}},
+		{Sel: "#VGPi", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
+				"Layer.Acts.Init.GeVar":  "0.1",
+			},
+			Hypers: params.Hypers{
+				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+			}},
+		{Sel: "#VSTNToVGPePr", Desc: "stronger VSTN -> VGPePr to kick it high at start",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.2",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#VSTNToVGPeAk", Desc: "this is weak biologically -- could try 0",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.1",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": ".05",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: ".CortexToSTN", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.5",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
 	},
 }
 
@@ -117,19 +184,6 @@ var ParamSetsDefs = netparams.Sets{
 				"Layer.Acts.Kir.Gbar":            {"Tweak": "-"},
 				"Layer.Acts.NMDA.Gbar":           {"Tweak": "-"},
 				"Layer.Inhib.Layer.Gi":           {"Tweak": "-"},
-			}},
-		{Sel: ".VSTNLayer", Desc: "all VSTN",
-			Params: params.Params{
-				"Layer.Acts.Init.GeBase":           "0.1",
-				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5  > 2 -- key for pause
-				"Layer.Acts.SKCa.Gbar":             "2",    // 2 > 5 >> 1 (for Kir = 10)
-				"Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",
-			},
-			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
-				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
-				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
 			}},
 		{Sel: "#VGPePr", Desc: "prototypical",
 			Params: params.Params{

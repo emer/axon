@@ -209,8 +209,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, one2one, space)
 	_ = accPosPT
 
-	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn)
-	net.ConnectLayers(accNeg, stn, full, axon.ForwardPrjn)
+	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn).SetClass("CortexToSTN")
+	net.ConnectLayers(accNeg, stn, full, axon.ForwardPrjn).SetClass("CortexToSTN")
 
 	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPrjn).SetClass("BgFixed")
 
