@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-vspatch: This project simulates the Ventral Striatum (VS) Patch (striosome) neurons that predict reward to generate an RPE (reward prediction error).  It is a testbed for learning the quantitative value representations needed for this.
+pfcmaint: This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons, in the PTMaint layer type.
 */
 package main
 
@@ -122,13 +122,13 @@ func (ss *Sim) ConfigEnv() {
 	newEnv := (len(ss.Envs) == 0)
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
-		var trn, tst *VSPatchEnv
+		var trn, tst *PFCMaintEnv
 		if newEnv {
-			trn = &VSPatchEnv{}
-			tst = &VSPatchEnv{}
+			trn = &PFCMaintEnv{}
+			tst = &PFCMaintEnv{}
 		} else {
-			trn = ss.Envs.ByModeDi(etime.Train, di).(*VSPatchEnv)
-			tst = ss.Envs.ByModeDi(etime.Test, di).(*VSPatchEnv)
+			trn = ss.Envs.ByModeDi(etime.Train, di).(*PFCMaintEnv)
+			tst = ss.Envs.ByModeDi(etime.Test, di).(*PFCMaintEnv)
 		}
 
 		// note: names must be standard here!
@@ -153,39 +153,41 @@ func (ss *Sim) ConfigEnv() {
 
 		// note: names must be in place when adding
 		ss.Envs.Add(trn, tst)
-		if di == 0 {
-			ss.ConfigPVLV(trn)
-		}
 	}
-}
-
-func (ss *Sim) ConfigPVLV(trn *VSPatchEnv) {
-	pv := &ss.Net.PVLV
-	pv.SetNUSs(&ss.Context, 2, 1)
-	pv.Defaults()
-	pv.Urgency.U50 = 20 // 20 def
-	pv.LHb.VSPatchGain = 3
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	ev := ss.Envs.ByModeDi(etime.Train, 0).(*VSPatchEnv)
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*PFCMaintEnv)
 
-	net.InitName(net, "VSPatch")
+	net.InitName(net, "PFCMaint")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	space := float32(2)
 	full := prjn.NewFull()
 
-	// mtxRndPrjn := prjn.NewPoolUnifRnd()
-	// mtxRndPrjn.PCon = 0.5
-	// _ = mtxRndPrjn
+	nun := ss.Config.Params.NUnits
+	if nun <= 0 {
+		nun = 7
+	}
+	in, inP := net.AddInputPulv2D("Item", ev.NUnitsY, ev.NUnitsX, space)
+	time, timeP := net.AddInputPulv2D("Time", ev.NUnitsY, ev.NTrials, space)
+	gpi := net.AddLayer2D("GPi", ev.NUnitsY, ev.NUnitsX, axon.InputLayer)
+	pfc, pfcCT, pfcPT, pfcPTp, pfcThal := net.AddPFC2D("PFC", "Thal", nun, nun, true, space)
+	_ = pfcPT
+	_ = pfcThal
 
-	in := net.AddLayer2D("State", ev.NUnitsY, ev.NUnitsX, axon.InputLayer)
-	vSpatchD1, vSpatchD2 := net.AddVSPatchLayers("", 1, 6, 6, space)
+	net.ConnectToPFCBack(in, inP, pfc, pfcCT, pfcPTp, full)
+	net.ConnectToPFCBack(time, timeP, pfc, pfcCT, pfcPTp, full)
 
-	net.ConnectToVSPatch(in, vSpatchD1, vSpatchD2, full)
+	net.ConnectLayers(gpi, pfcThal, full, axon.InhibPrjn)
+
+	time.PlaceRightOf(in, space)
+	gpi.PlaceRightOf(time, space)
+	pfcThal.PlaceRightOf(gpi, space)
+	pfc.PlaceAbove(in)
+	pfcPT.PlaceRightOf(pfc, space)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -232,7 +234,7 @@ func (ss *Sim) InitRndSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	ev := ss.Envs.ByModeDi(etime.Train, 0).(*VSPatchEnv)
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*PFCMaintEnv)
 
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
@@ -309,55 +311,18 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 	net := ss.Net
 	ss.Net.InitExt(ctx)
 
-	lays := []string{"State"}
+	lays := []string{"Item", "Time", "GPi"}
 
 	for di := 0; di < ss.Config.Run.NData; di++ {
-		ev := ss.Envs.ByModeDi(mode, di).(*VSPatchEnv)
+		ev := ss.Envs.ByModeDi(mode, di).(*PFCMaintEnv)
 		ev.Step()
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
 			itsr := ev.State(lnm)
 			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
-		ss.ApplyPVLV(ev, trial, uint32(di))
 	}
 	net.ApplyExts(ctx) // now required for GPU mode
-}
-
-// ApplyPVLV applies PVLV reward inputs
-func (ss *Sim) ApplyPVLV(ev *VSPatchEnv, trial int, di uint32) {
-	ctx := &ss.Context
-	pv := &ss.Net.PVLV
-	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.EffortUrgencyUpdt(ctx, di, 1)
-	pv.Urgency.Reset(ctx, di)
-
-	if trial == ev.NTrials-1 {
-		axon.SetGlbV(ctx, di, axon.GvACh, 1)
-		ss.ApplyRew(di, ev.Rew)
-	} else {
-		ss.ApplyRew(di, 0)
-		axon.SetGlbV(ctx, di, axon.GvACh, 0)
-	}
-}
-
-// ApplyRew applies reward
-func (ss *Sim) ApplyRew(di uint32, rew float32) {
-	ctx := &ss.Context
-	pv := &ss.Net.PVLV
-	if rew != 0 {
-		axon.GlobalSetRew(ctx, di, rew, true)
-	} else {
-		axon.GlobalSetRew(ctx, di, rew, false)
-	}
-	vsp := axon.GlbV(ctx, uint32(di), axon.GvRewPred)
-	dap := rew - vsp
-	if rew > 0 {
-		pv.SetUS(ctx, di, axon.Positive, 0, 1)
-	} else if rew < 0 {
-		pv.SetUS(ctx, di, axon.Negative, 0, 1)
-	}
-	axon.SetGlbV(ctx, di, axon.GvDA, dap)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -384,11 +349,7 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("Rew", 0)
-	ss.Stats.SetFloat("RewPred", 0)
-	ss.Stats.SetFloat("RewPred_NR", 0)
-	ss.Stats.SetFloat("DA", 0)
-	ss.Stats.SetFloat("DA_NR", 0)
+	// ss.Stats.SetFloat("Rew", 0)
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -415,26 +376,15 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Rew", "RewPred", "RewPred_NR", "DA", "DA_NR"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle"})
 }
 
 // TrialStats records the trial-level statistics
 func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
-	diu := uint32(di)
-	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*VSPatchEnv)
-	ss.Stats.SetInt("Cond", ev.Sequence.Cur)
-	hasRew := (axon.GlbV(ctx, diu, axon.GvHasRew) > 0)
-	ss.Stats.SetFloat32("Rew", ev.Rew)
-	ev.RewPred = axon.GlbV(ctx, diu, axon.GvRewPred)
-	ev.DA = axon.GlbV(ctx, diu, axon.GvDA)
-	if hasRew {
-		ss.Stats.SetFloat32("RewPred", ev.RewPred)
-		ss.Stats.SetFloat32("DA", ev.DA)
-	} else {
-		ss.Stats.SetFloat32("RewPred_NR", ev.RewPred)
-		ss.Stats.SetFloat32("DA_NR", ev.DA)
-	}
+	// diu := uint32(di)
+	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*PFCMaintEnv)
+	ss.Stats.SetInt("Item", ev.Sequence.Cur)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -450,26 +400,11 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatStringItem(etime.Test, etime.Sequence, "TrialName")
 
-	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Sequence)
-	li.Range.Max = 1.2
-	li = ss.Logs.AddStatAggItem("RewPred", etime.Run, etime.Epoch, etime.Sequence)
-	li.Range.Max = 1.2
-	ss.Logs.AddStatAggItem("RewPred_NR", etime.Run, etime.Epoch, etime.Sequence)
-	li = ss.Logs.AddStatAggItem("DA", etime.Run, etime.Epoch, etime.Sequence)
-	li.Range.Min = -0.5
-	li.Range.Max = 1
-	li.FixMin = true
-	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("DA_NR", etime.Run, etime.Epoch, etime.Sequence)
-	li.Range.Min = -0.5
-	li.Range.Max = 1
-	li.FixMin = true
-	li.FixMax = true
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("Rew", "RewPred", "RewPred_NR", "DA", "DA_NR")
+	// ss.Logs.PlotItems("Rew", "RewPred", "RewPred_NR", "DA", "DA_NR")
 
 	ss.Logs.CreateTables()
 
@@ -520,8 +455,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "VSPatch"
-	ss.GUI.MakeBody(ss, "vspatch", title, `This project simulates the VS Patch reward prediction learning. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	title := "PFCMaint"
+	ss.GUI.MakeBody(ss, "pfcmaint", title, `This project tests prefrontal cortex (PFC) active maintenance mechanisms supported by the pyramidal tract (PT) neurons, in the PTMaint layer type. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")

@@ -16,6 +16,9 @@ type EnvConfig struct {
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
 
+	// number of units per dimension in the PFC
+	NUnits int `default:"7"`
+
 	// If true, perform automated parameter tweaking for parameters marked Hypers Tweak = log,incr, or [vals]
 	Tweak bool
 
