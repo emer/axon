@@ -869,7 +869,8 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.Vals[0].ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\",\n", ly.Vals[0].ActAvg.GiMult)))
+	// note: last one has no comma
+	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.Vals[0].ActAvg.GiMult)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
