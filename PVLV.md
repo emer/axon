@@ -45,8 +45,8 @@ In contrast to the minus-plus phase-based timing of cortical learning, the RL-ba
 | BLA          |  ++      |      |  Rp  |  R          |
 | BLA dw       | tr=S*ACh |      |      | R(R-Rp)tr   |
 | OFC          |  BLA->   |  PT  |  PT  | reset PT    |
-| VSPatch = VP |          |      |  Rp  |             |
-| VP dw        |          |      |      | Sp*Rp*DA    |
+| VSPatch = VP |          |      |  ++ Rp  |             |
+| VP dw        |          |      |      | Sp Rp DA    |
 | DA           | ++ (BLA) |      |      | ++ (US-VPp) |
 
 * Rp = receiving activity on previous trial
