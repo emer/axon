@@ -56,8 +56,8 @@ func (pj *PrjnParams) VSPatchDefaults() {
 	pj.SWts.Adapt.On.SetBool(false)
 	pj.SWts.Adapt.SigGain = 1
 	pj.SWts.Init.SPct = 0
-	pj.SWts.Init.Mean = 0.1
-	pj.SWts.Init.Var = 0.05
+	pj.SWts.Init.Mean = 0.5
+	pj.SWts.Init.Var = 0.25
 	pj.SWts.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.LearnThr = 0 // 0.3

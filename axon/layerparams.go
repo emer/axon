@@ -949,10 +949,6 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVa
 	SetNrnV(ctx, ni, di, SpkMax, 0)
 	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
 
-	if ly.LayType == VSPatchLayer {
-		SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, GeIntNorm))
-	}
-
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)

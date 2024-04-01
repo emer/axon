@@ -118,9 +118,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "6",
-				"Prjn.Learn.Trace.LearnThr": "0.1",
-				"Prjn.Learn.LRate.Base":     "0.2", // 0.05 def -- todo: needs faster
+				"Prjn.PrjnScale.Abs":        "3",
+				"Prjn.Learn.Trace.LearnThr": "0",
+				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def -- todo: needs faster
 			}},
 		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
 			Params: params.Params{

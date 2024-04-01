@@ -38,16 +38,16 @@ Note that we use anatomical labels for computationally-specified functions consi
 
 In contrast to the minus-plus phase-based timing of cortical learning, the RL-based learning in PVLV is generally organized on trial-wise boundaries, with some factors computed online within the trial.  Here is a schematic, for an intermediate about of positive CS learning and VSPatch prediction of a positive US outcome, with an "Eat" action that drives the US:
 
-| Trial Step:  |   0      |   1  |   2  |   3         |
-| ------------ | -------- | ---- | ---- | ----------- |
-| Event / Act  |  CS      |      | Eat  |  US         |
-| SC -> ACh    |  ++      |      |      |             |
-| BLA          |  ++      |      |  Rp  |  R          |
-| BLA dw       | tr=S*ACh |      |      | R(R-Rp)tr   |
-| OFC          |  BLA->   |  PT  |  PT  | reset PT    |
-| VSPatch = VP |          |      |  ++ Rp  |             |
-| VP dw        |          |      |      | Sp Rp DA    |
-| DA           | ++ (BLA) |      |      | ++ (US-VPp) |
+| Trial Step:  |   0       |   1  |   2   |   3         |
+| ------------ | --------- | ---- | ----- | ----------- |
+| Event / Act  |  CS       |      | Eat   |  +++ US     |
+| SC -> ACh    |  +++      |      |       |             |
+| BLA          |  ++       |      |  Rp   |  R          |
+| BLA dw       | tr=S ⋅ ACh |      |       | R(R-Rp)tr   |
+| OFC          |  BLA->    |  PT  |  PT   | reset PT    |
+| VSPatch = VP |           |      | ++ Rp |             |
+| VP dw        |           |      |       | Sp ⋅ Rp ⋅ DA |
+| DA           | ++ (BLA)  |      |       | + (US-VPp)  |
 
 * Rp = receiving activity on previous trial
 * DA at US is computed at start of trial in PVLV.NewState, based on VS D1 - D2 on prev trial.
@@ -189,8 +189,6 @@ The learning rule here is a standard "3 factor" dopamine-modulated learning, ver
 * `DWt = lr * DALr * Sp * Rp`
 
 where `DAlr` is the dopamine-signed learning rate factor for D1 vs. D2, which is a function of US for the current trial (applied at start of a trial) minus VSPatch _from the prior time step_. Thus the prediction error in VSPatch relative to US reward drives learning, such that it will always adjust to reduce error, consistent with standard Rescorla-Wagner / TD learning rules.
-
-Also, the learning factor for the `Rp` receiving activity on the prior time step is the `GeIntNorm` Max-normalized value, not raw activity, because VSPatch neurons can be relatively inactive at the start (this is done by setting `SpkPrv` to `GeIntNorm` for this layer type only).
 
 # Negative USs and Costs
 

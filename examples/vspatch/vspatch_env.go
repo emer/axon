@@ -30,6 +30,9 @@ type VSPatchEnv struct {
 	// trial counter is for the step within condition
 	Trial env.Ctr `view:"inline"`
 
+	// if true, reward value is a probability of getting a 1 reward
+	Probs bool
+
 	// number of conditions, each of which can have a different reward value
 	NConds int
 
@@ -82,6 +85,7 @@ func (ev *VSPatchEnv) Desc() string {
 }
 
 func (ev *VSPatchEnv) Defaults() {
+	ev.Probs = true
 	ev.NConds = 4
 	ev.NTrials = 3
 	ev.NUnitsY = 5
@@ -176,7 +180,16 @@ func (ev *VSPatchEnv) Step() bool {
 	ev.RenderState(ev.Sequence.Cur, ev.Trial.Cur)
 	ev.Rew = 0
 	if ev.Trial.Cur == ev.NTrials-1 {
-		ev.Rew = ev.CondVals[ev.Sequence.Cur]
+		rv := ev.CondVals[ev.Sequence.Cur]
+		if ev.Probs {
+			if erand.BoolP32(rv, -1, &ev.Rand) {
+				ev.Rew = 1
+			} else {
+				ev.Rew = 0.001
+			}
+		} else {
+			ev.Rew = rv
+		}
 	}
 	ev.Sequence.Same()
 	if ev.Trial.Incr() {

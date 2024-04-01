@@ -60,7 +60,7 @@ type NeuroModParams struct {
 	// valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently
 	Valence ValenceTypes
 
-	// multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor
+	// dopamine modulation of excitatory and inhibitory conductances (i.e., "performance dopamine" effect -- this does NOT affect learning dopamine modulation in terms of RLrate): g *= 1 + (DAModGain * DA)
 	DAModGain float32
 
 	// modulate the sign of the learning rate factor according to the DA sign, taking into account the DAMod sign reversal for D2Mod, also using BurstGain and DipGain to modulate DA value -- otherwise, only the magnitude of the learning rate is modulated as a function of raw DA magnitude according to DALRateMod (without additional gain factors)
@@ -86,7 +86,7 @@ type NeuroModParams struct {
 
 func (nm *NeuroModParams) Defaults() {
 	// nm.DAMod is typically set by BuildConfig -- don't reset here
-	nm.DAModGain = 0.5
+	nm.DAModGain = 0
 	nm.DALRateMod = 0
 	nm.AChLRateMod = 0
 	nm.BurstGain = 1

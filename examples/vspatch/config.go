@@ -68,7 +68,7 @@ type RunConfig struct {
 	NEpochs int `default:"30"`
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
-	NTrials int `default:"32"`
+	NTrials int `default:"128"`
 }
 
 // LogConfig has config parameters related to logging data
