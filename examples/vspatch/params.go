@@ -24,7 +24,8 @@ var ParamSets = netparams.Sets{
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.On":              "false",
-				"Layer.Inhib.Pool.Gi":              "0.2",
+				"Layer.Inhib.Layer.On":             "true",
+				"Layer.Inhib.Layer.Gi":             "0.5",  // 0.5 needed for differentiated reps
 				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.5 default; 0 better
 				"Layer.Learn.RLRate.SigmoidMin":    "0.05", // 0.05 def

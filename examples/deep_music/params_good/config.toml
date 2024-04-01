@@ -1,4 +1,6 @@
-Includes = ["30notes.toml"]
+Includes = [
+  '30notes.toml'
+]
 GUI = false
 Debug = false
 
@@ -10,10 +12,10 @@ Debug = false
 
 [Params]
   Hid2 = false
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 

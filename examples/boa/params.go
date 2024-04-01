@@ -77,7 +77,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Pool.FB":            "0",
 				"Layer.Acts.Dend.ModGain":        "1", // todo: 2 is default
 				"Layer.Acts.Kir.Gbar":            "2",
-				"Layer.Learn.NeuroMod.BurstGain": "0.5",
+				"Layer.Learn.NeuroMod.BurstGain": "1",
 				"Layer.Learn.RLRate.SigmoidMin":  "0.001", // 0.01 better than .05
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
@@ -141,7 +141,7 @@ var ParamSets = netparams.Sets{
 		// PVLV Prjns
 		{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .1, but 3 needed for .03
+				"Prjn.PrjnScale.Abs": "4", // 2 is good for .CS nominal .1, but 3 needed for .03
 			}},
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{

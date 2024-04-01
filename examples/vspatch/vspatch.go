@@ -164,7 +164,7 @@ func (ss *Sim) ConfigPVLV(trn *VSPatchEnv) {
 	pv.SetNUSs(&ss.Context, 2, 1)
 	pv.Defaults()
 	pv.Urgency.U50 = 20 // 20 def
-	pv.LHb.VSPatchGain = 5
+	pv.LHb.VSPatchGain = 3
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {

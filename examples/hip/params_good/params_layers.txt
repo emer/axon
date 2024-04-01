@@ -4,18 +4,18 @@
             EC2		Nominal:	  0.02	Params: Base:#EC2: 0.02
 						Layer.Gi:	  1.20	Params: #EC2: 1.2
 
-             DG		Nominal:	  0.01	Params: Base:#DG: 0.01
+             DG		Nominal:	  0.01	Params: #DG: 0.01
 						Layer.Gi:	  2.40	Params: #DG: 2.4
 
-            CA3		Nominal:	  0.01	Params: #CA3: 0.01
-						Layer.Gi:	  1.20	Params: Base:#CA3: 1.2
+            CA3		Nominal:	  0.01	Params: Base:#CA3: 0.01
+						Layer.Gi:	  1.20	Params: #CA3: 1.2
 
-            EC3		Nominal:	  0.05	Params: .EC: 0.05
+            EC3		Nominal:	  0.05	Params: Base:.EC: 0.05
 						Pool.Gi: 	  1.10	Params: .EC: 1.1
 
             CA1		Nominal:	  0.03	Params: Base:#CA1: 0.03
 						Pool.Gi: 	  1.10	Params: #CA1: 1.1
 
-            EC5		Nominal:	  0.05	Params: Base:.EC: 0.05
+            EC5		Nominal:	  0.05	Params: .EC: 0.05
 						Pool.Gi: 	  1.10	Params: .EC: 1.1
 

@@ -28,7 +28,7 @@ params_good: ./examples/*
 	@for f in $^; do  \
 		DIR=$$(basename $${f}) && echo "" && echo "###########################" && \
 		echo "example: $${DIR} in path: $${f}"; \
-		cd $${f}; go build -v; ./$${DIR} -no-gui -Params.SaveAll -Params.Good; cd ../../; \
+		cd $${f}; go build -v; ./$${DIR} -nogui -Params.SaveAll -Params.Good; cd ../../; \
     done
 	
 test:

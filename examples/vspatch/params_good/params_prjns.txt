@@ -1,0 +1,10 @@
+
+Layer: State
+
+Layer: VsPatchD1
+	          State	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.40	Rel:  1.00
+								    Abs Params: .VSPatchPrjn: 2
+
+Layer: VsPatchD2
+	          State	    VSPatchPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.40	Rel:  1.00
+								    Abs Params: Base:.VSPatchPrjn: 2

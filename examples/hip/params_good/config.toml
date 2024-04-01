@@ -1,4 +1,6 @@
-Includes = ["medhip.toml"]
+Includes = [
+  'medhip.toml'
+]
 GUI = false
 Debug = false
 
@@ -21,21 +23,26 @@ Debug = false
   ThetaLow = 0.9
   ThetaHigh = 1.0
   EC5Clamp = true
-  EC5ClampSrc = "EC3"
+  EC5ClampSrc = 'EC3'
   EC5ClampTest = false
   EC5ClampThr = 0.1
+
   [Hip.EC2Size]
     X = 21
     Y = 21
+
   [Hip.EC3NPool]
     X = 2
     Y = 3
+
   [Hip.EC3NNrn]
     X = 7
     Y = 7
+
   [Hip.CA1NNrn]
     X = 15
     Y = 15
+
   [Hip.CA3Size]
     X = 30
     Y = 30
@@ -47,10 +54,10 @@ Debug = false
   DriftPct = 0.0
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 
@@ -61,7 +68,7 @@ Debug = false
   Run = 0
   Runs = 5
   Epochs = 100
-  NTrials = 20
+  NTrials = 50
   NData = 10
   TestInterval = 1
 

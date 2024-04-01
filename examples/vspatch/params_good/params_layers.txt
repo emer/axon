@@ -1,0 +1,9 @@
+          State		Nominal:	  0.20	Params: #State: 0.2
+						Layer.Gi:	  0.90	
+
+      VsPatchD1		Nominal:	  0.20	
+						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
+
+      VsPatchD2		Nominal:	  0.20	
+						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
+

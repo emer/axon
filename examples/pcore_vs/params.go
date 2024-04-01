@@ -23,16 +23,17 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":            "false",
-				"Layer.Inhib.Layer.Gi":           "0.5",
-				"Layer.Inhib.ActAvg.Nominal":     "0.25",
-				"Layer.Matrix.GateThr":           "0.05", // todo: .01 should be new default
-				"Layer.Matrix.IsVS":              "true", // key for resetting urgency
-				"Layer.Learn.RLRate.On":          "true", // only used for non-rew trials -- key
-				"Layer.Learn.RLRate.Diff":        "false",
-				"Layer.Learn.RLRate.SigmoidMin":  "0.01", // 0.01 better than .05
-				"Layer.Learn.TrgAvgAct.On":       "true",
-				"Layer.Learn.NeuroMod.BurstGain": "0.1", // 1 def
+				"Layer.Inhib.Pool.On":             "false",
+				"Layer.Inhib.Layer.Gi":            "0.5", // 0.5 needed for differentiated reps
+				"Layer.Inhib.ActAvg.Nominal":      "0.25",
+				"Layer.Matrix.GateThr":            "0.05", // todo: .01 should be new default
+				"Layer.Matrix.IsVS":               "true", // key for resetting urgency
+				"Layer.Learn.RLRate.On":           "true", // only used for non-rew trials -- key
+				"Layer.Learn.RLRate.Diff":         "false",
+				"Layer.Learn.RLRate.SigmoidMin":   "0.01", // 0.01 better than .05
+				"Layer.Learn.TrgAvgAct.RescaleOn": "true",
+				"Layer.Learn.NeuroMod.BurstGain":  "0.1", // 1 def -- must be smaller given rew dynamics
+				"Layer.Learn.NeuroMod.DAModGain":  "0.2", // cleaner, less random out-of-domain errors; lower train match
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{

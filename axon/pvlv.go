@@ -367,27 +367,28 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 // or "relief" burst when actual neg < predicted.
 type LHbParams struct {
 
-	// gain on the VSPatchD1 - D2 difference
-	VSPatchGain float32 `default:"5"`
+	// gain on the VSPatchD1 - D2 difference to drive the net VSPatch DA
+	// prediction signal, which goes in VSPatchPos and RewPred global variables
+	VSPatchGain float32 `default:"4"`
 
 	// threshold factor that multiplies integrated pvNeg value
 	// to establish a threshold for whether the integrated pvPos value
-	// is good enough to drive overall net positive reward
+	// is good enough to drive overall net positive reward.
+	// If pvPos wins, it is then multiplicatively discounted by pvNeg;
+	// otherwise, pvNeg is discounted by pvPos.
 	NegThr float32 `default:"1"`
 
 	// gain multiplier on PVpos for purposes of generating bursts
 	// (not for discounting negative dips).
-	// 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
 	BurstGain float32 `default:"1"`
 
 	// gain multiplier on PVneg for purposes of generating dips
 	// (not for discounting positive bursts).
-	// 4 renormalizes for typical ~.5 values (.5 * .5 = .25)
 	DipGain float32 `default:"1"`
 }
 
 func (lh *LHbParams) Defaults() {
-	lh.VSPatchGain = 5
+	lh.VSPatchGain = 4
 	lh.NegThr = 1
 	lh.BurstGain = 1
 	lh.DipGain = 1
@@ -1020,7 +1021,7 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 		giveUp := pp.GiveUpFmPV(ctx, di, pvNeg, rnd)
 		if giveUp {
 			SetGlbV(ctx, di, GvHasRew, 1)                            // key for triggering reset
-			rew := pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+			rew := pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual rew
 			SetGlbV(ctx, di, GvRew, rew)
 			return
 		}

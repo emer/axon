@@ -13,10 +13,16 @@
           USneg		Nominal:	  0.05	
 						Pool.Gi: 	  0.50	
 
+           Cost		Nominal:	  0.05	
+						Pool.Gi: 	  0.50	
+
          USposP		Nominal:	  0.05	
 						Pool.Gi: 	  0.50	
 
          USnegP		Nominal:	  0.05	
+						Pool.Gi: 	  0.50	
+
+          CostP		Nominal:	  0.05	
 						Pool.Gi: 	  0.50	
 
           PVpos		Nominal:	  0.20	
@@ -40,30 +46,29 @@
         Urgency		Nominal:	  0.20	
 						Layer.Gi:	  0.50	
 
-          VsGPi		Nominal:	  1.00	
+           VGPi		Nominal:	  1.00	
 
-       VsGPeOut		Nominal:	  1.00	
+         VGPePr		Nominal:	  1.00	
 
-        VsGPeIn		Nominal:	  1.00	
+         VGPeAk		Nominal:	  1.00	
 
-        VsGPeTA		Nominal:	  1.00	
-
-         VsSTNp		Nominal:	  0.15	
+           VSTN		Nominal:	  0.15	
 						Layer.Gi:	  0.50	
 
-         VsSTNs		Nominal:	  0.15	
-						Layer.Gi:	  0.50	
+         VMtxGo		Nominal:	  0.02	
+						Pool.Gi: 	  0.50	Params: .VSMatrixLayer: 0.5
 
-        VsMtxGo		Nominal:	  0.03	
-						Pool.Gi: 	  0.30	Params: .MatrixLayer: 0.3
-
-        VsMtxNo		Nominal:	  0.03	
-						Pool.Gi: 	  0.30	Params: .MatrixLayer: 0.3
+         VMtxNo		Nominal:	  0.02	
+						Pool.Gi: 	  0.50	Params: .VSMatrixLayer: 0.5
 
         VSGated		Nominal:	  0.50	
 						Layer.Gi:	  1.00	
 
-        VsPatch		Nominal:	  0.20	
+      VsPatchD1		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.50	Params: .VSPatchLayer: 0.5
+
+      VsPatchD2		Nominal:	  0.20	
 						Layer.Gi:	  0.50	
 						Pool.Gi: 	  0.50	Params: .VSPatchLayer: 0.5
 
@@ -117,9 +122,6 @@
 						Layer.Gi:	  1.20	
 						Pool.Gi: 	  1.40	Params: #OFCposUSPTp: 1.4
 
-       NotMaint		Nominal:	  0.20	
-						Layer.Gi:	  0.50	
-
        OFCnegUS		Nominal:	  0.10	Params: #OFCnegUS: 0.1
 						Layer.Gi:	  1.20	Params: #OFCnegUS: 1.2
 						Pool.Gi: 	  1.00	
@@ -140,61 +142,81 @@
 						Layer.Gi:	  1.20	
 						Pool.Gi: 	  1.40	Params: #OFCnegUSPTp: 1.4
 
-      OFCposVal		Nominal:	  0.10	
+          ILpos		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-    OFCposValCT		Nominal:	  0.10	
+        ILposCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-    OFCposValPT		Nominal:	  0.30	
+        ILposPT		Nominal:	  0.30	
 						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
 
-    OFCposValMD		Nominal:	  0.10	
+        ILposMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-   OFCposValPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
+       ILposPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
-      ACCnegVal		Nominal:	  0.10	
+          ILneg		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-    ACCnegValCT		Nominal:	  0.10	
+        ILnegCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-    ACCnegValPT		Nominal:	  0.30	
+        ILnegPT		Nominal:	  0.30	
 						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
 
-    ACCnegValMD		Nominal:	  0.10	
+        ILnegMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-   ACCnegValPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
+       ILnegPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
-     OFCposValP		Nominal:	  0.10	
+       ACCnegUS		Nominal:	  0.10	
+						Layer.Gi:	  1.20	
+						Pool.Gi: 	  1.00	
+
+     ACCnegUSCT		Nominal:	  0.03	
+						Layer.Gi:	  4.00	
+						Pool.Gi: 	  1.20	
+
+     ACCnegUSPT		Nominal:	  0.20	
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+						Pool.Gi: 	  2.40	Params: .PTMaintLayer: 2.4
+
+     ACCnegUSMD		Nominal:	  0.03	
+						Layer.Gi:	  2.00	
+						Pool.Gi: 	  0.60	
+
+    ACCnegUSPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
+						Layer.Gi:	  1.20	
+						Pool.Gi: 	  1.40	
+
+         ILposP		Nominal:	  0.10	
 						Layer.Gi:	  1.00	
 
-     ACCnegValP		Nominal:	  0.10	
+         ILnegP		Nominal:	  0.10	
 						Layer.Gi:	  1.00	
 
-        ACCutil		Nominal:	  0.10	
+         PLutil		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
 
-      ACCutilCT		Nominal:	  0.10	
+       PLutilCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-      ACCutilPT		Nominal:	  0.30	
+       PLutilPT		Nominal:	  0.30	
 						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
 
-      ACCutilMD		Nominal:	  0.10	
+       PLutilMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
-     ACCutilPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
+      PLutilPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
-             CS		Nominal:	  0.04	Params: .CS: 0.1
+             CS		Nominal:	  0.08	Params: .CS: 0.1
 						Layer.Gi:	  0.90	
 
-            CSP		Nominal:	  0.04	Params: .CS: 0.1
+            CSP		Nominal:	  0.08	Params: .CS: 0.1
 						Layer.Gi:	  1.00	
 
             Pos		Nominal:	  0.10	

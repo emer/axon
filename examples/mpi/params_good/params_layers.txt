@@ -2,7 +2,7 @@
 						Layer.Gi:	  0.90	Params: #Input: 0.9 | Base:Layer: 1.05
 
         Hidden1		Nominal:	  0.06	Params: Layer: 0.06
-						Layer.Gi:	  1.05	Params: Layer: 1.05
+						Layer.Gi:	  1.05	Params: Base:Layer: 1.05
 
         Hidden2		Nominal:	  0.06	Params: Layer: 0.06
 						Layer.Gi:	  1.05	Params: Base:Layer: 1.05

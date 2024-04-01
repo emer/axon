@@ -26,7 +26,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":             "0.5",  // 0.5 > others
 				"Layer.Learn.NeuroMod.BurstGain":  "0.1",  // 0.1 == 0.2 > 0.05 > 0.5 -- key lrate modulator
-				"Layer.Learn.NeuroMod.DAModGain":  "0.2",  // was 0.5
+				"Layer.Learn.NeuroMod.DAModGain":  "0.2",  // 0.2 >= 0.5 (orig) > 0
 				"Layer.Learn.RLRate.On":           "true", // note: applied for tr update trials
 				"Layer.Learn.TrgAvgAct.RescaleOn": "true", // true > false
 			},

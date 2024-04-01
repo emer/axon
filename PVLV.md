@@ -36,11 +36,11 @@ Note that we use anatomical labels for computationally-specified functions consi
 
 # Timing: Trial-wise
 
-In contrast to the minus-plus phase-based timing of cortical learning, the RL-based learning in PVLV is generally organized on trial-wise boundaries, with some factors computed online within the trial.  Here is a schematic, for an intermediate about of positive CS learning and VSPatch prediction of a positive US outcome, with an "Eat" action that drives the US:
+In contrast to the minus-plus phase-based timing of cortical learning, the RL-based learning in PVLV is generally organized on trial-wise boundaries, with some factors computed online within the trial.  Here is a schematic, for an intermediate amount of positive CS learning and VSPatch prediction of a positive US outcome, with an "Eat" action that drives the US:
 
 | Trial Step:  |   0       |   1  |   2   |   3         |
 | ------------ | --------- | ---- | ----- | ----------- |
-| Event / Act  |  CS       |      | Eat   |  +++ US     |
+| Event / Act  |  CS       |      | Eat   |  US         |
 | SC -> ACh    |  +++      |      |       |             |
 | BLA          |  ++       |      |  Rp   |  R          |
 | BLA dw       | tr=S ⋅ ACh |      |       | R(R-Rp)tr   |
@@ -49,14 +49,18 @@ In contrast to the minus-plus phase-based timing of cortical learning, the RL-ba
 | VP dw        |           |      |       | Sp ⋅ Rp ⋅ DA |
 | DA           | ++ (BLA)  |      |       | + (US-VPp)  |
 
-* Rp = receiving activity on previous trial
+* + = amount of activity, proportional to number of +'s.
+* Rp = receiving activity on previous trial.
+* PT = pyramidal tract neurons are active in OFC (and other vmPFC) due to CS-induced gating.
 * DA at US is computed at start of trial in PVLV.NewState, based on VS D1 - D2 on prev trial.
 
 # A Central Challenge: Learning *Something* when *Nothing* happens
 
 As articulated in the PVLV papers, a central challenge that any RL model must solve is to make learning dependent on expectations such that the *absence* of an expected outcome can serve as a learning event, with the appropriate effects.  This is critical for **extinction** learning, when an expected reward outcome no longer occurs, and the system must learn to no longer have this expectation of reward.  This issue is particularly challenging for PVLV because extinction learning involves different pathways than initial acquisition (e.g., BLA Ext vs. Acq layers, VSPatch, and the LHb dipping), so indirect effects of expectation are required.
 
-Furthermore, in the context of the full BG / OFC / ACC ([BOA](examples/boa/README.md)) goal-directed framework (i.e., the *Rubicon* model), an extinction event is equivalent to *goal failure* -- the expected outcome did not occur.  Thus, it is associated with the deactivation of any maintained goal state, and any additional cost associated with failure (at least the effort expended so far).  In this context, it is also possible (likely?) that outcome expectations in a simple Pavlovian context could be dissociable from a full goal-engagement state, involving only the OFC-specific portion of the full goal-engaged activity state.
+The expectation in PVLV is carried by active maintenance in the OFC and other vmPFC areas, engaged by the CS onset, which then project to the ventral striatum neurons that drive shunting inhibition and dipping via the LHb pathways.
+
+In the context of the full BG / OFC / ACC ([BOA](examples/boa/README.md)) goal-directed framework (i.e., the *Rubicon* model), this active maintenance is a full *goal* representation that includes an expected outcome (OFC) and an action plan (dlPFC) and expected utility (ACC, PL = prelimbic).  In this case, an extinction event is equivalent to *goal failure*, when the expected (desired) outcome did not occur.  Thus, it is associated with the deactivation of any maintained goal state, and any additional cost associated with failure (at least the effort expended so far).  In this context, it is also possible (likely?) that outcome expectations in a simple Pavlovian context could be dissociable from a full goal-engagement state, involving only the OFC-specific portion of the full goal-engaged activity state.
 
 In the 2020 version of PVLV, activation of the BLA by a CS, and subsequent activity of the external USTime input layer, represented the expectation and provided the *modulatory* activity on BLAExt and VSPatch to enable extinction learning conditioned on expectations.  The model relied heavily on these modulatory and externally-generated representations -- the current Axon version takes the next step in implementing these in a more realistic and robust manner.
 
@@ -78,11 +82,11 @@ Taken together, these key functions provide a compelling computational role for 
 
 # PT (Pyramidal Tract) Sustained and Dynamic Goal Maintenance
 
-Pyramidal tract (PT) neurons in layer 5 of each PFC area provide the robust active maintenance of goal state over time, serving as a sustained *bridge* between the initiation of the goal at the time of the CS to the time of the US.  See the `PTMaintLayer`, `PTPredLayer`, and `PTNotMaintLayer` in the [deep](DEEP.md) deep predictive learning framework.
+Pyramidal tract (PT) neurons in layer 5 of each PFC area provide the robust active maintenance of goal state over time, serving as a sustained *bridge* between the initiation of the goal at the time of the CS to the time of the US.  See the `PTMaintLayer` (PT) and `PTPredLayer` (PTp) in the [deep](DEEP.md) deep predictive learning framework.
 
 These PT layers are interconnected with the MD thalamus (and other thalamic areas such as VM = ventromedial, VA = ventral anterior, VL = ventral lateral) and are the primary output neurons of the cortex.  In M1 (primary motor cortex), these are the neurons that project to the spinal cord muscle outputs and actually drive motor behavior.  The thalamic connections are "side branches" of these descending subcortical pathways.  See [Guo et al. (2018)](#references).  There is a large diversity of PT neuron "subtypes" with different temporal and content-based response properties -- we are only implementing the subset of active maintenance (working memory) PT neurons.
 
-The BG (ventral striatum (VS) & ventral pallidum (VP) drives disinhibitory gating of active maintenance in the PT layers, consistent with the longstanding ideas in the PBWM (Prefrontal-cortex, Basal-ganglia Working Memory) framework and recent updates thereof.  The following are specific issues that need to be resolved in the implementation to make everything work properly in the PVLV context.
+The BG ventral striatum (VS) & ventral pallidum (VP) drives disinhibitory gating of active maintenance in the PT layers, consistent with the longstanding ideas in the PBWM (Prefrontal-cortex, Basal-ganglia Working Memory) framework and recent updates thereof.  The following are specific issues that need to be resolved in the implementation to make everything work properly in the PVLV context.
 
 ## Time of learning vs. gating issues
 
@@ -163,13 +167,19 @@ For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, re
 
 In the [Mollick et al. (2020)](#references) version, the PPTg (pedunculopontine tegmentum) directly computed a temporal derivative of amygdala inputs, to account for phasic DA firing only at the *onset* of a CS, when the BLA has sustained CS activity.  However, updated research shows that this is incorrect, and it is also causes problems functionally in the context of the BOA model.
 
-The new model has:
+In the new model, ACh (acetylcholine) from the LDT (laterodorsal tegmentum) provides a *disinhibitory* signal for VTA bursting, triggered by CS onset by the SC (superior colliculus), such that the sustained CeM -> VTA drive for a learned CS only results in bursting at CS onset, when LDT ACh is elevated from CS -> SC novel input.
 
 * `SC` = superior colliculus, which shows strong *stimulus specific adaptation* (SSA) behavior, such that firing is strong at the onset of a new stimulus, and decreases by 60% or so thereafter [(Dutta & Gutfreund, 2014; Boehnke et al, 2011)](#references).  Thus, the temporal derivative onset filter is on the pure sensory side, not after going through the amygdala.
 
 * `LDT` = laterodorsal tegmentum, which is the "limbic" portion of the mesopontine tegmentum, which also contains the pedunculopontine nucleus / tegmentum (PPN or PPT) [(Omelchenko & Sesack, 2005; Huerta-Ocampo et al. (2021)](#references).  The LDT receives primarily from the SC and OFC, ACC, and barely anything from the amygdala (same with PPN, which is more strongly connected to motor circuits and sends more output to SNc -- basically a motor version of LDT).  LDT contains glutamatergic, GABAergic, and ACh neurons (co-releasing at least GABA and ACh in some cases), and strongly modulates firing in the VTA, inducing bursting [(Dautan et al. (2016)](#references).  LDT also drives neurons in the nucleus basalis and CIN (cholinergic interneurons) in the BG, which all have consistent CS / US onset salience firing [(Sturgill et al., 2020)](#references).  LDT ACh has widespread projections to the BG (including SNr / GPi and thalamus), modulating gating to only occur at onset of novel stimuli.
 
-Our new model is that SC -> LDT -> VTA provides a *disinhibitory* signal for VTA bursting, such that the sustained CeM -> VTA drive for a learned CS only results in bursting at CS onset, when LDT ACh is elevated from CS -> SC novel input.  Furthermore, the OFC & ACC input to LDT serves to inhibit ACh salience signals when there is already an engaged goal, to reduce distraction.
+Furthermore, the OFC & ACC input to LDT serves to inhibit ACh salience signals when there is already an engaged goal, to reduce distraction.  To enable this inhibition, it is critical to add this code in the `ApplyPVLV` function called at the start of each trial:
+
+```Go
+	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLposPT", 0.3) // PT layer is  maint
+```
+
+which sets the `GoalMaint` global variable, that then drives inhibition of ACh in LDT via its `MaintInhib` parameter.
 
 ## SC
 

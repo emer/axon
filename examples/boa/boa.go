@@ -176,7 +176,7 @@ func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
 	pv.Defaults()
 	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
 	pv.USs.PVnegGain = .1 // global scaling of PV neg level -- was 1
-	pv.LHb.VSPatchGain = 5
+	pv.LHb.VSPatchGain = 4
 
 	pv.USs.USnegGains[0] = 2 // big salient input!
 

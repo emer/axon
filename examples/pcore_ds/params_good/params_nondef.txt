@@ -74,6 +74,7 @@ DMtxGo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 DMtxGo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 DMtxGo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 DMtxGo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
+DMtxGo.Learn.RLRate.SigmoidMin: 0.001 // (Default: 0.05,1)<br>
 DMtxGo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
 DMtxGo.DGPeAkToDMtxGo.PrjnScale.Abs: 3 // (Default: 1)<br>
 DMtxGo.DGPeAkToDMtxGo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>
@@ -99,6 +100,7 @@ DMtxNo.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 DMtxNo.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 DMtxNo.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 DMtxNo.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
+DMtxNo.Learn.RLRate.SigmoidMin: 0.001 // (Default: 0.05,1)<br>
 DMtxNo.Learn.NeuroMod.BurstGain: 0.1 // (Default: 1)<br>
 DMtxNo.DGPeAkToDMtxNo.PrjnScale.Abs: 6 // (Default: 1)<br>
 DMtxNo.DGPeAkToDMtxNo.SWts.Init.Mean: 0.75 // (Default: 0.5,0.4)<br>

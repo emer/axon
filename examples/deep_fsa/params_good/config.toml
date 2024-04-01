@@ -1,9 +1,19 @@
+Includes = []
 GUI = false
 Debug = false
 
 [Env]
   UnitsPer = 1
-  InputNames = ["B", "T", "S", "X", "V", "P", "E"]
+  InputNames = [
+    'B',
+    'T',
+    'S',
+    'X',
+    'V',
+    'P',
+    'E'
+  ]
+
   [Env.InputNameMap]
     B = 0
     E = 6
@@ -14,10 +24,10 @@ Debug = false
     X = 3
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 

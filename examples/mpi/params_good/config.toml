@@ -1,16 +1,19 @@
+Includes = []
 GUI = false
 Debug = false
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
+
   [Params.Hidden1Size]
     X = 10
     Y = 10
+
   [Params.Hidden2Size]
     X = 10
     Y = 10

@@ -1,29 +1,35 @@
+Includes = []
 GUI = false
 Debug = false
 
 [Env]
-  RunName = "PosAcq_A100"
+  RunName = 'PosAcq_A100'
   SetNBlocks = false
   NBlocks = 0
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
+
   [Params.PVLV]
-    "Urgency.U50" = 10
+    'Urgency.U50' = 10
 
 [Run]
   GPU = false
   NThreads = 0
+  ThetaCycles = 300
   Run = 0
   NRuns = 1
 
 [Log]
-  AggStats = ["DA", "VSPatch"]
+  AggStats = [
+    'DA',
+    'VSPatch'
+  ]
   SaveWts = false
   Block = true
   Cond = true

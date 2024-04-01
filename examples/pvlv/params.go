@@ -28,10 +28,18 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
+				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 needed for differentiation
+				"Layer.Inhib.Layer.Gi":             "0.5",
 				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.5 def; 0 faster
 				"Layer.Learn.RLRate.SigmoidMin":    "0.05", // 0.05 def
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
+			}},
+		{Sel: ".VTALayer", Desc: "",
+			Params: params.Params{
+				"Layer.VTA.CeMGain": "0.75", // 0.75 def -- controls size of CS burst
+				"Layer.VTA.LHbGain": "1.25", // 1.25 def -- controls size of PV DA
+				"Layer.VTA.AChThr":  "0.5",  // prevents non-CS-onset CS DA
 			}},
 		{Sel: ".MatrixLayer", Desc: "all mtx",
 			Params: params.Params{
@@ -48,6 +56,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Acts.Dend.ModGain": "1.5",
 				"Layer.Inhib.Layer.Gi":    "3.0",
+				"Layer.Inhib.Pool.Gi":     "3.6",
+			}},
+		{Sel: ".PTSelfMaint", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "4.0", // note: too much! need a better strat
+			}},
+		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
@@ -55,7 +72,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
-				"Layer.LDT.MaintInhib": "0.8",
+				"Layer.LDT.MaintInhib": "0.8", // 0.8 def; AChThr = 0.5 typically
 			}},
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
@@ -120,11 +137,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "3",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def -- todo: needs faster
-			}},
-		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
+				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def -- good
 			}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{

@@ -16,8 +16,9 @@
   [Base.Params]
     "Layer.Inhib.Pool.Gi" = "0.5"
     "Layer.Learn.NeuroMod.BurstGain" = "0.1"
+    "Layer.Learn.NeuroMod.DAModGain" = "0.2"
     "Layer.Learn.RLRate.On" = "true"
-    "Layer.Learn.TrgAvgAct.On" = "true"
+    "Layer.Learn.TrgAvgAct.RescaleOn" = "true"
   [Base.Hypers]
     [Base.Hypers."Layer.Acts.Kir.Gbar"]
       Tweak = "-"

@@ -1,3 +1,4 @@
+Includes = []
 RW = false
 GUI = false
 Debug = false
@@ -5,10 +6,10 @@ Debug = false
 [Env]
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 
@@ -21,7 +22,10 @@ Debug = false
   NTrials = 20
 
 [Log]
-  AggStats = ["DA", "VSPatch"]
+  AggStats = [
+    'DA',
+    'VSPatch'
+  ]
   SaveWts = false
   Epoch = true
   Run = true

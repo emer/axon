@@ -1,0 +1,34 @@
+[[Base]]
+  Sel = "Layer"
+  Desc = "clamp gain makes big diff on overall excitation, gating propensity"
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "1.0"
+
+[[Base]]
+  Sel = "#State"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "0.2"
+
+[[Base]]
+  Sel = ".VSPatchLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.Layer.Gi" = "0.5"
+    "Layer.Inhib.Layer.On" = "true"
+    "Layer.Inhib.Pool.On" = "false"
+    "Layer.Learn.NeuroMod.AChLRateMod" = "0"
+    "Layer.Learn.NeuroMod.DAModGain" = "0"
+    "Layer.Learn.NeuroMod.DipGain" = "1"
+    "Layer.Learn.RLRate.SigmoidMin" = "0.05"
+    "Layer.Learn.TrgAvgAct.GiBaseInit" = "0"
+
+[[Base]]
+  Sel = ".VSPatchPrjn"
+  Desc = ""
+  [Base.Params]
+    "Prjn.Learn.LRate.Base" = "0.05"
+    "Prjn.Learn.Trace.LearnThr" = "0"
+    "Prjn.PrjnScale.Abs" = "2"
+    "Prjn.SWts.Init.Mean" = "0.5"
+    "Prjn.SWts.Init.Var" = "0.25"

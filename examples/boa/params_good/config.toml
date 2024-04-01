@@ -1,9 +1,10 @@
+Includes = []
 GUI = false
 Debug = false
-OpenWts = ""
+OpenWts = ''
 
 [Env]
-  Config = "4.uncertain_cs.toml"
+  Config = ''
   NDrives = 4
   PctCortexStEpc = 10
   PctCortexNEpc = 1
@@ -11,10 +12,10 @@ OpenWts = ""
   SameSeed = false
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 

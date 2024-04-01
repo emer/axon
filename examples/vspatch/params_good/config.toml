@@ -3,9 +3,6 @@ GUI = false
 Debug = false
 
 [Env]
-  SeqLen = 4
-  NActions = 4
-  ActSoftMaxGain = 2.0
 
 [Params]
   Tweak = false
@@ -19,20 +16,18 @@ Debug = false
   Good = true
 
 [Run]
-  GPU = true
-  NData = 16
+  GPU = false
+  NData = 1
   NThreads = 0
-  ThetaCycles = 300
   Run = 0
-  NRuns = 25
-  NEpochs = 50
+  NRuns = 1
+  NEpochs = 30
   NTrials = 128
 
 [Log]
   SaveWts = false
   Epoch = true
   Run = true
-  Expt = true
   Trial = false
   TestEpoch = false
   TestTrial = false

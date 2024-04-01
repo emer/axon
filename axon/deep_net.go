@@ -247,12 +247,13 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	name := super.Name()
 	shp := super.Shape()
 	// is4D := false
+	ptExtra := 1 // extra size for pt layers
 	if shp.NumDims() == 2 {
-		pt = net.AddPTMaintLayer2D(name+"PT", shp.Dim(0), shp.Dim(1))
+		pt = net.AddPTMaintLayer2D(name+"PT", shp.Dim(0)*ptExtra, shp.Dim(1)*ptExtra)
 		thal = net.AddBGThalLayer2D(name+thalSuffix, shp.Dim(0), shp.Dim(1))
 	} else {
 		// is4D = true
-		pt = net.AddPTMaintLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		pt = net.AddPTMaintLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2)*ptExtra, shp.Dim(3)*ptExtra)
 		thal = net.AddBGThalLayer4D(name+thalSuffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
 	pt.SetClass(name)
@@ -320,6 +321,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	} else {
 		pt.PlaceBehind(super, space)
 	}
+	pt.Rel.Scale = float32(1) / float32(ptExtra)
 	thal.PlaceBehind(pt, space)
 
 	return
@@ -372,7 +374,8 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 		prjnClass = " " + prjnClass
 	}
 	name := strings.TrimSuffix(ptMaint.Name(), "PT")
-	shp := ptMaint.Shape()
+	// shp := ptMaint.Shape()
+	shp := ct.Shape()
 	if shp.NumDims() == 2 {
 		ptPred = net.AddPTPredLayer2D(name+"PTp", shp.Dim(0), shp.Dim(1))
 	} else {
@@ -409,6 +412,8 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 // use, e.g., pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8" to change default params.
 func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	p1to1 := prjn.NewPoolOneToOne()
+	// p1to1rnd := prjn.NewPoolUnifRnd()
+	// p1to1rnd.PCon = 0.5
 	one2one := prjn.NewOneToOne()
 	prjnClass := "PFCPrjn"
 	layClass := "PFCLayer"
@@ -482,6 +487,8 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
+	// rnd := prjn.NewUnifRnd()
+	// rnd.PCon = 0.5
 	prjnClass := "PFCPrjn"
 	layClass := "PFCLayer"
 

@@ -8,10 +8,10 @@
 						Layer.Gi:	  0.50	
 
          VMtxGo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
-						Layer.Gi:	  0.50	
+						Layer.Gi:	  0.50	Params: .MatrixLayer: 0.5
 
          VMtxNo		Nominal:	  0.25	Params: .MatrixLayer: 0.25
-						Layer.Gi:	  0.50	
+						Layer.Gi:	  0.50	Params: .MatrixLayer: 0.5
 
             SNc		Nominal:	  0.10	
 						Layer.Gi:	  0.90	

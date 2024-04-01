@@ -31,7 +31,7 @@ type LDTParams struct {
 
 	// extent to which active goal maintenance (via Global GoalMaint)
 	// inhibits ACh signals: when goal engaged, distractability is lower.
-	MaintInhib float32 `default:"0.5" max:"1" min:"0"`
+	MaintInhib float32 `default:"0.8" max:"1" min:"0"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
 	SrcLay1Idx int32 `edit:"-"`
@@ -51,7 +51,7 @@ type LDTParams struct {
 func (lp *LDTParams) Defaults() {
 	lp.SrcThr = 0.05
 	lp.Rew.SetBool(true)
-	lp.MaintInhib = 0.5
+	lp.MaintInhib = 0.8
 }
 
 func (lp *LDTParams) Update() {
@@ -115,12 +115,16 @@ type VTAParams struct {
 	// gain on computed LHb DA (Burst - Dip) -- for controlling DA levels
 	LHbGain float32 `default:"1.25"`
 
-	pad, pad1 float32
+	// threshold on ACh level required to generate LV CS-driven dopamine burst
+	AChThr float32 `default:"0.5"`
+
+	pad float32
 }
 
 func (vt *VTAParams) Defaults() {
 	vt.CeMGain = 0.75
 	vt.LHbGain = 1.25
+	vt.AChThr = 0.5
 }
 
 func (vt *VTAParams) Update() {
@@ -131,7 +135,11 @@ func (vt *VTAParams) Update() {
 func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	pvDA := vt.LHbGain * GlbV(ctx, di, GvLHbPVDA)
 	csNet := GlbV(ctx, di, GvCeMpos) - GlbV(ctx, di, GvCeMneg)
-	csDA := vt.CeMGain*ach*csNet - GlbV(ctx, di, GvVSPatchPos)
+	achMod := float32(0)
+	if ach >= vt.AChThr {
+		achMod = ach
+	}
+	csDA := achMod*vt.CeMGain*csNet - GlbV(ctx, di, GvVSPatchPos)
 
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)

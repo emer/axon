@@ -1,23 +1,26 @@
+Includes = []
 GUI = false
 Debug = false
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
+
   [Params.Hidden1Size]
     X = 10
     Y = 10
+
   [Params.Hidden2Size]
     X = 10
     Y = 10
 
 [Run]
-  GPU = false
-  NData = 1
+  GPU = true
+  NData = 16
   NThreads = 0
   Run = 0
   NRuns = 5
@@ -26,7 +29,7 @@ Debug = false
   NTrials = 32
   TestInterval = 5
   PCAInterval = 5
-  StartWts = ""
+  StartWts = ''
 
 [Log]
   SaveWts = false

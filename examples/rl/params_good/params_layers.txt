@@ -2,7 +2,7 @@
 						Layer.Gi:	  0.20	Params: Base:#Rew: 0.2
 
         RewPred		Nominal:	  1.00	Params: .TDPredLayer: 1
-						Layer.Gi:	  0.20	Params: .TDPredLayer: 0.2
+						Layer.Gi:	  0.20	Params: TD:.TDPredLayer: 0.2
 
        RewInteg		Nominal:	  1.00	Params: .TDIntegLayer: 1
 						Layer.Gi:	  0.20	Params: TD:.TDIntegLayer: 0.2

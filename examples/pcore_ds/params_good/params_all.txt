@@ -35,10 +35,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPi
@@ -140,10 +140,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPePr
@@ -245,10 +245,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 GP:      {
   GPType: GPeAk
@@ -350,10 +350,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: DGPePrToDSTN
@@ -452,10 +452,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.001  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.2  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
 }
 Matrix:  {
   GateThr: 0.05 IsVS: false OtherMatrixIdx: 5 ThalLay1Idx: 16 ThalLay2Idx: -1 ThalLay3Idx: -1 ThalLay4Idx: -1 ThalLay5Idx: -1 ThalLay6Idx: -1
@@ -626,10 +626,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.001  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.2  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 0.1  DipGain: 1 }
 }
 Matrix:  {
   GateThr: 0.05 IsVS: false OtherMatrixIdx: 4 ThalLay1Idx: 16 ThalLay2Idx: -1 ThalLay3Idx: -1 ThalLay4Idx: -1 ThalLay5Idx: -1 ThalLay6Idx: -1
@@ -780,10 +780,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -865,10 +865,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: State
@@ -898,7 +898,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.125  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -907,10 +907,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: S1
@@ -940,7 +940,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.125  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -949,10 +949,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: Target
@@ -991,10 +991,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
 Layer: MotorBS
@@ -1024,7 +1024,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.125  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 0.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -1033,10 +1033,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: DGPiToMotorBS
@@ -1126,7 +1126,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.125  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -1135,10 +1135,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIdx: 11
@@ -1240,10 +1240,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
@@ -1345,10 +1345,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 2 DecayTau: 50
@@ -1450,10 +1450,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: false  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: M1VMToM1PT
@@ -1552,10 +1552,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
 Prjn: M1PTToM1VM
@@ -1654,10 +1654,10 @@ Learn: {
   CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
-  TrgAvgAct: {  On: true  GiBaseInit: 0  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.05 DecayTau: 50

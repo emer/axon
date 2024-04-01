@@ -1,17 +1,19 @@
+Includes = []
 GUI = false
 Debug = false
 
 [Env]
   UnitsPer = 4
+
   [Env.Env]
     PctBlank = 0
 
 [Params]
   Hid2 = false
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 

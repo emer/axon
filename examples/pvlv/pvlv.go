@@ -157,7 +157,7 @@ func (ss *Sim) ConfigPVLV() {
 	pv.Defaults()
 	pv.USs.PVposGain = 2
 	pv.USs.PVnegGain = 1
-	pv.LHb.VSPatchGain = 5
+	pv.LHb.VSPatchGain = 6 // 4 def -- needs more for shorter trial count here
 
 	pv.USs.USnegGains[0] = 2 // big salient input!
 

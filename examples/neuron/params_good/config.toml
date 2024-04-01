@@ -15,14 +15,15 @@ NCycles = 200
 OnCycle = 10
 OffCycle = 160
 UpdtInterval = 10
+Includes = []
 GUI = false
 Debug = false
 
 [Params]
-  Sheet = ""
-  Tag = ""
-  Note = ""
-  File = ""
+  Sheet = ''
+  Tag = ''
+  Note = ''
+  File = ''
   SaveAll = false
   Good = true
 
