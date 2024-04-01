@@ -27,7 +27,7 @@ type ActAvgParams struct {
 	// nominal estimated average activity level in the layer, which is used in computing the scaling factor on sending projections from this layer.  In general it should roughly match the layer ActAvg.ActMAvg value, which can be logged using the axon.LogAddDiagnosticItems function.  If layers receiving from this layer are not getting enough Ge excitation, then this Nominal level can be lowered to increase projection strength (fewer active neurons means each one contributes more, so scaling factor goes as the inverse of activity level), or vice-versa if Ge is too high.  It is also the basis for the target activity level used for the AdaptGi option -- see the Offset which is added to this value.
 	Nominal float32 `min:"0" step:"0.01"`
 
-	// enable adapting of layer inhibition Gi multiplier factor (stored in layer GiMult value) to maintain a Target layer level of ActAvg.ActMAvg.  This generally works well and improves the long-term stability of the models.  It is not enabled by default because it depends on having established a reasonable Nominal + Offset target activity level.
+	// enable adapting of layer inhibition Gi multiplier factor (stored in layer GiMult value) to maintain a target layer level of ActAvg.Nominal.  This generally works well and improves the long-term stability of the models.  It is not enabled by default because it depends on having established a reasonable Nominal + Offset target activity level.
 	AdaptGi slbool.Bool
 
 	// offset to add to Nominal for the target average activity that drives adaptation of Gi for this layer.  Typically the Nominal level is good, but sometimes Nominal must be adjusted up or down to achieve desired Ge scaling, so this Offset can compensate accordingly.

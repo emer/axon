@@ -176,6 +176,7 @@ func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
 	pv.Defaults()
 	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
 	pv.USs.PVnegGain = .1 // global scaling of PV neg level -- was 1
+	pv.LHb.VSPatchGain = 5
 
 	pv.USs.USnegGains[0] = 2 // big salient input!
 
@@ -688,7 +689,6 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
 	ss.Stats.SetFloat("DA_GiveUp", 0)
-	ss.Stats.SetFloat("VSPatchThr", 0)
 
 	ss.Stats.SetFloat("Time", 0)
 	ss.Stats.SetFloat("Effort", 0)
@@ -788,9 +788,6 @@ func (ss *Sim) TrialStats(di int) {
 			ss.Stats.SetFloat("HasRew", 0)
 		}
 	}
-
-	vsLy := ss.Net.AxonLayerByName("VsPatchD1")
-	ss.Stats.SetFloat32("VSPatchThr", vsLy.Vals[0].ActAvg.AdaptThr)
 
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
 	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
@@ -1032,7 +1029,6 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA_GiveUp", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
-	ss.Logs.AddStatAggItem("VSPatchThr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Epoch, etime.Trial)

@@ -233,9 +233,6 @@ func (ly *Layer) InitWts(ctx *Context, nt *Network) { //gti:add
 		vals.Init()
 		vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
 		vals.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
-		if ly.LayerType() == VSPatchLayer {
-			vals.ActAvg.AdaptThr = ly.Params.VSPatch.ThrInit
-		}
 	}
 	ly.InitActAvg(ctx)
 	ly.InitActs(ctx)

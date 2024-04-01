@@ -563,8 +563,6 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	switch ly.LayerType() {
 	case MatrixLayer:
 		ly.MatrixGated(ctx)
-	case VSPatchLayer:
-		ly.VSPatchAdaptThr(ctx)
 	}
 }
 

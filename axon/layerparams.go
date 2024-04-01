@@ -165,9 +165,6 @@ type LayerParams struct {
 	// type of GP Layer.
 	GP GPParams `view:"inline"`
 
-	// parameters for VSPatch learning
-	VSPatch VSPatchParams `view:"inline"`
-
 	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
 	LDT LDTParams `view:"inline"`
 
@@ -202,7 +199,6 @@ func (ly *LayerParams) Update() {
 	ly.Matrix.Update()
 	ly.GP.Update()
 
-	ly.VSPatch.Update()
 	ly.LDT.Update()
 	ly.VTA.Update()
 
@@ -227,7 +223,6 @@ func (ly *LayerParams) Defaults() {
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
 
-	ly.VSPatch.Defaults()
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
 
@@ -249,8 +244,6 @@ func (ly *LayerParams) ShouldShow(field string) bool {
 		return ly.LayType == MatrixLayer
 	case "GP":
 		return ly.LayType == GPLayer
-	case "VSPatch":
-		return ly.LayType == VSPatchLayer
 	case "LDT":
 		return ly.LayType == LDTLayer
 	case "VTA":
@@ -299,9 +292,6 @@ func (ly *LayerParams) AllParams() string {
 		b, _ = json.MarshalIndent(&ly.GP, "", " ")
 		str += "GP:      {\n " + JsonToParams(b)
 
-	case VSPatchLayer:
-		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
-		str += "VSPatch: {\n " + JsonToParams(b)
 	case LDTLayer:
 		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
 		str += "LDT: {\n " + JsonToParams(b)
@@ -407,11 +397,11 @@ func (ly *LayerParams) IsInputOrTarget() bool {
 	return (ly.IsTarget() || ly.IsInput())
 }
 
-// IsLearnTrgAvg returns true if this layer has Learn.TrgAvgAct.On set for learning
+// IsLearnTrgAvg returns true if this layer has Learn.TrgAvgAct.RescaleOn set for learning
 // adjustments based on target average activity levels, and the layer is not an
 // input or target layer.
 func (ly *LayerParams) IsLearnTrgAvg() bool {
-	if ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue() || ly.Learn.TrgAvgAct.On.IsFalse() {
+	if ly.Acts.Clamp.IsInput.IsTrue() || ly.Acts.Clamp.IsTarget.IsTrue() || ly.Learn.TrgAvgAct.RescaleOn.IsFalse() {
 		return false
 	}
 	return true
@@ -918,7 +908,7 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 
 // note: needs to iterate over sub-pools in layer!
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool, vals *LayerVals) {
-	val := ly.VSPatch.ThrVal(pl.AvgMax.CaSpkD.Cycle.Avg, vals.ActAvg.AdaptThr)
+	val := pl.AvgMax.CaSpkD.Cycle.Avg
 	if ly.Learn.NeuroMod.DAMod == D1Mod {
 		SetGlbUSposV(ctx, di, GvVSPatchD1, uint32(pi-1), val)
 	} else {

@@ -26,10 +26,7 @@ type ActAvgVals struct {
 	// multiplier on inhibition -- adapted to maintain target activity level
 	GiMult float32 `edit:"-"`
 
-	// adaptive threshold -- only used for specialized layers, e.g., VSPatch
-	AdaptThr float32 `edit:"-"`
-
-	pad, pad1 float32
+	pad, pad1, pad2 float32
 }
 
 func (lv *ActAvgVals) Init() {
@@ -38,7 +35,6 @@ func (lv *ActAvgVals) Init() {
 	lv.AvgMaxGeM = 1
 	lv.AvgMaxGiM = 1
 	lv.GiMult = 1
-	lv.AdaptThr = 0 // will be initialized per-user type
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)

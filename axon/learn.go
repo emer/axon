@@ -148,11 +148,11 @@ func (np *CaSpkParams) CaFmSpike(ctx *Context, ni, di uint32) {
 // drives synaptic scaling at a slow timescale (Network.SlowInterval).
 type TrgAvgActParams struct {
 
-	// whether to use target average activity mechanism to scale synaptic weights
-	On slbool.Bool
-
-	// if this is > 0, then each neuron's GiBase is initialized as this proportion of TrgRange.Max - TrgAvg -- gives neurons differences in intrinsic inhibition / leak as a starting bias
+	// if this is > 0, then each neuron's GiBase is initialized as this proportion of TrgRange.Max - TrgAvg -- gives neurons differences in intrinsic inhibition / leak as a starting bias.  This is independent of using the target values to scale synaptic weights.
 	GiBaseInit float32
+
+	// whether to use target average activity mechanism to rescale synaptic weights, so that activity tracks the target values
+	RescaleOn slbool.Bool
 
 	// learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference.
 	ErrLRate float32 `default:"0.02"`
@@ -179,7 +179,7 @@ func (ta *TrgAvgActParams) Update() {
 }
 
 func (ta *TrgAvgActParams) Defaults() {
-	ta.On.SetBool(true)
+	ta.RescaleOn.SetBool(true)
 	ta.ErrLRate = 0.02
 	ta.SynScaleRate = 0.005
 	ta.SubMean = 1 // 1 in general beneficial
@@ -191,10 +191,12 @@ func (ta *TrgAvgActParams) Defaults() {
 
 func (ta *TrgAvgActParams) ShouldShow(field string) bool {
 	switch field {
-	case "On", "GiBaseInit":
+	case "RescaleOn", "GiBaseInit":
 		return true
+	case "TrgRange":
+		return ta.RescaleOn.IsTrue() || ta.GiBaseInit > 0
 	default:
-		return ta.On.IsTrue()
+		return ta.RescaleOn.IsTrue()
 	}
 }
 

@@ -448,14 +448,12 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 			delta *= pj.BLA.NegDeltaLRate
 		}
 		dwt = tr * delta * ract
-		// if pj.Idxs.RecvLay == 28 && (ri-pj.Idxs.RecvNeurSt) == 36 && NrnV(ctx, si, di, Burst) > 0.5 {
-		// 	fmt.Printf("ri: %d  si: %d  tr: %g  delta: %g  ract: %g  dwt: %g\n", ri, si, tr, delta, ract, dwt)
-		// }
 		SetSynCaV(ctx, syni, di, Tr, 0.0)
 	} else if ach > pj.BLA.AChThr {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
-		SetSynCaV(ctx, syni, di, DTr, ach*NrnV(ctx, si, di, Burst))
-		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), SynCaV(ctx, syni, di, DTr))
+		dtr := ach * NrnV(ctx, si, di, Burst)
+		SetSynCaV(ctx, syni, di, DTr, dtr)
+		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)
 		SetSynCaV(ctx, syni, di, Tr, tr)
 	} else {
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
@@ -591,15 +589,14 @@ func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
-// for the VSPatchPrjn type.  Currently only supporting the Pos D1 type.
+// for the VSPatchPrjn type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
-	ract := NrnV(ctx, ri, di, SpkPrv) // t-1
+	ract := NrnV(ctx, ri, di, SpkPrv) // t-1 -- note: is set to GeIntNorm in LayerParams.NewStateNeuron()
 	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.
-	// sact := NrnV(ctx, si, di, CaSpkD)
 	sact := NrnV(ctx, si, di, SpkPrv) // t-1
 	dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * sact * ract
 	SetSynCaV(ctx, syni, di, DiDWt, dwt)

@@ -19,12 +19,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Learn.NeuroMod.DipGain":     "1",      // boa requires balanced..
-				"Layer.VSPatch.Gain":               "5",      // 3 def
-				"Layer.VSPatch.ThrInit":            "0.2",    // thr .2
-				"Layer.VSPatch.ThrLRate":           "0.0001", // 0.0001 good for flexible cycle test
-				"Layer.VSPatch.ThrNonRew":          "10",
-				"Layer.Learn.TrgAvgAct.GiBaseInit": "0.5",
+				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
+				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.5 default; 0 better
 				"Layer.Learn.RLRate.SigmoidMin":    "0.05", // 0.05 def
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
 			}},

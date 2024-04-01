@@ -368,7 +368,7 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 type LHbParams struct {
 
 	// gain on the VSPatchD1 - D2 difference
-	VSPatchGain float32 `default:"2"`
+	VSPatchGain float32 `default:"5"`
 
 	// threshold factor that multiplies integrated pvNeg value
 	// to establish a threshold for whether the integrated pvPos value
@@ -387,7 +387,7 @@ type LHbParams struct {
 }
 
 func (lh *LHbParams) Defaults() {
-	lh.VSPatchGain = 2
+	lh.VSPatchGain = 5
 	lh.NegThr = 1
 	lh.BurstGain = 1
 	lh.DipGain = 1
@@ -731,7 +731,6 @@ func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
 	pp.USs.CostToZero(ctx, di)
 	pp.ResetGiveUp(ctx, di)
 	SetGlbV(ctx, di, GvVSPatchPos, 0)
-	SetGlbV(ctx, di, GvVSPatchPosPrev, 0)
 	SetGlbV(ctx, di, GvVSPatchPosSum, 0)
 	SetGlbV(ctx, di, GvRewPred, 0)
 	nd := pp.NPosUSs
@@ -873,7 +872,6 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 // saves to Prev, updates global VSPatchPos and VSPatchPosSum.
 // uses max across recorded VSPatch activity levels.
 func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
-	SetGlbV(ctx, di, GvVSPatchPosPrev, GlbV(ctx, di, GvVSPatchPos))
 	mx := float32(0)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
@@ -883,7 +881,6 @@ func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
 		if vs > mx {
 			mx = vs
 		}
-		SetGlbUSposV(ctx, di, GvVSPatchPrev, i, vs)
 	}
 	SetGlbV(ctx, di, GvVSPatchPos, mx)
 	SetGlbV(ctx, di, GvRewPred, mx)

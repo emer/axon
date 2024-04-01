@@ -102,42 +102,6 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	return ach
 }
 
-// VSPatchParams parameters for VSPatch learning
-type VSPatchParams struct {
-
-	// multiplier applied after Thr threshold
-	Gain float32 `default:"3"`
-
-	// initial value for overall threshold, which adapts over time -- stored in LayerVals.ActAvgVals.AdaptThr
-	ThrInit float32 `default:"0.15"`
-
-	// learning rate for the threshold -- moves in proportion to same predictive error signal that drives synaptic learning
-	ThrLRate float32 `default:"0,0.002"`
-
-	// extra gain factor for non-reward trials, which is the most critical
-	ThrNonRew float32 `default:"10"`
-}
-
-func (vp *VSPatchParams) Defaults() {
-	vp.Gain = 3
-	vp.ThrInit = 0.15
-	vp.ThrLRate = 0.002
-	vp.ThrNonRew = 10
-}
-
-func (vp *VSPatchParams) Update() {
-}
-
-// ThrVal returns the thresholded value, gain-multiplied value
-// for given VSPatch activity level
-func (vp *VSPatchParams) ThrVal(act, thr float32) float32 {
-	vs := act - thr
-	if vs < 0 {
-		return 0
-	}
-	return vp.Gain * vs
-}
-
 // VTAParams are for computing overall VTA DA based on LHb PVDA
 // (primary value -- at US time, computed at start of each trial
 // and stored in LHbPVDA global value)
@@ -182,33 +146,6 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 
 //gosl: end pvlv_layers
 
-// VSPatchAdaptThr adapts the learning threshold
-func (ly *Layer) VSPatchAdaptThr(ctx *Context) {
-	sumDThr := float32(0)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		hasRew := GlbV(ctx, di, GvHasRew)
-		// note: this all must be based on t-1 values!!!
-		modlr := ly.Params.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
-		if hasRew == 0 {
-			vsval := GlbV(ctx, di, GvVSPatchPosPrev)    // must be prev!
-			dthr := ly.Params.VSPatch.ThrNonRew * vsval // increase threshold if active
-			sumDThr += dthr
-		} else {
-			sumDThr -= modlr
-		}
-	}
-	// everyone uses the same threshold
-	sumDThr *= ly.Params.VSPatch.ThrLRate
-	thr := ly.Vals[0].ActAvg.AdaptThr
-	if sumDThr < 0 {
-		sumDThr *= thr // soft decrease
-	}
-	thr += sumDThr
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		ly.Vals[di].ActAvg.AdaptThr = thr
-	}
-}
-
 func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")
 
@@ -227,7 +164,7 @@ func (ly *Layer) BLADefaults() {
 	lp.Inhib.Pool.Gi = 1
 	lp.Inhib.ActAvg.Nominal = 0.025
 	lp.Learn.RLRate.SigmoidMin = 1.0
-	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	lp.Learn.RLRate.Diff.SetBool(true)
 	lp.Learn.RLRate.DiffThr = 0.01
 	lp.CT.DecayTau = 0
@@ -281,7 +218,7 @@ func (ly *Layer) CeMDefaults() {
 	lp.Inhib.Pool.On.SetBool(true)
 	lp.Inhib.Pool.Gi = 0.3
 	lp.Inhib.ActAvg.Nominal = 0.15
-	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	lp.Learn.RLRate.SigmoidMin = 1.0 // doesn't matter -- doesn't learn..
 
 	for _, pj := range ly.RcvPrjns {
@@ -299,7 +236,7 @@ func (ly *Layer) LDTDefaults() {
 	lp.Acts.Decay.Act = 1
 	lp.Acts.Decay.Glong = 1
 	lp.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
-	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	// lp.PVLV.Thr = 0.2
 	// lp.PVLV.Gain = 2
 
@@ -322,7 +259,7 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Learn.RLRate.Diff.SetBool(false)
 	ly.Learn.RLRate.SigmoidMin = 0.01 // 0.01 > 0.05
-	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	ly.Learn.TrgAvgAct.GiBaseInit = 0.5
 
 	// ms.Learn.NeuroMod.DAMod needs to be set via BuildConfig
@@ -344,7 +281,7 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Acts.PopCode.MaxSigma = 0.12
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 }
 
 func (ly *LayerParams) UrgencyDefaults() {
@@ -356,7 +293,7 @@ func (ly *LayerParams) UrgencyDefaults() {
 	ly.Acts.PopCode.MinAct = 0
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 }
 
 func (ly *LayerParams) USDefaults() {
@@ -370,7 +307,7 @@ func (ly *LayerParams) USDefaults() {
 	ly.Acts.PopCode.MaxSigma = 0.12
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 }
 
 func (ly *LayerParams) PVDefaults() {
@@ -385,5 +322,5 @@ func (ly *LayerParams) PVDefaults() {
 	// ly.Acts.PopCode.MaxSigma = 0.12
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 }

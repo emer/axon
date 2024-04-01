@@ -191,7 +191,7 @@ func (ly *Layer) PTMaintDefaults() {
 	}
 	ly.Params.Inhib.Layer.Gi = 2.4
 	ly.Params.Inhib.Pool.Gi = 2.4
-	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0
 
 	for _, pj := range ly.RcvPrjns {

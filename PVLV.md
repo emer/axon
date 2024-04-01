@@ -34,6 +34,24 @@ This division of labor is consistent with a considerable amount of data [Hazy et
 
 Note that we use anatomical labels for computationally-specified functions consistent with our theory, without continually reminding the reader that of course this is all a simplified theory for what these brain areas are actually doing.  If it is useful for you, just imagine it says "we hypothesize that the function of area X is.." everywhere.
 
+# Timing: Trial-wise
+
+In contrast to the minus-plus phase-based timing of cortical learning, the RL-based learning in PVLV is generally organized on trial-wise boundaries, with some factors computed online within the trial.  Here is a schematic, for an intermediate about of positive CS learning and VSPatch prediction of a positive US outcome, with an "Eat" action that drives the US:
+
+| Trial Step:  |   0      |   1  |   2  |   3         |
+| ------------ | -------- | ---- | ---- | ----------- |
+| Event / Act  |  CS      |      | Eat  |  US         |
+| SC -> ACh    |  ++      |      |      |             |
+| BLA          |  ++      |      |  Rp  |  R          |
+| BLA dw       | tr=S*ACh |      |      | R(R-Rp)tr   |
+| OFC          |  BLA->   |  PT  |  PT  | reset PT    |
+| VSPatch = VP |          |      |  Rp  |             |
+| VP dw        |          |      |      | Sp*Rp*DA    |
+| DA           | ++ (BLA) |      |      | ++ (US-VPp) |
+
+* Rp = receiving activity on previous trial
+* DA at US is computed at start of trial in PVLV.NewState, based on VS D1 - D2 on prev trial.
+
 # A Central Challenge: Learning *Something* when *Nothing* happens
 
 As articulated in the PVLV papers, a central challenge that any RL model must solve is to make learning dependent on expectations such that the *absence* of an expected outcome can serve as a learning event, with the appropriate effects.  This is critical for **extinction** learning, when an expected reward outcome no longer occurs, and the system must learn to no longer have this expectation of reward.  This issue is particularly challenging for PVLV because extinction learning involves different pathways than initial acquisition (e.g., BLA Ext vs. Acq layers, VSPatch, and the LHb dipping), so indirect effects of expectation are required.
@@ -88,23 +106,24 @@ The BLA learns at the time of the US, in response to dopamine and ACh (see below
 
 There are 2x2 BLA types: Positive or Negative valence US's with Acquisition vs. Extinction:
 
-* `BLAPosAcqD1` = Positive valence, Aquisition
+* `BLAPosAcqD1` = Positive valence, Acquisition
 * `BLAPosExtD2` = Positive valence, Extinction
 * `BLANegAcqD2` = Negative valence, Acquisition
 * `BLANegAcqD1` = Negative valence, Extinction
 
 The D1 / D2 flips the sign of the influence of DA on the activation and sign of learning of the BLA neuron (D1 = excitatory, D2 = inhibitory).
 
-The learning rule for PosAcqD1 is:
+The learning rule uses a trace-based mechanism similar to the BG Matrix projection, which is critical for bridging the CS -- US time window and supporting both acquisition and extinction with the same equations.  The trace component `Tr` is established by CS-onset activity, and reflects the sending activation component `S`:
 
-* `DWt = lr * DALr * Send_prv * |CaSpkP - SpkPrv|_+`
-    + `CaSpkP`: receiver current trial plus phase Ca -- also has DA modulation reflected in a D1 / D2 direction.
-    + `SpkPrv`: receiver CaSpkP from the previous ThetaCycle (trial).  Thus, as in the Leabra PVLV, the outcome / US is compared to the prior t-1 trial.  This difference is positively-rectified: negative deltas are 0.
-    + `Send_prv`: is the sending activity from *previous* trial -- this is also integrated over time in the `Tr` trace variable (can accumulate eligibility trace if Tau > 1).
-    + `DALr`: is the DA modulation of learning rate, implemented via `RLrate` factor via `Learn.NeuroMod` params.  This includes the `Diff` lrate factor as in standard axon, which is likewise based on the between-trial diff as opposed to the plus - minus phase differences.
-    + `[ ]_+` indicates the positive rectification of the delta -- there is a `BLAAcq.NegDeltaLRate` parameter that applies when this delta is negative -- typically .01, producing a very slow decrease relative to increase.
+* `Tr = ACh * S`
 
-The key logic for using the t-1 to t delta is that it self-limits the learning once BLA neurons start coming on for the CS -- initially they are activated by the US directly, so the delta occurs at the US trial, but after sufficient learning, BLA neurons activate at the CS and remain active during the intervening trial, so that there is no longer a delta at the US.
+At the time of a US, or when a "Give Up" effective US (with negative DA associated with "disappointment") occurs, then the receiver activity and the change in activity relative to the prior trial (`R - Rp`, to provide a natural limitation in learning) interact with the prior trace:
+
+* `DWt = lr * Tr * R * (R - Rp)`
+
+For acquisition, BLA neurons are initially only activated at the time of the US, and thus the delta `(R - Rp)` is large, but as they start getting activated at the time of the CS, this delta starts to decrease, limiting further learning.  The strength of this delta `(R - Rp)` factor can also be modulated by the `NegDeltaLRate` parameter when it goes negative, which is key for ensuring that the positive acquisition weights remain strong even during extinction (which primarily drives the ExtD2 neurons to become active and override the original acquisition signal).
+
+For extinction, the negative dopamine and projections from the PTp as described in the next section work to drive weight strengthening or weakening as appopriate.
     
 ## Extinction learning
 
@@ -156,20 +175,22 @@ Our new model is that SC -> LDT -> VTA provides a *disinhibitory* signal for VTA
 
 The SC layer has a relatively-strong trial scale adaptation current that causes activity to diminish over trials, using the sodium-driven potassium channel (KNa):
 ```
-"Layer.Acts.KNa.Slow.Max":     "0.5", // 0.5 to 1 generall works
+"Layer.Acts.KNa.Slow.Max":     "0.5", // 0.5 to 1 generally works
 ```
 
 # VSPatch
 
 The ventral striatum (VS) patch neurons functionally provide the discounting of primary reward outcomes based on learned predictions, comprising the PV = primary value component of the PVLV algorithm.
 
-This model greatly simplifies the VSPatch by only having a single layer for positive valence, D1 receptor, instead of the opposing D1 vs. D2 for both positive and negative valence.  The omission of negative valence is reasonable because it is unclear to what extent negative outcomes can be compensated for by learned expectations, and especially the extent to which there is a "relief burst" when an expected negative outcome does not occur.  The opposing D2 pathway for positive valence does not introduce any qualitatively new behavior and causes additional complexity in balancing the two pathways.
+It is critical to have the D1 vs D2 opponent dynamic for this layer, so that the D2 can learn to inhibit responding for non-reward trials, while D1 learns about signals that predict upcoming reward.  For now, we are omitting the negative valence case because there is reasonable variability and uncertainty in the extent to which negative outcomes can be diminished by learned expectations, and especially the extent to which there is a "relief burst" when an expected negative outcome does not occur. 
 
-The learning rule here is a standard "3 factor" dopamine-modulated learning, very similar to the BLA Ext case, except operating at the current time step:
+The learning rule here is a standard "3 factor" dopamine-modulated learning, very similar to the BLA Ext case, and operates on the prior time step activations (`Sp`, `Rp`), based on the [timing](#timing) logic shown above, and to ensure that the learning is predicting rather than just directly reporting the actual current time step activations:
 
-* `DWt = lr * DALr * Send_prv * (CaSpkP / Max)`
+* `DWt = lr * DALr * Sp * Rp`
 
-where `Max` again normalizes the receiving activity because VSPatch also can start out very weakly active.
+where `DAlr` is the dopamine-signed learning rate factor for D1 vs. D2, which is a function of US for the current trial (applied at start of a trial) minus VSPatch _from the prior time step_. Thus the prediction error in VSPatch relative to US reward drives learning, such that it will always adjust to reduce error, consistent with standard Rescorla-Wagner / TD learning rules.
+
+Also, the learning factor for the `Rp` receiving activity on the prior time step is the `GeIntNorm` Max-normalized value, not raw activity, because VSPatch neurons can be relatively inactive at the start (this is done by setting `SpkPrv` to `GeIntNorm` for this layer type only).
 
 # Negative USs and Costs
 

@@ -168,13 +168,9 @@ const (
 	// VSPatch prediction of PVpos net value
 
 	// VSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
-	// computed as the Max of US-specific VSPatch saved values.
+	// computed as the Max of US-specific VSPatch saved values, subtracting D1 - D2.
 	// This is also stored as GvRewPred.
 	GvVSPatchPos
-
-	// VSPatchPosPrev is the previous-trial version of VSPatchPos -- for adjusting the
-	// VSPatchThr threshold
-	GvVSPatchPosPrev
 
 	// VSPatchPosSum is the sum of VSPatchPos over goal engaged trials,
 	// representing the integrated prediction that the US is going to occur
@@ -256,9 +252,6 @@ const (
 
 	// VSPatch is current reward predicting VSPatch (PosD2) values.
 	GvVSPatchD2
-
-	// VSPatch is previous reward predicting VSPatch (D1-D2) values.
-	GvVSPatchPrev
 
 	// OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool
 	// used in anticipating potential USpos outcome value.
