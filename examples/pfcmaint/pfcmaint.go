@@ -194,6 +194,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	net.InitWts(ctx)
+	ss.ConfigPVLV()
+}
+
+func (ss *Sim) ConfigPVLV() {
+	pv := &ss.Net.PVLV
+	pv.SetNUSs(&ss.Context, 1, 1)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -322,7 +328,19 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
 	}
+
+	ss.ApplyPVLV(ctx, mode)
 	net.ApplyExts(ctx) // now required for GPU mode
+}
+
+func (ss *Sim) ApplyPVLV(ctx *axon.Context, mode etime.Modes) {
+	pv := &ss.Net.PVLV
+	di := uint32(0) // not doing NData here -- otherwise loop over
+	ev := ss.Envs.ByModeDi(mode, int(di)).(*PFCMaintEnv)
+	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
+	if ev.Trial.Cur == 0 {             // reset maint on rew -- trial counter wraps around to 0
+		axon.GlobalSetRew(ctx, di, 1, true)
+	}
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter

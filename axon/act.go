@@ -428,13 +428,14 @@ type SpikeNoiseParams struct {
 	// excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs
 	Gi float32 `min:"0"`
 
+	// add Ge noise to GeMaintRaw instead of standard Ge -- used for PTMaintLayer for example
+	MaintGe slbool.Bool
+
 	// Exp(-Interval) which is the threshold for GeNoiseP as it is updated
 	GeExpInt float32 `view:"-" json:"-" xml:"-"`
 
 	// Exp(-Interval) which is the threshold for GiNoiseP as it is updated
 	GiExpInt float32 `view:"-" json:"-" xml:"-"`
-
-	pad int32
 }
 
 func (an *SpikeNoiseParams) Update() {
@@ -500,8 +501,8 @@ type ClampParams struct {
 	// amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers
 	Ge float32 `default:"0.8,1.5"`
 
-	//
-	Add slbool.Bool `default:"false" view:"add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers"`
+	// add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers
+	Add slbool.Bool `default:"false"`
 
 	// threshold on neuron Act activity to count as active for computing error relative to target in PctErr method
 	ErrThr float32 `default:"0.5"`
@@ -518,50 +519,53 @@ func (cp *ClampParams) Defaults() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  AttnParams
+//  SMaintParams
 
-// AttnParams determine how the Attn modulates Ge
-type AttnParams struct {
+// SMaintParams for self-maintenance simulating a population of
+// NMDA-interconnected spiking neurons
+type SMaintParams struct {
 
-	// is attentional modulation active?
+	// is self maintenance active?
 	On slbool.Bool
 
-	// minimum act multiplier if attention is 0
-	Min float32
+	// number of neurons within the self-maintenance pool,
+	// each of which is assumed to have the same probability of spiking
+	NNeurons float32 `default:"10"`
 
-	// threshold on CaSpkP for determining the reaction time for the Layer -- starts after MaxCycStart to ensure that prior trial activity has had a chance to dissipate.
-	RTThr float32
+	// ISI (inter spike interval) range -- min is used as min ISI for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
+	ISI minmax.F32 `view:"inline"`
 
-	pad int32
+	// conductance multiplier for self maintenance synapses
+	Gbar float32 `default:"1"`
 }
 
-func (at *AttnParams) Defaults() {
-	at.On.SetBool(true)
-	at.Min = 0.8
-	at.RTThr = 0.5
+func (sm *SMaintParams) Defaults() {
+	sm.NNeurons = 10
+	sm.ISI.Set(3, 20)
+	sm.Gbar = 1
 }
 
-func (at *AttnParams) Update() {
+func (sm *SMaintParams) Update() {
 }
 
-func (at *AttnParams) ShouldShow(field string) bool {
+func (sm *SMaintParams) ShouldShow(field string) bool {
 	switch field {
-	case "On", "RTThr":
+	case "On":
 		return true
 	default:
-		return at.On.IsTrue()
+		return sm.On.IsTrue()
 	}
 }
 
-// ModVal returns the attn-modulated value -- attn must be between 1-0
-func (at *AttnParams) ModVal(val float32, attn float32) float32 {
-	if val < 0 {
-		val = 0
+// ExpInt returns the exponential interval value for determining
+// when the next excitatory spike will arrive, based on given ISI
+// value for this neuron.
+func (sm *SMaintParams) ExpInt(isi float32) float32 {
+	if isi <= 0 {
+		return 0
 	}
-	if at.On.IsFalse() {
-		return val
-	}
-	return val * (at.Min + (1-at.Min)*attn)
+	isi = max(isi, sm.ISI.Min)
+	return mat32.FastExp(-isi / sm.NNeurons)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -748,8 +752,9 @@ type ActParams struct {
 	// small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting.
 	SKCa chans.SKCaParams `view:"inline"`
 
-	// Attentional modulation parameters: how Attn modulates Ge
-	AttnMod AttnParams `view:"inline"`
+	// for self-maintenance simulating a population of
+	// NMDA-interconnected spiking neurons
+	SMaint SMaintParams `view:"inline"`
 
 	// provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)
 	PopCode PopCodeParams `view:"inline"`
@@ -788,7 +793,7 @@ func (ac *ActParams) Defaults() {
 	ac.AK.Gbar = 0.1
 	ac.SKCa.Defaults()
 	ac.SKCa.Gbar = 0
-	ac.AttnMod.Defaults()
+	ac.SMaint.Defaults()
 	ac.PopCode.Defaults()
 	ac.Update()
 }
@@ -812,7 +817,7 @@ func (ac *ActParams) Update() {
 	ac.VGCC.Update()
 	ac.AK.Update()
 	ac.SKCa.Update()
-	ac.AttnMod.Update()
+	ac.SMaint.Update()
 	ac.PopCode.Update()
 }
 
@@ -956,15 +961,15 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 
 	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
 	SetNrnV(ctx, ni, di, SpkMax, 0)
-	SetNrnV(ctx, ni, di, Attn, 1)
 	SetNrnV(ctx, ni, di, RLRate, 1)
 
 	SetNrnV(ctx, ni, di, GeNoiseP, 1)
 	SetNrnV(ctx, ni, di, GeNoise, 0)
 	SetNrnV(ctx, ni, di, GiNoiseP, 1)
 	SetNrnV(ctx, ni, di, GiNoise, 0)
-
 	SetNrnV(ctx, ni, di, GiSyn, 0)
+	SetNrnV(ctx, ni, di, SMaintP, 1)
+
 	SetNrnV(ctx, ni, di, GeInt, 0)
 	SetNrnV(ctx, ni, di, GeIntNorm, 0)
 	SetNrnV(ctx, ni, di, GiInt, 0)
@@ -1059,8 +1064,28 @@ func (ac *ActParams) MaintNMDAFmRaw(ctx *Context, ni, di uint32) {
 	if ac.MaintNMDA.Gbar == 0 {
 		return
 	}
+	if ac.SMaint.On.IsTrue() {
+		ac.SMaintFmISI(ctx, ni, di)
+	}
 	SetNrnV(ctx, ni, di, GMaintSyn, ac.MaintNMDA.NMDASyn(NrnV(ctx, ni, di, GMaintSyn), NrnV(ctx, ni, di, GMaintRaw)))
 	SetNrnV(ctx, ni, di, GnmdaMaint, ac.MaintNMDA.Gnmda(NrnV(ctx, ni, di, GMaintSyn), NrnV(ctx, ni, di, VmDend)))
+}
+
+// SMaintFmISI updates the SMaint self-maintenance current into GMaintRaw
+func (ac *ActParams) SMaintFmISI(ctx *Context, ni, di uint32) {
+	isi := NrnV(ctx, ni, di, ISI)
+	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
+		return
+	}
+	ndi := di*ctx.NetIdxs.NNeurons + ni
+	smp := NrnV(ctx, ni, di, SMaintP)
+	smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
+	trg := ac.SMaint.ExpInt(isi)
+	if smp <= trg {
+		smp = 1
+		AddNrnV(ctx, ni, di, GMaintRaw, ac.SMaint.Gbar)
+	}
+	SetNrnV(ctx, ni, di, SMaintP, smp)
 }
 
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
@@ -1140,7 +1165,6 @@ func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) 
 		SetNrnV(ctx, ni, di, GeExt, NrnV(ctx, ni, di, Ext)*ac.Clamp.Ge)
 		geSyn += NrnV(ctx, ni, di, GeExt)
 	}
-	geSyn = ac.AttnMod.ModVal(geSyn, NrnV(ctx, ni, di, Attn))
 
 	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ctx, ni, di, NeuronHasExt) { // todo: this flag check is not working
 		geSyn = NrnV(ctx, ni, di, Ext) * ac.Clamp.Ge

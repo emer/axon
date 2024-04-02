@@ -24,7 +24,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PFCPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2.0",
+				"Prjn.PrjnScale.Abs": "1.0",
 			}},
 		{Sel: "#GPiToPFCThal", Desc: "",
 			Params: params.Params{
@@ -32,9 +32,15 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				"Layer.Acts.Dend.ModGain": "1.5",
-				"Layer.Inhib.Layer.Gi":    "2.6",
-				"Layer.Inhib.Pool.Gi":     "3.6",
+				"Layer.Acts.Dend.ModGain":    "1.5",
+				"Layer.Acts.GabaB.Gbar":      "0.015", // too strong and it depresses firing for a long time
+				"Layer.Acts.SMaint.On":       "true",
+				"Layer.Acts.SMaint.NNeurons": "10",
+				"Layer.Acts.SMaint.ISI.Min":  "3",  // too high and fails to take
+				"Layer.Acts.SMaint.ISI.Max":  "20", // not much effect
+				"Layer.Acts.SMaint.Gbar":     "1",  // 0.5 = slower to overcome gabab
+				"Layer.Inhib.Layer.Gi":       "2",
+				"Layer.Inhib.Pool.Gi":        "2", // not active
 			}},
 		{Sel: ".BGThalLayer", Desc: "",
 			Params: params.Params{
@@ -42,7 +48,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5.0", // note: too much! need a better strat
+				"Prjn.PrjnScale.Rel": "0",
+				"Prjn.PrjnScale.Abs": "0",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{

@@ -19,6 +19,7 @@ type RandFunIdx uint32
 const (
 	RandFunActPGe RandFunIdx = iota
 	RandFunActPGi
+	RandFunActSMaintP
 	RandFunIdxN
 )
 
