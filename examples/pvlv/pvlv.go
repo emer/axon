@@ -224,20 +224,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full, "CSToPFC")
+	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full, "CSToPFC")
 
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
 
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
-	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPTp, full, "TimeToPFC")
 
-	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
-	net.ConnectToPFCBack(time, timeP, accCost, accCostCT, accCostPTp, full)
-	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, accCost, accCostCT, accCostPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPTp, full, "TimeToPFC")
 
 	////////////////////////////////////////////////
 	// position

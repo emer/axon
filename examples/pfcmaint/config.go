@@ -16,6 +16,9 @@ type EnvConfig struct {
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
 
+	// if true, uses maintenance connections instead of self-maintenance
+	MaintCons bool
+
 	// number of units per dimension in the PFC
 	NUnits int `default:"7"`
 
@@ -69,10 +72,10 @@ type RunConfig struct {
 	NRuns int `default:"1" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `default:"30"`
+	NEpochs int `default:"10"`
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
-	NTrials int `default:"128"`
+	NTrials int `default:"64"`
 }
 
 // LogConfig has config parameters related to logging data

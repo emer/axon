@@ -94,7 +94,11 @@ type Sim struct {
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
+	if ss.Config.Params.MaintCons {
+		ss.Params.Config(ParamSetsCons, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
+	} else {
+		ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
+	}
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
@@ -178,8 +182,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = pfcPT
 	_ = pfcThal
 
-	net.ConnectToPFCBack(in, inP, pfc, pfcCT, pfcPTp, full)
-	net.ConnectToPFCBack(time, timeP, pfc, pfcCT, pfcPTp, full)
+	net.ConnectToPFCBack(in, inP, pfc, pfcCT, pfcPTp, full, "InputToPFC")
+	net.ConnectToPFCBack(time, timeP, pfc, pfcCT, pfcPTp, full, "InputToPFC")
 
 	net.ConnectLayers(gpi, pfcThal, full, axon.InhibPrjn)
 
@@ -367,7 +371,10 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	// ss.Stats.SetFloat("Rew", 0)
+	ss.Stats.SetFloat("UnitErr", 0.0)
+	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetString("TrialName", "")
+	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -403,6 +410,12 @@ func (ss *Sim) TrialStats(di int) {
 	// diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*PFCMaintEnv)
 	ss.Stats.SetInt("Item", ev.Sequence.Cur)
+
+	plays := []string{"ItemP", "TimeP"}
+	for _, lnm := range plays {
+		ly := ss.Net.AxonLayerByName(lnm)
+		ss.Stats.SetFloat(lnm+"_CorSim", float64(ly.Vals[di].CorSim.Cor))
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -418,11 +431,14 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatStringItem(etime.Test, etime.Sequence, "TrialName")
 
+	ss.Logs.AddStatAggItem("ItemP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("TimeP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
-	// ss.Logs.PlotItems("Rew", "RewPred", "RewPred_NR", "DA", "DA_NR")
+	ss.Logs.PlotItems("ItemP_CorSim", "TimeP_CorSim")
 
 	ss.Logs.CreateTables()
 
@@ -455,8 +471,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		return
 		// row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
-		return // skip
-	case time == etime.Sequence:
 		for di := 0; di < ss.Config.Run.NData; di++ {
 			ss.TrialStats(di)
 			ss.StatCounters(di)

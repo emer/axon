@@ -841,7 +841,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
-	net.ConnectToPFC(pvPos, pvPosP, ilPos, ilPosCT, ilPosPTp, full)
+	net.ConnectToPFC(pvPos, pvPosP, ilPos, ilPosCT, ilPosPTp, full, "PVToIL")
 
 	net.ConnectPTPredToPulv(ilPosPTp, pvPosP, full, full, prjnClass)
 
@@ -896,7 +896,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
-	net.ConnectToPFC(pvNeg, pvNegP, ilNeg, ilNegCT, ilNegPTp, full)
+	net.ConnectToPFC(pvNeg, pvNegP, ilNeg, ilNegCT, ilNegPTp, full, "PVToIL")
 	net.ConnectPTPredToPulv(ilNegPTp, pvNegP, full, full, prjnClass)
 
 	// note: not connecting deeper CT and PT layers to vSmtxGo at this point
@@ -980,11 +980,11 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	// net.ConnectCTSelf(plUtilCT, full) // todo: test
 
 	// util predicts OFCval and ILneg
-	pj, _ = net.ConnectToPFCBidir(ilPos, ilPosP, plUtil, plUtilCT, plUtilPTp, full)
+	pj, _ = net.ConnectToPFCBidir(ilPos, ilPosP, plUtil, plUtilCT, plUtilPTp, full, "ILToPL")
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "1", // not good to make this stronger actually
 	}
-	pj, _ = net.ConnectToPFCBidir(ilNeg, ilNegP, plUtil, plUtilCT, plUtilPTp, full)
+	pj, _ = net.ConnectToPFCBidir(ilNeg, ilNegP, plUtil, plUtilCT, plUtilPTp, full, "ILToPL")
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "3", // drive acc stronger -- only this one works well
 	}

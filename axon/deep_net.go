@@ -550,8 +550,10 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 // layP -> pfc, layP <-> pfcCT
 // pfcPTp <-> layP
 // sets PFCPrjn class name for projections
-func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) {
-	prjnClass := "PFCPrjn"
+func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern, prjnClass string) {
+	if prjnClass == "" {
+		prjnClass = "PFCPrjn"
+	}
 	if lay != nil {
 		net.ConnectLayers(lay, pfc, pat, ForwardPrjn).SetClass(prjnClass)
 		pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
@@ -569,8 +571,10 @@ func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.
 // lay -> pfc using a BackPrjn -- weaker
 // layP -> pfc, layP <-> pfcCT
 // pfcPTp <-> layP
-func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) {
-	prjnClass := "PFCPrjn"
+func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern, prjnClass string) {
+	if prjnClass == "" {
+		prjnClass = "PFCPrjn"
+	}
 	tp := net.ConnectLayers(lay, pfc, pat, BackPrjn)
 	tp.SetClass(prjnClass)
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
@@ -587,8 +591,10 @@ func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat p
 // lay <-> pfc bidirectional
 // layP -> pfc, layP <-> pfcCT
 // pfcPTp <-> layP
-func (net *Network) ConnectToPFCBidir(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) (ff, fb *Prjn) {
-	prjnClass := "PFCPrjn"
+func (net *Network) ConnectToPFCBidir(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern, prjnClass string) (ff, fb *Prjn) {
+	if prjnClass == "" {
+		prjnClass = "PFCPrjn"
+	}
 	ff, fb = net.BidirConnectLayers(lay, pfc, pat)
 	ff.SetClass(prjnClass)
 	fb.SetClass(prjnClass)
