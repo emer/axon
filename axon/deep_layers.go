@@ -182,8 +182,8 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.AHP = 0
 	ly.Params.Acts.Decay.OnRew.SetBool(true)
-	ly.Params.Acts.Sahp.Gbar = 0.01 // not much pressure -- long maint
-	ly.Params.Acts.GabaB.Gbar = 0.01
+	ly.Params.Acts.Sahp.Gbar = 0.01  // not much pressure -- long maint
+	ly.Params.Acts.GabaB.Gbar = 0.01 // needed for cons
 	ly.Params.Acts.Dend.ModGain = 1.5
 	ly.Params.Inhib.ActAvg.Nominal = 0.3 // very active
 	if ly.Is4D() {

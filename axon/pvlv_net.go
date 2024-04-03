@@ -491,10 +491,11 @@ func (net *Network) AddPVLVPulvLayers(ctx *Context, nYneur, popY, popX int, spac
 // for given number of pos US pools (first is novelty / curiosity pool),
 // with given number of units per pool.
 func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
-	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCposUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
+	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCposUS", "MD", 1, nUSs, ofcY, ofcX, true, true, space)
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefParams["Layer.Inhib.Pool.On"] = "true"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
 	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -505,7 +506,7 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 // AddOFCnegUS adds orbital frontal cortex negative US-coding layers,
 // for given number of neg US pools with given number of units per pool.
 func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
-	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCnegUS", "MD", 1, nUSs, ofcY, ofcX, true, space)
+	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCnegUS", "MD", 1, nUSs, ofcY, ofcX, true, true, space)
 
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -523,7 +524,7 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 // for given number of cost pools (typically 2: time, effort),
 // with given number of units per pool.
 func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float32) (acc, accCT, accPT, accPTp, accMD *Layer) {
-	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCnegUS", "MD", 1, nCosts, accY, accX, true, space)
+	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCnegUS", "MD", 1, nCosts, accY, accX, true, true, space)
 
 	acc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	acc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -584,10 +585,10 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ofcNegUSMD := net.AddOFCnegUS(ctx, nUSneg, ofcY, ofcX, space)
 	_ = ofcNegUSPT
 
-	ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD := net.AddPFC2D("ILpos", "MD", ofcY, ofcX, true, space)
+	ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD := net.AddPFC2D("ILpos", "MD", ofcY, ofcX, true, true, space)
 	_ = ilPosPT
 
-	ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD := net.AddPFC2D("ILneg", "MD", ofcY, ofcX, true, space)
+	ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD := net.AddPFC2D("ILneg", "MD", ofcY, ofcX, true, true, space)
 	_ = ilNegPT
 
 	ilPosPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
@@ -948,7 +949,7 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 		"Prjn.PrjnScale.Rel": "0.1",
 	}
 
-	plUtil, plUtilCT, plUtilPT, plUtilPTp, plUtilMD := net.AddPFC2D("PLutil", "MD", pfcY, pfcX, true, space)
+	plUtil, plUtilCT, plUtilPT, plUtilPTp, plUtilMD := net.AddPFC2D("PLutil", "MD", pfcY, pfcX, true, true, space)
 	vSmtxGo.SetBuildConfig("ThalLay5Name", plUtilMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay5Name", plUtilMD.Name())
 	net.ConnectLayers(vSgpi, plUtilMD, full, InhibPrjn)

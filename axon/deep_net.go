@@ -238,9 +238,11 @@ func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass st
 // and associated CT, with given thal suffix (e.g., MD, VM).
 // PT and Thal have SetClass(super.Name()) called to allow shared params.
 // Projections are made with given classes: SuperToPT, PTSelfMaint, PTtoThal, ThalToPT,
-// with optional extra class
+// with optional extra class.
+// if selfMaint is true, the SMaint self-maintenance mechanism is used
+// instead of lateral connections.
 // The PT and BGThal layers are positioned behind the CT layer.
-func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnClass string, superToPT, ptSelf, ptThal prjn.Pattern, space float32) (pt, thal *Layer) {
+func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnClass string, superToPT, ptSelf, ptThal prjn.Pattern, selfMaint bool, space float32) (pt, thal *Layer) {
 	if prjnClass != "" {
 		prjnClass = " " + prjnClass
 	}
@@ -258,6 +260,14 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	}
 	pt.SetClass(name)
 	thal.SetClass(name)
+	if selfMaint {
+		pt.DefParams = params.Params{
+			"Layer.Acts.SMaint.On":  "true",
+			"Layer.Acts.GabaB.Gbar": "0.015",
+			"Layer.Inhib.Layer.Gi":  "2",
+			"Layer.Inhib.Pool.Gi":   "2",
+		}
+	}
 
 	pthal, thalpt := net.BidirConnectLayers(pt, thal, ptThal)
 	pthal.SetClass("PTtoThal" + prjnClass)
@@ -314,7 +324,9 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	}
 	pj.SetClass("SuperToPT" + prjnClass)
 
-	net.ConnectPTMaintSelf(pt, ptSelf, prjnClass)
+	if !selfMaint {
+		net.ConnectPTMaintSelf(pt, ptSelf, prjnClass)
+	}
 
 	if ct != nil {
 		pt.PlaceBehind(ct, space)
@@ -408,9 +420,11 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 // Sets PFCLayer as additional class for all cortical layers.
 // OneToOne and PoolOneToOne connectivity is used between layers.
 // decayOnRew determines the Act.Decay.OnRew setting (true of OFC, ACC type for sure).
+// if selfMaint is true, the SMaint self-maintenance mechanism is used
+// instead of lateral connections.
 // CT layer uses the Medium timescale params.
 // use, e.g., pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8" to change default params.
-func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
+func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew, selfMaint bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	p1to1 := prjn.NewPoolOneToOne()
 	// p1to1rnd := prjn.NewPoolUnifRnd()
 	// p1to1rnd.PCon = 0.5
@@ -423,7 +437,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
-	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, p1to1, space)
+	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, p1to1, selfMaint, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, p1to1, p1to1, prjnClass, space)
 	pfcPTp.SetClass(name)
 	pfcPT.AddClass(layClass)
@@ -457,11 +471,11 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
 	pfcCT.DefParams["Layer.Learn.TrgAvgAct.SynScaleRate"] = "0.0002"
 
-	pfcPT.DefParams = maps.Clone(pfcParams)
-	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
-	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"        // 2.4 orig
-	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
-	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
+	// pfcPT.DefParams = maps.Clone(pfcParams)
+	// pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
+	// pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"        // 2.4 orig
+	// pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
+	// pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
 
 	pfcPTp.DefParams = maps.Clone(pfcParams)
 	pfcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "1.2" // 0.8 orig
@@ -483,8 +497,10 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 // Sets PFCLayer as additional class for all cortical layers.
 // OneToOne, full connectivity is used between layers.
 // decayOnRew determines the Act.Decay.OnRew setting (true of OFC, ACC type for sure).
+// if selfMaint is true, the SMaint self-maintenance mechanism is used
+// instead of lateral connections.
 // CT layer uses the Medium timescale params.
-func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
+func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew, selfMaint bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 	// rnd := prjn.NewUnifRnd()
@@ -497,7 +513,7 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
-	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, full, full, space)
+	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, full, full, selfMaint, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, full, full, prjnClass, space)
 	pfcPTp.SetClass(name)
 	pfcPT.AddClass(layClass)
@@ -528,11 +544,11 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "false"
 	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
 
-	pfcPT.DefParams = maps.Clone(pfcParams)
-	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active
-	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"
-	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
-	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
+	// pfcPT.DefParams = maps.Clone(pfcParams)
+	// pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active
+	// pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"
+	// pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
+	// pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
 
 	pfcPTp.DefParams = maps.Clone(pfcParams)
 	pfcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"

@@ -532,11 +532,13 @@ type SMaintParams struct {
 	// each of which is assumed to have the same probability of spiking
 	NNeurons float32 `default:"10"`
 
-	// ISI (inter spike interval) range -- min is used as min ISI for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
-	ISI minmax.F32 `view:"inline"`
-
 	// conductance multiplier for self maintenance synapses
 	Gbar float32 `default:"1"`
+
+	pad float32
+
+	// ISI (inter spike interval) range -- min is used as min ISI for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
+	ISI minmax.F32 `view:"inline"`
 }
 
 func (sm *SMaintParams) Defaults() {

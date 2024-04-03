@@ -54,7 +54,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2",
 			}},
-		{Sel: ".PTSelfMaint", Desc: "",
+		{Sel: ".CTToPulv", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0",
 				"Prjn.PrjnScale.Abs": "0",
@@ -92,8 +92,8 @@ var ParamSetsCons = netparams.Sets{
 				"Layer.Acts.Dend.ModGain": "1.5",
 				"Layer.Acts.GabaB.Gbar":   "0.01", // too strong and it depresses firing for a long time
 				"Layer.Acts.SMaint.On":    "false",
-				"Layer.Inhib.Layer.Gi":    "3",
-				"Layer.Inhib.Pool.Gi":     "3", // not active
+				"Layer.Inhib.Layer.Gi":    "2.6", // 3 is too strong
+				"Layer.Inhib.Pool.Gi":     "3",   // not active
 			}},
 		{Sel: ".BGThalLayer", Desc: "",
 			Params: params.Params{
@@ -111,6 +111,11 @@ var ParamSetsCons = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "1",
 				"Prjn.PrjnScale.Abs": "5", // needs 5
+			}},
+		{Sel: ".CTToPulv", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Rel": "0",
+				"Prjn.PrjnScale.Abs": "0",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
