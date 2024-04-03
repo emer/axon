@@ -33,14 +33,16 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				"Layer.Acts.Dend.ModGain":    "1.5",
-				"Layer.Acts.GabaB.Gbar":      "0.015", // too strong and it depresses firing for a long time
+				"Layer.Acts.GabaB.Gbar":      "0.01", // too strong and it depresses firing for a long time
 				"Layer.Acts.SMaint.On":       "true",
-				"Layer.Acts.SMaint.NNeurons": "10",
-				"Layer.Acts.SMaint.ISI.Min":  "3",  // too high and fails to take
+				"Layer.Acts.SMaint.NNeurons": "10", // higher = more activity
+				"Layer.Acts.SMaint.ISI.Min":  "1",  // 1 sig better than 3
 				"Layer.Acts.SMaint.ISI.Max":  "20", // not much effect
-				"Layer.Acts.SMaint.Gbar":     "1",  // 0.5 = slower to overcome gabab
-				"Layer.Inhib.Layer.Gi":       "2",
-				"Layer.Inhib.Pool.Gi":        "2", // not active
+				"Layer.Acts.SMaint.Gbar":     "0.2",
+				"Layer.Acts.SMaint.Inhib":    "1",
+				"Layer.Inhib.ActAvg.Nominal": "0.1",
+				"Layer.Inhib.Layer.Gi":       "0.5",
+				"Layer.Inhib.Pool.Gi":        "0.5", // not active
 			}},
 		{Sel: ".BGThalLayer", Desc: "",
 			Params: params.Params{
@@ -62,6 +64,10 @@ var ParamSets = netparams.Sets{
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
+			}},
+		{Sel: "#PFCPTpToItemP", Desc: "weaker",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1",
 			}},
 	},
 }

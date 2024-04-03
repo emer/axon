@@ -182,8 +182,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = pfcPT
 	_ = pfcThal
 
-	net.ConnectToPFCBack(in, inP, pfc, pfcCT, pfcPTp, full, "InputToPFC")
-	net.ConnectToPFCBack(time, timeP, pfc, pfcCT, pfcPTp, full, "InputToPFC")
+	net.ConnectToPFCBack(in, inP, pfc, pfcCT, pfcPT, pfcPTp, full, "InputToPFC")
+	net.ConnectToPFCBack(time, timeP, pfc, pfcCT, pfcPT, pfcPTp, full, "InputToPFC")
 
 	net.ConnectLayers(gpi, pfcThal, full, axon.InhibPrjn)
 
@@ -280,7 +280,7 @@ func (ss *Sim) ConfigLoops() {
 	// Logging
 
 	man.AddOnEndToAll("Log", ss.Log)
-	axon.LooperResetLogBelow(man, &ss.Logs, etime.Sequence)
+	axon.LooperResetLogBelow(man, &ss.Logs)
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
@@ -288,9 +288,9 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
-	man.GetLoop(etime.Train, etime.Run).Main.Add("TestAll", func() {
-		ss.Loops.Run(etime.Test)
-	})
+	// man.GetLoop(etime.Train, etime.Run).Main.Add("TestAll", func() {
+	// 	ss.Loops.Run(etime.Test)
+	// })
 
 	////////////////////////////////////////////
 	// GUI
@@ -431,23 +431,26 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatStringItem(etime.Test, etime.Sequence, "TrialName")
 
-	ss.Logs.AddStatAggItem("ItemP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("TimeP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	li := ss.Logs.AddStatAggItem("ItemP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("TimeP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	li.FixMax = true
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
 
-	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
+	lys := ss.Net.LayersByClass("PFC")
+	axon.LogAddDiagnosticItems(&ss.Logs, lys, etime.Train, etime.Epoch, etime.Sequence, etime.Trial)
 
-	ss.Logs.PlotItems("ItemP_CorSim", "TimeP_CorSim")
+	ss.Logs.PlotItems("ItemP_CorSim", "TimeP_CorSim", "PFCPT_ActMAvg", "PFCPTp_ActMAvg", "PFC_ActMAvg")
 
 	ss.Logs.CreateTables()
 
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Train, etime.Trial)
+	// ss.Logs.NoPlot(etime.Train, etime.Trial)
 	ss.Logs.NoPlot(etime.Test, etime.Cycle)
-	ss.Logs.NoPlot(etime.Test, etime.Trial)
+	// ss.Logs.NoPlot(etime.Test, etime.Trial)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
@@ -471,6 +474,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		return
 		// row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
+		trl := ss.Stats.Int("Trial")
+		if trl == 0 {
+			return
+		}
 		for di := 0; di < ss.Config.Run.NData; di++ {
 			ss.TrialStats(di)
 			ss.StatCounters(di)

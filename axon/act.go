@@ -533,9 +533,10 @@ type SMaintParams struct {
 	NNeurons float32 `default:"10"`
 
 	// conductance multiplier for self maintenance synapses
-	Gbar float32 `default:"1"`
+	Gbar float32 `default:"0.2"`
 
-	pad float32
+	// inhib controls how much of the extra maintenance conductance goes to the GeExt, which drives extra proportional inhibition
+	Inhib float32 `default:"1"`
 
 	// ISI (inter spike interval) range -- min is used as min ISI for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
 	ISI minmax.F32 `view:"inline"`
@@ -543,8 +544,9 @@ type SMaintParams struct {
 
 func (sm *SMaintParams) Defaults() {
 	sm.NNeurons = 10
-	sm.ISI.Set(3, 20)
-	sm.Gbar = 1
+	sm.ISI.Set(1, 20)
+	sm.Gbar = 0.2
+	sm.Inhib = 1
 }
 
 func (sm *SMaintParams) Update() {

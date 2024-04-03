@@ -183,11 +183,11 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Acts.Decay.AHP = 0
 	ly.Params.Acts.Decay.OnRew.SetBool(true)
 	ly.Params.Acts.Sahp.Gbar = 0.01  // not much pressure -- long maint
-	ly.Params.Acts.GabaB.Gbar = 0.01 // needed for cons
+	ly.Params.Acts.GabaB.Gbar = 0.01 // needed for cons, good for smaint
 	ly.Params.Acts.Dend.ModGain = 1.5
-	ly.Params.Inhib.ActAvg.Nominal = 0.3 // very active
+	// ly.Params.Inhib.ActAvg.Nominal = 0.1 // normal
 	if ly.Is4D() {
-		ly.Params.Inhib.ActAvg.Nominal = 0.05
+		ly.Params.Inhib.ActAvg.Nominal = 0.02
 	}
 	ly.Params.Inhib.Layer.Gi = 2.4
 	ly.Params.Inhib.Pool.Gi = 2.4

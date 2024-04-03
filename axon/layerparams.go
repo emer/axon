@@ -480,6 +480,10 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		ctxExt := ly.Acts.Dt.GeSynFmRawSteady(geCtxt)
 		AddNrnV(ctx, ni, di, GeSyn, ctxExt)
 		saveVal = ctxExt // used In PostGs to set nrn.GeExt
+	case PTMaintLayer:
+		if ly.Acts.SMaint.On.IsTrue() {
+			saveVal = ly.Acts.SMaint.Inhib * NrnV(ctx, ni, di, GMaintRaw) // used In PostGs to set nrn.GeExt
+		}
 	case PulvinarLayer:
 		if ctx.PlusPhase.IsFalse() {
 			break
@@ -586,7 +590,9 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 	case BLALayer:
 		fallthrough
 	case CTLayer:
-		SetNrnV(ctx, ni, di, GeExt, saveVal)
+		fallthrough
+	case PTMaintLayer:
+		fallthrough
 	case PulvinarLayer:
 		SetNrnV(ctx, ni, di, GeExt, saveVal)
 	case PTPredLayer:
@@ -606,20 +612,24 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni, di uint32) {
 	extraSyn := float32(0)
 	nrnGModRaw := NrnV(ctx, ni, di, GModRaw)
 	nrnGModSyn := NrnV(ctx, ni, di, GModSyn)
+	ach := GlbV(ctx, di, GvACh)
 	switch ly.LayType {
 	case PTMaintLayer:
 		mod := ly.Acts.Dend.ModGain * nrnGModSyn
 		if ly.Acts.Dend.ModACh.IsTrue() {
-			mod *= GlbV(ctx, di, GvACh)
+			mod *= ach
 		}
 		mod += ly.Acts.Dend.ModBase
 		MulNrnV(ctx, ni, di, GeRaw, mod) // key: excluding GModMaint here, so active maintenance can persist
 		MulNrnV(ctx, ni, di, GeSyn, mod)
-		extraRaw = GlbV(ctx, di, GvACh) * ly.Acts.Dend.ModGain * nrnGModRaw
+		extraRaw = ly.Acts.Dend.ModGain * nrnGModRaw
+		if ly.Acts.Dend.ModACh.IsTrue() {
+			extraRaw *= ach
+		}
 		extraSyn = mod
 	case BLALayer:
-		extraRaw = GlbV(ctx, di, GvACh) * nrnGModRaw * ly.Acts.Dend.ModGain
-		extraSyn = GlbV(ctx, di, GvACh) * nrnGModSyn * ly.Acts.Dend.ModGain
+		extraRaw = ach * nrnGModRaw * ly.Acts.Dend.ModGain
+		extraSyn = ach * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
 		if ly.Acts.Dend.HasMod.IsTrue() {
 			mod := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn

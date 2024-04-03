@@ -5,8 +5,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
@@ -70,7 +68,7 @@ func (ev *PFCMaintEnv) Desc() string {
 }
 
 func (ev *PFCMaintEnv) Defaults() {
-	ev.NItems = 4
+	ev.NItems = 10
 	ev.NTrials = 10
 	ev.NUnitsY = 5
 	ev.NUnitsX = 5
@@ -94,23 +92,21 @@ func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
 func (ev *PFCMaintEnv) ConfigPats() {
 	ev.PatVocab = patgen.Vocab{}
 
-	pctAct := float32(0.2)
-	minDiff := float32(0.5)
-	patgen.AddVocabPermutedBinary(ev.PatVocab, "Pats", ev.NItems, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
-
-	npats := ev.NItems * ev.NTrials
+	npats := ev.NItems
 	sch := etable.Schema{
 		{"Name", etensor.STRING, nil, nil},
 		{"Item", etensor.FLOAT32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
 	}
 	ev.Pats.SetFromSchema(sch, npats)
 
-	tsr := ev.PatVocab["Pats"]
-	for i := 0; i < ev.NItems; i++ {
-		itmNm := fmt.Sprintf("item%d", i)
-		ev.Pats.SetCellTensor("Item", i, tsr.SubSpace([]int{i}))
-		ev.Pats.SetCellString("Name", i, itmNm)
-	}
+	pctAct := float32(0.2)
+	minPctDiff := float32(0.5)
+
+	nUn := ev.NUnitsY * ev.NUnitsX
+	nOn := patgen.NFmPct(pctAct, nUn)
+	minDiff := patgen.NFmPct(minPctDiff, nOn)
+
+	patgen.PermutedBinaryMinDiff(ev.Pats.ColByName("Item").(*etensor.Float32), nOn, 1, 0, minDiff)
 }
 
 func (ev *PFCMaintEnv) Validate() error {
