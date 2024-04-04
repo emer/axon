@@ -55,16 +55,8 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				"Layer.Acts.Dend.ModGain": "1.5",
-				"Layer.Inhib.Layer.Gi":    "3.0",
-				"Layer.Inhib.Pool.Gi":     "3.6",
-			}},
-		{Sel: ".PTSelfMaint", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0", // note: too much! need a better strat
-			}},
-		{Sel: "#OFCposUSPTToOFCposUSPT", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // 4 needed to sustain
+				// "Layer.Inhib.Layer.Gi":    "3.0",
+				// "Layer.Inhib.Pool.Gi":     "3.6",
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
@@ -76,11 +68,12 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "1.0",
+				"Layer.Inhib.Pool.Gi":        "0.5",
+				"Layer.Inhib.ActAvg.Nominal": "0.02",
 			}},
 		{Sel: "#OFCposUSPT", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "3.6",
+				"Layer.Acts.SMaint.Gbar": "0.4",
 			}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
@@ -137,7 +130,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "3",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def -- good
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.05 def -- good
 			}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{

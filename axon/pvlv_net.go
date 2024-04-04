@@ -493,9 +493,9 @@ func (net *Network) AddPVLVPulvLayers(ctx *Context, nYneur, popY, popX int, spac
 func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCposUS", "MD", 1, nUSs, ofcY, ofcX, true, true, space)
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
-	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.02"
 	ofcPT.DefParams["Layer.Inhib.Pool.On"] = "true"
-	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
+	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
 	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -511,8 +511,8 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	ofc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	ofc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
-	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	// ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
 	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -529,8 +529,8 @@ func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float3
 	acc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	acc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	acc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
-	accPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	accPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	// accPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	// accPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
 	accPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
 	accPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -929,7 +929,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, accUtil, sc *Layer) {
+func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accUtil, sc *Layer) {
 
 	full := prjn.NewFull()
 	var pj *Prjn

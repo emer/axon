@@ -206,7 +206,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accPos.SetClass("ACC")
 	accNeg.SetClass("ACC")
 
-	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, one2one, space)
+	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, one2one, true, space)
 	_ = accPosPT
 
 	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn).SetClass("CortexToSTN")

@@ -37,7 +37,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
+				// "Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
 				"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
 				"Layer.Acts.Kir.Gbar":     "0",   // no real diff here over range 0-10
 				"Layer.Acts.Dend.ModACh":  "true",
@@ -70,10 +70,6 @@ var ParamSets = netparams.Sets{
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.5",
-			}},
-		{Sel: ".PTSelfMaint", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{

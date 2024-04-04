@@ -221,12 +221,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name())
 
-	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, space)
+	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, true, space)
 	_ = m1PT
 	// todo: M1PTp should be VL interconnected, prior to PT, not after it.
 
 	// vl is a predictive thalamus but we don't have direct access to its source
-	net.ConnectToPFC(nil, vl, m1, m1CT, m1PTp, full) // m1 predicts vl
+	net.ConnectToPFC(nil, vl, m1, m1CT, m1PT, m1PTp, full, "VLM1") // m1 predicts vl
 
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")

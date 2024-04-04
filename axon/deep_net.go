@@ -264,8 +264,8 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 		pt.DefParams = params.Params{
 			"Layer.Acts.SMaint.On":  "true",
 			"Layer.Acts.GabaB.Gbar": "0.015",
-			"Layer.Inhib.Layer.Gi":  "2",
-			"Layer.Inhib.Pool.Gi":   "2",
+			"Layer.Inhib.Layer.Gi":  "0.5",
+			"Layer.Inhib.Pool.Gi":   "0.5",
 		}
 		if is4D {
 			pt.DefParams["Layer.Inhib.Pool.On"] = "true"
@@ -444,7 +444,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
-	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, p1to1, selfMaint, space)
+	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, one2one, selfMaint, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, p1to1, p1to1, prjnClass, space)
 	pfcPTp.SetClass(name)
 	pfcPT.AddClass(layClass)

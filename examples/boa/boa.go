@@ -215,7 +215,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPTp, plUtil, sc := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, plUtil, sc := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = plUtil, urgency
 	_, _ = ofcNegUSCT, ofcNegUSPTp
 
@@ -235,18 +235,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	m1, m1CT := net.AddSuperCT2D("M1", "PFCPrjn", nuCtxY, nuCtxX, space, one2one)
 	m1P := net.AddPulvForSuper(m1, space)
 
-	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
+	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, true, space)
 	_ = almPT
 
 	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPrjn)
 	// net.ConnectToMatrix(alm, vSmtxGo, full) // todo: explore
 	// net.ConnectToMatrix(alm, vSmtxNo, full)
 
-	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPTp, full) // alm predicts m1
+	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPT, almPTp, full, "M1ALM") // alm predicts m1
 
 	// vl is a predictive thalamus but we don't have direct access to its source
 	net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
-	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts m1
+	net.ConnectToPFC(nil, vl, alm, almCT, almPT, almPTp, full, "VLALM") // alm predicts m1
 
 	// sensory inputs guiding action
 	// note: alm gets effort, pos via predictive coding below
@@ -275,22 +275,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(cs, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
+	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "CSToPFC")
+	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcPosUSPT, ofcNegUSPTp, full, "CSToPFC")
 
 	///////////////////////////////////////////
 	// OFC, ACC, ALM predicts pos
 
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 	// using distance and effort here in the meantime
-	net.ConnectToPFCBack(pos, posP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full)
-	net.ConnectToPFCBack(pos, posP, ilPos, ilPosCT, ilPosPTp, full)
+	net.ConnectToPFCBack(pos, posP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "PosToPFC")
+	net.ConnectToPFCBack(pos, posP, ilPos, ilPosCT, ilPosPT, ilPosPTp, full, "PosToPFC")
 
-	net.ConnectToPFC(pos, posP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full)
-	net.ConnectToPFC(pos, posP, ilNeg, ilNegCT, ilNegPTp, full)
+	net.ConnectToPFC(pos, posP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "PosToPFC")
+	net.ConnectToPFC(pos, posP, ilNeg, ilNegCT, ilNegPT, ilNegPTp, full, "PosToPFC")
 
 	//	alm predicts all effort, cost, sensory state vars
-	net.ConnectToPFC(pos, posP, alm, almCT, almPTp, full)
+	net.ConnectToPFC(pos, posP, alm, almCT, almPT, almPTp, full, "PosToPFC")
 
 	///////////////////////////////////////////
 	// ALM, M1 <-> OFC, ACC

@@ -178,6 +178,7 @@ func (ly *Layer) BLADefaults() {
 	lp.CT.DecayTau = 0
 	lp.CT.GeGain = 0.1 // 0.1 has effect, can go a bit lower if need to
 
+	lp.Learn.NeuroMod.DAModGain = 0.5
 	if isAcq {
 		lp.Learn.NeuroMod.DALRateMod = 0.5
 		lp.Learn.NeuroMod.BurstGain = 0.2

@@ -193,7 +193,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, accCost, accCostCT, accCostPTp, ilNeg, ilNegCT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosUSPT, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
@@ -201,6 +201,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
 	_, _, _, _ = ilNeg, ilNegCT, ilNegPTp, ilNegMD
 	_, _, _ = accCost, accCostCT, accCostPTp
+	_, _, _, _, _ = ofcPosUSPT, ofcNegUSPT, ilPosPT, ilNegPT, accCostPT
 	// todo: connect more of above
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
@@ -224,20 +225,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full, "CSToPFC")
-	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full, "CSToPFC")
+	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "CSToPFC")
+	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "CSToPFC")
 
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
 
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
-	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, full, "TimeToPFC")
-	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPT, ilPosPTp, full, "TimeToPFC")
 
-	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPTp, full, "TimeToPFC")
-	net.ConnectToPFCBack(time, timeP, accCost, accCostCT, accCostPTp, full, "TimeToPFC")
-	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, accCost, accCostCT, accCostPT, accCostPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPT, ilNegPTp, full, "TimeToPFC")
 
 	////////////////////////////////////////////////
 	// position
