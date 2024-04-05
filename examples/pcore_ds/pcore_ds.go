@@ -221,7 +221,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name())
 
-	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, true, space)
+	// bool before space is selfmaint or not: selfcons much better (false)
+	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, false, space)
 	_ = m1PT
 	// todo: M1PTp should be VL interconnected, prior to PT, not after it.
 
@@ -229,39 +230,39 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFC(nil, vl, m1, m1CT, m1PT, m1PTp, full, "VLM1") // m1 predicts vl
 
 	// these projections are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).AddClass("ToVL")
 
 	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPrjn)
-	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
-	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS") // not useful
-	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).SetClass("M1ToMotorBS")
+	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
+	net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
+	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
 
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
 
-	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).SetClass("ToDSTN")
-	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).SetClass("ToDSTN")
-	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).AddClass("ToDSTN")
+	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).AddClass("ToM1")
+	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).AddClass("ToDSTN")
+	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn).AddClass("ToM1")
 
-	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).SetClass("DBGInhib")
+	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).AddClass("DBGInhib")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 
 	toMtx := full
 	// toMtx := mtxRndPrjn // works, but not as reliably
-	net.ConnectToDSMatrix(state, mtxGo, toMtx).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(state, mtxNo, toMtx).SetClass("StateToMtx")
-	net.ConnectToDSMatrix(s1, mtxNo, toMtx).SetClass("S1ToMtx")
-	net.ConnectToDSMatrix(s1, mtxGo, toMtx).SetClass("S1ToMtx")
+	net.ConnectToDSMatrix(state, mtxGo, toMtx).AddClass("StateToMtx")
+	net.ConnectToDSMatrix(state, mtxNo, toMtx).AddClass("StateToMtx")
+	net.ConnectToDSMatrix(s1, mtxNo, toMtx).AddClass("S1ToMtx")
+	net.ConnectToDSMatrix(s1, mtxGo, toMtx).AddClass("S1ToMtx")
 
-	net.ConnectToDSMatrix(m1, mtxGo, toMtx).SetClass("M1ToMtx")
-	net.ConnectToDSMatrix(m1, mtxNo, toMtx).SetClass("M1ToMtx")
+	net.ConnectToDSMatrix(m1, mtxGo, toMtx).AddClass("M1ToMtx")
+	net.ConnectToDSMatrix(m1, mtxNo, toMtx).AddClass("M1ToMtx")
 
 	// note: just using direct projections here -- theoretically through CL
 	// not working! -- need to make these modulatory in the right way.
-	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).SetClass("CLToMtx")
-	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).SetClass("CLToMtx")
+	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).AddClass("CLToMtx")
+	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).AddClass("CLToMtx")
 
 	pf.PlaceRightOf(gpi, space)
 	snc.PlaceBehind(stn, space)

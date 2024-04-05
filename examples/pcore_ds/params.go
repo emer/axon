@@ -55,10 +55,38 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				// "Layer.Inhib.Layer.Gi":      "2.2",   // 2.2 def
-				"Layer.Acts.Dend.ModGain":   "1.0",   // 1.5 def
-				"Layer.Acts.Kir.Gbar":       "0",     // no real diff here over range 0-10
-				"Layer.Acts.MaintNMDA.Gbar": "0.007", // 0.007 default
+				"Layer.Inhib.Layer.Gi":       "2.4",   // 2.4 def > 1.4
+				"Layer.Inhib.ActAvg.Nominal": "0.3",   // 0.3 def -- key but wrong!
+				"Layer.Acts.Decay.OnRew":     "true",  // true def -- seems better?
+				"Layer.Acts.Dend.ModGain":    "1.0",   // 1.5 def
+				"Layer.Acts.Kir.Gbar":        "0",     // no real diff here over range 0-10
+				"Layer.Acts.MaintNMDA.Gbar":  "0.007", // 0.007 default
+			}},
+		{Sel: ".PTPredLayer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "0.8",  // 0.8 def
+				"Layer.CT.GeGain":      "0.05", // 0.05 def
+				"Layer.CT.DecayTau":    "50",   // 50 def
+			}},
+		{Sel: ".CTLayer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "1.4", // 0.8 def
+				"Layer.CT.GeGain":      "5",   // 2 def
+				"Layer.CT.DecayTau":    "50",  // 50 def
+			}},
+		{Sel: ".CTtoPred", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2", // 1 def
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: ".PTtoPred", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // was 6
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#MotorBS", Desc: "",
 			Params: params.Params{
@@ -107,6 +135,13 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
+		{Sel: ".PTSelfMaint", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // 1 def
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3.0", // 3
@@ -131,6 +166,14 @@ var ParamSets = netparams.Sets{
 		{Sel: "#DGPiToPF", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "0.4", // 0.4 >= 0.5, 0.3, 0.2 >> higher
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#M1PTToVL", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Rel": "0.1",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
@@ -178,9 +221,18 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#M1PTToMotorBS", Desc: "PT to motor is strong, key",
+		{Sel: "#M1PTToMotorBS", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2 > 1.5, 2.5 per above
+				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Rel": "0.1",
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: "#M1PTpToMotorBS", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2",
+				"Prjn.PrjnScale.Rel": "1",
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

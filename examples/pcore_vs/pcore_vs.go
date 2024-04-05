@@ -203,25 +203,25 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	accPos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
 	accNeg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
-	accPos.SetClass("ACC")
-	accNeg.SetClass("ACC")
+	accPos.AddClass("ACC")
+	accNeg.AddClass("ACC")
 
 	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, one2one, true, space)
 	_ = accPosPT
 
-	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn).SetClass("CortexToSTN")
-	net.ConnectLayers(accNeg, stn, full, axon.ForwardPrjn).SetClass("CortexToSTN")
+	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn).AddClass("CortexToSTN")
+	net.ConnectLayers(accNeg, stn, full, axon.ForwardPrjn).AddClass("CortexToSTN")
 
-	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPrjn).AddClass("BgFixed")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
 
-	net.ConnectToVSMatrix(accPos, mtxGo, full).SetClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxNo, full).SetClass("ACCToVMtx")
+	net.ConnectToVSMatrix(accPos, mtxGo, full).AddClass("ACCToVMtx")
+	net.ConnectToVSMatrix(accNeg, mtxNo, full).AddClass("ACCToVMtx")
 	// cross connections:
-	net.ConnectToVSMatrix(accPos, mtxNo, full).SetClass("ACCToVMtx")
-	net.ConnectToVSMatrix(accNeg, mtxGo, full).SetClass("ACCToVMtx")
+	net.ConnectToVSMatrix(accPos, mtxNo, full).AddClass("ACCToVMtx")
+	net.ConnectToVSMatrix(accNeg, mtxGo, full).AddClass("ACCToVMtx")
 
 	net.ConnectToVSMatrix(urge, mtxGo, full)
 

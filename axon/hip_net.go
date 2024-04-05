@@ -124,7 +124,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 
 	// Monosynaptic Pathway (MSP)
 	ec3 = net.AddLayer4D("EC3", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
-	ec3.SetClass("EC")
+	ec3.AddClass("EC")
 	ec3.SetRepIdxsShape(emer.CenterPoolIdxs(ec3, 2), emer.CenterPoolShape(ec3, 2))
 	ca1 = net.AddLayer4D("CA1", hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X, SuperLayer)
 	ca1.SetRepIdxsShape(emer.CenterPoolIdxs(ca1, 2), emer.CenterPoolShape(ca1, 2))
@@ -133,7 +133,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	} else {
 		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
 	}
-	ec5.SetClass("EC")
+	ec5.AddClass("EC")
 	ec5.SetRepIdxsShape(emer.CenterPoolIdxs(ec5, 2), emer.CenterPoolShape(ec5, 2))
 
 	// Input and ECs connections
@@ -151,7 +151,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	lat.Radius = hip.EC2LatRadius
 	lat.Sigma = hip.EC2LatSigma
 	inh := net.ConnectLayers(ec2, ec2, lat, InhibPrjn)
-	inh.SetClass("InhibLateral")
+	inh.AddClass("InhibLateral")
 
 	// TSP connections
 	ppathDG := prjn.NewUnifRnd()
@@ -161,17 +161,17 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	ca3ToCA1 := prjn.NewUnifRnd()
 	ca3ToCA1.PCon = hip.CA3ToCA1PCon
 	full := prjn.NewFull()
-	net.ConnectLayers(ec2, dg, ppathDG, HipPrjn).SetClass("HippoCHL")
-	net.ConnectLayers(ec2, ca3, ppathCA3, HipPrjn).SetClass("PPath")
-	net.ConnectLayers(ca3, ca3, full, HipPrjn).SetClass("PPath")
-	net.ConnectLayers(dg, ca3, mossy, ForwardPrjn).SetClass("HippoCHL")
-	net.ConnectLayers(ca3, ca1, ca3ToCA1, HipPrjn).SetClass("HippoCHL")
+	net.ConnectLayers(ec2, dg, ppathDG, HipPrjn).AddClass("HippoCHL")
+	net.ConnectLayers(ec2, ca3, ppathCA3, HipPrjn).AddClass("PPath")
+	net.ConnectLayers(ca3, ca3, full, HipPrjn).AddClass("PPath")
+	net.ConnectLayers(dg, ca3, mossy, ForwardPrjn).AddClass("HippoCHL")
+	net.ConnectLayers(ca3, ca1, ca3ToCA1, HipPrjn).AddClass("HippoCHL")
 
 	// MSP connections
 	pool1to1 := prjn.NewPoolOneToOne()
-	net.ConnectLayers(ec3, ca1, pool1to1, HipPrjn).SetClass("EcCA1Prjn")     // HipPrjn makes wt linear
-	net.ConnectLayers(ca1, ec5, pool1to1, ForwardPrjn).SetClass("EcCA1Prjn") // doesn't work w/ HipPrjn
-	net.ConnectLayers(ec5, ca1, pool1to1, HipPrjn).SetClass("EcCA1Prjn")     // HipPrjn makes wt linear
+	net.ConnectLayers(ec3, ca1, pool1to1, HipPrjn).AddClass("EcCA1Prjn")     // HipPrjn makes wt linear
+	net.ConnectLayers(ca1, ec5, pool1to1, ForwardPrjn).AddClass("EcCA1Prjn") // doesn't work w/ HipPrjn
+	net.ConnectLayers(ec5, ca1, pool1to1, HipPrjn).AddClass("EcCA1Prjn")     // HipPrjn makes wt linear
 
 	// positioning
 	ec3.PlaceRightOf(ec2, space)

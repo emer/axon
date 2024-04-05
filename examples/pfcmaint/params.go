@@ -44,6 +44,18 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.Gi":       "0.5",
 				"Layer.Inhib.Pool.Gi":        "0.5", // not active
 			}},
+		{Sel: ".PTPredLayer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "0.8",  // 0.8 def
+				"Layer.CT.GeGain":      "0.05", // 0.05 def
+				"Layer.CT.DecayTau":    "50",   // 50 def
+			}},
+		{Sel: ".CTLayer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "1.4", // 0.8 def
+				"Layer.CT.GeGain":      "2",   // 2 def
+				"Layer.CT.DecayTau":    "50",  // 50 def
+			}},
 		{Sel: ".BGThalLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Learn.NeuroMod.AChDisInhib": "0",
@@ -52,9 +64,19 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2",
 			}},
-		{Sel: ".PFCPrjn", Desc: "",
+		{Sel: ".CTtoPred", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Prjn.PrjnScale.Abs": "2", // 1 def
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+			}},
+		{Sel: ".PTtoPred", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1", // was 6
+			},
+			Hypers: params.Hypers{
+				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".CTToPulv", Desc: "",
 			Params: params.Params{
@@ -68,6 +90,18 @@ var ParamSets = netparams.Sets{
 		{Sel: "#PFCPTpToItemP", Desc: "weaker",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
+			}},
+		{Sel: "#ItemPToPFCCT", Desc: "weaker",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "0.1",
+			}},
+		{Sel: "#TimePToPFCCT", Desc: "stronger",
+			Params: params.Params{
+				"Prjn.PrjnScale.Rel": "0.5",
+			}},
+		{Sel: "#TimePToPFC", Desc: "stronger",
+			Params: params.Params{
+				"Prjn.PrjnScale.Rel": "0.5",
 			}},
 	},
 }

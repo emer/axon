@@ -251,15 +251,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// sensory inputs guiding action
 	// note: alm gets effort, pos via predictive coding below
 
-	net.ConnectLayers(pos, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(pos, m1, full, axon.ForwardPrjn).AddClass("ToM1")
+	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPrjn).AddClass("ToM1")
 
 	// shortcut: not needed
-	// net.ConnectLayers(pos, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// net.ConnectLayers(pos, vl, full, axon.ForwardPrjn).AddClass("ToVL")
 
 	// these projections are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).AddClass("ToVL")
 
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
@@ -298,13 +298,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// action needs to know if maintaining a goal or not
 	// using plUtil as main summary "driver" input to action system
 	// PTp provides good notmaint signal for action.
-	net.ConnectLayers(plUtilPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
-	net.ConnectLayers(plUtilPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(plUtilPTp, alm, full, axon.ForwardPrjn).AddClass("ToALM")
+	net.ConnectLayers(plUtilPTp, m1, full, axon.ForwardPrjn).AddClass("ToM1")
 
 	// note: in Obelisk this helps with the Consume action
 	// but here in this example it produces some instability
 	// at later time points -- todo: investigate later.
-	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).AddClass("ToVL")
 
 	////////////////////////////////////////////////
 	// position

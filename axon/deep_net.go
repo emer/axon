@@ -59,8 +59,8 @@ func (net *Network) AddSuperCT2D(name, prjnClass string, shapeY, shapeX int, spa
 	ct = net.AddCTLayer2D(name+"CT", shapeY, shapeX)
 	ct.PlaceBehind(super, space)
 	net.ConnectSuperToCT(super, ct, pat, prjnClass)
-	super.SetClass(name)
-	ct.SetClass(name)
+	super.AddClass(name)
+	ct.AddClass(name)
 	return
 }
 
@@ -73,8 +73,8 @@ func (net *Network) AddSuperCT4D(name, prjnClass string, nPoolsY, nPoolsX, nNeur
 	ct = net.AddCTLayer4D(name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct.PlaceBehind(super, space)
 	net.ConnectSuperToCT(super, ct, pat, prjnClass)
-	super.SetClass(name)
-	ct.SetClass(name)
+	super.AddClass(name)
+	ct.AddClass(name)
 	return
 }
 
@@ -93,7 +93,7 @@ func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 	}
 	plv.SetBuildConfig("DriveLayName", name)
 	plv.SetRelPos(relpos.NewBehind(name+"CT", space))
-	plv.SetClass(name)
+	plv.AddClass(name)
 	return plv
 }
 
@@ -125,15 +125,13 @@ func (net *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 // Typically pulv is a different shape than super and ct, so use Full or appropriate
 // topological pattern. Adds optional prjnClass name as a suffix.
 func (net *Network) ConnectToPulv(super, ct, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern, prjnClass string) (toPulv, toSuper, toCT *Prjn) {
-	if prjnClass != "" {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	toPulv = net.ConnectLayers(ct, pulv, toPulvPat, ForwardPrjn)
-	toPulv.SetClass("CTToPulv" + prjnClass)
+	toPulv.AddClass("CTToPulv", prjnClass)
 	toSuper = net.ConnectLayers(pulv, super, fmPulvPat, BackPrjn)
-	toSuper.SetClass("FmPulv" + prjnClass)
+	toSuper.AddClass("FmPulv", prjnClass)
 	toCT = net.ConnectLayers(pulv, ct, fmPulvPat, BackPrjn)
-	toCT.SetClass("FmPulv" + prjnClass)
+	toCT.AddClass("FmPulv", prjnClass)
 	return
 }
 
@@ -147,17 +145,15 @@ func (net *Network) ConnectCtxtToCT(send, recv *Layer, pat prjn.Pattern) *Prjn {
 // The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
 // with optional class added.
 func (net *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern, prjnClass string) (ctxt, maint *Prjn) {
-	if prjnClass != "" {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	ctxt = net.ConnectLayers(ly, ly, pat, CTCtxtPrjn)
-	ctxt.SetClass("CTSelfCtxt" + prjnClass)
+	ctxt.AddClass("CTSelfCtxt", prjnClass)
 	maint = net.LateralConnectLayer(ly, pat)
 	maint.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "0.5", // normalized separately
 		"Prjn.Com.GType":     "MaintG",
 	}
-	maint.SetClass("CTSelfMaint" + prjnClass)
+	maint.AddClass("CTSelfMaint", prjnClass)
 	return
 }
 
@@ -165,11 +161,9 @@ func (net *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern, prjnClass string)
 // This automatically sets the FmSuper flag to engage proper defaults,
 // Uses given projection pattern -- e.g., Full, OneToOne, or PoolOneToOne
 func (net *Network) ConnectSuperToCT(send, recv *Layer, pat prjn.Pattern, prjnClass string) *Prjn {
-	if prjnClass != "" {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	pj := net.ConnectLayers(send, recv, pat, CTCtxtPrjn)
-	pj.SetClass("CTFmSuper" + prjnClass)
+	pj.AddClass("CTFmSuper", prjnClass)
 	return pj
 }
 
@@ -180,8 +174,8 @@ func (net *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float3
 	in := net.AddLayer2D(name, nNeurY, nNeurX, InputLayer)
 	pulv := net.AddPulvLayer2D(name+"P", nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
-	in.SetClass(name)
-	pulv.SetClass(name)
+	in.AddClass(name)
+	pulv.AddClass(name)
 	pulv.PlaceBehind(in, space)
 	return in, pulv
 }
@@ -193,8 +187,8 @@ func (net *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	in := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, InputLayer)
 	pulv := net.AddPulvLayer4D(name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
-	in.SetClass(name)
-	pulv.SetClass(name)
+	in.AddClass(name)
+	pulv.AddClass(name)
 	pulv.PlaceBehind(in, space)
 	return in, pulv
 }
@@ -217,9 +211,7 @@ func (net *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNe
 // ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
 // which supports active maintenance, with a class of PTSelfMaint
 func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass string) *Prjn {
-	if prjnClass != "" && prjnClass[0] != ' ' {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	pj := net.LateralConnectLayer(ly, pat)
 	pj.DefParams = params.Params{
 		"Prjn.Com.GType":        "MaintG",
@@ -229,7 +221,7 @@ func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass st
 		"Prjn.SWts.Init.Mean":   "0.5",
 		"Prjn.SWts.Init.Var":    "0.5", // high variance so not just spreading out over time
 	}
-	pj.SetClass("PTSelfMaint" + prjnClass)
+	pj.AddClass("PTSelfMaint", prjnClass)
 	return pj
 }
 
@@ -243,9 +235,7 @@ func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass st
 // instead of lateral connections.
 // The PT and BGThal layers are positioned behind the CT layer.
 func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnClass string, superToPT, ptSelf, ptThal prjn.Pattern, selfMaint bool, space float32) (pt, thal *Layer) {
-	if prjnClass != "" {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	name := super.Name()
 	shp := super.Shape()
 	is4D := false
@@ -258,8 +248,8 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 		pt = net.AddPTMaintLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2)*ptExtra, shp.Dim(3)*ptExtra)
 		thal = net.AddBGThalLayer4D(name+thalSuffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
-	pt.SetClass(name)
-	thal.SetClass(name)
+	pt.AddClass(name)
+	thal.AddClass(name)
 	if selfMaint {
 		pt.DefParams = params.Params{
 			"Layer.Acts.SMaint.On":  "true",
@@ -273,7 +263,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	}
 
 	pthal, thalpt := net.BidirConnectLayers(pt, thal, ptThal)
-	pthal.SetClass("PTtoThal" + prjnClass)
+	pthal.AddClass("PTtoThal", prjnClass)
 	thalpt.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel":  "1.0",
 		"Prjn.Com.GType":      "ModulatoryG", // modulatory -- control with extra ModGain factor
@@ -283,7 +273,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 		"Prjn.SWts.Init.Mean": "0.8",
 		"Prjn.SWts.Init.Var":  "0.0",
 	}
-	thalpt.SetClass("ThalToPT" + prjnClass)
+	thalpt.AddClass("ThalToPT", prjnClass)
 	// if is4D {
 	// fmThalInhib := params.Params{
 	// 	"Prjn.PrjnScale.Rel": "1.0",
@@ -297,10 +287,10 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	// note: holding off on these for now -- thal modulation should handle..
 	// ti := net.ConnectLayers(thal, pt, full, InhibPrjn)
 	// ti.DefParams = fmThalInhib
-	// ti.SetClass("ThalToPFCInhib")
+	// ti.AddClass("ThalToPFCInhib")
 	// ti = net.ConnectLayers(thal, ct, full, InhibPrjn)
 	// ti.DefParams = fmThalInhib
-	// ti.SetClass("ThalToPFCInhib")
+	// ti.AddClass("ThalToPFCInhib")
 
 	sthal := net.ConnectLayers(super, thal, superToPT, ForwardPrjn) // shortcuts
 	sthal.DefParams = params.Params{
@@ -312,7 +302,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 		"Prjn.SWts.Init.Mean": "0.8", // typically 1to1
 		"Prjn.SWts.Init.Var":  "0.0",
 	}
-	sthal.SetClass("SuperToThal" + prjnClass)
+	sthal.AddClass("SuperToThal", prjnClass)
 
 	pj := net.ConnectLayers(super, pt, superToPT, ForwardPrjn)
 	pj.DefParams = params.Params{
@@ -325,7 +315,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 		"Prjn.SWts.Init.Mean": "0.8",
 		"Prjn.SWts.Init.Var":  "0.0",
 	}
-	pj.SetClass("SuperToPT" + prjnClass)
+	pj.AddClass("SuperToPT", prjnClass)
 
 	if !selfMaint {
 		net.ConnectPTMaintSelf(pt, ptSelf, prjnClass)
@@ -360,7 +350,7 @@ func (net *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // ConnectPTPredSelf adds a Self (Lateral) projection within a PTPredLayer,
 // which supports active maintenance, with a class of PTSelfMaint
 func (net *Network) ConnectPTPredSelf(ly *Layer, pat prjn.Pattern) *Prjn {
-	return net.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint").(AxonPrjn).AsAxon()
+	return net.LateralConnectLayer(ly, pat).AddClass("PTSelfMaint").(AxonPrjn).AsAxon()
 }
 
 // ConnectPTToPulv connects PT, PTPred with given Pulv:
@@ -371,15 +361,13 @@ func (net *Network) ConnectPTPredSelf(ly *Layer, pat prjn.Pattern) *Prjn {
 // Typically Pulv is a different shape than PTPred, so use Full or appropriate
 // topological pattern. adds optional class name to projection.
 func (net *Network) ConnectPTToPulv(pt, ptPred, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern, prjnClass string) (ptToPulv, ptPredToPulv, toPTPred *Prjn) {
-	if prjnClass != "" {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	ptToPulv = net.ConnectLayers(pt, pulv, toPulvPat, ForwardPrjn)
-	ptToPulv.SetClass("PTToPulv" + prjnClass)
+	ptToPulv.AddClass("PTToPulv", prjnClass)
 	ptPredToPulv = net.ConnectLayers(ptPred, pulv, toPulvPat, ForwardPrjn)
-	ptPredToPulv.SetClass("PTPredToPulv" + prjnClass)
+	ptPredToPulv.AddClass("PTPredToPulv", prjnClass)
 	toPTPred = net.ConnectLayers(pulv, ptPred, fmPulvPat, BackPrjn)
-	toPTPred.SetClass("FmPulv" + prjnClass)
+	toPTPred.AddClass("FmPulv", prjnClass)
 	return
 }
 
@@ -389,9 +377,7 @@ func (net *Network) ConnectPTToPulv(pt, ptPred, pulv *Layer, toPulvPat, fmPulvPa
 // Projections are made with given classes: PTtoPred, CTtoPred
 // The PTPred layer is positioned behind the PT layer.
 func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrjn prjn.Pattern, prjnClass string, space float32) (ptPred *Layer) {
-	if prjnClass != "" {
-		prjnClass = " " + prjnClass
-	}
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	name := strings.TrimSuffix(ptMaint.Name(), "PT")
 	// shp := ptMaint.Shape()
 	shp := ct.Shape()
@@ -400,19 +386,19 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 	} else {
 		ptPred = net.AddPTPredLayer4D(name+"PTp", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
-	ptPred.SetClass(name)
+	ptPred.AddClass(name)
 	ptPred.PlaceBehind(ptMaint, space)
 	pj := net.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn)
-	pj.SetClass("PTtoPred" + prjnClass)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "6.0", // much stronger
-	}
+	pj.AddClass("PTtoPred", prjnClass)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "6.0", // much stronger
+	// }
 	pj = net.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel": "1", // 1 > 0.5
-		// "Prjn.PrjnScale.Abs": "2.0", // 2?
+		"Prjn.PrjnScale.Rel": "1",   // 1 > 0.5
+		"Prjn.PrjnScale.Abs": "2.0", // 2?
 	}
-	pj.SetClass("CTtoPred" + prjnClass)
+	pj.AddClass("CTtoPred", prjnClass)
 
 	// note: ptpred does not connect to thalamus -- it is only active on trial *after* thal gating
 	return
@@ -422,7 +408,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 // * AddSuperCT4D (Super and CT)
 // * AddPTMaintThal (PTMaint, BGThal)
 // * AddPTPredLayer (PTPred)
-// with given name prefix, which is also set as the Class for all layers,
+// with given name prefix, which is also set as the Class for all layers & prjns (+"Prjn"),
 // and suffix for the BGThal layer (e.g., "MD" or "VM" etc for different thalamic nuclei).
 // Sets PFCLayer as additional class for all cortical layers.
 // OneToOne and PoolOneToOne connectivity is used between layers.
@@ -436,23 +422,23 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	// p1to1rnd := prjn.NewPoolUnifRnd()
 	// p1to1rnd.PCon = 0.5
 	one2one := prjn.NewOneToOne()
-	prjnClass := "PFCPrjn"
+	prjnClass := name + "Prjn"
 	layClass := "PFCLayer"
 
 	pfc, pfcCT = net.AddSuperCT4D(name, prjnClass, nPoolsY, nPoolsX, nNeurY, nNeurX, space, one2one)
-	pfcCT.SetClass(name)
+	pfcCT.AddClass(name)
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
 	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, p1to1, one2one, selfMaint, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, p1to1, p1to1, prjnClass, space)
-	pfcPTp.SetClass(name)
+	pfcPTp.AddClass(name)
 	pfcPT.AddClass(layClass)
 	pfcPTp.AddClass(layClass)
 
 	pfcThal.PlaceBehind(pfcPTp, space)
 
-	net.ConnectLayers(pfcPT, pfcCT, p1to1, ForwardPrjn).SetClass(prjnClass)
+	net.ConnectLayers(pfcPT, pfcCT, p1to1, ForwardPrjn).AddClass(prjnClass)
 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
@@ -499,7 +485,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 // * AddSuperCT2D (Super and CT)
 // * AddPTMaintThal (PTMaint, BGThal)
 // * AddPTPredLayer (PTPred)
-// with given name prefix, which is also set as the Class for all layers,
+// with given name prefix, which is also set as the Class for all layers & prjns (+"Prjn"),
 // and suffix for the BGThal layer (e.g., "MD" or "VM" etc for different thalamic nuclei).
 // Sets PFCLayer as additional class for all cortical layers.
 // OneToOne, full connectivity is used between layers.
@@ -512,23 +498,23 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	full := prjn.NewFull()
 	// rnd := prjn.NewUnifRnd()
 	// rnd.PCon = 0.5
-	prjnClass := "PFCPrjn"
+	prjnClass := name + "Prjn"
 	layClass := "PFCLayer"
 
 	pfc, pfcCT = net.AddSuperCT2D(name, prjnClass, nNeurY, nNeurX, space, one2one)
-	pfcCT.SetClass(name)
+	pfcCT.AddClass(name)
 	pfc.AddClass(layClass)
 	pfcCT.AddClass(layClass)
 	// prjns are: super->PT, PT self
 	pfcPT, pfcThal = net.AddPTMaintThalForSuper(pfc, pfcCT, thalSuffix, prjnClass, one2one, full, one2one, selfMaint, space)
 	pfcPTp = net.AddPTPredLayer(pfcPT, pfcCT, full, full, prjnClass, space)
-	pfcPTp.SetClass(name)
+	pfcPTp.AddClass(name)
 	pfcPT.AddClass(layClass)
 	pfcPTp.AddClass(layClass)
 
 	pfcThal.PlaceBehind(pfcPTp, space)
 
-	net.ConnectLayers(pfcPT, pfcCT, full, ForwardPrjn).SetClass(prjnClass)
+	net.ConnectLayers(pfcPT, pfcCT, full, ForwardPrjn).AddClass(prjnClass)
 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
@@ -578,12 +564,12 @@ func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Layer, pa
 		prjnClass = "PFCPrjn"
 	}
 	if lay != nil {
-		net.ConnectLayers(lay, pfc, pat, ForwardPrjn).SetClass(prjnClass)
+		net.ConnectLayers(lay, pfc, pat, ForwardPrjn).AddClass(prjnClass)
 		pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
 		pj.DefParams = params.Params{
 			"Prjn.PrjnScale.Abs": "4",
 		}
-		pj.SetClass("ToPTp " + prjnClass)
+		pj.AddClass("ToPTp ", prjnClass)
 	}
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
 	net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, prjnClass)
@@ -599,14 +585,14 @@ func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Layer
 		prjnClass = "PFCPrjn"
 	}
 	tp := net.ConnectLayers(lay, pfc, pat, BackPrjn)
-	tp.SetClass(prjnClass)
+	tp.AddClass(prjnClass)
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
 	net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, prjnClass)
 	pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4",
 	}
-	pj.SetClass("ToPTp " + prjnClass)
+	pj.AddClass("ToPTp ", prjnClass)
 }
 
 // ConnectToPFCBidir connects given predictively learned input to all
@@ -619,14 +605,14 @@ func (net *Network) ConnectToPFCBidir(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Laye
 		prjnClass = "PFCPrjn"
 	}
 	ff, fb = net.BidirConnectLayers(lay, pfc, pat)
-	ff.SetClass(prjnClass)
-	fb.SetClass(prjnClass)
+	ff.AddClass(prjnClass)
+	fb.AddClass(prjnClass)
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
 	net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, prjnClass)
 	pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Abs": "4",
 	}
-	pj.SetClass("ToPTp " + prjnClass)
+	pj.AddClass("ToPTp ", prjnClass)
 	return
 }

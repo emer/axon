@@ -53,21 +53,21 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	}
 
 	bgclass := "VBGInhib"
-	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpePr, gpeAk, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpePr, stn, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpePr, gpi, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(mtxGo, gpi, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(mtxGo, gpeAk, full, InhibPrjn).SetClass(bgclass)
+	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpeAk, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, stn, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpi, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpi, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpeAk, full, InhibPrjn).AddClass(bgclass)
 	// this doesn't make that much diff -- bit cleaner RT without:
-	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxGo, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxNo, full, InhibPrjn).SetClass(bgclass)
+	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxGo, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxNo, full, InhibPrjn).AddClass(bgclass)
 
 	stnclass := "VSTNExcite"
-	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).SetClass(stnclass)
-	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).SetClass(stnclass)
-	net.ConnectLayers(stn, gpi, full, ForwardPrjn).SetClass(stnclass)
+	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).AddClass(stnclass)
+	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).AddClass(stnclass)
+	net.ConnectLayers(stn, gpi, full, ForwardPrjn).AddClass(stnclass)
 
 	gpeAk.PlaceBehind(gpi, space)
 	gpePr.PlaceRightOf(gpeAk, space)
@@ -118,31 +118,31 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	}
 
 	bgclass := "DBGInhib"
-	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpePr, stn, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpePr, gpi, p1to1, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPrjn).SetClass(bgclass)
+	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, stn, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpi, p1to1, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPrjn).AddClass(bgclass)
 	// not much diff with this: basically is an offset that can be learned
-	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPrjn).SetClass(bgclass)
-	net.ConnectLayers(gpi, pf, p1to1, InhibPrjn).SetClass(bgclass)
+	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpi, pf, p1to1, InhibPrjn).AddClass(bgclass)
 
 	stnclass := "DSTNExcite"
-	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).SetClass(stnclass)
-	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).SetClass(stnclass)
-	net.ConnectLayers(stn, gpi, full, ForwardPrjn).SetClass(stnclass)
+	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).AddClass(stnclass)
+	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).AddClass(stnclass)
+	net.ConnectLayers(stn, gpi, full, ForwardPrjn).AddClass(stnclass)
 
 	pfm := params.Params{
 		"Prjn.Learn.Learn":   "false",
 		"Prjn.Com.GType":     "ModulatoryG",
 		"Prjn.PrjnScale.Abs": "1",
 	}
-	pj = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPrjn).SetClass("PFToDMtx").(*Prjn)
+	pj = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPrjn).AddClass("PFToDMtx").(*Prjn)
 	pj.DefParams = pfm
-	pj = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPrjn).SetClass("PFToDMtx").(*Prjn)
+	pj = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPrjn).AddClass("PFToDMtx").(*Prjn)
 	pj.DefParams = pfm
 
 	gpePr.PlaceBehind(gpi, space)
@@ -160,7 +160,7 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 // This version has a 4D structure, with Pools representing separable gating domains.
 func (net *Network) AddBGThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, BGThalLayer)
-	ly.SetClass("BG")
+	ly.AddClass("BG")
 	return ly
 }
 
@@ -169,7 +169,7 @@ func (net *Network) AddBGThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // This version has a 2D structure
 func (net *Network) AddBGThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, BGThalLayer)
-	ly.SetClass("BG")
+	ly.AddClass("BG")
 	return ly
 }
 
@@ -179,7 +179,7 @@ func (net *Network) AddBGThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 func (net *Network) AddVMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
 	ly.SetBuildConfig("DAMod", da.String())
-	ly.SetClass("VSMatrixLayer")
+	ly.AddClass("VSMatrixLayer")
 	return ly
 }
 
@@ -189,7 +189,7 @@ func (net *Network) AddVMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeur
 func (net *Network) AddDMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
 	ly.SetBuildConfig("DAMod", da.String())
-	ly.SetClass("DSMatrixLayer")
+	ly.AddClass("DSMatrixLayer")
 	return ly
 }
 
@@ -207,7 +207,7 @@ func (net *Network) ConnectToDSMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn
 // Must set the GPType BuildConfig setting to appropriate GPLayerType
 func (net *Network) AddGPeLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
-	ly.SetClass(class)
+	ly.AddClass(class)
 	return ly
 }
 
@@ -215,14 +215,14 @@ func (net *Network) AddGPeLayer2D(name, class string, nNeurY, nNeurX int) *Layer
 func (net *Network) AddGPiLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
 	ly.SetBuildConfig("GPType", "GPi")
-	ly.SetClass(class)
+	ly.AddClass(class)
 	return ly
 }
 
 // AddSTNLayer2D adds a subthalamic nucleus Layer of given size, with given name.
 func (net *Network) AddSTNLayer2D(name, class string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, STNLayer)
-	ly.SetClass(class)
+	ly.AddClass(class)
 	return ly
 }
 
@@ -230,7 +230,7 @@ func (net *Network) AddSTNLayer2D(name, class string, nNeurY, nNeurX int) *Layer
 // Makes a 4D structure with Pools representing separable gating domains.
 func (net *Network) AddGPeLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
-	ly.SetClass(class)
+	ly.AddClass(class)
 	return ly
 }
 
@@ -239,7 +239,7 @@ func (net *Network) AddGPeLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, 
 func (net *Network) AddGPiLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
 	ly.SetBuildConfig("GPType", "GPi")
-	ly.SetClass(class)
+	ly.AddClass(class)
 	return ly
 }
 
@@ -247,7 +247,7 @@ func (net *Network) AddGPiLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, 
 // Makes a 4D structure with Pools representing separable gating domains.
 func (net *Network) AddSTNLayer4D(name, class string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, STNLayer)
-	ly.SetClass(class)
+	ly.AddClass(class)
 	return ly
 }
 
