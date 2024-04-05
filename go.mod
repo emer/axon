@@ -7,7 +7,7 @@ require (
 	github.com/alecthomas/assert/v2 v2.6.0
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.13
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.13.0.20240405051034-50e40bf26699
 	github.com/emer/empi/v2 v2.0.0-dev0.0.5
 	github.com/emer/etable/v2 v2.0.0-dev0.0.18
 	github.com/emer/eve/v2 v2.0.0-dev0.0.6
