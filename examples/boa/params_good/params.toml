@@ -15,8 +15,6 @@
   Desc = "time integration params"
   [Base.Params]
     "Layer.Acts.Dend.ModGain" = "1.5"
-    "Layer.Inhib.Layer.Gi" = "2.4"
-    "Layer.Inhib.Pool.Gi" = "2.4"
     "Layer.Learn.NeuroMod.AChDisInhib" = "0.0"
 
 [[Base]]
@@ -45,39 +43,34 @@
   Desc = ""
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.2"
-    "Layer.Inhib.Pool.Gi" = "3.0"
 
 [[Base]]
   Sel = "#OFCposUSPTp"
   Desc = ""
   [Base.Params]
-    "Layer.Inhib.Pool.Gi" = "1.4"
+    "Layer.Inhib.Pool.Gi" = "1.0"
 
 [[Base]]
   Sel = "#OFCnegUS"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.1"
-    "Layer.Inhib.Layer.Gi" = "1.2"
 
 [[Base]]
   Sel = "#OFCnegUSPT"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.2"
-    "Layer.Inhib.Pool.Gi" = "3.0"
 
 [[Base]]
   Sel = "#OFCnegUSPTp"
   Desc = ""
   [Base.Params]
-    "Layer.Inhib.Pool.Gi" = "1.4"
 
 [[Base]]
   Sel = "#ILpos"
   Desc = ""
   [Base.Params]
-    "Layer.Inhib.Pool.Gi" = "1"
 
 [[Base]]
   Sel = ".VSMatrixLayer"
@@ -156,13 +149,6 @@
   Desc = "not good to make this stronger"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1"
-
-[[Base]]
-  Sel = ".PTSelfMaint"
-  Desc = ""
-  [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.0001"
-    "Prjn.PrjnScale.Abs" = "4"
 
 [[Base]]
   Sel = ".ToPTp"

@@ -104,13 +104,13 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		v4[pi] = net.AddLayer4D("V4_"+pnm, v4Pools, v4Pools, hiddenNeurs, hiddenNeurs, axon.SuperLayer)
 		te[pi] = net.AddLayer2D("TE_"+pnm, teNeurs, teNeurs, axon.SuperLayer)
 
-		v1[pi].SetClass("V1m")
-		v2[pi].SetClass("V2m V2")
-		v4[pi].SetClass("V4")
+		v1[pi].AddClass("V1m")
+		v2[pi].AddClass("V2m V2")
+		v4[pi].AddClass("V4")
 
 		net.ConnectLayers(v1[pi], v2[pi], Prjn4x4Skp2, axon.ForwardPrjn)
 		net.BidirConnectLayers(v2[pi], v4[pi], Prjn4x4Skp2)
-		net.ConnectLayers(v1[pi], v4[pi], sparseRandom, axon.ForwardPrjn).SetClass("V1SC")
+		net.ConnectLayers(v1[pi], v4[pi], sparseRandom, axon.ForwardPrjn).AddClass("V1SC")
 		net.BidirConnectLayers(v4[pi], te[pi], full)
 		net.BidirConnectLayers(te[pi], outLay, full)
 	}

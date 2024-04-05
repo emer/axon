@@ -68,8 +68,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi":        "0.5",
-				"Layer.Inhib.ActAvg.Nominal": "0.02",
+				"Layer.Inhib.Pool.Gi":        "1",
+				"Layer.Inhib.ActAvg.Nominal": "0.1", //
 			}},
 		{Sel: "#OFCposUSPT", Desc: "",
 			Params: params.Params{
@@ -132,9 +132,9 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.Trace.LearnThr": "0",
 				"Prjn.Learn.LRate.Base":     "0.02", // 0.05 def -- good
 			}},
-		{Sel: ".ToPTp", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
-			}},
+		// {Sel: ".ToPTp", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs": "2",
+		// 	}},
 	},
 }

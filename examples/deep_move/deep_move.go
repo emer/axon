@@ -194,7 +194,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	dpHidSz := evec.Vec2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
 	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
-	// net.LateralConnectLayer(dpHidct, full).SetClass("CTSelfMaint") // no diff
+	// net.LateralConnectLayer(dpHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect, "") // fmPulv: rect == full
 	net.ConnectLayers(act, dpHid, full, axon.ForwardPrjn)
 	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPrjn)
@@ -234,10 +234,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(act, hdHid, full, axon.ForwardPrjn)
 	net.ConnectLayers(hd, hdHid, full, axon.ForwardPrjn)
 
-	dpIn.SetClass("DepthIn")
-	dpInp.SetClass("DepthIn")
-	hd.SetClass("HeadDirIn")
-	hdp.SetClass("HeadDirIn")
+	dpIn.AddClass("DepthIn")
+	dpInp.AddClass("DepthIn")
+	hd.AddClass("HeadDirIn")
+	hdp.AddClass("HeadDirIn")
 
 	// no benefit from these:
 	// net.ConnectLayers(hdHid, dpHid, full, emer.Back)

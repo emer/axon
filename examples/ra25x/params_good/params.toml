@@ -48,7 +48,7 @@
     "Layer.Learn.RLRate.On" = "true"
     "Layer.Learn.RLRate.SigmoidMin" = "0.05"
     "Layer.Learn.RLRate.SpkThr" = "0.1"
-    "Layer.Learn.TrgAvgAct.On" = "true"
+    "Layer.Learn.TrgAvgAct.RescaleOn" = "true"
     "Layer.Learn.TrgAvgAct.SubMean" = "1"
     "Layer.Learn.TrgAvgAct.SynScaleRate" = "0.0002"
 

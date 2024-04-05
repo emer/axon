@@ -172,7 +172,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
 		net.AddLayer2D(LayNm(hi), sz.Y, sz.X, axon.SuperLayer)
-		net.AddLayer2D(InhNm(hi), sz.Y, 2, axon.SuperLayer).SetClass("InhibLay")
+		net.AddLayer2D(InhNm(hi), sz.Y, 2, axon.SuperLayer).AddClass("InhibLay")
 	}
 
 	full := prjn.NewFull()
@@ -183,14 +183,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		ll := LayByNm(net, hi-1)
 		tl := LayByNm(net, hi)
 		il := InhByNm(net, hi)
-		net.ConnectLayers(ll, tl, full, axon.ForwardPrjn).SetClass("Excite")
-		net.ConnectLayers(ll, il, full, axon.ForwardPrjn).SetClass("ToInhib")
-		net.ConnectLayers(tl, il, full, axon.BackPrjn).SetClass("ToInhib")
+		net.ConnectLayers(ll, tl, full, axon.ForwardPrjn).AddClass("Excite")
+		net.ConnectLayers(ll, il, full, axon.ForwardPrjn).AddClass("ToInhib")
+		net.ConnectLayers(tl, il, full, axon.BackPrjn).AddClass("ToInhib")
 		net.ConnectLayers(il, tl, full, axon.InhibPrjn)
 		net.ConnectLayers(il, il, full, axon.InhibPrjn)
 
 		// if hi > 1 {
-		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPrjn).SetClass("RndSc")
+		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPrjn).AddClass("RndSc")
 		// }
 
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
@@ -198,9 +198,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		if hi < ss.Config.Params.NLayers {
 			nl := LayByNm(net, hi+1)
-			net.ConnectLayers(nl, il, full, axon.ForwardPrjn).SetClass("ToInhib")
-			net.ConnectLayers(tl, nl, full, axon.ForwardPrjn).SetClass("Excite")
-			net.ConnectLayers(nl, tl, full, axon.BackPrjn).SetClass("Excite")
+			net.ConnectLayers(nl, il, full, axon.ForwardPrjn).AddClass("ToInhib")
+			net.ConnectLayers(tl, nl, full, axon.ForwardPrjn).AddClass("Excite")
+			net.ConnectLayers(nl, tl, full, axon.BackPrjn).AddClass("Excite")
 		}
 	}
 	net.Build(ctx)

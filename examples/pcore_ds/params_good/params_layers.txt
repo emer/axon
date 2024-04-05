@@ -37,14 +37,14 @@
 						Layer.Gi:	  0.90	
 
            M1CT		Nominal:	  0.10	
-						Layer.Gi:	  1.40	
+						Layer.Gi:	  1.40	Params: .CTLayer: 1.4
 
-           M1PT		Nominal:	  0.30	
-						Layer.Gi:	  2.20	Params: .PTMaintLayer: 2.2
+           M1PT		Nominal:	  0.30	Params: .PTMaintLayer: 0.3
+						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
 
            M1VM		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
 
           M1PTp		Nominal:	  0.10	
-						Layer.Gi:	  0.80	
+						Layer.Gi:	  0.80	Params: .PTPredLayer: 0.8
 

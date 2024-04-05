@@ -170,14 +170,6 @@ var ParamSets = netparams.Sets{
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#M1PTToVL", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
-				"Prjn.PrjnScale.Rel": "0.1",
-			},
-			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
-			}},
 		{Sel: "#MotorBSToPF", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // 1 > 1.1 > 0.9 >> 0.5
@@ -223,20 +215,28 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#M1PTToMotorBS", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
-				"Prjn.PrjnScale.Rel": "0.1",
+				"Prjn.PrjnScale.Abs": "2", // 2
+				"Prjn.PrjnScale.Rel": "1", // 1
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
-		{Sel: "#M1PTpToMotorBS", Desc: "",
+		{Sel: "#M1PTToVL", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
-				"Prjn.PrjnScale.Rel": "1",
+				"Prjn.PrjnScale.Abs": "1",   // 1
+				"Prjn.PrjnScale.Rel": "0.1", // 0.1
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
 			}},
+		// {Sel: "#M1PTpToMotorBS", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs": "2",
+		// 		"Prjn.PrjnScale.Rel": "1",
+		// 	},
+		// 	Hypers: params.Hypers{
+		// 		"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+		// 	}},
 		{Sel: "#M1ToMotorBS", Desc: "weaker; note: this is a proxy for cerebellum etc inputs",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1.5", // 1.5 > 1, 2, 2.5

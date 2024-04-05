@@ -111,8 +111,8 @@
 						Pool.Gi: 	  1.20	
 
      OFCposUSPT		Nominal:	  0.20	Params: #OFCposUSPT: 0.2
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
-						Pool.Gi: 	  3.00	Params: #OFCposUSPT: 3.0 | .PTMaintLayer: 2.4
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.50	
 
      OFCposUSMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
@@ -120,10 +120,10 @@
 
     OFCposUSPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.40	Params: #OFCposUSPTp: 1.4
+						Pool.Gi: 	  1.00	Params: #OFCposUSPTp: 1.0
 
        OFCnegUS		Nominal:	  0.10	Params: #OFCnegUS: 0.1
-						Layer.Gi:	  1.20	Params: #OFCnegUS: 1.2
+						Layer.Gi:	  1.20	
 						Pool.Gi: 	  1.00	
 
      OFCnegUSCT		Nominal:	  0.03	
@@ -131,8 +131,8 @@
 						Pool.Gi: 	  1.20	
 
      OFCnegUSPT		Nominal:	  0.20	Params: #OFCnegUSPT: 0.2
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
-						Pool.Gi: 	  3.00	Params: #OFCnegUSPT: 3.0 | .PTMaintLayer: 2.4
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.50	
 
      OFCnegUSMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
@@ -140,7 +140,7 @@
 
     OFCnegUSPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.40	Params: #OFCnegUSPTp: 1.4
+						Pool.Gi: 	  1.40	
 
           ILpos		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
@@ -148,8 +148,8 @@
         ILposCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-        ILposPT		Nominal:	  0.30	
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+        ILposPT		Nominal:	  0.10	
+						Layer.Gi:	  0.50	
 
         ILposMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
@@ -163,8 +163,8 @@
         ILnegCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-        ILnegPT		Nominal:	  0.30	
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+        ILnegPT		Nominal:	  0.10	
+						Layer.Gi:	  0.50	
 
         ILnegMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
@@ -180,9 +180,9 @@
 						Layer.Gi:	  4.00	
 						Pool.Gi: 	  1.20	
 
-     ACCnegUSPT		Nominal:	  0.20	
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
-						Pool.Gi: 	  2.40	Params: .PTMaintLayer: 2.4
+     ACCnegUSPT		Nominal:	  0.02	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.50	
 
      ACCnegUSMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
@@ -204,8 +204,8 @@
        PLutilCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-       PLutilPT		Nominal:	  0.30	
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+       PLutilPT		Nominal:	  0.10	
+						Layer.Gi:	  0.50	
 
        PLutilMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	
@@ -249,8 +249,8 @@
           ALMCT		Nominal:	  0.10	
 						Layer.Gi:	  1.40	
 
-          ALMPT		Nominal:	  0.30	
-						Layer.Gi:	  2.40	Params: .PTMaintLayer: 2.4
+          ALMPT		Nominal:	  0.10	
+						Layer.Gi:	  0.50	
 
           ALMMD		Nominal:	  0.10	
 						Layer.Gi:	  0.60	

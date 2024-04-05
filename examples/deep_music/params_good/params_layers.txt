@@ -1,4 +1,4 @@
-          Input		Nominal:	  0.05	Params: 30Notes:.InLay: 0.05 | .InLay: 0.025 | Layer: 0.1
+          Input		Nominal:	  0.05	Params: 30Notes:.InLay: 0.05 | .InLay: 0.025 | Base:Layer: 0.1
 						Layer.Gi:	  0.90	Params: Layer: 0.9
 
          InputP		Nominal:	  0.05	Params: 30Notes:.InLay: 0.05 | .InLay: 0.025 | Layer: 0.1
@@ -7,6 +7,6 @@
          Hidden		Nominal:	  0.10	Params: .SuperLayer: 0.1 | Layer: 0.1
 						Layer.Gi:	  0.90	Params: Layer: 0.9
 
-       HiddenCT		Nominal:	  0.12	Params: .CTLayer: 0.12 | Layer: 0.1
+       HiddenCT		Nominal:	  0.12	Params: .CTLayer: 0.12 | Base:Layer: 0.1
 						Layer.Gi:	  2.20	Params: .CTLayer: 2.2 | Layer: 0.9
 

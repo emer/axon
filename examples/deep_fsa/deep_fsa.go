@@ -172,9 +172,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	in, inp := net.AddInputPulv4D("Input", 1, 7, ss.Config.Env.UnitsPer, 1, 2)
 	trg := net.AddLayer2D("Targets", 1, 7, axon.InputLayer) // just for visualization
-	in.SetClass("InLay")
-	inp.SetClass("InLay")
-	trg.SetClass("InLay")
+	in.AddClass("InLay")
+	inp.AddClass("InLay")
+	trg.AddClass("InLay")
 
 	hid, hidct := net.AddSuperCT2D("Hidden", "", 10, 10, 2, full)
 	// full > one2one -- one2one weights go to 0 -- this is key for more posterior-cortical CT
@@ -185,7 +185,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
 	net.ConnectToPulv(hid, hidct, inp, full, full, "") // inp -> hid and inp -> hidct is *essential*
-	// net.ConnectLayers(inp, hid, full, emer.Back).SetClass("FmPvlv")
+	// net.ConnectLayers(inp, hid, full, emer.Back).AddClass("FmPvlv")
 	// net.ConnectLayers(hidct, hid, full, emer.Back)
 
 	// not useful:

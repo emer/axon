@@ -55,7 +55,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.LrnNMDA.Voff":           "0",     // 0 for unified Act params, else 5
 				"Layer.Learn.LrnNMDA.Gbar":           "0.006",
 				"Layer.Learn.LrnNMDA.Tau":            "100",    // 100 def
-				"Layer.Learn.TrgAvgAct.On":           "true",   // true > false even with adapt gi
+				"Layer.Learn.TrgAvgAct.RescaleOn":    "true",   // true > false even with adapt gi
 				"Layer.Learn.TrgAvgAct.SubMean":      "1",      // 1 > 0 essential
 				"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // 0.0002 > others; 0.005 not as good
 				"Layer.Learn.RLRate.On":              "true",   // beneficial for trace

@@ -217,9 +217,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	it.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "V4", YAlign: relpos.Front, Space: 2})
 	out.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "IT", YAlign: relpos.Front, Space: 2})
 
-	v4IT.SetClass("NovLearn")
-	itOut.SetClass("NovLearn")
-	outIT.SetClass("NovLearn")
+	v4IT.AddClass("NovLearn")
+	itOut.AddClass("NovLearn")
+	outIT.AddClass("NovLearn")
 
 	net.Build(ctx)
 	net.Defaults()

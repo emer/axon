@@ -9,7 +9,7 @@ Act: {
   Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
   Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
   Clamp: {  IsInput: true  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
-  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001  MaintGe: false }
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 10  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.1  DtMax: 1 }
@@ -22,7 +22,8 @@ Act: {
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
-  AttnMod: {  On: true  Min: 0.8  RTThr: 0.5 }
+  SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
+  } }
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
@@ -51,7 +52,7 @@ Act: {
   Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
   Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
   Clamp: {  IsInput: false  IsTarget: true  Ge: 1.5  Add: false  ErrThr: 0.5 }
-  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001  MaintGe: false }
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 10  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.1  DtMax: 1 }
@@ -64,7 +65,8 @@ Act: {
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
-  AttnMod: {  On: true  Min: 0.8  RTThr: 0.5 }
+  SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
+  } }
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
@@ -116,7 +118,7 @@ Act: {
   Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
   Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
   Clamp: {  IsInput: true  IsTarget: false  Ge: 1.5  Add: false  ErrThr: 0.5 }
-  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001  MaintGe: false }
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 10  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.1  DtMax: 1 }
@@ -129,7 +131,8 @@ Act: {
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
-  AttnMod: {  On: true  Min: 0.8  RTThr: 0.5 }
+  SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
+  } }
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
@@ -158,7 +161,7 @@ Act: {
   Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
   Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
   Clamp: {  IsInput: false  IsTarget: false  Ge: 0.8  Add: false  ErrThr: 0.5 }
-  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001  MaintGe: false }
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 10  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.1  DtMax: 1 }
@@ -171,7 +174,8 @@ Act: {
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
-  AttnMod: {  On: true  Min: 0.8  RTThr: 0.5 }
+  SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
+  } }
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
@@ -243,7 +247,7 @@ Act: {
   Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
   Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
   Clamp: {  IsInput: false  IsTarget: false  Ge: 0.8  Add: false  ErrThr: 0.5 }
-  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001  MaintGe: false }
   VmRange: {  Min: 0.1  Max: 1 }
   Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
   Sahp: {  Gbar: 0.1  CaTau: 10  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.1  DtMax: 1 }
@@ -256,7 +260,8 @@ Act: {
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
-  AttnMod: {  On: true  Min: 0.8  RTThr: 0.5 }
+  SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
+  } }
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {

@@ -1,5 +1,5 @@
          Layer0		Nominal:	  0.10	Params: Layer: 0.1
-						Layer.Gi:	  1.00	Params: FSFFFB:Layer: 1.0 | Layer: 1.0
+						Layer.Gi:	  1.00	Params: Layer: 1.0 | Layer: 1.0
 
          Layer1		Nominal:	  0.10	Params: Layer: 0.1
 						Layer.Gi:	  1.00	Params: Layer: 1.0 | Layer: 1.0
@@ -11,5 +11,5 @@
 						Layer.Gi:	  1.00	Params: Layer: 1.0 | Layer: 1.0
 
          Inhib2		Nominal:	  0.50	Params: .InhibLay: 0.5 | Layer: 0.1
-						Layer.Gi:	  1.00	Params: FSFFFB:Layer: 1.0 | Layer: 1.0
+						Layer.Gi:	  1.00	Params: Layer: 1.0 | Layer: 1.0
 

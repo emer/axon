@@ -33,7 +33,6 @@
     "Layer.Acts.Dend.ModACh" = "true"
     "Layer.Acts.Dend.ModGain" = "1.5"
     "Layer.Acts.Kir.Gbar" = "0"
-    "Layer.Inhib.Layer.Gi" = "3.2"
 
 [[Base]]
   Sel = ".ACC"
@@ -70,12 +69,6 @@
   Desc = "one-to-one from super"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "0.5"
-
-[[Base]]
-  Sel = ".PTSelfMaint"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
 
 [[Base]]
   Sel = ".SuperToThal"

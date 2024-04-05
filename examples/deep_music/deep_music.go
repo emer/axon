@@ -197,8 +197,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 
 	in, inPulv := net.AddInputPulv4D("Input", 1, nnotes, ss.Config.Env.UnitsPer, 1, space)
-	in.SetClass("InLay")
-	inPulv.SetClass("InLay")
+	in.AddClass("InLay")
+	inPulv.AddClass("InLay")
 
 	var hidp, hid2, hid2ct *axon.Layer
 	hid, hidct := net.AddSuperCT2D("Hidden", "", 20, nUnits, space, one2one) // one2one learn > full
@@ -217,7 +217,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		net.ConnectCTSelf(hid2ct, full, "")
 		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full, "") // shortcut top-down
 		projection, _ := inPulv.SendNameTry(hid2ct.Name())
-		projection.SetClass("CTToPulvHigher")
+		projection.AddClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 

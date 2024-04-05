@@ -234,7 +234,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPrjn)
 	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
-	net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
+	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
 	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
 
 	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)

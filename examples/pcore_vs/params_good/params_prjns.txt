@@ -23,7 +23,7 @@ Layer: VSTN
 Layer: VMtxGo
 	         VMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  0.05	GScale:	  0.01	Rel:  0.05
 								    Abs Params: #VMtxNoToVMtxGo: 1
-								    Rel Params: Base:#VMtxNoToVMtxGo: 0.05
+								    Rel Params: #VMtxNoToVMtxGo: 0.05
 	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.95
 	         ACCPos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.24	Rel:  0.48
 								    Abs Params: .ACCToVMtx: 1.5
@@ -52,8 +52,6 @@ Layer: ACCPosPT
 	       ACCPosVM	       BackPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
 	         ACCPos	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
 								    Abs Params: Base:.SuperToPT: 0.5
-	       ACCPosPT	    LateralPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:  1.00
-								    Abs Params: Base:.PTSelfMaint: 4
 
 Layer: ACCPosVM
 	       ACCPosPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50

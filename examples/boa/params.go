@@ -23,8 +23,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":             "2.4",
-				"Layer.Inhib.Pool.Gi":              "2.4",
+				// "Layer.Inhib.Layer.Gi":             "2.4",
+				// "Layer.Inhib.Pool.Gi":              "2.4",
 				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
 				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
 			}},
@@ -46,29 +46,29 @@ var ParamSets = netparams.Sets{
 		{Sel: "#OFCposUSPT", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.2",
-				"Layer.Inhib.Pool.Gi":        "3.0",
+				// "Layer.Inhib.Pool.Gi":        "0.5",
 			}},
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "1.4",
+				"Layer.Inhib.Pool.Gi": "1.0",
 			}},
 		{Sel: "#OFCnegUS", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1",
-				"Layer.Inhib.Layer.Gi":       "1.2", // weaker in general so needs to be lower
+				// "Layer.Inhib.Layer.Gi":       "0.5", // weaker in general so needs to be lower
 			}},
 		{Sel: "#OFCnegUSPT", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.2",
-				"Layer.Inhib.Pool.Gi":        "3.0",
+				// "Layer.Inhib.Pool.Gi":        "3.0",
 			}},
 		{Sel: "#OFCnegUSPTp", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "1.4",
+				// "Layer.Inhib.Pool.Gi": "1.4",
 			}},
 		{Sel: "#ILpos", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "1",
+				// "Layer.Inhib.Pool.Gi": "1",
 			}},
 		{Sel: ".VSMatrixLayer", Desc: "vs mtx",
 			Params: params.Params{
@@ -128,11 +128,11 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // todo: try 3?
 			}},
-		{Sel: ".PTSelfMaint", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "4",
-				"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
-			}},
+		// {Sel: ".PTSelfMaint", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs":    "4",
+		// 		"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
+		// 	}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "4",

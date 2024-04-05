@@ -55,10 +55,46 @@
   Sel = ".PTMaintLayer"
   Desc = "time integration params"
   [Base.Params]
+    "Layer.Acts.Decay.OnRew" = "true"
     "Layer.Acts.Dend.ModGain" = "1.0"
     "Layer.Acts.Kir.Gbar" = "0"
     "Layer.Acts.MaintNMDA.Gbar" = "0.007"
-    "Layer.Inhib.Layer.Gi" = "2.2"
+    "Layer.Inhib.ActAvg.Nominal" = "0.3"
+    "Layer.Inhib.Layer.Gi" = "2.4"
+
+[[Base]]
+  Sel = ".PTPredLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.CT.DecayTau" = "50"
+    "Layer.CT.GeGain" = "0.05"
+    "Layer.Inhib.Layer.Gi" = "0.8"
+
+[[Base]]
+  Sel = ".CTLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.CT.DecayTau" = "50"
+    "Layer.CT.GeGain" = "5"
+    "Layer.Inhib.Layer.Gi" = "1.4"
+
+[[Base]]
+  Sel = ".CTtoPred"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = ".PTtoPred"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
 
 [[Base]]
   Sel = "#MotorBS"
@@ -195,9 +231,20 @@
 
 [[Base]]
   Sel = "#M1PTToMotorBS"
-  Desc = "PT to motor is strong, key"
+  Desc = ""
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "2"
+    "Prjn.PrjnScale.Rel" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = "#M1PTToVL"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+    "Prjn.PrjnScale.Rel" = "0.1"
   [Base.Hypers]
     [Base.Hypers."Prjn.PrjnScale.Abs"]
       Tweak = "-"
