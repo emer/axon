@@ -564,18 +564,18 @@ func (pp *PVLV) Update() {
 	pp.LHb.Update()
 }
 
-// USposIdx adds 1 to the given _simulation specific_ positive US index
+// USposIndex adds 1 to the given _simulation specific_ positive US index
 // to get the actual US / Drive index, where the first pool is reserved
 // for curiosity / novelty.
-func (pp *PVLV) USposIdx(simUsIdx int) int {
-	return simUsIdx + 1
+func (pp *PVLV) USposIndex(simUsIndex int) int {
+	return simUsIndex + 1
 }
 
-// USnegIdx allows for the possibility of automatically-managed
+// USnegIndex allows for the possibility of automatically-managed
 // negative USs, by adding those to the given _simulation specific_
 // negative US index to get the actual US index.
-func (pp *PVLV) USnegIdx(simUsIdx int) int {
-	return simUsIdx
+func (pp *PVLV) USnegIndex(simUsIndex int) int {
+	return simUsIndex
 }
 
 // SetNUSs sets the number of _additional_ simulation-specific
@@ -587,14 +587,14 @@ func (pp *PVLV) USnegIdx(simUsIdx int) int {
 // The USs specified here need to be managed by the simulation via the SetUS method.
 // Positive USs each have corresponding Drives.
 func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg int) {
-	nPos = pp.USposIdx(max(nPos, 1))
-	nNeg = pp.USnegIdx(max(nNeg, 1)) // ensure at least 1
+	nPos = pp.USposIndex(max(nPos, 1))
+	nNeg = pp.USnegIndex(max(nNeg, 1)) // ensure at least 1
 	pp.NPosUSs = uint32(nPos)
 	pp.NNegUSs = uint32(nNeg)
 	pp.NCosts = 2 // default
-	ctx.NetIdxs.PVLVNPosUSs = pp.NPosUSs
-	ctx.NetIdxs.PVLVNNegUSs = pp.NNegUSs
-	ctx.NetIdxs.PVLVNCosts = pp.NCosts
+	ctx.NetIndexes.PVLVNPosUSs = pp.NPosUSs
+	ctx.NetIndexes.PVLVNNegUSs = pp.NNegUSs
+	ctx.NetIndexes.PVLVNCosts = pp.NCosts
 	pp.Drive.Alloc(nPos)
 	pp.USs.Alloc(nPos, nNeg, int(pp.NCosts))
 }
@@ -641,13 +641,13 @@ func (pp *PVLV) AddTimeEffort(ctx *Context, di uint32, effort float32) {
 	SetGlbCostV(ctx, di, GvCostRaw, 1, eff) // effort is neg 1
 }
 
-// EffortUrgencyUpdt updates the Effort or Urgency based on
+// EffortUrgencyUpdate updates the Effort or Urgency based on
 // given effort increment.
 // Effort is incremented when VSMatrixHasGated (i.e., goal engaged)
 // and Urgency updates otherwise (when not goal engaged)
 // Call this at the start of the trial, in ApplyPVLV method,
 // after NewState.
-func (pp *PVLV) EffortUrgencyUpdt(ctx *Context, di uint32, effort float32) {
+func (pp *PVLV) EffortUrgencyUpdate(ctx *Context, di uint32, effort float32) {
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
 		pp.AddTimeEffort(ctx, di, effort)
 	} else {
@@ -692,10 +692,10 @@ func (pp *PVLV) SetDrives(ctx *Context, di uint32, curiosity float32, drives ...
 	}
 }
 
-// DriveUpdt is used when auto-updating drive levels based on US consumption,
+// DriveUpdate is used when auto-updating drive levels based on US consumption,
 // which partially satisfies (decrements) corresponding drive,
 // and on time passing, where drives adapt to their overall baseline levels.
-func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
+func (pp *PVLV) DriveUpdate(ctx *Context, di uint32) {
 	pp.Drive.ExpStepAll(ctx, di)
 	nd := pp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
@@ -709,19 +709,19 @@ func (pp *PVLV) DriveUpdt(ctx *Context, di uint32) {
 }
 
 // SetUS sets the given _simulation specific_ unconditioned
-// stimulus (US) state for PVLV algorithm.  usIdx = 0 is first US, etc.
+// stimulus (US) state for PVLV algorithm.  usIndex = 0 is first US, etc.
 // The US then drives activity of relevant PVLV-rendered inputs, and dopamine,
 // and sets the global HasRew flag, thus triggering a US learning event.
 // Note that costs can be used to track negative USs that are not strong
 // enough to trigger a US learning event.
-func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIdx int, magnitude float32) {
+func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex int, magnitude float32) {
 	SetGlbV(ctx, di, GvHasRew, 1)
 	if valence == Positive {
-		usIdx = pp.USposIdx(usIdx)
-		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIdx), magnitude)
+		usIndex = pp.USposIndex(usIndex)
+		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIndex), magnitude)
 	} else {
-		usIdx = pp.USnegIdx(usIdx)
-		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(usIdx), magnitude)
+		usIndex = pp.USnegIndex(usIndex)
+		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(usIndex), magnitude)
 		SetGlbV(ctx, di, GvNegUSOutcome, 1)
 	}
 }

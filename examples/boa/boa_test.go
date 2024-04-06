@@ -102,7 +102,7 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 
 	sim.RunNoGUI()
 
-	expectedVals := []expectedVal{
+	expectedValues := []expectedVal{
 		{"ActMatch", 0.95},
 		{"GateUS", 1.0},
 		{"GateCS", 1.0},
@@ -112,7 +112,7 @@ func RunPerfTest(t *testing.T, gpu bool, ndata int) {
 		// {"RewPred", 0.001}, // doesn't reliably come on until later -- expensive to run longer
 	}
 	epochTable := sim.Logs.Table(etime.Train, etime.Epoch)
-	for _, expected := range expectedVals {
+	for _, expected := range expectedValues {
 		val := epochTable.CellFloat(expected.name, epochTable.Rows-1)
 		assert.False(t, math.IsNaN(val), "%s is NaN", expected.name)
 		if expected.val == 1.0 || expected.val == 0 {

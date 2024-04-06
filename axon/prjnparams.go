@@ -39,9 +39,9 @@ type StartN struct {
 	pad, pad1 uint32 // todo: see if we can do without these?
 }
 
-// PrjnIdxs contains prjn-level index information into global memory arrays
-type PrjnIdxs struct {
-	PrjnIdx    uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
+// PrjnIndexes contains prjn-level index information into global memory arrays
+type PrjnIndexes struct {
+	PrjnIndex  uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
 	RecvLay    uint32 // index of the receiving layer in global list of layers
 	RecvNeurSt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
 	RecvNeurN  uint32 // number of neurons in recv layer
@@ -58,23 +58,23 @@ type PrjnIdxs struct {
 	pad, pad1, pad2 uint32
 }
 
-// RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons
+// RecvNIndexToLayIndex converts a neuron's index in network level global list of all neurons
 // to receiving layer-specific index-- e.g., for accessing GBuf and GSyn values.
 // Just subtracts RecvNeurSt -- docu-function basically..
-func (pi *PrjnIdxs) RecvNIdxToLayIdx(ni uint32) uint32 {
+func (pi *PrjnIndexes) RecvNIndexToLayIndex(ni uint32) uint32 {
 	return ni - pi.RecvNeurSt
 }
 
-// SendNIdxToLayIdx converts a neuron's index in network level global list of all neurons
+// SendNIndexToLayIndex converts a neuron's index in network level global list of all neurons
 // to sending layer-specific index.  Just subtracts SendNeurSt -- docu-function basically..
-func (pi *PrjnIdxs) SendNIdxToLayIdx(ni uint32) uint32 {
+func (pi *PrjnIndexes) SendNIndexToLayIndex(ni uint32) uint32 {
 	return ni - pi.SendNeurSt
 }
 
-// GScaleVals holds the conductance scaling values.
+// GScaleValues holds the conductance scaling values.
 // These are computed once at start and remain constant thereafter,
-// and therefore belong on Params and not on PrjnVals.
-type GScaleVals struct {
+// and therefore belong on Params and not on PrjnValues.
+type GScaleValues struct {
 
 	// scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params
 	Scale float32 `edit:"-"`
@@ -97,7 +97,7 @@ type PrjnParams struct {
 	pad, pad1, pad2 int32
 
 	// recv and send neuron-level projection index array access info
-	Idxs PrjnIdxs `view:"-"`
+	Indexes PrjnIndexes `view:"-"`
 
 	// synaptic communication parameters: delay, probability of failure
 	Com SynComParams `view:"inline"`
@@ -115,7 +115,7 @@ type PrjnParams struct {
 	Learn LearnSynParams `view:"add-fields"`
 
 	// conductance scaling values
-	GScale GScaleVals `view:"inline"`
+	GScale GScaleValues `view:"inline"`
 
 	// Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning
 	// for reward prediction: Da * Send activity.
@@ -228,18 +228,18 @@ func (pj *PrjnParams) SetFixedWts() {
 	pj.SWts.Init.Sym.SetBool(false)
 }
 
-// SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
+// SynRecvLayIndex converts the Synapse RecvIndex of recv neuron's index
 // in network level global list of all neurons to receiving
 // layer-specific index.
-func (pj *PrjnParams) SynRecvLayIdx(ctx *Context, syni uint32) uint32 {
-	return pj.Idxs.RecvNIdxToLayIdx(SynI(ctx, syni, SynRecvIdx))
+func (pj *PrjnParams) SynRecvLayIndex(ctx *Context, syni uint32) uint32 {
+	return pj.Indexes.RecvNIndexToLayIndex(SynI(ctx, syni, SynRecvIndex))
 }
 
-// SynSendLayIdx converts the Synapse SendIdx of sending neuron's index
+// SynSendLayIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
-func (pj *PrjnParams) SynSendLayIdx(ctx *Context, syni uint32) uint32 {
-	return pj.Idxs.SendNIdxToLayIdx(SynI(ctx, syni, SynSendIdx))
+func (pj *PrjnParams) SynSendLayIndex(ctx *Context, syni uint32) uint32 {
+	return pj.Indexes.SendNIndexToLayIndex(SynI(ctx, syni, SynSendIndex))
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -475,7 +475,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, ri, NrnNeurIdx) == 0 {
+	if NrnI(ctx, ri, NrnNeurIndex) == 0 {
 		if NrnV(ctx, ri, di, Ge) > NrnV(ctx, ri, di, Act) && da > 0 { // clipped at top, saturate up
 			da = 0
 		}
@@ -510,7 +510,7 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	ni := NrnI(ctx, ri, NrnNeurIdx)
+	ni := NrnI(ctx, ri, NrnNeurIndex)
 	if ni == 0 {
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
@@ -608,7 +608,7 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPo
 // DWtFmDiDWtSyn updates DWt from data parallel DiDWt values
 func (pj *PrjnParams) DWtFmDiDWtSyn(ctx *Context, syni uint32) {
 	dwt := float32(0)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		dwt += SynCaV(ctx, syni, di, DiDWt)
 	}
 	AddSynV(ctx, syni, DWt, dwt)

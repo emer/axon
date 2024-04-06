@@ -76,7 +76,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -200,8 +200,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -220,8 +220,8 @@ func (ss *Sim) ConfigLoops() {
 		AddTime(etime.Trial, ss.Config.Run.NTrials).
 		AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -245,12 +245,12 @@ func (ss *Sim) ConfigLoops() {
 	if !ss.Config.GUI {
 		if ss.Config.Log.NetData {
 			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+				ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
 			})
 		}
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -268,7 +268,7 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*CondEnv)
 	lays := []string{"Input"}
 	ss.Net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ev.Step()
 		for _, lnm := range lays {
 			ly := ss.Net.AxonLayerByName(lnm)
@@ -306,7 +306,7 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
+// Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
@@ -323,15 +323,15 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.GUI.ViewUpdt.View == nil {
+	if ss.GUI.ViewUpdate.View == nil {
 		return
 	}
-	di := ss.GUI.ViewUpdt.View.Di
+	di := ss.GUI.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -389,7 +389,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+		for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, dt.Rows, di)
@@ -412,8 +412,8 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	// nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
 	// nv.Scene().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))

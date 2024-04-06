@@ -123,7 +123,7 @@ func (nt *NetworkBase) NeuronMapSeq(ctx *Context, fun func(ly *Layer, ni uint32)
 	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
 		for lni := uint32(0); lni < ly.NNeurons; lni++ {
-			ni := ly.NeurStIdx + lni
+			ni := ly.NeurStIndex + lni
 			fun(ly, ni)
 		}
 	}
@@ -139,7 +139,7 @@ func (nt *NetworkBase) NeuronMapPar(ctx *Context, fun func(ly *Layer, ni uint32)
 		nt.FunTimerStart(funame)
 		ParallelRun(func(st, ed uint32) {
 			for ni := st; ni < ed; ni++ {
-				li := NrnI(ctx, ni, NrnLayIdx)
+				li := NrnI(ctx, ni, NrnLayIndex)
 				ly := nt.Layers[li]
 				fun(ly, ni)
 			}

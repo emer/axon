@@ -28,7 +28,7 @@ type GoNoEnv struct {
 
 	// if true, ACCPos and Neg are set manually for testing specific cases;
 	// do not generate random vals for training or auto-increment ACCPos / Neg values during test
-	ManualVals bool
+	ManualValues bool
 
 	// activation of ACC positive valence -- drives go
 	ACCPos float32
@@ -183,7 +183,7 @@ func (ev *GoNoEnv) RenderState() {
 // Step does one step -- must set Trial.Cur first if doing testing
 func (ev *GoNoEnv) Step() bool {
 	nTestInc := int(1.0/ev.TestInc) + 1
-	if !ev.ManualVals {
+	if !ev.ManualValues {
 		if ev.Mode == etime.Test {
 			repn := ev.Trial.Cur / ev.TestReps
 			pos := repn / nTestInc

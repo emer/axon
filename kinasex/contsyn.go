@@ -28,8 +28,8 @@ func (sy *ContSyn) VarByName(varNm string) float32 {
 }
 
 // VarByIndex returns synapse variable by index
-func (sy *ContSyn) VarByIndex(varIdx int) float32 {
-	switch varIdx {
+func (sy *ContSyn) VarByIndex(varIndex int) float32 {
+	switch varIndex {
 	case 0:
 		return sy.TDWt
 	case 1:

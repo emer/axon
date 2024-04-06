@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build this_is_broken_we_should_fix_or_delete
-
 /*
 attn_trn: test of trn-based attention in basic V1, V2, LIP localist network with gabor inputs.
 
@@ -12,6 +10,11 @@ In terms of differential sizes of attentional spotlight vs. stimulus size.
 */
 package main
 
+// TODO: fix or delete
+
+func main() {}
+
+/*
 import (
 	"fmt"
 	"log"
@@ -250,7 +253,7 @@ type Sim struct {
 	ViewOn bool
 
 	// at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster
-	ViewUpdt axon.TimeScales
+	ViewUpdate axon.TimeScales
 
 	// layer to measure attentional effects on
 	AttnLay string
@@ -283,7 +286,7 @@ type Sim struct {
 	TstRunPlot *eplot.Plot2D `view:"-"`
 
 	// for holding layer values
-	ValsTsrs map[string]*etensor.Float32 `view:"-"`
+	ValuesTsrs map[string]*etensor.Float32 `view:"-"`
 
 	// true if sim is running
 	IsRunning bool `view:"-"`
@@ -305,7 +308,7 @@ func (ss *Sim) New() {
 	ss.TstStats = &etable.Table{}
 	ss.Params = ParamSets
 	ss.ViewOn = true
-	ss.ViewUpdt = axon.AlphaCycle // axon.Cycle // axon.FastSpike
+	ss.ViewUpdate = axon.AlphaCycle // axon.Cycle // axon.FastSpike
 	ss.TstRecLays = []string{"V2"}
 
 	ss.Prjn3x3Skp1 = prjn.NewPoolTile()
@@ -454,8 +457,8 @@ func (ss *Sim) UpdateView(train bool) {
 	}
 }
 
-func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
-	switch viewUpdt {
+func (ss *Sim) UpdateViewTime(train bool, viewUpdate axon.TimeScales) {
+	switch viewUpdate {
 	case axon.Cycle:
 		ss.UpdateView(train)
 	case axon.FastSpike:
@@ -483,7 +486,7 @@ func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
 // Handles netview updating within scope, and calls TrainStats()
 func (ss *Sim) ThetaCyc(train bool) {
 	// ss.Win.PollEvents() // this can be used instead of running in a separate goroutine
-	viewUpdt := ss.ViewUpdt
+	viewUpdate := ss.ViewUpdate
 
 	plusCyc := 50
 	minusCyc := ss.Cycles - plusCyc
@@ -504,11 +507,11 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.Net.MinusPhase(&ss.Context)
 		}
 		if ss.ViewOn {
-			ss.UpdateViewTime(train, viewUpdt)
+			ss.UpdateViewTime(train, viewUpdate)
 		}
 	}
 	ss.Context.NewPhase()
-	if viewUpdt == axon.Phase {
+	if viewUpdate == axon.Phase {
 		ss.UpdateView(train)
 	}
 	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
@@ -520,10 +523,10 @@ func (ss *Sim) ThetaCyc(train bool) {
 			// ss.Net.CTCtxt(&ss.Context) // update context at end
 		}
 		if ss.ViewOn {
-			ss.UpdateViewTime(train, viewUpdt)
+			ss.UpdateViewTime(train, viewUpdate)
 		}
 	}
-	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
+	if viewUpdate == axon.Phase || viewUpdate == axon.AlphaCycle || viewUpdate == axon.ThetaCycle {
 		ss.UpdateView(train)
 	}
 
@@ -601,7 +604,7 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 			}
 			pi := y*sz.X + x
 			pl := &ly.Pools[pi+1]
-			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			for ni := pl.StIndex; ni < pl.EdIndex; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.Act >= thr {
 					// avg += nrn.Attn
@@ -660,7 +663,7 @@ func (ss *Sim) TestTrial() {
 	// Query counters FIRST
 	_, _, chg := ss.TestEnv.Counter(env.Epoch)
 	if chg {
-		if ss.ViewUpdt > axon.AlphaCycle {
+		if ss.ViewUpdate > axon.AlphaCycle {
 			ss.UpdateView(false)
 		}
 		return
@@ -785,15 +788,15 @@ func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
 //////////////////////////////////////////////
 //  TstTrlLog
 
-// ValsTsr gets value tensor of given name, creating if not yet made
-func (ss *Sim) ValsTsr(name string) *etensor.Float32 {
-	if ss.ValsTsrs == nil {
-		ss.ValsTsrs = make(map[string]*etensor.Float32)
+// ValuesTsr gets value tensor of given name, creating if not yet made
+func (ss *Sim) ValuesTsr(name string) *etensor.Float32 {
+	if ss.ValuesTsrs == nil {
+		ss.ValuesTsrs = make(map[string]*etensor.Float32)
 	}
-	tsr, ok := ss.ValsTsrs[name]
+	tsr, ok := ss.ValuesTsrs[name]
 	if !ok {
 		tsr = &etensor.Float32{}
-		ss.ValsTsrs[name] = tsr
+		ss.ValuesTsrs[name] = tsr
 	}
 	return tsr
 }
@@ -818,9 +821,9 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	dt.SetCellFloat("PctMod", row, float64(ss.PctMod))
 
 	for _, lnm := range ss.TstRecLays {
-		tsr := ss.ValsTsr(lnm)
+		tsr := ss.ValuesTsr(lnm)
 		ly := ss.Net.AxonLayerByName(lnm)
-		ly.UnitValsTensor(tsr, "Act")
+		ly.UnitValuesTensor(tsr, "Act")
 		dt.SetCellTensor(lnm, row, tsr)
 	}
 
@@ -866,14 +869,14 @@ func (ss *Sim) ConfigTstTrlPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 
 	for _, lnm := range ss.TstRecLays {
 		cp := plt.SetColParams(lnm, eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-		cp.TensorIdx = -1 // plot all
+		cp.TensorIndex = -1 // plot all
 	}
 	return plt
 }
 
 func (ss *Sim) TestStats() {
 	dt := ss.TstTrlLog
-	runix := etable.NewIdxView(dt)
+	runix := etable.NewIndexView(dt)
 	spl := split.GroupBy(runix, []string{"Trial"})
 	split.Agg(spl, "TrialName", agg.AggMean)
 	split.Agg(spl, "S1Act", agg.AggMean)
@@ -968,20 +971,20 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	split.SetSplits(.2, .8)
 
 	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
+		act.SetActiveStateUpdate(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.Init()
 		vp.SetNeedsFullRender()
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "Stop", Icon: "stop", Tooltip: "Interrupts running.  Hitting Train again will pick back up where it left off.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(ss.IsRunning)
+		act.SetActiveStateUpdate(ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.Stop()
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "Test Trial", Icon: "step-fwd", Tooltip: "Runs the next testing trial.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
+		act.SetActiveStateUpdate(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
@@ -991,7 +994,7 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "Test All", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
+		act.SetActiveStateUpdate(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
@@ -1001,7 +1004,7 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "Test Runs", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials x runs times for stats.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
+		act.SetActiveStateUpdate(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
@@ -1013,13 +1016,13 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	tbar.AddSeparator("msep")
 
 	tbar.AddAction(gi.ActOpts{Label: "Lesion", Icon: "cut", Tooltip: "Lesion spatial pathways.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
+		act.SetActiveStateUpdate(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		giv.CallMethod(ss, "Lesion", vp)
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "Defaults", Icon: icons.Update, Tooltip: "Restore default parameters.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
+		act.SetActiveStateUpdate(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.Defaults()
 		vp.SetNeedsFullRender()
@@ -1043,7 +1046,6 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
 	emen.Menu.AddCopyCutPaste(win)
 
-	/*
 		inQuitPrompt := false
 		gi.SetQuitReqFunc(func() {
 			if inQuitPrompt {
@@ -1081,7 +1083,6 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 					}
 				})
 		})
-	*/
 
 	win.SetCloseCleanFunc(func(w *gi.Window) {
 		go gi.Quit() // once main window is closed, quit
@@ -1123,3 +1124,4 @@ func mainrun() {
 	win := TheSim.ConfigGUI()
 	win.StartEventLoop()
 }
+*/

@@ -85,6 +85,6 @@ Total time: 26s out of 70s total, almost all of it spent in `Axon.SendSpike`
 - For the bench.go, we have: 7 Proj times
 	- Syn[] struct: 2025*2025 Synapses * 44B
 	- GBuf: 3 max delay * 2025 (neurons) * 4B (so small in size compared to the others that it doesn't really matter)
-	- RecvConIdx: 2025*2025 * 4B
-	- RecvSynIdx: 2025*2025 * 4B
-	- SendConIdx: 2025*2025 * 4B
+	- RecvConIndex: 2025*2025 * 4B
+	- RecvSynIndex: 2025*2025 * 4B
+	- SendConIndex: 2025*2025 * 4B

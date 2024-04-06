@@ -115,7 +115,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.PVLV.Defaults()
 
 	testNet.Build(ctx)
-	ctx.NetIdxs.NData = uint32(nData)
+	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
 	testNet.InitWts(ctx)                                            // get GScale here
@@ -141,7 +141,7 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(outLay, hidLay, full, BackPrjn)
 
 	testNet.Build(ctx)
-	ctx.NetIdxs.NData = uint32(nData)
+	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
 	testNet.InitWts(ctx)                                            // get GScale here
@@ -149,7 +149,7 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	return &testNet
 }
 
-func TestSynVals(t *testing.T) {
+func TestSynValues(t *testing.T) {
 	tol := Tol8
 	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
@@ -160,16 +160,16 @@ func TestSynVals(t *testing.T) {
 	}
 	fmIn := p.(*Prjn)
 
-	bfWt := fmIn.SynVal("Wt", 1, 1)
+	bfWt := fmIn.SynValue("Wt", 1, 1)
 	if mat32.IsNaN(bfWt) {
 		t.Errorf("Wt syn var not found")
 	}
-	bfLWt := fmIn.SynVal("LWt", 1, 1)
+	bfLWt := fmIn.SynValue("LWt", 1, 1)
 
-	fmIn.SetSynVal("Wt", 1, 1, .15)
+	fmIn.SetSynValue("Wt", 1, 1, .15)
 
-	afWt := fmIn.SynVal("Wt", 1, 1)
-	afLWt := fmIn.SynVal("LWt", 1, 1)
+	afWt := fmIn.SynValue("Wt", 1, 1)
+	afLWt := fmIn.SynValue("LWt", 1, 1)
 
 	CompareFloats(tol, []float32{bfWt, bfLWt, afWt, afLWt}, []float32{0.5, 0.5, 0.15, 0.42822415}, "syn val setting test", t)
 }
@@ -242,11 +242,11 @@ func TestSpikeProp(t *testing.T) {
 			net.Cycle(ctx)
 			ctx.CycleInc()
 
-			if NrnV(ctx, inLay.NeurStIdx, 0, Spike) > 0 {
+			if NrnV(ctx, inLay.NeurStIndex, 0, Spike) > 0 {
 				inCyc = cyc
 			}
 
-			ge := NrnV(ctx, hidLay.NeurStIdx, 0, Ge)
+			ge := NrnV(ctx, hidLay.NeurStIndex, 0, Ge)
 			if ge > 0 {
 				hidCyc = cyc
 				break
@@ -258,8 +258,8 @@ func TestSpikeProp(t *testing.T) {
 	}
 }
 
-// StructVals adds field vals to given vals map
-func StructVals(obj any, vals map[string]float32, key string) {
+// StructValues adds field vals to given vals map
+func StructValues(obj any, vals map[string]float32, key string) {
 	v := laser.NonPtrValue(reflect.ValueOf(obj))
 	typ := v.Type()
 	for i := 0; i < v.NumField(); i++ {
@@ -302,7 +302,7 @@ func TestInitWts(t *testing.T) {
 				for di := 0; di < nData; di++ {
 					key := fmt.Sprintf("Layer: %s\tUnit: %d\tDi: %d", ly.Nm, ni, di)
 					for _, vnm := range NeuronVarNames {
-						ly.UnitVals(&vals, vnm, di)
+						ly.UnitValues(&vals, vnm, di)
 						vkey := key + fmt.Sprintf("\t%s", vnm)
 						valMap[vkey] = vals[ni]
 					}
@@ -314,7 +314,7 @@ func TestInitWts(t *testing.T) {
 			for di := 0; di < nData; di++ {
 				lpl := ly.Pool(0, uint32(di))
 				lnm := fmt.Sprintf("%s: di: %d", ly.Nm, di)
-				StructVals(&lpl.Inhib, valMap, lnm)
+				StructValues(&lpl.Inhib, valMap, lnm)
 			}
 		}
 
@@ -440,7 +440,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
 				if gpu {
-					testNet.GPU.SyncNeuronsFmGPU()
+					testNet.GPU.SyncNeuronsFromGPU()
 				}
 			}
 			if qtr == 2 {
@@ -449,13 +449,13 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 				testNet.PlusPhaseStart(ctx)
 			}
 
-			inLay.UnitVals(&inActs, "Act", 0)
-			hidLay.UnitVals(&hidActs, "Act", 0)
-			hidLay.UnitVals(&hidGes, "Ge", 0)
-			hidLay.UnitVals(&hidGis, "Gi", 0)
-			outLay.UnitVals(&outActs, "Act", 0)
-			outLay.UnitVals(&outGes, "Ge", 0)
-			outLay.UnitVals(&outGis, "Gi", 0)
+			inLay.UnitValues(&inActs, "Act", 0)
+			hidLay.UnitValues(&hidActs, "Act", 0)
+			hidLay.UnitValues(&hidGes, "Ge", 0)
+			hidLay.UnitValues(&hidGis, "Gi", 0)
+			outLay.UnitValues(&outActs, "Act", 0)
+			outLay.UnitValues(&outGes, "Ge", 0)
+			outLay.UnitValues(&outGis, "Gi", 0)
 
 			if pi == 0 && qtr == 0 {
 				CompareFloats(tol, hidActs, qtr0HidActs, "qtr0HidActs", t)
@@ -500,10 +500,10 @@ func TestGPUDiffs(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	nonGPUVals := NetDebugAct(t, false, false, 1, false)
-	gpuVals := NetDebugAct(t, false, true, 1, false)
+	nonGPUValues := NetDebugAct(t, false, false, 1, false)
+	gpuValues := NetDebugAct(t, false, true, 1, false)
 	// note: this has bad tolerance due to NMDA -- can see that if you raise tol to Tol5 etc
-	ReportValDiffs(t, Tol4, nonGPUVals, gpuVals, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol4, nonGPUValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestDebugAct(t *testing.T) {
@@ -517,18 +517,18 @@ func TestDebugGPUAct(t *testing.T) {
 }
 
 func TestNDataDiffs(t *testing.T) {
-	nd1Vals := NetDebugAct(t, false, false, 1, true)
-	nd4Vals := NetDebugAct(t, false, false, 4, true)
-	ReportValDiffs(t, Tol8, nd1Vals, nd4Vals, "nData = 1", "nData = 4", nil)
+	nd1Values := NetDebugAct(t, false, false, 1, true)
+	nd4Values := NetDebugAct(t, false, false, 4, true)
+	ReportValDiffs(t, Tol8, nd1Values, nd4Values, "nData = 1", "nData = 4", nil)
 }
 
 func TestGPUNDataDiffs(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	nd1Vals := NetDebugAct(t, false, true, 1, true)
-	nd4Vals := NetDebugAct(t, false, true, 4, true)
-	ReportValDiffs(t, Tol8, nd1Vals, nd4Vals, "nData = 1", "nData = 4", nil)
+	nd1Values := NetDebugAct(t, false, true, 1, true)
+	nd4Values := NetDebugAct(t, false, true, 4, true)
+	ReportValDiffs(t, Tol8, nd1Values, nd4Values, "nData = 1", "nData = 4", nil)
 }
 
 // ReportValDiffs -- reports diffs between a, b values at given tolerance
@@ -564,22 +564,22 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 	}
 }
 
-// NetDebugAct prints selected values (if printVals),
+// NetDebugAct prints selected values (if printValues),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func NetDebugAct(t *testing.T, printVals bool, gpu bool, nData int, initWts bool) map[string]float32 {
+func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	ctx := NewContext()
 	testNet := newTestNet(ctx, nData)
 	testNet.ApplyParams(ParamSets.SetByName("FullDecay").Sheets["Network"], false)
-	return RunDebugAct(t, ctx, testNet, printVals, gpu, initWts)
+	return RunDebugAct(t, ctx, testNet, printValues, gpu, initWts)
 }
 
-// RunDebugAct runs and prints selected values (if printVals),
+// RunDebugAct runs and prints selected values (if printValues),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printVals bool, gpu bool, initWts bool) map[string]float32 {
+func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool, gpu bool, initWts bool) map[string]float32 {
 
-	nData := int(ctx.NetIdxs.NData)
+	nData := int(ctx.NetIndexes.NData)
 	valMap := make(map[string]float32)
 	inPats := newInPats()
 	inLay := testNet.AxonLayerByName("Input")
@@ -639,12 +639,12 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printVals bool, g
 						for di := 0; di < nData; di++ {
 							ppi := (pi + di) % 4
 							key := fmt.Sprintf("pat: %d\tqtr: %d\tcyc: %02d\tLayer: %s\tUnit: %d", ppi, qtr, cyc, ly.Nm, ni)
-							doPrint := (printVals && pi < nPats && qtr < nQtrs && cyc < cycPerQtr && ni < nNeurs && li >= stLayer && li < edLayer)
+							doPrint := (printValues && pi < nPats && qtr < nQtrs && cyc < cycPerQtr && ni < nNeurs && li >= stLayer && li < edLayer)
 							if doPrint {
 								fmt.Println(key)
 							}
 							for nvi, vnm := range NeuronVarNames {
-								ly.UnitVals(&vals, vnm, di)
+								ly.UnitValues(&vals, vnm, di)
 								vkey := key + fmt.Sprintf("\t%s", vnm)
 								valMap[vkey] = vals[ni]
 								if doPrint {
@@ -666,7 +666,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printVals bool, g
 						ppi := (pi + di) % 4
 						lpl := ly.Pool(0, uint32(di))
 						key := fmt.Sprintf("pat: %d\tqtr: %d\tcyc: %02d\tLayer: %s", ppi, qtr, cyc, ly.Nm)
-						StructVals(&lpl.Inhib, valMap, key)
+						StructValues(&lpl.Inhib, valMap, key)
 					}
 				}
 			}
@@ -700,7 +700,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 
-	// fmt.Printf("synbanks: %d\n", ctx.NetIdxs.NSynCaBanks)
+	// fmt.Printf("synbanks: %d\n", ctx.NetIndexes.NSynCaBanks)
 
 	inPats := newInPats()
 	inLay := testNet.AxonLayerByName("Input")
@@ -776,18 +776,18 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
 				if gpu {
-					testNet.GPU.SyncNeuronsFmGPU()
+					testNet.GPU.SyncNeuronsFromGPU()
 				}
 
-				hidLay.UnitVals(&hidAct, "Act", 0)
-				hidLay.UnitVals(&hidGes, "Ge", 0)
-				hidLay.UnitVals(&hidGis, "Gi", 0)
-				hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
-				hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
-				hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
+				hidLay.UnitValues(&hidAct, "Act", 0)
+				hidLay.UnitValues(&hidGes, "Ge", 0)
+				hidLay.UnitValues(&hidGis, "Gi", 0)
+				hidLay.UnitValues(&hidCaM, "NrnCaM", 0)
+				hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
+				hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
 
-				outLay.UnitVals(&outCaP, "NrnCaP", 0)
-				outLay.UnitVals(&outCaD, "NrnCaD", 0)
+				outLay.UnitValues(&outCaP, "NrnCaP", 0)
+				outLay.UnitValues(&outCaD, "NrnCaD", 0)
 
 				if printCycs {
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -799,11 +799,11 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 				testNet.PlusPhaseStart(ctx)
 			}
 
-			hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
-			hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
+			hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
+			hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
 
-			outLay.UnitVals(&outCaP, "NrnCaP", 0)
-			outLay.UnitVals(&outCaD, "NrnCaD", 0)
+			outLay.UnitValues(&outCaP, "NrnCaP", 0)
+			outLay.UnitValues(&outCaD, "NrnCaD", 0)
 
 			if qtr == 3 {
 				didx := pi
@@ -826,23 +826,23 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 
 		testNet.DWt(ctx)
 		if gpu {
-			testNet.GPU.SyncSynapsesFmGPU()
-			testNet.GPU.SyncSynCaFmGPU()
+			testNet.GPU.SyncSynapsesFromGPU()
+			testNet.GPU.SyncSynCaFromGPU()
 		}
 
 		didx := pi
 
-		hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
-		outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+		hiddwt[didx] = hidLay.RcvPrjns[0].SynValue("DWt", pi, pi)
+		outdwt[didx] = outLay.RcvPrjns[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFmDWt(ctx)
 		if gpu {
-			testNet.GPU.SyncSynapsesFmGPU()
-			testNet.GPU.SyncSynCaFmGPU()
+			testNet.GPU.SyncSynapsesFromGPU()
+			testNet.GPU.SyncSynCaFromGPU()
 		}
 
-		hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
-		outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
+		hidwt[didx] = hidLay.RcvPrjns[0].SynValue("Wt", pi, pi)
+		outwt[didx] = outLay.RcvPrjns[0].SynValue("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, q3hidCaP, qtr3HidCaP, "qtr3HidCaP", t)
@@ -944,17 +944,17 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
-				testNet.GPU.SyncNeuronsFmGPU()
+				testNet.GPU.SyncNeuronsFromGPU()
 
-				hidLay.UnitVals(&hidAct, "Act", 0)
-				hidLay.UnitVals(&hidGes, "Ge", 0)
-				hidLay.UnitVals(&hidGis, "Gi", 0)
-				hidLay.UnitVals(&hidCaM, "NrnCaM", 0)
-				hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
-				hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
+				hidLay.UnitValues(&hidAct, "Act", 0)
+				hidLay.UnitValues(&hidGes, "Ge", 0)
+				hidLay.UnitValues(&hidGis, "Gi", 0)
+				hidLay.UnitValues(&hidCaM, "NrnCaM", 0)
+				hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
+				hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
 
-				outLay.UnitVals(&outCaP, "NrnCaP", 0)
-				outLay.UnitVals(&outCaD, "NrnCaD", 0)
+				outLay.UnitValues(&outCaP, "NrnCaP", 0)
+				outLay.UnitValues(&outCaD, "NrnCaD", 0)
 
 				if printCycs {
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -966,11 +966,11 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 				testNet.PlusPhaseStart(ctx)
 			}
 
-			hidLay.UnitVals(&hidCaP, "NrnCaP", 0)
-			hidLay.UnitVals(&hidCaD, "NrnCaD", 0)
+			hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
+			hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
 
-			outLay.UnitVals(&outCaP, "NrnCaP", 0)
-			outLay.UnitVals(&outCaD, "NrnCaD", 0)
+			outLay.UnitValues(&outCaP, "NrnCaP", 0)
+			outLay.UnitValues(&outCaD, "NrnCaD", 0)
 
 			if qtr == 3 {
 				didx := pi
@@ -986,34 +986,34 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 		}
 		testNet.PlusPhase(ctx)
 		if gpu {
-			testNet.GPU.SyncNeuronsFmGPU() // RLRate updated after plus
+			testNet.GPU.SyncNeuronsFromGPU() // RLRate updated after plus
 		}
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
 		}
 
-		hidLay.UnitVals(&hidRLRate, "RLRate", 0)
+		hidLay.UnitValues(&hidRLRate, "RLRate", 0)
 		ridx := pi * 4
 		copy(hidrlrs[ridx:ridx+4], hidRLRate)
 
 		testNet.DWt(ctx)
 		if gpu {
-			testNet.GPU.SyncSynapsesFmGPU()
+			testNet.GPU.SyncSynapsesFromGPU()
 		}
 
 		didx := pi
 
-		hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
-		outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+		hiddwt[didx] = hidLay.RcvPrjns[0].SynValue("DWt", pi, pi)
+		outdwt[didx] = outLay.RcvPrjns[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFmDWt(ctx)
 		if gpu {
-			testNet.GPU.SyncSynapsesFmGPU()
+			testNet.GPU.SyncSynapsesFromGPU()
 		}
 
-		hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
-		outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
+		hidwt[didx] = hidLay.RcvPrjns[0].SynValue("Wt", pi, pi)
+		outwt[didx] = outLay.RcvPrjns[0].SynValue("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, hidrlrs, patHidRLRates, "patHidRLRates", t)
@@ -1031,10 +1031,10 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	testNet.GPU.Destroy()
 }
 
-// NetDebugLearn prints selected values (if printVals),
+// NetDebugLearn prints selected values (if printValues),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func NetDebugLearn(t *testing.T, printVals bool, gpu bool, maxData, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
+func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
 	ctx := NewContext()
 	var testNet *Network
 	rand.Seed(1337)
@@ -1050,16 +1050,16 @@ func NetDebugLearn(t *testing.T, printVals bool, gpu bool, maxData, nData int, i
 		testNet.ApplyParams(ParamSets.SetByName("SubMean").Sheets["Network"], false)
 	}
 
-	ctx.NetIdxs.NData = uint32(nData)
-	return RunDebugLearn(t, ctx, testNet, printVals, gpu, initWts, slowAdapt)
+	ctx.NetIndexes.NData = uint32(nData)
+	return RunDebugLearn(t, ctx, testNet, printValues, gpu, initWts, slowAdapt)
 }
 
-// RunDebugLearn prints selected values (if printVals),
+// RunDebugLearn prints selected values (if printValues),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printVals bool, gpu bool, initWts, slowAdapt bool) map[string]float32 {
+func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues bool, gpu bool, initWts, slowAdapt bool) map[string]float32 {
 
-	nData := int(ctx.NetIdxs.NData)
+	nData := int(ctx.NetIndexes.NData)
 	valMap := make(map[string]float32)
 	inPats := newInPats()
 	inLay := testNet.AxonLayerByName("Input")
@@ -1124,13 +1124,13 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printVals bool,
 		if syncAfterWt {
 			testNet.WtFmDWt(ctx)
 			if slowAdapt {
-				testNet.GPU.SyncSynCaFmGPU() // will be sent back and forth
+				testNet.GPU.SyncSynCaFromGPU() // will be sent back and forth
 				testNet.SlowAdapt(ctx)
 			}
 		}
 		if gpu {
-			testNet.GPU.SyncSynapsesFmGPU()
-			testNet.GPU.SyncSynCaFmGPU()
+			testNet.GPU.SyncSynapsesFromGPU()
+			testNet.GPU.SyncSynCaFromGPU()
 		}
 
 		for ni := 0; ni < 4; ni++ {
@@ -1139,12 +1139,12 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printVals bool,
 				for di := 0; di < nData; di++ {
 					ppi := (pi + di) % 4
 					key := fmt.Sprintf("pat: %d\tLayer: %s\tUnit: %d", ppi, ly.Nm, ni)
-					doPrint := (printVals && pi < nPats && ni < nNeurs && li >= stLayer && li < edLayer)
+					doPrint := (printValues && pi < nPats && ni < nNeurs && li >= stLayer && li < edLayer)
 					if doPrint {
 						fmt.Println(key + fmt.Sprintf("  di: %d", di))
 					}
 					for nvi, vnm := range NeuronVarNames {
-						ly.UnitVals(&vals, vnm, di)
+						ly.UnitValues(&vals, vnm, di)
 						vkey := key + fmt.Sprintf("\t%s", vnm)
 						valMap[vkey] = vals[ni]
 						if doPrint {
@@ -1156,9 +1156,9 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printVals bool,
 					}
 					lnm := fmt.Sprintf("%s: di: %d", ly.Nm, di)
 					lpl := ly.Pool(0, uint32(di))
-					StructVals(&lpl.Inhib, valMap, lnm)
-					lval := ly.LayerVals(uint32(di))
-					StructVals(&lval, valMap, lnm)
+					StructValues(&lpl.Inhib, valMap, lnm)
+					lval := ly.LayerValues(uint32(di))
+					StructValues(&lval, valMap, lnm)
 					if doPrint {
 						fmt.Printf("\n")
 					}
@@ -1186,8 +1186,8 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printVals bool,
 				testNet.SlowAdapt(ctx)
 			}
 			if gpu {
-				testNet.GPU.SyncSynapsesFmGPU()
-				testNet.GPU.SyncSynCaFmGPU()
+				testNet.GPU.SyncSynapsesFromGPU()
+				testNet.GPU.SyncSynCaFromGPU()
 			}
 		}
 
@@ -1204,33 +1204,33 @@ func TestDebugLearn(t *testing.T) {
 }
 
 func TestNDataLearn(t *testing.T) {
-	nd1Vals := NetDebugLearn(t, false, false, 1, 1, true, false, false)
-	nd4Vals := NetDebugLearn(t, false, false, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol8, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+	nd1Values := NetDebugLearn(t, false, false, 1, 1, true, false, false)
+	nd4Values := NetDebugLearn(t, false, false, 4, 4, true, false, false)
+	ReportValDiffs(t, Tol8, nd1Values, nd4Values, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
 }
 
 func TestNDataMaxDataLearn(t *testing.T) {
-	nd84Vals := NetDebugLearn(t, false, false, 8, 4, false, false, false)
-	nd44Vals := NetDebugLearn(t, false, false, 4, 4, false, false, false)
-	ReportValDiffs(t, Tol8, nd84Vals, nd44Vals, "maxData = 8, nData = 4", "maxData = 4, nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+	nd84Values := NetDebugLearn(t, false, false, 8, 4, false, false, false)
+	nd44Values := NetDebugLearn(t, false, false, 4, 4, false, false, false)
+	ReportValDiffs(t, Tol8, nd84Values, nd44Values, "maxData = 8, nData = 4", "maxData = 4, nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
 }
 
 func TestGPUNDataLearn(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	nd1Vals := NetDebugLearn(t, false, true, 1, 1, true, false, false)
-	nd4Vals := NetDebugLearn(t, false, true, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol8, nd1Vals, nd4Vals, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+	nd1Values := NetDebugLearn(t, false, true, 1, 1, true, false, false)
+	nd4Values := NetDebugLearn(t, false, true, 4, 4, true, false, false)
+	ReportValDiffs(t, Tol8, nd1Values, nd4Values, "nData = 1", "nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
 }
 
 func TestGPUNDataMaxDataLearn(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	nd84Vals := NetDebugLearn(t, false, true, 8, 4, false, false, false)
-	nd44Vals := NetDebugLearn(t, false, true, 4, 4, false, false, false)
-	ReportValDiffs(t, Tol8, nd84Vals, nd44Vals, "maxData = 8, nData = 4", "maxData = 4, nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
+	nd84Values := NetDebugLearn(t, false, true, 8, 4, false, false, false)
+	nd44Values := NetDebugLearn(t, false, true, 4, 4, false, false, false)
+	ReportValDiffs(t, Tol8, nd84Values, nd44Values, "maxData = 8, nData = 4", "maxData = 4, nData = 4", []string{"DWt", "ActAvg", "DTrgAvg"})
 }
 
 func TestGPULearnDiff(t *testing.T) {
@@ -1238,10 +1238,10 @@ func TestGPULearnDiff(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, 1, false, false, false)
+	cpuValues := NetDebugLearn(t, false, false, 1, 1, false, false, false)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, 1, false, false, false)
-	ReportValDiffs(t, Tol4, cpuVals, gpuVals, "CPU", "GPU", nil)
+	gpuValues := NetDebugLearn(t, false, true, 1, 1, false, false, false)
+	ReportValDiffs(t, Tol4, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestGPUSubMeanLearn(t *testing.T) {
@@ -1249,11 +1249,11 @@ func TestGPUSubMeanLearn(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, 1, false, true, false)
+	cpuValues := NetDebugLearn(t, false, false, 1, 1, false, true, false)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, 1, false, true, false)
+	gpuValues := NetDebugLearn(t, false, true, 1, 1, false, true, false)
 	// this has bad tolerance, due to GABAB -- similar to NMDA issues
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestGPUSlowAdaptLearn(t *testing.T) {
@@ -1261,11 +1261,11 @@ func TestGPUSlowAdaptLearn(t *testing.T) {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// fmt.Printf("\n#############\nCPU\n")
-	cpuVals := NetDebugLearn(t, false, false, 1, 1, false, false, true)
+	cpuValues := NetDebugLearn(t, false, false, 1, 1, false, false, true)
 	// fmt.Printf("\n#############\nGPU\n")
-	gpuVals := NetDebugLearn(t, false, true, 1, 1, false, false, true)
+	gpuValues := NetDebugLearn(t, false, true, 1, 1, false, false, true)
 	// this has bad tolerance, due to GABAB -- similar to NMDA issues
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestGPUSynCa(t *testing.T) {
@@ -1355,13 +1355,13 @@ func TestInhibAct(t *testing.T) {
 				ctx.CycleInc()
 
 				if printCycs {
-					inLay.UnitVals(&inActs, "Act", 0)
-					hidLay.UnitVals(&hidActs, "Act", 0)
-					hidLay.UnitVals(&hidGes, "Ge", 0)
-					hidLay.UnitVals(&hidGis, "Gi", 0)
-					outLay.UnitVals(&outActs, "Act", 0)
-					outLay.UnitVals(&outGes, "Ge", 0)
-					outLay.UnitVals(&outGis, "Gi", 0)
+					inLay.UnitValues(&inActs, "Act", 0)
+					hidLay.UnitValues(&hidActs, "Act", 0)
+					hidLay.UnitValues(&hidGes, "Ge", 0)
+					hidLay.UnitValues(&hidGis, "Gi", 0)
+					outLay.UnitValues(&outActs, "Act", 0)
+					outLay.UnitValues(&outGes, "Ge", 0)
+					outLay.UnitValues(&outGis, "Gi", 0)
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 				}
 			}
@@ -1375,13 +1375,13 @@ func TestInhibAct(t *testing.T) {
 				fmt.Printf("=============================\n")
 			}
 
-			inLay.UnitVals(&inActs, "Act", 0)
-			hidLay.UnitVals(&hidActs, "Act", 0)
-			hidLay.UnitVals(&hidGes, "Ge", 0)
-			hidLay.UnitVals(&hidGis, "Gi", 0)
-			outLay.UnitVals(&outActs, "Act", 0)
-			outLay.UnitVals(&outGes, "Ge", 0)
-			outLay.UnitVals(&outGis, "Gi", 0)
+			inLay.UnitValues(&inActs, "Act", 0)
+			hidLay.UnitValues(&hidActs, "Act", 0)
+			hidLay.UnitValues(&hidGes, "Ge", 0)
+			hidLay.UnitValues(&hidGis, "Gi", 0)
+			outLay.UnitValues(&outActs, "Act", 0)
+			outLay.UnitValues(&outGes, "Ge", 0)
+			outLay.UnitValues(&outGis, "Gi", 0)
 
 			if printQtrs {
 				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctx.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
@@ -1430,7 +1430,7 @@ func saveToFile(net *Network, t *testing.T) {
 	fp.Write(wb)
 }
 
-func TestGlobalIdxs(t *testing.T) {
+func TestGlobalIndexes(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(5)
 	net := newTestNet(ctx, int(nData))
@@ -1479,7 +1479,7 @@ func TestGlobalIdxs(t *testing.T) {
 	}
 }
 
-func TestSendGatherIdxs(t *testing.T) {
+func TestSendGatherIndexes(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(3)
 	net := newTestNet(ctx, int(nData))
@@ -1501,23 +1501,23 @@ func TestSendGatherIdxs(t *testing.T) {
 	for cyc := int32(0); cyc < maxCyc; cyc++ {
 		for ni := uint32(0); ni < nni; ni++ {
 			for di := uint32(0); di < nData; di++ {
-				li := NrnI(ctx, ni, NrnLayIdx)
+				li := NrnI(ctx, ni, NrnLayIndex)
 				ly := net.Layers[li]
 				if len(ly.SndPrjns) > 0 {
 					pj := ly.SndPrjns[0]
 					pjcom := &pj.Params.Com
 					wrOff := pjcom.WriteOff(int32(cyc))
-					scon := pj.SendCon[ni-pj.Send.NeurStIdx]
+					scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 					for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-						syni := pj.SynStIdx + syi
-						recvIdx := pj.Params.SynRecvLayIdx(ctx, syni) // note: layer-specific is ok here
-						ri := SynI(ctx, syni, SynRecvIdx)
-						bio := pj.Params.Idxs.GBufSt + pjcom.WriteIdxOff(recvIdx, di, wrOff, pj.Params.Idxs.RecvNeurN, nData)
-						bi := pj.Params.Idxs.GBufSt + pjcom.WriteIdx(recvIdx, di, int32(cyc), pj.Params.Idxs.RecvNeurN, nData)
+						syni := pj.SynStIndex + syi
+						recvIndex := pj.Params.SynRecvLayIndex(ctx, syni) // note: layer-specific is ok here
+						ri := SynI(ctx, syni, SynRecvIndex)
+						bio := pj.Params.Indexes.GBufSt + pjcom.WriteIndexOff(recvIndex, di, wrOff, pj.Params.Indexes.RecvNeurN, nData)
+						bi := pj.Params.Indexes.GBufSt + pjcom.WriteIndex(recvIndex, di, int32(cyc), pj.Params.Indexes.RecvNeurN, nData)
 						sidx := syni*nData + di
 						key := fmt.Sprintf("send: cyc: %d  synidx: %03d  bi: %03d  si: %02d  di: %d  ri: %02d\n", cyc, sidx, bi, ni, di, ri)
 						if bio != bi {
-							t.Errorf("writeIdx %d != WriteIdxOff %d: %s\n", bi, bio, key)
+							t.Errorf("writeIndex %d != WriteIndexOff %d: %s\n", bi, bio, key)
 						}
 
 						vl, ok := bivals[bi]
@@ -1536,15 +1536,15 @@ func TestSendGatherIdxs(t *testing.T) {
 						} else {
 							rimap[ri] = cur + key
 						}
-						// if pj.Send.Idx == 42 && pj.Recv.Idx == 44 && di == 0 && ri == 2783 {
+						// if pj.Send.Index == 42 && pj.Recv.Index == 44 && di == 0 && ri == 2783 {
 						// 	fmt.Printf("send: cyc: %d  bi: %d  di: %02d  ni: %04d  scale: %g  sv: %d\n", ctx.CyclesTotal, bi, di, ni, scale, sv)
 						// }
 					}
 				}
 				if len(ly.RcvPrjns) > 0 {
-					lni := ni - ly.NeurStIdx
+					lni := ni - ly.NeurStIndex
 					pj := ly.RcvPrjns[0]
-					bi := pj.Params.Idxs.GBufSt + pj.Params.Com.ReadIdx(lni, di, int32(cyc), pj.Params.Idxs.RecvNeurN, nData)
+					bi := pj.Params.Indexes.GBufSt + pj.Params.Com.ReadIndex(lni, di, int32(cyc), pj.Params.Indexes.RecvNeurN, nData)
 					key := fmt.Sprintf("recv: cyc: %d  bi: %03d  di: %d  ri: %02d\n", cyc, bi, di, ni)
 
 					vl, ok := bivals[bi]
@@ -1641,7 +1641,7 @@ func TestSWtInit(t *testing.T) {
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
 	}
-	ix := etable.NewIdxView(dt)
+	ix := etable.NewIndexView(dt)
 	desc := agg.DescAll(ix)
 
 	meanRow := desc.RowsByString("Agg", "Mean", etable.Equals, etable.UseCase)[0]

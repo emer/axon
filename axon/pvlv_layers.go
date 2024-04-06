@@ -34,16 +34,16 @@ type LDTParams struct {
 	MaintInhib float32 `default:"0.8" max:"1" min:"0"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used
-	SrcLay1Idx int32 `edit:"-"`
+	SrcLay1Index int32 `edit:"-"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used
-	SrcLay2Idx int32 `edit:"-"`
+	SrcLay2Index int32 `edit:"-"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used
-	SrcLay3Idx int32 `edit:"-"`
+	SrcLay3Index int32 `edit:"-"`
 
 	// idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used
-	SrcLay4Idx int32 `edit:"-"`
+	SrcLay4Index int32 `edit:"-"`
 
 	pad float32
 }

@@ -5,7 +5,7 @@
 // does NewState Update on each Pool
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -36,7 +36,7 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 [[vk::binding(0, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1][Data]
 [[vk::binding(1, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons][Data]
@@ -44,18 +44,18 @@
 
 void InitPrjnGBuffs(in Context ctx, in PrjnParams pj) {
 	uint dlen = pj.Com.DelLen;
-	uint maxData = ctx.NetIdxs.MaxData;
-	for (uint i = 0; i < pj.Idxs.RecvNeurN; i++) {
+	uint maxData = ctx.NetIndexes.MaxData;
+	for (uint i = 0; i < pj.Indexes.RecvNeurN; i++) {
 		for (uint di = 0; di < maxData; di++) {
-			GSyns[pj.Idxs.GSynSt + i*maxData + di] = 0;
+			GSyns[pj.Indexes.GSynSt + i*maxData + di] = 0;
 			for (uint dl = 0; dl < dlen; dl++) {
-				GBuf[pj.Idxs.GBufSt + i*dlen*maxData + dl*maxData + di] = 0;
+				GBuf[pj.Indexes.GBufSt + i*dlen*maxData + dl*maxData + di] = 0;
 			}
 		}
 	}
 }
 
-void NewState2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout LayerVals vals) {
+void NewState2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout LayerValues vals) {
 	ly.NewStatePool(ctx, pl);
 	if (pl.IsLayPool == 0) {
 		return;
@@ -64,23 +64,23 @@ void NewState2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, inout 
 	// calling NewStateLayerActAvg with aggregated actMinusAvg and actPlusAvg
 	// need to impl that here!
 	ly.NewStateLayer(ctx, pl, vals);
-	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		InitPrjnGBuffs(ctx, Prjns[ly.Idxs.RecvSt + pi]);
+	for (uint pi = 0; pi < ly.Indexes.RecvN; pi++) {
+		InitPrjnGBuffs(ctx, Prjns[ly.Indexes.RecvSt + pi]);
 	}
 }
 
 void NewState(in Context ctx, uint di, inout Pool pl) {
-	NewState2(ctx, Layers[pl.LayIdx], di, pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)]);
+	NewState2(ctx, Layers[pl.LayIndex], di, pl, LayValues[ctx.NetIndexes.ValuesIndex(pl.LayIndex, di)]);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Pools * Data (all pools)
 	uint npi = idx.x; // network pool
-	if (!Ctx[0].NetIdxs.PoolDataIdxIsValid(npi)) {
+	if (!Ctx[0].NetIndexes.PoolDataIndexIsValid(npi)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	NewState(Ctx[0], di, Pools[npi]);

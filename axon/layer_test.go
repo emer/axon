@@ -30,7 +30,7 @@ func TestLayer(t *testing.T) {
 
 	// query the 'Spike' variable for all neurons of the layer
 	tensor := etensor.NewFloat32([]int{2}, nil, nil)
-	assert.Nil(t, hiddenLayer.UnitValsTensor(tensor, "Spike", 0))
+	assert.Nil(t, hiddenLayer.UnitValuesTensor(tensor, "Spike", 0))
 	for i := 0; i < 4; i++ {
 		// can't have spiked as we haven't run the network yet
 		assert.Equal(t, float32(0.0), tensor.Values[i])
@@ -69,14 +69,14 @@ func TestLayer_SendSpike(t *testing.T) {
 	const in1pj0_n1_to_n2_wt = 0.1
 	const in1pj0_scale = 6.6
 	in1pj0 := inputLayer1.SendPrjn(0).(*Prjn)
-	// in1pj0.Syns[in1pj0.SendConIdxStart[1]].Wt = in1pj0_n1_to_n2_wt
+	// in1pj0.Syns[in1pj0.SendConIndexStart[1]].Wt = in1pj0_n1_to_n2_wt
 	in1pj0.Params.GScale.Scale = in1pj0_scale
 
 	const in2pj0_n0_to_n4_wt = 3.0
 	const in2pj0_scale = 0.4
 	in2pj0 := inputLayer2.SendPrjn(0).(*Prjn)
 	in2pj0.Params.GScale.Scale = in2pj0_scale
-	// in2pj0.Syns[in2pj0.SendConIdxStart[0]+4].Wt = in2pj0_n0_to_n4_wt
+	// in2pj0.Syns[in2pj0.SendConIndexStart[0]+4].Wt = in2pj0_n0_to_n4_wt
 
 	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) },
 		"SendSpike")
@@ -143,11 +143,11 @@ func TestLayerToJson(t *testing.T) {
 	// make sure the synapse weights are the same
 	origProj := hiddenLayer.RcvPrjns[0]
 	copyProj := hiddenLayerC.RcvPrjns[0]
-	varIdx, _ := origProj.SynVarIdx("Wt")
+	varIndex, _ := origProj.SynVarIndex("Wt")
 	assert.Equal(t, origProj.Syn1DNum(), copyProj.Syn1DNum())
 	for idx := 0; idx < origProj.Syn1DNum(); idx++ {
-		origWeight := origProj.SynVal1D(varIdx, idx)
-		copyWeight := copyProj.SynVal1D(varIdx, idx)
+		origWeight := origProj.SynVal1D(varIndex, idx)
+		copyWeight := copyProj.SynVal1D(varIndex, idx)
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
 
@@ -155,10 +155,10 @@ func TestLayerToJson(t *testing.T) {
 	actavgs := []float32{}
 	trgavgsC := []float32{}
 	actavgsC := []float32{}
-	hiddenLayer.UnitVals(&trgavgs, "TrgAvg", 0)
-	hiddenLayer.UnitVals(&actavgs, "ActAvg", 0)
-	hiddenLayerC.UnitVals(&trgavgsC, "TrgAvg", 0)
-	hiddenLayerC.UnitVals(&actavgsC, "ActAvg", 0)
+	hiddenLayer.UnitValues(&trgavgs, "TrgAvg", 0)
+	hiddenLayer.UnitValues(&actavgs, "ActAvg", 0)
+	hiddenLayerC.UnitValues(&trgavgsC, "TrgAvg", 0)
+	hiddenLayerC.UnitValues(&actavgsC, "ActAvg", 0)
 
 	for i := range trgavgs {
 		assert.Equal(t, trgavgs[i], trgavgsC[i])

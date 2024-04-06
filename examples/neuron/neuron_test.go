@@ -81,8 +81,8 @@ func TestNeuronGPU(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU=true env var to run GPU tests")
 	}
-	cpuVals := RunNeuron(t, false)
-	gpuVals := RunNeuron(t, true)
+	cpuValues := RunNeuron(t, false)
+	gpuValues := RunNeuron(t, true)
 	// On Mac, Tol7 works for most, Tol6 leaves only 2..
-	ReportValDiffs(t, Tol5, cpuVals, gpuVals, "CPU", "GPU", []string{"SpkMax", "SpkMaxCa", "GABAB", "NmdaCa"})
+	ReportValDiffs(t, Tol5, cpuValues, gpuValues, "CPU", "GPU", []string{"SpkMax", "SpkMaxCa", "GABAB", "NmdaCa"})
 }

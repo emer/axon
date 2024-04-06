@@ -533,7 +533,7 @@ func MinMaxRand(mm minmax.F32, rand erand.SysRand) float32 {
 
 // InactiveVal returns a new random inactive value from Config.Params.Inactive
 // param range.
-func (ev *Env) InactiveVal() float32 {
+func (ev *Env) InactiveValue() float32 {
 	return MinMaxRand(ev.Config.Params.Inactive, ev.Rand)
 }
 

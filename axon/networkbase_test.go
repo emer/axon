@@ -47,12 +47,12 @@ func TestDefaults(t *testing.T) {
 	val = net.LayersByClass("InputLayer")
 	assert.Equal(t, 1, len(val))
 
-	for layerIdx, lyr := range net.Layers {
-		assert.Equal(t, layerIdx, lyr.Index())
+	for layerIndex, lyr := range net.Layers {
+		assert.Equal(t, layerIndex, lyr.Index())
 		assert.Equal(t, uint32(4), lyr.NNeurons)
 		for lni := uint32(0); lni < lyr.NNeurons; lni++ {
-			ni := lyr.NeurStIdx + lni
-			li := NrnI(ctx, ni, NrnLayIdx)
+			ni := lyr.NeurStIndex + lni
+			li := NrnI(ctx, ni, NrnLayIndex)
 			assert.Equal(t, uint32(lyr.Index()), li)
 		}
 	}

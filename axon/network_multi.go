@@ -7,5 +7,5 @@
 package axon
 
 func GlobalNetwork(ctx *Context) *Network {
-	return Networks[ctx.NetIdxs.NetIdx]
+	return Networks[ctx.NetIndexes.NetIndex]
 }

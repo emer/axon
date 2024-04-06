@@ -46,7 +46,7 @@ type CaLrnParams struct {
 	Dt kinase.CaDtParams `view:"inline"`
 
 	// Threshold on CaSpkP CaSpkD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default.
-	UpdtThr float32 `default:"0.01,0.02,0.5"`
+	UpdateThr float32 `default:"0.01,0.02,0.5"`
 
 	// rate = 1 / tau
 	VgccDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
@@ -61,7 +61,7 @@ func (np *CaLrnParams) Defaults() {
 	np.Norm = 80
 	np.SpkVGCC.SetBool(true)
 	np.SpkVgccCa = 35
-	np.UpdtThr = 0.01
+	np.UpdateThr = 0.01
 	np.VgccTau = 10
 	np.Dt.Defaults()
 	np.Dt.MTau = 2
@@ -100,11 +100,11 @@ func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
 // signals, starting with CaSyn that is integrated at the neuron level
 // and drives synapse-level, pre * post Ca integration, which provides the Tr
 // trace that multiplies error signals, and drives learning directly for Target layers.
-// CaSpk* values are integrated separately at the Neuron level and used for UpdtThr
+// CaSpk* values are integrated separately at the Neuron level and used for UpdateThr
 // and RLRate as a proxy for the activation (spiking) based learning signal.
 type CaSpkParams struct {
 
-	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
+	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdateThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
 	SpikeG float32 `default:"8,12"`
 
 	// time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PrjnParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)
@@ -312,7 +312,7 @@ type LearnNeurParams struct {
 	// parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
 	CaLearn CaLrnParams `view:"inline"`
 
-	// parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdtThr and RLRate as a proxy for the activation (spiking) based learning signal.
+	// parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdateThr and RLRate as a proxy for the activation (spiking) based learning signal.
 	CaSpk CaSpkParams `view:"inline"`
 
 	// NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes
@@ -562,13 +562,13 @@ func (sp *SWtParams) Update() {
 }
 
 // WtVal returns the effective Wt value given the SWt and LWt values
-func (sp *SWtParams) WtVal(swt, lwt float32) float32 {
+func (sp *SWtParams) WtValue(swt, lwt float32) float32 {
 	return swt * sp.SigFmLinWt(lwt)
 }
 
 // ClipSWt returns SWt value clipped to valid range
 func (sp *SWtParams) ClipSWt(swt float32) float32 {
-	return sp.Limit.ClipVal(swt)
+	return sp.Limit.ClipValue(swt)
 }
 
 // ClipWt returns Wt value clipped to 0-1 range
@@ -628,7 +628,7 @@ func (sp *SWtParams) LWtFmWts(wt, swt float32) float32 {
 func (sp *SWtParams) WtFmDWt(wt, lwt *float32, dwt, swt float32) {
 	if dwt == 0 {
 		if *wt == 0 { // restore failed wts
-			*wt = sp.WtVal(swt, *lwt)
+			*wt = sp.WtValue(swt, *lwt)
 		}
 		return
 	}
@@ -639,7 +639,7 @@ func (sp *SWtParams) WtFmDWt(wt, lwt *float32, dwt, swt float32) {
 	} else if *lwt > 1 {
 		*lwt = 1
 	}
-	*wt = sp.WtVal(swt, *lwt)
+	*wt = sp.WtValue(swt, *lwt)
 }
 
 // InitSynCa initializes synaptic calcium state, including CaUpT
@@ -795,7 +795,7 @@ func (lr *LRateMod) ShouldShow(field string) bool {
 // If fact >= Range.Max, returns 1
 // otherwise, returns proportional value between Base..1
 func (lr *LRateMod) Mod(fact float32) float32 {
-	lrm := lr.Range.NormVal(fact)    // clips to 0-1 range
+	lrm := lr.Range.NormValue(fact)  // clips to 0-1 range
 	mod := lr.Base + lrm*(1-lr.Base) // resulting mod is in Base-1 range
 	return mod
 }

@@ -33,7 +33,7 @@ type RWDaParams struct {
 	TonicGe float32
 
 	// idx of RWPredLayer to get reward prediction from -- set during Build from BuildConfig RWPredLayName
-	RWPredLayIdx int32 `edit:"-"`
+	RWPredLayIndex int32 `edit:"-"`
 
 	pad, pad1 uint32
 }
@@ -64,7 +64,7 @@ type TDIntegParams struct {
 	PredGain float32
 
 	// idx of TDPredLayer to get reward prediction from -- set during Build from BuildConfig TDPredLayName
-	TDPredLayIdx int32 `edit:"-"`
+	TDPredLayIndex int32 `edit:"-"`
 
 	pad uint32
 }
@@ -85,7 +85,7 @@ type TDDaParams struct {
 	TonicGe float32
 
 	// idx of TDIntegLayer to get reward prediction from -- set during Build from BuildConfig TDIntegLayName
-	TDIntegLayIdx int32 `edit:"-"`
+	TDIntegLayIndex int32 `edit:"-"`
 
 	pad, pad1 uint32
 }
@@ -118,7 +118,7 @@ func (ly *LayerParams) RWPredDefaults() {
 
 // RWDaPostBuild does post-Build config
 func (ly *Layer) RWDaPostBuild() {
-	ly.Params.RWDa.RWPredLayIdx = ly.BuildConfigFindLayer("RWPredLayName", true)
+	ly.Params.RWDa.RWPredLayIndex = ly.BuildConfigFindLayer("RWPredLayName", true)
 }
 
 func (ly *LayerParams) TDDefaults() {
@@ -132,18 +132,18 @@ func (ly *LayerParams) TDPredDefaults() {
 }
 
 func (ly *Layer) LDTPostBuild() {
-	ly.Params.LDT.SrcLay1Idx = ly.BuildConfigFindLayer("SrcLay1Name", false) // optional
-	ly.Params.LDT.SrcLay2Idx = ly.BuildConfigFindLayer("SrcLay2Name", false) // optional
-	ly.Params.LDT.SrcLay3Idx = ly.BuildConfigFindLayer("SrcLay3Name", false) // optional
-	ly.Params.LDT.SrcLay4Idx = ly.BuildConfigFindLayer("SrcLay4Name", false) // optional
+	ly.Params.LDT.SrcLay1Index = ly.BuildConfigFindLayer("SrcLay1Name", false) // optional
+	ly.Params.LDT.SrcLay2Index = ly.BuildConfigFindLayer("SrcLay2Name", false) // optional
+	ly.Params.LDT.SrcLay3Index = ly.BuildConfigFindLayer("SrcLay3Name", false) // optional
+	ly.Params.LDT.SrcLay4Index = ly.BuildConfigFindLayer("SrcLay4Name", false) // optional
 }
 
 // TDIntegPostBuild does post-Build config
 func (ly *Layer) TDIntegPostBuild() {
-	ly.Params.TDInteg.TDPredLayIdx = ly.BuildConfigFindLayer("TDPredLayName", true)
+	ly.Params.TDInteg.TDPredLayIndex = ly.BuildConfigFindLayer("TDPredLayName", true)
 }
 
 // TDDaPostBuild does post-Build config
 func (ly *Layer) TDDaPostBuild() {
-	ly.Params.TDDa.TDIntegLayIdx = ly.BuildConfigFindLayer("TDIntegLayName", true)
+	ly.Params.TDDa.TDIntegLayIndex = ly.BuildConfigFindLayer("TDIntegLayName", true)
 }

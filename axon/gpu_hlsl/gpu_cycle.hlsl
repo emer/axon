@@ -5,7 +5,7 @@
 // performs the CycleNeuron function on all neurons
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -36,27 +36,27 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
 void PulvinarDriver2(in Context ctx, in LayerParams ly, in LayerParams dly, in Pool dlpl, uint ni, uint di, out float drvGe, out float nonDrivePct) {
 	float drvMax = dlpl.AvgMax.CaSpkP.Cycle.Max;
 	nonDrivePct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
-	uint pni = (ni - ly.Idxs.NeurSt) + dly.Idxs.NeurSt;
+	uint pni = (ni - ly.Indexes.NeurSt) + dly.Indexes.NeurSt;
 	drvGe = ly.Pulv.DriveGe(NrnV(ctx, pni, di, Burst));
 }
 
 void PulvinarDriver(in Context ctx, in LayerParams ly, in LayerParams dly, uint ni, uint di, out float drvGe, out float nonDrivePct) {
-	PulvinarDriver2(ctx, ly, dly, Pools[dly.Idxs.PoolIdx(0, di)], ni, di, drvGe, nonDrivePct);
+	PulvinarDriver2(ctx, ly, dly, Pools[dly.Indexes.PoolIndex(0, di)], ni, di, drvGe, nonDrivePct);
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
-void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in LayerVals vals) {
+void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in LayerValues vals) {
 	float drvGe = 0;
 	float nonDrivePct = 0;
 	if (ly.LayType == PulvinarLayer) {
-		PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIdx], ni, di, drvGe, nonDrivePct);
+		PulvinarDriver(ctx, ly, Layers[ly.Pulv.DriveLayIndex], ni, di, drvGe, nonDrivePct);
 		SetNrnV(ctx, ni, di, Ext, nonDrivePct); // use for regulating inhibition
 	}
 
@@ -69,8 +69,8 @@ void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in 
 	ly.SpecialPostGs(ctx, ni, di, saveVal);
 }
 
-void CycleNeuron3(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in Pool lpl, in LayerVals vals) {
-	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
+void CycleNeuron3(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in Pool lpl, in LayerValues vals) {
+	uint lni = ni - ly.Indexes.NeurSt; // layer-based as in Go
 	
 	GInteg(ctx, ly, ni, di, pl, vals);
 	ly.SpikeFmG(ctx, ni, di, lpl);
@@ -78,22 +78,22 @@ void CycleNeuron3(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool p
 
 void CycleNeuron2(in Context ctx, in LayerParams ly, uint ni, uint di) {
 	uint pi = NrnI(ctx, ni, NrnSubPool);
-	CycleNeuron3(ctx, ly, ni, di, Pools[ly.Idxs.PoolIdx(pi, di)], Pools[ly.Idxs.PoolIdx(0, di)], LayVals[ly.Idxs.ValsIdx(di)]);
+	CycleNeuron3(ctx, ly, ni, di, Pools[ly.Indexes.PoolIndex(pi, di)], Pools[ly.Indexes.PoolIndex(0, di)], LayValues[ly.Indexes.ValuesIndex(di)]);
 }
 
 void CycleNeuron(in Context ctx, uint ni, uint di) {
-	uint li = NrnI(ctx, ni, NrnLayIdx);
+	uint li = NrnI(ctx, ni, NrnLayIndex);
 	CycleNeuron2(ctx, Layers[li], ni, di);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) {  // over Neurons * Data
-	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
-	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
+	uint ni = Ctx[0].NetIndexes.ItemIndex(idx.x);
+	if (!Ctx[0].NetIndexes.NeurIndexIsValid(ni)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	CycleNeuron(Ctx[0], ni, di);

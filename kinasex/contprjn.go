@@ -90,7 +90,7 @@ type ContPrjn struct {
 	// kinase continuous learning rule params
 	Cont KinContParams `view:"inline"`
 
-	// continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array
+	// continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIndex array
 	ContSyns []ContSyn
 }
 
@@ -108,7 +108,7 @@ func (pj *ContPrjn) Build() error {
 	if err != nil {
 		return err
 	}
-	pj.ContSyns = make([]ContSyn, len(pj.SConIdx))
+	pj.ContSyns = make([]ContSyn, len(pj.SConIndex))
 	return nil
 }
 
@@ -154,7 +154,7 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		sn.PctDWt = 0
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+		if sn.CaP < kp.UpdateThr && sn.CaD < kp.UpdateThr {
 			continue
 		}
 		sndw := 0
@@ -163,14 +163,14 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 		tdw := (sisi == twin || (sn.Spike > 0 && sisi < twin))
 
 		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		st := int(pj.SConIndexSt[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SConIndex[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+			if rn.CaP < kp.UpdateThr && rn.CaD < kp.UpdateThr {
 				InitSynCa(sy) // make sure
 				continue
 			}
@@ -240,19 +240,19 @@ func (pj *ContPrjn) DWtCont(ltime *axon.Time) {
 	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+		if sn.CaP < kp.UpdateThr && sn.CaD < kp.UpdateThr {
 			continue
 		}
 		sndw := 0
 		sntot := 0
 		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		st := int(pj.SConIndexSt[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SConIndex[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+			if rn.CaP < kp.UpdateThr && rn.CaD < kp.UpdateThr {
 				continue
 			}
 			sy := &syns[ci]

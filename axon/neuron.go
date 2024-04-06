@@ -364,19 +364,19 @@ const (
 	// IMPORTANT: if GiBase is not the last, need to update gosl defn below
 )
 
-// NeuronIdxs are the neuron indexes and other uint32 values.
+// NeuronIndexes are the neuron indexes and other uint32 values.
 // There is only one of these per neuron -- not data parallel.
 // note: Flags are encoded in Vars because they are data parallel and
 // writable, whereas indexes are read-only.
-type NeuronIdxs int32 //enums:enum
+type NeuronIndexes int32 //enums:enum
 
 const (
-	// NrnNeurIdx is the index of this neuron within its owning layer
-	NrnNeurIdx NeuronIdxs = iota
+	// NrnNeurIndex is the index of this neuron within its owning layer
+	NrnNeurIndex NeuronIndexes = iota
 
-	// NrnLayIdx is the index of the layer that this neuron belongs to,
+	// NrnLayIndex is the index of the layer that this neuron belongs to,
 	// needed for neuron-level parallel code.
-	NrnLayIdx
+	NrnLayIndex
 
 	// NrnSubPool is the index of the sub-level inhibitory pool for this neuron
 	// (only for 4D shapes, the pool (unit-group / hypercolumn) structure level).
@@ -392,7 +392,7 @@ const (
 /*
 static const NeuronVars NeuronVarsN = NrnFlags + 1;
 static const NeuronAvgVars NeuronAvgVarsN = GiBase + 1;
-static const NeuronIdxs NeuronIdxsN = NrnSubPool + 1;
+static const NeuronIndexes NeuronIndexesN = NrnSubPool + 1;
 */
 //gosl: end neuron
 
@@ -414,9 +414,9 @@ type NeuronVarStrides struct {
 	pad, pad1 uint32
 }
 
-// Idx returns the index into network float32 array for given neuron, data, and variable
-func (ns *NeuronVarStrides) Idx(neurIdx, di uint32, nvar NeuronVars) uint32 {
-	return neurIdx*ns.Neuron + uint32(nvar)*ns.Var + di
+// Index returns the index into network float32 array for given neuron, data, and variable
+func (ns *NeuronVarStrides) Index(neurIndex, di uint32, nvar NeuronVars) uint32 {
+	return neurIndex*ns.Neuron + uint32(nvar)*ns.Var + di
 }
 
 // SetNeuronOuter sets strides with neurons as outer loop:
@@ -449,9 +449,9 @@ type NeuronAvgVarStrides struct {
 	pad, pad1 uint32
 }
 
-// Idx returns the index into network float32 array for given neuron and variable
-func (ns *NeuronAvgVarStrides) Idx(neurIdx uint32, nvar NeuronAvgVars) uint32 {
-	return neurIdx*ns.Neuron + uint32(nvar)*ns.Var
+// Index returns the index into network float32 array for given neuron and variable
+func (ns *NeuronAvgVarStrides) Index(neurIndex uint32, nvar NeuronAvgVars) uint32 {
+	return neurIndex*ns.Neuron + uint32(nvar)*ns.Var
 }
 
 // SetNeuronOuter sets strides with neurons as outer loop:
@@ -469,11 +469,11 @@ func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
 }
 
 ////////////////////////////////////////////////
-// 	Idxs
+// 	Indexes
 
-// NeuronIdxStrides encodes the stride offsets for neuron index access
+// NeuronIndexStrides encodes the stride offsets for neuron index access
 // into network uint32 array.
-type NeuronIdxStrides struct {
+type NeuronIndexStrides struct {
 
 	// neuron level
 	Neuron uint32
@@ -485,22 +485,22 @@ type NeuronIdxStrides struct {
 }
 
 // Idx returns the index into network uint32 array for given neuron, index value
-func (ns *NeuronIdxStrides) Idx(neurIdx uint32, idx NeuronIdxs) uint32 {
+func (ns *NeuronIndexStrides) Idx(neurIdx uint32, idx NeuronIndexes) uint32 {
 	return neurIdx*ns.Neuron + uint32(idx)*ns.Index
 }
 
 // SetNeuronOuter sets strides with neurons as outer dimension:
-// [Neurons[[Idxs] (outer to inner), which is optimal for CPU-based
+// [Neurons[[Indexes] (outer to inner), which is optimal for CPU-based
 // computation.
-func (ns *NeuronIdxStrides) SetNeuronOuter() {
-	ns.Neuron = uint32(NeuronIdxsN)
+func (ns *NeuronIndexStrides) SetNeuronOuter() {
+	ns.Neuron = uint32(NeuronIndexesN)
 	ns.Index = 1
 }
 
-// SetIdxOuter sets strides with indexes as outer dimension:
-// [Idxs][Neurons] (outer to inner), which is optimal for GPU-based
+// SetIndexOuter sets strides with indexes as outer dimension:
+// [Indexes][Neurons] (outer to inner), which is optimal for GPU-based
 // computation.
-func (ns *NeuronIdxStrides) SetIdxOuter(nneur int) {
+func (ns *NeuronIndexStrides) SetIndexOuter(nneur int) {
 	ns.Index = uint32(nneur)
 	ns.Neuron = 1
 }
@@ -691,8 +691,8 @@ func init() {
 	}
 }
 
-// NeuronVarIdxByName returns the index of the variable in the Neuron, or error
-func NeuronVarIdxByName(varNm string) (int, error) {
+// NeuronVarIndexByName returns the index of the variable in the Neuron, or error
+func NeuronVarIndexByName(varNm string) (int, error) {
 	i, ok := NeuronVarsMap[varNm]
 	if !ok {
 		return -1, fmt.Errorf("Neuron VarByName: variable name: %s not valid", varNm)

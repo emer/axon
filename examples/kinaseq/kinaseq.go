@@ -226,7 +226,7 @@ func (ss *Sim) Sweep() {
 			dvt.SetCellFloat("ErrDWt", row, float64(dwt))
 			dvt.SetCellString("Cond", row, cond)
 
-			rix := etable.NewIdxView(rdt)
+			rix := etable.NewIndexView(rdt)
 			for ci := 2; ci < rdt.NumCols(); ci++ {
 				cnm := rdt.ColName(ci)
 				mean := agg.Mean(rix, cnm)[0]
@@ -324,7 +324,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 				}
 			}
 
-			ss.NeuronUpdt(sSpk, rSpk, ge, gi)
+			ss.NeuronUpdate(sSpk, rSpk, ge, gi)
 
 			ss.LogState(dt, cyc, 0, cyc)
 			ss.Context.CycleInc()

@@ -5,7 +5,7 @@
 // does CyclePost: iterates over data parallel -- handles all special context updates
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -34,25 +34,25 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] RWStructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
-float LDTSrcLayAct(int layIdx, uint di) {
-	if (layIdx < 0) {
+float LDTSrcLayAct(int layIndex, uint di) {
+	if (layIndex < 0) {
 		return 0.0;
 	}
-	return Pools[Layers[layIdx].Idxs.PoolIdx(0, di)].AvgMax.CaSpkP.Cycle.Avg;
+	return Pools[Layers[layIndex].Indexes.PoolIndex(0, di)].AvgMax.CaSpkP.Cycle.Avg;
 }
 
-void CyclePostLDT(inout Context ctx, uint di, in LayerParams ly, inout LayerVals vals) {
-	float srcLay1Act = LDTSrcLayAct(ly.LDT.SrcLay1Idx, di);
-	float srcLay2Act = LDTSrcLayAct(ly.LDT.SrcLay2Idx, di);
-	float srcLay3Act = LDTSrcLayAct(ly.LDT.SrcLay3Idx, di);
-	float srcLay4Act = LDTSrcLayAct(ly.LDT.SrcLay4Idx, di);
+void CyclePostLDT(inout Context ctx, uint di, in LayerParams ly, inout LayerValues vals) {
+	float srcLay1Act = LDTSrcLayAct(ly.LDT.SrcLay1Index, di);
+	float srcLay2Act = LDTSrcLayAct(ly.LDT.SrcLay2Index, di);
+	float srcLay3Act = LDTSrcLayAct(ly.LDT.SrcLay3Index, di);
+	float srcLay4Act = LDTSrcLayAct(ly.LDT.SrcLay4Index, di);
 	ly.CyclePostLDTLayer(ctx, di, vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
 }
 
-void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
+void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerValues vals, in Pool lpl) {
 	ly.CyclePostLayer(ctx, di, lpl, vals);
 	switch (ly.LayType) {
 	case CeMLayer: {
@@ -60,9 +60,9 @@ void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout La
 		break;
 	}
 	case VSPatchLayer: {
-		int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
+		int npl = ly.Indexes.ShpPlY * ly.Indexes.ShpPlX;
 		for (int pi = 0; pi < npl; pi++) {
-			ly.CyclePostVSPatchLayer(ctx, di, pi+1, Pools[ly.Idxs.PoolIdx(1+pi, di)], vals);
+			ly.CyclePostVSPatchLayer(ctx, di, pi+1, Pools[ly.Indexes.PoolIndex(1+pi, di)], vals);
 		}
 		break;
 	}
@@ -75,7 +75,7 @@ void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout La
 		break;
 	}
 	case RWDaLayer: {
-		ly.CyclePostRWDaLayer(ctx, di, vals, LayVals[ctx.NetIdxs.ValsIdx(ly.RWDa.RWPredLayIdx, di)]);
+		ly.CyclePostRWDaLayer(ctx, di, vals, LayValues[ctx.NetIndexes.ValuesIndex(ly.RWDa.RWPredLayIndex, di)]);
 		break;
 	}
 	case TDPredLayer: {
@@ -83,31 +83,31 @@ void CyclePost2(inout Context ctx, in LayerParams ly, uint li, uint di, inout La
 		break;
 	}
 	case TDIntegLayer: {
-		ly.CyclePostTDIntegLayer(ctx, di, vals, LayVals[ctx.NetIdxs.ValsIdx(ly.TDInteg.TDPredLayIdx, di)]);
+		ly.CyclePostTDIntegLayer(ctx, di, vals, LayValues[ctx.NetIndexes.ValuesIndex(ly.TDInteg.TDPredLayIndex, di)]);
 		break;
 	}
 	case TDDaLayer: {
-		ly.CyclePostTDDaLayer(ctx, di, vals, LayVals[ctx.NetIdxs.ValsIdx(ly.TDDa.TDIntegLayIdx, di)]);
+		ly.CyclePostTDDaLayer(ctx, di, vals, LayValues[ctx.NetIndexes.ValuesIndex(ly.TDDa.TDIntegLayIndex, di)]);
 		break;
 	}
 	}
 }
 
 void CyclePost(inout Context ctx, in LayerParams ly, int li, uint di) {
-	CyclePost2(ctx, ly, uint(li), di, LayVals[ly.Idxs.ValsIdx(di)], Pools[ly.Idxs.PoolIdx(0, di)]);
+	CyclePost2(ctx, ly, uint(li), di, LayValues[ly.Indexes.ValuesIndex(di)], Pools[ly.Indexes.PoolIndex(0, di)]);
 }
 
-void CyclePostAll2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerVals vals, in Pool lpl) {
+void CyclePostAll2(inout Context ctx, in LayerParams ly, uint li, uint di, inout LayerValues vals, in Pool lpl) {
 	ly.CyclePostLayer(ctx, di, lpl, vals); // does reaction time
 }
 
 void CyclePostAll(inout Context ctx, in LayerParams ly, int li, uint di) {
-	CyclePostAll2(ctx, ly, uint(li), di, LayVals[ly.Idxs.ValsIdx(di)], Pools[ly.Idxs.PoolIdx(0, di)]);
+	CyclePostAll2(ctx, ly, uint(li), di, LayValues[ly.Indexes.ValuesIndex(di)], Pools[ly.Indexes.PoolIndex(0, di)]);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) {
-	if (idx.x >= Ctx[0].NetIdxs.NData) {
+	if (idx.x >= Ctx[0].NetIndexes.NData) {
 		return;
 	}
 
@@ -127,7 +127,7 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	int tdpi = -1;
 	int tdii = -1;
 	int tddi = -1;
-	for (int li = 0; li < Ctx[0].NetIdxs.NLayers; li++) {
+	for (int li = 0; li < Ctx[0].NetIndexes.NLayers; li++) {
 		CyclePostAll(Ctx[0], Layers[li], li, di);
 		switch (Layers[li].LayType) {
 		case CeMLayer:

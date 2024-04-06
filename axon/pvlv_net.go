@@ -429,7 +429,7 @@ func (net *Network) ConnectToSC1to1(send, recv *Layer) *Prjn {
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
 func (net *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
-	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIdxs.PVLVNPosUSs), nNeurY, nNeurX, DrivesLayer)
+	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIndexes.PVLVNPosUSs), nNeurY, nNeurX, DrivesLayer)
 	return drv
 }
 

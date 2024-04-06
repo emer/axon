@@ -193,7 +193,7 @@ func (ev *LEDEnv) OutErr(tsr *etensor.Float32, corLED int) (maxi int, err, err2 
 		si := ev.NOutPer * i
 		sum := 0.0
 		for j := 0; j < ev.NOutPer; j++ {
-			sum += tsr.FloatVal1D(si + j)
+			sum += tsr.FloatValue1D(si + j)
 		}
 		if sum > maxv {
 			maxi = i
@@ -213,7 +213,7 @@ func (ev *LEDEnv) OutErr(tsr *etensor.Float32, corLED int) (maxi int, err, err2 
 		si := ev.NOutPer * i
 		sum := 0.0
 		for j := 0; j < ev.NOutPer; j++ {
-			sum += tsr.FloatVal1D(si + j)
+			sum += tsr.FloatValue1D(si + j)
 		}
 		if sum > maxv2 {
 			maxi2 = i

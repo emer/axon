@@ -83,7 +83,7 @@ func TestGPUSynCa(t *testing.T) {
 	net.ConfigGPUnoGUI(ctx)
 
 	// on mac, only works up to ndata = 6 -- 7 fails
-	fmt.Printf("ndata: %d   floats per: %X  banks: %d\n", ctx.NetIdxs.NData, ctx.NetIdxs.GPUMaxBuffFloats, ctx.NetIdxs.GPUSynCaBanks)
+	fmt.Printf("ndata: %d   floats per: %X  banks: %d\n", ctx.NetIndexes.NData, ctx.NetIndexes.GPUMaxBuffFloats, ctx.NetIndexes.GPUSynCaBanks)
 
 	passed := net.GPU.TestSynCa()
 	if !passed {

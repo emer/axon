@@ -190,7 +190,7 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, 
 			net.PlusPhase(ctx)
 			net.DWt(ctx)
 			net.WtFmDWt(ctx)
-			outCorSim += outLay.Vals[0].CorSim.Cor
+			outCorSim += outLay.Values[0].CorSim.Cor
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
 			if pSSE != 0 {
@@ -205,19 +205,19 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, 
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Vals[0].CorSim.Avg, t)
+			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Values[0].CorSim.Avg, t)
 		}
 
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Vals[0].CorSim.Avg))
+		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Values[0].CorSim.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
 		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
 		epcLog.SetCellFloat("PctErr", epc, pctErr)
 		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Vals[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Vals[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Values[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Values[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {

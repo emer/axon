@@ -387,8 +387,8 @@ func (dp *DtParams) GiSynFmRawSteady(giRaw float32) float32 {
 	return giRaw * dp.GiTau
 }
 
-// AvgVarUpdt updates the average and variance from current value, using LongAvgDt
-func (dp *DtParams) AvgVarUpdt(avg, vr *float32, val float32) {
+// AvgVarUpdate updates the average and variance from current value, using LongAvgDt
+func (dp *DtParams) AvgVarUpdate(avg, vr *float32, val float32) {
 	if *avg == 0 { // first time -- set
 		*avg = val
 		*vr = 0
@@ -463,7 +463,7 @@ func (an *SpikeNoiseParams) ShouldShow(field string) bool {
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*ctx.NetIdxs.NNeurons + ni
+	ndi := di*ctx.NetIndexes.NNeurons + ni
 	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
@@ -475,7 +475,7 @@ func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*ctx.NetIdxs.NNeurons + ni
+	ndi := di*ctx.NetIndexes.NNeurons + ni
 	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
@@ -639,7 +639,7 @@ func (pc *PopCodeParams) SetRange(min, max, minSigma, maxSigma float32) {
 }
 
 // ClipVal returns clipped (clamped) value in min / max range
-func (pc *PopCodeParams) ClipVal(val float32) float32 {
+func (pc *PopCodeParams) ClipValue(val float32) float32 {
 	clipVal := val
 	if clipVal < pc.Min {
 		clipVal = pc.Min
@@ -658,8 +658,8 @@ func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float
 
 // EncodeVal returns value for given value, for neuron index i
 // out of n total neurons. n must be 2 or more.
-func (pc *PopCodeParams) EncodeVal(i, n uint32, val float32) float32 {
-	clipVal := pc.ClipVal(val)
+func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
+	clipVal := pc.ClipValue(val)
 	if pc.Clip.IsTrue() {
 		val = clipVal
 	}
@@ -682,7 +682,7 @@ func (pc *PopCodeParams) EncodeVal(i, n uint32, val float32) float32 {
 // EncodeGe returns Ge value for given value, for neuron index i
 // out of n total neurons. n must be 2 or more.
 func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
-	return pc.Ge * pc.EncodeVal(i, n, val)
+	return pc.Ge * pc.EncodeValue(i, n, val)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -1081,7 +1081,7 @@ func (ac *ActParams) SMaintFmISI(ctx *Context, ni, di uint32) {
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
-	ndi := di*ctx.NetIdxs.NNeurons + ni
+	ndi := di*ctx.NetIndexes.NNeurons + ni
 	smp := NrnV(ctx, ni, di, SMaintP)
 	smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)
@@ -1229,7 +1229,7 @@ func (ac *ActParams) InetFmG(vm, ge, gl, gi, gk float32) float32 {
 
 // VmFmInet computes new Vm value from inet, clamping range
 func (ac *ActParams) VmFmInet(vm, dt, inet float32) float32 {
-	return ac.VmRange.ClipVal(vm + dt*inet)
+	return ac.VmRange.ClipValue(vm + dt*inet)
 }
 
 // VmInteg integrates Vm over VmSteps to obtain a more stable value

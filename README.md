@@ -101,7 +101,7 @@ As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel 
 	net.SetMaxData(&ss.Context, ss.NData)
 ```
 
-* `Context.NetIdxs.NData` must be updated with the actual number (<= MaxData) to process each step, prior to calling `Network.NewState` -- above method does both.
+* `Context.NetIndexes.NData` must be updated with the actual number (<= MaxData) to process each step, prior to calling `Network.NewState` -- above method does both.
 
 * All compute methods take a `di` arg = data index.
 
@@ -109,7 +109,7 @@ As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel 
 
 ```Go
 net.InitExt(ctx) // clear any existing inputs
-for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 	ev.Step()
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
@@ -134,10 +134,10 @@ net.ApplyExts(ctx) // now required for GPU mode
 
 ```Go
 	for _, m := range man.Stacks {
-			m.Loops[etime.Cycle].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
+			m.Loops[etime.Cycle].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdate", func() {
 				ss.NetViewCounters(etime.Cycle)
 			})
-			m.Loops[etime.Trial].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdt", func() {
+			m.Loops[etime.Trial].OnEnd.InsertBefore("GUI:UpdateNetView", "GUI:CounterUpdate", func() {
 				ss.NetViewCounters(etime.Trial)
 			})
 	}
@@ -147,15 +147,15 @@ This ensures that the current data index counters are displayed:
 
 ```Go
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.GUI.ViewUpdt.View == nil {
+	if ss.GUI.ViewUpdate.View == nil {
 		return
 	}
-	di := ss.GUI.ViewUpdt.View.Di
+	di := ss.GUI.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
     // note: replace above with relevant counters -- from prior StatCounters
 }
 ```
@@ -168,7 +168,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 	case time == etime.Trial:
 		trl := ss.Stats.Int("Trial")
 		row = trl
-		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+		for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
 			ss.StatCounters(di)
@@ -178,7 +178,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 ```
 
 * Custom Log items can use the `ctx.Di` data index as needed to grab the relevant state from the network -- the `di` arg has been added to methods as needed, so you'll see those during build. 
-    + Use `ly.LayerVals(ctx.Di)` instead of `ly.Vals`
+    + Use `ly.LayerValues(ctx.Di)` instead of `ly.Values`
     + `ly.Pool(pi, ctx.Di)` instead of `ly.Pool[pi+1]` etc, where `pi` is the pool index.
 
 # Overview of the Axon Algorithm
@@ -527,7 +527,7 @@ Neurons are connected via synapses parameterized with the following variables, c
 
 The `axon.Network` `CycleImpl` method in [`axon/network.go`](axon/network.go) calls the following functions in order:
 
-* `GatherSpikes` on all `Neurons`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GVals` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
+* `GatherSpikes` on all `Neurons`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GValues` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
 
 * `GiFmSpikes` on all `Layer`s: computes inhibitory conductances based on total incoming FF and FB spikes into the layer, using the [FS-FFFB](fsfffb) summary functions.
 
@@ -543,7 +543,7 @@ All of the relevant parameters and most of the equations are in the [`axon/act.g
 
 ### PrjnGatherSpikes: for each Prjn
 
-`Prjn.GVals` integrates two synaptic conductance values `G` per receiving neuron index, using Ge time constants for excitatory synapses, and Gi for inhibitory.  These values were sent before in `SendSpike` and stored in the `Prjn.GBuf` slice (see below).  In principle synaptic conductance is computed using a standard *alpha function* double-exponential with one time constant for the rise and another for the decay.  In practice, the rise time is < 1 msec and thus it is simpler to just add the new raw and decay (decay tau = 5 msec):
+`Prjn.GValues` integrates two synaptic conductance values `G` per receiving neuron index, using Ge time constants for excitatory synapses, and Gi for inhibitory.  These values were sent before in `SendSpike` and stored in the `Prjn.GBuf` slice (see below).  In principle synaptic conductance is computed using a standard *alpha function* double-exponential with one time constant for the rise and another for the decay.  In practice, the rise time is < 1 msec and thus it is simpler to just add the new raw and decay (decay tau = 5 msec):
 * `GRaw = GBuf` at the `Com.Delay` index (e.g., 2 msec)
 * `GSyn += GRaw - Act.Dt.GeDt * GSyn  // GeSynFmRaw or GiSynFmRaw`
 
@@ -586,7 +586,7 @@ C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps
 
 Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each projection, so that means that threading can only be projection-parallel (fairly coarse-grained).  For the GPU, an atomic add operation is used to aggregate to GBuf, operating with sending neuron-level parallelism.
 
-The first-pass reading of recv spikes happens in `PrjnGatherSpikes` at the Prjn level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GVals, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
+The first-pass reading of recv spikes happens in `PrjnGatherSpikes` at the Prjn level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GValues, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
 
 Finally, `NeuronGatherSpikes` iterates over all recv neurons, and gathers the GRaw and GSyn values across the RecvPrjns into the relevant Neuron-level variables: `GeRaw, GeSyn; GiRaw, GiSyn; GModRaw, GModSyn` for the three different types of projections: `ExcitatoryG`, `InhibitoryG`, and `ModulatoryG`.
 
@@ -676,7 +676,7 @@ In addition, the Ca trace used for synaptic-level integration for the trace-base
 
 Finally, various peripheral aspects of learning (learning rate modulation, thresholds, etc) and some performance statistics use simple cascaded time-integrals of spike-driven Ca at the Neuron level, in the `CaSpk` variables.  The initial Ca level from spiking is just multiplied by a gain factor:
 
-* `SpikeG` (8 or 12) = gain multiplier on spike for computing `CaSpk`: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on `CaSpk` values: `RLRate`, `UpdtThr`.  `Prjn.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level `CaSpk` values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
+* `SpikeG` (8 or 12) = gain multiplier on spike for computing `CaSpk`: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on `CaSpk` values: `RLRate`, `UpdateThr`.  `Prjn.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level `CaSpk` values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
 
 The cascaded integration of these variables is:
 ```Go
@@ -693,7 +693,7 @@ This is expensive computationally because it requires traversing all of the syna
 
 ### SynCaSend, SynCaRecv
 
-If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SynCaSend`) and then any receiving neurons that spiked (`SynCaRecv`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdtThr` = 0.01.
+If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SynCaSend`) and then any receiving neurons that spiked (`SynCaRecv`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdateThr` = 0.01.
 
 After filtering, the basic cascaded integration shown above is performed on synapse-level variables where the immediate driving Ca value is the product of `CaSyn` on the recv and send neurons times a `SpikeG` gain factor:
 * `CaM += (SpikeG * send.CaSyn * recv.CaSyn - CaM) / MTau`

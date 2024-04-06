@@ -26,7 +26,7 @@ import (
 func LogTestErrors(lg *elog.Logs) {
 	sk := etime.Scope(etime.Test, etime.Trial)
 	lt := lg.TableDetailsScope(sk)
-	ix, _ := lt.NamedIdxView("TestErrors")
+	ix, _ := lt.NamedIndexView("TestErrors")
 	ix.Filter(func(et *etable.Table, row int) bool {
 		return et.CellFloat("Err", row) > 0 // include error trials
 	})
@@ -41,7 +41,7 @@ func LogTestErrors(lg *elog.Logs) {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func PCAStats(net *Network, lg *elog.Logs, stats *estats.Stats) {
-	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer))
+	stats.PCAStats(lg.IndexView(etime.Analyze, etime.Trial), "ActM", net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -88,7 +88,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorDiff",
@@ -97,7 +97,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(1.0 - ly.LayerVals(uint32(ctx.Di)).CorSim.Cor)
+					ctx.SetFloat32(1.0 - ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -108,7 +108,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.GiMult)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.GiMult)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -128,7 +128,7 @@ func LogInputLayer(lg *elog.Logs, net *Network, mode etime.Modes) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.ActMAvg)
 				}}})
 	}
 }
@@ -466,7 +466,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).CorSim.Cor)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[2], agg.AggMean)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
@@ -485,7 +485,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.ActMAvg)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
@@ -498,7 +498,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.LayerVals(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
 	}
 }
@@ -599,7 +599,7 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 	if dtRec.Rows == 0 {
 		return
 	}
-	ix := etable.NewIdxView(dtRec)
+	ix := etable.NewIndexView(dtRec)
 	spl := split.GroupBy(ix, []string{"Layer"})
 	split.AggAllNumericCols(spl, agg.AggMean)
 	ags := spl.AggsToTable(etable.ColNameOnly)

@@ -6,6 +6,7 @@ package armaze
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 	"log"
 
@@ -122,7 +123,7 @@ type GUI struct {
 	IsRunning bool `view:"-"`
 
 	// current depth map
-	DepthVals []float32
+	DepthValues []float32
 
 	// offscreen render camera settings
 	Camera evev.Camera
@@ -131,13 +132,13 @@ type GUI struct {
 	DepthMap giv.ColorMapName
 
 	// first-person right-eye full field view
-	EyeRFullImg *gi.Image `view:"-"`
+	EyeRFullImage *gi.Image `view:"-"`
 
 	// first-person right-eye fovea view
-	EyeRFovImg *gi.Image `view:"-"`
+	EyeRFovImage *gi.Image `view:"-"`
 
 	// depth map bitmap view
-	DepthImg *gi.Image `view:"-"`
+	DepthImage *gi.Image `view:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
 	USposPlot *eplot.Plot2D
@@ -216,11 +217,11 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	gi.NewLabel(imfr).SetText("Eye-View, Fovea:")
 	gi.NewLabel(imfr).SetText("Full Field:")
 
-	vw.EyeRFovImg = gi.NewImage(imfr, "eye-r-fov-img")
-	vw.EyeRFovImg.SetSize(vw.Camera.Size)
+	vw.EyeRFovImage = gi.NewImage(imfr, "eye-r-fov-img")
+	vw.EyeRFovImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
 
-	vw.EyeRFullImg = gi.NewImage(imfr, "eye-r-full-img")
-	vw.EyeRFullImg.SetSize(vw.Camera.Size)
+	vw.EyeRFullImage = gi.NewImage(imfr, "eye-r-full-img")
+	vw.EyeRFullImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
 
 	wd := float32(300)
 	ht := float32(100)
@@ -501,7 +502,7 @@ func (vw *GUI) GrabEyeImg() {
 	}
 	img, err := vw.View3D.Image()
 	if err == nil && img != nil {
-		vw.EyeRFullImg.SetImage(img)
+		vw.EyeRFullImage.SetImage(img)
 	} else {
 		log.Println(err)
 	}
@@ -514,28 +515,28 @@ func (vw *GUI) GrabEyeImg() {
 	}
 	img, err = vw.View3D.Image()
 	if err == nil && img != nil {
-		vw.EyeRFovImg.SetImage(img)
+		vw.EyeRFovImage.SetImage(img)
 	} else {
 		log.Println(err)
 	}
 
 	// depth, err := vw.View3D.DepthImage()
 	// if err == nil && depth != nil {
-	// 	vw.DepthVals = depth
+	// 	vw.DepthValues = depth
 	// 	vw.ViewDepth(depth)
 	// }
 }
 
 // ViewDepth updates depth bitmap with depth data
 func (vw *GUI) ViewDepth(depth []float32) {
-	cmap := colormap.AvailMaps[string(vw.DepthMap)]
-	vw.DepthImg.SetSize(vw.Camera.Size)
-	evev.DepthImage(vw.DepthImg.Pixels, depth, cmap, &vw.Camera)
+	cmap := colormap.AvailableMaps[string(vw.DepthMap)]
+	vw.DepthImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
+	evev.DepthImage(vw.DepthImage.Image, depth, cmap, &vw.Camera)
 }
 
 func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
 	cnm := "ArmMazeColors"
-	cm, ok := colormap.AvailMaps[cnm]
+	cm, ok := colormap.AvailableMaps[cnm]
 	if !ok {
 		ev := vw.Env
 		cm = &colormap.Map{}
@@ -547,7 +548,7 @@ func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
 		for i, cnm := range vw.MatColors {
 			cm.Colors[i] = grr.Log1(colors.FromString(cnm))
 		}
-		colormap.AvailMaps[cnm] = cm
+		colormap.AvailableMaps[cnm] = cm
 	}
 	tg.Disp.Defaults()
 	tg.Disp.ColorMap = giv.ColorMapName(cnm)

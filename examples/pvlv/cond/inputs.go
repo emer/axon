@@ -75,8 +75,8 @@ var (
 	}
 )
 
-// StimIdx returns index for given stimulus
-func StimIdx(stm string) int {
+// StimIndex returns index for given stimulus
+func StimIndex(stm string) int {
 	return Stims[stm]
 }
 
@@ -89,7 +89,7 @@ func StimYX(stidx int) []int {
 
 // SetStim sets stimulus for given input, returns index
 func SetStim(tsr *etensor.Float32, nyrep int, stm string) int {
-	stidx := StimIdx(stm)
+	stidx := StimIndex(stm)
 	xy := StimYX(stidx)
 	xy = append(xy, 0)
 	xy = append(xy, 0)
@@ -100,8 +100,8 @@ func SetStim(tsr *etensor.Float32, nyrep int, stm string) int {
 	return stidx
 }
 
-// ContextIdx returns index for given context
-func ContextIdx(ctx string) int {
+// ContextIndex returns index for given context
+func ContextIndex(ctx string) int {
 	return Contexts[ctx]
 }
 
@@ -114,7 +114,7 @@ func ContextYX(ctidx int) []int {
 
 // SetContext sets context for given input
 func SetContext(tsr *etensor.Float32, nyrep int, ctx string) int {
-	ctidx := ContextIdx(ctx)
+	ctidx := ContextIndex(ctx)
 	xy := ContextYX(ctidx)
 	xy = append(xy, 0)
 	xy = append(xy, 0)
@@ -125,9 +125,9 @@ func SetContext(tsr *etensor.Float32, nyrep int, ctx string) int {
 	return ctidx
 }
 
-// USTimeIdx returns index for US time based on stimulus, tick, start and end
+// USTimeIndex returns index for US time based on stimulus, tick, start and end
 // returns nil if not active.
-func USTimeIdx(stidx, tick, start, end int) []int {
+func USTimeIndex(stidx, tick, start, end int) []int {
 	tm := tick - start
 	if tm < 1 {
 		return nil
@@ -144,7 +144,7 @@ func USTimeIdx(stidx, tick, start, end int) []int {
 // SetUSTime sets USTime based on given values.
 // returns false if not set.
 func SetUSTime(tsr *etensor.Float32, nyrep, stidx, tick, start, end int) bool {
-	idx := USTimeIdx(stidx, tick, start, end)
+	idx := USTimeIndex(stidx, tick, start, end)
 	if idx == nil {
 		return false
 	}

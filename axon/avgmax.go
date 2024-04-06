@@ -95,11 +95,11 @@ func (am *AvgMaxI32) FloatToIntSum(val float32) int32 {
 
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)
-func (am *AvgMaxI32) FloatFromInt(ival, refIdx int32) float32 {
+func (am *AvgMaxI32) FloatFromInt(ival, refIndex int32) float32 {
 	//gosl: end avgmaxi
 	// note: this is not GPU-portable..
 	if ival < 0 {
-		log.Printf("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIdx: %d\n", refIdx)
+		log.Printf("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIndex: %d\n", refIndex)
 		fmt.Println(string(debug.Stack()))
 		if AvgMaxFloatFromIntErr != nil {
 			AvgMaxFloatFromIntErr()
@@ -111,7 +111,7 @@ func (am *AvgMaxI32) FloatFromInt(ival, refIdx int32) float32 {
 }
 
 // UpdateVal updates stats from given value
-func (am *AvgMaxI32) UpdateVal(val float32) {
+func (am *AvgMaxI32) UpdateValue(val float32) {
 	am.Sum += am.FloatToIntSum(val)
 	ival := am.FloatToInt(val)
 	if ival > am.CurMax {
@@ -121,13 +121,13 @@ func (am *AvgMaxI32) UpdateVal(val float32) {
 
 // Calc computes the average given the current Sum
 // and copies over CurMax to Max
-// refIdx is a reference index of thing being computed, which will be printed
+// refIndex is a reference index of thing being computed, which will be printed
 // in case there is an overflow, for debugging (can't be a string because
 // this code runs on GPU).
-func (am *AvgMaxI32) Calc(refIdx int32) {
-	am.Max = am.FloatFromInt(am.CurMax, refIdx)
-	am.Avg = am.FloatFromInt(am.Sum, refIdx) // N is already baked in
-	am.Init()                                // immediately ready to go
+func (am *AvgMaxI32) Calc(refIndex int32) {
+	am.Max = am.FloatFromInt(am.CurMax, refIndex)
+	am.Avg = am.FloatFromInt(am.Sum, refIndex) // N is already baked in
+	am.Init()                                  // immediately ready to go
 }
 
 //gosl: end avgmaxi

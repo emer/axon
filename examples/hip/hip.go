@@ -114,7 +114,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -182,12 +182,12 @@ func (ss *Sim) ConfigEnv() {
 	// note: names must be standard here!
 	trn.Nm = etime.Train.String()
 	trn.Dsc = "training params and state"
-	trn.Config(etable.NewIdxView(ss.TrainAB))
+	trn.Config(etable.NewIndexView(ss.TrainAB))
 	trn.Validate()
 
 	tst.Nm = etime.Test.String()
 	tst.Dsc = "testing params and state"
-	tst.Config(etable.NewIdxView(ss.TestABAC))
+	tst.Config(etable.NewIndexView(ss.TestABAC))
 	tst.Sequential = true
 	tst.Validate()
 
@@ -248,8 +248,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 func (ss *Sim) TestInit() {
@@ -274,8 +274,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTimeIncr(etime.Trial, 2*trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	ss.Net.ConfigLoopsHip(&ss.Context, man, &ss.Config.Hip, &ss.PretrainMode)
 
@@ -303,7 +303,7 @@ func (ss *Sim) ConfigLoops() {
 			abMem := float32(tstEpcLog.Table.CellFloat("ABMem", epc))
 			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (abMem >= ss.Config.Run.StopMem || epc == ss.Config.Run.Epochs/2) {
 				ss.Stats.SetInt("FirstPerfect", epc)
-				trn.Config(etable.NewIdxView(ss.TrainAC))
+				trn.Config(etable.NewIndexView(ss.TrainAC))
 				trn.Validate()
 			}
 		}
@@ -334,7 +334,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
-		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
+		ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
@@ -343,11 +343,11 @@ func (ss *Sim) ConfigLoops() {
 
 	if !ss.Config.GUI {
 		man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+			ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -366,7 +366,7 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*env.FixedTable)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ev.Step()
 		// note: must save env state for logging / stats due to data parallel re-use of same env
 		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
@@ -505,7 +505,7 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
+// Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
@@ -521,15 +521,15 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdt.View == nil {
+	if ss.ViewUpdate.View == nil {
 		return
 	}
-	di := ss.ViewUpdt.View.Di
+	di := ss.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -537,7 +537,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 func (ss *Sim) TrialStats(di int) {
 	out := ss.Net.AxonLayerByName("EC5")
 
-	ss.Stats.SetFloat("CorSim", float64(out.Vals[di].CorSim.Cor))
+	ss.Stats.SetFloat("CorSim", float64(out.Values[di].CorSim.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
 	ss.MemStats(ss.Loops.Mode, di)
 
@@ -564,8 +564,8 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	cmpN := 0.0           // completion target
 	trgOnN := 0.0
 	trgOffN := 0.0
-	actMi, _ := ecout.UnitVarIdx("ActM")
-	targi, _ := ecout.UnitVarIdx("Target")
+	actMi, _ := ecout.UnitVarIndex("ActM")
+	targi, _ := ecout.UnitVarIndex("Target")
 
 	ss.Stats.SetFloat("ABMem", math.NaN())
 	ss.Stats.SetFloat("ACMem", math.NaN())
@@ -633,18 +633,18 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 
 	// take completion pool to do CosDiff
 	var recallPat etensor.Float32
-	ecout.UnitValsTensor(&recallPat, "ActM", di)
+	ecout.UnitValuesTensor(&recallPat, "ActM", di)
 	mostSimilar := -1
 	highestCosDiff := float32(0)
 	var cosDiff float32
 	var patToComplete *etensor.Float32
-	var correctIdx int
+	var correctIndex int
 	if isAB {
 		patToComplete, _ = ss.PoolVocab.ByNameTry("B")
-		correctIdx, _ = strconv.Atoi(strings.Split(trialnm, "AB")[1])
+		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AB")[1])
 	} else {
 		patToComplete, _ = ss.PoolVocab.ByNameTry("C")
-		correctIdx, _ = strconv.Atoi(strings.Split(trialnm, "AC")[1])
+		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AC")[1])
 	}
 	for i := 0; i < patToComplete.Shp[0]; i++ { // for each item in the list
 		cosDiff = metric.Correlation32(recallPat.SubSpace([]int{0, 1}).(*etensor.Float32).Values, patToComplete.SubSpace([]int{i}).(*etensor.Float32).Values)
@@ -656,9 +656,9 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 
 	ss.Stats.SetInt("RecallItem", mostSimilar)
 	if isAB {
-		ss.Stats.SetFloat("ABRecMem", num.FromBool[float64](mostSimilar == correctIdx))
+		ss.Stats.SetFloat("ABRecMem", num.FromBool[float64](mostSimilar == correctIndex))
 	} else {
-		ss.Stats.SetFloat("ACRecMem", num.FromBool[float64](mostSimilar == correctIdx))
+		ss.Stats.SetFloat("ACRecMem", num.FromBool[float64](mostSimilar == correctIndex))
 	}
 }
 
@@ -762,7 +762,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+		for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
@@ -785,8 +785,8 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
 	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))

@@ -107,7 +107,7 @@ type Expect struct {
 	Label string
 }
 
-func CheckVal(t *testing.T, val, trg float64, gt bool, msg string) {
+func CheckValue(t *testing.T, val, trg float64, gt bool, msg string) {
 	cmp := LTGTString(gt)
 	fmt.Printf("%s  val: %7.2g %s trg: %g\n", msg, val, cmp, trg)
 	if gt {
@@ -144,7 +144,7 @@ func RunTest(t *testing.T, runName string, expect []Expect) {
 
 	for _, ex := range expect {
 		cell := dt.CellFloat(ex.Cell, ex.Row)
-		CheckVal(t, cell, ex.Val, ex.Rel, ex.Label)
+		CheckValue(t, cell, ex.Val, ex.Rel, ex.Label)
 	}
 
 }

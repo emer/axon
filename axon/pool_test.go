@@ -131,7 +131,7 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
 	testNet.Build(ctx)
-	ctx.NetIdxs.NData = uint32(nData)
+	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(PoolParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
 	testNet.InitWts(ctx)                                                // get GScale here
@@ -144,9 +144,9 @@ func TestPoolGPUDiffsLayerOnly(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	cpuVals := netDebugAct(t, "LayerOnly", false, false, 1, true)
-	gpuVals := netDebugAct(t, "LayerOnly", false, true, 1, true)
-	ReportValDiffs(t, Tol4, cpuVals, gpuVals, "CPU", "GPU", nil)
+	cpuValues := netDebugAct(t, "LayerOnly", false, false, 1, true)
+	gpuValues := netDebugAct(t, "LayerOnly", false, true, 1, true)
+	ReportValDiffs(t, Tol4, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestPoolGPUDiffsPoolOnly(t *testing.T) {
@@ -154,10 +154,10 @@ func TestPoolGPUDiffsPoolOnly(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	cpuVals := netDebugAct(t, "PoolOnly", false, false, 1, true)
-	gpuVals := netDebugAct(t, "PoolOnly", false, true, 1, true)
+	cpuValues := netDebugAct(t, "PoolOnly", false, false, 1, true)
+	gpuValues := netDebugAct(t, "PoolOnly", false, true, 1, true)
 	// GPU doesn't update layer Gi, GiOrig..
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", []string{"Gi", "GiOrig"})
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", []string{"Gi", "GiOrig"})
 }
 
 func TestPoolGPUDiffsLayerPoolSame(t *testing.T) {
@@ -165,9 +165,9 @@ func TestPoolGPUDiffsLayerPoolSame(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	cpuVals := netDebugAct(t, "LayerPoolSame", false, false, 1, true)
-	gpuVals := netDebugAct(t, "LayerPoolSame", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+	cpuValues := netDebugAct(t, "LayerPoolSame", false, false, 1, true)
+	gpuValues := netDebugAct(t, "LayerPoolSame", false, true, 1, true)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestPoolGPUDiffsLayerWeakPoolStrong(t *testing.T) {
@@ -175,9 +175,9 @@ func TestPoolGPUDiffsLayerWeakPoolStrong(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	cpuVals := netDebugAct(t, "LayerWeakPoolStrong", false, false, 1, true)
-	gpuVals := netDebugAct(t, "LayerWeakPoolStrong", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+	cpuValues := netDebugAct(t, "LayerWeakPoolStrong", false, false, 1, true)
+	gpuValues := netDebugAct(t, "LayerWeakPoolStrong", false, true, 1, true)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
 func TestPoolGPUDiffsLayerStrongPoolWeak(t *testing.T) {
@@ -185,19 +185,19 @@ func TestPoolGPUDiffsLayerStrongPoolWeak(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	cpuVals := netDebugAct(t, "LayerStrongPoolWeak", false, false, 1, true)
-	gpuVals := netDebugAct(t, "LayerStrongPoolWeak", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuVals, gpuVals, "CPU", "GPU", nil)
+	cpuValues := netDebugAct(t, "LayerStrongPoolWeak", false, false, 1, true)
+	gpuValues := netDebugAct(t, "LayerStrongPoolWeak", false, true, 1, true)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
 }
 
-// netDebugAct prints selected values (if printVals),
+// netDebugAct prints selected values (if printValues),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
-func netDebugAct(t *testing.T, params string, printVals bool, gpu bool, nData int, initWts bool) map[string]float32 {
+func netDebugAct(t *testing.T, params string, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	ctx := NewContext()
 	testNet := newPoolTestNet(ctx, nData)
 	testNet.ApplyParams(PoolParamSets.SetByName("FullDecay").Sheets["Network"], false)
 	testNet.ApplyParams(PoolParamSets.SetByName(params).Sheets["Network"], false)
 
-	return RunDebugAct(t, ctx, testNet, printVals, gpu, initWts)
+	return RunDebugAct(t, ctx, testNet, printValues, gpu, initWts)
 }

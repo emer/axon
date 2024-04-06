@@ -80,7 +80,7 @@ type PulvParams struct {
 	FullDriveAct float32 `default:"0.6" min:"0.01"`
 
 	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting
-	DriveLayIdx int32 `edit:"-"`
+	DriveLayIndex int32 `edit:"-"`
 
 	pad float32
 }
@@ -230,5 +230,5 @@ func (ly *LayerParams) PulvDefaults() {
 
 // PulvPostBuild does post-Build config of Pulvinar based on BuildConfig options
 func (ly *Layer) PulvPostBuild() {
-	ly.Params.Pulv.DriveLayIdx = ly.BuildConfigFindLayer("DriveLayName", true)
+	ly.Params.Pulv.DriveLayIndex = ly.BuildConfigFindLayer("DriveLayName", true)
 }

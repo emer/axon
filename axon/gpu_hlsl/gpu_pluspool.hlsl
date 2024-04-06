@@ -5,7 +5,7 @@
 // does PlusPhase Update on each Pool
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -34,7 +34,7 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-// [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+// [[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
 void PlusPool2(in Context ctx, in LayerParams ly, inout Pool pl) {
@@ -42,17 +42,17 @@ void PlusPool2(in Context ctx, in LayerParams ly, inout Pool pl) {
 }
 
 void PlusPool(in Context ctx, uint di, inout Pool pl) {
-	PlusPool2(ctx, Layers[pl.LayIdx], pl);
+	PlusPool2(ctx, Layers[pl.LayIndex], pl);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over all Pools
 	uint npi = idx.x; // network pi
-	if (!Ctx[0].NetIdxs.PoolDataIdxIsValid(npi)) {
+	if (!Ctx[0].NetIndexes.PoolDataIndexIsValid(npi)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	PlusPool(Ctx[0], di, Pools[npi]);

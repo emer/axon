@@ -99,7 +99,7 @@ const LayerTypesN LayerTypes = 30
 
 var _LayerTypesValueMap = map[string]LayerTypes{`SuperLayer`: 0, `InputLayer`: 1, `TargetLayer`: 2, `CompareLayer`: 3, `CTLayer`: 4, `PulvinarLayer`: 5, `TRNLayer`: 6, `PTMaintLayer`: 7, `PTPredLayer`: 8, `MatrixLayer`: 9, `STNLayer`: 10, `GPLayer`: 11, `BGThalLayer`: 12, `VSGatedLayer`: 13, `BLALayer`: 14, `CeMLayer`: 15, `VSPatchLayer`: 16, `LHbLayer`: 17, `DrivesLayer`: 18, `UrgencyLayer`: 19, `USLayer`: 20, `PVLayer`: 21, `LDTLayer`: 22, `VTALayer`: 23, `RewLayer`: 24, `RWPredLayer`: 25, `RWDaLayer`: 26, `TDPredLayer`: 27, `TDIntegLayer`: 28, `TDDaLayer`: 29}
 
-var _LayerTypesDescMap = map[LayerTypes]string{0: `Super is a superficial cortical layer (lamina 2-3-4) which does not receive direct input or targets. In more generic models, it should be used as a Hidden layer, and maps onto the Hidden type in emer.LayerType.`, 1: `Input is a layer that receives direct external input in its Ext inputs. Biologically, it can be a primary sensory layer, or a thalamic layer.`, 2: `Target is a layer that receives direct external target inputs used for driving plus-phase learning. Simple target layers are generally not used in more biological models, which instead use predictive learning via Pulvinar or related mechanisms.`, 3: `Compare is a layer that receives external comparison inputs, which drive statistics but do NOT drive activation or learning directly. It is rarely used in axon.`, 4: `CT are layer 6 corticothalamic projecting neurons, which drive &#34;top down&#34; predictions in Pulvinar layers. They maintain information over time via stronger NMDA channels and use maintained prior state information to generate predictions about current states forming on Super layers that then drive PT (5IB) bursting activity, which are the plus-phase drivers of Pulvinar activity.`, 5: `Pulvinar are thalamic relay cell neurons in the higher-order Pulvinar nucleus of the thalamus, and functionally isomorphic neurons in the MD thalamus, and potentially other areas. These cells alternately reflect predictions driven by CT projections, and actual outcomes driven by 5IB Burst activity from corresponding PT or Super layer neurons that provide strong driving inputs.`, 6: `TRNLayer is thalamic reticular nucleus layer for inhibitory competition within the thalamus.`, 7: `PTMaintLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that exhibit robust, stable maintenance of activity over the duration of a goal engaged window, modulated by basal ganglia (BG) disinhibitory gating, supported by strong MaintNMDA channels and recurrent excitation. The lateral PTSelfMaint projection uses MaintG to drive GMaintRaw input that feeds into the stronger, longer MaintNMDA channels, and the ThalToPT ModulatoryG projection from BGThalamus multiplicatively modulates the strength of other inputs, such that only at the time of BG gating are these strong enough to drive sustained active maintenance. Use Act.Dend.ModGain to parameterize.`, 8: `PTPredLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that combine modulatory input from PTMaintLayer sustained maintenance and CTLayer dynamic predictive learning that helps to predict state changes during the period of active goal maintenance. This layer provides the primary input to VSPatch US-timing prediction layers, and other layers that require predictive dynamic`, 9: `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`, 10: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`, 11: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`, 12: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory projection from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`, 13: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`, 14: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`, 15: `CeMLayer represents a central nucleus of the amygdala layer.`, 16: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`, 17: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`, 18: `DrivesLayer represents the Drives in PVLV framework. It tracks the Global Drives values for visualization and predictive learning purposes.`, 19: `UrgencyLayer represents the Urgency factor in PVLV framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`, 20: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in PVLV.`, 21: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`, 22: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`, 23: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from PVLV-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`, 24: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`, 25: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPrjn which does simple delta-rule learning on minus-plus.`, 26: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`, 27: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPrjn projection type for DA modulated learning.`, 28: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerVals from TDPredLayer.`, 29: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerVals.`}
+var _LayerTypesDescMap = map[LayerTypes]string{0: `Super is a superficial cortical layer (lamina 2-3-4) which does not receive direct input or targets. In more generic models, it should be used as a Hidden layer, and maps onto the Hidden type in emer.LayerType.`, 1: `Input is a layer that receives direct external input in its Ext inputs. Biologically, it can be a primary sensory layer, or a thalamic layer.`, 2: `Target is a layer that receives direct external target inputs used for driving plus-phase learning. Simple target layers are generally not used in more biological models, which instead use predictive learning via Pulvinar or related mechanisms.`, 3: `Compare is a layer that receives external comparison inputs, which drive statistics but do NOT drive activation or learning directly. It is rarely used in axon.`, 4: `CT are layer 6 corticothalamic projecting neurons, which drive &#34;top down&#34; predictions in Pulvinar layers. They maintain information over time via stronger NMDA channels and use maintained prior state information to generate predictions about current states forming on Super layers that then drive PT (5IB) bursting activity, which are the plus-phase drivers of Pulvinar activity.`, 5: `Pulvinar are thalamic relay cell neurons in the higher-order Pulvinar nucleus of the thalamus, and functionally isomorphic neurons in the MD thalamus, and potentially other areas. These cells alternately reflect predictions driven by CT projections, and actual outcomes driven by 5IB Burst activity from corresponding PT or Super layer neurons that provide strong driving inputs.`, 6: `TRNLayer is thalamic reticular nucleus layer for inhibitory competition within the thalamus.`, 7: `PTMaintLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that exhibit robust, stable maintenance of activity over the duration of a goal engaged window, modulated by basal ganglia (BG) disinhibitory gating, supported by strong MaintNMDA channels and recurrent excitation. The lateral PTSelfMaint projection uses MaintG to drive GMaintRaw input that feeds into the stronger, longer MaintNMDA channels, and the ThalToPT ModulatoryG projection from BGThalamus multiplicatively modulates the strength of other inputs, such that only at the time of BG gating are these strong enough to drive sustained active maintenance. Use Act.Dend.ModGain to parameterize.`, 8: `PTPredLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that combine modulatory input from PTMaintLayer sustained maintenance and CTLayer dynamic predictive learning that helps to predict state changes during the period of active goal maintenance. This layer provides the primary input to VSPatch US-timing prediction layers, and other layers that require predictive dynamic`, 9: `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`, 10: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`, 11: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`, 12: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory projection from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`, 13: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`, 14: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`, 15: `CeMLayer represents a central nucleus of the amygdala layer.`, 16: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`, 17: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`, 18: `DrivesLayer represents the Drives in PVLV framework. It tracks the Global Drives values for visualization and predictive learning purposes.`, 19: `UrgencyLayer represents the Urgency factor in PVLV framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`, 20: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in PVLV.`, 21: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`, 22: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`, 23: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from PVLV-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`, 24: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`, 25: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPrjn which does simple delta-rule learning on minus-plus.`, 26: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`, 27: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPrjn projection type for DA modulated learning.`, 28: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerValues from TDPredLayer.`, 29: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerValues.`}
 
 var _LayerTypesMap = map[LayerTypes]string{0: `SuperLayer`, 1: `InputLayer`, 2: `TargetLayer`, 3: `CompareLayer`, 4: `CTLayer`, 5: `PulvinarLayer`, 6: `TRNLayer`, 7: `PTMaintLayer`, 8: `PTPredLayer`, 9: `MatrixLayer`, 10: `STNLayer`, 11: `GPLayer`, 12: `BGThalLayer`, 13: `VSGatedLayer`, 14: `BLALayer`, 15: `CeMLayer`, 16: `VSPatchLayer`, 17: `LHbLayer`, 18: `DrivesLayer`, 19: `UrgencyLayer`, 20: `USLayer`, 21: `PVLayer`, 22: `LDTLayer`, 23: `VTALayer`, 24: `RewLayer`, 25: `RWPredLayer`, 26: `RWDaLayer`, 27: `TDPredLayer`, 28: `TDIntegLayer`, 29: `TDDaLayer`}
 
@@ -350,47 +350,47 @@ func (i *NeuronAvgVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "NeuronAvgVars")
 }
 
-var _NeuronIdxsValues = []NeuronIdxs{0, 1, 2}
+var _NeuronIndexesValues = []NeuronIndexes{0, 1, 2}
 
-// NeuronIdxsN is the highest valid value for type NeuronIdxs, plus one.
-const NeuronIdxsN NeuronIdxs = 3
+// NeuronIndexesN is the highest valid value for type NeuronIndexes, plus one.
+const NeuronIndexesN NeuronIndexes = 3
 
-var _NeuronIdxsValueMap = map[string]NeuronIdxs{`NrnNeurIdx`: 0, `NrnLayIdx`: 1, `NrnSubPool`: 2}
+var _NeuronIndexesValueMap = map[string]NeuronIndexes{`NrnNeurIndex`: 0, `NrnLayIndex`: 1, `NrnSubPool`: 2}
 
-var _NeuronIdxsDescMap = map[NeuronIdxs]string{0: `NrnNeurIdx is the index of this neuron within its owning layer`, 1: `NrnLayIdx is the index of the layer that this neuron belongs to, needed for neuron-level parallel code.`, 2: `NrnSubPool is the index of the sub-level inhibitory pool for this neuron (only for 4D shapes, the pool (unit-group / hypercolumn) structure level). Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).`}
+var _NeuronIndexesDescMap = map[NeuronIndexes]string{0: `NrnNeurIndex is the index of this neuron within its owning layer`, 1: `NrnLayIndex is the index of the layer that this neuron belongs to, needed for neuron-level parallel code.`, 2: `NrnSubPool is the index of the sub-level inhibitory pool for this neuron (only for 4D shapes, the pool (unit-group / hypercolumn) structure level). Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).`}
 
-var _NeuronIdxsMap = map[NeuronIdxs]string{0: `NrnNeurIdx`, 1: `NrnLayIdx`, 2: `NrnSubPool`}
+var _NeuronIndexesMap = map[NeuronIndexes]string{0: `NrnNeurIndex`, 1: `NrnLayIndex`, 2: `NrnSubPool`}
 
-// String returns the string representation of this NeuronIdxs value.
-func (i NeuronIdxs) String() string { return enums.String(i, _NeuronIdxsMap) }
+// String returns the string representation of this NeuronIndexes value.
+func (i NeuronIndexes) String() string { return enums.String(i, _NeuronIndexesMap) }
 
-// SetString sets the NeuronIdxs value from its string representation,
+// SetString sets the NeuronIndexes value from its string representation,
 // and returns an error if the string is invalid.
-func (i *NeuronIdxs) SetString(s string) error {
-	return enums.SetString(i, s, _NeuronIdxsValueMap, "NeuronIdxs")
+func (i *NeuronIndexes) SetString(s string) error {
+	return enums.SetString(i, s, _NeuronIndexesValueMap, "NeuronIndexes")
 }
 
-// Int64 returns the NeuronIdxs value as an int64.
-func (i NeuronIdxs) Int64() int64 { return int64(i) }
+// Int64 returns the NeuronIndexes value as an int64.
+func (i NeuronIndexes) Int64() int64 { return int64(i) }
 
-// SetInt64 sets the NeuronIdxs value from an int64.
-func (i *NeuronIdxs) SetInt64(in int64) { *i = NeuronIdxs(in) }
+// SetInt64 sets the NeuronIndexes value from an int64.
+func (i *NeuronIndexes) SetInt64(in int64) { *i = NeuronIndexes(in) }
 
-// Desc returns the description of the NeuronIdxs value.
-func (i NeuronIdxs) Desc() string { return enums.Desc(i, _NeuronIdxsDescMap) }
+// Desc returns the description of the NeuronIndexes value.
+func (i NeuronIndexes) Desc() string { return enums.Desc(i, _NeuronIndexesDescMap) }
 
-// NeuronIdxsValues returns all possible values for the type NeuronIdxs.
-func NeuronIdxsValues() []NeuronIdxs { return _NeuronIdxsValues }
+// NeuronIndexesValues returns all possible values for the type NeuronIndexes.
+func NeuronIndexesValues() []NeuronIndexes { return _NeuronIndexesValues }
 
-// Values returns all possible values for the type NeuronIdxs.
-func (i NeuronIdxs) Values() []enums.Enum { return enums.Values(_NeuronIdxsValues) }
+// Values returns all possible values for the type NeuronIndexes.
+func (i NeuronIndexes) Values() []enums.Enum { return enums.Values(_NeuronIndexesValues) }
 
 // MarshalText implements the [encoding.TextMarshaler] interface.
-func (i NeuronIdxs) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+func (i NeuronIndexes) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
-func (i *NeuronIdxs) UnmarshalText(text []byte) error {
-	return enums.UnmarshalText(i, text, "NeuronIdxs")
+func (i *NeuronIndexes) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "NeuronIndexes")
 }
 
 var _GPLayerTypesValues = []GPLayerTypes{0, 1, 2}
@@ -565,45 +565,45 @@ func (i *SynapseCaVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "SynapseCaVars")
 }
 
-var _SynapseIdxsValues = []SynapseIdxs{0, 1, 2}
+var _SynapseIndexesValues = []SynapseIndexes{0, 1, 2}
 
-// SynapseIdxsN is the highest valid value for type SynapseIdxs, plus one.
-const SynapseIdxsN SynapseIdxs = 3
+// SynapseIndexesN is the highest valid value for type SynapseIndexes, plus one.
+const SynapseIndexesN SynapseIndexes = 3
 
-var _SynapseIdxsValueMap = map[string]SynapseIdxs{`SynRecvIdx`: 0, `SynSendIdx`: 1, `SynPrjnIdx`: 2}
+var _SynapseIndexesValueMap = map[string]SynapseIndexes{`SynRecvIndex`: 0, `SynSendIndex`: 1, `SynPrjnIndex`: 2}
 
-var _SynapseIdxsDescMap = map[SynapseIdxs]string{0: `SynRecvIdx is receiving neuron index in network&#39;s global list of neurons`, 1: `SynSendIdx is sending neuron index in network&#39;s global list of neurons`, 2: `SynPrjnIdx is projection index in global list of projections organized as [Layers][RecvPrjns]`}
+var _SynapseIndexesDescMap = map[SynapseIndexes]string{0: `SynRecvIndex is receiving neuron index in network&#39;s global list of neurons`, 1: `SynSendIndex is sending neuron index in network&#39;s global list of neurons`, 2: `SynPrjnIndex is projection index in global list of projections organized as [Layers][RecvPrjns]`}
 
-var _SynapseIdxsMap = map[SynapseIdxs]string{0: `SynRecvIdx`, 1: `SynSendIdx`, 2: `SynPrjnIdx`}
+var _SynapseIndexesMap = map[SynapseIndexes]string{0: `SynRecvIndex`, 1: `SynSendIndex`, 2: `SynPrjnIndex`}
 
-// String returns the string representation of this SynapseIdxs value.
-func (i SynapseIdxs) String() string { return enums.String(i, _SynapseIdxsMap) }
+// String returns the string representation of this SynapseIndexes value.
+func (i SynapseIndexes) String() string { return enums.String(i, _SynapseIndexesMap) }
 
-// SetString sets the SynapseIdxs value from its string representation,
+// SetString sets the SynapseIndexes value from its string representation,
 // and returns an error if the string is invalid.
-func (i *SynapseIdxs) SetString(s string) error {
-	return enums.SetString(i, s, _SynapseIdxsValueMap, "SynapseIdxs")
+func (i *SynapseIndexes) SetString(s string) error {
+	return enums.SetString(i, s, _SynapseIndexesValueMap, "SynapseIndexes")
 }
 
-// Int64 returns the SynapseIdxs value as an int64.
-func (i SynapseIdxs) Int64() int64 { return int64(i) }
+// Int64 returns the SynapseIndexes value as an int64.
+func (i SynapseIndexes) Int64() int64 { return int64(i) }
 
-// SetInt64 sets the SynapseIdxs value from an int64.
-func (i *SynapseIdxs) SetInt64(in int64) { *i = SynapseIdxs(in) }
+// SetInt64 sets the SynapseIndexes value from an int64.
+func (i *SynapseIndexes) SetInt64(in int64) { *i = SynapseIndexes(in) }
 
-// Desc returns the description of the SynapseIdxs value.
-func (i SynapseIdxs) Desc() string { return enums.Desc(i, _SynapseIdxsDescMap) }
+// Desc returns the description of the SynapseIndexes value.
+func (i SynapseIndexes) Desc() string { return enums.Desc(i, _SynapseIndexesDescMap) }
 
-// SynapseIdxsValues returns all possible values for the type SynapseIdxs.
-func SynapseIdxsValues() []SynapseIdxs { return _SynapseIdxsValues }
+// SynapseIndexesValues returns all possible values for the type SynapseIndexes.
+func SynapseIndexesValues() []SynapseIndexes { return _SynapseIndexesValues }
 
-// Values returns all possible values for the type SynapseIdxs.
-func (i SynapseIdxs) Values() []enums.Enum { return enums.Values(_SynapseIdxsValues) }
+// Values returns all possible values for the type SynapseIndexes.
+func (i SynapseIndexes) Values() []enums.Enum { return enums.Values(_SynapseIndexesValues) }
 
 // MarshalText implements the [encoding.TextMarshaler] interface.
-func (i SynapseIdxs) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+func (i SynapseIndexes) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
-func (i *SynapseIdxs) UnmarshalText(text []byte) error {
-	return enums.UnmarshalText(i, text, "SynapseIdxs")
+func (i *SynapseIndexes) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "SynapseIndexes")
 }

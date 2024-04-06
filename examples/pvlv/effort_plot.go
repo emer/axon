@@ -187,8 +187,8 @@ func (ss *DrEffPlot) TimeRun() { //gti:add
 
 		axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, usv)
 		axon.SetGlbV(ctx, 0, axon.GvHadRew, num.FromBool[float32](usv > 0))
-		pp.EffortUrgencyUpdt(ctx, 0, 0)
-		pp.DriveUpdt(ctx, 0)
+		pp.EffortUrgencyUpdate(ctx, 0, 0)
+		pp.DriveUpdate(ctx, 0)
 	}
 	ss.TimePlot.Update()
 }

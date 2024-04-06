@@ -167,8 +167,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.Prjn = pj.(*axon.Prjn)
 }
 
-// NeuronUpdt updates the neuron with whether send or recv spiked
-func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
+// NeuronUpdate updates the neuron with whether send or recv spiked
+func (ss *Sim) NeuronUpdate(sSpk, rSpk bool, ge, gi float32) {
 	ly := ss.Net.LayByName("Recv")
 	ac := &ly.Params.Act
 	sn := ss.SendNeur
@@ -234,11 +234,11 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 	ly.Params.Learn.CaFmSpike(rn)
 	ly.Params.Learn.CaFmSpike(sn)
 
-	ss.SynUpdt()
+	ss.SynUpdate()
 }
 
-// SynUpdt updates the synapses based on current neuron state
-func (ss *Sim) SynUpdt() {
+// SynUpdate updates the synapses based on current neuron state
+func (ss *Sim) SynUpdate() {
 	// ly := ss.Net.LayByName("Recv")
 	pj := ss.Prjn
 	kp := &pj.Params.Learn.KinaseCa

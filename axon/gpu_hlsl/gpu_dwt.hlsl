@@ -5,7 +5,7 @@
 // performs the DWt function on all sending projections
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -36,7 +36,7 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
 void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint syni, uint di, uint si, uint ri) {
@@ -46,25 +46,25 @@ void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint syni, u
 	bool isTarget = (rlay.Acts.Clamp.IsTarget == 1);
 	uint pi = NrnI(ctx, ri, NrnSubPool);
 
-	pj.DWtSyn(ctx, syni, si, ri, di, Pools[rlay.Idxs.PoolIdx(0, di)], Pools[rlay.Idxs.PoolIdx(pi, di)], isTarget);
+	pj.DWtSyn(ctx, syni, si, ri, di, Pools[rlay.Indexes.PoolIndex(0, di)], Pools[rlay.Indexes.PoolIndex(pi, di)], isTarget);
 }
 
 void DWtSyn(in Context ctx, uint syni, uint di) {
-	uint pi = SynI(ctx, syni, SynPrjnIdx);
-	uint si = SynI(ctx, syni, SynSendIdx);
-	uint ri = SynI(ctx, syni, SynRecvIdx);
-	DWtSyn2(ctx, Layers[Prjns[pi].Idxs.RecvLay], Prjns[pi], syni, di, si, ri);
+	uint pi = SynI(ctx, syni, SynPrjnIndex);
+	uint si = SynI(ctx, syni, SynSendIndex);
+	uint ri = SynI(ctx, syni, SynRecvIndex);
+	DWtSyn2(ctx, Layers[Prjns[pi].Indexes.RecvLay], Prjns[pi], syni, di, si, ri);
 }
 
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Synapses * Data
-	uint syni = Ctx[0].NetIdxs.ItemIdx(idx.x);
-	if (!Ctx[0].NetIdxs.SynIdxIsValid(syni)) {
+	uint syni = Ctx[0].NetIndexes.ItemIndex(idx.x);
+	if (!Ctx[0].NetIndexes.SynIndexIsValid(syni)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	DWtSyn(Ctx[0], syni, di);

@@ -32,19 +32,19 @@ var content embed.FS
 [[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns]
+[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIndexes; // [Layer][RecvPrjns]
 [[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIndexes; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] RWStructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 [[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
 [[vk::binding(6, 2)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons][Data]
 
@@ -69,39 +69,39 @@ var content embed.FS
 
 Set: 0
     Role: Storage
-        Var: 0:	Layers	Struct[4]	(size: 1520)	Vals: 1
-        Var: 1:	Prjns		Struct[5]	(size: 352)	Vals: 1
+        Var: 0:	Layers	Struct[4]	(size: 1520)	Values: 1
+        Var: 1:	Prjns		Struct[5]	(size: 352)	Values: 1
 Set: 1
     Role: Storage
-        Var: 0:	NeuronIxs		Uint32[534]	(size: 4)	Vals: 1
-        Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Vals: 1
-        Var: 2:	SendCon		Struct[242]	(size: 16)	Vals: 1
-        Var: 3:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
-        Var: 4:	RecvCon		Struct[281]	(size: 16)	Vals: 1
-        Var: 5:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+        Var: 0:	NeuronIxs		Uint32[534]	(size: 4)	Values: 1
+        Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Values: 1
+        Var: 2:	SendCon		Struct[242]	(size: 16)	Values: 1
+        Var: 3:	RecvPrjnIndexes	Uint32[5]	(size: 4)	Values: 1
+        Var: 4:	RecvCon		Struct[281]	(size: 16)	Values: 1
+        Var: 5:	RecvSynIndexes	Uint32[12992]	(size: 4)	Values: 1
 Set: 2
     Role: Storage
-        Var: 0:	Ctx		Struct	(size: 512)	Vals: 1
-        Var: 1:	Neurons	Float32[227840]	(size: 4)	Vals: 1
-        Var: 2:	NeuronAvgs	Float32[1246]	(size: 4)	Vals: 1
-        Var: 3:	Pools		Struct[64]	(size: 1040)	Vals: 1
-        Var: 4:	LayVals	Struct[64]	(size: 80)	Vals: 1
-        Var: 5:	Globals	Float32[976]	(size: 4)	Vals: 1
-        Var: 6:	Exts		Float32[800]	(size: 4)	Vals: 1
+        Var: 0:	Ctx		Struct	(size: 512)	Values: 1
+        Var: 1:	Neurons	Float32[227840]	(size: 4)	Values: 1
+        Var: 2:	NeuronAvgs	Float32[1246]	(size: 4)	Values: 1
+        Var: 3:	Pools		Struct[64]	(size: 1040)	Values: 1
+        Var: 4:	LayValues	Struct[64]	(size: 80)	Values: 1
+        Var: 5:	Globals	Float32[976]	(size: 4)	Values: 1
+        Var: 6:	Exts		Float32[800]	(size: 4)	Values: 1
 Set: 3
     Role: Storage
-        Var: 0:	GBuf		Int32[13488]	(size: 4)	Vals: 1
-        Var: 1:	GSyns		Float32[4496]	(size: 4)	Vals: 1
-        Var: 2:	Synapses	Float32[64960]	(size: 4)	Vals: 1
+        Var: 0:	GBuf		Int32[13488]	(size: 4)	Values: 1
+        Var: 1:	GSyns		Float32[4496]	(size: 4)	Values: 1
+        Var: 2:	Synapses	Float32[64960]	(size: 4)	Values: 1
 Set: 4
     Role: Storage
-        Var: 0:	SynapseCas0	Float32[1455104]	(size: 4)	Vals: 1
-        Var: 1:	SynapseCas1	Float32	(size: 4)	Vals: 1
-        Var: 2:	SynapseCas2	Float32	(size: 4)	Vals: 1
-        Var: 3:	SynapseCas3	Float32	(size: 4)	Vals: 1
-        Var: 4:	SynapseCas4	Float32	(size: 4)	Vals: 1
-        Var: 5:	SynapseCas5	Float32	(size: 4)	Vals: 1
-        Var: 6:	SynapseCas6	Float32	(size: 4)	Vals: 1
+        Var: 0:	SynapseCas0	Float32[1455104]	(size: 4)	Values: 1
+        Var: 1:	SynapseCas1	Float32	(size: 4)	Values: 1
+        Var: 2:	SynapseCas2	Float32	(size: 4)	Values: 1
+        Var: 3:	SynapseCas3	Float32	(size: 4)	Values: 1
+        Var: 4:	SynapseCas4	Float32	(size: 4)	Values: 1
+        Var: 5:	SynapseCas5	Float32	(size: 4)	Values: 1
+        Var: 6:	SynapseCas6	Float32	(size: 4)	Values: 1
 */
 
 // TheGPU is the gpu device, shared across all networks
@@ -147,7 +147,7 @@ type GPU struct {
 	Params *vgpu.VarSet `view:"-"`
 
 	// VarSet = 1: the storage indexes and PrjnParams
-	Idxs *vgpu.VarSet `view:"-"`
+	Indexes *vgpu.VarSet `view:"-"`
 
 	// VarSet = 2: the Storage buffer for RW state structs and neuron floats
 	Structs *vgpu.VarSet `view:"-"`
@@ -254,7 +254,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	pcset := vars.AddPushSet()
 	gp.Params = vars.AddSet()
-	gp.Idxs = vars.AddSet()
+	gp.Indexes = vars.AddSet()
 	gp.Structs = vars.AddSet()
 	gp.Syns = vars.AddSet()
 	gp.SynCas = vars.AddSet()
@@ -265,19 +265,19 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Params.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(gp.Net.PrjnParams), vgpu.Storage, vgpu.ComputeShader)
 
 	// note: prjns must be in Storage here because couldn't have both Layers and Prjns as uniform.
-	gp.Idxs.Add("NeuronIxs", vgpu.Uint32, len(gp.Net.NeuronIxs), vgpu.Storage, vgpu.ComputeShader)
-	gp.Idxs.Add("SynapseIxs", vgpu.Uint32, len(gp.Net.SynapseIxs), vgpu.Storage, vgpu.ComputeShader)
-	gp.Idxs.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnSendCon), vgpu.Storage, vgpu.ComputeShader)
-	gp.Idxs.Add("RecvPrjnIdxs", vgpu.Uint32, len(gp.Net.RecvPrjnIdxs), vgpu.Storage, vgpu.ComputeShader)
-	gp.Idxs.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
-	gp.Idxs.Add("RecvSynIdxs", vgpu.Uint32, len(gp.Net.RecvSynIdxs), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("NeuronIxs", vgpu.Uint32, len(gp.Net.NeuronIxs), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("SynapseIxs", vgpu.Uint32, len(gp.Net.SynapseIxs), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnSendCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("RecvPrjnIndexes", vgpu.Uint32, len(gp.Net.RecvPrjnIndexes), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("RecvSynIndexes", vgpu.Uint32, len(gp.Net.RecvSynIndexes), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("Neurons", vgpu.Float32, len(gp.Net.Neurons), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("NeuronAvgs", vgpu.Float32, len(gp.Net.NeuronAvgs), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Pools", int(unsafe.Sizeof(Pool{})), len(gp.Net.Pools), vgpu.Storage, vgpu.ComputeShader)
-	gp.Structs.AddStruct("LayVals", int(unsafe.Sizeof(LayerVals{})), len(gp.Net.LayVals), vgpu.Storage, vgpu.ComputeShader)
+	gp.Structs.AddStruct("LayValues", int(unsafe.Sizeof(LayerValues{})), len(gp.Net.LayValues), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("Globals", vgpu.Float32, len(gp.Net.Globals), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("Exts", vgpu.Float32, len(gp.Net.Exts), vgpu.Storage, vgpu.ComputeShader)
 
@@ -294,11 +294,11 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.SynCas.Add("SynapseCas6", vgpu.Float32, len(gp.SynapseCas6), vgpu.Storage, vgpu.ComputeShader)
 	gp.SynCas.Add("SynapseCas7", vgpu.Float32, len(gp.SynapseCas7), vgpu.Storage, vgpu.ComputeShader)
 
-	gp.Params.ConfigVals(1)
-	gp.Idxs.ConfigVals(1)
-	gp.Structs.ConfigVals(1)
-	gp.Syns.ConfigVals(1)
-	gp.SynCas.ConfigVals(1)
+	gp.Params.ConfigValues(1)
+	gp.Indexes.ConfigValues(1)
+	gp.Structs.ConfigValues(1)
+	gp.Syns.ConfigValues(1)
+	gp.SynCas.ConfigValues(1)
 
 	// pipelines
 	gp.Sys.NewComputePipelineEmbed("GatherSpikes", content, "shaders/gpu_gather.spv")
@@ -329,7 +329,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.Config()
 
 	gp.CopyParamsToStaging()
-	gp.CopyIdxsToStaging()
+	gp.CopyIndexesToStaging()
 	gp.CopyExtsToStaging()
 	gp.CopyContextToStaging()
 	gp.CopyStateToStaging()
@@ -346,8 +346,8 @@ func (gp *GPU) ConfigSynCaBuffs() {
 
 	ctx := gp.Ctx
 	net := gp.Net
-	ctx.NetIdxs.GPUMaxBuffFloats = uint32(floatMax)
-	net.Ctx.NetIdxs.GPUMaxBuffFloats = uint32(floatMax)
+	ctx.NetIndexes.GPUMaxBuffFloats = uint32(floatMax)
+	net.Ctx.NetIndexes.GPUMaxBuffFloats = uint32(floatMax)
 
 	nSynCaFloat := len(net.SynapseCas)
 	nCaBanks := nSynCaFloat / int(floatMax)
@@ -355,10 +355,10 @@ func (gp *GPU) ConfigSynCaBuffs() {
 	if caLast > 0 {
 		nCaBanks++
 	}
-	ctx.NetIdxs.GPUSynCaBanks = uint32(nCaBanks)
-	net.Ctx.NetIdxs.GPUSynCaBanks = uint32(nCaBanks)
+	ctx.NetIndexes.GPUSynCaBanks = uint32(nCaBanks)
+	net.Ctx.NetIndexes.GPUSynCaBanks = uint32(nCaBanks)
 
-	// fmt.Printf("banks %d: MaxBuffFloats: %X\n", ctx.NetIdxs.GPUSynCaBanks, ctx.NetIdxs.GPUMaxBuffFloats)
+	// fmt.Printf("banks %d: MaxBuffFloats: %X\n", ctx.NetIndexes.GPUSynCaBanks, ctx.NetIndexes.GPUMaxBuffFloats)
 
 	if nCaBanks > 8 {
 		panic(fmt.Sprintf("SynapseCas only supports 8 banks of %X floats -- needs: %d banks\n", floatMax, nCaBanks))
@@ -448,10 +448,10 @@ func (gp *GPU) CopyParamsToStaging() {
 	if !gp.On {
 		return
 	}
-	_, layv, _ := gp.Params.ValByIdxTry("Layers", 0)
+	_, layv, _ := gp.Params.ValueByIndexTry("Layers", 0)
 	layv.CopyFromBytes(unsafe.Pointer(&gp.Net.LayParams[0]))
 
-	_, pjnv, _ := gp.Params.ValByIdxTry("Prjns", 0)
+	_, pjnv, _ := gp.Params.ValueByIndexTry("Prjns", 0)
 	pjnv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnParams[0]))
 }
 
@@ -465,30 +465,30 @@ func (gp *GPU) SyncParamsToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// CopyIdxsToStaging is only called when the network is built
+// CopyIndexesToStaging is only called when the network is built
 // to copy the indexes specifying connectivity etc to staging from CPU.
-func (gp *GPU) CopyIdxsToStaging() {
+func (gp *GPU) CopyIndexesToStaging() {
 	if !gp.On {
 		return
 	}
 
-	_, neuriv, _ := gp.Idxs.ValByIdxTry("NeuronIxs", 0)
+	_, neuriv, _ := gp.Indexes.ValueByIndexTry("NeuronIxs", 0)
 	neuriv.CopyFromBytes(unsafe.Pointer(&gp.Net.NeuronIxs[0]))
 
-	_, syniv, _ := gp.Idxs.ValByIdxTry("SynapseIxs", 0)
+	_, syniv, _ := gp.Indexes.ValueByIndexTry("SynapseIxs", 0)
 	syniv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseIxs[0]))
 
-	_, sconv, _ := gp.Idxs.ValByIdxTry("SendCon", 0)
+	_, sconv, _ := gp.Indexes.ValueByIndexTry("SendCon", 0)
 	sconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnSendCon[0]))
 
-	_, spiv, _ := gp.Idxs.ValByIdxTry("RecvPrjnIdxs", 0)
-	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPrjnIdxs[0]))
+	_, spiv, _ := gp.Indexes.ValueByIndexTry("RecvPrjnIndexes", 0)
+	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPrjnIndexes[0]))
 
-	_, rconv, _ := gp.Idxs.ValByIdxTry("RecvCon", 0)
+	_, rconv, _ := gp.Indexes.ValueByIndexTry("RecvCon", 0)
 	rconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnRecvCon[0]))
 
-	_, ssiv, _ := gp.Idxs.ValByIdxTry("RecvSynIdxs", 0)
-	ssiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvSynIdxs[0]))
+	_, ssiv, _ := gp.Indexes.ValueByIndexTry("RecvSynIndexes", 0)
+	ssiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvSynIndexes[0]))
 }
 
 // CopyExtsToStaging copies external inputs to staging from CPU.
@@ -497,7 +497,7 @@ func (gp *GPU) CopyExtsToStaging() {
 	if !gp.On {
 		return
 	}
-	_, extv, _ := gp.Structs.ValByIdxTry("Exts", 0)
+	_, extv, _ := gp.Structs.ValueByIndexTry("Exts", 0)
 	extv.CopyFromBytes(unsafe.Pointer(&gp.Net.Exts[0]))
 }
 
@@ -508,8 +508,8 @@ func (gp *GPU) CopyContextToStaging() {
 	if !gp.On {
 		return
 	}
-	_, ctxv, _ := gp.Structs.ValByIdxTry("Ctx", 0)
-	_, glbv, _ := gp.Structs.ValByIdxTry("Globals", 0)
+	_, ctxv, _ := gp.Structs.ValueByIndexTry("Ctx", 0)
+	_, glbv, _ := gp.Structs.ValueByIndexTry("Globals", 0)
 	ctxv.CopyFromBytes(unsafe.Pointer(gp.Ctx))
 	glbv.CopyFromBytes(unsafe.Pointer(&gp.Net.Globals[0]))
 }
@@ -536,23 +536,23 @@ func (gp *GPU) SetContext(ctx *Context) {
 	gp.SyncContextToGPU()
 }
 
-// CopyLayerValsToStaging copies LayerVals to staging from CPU.
-// Must call SyncMemToGPU after this (see SyncLayerValsToGPU).
-func (gp *GPU) CopyLayerValsToStaging() {
+// CopyLayerValuesToStaging copies LayerValues to staging from CPU.
+// Must call SyncMemToGPU after this (see SyncLayerValuesToGPU).
+func (gp *GPU) CopyLayerValuesToStaging() {
 	if !gp.On {
 		return
 	}
-	_, layv, _ := gp.Structs.ValByIdxTry("LayVals", 0)
-	layv.CopyFromBytes(unsafe.Pointer(&gp.Net.LayVals[0]))
+	_, layv, _ := gp.Structs.ValueByIndexTry("LayValues", 0)
+	layv.CopyFromBytes(unsafe.Pointer(&gp.Net.LayValues[0]))
 }
 
-// SyncLayerValsToGPU copies LayerVals to GPU from CPU.
+// SyncLayerValuesToGPU copies LayerValues to GPU from CPU.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
-func (gp *GPU) SyncLayerValsToGPU() {
+func (gp *GPU) SyncLayerValuesToGPU() {
 	if !gp.On {
 		return
 	}
-	gp.CopyLayerValsToStaging()
+	gp.CopyLayerValuesToStaging()
 	gp.SyncMemToGPU()
 }
 
@@ -562,7 +562,7 @@ func (gp *GPU) CopyPoolsToStaging() {
 	if !gp.On {
 		return
 	}
-	_, poolv, _ := gp.Structs.ValByIdxTry("Pools", 0)
+	_, poolv, _ := gp.Structs.ValueByIndexTry("Pools", 0)
 	poolv.CopyFromBytes(unsafe.Pointer(&gp.Net.Pools[0]))
 }
 
@@ -582,9 +582,9 @@ func (gp *GPU) CopyNeuronsToStaging() {
 	if !gp.On {
 		return
 	}
-	_, neurv, _ := gp.Structs.ValByIdxTry("Neurons", 0)
+	_, neurv, _ := gp.Structs.ValueByIndexTry("Neurons", 0)
 	neurv.CopyFromBytes(unsafe.Pointer(&gp.Net.Neurons[0]))
-	_, neurav, _ := gp.Structs.ValByIdxTry("NeuronAvgs", 0)
+	_, neurav, _ := gp.Structs.ValueByIndexTry("NeuronAvgs", 0)
 	neurav.CopyFromBytes(unsafe.Pointer(&gp.Net.NeuronAvgs[0]))
 }
 
@@ -598,7 +598,7 @@ func (gp *GPU) SyncNeuronsToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// CopyStateToStaging copies LayerVals, Pools, Neurons state to staging from CPU.
+// CopyStateToStaging copies LayerValues, Pools, Neurons state to staging from CPU.
 // this is typically sufficient for most syncing --
 // only missing the Synapses which must be copied separately.
 // Must call SyncMemToGPU after this (see SyncStateToGPU).
@@ -606,12 +606,12 @@ func (gp *GPU) CopyStateToStaging() {
 	if !gp.On {
 		return
 	}
-	gp.CopyLayerValsToStaging()
+	gp.CopyLayerValuesToStaging()
 	gp.CopyPoolsToStaging()
 	gp.CopyNeuronsToStaging()
 }
 
-// SyncStateToGPU copies LayVals, Pools, Neurons state to GPU
+// SyncStateToGPU copies LayValues, Pools, Neurons state to GPU
 // this is typically sufficient for most syncing --
 // only missing the Synapses which must be copied separately.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
@@ -623,7 +623,7 @@ func (gp *GPU) SyncStateToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// SyncStateGBufToGPU copies LayVals, Pools, Neurons, GBuf state to GPU
+// SyncStateGBufToGPU copies LayValues, Pools, Neurons, GBuf state to GPU
 // this is typically sufficient for most syncing --
 // only missing the Synapses which must be copied separately.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
@@ -636,7 +636,7 @@ func (gp *GPU) SyncStateGBufToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// SyncAllToGPU copies LayerVals, Pools, Neurons, Synapses to GPU.
+// SyncAllToGPU copies LayerValues, Pools, Neurons, Synapses to GPU.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
 func (gp *GPU) SyncAllToGPU() {
 	if !gp.On {
@@ -656,7 +656,7 @@ func (gp *GPU) CopySynapsesToStaging() {
 	if !gp.On {
 		return
 	}
-	_, synv, _ := gp.Syns.ValByIdxTry("Synapses", 0)
+	_, synv, _ := gp.Syns.ValueByIndexTry("Synapses", 0)
 	synv.CopyFromBytes(unsafe.Pointer(&gp.Net.Synapses[0]))
 }
 
@@ -680,34 +680,34 @@ func (gp *GPU) CopySynCaToStaging() {
 		return
 	}
 	// note: do not need these except in GUI or tests
-	_, syncv, _ := gp.SynCas.ValByIdxTry("SynapseCas0", 0)
+	_, syncv, _ := gp.SynCas.ValueByIndexTry("SynapseCas0", 0)
 	syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas0[0]))
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 1 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas1", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 1 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas1", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas1[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 2 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas2", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 2 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas2", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas2[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 3 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas3", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 3 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas3", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas3[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 4 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas4", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 4 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas4", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas4[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 5 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas5", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 5 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas5", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas5[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 6 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas6", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 6 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas6", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas6[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 7 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas7", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 7 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas7", 0)
 		syncv.CopyFromBytes(unsafe.Pointer(&gp.SynapseCas7[0]))
 	}
 }
@@ -728,9 +728,9 @@ func (gp *GPU) CopyGBufToStaging() {
 	if !gp.On {
 		return
 	}
-	_, gbv, _ := gp.Syns.ValByIdxTry("GBuf", 0)
+	_, gbv, _ := gp.Syns.ValueByIndexTry("GBuf", 0)
 	gbv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGBuf[0]))
-	_, gsv, _ := gp.Syns.ValByIdxTry("GSyns", 0)
+	_, gsv, _ := gp.Syns.ValueByIndexTry("GSyns", 0)
 	gsv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGSyns[0]))
 }
 
@@ -750,7 +750,7 @@ func (gp *GPU) SyncGBufToGPU() {
 
 // SyncRegionStruct returns the SyncRegion with error panic
 func (gp *GPU) SyncRegionStruct(vnm string) vgpu.MemReg {
-	r, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, vnm, 0)
+	r, err := gp.Sys.Mem.SyncRegionValueIndex(gp.Structs.Set, vnm, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -759,7 +759,7 @@ func (gp *GPU) SyncRegionStruct(vnm string) vgpu.MemReg {
 
 // SyncRegionSyns returns the SyncRegion with error panic
 func (gp *GPU) SyncRegionSyns(vnm string) vgpu.MemReg {
-	r, err := gp.Sys.Mem.SyncRegionValIdx(gp.Syns.Set, vnm, 0)
+	r, err := gp.Sys.Mem.SyncRegionValueIndex(gp.Syns.Set, vnm, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -768,7 +768,7 @@ func (gp *GPU) SyncRegionSyns(vnm string) vgpu.MemReg {
 
 // SyncRegionSynCas returns the SyncRegion with error panic
 func (gp *GPU) SyncRegionSynCas(vnm string) vgpu.MemReg {
-	r, err := gp.Sys.Mem.SyncRegionValIdx(gp.SynCas.Set, vnm, 0)
+	r, err := gp.Sys.Mem.SyncRegionValueIndex(gp.SynCas.Set, vnm, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -780,46 +780,46 @@ func (gp *GPU) CopyContextFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, ctxv, _ := gp.Structs.ValByIdxTry("Ctx", 0)
-	_, glbv, _ := gp.Structs.ValByIdxTry("Globals", 0)
+	_, ctxv, _ := gp.Structs.ValueByIndexTry("Ctx", 0)
+	_, glbv, _ := gp.Structs.ValueByIndexTry("Globals", 0)
 	ctxv.CopyToBytes(unsafe.Pointer(gp.Ctx))
 	glbv.CopyToBytes(unsafe.Pointer(&gp.Net.Globals[0]))
 }
 
-// SyncContextFmGPU copies Context from GPU to CPU.
+// SyncContextFromGPU copies Context from GPU to CPU.
 // This is done at the end of each cycle to get state back from GPU for CPU-side computations.
 // Use only when only thing being copied -- more efficient to get all at once.
-// e.g. see SyncStateFmGPU
-func (gp *GPU) SyncContextFmGPU() {
+// e.g. see SyncStateFromGPU
+func (gp *GPU) SyncContextFromGPU() {
 	if !gp.On {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(cxr, glr)
 	gp.CopyContextFmStaging()
 }
 
-// CopyLayerValsFmStaging copies LayerVals from staging to CPU, after Sync back down.
-func (gp *GPU) CopyLayerValsFmStaging() {
+// CopyLayerValuesFmStaging copies LayerValues from staging to CPU, after Sync back down.
+func (gp *GPU) CopyLayerValuesFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, layv, _ := gp.Structs.ValByIdxTry("LayVals", 0)
-	layv.CopyToBytes(unsafe.Pointer(&gp.Net.LayVals[0]))
+	_, layv, _ := gp.Structs.ValueByIndexTry("LayValues", 0)
+	layv.CopyToBytes(unsafe.Pointer(&gp.Net.LayValues[0]))
 }
 
-// SyncLayerValsFmGPU copies LayerVals from GPU to CPU.
+// SyncLayerValuesFromGPU copies LayerValues from GPU to CPU.
 // This is done at the end of each cycle to get state back from staging for CPU-side computations.
 // Use only when only thing being copied -- more efficient to get all at once.
-// e.g. see SyncStateFmGPU
-func (gp *GPU) SyncLayerValsFmGPU() {
+// e.g. see SyncStateFromGPU
+func (gp *GPU) SyncLayerValuesFromGPU() {
 	if !gp.On {
 		return
 	}
-	lvr := gp.SyncRegionStruct("LayVals")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvr)
-	gp.CopyLayerValsFmStaging()
+	lvr := gp.SyncRegionStruct("LayValues")
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(lvr)
+	gp.CopyLayerValuesFmStaging()
 }
 
 // CopyPoolsFmStaging copies Pools from staging to CPU, after Sync back down.
@@ -827,19 +827,19 @@ func (gp *GPU) CopyPoolsFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, plv, _ := gp.Structs.ValByIdxTry("Pools", 0)
+	_, plv, _ := gp.Structs.ValueByIndexTry("Pools", 0)
 	plv.CopyToBytes(unsafe.Pointer(&gp.Net.Pools[0]))
 }
 
-// SyncPoolsFmGPU copies Pools from GPU to CPU.
+// SyncPoolsFromGPU copies Pools from GPU to CPU.
 // Use only when only thing being copied -- more efficient to get all at once.
-// e.g. see SyncStateFmGPU
-func (gp *GPU) SyncPoolsFmGPU() {
+// e.g. see SyncStateFromGPU
+func (gp *GPU) SyncPoolsFromGPU() {
 	if !gp.On {
 		return
 	}
 	plr := gp.SyncRegionStruct("Pools")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(plr)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(plr)
 	gp.CopyPoolsFmStaging()
 }
 
@@ -848,24 +848,24 @@ func (gp *GPU) CopyNeuronsFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, neurv, _ := gp.Structs.ValByIdxTry("Neurons", 0)
+	_, neurv, _ := gp.Structs.ValueByIndexTry("Neurons", 0)
 	neurv.CopyToBytes(unsafe.Pointer(&gp.Net.Neurons[0]))
-	_, neurav, _ := gp.Structs.ValByIdxTry("NeuronAvgs", 0)
+	_, neurav, _ := gp.Structs.ValueByIndexTry("NeuronAvgs", 0)
 	neurav.CopyToBytes(unsafe.Pointer(&gp.Net.NeuronAvgs[0]))
 	// note: don't need to get indexes back down
 }
 
-// SyncNeuronsFmGPU copies Neurons from GPU to CPU.
+// SyncNeuronsFromGPU copies Neurons from GPU to CPU.
 // Use only when only thing being copied -- more efficient to get all at once.
-// e.g. see SyncStateFmGPU
-func (gp *GPU) SyncNeuronsFmGPU() {
+// e.g. see SyncStateFromGPU
+func (gp *GPU) SyncNeuronsFromGPU() {
 	if !gp.On {
 		return
 	}
 	nrr := gp.SyncRegionStruct("Neurons")
 	nrar := gp.SyncRegionStruct("NeuronAvgs")
 	// note: don't need to get indexes back down
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrr, nrar)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(nrr, nrar)
 	gp.CopyNeuronsFmStaging()
 }
 
@@ -875,19 +875,19 @@ func (gp *GPU) CopySynapsesFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, synv, _ := gp.Syns.ValByIdxTry("Synapses", 0)
+	_, synv, _ := gp.Syns.ValueByIndexTry("Synapses", 0)
 	synv.CopyToBytes(unsafe.Pointer(&gp.Net.Synapses[0]))
 }
 
-// SyncSynapsesFmGPU copies Synapses from GPU to CPU.
+// SyncSynapsesFromGPU copies Synapses from GPU to CPU.
 // Does not copy SynCa synapse state -- see SynCa methods.
 // Use only when only thing being copied -- more efficient to get all at once.
-func (gp *GPU) SyncSynapsesFmGPU() {
+func (gp *GPU) SyncSynapsesFromGPU() {
 	if !gp.On {
 		return
 	}
 	syr := gp.SyncRegionSyns("Synapses")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(syr)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(syr)
 	gp.CopySynapsesFmStaging()
 }
 
@@ -897,34 +897,34 @@ func (gp *GPU) CopySynCaFmStaging() {
 	if !gp.On {
 		return
 	}
-	_, syncv, _ := gp.SynCas.ValByIdxTry("SynapseCas0", 0)
+	_, syncv, _ := gp.SynCas.ValueByIndexTry("SynapseCas0", 0)
 	syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas0[0]))
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 1 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas1", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 1 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas1", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas1[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 2 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas2", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 2 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas2", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas2[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 3 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas3", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 3 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas3", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas3[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 4 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas4", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 4 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas4", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas4[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 5 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas5", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 5 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas5", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas5[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 6 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas6", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 6 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas6", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas6[0]))
 	}
-	if gp.Ctx.NetIdxs.GPUSynCaBanks > 7 {
-		_, syncv, _ = gp.SynCas.ValByIdxTry("SynapseCas7", 0)
+	if gp.Ctx.NetIndexes.GPUSynCaBanks > 7 {
+		_, syncv, _ = gp.SynCas.ValueByIndexTry("SynapseCas7", 0)
 		syncv.CopyToBytes(unsafe.Pointer(&gp.SynapseCas7[0]))
 	}
 }
@@ -951,80 +951,80 @@ func (gp *GPU) SynCaBuff(idx uint32) []float32 {
 	return nil
 }
 
-// SyncSynCaFmGPU copies the SynCa variables to GPU, which are per-Di (even larger).
+// SyncSynCaFromGPU copies the SynCa variables to GPU, which are per-Di (even larger).
 // This is only used for GUI viewing -- SynCa vars otherwise managed entirely on GPU.
 // Use only when only thing being copied -- more efficient to get all at once.
-func (gp *GPU) SyncSynCaFmGPU() {
+func (gp *GPU) SyncSynCaFromGPU() {
 	if !gp.On {
 		return
 	}
 	ctx := gp.Ctx
-	nBanks := int(ctx.NetIdxs.GPUSynCaBanks)
+	nBanks := int(ctx.NetIndexes.GPUSynCaBanks)
 	regs := make([]vgpu.MemReg, nBanks)
 	for i := range regs {
 		reg := fmt.Sprintf("SynapseCas%d", i)
 		regs[i] = gp.SyncRegionSynCas(reg)
 	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(regs...)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(regs...)
 	gp.CopySynCaFmStaging()
 }
 
-// CopyLayerStateFmStaging copies Context, LayerVals and Pools from staging to CPU, after Sync.
+// CopyLayerStateFmStaging copies Context, LayerValues and Pools from staging to CPU, after Sync.
 func (gp *GPU) CopyLayerStateFmStaging() {
 	gp.CopyContextFmStaging()
-	gp.CopyLayerValsFmStaging()
+	gp.CopyLayerValuesFmStaging()
 	gp.CopyPoolsFmStaging()
 }
 
-// SyncLayerStateFmCPU copies Context, LayerVals, and Pools from GPU to CPU.
+// SyncLayerStateFmCPU copies Context, LayerValues, and Pools from GPU to CPU.
 // This is the main GPU->CPU sync step automatically called after each Cycle.
-func (gp *GPU) SyncLayerStateFmGPU() {
+func (gp *GPU) SyncLayerStateFromGPU() {
 	if !gp.On {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr, lvr, plr)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(cxr, glr, lvr, plr)
 	gp.CopyLayerStateFmStaging()
 }
 
-// CopyStateFmStaging copies Context, LayerVals, Pools, and Neurons from staging to CPU, after Sync.
+// CopyStateFmStaging copies Context, LayerValues, Pools, and Neurons from staging to CPU, after Sync.
 func (gp *GPU) CopyStateFmStaging() {
 	gp.CopyLayerStateFmStaging()
 	gp.CopyNeuronsFmStaging()
 }
 
-// SyncStateFmCPU copies Neurons, LayerVals, and Pools from GPU to CPU.
+// SyncStateFmCPU copies Neurons, LayerValues, and Pools from GPU to CPU.
 // This is the main GPU->CPU sync step automatically called in PlusPhase.
-func (gp *GPU) SyncStateFmGPU() {
+func (gp *GPU) SyncStateFromGPU() {
 	if !gp.On {
 		return
 	}
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 	nrar := gp.SyncRegionStruct("NeuronAvgs")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, glr, lvr, plr, nrr, nrar)
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(cxr, glr, lvr, plr, nrr, nrar)
 	gp.CopyStateFmStaging()
 }
 
 // SyncAllFmCPU copies State except Context plus Synapses from GPU to CPU.
 // This is called before SlowAdapt, which is run CPU-side
-func (gp *GPU) SyncAllFmGPU() {
+func (gp *GPU) SyncAllFromGPU() {
 	if !gp.On {
 		return
 	}
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 	nrar := gp.SyncRegionStruct("NeuronAvgs")
 	syr := gp.SyncRegionSyns("Synapses")
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvr, plr, nrr, nrar, syr)
-	gp.CopyLayerValsFmStaging()
+	gp.Sys.Mem.SyncStorageRegionsFromGPU(lvr, plr, nrr, nrar, syr)
+	gp.CopyLayerValuesFmStaging()
 	gp.CopyPoolsFmStaging()
 	gp.CopyNeuronsFmStaging()
 	gp.CopySynapsesFmStaging()
@@ -1191,7 +1191,7 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 	nrar := gp.SyncRegionStruct("NeuronAvgs") // not strictly needed but consistency..
@@ -1220,7 +1220,7 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 		gp.RunPipelineMemWait(cmd, "SynCa", neurDataN)
 	}
 
-	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr, nrr, nrar)
+	gp.Sys.ComputeCopyFromGPU(cmd, cxr, glr, lvr, plr, nrr, nrar)
 	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
@@ -1253,7 +1253,7 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
 
 	maxData := int(gp.Net.MaxData)
@@ -1288,7 +1288,7 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 			gp.RunPipelineMemWait(cmd, "CycleInc", 1) // we do
 		}
 	}
-	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr)
+	gp.Sys.ComputeCopyFromGPU(cmd, cxr, glr, lvr, plr)
 	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
@@ -1317,7 +1317,7 @@ func (gp *GPU) RunCycleSeparateFuns() {
 		gp.RunPipelineWait("CyclePost", maxData)
 		gp.RunPipelineWait("SynCa", neurDataN)
 	}
-	gp.SyncLayerStateFmGPU()
+	gp.SyncLayerStateFromGPU()
 }
 
 // RunNewState runs the NewState shader to initialize state at start of new
@@ -1383,7 +1383,7 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 
@@ -1395,7 +1395,7 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 	gp.Sys.ComputeWaitMemHostToShader(cmd)
 	gp.RunPipelineMemWait(cmd, "MinusPool", poolDataN)
 	gp.RunPipelineNoWait(cmd, "MinusNeuron", neurDataN)
-	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr, nrr)
+	gp.Sys.ComputeCopyFromGPU(cmd, cxr, glr, lvr, plr, nrr)
 	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
@@ -1436,7 +1436,7 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 
 	cxr := gp.SyncRegionStruct("Ctx")
 	glr := gp.SyncRegionStruct("Globals")
-	lvr := gp.SyncRegionStruct("LayVals")
+	lvr := gp.SyncRegionStruct("LayValues")
 	plr := gp.SyncRegionStruct("Pools")
 	nrr := gp.SyncRegionStruct("Neurons")
 
@@ -1449,13 +1449,13 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	gp.RunPipelineMemWait(cmd, "PlusPool", poolDataN)
 	gp.RunPipelineNoWait(cmd, "PlusNeuron", neurDataN)
 
-	// note: could use atomic add to accumulate CorSim stat values in LayVals tmp vars for Cosv, ssm and ssp
+	// note: could use atomic add to accumulate CorSim stat values in LayValues tmp vars for Cosv, ssm and ssp
 	// from which the overall val is computed
 	// use float atomic add for this case b/c not so time critical
 	// also, matrix gated could be computed all on GPU without too much difficulty.
 	// this would put all standard computation on the GPU for entire ThetaCycle
 
-	gp.Sys.ComputeCopyFmGPU(cmd, cxr, glr, lvr, plr, nrr)
+	gp.Sys.ComputeCopyFromGPU(cmd, cxr, glr, lvr, plr, nrr)
 	gp.Sys.ComputeCmdEnd(cmd)
 	return cmd
 }
@@ -1621,7 +1621,7 @@ func (gp *GPU) TestSynCa() bool {
 	gp.Sys.ComputeSubmitWait(cmd)
 	gp.Net.FunTimerStop(gnm)
 
-	gp.SyncSynCaFmGPU()
+	gp.SyncSynCaFromGPU()
 
 	// for synapse-ordered memory
 	// nCmd, nPer, nLast := gp.SynDataNs()
@@ -1631,18 +1631,18 @@ func (gp *GPU) TestSynCa() bool {
 	// 	if i == nCmd-1 {
 	// 		n = nLast
 	// 	}
-	// 	ix := ctx.SynapseCaVars.Idx(uint32(off), 0, CaM)
-	// 	bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-	// 	res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+	// 	ix := ctx.SynapseCaVars.Index(uint32(off), 0, CaM)
+	// 	bank := uint32(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats))
+	// 	res := uint32(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats))
 	// 	fmt.Printf("proc: %d  ix: %X  bank: %d  res: %X\n", i, ix, bank, res)
 	// 	off += n
 	// }
 
 	// for var-ordered memory:
 	// for vr := CaM; vr < SynapseCaVarsN; vr++ {
-	// 	ix := ctx.SynapseCaVars.Idx(0, 0, vr)
-	// 	bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-	// 	res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+	// 	ix := ctx.SynapseCaVars.Index(0, 0, vr)
+	// 	bank := uint32(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats))
+	// 	res := uint32(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats))
 	// 	fmt.Printf("var: %d  %s   \tix: %X  bank: %d  res: %X\n", vr, vr.String(), ix, bank, res)
 	// }
 
@@ -1653,9 +1653,9 @@ func (gp *GPU) TestSynCa() bool {
 		nfail := 0
 		for syni := uint32(0); syni < uint32(4); syni++ {
 			for di := uint32(0); di < gp.Net.MaxData; di++ {
-				ix := ctx.SynapseCaVars.Idx(syni, di, vr)
-				bank := uint32(ix / uint64(ctx.NetIdxs.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIdxs.GPUMaxBuffFloats))
+				ix := ctx.SynapseCaVars.Index(syni, di, vr)
+				bank := uint32(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats))
+				res := uint32(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats))
 				iix := math.Float32bits(SynCaV(ctx, syni, di, vr))
 				ix32 := uint32(ix % 0xFFFFFFFF)
 				if ix32 != iix {

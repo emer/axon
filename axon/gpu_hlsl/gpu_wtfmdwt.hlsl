@@ -5,7 +5,7 @@
 // performs the WtFmDWt function on all sending projections
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -45,7 +45,7 @@ void WtFmDWtSyn2(in Context ctx, in PrjnParams pj, uint syni) {
 }
 
 void WtFmDWtSyn(in Context ctx, uint syni) {
-	uint pi = SynI(ctx, syni, SynPrjnIdx);
+	uint pi = SynI(ctx, syni, SynPrjnIndex);
 	WtFmDWtSyn2(ctx, Prjns[pi], syni);
 }
 
@@ -53,7 +53,7 @@ void WtFmDWtSyn(in Context ctx, uint syni) {
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Synapses NOT * Data
 	uint syni = idx.x;
-	if (!Ctx[0].NetIdxs.SynIdxIsValid(syni)) {
+	if (!Ctx[0].NetIndexes.SynIndexIsValid(syni)) {
 		return;
 	}
 	WtFmDWtSyn(Ctx[0], syni);

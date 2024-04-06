@@ -67,7 +67,7 @@ type MusicEnv struct {
 	Note etensor.Float32
 
 	// current note index
-	NoteIdx int
+	NoteIndex int
 
 	// the function for playing midi
 	Player func(msg midi.Message) error `view:"-"`
@@ -179,7 +179,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 					fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 				}
 				for ri := lastOnRow + 1; ri <= row; ri++ {
-					ev.Song.SetCellFloatIdx(ti, ri, float64(note))
+					ev.Song.SetCellFloatIndex(ti, ri, float64(note))
 				}
 			case msg.GetNoteOn(&channel, &note, &vel):
 				if ti == ev.Track {
@@ -190,12 +190,12 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 						fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 					}
 					for ri := lastOnRow + 1; ri <= row; ri++ {
-						ev.Song.SetCellFloatIdx(ti, ri, float64(note))
+						ev.Song.SetCellFloatIndex(ti, ri, float64(note))
 					}
 					lastOnRow = -1
 				} else {
 					lastOnRow = row
-					ev.Song.SetCellFloatIdx(ti, row, float64(note))
+					ev.Song.SetCellFloatIndex(ti, row, float64(note))
 					if ev.Debug && row < 20 {
 						fmt.Printf("%d\t%d\tnote on:\t%d\n", tick, row, note)
 					}
@@ -216,7 +216,7 @@ func (ev *MusicEnv) State(element string) etensor.Tensor {
 
 // String returns the current state as a string
 func (ev *MusicEnv) String() string {
-	return fmt.Sprintf("%d:%d", ev.Time.Cur, ev.NoteIdx)
+	return fmt.Sprintf("%d:%d", ev.Time.Cur, ev.NoteIndex)
 }
 
 func (ev *MusicEnv) ConfigPlay() error {
@@ -275,7 +275,7 @@ func (ev *MusicEnv) Step() bool {
 		ev.Time.Set(0)
 		tm = 0
 	}
-	note := int(ev.Song.CellFloatIdx(ev.Track, tm))
+	note := int(ev.Song.CellFloatIndex(ev.Track, tm))
 	ev.RenderNote(note)
 	return true
 }
@@ -283,13 +283,13 @@ func (ev *MusicEnv) Step() bool {
 // StepDi is data parallel version sampling different offsets from current timestep
 func (ev *MusicEnv) StepDi(di int) bool {
 	tm := (ev.Time.Cur + di*ev.DiOffset) % ev.Song.Rows
-	note := int(ev.Song.CellFloatIdx(ev.Track, tm))
+	note := int(ev.Song.CellFloatIndex(ev.Track, tm))
 	ev.RenderNote(note)
 	return true
 }
 
 func (ev *MusicEnv) RenderNote(note int) {
-	ev.NoteIdx = note
+	ev.NoteIndex = note
 	ev.Note.SetZeros()
 	if note <= 0 {
 		return
@@ -305,11 +305,11 @@ func (ev *MusicEnv) RenderNote(note int) {
 }
 
 // PlayNote actually plays a note (based on index) to the midi device, if Play is active and working
-func (ev *MusicEnv) PlayNote(noteIdx int) {
+func (ev *MusicEnv) PlayNote(noteIndex int) {
 	if !ev.Play || ev.Player == nil {
 		return
 	}
-	note := noteIdx + ev.NoteRange.Min
+	note := noteIndex + ev.NoteRange.Min
 	if ev.LastNotePlayed > 0 && note != ev.LastNotePlayed {
 		ev.Player(midi.NoteOff(0, uint8(ev.LastNotePlayed)))
 	}

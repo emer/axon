@@ -33,7 +33,7 @@
     "Layer.Learn.CaLearn.Norm" = "80"
     "Layer.Learn.CaLearn.SpkVGCC" = "true"
     "Layer.Learn.CaLearn.SpkVgccCa" = "35"
-    "Layer.Learn.CaLearn.UpdtThr" = "0.01"
+    "Layer.Learn.CaLearn.UpdateThr" = "0.01"
     "Layer.Learn.CaLearn.VgccTau" = "10"
     "Layer.Learn.CaSpk.Dt.MTau" = "5"
     "Layer.Learn.CaSpk.SpikeG" = "8"

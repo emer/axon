@@ -5,7 +5,7 @@
 // performs the DWtSubMean synaptic Ca integration function on all sending projections
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -33,9 +33,9 @@
 
 // Set 1: effectively uniform indexes and prjn params as structured buffers in storage
 // [[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIndexes; // [Layer][RecvPrjns][RecvNeurons]
 [[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIndexes; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
@@ -46,14 +46,14 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ri
 	if (sm == 0) {
 		return;
 	}
-	uint cni = pj.Idxs.RecvConSt + lni;
-	uint synst = pj.Idxs.RecvSynSt + RecvCon[cni].Start;
+	uint cni = pj.Indexes.RecvConSt + lni;
+	uint synst = pj.Indexes.RecvSynSt + RecvCon[cni].Start;
 	uint synn = RecvCon[cni].N;
 
 	float sumDWt = 0;
 	int nnz = 0;
 	for (uint ci = 0; ci < synn; ci++) {
-		uint syni = RecvSynIdxs[synst + ci];
+		uint syni = RecvSynIndexes[synst + ci];
 		float dw = SynV(ctx, syni, DWt);
 		if (dw != 0) {
 			sumDWt += dw;
@@ -65,7 +65,7 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ri
 	}
 	sumDWt /= float(nnz);
 	for (uint sci = 0; sci < synn; sci++) {
-		uint syni = RecvSynIdxs[synst + sci];
+		uint syni = RecvSynIndexes[synst + sci];
 		float dw = SynV(ctx, syni, DWt);
 		if (dw != 0) {
 			AddSynV(ctx, syni, DWt, -sm * sumDWt);
@@ -74,21 +74,21 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ri
 }
 
 void DWtSubMean2(in Context ctx, in LayerParams ly, uint ri) {
-	uint lni = ri - ly.Idxs.NeurSt; // layer-based as in Go
-	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		DWtSubMeanPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ri, lni);
+	uint lni = ri - ly.Indexes.NeurSt; // layer-based as in Go
+	for (uint pi = 0; pi < ly.Indexes.RecvN; pi++) {
+		DWtSubMeanPrjn(ctx, Prjns[RecvPrjnIndexes[ly.Indexes.RecvSt + pi]], ly, ri, lni);
 	}
 }
 
 void DWtSubMean(in Context ctx, uint ri) {
-	uint li = NrnI(ctx, ri, NrnLayIdx);
+	uint li = NrnI(ctx, ri, NrnLayIndex);
 	DWtSubMean2(ctx, Layers[li], ri);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Neurons -- NOT Data
 	uint ri = idx.x;
-	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ri)) {
+	if (!Ctx[0].NetIndexes.NeurIndexIsValid(ri)) {
 		return;
 	}
 	DWtSubMean(Ctx[0], ri);

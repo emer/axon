@@ -72,7 +72,7 @@ type NetworkBase struct {
 	UseGPUOrder bool `edit:"-"`
 
 	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
-	NetIdx uint32 `view:"-"`
+	NetIndex uint32 `view:"-"`
 
 	// maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer.
 	MaxDelay uint32 `edit:"-" view:"-"`
@@ -96,7 +96,7 @@ type NetworkBase struct {
 	LayParams []LayerParams `view:"-"`
 
 	// array of layer values, with extra per data
-	LayVals []LayerVals `view:"-"`
+	LayValues []LayerValues `view:"-"`
 
 	// array of inhibitory pools for all layers.
 	Pools []Pool `view:"-"`
@@ -128,7 +128,7 @@ type NetworkBase struct {
 	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.
 	PrjnSendCon []StartN `view:"-"`
 
-	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.
+	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.
 	PrjnRecvCon []StartN `view:"-"`
 
 	// conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration
@@ -138,15 +138,15 @@ type NetworkBase struct {
 	PrjnGSyns []float32 `view:"-"`
 
 	// indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU.
-	RecvPrjnIdxs []uint32 `view:"-"`
+	RecvPrjnIndexes []uint32 `view:"-"`
 
 	// indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access.
-	RecvSynIdxs []uint32 `view:"-"`
+	RecvSynIndexes []uint32 `view:"-"`
 
 	// external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method.
 	Exts []float32
 
-	// context used only for accessing neurons for display -- NetIdxs.NData in here is copied from active context in NewState
+	// context used only for accessing neurons for display -- NetIndexes.NData in here is copied from active context in NewState
 	Ctx Context `view:"-"`
 
 	// random number generator for the network -- all random calls must use this -- set seed here for weight initialization values
@@ -175,7 +175,7 @@ func (nt *NetworkBase) NLayers() int                  { return len(nt.Layers) }
 func (nt *NetworkBase) Layer(idx int) emer.Layer      { return nt.Layers[idx] }
 func (nt *NetworkBase) Bounds() (min, max mat32.Vec3) { min = nt.MinPos; max = nt.MaxPos; return }
 func (nt *NetworkBase) MaxParallelData() int          { return int(nt.MaxData) }
-func (nt *NetworkBase) NParallelData() int            { return int(nt.Ctx.NetIdxs.NData) }
+func (nt *NetworkBase) NParallelData() int            { return int(nt.Ctx.NetIndexes.NData) }
 
 // LayByName returns a layer by looking it up by name in the layer map (nil if not found).
 // Will create the layer map if it is nil or a different size than layers slice,
@@ -282,9 +282,9 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 	return layers
 }
 
-// LayerVal returns LayerVals for given layer and data parallel indexes
-func (nt *NetworkBase) LayerVals(li, di uint32) *LayerVals {
-	return &nt.LayVals[li*nt.MaxData+di]
+// LayerVal returns LayerValues for given layer and data parallel indexes
+func (nt *NetworkBase) LayerValues(li, di uint32) *LayerValues {
+	return &nt.LayValues[li*nt.MaxData+di]
 }
 
 // UnitVarNames returns a list of variable names available on the units in this network.
@@ -360,11 +360,11 @@ func (nt *NetworkBase) Layout() {
 			lstly = ly
 		}
 	}
-	nt.BoundsUpdt()
+	nt.BoundsUpdate()
 }
 
-// BoundsUpdt updates the Min / Max display bounds for 3D display
-func (nt *NetworkBase) BoundsUpdt() {
+// BoundsUpdate updates the Min / Max display bounds for 3D display
+func (nt *NetworkBase) BoundsUpdate() {
 	mn := mat32.V3Scalar(mat32.Infinity)
 	mx := mat32.Vec3{}
 	for _, ly := range nt.Layers {
@@ -587,21 +587,21 @@ func (nt *NetworkBase) AllGlobals() string {
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNCosts; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNCosts; ui++ {
 				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbCostV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNNegUSs; ui++ {
 				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSnegV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNPosUSs; ui++ {
 				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbUSposV(ctx, di, vv, ui))
 			}
 			str += "\n"
@@ -616,9 +616,9 @@ func (nt *NetworkBase) ShowAllGlobals() { //gti:add
 	texteditor.TextDialog(nil, "All Global Vars: "+nt.Name(), agv)
 }
 
-// AllGlobalVals adds to map of all Global variables and values.
+// AllGlobalValues adds to map of all Global variables and values.
 // ctrKey is a key of counters to contextualize values.
-func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
+func (nt *NetworkBase) AllGlobalValues(ctrKey string, vals map[string]float32) {
 	ctx := &nt.Ctx
 	for di := uint32(0); di < nt.MaxData; di++ {
 		for vv := GvRew; vv < GvCost; vv++ {
@@ -626,19 +626,19 @@ func (nt *NetworkBase) AllGlobalVals(ctrKey string, vals map[string]float32) {
 			vals[key] = GlbV(ctx, di, vv)
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNCosts; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNCosts; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbCostV(ctx, di, vv, ui)
 			}
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNNegUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNNegUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbUSnegV(ctx, di, vv, ui)
 			}
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
-			for ui := uint32(0); ui < ctx.NetIdxs.PVLVNPosUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbUSposV(ctx, di, vv, ui)
 			}
@@ -788,8 +788,8 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 // SetMaxData sets the MaxData and current NData for both the Network and the Context
 func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
 	nt.MaxData = uint32(maxData)
-	simCtx.NetIdxs.NData = uint32(maxData)
-	simCtx.NetIdxs.MaxData = uint32(maxData)
+	simCtx.NetIndexes.NData = uint32(maxData)
+	simCtx.NetIndexes.MaxData = uint32(maxData)
 }
 
 // Build constructs the layer and projection state based on the layer shapes
@@ -804,7 +804,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	}
 	ctx := &nt.Ctx
 	*ctx = *simCtx
-	ctx.NetIdxs.NetIdx = nt.NetIdx
+	ctx.NetIndexes.NetIndex = nt.NetIndex
 	nt.FunTimes = make(map[string]*timer.Time)
 	nt.LayClassMap = make(map[string][]string)
 	maxData := int(nt.MaxData)
@@ -833,14 +833,14 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 		}
 	}
 	nt.LayParams = make([]LayerParams, nLayers)
-	nt.LayVals = make([]LayerVals, nLayers*maxData)
+	nt.LayValues = make([]LayerValues, nLayers*maxData)
 	nt.Pools = make([]Pool, totPools*maxData)
 	nt.NNeurons = uint32(totNeurons)
 	nneurv := uint32(totNeurons) * nt.MaxData * uint32(NeuronVarsN)
 	nt.Neurons = make([]float32, nneurv)
 	nneurav := uint32(totNeurons) * uint32(NeuronAvgVarsN)
 	nt.NeuronAvgs = make([]float32, nneurav)
-	nneuri := uint32(totNeurons) * uint32(NeuronIdxsN)
+	nneuri := uint32(totNeurons) * uint32(NeuronIndexesN)
 	nt.NeuronIxs = make([]uint32, nneuri)
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
@@ -849,79 +849,79 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	if nt.UseGPUOrder {
 		ctx.NeuronVars.SetVarOuter(totNeurons, maxData)
 		ctx.NeuronAvgVars.SetVarOuter(totNeurons)
-		ctx.NeuronIdxs.SetIdxOuter(totNeurons)
+		ctx.NeuronIndexes.SetIndexOuter(totNeurons)
 	} else {
 		ctx.NeuronVars.SetNeuronOuter(maxData)
 		ctx.NeuronAvgVars.SetNeuronOuter()
-		ctx.NeuronIdxs.SetNeuronOuter()
+		ctx.NeuronIndexes.SetNeuronOuter()
 	}
 
 	totSynapses := 0
 	totRecvCon := 0
 	totSendCon := 0
-	neurIdx := 0
-	prjnIdx := 0
-	rprjnIdx := 0
-	poolIdx := 0
-	extIdx := 0
+	neurIndex := 0
+	prjnIndex := 0
+	rprjnIndex := 0
+	poolIndex := 0
+	extIndex := 0
 	for li, ly := range nt.Layers {
 		ly.Params = &nt.LayParams[li]
 		ly.Params.LayType = LayerTypes(ly.Typ)
-		ly.Vals = nt.LayVals[li*maxData : (li+1)*maxData]
+		ly.Values = nt.LayValues[li*maxData : (li+1)*maxData]
 		if ly.IsOff() {
 			continue
 		}
 		shp := ly.Shape()
 		nn := shp.Len()
 		ly.NNeurons = uint32(nn)
-		ly.NeurStIdx = uint32(neurIdx)
+		ly.NeurStIndex = uint32(neurIndex)
 		ly.MaxData = nt.MaxData
 		np := ly.NSubPools() + 1
 		npd := np * maxData
 		ly.NPools = uint32(np)
-		ly.Pools = nt.Pools[poolIdx : poolIdx+npd]
-		ly.Params.Idxs.LayIdx = uint32(li)
-		ly.Params.Idxs.MaxData = nt.MaxData
-		ly.Params.Idxs.PoolSt = uint32(poolIdx)
-		ly.Params.Idxs.NeurSt = uint32(neurIdx)
-		ly.Params.Idxs.NeurN = uint32(nn)
+		ly.Pools = nt.Pools[poolIndex : poolIndex+npd]
+		ly.Params.Indexes.LayIndex = uint32(li)
+		ly.Params.Indexes.MaxData = nt.MaxData
+		ly.Params.Indexes.PoolSt = uint32(poolIndex)
+		ly.Params.Indexes.NeurSt = uint32(neurIndex)
+		ly.Params.Indexes.NeurN = uint32(nn)
 		if shp.NumDims() == 2 {
-			ly.Params.Idxs.ShpUnY = int32(shp.Dim(0))
-			ly.Params.Idxs.ShpUnX = int32(shp.Dim(1))
-			ly.Params.Idxs.ShpPlY = 1
-			ly.Params.Idxs.ShpPlX = 1
+			ly.Params.Indexes.ShpUnY = int32(shp.Dim(0))
+			ly.Params.Indexes.ShpUnX = int32(shp.Dim(1))
+			ly.Params.Indexes.ShpPlY = 1
+			ly.Params.Indexes.ShpPlX = 1
 		} else {
-			ly.Params.Idxs.ShpPlY = int32(shp.Dim(0))
-			ly.Params.Idxs.ShpPlX = int32(shp.Dim(1))
-			ly.Params.Idxs.ShpUnY = int32(shp.Dim(2))
-			ly.Params.Idxs.ShpUnX = int32(shp.Dim(3))
+			ly.Params.Indexes.ShpPlY = int32(shp.Dim(0))
+			ly.Params.Indexes.ShpPlX = int32(shp.Dim(1))
+			ly.Params.Indexes.ShpUnY = int32(shp.Dim(2))
+			ly.Params.Indexes.ShpUnX = int32(shp.Dim(3))
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Vals[di].LayIdx = uint32(li)
-			ly.Vals[di].DataIdx = uint32(di)
+			ly.Values[di].LayIndex = uint32(li)
+			ly.Values[di].DataIndex = uint32(di)
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
 				ix := pi*int(ly.MaxData) + di
 				pl := &ly.Pools[ix]
-				pl.LayIdx = uint32(li)
-				pl.DataIdx = uint32(di)
-				pl.PoolIdx = uint32(poolIdx + ix)
+				pl.LayIndex = uint32(li)
+				pl.DataIndex = uint32(di)
+				pl.PoolIndex = uint32(poolIndex + ix)
 			}
 		}
 		if ly.LayerType().IsExt() {
-			ly.Exts = nt.Exts[extIdx : extIdx+nn*maxData]
-			ly.Params.Idxs.ExtsSt = uint32(extIdx)
-			extIdx += nn * maxData
+			ly.Exts = nt.Exts[extIndex : extIndex+nn*maxData]
+			ly.Params.Indexes.ExtsSt = uint32(extIndex)
+			extIndex += nn * maxData
 		} else {
 			ly.Exts = nil
-			ly.Params.Idxs.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
+			ly.Params.Indexes.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
 		}
 		sprjns := *ly.SendPrjns()
-		ly.Params.Idxs.SendSt = uint32(prjnIdx)
-		ly.Params.Idxs.SendN = uint32(len(sprjns))
+		ly.Params.Indexes.SendSt = uint32(prjnIndex)
+		ly.Params.Indexes.SendN = uint32(len(sprjns))
 		for pi, pj := range sprjns {
-			pii := prjnIdx + pi
+			pii := prjnIndex + pi
 			pj.Params = &nt.PrjnParams[pii]
 			nt.Prjns[pii] = pj
 		}
@@ -931,17 +931,17 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 		}
 		// now collect total number of synapses after layer build
 		for _, pj := range sprjns {
-			totSynapses += len(pj.SendConIdx)
+			totSynapses += len(pj.SendConIndex)
 			totSendCon += nn // sep vals for each send neuron per prjn
 		}
 		rprjns := *ly.RecvPrjns()
-		ly.Params.Idxs.RecvSt = uint32(rprjnIdx)
-		ly.Params.Idxs.RecvN = uint32(len(rprjns))
+		ly.Params.Indexes.RecvSt = uint32(rprjnIndex)
+		ly.Params.Indexes.RecvN = uint32(len(rprjns))
 		totRecvCon += nn * len(rprjns)
-		rprjnIdx += len(rprjns)
-		neurIdx += nn
-		prjnIdx += len(sprjns)
-		poolIdx += npd
+		rprjnIndex += len(rprjns)
+		neurIndex += nn
+		prjnIndex += len(sprjns)
+		poolIndex += npd
 	}
 	if totSynapses > math.MaxUint32 {
 		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")
@@ -952,53 +952,53 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	nt.Synapses = make([]float32, nSynFloat)
 	nSynCaFloat := totSynapses * int(SynapseCaVarsN) * int(nt.MaxData)
 	nt.SynapseCas = make([]float32, nSynCaFloat)
-	nt.SynapseIxs = make([]uint32, totSynapses*int(SynapseIdxsN))
+	nt.SynapseIxs = make([]uint32, totSynapses*int(SynapseIndexesN))
 	nt.PrjnSendCon = make([]StartN, totSendCon)
 	nt.PrjnRecvCon = make([]StartN, totRecvCon)
-	nt.RecvPrjnIdxs = make([]uint32, rprjnIdx)
-	nt.RecvSynIdxs = make([]uint32, totSynapses)
+	nt.RecvPrjnIndexes = make([]uint32, rprjnIndex)
+	nt.RecvSynIndexes = make([]uint32, totSynapses)
 
 	if nt.UseGPUOrder {
 		ctx.SynapseVars.SetVarOuter(totSynapses)
 		ctx.SynapseCaVars.SetVarOuter(totSynapses, maxData)
-		ctx.SynapseIdxs.SetIdxOuter(totSynapses)
+		ctx.SynapseIndexes.SetIndexOuter(totSynapses)
 	} else {
 		ctx.SynapseVars.SetSynapseOuter()
 		ctx.SynapseCaVars.SetSynapseOuter(maxData)
-		ctx.SynapseIdxs.SetSynapseOuter()
+		ctx.SynapseIndexes.SetSynapseOuter()
 	}
 
 	// distribute synapses, send
-	syIdx := 0
+	syIndex := 0
 	pjidx := 0
-	sendConIdx := 0
+	sendConIndex := 0
 	for _, ly := range nt.Layers {
 		for _, pj := range ly.SndPrjns {
 			rlay := pj.Recv
-			pj.Params.Idxs.RecvLay = uint32(rlay.Idx)
-			pj.Params.Idxs.RecvNeurSt = uint32(rlay.NeurStIdx)
-			pj.Params.Idxs.RecvNeurN = rlay.NNeurons
-			pj.Params.Idxs.SendLay = uint32(ly.Idx)
-			pj.Params.Idxs.SendNeurSt = uint32(ly.NeurStIdx)
-			pj.Params.Idxs.SendNeurN = ly.NNeurons
+			pj.Params.Indexes.RecvLay = uint32(rlay.Idx)
+			pj.Params.Indexes.RecvNeurSt = uint32(rlay.NeurStIndex)
+			pj.Params.Indexes.RecvNeurN = rlay.NNeurons
+			pj.Params.Indexes.SendLay = uint32(ly.Idx)
+			pj.Params.Indexes.SendNeurSt = uint32(ly.NeurStIndex)
+			pj.Params.Indexes.SendNeurN = ly.NNeurons
 
-			nsyn := len(pj.SendConIdx)
-			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
-			pj.Params.Idxs.SynapseSt = uint32(syIdx)
-			pj.SynStIdx = uint32(syIdx)
-			pj.Params.Idxs.PrjnIdx = uint32(pjidx)
+			nsyn := len(pj.SendConIndex)
+			pj.Params.Indexes.SendConSt = uint32(sendConIndex)
+			pj.Params.Indexes.SynapseSt = uint32(syIndex)
+			pj.SynStIndex = uint32(syIndex)
+			pj.Params.Indexes.PrjnIndex = uint32(pjidx)
 			pj.NSyns = uint32(nsyn)
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
-				si := ly.NeurStIdx + sni
+				si := ly.NeurStIndex + sni
 				scon := pj.SendCon[sni]
-				nt.PrjnSendCon[sendConIdx] = scon
-				sendConIdx++
+				nt.PrjnSendCon[sendConIndex] = scon
+				sendConIndex++
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-					syni := pj.SynStIdx + syi
-					SetSynI(ctx, syni, SynSendIdx, uint32(si)) // network-global idx
-					SetSynI(ctx, syni, SynRecvIdx, pj.SendConIdx[syi]+uint32(rlay.NeurStIdx))
-					SetSynI(ctx, syni, SynPrjnIdx, uint32(pjidx))
-					syIdx++
+					syni := pj.SynStIndex + syi
+					SetSynI(ctx, syni, SynSendIndex, uint32(si)) // network-global idx
+					SetSynI(ctx, syni, SynRecvIndex, pj.SendConIndex[syi]+uint32(rlay.NeurStIndex))
+					SetSynI(ctx, syni, SynPrjnIndex, uint32(pjidx))
+					syIndex++
 				}
 			}
 			pjidx++
@@ -1006,39 +1006,39 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	}
 
 	// update recv synapse / prjn info
-	rprjnIdx = 0
-	recvConIdx := 0
-	syIdx = 0
+	rprjnIndex = 0
+	recvConIndex := 0
+	syIndex = 0
 	for _, ly := range nt.Layers {
 		for _, pj := range ly.RcvPrjns {
-			nt.RecvPrjnIdxs[rprjnIdx] = pj.Params.Idxs.PrjnIdx
-			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
-			pj.Params.Idxs.RecvSynSt = uint32(syIdx)
-			synSt := pj.Params.Idxs.SynapseSt
+			nt.RecvPrjnIndexes[rprjnIndex] = pj.Params.Indexes.PrjnIndex
+			pj.Params.Indexes.RecvConSt = uint32(recvConIndex)
+			pj.Params.Indexes.RecvSynSt = uint32(syIndex)
+			synSt := pj.Params.Indexes.SynapseSt
 			for rni := uint32(0); rni < ly.NNeurons; rni++ {
 				if len(pj.RecvCon) <= int(rni) {
 					continue
 				}
 				rcon := pj.RecvCon[rni]
-				nt.PrjnRecvCon[recvConIdx] = rcon
-				recvConIdx++
-				syIdxs := pj.RecvSynIdxs(rni)
-				for _, ssi := range syIdxs {
-					nt.RecvSynIdxs[syIdx] = ssi + synSt
-					syIdx++
+				nt.PrjnRecvCon[recvConIndex] = rcon
+				recvConIndex++
+				syIndexes := pj.RecvSynIndexes(rni)
+				for _, ssi := range syIndexes {
+					nt.RecvSynIndexes[syIndex] = ssi + synSt
+					syIndex++
 				}
 			}
-			rprjnIdx++
+			rprjnIndex++
 		}
 	}
 
-	ctx.NetIdxs.MaxData = nt.MaxData
-	ctx.NetIdxs.NLayers = uint32(nLayers)
-	ctx.NetIdxs.NNeurons = nt.NNeurons
-	ctx.NetIdxs.NPools = uint32(totPools)
-	ctx.NetIdxs.NSyns = nt.NSyns
-	ctx.NetIdxs.PVLVNPosUSs = nt.PVLV.NPosUSs
-	ctx.NetIdxs.PVLVNNegUSs = nt.PVLV.NNegUSs
+	ctx.NetIndexes.MaxData = nt.MaxData
+	ctx.NetIndexes.NLayers = uint32(nLayers)
+	ctx.NetIndexes.NNeurons = nt.NNeurons
+	ctx.NetIndexes.NPools = uint32(totPools)
+	ctx.NetIndexes.NSyns = nt.NSyns
+	ctx.NetIndexes.PVLVNPosUSs = nt.PVLV.NPosUSs
+	ctx.NetIndexes.PVLVNNegUSs = nt.PVLV.NNegUSs
 	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)
@@ -1087,10 +1087,10 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 		nneur := uint32(ly.NNeurons)
 		for _, pj := range ly.RcvPrjns {
 			gbs := nneur * mxlen * nt.MaxData
-			pj.Params.Idxs.GBufSt = gbi
+			pj.Params.Indexes.GBufSt = gbi
 			pj.GBuf = nt.PrjnGBuf[gbi : gbi+gbs]
 			gbi += gbs
-			pj.Params.Idxs.GSynSt = gsi
+			pj.Params.Indexes.GSynSt = gsi
 			pj.GSyns = nt.PrjnGSyns[gsi : gsi+nneur*nt.MaxData]
 			gsi += nneur * nt.MaxData
 		}
@@ -1109,7 +1109,7 @@ func (nt *NetworkBase) DeleteAll() {
 	nt.FunTimes = nil
 	nt.Globals = nil
 	nt.LayParams = nil
-	nt.LayVals = nil
+	nt.LayValues = nil
 	nt.Pools = nil
 	nt.Neurons = nil
 	nt.NeuronAvgs = nil
@@ -1123,7 +1123,7 @@ func (nt *NetworkBase) DeleteAll() {
 	nt.PrjnRecvCon = nil
 	nt.PrjnGBuf = nil
 	nt.PrjnGSyns = nil
-	nt.RecvPrjnIdxs = nil
+	nt.RecvPrjnIndexes = nil
 	nt.Exts = nil
 }
 
@@ -1181,7 +1181,7 @@ func (nt *NetworkBase) OpenWtsJSON(filename gi.Filename) error { //gti:add
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (nt *NetworkBase) WriteWtsJSON(w io.Writer) error {
-	nt.GPU.SyncAllFmGPU()
+	nt.GPU.SyncAllFromGPU()
 	depth := 0
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("{\n"))
@@ -1315,7 +1315,7 @@ func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 			for lni := range pj.SendCon {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-					syni := pj.SynStIdx + syi
+					syni := pj.SynStIndex + syi
 					(*vals)[i] = SynV(ctx, syni, synvar)
 					i++
 				}
@@ -1334,10 +1334,10 @@ func (nt *Network) NeuronsSlice(vals *[]float32, nrnVar string, di int) {
 	}
 	i := 0
 	for _, ly := range nt.Layers {
-		varIdx, _ := ly.UnitVarIdx(nrnVar)
+		varIndex, _ := ly.UnitVarIndex(nrnVar)
 		nn := int(ly.NNeurons)
 		for lni := 0; lni < nn; lni++ {
-			(*vals)[i] = ly.UnitVal1D(varIdx, lni, di)
+			(*vals)[i] = ly.UnitVal1D(varIndex, lni, di)
 			i++
 		}
 	}
@@ -1435,7 +1435,7 @@ func (nt *NetworkBase) CopyStateFrom(on *NetworkBase) error {
 	copy(nt.Neurons, on.Neurons)
 	copy(nt.NeuronAvgs, on.NeuronAvgs)
 	copy(nt.Pools, on.Pools)
-	copy(nt.LayVals, on.LayVals)
+	copy(nt.LayValues, on.LayValues)
 	copy(nt.Synapses, on.Synapses)
 	copy(nt.SynapseCas, on.SynapseCas)
 	return nil
@@ -1447,11 +1447,11 @@ func (nt *NetworkBase) CopyStateFrom(on *NetworkBase) error {
 func (nt *NetworkBase) DiffFrom(ctx *Context, on *NetworkBase, maxDiff int) string {
 	diffs := ""
 	ndif := 0
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		for ni := uint32(0); ni < nt.NNeurons; ni++ {
 			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
-				nv := nt.Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
-				ov := on.Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
+				nv := nt.Neurons[ctx.NeuronVars.Index(ni, di, nvar)]
+				ov := on.Neurons[ctx.NeuronVars.Index(ni, di, nvar)]
 				if nv != ov {
 					diffs += fmt.Sprintf("Neuron: di: %d\tni: %d\tvar: %s\tval: %g\toth: %g\n", di, ni, nvar.String(), nv, ov)
 					ndif++
@@ -1464,8 +1464,8 @@ func (nt *NetworkBase) DiffFrom(ctx *Context, on *NetworkBase, maxDiff int) stri
 	}
 	for ni := uint32(0); ni < nt.NNeurons; ni++ {
 		for nvar := ActAvg; nvar < NeuronAvgVarsN; nvar++ {
-			nv := nt.NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
-			ov := on.NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
+			nv := nt.NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)]
+			ov := on.NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)]
 			if nv != ov {
 				diffs += fmt.Sprintf("NeuronAvg: ni: %d\tvar: %s\tval: %g\toth: %g\n", ni, nvar.String(), nv, ov)
 				ndif++
@@ -1477,8 +1477,8 @@ func (nt *NetworkBase) DiffFrom(ctx *Context, on *NetworkBase, maxDiff int) stri
 	}
 	for si := uint32(0); si < nt.NSyns; si++ {
 		for svar := Wt; svar < SynapseVarsN; svar++ {
-			sv := nt.Synapses[ctx.SynapseVars.Idx(si, svar)]
-			ov := on.Synapses[ctx.SynapseVars.Idx(si, svar)]
+			sv := nt.Synapses[ctx.SynapseVars.Index(si, svar)]
+			ov := on.Synapses[ctx.SynapseVars.Index(si, svar)]
 			if sv != ov {
 				diffs += fmt.Sprintf("Synapse: si: %d\tvar: %s\tval: %g\toth: %g\n", si, svar.String(), sv, ov)
 				ndif++
@@ -1488,11 +1488,11 @@ func (nt *NetworkBase) DiffFrom(ctx *Context, on *NetworkBase, maxDiff int) stri
 			}
 		}
 	}
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		for si := uint32(0); si < nt.NSyns; si++ {
 			for svar := CaM; svar < SynapseCaVarsN; svar++ {
-				sv := nt.Synapses[ctx.SynapseCaVars.Idx(di, si, svar)]
-				ov := on.Synapses[ctx.SynapseCaVars.Idx(di, si, svar)]
+				sv := nt.Synapses[ctx.SynapseCaVars.Index(di, si, svar)]
+				ov := on.Synapses[ctx.SynapseCaVars.Index(di, si, svar)]
 				if sv != ov {
 					diffs += fmt.Sprintf("SynapseCa: di: %d, si: %d\tvar: %s\tval: %g\toth: %g\n", di, si, svar.String(), sv, ov)
 					ndif++

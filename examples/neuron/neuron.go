@@ -115,7 +115,7 @@ type Sim struct {
 	Cycle int `edit:"-"`
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -197,8 +197,8 @@ func (ss *Sim) Counters() string {
 
 func (ss *Sim) UpdateView() {
 	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
-	ss.GUI.ViewUpdt.Text = ss.Counters()
-	ss.GUI.ViewUpdt.UpdateCycle(int(ss.Context.Cycle))
+	ss.GUI.ViewUpdate.Text = ss.Counters()
+	ss.GUI.ViewUpdate.UpdateCycle(int(ss.Context.Cycle))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,11 +222,11 @@ func (ss *Sim) RunCycles() {
 		case ss.Config.OffCycle:
 			inputOn = false
 		}
-		ss.NeuronUpdt(ss.Net, inputOn)
+		ss.NeuronUpdate(ss.Net, inputOn)
 		ctx.Cycle = int32(cyc)
 		ss.Logs.LogRow(etime.Test, etime.Cycle, cyc)
-		ss.RecordVals(cyc)
-		if cyc%ss.Config.UpdtInterval == 0 {
+		ss.RecordValues(cyc)
+		if cyc%ss.Config.UpdateInterval == 0 {
 			ss.UpdateView()
 		}
 		ss.Context.CycleInc()
@@ -237,23 +237,23 @@ func (ss *Sim) RunCycles() {
 	ss.UpdateView()
 }
 
-func (ss *Sim) RecordVals(cyc int) {
+func (ss *Sim) RecordValues(cyc int) {
 	var vals []float32
 	ly := ss.Net.AxonLayerByName("Neuron")
 	key := fmt.Sprintf("cyc: %03d", cyc)
 	for _, vnm := range axon.NeuronVarNames {
-		ly.UnitVals(&vals, vnm, 0)
+		ly.UnitValues(&vals, vnm, 0)
 		vkey := key + fmt.Sprintf("\t%s", vnm)
 		ss.ValMap[vkey] = vals[0]
 	}
 }
 
-// NeuronUpdt updates the neuron
+// NeuronUpdate updates the neuron
 // this just calls the relevant code directly, bypassing most other stuff.
-func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
+func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 	ctx := &ss.Context
 	ly := ss.Net.AxonLayerByName("Neuron")
-	ni := ly.NeurStIdx
+	ni := ly.NeurStIndex
 	di := uint32(0)
 	ac := &ly.Params.Acts
 	nex := &ss.NeuronEx
@@ -284,11 +284,11 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	if ss.Net.GPU.On {
 		ss.Net.GPU.SyncStateToGPU()
 		ss.Net.GPU.RunPipelineWait("Cycle", 2)
-		ss.Net.GPU.SyncStateFmGPU()
+		ss.Net.GPU.SyncStateFromGPU()
 		ctx.CycleInc() // why is this not working!?
 	} else {
 		lpl := ly.Pool(0, di)
-		ly.GInteg(ctx, ni, di, lpl, ly.LayerVals(0))
+		ly.GInteg(ctx, ni, di, lpl, ly.LayerValues(0))
 		ly.SpikeFmG(ctx, ni, di, lpl)
 	}
 }
@@ -359,7 +359,7 @@ func (ss *Sim) ConfigLogItems() {
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					vl := ly.UnitVal(cvnm, []int{0, 0}, 0)
+					vl := ly.UnitValue(cvnm, []int{0, 0}, 0)
 					ctx.SetFloat32(vl)
 				}}})
 	}
@@ -388,8 +388,8 @@ func (ss *Sim) ConfigGUI() {
 	nv.Var = "Act"
 	nv.SetNet(ss.Net)
 	ss.ConfigNetView(nv) // add labels etc
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.ViewUpdate.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 	// key := etime.Scope(etime.Test, etime.Cycle)

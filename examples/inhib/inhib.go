@@ -82,7 +82,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -233,8 +233,8 @@ func (ss *Sim) Init() {
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -293,12 +293,12 @@ func (ss *Sim) ConfigLoops() {
 	if !ss.Config.GUI {
 		if ss.Config.Log.NetData {
 			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+				ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
 			})
 		}
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -344,7 +344,7 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
+// Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters() {
 	ctx := &ss.Context
 	mode := ctx.Mode
@@ -353,11 +353,11 @@ func (ss *Sim) StatCounters() {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdt.View == nil {
+	if ss.ViewUpdate.View == nil {
 		return
 	}
 	ss.StatCounters()
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Trial", "Cycle"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Trial", "Cycle"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -409,7 +409,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.AxonLayerByName(clnm)
-					ctx.SetFloat32(axon.NrnV(&ss.Context, ly.NeurStIdx, 0, axon.Gi))
+					ctx.SetFloat32(axon.NrnV(&ss.Context, ly.NeurStIndex, 0, axon.Gi))
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SGi",
@@ -520,8 +520,8 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.ViewUpdate.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
 	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))

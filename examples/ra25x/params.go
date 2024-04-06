@@ -46,7 +46,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.CaLearn.SpkVGCC":        "true",  // sig better..
 				"Layer.Learn.CaLearn.SpkVgccCa":      "35",    // 70 / 5 or 35 / 10 both work
 				"Layer.Learn.CaLearn.VgccTau":        "10",    // 10 > 5 ?
-				"Layer.Learn.CaLearn.UpdtThr":        "0.01",  // 0.01 def
+				"Layer.Learn.CaLearn.UpdateThr":      "0.01",  // 0.01 def
 				"Layer.Learn.CaLearn.Dt.MTau":        "2",     // 2 > 1 ?
 				"Layer.Learn.CaSpk.SpikeG":           "8",     // 8 produces reasonable 0-1 norm CaSpk levels?
 				"Layer.Learn.CaSpk.SynTau":           "30",    // 30 > 20, 40

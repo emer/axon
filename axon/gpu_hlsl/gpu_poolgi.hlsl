@@ -5,7 +5,7 @@
 // calls SubPoolGiFmSpikes on sub-pools, after poolgemax has been called.
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -34,29 +34,29 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
 void PoolGi2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, float giMult) {
 	if(pl.IsLayPool == 0) {
-		pl.AvgMax.Calc(pl.LayIdx);
+		pl.AvgMax.Calc(pl.LayIndex);
 		pl.Inhib.IntToRaw();
-		ly.SubPoolGiFmSpikes(ctx, di, pl, Pools[ly.Idxs.PoolIdx(0, di)], ly.Inhib.Layer.On == 1, giMult);
+		ly.SubPoolGiFmSpikes(ctx, di, pl, Pools[ly.Indexes.PoolIndex(0, di)], ly.Inhib.Layer.On == 1, giMult);
 	}
 }
 
 void PoolGi(in Context ctx, uint di, inout Pool pl) {
-	PoolGi2(ctx, Layers[pl.LayIdx], di, pl, LayVals[ctx.NetIdxs.ValsIdx(pl.LayIdx, di)].ActAvg.GiMult);
+	PoolGi2(ctx, Layers[pl.LayIndex], di, pl, LayValues[ctx.NetIndexes.ValuesIndex(pl.LayIndex, di)].ActAvg.GiMult);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Pools * Data (all pools)
 	uint npi = idx.x; // network pi
-	if (!Ctx[0].NetIdxs.PoolDataIdxIsValid(npi)) {
+	if (!Ctx[0].NetIndexes.PoolDataIndexIsValid(npi)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	PoolGi(Ctx[0], di, Pools[npi]);

@@ -56,7 +56,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper
 // for given network, ctx, and netview update manager
 // Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdt, trial ...etime.Times) {
+func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
 	trl := etime.Trial
 	if len(trial) > 0 {
 		trl = trial[0]
@@ -80,9 +80,9 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 	man.GetLoop(etime.Train, trl).OnEnd.Add("UpdateWeights", func() {
 		net.DWt(ctx)
 		if viewupdt.IsViewingSynapse() {
-			net.GPU.SyncSynapsesFmGPU()
-			net.GPU.SyncSynCaFmGPU() // note: only time we call this
-			viewupdt.RecordSyns()    // note: critical to update weights here so DWt is visible
+			net.GPU.SyncSynapsesFromGPU()
+			net.GPU.SyncSynCaFromGPU() // note: only time we call this
+			viewupdt.RecordSyns()      // note: critical to update weights here so DWt is visible
 		}
 		net.WtFmDWt(ctx)
 	})
@@ -123,15 +123,15 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.T
 	}
 }
 
-// LooperUpdtNetView adds netview update calls at each time level
-func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Network, ctrUpdtFunc func(tm etime.Times)) {
+// LooperUpdateNetView adds netview update calls at each time level
+func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net *Network, ctrUpdateFunc func(tm etime.Times)) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
 			if curTime != etime.Cycle {
 				loop.OnEnd.Add("GUI:UpdateNetView", func() {
-					ctrUpdtFunc(curTime)
+					ctrUpdateFunc(curTime)
 					viewupdt.UpdateTime(curTime)
 				})
 			}
@@ -139,14 +139,14 @@ func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Net
 		cycLoop := man.GetLoop(curMode, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
 			cyc := cycLoop.Counter.Cur
-			ctrUpdtFunc(etime.Cycle)
+			ctrUpdateFunc(etime.Cycle)
 			viewupdt.UpdateCycle(cyc)
 		})
 	}
 }
 
-// LooperUpdtPlots adds plot update calls at each time level
-func LooperUpdtPlots(man *looper.Manager, gui *egui.GUI) {
+// LooperUpdatePlots adds plot update calls at each time level
+func LooperUpdatePlots(man *looper.Manager, gui *egui.GUI) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {

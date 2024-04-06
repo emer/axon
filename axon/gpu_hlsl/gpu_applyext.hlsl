@@ -5,7 +5,7 @@
 // calls ApplyExt on neurons
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -37,26 +37,26 @@
 
 
 void ApplyExt2(in Context ctx, in LayerParams ly, uint ni, uint di) {
-	uint lni = ni - ly.Idxs.NeurSt; // layer-based 
+	uint lni = ni - ly.Indexes.NeurSt; // layer-based 
 	ly.InitExt(ctx, ni, di);
 	if (IsExtLayerType(ly.LayType)) {
-		uint ei = ly.Idxs.ExtIdx(lni, di) + ly.Idxs.ExtsSt;
-		ly.ApplyExtVal(ctx, ni, di, Exts[ei]);
+		uint ei = ly.Indexes.ExtIndex(lni, di) + ly.Indexes.ExtsSt;
+		ly.ApplyExtValue(ctx, ni, di, Exts[ei]);
 	}
 }
 
 void ApplyExt(in Context ctx, uint ni, uint di) {
-	ApplyExt2(ctx, Layers[NrnI(ctx, ni, NrnLayIdx)], ni, di);
+	ApplyExt2(ctx, Layers[NrnI(ctx, ni, NrnLayIndex)], ni, di);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Neurons x Data
-	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
-	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
+	uint ni = Ctx[0].NetIndexes.ItemIndex(idx.x);
+	if (!Ctx[0].NetIndexes.NeurIndexIsValid(ni)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	ApplyExt(Ctx[0], ni, di);

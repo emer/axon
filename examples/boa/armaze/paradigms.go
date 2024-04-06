@@ -36,7 +36,7 @@ func (ev *Env) StartApproach() {
 		if i == ev.TrgDrive {
 			ev.Drives[i] = 1
 		} else {
-			ev.Drives[i] = ev.InactiveVal()
+			ev.Drives[i] = ev.InactiveValue()
 		}
 	}
 }

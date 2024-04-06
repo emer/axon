@@ -40,7 +40,7 @@ type VSPatchEnv struct {
 	NTrials int
 
 	// condition current values
-	CondVals []float32
+	CondValues []float32
 
 	// state rep, number of units, Y
 	NUnitsY int `view:"-"`
@@ -93,10 +93,10 @@ func (ev *VSPatchEnv) Defaults() {
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
 }
 
-// SetRandCondVals sets values of each condition to random numbers
-func (ev *VSPatchEnv) SetRandCondVals() {
+// SetRandCondValues sets values of each condition to random numbers
+func (ev *VSPatchEnv) SetRandCondValues() {
 	for i := 0; i < ev.NConds; i++ {
-		ev.CondVals[i] = ev.Rand.Float32(-1)
+		ev.CondValues[i] = ev.Rand.Float32(-1)
 	}
 }
 
@@ -107,10 +107,10 @@ func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Rand.NewRand(ev.RndSeed)
 	ev.States = make(map[string]*etensor.Float32)
 	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.CondVals = make([]float32, ev.NConds)
+	ev.CondValues = make([]float32, ev.NConds)
 	ev.Sequence.Max = ev.NConds
 	ev.Trial.Max = ev.NTrials
-	ev.SetRandCondVals()
+	ev.SetRandCondValues()
 	ev.ConfigPats()
 }
 
@@ -180,7 +180,7 @@ func (ev *VSPatchEnv) Step() bool {
 	ev.RenderState(ev.Sequence.Cur, ev.Trial.Cur)
 	ev.Rew = 0
 	if ev.Trial.Cur == ev.NTrials-1 {
-		rv := ev.CondVals[ev.Sequence.Cur]
+		rv := ev.CondValues[ev.Sequence.Cur]
 		if ev.Probs {
 			if erand.BoolP32(rv, -1, &ev.Rand) {
 				ev.Rew = 1

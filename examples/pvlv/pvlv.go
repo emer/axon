@@ -88,7 +88,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -278,8 +278,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -302,7 +302,7 @@ func (ss *Sim) ConfigLoops() {
 		AddTime(etime.Cycle, nCycles)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, nCycles-50, nCycles-1) // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt)   // std algo code
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -330,8 +330,8 @@ func (ss *Sim) ConfigLoops() {
 	// GUI
 
 	if ss.Config.GUI {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -388,7 +388,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	di := uint32(0)                    // not doing NData here -- otherwise loop over
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
 	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "ILposPT", 0.3)
-	pv.EffortUrgencyUpdt(ctx, di, 1)
+	pv.EffortUrgencyUpdate(ctx, di, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
 			pv.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)
@@ -476,7 +476,7 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
+// Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters() {
 	ctx := &ss.Context
 	mode := ctx.Mode
@@ -489,11 +489,11 @@ func (ss *Sim) StatCounters() {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdt.View == nil {
+	if ss.ViewUpdate.View == nil {
 		return
 	}
 	ss.StatCounters()
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle", "Time", "HasRew", "Gated", "GiveUp"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle", "Time", "HasRew", "Gated", "GiveUp"})
 }
 
 // TrialStats computes the tick-level statistics.
@@ -682,7 +682,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) BlockStats() {
 	stnm := "BlockByType"
 
-	ix := ss.Logs.IdxView(etime.Train, etime.Trial)
+	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
 	spl := split.GroupBy(ix, []string{"TrialType", "Trial"})
 	for _, ts := range ix.Table.ColNames {
 		if ts == "TrialType" || ts == "TrialName" || ts == "Trial" {
@@ -737,8 +737,8 @@ func (ss *Sim) ConfigGUI() {
 	nv.Params.Raster.Max = ss.Config.Run.ThetaCycles
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.4, 2.6)
 	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))

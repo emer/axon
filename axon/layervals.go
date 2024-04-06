@@ -6,10 +6,10 @@ package axon
 
 //gosl: start layervals
 
-// ActAvgVals are long-running-average activation levels stored in the LayerVals,
+// ActAvgValues are long-running-average activation levels stored in the LayerValues,
 // for monitoring and adapting inhibition and possibly scaling parameters.
 // All of these integrate over NData within a network, so are the same across them.
-type ActAvgVals struct {
+type ActAvgValues struct {
 
 	// running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level
 	ActMAvg float32 `edit:"-"`
@@ -29,7 +29,7 @@ type ActAvgVals struct {
 	pad, pad1, pad2 float32
 }
 
-func (lv *ActAvgVals) Init() {
+func (lv *ActAvgValues) Init() {
 	lv.ActMAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWts
 	lv.ActPAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWts
 	lv.AvgMaxGeM = 1
@@ -59,10 +59,10 @@ func (cd *CorSimStats) Init() {
 	cd.Var = 0
 }
 
-// LaySpecialVals holds special values used to communicate to other layers
+// LaySpecialValues holds special values used to communicate to other layers
 // based on neural values, used for special algorithms such as RL where
 // some of the computation is done algorithmically.
-type LaySpecialVals struct {
+type LaySpecialValues struct {
 
 	// one value
 	V1 float32 `edit:"-"`
@@ -77,38 +77,38 @@ type LaySpecialVals struct {
 	V4 float32 `edit:"-"`
 }
 
-func (lv *LaySpecialVals) Init() {
+func (lv *LaySpecialValues) Init() {
 	lv.V1 = 0
 	lv.V2 = 0
 	lv.V3 = 0
 	lv.V4 = 0
 }
 
-// LayerVals holds extra layer state that is updated per layer.
+// LayerValues holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
-type LayerVals struct {
+type LayerValues struct {
 
 	// layer index for these vals
-	LayIdx uint32 `view:"-"`
+	LayIndex uint32 `view:"-"`
 
 	// data index for these vals
-	DataIdx uint32 `view:"-"`
+	DataIndex uint32 `view:"-"`
 
 	// reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold
 	RT  float32 `edit:"-"`
 	pad uint32
 
 	// running-average activation levels used for adaptive inhibition, and other adapting values
-	ActAvg ActAvgVals `view:"inline"`
+	ActAvg ActAvgValues `view:"inline"`
 
 	// correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states
 	CorSim CorSimStats
 
 	// special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc
-	Special LaySpecialVals `view:"inline"`
+	Special LaySpecialValues `view:"inline"`
 }
 
-func (lv *LayerVals) Init() {
+func (lv *LayerValues) Init() {
 	lv.ActAvg.Init()
 	lv.CorSim.Init()
 	lv.Special.Init()

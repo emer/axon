@@ -38,9 +38,9 @@ func (pj *HebbPrjn) DWt(ctx *Context) {
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
+		st := int(pj.SendConIndexStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
+		scons := pj.SendConIndex[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]
 			ri := scons[ci]

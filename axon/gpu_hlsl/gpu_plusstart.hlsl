@@ -5,7 +5,7 @@
 // does PlusPhaseStart on each Neuron
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -34,27 +34,27 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
 void PlusPhaseStartNeuron2(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl) {
-	ly.PlusPhaseStartNeuron(ctx, ni, di, pl, Pools[ly.Idxs.PoolIdx(0, di)], LayVals[ly.Idxs.ValsIdx(di)]);
+	ly.PlusPhaseStartNeuron(ctx, ni, di, pl, Pools[ly.Indexes.PoolIndex(0, di)], LayValues[ly.Indexes.ValuesIndex(di)]);
 }
 
 void PlusPhaseStartNeuron(in Context ctx, uint ni, uint di) {
-	uint li = NrnI(ctx, ni, NrnLayIdx);
+	uint li = NrnI(ctx, ni, NrnLayIndex);
 	uint pi = NrnI(ctx, ni, NrnSubPool);
-	PlusPhaseStartNeuron2(ctx, Layers[li], ni, di, Pools[Layers[li].Idxs.PoolIdx(pi, di)]);
+	PlusPhaseStartNeuron2(ctx, Layers[li], ni, di, Pools[Layers[li].Indexes.PoolIndex(pi, di)]);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Neurons * Data
-	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
-	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
+	uint ni = Ctx[0].NetIndexes.ItemIndex(idx.x);
+	if (!Ctx[0].NetIndexes.NeurIndexIsValid(ni)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	PlusPhaseStartNeuron(Ctx[0], ni, di);

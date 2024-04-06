@@ -116,25 +116,25 @@ func (hip *HipConfig) Defaults() {
 func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
 	// Trisynaptic Pathway (TSP)
 	ec2 = net.AddLayer2D("EC2", hip.EC2Size.Y, hip.EC2Size.X, SuperLayer)
-	ec2.SetRepIdxsShape(emer.Layer2DRepIdxs(ec2, 10))
+	ec2.SetRepIndexesShape(emer.Layer2DRepIndexes(ec2, 10))
 	dg = net.AddLayer2D("DG", int(float32(hip.CA3Size.Y)*hip.DGRatio), int(float32(hip.CA3Size.X)*hip.DGRatio), SuperLayer)
-	dg.SetRepIdxsShape(emer.Layer2DRepIdxs(dg, 10))
+	dg.SetRepIndexesShape(emer.Layer2DRepIndexes(dg, 10))
 	ca3 = net.AddLayer2D("CA3", hip.CA3Size.Y, hip.CA3Size.X, SuperLayer)
-	ca3.SetRepIdxsShape(emer.Layer2DRepIdxs(ca3, 10))
+	ca3.SetRepIndexesShape(emer.Layer2DRepIndexes(ca3, 10))
 
 	// Monosynaptic Pathway (MSP)
 	ec3 = net.AddLayer4D("EC3", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
 	ec3.AddClass("EC")
-	ec3.SetRepIdxsShape(emer.CenterPoolIdxs(ec3, 2), emer.CenterPoolShape(ec3, 2))
+	ec3.SetRepIndexesShape(emer.CenterPoolIndexes(ec3, 2), emer.CenterPoolShape(ec3, 2))
 	ca1 = net.AddLayer4D("CA1", hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X, SuperLayer)
-	ca1.SetRepIdxsShape(emer.CenterPoolIdxs(ca1, 2), emer.CenterPoolShape(ca1, 2))
+	ca1.SetRepIndexesShape(emer.CenterPoolIndexes(ca1, 2), emer.CenterPoolShape(ca1, 2))
 	if hip.EC5Clamp {
 		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, TargetLayer) // clamped in plus phase
 	} else {
 		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
 	}
 	ec5.AddClass("EC")
-	ec5.SetRepIdxsShape(emer.CenterPoolIdxs(ec5, 2), emer.CenterPoolShape(ec5, 2))
+	ec5.SetRepIndexesShape(emer.CenterPoolIndexes(ec5, 2), emer.CenterPoolShape(ec5, 2))
 
 	// Input and ECs connections
 	onetoone := prjn.NewOneToOne()
@@ -189,7 +189,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 // ec5ClampFrom specifies the layer to clamp EC5 plus phase values from:
 // EC3 is the biological source, but can use Input layer for simple testing net.
 func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipConfig, pretrain *bool) {
-	var tmpVals []float32
+	var tmpValues []float32
 
 	clampSrc := net.AxonLayerByName(hip.EC5ClampSrc)
 	ec5 := net.AxonLayerByName("EC5")
@@ -254,12 +254,12 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		// clamp EC5 from clamp source (EC3 typically)
 		if hip.EC5Clamp {
 			if mode != etime.Test || hip.EC5ClampTest {
-				for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-					clampSrc.UnitVals(&tmpVals, "Act", int(di))
+				for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+					clampSrc.UnitValues(&tmpValues, "Act", int(di))
 					if hip.EC5ClampThr > 0 {
-						norm.Binarize32(tmpVals, hip.EC5ClampThr, 1, 0)
+						norm.Binarize32(tmpValues, hip.EC5ClampThr, 1, 0)
 					}
-					ec5.ApplyExt1D32(ctx, di, tmpVals)
+					ec5.ApplyExt1D32(ctx, di, tmpValues)
 				}
 			}
 		}

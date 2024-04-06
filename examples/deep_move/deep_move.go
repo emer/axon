@@ -78,7 +78,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -282,8 +282,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -309,8 +309,8 @@ func (ss *Sim) ConfigLoops() {
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
 		AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -362,7 +362,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
-		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
+		ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
@@ -372,12 +372,12 @@ func (ss *Sim) ConfigLoops() {
 	if !ss.Config.GUI {
 		if ss.Config.Log.NetData {
 			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+				ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
 			})
 		}
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -396,7 +396,7 @@ func (ss *Sim) ApplyInputs() {
 	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	net.InitExt(ctx)
 
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*MoveEnv)
 		ev.Step()
 		for _, lnm := range lays {
@@ -415,7 +415,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
-	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}
@@ -431,7 +431,7 @@ func (ss *Sim) NewRun() {
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
 	ctx := &ss.Context
-	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}
 	ss.Loops.ResetAndRun(etime.Test)
@@ -464,15 +464,15 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdt.View == nil {
+	if ss.ViewUpdate.View == nil {
 		return
 	}
-	di := ss.ViewUpdt.View.Di
+	di := ss.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -486,7 +486,7 @@ func (ss *Sim) TrialStats(di int) {
 
 	inp := ss.Net.AxonLayerByName("DepthP")
 	ss.Stats.SetFloat("TrlErr", 1)
-	ss.Stats.SetFloat32("CorSim", inp.Vals[di].CorSim.Cor)
+	ss.Stats.SetFloat32("CorSim", inp.Values[di].CorSim.Cor)
 	ss.Stats.SetFloat("UnitErr", inp.PctUnitErr(ctx)[di])
 }
 
@@ -494,7 +494,7 @@ func (ss *Sim) TrialStats(di int) {
 func (ss *Sim) SimMat() {
 	sk := etime.Scope(etime.Analyze, etime.Trial)
 	lt := ss.Logs.TableDetailsScope(sk)
-	ix, _ := lt.NamedIdxView("AnalyzeTimes")
+	ix, _ := lt.NamedIndexView("AnalyzeTimes")
 	timeMap := make(map[int]bool)
 	ix.Filter(func(et *etable.Table, row int) bool {
 		time := int(et.CellFloat("Time", row))
@@ -504,7 +504,7 @@ func (ss *Sim) SimMat() {
 		timeMap[time] = true
 		return true
 	})
-	ix.SortCol(lt.Table.ColIdx("Time"), etable.Ascending)
+	ix.SortCol(lt.Table.ColIndex("Time"), etable.Ascending)
 	times := ix.NewTable()
 	ss.Logs.MiscTables["AnalyzeTimes"] = times
 
@@ -614,9 +614,9 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
+	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 	ss.ConfigNetView(nv)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

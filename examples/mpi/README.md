@@ -60,10 +60,10 @@ There are some other things added but they are just more of what is already ther
 In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to different nodes, so that each epoch has the same full set of input patterns as with one processor.
 
 ```go
-	ss.TrainEnv.Table = etable.NewIdxView(ss.Pats)
+	ss.TrainEnv.Table = etable.NewIndexView(ss.Pats)
 	if ss.Config.Run.MPI {
 		st, ed, _ := empi.AllocN(ss.Pats.Rows)
-		ss.TrainEnv.Table.Idxs = ss.TrainEnv.Table.Idxs[st:ed]
+		ss.TrainEnv.Table.Indexes = ss.TrainEnv.Table.Indexes[st:ed]
 	}
 ```
 

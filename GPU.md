@@ -45,7 +45,7 @@ The `Net.GPU` object manages all the GPU functionality and the `Net.GPU.On` is c
 
 The network state (everything except Synapses) is automatically synchronized at the end of the Plus Phase, so it will be visible in the netview.
 
-Also, the `axon.LooperUpdtNetView` method now requires a `ss.Net` argument, to enable grabbing Neuron state if updating at the Cycle level.
+Also, the `axon.LooperUpdateNetView` method now requires a `ss.Net` argument, to enable grabbing Neuron state if updating at the Cycle level.
 
 The new `LayerTypes` and `PrjnTypes` enums require renaming type selectors in params and other places.  There is now just one layer type, `Layer`, so cases that were different types are now specified by the Class selector (`.` prefix) based on the LayerTypes enum, which is automatically added for each layer.
 
@@ -69,30 +69,30 @@ Finally, you must move the calls to `net.Defaults`, `Params.SetObject` *after* t
 ```
 Set: 0
     Role: Uniform
-        Var: 0:	Layers	Struct[4]	(size: 1520)	Vals: 1
-Set: 1	Idxs
+        Var: 0:	Layers	Struct[4]	(size: 1520)	Values: 1
+Set: 1	Indexes
     Role: Storage
-        Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Vals: 1
-        Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Vals: 1
-        Var: 2:	Prjns	Struct[5]	(size: 352)	Vals: 1
-        Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
-        Var: 4:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
-        Var: 5:	RecvCon	Struct[281]	(size: 16)	Vals: 1
-        Var: 6:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+        Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Values: 1
+        Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Values: 1
+        Var: 2:	Prjns	Struct[5]	(size: 352)	Values: 1
+        Var: 3:	SendCon	Struct[242]	(size: 16)	Values: 1
+        Var: 4:	RecvPrjnIndexes	Uint32[5]	(size: 4)	Values: 1
+        Var: 5:	RecvCon	Struct[281]	(size: 16)	Values: 1
+        Var: 6:	RecvSynIndexes	Uint32[12992]	(size: 4)	Values: 1
 Set: 2	Structs
     Role: Storage
-        Var: 0:	Ctx	Struct	(size: 864)	Vals: 1
-        Var: 1:	Neurons	Float32[14596]	(size: 4)	Vals: 1
-        Var: 2:	NeuronAvgs	Float32[890]	(size: 4)	Vals: 1
-        Var: 3:	Pools	Struct[4]	(size: 1040)	Vals: 1
-        Var: 4:	LayVals	Struct[4]	(size: 128)	Vals: 1
-        Var: 5:	Exts	Float32[50]	(size: 4)	Vals: 1
+        Var: 0:	Ctx	Struct	(size: 864)	Values: 1
+        Var: 1:	Neurons	Float32[14596]	(size: 4)	Values: 1
+        Var: 2:	NeuronAvgs	Float32[890]	(size: 4)	Values: 1
+        Var: 3:	Pools	Struct[4]	(size: 1040)	Values: 1
+        Var: 4:	LayValues	Struct[4]	(size: 128)	Values: 1
+        Var: 5:	Exts	Float32[50]	(size: 4)	Values: 1
 Set: 3	Syns
     Role: Storage
-        Var: 0:	Synapses	Float32[64960]	(size: 4)	Vals: 1
-        Var: 1:	SynapseCas	Float32[77952]	(size: 4)	Vals: 1
-        Var: 2:	GBuf	Int32[843]	(size: 4)	Vals: 1
-        Var: 3:	GSyns	Float32[281]	(size: 4)	Vals: 1
+        Var: 0:	Synapses	Float32[64960]	(size: 4)	Values: 1
+        Var: 1:	SynapseCas	Float32[77952]	(size: 4)	Values: 1
+        Var: 2:	GBuf	Int32[843]	(size: 4)	Values: 1
+        Var: 3:	GSyns	Float32[281]	(size: 4)	Values: 1
 ```
 
 # General issues and strategies
@@ -107,7 +107,7 @@ Set: 3	Syns
 
 * `Context` (was Time) is copied *from CPU -> GPU* at the start of `RunCycle` and back down *from GPU -> CPU* at the end.  The GPU can update the `NeuroMod` values during the Cycle call, while Context can be updated with on the GPU side to encode global reward values and other relevant context.
 
-* `LayerVals` and `Pool`s are copied *from GPU -> CPU* at the end of `RunCycle`, and can be used for logging, stats or other functions during the 200 cycle update.  There is a `Special` field for `LaySpecialVals` that holds generic special values that can be used for different cases.
+* `LayerValues` and `Pool`s are copied *from GPU -> CPU* at the end of `RunCycle`, and can be used for logging, stats or other functions during the 200 cycle update.  There is a `Special` field for `LaySpecialValues` that holds generic special values that can be used for different cases.
 
 * At end of the 200 cycle ThetaCycle, the above state plus Neurons are grabbed back from GPU -> CPU, so further stats etc can be computed on this Neuron level data.
 
@@ -151,7 +151,7 @@ The following Layer and Prjn level types contain most of the core algorithm spec
     + `PrjnScaleParams` also at end of `act.go` -- projection scaling params, for `GScale` overall value.
     + `SWtParams` in `learn.go` -- for initializing the slow and regular weight values -- most of the initial weight variation goes into SWt.
     + `LearnSynParams` in `learn.go` -- core learning algorithm at the synapse level.
-    + `GScaleVals` -- these are computed from `PrjnScaleParams` and not user-set directly, but remain constant so are put here.
+    + `GScaleValues` -- these are computed from `PrjnScaleParams` and not user-set directly, but remain constant so are put here.
 
 Each class of special algorithms has its own set of mostly GPU-side code:
 

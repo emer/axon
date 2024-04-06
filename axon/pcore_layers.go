@@ -29,25 +29,25 @@ type MatrixParams struct {
 	IsVS slbool.Bool
 
 	// index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName
-	OtherMatrixIdx int32 `edit:"-"`
+	OtherMatrixIndex int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
-	ThalLay1Idx int32 `edit:"-"`
+	ThalLay1Index int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used
-	ThalLay2Idx int32 `edit:"-"`
+	ThalLay2Index int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used
-	ThalLay3Idx int32 `edit:"-"`
+	ThalLay3Index int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used
-	ThalLay4Idx int32 `edit:"-"`
+	ThalLay4Index int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used
-	ThalLay5Idx int32 `edit:"-"`
+	ThalLay5Index int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used
-	ThalLay6Idx int32 `edit:"-"`
+	ThalLay6Index int32 `edit:"-"`
 
 	pad, pad1, pad2 int32
 }
@@ -99,46 +99,46 @@ func (gp *GPParams) Update() {
 // downloaded from GPU, to set Gated flag based on SpkMax activity
 func (ly *Layer) MatrixGated(ctx *Context) {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
-		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
+		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIndex)]
 		// note: NoGo layers don't track gating at the sub-pool level!
-		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 			ly.Pool(0, di).Gated = oly.Pool(0, di).Gated
 		}
 		return
 	}
 	// todo: Context requires data parallel state!
 
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
-		mtxGated, poolIdx := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+		mtxGated, poolIndex := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 
 		thalGated := false
-		if ly.Params.Matrix.ThalLay1Idx >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
+		if ly.Params.Matrix.ThalLay1Index >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Index)]
 			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
-		if ly.Params.Matrix.ThalLay2Idx >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
+		if ly.Params.Matrix.ThalLay2Index >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Index)]
 			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
-		if ly.Params.Matrix.ThalLay3Idx >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
+		if ly.Params.Matrix.ThalLay3Index >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Index)]
 			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
-		if ly.Params.Matrix.ThalLay4Idx >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
+		if ly.Params.Matrix.ThalLay4Index >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Index)]
 			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
-		if ly.Params.Matrix.ThalLay5Idx >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
+		if ly.Params.Matrix.ThalLay5Index >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Index)]
 			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
-		if ly.Params.Matrix.ThalLay6Idx >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
+		if ly.Params.Matrix.ThalLay6Index >= 0 {
+			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Index)]
 			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
@@ -160,7 +160,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
 			SetGlbV(ctx, di, GvVSMatrixJustGated, num.FromBool[float32](mtxGated))
 			if mtxGated {
-				SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, uint32(poolIdx), 1)
+				SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, uint32(poolIndex), 1)
 			}
 		}
 	}
@@ -171,7 +171,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 // returns true if any gated, and the pool index if 4D layer (0 = first).
 func (ly *Layer) GatedFmSpkMax(di uint32, thr float32) (bool, int) {
 	anyGated := false
-	poolIdx := -1
+	poolIndex := -1
 	if ly.Is4D() {
 		for pi := uint32(1); pi < ly.NPools; pi++ {
 			pl := ly.Pool(pi, di)
@@ -179,8 +179,8 @@ func (ly *Layer) GatedFmSpkMax(di uint32, thr float32) (bool, int) {
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
-				if poolIdx < 0 {
-					poolIdx = int(pi) - 1
+				if poolIndex < 0 {
+					poolIndex = int(pi) - 1
 				}
 			}
 			pl.Gated.SetBool(gthr)
@@ -192,7 +192,7 @@ func (ly *Layer) GatedFmSpkMax(di uint32, thr float32) (bool, int) {
 		}
 	}
 	ly.Pool(0, di).Gated.SetBool(anyGated)
-	return anyGated, poolIdx
+	return anyGated, poolIndex
 }
 
 // AnyGated returns true if the layer-level pool Gated flag is true,
@@ -259,14 +259,14 @@ func (ly *Layer) MatrixDefaults() {
 }
 
 func (ly *Layer) MatrixPostBuild() {
-	ly.Params.Matrix.ThalLay1Idx = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
-	ly.Params.Matrix.ThalLay2Idx = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
-	ly.Params.Matrix.ThalLay3Idx = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
-	ly.Params.Matrix.ThalLay4Idx = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
-	ly.Params.Matrix.ThalLay5Idx = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
-	ly.Params.Matrix.ThalLay6Idx = ly.BuildConfigFindLayer("ThalLay6Name", false) // optional
+	ly.Params.Matrix.ThalLay1Index = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
+	ly.Params.Matrix.ThalLay2Index = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
+	ly.Params.Matrix.ThalLay3Index = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
+	ly.Params.Matrix.ThalLay4Index = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
+	ly.Params.Matrix.ThalLay5Index = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
+	ly.Params.Matrix.ThalLay6Index = ly.BuildConfigFindLayer("ThalLay6Name", false) // optional
 
-	ly.Params.Matrix.OtherMatrixIdx = ly.BuildConfigFindLayer("OtherMatrixName", true)
+	ly.Params.Matrix.OtherMatrixIndex = ly.BuildConfigFindLayer("OtherMatrixName", true)
 
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {

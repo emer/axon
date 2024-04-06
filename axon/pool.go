@@ -49,8 +49,8 @@ func (am *AvgMaxPhases) CycleToPlus() {
 }
 
 // Calc does Calc on Cycle, which is then ready for aggregation again
-func (am *AvgMaxPhases) Calc(refIdx int32) {
-	am.Cycle.Calc(refIdx)
+func (am *AvgMaxPhases) Calc(refIndex int32) {
+	am.Cycle.Calc(refIndex)
 }
 
 // Zero does a full reset on everything -- for InitActs
@@ -138,20 +138,20 @@ func (am *PoolAvgMax) Zero() {
 }
 
 // Calc does Calc on Cycle level, and re-inits
-func (am *PoolAvgMax) Calc(refIdx int32) {
-	am.CaSpkP.Calc(refIdx)
-	am.CaSpkD.Calc(refIdx)
-	am.SpkMax.Calc(refIdx)
-	am.Act.Calc(refIdx)
-	am.GeInt.Calc(refIdx)
-	am.GiInt.Calc(refIdx)
+func (am *PoolAvgMax) Calc(refIndex int32) {
+	am.CaSpkP.Calc(refIndex)
+	am.CaSpkD.Calc(refIndex)
+	am.SpkMax.Calc(refIndex)
+	am.Act.Calc(refIndex)
+	am.GeInt.Calc(refIndex)
+	am.GiInt.Calc(refIndex)
 }
 
 //gosl: end pool
 
 // note: the following is actually being used despite appearing to be
 // commented out!  it is auto-uncommented when copied to hlsl
-// MUST update whenever above UpdateVals code is updated.
+// MUST update whenever above UpdateValues code is updated.
 
 //gosl: hlsl pool
 /*
@@ -177,16 +177,16 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 type Pool struct {
 
 	// starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool
-	StIdx, EdIdx uint32 `edit:"-"`
+	StIndex, EdIndex uint32 `edit:"-"`
 
 	// layer index in global layer list
-	LayIdx uint32 `view:"-"`
+	LayIndex uint32 `view:"-"`
 
 	// data parallel index (innermost index per layer)
-	DataIdx uint32 `view:"-"`
+	DataIndex uint32 `view:"-"`
 
 	// pool index in global pool list:
-	PoolIdx uint32 `view:"-"`
+	PoolIndex uint32 `view:"-"`
 
 	// is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer
 	IsLayPool slbool.Bool `edit:"-"`
@@ -216,25 +216,25 @@ func (pl *Pool) Init() {
 	pl.Gated.SetBool(false)
 }
 
-// NNeurons returns the number of neurons in the pool: EdIdx - StIdx
+// NNeurons returns the number of neurons in the pool: EdIndex - StIndex
 func (pl *Pool) NNeurons() int {
-	return int(pl.EdIdx - pl.StIdx)
+	return int(pl.EdIndex - pl.StIndex)
 }
 
 //gosl: end pool
 
 // AvgMaxUpdate updates the AvgMax values based on current neuron values
 func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
-	pl.AvgMax.CaSpkP.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkP))
-	pl.AvgMax.CaSpkD.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkD))
-	pl.AvgMax.SpkMax.Cycle.UpdateVal(NrnV(ctx, ni, di, SpkMax))
-	pl.AvgMax.Act.Cycle.UpdateVal(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
-	pl.AvgMax.GeInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GeInt))
-	pl.AvgMax.GiInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GiInt))
+	pl.AvgMax.CaSpkP.Cycle.UpdateValue(NrnV(ctx, ni, di, CaSpkP))
+	pl.AvgMax.CaSpkD.Cycle.UpdateValue(NrnV(ctx, ni, di, CaSpkD))
+	pl.AvgMax.SpkMax.Cycle.UpdateValue(NrnV(ctx, ni, di, SpkMax))
+	pl.AvgMax.Act.Cycle.UpdateValue(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
+	pl.AvgMax.GeInt.Cycle.UpdateValue(NrnV(ctx, ni, di, GeInt))
+	pl.AvgMax.GiInt.Cycle.UpdateValue(NrnV(ctx, ni, di, GiInt))
 }
 
-// TestVals returns a map of CaSpkD.Avg, which provides an
+// TestValues returns a map of CaSpkD.Avg, which provides an
 // integrated summary of pool activity for testing
-func (pl *Pool) TestVals(layKey string, vals map[string]float32) {
+func (pl *Pool) TestValues(layKey string, vals map[string]float32) {
 	vals[layKey+" CaSpkD Avg"] = pl.AvgMax.CaSpkD.Cycle.Avg
 }

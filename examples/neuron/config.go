@@ -113,7 +113,7 @@ type Config struct {
 	OffCycle int `min:"0" default:"160"`
 
 	// how often to update display (in cycles)
-	UpdtInterval int `min:"1" default:"10" `
+	UpdateInterval int `min:"1" default:"10" `
 
 	// specify include files here, and after configuration, it contains list of include files added
 	Includes []string

@@ -79,7 +79,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -227,8 +227,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -254,8 +254,8 @@ func (ss *Sim) ConfigLoops() {
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
 		AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -306,7 +306,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
-		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
+		ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
@@ -329,12 +329,12 @@ func (ss *Sim) ConfigLoops() {
 	if !ss.Config.GUI {
 		if ss.Config.Log.NetData {
 			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+				ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
 			})
 		}
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -356,7 +356,7 @@ func (ss *Sim) ApplyInputs() {
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 
 	net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		fsenv := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*FSAEnv)
 		fsenv.Step()
 		ns := fsenv.NNext.Values[0]
@@ -370,10 +370,10 @@ func (ss *Sim) ApplyInputs() {
 			if i == 0 {
 				for yi := 0; yi < ss.Config.Env.UnitsPer; yi++ {
 					idx := li*ss.Config.Env.UnitsPer + yi
-					in.ApplyExtVal(ctx, uint32(idx), di, 1, clrmsk, setmsk, false)
+					in.ApplyExtValue(ctx, uint32(idx), di, 1, clrmsk, setmsk, false)
 				}
 			}
-			trg.ApplyExtVal(ctx, uint32(li), di, 1, clrmsk, setmsk, false)
+			trg.ApplyExtValue(ctx, uint32(li), di, 1, clrmsk, setmsk, false)
 		}
 	}
 	ss.Net.ApplyExts(ctx)
@@ -384,7 +384,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
-	for di := 0; di < int(ctx.NetIdxs.NData); di++ {
+	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}
@@ -415,7 +415,7 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
+// Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ss.Context.Mode
@@ -432,15 +432,15 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdt.View == nil {
+	if ss.ViewUpdate.View == nil {
 		return
 	}
-	di := ss.ViewUpdt.View.Di
+	di := ss.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "Output", "TrlErr", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "Output", "TrlErr", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -450,15 +450,15 @@ func (ss *Sim) TrialStats(di int) {
 	inp := ss.Net.AxonLayerByName("InputP")
 	trg := ss.Net.AxonLayerByName("Targets")
 
-	ss.Stats.SetFloat("CorSim", float64(inp.Vals[di].CorSim.Cor))
-	_, minusIdxs, _ := inp.LocalistErr4D(ctx)
-	minusIdx := minusIdxs[di]
-	trgExt := axon.NrnV(ctx, trg.NeurStIdx+uint32(minusIdx), uint32(di), axon.Ext)
+	ss.Stats.SetFloat("CorSim", float64(inp.Values[di].CorSim.Cor))
+	_, minusIndexes, _ := inp.LocalistErr4D(ctx)
+	minusIndex := minusIndexes[di]
+	trgExt := axon.NrnV(ctx, trg.NeurStIndex+uint32(minusIndex), uint32(di), axon.Ext)
 	err := true
 	if trgExt > 0.5 {
 		err = false
 	}
-	ss.Stats.SetInt("Output", minusIdx)
+	ss.Stats.SetInt("Output", minusIndex)
 	ss.Stats.SetFloat("UnitErr", inp.PctUnitErr(ctx)[di])
 	if err {
 		ss.Stats.SetFloat("TrlErr", 1)
@@ -619,9 +619,9 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
+	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 	ss.ConfigNetView(nv)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

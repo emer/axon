@@ -62,21 +62,21 @@ const (
 	// IMPORTANT: if DiDWt is not the last, need to update gosl defn below
 )
 
-// SynapseIdxs are the neuron indexes and other uint32 values (flags, etc).
+// SynapseIndexes are the neuron indexes and other uint32 values (flags, etc).
 // There is only one of these per neuron -- not data parallel.
-type SynapseIdxs int32 //enums:enum
+type SynapseIndexes int32 //enums:enum
 
 const (
-	// SynRecvIdx is receiving neuron index in network's global list of neurons
-	SynRecvIdx SynapseIdxs = iota
+	// SynRecvIndex is receiving neuron index in network's global list of neurons
+	SynRecvIndex SynapseIndexes = iota
 
-	// SynSendIdx is sending neuron index in network's global list of neurons
-	SynSendIdx
+	// SynSendIndex is sending neuron index in network's global list of neurons
+	SynSendIndex
 
-	// SynPrjnIdx is projection index in global list of projections organized as [Layers][RecvPrjns]
-	SynPrjnIdx
+	// SynPrjnIndex is projection index in global list of projections organized as [Layers][RecvPrjns]
+	SynPrjnIndex
 
-	// IMPORTANT: if SynPrjnIdx is not the last, need to update gosl defn below
+	// IMPORTANT: if SynPrjnIndex is not the last, need to update gosl defn below
 )
 
 //gosl: end synapse
@@ -85,7 +85,7 @@ const (
 /*
 static const SynapseVars SynapseVarsN = DSWt + 1;
 static const SynapseCaVars SynapseCaVarsN = DiDWt + 1;
-static const SynapseIdxs SynapseIdxsN = SynPrjnIdx + 1;
+static const SynapseIndexes SynapseIndexesN = SynPrjnIndex + 1;
 */
 //gosl: end synapse
 
@@ -109,10 +109,10 @@ type SynapseVarStrides struct {
 
 // note: when increasing synapse var capacity beyond 2^31, change back to uint64
 
-// Idx returns the index into network float32 array for given synapse, and variable
-func (ns *SynapseVarStrides) Idx(synIdx uint32, nvar SynapseVars) uint32 {
-	// return uint64(synIdx)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var)
-	return synIdx*ns.Synapse + uint32(nvar)*ns.Var
+// Index returns the index into network float32 array for given synapse, and variable
+func (ns *SynapseVarStrides) Index(synIndex uint32, nvar SynapseVars) uint32 {
+	// return uint64(synIndex)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var)
+	return synIndex*ns.Synapse + uint32(nvar)*ns.Var
 }
 
 // SetSynapseOuter sets strides with synapses as outer loop:
@@ -143,9 +143,9 @@ type SynapseCaStrides struct {
 	Var uint64
 }
 
-// Idx returns the index into network float32 array for given synapse, data, and variable
-func (ns *SynapseCaStrides) Idx(synIdx, di uint32, nvar SynapseCaVars) uint64 {
-	return uint64(synIdx)*ns.Synapse + uint64(nvar)*ns.Var + uint64(di)
+// Index returns the index into network float32 array for given synapse, data, and variable
+func (ns *SynapseCaStrides) Index(synIndex, di uint32, nvar SynapseCaVars) uint64 {
+	return uint64(synIndex)*ns.Synapse + uint64(nvar)*ns.Var + uint64(di)
 }
 
 // SetSynapseOuter sets strides with synapses as outer loop:
@@ -163,11 +163,11 @@ func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
 }
 
 ////////////////////////////////////////////////
-// 	Idxs
+// 	Indexes
 
-// SynapseIdxStrides encodes the stride offsets for synapse index access
+// SynapseIndexStrides encodes the stride offsets for synapse index access
 // into network uint32 array.
-type SynapseIdxStrides struct {
+type SynapseIndexStrides struct {
 
 	// synapse level
 	Synapse uint32
@@ -179,22 +179,22 @@ type SynapseIdxStrides struct {
 }
 
 // Idx returns the index into network uint32 array for given synapse, index value
-func (ns *SynapseIdxStrides) Idx(synIdx uint32, idx SynapseIdxs) uint32 {
+func (ns *SynapseIndexStrides) Idx(synIdx uint32, idx SynapseIndexes) uint32 {
 	return synIdx*ns.Synapse + uint32(idx)*ns.Index
 }
 
 // SetSynapseOuter sets strides with synapses as outer dimension:
-// [Synapses][Idxs] (outer to inner), which is optimal for CPU-based
+// [Synapses][Indexes] (outer to inner), which is optimal for CPU-based
 // computation.
-func (ns *SynapseIdxStrides) SetSynapseOuter() {
-	ns.Synapse = uint32(SynapseIdxsN)
+func (ns *SynapseIndexStrides) SetSynapseOuter() {
+	ns.Synapse = uint32(SynapseIndexesN)
 	ns.Index = 1
 }
 
-// SetIdxOuter sets strides with indexes as outer dimension:
-// [Idxs][Synapses] (outer to inner), which is optimal for GPU-based
+// SetIndexOuter sets strides with indexes as outer dimension:
+// [Indexes][Synapses] (outer to inner), which is optimal for GPU-based
 // computation.
-func (ns *SynapseIdxStrides) SetIdxOuter(nsyn int) {
+func (ns *SynapseIndexStrides) SetIndexOuter(nsyn int) {
 	ns.Index = uint32(nsyn)
 	ns.Synapse = 1
 }

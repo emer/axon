@@ -219,12 +219,12 @@ const (
 	// It represents estimated value V(t) from prior time step in the minus phase,
 	// and estimated discount * V(t+1) + r(t) in the plus phase.
 	// It gets Rew, PrevPred from Context.NeuroMod, and Special
-	// LayerVals from TDPredLayer.
+	// LayerValues from TDPredLayer.
 	TDIntegLayer
 
 	// TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD)
 	// between the TDIntegLayer activations in the minus and plus phase.
-	// These are retrieved from Special LayerVals.
+	// These are retrieved from Special LayerValues.
 	TDDaLayer
 )
 

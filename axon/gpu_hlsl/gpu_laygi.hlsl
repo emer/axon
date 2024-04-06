@@ -5,7 +5,7 @@
 // updates layer inhibition
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -34,27 +34,27 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
 
-void LayGi2(in Context ctx, in LayerParams ly, uint li, uint di, inout Pool lpl, inout LayerVals vals) {
+void LayGi2(in Context ctx, in LayerParams ly, uint li, uint di, inout Pool lpl, inout LayerValues vals) {
 	lpl.AvgMax.Calc(int(li));
 	lpl.Inhib.IntToRaw();
-	ly.LayPoolGiFmSpikes(ctx, lpl, vals); // also updates LayerVals with NeuroMod
+	ly.LayPoolGiFmSpikes(ctx, lpl, vals); // also updates LayerValues with NeuroMod
 }
 
 void LayGi(in Context ctx, in LayerParams ly, uint li, uint di) {
-	LayGi2(ctx, ly, li, di, Pools[ly.Idxs.PoolIdx(0, di)], LayVals[ly.Idxs.ValsIdx(di)]);
+	LayGi2(ctx, ly, li, di, Pools[ly.Indexes.PoolIndex(0, di)], LayValues[ly.Indexes.ValuesIndex(di)]);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Layers * Data
-	uint li = Ctx[0].NetIdxs.ItemIdx(idx.x);
-	if (!Ctx[0].NetIdxs.LayerIdxIsValid(li)) {
+	uint li = Ctx[0].NetIndexes.ItemIndex(idx.x);
+	if (!Ctx[0].NetIndexes.LayerIndexIsValid(li)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	LayGi(Ctx[0], Layers[li], li, di);

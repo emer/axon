@@ -89,7 +89,7 @@ type Sim struct {
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdt netview.ViewUpdt `view:"inline"`
+	ViewUpdate netview.ViewUpdate `view:"inline"`
 
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
@@ -198,8 +198,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	it := net.AddLayer2D("IT", 16, 16, axon.SuperLayer)       // 16x16 == 20x20 > 10x10 (orig)
 	out := net.AddLayer4D("Output", 4, 5, ss.Config.Env.NOutPer, 1, axon.TargetLayer)
 
-	v1.SetRepIdxsShape(emer.CenterPoolIdxs(v1, 2), emer.CenterPoolShape(v1, 2))
-	v4.SetRepIdxsShape(emer.CenterPoolIdxs(v4, 2), emer.CenterPoolShape(v4, 2))
+	v1.SetRepIndexesShape(emer.CenterPoolIndexes(v1, 2), emer.CenterPoolShape(v1, 2))
+	v4.SetRepIndexesShape(emer.CenterPoolIndexes(v4, 2), emer.CenterPoolShape(v4, 2))
 
 	full := prjn.NewFull()
 	_ = full
@@ -252,8 +252,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdt.Update()
-	ss.ViewUpdt.RecordSyns()
+	ss.ViewUpdate.Update()
+	ss.ViewUpdate.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -279,8 +279,8 @@ func (ss *Sim) ConfigLoops() {
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
 		AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for mode := range man.Stacks {
 		mode := mode // For closures
@@ -331,7 +331,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
-		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
+		ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
@@ -341,7 +341,7 @@ func (ss *Sim) ConfigLoops() {
 	if !ss.Config.GUI {
 		if ss.Config.Log.NetData {
 			man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-				ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+				ss.GUI.NetDataRecord(ss.ViewUpdate.Text)
 			})
 		}
 	} else {
@@ -350,15 +350,15 @@ func (ss *Sim) ConfigLoops() {
 				ss.Stats.UpdateActRFs(ss.Net, "ActM", 0.01, di)
 			}
 		})
-		man.GetLoop(etime.Train, etime.Trial).OnStart.Add("UpdtImage", func() {
+		man.GetLoop(etime.Train, etime.Trial).OnStart.Add("UpdateImage", func() {
 			ss.GUI.Grid("Image").NeedsRender()
 		})
-		man.GetLoop(etime.Test, etime.Trial).OnStart.Add("UpdtImage", func() {
+		man.GetLoop(etime.Test, etime.Trial).OnStart.Add("UpdateImage", func() {
 			ss.GUI.Grid("Image").NeedsRender()
 		})
 
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net, ss.NetViewCounters)
-		axon.LooperUpdtPlots(man, &ss.GUI)
+		axon.LooperUpdateNetView(man, &ss.ViewUpdate, ss.Net, ss.NetViewCounters)
+		axon.LooperUpdatePlots(man, &ss.GUI)
 	}
 
 	if ss.Config.Debug {
@@ -377,7 +377,7 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ev.Step()
 		ss.Stats.SetIntDi("Cat", int(di), ev.CurLED) // note: must save relevant state for stats later
 		ss.Stats.SetStringDi("TrialName", int(di), ev.String())
@@ -440,7 +440,7 @@ func (ss *Sim) InitStats() {
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them for ViewUpdt.Text
+// Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
@@ -457,15 +457,15 @@ func (ss *Sim) StatCounters(di int) {
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
-	if ss.ViewUpdt.View == nil {
+	if ss.ViewUpdate.View == nil {
 		return
 	}
-	di := ss.ViewUpdt.View.Di
+	di := ss.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cat", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cat", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -474,7 +474,7 @@ func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	out := ss.Net.AxonLayerByName("Output")
 
-	ss.Stats.SetFloat("CorSim", float64(out.Vals[di].CorSim.Cor))
+	ss.Stats.SetFloat("CorSim", float64(out.Values[di].CorSim.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(ctx)[di])
 
 	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
@@ -556,16 +556,16 @@ func (ss *Sim) ConfigLogItems() {
 			}}})
 
 	ss.Logs.AddItem(&elog.Item{
-		Name:      "CatErr",
-		Type:      etensor.FLOAT64,
-		CellShape: []int{20},
-		DimNames:  []string{"Cat"},
-		Plot:      true,
-		Range:     minmax.F64{Min: 0},
-		TensorIdx: -1, // plot all values
+		Name:        "CatErr",
+		Type:        etensor.FLOAT64,
+		CellShape:   []int{20},
+		DimNames:    []string{"Cat"},
+		Plot:        true,
+		Range:       minmax.F64{Min: 0},
+		TensorIndex: -1, // plot all values
 		Write: elog.WriteMap{
 			etime.Scope(etime.Test, etime.Epoch): func(ctx *elog.Context) {
-				ix := ctx.Logs.IdxView(etime.Test, etime.Trial)
+				ix := ctx.Logs.IndexView(etime.Test, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Cat"})
 				split.AggTry(spl, "Err", agg.AggMean)
 				cats := spl.AggsToTable(etable.ColNameOnly)
@@ -670,13 +670,13 @@ func (ss *Sim) ConfigGUI() {
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.Phase, etime.Phase)
+	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 
 	cam := &(nv.SceneXYZ().Camera)
 	cam.Pose.Pos.Set(0.0, 1.733, 2.3)
 	cam.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))
 
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
+	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

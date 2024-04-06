@@ -5,7 +5,7 @@
 // tests writing values to SynCas
 
 // note: all must be visible always because accessor methods refer to them
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
 [[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
@@ -44,12 +44,12 @@ struct PushConst {
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 
 void WriteSynCa(in Context ctx, uint syni, uint di) {
-	// uint64_t ix = ctx.SynapseCaVars.Idx(syni, di, DTr);
-	// uint bank = uint(ix / uint64_t(ctx.NetIdxs.GPUMaxBuffFloats));
-	// uint res = uint(ix % uint64_t(ctx.NetIdxs.GPUMaxBuffFloats));
-	// uint pi = SynI(ctx, syni, SynPrjnIdx);
-	// uint si = SynI(ctx, syni, SynSendIdx);
-	// uint ri = SynI(ctx, syni, SynRecvIdx);
+	// uint64_t ix = ctx.SynapseCaVars.Index(syni, di, DTr);
+	// uint bank = uint(ix / uint64_t(ctx.NetIndexes.GPUMaxBuffFloats));
+	// uint res = uint(ix % uint64_t(ctx.NetIndexes.GPUMaxBuffFloats));
+	// uint pi = SynI(ctx, syni, SynPrjnIndex);
+	// uint si = SynI(ctx, syni, SynSendIndex);
+	// uint ri = SynI(ctx, syni, SynRecvIndex);
 	// SetSynCaV(ctx, syni, di, CaM, asfloat(pi));
 	// SetSynCaV(ctx, syni, di, CaP, asfloat(si));
 	// SetSynCaV(ctx, syni, di, CaD, asfloat(ri));
@@ -58,18 +58,18 @@ void WriteSynCa(in Context ctx, uint syni, uint di) {
 	// SetSynCaV(ctx, syni, di, DTr, asfloat(bank));
 	// SetSynCaV(ctx, syni, di, DiDWt, asfloat(res));
 
-	SetSynCaV(ctx, syni, di, CaM, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaM) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, CaP, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaP) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, CaD, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaD) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, CaUpT) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, Tr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, Tr) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, DTr, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DTr) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, DiDWt, asfloat(uint(ctx.SynapseCaVars.Idx(syni, di, DiDWt) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, CaM, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaM) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, CaP, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaP) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, CaD, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaD) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaUpT) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, Tr, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, Tr) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, DTr, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, DTr) % 0xFFFFFFFF)));
+	SetSynCaV(ctx, syni, di, DiDWt, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, DiDWt) % 0xFFFFFFFF)));
 
 	// SetSynCaV(ctx, syni, di, DiDWt, 42.22);
-	// uint64_t ix = ctx.SynapseCaVars.Idx(syni, di, DiDWt);
-	// uint res = uint(ix - uint64_t(ctx.NetIdxs.GPUMaxBuffFloats));
-	// uint res = syni * ctx.NetIdxs.MaxData + di;
+	// uint64_t ix = ctx.SynapseCaVars.Index(syni, di, DiDWt);
+	// uint res = uint(ix - uint64_t(ctx.NetIndexes.GPUMaxBuffFloats));
+	// uint res = syni * ctx.NetIndexes.MaxData + di;
 	// SynapseCas1[res] = asfloat(0x6666666);
 	// SynapseCas0[res] = asfloat(0x4444444);
 }
@@ -77,12 +77,12 @@ void WriteSynCa(in Context ctx, uint syni, uint di) {
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Synapses * Data
-	uint syni = Ctx[0].NetIdxs.ItemIdx(idx.x) + PushOff.Off;
-	if (!Ctx[0].NetIdxs.SynIdxIsValid(syni)) {
+	uint syni = Ctx[0].NetIndexes.ItemIndex(idx.x) + PushOff.Off;
+	if (!Ctx[0].NetIndexes.SynIndexIsValid(syni)) {
 		return;
 	}
-	uint di = Ctx[0].NetIdxs.DataIdx(idx.x);
-	if (!Ctx[0].NetIdxs.DataIdxIsValid(di)) {
+	uint di = Ctx[0].NetIndexes.DataIndex(idx.x);
+	if (!Ctx[0].NetIndexes.DataIndexIsValid(di)) {
 		return;
 	}
 	WriteSynCa(Ctx[0], syni, di);

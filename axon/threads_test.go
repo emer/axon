@@ -233,7 +233,7 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 		// check Neuron fields
 		for lni := uint32(0); lni < layerS.NNeurons; lni++ {
 			for _, fn := range NeuronVarNames {
-				vidx, _ := layerS.UnitVarIdx(fn)
+				vidx, _ := layerS.UnitVarIndex(fn)
 				vS := layerS.UnitVal1D(vidx, int(lni), 0)
 				vP := layerP.UnitVal1D(vidx, int(lni), 0)
 				require.Equal(t, vS, vP,
@@ -274,7 +274,7 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 		// check Neuron fields
 		for lni := uint32(0); lni < layerS.NNeurons; lni++ {
 			for _, fn := range NeuronVarNames {
-				vidx, _ := layerS.UnitVarIdx(fn)
+				vidx, _ := layerS.UnitVarIndex(fn)
 				vS := layerS.UnitVal1D(vidx, int(lni), 0)
 				vP := layerP.UnitVal1D(vidx, int(lni), 0)
 				if vS != vP {

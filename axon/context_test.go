@@ -11,19 +11,19 @@ func TestSetGetUS(t *testing.T) {
 	require.NoError(t, TheNetwork.Build(ctx))
 	const di = 0
 	ctx.PVLVInitUS(di)
-	const usIdx = 0
-	assert.Equal(t, float32(0), PVLVUSStimVal(ctx, di, usIdx, Positive))
-	assert.Equal(t, float32(0), PVLVUSStimVal(ctx, di, usIdx, Negative))
+	const usIndex = 0
+	assert.Equal(t, float32(0), PVLVUSStimValue(ctx, di, usIndex, Positive))
+	assert.Equal(t, float32(0), PVLVUSStimValue(ctx, di, usIndex, Negative))
 	assert.False(t, PVLVHasPosUS(ctx, di))
 
-	ctx.PVLVSetUS(di, Positive, usIdx, 1)
+	ctx.PVLVSetUS(di, Positive, usIndex, 1)
 	// TODO: +1 for curiosity is hard-coded into PVLVSetUS. This assymetry between the
 	// getter and setter seems bug-prone.
-	const usIdxForGetterPositive = usIdx + 1
-	assert.Equal(t, float32(1), PVLVUSStimVal(ctx, 0, usIdxForGetterPositive, Positive))
+	const usIndexForGetterPositive = usIndex + 1
+	assert.Equal(t, float32(1), PVLVUSStimValue(ctx, 0, usIndexForGetterPositive, Positive))
 	assert.True(t, PVLVHasPosUS(ctx, di))
 
-	ctx.PVLVSetUS(di, Negative, usIdx, 1)
-	assert.Equal(t, float32(1), PVLVUSStimVal(ctx, di, usIdx, Negative))
+	ctx.PVLVSetUS(di, Negative, usIndex, 1)
+	assert.Equal(t, float32(1), PVLVUSStimValue(ctx, di, usIndex, Negative))
 }
 */
