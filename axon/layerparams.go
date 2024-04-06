@@ -165,6 +165,9 @@ type LayerParams struct {
 	// type of GP Layer.
 	GP GPParams `view:"inline"`
 
+	// parameters for VSPatch learning
+	VSPatch VSPatchParams `view:"inline"`
+
 	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
 	LDT LDTParams `view:"inline"`
 
@@ -199,6 +202,7 @@ func (ly *LayerParams) Update() {
 	ly.Matrix.Update()
 	ly.GP.Update()
 
+	ly.VSPatch.Update()
 	ly.LDT.Update()
 	ly.VTA.Update()
 
@@ -223,6 +227,7 @@ func (ly *LayerParams) Defaults() {
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
 
+	ly.VSPatch.Defaults()
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
 
@@ -244,6 +249,8 @@ func (ly *LayerParams) ShouldShow(field string) bool {
 		return ly.LayType == MatrixLayer
 	case "GP":
 		return ly.LayType == GPLayer
+	case "VSPatch":
+		return ly.LayType == VSPatchLayer
 	case "LDT":
 		return ly.LayType == LDTLayer
 	case "VTA":
@@ -292,6 +299,9 @@ func (ly *LayerParams) AllParams() string {
 		b, _ = json.MarshalIndent(&ly.GP, "", " ")
 		str += "GP:      {\n " + JsonToParams(b)
 
+	case VSPatchLayer:
+		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
+		str += "VSPatch: {\n " + JsonToParams(b)
 	case LDTLayer:
 		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
 		str += "LDT: {\n " + JsonToParams(b)
@@ -1010,8 +1020,10 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	SetNrnV(ctx, ni, di, ActP, NrnV(ctx, ni, di, ActInt))
 	nrnCaSpkP := NrnV(ctx, ni, di, CaSpkP)
 	nrnCaSpkD := NrnV(ctx, ni, di, CaSpkD)
+	da := GlbV(ctx, di, GvDA)
+	ach := GlbV(ctx, di, GvACh)
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
-	modlr := ly.Learn.NeuroMod.LRMod(GlbV(ctx, di, GvDA), GlbV(ctx, di, GvACh))
+	modlr := ly.Learn.NeuroMod.LRMod(da, ach)
 	dlr := float32(1)
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
 
@@ -1024,11 +1036,9 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	case VSPatchLayer:
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // note: don't have proper max here
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
-		// if hasRew {
-		// }
-		// if modlr < 0 { // for negative da, target the strongest
-		// 	mlr = 1 - mlr
-		// }
+		if !hasRew && da < 0 && da > -ly.VSPatch.SmallNegDAThr { // for negative da, increase lrate
+			mlr *= ly.VSPatch.SmallNegDALRate
+		}
 	case MatrixLayer:
 		if hasRew { // reward time
 			mlr = 1 // don't use dig deriv

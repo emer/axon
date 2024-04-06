@@ -591,7 +591,7 @@ func (pj *PrjnParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPrjn type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
-	ract := NrnV(ctx, ri, di, SpkPrv) // t-1 -- note: is set to GeIntNorm in LayerParams.NewStateNeuron()
+	ract := NrnV(ctx, ri, di, SpkPrv) // t-1
 	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
 	}

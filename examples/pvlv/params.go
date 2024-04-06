@@ -58,6 +58,10 @@ var ParamSets = netparams.Sets{
 				// "Layer.Inhib.Layer.Gi":    "3.0",
 				// "Layer.Inhib.Pool.Gi":     "3.6",
 			}},
+		{Sel: "#OFCposUSPT", Desc: "",
+			Params: params.Params{
+				"Layer.Acts.SMaint.Gbar": "0.4",
+			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
 				"Layer.CT.GeGain": "0.05", // stronger ptp

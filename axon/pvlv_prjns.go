@@ -52,7 +52,7 @@ func (pj *PrjnParams) BLADefaults() {
 }
 
 func (pj *PrjnParams) VSPatchDefaults() {
-	pj.PrjnScale.Abs = 2 // needs strong drive in general
+	pj.PrjnScale.Abs = 4 // needs strong drive in general
 	pj.SWts.Adapt.On.SetBool(false)
 	pj.SWts.Adapt.SigGain = 1
 	pj.SWts.Init.SPct = 0

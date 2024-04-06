@@ -208,6 +208,12 @@ There are two qualitatively-different types of negative outcome values, which re
 
 * `Costs`: Continuous, inevitable costs, specifically Time and Effort, and lower-grade forms of pain, that animals are always seeking to minimize.  These are not associated with phasic CSs, but rather vary as a function of motor plans (e.g., climbing a steep hill vs. walking along a flat path).  These negative outcomes do not engage the BLA because they are not primarily CS-associated, and instead are predicted from motor-cingulate areas.
 
+# Giving up
+
+Key idea: when rew pred delta goes negative (threshold) then give up.  Don't give up when making progress!!
+
+* also, what about a generic rep of proximity to reward -- VSPatch is too precise -- currently USposP is prediction but is US specific.  USrewP or something?  need to give US more things to do to dynamically update.  Then can use this as an additional factor in Give up.
+
 # References
 
 * Boehnke, S. E., Berg, D. J., Marino, R. A., Baldi, P. F., Itti, L., & Munoz, D. P. (2011). Visual adaptation and novelty responses in the superior colliculus. European Journal of Neuroscience, 34(5), 766–779. https://doi.org/10.1111/j.1460-9568.2011.07805.x

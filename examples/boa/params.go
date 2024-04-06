@@ -109,6 +109,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.DipGain":     "1",    // if < 1, overshoots, more -DA
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.01 > 0.05 def
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.2 gets too diffuse
+				"Layer.VSPatch.SmallNegDALRate":    "50",
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -127,7 +128,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "6",
+				"Prjn.PrjnScale.Abs": "1",
 			}},
 		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "stronger",
 			Params: params.Params{
@@ -185,9 +186,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "4", // 3 orig
+				"Prjn.PrjnScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.01", // 0.01 better than 0.05 def
+				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 learns in ~5 epochs, is reasonably smooth
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
 			Params: params.Params{

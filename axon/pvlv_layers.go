@@ -102,6 +102,29 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	return ach
 }
 
+// VSPatchParams parameters for VSPatch learning:
+// learning rate amplification for small negative DA signals that result
+// from VSPatch over-expecting nonexistent rewards: learning is strong to
+// squash these.
+type VSPatchParams struct {
+
+	// threshold for small negative dopamine levels (positive magnitude specified here) below which learning rate is amplified by SmallNegDALRate
+	SmallNegDAThr float32 `default:"0.2"`
+
+	// learning rate multiplier for small negative dopamine levels (below SmallNegDAThr)
+	SmallNegDALRate float32 `default:"100"`
+
+	pad, pad1 float32
+}
+
+func (vp *VSPatchParams) Defaults() {
+	vp.SmallNegDAThr = 0.2
+	vp.SmallNegDALRate = 100
+}
+
+func (vp *VSPatchParams) Update() {
+}
+
 // VTAParams are for computing overall VTA DA based on LHb PVDA
 // (primary value -- at US time, computed at start of each trial
 // and stored in LHbPVDA global value)

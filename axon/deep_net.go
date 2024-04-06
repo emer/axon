@@ -390,9 +390,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 	ptPred.PlaceBehind(ptMaint, space)
 	pj := net.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn)
 	pj.AddClass("PTtoPred", prjnClass)
-	// pj.DefParams = params.Params{
-	// 	"Prjn.PrjnScale.Abs": "6.0", // much stronger
-	// }
+
 	pj = net.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn)
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel": "1",   // 1 > 0.5
