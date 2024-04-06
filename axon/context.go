@@ -102,12 +102,12 @@ func MulNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
 
 // NrnI is the CPU version of the neuron idx accessor
 func NrnI(ctx *Context, ni uint32, idx NeuronIndexes) uint32 {
-	return GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIndexes.Idx(ni, idx)]
+	return GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIndexes.Index(ni, idx)]
 }
 
 // SetNrnI is the CPU version of the neuron idx settor
 func SetNrnI(ctx *Context, ni uint32, idx NeuronIndexes, val uint32) {
-	GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIndexes.Idx(ni, idx)] = val
+	GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIndexes.Index(ni, idx)] = val
 }
 
 // SynapseVars
@@ -158,12 +158,12 @@ func MulSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
 
 // SynI is the CPU version of the synapse idx accessor
 func SynI(ctx *Context, syni uint32, idx SynapseIndexes) uint32 {
-	return GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIndexes.Idx(syni, idx)]
+	return GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIndexes.Index(syni, idx)]
 }
 
 // SetSynI is the CPU version of the synapse idx settor
 func SetSynI(ctx *Context, syni uint32, idx SynapseIndexes, val uint32) {
-	GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIndexes.Idx(syni, idx)] = val
+	GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIndexes.Index(syni, idx)] = val
 }
 
 /////////////////////////////////

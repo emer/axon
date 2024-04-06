@@ -173,14 +173,14 @@ type SynapseIndexStrides struct {
 	Synapse uint32
 
 	// index value level
-	Index uint32
+	Idx uint32
 
 	pad, pad1 uint32
 }
 
-// Idx returns the index into network uint32 array for given synapse, index value
-func (ns *SynapseIndexStrides) Idx(synIdx uint32, idx SynapseIndexes) uint32 {
-	return synIdx*ns.Synapse + uint32(idx)*ns.Index
+// Index returns the index into network uint32 array for given synapse, index value
+func (ns *SynapseIndexStrides) Index(synIdx uint32, idx SynapseIndexes) uint32 {
+	return synIdx*ns.Synapse + uint32(idx)*ns.Idx
 }
 
 // SetSynapseOuter sets strides with synapses as outer dimension:
@@ -188,14 +188,14 @@ func (ns *SynapseIndexStrides) Idx(synIdx uint32, idx SynapseIndexes) uint32 {
 // computation.
 func (ns *SynapseIndexStrides) SetSynapseOuter() {
 	ns.Synapse = uint32(SynapseIndexesN)
-	ns.Index = 1
+	ns.Idx = 1
 }
 
 // SetIndexOuter sets strides with indexes as outer dimension:
 // [Indexes][Synapses] (outer to inner), which is optimal for GPU-based
 // computation.
 func (ns *SynapseIndexStrides) SetIndexOuter(nsyn int) {
-	ns.Index = uint32(nsyn)
+	ns.Idx = uint32(nsyn)
 	ns.Synapse = 1
 }
 

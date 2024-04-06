@@ -4,9 +4,7 @@ go 1.22
 
 require (
 	cogentcore.org/core v0.0.9
-	github.com/alecthomas/assert/v2 v2.6.0
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/emer/emergent/v2 v2.0.0-dev0.0.13.0.20240405051034-50e40bf26699
 	github.com/emer/empi/v2 v2.0.0-dev0.0.5
 	github.com/emer/etable/v2 v2.0.0-dev0.0.18
@@ -26,7 +24,6 @@ require (
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/alecthomas/chroma/v2 v2.13.0 // indirect
-	github.com/alecthomas/repr v0.4.0 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
@@ -45,7 +42,6 @@ require (
 	github.com/hack-pad/go-indexeddb v0.3.2 // indirect
 	github.com/hack-pad/hackpadfs v0.2.1 // indirect
 	github.com/hack-pad/safejs v0.1.1 // indirect
-	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect

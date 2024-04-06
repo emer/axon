@@ -479,14 +479,14 @@ type NeuronIndexStrides struct {
 	Neuron uint32
 
 	// index value level
-	Index uint32
+	Idx uint32
 
 	pad, pad1 uint32
 }
 
-// Idx returns the index into network uint32 array for given neuron, index value
-func (ns *NeuronIndexStrides) Idx(neurIdx uint32, idx NeuronIndexes) uint32 {
-	return neurIdx*ns.Neuron + uint32(idx)*ns.Index
+// Index returns the index into network uint32 array for given neuron, index value
+func (ns *NeuronIndexStrides) Index(neurIdx uint32, idx NeuronIndexes) uint32 {
+	return neurIdx*ns.Neuron + uint32(idx)*ns.Idx
 }
 
 // SetNeuronOuter sets strides with neurons as outer dimension:
@@ -494,14 +494,14 @@ func (ns *NeuronIndexStrides) Idx(neurIdx uint32, idx NeuronIndexes) uint32 {
 // computation.
 func (ns *NeuronIndexStrides) SetNeuronOuter() {
 	ns.Neuron = uint32(NeuronIndexesN)
-	ns.Index = 1
+	ns.Idx = 1
 }
 
 // SetIndexOuter sets strides with indexes as outer dimension:
 // [Indexes][Neurons] (outer to inner), which is optimal for GPU-based
 // computation.
 func (ns *NeuronIndexStrides) SetIndexOuter(nneur int) {
-	ns.Index = uint32(nneur)
+	ns.Idx = uint32(nneur)
 	ns.Neuron = 1
 }
 

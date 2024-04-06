@@ -10,8 +10,8 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/giv"
+	"cogentcore.org/core/glop/datasize"
 	"cogentcore.org/core/icons"
-	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/etable/v2/etensor"
@@ -659,7 +659,7 @@ func (nt *Network) SizeReport(detail bool) string {
 			// Sizeof returns size of struct in bytes
 			nrnMem := nn * memNeuron
 			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn,
-				(datasize.ByteSize)(nrnMem).HumanReadable())
+				(datasize.Size)(nrnMem).String())
 		}
 		for _, pj := range ly.SndPrjns {
 			// We only calculate the size of the important parts of the proj struct:
@@ -674,7 +674,7 @@ func (nt *Network) SizeReport(detail bool) string {
 				nSyn := int(pj.NSyns)
 				synMem := nSyn*memSynapse + projMemIndexes
 				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
-					nSyn, (datasize.ByteSize)(synMem).HumanReadable())
+					nSyn, (datasize.Size)(synMem).String())
 			}
 		}
 	}
@@ -685,8 +685,8 @@ func (nt *Network) SizeReport(detail bool) string {
 	synCaMem := (len(nt.SynapseCas)) * synVarBytes
 
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynCa: %v\n",
-		nt.Nm, nt.NNeurons, (datasize.ByteSize)(nrnMem).HumanReadable(), nt.NSyns,
-		(datasize.ByteSize)(synIndexMem).HumanReadable(), (datasize.ByteSize)(synWtMem).HumanReadable(), (datasize.ByteSize)(synCaMem).HumanReadable())
+		nt.Nm, nt.NNeurons, (datasize.Size)(nrnMem).String(), nt.NSyns,
+		(datasize.Size)(synIndexMem).String(), (datasize.Size)(synWtMem).String(), (datasize.Size)(synCaMem).String())
 	return b.String()
 }
 

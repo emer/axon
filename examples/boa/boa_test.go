@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"cogentcore.org/core/mat32"
-	"github.com/alecthomas/assert/v2"
 	"github.com/emer/emergent/v2/etime"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 )
 
