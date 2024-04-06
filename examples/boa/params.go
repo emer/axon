@@ -28,6 +28,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
 				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
 			}},
+		{Sel: ".BLALayer", Desc: "",
+			Params: params.Params{
+				"Layer.Learn.NeuroMod.DAModGain": "0.5",
+			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal":       "0.1",
@@ -39,37 +43,45 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 			}},
-		{Sel: "#OFCposUS", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "1",
-			}},
-		{Sel: "#OFCposUSPT", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.2",
-				// "Layer.Inhib.Pool.Gi":        "0.5",
-			}},
+		// {Sel: "#OFCposUS", Desc: "",
+		// 	Params: params.Params{
+		// 		"Layer.Inhib.Pool.Gi": "1",
+		// 	}},
+		// {Sel: "#OFCposUSPT", Desc: "",
+		// 	Params: params.Params{
+		// 		"Layer.Inhib.Pool.Gi":        "0.5",
+		// 	}},
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi": "1.0",
+				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 -- affects how strongly BLA is driven -- key param
+				"Layer.Inhib.Pool.Gi":        "1.4",
+			}},
+		{Sel: "#ILposPTp", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "1.2",
+			}},
+		{Sel: "#ILnegPTp", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "1.2",
 			}},
 		{Sel: "#OFCnegUS", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1",
 				// "Layer.Inhib.Layer.Gi":       "0.5", // weaker in general so needs to be lower
 			}},
-		{Sel: "#OFCnegUSPT", Desc: "",
-			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.2",
-				// "Layer.Inhib.Pool.Gi":        "3.0",
-			}},
-		{Sel: "#OFCnegUSPTp", Desc: "",
-			Params: params.Params{
-				// "Layer.Inhib.Pool.Gi": "1.4",
-			}},
-		{Sel: "#ILpos", Desc: "",
-			Params: params.Params{
-				// "Layer.Inhib.Pool.Gi": "1",
-			}},
+		// {Sel: "#OFCnegUSPT", Desc: "",
+		// 	Params: params.Params{
+		// 		"Layer.Inhib.ActAvg.Nominal": "0.2",
+		// 		"Layer.Inhib.Pool.Gi":        "3.0",
+		// 	}},
+		// {Sel: "#OFCnegUSPTp", Desc: "",
+		// 	Params: params.Params{
+		// 		"Layer.Inhib.Pool.Gi": "1.4",
+		// 	}},
+		// {Sel: "#ILpos", Desc: "",
+		// 	Params: params.Params{
+		// 		"Layer.Inhib.Pool.Gi": "1",
+		// 	}},
 		{Sel: ".VSMatrixLayer", Desc: "vs mtx",
 			Params: params.Params{
 				"Layer.Inhib.Layer.On":           "false", // todo: explore -- could be bad for gating
@@ -78,6 +90,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModGain":        "1", // todo: 2 is default
 				"Layer.Acts.Kir.Gbar":            "2",
 				"Layer.Learn.NeuroMod.BurstGain": "1",
+				"Layer.Learn.NeuroMod.DAModGain": "0.5",
 				"Layer.Learn.RLRate.SigmoidMin":  "0.001", // 0.01 better than .05
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
@@ -124,6 +137,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3",
 			}},
+		{Sel: ".USToBLAExtInhib", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "2",
+			}},
 		{Sel: "#ILposToPLutil", Desc: "not good to make this stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // todo: try 3?
@@ -133,16 +150,8 @@ var ParamSets = netparams.Sets{
 		// 		"Prjn.PrjnScale.Abs":    "4",
 		// 		"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
 		// 	}},
-		{Sel: ".ToPTp", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
-			}},
 		////////////////////////////////////////////
 		// PVLV Prjns
-		{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 2 is good for .CS nominal .1, but 3 needed for .03
-			}},
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.5", // 3 orig
@@ -196,9 +205,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
 			}},
-		{Sel: "#UrgencyToVMtxGo", Desc: "",
+		{Sel: ".BLAFromNovel", Desc: "Note: this setting is overwritten in boa.go ApplyParams",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "20", // 20 necessary
+				"Prjn.PrjnScale.Rel": "0.1", // weak rel to not dilute rest of bla prjns
+				"Prjn.PrjnScale.Abs": "4",   // 2 is good for .CS nominal .1, but 3 needed for .03
 			}},
 	},
 }

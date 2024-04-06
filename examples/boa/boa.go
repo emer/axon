@@ -345,7 +345,7 @@ func (ss *Sim) ApplyParams() {
 	// this is very sensitive param to get right
 	// too little and the hamster does not try CSs at the beginning,
 	// too high and it gets stuck trying the same location over and over
-	pj.Params.PrjnScale.Abs = float32(math.Min(float64(2.3+(float32(nCSTot)/10.0)), 3.0))
+	pj.Params.PrjnScale.Abs = float32(mat32.Min(2.3+(float32(nCSTot)/10.0), 3.0))
 
 	// then apply config-set params.
 	if ss.Config.Params.Network != nil {
@@ -363,6 +363,7 @@ func (ss *Sim) Init() {
 		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
 	}
 	ss.Loops.ResetCounters()
+	ss.Logs.ResetLog(etime.Debug, etime.Trial)
 	ss.InitRndSeed(0)
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc

@@ -168,12 +168,16 @@ type UrgencyParams struct {
 
 	// threshold for urge -- cuts off small baseline values
 	Thr float32 `default:"0.2"`
+
+	// gain factor for driving tonic DA levels as a function of urgency
+	DAtonic float32 `default:"50"`
 }
 
 func (ur *UrgencyParams) Defaults() {
 	ur.U50 = 10
 	ur.Power = 4
 	ur.Thr = 0.2
+	ur.DAtonic = 50
 }
 
 func (ur *UrgencyParams) Update() {
@@ -201,13 +205,14 @@ func (ur *UrgencyParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvUrgency, 0)
 }
 
-// Urge computes normalized Urge value from Raw
+// Urge computes normalized Urge value from Raw, and sets DAtonic from that
 func (ur *UrgencyParams) Urge(ctx *Context, di uint32) float32 {
 	urge := ur.UrgeFun(GlbV(ctx, di, GvUrgencyRaw))
 	if urge < ur.Thr {
 		urge = 0
 	}
 	SetGlbV(ctx, di, GvUrgency, urge)
+	SetGlbV(ctx, di, GvDAtonic, ur.DAtonic*urge) // simple equation for now
 	return urge
 }
 

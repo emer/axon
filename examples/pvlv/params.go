@@ -69,12 +69,12 @@ var ParamSets = netparams.Sets{
 		{Sel: "#OFCposUSPTp", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":        "1",
-				"Layer.Inhib.ActAvg.Nominal": "0.1", //
+				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 -- affects how strongly BLA is driven -- key param
 			}},
-		{Sel: "#OFCposUSPT", Desc: "",
-			Params: params.Params{
-				"Layer.Acts.SMaint.Gbar": "0.4",
-			}},
+		// {Sel: "#OFCposUSPT", Desc: "",
+		// 	Params: params.Params{
+		// 		"Layer.Acts.SMaint.Gbar": "0.4", // 0.2 def fine
+		// 	}},
 		{Sel: "#SC", Desc: "",
 			Params: params.Params{
 				"Layer.Acts.KNa.Slow.Max": "0.5", // .5 needed to shut off

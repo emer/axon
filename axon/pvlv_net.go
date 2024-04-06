@@ -524,7 +524,7 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 // for given number of cost pools (typically 2: time, effort),
 // with given number of units per pool.
 func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float32) (acc, accCT, accPT, accPTp, accMD *Layer) {
-	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCnegUS", "MD", 1, nCosts, accY, accX, true, true, space)
+	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCcost", "MD", 1, nCosts, accY, accX, true, true, space)
 
 	acc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	acc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
@@ -790,15 +790,15 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	pj.DefParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
-	pj = net.ConnectToVSMatrix(urgency, vSmtxGo, full)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel":  "0.1", // don't dilute from others
-		"Prjn.PrjnScale.Abs":  "4",   // but make it strong
-		"Prjn.SWts.Init.SPct": "0",
-		"Prjn.SWts.Init.Mean": "0.5",
-		"Prjn.SWts.Init.Var":  "0.4",
-		"Prjn.Learn.Learn":    "false",
-	}
+	// pj = net.ConnectToVSMatrix(urgency, vSmtxGo, full)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Rel":  "0.1", // don't dilute from others
+	// 	"Prjn.PrjnScale.Abs":  "4",   // but make it strong
+	// 	"Prjn.SWts.Init.SPct": "0",
+	// 	"Prjn.SWts.Init.Mean": "0.5",
+	// 	"Prjn.SWts.Init.Var":  "0.4",
+	// 	"Prjn.Learn.Learn":    "false",
+	// }
 
 	///////////////////////////////////////////
 	// OFCposUS

@@ -681,7 +681,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *Laye
 
 // GNeuroMod does neuromodulation of conductances
 func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32, vals *LayerVals) {
-	ggain := ly.Learn.NeuroMod.GGain(GlbV(ctx, di, GvDA))
+	ggain := ly.Learn.NeuroMod.GGain(GlbV(ctx, di, GvDA) + GlbV(ctx, di, GvDAtonic))
 	MulNrnV(ctx, ni, di, Ge, ggain)
 	MulNrnV(ctx, ni, di, Gi, ggain)
 }

@@ -224,7 +224,7 @@ var ParamSets = netparams.Sets{
 		{Sel: "#M1PTToVL", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",   // 1
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1
+				"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2, .05, 0
 			},
 			Hypers: params.Hypers{
 				"Prjn.PrjnScale.Abs": {"Tweak": "-"},

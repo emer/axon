@@ -154,7 +154,7 @@ func (nm *NeuroModParams) LRMod(da, ach float32) float32 {
 }
 
 // GGain returns effective Ge and Gi gain factor given
-// dopamine (DA) +/- burst / dip value (0 = tonic level).
+// total dopamine (DA) value: tonic + phasic.
 // factor is 1 for no modulation, otherwise higher or lower.
 func (nm *NeuroModParams) GGain(da float32) float32 {
 	if da > 0 {

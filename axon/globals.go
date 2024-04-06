@@ -39,11 +39,17 @@ const (
 	/////////////////////////////////////////
 	// NeuroMod neuromodulators
 
-	// DA is dopamine -- represents reward prediction error, signaled as phasic
+	// DA is phasic dopamine that drives learning moreso than performance,
+	// representing reward prediction error, signaled as phasic
 	// increases or decreases in activity relative to a tonic baseline, which is
 	// represented by a value of 0.  Released by the VTA (ventral tegmental area),
 	// or SNc (substantia nigra pars compacta).
 	GvDA
+
+	// DAtonic is tonic dopamine, which has modulatory instead of learning effects.
+	// Increases can drive greater propensity to engage in activities by biasing Go
+	// vs No pathways in the basal ganglia, for example as a function of Urgency.
+	GvDAtonic
 
 	// ACh is acetylcholine, activated by salient events, particularly at the onset
 	// of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS).
@@ -100,7 +106,8 @@ const (
 	GvUrgencyRaw
 
 	// Urgency is the overall urgency activity level (normalized 0-1),
-	// computed from logistic function of GvUrgencyRaw
+	// computed from logistic function of GvUrgencyRaw.  This drives DAtonic
+	// activity to increasingly bias Go firing.
 	GvUrgency
 
 	/////////////////////////////////////////

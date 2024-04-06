@@ -461,8 +461,6 @@ func (ev *Env) TakeAct(act Actions) {
 		if ev.Pos == arm.Length {
 			if ev.USConsumed < 0 {
 				ev.ConsumeUS(arm)
-			} else {
-				ev.JustConsumed = true
 			}
 		}
 	}
@@ -476,6 +474,7 @@ func (ev *Env) ConsumeUS(arm *Arm) {
 	if got {
 		ev.USConsumed = arm.US
 		ev.USValue = mag
+		ev.JustConsumed = true
 	} else {
 		ev.USConsumed = -1
 		ev.USValue = 0
