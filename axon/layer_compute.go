@@ -540,8 +540,8 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
+	np := ly.NPools
 	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposUSPT" {
-		np := ly.NPools
 		for pi := uint32(1); pi < np; pi++ {
 			for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 				pl := ly.Pool(pi, di)
@@ -556,7 +556,11 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 			hasRew := (GlbV(ctx, di, GvHasRew) > 0)
 			giveUp := (GlbV(ctx, di, GvGiveUp) > 0)
 			if hasRew || giveUp {
-				ly.DecayState(ctx, di, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+				ly.DecayState(ctx, di, 1, 1, 1)      // note: GPU will get, and GBuf are auto-cleared in NewState
+				for pi := uint32(0); pi < np; pi++ { // also clear the pool stats: GoalMaint depends on these..
+					pl := ly.Pool(pi, di)
+					pl.AvgMax.Zero()
+				}
 			}
 		}
 	}

@@ -497,7 +497,7 @@ func (net *Network) AddOFCposUS(ctx *Context, nUSs, nY, ofcY, ofcX int, space fl
 	ofcPT.DefParams["Layer.Inhib.Pool.On"] = "true"
 	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
 	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.0"
 	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
 	return
@@ -526,15 +526,22 @@ func (net *Network) AddOFCnegUS(ctx *Context, nUSs, ofcY, ofcX int, space float3
 func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float32) (acc, accCT, accPT, accPTp, accMD *Layer) {
 	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCcost", "MD", 1, nCosts, accY, accX, true, true, space)
 
+	acc.DefParams["Layer.Inhib.Layer.On"] = "false" // no match
 	acc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
 	acc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	acc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
+
+	accCT.DefParams["Layer.Inhib.Layer.On"] = "false"
+	accCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.8"
+
 	// accPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
 	// accPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	accPT.DefParams["Layer.Inhib.Layer.On"] = "false"
 	accPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
-	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
-	accPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
+	accPTp.DefParams["Layer.Inhib.Layer.On"] = "false"
+	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.0"
+	accPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	return
 }
 

@@ -117,6 +117,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
 	ss.Context.Defaults()
+	ss.Context.ThetaCycles = int32(ss.Config.Run.NCycles)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -386,6 +387,8 @@ func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 	// ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 
+	ncyc := ss.Config.Run.NCycles
+
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
 	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
@@ -393,9 +396,9 @@ func (ss *Sim) ConfigLoops() {
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, ncyc)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-50, ncyc-1)       // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m := range man.Stacks {
@@ -622,7 +625,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *armaze.Env, di uint32) {
 	pv := &ss.Net.PVLV
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.3)
+	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.2)
 	pv.EffortUrgencyUpdate(ctx, di, 1) // note: effort can vary with terrain!
 	if ev.USConsumed >= 0 {
 		pv.SetUS(ctx, di, axon.Positive, ev.USConsumed, ev.USValue)
@@ -680,12 +683,14 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Deciding", 0)
 	ss.Stats.SetFloat("GatedEarly", 0)
 	ss.Stats.SetFloat("MaintEarly", 0)
+	ss.Stats.SetFloat("MaintIncon", 0)
 	ss.Stats.SetFloat("GatedAgain", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("AChShould", 0)
 	ss.Stats.SetFloat("AChShouldnt", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetFloat("DA", 0)
+	ss.Stats.SetFloat("GoalMaint", 0)
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
@@ -869,12 +874,13 @@ func (ss *Sim) GatedStats(di int) {
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
+	justGatedF := num.FromBool[float32](justGated)
 	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 	nan := mat32.NaN()
 	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
 	ss.ActionStatsDi(di)
 
-	ss.Stats.SetFloat32("JustGated", num.FromBool[float32](justGated))
+	ss.Stats.SetFloat32("JustGated", justGatedF)
 	ss.Stats.SetFloat32("Should", num.FromBool[float32](ev.ShouldGate))
 	ss.Stats.SetFloat32("HasGated", num.FromBool[float32](hasGated))
 	ss.Stats.SetFloat32("GateUS", nan)
@@ -891,36 +897,43 @@ func (ss *Sim) GatedStats(di int) {
 	}
 	if ev.ShouldGate {
 		if hasPos {
-			ss.Stats.SetFloat32("GateUS", num.FromBool[float32](justGated))
+			ss.Stats.SetFloat32("GateUS", justGatedF)
 		} else {
-			ss.Stats.SetFloat32("GateCS", num.FromBool[float32](justGated))
+			ss.Stats.SetFloat32("GateCS", justGatedF)
 		}
 	} else {
 		if hasGated {
-			ss.Stats.SetFloat32("GatedAgain", num.FromBool[float32](justGated))
+			ss.Stats.SetFloat32("GatedAgain", justGatedF)
 		} else { // !should gate means early..
-			ss.Stats.SetFloat32("GatedEarly", num.FromBool[float32](justGated))
+			ss.Stats.SetFloat32("GatedEarly", justGatedF)
 		}
 	}
 	// We get get ACh when new CS or Rew
+	ach := axon.GlbV(ctx, diu, axon.GvACh)
 	if hasPos || ev.LastCS != ev.CurCS() {
-		ss.Stats.SetFloat32("AChShould", axon.GlbV(ctx, diu, axon.GvACh))
+		ss.Stats.SetFloat32("AChShould", ach)
 	} else {
-		ss.Stats.SetFloat32("AChShouldnt", axon.GlbV(ctx, diu, axon.GvACh))
+		ss.Stats.SetFloat32("AChShouldnt", ach)
 	}
 }
 
 // MaintStats updates the PFC maint stats
 func (ss *Sim) MaintStats(di int) {
 	ctx := &ss.Context
+	diu := uint32(di)
+	nan := mat32.NaN()
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 	// should be maintaining while going forward
 	isFwd := ev.LastAct == armaze.Forward
 	isCons := ev.LastAct == armaze.Consume
 	actThr := float32(0.05) // 0.1 too high
 	net := ss.Net
+	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
+	goalMaint := axon.GlbV(ctx, diu, axon.GvGoalMaint)
+	ss.Stats.SetFloat32("GoalMaint", goalMaint)
+	hasGoalMaint := goalMaint > actThr
 	lays := net.LayersByType(axon.PTMaintLayer)
-	hasMaint := false
+	otherMaint := false
 	for _, lnm := range lays {
 		mnm := "Maint" + lnm
 		fnm := "MaintFail" + lnm
@@ -939,7 +952,7 @@ func (ss *Sim) MaintStats(di int) {
 		}
 		overThr := mact > actThr
 		if overThr {
-			hasMaint = true
+			otherMaint = true
 		}
 		ss.Stats.SetFloat32(pnm, mat32.NaN())
 		ss.Stats.SetFloat32(mnm, mat32.NaN())
@@ -951,8 +964,13 @@ func (ss *Sim) MaintStats(di int) {
 			ss.Stats.SetFloat32(pnm, num.FromBool[float32](overThr))
 		}
 	}
-	if hasMaint {
-		ss.Stats.SetFloat32("MaintEarly", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
+	ss.Stats.SetFloat32("MaintIncon", num.FromBool[float32](otherMaint != hasGoalMaint))
+	if hasGoalMaint && !hasGated {
+		ss.Stats.SetFloat32("MaintEarly", 1)
+	} else if !hasGated {
+		ss.Stats.SetFloat32("MaintEarly", 0)
+	} else {
+		ss.Stats.SetFloat32("MaintEarly", nan)
 	}
 }
 
@@ -1009,10 +1027,12 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("Deciding", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("MaintEarly", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("MaintIncon", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedAgain", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GoalMaint", etime.Run, etime.Epoch, etime.Trial)
 
 	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false

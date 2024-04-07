@@ -210,9 +210,17 @@ There are two qualitatively-different types of negative outcome values, which re
 
 # Giving up
 
-Key idea: when rew pred delta goes negative (threshold) then give up.  Don't give up when making progress!!
+TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don't give up when making progress!!
 
-* also, what about a generic rep of proximity to reward -- VSPatch is too precise -- currently USposP is prediction but is US specific.  USrewP or something?  need to give US more things to do to dynamically update.  Then can use this as an additional factor in Give up.
+* also, what about a generic rep of proximity to reward -- VSPatch is too precise -- currently USposP is prediction but is US specific.  USrewP or something?  need to give US more things to do to dynamically update.  Then can use this as an additional factor in Give up, to replace below:
+
+* TODO: current mechanism is not very general -- uses OFCposUSPT layer to set GvOFCposUSPTMaint in layer_compute.go:PlusPhasePost, then in pvlv.go:PVposEst it uses this to compute PVposEst -- if currently maintaining then it assumes PVpos estimate is high..  
+
+
+# TODO / Issues
+
+* BLAExt vs. Acq could be more robust -- Ext activity depends on PT -> Ext strength..
+
 
 # References
 

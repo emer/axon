@@ -186,9 +186,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
+				"Prjn.PrjnScale.Abs":        "3", // 4 > 3 > 2 -- key for rapid learning
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 learns in ~5 epochs, is reasonably smooth
+				"Prjn.Learn.LRate.Base":     "0.01", // 0.05 learns in ~5 epochs, is reasonably smooth
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
 			Params: params.Params{
@@ -209,7 +209,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".BLAFromNovel", Desc: "Note: this setting is overwritten in boa.go ApplyParams",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // weak rel to not dilute rest of bla prjns
-				"Prjn.PrjnScale.Abs": "4",   // 2 is good for .CS nominal .1, but 3 needed for .03
+				"Prjn.PrjnScale.Abs": "3",   // 2 is good for .CS nominal .1, but 3 needed for .03
 			}},
 	},
 }
