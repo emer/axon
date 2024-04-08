@@ -538,7 +538,7 @@ type SMaintParams struct {
 	// inhib controls how much of the extra maintenance conductance goes to the GeExt, which drives extra proportional inhibition
 	Inhib float32 `default:"1"`
 
-	// ISI (inter spike interval) range -- min is used as min ISI for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
+	// ISI (inter spike interval) range -- min is used as min ISIAvg for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
 	ISI minmax.F32 `view:"inline"`
 }
 
@@ -1077,7 +1077,7 @@ func (ac *ActParams) MaintNMDAFmRaw(ctx *Context, ni, di uint32) {
 
 // SMaintFmISI updates the SMaint self-maintenance current into GMaintRaw
 func (ac *ActParams) SMaintFmISI(ctx *Context, ni, di uint32) {
-	isi := NrnV(ctx, ni, di, ISI)
+	isi := NrnV(ctx, ni, di, ISIAvg)
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
