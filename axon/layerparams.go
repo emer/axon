@@ -1036,7 +1036,8 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	case VSPatchLayer:
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // note: don't have proper max here
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
-		if !hasRew && da < 0 && da > -ly.VSPatch.SmallNegDAThr { // for negative da, increase lrate
+		// !hasRew &&  // this is not the right solution .
+		if da < 0 && da > -ly.VSPatch.SmallNegDAThr { // for negative da, increase lrate
 			mlr *= ly.VSPatch.SmallNegDALRate
 		}
 	case MatrixLayer:

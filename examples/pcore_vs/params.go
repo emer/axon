@@ -33,7 +33,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.RLRate.SigmoidMin":   "0.01", // 0.01 better than .05
 				"Layer.Learn.TrgAvgAct.RescaleOn": "true",
 				"Layer.Learn.NeuroMod.BurstGain":  "0.1", // 1 def -- must be smaller given rew dynamics
-				"Layer.Learn.NeuroMod.DAModGain":  "0.2", // cleaner, less random out-of-domain errors; lower train match
+				"Layer.Learn.NeuroMod.DAModGain":  "0",   // strongly biases the gating
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{

@@ -25,18 +25,19 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Pool.On":              "false",
 				"Layer.Inhib.Layer.On":             "true",
-				"Layer.Inhib.Layer.Gi":             "0.5",  // 0.5 needed for differentiated reps
-				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
-				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.5 default; 0 better
-				"Layer.Learn.RLRate.SigmoidMin":    "0.05", // 0.05 def
+				"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 needed for differentiated reps
+				"Layer.Learn.NeuroMod.DipGain":     "1",   // boa requires balanced..
+				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",   // 0.5 default; 0 better
+				"Layer.Learn.RLRate.SigmoidMin":    "1",   // 0.05 def; 1 causes positive DA bias
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
 				"Layer.Learn.NeuroMod.DAModGain":   "0", // this is actual perf mod
+				"Layer.VSPatch.SmallNegDALRate":    "50",
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "2",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.05 def
 				"Prjn.SWts.Init.Mean":       "0.5",
 				"Prjn.SWts.Init.Var":        "0.25",
 			}},

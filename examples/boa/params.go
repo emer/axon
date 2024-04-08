@@ -90,7 +90,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModGain":        "1", // todo: 2 is default
 				"Layer.Acts.Kir.Gbar":            "2",
 				"Layer.Learn.NeuroMod.BurstGain": "1",
-				"Layer.Learn.NeuroMod.DAModGain": "0.5",
+				"Layer.Learn.NeuroMod.DAModGain": "0",     // no bias is better!
 				"Layer.Learn.RLRate.SigmoidMin":  "0.001", // 0.01 better than .05
 			}},
 		{Sel: "#BLAPosAcqD1", Desc: "",
@@ -104,9 +104,10 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi":              "0.5",  // 0.5 ok?
-				"Layer.Inhib.Pool.FB":              "0",    // only fb
-				"Layer.Learn.NeuroMod.DipGain":     "1",    // if < 1, overshoots, more -DA
+				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 ok?
+				"Layer.Inhib.Pool.FB":              "0",   // only fb
+				"Layer.Learn.NeuroMod.DipGain":     "1",   // if < 1, overshoots, more -DA
+				"Layer.Learn.NeuroMod.BurstGain":   "1",
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.01 > 0.05 def
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.2 gets too diffuse
 				"Layer.VSPatch.SmallNegDALRate":    "50",
