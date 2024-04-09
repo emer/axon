@@ -166,13 +166,13 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be in place when adding
 		ss.Envs.Add(trn)
 		if di == 0 {
-			ss.ConfigPVLV(trn)
+			ss.ConfigRubicon(trn)
 		}
 	}
 }
 
-func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
+	pv := &ss.Net.Rubicon
 	pv.SetNUSs(&ss.Context, trn.Config.NDrives, 1)
 	pv.Defaults()
 	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
@@ -184,8 +184,8 @@ func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
 
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
 	pv.Urgency.U50 = 10
-	if ss.Config.Params.PVLV != nil {
-		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
+	if ss.Config.Params.Rubicon != nil {
+		params.ApplyMap(pv, ss.Config.Params.Rubicon, ss.Config.Debug)
 	}
 }
 
@@ -497,7 +497,7 @@ func (ss *Sim) ConfigLoops() {
 // after this point, so that is dealt with at end of plus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	mtxLy := ss.Net.AxonLayerByName("VMtxGo")
 	vlly := ss.Net.AxonLayerByName("VL")
 	threshold := float32(0.1)
@@ -609,22 +609,22 @@ func (ss *Sim) ApplyInputs() {
 		ev.Step()
 		if ev.Tick == 0 {
 			ss.Stats.SetFloat32Di("CortexDriving", int(di), num.FromBool[float32](erand.BoolP32(ss.Config.Env.PctCortex, -1)))
-			ev.ExValueUtil(&ss.Net.PVLV, ctx)
+			ev.ExValueUtil(&ss.Net.Rubicon, ctx)
 		}
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
 			itsr := ev.State(lnm)
 			ly.ApplyExt(ctx, di, itsr)
 		}
-		ss.ApplyPVLV(ctx, ev, di)
+		ss.ApplyRubicon(ctx, ev, di)
 	}
 	ss.Net.ApplyExts(ctx)
 }
 
-// ApplyPVLV applies current PVLV values to Context.PVLV,
+// Apply.Rubicon applies current .Rubicon values to Context.Rubicon,
 // from given trial data.
-func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *armaze.Env, di uint32) {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
+	pv := &ss.Net.Rubicon
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
 	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.2)
 	pv.EffortUrgencyUpdate(ctx, di, 1) // note: effort can vary with terrain!
@@ -772,7 +772,7 @@ func (ss *Sim) TrialStats(di int) {
 
 	diu := uint32(di)
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	nan := math.NaN()
 	ss.Stats.SetFloat("DA", nan)
 	ss.Stats.SetFloat("RewPred", nan)
@@ -872,7 +872,7 @@ func (ss *Sim) ActionStatsDi(di int) {
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats(di int) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
@@ -1129,7 +1129,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	if mode != etime.Analyze && mode != etime.Debug {
 		ctx.Mode = mode // Also set specifically in a Loop callback.
 	}
@@ -1193,7 +1193,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	ev := ss.Envs.ByModeDi(mode, di).(*armaze.Env)
 	ctx := &ss.Context
 	net := ss.Net
-	pv := &net.PVLV
+	pv := &net.Rubicon
 	dp := ss.EnvGUI.USposData
 	ofcPosUS := net.AxonLayerByName("OFCposUSPT")
 	ofcmul := float32(1)

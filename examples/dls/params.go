@@ -69,7 +69,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.PrjnScale.Abs": "4",
 			}},
 		////////////////////////////////////////////
-		// PVLV Prjns
+		// Rubicon Prjns
 		{Sel: ".MatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!

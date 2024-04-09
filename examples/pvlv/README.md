@@ -2,47 +2,17 @@
 
 # TODO:
 
-* give up not happening in extinction -- maint staying active -- need to re-figure out these params, and document in the PVLV.md
-
 * Kir = 10 not working? but now working? what is the deal?
 * add dopamine-kir disinhib for more activity dynamics?
 - not well supported by data -- other channels involved.  maybe ACh modulates Kir tho?
 
 * why is nCycles == 300 not getting good DA?  where does it go?
 
-* MtxGo is over-active -- partial random looked good -- maybe go back to that.
-
-* better at keeping No active -- add more scale there to balance better.
-
-# DONE
-
-* BLA acq is very fast -- can we slow that down?  I guess part of that is baseline novelty
-
-
-* vspatch needs better learning (still, again!): nonlinear DA learning (some mix of ACh and DA?)
-  such that lrate is higher until it actually matches.
-
-    + ACh MaintInhib = .5 much better than 1 -- ach is inhibiting learning.  maybe just turn down / off?  
-
-
-* what is using slow weights in the BG, etc circuits?  seems good.  TrgActAvg is maybe faster but less reliable; slow wts also not clear big diff
-
-* simplify / fix all the PTNotMaint stuff?  PL is "PFC of record" and key area for engaged goal -- has main descending prjns to raphe, ACh, etc.  Needed for proper feedback loop of learning at time of gating.
-
-* Learn Tr at time of Rew in proportion to prior gating discounting of ACh: if 
-  already gated, then don't learn, but if didn't gate, then learn.  provides the
-  key robustness but learning at time of rew is generally not good.
-
-
-* go full rodent: rename ACCUtil -> PL, ACCNegVal -> IL; reserve ACC for actual motor ACC.
-
-* pvlv function needs to set GoalMaint global activity, typically as function of PL activity but could be other proxies in other models.  Inhibits Ach.
-
-
-
 # Overview
 
-This simulation explores the PVLV (Primary Value, Learned Value) learning algorithm, which considers the role of different brain areas in controlling dopamine cell firing during learning about reward and punishment in classical conditioning tasks [Mollick et al, 2020](#references).  It represents a more flexible and biologically-detailed approach to the computations explored in the `rl_cond` model.
+This simulation explores the PVLV (Primary Value, Learned Value) learning algorithm, which considers the role of different brain areas in controlling dopamine cell firing during learning about reward and punishment in classical conditioning tasks [Mollick et al, 2020](#references).  See the [Rubicon](../../Rubicon.md) document for full up-to-date details about the underlying algorithms: PVLV is now a subset of the broader Rubicon goal-directed motivational system model in axon, focused on the phasic dopamine components.
+
+IMPORTANT: The following docs are partially out-of-date, reflecting the earlier Leabra PVLV model:
 
 There are many brain areas involved in the phasic firing of dopamine cells in the VTA (ventral tegmental area) and SNc (substantia nigra, pars reticulata). The PVLV model integrates contributions from the most important of these areas within a coherent overall computational framework including: 1) multiple sub-regions of the amygdala, an area long implicated in affective processing of both positive and negative emotion; 2) multiple pathways within the ventral striatum (VS, which includes the nucleus accumbens, NAc), also important in many aspects of emotional expression; and, 3) the lateral habenula (LHb) pathway, recently identified as the substrate responsible for the inhibitory pausing (dipping) of dopamine neuron activity [Matsumoto & Hikosaka, 2007; Matsumoto & Hikosaka, 2009](#references).
 

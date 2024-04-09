@@ -225,9 +225,9 @@ func (ur *UrgencyParams) AddEffort(ctx *Context, di uint32, inc float32) {
 /////////////////////////////////////////////////////////
 // USParams
 
-// PVLVLNormFun is the normalizing function applied to the sum of all
+// RubiconLNormFun is the normalizing function applied to the sum of all
 // weighted raw values: 1 - (1 / (1 + usRaw.Sum()))
-func PVLVNormFun(raw float32) float32 {
+func RubiconNormFun(raw float32) float32 {
 	return 1.0 - (1.0 / (1.0 + raw))
 }
 
@@ -327,12 +327,12 @@ func (us *USParams) Update() {
 func (us *USParams) USnegCostFromRaw(ctx *Context, di uint32) {
 	for i, ng := range us.USnegGains {
 		raw := GlbUSnegV(ctx, di, GvUSnegRaw, uint32(i))
-		norm := PVLVNormFun(ng * raw)
+		norm := RubiconNormFun(ng * raw)
 		SetGlbUSnegV(ctx, di, GvUSneg, uint32(i), norm)
 	}
 	for i, ng := range us.CostGains {
 		raw := GlbCostV(ctx, di, GvCostRaw, uint32(i))
-		norm := PVLVNormFun(ng * raw)
+		norm := RubiconNormFun(ng * raw)
 		SetGlbCostV(ctx, di, GvCost, uint32(i), norm)
 	}
 }
@@ -506,11 +506,12 @@ func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
 }
 
 //////////////////////////////////////////////////////////
-//  PVLV
+//  Rubicon
 
-// PVLV represents the core brainstem-level (hypothalamus) bodily drives
+// Rubicon implements core elements of the Rubicon goal-directed motivational
+// model, representing the core brainstem-level (hypothalamus) bodily drives
 // and resulting dopamine from US (unconditioned stimulus) inputs,
-// as computed by the PVLV model of primary value (PV)
+// subsuming the earlier Rubicon model of primary value (PV)
 // and learned value (LV), describing the functions of the Amygala,
 // Ventral Striatum, VTA and associated midbrain nuclei (LDT, LHb, RMTg).
 // Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine
@@ -520,7 +521,7 @@ func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
 // at the start of each trial (NewState, Step).  The LV / CS dopamine is computed
 // cycle-by-cycle by the VTA layer using parameters set by the VTA layer.
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
-type PVLV struct {
+type Rubicon struct {
 
 	// number of possible positive US states and corresponding drives.
 	// The first is always reserved for novelty / curiosity.
@@ -562,35 +563,35 @@ type PVLV struct {
 	GiveUp GiveUpParams
 }
 
-func (pp *PVLV) Defaults() {
-	if pp.LHb.VSPatchGain != 0 { // already done
+func (rp *Rubicon) Defaults() {
+	if rp.LHb.VSPatchGain != 0 { // already done
 		return
 	}
-	pp.Drive.Defaults()
-	pp.Urgency.Defaults()
-	pp.USs.Defaults()
-	pp.LHb.Defaults()
-	pp.GiveUp.Defaults()
+	rp.Drive.Defaults()
+	rp.Urgency.Defaults()
+	rp.USs.Defaults()
+	rp.LHb.Defaults()
+	rp.GiveUp.Defaults()
 }
 
-func (pp *PVLV) Update() {
-	pp.Drive.Update()
-	pp.Urgency.Update()
-	pp.USs.Update()
-	pp.LHb.Update()
+func (rp *Rubicon) Update() {
+	rp.Drive.Update()
+	rp.Urgency.Update()
+	rp.USs.Update()
+	rp.LHb.Update()
 }
 
 // USposIndex adds 1 to the given _simulation specific_ positive US index
 // to get the actual US / Drive index, where the first pool is reserved
 // for curiosity / novelty.
-func (pp *PVLV) USposIndex(simUsIndex int) int {
+func (rp *Rubicon) USposIndex(simUsIndex int) int {
 	return simUsIndex + 1
 }
 
 // USnegIndex allows for the possibility of automatically-managed
 // negative USs, by adding those to the given _simulation specific_
 // negative US index to get the actual US index.
-func (pp *PVLV) USnegIndex(simUsIndex int) int {
+func (rp *Rubicon) USnegIndex(simUsIndex int) int {
 	return simUsIndex
 }
 
@@ -598,33 +599,33 @@ func (pp *PVLV) USnegIndex(simUsIndex int) int {
 // phasic positive and negative USs (primary value outcomes).
 // This must be called _before_ network Build, which allocates global values
 // that depend on these numbers.  Any change must also call network.BuildGlobals.
-// 1 PosUS (curiosity / novelty) is managed automatically by the PVLV code.
+// 1 PosUS (curiosity / novelty) is managed automatically by the Rubicon code.
 // Two costs (Time, Effort) are also automatically allocated and managed.
 // The USs specified here need to be managed by the simulation via the SetUS method.
 // Positive USs each have corresponding Drives.
-func (pp *PVLV) SetNUSs(ctx *Context, nPos, nNeg int) {
-	nPos = pp.USposIndex(max(nPos, 1))
-	nNeg = pp.USnegIndex(max(nNeg, 1)) // ensure at least 1
-	pp.NPosUSs = uint32(nPos)
-	pp.NNegUSs = uint32(nNeg)
-	pp.NCosts = 2 // default
-	ctx.NetIndexes.PVLVNPosUSs = pp.NPosUSs
-	ctx.NetIndexes.PVLVNNegUSs = pp.NNegUSs
-	ctx.NetIndexes.PVLVNCosts = pp.NCosts
-	pp.Drive.Alloc(nPos)
-	pp.USs.Alloc(nPos, nNeg, int(pp.NCosts))
+func (rp *Rubicon) SetNUSs(ctx *Context, nPos, nNeg int) {
+	nPos = rp.USposIndex(max(nPos, 1))
+	nNeg = rp.USnegIndex(max(nNeg, 1)) // ensure at least 1
+	rp.NPosUSs = uint32(nPos)
+	rp.NNegUSs = uint32(nNeg)
+	rp.NCosts = 2 // default
+	ctx.NetIndexes.RubiconNPosUSs = rp.NPosUSs
+	ctx.NetIndexes.RubiconNNegUSs = rp.NNegUSs
+	ctx.NetIndexes.RubiconNCosts = rp.NCosts
+	rp.Drive.Alloc(nPos)
+	rp.USs.Alloc(nPos, nNeg, int(rp.NCosts))
 }
 
-// Reset resets all PVLV state
-func (pp *PVLV) Reset(ctx *Context, di uint32) {
-	pp.Drive.ToBaseline(ctx, di)
-	pp.TimeEffortReset(ctx, di)
-	pp.Urgency.Reset(ctx, di)
-	pp.InitUS(ctx, di)
-	pp.LHb.Reset(ctx, di)
-	pp.Drive.VarToZero(ctx, di, GvVSPatchD1)
-	pp.Drive.VarToZero(ctx, di, GvVSPatchD2)
-	pp.ResetGoalState(ctx, di)
+// Reset resets all Rubicon state
+func (rp *Rubicon) Reset(ctx *Context, di uint32) {
+	rp.Drive.ToBaseline(ctx, di)
+	rp.TimeEffortReset(ctx, di)
+	rp.Urgency.Reset(ctx, di)
+	rp.InitUS(ctx, di)
+	rp.LHb.Reset(ctx, di)
+	rp.Drive.VarToZero(ctx, di, GvVSPatchD1)
+	rp.Drive.VarToZero(ctx, di, GvVSPatchD2)
+	rp.ResetGoalState(ctx, di)
 	SetGlbV(ctx, di, GvVtaDA, 0)
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
 	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
@@ -633,21 +634,21 @@ func (pp *PVLV) Reset(ctx *Context, di uint32) {
 }
 
 // InitUS initializes all the USs to zero
-func (pp *PVLV) InitUS(ctx *Context, di uint32) {
-	pp.USs.USposToZero(ctx, di)
-	pp.USs.USnegToZero(ctx, di)
-	pp.USs.CostToZero(ctx, di)
+func (rp *Rubicon) InitUS(ctx *Context, di uint32) {
+	rp.USs.USposToZero(ctx, di)
+	rp.USs.USnegToZero(ctx, di)
+	rp.USs.CostToZero(ctx, di)
 	SetGlbV(ctx, di, GvHasRew, 0)
 	SetGlbV(ctx, di, GvRew, 0)
 }
 
 // InitDrives initializes all the Drives to baseline values (default = 0)
-func (pp *PVLV) InitDrives(ctx *Context, di uint32) {
-	pp.Drive.ToBaseline(ctx, di)
+func (rp *Rubicon) InitDrives(ctx *Context, di uint32) {
+	rp.Drive.ToBaseline(ctx, di)
 }
 
 // AddTimeEffort adds a unit of time and an increment of effort
-func (pp *PVLV) AddTimeEffort(ctx *Context, di uint32, effort float32) {
+func (rp *Rubicon) AddTimeEffort(ctx *Context, di uint32, effort float32) {
 	AddGlbV(ctx, di, GvTime, 1)
 	tm := GlbV(ctx, di, GvTime)
 	SetGlbCostV(ctx, di, GvCostRaw, 0, tm) // time is neg 0
@@ -661,19 +662,19 @@ func (pp *PVLV) AddTimeEffort(ctx *Context, di uint32, effort float32) {
 // given effort increment.
 // Effort is incremented when VSMatrixHasGated (i.e., goal engaged)
 // and Urgency updates otherwise (when not goal engaged)
-// Call this at the start of the trial, in ApplyPVLV method,
+// Call this at the start of the trial, in ApplyRubicon method,
 // after NewState.
-func (pp *PVLV) EffortUrgencyUpdate(ctx *Context, di uint32, effort float32) {
+func (rp *Rubicon) EffortUrgencyUpdate(ctx *Context, di uint32, effort float32) {
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
-		pp.AddTimeEffort(ctx, di, effort)
+		rp.AddTimeEffort(ctx, di, effort)
 	} else {
-		pp.Urgency.AddEffort(ctx, di, effort)
+		rp.Urgency.AddEffort(ctx, di, effort)
 	}
 }
 
 // TimeEffortReset resets the raw time and effort back to zero,
 // at start of new gating event
-func (pp *PVLV) TimeEffortReset(ctx *Context, di uint32) {
+func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvTime, 0)
 	SetGlbV(ctx, di, GvEffort, 0)
 	SetGlbCostV(ctx, di, GvCostRaw, 0, 0) // effort is neg 0
@@ -684,15 +685,15 @@ func (pp *PVLV) TimeEffortReset(ctx *Context, di uint32) {
 // given US value and drive for that value (typically in 0-1 range),
 // and total effort, from which the effort discount factor is computed an applied:
 // usValue * drive * Effort.DiscFun(effort).
-// This is not called directly in the PVLV code -- can be used to compute
-// what the PVLV code itself will compute -- see LHbPVDA
+// This is not called directly in the Rubicon code -- can be used to compute
+// what the Rubicon code itself will compute -- see LHbPVDA
 // todo: this is not very meaningful anymore
-// func (pp *PVLV) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
-// 	return usValue * drive * (1 - PVLVNormFun(pp.USs.PVnegWts[0]*effort))
+// func (pp *Rubicon) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
+// 	return usValue * drive * (1 - RubiconNormFun(pp.USs.PVnegWts[0]*effort))
 // }
 
-// PVLVSetDrive sets given Drive to given value
-func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
+// RubiconSetDrive sets given Drive to given value
+func (rp *Rubicon) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
 	SetGlbUSposV(ctx, di, GvDrives, dr, val)
 }
 
@@ -700,23 +701,23 @@ func (pp *PVLV) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
 // curiosity sets the strength for the curiosity drive
 // and drives are strengths of the remaining sim-specified drives, in order.
 // any drives not so specified are at the InitDrives baseline level.
-func (pp *PVLV) SetDrives(ctx *Context, di uint32, curiosity float32, drives ...float32) {
-	pp.InitDrives(ctx, di)
-	pp.SetDrive(ctx, di, 0, curiosity)
+func (rp *Rubicon) SetDrives(ctx *Context, di uint32, curiosity float32, drives ...float32) {
+	rp.InitDrives(ctx, di)
+	rp.SetDrive(ctx, di, 0, curiosity)
 	for i, v := range drives {
-		pp.SetDrive(ctx, di, uint32(1+i), v)
+		rp.SetDrive(ctx, di, uint32(1+i), v)
 	}
 }
 
 // DriveUpdate is used when auto-updating drive levels based on US consumption,
 // which partially satisfies (decrements) corresponding drive,
 // and on time passing, where drives adapt to their overall baseline levels.
-func (pp *PVLV) DriveUpdate(ctx *Context, di uint32) {
-	pp.Drive.ExpStepAll(ctx, di)
-	nd := pp.NPosUSs
+func (rp *Rubicon) DriveUpdate(ctx *Context, di uint32) {
+	rp.Drive.ExpStepAll(ctx, di)
+	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		us := GlbUSposV(ctx, di, GvUSpos, i)
-		nwdrv := GlbUSposV(ctx, di, GvDrives, i) - us*pp.Drive.Satisfaction[i]
+		nwdrv := GlbUSposV(ctx, di, GvDrives, i) - us*rp.Drive.Satisfaction[i]
 		if nwdrv < 0 {
 			nwdrv = 0
 		}
@@ -725,18 +726,18 @@ func (pp *PVLV) DriveUpdate(ctx *Context, di uint32) {
 }
 
 // SetUS sets the given _simulation specific_ unconditioned
-// stimulus (US) state for PVLV algorithm.  usIndex = 0 is first US, etc.
-// The US then drives activity of relevant PVLV-rendered inputs, and dopamine,
+// stimulus (US) state for Rubicon algorithm.  usIndex = 0 is first US, etc.
+// The US then drives activity of relevant Rubicon-rendered inputs, and dopamine,
 // and sets the global HasRew flag, thus triggering a US learning event.
 // Note that costs can be used to track negative USs that are not strong
 // enough to trigger a US learning event.
-func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex int, magnitude float32) {
+func (rp *Rubicon) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex int, magnitude float32) {
 	SetGlbV(ctx, di, GvHasRew, 1)
 	if valence == Positive {
-		usIndex = pp.USposIndex(usIndex)
+		usIndex = rp.USposIndex(usIndex)
 		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIndex), magnitude)
 	} else {
-		usIndex = pp.USnegIndex(usIndex)
+		usIndex = rp.USnegIndex(usIndex)
 		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(usIndex), magnitude)
 		SetGlbV(ctx, di, GvNegUSOutcome, 1)
 	}
@@ -745,17 +746,17 @@ func (pp *PVLV) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex int
 // ResetGoalState resets all the goal-engaged global values.
 // Critically, this is only called after goal accomplishment,
 // not after goal gating -- prevents "shortcutting" by re-gating.
-func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
+func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvVSMatrixHasGated, 0)
-	pp.Urgency.Reset(ctx, di)
-	pp.TimeEffortReset(ctx, di)
-	pp.USs.USnegToZero(ctx, di) // all negs restart
-	pp.USs.CostToZero(ctx, di)
-	pp.ResetGiveUp(ctx, di)
+	rp.Urgency.Reset(ctx, di)
+	rp.TimeEffortReset(ctx, di)
+	rp.USs.USnegToZero(ctx, di) // all negs restart
+	rp.USs.CostToZero(ctx, di)
+	rp.ResetGiveUp(ctx, di)
 	SetGlbV(ctx, di, GvVSPatchPos, 0)
 	SetGlbV(ctx, di, GvVSPatchPosSum, 0)
 	SetGlbV(ctx, di, GvRewPred, 0)
-	nd := pp.NPosUSs
+	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, i, 0)
 		SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, i, 0)
@@ -763,7 +764,7 @@ func (pp *PVLV) ResetGoalState(ctx *Context, di uint32) {
 }
 
 // ResetGiveUp resets all the give-up related global values.
-func (pp *PVLV) ResetGiveUp(ctx *Context, di uint32) {
+func (rp *Rubicon) ResetGiveUp(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvPVposEst, 0)
 	SetGlbV(ctx, di, GvPVposEstSum, 0)
 	SetGlbV(ctx, di, GvPVposEstDisc, 0)
@@ -775,7 +776,7 @@ func (pp *PVLV) ResetGiveUp(ctx *Context, di uint32) {
 // NewState is called at very start of new state (trial) of processing.
 // sets HadRew = HasRew from last trial -- used to then reset various things
 // after reward.
-func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
+func (rp *Rubicon) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	hadRewF := GlbV(ctx, di, GvHasRew)
 	hadRew := num.ToBool(hadRewF)
 	SetGlbV(ctx, di, GvHadRew, hadRewF)
@@ -786,23 +787,23 @@ func (pp *PVLV) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 	SetGlbV(ctx, di, GvHasRew, 0)
 	SetGlbV(ctx, di, GvNegUSOutcome, 0)
 
-	pp.VSPatchNewState(ctx, di)
+	rp.VSPatchNewState(ctx, di)
 
 	if hadRew {
-		pp.ResetGoalState(ctx, di)
+		rp.ResetGoalState(ctx, di)
 	} else if GlbV(ctx, di, GvVSMatrixJustGated) > 0 {
 		SetGlbV(ctx, di, GvVSMatrixHasGated, 1)
-		pp.Urgency.Reset(ctx, di)
+		rp.Urgency.Reset(ctx, di)
 	}
 	SetGlbV(ctx, di, GvVSMatrixJustGated, 0)
-	pp.USs.USposToZero(ctx, di) // pos USs must be set fresh every time
+	rp.USs.USposToZero(ctx, di) // pos USs must be set fresh every time
 }
 
 // Step does one step (trial) after applying USs, Drives,
-// and updating Effort.  It should be the final call in ApplyPVLV.
+// and updating Effort.  It should be the final call in ApplyRubicon.
 // Calls PVDA which does all US, PV, LHb, GiveUp updating.
-func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
-	pp.PVDA(ctx, di, rnd)
+func (rp *Rubicon) Step(ctx *Context, di uint32, rnd erand.Rand) {
+	rp.PVDA(ctx, di, rnd)
 }
 
 // SetGoalMaintFromLayer sets the GoalMaint global state variable
@@ -810,7 +811,7 @@ func (pp *PVLV) Step(ctx *Context, di uint32, rnd erand.Rand) {
 // GoalMaintis normalized 0-1 based on the given max activity level,
 // with anything out of range clamped to 0-1 range.
 // Returns (and logs) an error if layer name not found.
-func (pp *PVLV) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, layName string, maxAct float32) error {
+func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, layName string, maxAct float32) error {
 	ly := net.AxonLayerByName(layName)
 	if ly == nil {
 		err := fmt.Errorf("SetGoalMaintFromLayer: layer named: %q not found", layName)
@@ -829,11 +830,11 @@ func (pp *PVLV) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, lay
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//    methods below used in computing PVLV state, not generally called from sims
+//    methods below used in computing Rubicon state, not generally called from sims
 
 // HasPosUS returns true if there is at least one non-zero positive US
-func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
-	nd := pp.NPosUSs
+func (rp *Rubicon) HasPosUS(ctx *Context, di uint32) bool {
+	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		if GlbUSposV(ctx, di, GvUSpos, i) > 0 {
 			return true
@@ -847,13 +848,13 @@ func (pp *PVLV) HasPosUS(ctx *Context, di uint32) bool {
 // its current drive and weighting factor (pvPosSum),
 // and the normalized version of this sum (PVpos = overall positive PV)
 // as 1 / (1 + (PVposGain * pvPosSum))
-func (pp *PVLV) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
-	nd := pp.NPosUSs
-	wts := pp.USs.PVposWts
+func (rp *Rubicon) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
+	nd := rp.NPosUSs
+	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * pp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * rp.Drive.EffectiveDrive(ctx, di, i)
 	}
-	pvPos = PVLVNormFun(pp.USs.PVposGain * pvPosSum)
+	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
 }
 
@@ -862,30 +863,30 @@ func (pp *PVLV) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 // is multiplied by a weighting factor and summed (usNegSum)
 // and the normalized version of this sum (PVneg = overall negative PV)
 // as 1 / (1 + (PVnegGain * PVnegSum))
-func (pp *PVLV) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
-	nn := pp.NNegUSs
-	wts := pp.USs.PVnegWts
+func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
+	nn := rp.NNegUSs
+	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
 		pvNegSum += wts[i] * GlbUSnegV(ctx, di, GvUSnegRaw, i)
 	}
-	nn = pp.NCosts
-	wts = pp.USs.PVcostWts
+	nn = rp.NCosts
+	wts = rp.USs.PVcostWts
 	for i := uint32(0); i < nn; i++ {
 		pvNegSum += wts[i] * GlbCostV(ctx, di, GvCostRaw, i)
 	}
-	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvNegSum)
+	pvNeg = RubiconNormFun(rp.USs.PVnegGain * pvNegSum)
 	return
 }
 
 // PVsFmUSs updates the current PV summed, weighted, normalized values
 // from the underlying US values.
-func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
-	pvPosSum, pvPos := pp.PVpos(ctx, di)
+func (rp *Rubicon) PVsFmUSs(ctx *Context, di uint32) {
+	pvPosSum, pvPos := rp.PVpos(ctx, di)
 	SetGlbV(ctx, di, GvPVposSum, pvPosSum)
 	SetGlbV(ctx, di, GvPVpos, pvPos)
-	SetGlbV(ctx, di, GvHasPosUS, num.FromBool[float32](pp.HasPosUS(ctx, di)))
+	SetGlbV(ctx, di, GvHasPosUS, num.FromBool[float32](rp.HasPosUS(ctx, di)))
 
-	pvNegSum, pvNeg := pp.PVneg(ctx, di)
+	pvNegSum, pvNeg := rp.PVneg(ctx, di)
 	SetGlbV(ctx, di, GvPVnegSum, pvNegSum)
 	SetGlbV(ctx, di, GvPVneg, pvNeg)
 }
@@ -893,13 +894,13 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 // VSPatchNewState does VSPatch processing in NewState:
 // updates global VSPatchPos and VSPatchPosSum, sets to RewPred.
 // uses max across recorded VSPatch activity levels.
-func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
+func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 	mx := float32(0)
-	nd := pp.NPosUSs
+	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		vsD1 := GlbUSposV(ctx, di, GvVSPatchD1, i)
 		vsD2 := GlbUSposV(ctx, di, GvVSPatchD2, i)
-		vs := pp.LHb.VSPatchGain * (vsD1 - vsD2)
+		vs := rp.LHb.VSPatchGain * (vsD1 - vsD2)
 		if vs > mx {
 			mx = vs
 		}
@@ -911,8 +912,8 @@ func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
 
 // PVposEst returns the estimated positive PV value
 // based on drives and OFCposUSPT maint and VSMatrix gating
-func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
-	nd := pp.NPosUSs
+func (rp *Rubicon) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
+	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		maint := GlbUSposV(ctx, di, GvOFCposUSPTMaint, i)  // avg act
 		gate := GlbUSposV(ctx, di, GvVSMatrixPoolGated, i) // bool
@@ -920,11 +921,11 @@ func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 		if maint > 0.2 || gate > 0 {
 			est = 1 // don't have value
 		}
-		pp.USs.USposEst[i] = est
+		rp.USs.USposEst[i] = est
 	}
-	pvPosSum, pvPos = pp.PVposEstFmUSs(ctx, di, pp.USs.USposEst)
-	if pvPos < pp.GiveUp.MinPVposEst {
-		pvPos = pp.GiveUp.MinPVposEst
+	pvPosSum, pvPos = rp.PVposEstFmUSs(ctx, di, rp.USs.USposEst)
+	if pvPos < rp.GiveUp.MinPVposEst {
+		pvPos = rp.GiveUp.MinPVposEst
 	}
 	return
 }
@@ -932,58 +933,58 @@ func (pp *PVLV) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 // PVposEstFmUSs returns the estimated positive PV value
 // based on drives and given US values.  This can be used
 // to compute estimates to compare network performance.
-func (pp *PVLV) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosSum, pvPos float32) {
-	nd := pp.NPosUSs
+func (rp *Rubicon) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosSum, pvPos float32) {
+	nd := rp.NPosUSs
 	if len(uss) < int(nd) {
 		nd = uint32(len(uss))
 	}
-	wts := pp.USs.PVposWts
+	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * uss[i] * pp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * uss[i] * rp.Drive.EffectiveDrive(ctx, di, i)
 	}
-	pvPos = PVLVNormFun(pp.USs.PVposGain * pvPosSum)
+	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
 }
 
 // PVposEstFmUSsDrives returns the estimated positive PV value
 // based on given externally-provided drives and US values.
 // This can be used to compute estimates to compare network performance.
-func (pp *PVLV) PVposEstFmUSsDrives(uss, drives []float32) (pvPosSum, pvPos float32) {
-	nd := pp.NPosUSs
+func (rp *Rubicon) PVposEstFmUSsDrives(uss, drives []float32) (pvPosSum, pvPos float32) {
+	nd := rp.NPosUSs
 	if len(uss) < int(nd) {
 		nd = uint32(len(uss))
 	}
-	wts := pp.USs.PVposWts
+	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
 		pvPosSum += wts[i] * uss[i] * drives[i]
 	}
-	pvPos = PVLVNormFun(pp.USs.PVposGain * pvPosSum)
+	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
 }
 
 // PVnegEstFmUSs returns the estimated negative PV value
 // based on given externally-provided US values.
 // This can be used to compute estimates to compare network performance.
-func (pp *PVLV) PVnegEstFmUSs(uss []float32) (pvNegSum, pvNeg float32) {
-	nn := pp.NNegUSs
-	wts := pp.USs.PVnegWts
+func (rp *Rubicon) PVnegEstFmUSs(uss []float32) (pvNegSum, pvNeg float32) {
+	nn := rp.NNegUSs
+	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
 		pvNegSum += wts[i] * uss[i]
 	}
-	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvNegSum)
+	pvNeg = RubiconNormFun(rp.USs.PVnegGain * pvNegSum)
 	return
 }
 
 // PVcostEstFmUSs returns the estimated negative PV value
 // based on given externally-provided Cost values.
 // This can be used to compute estimates to compare network performance.
-func (pp *PVLV) PVcostEstFmCosts(costs []float32) (pvCostSum, pvNeg float32) {
-	nn := pp.NCosts
-	wts := pp.USs.PVcostWts
+func (rp *Rubicon) PVcostEstFmCosts(costs []float32) (pvCostSum, pvNeg float32) {
+	nn := rp.NCosts
+	wts := rp.USs.PVcostWts
 	for i := uint32(0); i < nn; i++ {
 		pvCostSum += wts[i] * costs[i]
 	}
-	pvNeg = PVLVNormFun(pp.USs.PVnegGain * pvCostSum)
+	pvNeg = RubiconNormFun(rp.USs.PVnegGain * pvCostSum)
 	return
 }
 
@@ -991,21 +992,21 @@ func (pp *PVLV) PVcostEstFmCosts(costs []float32) (pvCostSum, pvNeg float32) {
 // activity from given pvPos, pvNeg, and vsPatchPos values.
 // Also returns the net "reward" value as the discounted PV value,
 // separate from the vsPatchPos prediction error factor.
-func (pp *PVLV) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
-	return pp.LHb.DAFmPVs(pvPos, pvNeg, vsPatchPos)
+func (rp *Rubicon) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
+	return rp.LHb.DAFmPVs(pvPos, pvNeg, vsPatchPos)
 }
 
 // GiveUpFmPV determines whether to give up on current goal
 // based on balance between estimated PVpos and accumulated PVneg.
 // returns true if give up triggered.
-func (pp *PVLV) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Rand) bool {
+func (rp *Rubicon) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Rand) bool {
 	// now compute give-up
-	posEstSum, posEst := pp.PVposEst(ctx, di)
+	posEstSum, posEst := rp.PVposEst(ctx, di)
 	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
 	posDisc := posEst - vsPatchSum
 	// note: cannot do ratio here because discounting can get negative
 	diff := posDisc - pvNeg
-	prob, giveUp := pp.GiveUp.Prob(-diff, rnd)
+	prob, giveUp := rp.GiveUp.Prob(-diff, rnd)
 
 	SetGlbV(ctx, di, GvPVposEst, posEst)
 	SetGlbV(ctx, di, GvPVposEstSum, posEstSum)
@@ -1022,9 +1023,9 @@ func (pp *PVLV) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Ran
 // and the resulting values are stored in global variables.
 // Called after updating USs, Effort, Drives at start of trial step,
 // in Step.
-func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
-	pp.USs.USnegCostFromRaw(ctx, di)
-	pp.PVsFmUSs(ctx, di)
+func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
+	rp.USs.USnegCostFromRaw(ctx, di)
+	rp.PVsFmUSs(ctx, di)
 
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
 	pvPos := GlbV(ctx, di, GvPVpos)
@@ -1032,23 +1033,23 @@ func (pp *PVLV) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	vsPatchPos := GlbV(ctx, di, GvVSPatchPos)
 
 	if hasRew {
-		pp.ResetGiveUp(ctx, di)
-		rew := pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+		rp.ResetGiveUp(ctx, di)
+		rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
 		SetGlbV(ctx, di, GvRew, rew)
 		return
 	}
 
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
-		giveUp := pp.GiveUpFmPV(ctx, di, pvNeg, rnd)
+		giveUp := rp.GiveUpFmPV(ctx, di, pvNeg, rnd)
 		if giveUp {
 			SetGlbV(ctx, di, GvHasRew, 1)                            // key for triggering reset
-			rew := pp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual rew
+			rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual rew
 			SetGlbV(ctx, di, GvRew, rew)
 			return
 		}
 	}
 
 	// no US regular case
-	pp.LHb.DAforNoUS(ctx, di, vsPatchPos)
+	rp.LHb.DAforNoUS(ctx, di, vsPatchPos)
 	SetGlbV(ctx, di, GvRew, 0)
 }

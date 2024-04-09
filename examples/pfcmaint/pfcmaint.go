@@ -198,11 +198,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
 	net.InitWts(ctx)
-	ss.ConfigPVLV()
+	ss.ConfigRubicon()
 }
 
-func (ss *Sim) ConfigPVLV() {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ConfigRubicon() {
+	pv := &ss.Net.Rubicon
 	pv.SetNUSs(&ss.Context, 1, 1)
 }
 
@@ -333,12 +333,12 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 		}
 	}
 
-	ss.ApplyPVLV(ctx, mode)
+	ss.ApplyRubicon(ctx, mode)
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
-func (ss *Sim) ApplyPVLV(ctx *axon.Context, mode etime.Modes) {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ApplyRubicon(ctx *axon.Context, mode etime.Modes) {
+	pv := &ss.Net.Rubicon
 	di := uint32(0) // not doing NData here -- otherwise loop over
 	ev := ss.Envs.ByModeDi(mode, int(di)).(*PFCMaintEnv)
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated

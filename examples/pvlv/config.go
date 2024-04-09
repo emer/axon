@@ -34,8 +34,8 @@ func (ec *EnvConfig) ShouldShow(field string) bool {
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
 
-	// PVLV parameters -- can set any field/subfield on Net.PVLV params, using standard TOML formatting
-	PVLV map[string]any
+	// Rubicon parameters -- can set any field/subfield on Net.Rubicon params, using standard TOML formatting
+	Rubicon map[string]any
 
 	// network parameters
 	Network map[string]any

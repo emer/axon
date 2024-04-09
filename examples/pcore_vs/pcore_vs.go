@@ -161,13 +161,13 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be in place when adding
 		ss.Envs.Add(trn, tst)
 		if di == 0 {
-			ss.ConfigPVLV(trn)
+			ss.ConfigRubicon(trn)
 		}
 	}
 }
 
-func (ss *Sim) ConfigPVLV(trn *GoNoEnv) {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ConfigRubicon(trn *GoNoEnv) {
+	pv := &ss.Net.Rubicon
 	pv.SetNUSs(&ss.Context, 2, 1)
 	pv.Urgency.U50 = 20 // 20 def
 }
@@ -384,15 +384,15 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 				ly.ApplyExt(ctx, uint32(di), itsr)
 			}
 		}
-		ss.ApplyPVLV(ev, trial, uint32(di))
+		ss.ApplyRubicon(ev, trial, uint32(di))
 	}
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
-// ApplyPVLV applies PVLV reward inputs
-func (ss *Sim) ApplyPVLV(ev *GoNoEnv, trial int, di uint32) {
+// ApplyRubicon applies Rubicon reward inputs
+func (ss *Sim) ApplyRubicon(ev *GoNoEnv, trial int, di uint32) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	pv.EffortUrgencyUpdate(ctx, di, 1)
 	if ctx.Mode == etime.Test {
 		pv.Urgency.Reset(ctx, di)
@@ -420,7 +420,7 @@ func (ss *Sim) GatedRew(ev *GoNoEnv, di uint32) {
 
 func (ss *Sim) SetRew(rew float32, di uint32) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	axon.GlobalSetRew(ctx, di, rew, true)
 	axon.SetGlbV(ctx, di, axon.GvDA, rew) // no reward prediction error
 	if rew > 0 {

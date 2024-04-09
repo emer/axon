@@ -579,7 +579,7 @@ func (sm *SMaintParams) ExpInt(isi float32) float32 {
 // where a single continuous (scalar) value is encoded as a gaussian bump
 // across a population of neurons (1 dimensional).
 // It can also modulate rate code and number of neurons active according to the value.
-// This is for layers that represent values as in the PVLV system (from Context.PVLV).
+// This is for layers that represent values as in the Rubicon system (from Context.Rubicon).
 // Both normalized activation values (1 max) and Ge conductance values can be generated.
 type PopCodeParams struct {
 

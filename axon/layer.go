@@ -176,7 +176,7 @@ func (ly *Layer) PostBuild() {
 	case PVLayer:
 		fallthrough
 	case VSPatchLayer:
-		ly.PVLVPostBuild()
+		ly.RubiconPostBuild()
 
 	case MatrixLayer:
 		ly.MatrixPostBuild()

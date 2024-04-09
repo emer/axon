@@ -59,7 +59,7 @@ func (nt *Network) NewPrjn() emer.Prjn {
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
-	nt.PVLV.Defaults()
+	nt.Rubicon.Defaults()
 	nt.SetNThreads(0) // default
 	for _, ly := range nt.Layers {
 		ly.Defaults()
@@ -291,7 +291,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts(ctx *Context) { //gti:add
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-		nt.PVLV.Reset(ctx, di)
+		nt.Rubicon.Reset(ctx, di)
 	}
 	nt.BuildPrjnGBuf()
 	ctx.SlowCtr = 0

@@ -55,7 +55,7 @@ const (
 	// opposite cases.  Weights are positive-only.
 	TDPredPrjn
 
-	// BLAPrjn implements the PVLV BLA learning rule:
+	// BLAPrjn implements the Rubicon BLA learning rule:
 	// dW = ACh * X_t-1 * (Y_t - Y_t-1)
 	// The recv delta is across trials, where the US should activate on trial
 	// boundary, to enable sufficient time for gating through to OFC, so

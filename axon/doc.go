@@ -5,7 +5,7 @@
 /*
 Package axon provides the basic reference axon implementation, for rate-coded
 activations and standard error-driven learning.  Other packages provide spiking
-or deep axon, PVLV, PBWM, etc.
+or deep axon, Rubicon, PBWM, etc.
 
 The overall design seeks an "optimal" tradeoff between simplicity, transparency, ability to flexibly
 recombine and extend elements, and avoiding having to rewrite a bunch of stuff.

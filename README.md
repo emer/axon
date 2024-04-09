@@ -850,15 +850,15 @@ The only way to manage the complexity of large spiking nets is to develop advanc
 
 This repository contains specialized additions to the core algorithm described above, which are implemented via specific `LayerTypes` and `PrjnTypes`, in `_net.go`, `_layers.go`, and `_prjns.go` files:
 
-* The [deep cortical layers](DEEP.md) and the bidirectional connections with the thalamus, which can support predictive error-driven learning [O'Reilly et al., 2021](#references): deep_{[net.go](axon/deep_net.go), [layers.go](axon/deep_layers.go), [prjns.go](axon/deep_prjns.go)}. The basic Axon represents purely superficial-layer processing, consistent with the `LayerTypes` of `SuperLayer`.
+* The [deep cortical layers](Deep.md) and the bidirectional connections with the thalamus, which can support predictive error-driven learning [O'Reilly et al., 2021](#references): deep_{[net.go](axon/deep_net.go), [layers.go](axon/deep_layers.go), [prjns.go](axon/deep_prjns.go)}. The basic Axon represents purely superficial-layer processing, consistent with the `LayerTypes` of `SuperLayer`.
 
 * [Reinforcement Learning](RL.md) including as Rescorla-Wagner and TD (temporal differences). rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [prjns.go](axon/rl_prjns.go)}.
 
-* The [PVLV](PVLV.md) (Primary Value, Learned Value) algorithm, which is a biologically detailed model of the brain circuits driving phasic dopamine firing, in: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.
+* The [Rubicon](Rubicon.md) model, including PVLV (Primary Value, Learned Value), which is a biologically detailed model of the brain circuits driving goal-driven motivated behavior and phasic dopamine firing, in: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.
 
-* The [PCORE](PCORE_BG.md) Pallidal Core model of basal ganglia (BG) in: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
+* The [PCore](PCoreBG.md) Pallidal Core model of basal ganglia (BG) in: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
 
-* [HIP](HIP.md) implements the hippocampus-specific learning mechanisms, in hip_{[net.go](axon/hip_net.go), [prjns.go](axon/hip_prjns.go)}.
+* [Hip](Hip.md) implements the hippocampus-specific learning mechanisms, in hip_{[net.go](axon/hip_net.go), [prjns.go](axon/hip_prjns.go)}.
 
 # Appendix: Kinase-Trace Learning Rule Derivation
 

@@ -111,8 +111,8 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
-	testNet.PVLV.SetNUSs(ctx, 4, 3)
-	testNet.PVLV.Defaults()
+	testNet.Rubicon.SetNUSs(ctx, 4, 3)
+	testNet.Rubicon.Defaults()
 
 	testNet.Build(ctx)
 	ctx.NetIndexes.NData = uint32(nData)
@@ -1434,7 +1434,7 @@ func TestGlobalIndexes(t *testing.T) {
 	ctx := NewContext()
 	nData := uint32(5)
 	net := newTestNet(ctx, int(nData))
-	pv := &net.PVLV
+	pv := &net.Rubicon
 	val := float32(0)
 
 	// fmt.Println("NCosts:", pv.NCosts, "NNegUSs:", pv.NNegUSs, "NPosUSs:", pv.NPosUSs)
@@ -1600,7 +1600,7 @@ func TestSendGatherIndexes(t *testing.T) {
 	}
 }
 
-func TestPVLVGiveUp(t *testing.T) {
+func TestRubiconGiveUp(t *testing.T) {
 	t.Skip("")
 	gp := &GiveUpParams{}
 	gp.Defaults()

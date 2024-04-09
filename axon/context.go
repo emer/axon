@@ -286,14 +286,14 @@ type NetIndexes struct {
 	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
 	GPUSynCaBanks uint32 `edit:"-"`
 
-	// total number of PVLV Drives / positive USs
-	PVLVNPosUSs uint32 `edit:"-"`
+	// total number of .Rubicon Drives / positive USs
+	RubiconNPosUSs uint32 `edit:"-"`
 
-	// total number of PVLV Costs
-	PVLVNCosts uint32 `edit:"-"`
+	// total number of .Rubicon Costs
+	RubiconNCosts uint32 `edit:"-"`
 
-	// total number of PVLV Negative USs
-	PVLVNNegUSs uint32 `edit:"-"`
+	// total number of .Rubicon Negative USs
+	RubiconNNegUSs uint32 `edit:"-"`
 
 	// offset into GlobalVars for Cost values
 	GvCostOff uint32 `edit:"-"`
@@ -481,11 +481,11 @@ func (ctx *Context) SlowInc() bool {
 // SetGlobalStrides sets global variable access offsets and strides
 func (ctx *Context) SetGlobalStrides() {
 	ctx.NetIndexes.GvCostOff = ctx.GlobalIndex(0, GvCost)
-	ctx.NetIndexes.GvCostStride = uint32(ctx.NetIndexes.PVLVNCosts) * ctx.NetIndexes.MaxData
-	ctx.NetIndexes.GvUSnegOff = ctx.GlobalCostIndex(0, GvCostRaw, ctx.NetIndexes.PVLVNCosts)
-	ctx.NetIndexes.GvUSnegStride = uint32(ctx.NetIndexes.PVLVNNegUSs) * ctx.NetIndexes.MaxData
-	ctx.NetIndexes.GvUSposOff = ctx.GlobalUSnegIndex(0, GvUSnegRaw, ctx.NetIndexes.PVLVNNegUSs)
-	ctx.NetIndexes.GvUSposStride = uint32(ctx.NetIndexes.PVLVNPosUSs) * ctx.NetIndexes.MaxData
+	ctx.NetIndexes.GvCostStride = uint32(ctx.NetIndexes.RubiconNCosts) * ctx.NetIndexes.MaxData
+	ctx.NetIndexes.GvUSnegOff = ctx.GlobalCostIndex(0, GvCostRaw, ctx.NetIndexes.RubiconNCosts)
+	ctx.NetIndexes.GvUSnegStride = uint32(ctx.NetIndexes.RubiconNNegUSs) * ctx.NetIndexes.MaxData
+	ctx.NetIndexes.GvUSposOff = ctx.GlobalUSnegIndex(0, GvUSnegRaw, ctx.NetIndexes.RubiconNNegUSs)
+	ctx.NetIndexes.GvUSposStride = uint32(ctx.NetIndexes.RubiconNPosUSs) * ctx.NetIndexes.MaxData
 }
 
 // GlobalIndex returns index into main global variables,
@@ -770,17 +770,17 @@ func GlobalsReset(ctx *Context) {
 			SetGlbV(ctx, di, vg, 0)
 		}
 		for vn := GvCost; vn <= GvCostRaw; vn++ {
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNCosts; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNCosts; ui++ {
 				SetGlbCostV(ctx, di, vn, ui, 0)
 			}
 		}
 		for vn := GvUSneg; vn <= GvUSnegRaw; vn++ {
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNNegUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNNegUSs; ui++ {
 				SetGlbUSnegV(ctx, di, vn, ui, 0)
 			}
 		}
 		for vp := GvDrives; vp < GlobalVarsN; vp++ {
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNPosUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNPosUSs; ui++ {
 				SetGlbUSposV(ctx, di, vp, ui, 0)
 			}
 		}
@@ -798,21 +798,21 @@ func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 	}
 }
 
-// PVLVUSStimVal returns stimulus value for US at given index
+// .RubiconUSStimVal returns stimulus value for US at given index
 // and valence (includes Cost).  If US > 0.01, a full 1 US activation is returned.
-func PVLVUSStimValue(ctx *Context, di uint32, usIndex uint32, valence ValenceTypes) float32 {
+func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence ValenceTypes) float32 {
 	us := float32(0)
 	switch valence {
 	case Positive:
-		if usIndex < ctx.NetIndexes.PVLVNPosUSs {
+		if usIndex < ctx.NetIndexes.RubiconNPosUSs {
 			us = GlbUSposV(ctx, di, GvUSpos, usIndex)
 		}
 	case Negative:
-		if usIndex < ctx.NetIndexes.PVLVNNegUSs {
+		if usIndex < ctx.NetIndexes.RubiconNNegUSs {
 			us = GlbUSnegV(ctx, di, GvUSneg, usIndex)
 		}
 	case Cost:
-		if usIndex < ctx.NetIndexes.PVLVNCosts {
+		if usIndex < ctx.NetIndexes.RubiconNCosts {
 			us = GlbCostV(ctx, di, GvCost, usIndex)
 		}
 	}

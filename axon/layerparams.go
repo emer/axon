@@ -171,10 +171,10 @@ type LayerParams struct {
 	// parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.
 	VTA VTAParams `view:"inline"`
 
-	// parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
+	// parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
 	RWPred RWPredParams `view:"inline"`
 
-	// parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework).
+	// parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
 	RWDa RWDaParams `view:"inline"`
 
 	// parameterizes TD reward integration layer
@@ -538,7 +538,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFmRawSteady(geRaw))
 	case USLayer:
-		us := PVLVUSStimValue(ctx, di, pi, ly.Learn.NeuroMod.Valence)
+		us := RubiconUSStimValue(ctx, di, pi, ly.Learn.NeuroMod.Valence)
 		geRaw := us
 		if us > 0 {
 			geRaw = ly.Acts.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), us)
@@ -778,7 +778,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		}
 		SetNrnV(ctx, ni, di, Act, act)
 	case USLayer:
-		us := PVLVUSStimValue(ctx, di, pi, ly.Learn.NeuroMod.Valence)
+		us := RubiconUSStimValue(ctx, di, pi, ly.Learn.NeuroMod.Valence)
 		act := us
 		if us > 0 {
 			act = ly.Acts.PopCode.EncodeValue(pni, uint32(pl.NNeurons()), us)

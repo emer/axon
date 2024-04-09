@@ -44,7 +44,7 @@ In addition, there are three optional layer types that account for the deep laye
 
 * `PTMaintLayer`: implements a subset of PT neurons that exhibit robust active maintenance, typically gated by basal ganglia (BG) disinhibition of a corresponding thalamic layer (e.g., via the [pcore](PCORE_BG.md) framework).  This gating can be accomplished by configuring a `ModulatoryG` projection from the thalamus layer, which contributes extra excitation according to the `Act.Dend.ModGain` scaling parameter.
 
-* `PTPredLayer`: implements a subset of PT neurons that is like `CTLayer` in contributing to predictive learning over the thalamus, but receives input from the `PTMaintLayer` and is thus only active during periods of active maintenance.  This layer provides the primary input to `VSPatch` US-timing prediction layers in the [pvlv](PVLV.md) framework, and other layers that require predictive dynamic inputs.
+* `PTPredLayer`: implements a subset of PT neurons that is like `CTLayer` in contributing to predictive learning over the thalamus, but receives input from the `PTMaintLayer` and is thus only active during periods of active maintenance.  This layer provides the primary input to `VSPatch` US-timing prediction layers in the [Rubicon](Rubicon.md) framework, and other layers that require predictive dynamic inputs.
 
 * `PTNotMaintLayer`: implements a tonically active layer that is inhibited by the `PTMaintLayer`, thereby providing an active representation of the *absence* of maintained PT activity, which is useful for driving appropriate actions (e.g., exploration) when not in goal-engaged mode.
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// effort_plot plots the PVLV effort cost equations.
+// effort_plot plots the Rubicon effort cost equations.
 package main
 
 import (
@@ -37,8 +37,8 @@ type DrEffPlot struct {
 	// context just for plotting
 	Context axon.Context
 
-	// PVLV params
-	PVLV axon.PVLV
+	// Rubicon params
+	Rubicon axon.Rubicon
 
 	// total number of time steps to simulate
 	TimeSteps int
@@ -68,7 +68,7 @@ type DrEffPlot struct {
 // Config configures all the elements using the standard functions
 func (ss *DrEffPlot) Config() {
 	ss.Context.Defaults()
-	pp := &ss.PVLV
+	pp := &ss.Rubicon
 	pp.SetNUSs(&ss.Context, 1, 1)
 	pp.Defaults()
 	pp.Drive.DriveMin = 0
@@ -94,13 +94,13 @@ func (ss *DrEffPlot) Update() {
 func (ss *DrEffPlot) EffortPlot() { //gti:add
 	ss.Update()
 	ctx := &ss.Context
-	pp := &ss.PVLV
+	pp := &ss.Rubicon
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
 	pp.TimeEffortReset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
-		ev := 1 - axon.PVLVNormFun(0.02)
+		ev := 1 - axon.RubiconNormFun(0.02)
 		dt.SetCellFloat("X", vi, float64(vi))
 		dt.SetCellFloat("Y", vi, float64(ev))
 
@@ -112,7 +112,7 @@ func (ss *DrEffPlot) EffortPlot() { //gti:add
 // UrgencyPlot plots the equation as a function of effort / time
 func (ss *DrEffPlot) UrgencyPlot() { //gti:add
 	ctx := &ss.Context
-	pp := &ss.PVLV
+	pp := &ss.Rubicon
 	ss.Update()
 	dt := ss.Table
 	nv := 100
@@ -156,7 +156,7 @@ func (ss *DrEffPlot) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 func (ss *DrEffPlot) TimeRun() { //gti:add
 	ss.Update()
 	dt := ss.TimeTable
-	pp := &ss.PVLV
+	pp := &ss.Rubicon
 	ctx := &ss.Context
 	pp.TimeEffortReset(ctx, 0)
 	pp.Urgency.Reset(ctx, 0)
@@ -167,7 +167,7 @@ func (ss *DrEffPlot) TimeRun() { //gti:add
 	// pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := 1 - axon.PVLVNormFun(0.02)
+		ev := 1 - axon.RubiconNormFun(0.02)
 		urg := pp.Urgency.Urge(ctx, 0)
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
 		dr := axon.GlbUSposV(ctx, 0, axon.GvDrives, 0)

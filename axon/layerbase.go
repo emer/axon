@@ -96,7 +96,7 @@ type LayerBase struct {
 	// configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,
 	BuildConfig map[string]string `tableview:"-"`
 
-	// default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
+	// default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., Rubicon, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
 	DefParams params.Params `tableview:"-"`
 
 	// provides a history of parameters applied to the layer

@@ -152,7 +152,7 @@ var ParamSets = netparams.Sets{
 		// 		"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
 		// 	}},
 		////////////////////////////////////////////
-		// PVLV Prjns
+		// Rubicon Prjns
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.5", // 3 orig

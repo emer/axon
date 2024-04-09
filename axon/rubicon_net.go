@@ -64,11 +64,11 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 // AddAmygdala adds a full amygdala complex including BLA,
 // CeM, and LDT.  Inclusion of negative valence is optional with neg
 // arg -- neg* layers are nil if not included.
-// Uses the network PVLV.NPosUSs and NNegUSs for number of pools --
+// Uses the network .Rubicon.NPosUSs and NNegUSs for number of pools --
 // must be configured prior to calling this.
 func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov *Layer) {
-	nUSpos := int(net.PVLV.NPosUSs)
-	nUSneg := int(net.PVLV.NNegUSs)
+	nUSpos := int(net.Rubicon.NPosUSs)
+	nUSneg := int(net.Rubicon.NNegUSs)
 
 	blaPosAcq, blaPosExt = net.AddBLALayers(prefix, true, nUSpos, nNeurY, nNeurX, relpos.Behind, space)
 	if neg {
@@ -216,13 +216,13 @@ func (net *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prj
 // AddUSLayers adds USpos, USneg, and Cost layers for positive or negative valence
 // unconditioned stimuli (USs), using a pop-code representation of US magnitude.
 // These track the Global USpos, USneg, Cost for visualization and predictive learning.
-// Actual US inputs are set in PVLV.
-// Uses the network PVLV.NPosUSs, NNegUSs, and NCosts for number of pools --
+// Actual US inputs are set in .Rubicon.
+// Uses the network .Rubicon.NPosUSs, NNegUSs, and NCosts for number of pools --
 // must be configured prior to calling this.
 func (net *Network) AddUSLayers(popY, popX int, rel relpos.Relations, space float32) (usPos, usNeg, cost *Layer) {
-	nUSpos := int(net.PVLV.NPosUSs)
-	nUSneg := int(net.PVLV.NNegUSs)
-	nCost := int(net.PVLV.NCosts)
+	nUSpos := int(net.Rubicon.NPosUSs)
+	nUSneg := int(net.Rubicon.NNegUSs)
+	nCost := int(net.Rubicon.NCosts)
 	usPos = net.AddLayer4D("USpos", 1, nUSpos, popY, popX, USLayer)
 	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	usPos.SetBuildConfig("Valence", "Positive")
@@ -244,7 +244,7 @@ func (net *Network) AddUSLayers(popY, popX int, rel relpos.Relations, space floa
 // AddUSPulvLayers adds USpos, USneg, and Cost layers for positive or negative valence
 // unconditioned stimuli (USs), using a pop-code representation of US magnitude.
 // These track the Global USpos, USneg, Cost, for visualization and predictive learning.
-// Actual US inputs are set in PVLV.
+// Actual US inputs are set in .Rubicon.
 // Adds Pulvinar predictive layers for each.
 func (net *Network) AddUSPulvLayers(popY, popX int, rel relpos.Relations, space float32) (usPos, usNeg, cost, usPosP, usNegP, costP *Layer) {
 	usPos, usNeg, cost = net.AddUSLayers(popY, popX, rel, space)
@@ -424,16 +424,16 @@ func (net *Network) ConnectToSC1to1(send, recv *Layer) *Prjn {
 	return pj
 }
 
-// AddDrivesLayer adds PVLV layer representing current drive activity,
+// AddDrivesLayer adds .Rubicon layer representing current drive activity,
 // from Global Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
 func (net *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
-	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIndexes.PVLVNPosUSs), nNeurY, nNeurX, DrivesLayer)
+	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIndexes.RubiconNPosUSs), nNeurY, nNeurX, DrivesLayer)
 	return drv
 }
 
-// AddDrivesPulvLayer adds PVLV layer representing current drive activity,
+// AddDrivesPulvLayer adds .Rubicon layer representing current drive activity,
 // from Global Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
@@ -451,7 +451,7 @@ func (net *Network) AddDrivesPulvLayer(ctx *Context, nNeurY, nNeurX int, space f
 	return
 }
 
-// AddUrgencyLayer adds PVLV layer representing current urgency factor,
+// AddUrgencyLayer adds .Rubicon layer representing current urgency factor,
 // from Global Urgency.Urge
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions.
@@ -460,10 +460,10 @@ func (net *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
 	return urge
 }
 
-// AddPVLVPulvLayers adds PVLV layers for PV-related information visualizing
+// Add.RubiconPulvLayers adds .Rubicon layers for PV-related information visualizing
 // the internal states of the Global state, with Pulvinar prediction
 // layers for training PFC layers.
-// Uses the network PVLV.NPosUSs, NNegUSs, NCosts for number of pools --
+// Uses the network .Rubicon.NPosUSs, NNegUSs, NCosts for number of pools --
 // must be configured prior to calling this.
 // * drives = popcode representation of drive strength (no activity for 0)
 // number of active drives comes from Context; popY, popX neurons per pool.
@@ -473,7 +473,7 @@ func (net *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
 // valences -- this is what the dopamine value ends up conding (pos - neg).
 // Layers are organized in depth per type: USs in one column, PVs in the next,
 // with Drives in the back; urgency behind that.
-func (net *Network) AddPVLVPulvLayers(ctx *Context, nYneur, popY, popX int, space float32) (drives, drivesP, urgency, usPos, usNeg, cost, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+func (net *Network) AddRubiconPulvLayers(ctx *Context, nYneur, popY, popX int, space float32) (drives, drivesP, urgency, usPos, usNeg, cost, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
 	rel := relpos.Behind
 
 	usPos, usNeg, cost, usPosP, usNegP, costP = net.AddUSPulvLayers(popY, popX, rel, space)
@@ -545,15 +545,15 @@ func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float3
 	return
 }
 
-// AddPVLVOFCus builds a complete PVLV network with OFCposUS
+// Add.RubiconOFCus builds a complete .Rubicon network with OFCposUS
 // (orbital frontal cortex) US-coding layers,
 // ILpos infralimbic abstract positive value,
 // OFCnegUS for negative value inputs, and ILneg value layers,
 // and ACCost cost prediction layers.
-// Uses the network PVLV.NPosUSs, NNegUSs, NCosts for number of pools --
+// Uses the network .Rubicon.NPosUSs, NNegUSs, NCosts for number of pools --
 // must be configured prior to calling this.  Calls:
 // * AddVTALHbLDTLayers
-// * AddPVLVPulvLayers
+// * Add.RubiconPulvLayers
 // * AddVS
 // * AddAmygdala
 // * AddOFCposUS
@@ -561,16 +561,16 @@ func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float3
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc *Layer) {
-	nUSpos := int(net.PVLV.NPosUSs)
-	nUSneg := int(net.PVLV.NNegUSs)
-	nCosts := int(net.PVLV.NCosts)
+func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc *Layer) {
+	nUSpos := int(net.Rubicon.NPosUSs)
+	nUSneg := int(net.Rubicon.NNegUSs)
+	nCosts := int(net.Rubicon.NCosts)
 
 	vta, lhb, ldt := net.AddVTALHbLDTLayers(relpos.Behind, space)
 	_ = lhb
 	_ = ldt
 
-	drives, drivesP, urgency, usPos, usNeg, cost, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(ctx, nYneur, popY, popX, space)
+	drives, drivesP, urgency, usPos, usNeg, cost, usPosP, usNegP, costP, pvPos, pvNeg, pvPosP, pvNegP := net.AddRubiconPulvLayers(ctx, nYneur, popY, popX, space)
 	_ = urgency
 
 	vSmtxGo, vSmtxNo, vSgpePr, vSgpeAk, vSstn, vSgpi := net.AddVBG("", 1, nUSpos, bgY, bgX, bgY, bgX, space)
@@ -931,9 +931,9 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 }
 
 // AddBOA builds a complete BOA (BG, OFC, ACC) for goal-driven decision making.
-// Uses the network PVLV.NPosUSs and NNegUSs for number of pools --
+// Uses the network .Rubicon.NPosUSs and NNegUSs for number of pools --
 // must be configured prior to calling this.  Calls:
-// * AddPVLVOFCus -- PVLV, and OFC us coding
+// * Add.RubiconOFCus -- .Rubicon, and OFC us coding
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
@@ -942,7 +942,7 @@ func (net *Network) AddBOA(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfc
 	full := prjn.NewFull()
 	var pj *Prjn
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddRubiconOFCus(ctx, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
 	_, _, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ilPosCT, ilNegMD
 	_, _, _ = accCost, accCostCT, accCostPTp
 	_, _ = blaNegAcq, blaNegExt

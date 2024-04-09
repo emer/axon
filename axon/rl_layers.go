@@ -11,7 +11,7 @@ import (
 //gosl: start rl_layers
 
 // RWPredParams parameterizes reward prediction for a simple Rescorla-Wagner
-// learning dynamic (i.e., PV learning in the PVLV framework).
+// learning dynamic (i.e., PV learning in the Rubicon framework).
 type RWPredParams struct {
 
 	// default 0.1..0.99 range of predictions that can be represented -- having a truncated range preserves some sensitivity in dopamine at the extremes of good or poor performance
@@ -26,7 +26,7 @@ func (rp *RWPredParams) Update() {
 }
 
 // RWDaParams computes a dopamine (DA) signal using simple Rescorla-Wagner
-// learning dynamic (i.e., PV learning in the PVLV framework).
+// learning dynamic (i.e., PV learning in the Rubicon framework).
 type RWDaParams struct {
 
 	// tonic baseline Ge level for DA = 0 -- +/- are between 0 and 2*TonicGe -- just for spiking display of computed DA value

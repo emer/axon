@@ -145,14 +145,14 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
-	ss.ConfigPVLV()
+	ss.ConfigRubicon()
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
 }
 
-func (ss *Sim) ConfigPVLV() {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ConfigRubicon() {
+	pv := &ss.Net.Rubicon
 	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=negUS
 	pv.Defaults()
 	pv.USs.PVposGain = 2
@@ -162,14 +162,14 @@ func (ss *Sim) ConfigPVLV() {
 	pv.USs.USnegGains[0] = 2      // big salient input!
 
 	pv.Urgency.U50 = 50 // no pressure during regular trials
-	if ss.Config.Params.PVLV != nil {
-		params.ApplyMap(pv, ss.Config.Params.PVLV, ss.Config.Debug)
+	if ss.Config.Params.Rubicon != nil {
+		params.ApplyMap(pv, ss.Config.Params.Rubicon, ss.Config.Debug)
 	}
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "PVLV")
+	net.InitName(net, ".Rubicon")
 	net.SetMaxData(ctx, 1)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
@@ -193,7 +193,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosUSPT, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddPVLVOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosUSPT, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddRubiconOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
@@ -379,14 +379,14 @@ func (ss *Sim) ApplyInputs() {
 			ly.Pool(0, 0).Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
 		}
 	}
-	ss.ApplyPVLV(ctx, &ev.CurTrial)
+	ss.ApplyRubicon(ctx, &ev.CurTrial)
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
-// ApplyPVLV applies current PVLV values to Context.PVLV,
+// Apply.Rubicon applies current .Rubicon values to Context.Rubicon,
 // from given trial data.
-func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ApplyRubicon(ctx *axon.Context, trl *cond.Trial) {
+	pv := &ss.Net.Rubicon
 	di := uint32(0)                    // not doing NData here -- otherwise loop over
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
 	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "ILposPT", 0.3)
@@ -730,8 +730,8 @@ func (ss *Sim) BlockStats() {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Axon PVLV"
-	ss.GUI.MakeBody(ss, "pvlv", title, `This is the PVLV test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	title := "Axon .Rubicon"
+	ss.GUI.MakeBody(ss, "pvlv", title, `This is the .Rubicon test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -818,7 +818,7 @@ func (ss *Sim) ConfigGUI() {
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
 			Icon:    icons.PlayArrow,
-			Tooltip: "Opens a new window to plot PVLV Drive and Effort dynamics.",
+			Tooltip: "Opens a new window to plot .Rubicon Drive and Effort dynamics.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
 				go DriveEffortGUI()

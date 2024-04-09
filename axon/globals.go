@@ -7,7 +7,7 @@ package axon
 //gosl: start globals
 
 // GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc
-// including the state for the PVLV phasic dopamine model. These are stored
+// including the state for the Rubicon phasic dopamine model. These are stored
 // in the Network.Globals float32 slice and corresponding global GPU slice.
 type GlobalVars int32 //enums:enum
 
@@ -16,17 +16,17 @@ const (
 	// Reward
 
 	// Rew is the external reward value.  Must also set HasRew flag when Rew is set,
-	// otherwise it is ignored. This is computed by the PVLV algorithm from US
-	// inputs set by Net.PVLV methods, and can be directly set in simpler RL cases.
+	// otherwise it is ignored. This is computed by the Rubicon algorithm from US
+	// inputs set by Net.Rubicon methods, and can be directly set in simpler RL cases.
 	GvRew GlobalVars = iota
 
 	// HasRew must be set to true (1) when an external reward / US input is present,
-	// otherwise Rew is ignored.  This is also set when PVLV BOA model gives up.
-	// This drives ACh release in the PVLV model.
+	// otherwise Rew is ignored.  This is also set when Rubicon BOA model gives up.
+	// This drives ACh release in the Rubicon model.
 	GvHasRew
 
 	// RewPred is the reward prediction, computed by a special reward prediction layer,
-	// e.g., the VSPatch layer in the PVLV algorithm.
+	// e.g., the VSPatch layer in the Rubicon algorithm.
 	GvRewPred
 
 	// PrevPred is previous time step reward prediction, e.g., for TDPredLayer
@@ -66,12 +66,12 @@ const (
 	GvAChRaw
 
 	// GoalMaint is the normalized (0-1) goal maintenance activity,
-	// set in ApplyPVLV function at start of trial.
+	// set in ApplyRubicon function at start of trial.
 	// Drives top-down inhibition of LDT layer / ACh activity.
 	GvGoalMaint
 
 	/////////////////////////////////////////
-	// VSMatrix gating and PVLV Rew flags
+	// VSMatrix gating and Rubicon Rew flags
 
 	// VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance
 	// in PFC areas), set at end of plus phase.  This excludes any gating
@@ -174,13 +174,13 @@ const (
 	/////////////////////////////////////////
 	// VSPatch prediction of PVpos net value
 
-	// VSPatchPos is the net shunting input from VSPatch (PosD1, named PVi in original PVLV)
+	// VSPatchPos is the net shunting input from VSPatch (PosD1, named PVi in original Rubicon)
 	// computed as the Max of US-specific VSPatch saved values, subtracting D1 - D2.
 	// This is also stored as GvRewPred.
 	GvVSPatchPos
 
 	// VSPatchPosThr is a thresholded version of GvVSPatchPos,
-	// applying PVLV.LHb.VSPatchNonRewThr threshold for non-reward trials.
+	// applying Rubicon.LHb.VSPatchNonRewThr threshold for non-reward trials.
 	// This is the version used for computing DA.
 	GvVSPatchPosThr
 
@@ -196,7 +196,7 @@ const (
 	GvVSPatchPosSum
 
 	/////////////////////////////////////////
-	// LHb lateral habenula component of the PVLV model -- does all US processing
+	// LHb lateral habenula component of the Rubicon model -- does all US processing
 
 	// computed LHb activity level that drives dipping / pausing of DA firing,
 	// when VSPatch pos prediction > actual PV reward drive

@@ -1,10 +1,14 @@
 # PVLV: Primary Value, Learned Value
 
-This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for Axon, designed to capture the essential properties of the [Go leabra version](https://github.com/emer/leabra/tree/master/pvlv) in a yet simpler and cleaner way without the extensive modulatory dynamics present in the Leabra model. Thus, these can be used in a more mix-and-match manner (e.g., the BLA can be used to train OFC, independent of its phasic dopamine role).
+This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for Axon, designed to capture the essential properties of the [Go leabra version](https://github.com/emer/leabra/tree/master/pvlv), in a way that is integrated with the larger [BOA](examples/boa) framework for goal-driven motivated behavior.
 
 Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.  Example: [pvlv](examples/pvlv) and [boa](examples/boa).
 
 # Introduction
+
+The integration of classical (passive, Pavlovian) conditioning with the mechanisms of the goal-driven system represents a novel way of understanding both of these mechanisms and literatures. In effect, classical conditioning leverages the core goal-driven mechanisms in a simplified manner, making it an ideal paradigm for testing and validating these mechanisms.  In the goal-driven paradigm, a _conditioned stimulus_ (CS) is a signal for the opportunity to obtain a desired outcome (i.e., the _unconditioned stimulus_ or US).  Thus, a CS activates a goal state in the vmPFC (ventral and medial prefrontal cortex, specifically OFC (orbital frontal cortex), IL (infralimbic), PL (prelimbic) in rodents), setting up the expectation for the subsequent outcome.
+
+The most important and challenging aspect of classical conditioning in this context is recognizing when an expected US is _not_ actually going to happen.  A non-reward trial is, superficially, indistinguishable from any other moment in time when nothing happens.  It is only because of the learned internal expectation that it takes on significance, when this nothing happens instead of the expected something.  Thus, the non-reward trial helps shed light on the machinery that is necessary in the goal-driven context to decide when to [give up](#give-up) on an engaged goal.
 
 <img src="figs/fig_pvlv_pv_lv_schultz_da.png" height="600">
 
@@ -74,11 +78,13 @@ The LHb (lateral habenula) turns an expected (via VSPatch inputs) but absent US 
 
 * **DA dipping**: The combination of an active VSPatch input signaling the expectation of a US at the current point in time, with no bottom-up actual US receipt (e.g., via hypothalamic inputs), results in activity of a subset of LHb neurons, which then drive dipping (pausing) of DA tonic activity (via the inhibition provided by the RMTg).  This phasic dip in DA activity shifts the balance from D1 to D2 in all DA-recipient neurons in the BG and BLA, causing learning to start to expect this absence (see below on BLA Ext pathway).
 
-* **OFC / goal gating off**: the LHb dip activation is summed over trials, and when it reaches a threshold level, the system effectively "gives up" on the current US expectation.  This amounts to deactivating any existing goal state (i.e., the OFC maintained activity in this model), and in the goal-driven learning framework (BOA), it also entails "paying the cost" of accumulated effort toward the goal (i.e., extra negative US / DA dipping -- gets applied to the first USneg value), which may be associated with the subjective sense of "disappointment".  Biologically, this is thought to occur via MD thalamic projections to OFC, ACC, dlPFC areas, which are the same pathways activated when an actual US is received and likewise deactivates these areas.  Implementationally, it happens simply by setting the `HasRew` flag in the `Context.NeuroMod` structure, which triggers decay of the relevant PFC areas (via the `Act.Decay.OnRew` flag).  This happens at the end of the Minus Phase.
+* **OFC / goal gating off**: the LHb dip activation is summed over trials, and when it reaches a threshold level, the system effectively "gives up" on the current US expectation.  This amounts to deactivating any existing goal state (i.e., the OFC maintained activity in this model), and in the goal-driven learning framework (BOA), it also entails "paying the cost" of accumulated effort toward the goal (i.e., extra negative US / DA dipping -- gets applied to the first USneg value), which may be associated with the subjective sense of "disappointment".  Biologically, this is thought to occur via MD thalamic projections to OFC, ACC, dlPFC areas, which are the same pathways activated when an actual US is received and likewise deactivates these areas.  Implementationally, it happens simply by setting the `HasRew` flag in the `Context.NeuroMod` structure, which triggers decay of the relevant PFC areas (via the `Act.Decay.OnRew` flag).  This happens at the end of the Trial.
 
 * **ACh signaling**: ACh (acetylcholine) is released for salient events, basically CS onset (via superior colliculus to LDT = laterodorsal tegmentum) and US onset, and it modulates learning and activity in the BLA and VS.  The LHb projections to the basal forebrain cholinergic system allow it to provide the key missing piece of ACh signaling for the absence of an expected US, so that a consistent framework of ACh neuromodulation can apply for all of these cases.
 
 Taken together, these key functions provide a compelling computational role for why the brain has a separate neural system for recognizing the absence of an expected US.  In the mathematics of the temporal-difference (TD) equations, a negative TD signal associated with a missing expected reward is no different than the reduction associated with the prediction of a reward that does occur, but the brain treats these two very differently.  The VSPatch provides a shunting-only effect directly to the VTA to reduce dopamine firing for expected rewards (USs) that occur, but the LHb is a special system for the case where USs fail to occur.
+
+See the [Give up](#give-up) section below for more details.
 
 # PT (Pyramidal Tract) Sustained and Dynamic Goal Maintenance
 
@@ -94,9 +100,11 @@ Gating happens within the CS-onset theta cycle, driven by direct BLA recognition
 
 ## Time / context specificity of PT activity vs. Stable maintenance
 
-There is a basic tension in PT maintained activity, which can be resolved by having two different PT layer types.  On the one hand, PT needs to maintain a stable representation of the stimulus and other context present at the time of initial goal activation (gating), so that learning can properly bridge across the full time window between the initial gating and final outcome.  On the other hand, prediction of specific events within the goal-engaged window, and especially the prediction of when the goal will be achieved, requires a continuously-updating dynamic representation, like that provided by the CT layer, which is specifically driven by predictive learning of state as it updates across time.  However, the CT layer is always active, and thus does not strongly distinguish the critical difference between goal engaged vs. not.  Furthermore, anatomically, CT only projects to the thalamus and does not have the broad broadcasting ability of the PT layer.  Electrophysiologically, there is plenty of evidence for both sustained and dynamically updating PT activity.  As usual, these are not strongly segregated anatomically, but we use different layers in the model to make the connectivity and parameterization simpler.
+There is a basic tension in PT maintained activity, which can be resolved by having two different PT layer types: `PTMaintLayer` (`PT` suffix) and `PTPredLayer` (`PTp` suffix).  On the one hand, PT needs to maintain a stable representation of the stimulus and other context present at the time of initial goal activation (gating), so that learning can properly bridge across the full time window between the initial gating and final outcome.  This is what `PTMaintLayer` achieves, using strong recurrent NMDA projections that stably maintain the gated activity state.  The [pfcmaint](examples/pfcmaint) example test project tests this mechanism specifically, including the `SMaint` self maintenance mechanism that simulates a larger population of interconnected neurons.
 
-A reasonable solution to this situation is to add a new PT layer type, `PTPredLayer`, that represents the integration of PT stable maintenance and CT dynamic updating.  This layer type receives a temporally-delayed `CTCtxtPrjn` from the corresponding `PTMaintLayer`, which also solves the timing issue above, because the temporal delay prevents activity during the CS gating trial itself.  The PTPred layer is parameterized to not have strong active maintenance NMDA currents, and to track and help predict the relevant dynamic variables (time, effort etc).  See [deep](DEEP.md) for more info.
+On the other hand, prediction of specific events within the goal-engaged window, and especially the prediction of when the goal will be achieved, requires a continuously-updating dynamic representation, like that provided by the CT layer, which is specifically driven by predictive learning of state as it updates across time.  However, the CT layer is always active, and thus does not strongly distinguish the critical difference between goal engaged vs. not.  Furthermore, anatomically, CT only projects to the thalamus and does not have the broad broadcasting ability of the PT layer.  Electrophysiologically, there is plenty of evidence for both sustained and dynamically updating PT activity.  As usual, these are not strongly segregated anatomically, but we use different layers in the model to make the connectivity and parameterization simpler.
+
+The `PTPredLayer` represents the integration of PT stable maintenance and CT dynamic updating.  This layer type receives a temporally-delayed `CTCtxtPrjn` from the corresponding `PTMaintLayer`, which also solves the timing issue above, because the temporal delay prevents activity during the CS gating trial itself.  The PTPred layer is parameterized to not have strong active maintenance NMDA currents, and to track and help predict the relevant dynamic variables (time, effort etc).  See [deep](DEEP.md) for more info.
 
 ## Extinction learning and goal inactivation
 
@@ -202,7 +210,9 @@ where `DAlr` is the dopamine-signed learning rate factor for D1 vs. D2, which is
 
 ## Non-reward Non-responding
 
-A major challenge for VSPatch is extinguishing the prediction on non-reward trials leading up to an expected reward trial.  Various attempts to alter the learning rates etc affected the ability to match the target value, so now we are just using a threshold _that applies on the exported global DA value_ for small non-reward VSPatch values.  Critically, the VSPatch itself learns based on `VSPatchPosRPE` based on the non-thresholded value, so it still drives learning.
+A major challenge for VSPatch is extinguishing the prediction on non-reward trials leading up to an expected reward trial.  Various experiments that altered the learning rates etc impaired the ability to accurately match the target value, so now we are just using a threshold _that applies on the exported global DA value_ for small non-reward VSPatch values (i.e., if VSPatch is 0.1 or lower on a non-reward trial, the DA value is 0).  Critically, the VSPatch itself learns based on the global `VSPatchPosRPE` value, which is computed on the non-thresholded value, so it still drives learning to push the prediction downward, which does eventually happen over time.
+
+Biologically, this would require a subpopulation of VTA neurons that project to the VSPatch neurons, that have less of a threshold in their response from LHb dipping inputs that the VSPatch drives.
 
 # Negative USs and Costs
 
@@ -212,7 +222,69 @@ There are two qualitatively-different types of negative outcome values, which re
 
 * `Costs`: Continuous, inevitable costs, specifically Time and Effort, and lower-grade forms of pain, that animals are always seeking to minimize.  These are not associated with phasic CSs, but rather vary as a function of motor plans (e.g., climbing a steep hill vs. walking along a flat path).  These negative outcomes do not engage the BLA because they are not primarily CS-associated, and instead are predicted from motor-cingulate areas.
 
-# Giving up
+# Online and Final Estimates
+
+Like the distinction between `PTMaint` and `PTPred`, we need both a stable representation of the expected final outcomes for positive and negative cost factors, and an online incrementing estimate of our sense of progress toward the positive outcome, and accumulated cost.
+
+For costs, the online increment is entirely straightforward, because we get that directly bottom-up, by hypothesis.  However, there is no obvious representation of the final accumulated cost estimate.
+
+For positive outcomes (USs), the BLA provides a concrete representation of the expected US, which can be directly used to estimate value of final outcome, and it directly influences OFC continuously, so this information is widely available.  However, it is not explicitly represented as _canonical_ value-based code, e.g., a population-coded value used for all different outcomes.  Furthermore, there is no obvious representation of the incremental accumulating value.
+
+Resolving these remaining uncertainties in these representations is a critical path TODO item, and they strongly impact the GiveUp computation as described in the next section.  Various possibilities are enumerated below.
+
+## Emergent PFC representations
+
+The working hypothesis has been that the PTMaint layers learn to reliably encode the final outcome values, while the PTPred layers learn the online incrementing estimates.  However, this has not yet been the main focus of investigation and optimization.
+
+At a minimum, we likely need some more focus on the learning that happens at the time of the outcome: this needs to shape the representations in PTMaint layers, which in turn are driven by the superficial PFC layers at the time of goal gating.  For the OFCposUS case, given the BLA US encoding, this seems reasonable, but we likely need to modulate the learning rate at the time of US outcome to encourage the proper learning.  And for this case, the question of incremental learning is more uncertain.
+
+For the ACCcost layer, it is unclear how it might work, given the lack of a final cost representation.
+
+One specific question is whether we can usefully create a focused test project to examine this question specifically.  Probably.  That should be the next goal.
+
+## Explicit final value, cost representations
+
+One possible additional step would be to add layers that just reflect the final estimated positive and cost values.  At the very least, we need to re-add these as decoding layers.  But it would make sense to have a brain area that just represents that explicitly -- receives from PT, and learns only at US for each value respectively, and can then be used for estimates.  Will do this now.
+
+## Incremental positive value progress representation
+
+Likewise, it makes sense to add an explicit abstract value progress layer.  How does it work though?  One idea is that you just train with PTp -- basically pvPosP.  first step is to start reading out that value to see how it is going.
+
+# Give up
+
+The decision to give up on an engaged goal is very difficult.  The value system is biased toward not giving up in general, because doing so requires accepting the accumulated costs as "disappointment" negative dopamine, and updates the expected outcome estimates for such a goal / plan in the future, which we don't want to be inaccurately pessimistic.  On the other hand, we don't want to expend energy and opportunity cost if the desired outcome is unlikely to actually happen, and cutting ones losses as quickly as possible is advantageous here.  This tradeoff is captured in the often-subtle distinction between _perseverance_ (sticking with your goal and ultimately getting the payoff) and _perseveration_ (failing to give up on a hopeless goal).
+
+Giving up involves three separable factors, listed in precedence order:
+
+* `Utility:` Weighing the accumulated costs relative to the potential expected outcome.  At some point, even if the desired outcome might occur, it would not be worth the expended effort and opportunity costs (when you could have been doing something else of greater potential value).  Because costs are known but the outcome is not, there is uncertainty in this factor, and computing the expected outcome value is difficult.  The result is a probability function reflecting this uncertainty.
+
+* `Timing:` The likelihood that the expected positive outcome is not actually going to happen, based on specific learned reward predictions in the VSPatch.  VSPatch learns about specific discrete timing, in order to cancel the dopamine burst, and is penalized for anticipatory activity (that would generate a negative DA signal).  This yields a probability-like factor going from `NotYet` (0) to `Past` (1), which is computed using a sigmoidal function.
+
+* `Progress:` An estimate of the current rate of progress toward the goal, which can be dissociated from the specific timing of the actual outcome provided by the VSPatch.  Even if the "usual" expected point of reward has passed, if still making progress, then it can make sense to persevere (until it becomes perseveration).
+
+Each of these factors is computed as described in the sections below, and are integrated with the following logic:
+
+1. If `Utility` goes negative, we give up regardless.  If `Utility` is strongly positive, that influences the extent to which we consider the remaining factors.  Thus, there are two functions computed on utility: `P(GiveUp | Utility)` is sigmoidal with high gain centered around the point where utility goes negative.  `P(ConsiderOtherFactors | Utility)` is more of a linear function of `1-Utility` (for normalized Utility).
+
+2. If `Timing` is `NotYet`, we don't give up, regardless.  In novel domains where our estimate of timing is poor, this naturally biases the system to fall back on the overriding `Utility` factor.
+    - It _might_ make sense to also include the Progress factor here if we're getting nothing from the Timing signal, but it is difficult to estimate future Timing factors in advance of actually getting a signal from the VSPatch (i.e., it is an implicit, weight-based signal).  Additional activation-based, explicit factors could be added in the future.
+
+3. If `Timing` is `Past`, then `Progress` becomes relevant: can put off giving up as long as progress continues.  Need sufficient time integrals here to compute progress dynamics reliably.
+
+## Utility
+
+We already assume both a metabolic and time-based integrator of effort and opportunity costs, which are also estimated online via the ACCcost layers.  
+
+  The VSPatch layer provides the best learned estimate of precisely when the outcome is expected, so it is the core driver of this mechanism.
+
+However, VSPatch can be imprecise, and the cost of prematurely giving up is significant, so it is also important to include an estimate of current progress and proximity to the goal outcome: if you are currently making progress, then don't give up now -- instead, you should try harder!  This is the key logic of the norepinepherine (NE) system according to the Aston-Jones & Cohen model: it mediates between trying harder and giving up. Also, from the ADHD literature, it is potentially important for noise and exploration strategy dynamics.
+
+There are two contributors to the sense of continued progress:
+
+* VSPatch temporal derivative: if VSPatch goes down after being elevated, then it is clear that the predicted outcome is no longer being predicted.
+
+* 
+
 
 TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don't give up when making progress!!
 

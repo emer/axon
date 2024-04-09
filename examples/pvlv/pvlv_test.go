@@ -140,7 +140,7 @@ func RunTest(t *testing.T, runName string, expect []Expect) {
 	sim.RunNoGUI()
 
 	dt := sim.Logs.Table(etime.Train, etime.Condition)
-	// dt.OpenCSV("testdata/PVLV_Base_cnd.tsv", etable.Tab) // for tuning tests from saved data
+	// dt.OpenCSV("testdata/Rubicon_Base_cnd.tsv", etable.Tab) // for tuning tests from saved data
 
 	for _, ex := range expect {
 		cell := dt.CellFloat(ex.Cell, ex.Row)

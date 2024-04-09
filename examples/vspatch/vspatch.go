@@ -168,13 +168,13 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be in place when adding
 		ss.Envs.Add(trn, tst)
 		if di == 0 {
-			ss.ConfigPVLV(trn)
+			ss.ConfigRubicon(trn)
 		}
 	}
 }
 
-func (ss *Sim) ConfigPVLV(trn *VSPatchEnv) {
-	pv := &ss.Net.PVLV
+func (ss *Sim) ConfigRubicon(trn *VSPatchEnv) {
+	pv := &ss.Net.Rubicon
 	pv.SetNUSs(&ss.Context, 1, 1)
 	pv.Defaults()
 	pv.Urgency.U50 = 20 // 20 def
@@ -342,15 +342,15 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 			itsr := ev.State(lnm)
 			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
-		ss.ApplyPVLV(ev, trial, uint32(di))
+		ss.ApplyRubicon(ev, trial, uint32(di))
 	}
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
-// ApplyPVLV applies PVLV reward inputs
-func (ss *Sim) ApplyPVLV(ev *VSPatchEnv, trial int, di uint32) {
+// Apply.Rubicon applies .Rubicon reward inputs
+func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, trial int, di uint32) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
 	pv.EffortUrgencyUpdate(ctx, di, 1)
 	pv.Urgency.Reset(ctx, di)
@@ -367,7 +367,7 @@ func (ss *Sim) ApplyPVLV(ev *VSPatchEnv, trial int, di uint32) {
 // ApplyRew applies reward
 func (ss *Sim) ApplyRew(di uint32, rew float32) {
 	ctx := &ss.Context
-	pv := &ss.Net.PVLV
+	pv := &ss.Net.Rubicon
 	if rew > 0 {
 		pv.SetUS(ctx, di, axon.Positive, 0, rew)
 	} else if rew < 0 {

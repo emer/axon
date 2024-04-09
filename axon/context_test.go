@@ -6,24 +6,24 @@ func TestSetGetUS(t *testing.T) {
 	TheNetwork = NewNetwork("TestSetGetUS")
 	ctx := NewContext()
 	// TODO: seems impossible to test with only one drive
-	// because of the +1 for curiosity in PVLVSetUS.
-	ctx.PVLV.NPosUSs = 2
+	// because of the +1 for curiosity in .RubiconSetUS.
+	ctx.Rubicon.NPosUSs = 2
 	require.NoError(t, TheNetwork.Build(ctx))
 	const di = 0
-	ctx.PVLVInitUS(di)
+	ctx.RubiconInitUS(di)
 	const usIndex = 0
-	assert.Equal(t, float32(0), PVLVUSStimValue(ctx, di, usIndex, Positive))
-	assert.Equal(t, float32(0), PVLVUSStimValue(ctx, di, usIndex, Negative))
-	assert.False(t, PVLVHasPosUS(ctx, di))
+	assert.Equal(t, float32(0), .RubiconUSStimValue(ctx, di, usIndex, Positive))
+	assert.Equal(t, float32(0), .RubiconUSStimValue(ctx, di, usIndex, Negative))
+	assert.False(t, .RubiconHasPosUS(ctx, di))
 
-	ctx.PVLVSetUS(di, Positive, usIndex, 1)
-	// TODO: +1 for curiosity is hard-coded into PVLVSetUS. This assymetry between the
+	ctx.RubiconSetUS(di, Positive, usIndex, 1)
+	// TODO: +1 for curiosity is hard-coded into .RubiconSetUS. This assymetry between the
 	// getter and setter seems bug-prone.
 	const usIndexForGetterPositive = usIndex + 1
-	assert.Equal(t, float32(1), PVLVUSStimValue(ctx, 0, usIndexForGetterPositive, Positive))
-	assert.True(t, PVLVHasPosUS(ctx, di))
+	assert.Equal(t, float32(1), .RubiconUSStimValue(ctx, 0, usIndexForGetterPositive, Positive))
+	assert.True(t, .RubiconHasPosUS(ctx, di))
 
-	ctx.PVLVSetUS(di, Negative, usIndex, 1)
-	assert.Equal(t, float32(1), PVLVUSStimValue(ctx, di, usIndex, Negative))
+	ctx.RubiconSetUS(di, Negative, usIndex, 1)
+	assert.Equal(t, float32(1), .RubiconUSStimValue(ctx, di, usIndex, Negative))
 }
 */

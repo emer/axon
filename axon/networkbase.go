@@ -50,8 +50,8 @@ type NetworkBase struct {
 	// filename of last weights file loaded or saved
 	WtsFile string
 
-	// PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
-	PVLV PVLV
+	// Rubicon system for goal-driven motivated behavior, including Rubicon phasic dopamine signaling.  Manages internal drives, US outcomes. Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer). Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
+	Rubicon Rubicon
 
 	// map of name to layers -- layer names must be unique
 	LayMap map[string]*Layer `view:"-"`
@@ -587,21 +587,21 @@ func (nt *NetworkBase) AllGlobals() string {
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNCosts; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNCosts; ui++ {
 				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbCostV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNNegUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNNegUSs; ui++ {
 				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSnegV(ctx, di, vv, ui))
 			}
 			str += "\n"
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNPosUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNPosUSs; ui++ {
 				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbUSposV(ctx, di, vv, ui))
 			}
 			str += "\n"
@@ -626,19 +626,19 @@ func (nt *NetworkBase) AllGlobalValues(ctrKey string, vals map[string]float32) {
 			vals[key] = GlbV(ctx, di, vv)
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNCosts; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNCosts; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbCostV(ctx, di, vv, ui)
 			}
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNNegUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNNegUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbUSnegV(ctx, di, vv, ui)
 			}
 		}
 		for vv := GvDrives; vv < GlobalVarsN; vv++ {
-			for ui := uint32(0); ui < ctx.NetIndexes.PVLVNPosUSs; ui++ {
+			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlbUSposV(ctx, di, vv, ui)
 			}
@@ -799,8 +799,8 @@ func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
 // access strides for this network -- must be set properly -- see SetCtxStrides.
 func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	nt.UseGPUOrder = true // todo: set externally
-	if nt.PVLV.NPosUSs == 0 {
-		nt.PVLV.SetNUSs(simCtx, 1, 1)
+	if nt.Rubicon.NPosUSs == 0 {
+		nt.Rubicon.SetNUSs(simCtx, 1, 1)
 	}
 	ctx := &nt.Ctx
 	*ctx = *simCtx
@@ -1037,8 +1037,8 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //gti:add
 	ctx.NetIndexes.NNeurons = nt.NNeurons
 	ctx.NetIndexes.NPools = uint32(totPools)
 	ctx.NetIndexes.NSyns = nt.NSyns
-	ctx.NetIndexes.PVLVNPosUSs = nt.PVLV.NPosUSs
-	ctx.NetIndexes.PVLVNNegUSs = nt.PVLV.NNegUSs
+	ctx.NetIndexes.RubiconNPosUSs = nt.Rubicon.NPosUSs
+	ctx.NetIndexes.RubiconNNegUSs = nt.Rubicon.NNegUSs
 	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)

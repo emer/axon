@@ -200,8 +200,8 @@ func (ly *Layer) BLADefaults() {
 	}
 }
 
-// PVLVPostBuild is used for BLA, VSPatch, and PVLayer types to set NeuroMod params
-func (ly *Layer) PVLVPostBuild() {
+// RubiconPostBuild is used for BLA, VSPatch, and PVLayer types to set NeuroMod params
+func (ly *Layer) RubiconPostBuild() {
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
 		err = ly.Params.Learn.NeuroMod.DAMod.SetString(dm)
@@ -247,8 +247,8 @@ func (ly *Layer) LDTDefaults() {
 	lp.Acts.Decay.Glong = 1
 	lp.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
-	// lp.PVLV.Thr = 0.2
-	// lp.PVLV.Gain = 2
+	// lp.Rubicon.Thr = 0.2
+	// lp.Rubicon.Gain = 2
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()

@@ -58,7 +58,7 @@ type PrjnBase struct {
 
 	// default parameters that are applied prior to user-set parameters.
 	// these are useful for specific functionality in specialized brain areas
-	// (e.g., PVLV, BG etc) not associated with a prjn type, which otherwise
+	// (e.g., Rubicon, BG etc) not associated with a prjn type, which otherwise
 	// is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
 	DefParams params.Params `tableview:"-"`
