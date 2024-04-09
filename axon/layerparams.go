@@ -165,9 +165,6 @@ type LayerParams struct {
 	// type of GP Layer.
 	GP GPParams `view:"inline"`
 
-	// parameters for VSPatch learning
-	VSPatch VSPatchParams `view:"inline"`
-
 	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
 	LDT LDTParams `view:"inline"`
 
@@ -202,7 +199,6 @@ func (ly *LayerParams) Update() {
 	ly.Matrix.Update()
 	ly.GP.Update()
 
-	ly.VSPatch.Update()
 	ly.LDT.Update()
 	ly.VTA.Update()
 
@@ -227,7 +223,6 @@ func (ly *LayerParams) Defaults() {
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
 
-	ly.VSPatch.Defaults()
 	ly.LDT.Defaults()
 	ly.VTA.Defaults()
 
@@ -249,8 +244,6 @@ func (ly *LayerParams) ShouldShow(field string) bool {
 		return ly.LayType == MatrixLayer
 	case "GP":
 		return ly.LayType == GPLayer
-	case "VSPatch":
-		return ly.LayType == VSPatchLayer
 	case "LDT":
 		return ly.LayType == LDTLayer
 	case "VTA":
@@ -299,9 +292,6 @@ func (ly *LayerParams) AllParams() string {
 		b, _ = json.MarshalIndent(&ly.GP, "", " ")
 		str += "GP:      {\n " + JsonToParams(b)
 
-	case VSPatchLayer:
-		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
-		str += "VSPatch: {\n " + JsonToParams(b)
 	case LDTLayer:
 		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
 		str += "LDT: {\n " + JsonToParams(b)
@@ -1037,13 +1027,6 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 		da = GlbV(ctx, di, GvVSPatchPosRPE) // our own personal
 		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(NrnV(ctx, ni, di, SpkPrv), 1) // note: don't have proper max here
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, nrnCaSpkD)
-		dam := mat32.Abs(da)
-		lrf := ly.VSPatch.MaxLRateFactor
-		if dam != 0 {
-			lrf = min(lrf, 1/dam)
-		}
-		modlr *= lrf
 	case MatrixLayer:
 		if hasRew { // reward time
 			mlr = 1 // don't use dig deriv

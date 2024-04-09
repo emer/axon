@@ -77,7 +77,7 @@ var AllBlocks = map[string]Block{
 			CSEnd:    3,
 			CS2Start: -1,
 			CS2End:   -1,
-			US:       0,
+			US:       1,
 			USStart:  3,
 			USEnd:    3,
 			Context:  "B",

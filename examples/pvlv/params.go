@@ -134,7 +134,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "3",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.05 def -- good
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 needed for vspatch test
 			}},
 		// {Sel: ".ToPTp", Desc: "",
 		// 	Params: params.Params{

@@ -102,26 +102,6 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	return ach
 }
 
-// VSPatchParams parameters for VSPatch learning:
-// learning rate amplification for small negative DA signals that result
-// from VSPatch over-expecting nonexistent rewards: learning is strong to
-// squash these.
-type VSPatchParams struct {
-
-	// maximum learning rate multiplier to compensate for smaller DA levels:
-	// factor = min(1 / da, MaxLRateFactor)
-	MaxLRateFactor float32 `default:"2"`
-
-	pad, pad1, pad2 float32
-}
-
-func (vp *VSPatchParams) Defaults() {
-	vp.MaxLRateFactor = 2
-}
-
-func (vp *VSPatchParams) Update() {
-}
-
 // VTAParams are for computing overall VTA DA based on LHb PVDA
 // (primary value -- at US time, computed at start of each trial
 // and stored in LHbPVDA global value)

@@ -62,5 +62,5 @@ func (pj *PrjnParams) VSPatchDefaults() {
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.LearnThr = 0 // 0.3
 	pj.Learn.Trace.Update()
-	pj.Learn.LRate.Base = 0.05
+	pj.Learn.LRate.Base = 0.02 // 0.02 needed for smooth integ on vspatch test
 }

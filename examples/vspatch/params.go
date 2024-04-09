@@ -37,7 +37,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "2",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 necc to fit closely
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 necc to fit closely; no bene for 0.01
 				"Prjn.SWts.Init.Mean":       "0.5",
 				"Prjn.SWts.Init.Var":        "0.25",
 			}},

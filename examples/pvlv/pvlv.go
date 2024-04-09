@@ -157,9 +157,9 @@ func (ss *Sim) ConfigPVLV() {
 	pv.Defaults()
 	pv.USs.PVposGain = 2
 	pv.USs.PVnegGain = 1
-	pv.LHb.VSPatchGain = 6 // 4 def -- needs more for shorter trial count here
-
-	pv.USs.USnegGains[0] = 2 // big salient input!
+	pv.LHb.VSPatchGain = 4        // 4 def -- needs more for shorter trial count here
+	pv.LHb.VSPatchNonRewThr = 0.1 // 0.1 def
+	pv.USs.USnegGains[0] = 2      // big salient input!
 
 	pv.Urgency.U50 = 50 // no pressure during regular trials
 	if ss.Config.Params.PVLV != nil {
@@ -217,6 +217,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
+	net.ConnectLayers(cs, vSpatchD1, full, axon.ForwardPrjn) // these are critical for discriminating A vs. B
+	net.ConnectLayers(cs, vSpatchD2, full, axon.ForwardPrjn)
 
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction

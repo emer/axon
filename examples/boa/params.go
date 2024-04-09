@@ -110,7 +110,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.BurstGain":   "1",
 				"Layer.Learn.RLRate.SigmoidMin":    "0.01", // 0.01 > 0.05 def
 				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.2 gets too diffuse
-				"Layer.VSPatch.MaxLRateFactor":     "1",
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -189,7 +188,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "3", // 4 > 3 > 2 -- key for rapid learning
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.05 learns in ~5 epochs, is reasonably smooth
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 needed in test
 			}},
 		{Sel: "#CSToBLAPosAcqD1", Desc: "",
 			Params: params.Params{

@@ -396,6 +396,7 @@ type LHbParams struct {
 }
 
 func (lh *LHbParams) Defaults() {
+	lh.VSPatchNonRewThr = 0.1
 	lh.VSPatchGain = 4
 	lh.NegThr = 1
 	lh.BurstGain = 1
@@ -562,6 +563,9 @@ type PVLV struct {
 }
 
 func (pp *PVLV) Defaults() {
+	if pp.LHb.VSPatchGain != 0 { // already done
+		return
+	}
 	pp.Drive.Defaults()
 	pp.Urgency.Defaults()
 	pp.USs.Defaults()

@@ -192,13 +192,17 @@ The SC layer has a relatively-strong trial scale adaptation current that causes 
 
 The ventral striatum (VS) patch neurons functionally provide the discounting of primary reward outcomes based on learned predictions, comprising the PV = primary value component of the PVLV algorithm.
 
-It is critical to have the D1 vs D2 opponent dynamic for this layer, so that the D2 can learn to inhibit responding for non-reward trials, while D1 learns about signals that predict upcoming reward.  For now, we are omitting the negative valence case because there is reasonable variability and uncertainty in the extent to which negative outcomes can be diminished by learned expectations, and especially the extent to which there is a "relief burst" when an expected negative outcome does not occur. 
+It is critical to have the D1 vs D2 opponent dynamic for this layer, so that the D2 can learn to inhibit responding for non-reward trials, while D1 learns about signals that predict upcoming reward (see subsection below).  For now, we are omitting the negative valence case because there is reasonable variability and uncertainty in the extent to which negative outcomes can be diminished by learned expectations, and especially the extent to which there is a "relief burst" when an expected negative outcome does not occur. 
 
 The learning rule here is a standard "3 factor" dopamine-modulated learning, very similar to the BLA Ext case, and operates on the prior time step activations (`Sp`, `Rp`), based on the [timing](#timing) logic shown above, and to ensure that the learning is predicting rather than just directly reporting the actual current time step activations:
 
 * `DWt = lr * DALr * Sp * Rp`
 
 where `DAlr` is the dopamine-signed learning rate factor for D1 vs. D2, which is a function of US for the current trial (applied at start of a trial) minus VSPatch _from the prior time step_. Thus the prediction error in VSPatch relative to US reward drives learning, such that it will always adjust to reduce error, consistent with standard Rescorla-Wagner / TD learning rules.
+
+## Non-reward Non-responding
+
+A major challenge for VSPatch is extinguishing the prediction on non-reward trials leading up to an expected reward trial.  Various attempts to alter the learning rates etc affected the ability to match the target value, so now we are just using a threshold _that applies on the exported global DA value_ for small non-reward VSPatch values.  Critically, the VSPatch itself learns based on `VSPatchPosRPE` based on the non-thresholded value, so it still drives learning.
 
 # Negative USs and Costs
 
@@ -212,12 +216,15 @@ There are two qualitatively-different types of negative outcome values, which re
 
 TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don't give up when making progress!!
 
+* boa is currently giving up prior to getting reward; and pvlv is not generating enough negative DA on 50% B due to dip not reflecting full RPE.
+
 * also, what about a generic rep of proximity to reward -- VSPatch is too precise -- currently USposP is prediction but is US specific.  USrewP or something?  need to give US more things to do to dynamically update.  Then can use this as an additional factor in Give up, to replace below:
 
 * TODO: current mechanism is not very general -- uses OFCposUSPT layer to set GvOFCposUSPTMaint in layer_compute.go:PlusPhasePost, then in pvlv.go:PVposEst it uses this to compute PVposEst -- if currently maintaining then it assumes PVpos estimate is high..  
 
 
 # TODO / Issues
+
 
 * BLAExt vs. Acq could be more robust -- Ext activity depends on PT -> Ext strength..
 

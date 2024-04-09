@@ -540,7 +540,7 @@ func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float3
 	accPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
 
 	accPTp.DefParams["Layer.Inhib.Layer.On"] = "false"
-	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.0"
+	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
 	accPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	return
 }
@@ -694,7 +694,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, ofc
 	net.ConnectToVSPatch(ilPosPTp, vSpatchD1, vSpatchD2, full)
 	net.ConnectToVSPatch(ofcNegUSPTp, vSpatchD1, vSpatchD2, full)
 	net.ConnectToVSPatch(ilNegPTp, vSpatchD1, vSpatchD2, full)
-	net.ConnectToVSPatch(accCostPTp, vSpatchD1, vSpatchD2, full)
+	net.ConnectToVSPatch(pvPosP, vSpatchD1, vSpatchD2, full)
 
 	// same prjns to stn as mtxgo
 	net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
