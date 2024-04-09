@@ -37,7 +37,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VTALayer", Desc: "",
 			Params: params.Params{
-				"Layer.VTA.CeMGain": "0.75", // 0.75 def -- controls size of CS burst
+				"Layer.VTA.CeMGain": "0.5",  // 0.75 def -- controls size of CS burst
 				"Layer.VTA.LHbGain": "1.25", // 1.25 def -- controls size of PV DA
 				"Layer.VTA.AChThr":  "0.5",  // prevents non-CS-onset CS DA
 			}},

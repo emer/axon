@@ -372,6 +372,9 @@ func (us *USParams) USposToZero(ctx *Context, di uint32) {
 // or "relief" burst when actual neg < predicted.
 type LHbParams struct {
 
+	// threshold on VSPatch prediction during a non-reward trial
+	VSPatchNonRewThr float32 `default:"0.1"`
+
 	// gain on the VSPatchD1 - D2 difference to drive the net VSPatch DA
 	// prediction signal, which goes in VSPatchPos and RewPred global variables
 	VSPatchGain float32 `default:"4"`
@@ -407,6 +410,7 @@ func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvLHbDip, 0)
 	SetGlbV(ctx, di, GvLHbBurst, 0)
 	SetGlbV(ctx, di, GvLHbPVDA, 0)
+	SetGlbV(ctx, di, GvVSPatchPosRPE, 0)
 }
 
 // DAFmPVs computes the overall PV DA in terms of LHb burst and dip
@@ -441,6 +445,8 @@ func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos f
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 	SetGlbV(ctx, di, GvLHbPVDA, da)
+	SetGlbV(ctx, di, GvVSPatchPosThr, vsPatchPos) // no thresholding for US
+	SetGlbV(ctx, di, GvVSPatchPosRPE, da)
 	return rew
 }
 
@@ -451,8 +457,14 @@ func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos f
 // (and there is no PVpos), so only vsPatchPos is operative.
 // Returns net dopamine which is -vsPatchPos.
 func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) float32 {
+	if vsPatchPos < lh.VSPatchNonRewThr {
+		vsPatchPos = 0
+	}
+	SetGlbV(ctx, di, GvVSPatchPosThr, vsPatchPos) // yes thresholding
+
 	burst := float32(0)
-	dip := vsPatchPos // dip is entirely mis-prediction of positive outcome
+	dip := vsPatchPos
+	SetGlbV(ctx, di, GvVSPatchPosRPE, -vsPatchPos)
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
@@ -875,7 +887,7 @@ func (pp *PVLV) PVsFmUSs(ctx *Context, di uint32) {
 }
 
 // VSPatchNewState does VSPatch processing in NewState:
-// saves to Prev, updates global VSPatchPos and VSPatchPosSum.
+// updates global VSPatchPos and VSPatchPosSum, sets to RewPred.
 // uses max across recorded VSPatch activity levels.
 func (pp *PVLV) VSPatchNewState(ctx *Context, di uint32) {
 	mx := float32(0)

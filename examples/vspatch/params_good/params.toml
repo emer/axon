@@ -20,14 +20,15 @@
     "Layer.Learn.NeuroMod.AChLRateMod" = "0"
     "Layer.Learn.NeuroMod.DAModGain" = "0"
     "Layer.Learn.NeuroMod.DipGain" = "1"
-    "Layer.Learn.RLRate.SigmoidMin" = "0.05"
+    "Layer.Learn.RLRate.SigmoidMin" = "1"
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0"
+    "Layer.VSPatch.MaxLRateFactor" = "1"
 
 [[Base]]
   Sel = ".VSPatchPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.05"
+    "Prjn.Learn.LRate.Base" = "0.02"
     "Prjn.Learn.Trace.LearnThr" = "0"
     "Prjn.PrjnScale.Abs" = "2"
     "Prjn.SWts.Init.Mean" = "0.5"

@@ -108,18 +108,15 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 // squash these.
 type VSPatchParams struct {
 
-	// threshold for small negative dopamine levels (positive magnitude specified here) below which learning rate is amplified by SmallNegDALRate
-	SmallNegDAThr float32 `default:"0.2"`
+	// maximum learning rate multiplier to compensate for smaller DA levels:
+	// factor = min(1 / da, MaxLRateFactor)
+	MaxLRateFactor float32 `default:"2"`
 
-	// learning rate multiplier for small negative dopamine levels (below SmallNegDAThr)
-	SmallNegDALRate float32 `default:"100"`
-
-	pad, pad1 float32
+	pad, pad1, pad2 float32
 }
 
 func (vp *VSPatchParams) Defaults() {
-	vp.SmallNegDAThr = 0.2
-	vp.SmallNegDALRate = 100
+	vp.MaxLRateFactor = 2
 }
 
 func (vp *VSPatchParams) Update() {
@@ -162,7 +159,8 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	if ach >= vt.AChThr {
 		achMod = ach
 	}
-	csDA := achMod*vt.CeMGain*csNet - GlbV(ctx, di, GvVSPatchPos)
+	vsPatch := GlbV(ctx, di, GvVSPatchPosThr) // note: critical to use thresholded version
+	csDA := achMod*vt.CeMGain*csNet - vsPatch
 
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)

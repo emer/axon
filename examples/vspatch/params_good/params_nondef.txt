@@ -6,10 +6,11 @@ VsPatchD1.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VsPatchD1.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 VsPatchD1.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VsPatchD1.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
+VsPatchD1.VSPatch.MaxLRateFactor: 1 // (Default: 2)<br>
 VsPatchD1.StateToVsPatchD1.PrjnScale.Abs: 2 // (Default: 1)<br>
 VsPatchD1.StateToVsPatchD1.SWts.Init.Sym: false // (Default: true)<br>
 VsPatchD1.StateToVsPatchD1.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-VsPatchD1.StateToVsPatchD1.Learn.LRate.Base: 0.05 // (Default: 0.04,0.1,0.2)<br>
+VsPatchD1.StateToVsPatchD1.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
 VsPatchD2.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
 VsPatchD2.Acts.Decay.LearnCa: 1 // (Default: 0)<br>
 VsPatchD2.Acts.Clamp.Ge: 1 // (Default: 0.8,1.5)<br>
@@ -17,7 +18,8 @@ VsPatchD2.Inhib.Layer.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VsPatchD2.Inhib.Layer.FB: 0 // (Default: 0.5,1,4)<br>
 VsPatchD2.Inhib.Pool.Gi: 0.5 // (Default: 1,1.1,0.75,0.9)<br>
 VsPatchD2.Inhib.Pool.FB: 0 // (Default: 0.5,1,4)<br>
+VsPatchD2.VSPatch.MaxLRateFactor: 1 // (Default: 2)<br>
 VsPatchD2.StateToVsPatchD2.PrjnScale.Abs: 2 // (Default: 1)<br>
 VsPatchD2.StateToVsPatchD2.SWts.Init.Sym: false // (Default: true)<br>
 VsPatchD2.StateToVsPatchD2.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
-VsPatchD2.StateToVsPatchD2.Learn.LRate.Base: 0.05 // (Default: 0.04,0.1,0.2)<br>
+VsPatchD2.StateToVsPatchD2.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>

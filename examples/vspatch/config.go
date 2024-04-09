@@ -51,10 +51,10 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `default:"false"`
+	GPU bool `default:"true"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `default:"1" min:"1"`
+	NData int `default:"16" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `default:"0"`
@@ -65,15 +65,21 @@ type RunConfig struct {
 	// total number of runs to do when running Train
 	NRuns int `default:"1" min:"1"`
 
-	// total number of epochs per run
-	NEpochs int `default:"30"`
+	// number of epochs to run per condition -- every this interval new reward values are picked
+	CondEpochs int `default:"20"`
 
-	// total number of trials per epoch.  Should be an even multiple of NData.
-	NTrials int `default:"128"`
+	// total number of epochs per run --
+	NEpochs int `default:"100"`
+
+	// total number of sequence trials per epoch.  Should be an even multiple of NData.
+	NTrials int `default:"256"`
 }
 
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
+
+	// stats to aggregate at higher levels
+	AggStats []string `default:"['Rew', 'RewPred', 'DA', 'RewPred_NR', 'DA_NR']"`
 
 	// if true, save final weights after each run
 	SaveWts bool

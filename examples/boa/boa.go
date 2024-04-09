@@ -178,6 +178,7 @@ func (ss *Sim) ConfigPVLV(trn *armaze.Env) {
 	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
 	pv.USs.PVnegGain = .1 // global scaling of PV neg level -- was 1
 	pv.LHb.VSPatchGain = 4
+	pv.LHb.VSPatchNonRewThr = 0.2
 
 	pv.USs.USnegGains[0] = 2 // big salient input!
 
@@ -776,22 +777,23 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("DA", nan)
 	ss.Stats.SetFloat("RewPred", nan)
 	ss.Stats.SetFloat("Rew", nan)
-	ss.Stats.SetFloat("HasRew", nan)
+	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
 	ss.Stats.SetFloat("DA_NR", nan)
 	ss.Stats.SetFloat("RewPred_NR", nan)
 	ss.Stats.SetFloat("DA_GiveUp", nan)
+	da := axon.GlbV(ctx, diu, axon.GvDA)
 	if pv.HasPosUS(ctx, diu) {
-		ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
+		ss.Stats.SetFloat32("DA", da)
 		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
-		ss.Stats.SetFloat("HasRew", 1)
 	} else {
 		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 || axon.GlbV(ctx, diu, axon.GvNegUSOutcome) > 0 {
-			ss.Stats.SetFloat32("DA_GiveUp", axon.GlbV(ctx, diu, axon.GvDA))
+			ss.Stats.SetFloat32("DA_GiveUp", da)
 		} else {
-			ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
-			ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
-			ss.Stats.SetFloat("HasRew", 0)
+			if da <= 0 { // exclude CS da
+				ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
+				ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
+			}
 		}
 	}
 

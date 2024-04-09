@@ -10,6 +10,8 @@ package main
 //go:generate core generate -add-types
 
 import (
+	"fmt"
+	"math/rand"
 	"os"
 
 	"cogentcore.org/core/gi"
@@ -30,8 +32,12 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/empi/v2/mpi"
+	"github.com/emer/etable/v2/agg"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
+	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/minmax"
+	"github.com/emer/etable/v2/split"
 )
 
 func main() {
@@ -121,6 +127,7 @@ func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
 
+	var trn0 *VSPatchEnv
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		var trn, tst *VSPatchEnv
 		if newEnv {
@@ -138,6 +145,12 @@ func (ss *Sim) ConfigEnv() {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
 		trn.Config(etime.Train, 73+int64(di)*73)
+		if di == 0 {
+			trn.ConfigPats()
+			trn0 = trn
+		} else {
+			trn.Pats = trn0.Pats
+		}
 		trn.Validate()
 
 		tst.Nm = env.ModeDi(etime.Test, di)
@@ -146,6 +159,7 @@ func (ss *Sim) ConfigEnv() {
 			params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 		}
 		tst.Config(etime.Test, 181+int64(di)*181)
+		tst.Pats = trn0.Pats
 		tst.Validate()
 
 		trn.Init(0)
@@ -161,10 +175,12 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigPVLV(trn *VSPatchEnv) {
 	pv := &ss.Net.PVLV
-	pv.SetNUSs(&ss.Context, 2, 1)
+	pv.SetNUSs(&ss.Context, 1, 1)
 	pv.Defaults()
 	pv.Urgency.U50 = 20 // 20 def
 	pv.LHb.VSPatchGain = 3
+	pv.LHb.VSPatchNonRewThr = 0.1
+	pv.USs.PVposGain = 10
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -268,7 +284,7 @@ func (ss *Sim) ConfigLoops() {
 	// Logging
 
 	man.AddOnEndToAll("Log", ss.Log)
-	axon.LooperResetLogBelow(man, &ss.Logs, etime.Sequence)
+	axon.LooperResetLogBelow(man, &ss.Logs)
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
@@ -276,8 +292,15 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
 	})
 
-	man.GetLoop(etime.Train, etime.Run).Main.Add("TestAll", func() {
-		ss.Loops.Run(etime.Test)
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("NewConds", func() {
+		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if trnEpc > 1 && trnEpc%ss.Config.Run.CondEpochs == 0 {
+			ord := rand.Perm(ev.NConds)
+			for di := 0; di < ss.Config.Run.NData; di++ {
+				ev := ss.Envs.ByModeDi(etime.Train, di).(*VSPatchEnv)
+				ev.SetCondValuesPermute(ord)
+			}
+		}
 	})
 
 	////////////////////////////////////////////
@@ -345,19 +368,15 @@ func (ss *Sim) ApplyPVLV(ev *VSPatchEnv, trial int, di uint32) {
 func (ss *Sim) ApplyRew(di uint32, rew float32) {
 	ctx := &ss.Context
 	pv := &ss.Net.PVLV
-	if rew != 0 {
-		axon.GlobalSetRew(ctx, di, rew, true)
-	} else {
-		axon.GlobalSetRew(ctx, di, rew, false)
-	}
-	vsp := axon.GlbV(ctx, uint32(di), axon.GvRewPred)
-	dap := rew - vsp
 	if rew > 0 {
-		pv.SetUS(ctx, di, axon.Positive, 0, 1)
+		pv.SetUS(ctx, di, axon.Positive, 0, rew)
 	} else if rew < 0 {
-		pv.SetUS(ctx, di, axon.Negative, 0, 1)
+		pv.SetUS(ctx, di, axon.Negative, 0, -rew)
 	}
-	axon.SetGlbV(ctx, di, axon.GvDA, dap)
+	drvs := []float32{1}
+	pv.SetDrives(ctx, di, 1, drvs...)
+	pv.Step(ctx, di, &ss.Net.Rand)
+	axon.SetGlbV(ctx, di, axon.GvDA, axon.GlbV(ctx, di, axon.GvLHbPVDA)) // normally set by VTA layer, including CS
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -384,6 +403,8 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
+	ss.Stats.SetInt("Cond", 0)
+	ss.Stats.SetFloat("CondRew", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
@@ -403,7 +424,6 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Trial", trl+di)
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
-	ss.Stats.SetString("TrialName", "")
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
@@ -413,27 +433,88 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 	di := ss.ViewUpdate.View.Di
 	if tm == etime.Trial {
 		ss.TrialStats(di) // get trial stats for current di
+		ss.SeqStats(di)
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "TrialName", "Cycle", "Rew", "RewPred", "RewPred_NR", "DA", "DA_NR"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Di", "Cond", "CondRew", "Cycle", "Rew", "RewPred", "RewPred_NR", "DA", "DA_NR"})
 }
 
-// TrialStats records the trial-level statistics
+// TrialStats records the trial-level statistics: only the non-rew trial
 func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*VSPatchEnv)
-	ss.Stats.SetInt("Cond", ev.Sequence.Cur)
-	hasRew := (axon.GlbV(ctx, diu, axon.GvHasRew) > 0)
-	ss.Stats.SetFloat32("Rew", ev.Rew)
 	ev.RewPred = axon.GlbV(ctx, diu, axon.GvRewPred)
 	ev.DA = axon.GlbV(ctx, diu, axon.GvDA)
-	if hasRew {
-		ss.Stats.SetFloat32("RewPred", ev.RewPred)
-		ss.Stats.SetFloat32("DA", ev.DA)
-	} else {
-		ss.Stats.SetFloat32("RewPred_NR", ev.RewPred)
-		ss.Stats.SetFloat32("DA_NR", ev.DA)
+	trl := ev.Trial.Cur
+	if trl == 2 { // is +1 -- actually 1
+		ss.Stats.SetFloat32Di("RewPred_NR", di, ev.RewPred)
+		ss.Stats.SetFloat32Di("DA_NR", di, ev.DA)
+	}
+}
+
+// SeqStats records the sequence-level statistics for current di, for use in immediate logging
+func (ss *Sim) SeqStats(di int) {
+	ctx := &ss.Context
+	diu := uint32(di)
+	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*VSPatchEnv)
+	trl := ev.Trial.Cur
+	ss.Stats.SetInt("Cond", ev.Cond)
+	ss.Stats.SetFloat32("CondRew", ev.CondRew)
+	ss.Stats.SetString("TrialName", fmt.Sprintf("Cond_%d_%d", ev.Cond, trl))
+	ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
+	ev.RewPred = axon.GlbV(ctx, diu, axon.GvRewPred)
+	ev.DA = axon.GlbV(ctx, diu, axon.GvDA)
+	ss.Stats.SetFloat32("RewPred", ev.RewPred)
+	ss.Stats.SetFloat32("DA", ev.DA)
+	ss.Stats.SetFloat("RewPred_NR", ss.Stats.FloatDi("RewPred_NR", di))
+	ss.Stats.SetFloat("DA_NR", ss.Stats.FloatDi("DA_NR", di))
+}
+
+// CondStats computes summary stats per condition at the epoch level
+func (ss *Sim) CondStats() {
+	stnm := "CondStats"
+	ix := ss.Logs.IndexView(etime.Train, etime.Sequence)
+	spl := split.GroupBy(ix, []string{"Cond"})
+	for _, ts := range ix.Table.ColNames {
+		if ts == "TrialName" || ts == "Cond" || ts == "CondRew" {
+			continue
+		}
+		split.Agg(spl, ts, agg.AggMean)
+	}
+	dt := spl.AggsToTable(etable.ColNameOnly)
+	dt.SetMetaData("Rew:On", "+")
+	dt.SetMetaData("Rew:FixMax", "+")
+	dt.SetMetaData("Rew:Max", "1")
+	dt.SetMetaData("RewPred:On", "+")
+	dt.SetMetaData("RewPred:FixMax", "+")
+	dt.SetMetaData("RewPred:Max", "1")
+	dt.SetMetaData("RewPred_NR:On", "+")
+	dt.SetMetaData("RewPred_NR:FixMax", "+")
+	dt.SetMetaData("RewPred_NR:Max", "1")
+	dt.SetMetaData("DA:On", "+")
+	dt.SetMetaData("DA:FixMin", "+")
+	dt.SetMetaData("DA:Min", "-0.5")
+	dt.SetMetaData("DA:FixMax", "+")
+	dt.SetMetaData("DA:Max", "1")
+	dt.SetMetaData("DA_NR:On", "+")
+	dt.SetMetaData("DA_NR:FixMin", "+")
+	dt.SetMetaData("DA_NR:Min", "-0.5")
+	ss.Logs.MiscTables[stnm] = dt
+
+	// grab selected stats
+	nc := dt.Rows
+	for i := 0; i < nc; i++ {
+		for _, st := range ss.Config.Log.AggStats {
+			ci := int(dt.CellFloat("Cond", i))
+			stnm := fmt.Sprintf("Cond_%d_%s", ci, st)
+			ss.Stats.SetFloat(stnm, dt.CellFloat(st, i))
+		}
+	}
+	if ss.Config.GUI {
+		plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
+		plt.SetTable(dt)
+		plt.GoUpdatePlot()
 	}
 }
 
@@ -445,10 +526,17 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Sequence, etime.Trial, etime.Cycle)
 	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Sequence, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatStringItem(etime.Test, etime.Sequence, "TrialName")
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Cond")
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Sequence, "Cond")
+	ss.Logs.AddStatIntNoAggItem(etime.Test, etime.Sequence, "Cond")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "CondRew")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Sequence, "CondRew")
+	ss.Logs.AddStatFloatNoAggItem(etime.Test, etime.Sequence, "CondRew")
 
 	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Sequence)
 	li.Range.Max = 1.2
@@ -469,6 +557,8 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
+	ss.ConfigLogItems()
+
 	ss.Logs.PlotItems("Rew", "RewPred", "RewPred_NR", "DA", "DA_NR")
 
 	ss.Logs.CreateTables()
@@ -483,6 +573,28 @@ func (ss *Sim) ConfigLogs() {
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
+}
+
+func (ss *Sim) ConfigLogItems() {
+	ev := ss.Envs.ByModeDi(etime.Train, 0).(*VSPatchEnv)
+	for ci := 0; ci < ev.NConds; ci++ {
+		for _, st := range ss.Config.Log.AggStats {
+			stnm := fmt.Sprintf("Cond_%d_%s", ci, st)
+			ss.Logs.AddItem(&elog.Item{
+				Name: stnm,
+				Type: etensor.FLOAT64,
+				// FixMin: true,
+				// FixMax: true,
+				Range: minmax.F64{Max: 1},
+				Write: elog.WriteMap{
+					etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+						ctx.SetFloat64(ctx.Stats.Float(stnm))
+					}, etime.Scope(etime.AllModes, etime.Run): func(ctx *elog.Context) {
+						ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5) // cached
+						ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+					}}})
+		}
+	}
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -502,14 +614,19 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		return
 		// row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
-		return // skip
+		for di := 0; di < ss.Config.Run.NData; di++ {
+			ss.TrialStats(di) // only records NR
+		}
+		return // don't log
 	case time == etime.Sequence:
 		for di := 0; di < ss.Config.Run.NData; di++ {
-			ss.TrialStats(di)
+			ss.SeqStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)
 		}
 		return // don't do reg
+	case time == etime.Epoch:
+		ss.CondStats()
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -537,13 +654,14 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	tststnm := "TestTrialStats"
-	tstst := ss.Logs.MiscTable(tststnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
-	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
-	plt.Params.Title = tststnm
-	plt.Params.XAxisCol = "Trial"
-	plt.SetTable(tstst)
+	stnm := "CondStats"
+	dt := ss.Logs.MiscTable(stnm)
+	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
+	plt.Params.Title = stnm
+	plt.Params.XAxisCol = "Cond"
+	plt.Params.Type = eplot.Bar
+	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,

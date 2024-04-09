@@ -174,10 +174,22 @@ const (
 	/////////////////////////////////////////
 	// VSPatch prediction of PVpos net value
 
-	// VSPatchPos is net shunting input from VSPatch (PosD1, named PVi in original PVLV)
+	// VSPatchPos is the net shunting input from VSPatch (PosD1, named PVi in original PVLV)
 	// computed as the Max of US-specific VSPatch saved values, subtracting D1 - D2.
 	// This is also stored as GvRewPred.
 	GvVSPatchPos
+
+	// VSPatchPosThr is a thresholded version of GvVSPatchPos,
+	// applying PVLV.LHb.VSPatchNonRewThr threshold for non-reward trials.
+	// This is the version used for computing DA.
+	GvVSPatchPosThr
+
+	// VSPatchPosRPE is the reward prediction error for the VSPatchPos reward prediction
+	// without any thresholding applied, and only for PV events.
+	// This is used to train the VSPatch, assuming a local feedback circuit that does
+	// not have the effective thresholding used for the broadcast critic signal that
+	// trains the rest of the network.
+	GvVSPatchPosRPE
 
 	// VSPatchPosSum is the sum of VSPatchPos over goal engaged trials,
 	// representing the integrated prediction that the US is going to occur

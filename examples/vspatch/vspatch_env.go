@@ -13,6 +13,8 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
+	"github.com/emer/etable/v2/metric"
+	"github.com/emer/etable/v2/simat"
 )
 
 // VSPatchEnv implements simple Go vs. NoGo input patterns to test BG learning.
@@ -29,6 +31,12 @@ type VSPatchEnv struct {
 
 	// trial counter is for the step within condition
 	Trial env.Ctr `view:"inline"`
+
+	// current condition index
+	Cond int
+
+	// current condition target reward
+	CondRew float32
 
 	// if true, reward value is a probability of getting a 1 reward
 	Probs bool
@@ -52,10 +60,13 @@ type VSPatchEnv struct {
 	NUnits int `view:"-"`
 
 	// condition, time-step patterns
-	Pats etable.Table
+	Pats *etable.Table
 
 	// pattern vocab
 	PatVocab patgen.Vocab
+
+	// pattern similarity matrix
+	PatSimMat simat.SimMat
 
 	// random number generator for the env -- all random calls must use this
 	Rand erand.SysRand `view:"-"`
@@ -66,7 +77,7 @@ type VSPatchEnv struct {
 	// named states: ACCPos, ACCNeg
 	States map[string]*etensor.Float32
 
-	// current reward value
+	// current reward value -- is 0 until final trial
 	Rew float32 `edit:"-"`
 
 	// reward prediction from model
@@ -93,10 +104,19 @@ func (ev *VSPatchEnv) Defaults() {
 	ev.NUnits = ev.NUnitsY * ev.NUnitsX
 }
 
-// SetRandCondValues sets values of each condition to random numbers
-func (ev *VSPatchEnv) SetRandCondValues() {
+// SetCondValues sets values of each condition incrementing upward
+func (ev *VSPatchEnv) SetCondValues() {
+	pc := float32(1) / (float32(ev.NConds) + 1)
 	for i := 0; i < ev.NConds; i++ {
-		ev.CondValues[i] = ev.Rand.Float32(-1)
+		ev.CondValues[i] = float32(1+i) * pc
+	}
+}
+
+// SetCondValuesPermute sets permuted order of values
+func (ev *VSPatchEnv) SetCondValuesPermute(ord []int) {
+	pc := float32(1) / (float32(ev.NConds) + 1)
+	for i := 0; i < ev.NConds; i++ {
+		ev.CondValues[ord[i]] = float32(1+i) * pc
 	}
 }
 
@@ -110,13 +130,12 @@ func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.CondValues = make([]float32, ev.NConds)
 	ev.Sequence.Max = ev.NConds
 	ev.Trial.Max = ev.NTrials
-	ev.SetRandCondValues()
-	ev.ConfigPats()
+	ev.SetCondValues()
 }
 
+// ConfigPats configures patterns -- only done on the first env
 func (ev *VSPatchEnv) ConfigPats() {
 	ev.PatVocab = patgen.Vocab{}
-
 	pctAct := float32(0.2)
 	minDiff := float32(0.5)
 	flipPct := float32(0.2)
@@ -130,7 +149,7 @@ func (ev *VSPatchEnv) ConfigPats() {
 		{"Name", etensor.STRING, nil, nil},
 		{"Input", etensor.FLOAT32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
 	}
-	ev.Pats.SetFromSchema(sch, npats)
+	ev.Pats = etable.New(sch, npats)
 
 	idx := 0
 	for i := 0; i < ev.NConds; i++ {
@@ -143,6 +162,8 @@ func (ev *VSPatchEnv) ConfigPats() {
 		}
 		idx += ev.NTrials
 	}
+
+	ev.PatSimMat.TableCol(etable.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
 }
 
 func (ev *VSPatchEnv) Validate() error {
@@ -179,8 +200,10 @@ func (ev *VSPatchEnv) RenderState(cond, trial int) {
 func (ev *VSPatchEnv) Step() bool {
 	ev.RenderState(ev.Sequence.Cur, ev.Trial.Cur)
 	ev.Rew = 0
+	rv := ev.CondValues[ev.Sequence.Cur]
+	ev.Cond = ev.Sequence.Cur // todo: randomize
+	ev.CondRew = rv
 	if ev.Trial.Cur == ev.NTrials-1 {
-		rv := ev.CondValues[ev.Sequence.Cur]
 		if ev.Probs {
 			if erand.BoolP32(rv, -1, &ev.Rand) {
 				ev.Rew = 1

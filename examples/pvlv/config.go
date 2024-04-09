@@ -81,7 +81,7 @@ type RunConfig struct {
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
 
-	// ] stats to aggregate at higher levels
+	// stats to aggregate at higher levels
 	AggStats []string `default:"['DA','VSPatch']"`
 
 	// if true, save final weights after each run
