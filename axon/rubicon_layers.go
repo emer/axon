@@ -12,7 +12,7 @@ import (
 	"github.com/emer/gosl/v2/slbool"
 )
 
-//gosl: start pvlv_layers
+//gosl: start rubicon_layers
 
 // LDTParams compute reward salience as ACh global neuromodulatory signal
 // as a function of the MAX activation of its inputs from salience detecting
@@ -153,7 +153,7 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	SetGlbV(ctx, di, GvDA, netDA)    // general neuromod DA
 }
 
-//gosl: end pvlv_layers
+//gosl: end rubicon_layers
 
 func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")

@@ -1,8 +1,8 @@
-# PVLV: Primary Value, Learned Value
+# Rubicon Goal-Driven Motivated Behavior Model
 
 This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for Axon, designed to capture the essential properties of the [Go leabra version](https://github.com/emer/leabra/tree/master/pvlv), in a way that is integrated with the larger [BOA](examples/boa) framework for goal-driven motivated behavior.
 
-Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.  Example: [pvlv](examples/pvlv) and [boa](examples/boa).
+Files: rubicon_{[net.go](axon/rubicon_net.go), [layers.go](axon/rubicon_layers.go), [prjns.go](axon/rubicon_prjns.go)}.  Example: [rubicon](examples/rubicon) and [boa](examples/boa).
 
 # Introduction
 

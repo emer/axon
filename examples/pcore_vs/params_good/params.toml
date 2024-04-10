@@ -18,7 +18,7 @@
     "Layer.Inhib.Layer.Gi" = "0.5"
     "Layer.Inhib.Pool.On" = "false"
     "Layer.Learn.NeuroMod.BurstGain" = "0.1"
-    "Layer.Learn.NeuroMod.DAModGain" = "0.2"
+    "Layer.Learn.NeuroMod.DAModGain" = "0"
     "Layer.Learn.RLRate.Diff" = "false"
     "Layer.Learn.RLRate.On" = "true"
     "Layer.Learn.RLRate.SigmoidMin" = "0.01"

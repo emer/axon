@@ -104,13 +104,13 @@
 
        OFCposUS		Nominal:	  0.03	
 						Layer.Gi:	  2.20	
-						Pool.Gi: 	  1.00	Params: #OFCposUS: 1
+						Pool.Gi: 	  1.00	
 
      OFCposUSCT		Nominal:	  0.03	
 						Layer.Gi:	  4.00	
 						Pool.Gi: 	  1.20	
 
-     OFCposUSPT		Nominal:	  0.20	Params: #OFCposUSPT: 0.2
+     OFCposUSPT		Nominal:	  0.02	
 						Layer.Gi:	  0.50	
 						Pool.Gi: 	  0.50	
 
@@ -118,9 +118,9 @@
 						Layer.Gi:	  2.00	
 						Pool.Gi: 	  0.60	
 
-    OFCposUSPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
+    OFCposUSPTp		Nominal:	  0.10	Params: #OFCposUSPTp: 0.1 | .PTPredLayer: 0.1
 						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.00	Params: #OFCposUSPTp: 1.0
+						Pool.Gi: 	  1.40	Params: #OFCposUSPTp: 1.4
 
        OFCnegUS		Nominal:	  0.10	Params: #OFCnegUS: 0.1
 						Layer.Gi:	  1.20	
@@ -130,7 +130,7 @@
 						Layer.Gi:	  4.00	
 						Pool.Gi: 	  1.20	
 
-     OFCnegUSPT		Nominal:	  0.20	Params: #OFCnegUSPT: 0.2
+     OFCnegUSPT		Nominal:	  0.02	
 						Layer.Gi:	  0.50	
 						Pool.Gi: 	  0.50	
 
@@ -155,7 +155,7 @@
 						Layer.Gi:	  0.60	
 
        ILposPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
-						Layer.Gi:	  0.80	
+						Layer.Gi:	  1.20	Params: #ILposPTp: 1.2
 
           ILneg		Nominal:	  0.10	
 						Layer.Gi:	  0.90	
@@ -170,27 +170,23 @@
 						Layer.Gi:	  0.60	
 
        ILnegPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
-						Layer.Gi:	  0.80	
+						Layer.Gi:	  1.20	Params: #ILnegPTp: 1.2
 
-       ACCnegUS		Nominal:	  0.10	
-						Layer.Gi:	  1.20	
+        ACCcost		Nominal:	  0.10	
 						Pool.Gi: 	  1.00	
 
-     ACCnegUSCT		Nominal:	  0.03	
-						Layer.Gi:	  4.00	
-						Pool.Gi: 	  1.20	
+      ACCcostCT		Nominal:	  0.03	
+						Pool.Gi: 	  1.80	
 
-     ACCnegUSPT		Nominal:	  0.02	
-						Layer.Gi:	  0.50	
+      ACCcostPT		Nominal:	  0.02	
 						Pool.Gi: 	  0.50	
 
-     ACCnegUSMD		Nominal:	  0.03	
+      ACCcostMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
 						Pool.Gi: 	  0.60	
 
-    ACCnegUSPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
-						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.40	
+     ACCcostPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
+						Pool.Gi: 	  1.20	
 
          ILposP		Nominal:	  0.10	
 						Layer.Gi:	  1.00	

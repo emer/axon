@@ -6,7 +6,7 @@ func TestSetGetUS(t *testing.T) {
 	TheNetwork = NewNetwork("TestSetGetUS")
 	ctx := NewContext()
 	// TODO: seems impossible to test with only one drive
-	// because of the +1 for curiosity in .RubiconSetUS.
+	// because of the +1 for curiosity in RubiconSetUS.
 	ctx.Rubicon.NPosUSs = 2
 	require.NoError(t, TheNetwork.Build(ctx))
 	const di = 0

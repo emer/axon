@@ -31,7 +31,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.RLRate.SigmoidMin":    "1",   // 0.05 def; 1 causes positive DA bias
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
 				"Layer.Learn.NeuroMod.DAModGain":   "0", // this is actual perf mod
-				"Layer.VSPatch.MaxLRateFactor":     "1", // even 2 causes too much distortion -- remove
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{

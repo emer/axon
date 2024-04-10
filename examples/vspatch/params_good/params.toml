@@ -22,7 +22,6 @@
     "Layer.Learn.NeuroMod.DipGain" = "1"
     "Layer.Learn.RLRate.SigmoidMin" = "1"
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0"
-    "Layer.VSPatch.MaxLRateFactor" = "1"
 
 [[Base]]
   Sel = ".VSPatchPrjn"

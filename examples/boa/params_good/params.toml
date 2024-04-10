@@ -18,6 +18,12 @@
     "Layer.Learn.NeuroMod.AChDisInhib" = "0.0"
 
 [[Base]]
+  Sel = ".BLALayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.Learn.NeuroMod.DAModGain" = "0.5"
+
+[[Base]]
   Sel = ".PTPredLayer"
   Desc = ""
   [Base.Params]
@@ -33,44 +39,29 @@
     "Layer.Inhib.ActAvg.Nominal" = "0.1"
 
 [[Base]]
-  Sel = "#OFCposUS"
-  Desc = ""
-  [Base.Params]
-    "Layer.Inhib.Pool.Gi" = "1"
-
-[[Base]]
-  Sel = "#OFCposUSPT"
-  Desc = ""
-  [Base.Params]
-    "Layer.Inhib.ActAvg.Nominal" = "0.2"
-
-[[Base]]
   Sel = "#OFCposUSPTp"
   Desc = ""
   [Base.Params]
-    "Layer.Inhib.Pool.Gi" = "1.0"
+    "Layer.Inhib.ActAvg.Nominal" = "0.1"
+    "Layer.Inhib.Pool.Gi" = "1.4"
+
+[[Base]]
+  Sel = "#ILposPTp"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.Layer.Gi" = "1.2"
+
+[[Base]]
+  Sel = "#ILnegPTp"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.Layer.Gi" = "1.2"
 
 [[Base]]
   Sel = "#OFCnegUS"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.1"
-
-[[Base]]
-  Sel = "#OFCnegUSPT"
-  Desc = ""
-  [Base.Params]
-    "Layer.Inhib.ActAvg.Nominal" = "0.2"
-
-[[Base]]
-  Sel = "#OFCnegUSPTp"
-  Desc = ""
-  [Base.Params]
-
-[[Base]]
-  Sel = "#ILpos"
-  Desc = ""
-  [Base.Params]
 
 [[Base]]
   Sel = ".VSMatrixLayer"
@@ -82,6 +73,7 @@
     "Layer.Inhib.Pool.FB" = "0"
     "Layer.Inhib.Pool.Gi" = "0.5"
     "Layer.Learn.NeuroMod.BurstGain" = "1"
+    "Layer.Learn.NeuroMod.DAModGain" = "0"
     "Layer.Learn.RLRate.SigmoidMin" = "0.001"
 
 [[Base]]
@@ -103,6 +95,7 @@
   [Base.Params]
     "Layer.Inhib.Pool.FB" = "0"
     "Layer.Inhib.Pool.Gi" = "0.5"
+    "Layer.Learn.NeuroMod.BurstGain" = "1"
     "Layer.Learn.NeuroMod.DipGain" = "1"
     "Layer.Learn.RLRate.SigmoidMin" = "0.01"
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0"
@@ -130,7 +123,7 @@
   Sel = ".PTtoPred"
   Desc = "stronger drive on pt pred"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "6"
+    "Prjn.PrjnScale.Abs" = "1"
 
 [[Base]]
   Sel = "#BLAPosAcqD1ToOFCposUS"
@@ -145,22 +138,16 @@
     "Prjn.PrjnScale.Abs" = "3"
 
 [[Base]]
+  Sel = ".USToBLAExtInhib"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+
+[[Base]]
   Sel = "#ILposToPLutil"
   Desc = "not good to make this stronger"
   [Base.Params]
     "Prjn.PrjnScale.Abs" = "1"
-
-[[Base]]
-  Sel = ".ToPTp"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
-
-[[Base]]
-  Sel = ".BLAFromNovel"
-  Desc = "must be strong enough to compete with CS at start -- now done automatically"
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
 
 [[Base]]
   Sel = ".VSMatrixPrjn"
@@ -211,9 +198,9 @@
   Sel = ".VSPatchPrjn"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.01"
+    "Prjn.Learn.LRate.Base" = "0.02"
     "Prjn.Learn.Trace.LearnThr" = "0"
-    "Prjn.PrjnScale.Abs" = "4"
+    "Prjn.PrjnScale.Abs" = "3"
 
 [[Base]]
   Sel = "#CSToBLAPosAcqD1"
@@ -240,7 +227,8 @@
     "Prjn.PrjnScale.Abs" = "5"
 
 [[Base]]
-  Sel = "#UrgencyToVMtxGo"
-  Desc = ""
+  Sel = ".BLAFromNovel"
+  Desc = "Note: this setting is overwritten in boa.go ApplyParams"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "20"
+    "Prjn.PrjnScale.Abs" = "3"
+    "Prjn.PrjnScale.Rel" = "0.1"

@@ -347,7 +347,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
-// Apply.Rubicon applies .Rubicon reward inputs
+// ApplyRubicon applies Rubicon reward inputs
 func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, trial int, di uint32) {
 	ctx := &ss.Context
 	pv := &ss.Net.Rubicon

@@ -13,18 +13,18 @@ Layer: Cost
 
 Layer: USposP
 	     OFCposUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.33
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.33
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.33
 	    OFCposUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
 
 Layer: USnegP
 	     OFCnegUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.33
-	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.33
+	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.33
 	    OFCnegUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.33
 
 Layer: CostP
-	     ACCnegUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.33
-	     ACCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.33
-	    ACCnegUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
+	      ACCcostCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.33
+	      ACCcostPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.33
+	     ACCcostPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
 
 Layer: PVpos
 
@@ -32,7 +32,7 @@ Layer: PVneg
 
 Layer: PVposP
 	     OFCposUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:  0.12
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
 	    OFCposUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.12
 	        ILposCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
 	        ILposPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
@@ -42,11 +42,11 @@ Layer: PVposP
 
 Layer: PVnegP
 	     OFCnegUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.09
-	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.09
+	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.09
 	    OFCnegUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.09
-	     ACCnegUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.09
-	     ACCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.09
-	    ACCnegUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.09
+	      ACCcostCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.09
+	      ACCcostPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.09
+	     ACCcostPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.09
 	        ILnegCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.09
 	        ILnegPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.09
 	       ILnegPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.09
@@ -57,7 +57,7 @@ Layer: Drives
 
 Layer: DrivesP
 	     OFCposUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.33
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.33
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.33
 	    OFCposUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
 
 Layer: Urgency
@@ -87,18 +87,18 @@ Layer: VSTN
 Layer: VMtxGo
 	         VMtxNo	      InhibPrjn	Abs:	  1.00	Rel:	  0.05	GScale:	  0.02	Rel:  0.05
 	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.95
-	          USpos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.19	Rel:  0.37
+	          USpos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.19	Rel:  0.38
 								    Abs Params: Base:.VSMatrixPrjn: 1.5
-	    BLAPosAcqD1	   VSMatrixPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.49	Rel:  0.37
+	    BLAPosAcqD1	   VSMatrixPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.51	Rel:  0.38
 								    Abs Params: .BLAAcqToGo: 4 | Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .BLAAcqToGo: 1
 	         Drives	   VSMatrixPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
 								    Abs Params: .DrivesToMtx: 1 | Base:.VSMatrixPrjn: 1.5
 	       OFCposUS	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
-								    Abs Params: .VSMatrixPrjn: 1.5
+								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	          ILpos	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
-								    Abs Params: Base:.VSMatrixPrjn: 1.5
+								    Abs Params: .VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	       OFCnegUS	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Abs Params: .VSMatrixPrjn: 1.5
@@ -106,19 +106,17 @@ Layer: VMtxGo
 	          ILneg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Abs Params: .VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
-	       ACCnegUS	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	        ACCcost	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
-	        Urgency	   VSMatrixPrjn	Abs:	 20.00	Rel:	  0.10	GScale:	  0.25	Rel:  0.04
-								    Abs Params: #UrgencyToVMtxGo: 20 | Base:.VSMatrixPrjn: 1.5
 	         PLutil	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
-								    Abs Params: .VSMatrixPrjn: 1.5
+								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 
 Layer: VMtxNo
 	         VGPeAk	      InhibPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
 	          ILneg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
-								    Abs Params: .VSMatrixPrjn: 1.5
+								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	    BLAPosAcqD1	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.14	Rel:  0.27
 								    Abs Params: Base:.VSMatrixPrjn: 1.5
@@ -126,7 +124,7 @@ Layer: VMtxNo
 								    Abs Params: .BLAAcqToGo: 4 | Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .BLAAcqToGo: 1
 	    BLAPosExtD2	   VSMatrixPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.14	Rel:  0.27
-								    Abs Params: .VSMatrixPrjn: 1.5
+								    Abs Params: Base:.VSMatrixPrjn: 1.5
 	         Drives	   VSMatrixPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
 								    Abs Params: .DrivesToMtx: 1 | Base:.VSMatrixPrjn: 1.5
 	       OFCposUS	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
@@ -136,12 +134,12 @@ Layer: VMtxNo
 								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	       OFCnegUS	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
-								    Abs Params: .VSMatrixPrjn: 1.5
-								    Rel Params: .PFCToVSMtx: 0.1
-	          ILneg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
 								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
-	       ACCnegUS	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	          ILneg	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+								    Abs Params: .VSMatrixPrjn: 1.5
+								    Rel Params: .PFCToVSMtx: 0.1
+	        ACCcost	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
 								    Abs Params: Base:.VSMatrixPrjn: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	         PLutil	   VSMatrixPrjn	Abs:	  1.50	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
@@ -151,40 +149,40 @@ Layer: VMtxNo
 Layer: VSGated
 
 Layer: VsPatchD1
-	       ILnegPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	         Drives	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:  1.00
-								    Abs Params: .VSPatchPrjn: 4
-	    OFCposUSPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	       ILposPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	    OFCnegUSPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: .VSPatchPrjn: 4
-	       ILnegPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	    ACCnegUSPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	      PLutilPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: .VSPatchPrjn: 4
+	       ILnegPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	         Drives	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  3.00	Rel:  1.00
+								    Abs Params: .VSPatchPrjn: 3
+	    OFCposUSPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.07	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	       ILposPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	    OFCnegUSPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	       ILnegPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	         PVposP	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	      PLutilPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
 
 Layer: VsPatchD2
-	       ILnegPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	         Drives	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:  1.00
-								    Abs Params: .VSPatchPrjn: 4
-	    OFCposUSPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.14
-								    Abs Params: .VSPatchPrjn: 4
-	       ILposPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	    OFCnegUSPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	       ILnegPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	    ACCnegUSPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
-	      PLutilPTp	    VSPatchPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPrjn: 4
+	       ILnegPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	         Drives	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  3.00	Rel:  1.00
+								    Abs Params: Base:.VSPatchPrjn: 3
+	    OFCposUSPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.07	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	       ILposPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: .VSPatchPrjn: 3
+	    OFCnegUSPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: .VSPatchPrjn: 3
+	       ILnegPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: .VSPatchPrjn: 3
+	         PVposP	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
+	      PLutilPTp	    VSPatchPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.14
+								    Abs Params: Base:.VSPatchPrjn: 3
 
 Layer: SC
 	             CS	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
@@ -194,19 +192,22 @@ Layer: BLAPosAcqD1
 	    BLAPosExtD2	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
 								    Abs Params: Base:.BLAExtToAcq: 0.5
 	     BLANovelCS	    ForwardPrjn	Abs:	  2.70	Rel:	  0.10	GScale:	  0.17	Rel:  0.06
-								    Abs Params: Base:.BLAFromNovel: 4
+								    Abs Params: .BLAFromNovel: 3
+								    Rel Params: Base:.BLAFromNovel: 0.1
 	          USpos	        BLAPrjn	Abs:	  6.00	Rel:	  0.50	GScale:	  0.62	Rel:  0.31
 	             CS	        BLAPrjn	Abs:	  1.50	Rel:	  1.00	GScale:	  0.94	Rel:  0.62
 
 Layer: BLAPosExtD2
 	    BLAPosAcqD1	     CTCtxtPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
-	          USpos	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
+	          USpos	      InhibPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+								    Abs Params: Base:.USToBLAExtInhib: 2
 	    OFCposUSPTp	        BLAPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
 	             CS	        BLAPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 
 Layer: BLANegExtD1
 	    BLANegAcqD2	     CTCtxtPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
-	          USneg	      InhibPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+	          USneg	      InhibPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
+								    Abs Params: Base:.USToBLAExtInhib: 2
 	             CS	        BLAPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
 
 Layer: BLANegAcqD2
@@ -243,7 +244,7 @@ Layer: OFCposUS
 
 Layer: OFCposUSCT
 	       OFCposUS	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.40	Rel:  0.40
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.40
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.13	Rel:  0.40
 	        DrivesP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
 	         USposP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 	         PVposP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
@@ -263,8 +264,8 @@ Layer: OFCposUSMD
 								    Abs Params: Base:.GPiToBGThal: 5
 
 Layer: OFCposUSPTp
-	     OFCposUSPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.15	Rel:  0.22
-								    Abs Params: .PTtoPred: 6
+	     OFCposUSPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:  0.22
+								    Abs Params: .PTtoPred: 1
 	     OFCposUSCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.15	Rel:  0.22
 	        DrivesP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.02
 	         USposP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
@@ -288,7 +289,7 @@ Layer: OFCnegUS
 
 Layer: OFCnegUSCT
 	       OFCnegUS	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:  0.42
-	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.42
+	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:  0.42
 	         USnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 	            CSP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
@@ -307,8 +308,8 @@ Layer: OFCnegUSMD
 								    Abs Params: Base:.GPiToBGThal: 5
 
 Layer: OFCnegUSPTp
-	     OFCnegUSPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.19	Rel:  0.23
-								    Abs Params: .PTtoPred: 6
+	     OFCnegUSPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.23	Rel:  0.23
+								    Abs Params: .PTtoPred: 1
 	     OFCnegUSCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.23
 	         USnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.02
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
@@ -345,8 +346,8 @@ Layer: ILposMD
 								    Abs Params: Base:.GPiToBGThal: 5
 
 Layer: ILposPTp
-	        ILposPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.35	Rel:  0.23
-								    Abs Params: .PTtoPred: 6
+	        ILposPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.23
+								    Abs Params: .PTtoPred: 1
 	        ILposCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.23
 	          PVpos	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.31	Rel:  0.23
 	         PVposP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
@@ -356,7 +357,7 @@ Layer: ILposPTp
 
 Layer: ILneg
 	       OFCnegUS	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.23
-	       ACCnegUS	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.23
+	        ACCcost	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.23
 	          PVneg	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.23
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
 	         PLutil	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
@@ -382,8 +383,8 @@ Layer: ILnegMD
 								    Abs Params: Base:.GPiToBGThal: 5
 
 Layer: ILnegPTp
-	        ILnegPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.35	Rel:  0.23
-								    Abs Params: .PTtoPred: 6
+	        ILnegPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.23
+								    Abs Params: .PTtoPred: 1
 	        ILnegCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.23
 	          PVneg	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.31	Rel:  0.23
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
@@ -391,35 +392,35 @@ Layer: ILnegPTp
 	            Pos	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.47	Rel:  0.23
 	           PosP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
 
-Layer: ACCnegUS
+Layer: ACCcost
 	          PVneg	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.07	Rel:  0.20
 	           Cost	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.10	Rel:  0.20
 	          CostP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.10	Rel:  0.20
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.07	Rel:  0.20
 	          ILneg	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:  0.20
 
-Layer: ACCnegUSCT
-	       ACCnegUS	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
-	     ACCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
+Layer: ACCcostCT
+	        ACCcost	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
+	      ACCcostPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
 	          CostP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
 
-Layer: ACCnegUSPT
-	     ACCnegUSMD	       BackPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
-	       ACCnegUS	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+Layer: ACCcostPT
+	      ACCcostMD	       BackPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	        ACCcost	    ForwardPrjn	Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
 								    Abs Params: .SuperToPT: 0.5
 
-Layer: ACCnegUSMD
-	     ACCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
-	       ACCnegUS	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
+Layer: ACCcostMD
+	      ACCcostPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	        ACCcost	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
 								    Abs Params: .SuperToThal: 4
 	           VGPi	      InhibPrjn	Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
 								    Abs Params: Base:.GPiToBGThal: 5
 
-Layer: ACCnegUSPTp
-	     ACCnegUSPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  2.73	Rel:  0.45
-								    Abs Params: .PTtoPred: 6
-	     ACCnegUSCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
+Layer: ACCcostPTp
+	      ACCcostPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
+								    Abs Params: .PTtoPred: 1
+	      ACCcostCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
 	          CostP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
 	         PVnegP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
 
@@ -459,8 +460,8 @@ Layer: PLutilMD
 								    Abs Params: Base:.GPiToBGThal: 5
 
 Layer: PLutilPTp
-	       PLutilPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.36	Rel:  0.24
-								    Abs Params: .PTtoPred: 6
+	       PLutilPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.24
+								    Abs Params: .PTtoPred: 1
 	       PLutilCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.24
 	         ILposP	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
 	          ILpos	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.24	Rel:  0.24
@@ -471,23 +472,23 @@ Layer: CS
 
 Layer: CSP
 	     OFCposUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.17
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:  0.17
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.17
 	    OFCposUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.17
 	     OFCnegUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.17
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:  0.17
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.17
 	    OFCnegUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.17
 
 Layer: Pos
 
 Layer: PosP
 	     OFCposUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.07
-	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:  0.07
+	     OFCposUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
 	    OFCposUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.00	Rel:  0.07
 	        ILposCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
 	        ILposPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
 	       ILposPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
 	     OFCnegUSCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:  0.07
-	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.07
+	     OFCnegUSPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:  0.07
 	    OFCnegUSPTp	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
 	        ILnegCT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
 	        ILnegPT	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.07
@@ -552,8 +553,8 @@ Layer: ALMMD
 								    Abs Params: Base:.GPiToBGThal: 5
 
 Layer: ALMPTp
-	          ALMPT	     CTCtxtPrjn	Abs:	  6.00	Rel:	  1.00	GScale:	  0.35	Rel:  0.23
-								    Abs Params: .PTtoPred: 6
+	          ALMPT	     CTCtxtPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.23
+								    Abs Params: .PTtoPred: 1
 	          ALMCT	    ForwardPrjn	Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.23
 	            M1P	       BackPrjn	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
 	             M1	    ForwardPrjn	Abs:	  4.00	Rel:	  1.00	GScale:	  0.23	Rel:  0.23

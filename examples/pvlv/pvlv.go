@@ -730,8 +730,8 @@ func (ss *Sim) BlockStats() {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Axon .Rubicon"
-	ss.GUI.MakeBody(ss, "pvlv", title, `This is the .Rubicon test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	title := "Axon PVLV"
+	ss.GUI.MakeBody(ss, "pvlv", title, `This is the PVLV test model in Axon, in the Rubicon framework. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")

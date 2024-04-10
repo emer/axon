@@ -42,7 +42,7 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 VTA: {
-  CeMGain: 0.75 LHbGain: 1.25 AChThr: 0.5
+  CeMGain: 0.5 LHbGain: 1.25 AChThr: 0.5
 }
 /////////////////////////////////////////////////
 Layer: LHb
@@ -521,7 +521,7 @@ Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 5
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSCTToCostP
+Prjn: ACCcostCTToCostP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -541,7 +541,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTToCostP
+Prjn: ACCcostPTToCostP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -561,7 +561,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTpToCostP
+Prjn: ACCcostPTpToCostP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -979,7 +979,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSCTToPVnegP
+Prjn: ACCcostCTToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -999,7 +999,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTToPVnegP
+Prjn: ACCcostPTToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -1019,7 +1019,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTpToPVnegP
+Prjn: ACCcostPTpToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -2039,7 +2039,7 @@ Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSToVMtxGo
+Prjn: ACCcostToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -2053,29 +2053,6 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-Matrix: {
-  Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
-}
-///////////////////////////////////////////////////
-Prjn: UrgencyToVMtxGo
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 0.1 Abs: 4
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
-  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: false
   LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
@@ -2358,7 +2335,7 @@ Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSToVMtxNo
+Prjn: ACCcostToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -2587,7 +2564,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTpToVsPatchD1
+Prjn: PVposPToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -2602,6 +2579,26 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+}
+///////////////////////////////////////////////////
+Prjn: CSToVsPatchD1
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PrjnScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -2770,7 +2767,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTpToVsPatchD2
+Prjn: PVposPToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -2785,6 +2782,26 @@ SWt: {
 Learn: {
   Learn: true
   LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+}
+///////////////////////////////////////////////////
+Prjn: CSToVsPatchD2
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PrjnScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -2896,7 +2913,7 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -3028,7 +3045,7 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -3160,7 +3177,7 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Negative  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -3269,7 +3286,7 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -3547,7 +3564,7 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
@@ -5974,7 +5991,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSToILneg
+Prjn: ACCcostToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6572,7 +6589,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: ACCnegUS
+Layer: ACCcost
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -6601,7 +6618,7 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: false  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
@@ -6618,7 +6635,7 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegToACCnegUS
+Prjn: PVnegToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6638,7 +6655,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: CostToACCnegUS
+Prjn: CostToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6658,7 +6675,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: CostPToACCnegUS
+Prjn: CostPToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6678,7 +6695,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToACCnegUS
+Prjn: PVnegPToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6698,7 +6715,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToACCnegUS
+Prjn: ILnegToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6718,7 +6735,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToACCnegUS
+Prjn: TimeToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6738,7 +6755,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToACCnegUS
+Prjn: TimePToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6758,7 +6775,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: ACCnegUSCT
+Layer: ACCcostCT
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -6787,8 +6804,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
-  Pool: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: false  Gi: 4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: true  Gi: 1.8  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdateThr: 0.01 }
@@ -6804,7 +6821,7 @@ CT:      {
   GeGain: 2 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSToACCnegUSCT
+Prjn: ACCcostToACCcostCT
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6824,7 +6841,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTToACCnegUSCT
+Prjn: ACCcostPTToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6844,7 +6861,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: CostPToACCnegUSCT
+Prjn: CostPToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6864,7 +6881,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToACCnegUSCT
+Prjn: PVnegPToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6884,7 +6901,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToACCnegUSCT
+Prjn: TimePToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6904,7 +6921,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: ACCnegUSPT
+Layer: ACCcostPT
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: true  ModGain: 1.5  ModACh: true  ModBase: 0 }
@@ -6933,7 +6950,7 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.02  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 0.5  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: false  Gi: 0.5  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: true  Gi: 0.5  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
@@ -6947,7 +6964,7 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSMDToACCnegUSPT
+Prjn: ACCcostMDToACCcostPT
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6967,7 +6984,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSToACCnegUSPT
+Prjn: ACCcostToACCcostPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -6987,7 +7004,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: ACCnegUSMD
+Layer: ACCcostMD
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -7030,7 +7047,7 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTToACCnegUSMD
+Prjn: ACCcostPTToACCcostMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7050,7 +7067,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSToACCnegUSMD
+Prjn: ACCcostToACCcostMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7070,7 +7087,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPiToACCnegUSMD
+Prjn: VGPiToACCcostMD
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7090,7 +7107,7 @@ Learn: {
   } }
 }
 /////////////////////////////////////////////////
-Layer: ACCnegUSPTp
+Layer: ACCcostPTp
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -7119,8 +7136,8 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
-  Pool: {  On: true  Gi: 1.4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: false  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
   CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdateThr: 0.01 }
@@ -7136,7 +7153,7 @@ CT:      {
   GeGain: 0.05 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTToACCnegUSPTp
+Prjn: ACCcostPTToACCcostPTp
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7156,7 +7173,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSCTToACCnegUSPTp
+Prjn: ACCcostCTToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7176,7 +7193,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: CostPToACCnegUSPTp
+Prjn: CostPToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7196,7 +7213,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToACCnegUSPTp
+Prjn: PVnegPToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7216,7 +7233,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToACCnegUSPTp
+Prjn: TimePToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7236,7 +7253,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToACCnegUSPTp
+Prjn: TimeToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7525,7 +7542,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSCTToTimeP
+Prjn: ACCcostCTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7545,7 +7562,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTToTimeP
+Prjn: ACCcostPTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
@@ -7565,7 +7582,7 @@ Learn: {
   } }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCnegUSPTpToTimeP
+Prjn: ACCcostPTpToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }

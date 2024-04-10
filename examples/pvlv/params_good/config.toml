@@ -15,9 +15,6 @@ Debug = false
   SaveAll = false
   Good = true
 
-  [Params.PVLV]
-    'Urgency.U50' = 10
-
 [Run]
   GPU = false
   NThreads = 0

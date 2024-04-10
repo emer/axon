@@ -4,8 +4,8 @@
             EC2		Nominal:	  0.02	Params: Base:#EC2: 0.02
 						Layer.Gi:	  1.20	Params: #EC2: 1.2
 
-             DG		Nominal:	  0.01	Params: #DG: 0.01
-						Layer.Gi:	  2.40	Params: Base:#DG: 2.4
+             DG		Nominal:	  0.01	Params: Base:#DG: 0.01
+						Layer.Gi:	  2.40	Params: #DG: 2.4
 
             CA3		Nominal:	  0.01	Params: Base:#CA3: 0.01
 						Layer.Gi:	  1.20	Params: #CA3: 1.2

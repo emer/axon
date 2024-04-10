@@ -84,9 +84,6 @@ Learn: {
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
-VSPatch: {
-  MaxLRateFactor: 1
-}
 ///////////////////////////////////////////////////
 Prjn: StateToVsPatchD1
 Com: {
@@ -149,9 +146,6 @@ Learn: {
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
-}
-VSPatch: {
-  MaxLRateFactor: 1
 }
 ///////////////////////////////////////////////////
 Prjn: StateToVsPatchD2

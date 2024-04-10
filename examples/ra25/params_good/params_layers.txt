@@ -2,11 +2,11 @@
 						Layer.Gi:	  0.90	Params: #Input: 0.9 | Base:Layer: 1.05
 
         Hidden1		Nominal:	  0.06	Params: Layer: 0.06
-						Layer.Gi:	  1.05	Params: Base:Layer: 1.05
+						Layer.Gi:	  1.05	Params: Layer: 1.05
 
         Hidden2		Nominal:	  0.06	Params: Layer: 0.06
 						Layer.Gi:	  1.05	Params: Base:Layer: 1.05
 
-         Output		Nominal:	  0.24	Params: #Output: 0.24 | Base:Layer: 0.06
-						Layer.Gi:	  0.65	Params: #Output: 0.65 | Layer: 1.05
+         Output		Nominal:	  0.24	Params: #Output: 0.24 | Layer: 0.06
+						Layer.Gi:	  0.65	Params: #Output: 0.65 | Base:Layer: 1.05
 

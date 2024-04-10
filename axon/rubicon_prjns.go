@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl: start pvlv_prjns
+//gosl: start rubicon_prjns
 
 // BLAPrjnParams has parameters for basolateral amygdala learning.
 // Learning is driven by the Tr trace as function of ACh * Send Act
@@ -37,7 +37,7 @@ func (bp *BLAPrjnParams) Update() {
 
 }
 
-//gosl: end pvlv_prjns
+//gosl: end rubicon_prjns
 
 func (pj *PrjnParams) BLADefaults() {
 	pj.SWts.Adapt.On.SetBool(false)

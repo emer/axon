@@ -6,7 +6,7 @@ OpenWts = ''
 [Env]
   Config = ''
   NDrives = 4
-  PctCortexStEpc = 10
+  PctCortexStEpc = 50
   PctCortexNEpc = 1
   PctCortex = 0.0
   SameSeed = false
@@ -27,6 +27,7 @@ OpenWts = ''
   NRuns = 5
   NEpochs = 100
   NTrials = 128
+  NCycles = 300
   PCAInterval = 10
 
 [Log]

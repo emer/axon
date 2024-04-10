@@ -621,7 +621,7 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.ApplyExts(ctx)
 }
 
-// Apply.Rubicon applies current .Rubicon values to Context.Rubicon,
+// ApplyRubicon applies current Rubicon values to Context.Rubicon,
 // from given trial data.
 func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
 	pv := &ss.Net.Rubicon

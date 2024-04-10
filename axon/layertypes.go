@@ -123,7 +123,7 @@ const (
 	VSGatedLayer
 
 	/////////////
-	// .Rubicon
+	// Rubicon
 
 	// BLALayer represents a basolateral amygdala layer
 	// which learns to associate arbitrary stimuli (CSs)
@@ -150,14 +150,14 @@ const (
 	// visualization and predictive learning purposes.
 	DrivesLayer
 
-	// UrgencyLayer represents the Urgency factor in .Rubicon framework.
+	// UrgencyLayer represents the Urgency factor in Rubicon framework.
 	// It tracks the Global Urgency.Urge value for
 	// visualization and predictive learning purposes.
 	UrgencyLayer
 
 	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
 	// It tracks the Global USpos or USneg, for visualization
-	// and predictive learning purposes. Actual US inputs are set in .Rubicon.
+	// and predictive learning purposes. Actual US inputs are set in Rubicon.
 	USLayer
 
 	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
@@ -179,7 +179,7 @@ const (
 	LDTLayer
 
 	// VTALayer represents the ventral tegmental area, which releases
-	// dopamine.  It computes final DA value from .Rubicon-computed
+	// dopamine.  It computes final DA value from Rubicon-computed
 	// LHb PVDA (primary value DA), updated at start of each trial from
 	// updated US, Effort, etc state, and cycle-by-cycle LV learned value
 	// state reflecting CS inputs, in the Amygdala (CeM).
@@ -195,14 +195,14 @@ const (
 	RewLayer
 
 	// RWPredLayer computes reward prediction for a simple Rescorla-Wagner
-	// learning dynamic (i.e., PV learning in the .Rubicon framework).
+	// learning dynamic (i.e., PV learning in the Rubicon framework).
 	// Activity is computed as linear function of excitatory conductance
 	// (which can be negative -- there are no constraints).
 	// Use with RWPrjn which does simple delta-rule learning on minus-plus.
 	RWPredLayer
 
 	// RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner
-	// learning dynamic (i.e., PV learning in the .Rubicon framework).
+	// learning dynamic (i.e., PV learning in the Rubicon framework).
 	// It computes difference between r(t) and RWPred values.
 	// r(t) is accessed directly from a Rew layer -- if no external input then no
 	// DA is computed -- critical for effective use of RW only for PV cases.

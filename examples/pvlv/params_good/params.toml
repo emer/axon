@@ -33,7 +33,7 @@
   Desc = ""
   [Base.Params]
     "Layer.VTA.AChThr" = "0.5"
-    "Layer.VTA.CeMGain" = "0.75"
+    "Layer.VTA.CeMGain" = "0.5"
     "Layer.VTA.LHbGain" = "1.25"
 
 [[Base]]
@@ -58,6 +58,12 @@
     "Layer.Acts.Dend.ModGain" = "1.5"
 
 [[Base]]
+  Sel = "#OFCposUSPT"
+  Desc = ""
+  [Base.Params]
+    "Layer.Acts.SMaint.Gbar" = "0.4"
+
+[[Base]]
   Sel = ".PTPredLayer"
   Desc = ""
   [Base.Params]
@@ -75,12 +81,6 @@
   [Base.Params]
     "Layer.Inhib.ActAvg.Nominal" = "0.1"
     "Layer.Inhib.Pool.Gi" = "1"
-
-[[Base]]
-  Sel = "#OFCposUSPT"
-  Desc = ""
-  [Base.Params]
-    "Layer.Acts.SMaint.Gbar" = "0.4"
 
 [[Base]]
   Sel = "#SC"

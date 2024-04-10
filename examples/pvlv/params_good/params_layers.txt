@@ -72,7 +72,7 @@
 
       VsPatchD2		Nominal:	  0.20	
 						Layer.Gi:	  0.50	Params: .VSPatchLayer: 0.5
-						Pool.Gi: 	  0.50	Params: .VSPatchLayer: 0.5
+						Pool.Gi: 	  0.50	Params: Base:.VSPatchLayer: 0.5
 
              SC		Nominal:	  0.10	
 						Layer.Gi:	  1.20	
@@ -82,8 +82,8 @@
 						Pool.Gi: 	  1.00	
 
     BLAPosExtD2		Nominal:	  0.03	
-						Layer.Gi:	  1.80	Params: #BLAPosExtD2: 1.8
-						Pool.Gi: 	  1.00	Params: Base:#BLAPosExtD2: 1.0
+						Layer.Gi:	  1.80	Params: Base:#BLAPosExtD2: 1.8
+						Pool.Gi: 	  1.00	Params: #BLAPosExtD2: 1.0
 
     BLANegExtD1		Nominal:	  0.03	
 						Layer.Gi:	  1.80	
@@ -174,25 +174,21 @@
        ILnegPTp		Nominal:	  0.10	
 						Layer.Gi:	  0.80	
 
-       ACCnegUS		Nominal:	  0.10	
-						Layer.Gi:	  1.20	
+        ACCcost		Nominal:	  0.10	
 						Pool.Gi: 	  1.00	
 
-     ACCnegUSCT		Nominal:	  0.03	
-						Layer.Gi:	  4.00	
-						Pool.Gi: 	  1.20	
+      ACCcostCT		Nominal:	  0.03	
+						Pool.Gi: 	  1.80	
 
-     ACCnegUSPT		Nominal:	  0.02	
-						Layer.Gi:	  0.50	
+      ACCcostPT		Nominal:	  0.02	
 						Pool.Gi: 	  0.50	
 
-     ACCnegUSMD		Nominal:	  0.03	
+      ACCcostMD		Nominal:	  0.03	
 						Layer.Gi:	  2.00	
 						Pool.Gi: 	  0.60	
 
-    ACCnegUSPTp		Nominal:	  0.10	
-						Layer.Gi:	  1.20	
-						Pool.Gi: 	  1.40	
+     ACCcostPTp		Nominal:	  0.10	
+						Pool.Gi: 	  1.20	
 
            Time		Nominal:	  0.10	
 						Layer.Gi:	  0.90	

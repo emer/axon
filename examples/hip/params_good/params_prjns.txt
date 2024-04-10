@@ -24,7 +24,7 @@ Layer: CA3
 
 Layer: EC3
 	            EC5	       BackPrjn	Abs:	  1.00	Rel:	  0.50	GScale:	  0.33	Rel:  0.33
-								    Rel Params: Base:#EC5ToEC3: 0.5
+								    Rel Params: #EC5ToEC3: 0.5
 	          Input	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  0.67	Rel:  0.67
 
 Layer: CA1
@@ -35,4 +35,4 @@ Layer: CA1
 
 Layer: EC5
 	            CA1	    ForwardPrjn	Abs:	  3.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
-								    Abs Params: Base:#CA1ToEC5: 3.0
+								    Abs Params: #CA1ToEC5: 3.0
