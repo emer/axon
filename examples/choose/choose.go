@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-boa: This project tests BG, OFC & ACC learning in a CS-driven approach task.
+choose: This project tests the Rubicon framework making cost-benefit based choices
 */
 package main
 
@@ -20,7 +20,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/mat32"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/axon/v2/examples/boa/armaze"
+	"github.com/emer/axon/v2/examples/choose/armaze"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
@@ -192,7 +192,7 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
-	net.InitName(net, "Boa")
+	net.InitName(net, "Choose")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
@@ -1227,8 +1227,8 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "BOA: BG, OFC ACC"
-	ss.GUI.MakeBody(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	title := "Choose: Rubicon"
+	ss.GUI.MakeBody(ss, "choose", title, `This project tests the Rubicon framework in simple cost-benefit choice scenarios, using an N-arm bandit maze task. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -1286,7 +1286,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/boa/README.md")
+				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/choose/README.md")
 			},
 		})
 	})
