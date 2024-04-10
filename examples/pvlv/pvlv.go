@@ -169,7 +169,7 @@ func (ss *Sim) ConfigRubicon() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, ".Rubicon")
+	net.InitName(net, "Rubicon")
 	net.SetMaxData(ctx, 1)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
@@ -245,8 +245,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	////////////////////////////////////////////////
 	// position
 
-	time.PlaceRightOf(pvPos, space)
-	cs.PlaceRightOf(time, space*3)
+	time.PlaceRightOf(pvPos, space*2)
+	cs.PlaceRightOf(time, space)
 	ctxIn.PlaceRightOf(cs, space)
 
 	net.Build(ctx)
@@ -383,7 +383,7 @@ func (ss *Sim) ApplyInputs() {
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
-// Apply.Rubicon applies current .Rubicon values to Context.Rubicon,
+// ApplyRubicon applies current Rubicon values to Context.Rubicon,
 // from given trial data.
 func (ss *Sim) ApplyRubicon(ctx *axon.Context, trl *cond.Trial) {
 	pv := &ss.Net.Rubicon
@@ -818,7 +818,7 @@ func (ss *Sim) ConfigGUI() {
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
 			Icon:    icons.PlayArrow,
-			Tooltip: "Opens a new window to plot .Rubicon Drive and Effort dynamics.",
+			Tooltip: "Opens a new window to plot Rubicon Drive and Effort dynamics.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
 				go DriveEffortGUI()

@@ -371,6 +371,21 @@ func (net *Network) ConnectPTToPulv(pt, ptPred, pulv *Layer, toPulvPat, fmPulvPa
 	return
 }
 
+// ConnectPTpToPulv connects PTPred with given Pulv:
+// PTPred -> Pulv is class PTPredToPulv,
+// From Pulv = type = Back, class = FromPulv
+// toPulvPat is the prjn.Pattern PT -> Pulv and fmPulvPat is Pulv -> PTPred
+// Typically Pulv is a different shape than PTPred, so use Full or appropriate
+// topological pattern. adds optional class name to projection.
+func (net *Network) ConnectPTpToPulv(ptPred, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern, prjnClass string) (ptToPulv, ptPredToPulv, toPTPred *Prjn) {
+	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
+	ptPredToPulv = net.ConnectLayers(ptPred, pulv, toPulvPat, ForwardPrjn)
+	ptPredToPulv.AddClass("PTPredToPulv", prjnClass)
+	toPTPred = net.ConnectLayers(pulv, ptPred, fmPulvPat, BackPrjn)
+	toPTPred.AddClass("FromPulv", prjnClass)
+	return
+}
+
 // AddPTPredLayer adds a PTPred pyramidal tract prediction layer
 // for given PTMaint layer and associated CT.
 // Sets SetClass(super.Name()) to allow shared params.
@@ -556,6 +571,7 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 // lay -> pfc (skipped if lay == nil)
 // layP -> pfc, layP <-> pfcCT
 // pfcPTp <-> layP
+// if pfcPT != nil: pfcPT <-> layP
 // sets PFCPrjn class name for projections
 func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Layer, pat prjn.Pattern, prjnClass string) {
 	if prjnClass == "" {
@@ -570,7 +586,11 @@ func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Layer, pa
 		pj.AddClass("ToPTp ", prjnClass)
 	}
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
-	net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, prjnClass)
+	if pfcPT == nil {
+		net.ConnectPTpToPulv(pfcPTp, layP, pat, pat, prjnClass)
+	} else {
+		net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, prjnClass)
+	}
 }
 
 // ConnectToPFCBack connects given predictively learned input to all

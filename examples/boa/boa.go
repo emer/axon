@@ -217,7 +217,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, plUtil, sc := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = plUtil, urgency
 	_, _ = ofcNegUSCT, ofcNegUSPTp
 
@@ -262,6 +262,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).AddClass("ToVL")
 	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+
+	net.ConnectLayers(m1, accCost, full, axon.ForwardPrjn).AddClass("MToACC")
+	net.ConnectLayers(alm, accCost, full, axon.ForwardPrjn).AddClass("MToACC")
 
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 

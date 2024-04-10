@@ -323,10 +323,11 @@ func (ly *LayerParams) USDefaults() {
 func (ly *LayerParams) PVDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Layer.Gi = 1
 	ly.Inhib.Pool.On.SetBool(false)
 	ly.Acts.PopCode.On.SetBool(true)
 	// note: may want to modulate rate code as well:
+	ly.Acts.PopCode.Ge = 0.4
 	// ly.Acts.PopCode.MinAct = 0.2
 	// ly.Acts.PopCode.MinSigma = 0.08
 	// ly.Acts.PopCode.MaxSigma = 0.12

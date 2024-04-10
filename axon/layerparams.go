@@ -468,6 +468,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	pni := NrnI(ctx, ni, NrnNeurIndex) - pl.StIndex
 	nrnCtxtGe := NrnV(ctx, ni, di, CtxtGe)
 	nrnGeRaw := NrnV(ctx, ni, di, GeRaw)
+	hasRew := GlbV(ctx, di, GvHasRew) > 0
 	switch ly.LayType {
 	case CTLayer:
 		fallthrough
@@ -543,18 +544,23 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		if us > 0 {
 			geRaw = ly.Acts.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), us)
 		}
-		SetNrnV(ctx, ni, di, GeRaw, geRaw)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFromRawSteady(geRaw))
-	case PVLayer:
-		pv := float32(0)
-		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = GlbV(ctx, di, GvPVpos)
-		} else {
-			pv = GlbV(ctx, di, GvPVneg)
+		// D2Mod = final
+		if ly.Learn.NeuroMod.DAMod == D1Mod || (ly.Learn.NeuroMod.DAMod == D2Mod && hasRew && ctx.PlusPhase.IsTrue()) {
+			SetNrnV(ctx, ni, di, GeRaw, geRaw)
+			SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFromRawSteady(geRaw))
 		}
-		pc := ly.Acts.PopCode.EncodeGe(pni, ly.Indexes.NeurN, pv)
-		SetNrnV(ctx, ni, di, GeRaw, pc)
-		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFromRawSteady(pc))
+	case PVLayer:
+		if hasRew && ctx.PlusPhase.IsTrue() {
+			pv := float32(0)
+			if ly.Learn.NeuroMod.Valence == Positive {
+				pv = GlbV(ctx, di, GvPVpos)
+			} else {
+				pv = GlbV(ctx, di, GvPVneg)
+			}
+			pc := ly.Acts.PopCode.EncodeGe(pni, ly.Indexes.NeurN, pv)
+			SetNrnV(ctx, ni, di, GeRaw, pc)
+			SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFromRawSteady(pc))
+		}
 	case LDTLayer:
 		geRaw := 0.4 * GlbV(ctx, di, GvACh)
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
@@ -716,6 +722,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	SetNrnV(ctx, ni, di, Burst, NrnV(ctx, ni, di, CaSpkP))
 	pi := NrnI(ctx, ni, NrnSubPool) - 1 // 0-n pool index
 	pni := NrnI(ctx, ni, NrnNeurIndex) - pl.StIndex
+	hasRew := GlbV(ctx, di, GvHasRew) > 0
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -748,7 +755,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
-			if GlbV(ctx, di, GvHasRew) > 0 {
+			if hasRew {
 				SetNrnV(ctx, ni, di, CtxtGe, 0)
 				SetNrnV(ctx, ni, di, CtxtGeOrig, 0)
 			} else if GlbV(ctx, di, GvACh) > 0.1 {
@@ -783,16 +790,21 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		if us > 0 {
 			act = ly.Acts.PopCode.EncodeValue(pni, uint32(pl.NNeurons()), us)
 		}
-		SetNrnV(ctx, ni, di, Act, act)
-	case PVLayer:
-		pv := float32(0)
-		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = GlbV(ctx, di, GvPVpos)
-		} else {
-			pv = GlbV(ctx, di, GvPVneg)
+		// D2Mod = final
+		if ly.Learn.NeuroMod.DAMod == D1Mod || (ly.Learn.NeuroMod.DAMod == D2Mod && hasRew && ctx.PlusPhase.IsTrue()) {
+			SetNrnV(ctx, ni, di, Act, act)
 		}
-		act := ly.Acts.PopCode.EncodeValue(pni, ly.Indexes.NeurN, pv)
-		SetNrnV(ctx, ni, di, Act, act)
+	case PVLayer:
+		if hasRew {
+			pv := float32(0)
+			if ly.Learn.NeuroMod.Valence == Positive {
+				pv = GlbV(ctx, di, GvPVpos)
+			} else {
+				pv = GlbV(ctx, di, GvPVneg)
+			}
+			act := ly.Acts.PopCode.EncodeValue(pni, ly.Indexes.NeurN, pv)
+			SetNrnV(ctx, ni, di, Act, act)
+		}
 	case LDTLayer:
 		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvAChRaw)) // I set this in CyclePost
 	case VTALayer:

@@ -146,6 +146,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1", // todo: try 3?
 			}},
+		{Sel: ".MToACC", Desc: "",
+			Params: params.Params{
+				"Prjn.PrjnScale.Abs": "3",
+			}},
 		// {Sel: ".PTSelfMaint", Desc: "",
 		// 	Params: params.Params{
 		// 		"Prjn.PrjnScale.Abs":    "4",

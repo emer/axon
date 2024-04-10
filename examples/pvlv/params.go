@@ -83,6 +83,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Acts.KNa.Slow.Max": "0.5", // .5 needed to shut off
 			}},
+		{Sel: "#CostP", Desc: "",
+			Params: params.Params{
+				"Layer.Pulv.DriveScale": "0.2", // 0.1 def
+			}},
 		//////////////////////////////////////////////////
 		// required custom params for this project
 		{Sel: "#ContextInToBLAPosExtD2", Desc: "specific to this project",
