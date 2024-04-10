@@ -42,7 +42,7 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 	}
 }
 
-// GiFmSpikes gets the Spike, GeRaw and GeExt from neurons in the pools
+// GiFromSpikes gets the Spike, GeRaw and GeExt from neurons in the pools
 // where Spike drives FBsRaw = raw feedback signal,
 // GeRaw drives FFsRaw = aggregate feedforward excitatory spiking input.
 // GeExt represents extra excitatory input from other sources.
@@ -50,7 +50,7 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 // at the layer and pool level.
 // Called separately by Network.CycleImpl on all Layers
 // Also updates all AvgMax values at the Cycle level.
-func (ly *Layer) GiFmSpikes(ctx *Context) {
+func (ly *Layer) GiFromSpikes(ctx *Context) {
 	np := ly.NPools
 	hasSubPools := (np > 1)
 	nn := ly.NNeurons
@@ -77,7 +77,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 			ppi := pi
 			ddi := di
 			SetAvgMaxFloatFromIntErr(func() {
-				fmt.Printf("GiFmSpikes: Layer: %s  pool: %d  di: %d\n", ly.Nm, ppi, ddi)
+				fmt.Printf("GiFromSpikes: Layer: %s  pool: %d  di: %d\n", ly.Nm, ppi, ddi)
 			})
 			pl := ly.Pool(pi, di)
 			pl.AvgMax.Calc(int32(ly.Idx))
@@ -86,16 +86,16 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	for di := uint32(0); di < ctx.NetIndexes.MaxData; di++ {
 		lpl := ly.Pool(0, di)
 		lpl.Inhib.IntToRaw()
-		ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.LayerValues(di))
+		ly.Params.LayPoolGiFromSpikes(ctx, lpl, ly.LayerValues(di))
 	}
-	// ly.PoolGiFmSpikes(ctx) // note: this is now called as a second pass
+	// ly.PoolGiFromSpikes(ctx) // note: this is now called as a second pass
 	// so that we can do between-layer inhibition
 }
 
-// PoolGiFmSpikes computes inhibition Gi from Spikes within sub-pools.
+// PoolGiFromSpikes computes inhibition Gi from Spikes within sub-pools.
 // and also between different layers based on LayInhib* indexes
-// must happen after LayPoolGiFmSpikes has been called.
-func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
+// must happen after LayPoolGiFromSpikes has been called.
+func (ly *Layer) PoolGiFromSpikes(ctx *Context) {
 	ly.BetweenLayerGi(ctx)
 	np := ly.NPools
 	if np == 1 {
@@ -107,7 +107,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 		for pi := uint32(1); pi < np; pi++ {
 			pl := ly.Pool(pi, di)
 			pl.Inhib.IntToRaw()
-			ly.Params.SubPoolGiFmSpikes(ctx, di, pl, lpl, lyInhib, ly.Values[di].ActAvg.GiMult)
+			ly.Params.SubPoolGiFromSpikes(ctx, di, pl, lpl, lyInhib, ly.Values[di].ActAvg.GiMult)
 		}
 	}
 }
@@ -150,7 +150,7 @@ func (ly *Layer) PulvinarDriver(ctx *Context, lni, di uint32) (drvGe, nonDrivePc
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
-// calls SpecialGFmRawSyn, GiInteg
+// calls SpecialGFromRawSyn, GiInteg
 func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues) {
 	drvGe := float32(0)
 	nonDrivePct := float32(0)
@@ -161,16 +161,16 @@ func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues
 
 	saveVal := ly.Params.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct)
 
-	ly.Params.GFmRawSyn(ctx, ni, di)
+	ly.Params.GFromRawSyn(ctx, ni, di)
 	ly.Params.GiInteg(ctx, ni, di, pl, vals)
 	ly.Params.GNeuroMod(ctx, ni, di, vals)
 
 	ly.Params.SpecialPostGs(ctx, ni, di, saveVal)
 }
 
-// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32, lpl *Pool) {
-	ly.Params.SpikeFmG(ctx, ni, di, lpl)
+// SpikeFromG computes Vm from Ge, Gi, Gl conductances and then Spike from that
+func (ly *Layer) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
+	ly.Params.SpikeFromG(ctx, ni, di, lpl)
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
@@ -180,7 +180,7 @@ func (ly *Layer) CycleNeuron(ctx *Context, ni uint32) {
 		lpl := ly.Pool(0, di)
 		pl := ly.SubPool(ctx, ni, di)
 		ly.GInteg(ctx, ni, di, pl, ly.LayerValues(di))
-		ly.SpikeFmG(ctx, ni, di, lpl)
+		ly.SpikeFromG(ctx, ni, di, lpl)
 	}
 }
 
@@ -539,7 +539,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
-	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
+	ly.CorSimFromActs(ctx) // GPU syncs down the state before this
 	np := ly.NPools
 	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposUSPT" {
 		for pi := uint32(1); pi < np; pi++ {
@@ -661,10 +661,10 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 	}
 }
 
-// CorSimFmActs computes the correlation similarity
+// CorSimFromActs computes the correlation similarity
 // (centered cosine aka normalized dot product)
 // in activation state between minus and plus phases.
-func (ly *Layer) CorSimFmActs(ctx *Context) {
+func (ly *Layer) CorSimFromActs(ctx *Context) {
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		vals := ly.LayerValues(di)
 		lpl := ly.Pool(0, di)
@@ -720,18 +720,18 @@ func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
 	}
 }
 
-// WtFmDWt updates weight values from delta weight changes
-func (ly *Layer) WtFmDWt(ctx *Context, si uint32) {
+// WtFromDWt updates weight values from delta weight changes
+func (ly *Layer) WtFromDWt(ctx *Context, si uint32) {
 	for _, pj := range ly.SndPrjns {
 		if pj.IsOff() {
 			continue
 		}
-		pj.WtFmDWt(ctx, si)
+		pj.WtFromDWt(ctx, si)
 	}
 }
 
 // DTrgSubMean subtracts the mean from DTrgAvg values
-// Called by TrgAvgFmD
+// Called by TrgAvgFromD
 func (ly *Layer) DTrgSubMean(ctx *Context) {
 	submean := ly.Params.Learn.TrgAvgAct.SubMean
 	if submean == 0 {
@@ -790,8 +790,8 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 	}
 }
 
-// TrgAvgFmD updates TrgAvg from DTrgAvg -- called in PlusPhasePost
-func (ly *Layer) TrgAvgFmD(ctx *Context) {
+// TrgAvgFromD updates TrgAvg from DTrgAvg -- called in PlusPhasePost
+func (ly *Layer) TrgAvgFromD(ctx *Context) {
 	lr := ly.Params.LearnTrgAvgErrLRate()
 	if lr == 0 {
 		return
@@ -810,19 +810,19 @@ func (ly *Layer) TrgAvgFmD(ctx *Context) {
 	}
 }
 
-// WtFmDWtLayer does weight update at the layer level.
-// does NOT call main projection-level WtFmDWt method.
-// in base, only calls TrgAvgFmD
-func (ly *Layer) WtFmDWtLayer(ctx *Context) {
-	ly.TrgAvgFmD(ctx)
+// WtFromDWtLayer does weight update at the layer level.
+// does NOT call main projection-level WtFromDWt method.
+// in base, only calls TrgAvgFromD
+func (ly *Layer) WtFromDWtLayer(ctx *Context) {
+	ly.TrgAvgFromD(ctx)
 }
 
 // SlowAdapt is the layer-level slow adaptation functions.
-// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.
+// Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
 // Does NOT call projection-level methods.
 func (ly *Layer) SlowAdapt(ctx *Context) {
 	ly.AdaptInhib(ctx)
-	ly.AvgDifFmTrgAvg(ctx)
+	ly.AvgDifFromTrgAvg(ctx)
 	// note: prjn level call happens at network level
 }
 
@@ -837,9 +837,9 @@ func (ly *Layer) AdaptInhib(ctx *Context) {
 	}
 }
 
-// AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
+// AvgDifFromTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
 // which is then used for synaptic scaling of LWt values in Prjn SynScale.
-func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
+func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 	sp := uint32(0)
 	if ly.NPools > 1 {
 		sp = 1
@@ -878,7 +878,7 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 		}
 		ppi := pi
 		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFmTrgAvg Pool Layer: %s  pool: %d\n", ly.Nm, ppi)
+			fmt.Printf("AvgDifFromTrgAvg Pool Layer: %s  pool: %d\n", ly.Nm, ppi)
 		})
 		pl.AvgDif.Calc(int32(ly.Idx))                          // ref in case of crash
 		for di := uint32(1); di < ctx.NetIndexes.NData; di++ { // copy to other datas
@@ -897,7 +897,7 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			lpl.AvgDif.UpdateValue(mat32.Abs(NrnAvgV(ctx, ni, AvgDif)))
 		}
 		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFmTrgAvg LayPool Layer: %s\n", ly.Nm)
+			fmt.Printf("AvgDifFromTrgAvg LayPool Layer: %s\n", ly.Nm)
 		})
 		lpl.AvgDif.Calc(int32(ly.Idx))
 
@@ -909,7 +909,7 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 }
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
-// and WtFmDWt, but this call can be used during testing to update failing synapses.
+// and WtFromDWt, but this call can be used during testing to update failing synapses.
 func (ly *Layer) SynFail(ctx *Context) {
 	for _, pj := range ly.SndPrjns {
 		if pj.IsOff() {

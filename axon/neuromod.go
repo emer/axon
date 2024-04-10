@@ -178,9 +178,9 @@ func (nm *NeuroModParams) GGain(da float32) float32 {
 	return gain
 }
 
-// GIFmACh returns amount of extra inhibition to add based on disinhibitory
+// GIFromACh returns amount of extra inhibition to add based on disinhibitory
 // effects of ACh -- no inhibition when ACh = 1, extra when < 1.
-func (nm *NeuroModParams) GiFmACh(ach float32) float32 {
+func (nm *NeuroModParams) GiFromACh(ach float32) float32 {
 	ai := 1 - ach
 	if ai < 0 {
 		ai = 0

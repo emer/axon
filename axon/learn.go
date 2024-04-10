@@ -76,7 +76,7 @@ func (np *CaLrnParams) Update() {
 
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
 // and performs time-integration of VgccCa
-func (np *CaLrnParams) VgccCaFmSpike(ctx *Context, ni, di uint32) {
+func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 	if np.SpkVGCC.IsTrue() {
 		SetNrnV(ctx, ni, di, VgccCa, np.SpkVgccCa*NrnV(ctx, ni, di, Spike))
 	}
@@ -88,7 +88,7 @@ func (np *CaLrnParams) VgccCaFmSpike(ctx *Context, ni, di uint32) {
 // it first calls VgccCa to update the spike-driven version of that variable, and
 // perform its time-integration.
 func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
-	np.VgccCaFmSpike(ctx, ni, di)
+	np.VgccCaFromSpike(ctx, ni, di)
 	SetNrnV(ctx, ni, di, CaLrn, np.NormInv*(NrnV(ctx, ni, di, NmdaCa)+NrnV(ctx, ni, di, VgccCaInt)))
 	AddNrnV(ctx, ni, di, NrnCaM, np.Dt.MDt*(NrnV(ctx, ni, di, CaLrn)-NrnV(ctx, ni, di, NrnCaM)))
 	AddNrnV(ctx, ni, di, NrnCaP, np.Dt.PDt*(NrnV(ctx, ni, di, NrnCaM)-NrnV(ctx, ni, di, NrnCaP)))
@@ -131,8 +131,8 @@ func (np *CaSpkParams) Update() {
 	np.SynDt = 1 / np.SynTau
 }
 
-// CaFmSpike computes CaSpk* and CaSyn calcium signals based on current spike.
-func (np *CaSpkParams) CaFmSpike(ctx *Context, ni, di uint32) {
+// CaFromSpike computes CaSpk* and CaSyn calcium signals based on current spike.
+func (np *CaSpkParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	nsp := np.SpikeG * NrnV(ctx, ni, di, Spike)
 	AddNrnV(ctx, ni, di, CaSyn, np.SynDt*(nsp-NrnV(ctx, ni, di, CaSyn)))
 	AddNrnV(ctx, ni, di, CaSpkM, np.Dt.MDt*(nsp-NrnV(ctx, ni, di, CaSpkM)))
@@ -371,24 +371,24 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, CaDiff, 0)
 }
 
-// LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
+// LrnNMDAFromRaw updates the separate NMDA conductance and calcium values
 // based on GeTot = GeRaw + external ge conductance.  These are the variables
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
-func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float32) {
+func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if geTot < 0 {
 		geTot = 0
 	}
 	vmd := NrnV(ctx, ni, di, VmDend)
 	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaLrn), geTot))
 	gnmda := ln.LrnNMDA.Gnmda(NrnV(ctx, ni, di, GnmdaLrn), vmd)
-	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(vmd))
+	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFromV(vmd))
 }
 
-// CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
+// CaFromSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
 // Computed after new activation for current cycle is updated.
-func (ln *LearnNeurParams) CaFmSpike(ctx *Context, ni, di uint32) {
-	ln.CaSpk.CaFmSpike(ctx, ni, di)
+func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
+	ln.CaSpk.CaFromSpike(ctx, ni, di)
 	ln.CaLearn.CaLrns(ctx, ni, di)
 }
 
@@ -563,7 +563,7 @@ func (sp *SWtParams) Update() {
 
 // WtVal returns the effective Wt value given the SWt and LWt values
 func (sp *SWtParams) WtValue(swt, lwt float32) float32 {
-	return swt * sp.SigFmLinWt(lwt)
+	return swt * sp.SigFromLinWt(lwt)
 }
 
 // ClipSWt returns SWt value clipped to valid range
@@ -582,10 +582,10 @@ func (sp *SWtParams) ClipWt(wt float32) float32 {
 	return wt
 }
 
-// SigFmLinWt returns sigmoidal contrast-enhanced weight from linear weight,
+// SigFromLinWt returns sigmoidal contrast-enhanced weight from linear weight,
 // centered at 1 and normed in range +/- 1 around that
 // in preparation for multiplying times SWt
-func (sp *SWtParams) SigFmLinWt(lw float32) float32 {
+func (sp *SWtParams) SigFromLinWt(lw float32) float32 {
 	var wt float32
 	if sp.Adapt.SigGain == 1 {
 		wt = lw
@@ -597,10 +597,10 @@ func (sp *SWtParams) SigFmLinWt(lw float32) float32 {
 	return 2.0 * wt // center at 1 instead of .5
 }
 
-// LinFmSigWt returns linear weight from sigmoidal contrast-enhanced weight.
+// LinFromSigWt returns linear weight from sigmoidal contrast-enhanced weight.
 // wt is centered at 1, and normed in range +/- 1 around that,
 // return value is in 0-1 range, centered at .5
-func (sp *SWtParams) LinFmSigWt(wt float32) float32 {
+func (sp *SWtParams) LinFromSigWt(wt float32) float32 {
 	wt *= 0.5
 	if wt < 0 {
 		wt = 0
@@ -616,16 +616,16 @@ func (sp *SWtParams) LinFmSigWt(wt float32) float32 {
 	return SigInvFun(wt, sp.Adapt.SigGain, 1)
 }
 
-// LWtFmWts returns linear, learning LWt from wt and swt.
+// LWtFromWts returns linear, learning LWt from wt and swt.
 // LWt is set to reproduce given Wt relative to given SWt base value.
-func (sp *SWtParams) LWtFmWts(wt, swt float32) float32 {
+func (sp *SWtParams) LWtFromWts(wt, swt float32) float32 {
 	rwt := wt / swt
-	return sp.LinFmSigWt(rwt)
+	return sp.LinFromSigWt(rwt)
 }
 
-// WtFmDWt updates the synaptic weights from accumulated weight changes.
+// WtFromDWt updates the synaptic weights from accumulated weight changes.
 // wt is the sigmoidal contrast-enhanced weight and lwt is the linear weight value.
-func (sp *SWtParams) WtFmDWt(wt, lwt *float32, dwt, swt float32) {
+func (sp *SWtParams) WtFromDWt(wt, lwt *float32, dwt, swt float32) {
 	if dwt == 0 {
 		if *wt == 0 { // restore failed wts
 			*wt = sp.WtValue(swt, *lwt)
@@ -671,7 +671,7 @@ func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean,
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 prjns
 		SetSynV(ctx, syni, SWt, 0.5)
 	}
-	SetSynV(ctx, syni, LWt, sp.LWtFmWts(wt, SynV(ctx, syni, SWt)))
+	SetSynV(ctx, syni, LWt, sp.LWtFromWts(wt, SynV(ctx, syni, SWt)))
 	SetSynV(ctx, syni, DWt, 0)
 	SetSynV(ctx, syni, DSWt, 0)
 }
@@ -743,9 +743,9 @@ func (tp *TraceParams) Update() {
 	tp.Dt = 1.0 / tp.Tau
 }
 
-// TrFmCa returns updated trace factor as function of a
+// TrFromCa returns updated trace factor as function of a
 // synaptic calcium update factor and current trace
-func (tp *TraceParams) TrFmCa(tr float32, ca float32) float32 {
+func (tp *TraceParams) TrFromCa(tr float32, ca float32) float32 {
 	tr += tp.Dt * (ca - tr)
 	return tr
 }

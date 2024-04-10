@@ -74,28 +74,28 @@ func (ap *AKParams) Proximal() {
 	ap.Hf = 0.1112
 }
 
-// AlphaFmVK returns the Alpha function from vbio (not normalized, must not exceed 0)
-func (ap *AKParams) AlphaFmVK(vbio, k float32) float32 {
+// AlphaFromVK returns the Alpha function from vbio (not normalized, must not exceed 0)
+func (ap *AKParams) AlphaFromVK(vbio, k float32) float32 {
 	return mat32.FastExp(0.03707 * k * (vbio - ap.Voff))
 }
 
-// BetaFmVK returns the Beta function from vbio (not normalized, must not exceed 0)
-func (ap *AKParams) BetaFmVK(vbio, k float32) float32 {
+// BetaFromVK returns the Beta function from vbio (not normalized, must not exceed 0)
+func (ap *AKParams) BetaFromVK(vbio, k float32) float32 {
 	return mat32.FastExp(ap.Beta * k * (vbio - ap.Voff))
 }
 
-// KFmV returns the K value from vbio (not normalized, must not exceed 0)
-func (ap *AKParams) KFmV(vbio float32) float32 {
+// KFromV returns the K value from vbio (not normalized, must not exceed 0)
+func (ap *AKParams) KFromV(vbio float32) float32 {
 	return -ap.Koff - 1.0/(1.0+mat32.FastExp((vbio+40)/5))
 }
 
-// HFmV returns the H gate value from vbio (not normalized, must not exceed 0)
-func (ap *AKParams) HFmV(vbio float32) float32 {
+// HFromV returns the H gate value from vbio (not normalized, must not exceed 0)
+func (ap *AKParams) HFromV(vbio float32) float32 {
 	return 1.0 / (1.0 + mat32.FastExp(ap.Hf*(vbio+56)))
 }
 
-// HTauFmV returns the HTau rate constant in msec from vbio (not normalized, must not exceed 0)
-func (ap *AKParams) HTauFmV(vbio float32) float32 {
+// HTauFromV returns the HTau rate constant in msec from vbio (not normalized, must not exceed 0)
+func (ap *AKParams) HTauFromV(vbio float32) float32 {
 	tau := 0.26 * (vbio + 50)
 	if tau < 2 {
 		tau = 2
@@ -103,30 +103,30 @@ func (ap *AKParams) HTauFmV(vbio float32) float32 {
 	return tau
 }
 
-// MFmAlpha returns the M gate factor from alpha
-func (ap *AKParams) MFmAlpha(alpha float32) float32 {
+// MFromAlpha returns the M gate factor from alpha
+func (ap *AKParams) MFromAlpha(alpha float32) float32 {
 	return 1.0 / (1.0 + alpha)
 }
 
-// MTauFmAlphaBeta returns the MTau rate constant in msec from alpha, beta
-func (ap *AKParams) MTauFmAlphaBeta(alpha, beta float32) float32 {
+// MTauFromAlphaBeta returns the MTau rate constant in msec from alpha, beta
+func (ap *AKParams) MTauFromAlphaBeta(alpha, beta float32) float32 {
 	return 1 + beta/(ap.Dm*(1+alpha)) // minimum of 1 msec
 }
 
-// DMHFmV returns the change at msec update scale in M, H factors
+// DMHFromV returns the change at msec update scale in M, H factors
 // as a function of V normalized (0-1)
-func (ap *AKParams) DMHFmV(v, m, h float32) (float32, float32) {
+func (ap *AKParams) DMHFromV(v, m, h float32) (float32, float32) {
 	vbio := VToBio(v)
 	if vbio > 0 {
 		vbio = 0
 	}
-	k := ap.KFmV(vbio)
-	a := ap.AlphaFmVK(vbio, k)
-	b := ap.BetaFmVK(vbio, k)
-	mt := ap.MTauFmAlphaBeta(a, b)
-	ht := ap.HTauFmV(vbio)
-	dm := (ap.MFmAlpha(a) - m) / mt
-	dh := (ap.HFmV(vbio) - h) / ht
+	k := ap.KFromV(vbio)
+	a := ap.AlphaFromVK(vbio, k)
+	b := ap.BetaFromVK(vbio, k)
+	mt := ap.MTauFromAlphaBeta(a, b)
+	ht := ap.HTauFromV(vbio)
+	dm := (ap.MFromAlpha(a) - m) / mt
+	dh := (ap.HFromV(vbio) - h) / ht
 	return dm, dh
 }
 
@@ -187,23 +187,23 @@ func (ap *AKsParams) ShouldShow(field string) bool {
 	}
 }
 
-// MFmV returns the M gate function from vbio
-func (ap *AKsParams) MFmV(vbio float32) float32 {
+// MFromV returns the M gate function from vbio
+func (ap *AKsParams) MFromV(vbio float32) float32 {
 	if vbio > ap.Vmax {
 		vbio = ap.Vmax
 	}
 	return ap.Hf / (1.0 + mat32.FastExp(-ap.Mf*(vbio+ap.Voff)))
 }
 
-// MFmVnorm returns the M gate function from vnorm
-func (ap *AKsParams) MFmVnorm(v float32) float32 {
-	return ap.MFmV(VToBio(v))
+// MFromVnorm returns the M gate function from vnorm
+func (ap *AKsParams) MFromVnorm(v float32) float32 {
+	return ap.MFromV(VToBio(v))
 }
 
 // Gak returns the conductance as a function of normalized Vm
-// GBar * MFmVnorm(v)
+// GBar * MFromVnorm(v)
 func (ap *AKsParams) Gak(v float32) float32 {
-	return ap.Gbar * ap.MFmVnorm(v)
+	return ap.Gbar * ap.MFromVnorm(v)
 }
 
 //gosl: end chans

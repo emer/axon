@@ -1018,6 +1018,6 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			}
 		}
 	}
-	ly.AvgDifFmTrgAvg(ctx) // update AvgPct based on loaded ActAvg values
+	ly.AvgDifFromTrgAvg(ctx) // update AvgPct based on loaded ActAvg values
 	return err
 }

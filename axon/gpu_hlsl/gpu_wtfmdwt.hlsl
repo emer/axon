@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// performs the WtFmDWt function on all sending projections
+// performs the WtFromDWt function on all sending projections
 
 // note: all must be visible always because accessor methods refer to them
 [[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
@@ -37,16 +37,16 @@
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 
 
-void WtFmDWtSyn2(in Context ctx, in PrjnParams pj, uint syni) {
+void WtFromDWtSyn2(in Context ctx, in PrjnParams pj, uint syni) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
-	pj.WtFmDWtSyn(ctx, syni);
+	pj.WtFromDWtSyn(ctx, syni);
 }
 
-void WtFmDWtSyn(in Context ctx, uint syni) {
+void WtFromDWtSyn(in Context ctx, uint syni) {
 	uint pi = SynI(ctx, syni, SynPrjnIndex);
-	WtFmDWtSyn2(ctx, Prjns[pi], syni);
+	WtFromDWtSyn2(ctx, Prjns[pi], syni);
 }
 
 
@@ -56,7 +56,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Synapses NOT * Data
 	if (!Ctx[0].NetIndexes.SynIndexIsValid(syni)) {
 		return;
 	}
-	WtFmDWtSyn(Ctx[0], syni);
+	WtFromDWtSyn(Ctx[0], syni);
 }
 
 

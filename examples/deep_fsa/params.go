@@ -100,7 +100,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1  still 1.7.19
 				"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 			}},
-		{Sel: ".CTFmSuper", Desc: "full > 1to1",
+		{Sel: ".CTFromSuper", Desc: "full > 1to1",
 			Params: params.Params{
 				"Prjn.Learn.Learn":    "true",
 				"Prjn.SWts.Init.Mean": "0.5",
@@ -122,7 +122,7 @@ var ParamSets = netparams.Sets{
 		// 		"Prjn.PrjnScale.Rel": "0.1",
 		// 		"Prjn.SWts.Init.Sym":  "true", // no effect?  not sure why
 		// 	}},
-		{Sel: ".FmPulv", Desc: "",
+		{Sel: ".FromPulv", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
 			}},

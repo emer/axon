@@ -346,7 +346,7 @@ func TestInitWts(t *testing.T) {
 			}
 			testNet.PlusPhase(ctx)
 			testNet.DWt(ctx)
-			testNet.WtFmDWt(ctx)
+			testNet.WtFromDWt(ctx)
 		}
 	}
 	ReportValDiffs(t, Tol8, valMapA, valMapB, "init1", "init2", nil)
@@ -835,7 +835,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 		hiddwt[didx] = hidLay.RcvPrjns[0].SynValue("DWt", pi, pi)
 		outdwt[didx] = outLay.RcvPrjns[0].SynValue("DWt", pi, pi)
 
-		testNet.WtFmDWt(ctx)
+		testNet.WtFromDWt(ctx)
 		if gpu {
 			testNet.GPU.SyncSynapsesFromGPU()
 			testNet.GPU.SyncSynCaFromGPU()
@@ -1007,7 +1007,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 		hiddwt[didx] = hidLay.RcvPrjns[0].SynValue("DWt", pi, pi)
 		outdwt[didx] = outLay.RcvPrjns[0].SynValue("DWt", pi, pi)
 
-		testNet.WtFmDWt(ctx)
+		testNet.WtFromDWt(ctx)
 		if gpu {
 			testNet.GPU.SyncSynapsesFromGPU()
 		}
@@ -1122,7 +1122,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 		testNet.DWt(ctx)
 
 		if syncAfterWt {
-			testNet.WtFmDWt(ctx)
+			testNet.WtFromDWt(ctx)
 			if slowAdapt {
 				testNet.GPU.SyncSynCaFromGPU() // will be sent back and forth
 				testNet.SlowAdapt(ctx)
@@ -1181,7 +1181,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 		}
 
 		if !syncAfterWt {
-			testNet.WtFmDWt(ctx)
+			testNet.WtFromDWt(ctx)
 			if slowAdapt {
 				testNet.SlowAdapt(ctx)
 			}
@@ -1800,7 +1800,7 @@ func TestSWtLinLearn(t *testing.T) {
 	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	for i := 0; i < nlrn; i++ {
 		sy.DWt = dwt
-		pj.SWts.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+		pj.SWts.WtFromDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 		// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	}
 	if sy.Wt != 1 {

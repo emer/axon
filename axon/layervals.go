@@ -41,7 +41,7 @@ func (lv *ActAvgValues) Init() {
 // statistics at the layer level
 type CorSimStats struct {
 
-	// correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase
+	// correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFromActs called by PlusPhase
 	Cor float32 `edit:"-"`
 
 	// running average of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase

@@ -69,9 +69,9 @@ func (mp *MahpParams) EFun(z float32) float32 {
 	return z / (mat32.FastExp(z) - 1.0)
 }
 
-// NinfTauFmV returns the target infinite-time N gate value and
+// NinfTauFromV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from vbio
-func (mp *MahpParams) NinfTauFmV(vbio float32, ninf, tau *float32) {
+func (mp *MahpParams) NinfTauFromV(vbio float32, ninf, tau *float32) {
 	vo := vbio - mp.Voff
 
 	// logical functions, but have signularity at Voff (vo = 0)
@@ -87,16 +87,16 @@ func (mp *MahpParams) NinfTauFmV(vbio float32, ninf, tau *float32) {
 	return
 }
 
-// NinfTauFmV returns the target infinite-time N gate value and
+// NinfTauFromV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from normalized vm
-func (mp *MahpParams) NinfTauFmVnorm(v float32, ninf, tau *float32) {
-	mp.NinfTauFmV(VToBio(v), ninf, tau)
+func (mp *MahpParams) NinfTauFromVnorm(v float32, ninf, tau *float32) {
+	mp.NinfTauFromV(VToBio(v), ninf, tau)
 }
 
-// DNFmV returns the change in gating factor N based on normalized Vm
-func (mp *MahpParams) DNFmV(v, n float32) float32 {
+// DNFromV returns the change in gating factor N based on normalized Vm
+func (mp *MahpParams) DNFromV(v, n float32) float32 {
 	var ninf, tau float32
-	mp.NinfTauFmVnorm(v, &ninf, &tau)
+	mp.NinfTauFromVnorm(v, &ninf, &tau)
 	// dt := 1.0 - mat32.FastExp(-mp.Tadj/tau) // Mainen comments out this form; Poirazi uses
 	// dt := mp.Tadj / tau // simple linear fix
 	dn := (ninf - n) / tau
@@ -105,7 +105,7 @@ func (mp *MahpParams) DNFmV(v, n float32) float32 {
 
 // GmAHP returns the conductance as a function of n
 func (mp *MahpParams) GmAHP(v float32, n *float32) float32 {
-	dn := mp.DNFmV(v, *n)
+	dn := mp.DNFromV(v, *n)
 	*n += dn
 	g := mp.Tadj * mp.Gbar * *n
 	return g

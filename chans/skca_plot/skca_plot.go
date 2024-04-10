@@ -158,8 +158,8 @@ func (ss *Sim) TimeRun() { //gti:add
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		trial = ti / 200
 		t := float32(ti) * msdt
-		m = ss.SKCa.MFmCa(caR, m)
-		ss.SKCa.CaInRFmSpike(spike, caD, &caIn, &caR)
+		m = ss.SKCa.MFromCa(caR, m)
+		ss.SKCa.CaInRFromSpike(spike, caD, &caIn, &caR)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("Spike", ti, float64(spike))
@@ -175,7 +175,7 @@ func (ss *Sim) TimeRun() { //gti:add
 		} else {
 			spike = 0
 		}
-		ss.CaParams.FmSpike(spike, &caM, &caP, &caD)
+		ss.CaParams.FromSpike(spike, &caM, &caP, &caD)
 	}
 	if ss.TimePlot != nil {
 		ss.TimePlot.UpdatePlot()

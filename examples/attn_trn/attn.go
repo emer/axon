@@ -482,7 +482,7 @@ func (ss *Sim) UpdateViewTime(train bool, viewUpdate axon.TimeScales) {
 // ThetaCyc runs one theta cycle (200 msec) of processing.
 // External inputs must have already been applied prior to calling,
 // using ApplyExt method on relevant layers (see TrainTrial, TestTrial).
-// If train is true, then learning DWt or WtFmDWt calls are made.
+// If train is true, then learning DWt or WtFromDWt calls are made.
 // Handles netview updating within scope, and calls TrainStats()
 func (ss *Sim) ThetaCyc(train bool) {
 	// ss.Win.PollEvents() // this can be used instead of running in a separate goroutine

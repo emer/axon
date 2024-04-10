@@ -414,11 +414,11 @@ func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvVSPatchPosRPE, 0)
 }
 
-// DAFmPVs computes the overall PV DA in terms of LHb burst and dip
+// DAFromPVs computes the overall PV DA in terms of LHb burst and dip
 // activity from given pvPos, pvNeg, and vsPatchPos values.
 // Also returns the net "reward" value as the discounted PV value,
 // separate from the vsPatchPos prediction error factor.
-func (lh *LHbParams) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
+func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
 	thr := lh.NegThr * pvNeg
 	net := pvPos - thr // if > 0, net positive outcome; else net negative (not worth it)
 	if net > 0 {       // worth it
@@ -442,7 +442,7 @@ func (lh *LHbParams) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, 
 // positive reward value or a give-up state has triggered.
 // Returns the overall net reward magnitude, prior to VSPatch discounting.
 func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) float32 {
-	burst, dip, da, rew := lh.DAFmPVs(pvPos, pvNeg, vsPatchPos)
+	burst, dip, da, rew := lh.DAFromPVs(pvPos, pvNeg, vsPatchPos)
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 	SetGlbV(ctx, di, GvLHbPVDA, da)
@@ -681,14 +681,14 @@ func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 	SetGlbCostV(ctx, di, GvCost, 0, 0)
 }
 
-// PVposFmDriveEffort returns the net primary value ("reward") based on
+// PVposFromDriveEffort returns the net primary value ("reward") based on
 // given US value and drive for that value (typically in 0-1 range),
 // and total effort, from which the effort discount factor is computed an applied:
 // usValue * drive * Effort.DiscFun(effort).
 // This is not called directly in the Rubicon code -- can be used to compute
 // what the Rubicon code itself will compute -- see LHbPVDA
 // todo: this is not very meaningful anymore
-// func (pp *Rubicon) PVposFmDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
+// func (pp *Rubicon) PVposFromDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
 // 	return usValue * drive * (1 - RubiconNormFun(pp.USs.PVnegWts[0]*effort))
 // }
 
@@ -878,9 +878,9 @@ func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
 	return
 }
 
-// PVsFmUSs updates the current PV summed, weighted, normalized values
+// PVsFromUSs updates the current PV summed, weighted, normalized values
 // from the underlying US values.
-func (rp *Rubicon) PVsFmUSs(ctx *Context, di uint32) {
+func (rp *Rubicon) PVsFromUSs(ctx *Context, di uint32) {
 	pvPosSum, pvPos := rp.PVpos(ctx, di)
 	SetGlbV(ctx, di, GvPVposSum, pvPosSum)
 	SetGlbV(ctx, di, GvPVpos, pvPos)
@@ -923,17 +923,17 @@ func (rp *Rubicon) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 		}
 		rp.USs.USposEst[i] = est
 	}
-	pvPosSum, pvPos = rp.PVposEstFmUSs(ctx, di, rp.USs.USposEst)
+	pvPosSum, pvPos = rp.PVposEstFromUSs(ctx, di, rp.USs.USposEst)
 	if pvPos < rp.GiveUp.MinPVposEst {
 		pvPos = rp.GiveUp.MinPVposEst
 	}
 	return
 }
 
-// PVposEstFmUSs returns the estimated positive PV value
+// PVposEstFromUSs returns the estimated positive PV value
 // based on drives and given US values.  This can be used
 // to compute estimates to compare network performance.
-func (rp *Rubicon) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosSum, pvPos float32) {
+func (rp *Rubicon) PVposEstFromUSs(ctx *Context, di uint32, uss []float32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	if len(uss) < int(nd) {
 		nd = uint32(len(uss))
@@ -946,10 +946,10 @@ func (rp *Rubicon) PVposEstFmUSs(ctx *Context, di uint32, uss []float32) (pvPosS
 	return
 }
 
-// PVposEstFmUSsDrives returns the estimated positive PV value
+// PVposEstFromUSsDrives returns the estimated positive PV value
 // based on given externally-provided drives and US values.
 // This can be used to compute estimates to compare network performance.
-func (rp *Rubicon) PVposEstFmUSsDrives(uss, drives []float32) (pvPosSum, pvPos float32) {
+func (rp *Rubicon) PVposEstFromUSsDrives(uss, drives []float32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	if len(uss) < int(nd) {
 		nd = uint32(len(uss))
@@ -962,10 +962,10 @@ func (rp *Rubicon) PVposEstFmUSsDrives(uss, drives []float32) (pvPosSum, pvPos f
 	return
 }
 
-// PVnegEstFmUSs returns the estimated negative PV value
+// PVnegEstFromUSs returns the estimated negative PV value
 // based on given externally-provided US values.
 // This can be used to compute estimates to compare network performance.
-func (rp *Rubicon) PVnegEstFmUSs(uss []float32) (pvNegSum, pvNeg float32) {
+func (rp *Rubicon) PVnegEstFromUSs(uss []float32) (pvNegSum, pvNeg float32) {
 	nn := rp.NNegUSs
 	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
@@ -975,10 +975,10 @@ func (rp *Rubicon) PVnegEstFmUSs(uss []float32) (pvNegSum, pvNeg float32) {
 	return
 }
 
-// PVcostEstFmUSs returns the estimated negative PV value
+// PVcostEstFromUSs returns the estimated negative PV value
 // based on given externally-provided Cost values.
 // This can be used to compute estimates to compare network performance.
-func (rp *Rubicon) PVcostEstFmCosts(costs []float32) (pvCostSum, pvNeg float32) {
+func (rp *Rubicon) PVcostEstFromCosts(costs []float32) (pvCostSum, pvNeg float32) {
 	nn := rp.NCosts
 	wts := rp.USs.PVcostWts
 	for i := uint32(0); i < nn; i++ {
@@ -988,18 +988,18 @@ func (rp *Rubicon) PVcostEstFmCosts(costs []float32) (pvCostSum, pvNeg float32) 
 	return
 }
 
-// DAFmPVs computes the overall PV DA in terms of LHb burst and dip
+// DAFromPVs computes the overall PV DA in terms of LHb burst and dip
 // activity from given pvPos, pvNeg, and vsPatchPos values.
 // Also returns the net "reward" value as the discounted PV value,
 // separate from the vsPatchPos prediction error factor.
-func (rp *Rubicon) DAFmPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
-	return rp.LHb.DAFmPVs(pvPos, pvNeg, vsPatchPos)
+func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
+	return rp.LHb.DAFromPVs(pvPos, pvNeg, vsPatchPos)
 }
 
-// GiveUpFmPV determines whether to give up on current goal
+// GiveUpFromPV determines whether to give up on current goal
 // based on balance between estimated PVpos and accumulated PVneg.
 // returns true if give up triggered.
-func (rp *Rubicon) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Rand) bool {
+func (rp *Rubicon) GiveUpFromPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Rand) bool {
 	// now compute give-up
 	posEstSum, posEst := rp.PVposEst(ctx, di)
 	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
@@ -1025,7 +1025,7 @@ func (rp *Rubicon) GiveUpFmPV(ctx *Context, di uint32, pvNeg float32, rnd erand.
 // in Step.
 func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	rp.USs.USnegCostFromRaw(ctx, di)
-	rp.PVsFmUSs(ctx, di)
+	rp.PVsFromUSs(ctx, di)
 
 	hasRew := (GlbV(ctx, di, GvHasRew) > 0)
 	pvPos := GlbV(ctx, di, GvPVpos)
@@ -1040,7 +1040,7 @@ func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	}
 
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
-		giveUp := rp.GiveUpFmPV(ctx, di, pvNeg, rnd)
+		giveUp := rp.GiveUpFromPV(ctx, di, pvNeg, rnd)
 		if giveUp {
 			SetGlbV(ctx, di, GvHasRew, 1)                            // key for triggering reset
 			rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual rew

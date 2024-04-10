@@ -116,13 +116,13 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.Trace.SubMean": "0",     //
 				"Prjn.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
 			}},
-		{Sel: ".CTFmSuper", Desc: "1to1 > full",
+		{Sel: ".CTFromSuper", Desc: "1to1 > full",
 			Params: params.Params{
 				"Prjn.Learn.Learn":    "true", // learning > fixed 1to1
 				"Prjn.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
 				"Prjn.SWts.Init.Var":  "0.25",
 			}},
-		{Sel: ".FmPulv", Desc: "defaults to .Back but generally weaker is better",
+		{Sel: ".FromPulv", Desc: "defaults to .Back but generally weaker is better",
 			Params: params.Params{
 				"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 			}},

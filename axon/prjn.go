@@ -134,7 +134,7 @@ func (pj *Prjn) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 		if SynV(ctx, syni, SWt) == 0 {
 			SetSynV(ctx, syni, SWt, wt)
 		}
-		SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(wt, SynV(ctx, syni, SWt)))
+		SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFromWts(wt, SynV(ctx, syni, SWt)))
 	}
 	return nil
 }
@@ -296,7 +296,7 @@ func (pj *Prjn) SetSWtsRPool(ctx *Context, swts etensor.Tensor) {
 						SetSynV(ctx, syni, SWt, float32(swt))
 						wt := pj.Params.SWts.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWts.Init.Mean))
 						SetSynV(ctx, syni, Wt, wt)
-						SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(wt, swt))
+						SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFromWts(wt, swt))
 					}
 				}
 			}
@@ -341,7 +341,7 @@ func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *et
 			SetSynV(ctx, syni, SWt, swt)
 			wt := pj.Params.SWts.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWts.Init.Mean))
 			SetSynV(ctx, syni, Wt, wt)
-			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(wt, swt))
+			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFromWts(wt, swt))
 		}
 	}
 }
@@ -504,7 +504,7 @@ func (pj *Prjn) InitWtSym(ctx *Context, rpj *Prjn) {
 						SetSynV(ctx, recipSyni, Wt, SynV(ctx, syni, Wt))
 						SetSynV(ctx, recipSyni, LWt, SynV(ctx, syni, LWt))
 						SetSynV(ctx, recipSyni, SWt, SynV(ctx, syni, SWt))
-						// note: if we support SymFmTop then can have option to go other way
+						// note: if we support SymFromTop then can have option to go other way
 						break
 					}
 					up++
@@ -518,7 +518,7 @@ func (pj *Prjn) InitWtSym(ctx *Context, rpj *Prjn) {
 						SetSynV(ctx, recipSyni, Wt, SynV(ctx, syni, Wt))
 						SetSynV(ctx, recipSyni, LWt, SynV(ctx, syni, LWt))
 						SetSynV(ctx, recipSyni, SWt, SynV(ctx, syni, SWt))
-						// note: if we support SymFmTop then can have option to go other way
+						// note: if we support SymFromTop then can have option to go other way
 						break
 					}
 					dn--

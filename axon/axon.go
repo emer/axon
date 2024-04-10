@@ -16,7 +16,7 @@ import (
 // * Cycle
 // * NewPhase
 // * DWt
-// * WtFmDwt
+// * WtFromDwt
 // Because we don't want to have to force the user to use the interface cast in calling
 // these methods, we provide Impl versions here that are the implementations
 // which the user-facing method calls through the interface cast.

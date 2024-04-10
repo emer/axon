@@ -251,19 +251,19 @@ func (pj *PrjnParams) SynSendLayIndex(ctx *Context, syni uint32) uint32 {
 func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32, gRaw float32, gSyn *float32) {
 	switch pj.Com.GType {
 	case ExcitatoryG:
-		*gSyn = ly.Acts.Dt.GeSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GeRaw, gRaw)
 		AddNrnV(ctx, ni, di, GeSyn, *gSyn)
 	case InhibitoryG:
-		*gSyn = ly.Acts.Dt.GiSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GiSynFromRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GiRaw, gRaw)
 		AddNrnV(ctx, ni, di, GiSyn, *gSyn)
 	case ModulatoryG:
-		*gSyn = ly.Acts.Dt.GeSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GModRaw, gRaw)
 		AddNrnV(ctx, ni, di, GModSyn, *gSyn)
 	case MaintG:
-		*gSyn = ly.Acts.Dt.GeSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GMaintRaw, gRaw)
 		// note: Syn happens via NMDA in Act
 	case ContextG:
@@ -296,7 +296,7 @@ func (pj *PrjnParams) SynCaSyn(ctx *Context, syni uint32, ni, di uint32, otherCa
 	syCaD := SynCaV(ctx, syni, di, CaD)
 	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr-1, caUpT, &syCaM, &syCaP, &syCaD)
 	ca := NrnV(ctx, ni, di, CaSyn) * otherCaSyn
-	pj.Learn.KinaseCa.FmCa(ca, &syCaM, &syCaP, &syCaD)
+	pj.Learn.KinaseCa.FromCa(ca, &syCaM, &syCaP, &syCaD)
 	SetSynCaV(ctx, syni, di, CaM, syCaM)
 	SetSynCaV(ctx, syni, di, CaP, syCaP)
 	SetSynCaV(ctx, syni, di, CaD, syCaD)
@@ -324,7 +324,7 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 	case BLAPrjn:
 		pj.DWtSynBLA(ctx, syni, si, ri, di, layPool, subPool)
 	case HipPrjn:
-		pj.DWtSynHip(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFmDWtSynNoLimits
+		pj.DWtSynHip(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFromDWtSynNoLimits
 	default:
 		pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
 	}
@@ -344,10 +344,10 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 	if pj.PrjnType == CTCtxtPrjn {                                       // layer 6 CT projection
 		dtr = NrnV(ctx, si, di, BurstPrv)
 	}
-	SetSynCaV(ctx, syni, di, DTr, dtr)                          // save delta trace for GUI
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	SetSynCaV(ctx, syni, di, Tr, tr)                            // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
-	if SynV(ctx, syni, Wt) == 0 {                               // failed con, no learn
+	SetSynCaV(ctx, syni, di, DTr, dtr)                            // save delta trace for GUI
+	tr := pj.Learn.Trace.TrFromCa(SynCaV(ctx, syni, di, Tr), dtr) // TrFromCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr)                              // save new trace, updated w/ credit assignment (dependent on Tau in the TrFromCa function)
+	if SynV(ctx, syni, Wt) == 0 {                                 // failed con, no learn
 		return
 	}
 
@@ -387,8 +387,8 @@ func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
 	dtr := syCaD                                                         // delta trace, caD reflects entire window
 	SetSynCaV(ctx, syni, di, DTr, dtr)                                   // save delta trace for GUI
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)          // TrFmCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
-	SetSynCaV(ctx, syni, di, Tr, tr)                                     // save new trace, updated w/ credit assignment (dependent on Tau in the TrFmCa function)
+	tr := pj.Learn.Trace.TrFromCa(SynCaV(ctx, syni, di, Tr), dtr)        // TrFromCa(prev-multiTrial Integrated Trace, deltaTrace), as a mixing func
+	SetSynCaV(ctx, syni, di, Tr, tr)                                     // save new trace, updated w/ credit assignment (dependent on Tau in the TrFromCa function)
 	if SynV(ctx, syni, Wt) == 0 {                                        // failed con, no learn
 		return
 	}
@@ -453,7 +453,7 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		dtr := ach * NrnV(ctx, si, di, Burst)
 		SetSynCaV(ctx, syni, di, DTr, dtr)
-		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)
+		tr := pj.Learn.Trace.TrFromCa(SynCaV(ctx, syni, di, Tr), dtr)
 		SetSynCaV(ctx, syni, di, Tr, tr)
 	} else {
 		SetSynCaV(ctx, syni, di, DTr, 0.0)
@@ -603,10 +603,10 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPo
 }
 
 ///////////////////////////////////////////////////
-// WtFmDWt
+// WtFromDWt
 
-// DWtFmDiDWtSyn updates DWt from data parallel DiDWt values
-func (pj *PrjnParams) DWtFmDiDWtSyn(ctx *Context, syni uint32) {
+// DWtFromDiDWtSyn updates DWt from data parallel DiDWt values
+func (pj *PrjnParams) DWtFromDiDWtSyn(ctx *Context, syni uint32) {
 	dwt := float32(0)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		dwt += SynCaV(ctx, syni, di, DiDWt)
@@ -614,38 +614,38 @@ func (pj *PrjnParams) DWtFmDiDWtSyn(ctx *Context, syni uint32) {
 	AddSynV(ctx, syni, DWt, dwt)
 }
 
-// WtFmDWtSyn is the overall entry point for updating weights from weight changes.
-func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, syni uint32) {
+// WtFromDWtSyn is the overall entry point for updating weights from weight changes.
+func (pj *PrjnParams) WtFromDWtSyn(ctx *Context, syni uint32) {
 	switch pj.PrjnType {
 	case RWPrjn:
-		pj.WtFmDWtSynNoLimits(ctx, syni)
+		pj.WtFromDWtSynNoLimits(ctx, syni)
 	case TDPredPrjn:
-		pj.WtFmDWtSynNoLimits(ctx, syni)
+		pj.WtFromDWtSynNoLimits(ctx, syni)
 	case BLAPrjn:
-		pj.WtFmDWtSynNoLimits(ctx, syni)
+		pj.WtFromDWtSynNoLimits(ctx, syni)
 	case HipPrjn:
-		pj.WtFmDWtSynNoLimits(ctx, syni)
+		pj.WtFromDWtSynNoLimits(ctx, syni)
 	default:
-		pj.WtFmDWtSynCortex(ctx, syni)
+		pj.WtFromDWtSynCortex(ctx, syni)
 	}
 }
 
-// WtFmDWtSynCortex updates weights from dwt changes
-func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, syni uint32) {
+// WtFromDWtSynCortex updates weights from dwt changes
+func (pj *PrjnParams) WtFromDWtSynCortex(ctx *Context, syni uint32) {
 	dwt := SynV(ctx, syni, DWt)
 	AddSynV(ctx, syni, DSWt, dwt)
 	wt := SynV(ctx, syni, Wt)
 	lwt := SynV(ctx, syni, LWt)
 
-	pj.SWts.WtFmDWt(&wt, &lwt, dwt, SynV(ctx, syni, SWt))
+	pj.SWts.WtFromDWt(&wt, &lwt, dwt, SynV(ctx, syni, SWt))
 	SetSynV(ctx, syni, DWt, 0)
 	SetSynV(ctx, syni, Wt, wt)
 	SetSynV(ctx, syni, LWt, lwt)
 	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
 }
 
-// WtFmDWtSynNoLimits -- weight update without limits
-func (pj *PrjnParams) WtFmDWtSynNoLimits(ctx *Context, syni uint32) {
+// WtFromDWtSynNoLimits -- weight update without limits
+func (pj *PrjnParams) WtFromDWtSynNoLimits(ctx *Context, syni uint32) {
 	dwt := SynV(ctx, syni, DWt)
 	if dwt == 0 {
 		return

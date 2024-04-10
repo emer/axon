@@ -103,8 +103,8 @@ func (fb *GiParams) ShouldShow(field string) bool {
 	}
 }
 
-// FSiFmFFs updates fast-spiking inhibition from FFs spikes
-func (fb *GiParams) FSiFmFFs(fsi *float32, ffs, fbs float32) {
+// FSiFromFFs updates fast-spiking inhibition from FFs spikes
+func (fb *GiParams) FSiFromFFs(fsi *float32, ffs, fbs float32) {
 	*fsi += (ffs + fb.FB*fbs) - fb.FSDt**fsi // immediate up, slow down
 }
 
@@ -126,8 +126,8 @@ func (fb *GiParams) FS(fsi, gext float32, clamped bool) float32 {
 	return fb.FS0Thr(fsi) + gext
 }
 
-// SSFmFBs updates slow-spiking inhibition from FBs
-func (fb *GiParams) SSFmFBs(ssf, ssi *float32, fbs float32) {
+// SSFromFBs updates slow-spiking inhibition from FBs
+func (fb *GiParams) SSFromFBs(ssf, ssi *float32, fbs float32) {
 	*ssi += fb.SSiDt * (*ssf*fbs - *ssi)
 	*ssf += fbs*(1-*ssf) - fb.SSfDt**ssf
 }
@@ -142,13 +142,13 @@ func (fb *GiParams) Inhib(inh *Inhib, gimult float32) {
 
 	inh.FFAvg += fb.FFAvgDt * (inh.FFs - inh.FFAvg)
 
-	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
+	fb.FSiFromFFs(&inh.FSi, inh.FFs, inh.FBs)
 	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts, inh.Clamped.IsTrue())
 
-	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
+	fb.SSFromFBs(&inh.SSf, &inh.SSi, inh.FBs)
 	inh.SSGi = fb.Gi * fb.SS * inh.SSi
 
-	inh.Gi = inh.GiFmFSSS() + fb.FFPrv*inh.FFAvgPrv
+	inh.Gi = inh.GiFromFSSS() + fb.FFPrv*inh.FFAvgPrv
 	inh.SaveOrig()
 }
 

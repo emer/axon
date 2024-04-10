@@ -103,8 +103,8 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	minPctDiff := float32(0.5)
 
 	nUn := ev.NUnitsY * ev.NUnitsX
-	nOn := patgen.NFmPct(pctAct, nUn)
-	minDiff := patgen.NFmPct(minPctDiff, nOn)
+	nOn := patgen.NFromPct(pctAct, nUn)
+	minDiff := patgen.NFromPct(minPctDiff, nOn)
 
 	patgen.PermutedBinaryMinDiff(ev.Pats.ColByName("Item").(*etensor.Float32), nOn, 1, 0, minDiff)
 }

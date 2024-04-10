@@ -183,7 +183,7 @@ func (ss *Sim) NeuronUpdate(sSpk, rSpk bool, ge, gi float32) {
 		sn.Spike = 0
 		sn.ISI += 1
 	}
-	ly.Params.Learn.LrnNMDA.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
+	ly.Params.Learn.LrnNMDA.SnmdaFromSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
 
 	//	Recv
 
@@ -213,11 +213,11 @@ func (ss *Sim) NeuronUpdate(sSpk, rSpk bool, ge, gi float32) {
 		rn.RCa = ly.Params.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	} else {
 		rn.GeRaw = ge
-		ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.GeBase)
+		ac.Dt.GeSynFromRaw(rn.GeRaw, &rn.GeSyn, ac.Init.GeBase)
 		rn.Ge = rn.GeSyn
 		rn.Gi = gi
-		ac.NMDAFmRaw(rn, 0)
-		nex.NMDAGmg = ac.NMDA.MgGFmV(rn.VmDend)
+		ac.NMDAFromRaw(rn, 0)
+		nex.NMDAGmg = ac.NMDA.MgGFromV(rn.VmDend)
 	}
 	rn.GABAB, rn.GABABx = ac.GABAB.GABAB(rn.GABAB, rn.GABABx, rn.Gi)
 	rn.GgabaB = ac.GABAB.GgabaB(rn.GABAB, rn.VmDend)
@@ -225,14 +225,14 @@ func (ss *Sim) NeuronUpdate(sSpk, rSpk bool, ge, gi float32) {
 	rn.Ge += rn.Gvgcc + rn.Gnmda
 	rn.Gi += rn.GgabaB
 
-	ac.VmFmG(rn)
+	ac.VmFromG(rn)
 	if ss.RGeClamp {
-		ac.ActFmG(rn)
+		ac.ActFromG(rn)
 	}
-	ly.Params.Learn.LrnNMDAFmRaw(rn, 0)
+	ly.Params.Learn.LrnNMDAFromRaw(rn, 0)
 
-	ly.Params.Learn.CaFmSpike(rn)
-	ly.Params.Learn.CaFmSpike(sn)
+	ly.Params.Learn.CaFromSpike(rn)
+	ly.Params.Learn.CaFromSpike(sn)
 
 	ss.SynUpdate()
 }
@@ -272,7 +272,7 @@ func (ss *Sim) SynUpdate() {
 	if synspk {
 		sst.CaM, sst.CaP, sst.CaD = kp.CurCa(ctime-1, sst.CaUpT, sst.CaM, sst.CaP, sst.CaD)
 		sst.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
-		kp.FmCa(sst.Ca, &sst.CaM, &sst.CaP, &sst.CaD)
+		kp.FromCa(sst.Ca, &sst.CaM, &sst.CaP, &sst.CaD)
 		sst.CaUpT = ctime
 	}
 
@@ -301,11 +301,11 @@ func (ss *Sim) SynUpdate() {
 	} else {
 		ssc.Ca = 0
 	}
-	kp.FmCa(ssc.Ca, &ssc.CaM, &ssc.CaP, &ssc.CaD)
+	kp.FromCa(ssc.Ca, &ssc.CaM, &ssc.CaP, &ssc.CaD)
 
 	// SynNMDACont: NMDA driven synaptic updating
 	snc.Ca = kp.NMDAG * sn.SnmdaO * rn.RCa
-	kp.FmCa(snc.Ca, &snc.CaM, &snc.CaP, &snc.CaD)
+	kp.FromCa(snc.Ca, &snc.CaM, &snc.CaP, &snc.CaD)
 
 	if tdw {
 		pj.Params.Learn.KinaseTDWt(ssc)
@@ -319,8 +319,8 @@ func (ss *Sim) SynUpdate() {
 		axon.DecaySynCa(snc, pj.Params.Learn.KinaseDWt.TrlDecay)
 	}
 
-	pj.Params.Learn.DWtFmTDWt(ssc, 1)
-	pj.Params.Learn.DWtFmTDWt(snc, 1)
+	pj.Params.Learn.DWtFromTDWt(ssc, 1)
+	pj.Params.Learn.DWtFromTDWt(snc, 1)
 }
 
 func (ss *Sim) InitWts() {

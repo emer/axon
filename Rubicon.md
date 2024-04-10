@@ -1,5 +1,19 @@
 # Rubicon Goal-Driven Motivated Behavior Model
 
+This model implements the [Rubicon](../../Rubicon.md) model for goal-driven motivated behavior, which posits distinct  **goal-selection** vs. **goal-engaged** states of the brain ([O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf); [Heckhausen & Gollwitzer, 1987](#references)).  In the goal selection phase, different options are considered and evaluated according to learned cost-benefit _utilities_ with the following brain areas protypically representing the following info:
+
+* **Benefit** (expected positive _outcome_) in the **OFC**, orbital frontal cortex, **IL**, infralimbic cortex, and **aIC**, anterior insular cortex.
+
+* **Cost** of actions in dorsal **ACC**, anterior cingulate cortex.
+
+* **Utility** (Benefit vs Cost) in **PL**, prelimbic cortex.
+
+* **Action plan** in the **dlPFC**, dorsolateral prefrontal cortex, which is  **ALM**, anterior lateral motor in rodents.
+
+Each of which mutually informs the other through bidirectional _constraint satisfaction_ to propose a potential overall goal / plan state across these three areas, as discussed in [Herd et al., 2021](https://ccnlab.org/papers/HerdKruegerNairEtAl21.pdf).
+
+If the proposed goal / plan is selected via BG (basal ganglia, implemented via [PCore](../../PCoreBG.md)) _gating_, it then drives stable active maintenance of this _goal state_ which is a distributed representation across these PFC areas.  This maintained goal state then drives coordinated behavior toward achieving the expected outcome through the selected action plan.  Learning happens primarily when the goal is either achieved or abandoned, updating the expected utility, outcome, and action plan as a function of what actually happened during the goal engaged state.
+
 This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for Axon, designed to capture the essential properties of the [Go leabra version](https://github.com/emer/leabra/tree/master/pvlv), in a way that is integrated with the larger [BOA](examples/boa) framework for goal-driven motivated behavior.
 
 Files: rubicon_{[net.go](axon/rubicon_net.go), [layers.go](axon/rubicon_layers.go), [prjns.go](axon/rubicon_prjns.go)}.  Example: [rubicon](examples/rubicon) and [boa](examples/boa).
@@ -319,6 +333,8 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 
 * Hazy, T. E., Frank, M. J., & O’Reilly, R. C. (2010). Neural mechanisms of acquired phasic dopamine responses in learning. Neuroscience and Biobehavioral Reviews, 34(5), 701–720. http://www.ncbi.nlm.nih.gov/pubmed/19944716 [PDF](https://ccnlab.org/papers/HazyFrankOReilly10.pdf)
 
+* Heckhausen, H., & Gollwitzer, P. M. (1987). Thought contents and cognitive functioning in motivational versus volitional states of mind. Motivation and Emotion, 11(2), 101–120. https://doi.org/10.1007/BF00992338
+
 * Herry, C., Ciocchi, S., Senn, V., Demmou, L., Müller, C., & Lüthi, A. (2008). Switching on and off fear by distinct neuronal circuits. Nature, 454(7204), 1–7. http://www.ncbi.nlm.nih.gov/pubmed/18615015
 
 * Huerta-Ocampo, I., Dautan, D., Gut, N. K., Khan, B., & Mena-Segovia, J. (2021). Whole-brain mapping of monosynaptic inputs to midbrain cholinergic neurons. Scientific Reports, 11, 9055. https://doi.org/10.1038/s41598-021-88374-6
@@ -332,6 +348,8 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 * Mollick, J. A., Hazy, T. E., Krueger, K. A., Nair, A., Mackie, P., Herd, S. A., & O'Reilly, R. C. (2020). A systems-neuroscience model of phasic dopamine. Psychological Review, 127(6), 972–1021. https://doi.org/10.1037/rev0000199.  [PDF](https://ccnlab.org/papers/MollickHazyKruegerEtAl20.pdf)
 
 * Omelchenko, N., & Sesack, S. R. (2005). Laterodorsal tegmental projections to identified cell populations in the rat ventral tegmental area. The Journal of Comparative Neurology, 483(2), 217–235. https://doi.org/10.1002/cne.20417
+
+* O’Reilly, R. C. (2020). Unraveling the Mysteries of Motivation. Trends in Cognitive Sciences. https://doi.org/10.1016/j.tics.2020.03.001
 
 * O’Reilly, R. C., Frank, M. J., Hazy, T. E., & Watz, B. (2007). PVLV: The primary value and learned value Pavlovian learning algorithm. Behavioral Neuroscience, 121(1), 31–49. http://www.ncbi.nlm.nih.gov/pubmed/17324049 [PDF](https://ccnlab.org/papers/OReillyFrankHazyEtAl07.pdf)
 

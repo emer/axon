@@ -196,15 +196,15 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 	ca1 := net.AxonLayerByName("CA1")
 	ca3 := net.AxonLayerByName("CA3")
 	dg := net.AxonLayerByName("DG")
-	dgFmEc2 := dg.SendName("EC2")
-	ca1FmEc3 := ca1.SendName("EC3")
-	ca1FmCa3 := ca1.SendName("CA3")
-	ca3FmDg := ca3.SendName("DG")
-	ca3FmEc2 := ca3.SendName("EC2")
-	ca3FmCa3 := ca3.SendName("CA3")
+	dgFromEc2 := dg.SendName("EC2")
+	ca1FromEc3 := ca1.SendName("EC3")
+	ca1FromCa3 := ca1.SendName("CA3")
+	ca3FromDg := ca3.SendName("DG")
+	ca3FromEc2 := ca3.SendName("EC2")
+	ca3FromCa3 := ca3.SendName("CA3")
 
-	dgPjScale := ca3FmDg.Params.PrjnScale.Rel
-	ca1FmCa3Abs := ca1FmCa3.Params.PrjnScale.Abs
+	dgPjScale := ca3FromDg.Params.PrjnScale.Rel
+	ca1FromCa3Abs := ca1FromCa3.Params.PrjnScale.Abs
 
 	// configure events -- note that events are shared between Train, Test
 	// so only need to do it once on Train
@@ -214,32 +214,32 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 	minusStart, _ := cyc.EventByName("MinusPhase")
 	minusStart.OnEvent.Add("HipMinusPhase:Start", func() {
 		if *pretrain {
-			dgFmEc2.Params.Learn.Learn = 0
-			ca3FmEc2.Params.Learn.Learn = 0
-			ca3FmCa3.Params.Learn.Learn = 0
-			ca1FmCa3.Params.Learn.Learn = 0
-			ca1FmCa3.Params.PrjnScale.Abs = 0
+			dgFromEc2.Params.Learn.Learn = 0
+			ca3FromEc2.Params.Learn.Learn = 0
+			ca3FromCa3.Params.Learn.Learn = 0
+			ca1FromCa3.Params.Learn.Learn = 0
+			ca1FromCa3.Params.PrjnScale.Abs = 0
 		} else {
-			dgFmEc2.Params.Learn.Learn = 1
-			ca3FmEc2.Params.Learn.Learn = 1
-			ca3FmCa3.Params.Learn.Learn = 1
-			ca1FmCa3.Params.Learn.Learn = 1
-			ca1FmCa3.Params.PrjnScale.Abs = ca1FmCa3Abs
+			dgFromEc2.Params.Learn.Learn = 1
+			ca3FromEc2.Params.Learn.Learn = 1
+			ca3FromCa3.Params.Learn.Learn = 1
+			ca1FromCa3.Params.Learn.Learn = 1
+			ca1FromCa3.Params.PrjnScale.Abs = ca1FromCa3Abs
 		}
-		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
-		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
+		ca1FromEc3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaLow
 
-		ca3FmDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
+		ca3FromDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
 
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
 	beta1, _ := cyc.EventByName("Beta1")
 	beta1.OnEvent.Add("Hip:Beta1", func() {
-		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaLow
-		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FromEc3.Params.PrjnScale.Rel = hip.ThetaLow
+		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaHigh
 		if man.Mode == etime.Test {
-			ca3FmDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
+			ca3FromDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
@@ -248,9 +248,9 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 	// note: critical for this to come before std start
 	plus.OnEvent.InsertBefore("PlusPhase:Start", "HipPlusPhase:Start", func() {
-		ca3FmDg.Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
-		ca1FmEc3.Params.PrjnScale.Rel = hip.ThetaHigh
-		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaLow
+		ca3FromDg.Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
+		ca1FromEc3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaLow
 		// clamp EC5 from clamp source (EC3 typically)
 		if hip.EC5Clamp {
 			if mode != etime.Test || hip.EC5ClampTest {
@@ -270,7 +270,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 	trl := stack.Loops[etime.Trial]
 	trl.OnEnd.Prepend("HipPlusPhase:End", func() {
-		ca1FmCa3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})

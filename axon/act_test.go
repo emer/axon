@@ -37,10 +37,10 @@ func TestActUpdate(t *testing.T) {
 
 	for i := range geinc {
 		neuron.GeRaw += geinc[i]
-		ac.GeFmRaw(neuron, neuron.GeRaw, 0)
-		ac.GiFmRaw(neuron, neuron.GiRaw)
-		ac.VmFmG(neuron)
-		ac.SpikeFmVm(neuron)
+		ac.GeFromRaw(neuron, neuron.GeRaw, 0)
+		ac.GiFromRaw(neuron, neuron.GiRaw)
+		ac.VmFromG(neuron)
+		ac.SpikeFromVm(neuron)
 		ge[i] = neuron.Ge
 		inet[i] = neuron.Inet
 		vm[i] = neuron.Vm

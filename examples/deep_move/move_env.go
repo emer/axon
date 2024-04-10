@@ -224,7 +224,7 @@ func NormVecLine(v mat32.Vec2) mat32.Vec2 {
 // such that the largest value is 1.
 func NextVecPoint(cp, v mat32.Vec2) (mat32.Vec2, evec.Vec2i) {
 	n := cp.Add(v)
-	g := evec.NewVec2iFmVec2Round(n)
+	g := evec.NewVec2iFromVec2Round(n)
 	return n, g
 }
 

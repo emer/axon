@@ -51,7 +51,7 @@ void PulvinarDriver(in Context ctx, in LayerParams ly, in LayerParams dly, uint 
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
-// calls NeuronGatherSpikes, GFmRawSyn, GiInteg
+// calls NeuronGatherSpikes, GFromRawSyn, GiInteg
 void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in LayerValues vals) {
 	float drvGe = 0;
 	float nonDrivePct = 0;
@@ -62,7 +62,7 @@ void GInteg(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool pl, in 
 
 	float saveVal = ly.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct);
 	
-	ly.GFmRawSyn(ctx, ni, di);
+	ly.GFromRawSyn(ctx, ni, di);
 	ly.GiInteg(ctx, ni, di, pl, vals);
 	ly.GNeuroMod(ctx, ni, di, vals);
 	
@@ -73,7 +73,7 @@ void CycleNeuron3(in Context ctx, in LayerParams ly, uint ni, uint di, in Pool p
 	uint lni = ni - ly.Indexes.NeurSt; // layer-based as in Go
 	
 	GInteg(ctx, ly, ni, di, pl, vals);
-	ly.SpikeFmG(ctx, ni, di, lpl);
+	ly.SpikeFromG(ctx, ni, di, lpl);
 }
 
 void CycleNeuron2(in Context ctx, in LayerParams ly, uint ni, uint di) {

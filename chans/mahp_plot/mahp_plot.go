@@ -108,7 +108,7 @@ func (ss *Sim) VmRun() { //gti:add
 	for vi := 0; vi < nv; vi++ {
 		vbio := ss.Vstart + float32(vi)*ss.Vstep
 		var ninf, tau float32
-		mp.NinfTauFmV(vbio, &ninf, &tau)
+		mp.NinfTauFromV(vbio, &ninf, &tau)
 
 		dt.SetCellFloat("V", vi, float64(vbio))
 		dt.SetCellFloat("Ninf", vi, float64(ninf))
@@ -153,7 +153,7 @@ func (ss *Sim) TimeRun() { //gti:add
 	mp := &ss.Mahp
 
 	var n, tau float32
-	mp.NinfTauFmV(ss.TimeVstart, &n, &tau)
+	mp.NinfTauFromV(ss.TimeVstart, &n, &tau)
 	kna := float32(0)
 	msdt := float32(0.001)
 	v := ss.TimeVstart
@@ -163,11 +163,11 @@ func (ss *Sim) TimeRun() { //gti:add
 
 	dt.SetNumRows(ss.TimeSteps)
 	for ti := 1; ti <= ss.TimeSteps; ti++ {
-		vnorm := chans.VFmBio(v)
+		vnorm := chans.VFromBio(v)
 		t := float32(ti) * msdt
 
 		var ninf, tau float32
-		mp.NinfTauFmV(v, &ninf, &tau)
+		mp.NinfTauFromV(v, &ninf, &tau)
 		g := mp.GmAHP(vnorm, &n)
 
 		dt.SetCellFloat("Time", ti, float64(t))

@@ -278,12 +278,12 @@ func (ev *Env) ExValueUtil(pv *axon.Rubicon, ctx *axon.Context) {
 			usNeg[j] = 0
 		}
 		usPos[arm.US+1] = val
-		_, pvPos := pv.PVposEstFmUSs(ctx, uint32(ev.Di), usPos)
+		_, pvPos := pv.PVposEstFromUSs(ctx, uint32(ev.Di), usPos)
 		exTime := float32(arm.Length) + 1 // time
 		usNeg[0] = exTime
 		usNeg[1] = exTime * arm.Effort.Midpoint()
-		_, pvNeg := pv.PVnegEstFmUSs(usNeg)
-		burst, dip, da, rew := pv.DAFmPVs(pvPos, pvNeg, 0)
+		_, pvNeg := pv.PVnegEstFromUSs(usNeg)
+		burst, dip, da, rew := pv.DAFromPVs(pvPos, pvNeg, 0)
 		_, _, _ = burst, dip, rew
 		arm.ExPVpos = pvPos
 		arm.ExPVneg = pvNeg

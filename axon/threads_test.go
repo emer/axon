@@ -114,12 +114,12 @@ func TestCollectAndSetDWts(t *testing.T) {
 	// 	t.Errorf("CollectDWts -> SetDWts failed\n")
 	// }
 
-	netA.WtFmDWt(ctxA)
+	netA.WtFromDWt(ctxA)
 	assert.False(t, netA.WtsHash() == netB.WtsHash())
 
-	netB.WtFmDWt(ctxB)
+	netB.WtFromDWt(ctxB)
 	// if CompareWtsAll(netA, netB) {
-	// 	t.Errorf("WtFmDWt failed\n")
+	// 	t.Errorf("WtFromDWt failed\n")
 	// }
 	assert.True(t, netA.WtsHash() == netB.WtsHash())
 
@@ -132,11 +132,11 @@ func TestCollectAndSetDWts(t *testing.T) {
 	// And again (as a sanity check), but without syncing DWt -> Models should diverge
 	runCycle(netA, ctxA, patsA)
 	runCycle(netB, ctxB, patsB)
-	netA.WtFmDWt(ctxA)
+	netA.WtFromDWt(ctxA)
 	netA.SlowAdapt(ctxA)
 	assert.False(t, netA.WtsHash() == netB.WtsHash())
 	// netB is trained on a different pattern, hence different DWt, hence different Wt
-	netB.WtFmDWt(ctxB)
+	netB.WtFromDWt(ctxB)
 	netB.SlowAdapt(ctxB)
 	assert.False(t, netA.WtsHash() == netB.WtsHash())
 }
@@ -201,7 +201,7 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 
 	fun := func(net *Network, ctx *Context) {
 		net.Cycle(ctx)
-		net.WtFmDWt(ctx)
+		net.WtFromDWt(ctx)
 	}
 
 	// by splitting the epochs into three parts for netB, we make sure that the

@@ -40,7 +40,7 @@
 void LayGi2(in Context ctx, in LayerParams ly, uint li, uint di, inout Pool lpl, inout LayerValues vals) {
 	lpl.AvgMax.Calc(int(li));
 	lpl.Inhib.IntToRaw();
-	ly.LayPoolGiFmSpikes(ctx, lpl, vals); // also updates LayerValues with NeuroMod
+	ly.LayPoolGiFromSpikes(ctx, lpl, vals); // also updates LayerValues with NeuroMod
 }
 
 void LayGi(in Context ctx, in LayerParams ly, uint li, uint di) {

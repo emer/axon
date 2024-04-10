@@ -66,8 +66,8 @@ func (aa *ActAvgParams) ShouldShow(field string) bool {
 	}
 }
 
-// AvgFmAct updates the running-average activation given average activity level in layer
-func (aa *ActAvgParams) AvgFmAct(avg *float32, act float32, dt float32) {
+// AvgFromAct updates the running-average activation given average activity level in layer
+func (aa *ActAvgParams) AvgFromAct(avg *float32, act float32, dt float32) {
 	if act < 0.0001 {
 		return
 	}
@@ -149,7 +149,7 @@ func (ti *TopoInhibParams) ShouldShow(field string) bool {
 	}
 }
 
-func (ti *TopoInhibParams) GiFmGeAct(ge, act, ff0 float32) float32 {
+func (ti *TopoInhibParams) GiFromGeAct(ge, act, ff0 float32) float32 {
 	if ge < ff0 {
 		ge = 0
 	} else {

@@ -74,9 +74,9 @@ func (mp *SahpParams) EFun(z float32) float32 {
 	return z / (mat32.FastExp(z) - 1.0)
 }
 
-// NinfTauFmCa returns the target infinite-time N gate value and
+// NinfTauFromCa returns the target infinite-time N gate value and
 // time constant tau, from integrated Ca value
-func (mp *SahpParams) NinfTauFmCa(ca float32, ninf, tau *float32) {
+func (mp *SahpParams) NinfTauFromCa(ca float32, ninf, tau *float32) {
 	co := ca - mp.Off
 
 	// logical functions, but have signularity at Voff (vo = 0)
@@ -96,11 +96,11 @@ func (mp *SahpParams) CaInt(caInt, ca float32) float32 {
 	return caInt
 }
 
-// DNFmCa returns the change in gating factor N based on integrated Ca
+// DNFromCa returns the change in gating factor N based on integrated Ca
 // Omit this and just use ninf directly for theta-cycle updating.
-func (mp *SahpParams) DNFmV(ca, n float32) float32 {
+func (mp *SahpParams) DNFromV(ca, n float32) float32 {
 	var ninf, tau float32
-	mp.NinfTauFmCa(ca, &ninf, &tau)
+	mp.NinfTauFromCa(ca, &ninf, &tau)
 	dn := (ninf - n) / tau
 	return dn
 }

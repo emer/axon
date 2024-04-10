@@ -185,7 +185,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
 	net.ConnectToPulv(hid, hidct, inp, full, full, "") // inp -> hid and inp -> hidct is *essential*
-	// net.ConnectLayers(inp, hid, full, emer.Back).AddClass("FmPvlv")
+	// net.ConnectLayers(inp, hid, full, emer.Back).AddClass("FromPvlv")
 	// net.ConnectLayers(hidct, hid, full, emer.Back)
 
 	// not useful:

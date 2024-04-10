@@ -42,9 +42,9 @@ func (np *VGCCParams) ShouldShow(field string) bool {
 	}
 }
 
-// GFmV returns the VGCC conductance as a function of normalized membrane potential
+// GFromV returns the VGCC conductance as a function of normalized membrane potential
 // Based on Urakubo's calculation of `max` in CaL.g in the section commented 'i gate'.
-func (np *VGCCParams) GFmV(v float32) float32 {
+func (np *VGCCParams) GFromV(v float32) float32 {
 	vbio := VToBio(v)
 	if vbio > -0.5 && vbio < 0.5 { // this avoids divide by 0, and numerical instability around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
@@ -52,9 +52,9 @@ func (np *VGCCParams) GFmV(v float32) float32 {
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
 }
 
-// MFmV returns the M gate function from vbio (not normalized, must not exceed 0).
+// MFromV returns the M gate function from vbio (not normalized, must not exceed 0).
 // Based on Urakubo's calculation of `max` in CaL.g in the section commented 'm gate'.
-func (np *VGCCParams) MFmV(vbio float32) float32 {
+func (np *VGCCParams) MFromV(vbio float32) float32 {
 	// approximate values at the asymptotes for performance
 	if vbio < -60 {
 		return 0
@@ -65,9 +65,9 @@ func (np *VGCCParams) MFmV(vbio float32) float32 {
 	return 1.0 / (1.0 + mat32.FastExp(-(vbio + 37)))
 }
 
-// HFmV returns the H gate function from vbio (not normalized, must not exceed 0)
+// HFromV returns the H gate function from vbio (not normalized, must not exceed 0)
 // Based on Urakubo's calculation of `max` in CaL.g in the section commented 'h gate'.
-func (np *VGCCParams) HFmV(vbio float32) float32 {
+func (np *VGCCParams) HFromV(vbio float32) float32 {
 	// approximate values at the asymptotes for performance
 	if vbio < -50 {
 		return 1
@@ -78,25 +78,25 @@ func (np *VGCCParams) HFmV(vbio float32) float32 {
 	return 1.0 / (1.0 + mat32.FastExp((vbio+41)*2))
 }
 
-// DMHFmV returns the change at msec update scale in M, H factors
+// DMHFromV returns the change at msec update scale in M, H factors
 // as a function of V normalized (0-1)
-func (np *VGCCParams) DMHFmV(v, m, h float32, dm, dh *float32) {
+func (np *VGCCParams) DMHFromV(v, m, h float32, dm, dh *float32) {
 	vbio := VToBio(v)
 	if vbio > 0 {
 		vbio = 0
 	}
-	*dm = (np.MFmV(vbio) - m) / 3.6
-	*dh = (np.HFmV(vbio) - h) / 29.0
+	*dm = (np.MFromV(vbio) - m) / 3.6
+	*dh = (np.HFromV(vbio) - h) / 29.0
 }
 
 // Gvgcc returns the VGCC net conductance from m, h activation and vm
 func (np *VGCCParams) Gvgcc(vm, m, h float32) float32 {
-	return np.Gbar * np.GFmV(vm) * m * m * m * h
+	return np.Gbar * np.GFromV(vm) * m * m * m * h
 }
 
-// CaFmG returns the Ca from Gvgcc conductance, current Ca level,
+// CaFromG returns the Ca from Gvgcc conductance, current Ca level,
 // and normalized membrane potential.
-func (np *VGCCParams) CaFmG(v, g, ca float32) float32 {
+func (np *VGCCParams) CaFromG(v, g, ca float32) float32 {
 	vbio := VToBio(v)
 	return -vbio * np.Ca * g
 }

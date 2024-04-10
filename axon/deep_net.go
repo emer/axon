@@ -119,8 +119,8 @@ func (net *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 // layers      | class      | prjn type   | prjn pat
 // ------------+------------+-------------+----------
 // ct  ->pulv  | "CTToPulv" | ForwardPrjn | toPulvPat
-// pulv->super | "FmPulv"   | BackPrjn    | fmPulvPat
-// pulv->ct    | "FmPulv"   | BackPrjn    | fmPulvPat
+// pulv->super | "FromPulv"   | BackPrjn    | fmPulvPat
+// pulv->ct    | "FromPulv"   | BackPrjn    | fmPulvPat
 //
 // Typically pulv is a different shape than super and ct, so use Full or appropriate
 // topological pattern. Adds optional prjnClass name as a suffix.
@@ -129,9 +129,9 @@ func (net *Network) ConnectToPulv(super, ct, pulv *Layer, toPulvPat, fmPulvPat p
 	toPulv = net.ConnectLayers(ct, pulv, toPulvPat, ForwardPrjn)
 	toPulv.AddClass("CTToPulv", prjnClass)
 	toSuper = net.ConnectLayers(pulv, super, fmPulvPat, BackPrjn)
-	toSuper.AddClass("FmPulv", prjnClass)
+	toSuper.AddClass("FromPulv", prjnClass)
 	toCT = net.ConnectLayers(pulv, ct, fmPulvPat, BackPrjn)
-	toCT.AddClass("FmPulv", prjnClass)
+	toCT.AddClass("FromPulv", prjnClass)
 	return
 }
 
@@ -158,12 +158,12 @@ func (net *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern, prjnClass string)
 }
 
 // ConnectSuperToCT adds a CTCtxtPrjn from given sending Super layer to a CT layer
-// This automatically sets the FmSuper flag to engage proper defaults,
+// This automatically sets the FromSuper flag to engage proper defaults,
 // Uses given projection pattern -- e.g., Full, OneToOne, or PoolOneToOne
 func (net *Network) ConnectSuperToCT(send, recv *Layer, pat prjn.Pattern, prjnClass string) *Prjn {
 	prjnClass = params.AddClass(prjnClass, "PFCPrjn")
 	pj := net.ConnectLayers(send, recv, pat, CTCtxtPrjn)
-	pj.AddClass("CTFmSuper", prjnClass)
+	pj.AddClass("CTFromSuper", prjnClass)
 	return pj
 }
 
@@ -356,7 +356,7 @@ func (net *Network) ConnectPTPredSelf(ly *Layer, pat prjn.Pattern) *Prjn {
 // ConnectPTToPulv connects PT, PTPred with given Pulv:
 // PT -> Pulv is class PTToPulv; PT does NOT receive back from Pulv
 // PTPred -> Pulv is class PTPredToPulv,
-// From Pulv = type = Back, class = FmPulv
+// From Pulv = type = Back, class = FromPulv
 // toPulvPat is the prjn.Pattern PT -> Pulv and fmPulvPat is Pulv -> PTPred
 // Typically Pulv is a different shape than PTPred, so use Full or appropriate
 // topological pattern. adds optional class name to projection.
@@ -367,7 +367,7 @@ func (net *Network) ConnectPTToPulv(pt, ptPred, pulv *Layer, toPulvPat, fmPulvPa
 	ptPredToPulv = net.ConnectLayers(ptPred, pulv, toPulvPat, ForwardPrjn)
 	ptPredToPulv.AddClass("PTPredToPulv", prjnClass)
 	toPTPred = net.ConnectLayers(pulv, ptPred, fmPulvPat, BackPrjn)
-	toPTPred.AddClass("FmPulv", prjnClass)
+	toPTPred.AddClass("FromPulv", prjnClass)
 	return
 }
 

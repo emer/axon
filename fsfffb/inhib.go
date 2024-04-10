@@ -133,13 +133,13 @@ func (fi *Inhib) RawIncr(spike, geRaw, geExt float32, nneurons int) {
 	fi.GeExtRaw += geExt / float32(nneurons)
 }
 
-// SpikesFmRawFloat updates spike values from raw, dividing by given number in pool
+// SpikesFromRawFloat updates spike values from raw, dividing by given number in pool
 // for float-based aggregation, which does not divide by nneurons up front
-// func (fi *Inhib) SpikesFmRawFloat(nneurons int) {
+// func (fi *Inhib) SpikesFromRawFloat(nneurons int) {
 // }
 
-// SpikesFmRaw updates spike values from raw, dividing by given number in pool
-func (fi *Inhib) SpikesFmRaw(nneurons int) {
+// SpikesFromRaw updates spike values from raw, dividing by given number in pool
+func (fi *Inhib) SpikesFromRaw(nneurons int) {
 	fi.FBs = fi.FBsRaw / float32(nneurons)
 	fi.FFs = fi.FFsRaw
 	fi.GeExts = fi.GeExtRaw
@@ -151,8 +151,8 @@ func (fi *Inhib) SaveOrig() {
 	fi.GiOrig = fi.Gi
 }
 
-// GiFmFSSS returns the sum of FSGi and SSGi as overall inhibition
-func (fi *Inhib) GiFmFSSS() float32 {
+// GiFromFSSS returns the sum of FSGi and SSGi as overall inhibition
+func (fi *Inhib) GiFromFSSS() float32 {
 	return fi.FSGi + fi.SSGi
 }
 
@@ -179,10 +179,10 @@ func (fi *Inhib) FloatToIntFactor() float32 {
 	return float32(1 << 24) // leaves 9 bits = 512 to cover extreme values
 }
 
-// FloatFmIntFactor returns the factor used for converting int32
+// FloatFromIntFactor returns the factor used for converting int32
 // back to float32 -- this is 1 / FloatToIntFactor for faster multiplication
 // instead of dividing.
-func (fi *Inhib) FloatFmIntFactor() float32 {
+func (fi *Inhib) FloatFromIntFactor() float32 {
 	return 1.0 / float32(1<<24)
 }
 
@@ -202,7 +202,7 @@ func (fi *Inhib) FloatFromInt(ival int32) float32 {
 		return 1
 	}
 	//gosl: start fsfffb
-	return float32(ival) * fi.FloatFmIntFactor()
+	return float32(ival) * fi.FloatFromIntFactor()
 }
 
 // RawIncrInt increments raw values from given neuron-based input values

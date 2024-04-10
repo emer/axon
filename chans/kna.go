@@ -54,8 +54,8 @@ func (ka *KNaParams) ShouldShow(field string) bool {
 	}
 }
 
-// GcFmSpike updates the KNa conductance based on spike or not
-func (ka *KNaParams) GcFmSpike(gKNa *float32, spike bool) {
+// GcFromSpike updates the KNa conductance based on spike or not
+func (ka *KNaParams) GcFromSpike(gKNa *float32, spike bool) {
 	if ka.On.IsTrue() {
 		if spike {
 			*gKNa += ka.Rise * (ka.Max - *gKNa)
@@ -113,11 +113,11 @@ func (ka *KNaMedSlow) ShouldShow(field string) bool {
 	}
 }
 
-// GcFmSpike updates med, slow time scales of KNa adaptation from spiking
-func (ka *KNaMedSlow) GcFmSpike(gKNaM, gKNaS *float32, spike bool) {
-	ka.Med.GcFmSpike(gKNaM, spike)
+// GcFromSpike updates med, slow time scales of KNa adaptation from spiking
+func (ka *KNaMedSlow) GcFromSpike(gKNaM, gKNaS *float32, spike bool) {
+	ka.Med.GcFromSpike(gKNaM, spike)
 	if ka.TrialSlow.IsFalse() {
-		ka.Slow.GcFmSpike(gKNaS, spike)
+		ka.Slow.GcFromSpike(gKNaS, spike)
 	}
 }
 

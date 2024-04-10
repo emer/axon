@@ -143,8 +143,8 @@ func (ss *Sim) Run() { //gti:add
 			gbug = 0.15 / (1.0 + float64(ss.NMDAStd.MgFact*mat32.FastExp(float32(-0.062*bugv))))
 		}
 
-		gs := ss.NMDAStd.Gnmda(1, chans.VFmBio(float32(v)))
-		ca := ss.NMDAStd.CaFmVbio(float32(v))
+		gs := ss.NMDAStd.Gnmda(1, chans.VFromBio(float32(v)))
+		ca := ss.NMDAStd.CaFromVbio(float32(v))
 
 		dt.SetCellFloat("V", vi, v)
 		dt.SetCellFloat("Gnmda", vi, g)

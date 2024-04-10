@@ -106,8 +106,8 @@ func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
 	return 0.81 / (1.0 + mat32.FastExp(-(mat32.Log(cai)+0.3))/0.46)
 }
 
-// CaInRFmSpike updates CaIn, CaR from Spiking and CaD time-integrated spiking activity
-func (sp *SKCaParams) CaInRFmSpike(spike, caD float32, caIn, caR *float32) {
+// CaInRFromSpike updates CaIn, CaR from Spiking and CaD time-integrated spiking activity
+func (sp *SKCaParams) CaInRFromSpike(spike, caD float32, caIn, caR *float32) {
 	*caR -= *caR * sp.CaRDecayDt
 	if spike > 0 {
 		x := *caIn * sp.KCaR
@@ -119,9 +119,9 @@ func (sp *SKCaParams) CaInRFmSpike(spike, caD float32, caIn, caR *float32) {
 	}
 }
 
-// MFmCa returns updated m gating value as a function of current CaR released Ca
+// MFromCa returns updated m gating value as a function of current CaR released Ca
 // and the current m gating value, with activation and deactivation time constants.
-func (sp *SKCaParams) MFmCa(caR, mcur float32) float32 {
+func (sp *SKCaParams) MFromCa(caR, mcur float32) float32 {
 	mas := sp.MAsympHill(caR)
 	if mas > mcur {
 		return mcur + sp.ActDt*(mas-mcur)

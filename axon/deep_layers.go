@@ -32,8 +32,8 @@ func (bp *BurstParams) Defaults() {
 	bp.ThrAbs = 0.1
 }
 
-// ThrFmAvgMax returns threshold from average and maximum values
-func (bp *BurstParams) ThrFmAvgMax(avg, mx float32) float32 {
+// ThrFromAvgMax returns threshold from average and maximum values
+func (bp *BurstParams) ThrFromAvgMax(avg, mx float32) float32 {
 	thr := avg + bp.ThrRel*(mx-avg)
 	thr = mat32.Max(thr, bp.ThrAbs)
 	return thr

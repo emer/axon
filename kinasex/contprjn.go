@@ -50,9 +50,9 @@ func (kp *KinContParams) DWt(caM, caP, caD float32, tdwt *float32) bool {
 	return true
 }
 
-// DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
+// DWtFromTDWt updates the DWt from the TDWt, checking the learning threshold
 // using given aggregate learning rate.  Returns true if updated DWt
-func (kp *KinContParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
+func (kp *KinContParams) DWtFromTDWt(sy *Synapse, lr float32) bool {
 	if sy.CaD >= ls.KinaseDWt.DMaxPct*sy.CaDMax {
 		return false
 	}
@@ -186,7 +186,7 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 					sy.Ca = 0
 				}
 			}
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			kp.FromCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			if tdw {
 				if pj.Learn.XCal.On {
 					sy.TDWt = pj.XCal.DWt(sy.CaP, pj.Learn.KinaseDWt.DScale*sy.CaD)
@@ -197,7 +197,7 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 			if sy.CaD > sy.CaDMax {
 				sy.CaDMax = sy.CaD
 			}
-			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLRate) {
+			if pj.Learn.DWtFromTDWt(sy, lr*rn.RLRate) {
 				sndw++
 			}
 			sntot++
@@ -261,7 +261,7 @@ func (pj *ContPrjn) DWtCont(ltime *axon.Time) {
 			}
 			DecaySynCa(sy, decay)
 			// above decay, representing time passing after discrete trials, can trigger learning
-			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLRate) {
+			if pj.Learn.DWtFromTDWt(sy, lr*rn.RLRate) {
 				sndw++
 			}
 			sntot++

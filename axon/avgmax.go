@@ -74,10 +74,10 @@ func (am *AvgMaxI32) FloatToIntFactor() float32 {
 	return float32(1 << 20) // leaves 7 bits = 128 to cover extreme values
 }
 
-// FloatFmIntFactor returns the factor used for converting int32
+// FloatFromIntFactor returns the factor used for converting int32
 // back to float32 -- this is 1 / FloatToIntFactor for faster multiplication
 // instead of dividing.
-func (am *AvgMaxI32) FloatFmIntFactor() float32 {
+func (am *AvgMaxI32) FloatFromIntFactor() float32 {
 	return 1.0 / float32(1<<20)
 }
 
@@ -107,7 +107,7 @@ func (am *AvgMaxI32) FloatFromInt(ival, refIndex int32) float32 {
 		return 1
 	}
 	//gosl: start avgmaxi
-	return float32(ival) * am.FloatFmIntFactor()
+	return float32(ival) * am.FloatFromIntFactor()
 }
 
 // UpdateVal updates stats from given value

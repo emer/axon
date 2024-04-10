@@ -112,17 +112,17 @@ func (ss *Sim) VmRun() { //gti:add
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
 		vbio := ss.Vstart + float32(vi)*ss.Vstep
-		vnorm := chans.VFmBio(vbio)
-		k := ap.KFmV(vbio)
-		a := ap.AlphaFmVK(vbio, k)
-		b := ap.BetaFmVK(vbio, k)
-		mt := ap.MTauFmAlphaBeta(a, b)
-		ht := ap.HTauFmV(vbio)
-		m := ap.MFmAlpha(a)
-		h := ap.HFmV(vbio)
+		vnorm := chans.VFromBio(vbio)
+		k := ap.KFromV(vbio)
+		a := ap.AlphaFromVK(vbio, k)
+		b := ap.BetaFromVK(vbio, k)
+		mt := ap.MTauFromAlphaBeta(a, b)
+		ht := ap.HTauFromV(vbio)
+		m := ap.MFromAlpha(a)
+		h := ap.HFromV(vbio)
 		g := ap.Gak(m, h)
 
-		ms := ss.AKs.MFmV(vbio)
+		ms := ss.AKs.MFromV(vbio)
 		gs := ss.AKs.Gak(vnorm)
 
 		dt.SetCellFloat("V", vi, float64(vbio))
@@ -203,17 +203,17 @@ func (ss *Sim) TimeRun() { //gti:add
 	dt.SetNumRows(ss.TimeSteps)
 	var g float32
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		vnorm := chans.VFmBio(v)
+		vnorm := chans.VFromBio(v)
 		t := float32(ti) * msdt
 
-		k := ap.KFmV(v)
-		a := ap.AlphaFmVK(v, k)
-		b := ap.BetaFmVK(v, k)
-		mt := ap.MTauFmAlphaBeta(a, b)
-		ht := ap.HTauFmV(v)
+		k := ap.KFromV(v)
+		a := ap.AlphaFromVK(v, k)
+		b := ap.BetaFromVK(v, k)
+		mt := ap.MTauFromAlphaBeta(a, b)
+		ht := ap.HTauFromV(v)
 		g = ap.Gak(m, h)
 
-		dm, dh := ss.AK.DMHFmV(vnorm, m, h)
+		dm, dh := ss.AK.DMHFromV(vnorm, m, h)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))

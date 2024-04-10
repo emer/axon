@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// calls SubPoolGiFmSpikes on sub-pools, after poolgemax has been called.
+// calls SubPoolGiFromSpikes on sub-pools, after poolgemax has been called.
 
 // note: all must be visible always because accessor methods refer to them
 [[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
@@ -41,7 +41,7 @@ void PoolGi2(in Context ctx, in LayerParams ly, uint di, inout Pool pl, float gi
 	if(pl.IsLayPool == 0) {
 		pl.AvgMax.Calc(pl.LayIndex);
 		pl.Inhib.IntToRaw();
-		ly.SubPoolGiFmSpikes(ctx, di, pl, Pools[ly.Indexes.PoolIndex(0, di)], ly.Inhib.Layer.On == 1, giMult);
+		ly.SubPoolGiFromSpikes(ctx, di, pl, Pools[ly.Indexes.PoolIndex(0, di)], ly.Inhib.Layer.On == 1, giMult);
 	}
 }
 

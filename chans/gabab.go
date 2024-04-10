@@ -69,8 +69,8 @@ func (gp *GABABParams) ShouldShow(field string) bool {
 	}
 }
 
-// GFmV returns the GABA-B conductance as a function of normalized membrane potential
-func (gp *GABABParams) GFmV(v float32) float32 {
+// GFromV returns the GABA-B conductance as a function of normalized membrane potential
+func (gp *GABABParams) GFromV(v float32) float32 {
 	vbio := VToBio(v)
 	if vbio < -90 {
 		vbio = -90
@@ -78,9 +78,9 @@ func (gp *GABABParams) GFmV(v float32) float32 {
 	return (vbio + 90.0) / (1.0 + mat32.FastExp(0.1*((vbio+90.0)+10.0)))
 }
 
-// GFmS returns the GABA-B conductance as a function of GABA spiking rate,
+// GFromS returns the GABA-B conductance as a function of GABA spiking rate,
 // based on normalized spiking factor (i.e., Gi from FFFB etc)
-func (gp *GABABParams) GFmS(s float32) float32 {
+func (gp *GABABParams) GFromS(s float32) float32 {
 	ss := s * gp.GiSpike
 	if ss > 20 {
 		return 1
@@ -100,7 +100,7 @@ func (gp *GABABParams) BiExp(g, x float32, dG, dX *float32) {
 func (gp *GABABParams) GABAB(gi float32, gabaB, gabaBx *float32) {
 	var dG, dX float32
 	gp.BiExp(*gabaB, *gabaBx, &dG, &dX)
-	*gabaBx += gp.GFmS(gi) + dX // gets new input
+	*gabaBx += gp.GFromS(gi) + dX // gets new input
 	*gabaB += dG
 	return
 }
@@ -108,7 +108,7 @@ func (gp *GABABParams) GABAB(gi float32, gabaB, gabaBx *float32) {
 // GgabaB returns the overall net GABAB / GIRK conductance including
 // Gbar, Gbase, and voltage-gating
 func (gp *GABABParams) GgabaB(gabaB, vm float32) float32 {
-	return gp.Gbar * gp.GFmV(vm) * (gabaB + gp.Gbase)
+	return gp.Gbar * gp.GFromV(vm) * (gabaB + gp.Gbase)
 }
 
 //gosl: end chans

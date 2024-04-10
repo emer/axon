@@ -48,20 +48,20 @@ func VToBio(vm float32) float32 {
 	return vm*100 - 100
 }
 
-// VFmBio returns normalized 0-1 voltage from biological mV voltage
+// VFromBio returns normalized 0-1 voltage from biological mV voltage
 // where 0 = -100mV and 1 = 0mV
-func VFmBio(vm float32) float32 {
+func VFromBio(vm float32) float32 {
 	return (vm + 100) / 100
 }
 
 //gosl: end chans
 
-// SetFmOtherMinus sets all the values from other Chans minus given value
-func (ch *Chans) SetFmOtherMinus(oth Chans, minus float32) {
+// SetFromOtherMinus sets all the values from other Chans minus given value
+func (ch *Chans) SetFromOtherMinus(oth Chans, minus float32) {
 	ch.E, ch.L, ch.I, ch.K = oth.E-minus, oth.L-minus, oth.I-minus, oth.K-minus
 }
 
-// SetFmMinusOther sets all the values from given value minus other Chans
-func (ch *Chans) SetFmMinusOther(minus float32, oth Chans) {
+// SetFromMinusOther sets all the values from given value minus other Chans
+func (ch *Chans) SetFromMinusOther(minus float32, oth Chans) {
 	ch.E, ch.L, ch.I, ch.K = minus-oth.E, minus-oth.L, minus-oth.I, minus-oth.K
 }

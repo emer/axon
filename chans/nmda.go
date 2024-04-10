@@ -64,11 +64,11 @@ func (np *NMDAParams) ShouldShow(field string) bool {
 	}
 }
 
-// MgGFmVbio returns the NMDA conductance as a function of biological membrane potential
+// MgGFromVbio returns the NMDA conductance as a function of biological membrane potential
 // based on Mg ion blocking
 // Using parameters from Brunel & Wang (2001)
 // see also Urakubo et al (2008)
-func (np *NMDAParams) MgGFmVbio(vbio float32) float32 {
+func (np *NMDAParams) MgGFromVbio(vbio float32) float32 {
 	vbio += np.Voff
 	if vbio >= 0 {
 		return 0
@@ -76,10 +76,10 @@ func (np *NMDAParams) MgGFmVbio(vbio float32) float32 {
 	return -vbio / (1.0 + np.MgFact*mat32.FastExp(-0.062*vbio))
 }
 
-// MgGFmV returns the NMDA conductance as a function of normalized membrane potential
+// MgGFromV returns the NMDA conductance as a function of normalized membrane potential
 // based on Mg ion blocking
-func (np *NMDAParams) MgGFmV(v float32) float32 {
-	return np.MgGFmVbio(VToBio(v))
+func (np *NMDAParams) MgGFromV(v float32) float32 {
+	return np.MgGFromVbio(VToBio(v))
 }
 
 // note on a bug present in version prior to 4/27/2023, re
@@ -97,12 +97,12 @@ func (np *NMDAParams) MgGFmV(v float32) float32 {
 // 	return 1.0 / (0.0756 + 0.5*vbio)
 // }
 
-// CaFmVbio returns the calcium current factor as a function of biological membrane
-// potential -- this factor is needed for computing the calcium current * MgGFmV.
+// CaFromVbio returns the calcium current factor as a function of biological membrane
+// potential -- this factor is needed for computing the calcium current * MgGFromV.
 // This is the same function used in VGCC for their conductance factor.
 // based on implementation in Urakubo et al (2008).
 // http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/
-func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
+func (np *NMDAParams) CaFromVbio(vbio float32) float32 {
 	vbio += np.Voff
 	if vbio > -0.5 && vbio < 0.5 { // this eliminates div 0 at 0, and numerical "fuzz" around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
@@ -110,18 +110,18 @@ func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
 }
 
-// CaFmV returns the calcium current factor as a function of normalized membrane
-// potential -- this factor is needed for computing the calcium current * MgGFmV
-func (np *NMDAParams) CaFmV(v float32) float32 {
-	return np.CaFmVbio(VToBio(v))
+// CaFromV returns the calcium current factor as a function of normalized membrane
+// potential -- this factor is needed for computing the calcium current * MgGFromV
+func (np *NMDAParams) CaFromV(v float32) float32 {
+	return np.CaFromVbio(VToBio(v))
 }
 
-// VFactors returns MgGFmV and CaFmV based on normalized membrane potential.
+// VFactors returns MgGFromV and CaFromV based on normalized membrane potential.
 // Just does the voltage conversion once.
 func (np *NMDAParams) VFactors(v float32, mgg, cav *float32) {
 	vbio := VToBio(v)
-	*mgg = np.MgGFmVbio(vbio)
-	*cav = np.CaFmVbio(vbio)
+	*mgg = np.MgGFromVbio(vbio)
+	*cav = np.CaFromVbio(vbio)
 }
 
 // NMDASyn returns the updated synaptic NMDA Glu binding
@@ -133,13 +133,13 @@ func (np *NMDAParams) NMDASyn(nmda, raw float32) float32 {
 // Gnmda returns the NMDA net conductance from nmda Glu binding and Vm
 // including the GBar factor
 func (np *NMDAParams) Gnmda(nmda, vm float32) float32 {
-	return np.Gbar * np.MgGFmV(vm) * nmda
+	return np.Gbar * np.MgGFromV(vm) * nmda
 }
 
-// SnmdaFmSpike updates sender-based NMDA channel opening based on neural spiking
+// SnmdaFromSpike updates sender-based NMDA channel opening based on neural spiking
 // using the inhibition and decay factors.  These dynamics closely match the
 // Urakubo et al (2008) allosteric NMDA receptor behavior, with ITau = 100, Tau = 30
-func (np *NMDAParams) SnmdaFmSpike(spike float32, snmdaO, snmdaI *float32) {
+func (np *NMDAParams) SnmdaFromSpike(spike float32, snmdaO, snmdaI *float32) {
 	if spike > 0 {
 		inh := (1 - *snmdaI)
 		*snmdaO += inh * (1 - *snmdaO)

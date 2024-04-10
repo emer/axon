@@ -121,7 +121,7 @@ func (pj *Prjn) DWt(ctx *Context, si uint32) {
 }
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
-// This is called on *receiving* projections, prior to WtFmDwt.
+// This is called on *receiving* projections, prior to WtFromDwt.
 func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
@@ -156,31 +156,31 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
 	}
 }
 
-// WtFmDWt computes the weight change (learning), based on
+// WtFromDWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) WtFmDWt(ctx *Context, ni uint32) {
+func (pj *Prjn) WtFromDWt(ctx *Context, ni uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIndex + syi
-		pj.Params.WtFmDWtSyn(ctx, syni)
+		pj.Params.WtFromDWtSyn(ctx, syni)
 	}
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
 func (pj *Prjn) SlowAdapt(ctx *Context) {
 	pj.SynCaReset(ctx)
-	pj.SWtFmWt(ctx)
+	pj.SWtFromWt(ctx)
 	pj.SynScale(ctx)
 }
 
-// SWtFmWt updates structural, slowly-adapting SWt value based on
+// SWtFromWt updates structural, slowly-adapting SWt value based on
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
-func (pj *Prjn) SWtFmWt(ctx *Context) {
+func (pj *Prjn) SWtFromWt(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWts.Adapt.On.IsFalse() {
 		return
 	}
@@ -219,14 +219,14 @@ func (pj *Prjn) SWtFmWt(ctx *Context) {
 				wt := pj.Params.SWts.WtValue(swt, SynV(ctx, syni, LWt))
 				SetSynV(ctx, syni, Wt, wt)
 			}
-			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFmWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWts.Adapt.RndVar()
+			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFromWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWts.Adapt.RndVar()
 			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtValue(swt, SynV(ctx, syni, LWt)))
 		}
 	}
 }
 
 // SynScale performs synaptic scaling based on running average activation vs. targets.
-// Layer-level AvgDifFmTrgAvg function must be called first.
+// Layer-level AvgDifFromTrgAvg function must be called first.
 func (pj *Prjn) SynScale(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
 		return
@@ -273,7 +273,7 @@ func (pj *Prjn) SynCaReset(ctx *Context) {
 }
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
-// and WtFmDWt, but this call can be used during testing to update failing synapses.
+// and WtFromDWt, but this call can be used during testing to update failing synapses.
 func (pj *Prjn) SynFail(ctx *Context) {
 	slay := pj.Send
 	for lni := uint32(0); lni < slay.NNeurons; lni++ {

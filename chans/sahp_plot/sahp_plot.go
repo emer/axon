@@ -100,7 +100,7 @@ func (ss *Sim) CaRun() { //gti:add
 	for vi := 0; vi < nv; vi++ {
 		ca := ss.CaStart + float32(vi)*ss.CaStep
 		var ninf, tau float32
-		mp.NinfTauFmCa(ca, &ninf, &tau)
+		mp.NinfTauFromCa(ca, &ninf, &tau)
 
 		dt.SetCellFloat("Ca", vi, float64(ca))
 		dt.SetCellFloat("Ninf", vi, float64(ninf))
@@ -145,7 +145,7 @@ func (ss *Sim) TimeRun() { //gti:add
 	mp := &ss.Sahp
 
 	var n, tau float32
-	mp.NinfTauFmCa(ss.TimeCaStart, &n, &tau)
+	mp.NinfTauFromCa(ss.TimeCaStart, &n, &tau)
 	ca := ss.TimeCaStart
 
 	dt.SetNumRows(ss.TimeSteps)
@@ -153,8 +153,8 @@ func (ss *Sim) TimeRun() { //gti:add
 		t := float32(ti)
 
 		var ninf, tau float32
-		mp.NinfTauFmCa(ca, &ninf, &tau)
-		dn := mp.DNFmV(ca, n)
+		mp.NinfTauFromCa(ca, &ninf, &tau)
+		dn := mp.DNFromV(ca, n)
 		g := mp.GsAHP(n)
 
 		dt.SetCellFloat("Time", ti, float64(t))

@@ -398,7 +398,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.Net.GPU.SyncSynCaFromGPU() // note: only time we call this
 			ss.ViewUpdate.RecordSyns()    // note: critical to update weights here so DWt is visible
 		}
-		ss.MPIWtFmDWt()
+		ss.MPIWtFromDWt()
 	})
 
 	for m, _ := range man.Stacks {
@@ -850,15 +850,15 @@ func (ss *Sim) MPIFinalize() {
 	}
 }
 
-// MPIWtFmDWt updates weights from weight changes, using MPI to integrate
+// MPIWtFromDWt updates weights from weight changes, using MPI to integrate
 // DWt changes across parallel nodes, each of which are learning on different
 // sequences of inputs.
-func (ss *Sim) MPIWtFmDWt() {
+func (ss *Sim) MPIWtFromDWt() {
 	ctx := &ss.Context
 	if ss.Config.Run.MPI {
 		ss.Net.CollectDWts(ctx, &ss.AllDWts)
 		ss.Comm.AllReduceF32(mpi.OpSum, ss.AllDWts, nil) // in place
 		ss.Net.SetDWts(ctx, ss.AllDWts, mpi.WorldSize())
 	}
-	ss.Net.WtFmDWt(ctx)
+	ss.Net.WtFromDWt(ctx)
 }

@@ -106,8 +106,8 @@ func (sk *SpikeParams) ActToISI(act, timeInc, integ float32) float32 {
 	return (1 / (timeInc * integ * act * sk.MaxHz))
 }
 
-// ActFmISI computes rate-code activation from estimated spiking interval
-func (sk *SpikeParams) ActFmISI(isi, timeInc, integ float32) float32 {
+// ActFromISI computes rate-code activation from estimated spiking interval
+func (sk *SpikeParams) ActFromISI(isi, timeInc, integ float32) float32 {
 	if isi <= 0 {
 		return 0
 	}
@@ -115,8 +115,8 @@ func (sk *SpikeParams) ActFmISI(isi, timeInc, integ float32) float32 {
 	return maxInt / isi                          // normalized
 }
 
-// AvgFmISI returns updated spiking ISI from current isi interval value
-func (sk *SpikeParams) AvgFmISI(avg float32, isi float32) float32 {
+// AvgFromISI returns updated spiking ISI from current isi interval value
+func (sk *SpikeParams) AvgFromISI(avg float32, isi float32) float32 {
 	if avg <= 0 {
 		avg = isi
 	} else if isi < 0.8*avg {
@@ -361,29 +361,29 @@ func (dp *DtParams) Defaults() {
 	dp.Update()
 }
 
-// GeSynFmRaw integrates a synaptic conductance from raw spiking using GeTau
-func (dp *DtParams) GeSynFmRaw(geSyn, geRaw float32) float32 {
+// GeSynFromRaw integrates a synaptic conductance from raw spiking using GeTau
+func (dp *DtParams) GeSynFromRaw(geSyn, geRaw float32) float32 {
 	return geSyn + geRaw - dp.GeDt*geSyn
 }
 
-// GeSynFmRawSteady returns the steady-state GeSyn that would result from
+// GeSynFromRawSteady returns the steady-state GeSyn that would result from
 // receiving a steady increment of GeRaw every time step = raw * GeTau.
 // dSyn = Raw - dt*Syn; solve for dSyn = 0 to get steady state:
 // dt*Syn = Raw; Syn = Raw / dt = Raw * Tau
-func (dp *DtParams) GeSynFmRawSteady(geRaw float32) float32 {
+func (dp *DtParams) GeSynFromRawSteady(geRaw float32) float32 {
 	return geRaw * dp.GeTau
 }
 
-// GiSynFmRaw integrates a synaptic conductance from raw spiking using GiTau
-func (dp *DtParams) GiSynFmRaw(giSyn, giRaw float32) float32 {
+// GiSynFromRaw integrates a synaptic conductance from raw spiking using GiTau
+func (dp *DtParams) GiSynFromRaw(giSyn, giRaw float32) float32 {
 	return giSyn + giRaw - dp.GiDt*giSyn
 }
 
-// GiSynFmRawSteady returns the steady-state GiSyn that would result from
+// GiSynFromRawSteady returns the steady-state GiSyn that would result from
 // receiving a steady increment of GiRaw every time step = raw * GiTau.
 // dSyn = Raw - dt*Syn; solve for dSyn = 0 to get steady state:
 // dt*Syn = Raw; Syn = Raw / dt = Raw * Tau
-func (dp *DtParams) GiSynFmRawSteady(giRaw float32) float32 {
+func (dp *DtParams) GiSynFromRawSteady(giRaw float32) float32 {
 	return giRaw * dp.GiTau
 }
 
@@ -1048,9 +1048,9 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// NMDAFmRaw updates all the NMDA variables from
+// NMDAFromRaw updates all the NMDA variables from
 // total Ge (GeRaw + Ext) and current Vm, Spiking
-func (ac *ActParams) NMDAFmRaw(ctx *Context, ni, di uint32, geTot float32) {
+func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if ac.NMDA.Gbar == 0 {
 		return
 	}
@@ -1062,21 +1062,21 @@ func (ac *ActParams) NMDAFmRaw(ctx *Context, ni, di uint32, geTot float32) {
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
 
-// MaintNMDAFmRaw updates all the Maint NMDA variables from
+// MaintNMDAFromRaw updates all the Maint NMDA variables from
 // GModRaw and current Vm, Spiking
-func (ac *ActParams) MaintNMDAFmRaw(ctx *Context, ni, di uint32) {
+func (ac *ActParams) MaintNMDAFromRaw(ctx *Context, ni, di uint32) {
 	if ac.MaintNMDA.Gbar == 0 {
 		return
 	}
 	if ac.SMaint.On.IsTrue() {
-		ac.SMaintFmISI(ctx, ni, di)
+		ac.SMaintFromISI(ctx, ni, di)
 	}
 	SetNrnV(ctx, ni, di, GMaintSyn, ac.MaintNMDA.NMDASyn(NrnV(ctx, ni, di, GMaintSyn), NrnV(ctx, ni, di, GMaintRaw)))
 	SetNrnV(ctx, ni, di, GnmdaMaint, ac.MaintNMDA.Gnmda(NrnV(ctx, ni, di, GMaintSyn), NrnV(ctx, ni, di, VmDend)))
 }
 
-// SMaintFmISI updates the SMaint self-maintenance current into GMaintRaw
-func (ac *ActParams) SMaintFmISI(ctx *Context, ni, di uint32) {
+// SMaintFromISI updates the SMaint self-maintenance current into GMaintRaw
+func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
 	isi := NrnV(ctx, ni, di, ISIAvg)
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
@@ -1092,22 +1092,22 @@ func (ac *ActParams) SMaintFmISI(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, SMaintP, smp)
 }
 
-// GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
+// GvgccFromVm updates all the VGCC voltage-gated calcium channel variables
 // from VmDend
-func (ac *ActParams) GvgccFmVm(ctx *Context, ni, di uint32) {
+func (ac *ActParams) GvgccFromVm(ctx *Context, ni, di uint32) {
 	if ac.VGCC.Gbar == 0 {
 		return
 	}
 	SetNrnV(ctx, ni, di, Gvgcc, ac.VGCC.Gvgcc(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, VgccM), NrnV(ctx, ni, di, VgccH)))
 	var dm, dh float32
-	ac.VGCC.DMHFmV(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, VgccM), NrnV(ctx, ni, di, VgccH), &dm, &dh)
+	ac.VGCC.DMHFromV(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, VgccM), NrnV(ctx, ni, di, VgccH), &dm, &dh)
 	AddNrnV(ctx, ni, di, VgccM, dm)
 	AddNrnV(ctx, ni, di, VgccH, dh)
-	SetNrnV(ctx, ni, di, VgccCa, ac.VGCC.CaFmG(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, Gvgcc), NrnV(ctx, ni, di, VgccCa))) // note: may be overwritten!
+	SetNrnV(ctx, ni, di, VgccCa, ac.VGCC.CaFromG(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, Gvgcc), NrnV(ctx, ni, di, VgccCa))) // note: may be overwritten!
 }
 
-// GkFmVm updates all the Gk-based conductances: Mahp, KNa, Gak
-func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
+// GkFromVm updates all the Gk-based conductances: Mahp, KNa, Gak
+func (ac *ActParams) GkFromVm(ctx *Context, ni, di uint32) {
 	vm := NrnV(ctx, ni, di, Vm)
 	vmd := NrnV(ctx, ni, di, VmDend)
 	mahpN := NrnV(ctx, ni, di, MahpN)
@@ -1130,7 +1130,7 @@ func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() {
 		gknaMed := NrnV(ctx, ni, di, GknaMed)
 		gknaSlow := NrnV(ctx, ni, di, GknaSlow)
-		ac.KNa.GcFmSpike(&gknaMed, &gknaSlow, NrnV(ctx, ni, di, Spike) > .5)
+		ac.KNa.GcFromSpike(&gknaMed, &gknaSlow, NrnV(ctx, ni, di, Spike) > .5)
 		SetNrnV(ctx, ni, di, GknaMed, gknaMed)
 		SetNrnV(ctx, ni, di, GknaSlow, gknaSlow)
 		gktot += gknaMed + gknaSlow
@@ -1146,24 +1146,24 @@ func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	}
 }
 
-// GSkCaFmCa updates the SKCa channel if used
-func (ac *ActParams) GSkCaFmCa(ctx *Context, ni, di uint32) {
+// GSkCaFromCa updates the SKCa channel if used
+func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 	if ac.SKCa.Gbar == 0 {
 		return
 	}
 	skcar := NrnV(ctx, ni, di, SKCaR)
 	skcain := NrnV(ctx, ni, di, SKCaIn)
-	SetNrnV(ctx, ni, di, SKCaM, ac.SKCa.MFmCa(skcar, NrnV(ctx, ni, di, SKCaM)))
-	ac.SKCa.CaInRFmSpike(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, CaSpkD), &skcain, &skcar)
+	SetNrnV(ctx, ni, di, SKCaM, ac.SKCa.MFromCa(skcar, NrnV(ctx, ni, di, SKCaM)))
+	ac.SKCa.CaInRFromSpike(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, CaSpkD), &skcain, &skcar)
 	SetNrnV(ctx, ni, di, SKCaR, skcar)
 	SetNrnV(ctx, ni, di, SKCaIn, skcain)
 	SetNrnV(ctx, ni, di, Gsk, ac.SKCa.Gbar*NrnV(ctx, ni, di, SKCaM))
 	AddNrnV(ctx, ni, di, Gk, NrnV(ctx, ni, di, Gsk))
 }
 
-// GeFmSyn integrates Ge excitatory conductance from GeSyn.
+// GeFromSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
-func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
+func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
 	SetNrnV(ctx, ni, di, GeExt, 0)
 	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ctx, ni, di, NeuronHasExt) {
 		SetNrnV(ctx, ni, di, GeExt, NrnV(ctx, ni, di, Ext)*ac.Clamp.Ge)
@@ -1191,7 +1191,7 @@ func (ac *ActParams) AddGeNoise(ctx *Context, ni, di uint32) {
 	p := NrnV(ctx, ni, di, GeNoiseP)
 	ge := ac.Noise.PGe(ctx, &p, ni, di)
 	SetNrnV(ctx, ni, di, GeNoiseP, p)
-	SetNrnV(ctx, ni, di, GeNoise, ac.Dt.GeSynFmRaw(NrnV(ctx, ni, di, GeNoise), ge))
+	SetNrnV(ctx, ni, di, GeNoise, ac.Dt.GeSynFromRaw(NrnV(ctx, ni, di, GeNoise), ge))
 	AddNrnV(ctx, ni, di, Ge, NrnV(ctx, ni, di, GeNoise))
 }
 
@@ -1203,12 +1203,12 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 	p := NrnV(ctx, ni, di, GiNoiseP)
 	gi := ac.Noise.PGi(ctx, &p, ni, di)
 	SetNrnV(ctx, ni, di, GiNoiseP, p)
-	SetNrnV(ctx, ni, di, GiNoise, ac.Dt.GiSynFmRaw(NrnV(ctx, ni, di, GiNoise), gi))
+	SetNrnV(ctx, ni, di, GiNoise, ac.Dt.GiSynFromRaw(NrnV(ctx, ni, di, GiNoise), gi))
 }
 
-// GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
+// GiFromSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
-func (ac *ActParams) GiFmSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
+func (ac *ActParams) GiFromSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
 	ac.AddGiNoise(ctx, ni, di)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
 		giSyn = 0
@@ -1216,8 +1216,8 @@ func (ac *ActParams) GiFmSyn(ctx *Context, ni, di uint32, giSyn float32) float32
 	return giSyn
 }
 
-// InetFmG computes net current from conductances and Vm
-func (ac *ActParams) InetFmG(vm, ge, gl, gi, gk float32) float32 {
+// InetFromG computes net current from conductances and Vm
+func (ac *ActParams) InetFromG(vm, ge, gl, gi, gk float32) float32 {
 	inet := ge*(ac.Erev.E-vm) + gl*ac.Gbar.L*(ac.Erev.L-vm) + gi*(ac.Erev.I-vm) + gk*(ac.Erev.K-vm)
 	if inet > ac.Dt.VmTau {
 		inet = ac.Dt.VmTau
@@ -1227,8 +1227,8 @@ func (ac *ActParams) InetFmG(vm, ge, gl, gi, gk float32) float32 {
 	return inet
 }
 
-// VmFmInet computes new Vm value from inet, clamping range
-func (ac *ActParams) VmFmInet(vm, dt, inet float32) float32 {
+// VmFromInet computes new Vm value from inet, clamping range
+func (ac *ActParams) VmFromInet(vm, dt, inet float32) float32 {
 	return ac.VmRange.ClipValue(vm + dt*inet)
 }
 
@@ -1238,13 +1238,13 @@ func (ac *ActParams) VmInteg(vm, dt, ge, gl, gi, gk float32, nvm, inet *float32)
 	dt *= ac.Dt.DtStep
 	*nvm = vm
 	for i := int32(0); i < ac.Dt.VmSteps; i++ {
-		*inet = ac.InetFmG(*nvm, ge, gl, gi, gk)
-		*nvm = ac.VmFmInet(*nvm, dt, *inet)
+		*inet = ac.InetFromG(*nvm, ge, gl, gi, gk)
+		*nvm = ac.VmFromInet(*nvm, dt, *inet)
 	}
 }
 
-// VmFmG computes membrane potential Vm from conductances Ge, Gi, and Gk.
-func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
+// VmFromG computes membrane potential Vm from conductances Ge, Gi, and Gk.
+func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 	updtVm := true
 	// note: nrn.ISI has NOT yet been updated at this point: 0 right after spike, etc
 	// so it takes a full 3 time steps after spiking for Tr period
@@ -1268,7 +1268,7 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 				expi = ac.Dt.VmTau
 			}
 			inet += expi
-			nvm = ac.VmFmInet(nvm, ac.Dt.VmDt, expi)
+			nvm = ac.VmFromInet(nvm, ac.Dt.VmDt, expi)
 		}
 		SetNrnV(ctx, ni, di, Vm, nvm)
 		SetNrnV(ctx, ni, di, Inet, inet)
@@ -1292,14 +1292,14 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 		giEff = gi + ac.Gbar.I*NrnV(ctx, ni, di, SSGiDend)
 		ac.VmInteg(NrnV(ctx, ni, di, VmDend), ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
 		if updtVm {
-			nvm = ac.VmFmInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
+			nvm = ac.VmFromInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
 		}
 		SetNrnV(ctx, ni, di, VmDend, nvm)
 	}
 }
 
-// SpikeFmVmVars computes Spike from Vm and ISI-based activation, using pointers to variables
-func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAct *float32, nrnVm float32) {
+// SpikeFromVmVars computes Spike from Vm and ISI-based activation, using pointers to variables
+func (ac *ActParams) SpikeFromVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAct *float32, nrnVm float32) {
 	var thr float32
 	if ac.Spikes.Exp.IsTrue() {
 		thr = ac.Spikes.ExpThr
@@ -1311,7 +1311,7 @@ func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAc
 		if *nrnISIAvg == -1 {
 			*nrnISIAvg = -2
 		} else if *nrnISI > 0 { // must have spiked to update
-			*nrnISIAvg = ac.Spikes.AvgFmISI(*nrnISIAvg, *nrnISI+1)
+			*nrnISIAvg = ac.Spikes.AvgFromISI(*nrnISIAvg, *nrnISI+1)
 		}
 		*nrnISI = 0
 	} else {
@@ -1332,11 +1332,11 @@ func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAc
 			*nrnSpiked = 0
 		}
 		if *nrnISIAvg >= 0 && *nrnISI > 0 && *nrnISI > 1.2**nrnISIAvg {
-			*nrnISIAvg = ac.Spikes.AvgFmISI(*nrnISIAvg, *nrnISI)
+			*nrnISIAvg = ac.Spikes.AvgFromISI(*nrnISIAvg, *nrnISI)
 		}
 	}
 
-	nwAct := ac.Spikes.ActFmISI(*nrnISIAvg, .001, ac.Dt.Integ)
+	nwAct := ac.Spikes.ActFromISI(*nrnISIAvg, .001, ac.Dt.Integ)
 	if nwAct > 1 {
 		nwAct = 1
 	}
@@ -1344,15 +1344,15 @@ func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAc
 	*nrnAct = nwAct
 }
 
-// SpikeFmVm computes Spike from Vm and ISI-based activation
-func (ac *ActParams) SpikeFmVm(ctx *Context, ni, di uint32) {
+// SpikeFromVm computes Spike from Vm and ISI-based activation
+func (ac *ActParams) SpikeFromVm(ctx *Context, ni, di uint32) {
 	nrnISI := NrnV(ctx, ni, di, ISI)
 	nrnISIAvg := NrnV(ctx, ni, di, ISIAvg)
 	nrnSpike := NrnV(ctx, ni, di, Spike)
 	nrnSpiked := NrnV(ctx, ni, di, Spiked)
 	nrnAct := NrnV(ctx, ni, di, Act)
 	nrnVm := NrnV(ctx, ni, di, Vm)
-	ac.SpikeFmVmVars(&nrnISI, &nrnISIAvg, &nrnSpike, &nrnSpiked, &nrnAct, nrnVm)
+	ac.SpikeFromVmVars(&nrnISI, &nrnISIAvg, &nrnSpike, &nrnSpiked, &nrnAct, nrnVm)
 	SetNrnV(ctx, ni, di, ISI, nrnISI)
 	SetNrnV(ctx, ni, di, ISIAvg, nrnISIAvg)
 	SetNrnV(ctx, ni, di, Spike, nrnSpike)

@@ -105,12 +105,12 @@ func (ss *Sim) VmRun() { //gti:add
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
 		v := ss.Vstart + float32(vi)*ss.Vstep
-		vnorm := chans.VFmBio(v)
-		g := ss.VGCC.GFmV(vnorm)
-		m := ss.VGCC.MFmV(v)
-		h := ss.VGCC.HFmV(v)
+		vnorm := chans.VFromBio(v)
+		g := ss.VGCC.GFromV(vnorm)
+		m := ss.VGCC.MFromV(v)
+		h := ss.VGCC.HFromV(v)
 		var dm, dh float32
-		ss.VGCC.DMHFmV(vnorm, m, h, &dm, &dh)
+		ss.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
 
 		dt.SetCellFloat("V", vi, float64(v))
 		dt.SetCellFloat("Gvgcc", vi, float64(g))
@@ -170,11 +170,11 @@ func (ss *Sim) TimeRun() { //gti:add
 	dt.SetNumRows(ss.TimeSteps)
 	var g float32
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		vnorm := chans.VFmBio(v)
+		vnorm := chans.VFromBio(v)
 		t := float32(ti) * msdt
 		g = ss.VGCC.Gvgcc(vnorm, m, h)
 		var dm, dh float32
-		ss.VGCC.DMHFmV(vnorm, m, h, &dm, &dh)
+		ss.VGCC.DMHFromV(vnorm, m, h, &dm, &dh)
 		m += dm
 		h += dh
 

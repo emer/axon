@@ -109,37 +109,37 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 	// todo: Context requires data parallel state!
 
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-		mtxGated, poolIndex := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+		mtxGated, poolIndex := ly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 
 		thalGated := false
 		if ly.Params.Matrix.ThalLay1Index >= 0 {
 			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Index)]
-			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
 		if ly.Params.Matrix.ThalLay2Index >= 0 {
 			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Index)]
-			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
 		if ly.Params.Matrix.ThalLay3Index >= 0 {
 			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Index)]
-			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
 		if ly.Params.Matrix.ThalLay4Index >= 0 {
 			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Index)]
-			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
 		if ly.Params.Matrix.ThalLay5Index >= 0 {
 			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Index)]
-			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
 		if ly.Params.Matrix.ThalLay6Index >= 0 {
 			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Index)]
-			gt, _ := tly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
+			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 			thalGated = thalGated || gt
 		}
 
@@ -166,10 +166,10 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 	}
 }
 
-// GatedFmSpkMax updates the Gated state in Pools of given layer,
+// GatedFromSpkMax updates the Gated state in Pools of given layer,
 // based on Avg SpkMax being above given threshold.
 // returns true if any gated, and the pool index if 4D layer (0 = first).
-func (ly *Layer) GatedFmSpkMax(di uint32, thr float32) (bool, int) {
+func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
 	anyGated := false
 	poolIndex := -1
 	if ly.Is4D() {

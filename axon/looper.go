@@ -53,7 +53,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	}
 }
 
-// LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper
+// LooperSimCycleAndLearn adds Cycle and DWt, WtFromDWt functions to looper
 // for given network, ctx, and netview update manager
 // Can pass a trial-level time scale to use instead of the default etime.Trial
 func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
@@ -84,7 +84,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 			net.GPU.SyncSynCaFromGPU() // note: only time we call this
 			viewupdt.RecordSyns()      // note: critical to update weights here so DWt is visible
 		}
-		net.WtFmDWt(ctx)
+		net.WtFromDWt(ctx)
 	})
 
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.

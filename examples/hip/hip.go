@@ -416,8 +416,8 @@ func (ss *Sim) ConfigPats() {
 	npats := ss.Config.Run.NTrials
 	pctAct := ss.Config.Mod.ECPctAct
 	minDiff := ss.Config.Pat.MinDiffPct
-	nOn := patgen.NFmPct(pctAct, plY*plX)
-	ctxtflip := patgen.NFmPct(ss.Config.Pat.CtxtFlipPct, nOn)
+	nOn := patgen.NFromPct(pctAct, plY*plX)
+	ctxtflip := patgen.NFromPct(ss.Config.Pat.CtxtFlipPct, nOn)
 	patgen.AddVocabEmpty(ss.PoolVocab, "empty", npats, plY, plX)
 	patgen.AddVocabPermutedBinary(ss.PoolVocab, "A", npats, plY, plX, pctAct, minDiff)
 	patgen.AddVocabPermutedBinary(ss.PoolVocab, "B", npats, plY, plX, pctAct, minDiff)

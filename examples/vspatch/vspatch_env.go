@@ -140,8 +140,8 @@ func (ev *VSPatchEnv) ConfigPats() {
 	minDiff := float32(0.5)
 	flipPct := float32(0.2)
 	nUn := ev.NUnitsY * ev.NUnitsX
-	nOn := patgen.NFmPct(pctAct, nUn)
-	flipBits := patgen.NFmPct(flipPct, nOn)
+	nOn := patgen.NFromPct(pctAct, nUn)
+	flipBits := patgen.NFromPct(flipPct, nOn)
 	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
 
 	npats := ev.NConds * ev.NTrials

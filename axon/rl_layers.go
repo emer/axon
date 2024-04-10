@@ -45,8 +45,8 @@ func (rp *RWDaParams) Defaults() {
 func (rp *RWDaParams) Update() {
 }
 
-// GeFmDA returns excitatory conductance from DA dopamine value
-func (rp *RWDaParams) GeFmDA(da float32) float32 {
+// GeFromDA returns excitatory conductance from DA dopamine value
+func (rp *RWDaParams) GeFromDA(da float32) float32 {
 	ge := rp.TonicGe * (1.0 + da)
 	if ge < 0 {
 		ge = 0
@@ -97,8 +97,8 @@ func (tp *TDDaParams) Defaults() {
 func (tp *TDDaParams) Update() {
 }
 
-// GeFmDA returns excitatory conductance from DA dopamine value
-func (tp *TDDaParams) GeFmDA(da float32) float32 {
+// GeFromDA returns excitatory conductance from DA dopamine value
+func (tp *TDDaParams) GeFromDA(da float32) float32 {
 	return tp.TonicGe * (1.0 + da)
 }
 

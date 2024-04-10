@@ -189,7 +189,7 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, 
 			}
 			net.PlusPhase(ctx)
 			net.DWt(ctx)
-			net.WtFmDWt(ctx)
+			net.WtFromDWt(ctx)
 			outCorSim += outLay.Values[0].CorSim.Cor
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE

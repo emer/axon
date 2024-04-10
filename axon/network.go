@@ -109,8 +109,8 @@ func (nt *Network) Cycle(ctx *Context) {
 		return
 	}
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.GatherSpikes(ctx, ni) }, "GatherSpikes")
-	nt.LayerMapPar(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")         // note: important to be Par for linux / amd64
-	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes") // note: Par not useful
+	nt.LayerMapPar(func(ly *Layer) { ly.GiFromSpikes(ctx) }, "GiFromSpikes")         // note: important to be Par for linux / amd64
+	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFromSpikes(ctx) }, "PoolGiFromSpikes") // note: Par not useful
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
@@ -255,15 +255,15 @@ func (nt *Network) DWt(ctx *Context) {
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
 }
 
-// WtFmDWt updates the weights from delta-weight changes.
+// WtFromDWt updates the weights from delta-weight changes.
 // Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
-func (nt *Network) WtFmDWt(ctx *Context) {
-	nt.LayerMapSeq(func(ly *Layer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // lightweight
+func (nt *Network) WtFromDWt(ctx *Context) {
+	nt.LayerMapSeq(func(ly *Layer) { ly.WtFromDWtLayer(ctx) }, "WtFromDWtLayer") // lightweight
 	if nt.GPU.On {
-		nt.GPU.RunWtFmDWt()
+		nt.GPU.RunWtFromDWt()
 	} else {
 		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
-		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFmDWt(ctx, ni) }, "WtFmDWt")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFromDWt(ctx, ni) }, "WtFromDWt")
 	}
 	if ctx.SlowInc() {
 		nt.SlowAdapt(ctx)

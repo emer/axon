@@ -146,7 +146,7 @@ func (ss *Sim) VGRun() { //gti:add
 	for vi := 0; vi < nv; vi++ {
 		v = ss.Vstart + float64(vi)*ss.Vstep
 		g = float64(ss.GABAstd.Gbar) * (v - ss.GABAberev) / (1 + math.Exp(ss.GABAbv*((v-ss.GABAberev)+ss.GABAbo)))
-		gs := ss.GABAstd.Gbar * ss.GABAstd.GFmV(chans.VFmBio(float32(v)))
+		gs := ss.GABAstd.Gbar * ss.GABAstd.GFromV(chans.VFromBio(float32(v)))
 
 		gbug := 0.2 / (1.0 + mat32.FastExp(float32(0.1*((v+90)+10))))
 
@@ -199,7 +199,7 @@ func (ss *Sim) SGRun() { //gti:add
 	for si := 0; si < nv; si++ {
 		s = float64(si) * ss.Vstep
 		g = 1.0 / (1.0 + math.Exp(-(s-7.1)/1.4))
-		gs := ss.GABAstd.GFmS(float32(s))
+		gs := ss.GABAstd.GFromS(float32(s))
 
 		dt.SetCellFloat("S", si, s)
 		dt.SetCellFloat("GgabaB_max", si, g)
