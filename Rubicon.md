@@ -12,17 +12,83 @@ This document describes the [Rubicon](../../Rubicon.md) model for goal-driven mo
 
 Each of these areas mutually informs the other through bidirectional _constraint satisfaction_ to propose a potential overall goal / plan state across these three areas, as discussed in [Herd et al., 2021](https://ccnlab.org/papers/HerdKruegerNairEtAl21.pdf).
 
-If the proposed goal / plan is selected via BG (basal ganglia, implemented via [PCore](PCoreBG.md)) _gating_, it then drives stable active maintenance of this _goal state_ which is a distributed representation across these PFC areas.  This maintained goal state then drives coordinated behavior toward achieving the expected outcome through the selected action plan.  The maintenance of this consistent goal state is critical for allowing learning at the time when the goal is either achieved or abandoned to update the representations that then drive goal selection behavior in the future, so that these choices can be informed by what actually happened on previous choices.  This then provides a solution to the _temporal credit assignment_ problem.
+If the proposed goal / plan is selected via BG (basal ganglia, implemented via [PCore](PCoreBG.md)) _gating_, it then drives stable active maintenance of this _goal state_ which is a distributed representation across these PFC areas.  This maintained goal state then drives coordinated behavior toward achieving the expected outcome through the selected action plan.
 
-The Rubicon model subsumes the PVLV [Mollick et al, 2020](#references) (Primary Value, Learned Value) framework for phasic dopamine firing, which provides the learning signals at the time of the outcome that drive learning in the BG.
+The maintenance of this consistent goal state is critical for allowing learning at the time when the goal is either achieved or abandoned, to update the representations that then drive goal selection behavior in the future, so that these choices can be informed by what actually happened on previous choices.  This then provides a solution to the _temporal credit assignment_ problem.
+
+The Rubicon model subsumes the PVLV [Mollick et al, 2020](#references) (Primary Value, Learned Value) framework for phasic dopamine firing in the Pavlovian, classical conditioning paradigm.  This provides the learning signals at the time of the outcome that drive learning in the BG.
 
 Implementation files: rubicon_{[net.go](axon/rubicon_net.go), [layers.go](axon/rubicon_layers.go), [prjns.go](axon/rubicon_prjns.go)}.  Examples / test cases: [pvlv](examples/pvlv), [choose](examples/choose).
 
 # Introduction
 
-The integration of classical (passive, Pavlovian) conditioning with the mechanisms of the goal-driven system represents a novel way of understanding both of these mechanisms and literatures. In effect, classical conditioning leverages the core goal-driven mechanisms in a simplified manner, making it an ideal paradigm for testing and validating these mechanisms.  In the goal-driven paradigm, a _conditioned stimulus_ (CS) is a signal for the opportunity to obtain a desired outcome (i.e., the _unconditioned stimulus_ or US).  Thus, a CS activates a goal state in the vmPFC (ventral and medial prefrontal cortex, specifically OFC (orbital frontal cortex), IL (infralimbic), PL (prelimbic) in rodents), setting up the expectation for the subsequent outcome.
+The integration of classical (passive, Pavlovian) conditioning with the mechanisms of the goal-driven system represents a useful way of understanding both of these mechanisms and literatures. In effect, classical conditioning leverages the core goal-driven mechanisms in a simplified manner, making it an ideal paradigm for testing and validating these mechanisms.
 
-The most important and challenging aspect of classical conditioning in this context is recognizing when an expected US is _not_ actually going to happen.  A non-reward trial is, superficially, indistinguishable from any other moment in time when nothing happens.  It is only because of the learned internal expectation that it takes on significance, when this nothing happens instead of the expected something.  Thus, the non-reward trial helps shed light on the machinery that is necessary in the goal-driven context to decide when to [give up](#give-up) on an engaged goal.
+In the goal-driven paradigm, a _conditioned stimulus_ (CS) is a signal for the opportunity to obtain a desired outcome (i.e., the _unconditioned stimulus_ or US).  Thus, a CS activates a goal state in the vmPFC (ventral and medial prefrontal cortex), specifically OFC, IL, and PL, in the Rubicon framework.  Notably, the passive nature of the Pavlovian paradigm means that no additional motor plan representations (e.g., in dlPFC, ALM) are needed.  This goal state is then maintained until the US outcome occurs, and helps establish the CS-US association at the core of classical conditioning.
+
+The most relevant and challenging aspect of classical conditioning in this context is recognizing when an expected US is _not_ actually going to happen.  A non-reward trial is, superficially, indistinguishable from any other moment in time when nothing happens.  It is only because of the maintained internal expectation that it takes on significance, when this nothing happens instead of the expected something.  In the Rubicon framework, this expectation is synonymous with the maintained goal state, and thus a non-reward trial represents a goal failure state, and the proper processing of this goal failure requires a decision to [give up](#give-up) on the engaged goal.  The mechanics of this give-up decision and resulting dopamine and other learning effects is thus tested by simple partial reinforcement and extinction conditioning paradigms, in ways that were explored to some extent in the PVLV paper [Mollick et al, 2020](#references).
+
+## Goal Representations
+
+![Distributed Goal Representation](figs/fig_rubicon_loops_spiral_goals.png?raw=true "Distributed brain areas representing different aspect of a Goal")
+
+**Figure 1:** A version of the classic [Alexander et al. (1986)](#references) 5 loops through the frontal / BG diagram (Striatum = input to BG, with different anatomical regions labeled: D = dorsal, M = medial, V = ventral; Thalamus = output of the BG; SMA = supplementary motor area under dlPFC), highlighting how the OFC, PL / ACC, and dlPFC form a distributed goal / plan representation.
+
+Figure 1 shows the main distributed goal representation brain areas, interconnected with the BG and MD (mediodorsal) nucleus of the thalamus that is ultimately disinhibited by the BG to drive a goal engagement event.  Once the goal is engaged and maintained, it influences individual action choices in the lower-level motor areas (SMA).
+
+![Rubicon Time Bridging Logic](figs/fig_rubicon_logic.png?raw=true "Overall Time Bridging Logic, to solve the temporal credit assignment problem")
+
+**Figure 2:**  Diagram of key elements of the Rubicon model and how they bridge the goal engaged time window between CS trigger for goal engagement and US outcome.
+
+Figure 2 illustrates how the CS-driven goal selection drives active maintenance of the goal state across the duration of the goal execution, thereby bridging the temporal gap.  In addition to this active maintenance, there are other specialized "shortcut" pathways that help bridge the temporal gap, specifically the the basolateral amygdala (**BLA**).
+
+The BLA learns to associate an initially neutral CS with the US that it is reliably associated with.  This learning provides a key step in enabling the system to later recognize the CS as a "trigger" opportunity to obtain its associated US -- if that US is consistent with the current Drive state (e.g., the CS is associated with food and the system is "hungry"), then it should engage a goal to obtain the US.
+
+In the classical conditioning paradigm pioneered by Pavlov, the CS was a bell and the US was food.  The BLA learns the link between the bell and the food, effectively "translating" the meaning of the CS into pre-existing pathways in the brain that process different USs, thus causing Pavlov's dogs to salivate upon hearing the tone.
+
+## Ventral BG Gating for Goal Selection and Maintenance
+
+The ventral portion of the basal ganglia (VBG) plays the role of the final "Decider" in the Rubicon framework ([Herd et al., 2021](https://ccnlab.org/papers/HerdKruegerNairEtAl21.pdf)).  The input layer to the VBG is the _ventral striatum_ (**VS**) (also known as the _nucleus accumbens_ or NAcc), receives from the vmPFC goal areas (and other relevant sensory input areas), and projects to the _VP_ (ventral pallidum), which then projects to the **MD** thalamus, which is bidirectionally interconnected with the vmPFC goal areas (Figure 1).  If the VBG decides to select the currently-proposed goal state represented in vmPFC, this results in a disinhibition of the MD thalamus, opening up the corticothalamic loop, which updates and locks in the goal representation.  This gating dynamic was originally captured in the PBWM (prefrontal-cortex basal-ganglia working memory) model ([O'Reilly & Frank, 2006; O'Reilly, 2006)](#references), and has recently been supported by detailed recording and optogenetic manipulation studies in the Svoboda lab [(Inagaki et al, 2022; 2018; Li et al., 2015; Guo et al., 2017; 2014)](#references).
+
+The VBG is implemented using the [PCore](PCoreBG.md) model, which has **Go** (direct, D1) and **No** (indirect, D2) striatum (matrix = **Mtx**) input layers, that learn whether to gate in and maintain a goal state based on the current BLA state and associated learned information in the OFC and ACC layers, trained by the phasic **DA** = dopamine signal (see [Dopamine System](#dopamine-system) below).  The **GPe**, **GPi** and **STN** layers here are all described in the pcore link and enable the BG to exhibit strongly nonlinear decision dynamics.
+
+An important feature of the VBG is its sensitivity to the *match* between the US outcome associated with the current input stimulus (CS) and the currently activated Drive(s), which is not present in the BLA signal itself (which just does the CS -> US translation).  This match computation works by setting the Drives as a *modulator* input to the BG, such that a given US / Drive specific pool in the BG can only fire if it is receiving a given Drive input.  Whether it actually does fire is determined by the BLA and inputs from OFC and ACC. The other unique feature of the BG is the ability to use dopamine-based learning to interpret the actual reward value of the OFC and ACC cortical representations, to make the final Go vs. NoGo decision for activating a proposed plan.
+
+## Predictive Learning in vmPFC areas
+
+![vmPFC Areas](figs/fig_rubicon_vmpfc_areas.png?raw=true "vmPFC areas across species")
+
+**Figure 3:** Functional mappings across four species for the core vmPFC goal areas, based on [Roberts & Clarke (2019)](#references).  The rat PFC is essentially entirely these core goal-driven areas, which are then expanded and supplemented by extensive additional higher-level motor planning areas in the three primate species (Marmoset, Macaque, Human).
+
+
+![vmPFC Areas](figs/fig_rubicon_anatomy_macaque_rat.png?raw=true "vmPFC areas in macaque and rat")
+
+**Figure 4:** More detailed anatomy of the vmPFC areas in Macaque and Rat.
+
+How do the various distributed goal state areas (shown in Figure 3 for three different species, and in greater detail in Macaque and Rat) actually learn to encode the information needed to make good decisions?  We hypothesize that they learn by predicting outcomes, at two different time scales: a continuous step-by-step prediction, and a _Final_ prediction of the final outcome.
+
+## Outcome in OFC, IL, aIC
+
+* **OFC** encodes predictions of the *outcome* of an action plan -- i.e., the **US** = unconditioned stimulus (food, water, etc).  There are various subregions of OFC in primate (mOFC, lOFC, area 13) vs. rat (VOLO, MO), with various levels of detail vs. abstraction and modality-level factors in representing outcomes -- here we only represent a basic US-specific system that predicts the US on the `USP` layer, where the `P` suffix represents Prediction and Pulvinar (the actual thalamus layer would be the pulvinar-like areas of the MD as described below).  It learns this prediction based on BLA inputs at the time of the US, and is strongly driven by the BLA in general, so when a CS next appears, it will activate the associated OFC representation of the associated US outcome.  Unlike the BLA, the OFC can actively maintain this US expectation (even if the CS later is occluded etc), and these maintained active neurons can *bias* processing in the rest of the system to organize appropriate behavior around this US.  Thus, the BLA and OFC are a "dynamic duo" working together to do CS -> US learning (BLA) and active maintenance and cognitive control of US expectations (OFC).
+
+* **ACC** encodes predictions of the overall *utility* of an action plan: the benefits of obtaining the US minus the costs entailed in doing so, which is learned by predicting the time and effort involved in the action plan.  Anatomically, area 24 (posterior ACC, Cg = cingulum in the rodent) is more directly action-specific and area 32 (in primate this is subgenual ACC -- sgACC, corresponding to prelimbic **PL** in rodent) is more abstract and represents overall plan utility.
+
+* **ALM** / **dlPFC** (dorsolateral prefrontal cortex) encodes an overall *policy* or *plan of action* for achieving the desired outcome, which is learned by predicting the sequence of actions performed.  dlPFC in the primate corresponds to ALM (anterior lateral motor area) in the rodent (not PL as is often suggested in the literature).
+
+The three PFC areas that together comprise the distributed goal representation (OFC, ACC, dlPFC / ALM) each have distinct *lamina* (neocortical layers 1-6) with different functions, along with associated connections to the thalamus (MD) in thalamocortical loops:
+
+* **MD** = mediodorsal thalamus is the part of the thalamus that interconnects with the OFC, ACC, and dlPFC / ALM and receives inhibition from the VS / VP system.  See [Root et al. (2015)](#references) for major review of VS -> MD pathways and associated recording, anatomy etc data.  MD is disinhibited at the time of CS-driven gating, and it bidirectionally connects to the *PT* (pyramidal tract) layers, providing a burst of activity that toggles their NMDA channels resulting ultimately in the active maintenance of the goal state in each of these areas.
+
+* **PT** = pyramidal tract neurons in layer 5 of each PFC area, which provide the robust active maintenance of goal state over time, serving as a sustained *bridge* between the initiation of the goal at the time of the CS to the time of the US.  These are interconnected with the MD thalamus (and other thalamic areas such as VM = ventromedial, VA = ventral anterior, VL = ventral lateral) and are the primary output neurons of the cortex.  In M1 (primary motor cortex), these are the neurons that project to the spinal cord muscle outputs and actually drive motor behavior.  The thalamic connections are "side branches" of these descending subcortical pathways.  See Guo et al. (2018) and Figure 3 below for more info.  There is a large diversity of PT neuron "subtypes" with different temporal and content-based response properties -- we are only implementing the subset of active maintenance (working memory) PT neurons.
+
+* **PTPred** = PT predictive learning neurons: has dynamically changing states that learn to predict everything that happens during a given period of persistent active goal maintenance.  Unlike the above PT (`PTMaintLayer`) layers which are relatively stable over time, the dynamic changing state in the Pred layers is useful for driving predictions of when US outcomes might occur, it the `VSPatch` layer.
+
+* **CT** = corticothalamic neurons in layer 6 of each PFC area.  These are interconnected in multiple loops through the thalamus, and are functionally important for *context* and *continuous time* updating of activity patterns over time, as shown in Figure 4 below.  Computationally, they are a critical element of the deep predictive learning framework described in [OReilly et al., 2021](https://ccnlab.org/papers/OReillyRussinZolfagharEtAl21.pdf), and are functionally similar to context layers in the simple recurrent network (SRN) model of [Elman (1990)](#references).  They generate predictions over pulvinar-like thalamic layers, which are characteristic of some of the MD, and provide a key driver for learning useful representations in the cortex.  In the BOA model, these layers enable the PFC to learn about sequential events over time, complementing the stable bridging activity in the PT neurons.  You can think of them as the "stream of consciousness" neurons -- always updating and reflecting what you're currently thinking about or doing.  As shown in Figure 3 below, they also provide an "open loop" input to the thalamic loops that drive gating in the PT -- they are not themselves subject to the gating signal from these thalamic areas, but they provide useful context info into those PT loops.
+
+* **Super** = superficial layers 2-3 neurons (without any suffix in the model, e.g., plain OFC) always represent the current state of the network / world, influenced by various inputs.  They are bidirectionally connected and are where the constraint satisfaction process takes place to formulate a new proposed plan.  Consistent with data, we assume a subset of PT neurons represent these super states, and convey this info to the BG to influence gating, and also to the MD to provide a drive to activate it when the BG disinhibits it.  Super info is also a key source of input to the CT layer, although with a temporal delay so that CT is forced to try to make predictions about the current state based on prior state info.
+
+
+## PVLV Phasic Dopamine
 
 <img src="figs/fig_pvlv_pv_lv_schultz_da.png" height="600">
 
@@ -184,7 +250,11 @@ The first, novelty pool in the BLA requires a stimulus input to drive it when a 
 ## CeM
 
 For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL.
-    
+
+## Central Amygdala: CeM
+
+ **CeM -> PPTg -> ACh** This pathway drives acetylcholine (ACh) release in response to *changes* in BLA activity from one trial step to the next, so that ACh can provide a phasic signal reflecting the onset of a *new* CS or US, consistent with available data about firing of neurons in the nucleus basalis and CIN (cholinergic interneurons) in the BG [(Sturgill et al., 2020)](#references).  This ACh signal modulates activity in the BG, so gating is restricted to these time points.  The `CeM` (central nucleus of the amygdala) provides a summary readout of the BLA activity levels, as the difference between the `Acq - Ext` activity, representing the overall CS activity strength.  This goes to the `PPTg` (pedunculopontine tegmental nucleus) which computes a temporal derivative of its CeM input, which then drives phasic DA (dopamine, in VTA and SNc anatomically) and ACh, as described in the PVLV model [(Mollick et al., 2020)](#references).
+
 # SC -> LDT ACh
 
 In the [Mollick et al. (2020)](#references) version, the PPTg (pedunculopontine tegmentum) directly computed a temporal derivative of amygdala inputs, to account for phasic DA firing only at the *onset* of a CS, when the BLA has sustained CS activity.  However, updated research shows that this is incorrect, and it is also causes problems functionally in the context of the BOA model.
@@ -309,6 +379,11 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 * TODO: current mechanism is not very general -- uses OFCposUSPT layer to set GvOFCposUSPTMaint in layer_compute.go:PlusPhasePost, then in pvlv.go:PVposEst it uses this to compute PVposEst -- if currently maintaining then it assumes PVpos estimate is high..  
 
 
+# Progress tracking
+
+* leverages sensory distance as the original example;  SC starts with this?
+
+
 # TODO / Issues
 
 
@@ -317,15 +392,21 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 
 # References
 
+* Alexander, G. E., DeLong, M. R., & Strick, P. L. (1986). Parallel organization of functionally segregated circuits linking basal ganglia and cortex. Annual Review of Neuroscience, 9, 357–381. http://www.ncbi.nlm.nih.gov/pubmed/3085570
+
 * Boehnke, S. E., Berg, D. J., Marino, R. A., Baldi, P. F., Itti, L., & Munoz, D. P. (2011). Visual adaptation and novelty responses in the superior colliculus. European Journal of Neuroscience, 34(5), 766–779. https://doi.org/10.1111/j.1460-9568.2011.07805.x
 
 * Bouton, M. E. (2004). Context and behavioral processes in extinction. Learning & Memory, 11(5), 485–494. http://dx.doi.org/10.1101/lm.78804
 
 * Brischoux, F., Chakraborty, S., Brierley, D. I., & Ungless, M. A. (2009). Phasic excitation of dopamine neurons in ventral {VTA} by noxious stimuli. Proceedings of the National Academy of Sciences USA, 106(12), 4894–4899. http://www.ncbi.nlm.nih.gov/pubmed/19261850
 
+* Chernysheva, M., Sych, Y., Fomins, A., Warren, J. L. A., Lewis, C., Capdevila, L. S., Boehringer, R., Amadei, E. A., Grewe, B. F., O’Connor, E. C., Hall, B. J., & Helmchen, F. (2021). Striatum-projecting prefrontal cortex neurons support working memory maintenance (p. 2021.12.03.471159). bioRxiv. https://doi.org/10.1101/2021.12.03.471159
+
 * Dautan, D., Souza, A. S., Huerta-Ocampo, I., Valencia, M., Assous, M., Witten, I. B., Deisseroth, K., Tepper, J. M., Bolam, J. P., Gerdjikov, T. V., & Mena-Segovia, J. (2016). Segregated cholinergic transmission modulates dopamine neurons integrated in distinct functional circuits. Nature Neuroscience, 19(8), Article 8. https://doi.org/10.1038/nn.4335
 
 * Dutta, A., & Gutfreund, Y. (2014). Saliency mapping in the optic tectum and its relationship to habituation. Frontiers in Integrative Neuroscience, 8. https://www.frontiersin.org/articles/10.3389/fnint.2014.00001
+
+* Elman, J. L. (1990). Finding structure in time. Cognitive Science, 14(2), 179–211.
 
 * Gerfen, C. R., & Surmeier, D. J. (2011). Modulation of striatal projection systems by dopamine. Annual Review of Neuroscience, 34, 441–466. http://www.ncbi.nlm.nih.gov/pubmed/21469956
 
@@ -347,11 +428,17 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 
 * Mollick, J. A., Hazy, T. E., Krueger, K. A., Nair, A., Mackie, P., Herd, S. A., & O'Reilly, R. C. (2020). A systems-neuroscience model of phasic dopamine. Psychological Review, 127(6), 972–1021. https://doi.org/10.1037/rev0000199.  [PDF](https://ccnlab.org/papers/MollickHazyKruegerEtAl20.pdf)
 
+* Root, D. H., Melendez, R. I., Zaborszky, L., & Napier, T. C. (2015). The ventral pallidum: Subregion-specific functional anatomy and roles in motivated behaviors. Progress in Neurobiology, 130, 29–70. https://doi.org/10.1016/j.pneurobio.2015.03.005
+
 * Omelchenko, N., & Sesack, S. R. (2005). Laterodorsal tegmental projections to identified cell populations in the rat ventral tegmental area. The Journal of Comparative Neurology, 483(2), 217–235. https://doi.org/10.1002/cne.20417
 
 * O’Reilly, R. C. (2020). Unraveling the Mysteries of Motivation. Trends in Cognitive Sciences. https://doi.org/10.1016/j.tics.2020.03.001
 
+* O’Reilly, R. C., Russin, J. L., Zolfaghar, M., & Rohrlich, J. (2020). Deep Predictive Learning in Neocortex and Pulvinar. ArXiv:2006.14800 [q-Bio]. http://arxiv.org/abs/2006.14800
+
 * O’Reilly, R. C., Frank, M. J., Hazy, T. E., & Watz, B. (2007). PVLV: The primary value and learned value Pavlovian learning algorithm. Behavioral Neuroscience, 121(1), 31–49. http://www.ncbi.nlm.nih.gov/pubmed/17324049 [PDF](https://ccnlab.org/papers/OReillyFrankHazyEtAl07.pdf)
+
+* Sturgill, J. F., Hegedus, P., Li, S. J., Chevy, Q., Siebels, A., Jing, M., Li, Y., Hangya, B., & Kepecs, A. (2020). Basal forebrain-derived acetylcholine encodes valence-free reinforcement prediction error (p. 2020.02.17.953141). bioRxiv. https://doi.org/10.1101/2020.02.17.953141
 
 * Tobler, P. N., Dickinson, A., & Schultz, W. (2003). Coding of predicted reward omission by dopamine neurons in a conditioned inhibition paradigm. Journal of Neuroscience, 23, 10402–10410. http://www.ncbi.nlm.nih.gov/pubmed/14614099
 
