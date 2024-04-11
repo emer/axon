@@ -541,12 +541,12 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFromActs(ctx) // GPU syncs down the state before this
 	np := ly.NPools
-	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposUSPT" {
+	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposPT" {
 		for pi := uint32(1); pi < np; pi++ {
 			for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 				pl := ly.Pool(pi, di)
 				val := pl.AvgMax.CaSpkD.Cycle.Avg
-				SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, uint32(pi-1), val)
+				SetGlbUSposV(ctx, di, GvOFCposPTMaint, uint32(pi-1), val)
 			}
 		}
 	}

@@ -153,7 +153,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigRubicon() {
 	pv := &ss.Net.Rubicon
-	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=negUS
+	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=neg
 	pv.Defaults()
 	pv.USs.PVposGain = 2
 	pv.USs.PVnegGain = 1
@@ -215,7 +215,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToSC1to1(cs, sc)
 
-	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
+	net.ConnectCSToBLApos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
 	net.ConnectLayers(cs, vSpatchD1, full, axon.ForwardPrjn) // these are critical for discriminating A vs. B
 	net.ConnectLayers(cs, vSpatchD2, full, axon.ForwardPrjn)

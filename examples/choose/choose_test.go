@@ -209,7 +209,7 @@ func RunStdTest(t *testing.T, gpu, excludeLays bool, ndata int) {
 		}
 		ex := []string{}
 		if excludeLays {
-			ex = []string{"Lay:", "GvNotMaint", "GvDA", "GvVtaDA", "GvOFCposUSPTMaint"}
+			ex = []string{"Lay:", "GvNotMaint", "GvDA", "GvVtaDA", "GvOFCposPTMaint"}
 		}
 		ReportValDiffs(t, std, tdata, "Std", "Test", ex)
 	}

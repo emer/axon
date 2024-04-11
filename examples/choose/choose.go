@@ -217,7 +217,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc := net.AddBOA(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc := net.AddRubicon(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = plUtil, urgency
 	_, _ = ofcNegUSCT, ofcNegUSPTp
 
@@ -273,7 +273,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToSC1to1(cs, sc)
 
-	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
+	net.ConnectCSToBLApos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAExt(cs, blaPosExt, full)
 
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
@@ -343,7 +343,7 @@ func (ss *Sim) ApplyParams() {
 	cs.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 	csp := net.AxonLayerByName("CSP")
 	csp.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
-	bla := net.AxonLayerByName("BLAPosAcqD1")
+	bla := net.AxonLayerByName("BLAposAcqD1")
 	pji, _ := bla.SendNameTry("BLANovelCS")
 	pj := pji.(*axon.Prjn)
 
@@ -1198,7 +1198,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	net := ss.Net
 	pv := &net.Rubicon
 	dp := ss.EnvGUI.USposData
-	ofcPosUS := net.AxonLayerByName("OFCposUSPT")
+	ofcPosUS := net.AxonLayerByName("OFCposPT")
 	ofcmul := float32(1)
 	np := pv.NPosUSs
 	for i := uint32(0); i < np; i++ {
@@ -1211,7 +1211,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		dp.SetCellFloat("OFC", int(i), float64(ofc))
 	}
 	dn := ss.EnvGUI.USnegData
-	ofcNegUS := net.AxonLayerByName("OFCnegUSPT")
+	ofcNegUS := net.AxonLayerByName("OFCnegPT")
 	nn := pv.NNegUSs
 	for i := uint32(0); i < nn; i++ {
 		us := axon.GlbUSnegV(ctx, diu, axon.GvUSneg, i)

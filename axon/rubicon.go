@@ -285,7 +285,7 @@ type USParams struct {
 	// lower (.02) than salient simulation-specific USs (1).
 	PVcostWts []float32
 
-	// computed estimated US values, based on OFCposUSPT and VSMatrix gating, in PVposEst
+	// computed estimated US values, based on OFCposPT and VSMatrix gating, in PVposEst
 	USposEst []float32 `edit:"-"`
 }
 
@@ -758,7 +758,7 @@ func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvRewPred, 0)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		SetGlbUSposV(ctx, di, GvOFCposUSPTMaint, i, 0)
+		SetGlbUSposV(ctx, di, GvOFCposPTMaint, i, 0)
 		SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, i, 0)
 	}
 }
@@ -911,11 +911,11 @@ func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 }
 
 // PVposEst returns the estimated positive PV value
-// based on drives and OFCposUSPT maint and VSMatrix gating
+// based on drives and OFCposPT maint and VSMatrix gating
 func (rp *Rubicon) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		maint := GlbUSposV(ctx, di, GvOFCposUSPTMaint, i)  // avg act
+		maint := GlbUSposV(ctx, di, GvOFCposPTMaint, i)    // avg act
 		gate := GlbUSposV(ctx, di, GvVSMatrixPoolGated, i) // bool
 		est := float32(0)
 		if maint > 0.2 || gate > 0 {

@@ -145,11 +145,11 @@ const (
 	// = (1 - 1/(1+PVnegGain * PVnegSum))
 	GvPVneg
 
-	// PVposEst is the estimated PVpos value based on OFCposUSPT and VSMatrix gating
+	// PVposEst is the estimated PVpos value based on OFCposPT and VSMatrix gating
 	GvPVposEst
 
 	// PVposEstSum is the sum that goes into computing estimated PVpos
-	// value based on OFCposUSPT and VSMatrix gating
+	// value based on OFCposPT and VSMatrix gating
 	GvPVposEstSum
 
 	// PVposEstDisc is the discounted version of PVposEst, subtracting VSPatchPosSum,
@@ -216,14 +216,14 @@ const (
 
 	// CeMpos is positive valence central nucleus of the amygdala (CeM)
 	// LV (learned value) activity, reflecting
-	// |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.
+	// |BLAposAcqD1 - BLAposExtD2|_+ positively rectified.
 	// CeM sets Raw directly.  Note that a positive US onset even with no
 	// active Drive will be reflected here, enabling learning about unexpected outcomes.
 	GvCeMpos
 
 	// CeMneg is negative valence central nucleus of the amygdala (CeM)
 	// LV (learned value) activity, reflecting
-	// |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly
+	// |BLAnegAcqD2 - BLAnegExtD1|_+ positively rectified.  CeM sets Raw directly
 	GvCeMneg
 
 	/////////////////////////////////////////
@@ -272,9 +272,9 @@ const (
 	// VSPatch is current reward predicting VSPatch (PosD2) values.
 	GvVSPatchD2
 
-	// OFCposUSPTMaint is activity level of given OFCposUSPT maintenance pool
+	// OFCposPTMaint is activity level of given OFCposPT maintenance pool
 	// used in anticipating potential USpos outcome value.
-	GvOFCposUSPTMaint
+	GvOFCposPTMaint
 
 	// VSMatrixPoolGated indicates whether given VSMatrix pool gated
 	// this is reset after last goal accomplished -- records gating since then.

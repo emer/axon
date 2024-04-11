@@ -43,15 +43,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 			}},
-		// {Sel: "#OFCposUS", Desc: "",
+		// {Sel: "#OFCpos", Desc: "",
 		// 	Params: params.Params{
 		// 		"Layer.Inhib.Pool.Gi": "1",
 		// 	}},
-		// {Sel: "#OFCposUSPT", Desc: "",
+		// {Sel: "#OFCposPT", Desc: "",
 		// 	Params: params.Params{
 		// 		"Layer.Inhib.Pool.Gi":        "0.5",
 		// 	}},
-		{Sel: "#OFCposUSPTp", Desc: "",
+		{Sel: "#OFCposPTp", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 -- affects how strongly BLA is driven -- key param
 				"Layer.Inhib.Pool.Gi":        "1.4",
@@ -64,17 +64,17 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "1.2",
 			}},
-		{Sel: "#OFCnegUS", Desc: "",
+		{Sel: "#OFCneg", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.1",
 				// "Layer.Inhib.Layer.Gi":       "0.5", // weaker in general so needs to be lower
 			}},
-		// {Sel: "#OFCnegUSPT", Desc: "",
+		// {Sel: "#OFCnegPT", Desc: "",
 		// 	Params: params.Params{
 		// 		"Layer.Inhib.ActAvg.Nominal": "0.2",
 		// 		"Layer.Inhib.Pool.Gi":        "3.0",
 		// 	}},
-		// {Sel: "#OFCnegUSPTp", Desc: "",
+		// {Sel: "#OFCnegPTp", Desc: "",
 		// 	Params: params.Params{
 		// 		"Layer.Inhib.Pool.Gi": "1.4",
 		// 	}},
@@ -93,12 +93,12 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.DAModGain": "0",     // no bias is better!
 				"Layer.Learn.RLRate.SigmoidMin":  "0.001", // 0.01 better than .05
 			}},
-		{Sel: "#BLAPosAcqD1", Desc: "",
+		{Sel: "#BLAposAcqD1", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "2.4", // 2.2 not enough to knock out novelty
 				"Layer.Inhib.Pool.Gi":  "1",
 			}},
-		{Sel: "#BLANegAcqD2", Desc: "",
+		{Sel: "#BLAnegAcqD2", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "1.2", // weaker
 			}},
@@ -130,11 +130,11 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1",
 			}},
-		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "stronger",
+		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later
 			}},
-		{Sel: "#OFCposUSToILpos", Desc: "stronger",
+		{Sel: "#OFCposToILpos", Desc: "stronger",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3",
 			}},
@@ -194,7 +194,7 @@ var ParamSets = netparams.Sets{
 				"Prjn.Learn.Trace.LearnThr": "0",
 				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 needed in test
 			}},
-		{Sel: "#CSToBLAPosAcqD1", Desc: "",
+		{Sel: "#CSToBLAposAcqD1", Desc: "",
 			Params: params.Params{
 				"Prjn.Learn.LRate.Base": "0.1", // was 0.5 -- too fast!?
 			}},

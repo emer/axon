@@ -47,7 +47,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.RLRate.On":   "true", // only used for non-rew trials -- key
 				"Layer.Learn.RLRate.Diff": "false",
 			}},
-		{Sel: "#BLAPosExtD2", Desc: "",
+		{Sel: "#BLAposExtD2", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "1.8",
 				"Layer.Inhib.Pool.Gi":  "1.0",
@@ -58,7 +58,7 @@ var ParamSets = netparams.Sets{
 				// "Layer.Inhib.Layer.Gi":    "3.0",
 				// "Layer.Inhib.Pool.Gi":     "3.6",
 			}},
-		{Sel: "#OFCposUSPT", Desc: "",
+		{Sel: "#OFCposPT", Desc: "",
 			Params: params.Params{
 				"Layer.Acts.SMaint.Gbar": "0.4",
 			}},
@@ -70,12 +70,12 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.LDT.MaintInhib": "0.8", // 0.8 def; AChThr = 0.5 typically
 			}},
-		{Sel: "#OFCposUSPTp", Desc: "",
+		{Sel: "#OFCposPTp", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":        "1",
 				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 -- affects how strongly BLA is driven -- key param
 			}},
-		// {Sel: "#OFCposUSPT", Desc: "",
+		// {Sel: "#OFCposPT", Desc: "",
 		// 	Params: params.Params{
 		// 		"Layer.Acts.SMaint.Gbar": "0.4", // 0.2 def fine
 		// 	}},
@@ -89,7 +89,7 @@ var ParamSets = netparams.Sets{
 			}},
 		//////////////////////////////////////////////////
 		// required custom params for this project
-		{Sel: "#ContextInToBLAPosExtD2", Desc: "specific to this project",
+		{Sel: "#ContextInToBLAposExtD2", Desc: "specific to this project",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":    "4",
 				"Prjn.Learn.LRate.Base": "0.1",
@@ -122,7 +122,7 @@ var ParamSets = netparams.Sets{
 				// "Prjn.Learn.LRate.Base": "0.0",
 				"Prjn.PrjnScale.Abs": "0.5", // todo: expt
 			}},
-		{Sel: "#BLAPosAcqD1ToOFCposUS", Desc: "strong, high variance",
+		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "strong, high variance",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // key param for OFC focusing on current cs -- expt
 			}},
