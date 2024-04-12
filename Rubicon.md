@@ -288,11 +288,11 @@ Giving up involves three separable factors, listed in precedence order:
 
 * **Utility:** Weighing the accumulated costs relative to the potential expected outcome.  At some point, even if the desired outcome might occur, it would not be worth the expended effort and opportunity costs (when you could have been doing something else of greater potential value).  Costs are continuously available (and drive predictive learning), but the final outcome is only available as a learned estimate, and thus has uncertainty associated with it.  The estimated value, driven by the `ILposPT` to `PVposFinal` pathway, is decoded along with the uncertainty in the neural signal to compute this Utility factor.
 
-* **Timing:** The likelihood that the expected positive outcome is not actually going to happen, based on specific learned predictions in the VSPatch about the timing for the outcome.  VSPatch learns about specific discrete timing, in order to cancel the dopamine burst, and is penalized for anticipatory activity (that would generate a negative DA signal).  This yields a probability-like factor going from `NotYet` (0) to `Past` (1), which is computed using a sigmoidal function of VSPatch activity, which also takes into account the changes over time: if the integrated VSPatch value over time has remained static recently, then it is more likely that the timing window has past.
+* **Timing:** The likelihood that the expected positive outcome is not actually going to happen, based on specific learned predictions in the VSPatch about the timing for the outcome.  VSPatch learns about specific discrete timing, in order to cancel the dopamine burst, and is penalized for anticipatory activity (that would generate a negative DA signal).  The timing function is based on integrated (summed) VSPatch value over time, and also the temporal variance (running average absolute value of change from one trial to the next), so that it does not come into effect until it has been relatively static recently, indicating that the timing window has likely past
 
-* **Progress:** An estimate of the current rate of progress toward the goal, which can be dissociated from the specific timing of the actual outcome provided by the VSPatch.  Even if the "usual" expected Timing of the outcome has passed, if still making progress, then it can make sense to persevere (until it becomes perseveration).  The continuous estimate of progress toward the goal, based on sensory distance, is used for this factor.
+* **Progress:** An estimate of the current rate of progress toward the goal, which can be dissociated from the specific timing of the actual outcome provided by the VSPatch.  Even if the "usual" expected Timing of the outcome has passed, if still making progress, then it can make sense to persevere (until it becomes perseveration).  The continuous estimate of progress toward the goal based on sensory distance is used for this factor.
 
-These factors are used according to the following logic.  We integrate weighting factors `Wgiveup` and `Wcontinue` that separately add to determine the numerator and denominator of an odds ratio representing the probability of giving up vs. continuing:
+These factors are integrated using weighting terms `Wgiveup` and `Wcontinue` that separately add to determine the numerator and denominator of an odds ratio representing the probability of giving up vs. continuing:
 
 ```go
     P(GiveUp) = 1 / (1 + (Wgiveup / Wcontinue))
@@ -305,7 +305,7 @@ Wgiveup = U * cost
 Wcontinue = U * benefit
 ```
 
-Thus, as the costs start to outweigh the benefits, the probability of giving up can increase significantly, as a function of how large U is.
+    Thus, as the costs start to outweigh the benefits, the probability of giving up can increase significantly, as a function of how large U is.
 
 2. **Timing** uses a weight factor `T` multiplying a function of the normalized (relative to an expected Max) summed VSPatch outcome prediction that is penalized by the normalized temporal variance of that signal, such that when the value has stabilized (low variance), the full sum is applied:
 
@@ -314,7 +314,7 @@ Wgiveup = T * VSPatchSum * (1 - Var(VSPatchSum))
 Wcontinue = T * (1 - VSPatchSum) * Var(VSPatchSum)
 ```
 
-Thus, as the timing window passes, this factor weights in favor of giving up with a maximum contribution of `T`.
+    Thus, as the timing window passes, this factor weights in favor of giving up with a maximum contribution of `T`.
 
 3. **Progress** uses weight factor `P` multiplying the current time-integrated rate of decrease in estimated distance to the goal for the continuing weight, and the opposite for giving up:
 
@@ -323,7 +323,7 @@ Wgiveup = P * -ProgressRate
 Wcontinue = P * ProgressRate
 ```
 
-Thus, if the progress rate is positive, it favors continuing, and favors giving up if negative.  It is well known that animals (including humans) do not like to move away from the perceived goal, so perhaps this has something to do with that.
+    Thus, if the progress rate is positive, it favors continuing, and favors giving up if negative.  It is well known that animals (including humans) do not like to move away from the perceived goal, so perhaps this has something to do with that.
 
 # TODO / Issues
 
