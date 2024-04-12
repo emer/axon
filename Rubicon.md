@@ -48,7 +48,7 @@ The BLA learns to associate an initially neutral CS with the US that it is relia
 
 ## Ventral BG Gating for Goal Selection and Maintenance
 
-The ventral portion of the basal ganglia (VBG) plays the role of the final "Decider" in the Rubicon framework ([Herd et al., 2021](https://ccnlab.org/papers/HerdKruegerNairEtAl21.pdf)).  The input layer to the VBG is the _ventral striatum_ (**VS**) (also known as the _nucleus accumbens_ or NAcc), which receives from the vmPFC goal areas (and other relevant sensory input areas), and projects to the _VP_ (ventral pallidum), which then projects to the **MD** thalamus, which is bidirectionally interconnected with the vmPFC goal areas (Figure 1).  If the VBG decides to select the currently-proposed goal state represented in vmPFC, this results in a disinhibition of the MD thalamus, opening up the corticothalamic loop, which updates and locks in the goal representation.  This gating dynamic was originally captured in the PBWM (prefrontal-cortex basal-ganglia working memory) model ([O'Reilly & Frank, 2006; O'Reilly, 2006)](#references), and has recently been supported by detailed recording and optogenetic manipulation studies in the Svoboda lab [(Inagaki et al, 2022; 2018; Li et al., 2015; Guo et al., 2017; 2014)](#references).
+The ventral portion of the basal ganglia (VBG) plays the role of the final "Decider" in the Rubicon framework ([Herd et al., 2021](https://ccnlab.org/papers/HerdKruegerNairEtAl21.pdf)).  The input layer to the VBG is the _ventral striatum_ (**VS**) (also known as the _nucleus accumbens_ or NAc), which receives from the vmPFC goal areas (and other relevant sensory input areas), and projects to the _VP_ (ventral pallidum), which then projects to the **MD** thalamus, which is bidirectionally interconnected with the vmPFC goal areas (Figure 1).  If the VBG decides to select the currently-proposed goal state represented in vmPFC, this results in a disinhibition of the MD thalamus, opening up the corticothalamic loop, which updates and locks in the goal representation.  This gating dynamic was originally captured in the PBWM (prefrontal-cortex basal-ganglia working memory) model ([O'Reilly & Frank, 2006; O'Reilly, 2006)](#references), and has recently been supported by detailed recording and optogenetic manipulation studies in the Svoboda lab [(Inagaki et al, 2022; 2018; Li et al., 2015; Guo et al., 2017; 2014)](#references).
 
 The VBG is implemented using the [PCore](PCoreBG.md) model, which has **Go** (direct, D1) and **No** (indirect, D2) striatum input layers (specifically the _matrix_ = **Mtx** medium spiny neurons, MSNs).  These learn whether to gate in and maintain a goal state based on the current BLA state and associated learned information in the OFC, ACC, IL, and PL layers, trained by the phasic **DA** = dopamine signal (see [Dopamine System](#pvlv-phasic-dopamine) below).  The **GPe**, **GPi** and **STN** layers here are all described in the pcore link and enable the BG to exhibit strongly nonlinear decision dynamics.
 
@@ -110,15 +110,9 @@ The **ALM** / **dlPFC** (dorsolateral prefrontal cortex) encodes an overall *pol
 
 **Figure 5:** PV and LV in the PVLV model: LV = Learned Value (Amygdala), which learns the value of conditioned stimuli (CSs). PV = Primary Value (Ventral Striatum, principally the Nucleus Accumbens Core, NAc), which learns to expect US (unconditioned stimuli, rewards) and shunt dopamine when they occur, or, when omitted, the LHb (lateral habenula) drives a dip / pause in DA firing.  Data from Schultz et al (1997) of VTA firing in a Pavlovian conditioning paradigm.
 
-There are many brain areas involved in controlling the phasic firing of dopamine cells in the VTA (ventral tegmental area) and SNc (substantia nigra, pars reticulata). The PVLV model integrates contributions from the most important of these areas within a coherent overall computational framework including: 1) multiple sub-regions of the amygdala, an area long implicated in affective processing of both positive and negative emotion; 2) multiple pathways within the ventral striatum (VS, which includes the nucleus accumbens, NAc), also important in many aspects of emotional expression; and, 3) the lateral habenula (LHb) pathway, recently identified as the substrate responsible for the inhibitory pausing (dipping) of dopamine neuron activity [Matsumoto & Hikosaka, 2007; Matsumoto & Hikosaka, 2009](#references).
+The VBG that drives goal selection learns under the influence of phasic dopamine neuromodulation released by the VTA (ventral tegmental area) in the midbrain.  The basal ganglia has the densest concentration of dopamine receptors, and, critically, reuptake mechanisms that allow it to be sensitive to rapid temporal transients, which most other brain areas lack.  There are many higher-level brain areas that drive this phasic dopamine release, and the PVLV (Primary Value, Learned Value) model [Mollick et al, 2020](#references) integrates contributions from the most important of these areas within a coherent overall computational framework.
 
-The basic functions of the model can be seen in Pavlovian conditioning:
-
-* Initially neutral cues (**conditioned stimuli; CSs**) are paired with rewards or punishments (**unconditioned stimuli; USs**), resulting in the acquisition of conditioned associations between CS -> US.
-
-* Critically, phasic dopamine responses that initially occur for unexpected USs come to occur at the time of the CS instead.
-
-PVLV models the neurobiological mechanisms that cause this change in dopamine signaling to occur.  The overarching idea behind the PVLV model [OReilly et al, 2007](#references) is that there are two separate brain systems underlying two separate aspects of reward learning:
+Figure 5 shows the most important hypothesis of the PVLV model, which is that there are anatomically distinct brain areas involved in driving phasic dopamine responding to CSs (the LV system, principally involving the Amygdala), versus those involved in anticipating the US and shunting phasic dopamine firing that would otherwise occur then (in the VS), and driving phasic dopamine dips to omitted anticipated USs (in the LHb).  Thus, the main elements of PVLV are:
 
 * The **Primary Value (PV)** (US outcome predicting) and **Learned Value (LV)** (CS predictive cue learning) systems.
 
@@ -126,17 +120,49 @@ PVLV models the neurobiological mechanisms that cause this change in dopamine si
 
 * **LV = amygdala**, which learns to associate CSs with US outcomes (rewards and punishments), thus acquiring new CS-outcome value associations (learned value).
 
-This division of labor is consistent with a considerable amount of data [Hazy et al, 2010](#references). The 2020 PVLV model has a greatly elaborated representation of the amygdala and ventral striatal circuitry, including explicitly separate pathways for appetitive vs. aversive processing, as well as incorporating a central role for the *lateral habenula* (LHb) in driving pauses in dopamine cell firing (dipping) for worse than expected outcomes. Figure 1 provides a big-picture overview of the model.
+This division of labor is consistent with a considerable amount of data [Hazy et al, 2010](#references). The 2020 PVLV model has a greatly elaborated representation of the amygdala and ventral striatal circuitry, including separate pathways for appetitive vs. aversive processing, as well as incorporating a central role for the *lateral habenula* (LHb) in driving pauses in dopamine cell firing (dipping) for worse than expected outcomes. Figure 1 provides a big-picture overview of the model.
 
-![PV.2](figs/fig_bvpvlv_pv_lv_only.png?raw=true "PV.2")
+![PV.6](figs/fig_bvpvlv_pv_lv_only.png?raw=true "PV.2")
 
-**Figure 2:** Simplified diagram of major components of the PVLV model, with the LV Learned Value component in the Amygdala and PV Primary Value component in the Ventral Striatum (principally the Nucleus Accumbens Core, NAc).  LHb: Lateral Habenula, RMTg: RostroMedial Tegmentum, LDT: Laterodorsal Tegmentum, LHA: Lateral Hypothalamus, PBN: Parabrachial Nucleus. 
+**Figure 6:** Simplified diagram of major components of the PVLV model, with the LV Learned Value component in the Amygdala and PV Primary Value component in the Ventral Striatum (principally the Nucleus Accumbens Core, NAc).  LHb: Lateral Habenula, RMTg: RostroMedial Tegmentum, LDT: Laterodorsal Tegmentum, LHA: Lateral Hypothalamus, PBN: Parabrachial Nucleus. 
 
-Note that we use anatomical labels for computationally-specified functions consistent with our theory, without continually reminding the reader that of course this is all a simplified theory for what these brain areas are actually doing.  If it is useful for you, just imagine it says "we hypothesize that the function of area X is.." everywhere.
+### A Central Challenge: Learning *Something* when *Nothing* happens
+
+As noted above and articulated in the PVLV papers, a central challenge that any RL model must solve is to make learning dependent on expectations such that the *absence* of an expected outcome can serve as a learning event, with the appropriate effects.  This is critical for **extinction** learning, when an expected reward outcome no longer occurs, and the system must learn to no longer have this expectation of reward.  This issue is particularly challenging for PVLV because extinction learning involves different pathways than initial acquisition (e.g., BLA Ext vs. Acq layers, VSPatch, and the LHb dipping), so indirect effects of expectation are required.
+
+The basic PVLV extinction dynamic involves the sustained goal engaged state, specifically in the OFC PT maintenance layer, driving learned `VSPatch` activity at the time of the expected US outcome.  The VSPatch then drives the LHb which in turn drives dipping (pausing) of VTA activity, which in turn causes widespread new learning to extinguish the CS -- US association.  This seemingly over-elaborate chain of activity, and the need for a separate brain area involved in driving dipping of dopamine firing, makes more sense when we consider the further computations required in determining when goal failure should occur, as discussed below, after first reviewing some of the other effects of LHb firing.
+
+### LHb: The Brain's Extinguisher
+
+The LHb (lateral habenula) has the following coordinated effects in the model:
+
+* **DA dipping**: The phasic dip in DA activity shifts the balance from D1 to D2 in all DA-recipient neurons in the BG and BLA, causing learning to start to expect this absence (see below on BLA Ext pathway).  Note that this dopamine dip should represent not just the absence of an expected outcome, but also any accumulated effort costs incurred during goal pursuit.
+
+* **OFC / goal gating off**: The LHb can also drive MD thalamic projections to the vmPFC goal areas, deactivating the maintained goal representations.  Implementationally, it happens simply by setting the `HasRew` flag in the `Context.NeuroMod` structure, which triggers decay of the relevant PFC areas (via the `Act.Decay.OnRew` flag).  This happens at the end of the Trial.
+
+* **ACh signaling**: ACh (acetylcholine) is released for salient events, basically CS onset (via superior colliculus to LDT = laterodorsal tegmentum) and US onset, and it modulates learning and activity in the BLA and VS.  The LHb projections to the basal forebrain cholinergic system allow it to provide the key missing piece of ACh signaling for the absence of an expected US, so that a consistent framework of ACh neuromodulation can apply for all of these cases.
+
+See the [Give up](#give-up) section below for more details on how the LHb computes when to give up on a maintained goal.
+
+## Negative USs and Costs
+
+There are two qualitatively-different types of negative outcome values, which require distinct pathways within the model:
+
+* `USneg`: Phasic, discrete "events", such as a shock or impact, that can be associated with a stimulus (CS) or action, and thereby potentially predicted and avoided in the future.  The BLA plays a well-established role here for establishing CS -- US associations (e.g., tone-shock in the widely-used fear conditioning paradigm), in the same way as in the positive valence case.
+
+* `Costs`: Continuous, inevitable costs, specifically Time and Effort, and lower-grade forms of pain, that animals are always seeking to minimize.  These are not associated with phasic CSs, but rather vary as a function of motor plans (e.g., climbing a steep hill vs. walking along a flat path).  These negative outcomes do not engage the BLA because they are not primarily CS-associated, and instead are predicted from motor-cingulate areas.
+
+## Novelty-based Exploration
+
+In order to learn about possible US associations of novel CSs, it is essential to approach them and determine if any kind of US outcome is associated with a given CS.  The Rubicon model has a default drive to explore novel stimuli, and there is a pathway converging on the BLA that is activated by novel CSs, which enables the model to engage a goal state organized specifically to explore novel CSs.  As experience accumulates, the standard BLA and other learning mechanisms take over and drive responding accordingly.
+
+# Detailed Implementation
+
+The following sections provide a more detailed description of each of the components of the Rubicon model.
 
 # Timing: Trial-wise
 
-In contrast to the minus-plus phase-based timing of cortical learning, the RL-based learning in PVLV is generally organized on trial-wise boundaries, with some factors computed online within the trial.  Here is a schematic, for an intermediate amount of positive CS learning and VSPatch prediction of a positive US outcome, with an "Eat" action that drives the US:
+First, we describe the overall timing dynamics.  In contrast to the minus-plus phase-based timing of cortical learning, the RL-based learning in Rubicon is generally organized on trial-wise boundaries, with some factors computed online within the trial.  Here is a schematic, for an intermediate amount of positive CS learning and VSPatch prediction of a positive US outcome, with an "Eat" action that drives the US:
 
 | Trial Step:  |   0       |   1  |   2   |   3         |
 | ------------ | --------- | ---- | ----- | ----------- |
@@ -154,63 +180,9 @@ In contrast to the minus-plus phase-based timing of cortical learning, the RL-ba
 * PT = pyramidal tract neurons are active in OFC (and other vmPFC) due to CS-induced gating.
 * DA at US is computed at start of trial in PVLV.NewState, based on VS D1 - D2 on prev trial.
 
-# A Central Challenge: Learning *Something* when *Nothing* happens
+# Basolateral Amygdala: BLA
 
-As articulated in the PVLV papers, a central challenge that any RL model must solve is to make learning dependent on expectations such that the *absence* of an expected outcome can serve as a learning event, with the appropriate effects.  This is critical for **extinction** learning, when an expected reward outcome no longer occurs, and the system must learn to no longer have this expectation of reward.  This issue is particularly challenging for PVLV because extinction learning involves different pathways than initial acquisition (e.g., BLA Ext vs. Acq layers, VSPatch, and the LHb dipping), so indirect effects of expectation are required.
-
-The expectation in PVLV is carried by active maintenance in the OFC and other vmPFC areas, engaged by the CS onset, which then project to the ventral striatum neurons that drive shunting inhibition and dipping via the LHb pathways.
-
-In the context of the full BG / OFC / ACC ([BOA](examples/boa/README.md)) goal-directed framework (i.e., the *Rubicon* model), this active maintenance is a full *goal* representation that includes an expected outcome (OFC) and an action plan (dlPFC) and expected utility (ACC, PL = prelimbic).  In this case, an extinction event is equivalent to *goal failure*, when the expected (desired) outcome did not occur.  Thus, it is associated with the deactivation of any maintained goal state, and any additional cost associated with failure (at least the effort expended so far).  In this context, it is also possible (likely?) that outcome expectations in a simple Pavlovian context could be dissociable from a full goal-engagement state, involving only the OFC-specific portion of the full goal-engaged activity state.
-
-In the 2020 version of PVLV, activation of the BLA by a CS, and subsequent activity of the external USTime input layer, represented the expectation and provided the *modulatory* activity on BLAExt and VSPatch to enable extinction learning conditioned on expectations.  The model relied heavily on these modulatory and externally-generated representations -- the current Axon version takes the next step in implementing these in a more realistic and robust manner.
-
-In the current version, the gated goal engaged state, corresponding to *OFC PT layer sustained activity*, is the key neural indicator of an active expectation.  Thus, we need to ensure that the model exhibits proper CS-driven BG (VP) gating of active maintenance in OFC PT, and that this maintained activity is available at the right time (and not the wrong time), and in the right form, to drive extinction learning in the right way.  Thus, the PT layers are the core "backbone" of the model, bridging between the LV and PV sides.
-
-The key logic for extinction (in a positive valence context), and related RPE (reward prediction error) expectation-dependent dynamics of DA bursting, is that the `VSPatch` layer (called `PVi` = Primary Value inhibition in earlier PVLV models) learns to expect when a primary value (PV) US (unconditioned stimulus) outcome occurs, and it drives both shunting inhibition to the VTA (to reduce firing when the US does occur) and also dipping via the LHb when the US does not occur.
-
-# LHb: The Brain's Extinguisher
-
-The LHb (lateral habenula) turns an expected (via VSPatch inputs) but absent US non-event into a full-fledged active neural signal, which drives three distinct outputs:
-
-* **DA dipping**: The combination of an active VSPatch input signaling the expectation of a US at the current point in time, with no bottom-up actual US receipt (e.g., via hypothalamic inputs), results in activity of a subset of LHb neurons, which then drive dipping (pausing) of DA tonic activity (via the inhibition provided by the RMTg).  This phasic dip in DA activity shifts the balance from D1 to D2 in all DA-recipient neurons in the BG and BLA, causing learning to start to expect this absence (see below on BLA Ext pathway).
-
-* **OFC / goal gating off**: the LHb dip activation is summed over trials, and when it reaches a threshold level, the system effectively "gives up" on the current US expectation.  This amounts to deactivating any existing goal state (i.e., the OFC maintained activity in this model), and in the goal-driven learning framework (BOA), it also entails "paying the cost" of accumulated effort toward the goal (i.e., extra negative US / DA dipping -- gets applied to the first USneg value), which may be associated with the subjective sense of "disappointment".  Biologically, this is thought to occur via MD thalamic projections to OFC, ACC, dlPFC areas, which are the same pathways activated when an actual US is received and likewise deactivates these areas.  Implementationally, it happens simply by setting the `HasRew` flag in the `Context.NeuroMod` structure, which triggers decay of the relevant PFC areas (via the `Act.Decay.OnRew` flag).  This happens at the end of the Trial.
-
-* **ACh signaling**: ACh (acetylcholine) is released for salient events, basically CS onset (via superior colliculus to LDT = laterodorsal tegmentum) and US onset, and it modulates learning and activity in the BLA and VS.  The LHb projections to the basal forebrain cholinergic system allow it to provide the key missing piece of ACh signaling for the absence of an expected US, so that a consistent framework of ACh neuromodulation can apply for all of these cases.
-
-Taken together, these key functions provide a compelling computational role for why the brain has a separate neural system for recognizing the absence of an expected US.  In the mathematics of the temporal-difference (TD) equations, a negative TD signal associated with a missing expected reward is no different than the reduction associated with the prediction of a reward that does occur, but the brain treats these two very differently.  The VSPatch provides a shunting-only effect directly to the VTA to reduce dopamine firing for expected rewards (USs) that occur, but the LHb is a special system for the case where USs fail to occur.
-
-See the [Give up](#give-up) section below for more details.
-
-# PT (Pyramidal Tract) Sustained and Dynamic Goal Maintenance
-
-Pyramidal tract (PT) neurons in layer 5 of each PFC area provide the robust active maintenance of goal state over time, serving as a sustained *bridge* between the initiation of the goal at the time of the CS to the time of the US.  See the `PTMaintLayer` (PT) and `PTPredLayer` (PTp) in the [deep](DEEP.md) deep predictive learning framework.
-
-These PT layers are interconnected with the MD thalamus (and other thalamic areas such as VM = ventromedial, VA = ventral anterior, VL = ventral lateral) and are the primary output neurons of the cortex.  In M1 (primary motor cortex), these are the neurons that project to the spinal cord muscle outputs and actually drive motor behavior.  The thalamic connections are "side branches" of these descending subcortical pathways.  See [Guo et al. (2018)](#references).  There is a large diversity of PT neuron "subtypes" with different temporal and content-based response properties -- we are only implementing the subset of active maintenance (working memory) PT neurons.
-
-The BG ventral striatum (VS) & ventral pallidum (VP) drives disinhibitory gating of active maintenance in the PT layers, consistent with the longstanding ideas in the PBWM (Prefrontal-cortex, Basal-ganglia Working Memory) framework and recent updates thereof.  The following are specific issues that need to be resolved in the implementation to make everything work properly in the PVLV context.
-
-## Time of learning vs. gating issues
-
-Gating happens within the CS-onset theta cycle, driven by direct BLA recognition of the CS and parallel superior colliculus (SC) phasic activity to CS stimulus onset, which drives LDT (laterodorsal tegmentum) ACh, which disinhibits the BG.  This results in an activated OFC PT layer by the end of the trial.  This is problematic in the PVLV context, because the active PT layer will drive activity and learning in the VSPatch layer consistent with the goal engaged state.  In the 2020 PVLV model, the USTime input was programmed to activate only on the post-CS trial.
-
-## Time / context specificity of PT activity vs. Stable maintenance
-
-There is a basic tension in PT maintained activity, which can be resolved by having two different PT layer types: `PTMaintLayer` (`PT` suffix) and `PTPredLayer` (`PTp` suffix).  On the one hand, PT needs to maintain a stable representation of the stimulus and other context present at the time of initial goal activation (gating), so that learning can properly bridge across the full time window between the initial gating and final outcome.  This is what `PTMaintLayer` achieves, using strong recurrent NMDA projections that stably maintain the gated activity state.  The [pfcmaint](examples/pfcmaint) example test project tests this mechanism specifically, including the `SMaint` self maintenance mechanism that simulates a larger population of interconnected neurons.
-
-On the other hand, prediction of specific events within the goal-engaged window, and especially the prediction of when the goal will be achieved, requires a continuously-updating dynamic representation, like that provided by the CT layer, which is specifically driven by predictive learning of state as it updates across time.  However, the CT layer is always active, and thus does not strongly distinguish the critical difference between goal engaged vs. not.  Furthermore, anatomically, CT only projects to the thalamus and does not have the broad broadcasting ability of the PT layer.  Electrophysiologically, there is plenty of evidence for both sustained and dynamically updating PT activity.  As usual, these are not strongly segregated anatomically, but we use different layers in the model to make the connectivity and parameterization simpler.
-
-The `PTPredLayer` represents the integration of PT stable maintenance and CT dynamic updating.  This layer type receives a temporally-delayed `CTCtxtPrjn` from the corresponding `PTMaintLayer`, which also solves the timing issue above, because the temporal delay prevents activity during the CS gating trial itself.  The PTPred layer is parameterized to not have strong active maintenance NMDA currents, and to track and help predict the relevant dynamic variables (time, effort etc).  See [deep](DEEP.md) for more info.
-
-## Extinction learning and goal inactivation
-
-As noted above, the LHb will drive deactivation of the PT active maintenance layer, signaling that the expected US outcome was not achieved.  Because the PT drives input into the VSPatch expectation layer, it then no longer signals the expectation.  Thus, it is important for both the goal-driven and pavlovian paradigms to deactivate the PT maintenance at this point.
-
-# BLA: Basolateral Amygdala
-
-The basolateral amygdala learns to associate an initially neutral CS with the US that it is reliably associated with.  This learning provides a key step in enabling the system to later recognize the CS as a "trigger" opportunity to obtain its associated US -- if that US is consistent with the current Drive state (e.g., the CS is associated with food and the system is "hungry"), then it should engage a goal to obtain the US.  In the classical conditioning paradigm pioneered by Pavlov, the CS was a bell and the US was food.  The BLA learns the link between the bell and the food, effectively "translating" the meaning of the CS into pre-existing pathways in the brain that process different USs, thus causing Pavlov's dogs to salivate upon hearing the tone. 
-
-The BLA learns at the time of the US, in response to dopamine and ACh (see below), so any stimulus or memory representation reliably present just before the onset of the US is then mapped onto the corresponding US-specific Pool in the BLA layer.  `BLAposAcqD1` is the positive-valence *acquisition* layer expressing more D1 dopamine receptors, and it is opposed (inhibited) by a corresponding `BLAposExtD2` D2-dominant *extinction* layer.  The PVLV model of [Mollick et al. (2020)](https://ccnlab.org/papers/MollickHazyKruegerEtAl20.pdf) describes all of this in great detail. 
+The basolateral amygdala learns to associate an initially neutral CS with the US that it is reliably associated with.  The BLA learns at the time of the US, in response to dopamine and ACh (see below), so any stimulus or memory representation reliably present just before the onset of the US is then mapped onto the corresponding US-specific Pool in the BLA layer.  `BLAposAcqD1` is the positive-valence *acquisition* layer expressing more D1 dopamine receptors, and it is opposed (inhibited) by a corresponding `BLAposExtD2` D2-dominant *extinction* layer.  See the PVLV model [Mollick et al. (2020)](https://ccnlab.org/papers/MollickHazyKruegerEtAl20.pdf) for more details.
 
 There are 2x2 BLA types: Positive or Negative valence US's with Acquisition vs. Extinction:
 
@@ -233,7 +205,7 @@ For acquisition, BLA neurons are initially only activated at the time of the US,
 
 For extinction, the negative dopamine and projections from the PTp as described in the next section work to drive weight strengthening or weakening as appopriate.
     
-## Extinction learning
+## BLA Extinction Learning
 
 The `BLAposExtD2` extinction layer provides the "context specific override" of the acquisition learning in `BLAposAcqD1`, which itself only unlearns very slowly if at all.  It achieves this override in 3 different ways:
 
@@ -251,7 +223,7 @@ To work with the Novelty case (below), and leverage the delta-based learning rul
 
 Importantly, while the learning of Ext is driven by the maintained PTpred, it must have a fast CS-driven activation in order to oppose the Acq pool.  Thus, this CS-driven pathway (which includes contextual inputs via the hippocampus and other areas) is the primary locus of learning, and it also is not ACh gated because it must remain active persistently to counter the Acq activation. 
 
-## Novelty & Curiosity Drive
+# Novelty & Curiosity Drive
 
 <img src="figs/fig_pvlv_bla_novelty.png" height="600">
 
@@ -259,19 +231,15 @@ The first pool in the BLAposAcq / PosExt layers is reserved for the "novelty" ca
 
 The delta learning rule for novelty extinction works via the same extinction logic as regular US pathways: if no US outcome occurs, and the maximum effort limit has been reached, then the LHb dip / reset dynamic is activated, triggering phasic ACh release as if an actual US had occurred.
 
-### BLANovelCS
+## BLANovelCS
 
 The first, novelty pool in the BLA requires a stimulus input to drive it when a novel CS comes on.  This is accomplished in a simple way in the model through a layer (`BLANovelCS`) with fixed (non-learning) synaptic weights from all CS inputs, such that any given CS will activate a particular activity pattern over this layer.  This layer projects into the first BLApos pools, and drives activity there for novel CSs.  When a specific CS acquires a specific US outcome representation in the BLA, that pathway should out-compete the "default" BLANovelCS pathway.
 
-## CeM
+# Central Amygdala: CeM
 
-For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL.
+For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL.  Biologically, the CeM is capable of independent associative learning, but this is likely redundant with BLA learning in most cases.
 
-## Central Amygdala: CeM
-
- **CeM -> PPTg -> ACh** This pathway drives acetylcholine (ACh) release in response to *changes* in BLA activity from one trial step to the next, so that ACh can provide a phasic signal reflecting the onset of a *new* CS or US, consistent with available data about firing of neurons in the nucleus basalis and CIN (cholinergic interneurons) in the BG [(Sturgill et al., 2020)](#references).  This ACh signal modulates activity in the BG, so gating is restricted to these time points.  The `CeM` (central nucleus of the amygdala) provides a summary readout of the BLA activity levels, as the difference between the `Acq - Ext` activity, representing the overall CS activity strength.  This goes to the `PPTg` (pedunculopontine tegmental nucleus) which computes a temporal derivative of its CeM input, which then drives phasic DA (dopamine, in VTA and SNc anatomically) and ACh, as described in the PVLV model [(Mollick et al., 2020)](#references).
-
-# SC -> LDT ACh
+# Superior Colliculus: SC -> LDT ACh
 
 In the [Mollick et al. (2020)](#references) version, the PPTg (pedunculopontine tegmentum) directly computed a temporal derivative of amygdala inputs, to account for phasic DA firing only at the *onset* of a CS, when the BLA has sustained CS activity.  However, updated research shows that this is incorrect, and it is also causes problems functionally in the context of the BOA model.
 
@@ -288,8 +256,6 @@ Furthermore, the OFC & ACC input to LDT serves to inhibit ACh salience signals w
 ```
 
 which sets the `GoalMaint` global variable, that then drives inhibition of ACh in LDT via its `MaintInhib` parameter.
-
-## SC
 
 The SC layer has a relatively-strong trial scale adaptation current that causes activity to diminish over trials, using the sodium-driven potassium channel (KNa):
 ```
@@ -313,42 +279,6 @@ where `DAlr` is the dopamine-signed learning rate factor for D1 vs. D2, which is
 A major challenge for VSPatch is extinguishing the prediction on non-reward trials leading up to an expected reward trial.  Various experiments that altered the learning rates etc impaired the ability to accurately match the target value, so now we are just using a threshold _that applies on the exported global DA value_ for small non-reward VSPatch values (i.e., if VSPatch is 0.1 or lower on a non-reward trial, the DA value is 0).  Critically, the VSPatch itself learns based on the global `VSPatchPosRPE` value, which is computed on the non-thresholded value, so it still drives learning to push the prediction downward, which does eventually happen over time.
 
 Biologically, this would require a subpopulation of VTA neurons that project to the VSPatch neurons, that have less of a threshold in their response from LHb dipping inputs that the VSPatch drives.
-
-# Negative USs and Costs
-
-There are two qualitatively-different types of negative outcome values, which require distinct pathways within the model:
-
-* `USneg`: Phasic, discrete "events", such as a shock or impact, that can be associated with a stimulus (CS) or action, and thereby potentially predicted and avoided in the future.  The BLA plays a well-established role here for establishing CS -- US associations (e.g., tone-shock in the widely-used fear conditioning paradigm), in the same way as in the positive valence case.
-
-* `Costs`: Continuous, inevitable costs, specifically Time and Effort, and lower-grade forms of pain, that animals are always seeking to minimize.  These are not associated with phasic CSs, but rather vary as a function of motor plans (e.g., climbing a steep hill vs. walking along a flat path).  These negative outcomes do not engage the BLA because they are not primarily CS-associated, and instead are predicted from motor-cingulate areas.
-
-# Online and Final Estimates
-
-Like the distinction between `PTMaint` and `PTPred`, we need both a stable representation of the expected final outcomes for positive and negative cost factors, and an online incrementing estimate of our sense of progress toward the positive outcome, and accumulated cost.
-
-For costs, the online increment is entirely straightforward, because we get that directly bottom-up, by hypothesis.  However, there is no obvious representation of the final accumulated cost estimate.
-
-For positive outcomes (USs), the BLA provides a concrete representation of the expected US, which can be directly used to estimate value of final outcome, and it directly influences OFC continuously, so this information is widely available.  However, it is not explicitly represented as _canonical_ value-based code, e.g., a population-coded value used for all different outcomes.  Furthermore, there is no obvious representation of the incremental accumulating value.
-
-Resolving these remaining uncertainties in these representations is a critical path TODO item, and they strongly impact the GiveUp computation as described in the next section.  Various possibilities are enumerated below.
-
-## Emergent PFC representations
-
-The working hypothesis has been that the PTMaint layers learn to reliably encode the final outcome values, while the PTPred layers learn the online incrementing estimates.  However, this has not yet been the main focus of investigation and optimization.
-
-At a minimum, we likely need some more focus on the learning that happens at the time of the outcome: this needs to shape the representations in PTMaint layers, which in turn are driven by the superficial PFC layers at the time of goal gating.  For the OFCpos case, given the BLA US encoding, this seems reasonable, but we likely need to modulate the learning rate at the time of US outcome to encourage the proper learning.  And for this case, the question of incremental learning is more uncertain.
-
-For the ACCcost layer, it is unclear how it might work, given the lack of a final cost representation.
-
-One specific question is whether we can usefully create a focused test project to examine this question specifically.  Probably.  That should be the next goal.
-
-## Explicit final value, cost representations
-
-One possible additional step would be to add layers that just reflect the final estimated positive and cost values.  At the very least, we need to re-add these as decoding layers.  But it would make sense to have a brain area that just represents that explicitly -- receives from PT, and learns only at US for each value respectively, and can then be used for estimates.  Will do this now.
-
-## Incremental positive value progress representation
-
-Likewise, it makes sense to add an explicit abstract value progress layer.  How does it work though?  One idea is that you just train with PTp -- basically pvPosP.  first step is to start reading out that value to see how it is going.
 
 # Give up
 
@@ -391,6 +321,9 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 
 * TODO: current mechanism is not very general -- uses OFCposPT layer to set GvOFCposPTMaint in layer_compute.go:PlusPhasePost, then in pvlv.go:PVposEst it uses this to compute PVposEst -- if currently maintaining then it assumes PVpos estimate is high..  
 
+The [pfcmaint](examples/pfcmaint) example test project tests this mechanism specifically, including the `SMaint` self maintenance mechanism that simulates a larger population of interconnected neurons.
+
+The `PTPredLayer` represents the integration of PT stable maintenance and CT dynamic updating.  This layer type receives a temporally-delayed `CTCtxtPrjn` from the corresponding `PTMaintLayer`, which also solves the timing issue above, because the temporal delay prevents activity during the CS gating trial itself.  The PTPred layer is parameterized to not have strong active maintenance NMDA currents, and to track and help predict the relevant dynamic variables (time, effort etc).  See [deep](DEEP.md) for more info.
 
 # Progress tracking
 
@@ -398,7 +331,6 @@ TODO: Key idea: when rew pred delta goes negative (threshold) then give up.  Don
 
 
 # TODO / Issues
-
 
 * BLAExt vs. Acq could be more robust -- Ext activity depends on PT -> Ext strength..
 
