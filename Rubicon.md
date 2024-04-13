@@ -300,32 +300,26 @@ These factors are integrated using weighting terms `Wgiveup` and `Wcontinue` tha
 
 When `Wgiveup == Wcontinue`, the resulting probability is 1/2, and as `Wgiveup` grows relative to `Wcontinue`, the overall probability approaches 1.
 
-1. **Utility** has an overall weight factor `U` (which tends to be large) that multiplies the contributions of the costs and benefits to the corresponding weight factors:
+1. **Utility** has an overall weight factor `U` (which tends to be large) that multiplies the contributions of the costs and benefits to the corresponding weight factors, such that as the costs start to outweigh the benefits, the probability of giving up can increase significantly:
 
 ```go
 Wgiveup = U * cost
 Wcontinue = U * benefit
 ```
 
-    - Thus, as the costs start to outweigh the benefits, the probability of giving up can increase significantly, as a function of how large U is.
-
-2. **Timing** uses a weight factor `T` multiplying a function of the normalized (relative to an expected Max) summed VSPatch outcome prediction that is penalized by the normalized temporal variance of that signal, such that when the value has stabilized (low variance), the full sum is applied:
+2. **Timing** uses a weight factor `T` multiplying a function of the normalized (relative to an expected Max) summed VSPatch outcome prediction that is penalized by the normalized temporal variance of that signal, such that when the value has stabilized (low variance), the full sum is applied:  
 
 ```go
 Wgiveup = T * VSPatchSum * (1 - Var(VSPatchSum))
 Wcontinue = T * (1 - VSPatchSum) * Var(VSPatchSum)
 ```
 
-    - Thus, as the timing window passes, this factor weights in favor of giving up with a maximum contribution of `T`.
-
-3. **Progress** uses weight factor `P` multiplying the current time-integrated rate of decrease in estimated distance to the goal for the continuing weight, and the opposite for giving up:
+3. **Progress** uses weight factor `P` multiplying the current time-integrated rate of decrease in estimated distance to the goal for the continuing weight, and the opposite for giving up.  Thus, if the progress rate is positive, it favors continuing, and favors giving up if negative.  It is well known that animals (including humans) do not like to move away from the perceived goal, so perhaps this has something to do with that.
 
 ```go
 Wgiveup = P * -ProgressRate
 Wcontinue = P * ProgressRate
 ```
-
-    - Thus, if the progress rate is positive, it favors continuing, and favors giving up if negative.  It is well known that animals (including humans) do not like to move away from the perceived goal, so perhaps this has something to do with that.
 
 # TODO / Issues
 
