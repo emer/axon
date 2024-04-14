@@ -16,9 +16,9 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/gi"
-	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -346,7 +346,7 @@ func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MotorSeqEnv)
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	nSeqTrials := ev.SeqLen + 1 // 1 reward at end
 
@@ -521,7 +521,7 @@ func (ss *Sim) SoftMaxChoose2D(vt *etensor.Float32) int {
 		for j := 0; j < dy; j++ {
 			sum += vt.Value([]int{j, i})
 		}
-		p := mat32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
 		probs[i] = p
 		tot += p
 	}
@@ -547,7 +547,7 @@ func (ss *Sim) SoftMaxChoose4D(vt *etensor.Float32) int {
 				sum += vt.Value([]int{0, i, j, k})
 			}
 		}
-		p := mat32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
 		probs[i] = p
 		tot += p
 	}
@@ -837,7 +837,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.0, 2.5)
-	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, -0.03, 0.02), mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.V3(0, -0.03, 0.02), math32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 

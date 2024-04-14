@@ -19,7 +19,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/dls/armaze"
 	"github.com/emer/emergent/v2/econfig"
@@ -375,7 +375,7 @@ func (ss *Sim) ConfigLoops() {
 	// ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
@@ -535,7 +535,7 @@ func (ss *Sim) SoftMaxChoose(ev *armaze.Env, vt *etensor.Float32) int {
 		for j := 0; j < ev.Config.Params.NYReps; j++ {
 			sum += vt.Value([]int{j, i})
 		}
-		p := mat32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
+		p := math32.FastExp(ss.Config.Env.ActSoftMaxGain * sum)
 		probs[i] = p
 		tot += p
 	}
@@ -981,7 +981,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.3, 1.8)
-	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{}, mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3{}, math32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 

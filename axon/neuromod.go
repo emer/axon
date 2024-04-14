@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/gosl/v2/slbool"
 )
 
@@ -94,8 +94,8 @@ func (nm *NeuroModParams) Defaults() {
 }
 
 func (nm *NeuroModParams) Update() {
-	nm.DALRateMod = mat32.Clamp(nm.DALRateMod, 0, 1)
-	nm.AChLRateMod = mat32.Clamp(nm.AChLRateMod, 0, 1)
+	nm.DALRateMod = math32.Clamp(nm.DALRateMod, 0, 1)
+	nm.AChLRateMod = math32.Clamp(nm.AChLRateMod, 0, 1)
 }
 
 func (nm *NeuroModParams) ShouldShow(field string) bool {
@@ -117,7 +117,7 @@ func (nm *NeuroModParams) IsBLAExt() bool {
 
 // LRModFact returns learning rate modulation factor for given inputs.
 func (nm *NeuroModParams) LRModFact(pct, val float32) float32 {
-	val = mat32.Clamp(mat32.Abs(val), 0, 1)
+	val = math32.Clamp(math32.Abs(val), 0, 1)
 	return 1.0 - pct*(1.0-val)
 }
 
@@ -170,7 +170,7 @@ func (nm *NeuroModParams) GGain(da float32) float32 {
 	case D2Mod:
 		gain -= nm.DAModGain * da
 	case D1AbsMod:
-		gain += nm.DAModGain * mat32.Abs(da)
+		gain += nm.DAModGain * math32.Abs(da)
 	}
 	if gain < 0 {
 		gain = 0

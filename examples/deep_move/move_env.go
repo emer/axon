@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/evec"
@@ -68,7 +68,7 @@ type MoveEnv struct {
 	PctBlank float32
 
 	// current location of agent, floating point
-	PosF mat32.Vec2 `edit:"-"`
+	PosF math32.Vec2 `edit:"-"`
 
 	// current location of agent, integer
 	PosI evec.Vec2i `edit:"-"`
@@ -202,14 +202,14 @@ func AngMod(ang int) int {
 
 // AngVec returns the incremental vector to use for given angle, in deg
 // such that the largest value is 1.
-func AngVec(ang int) mat32.Vec2 {
-	a := mat32.DegToRad(float32(AngMod(ang)))
-	v := mat32.V2(mat32.Cos(a), mat32.Sin(a))
+func AngVec(ang int) math32.Vec2 {
+	a := math32.DegToRad(float32(AngMod(ang)))
+	v := math32.V2(math32.Cos(a), math32.Sin(a))
 	return NormVecLine(v)
 }
 
 // NormVec normalize vector for drawing a line
-func NormVecLine(v mat32.Vec2) mat32.Vec2 {
+func NormVecLine(v math32.Vec2) math32.Vec2 {
 	av := v.Abs()
 	if av.X > av.Y {
 		v = v.DivScalar(av.X)
@@ -222,7 +222,7 @@ func NormVecLine(v mat32.Vec2) mat32.Vec2 {
 // NextVecPoint returns the next grid point along vector,
 // from given current floating and grid points.  v is normalized
 // such that the largest value is 1.
-func NextVecPoint(cp, v mat32.Vec2) (mat32.Vec2, evec.Vec2i) {
+func NextVecPoint(cp, v math32.Vec2) (math32.Vec2, evec.Vec2i) {
 	n := cp.Add(v)
 	g := evec.NewVec2iFromVec2Round(n)
 	return n, g
@@ -235,7 +235,7 @@ func NextVecPoint(cp, v mat32.Vec2) (mat32.Vec2, evec.Vec2i) {
 func (ev *MoveEnv) ScanDepth() {
 	idx := 0
 	hang := ev.FOV / 2
-	maxld := mat32.Log(1 + mat32.Sqrt(float32(ev.Size.X*ev.Size.X+ev.Size.Y*ev.Size.Y)))
+	maxld := math32.Log(1 + math32.Sqrt(float32(ev.Size.X*ev.Size.X+ev.Size.Y*ev.Size.Y)))
 	for ang := hang; ang >= -hang; ang -= ev.AngInc {
 		v := AngVec(ang + ev.Angle)
 		op := ev.PosF
@@ -258,7 +258,7 @@ func (ev *MoveEnv) ScanDepth() {
 		}
 		ev.Depths[idx] = depth
 		if depth > 0 {
-			ev.DepthLogs[idx] = mat32.Log(1+depth) / maxld
+			ev.DepthLogs[idx] = math32.Log(1+depth) / maxld
 		} else {
 			ev.DepthLogs[idx] = 1
 		}

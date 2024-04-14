@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/gosl/v2/slbool"
 )
 
@@ -59,7 +59,7 @@ func (lp *LDTParams) Update() {
 
 // Thr applies SrcThr threshold to given value
 func (lp *LDTParams) Thr(val float32) float32 {
-	val = mat32.Abs(val) // only abs makes sense -- typically positive anyway
+	val = math32.Abs(val) // only abs makes sense -- typically positive anyway
 	if lp.SrcThr <= 0 {
 		return val
 	}
@@ -97,7 +97,7 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	if GlbV(ctx, di, GvHasRew) > 0 {
 		ach = 1
 	} else {
-		ach = mat32.Max(ach, GlbV(ctx, di, GvUrgency))
+		ach = math32.Max(ach, GlbV(ctx, di, GvUrgency))
 	}
 	return ach
 }

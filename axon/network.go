@@ -10,7 +10,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/giv"
-	"cogentcore.org/core/glop/datasize"
+	"cogentcore.org/core/gox/datasize"
 	"cogentcore.org/core/icons"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/prjn"

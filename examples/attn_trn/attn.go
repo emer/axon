@@ -36,7 +36,7 @@ import (
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/giv
 	"cogentcore.org/core/ki"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 // this is the stub main for gogi that calls our actual mainrun function, at end of file
@@ -572,7 +572,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 			}
 			pi := y*sz.X + x
 			pl := &ly.Pools[pi+1]
-			max = mat32.Max(max, pl.Inhib.Act.Max)
+			max = math32.Max(max, pl.Inhib.Act.Max)
 		}
 	}
 	return max
@@ -582,8 +582,8 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
 	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
-	cx := int(mat32.Round(pt.X)) - 1
-	cy := int(mat32.Round(pt.Y)) - 1
+	cx := int(math32.Round(pt.X)) - 1
+	cy := int(math32.Round(pt.Y)) - 1
 	if cx > sz.X/2 {
 		cx++
 	}
@@ -624,7 +624,7 @@ func (ss *Sim) TrialStats() {
 	ss.S2Act = ss.StimAvgAct(&ss.TestEnv.CurStim.Stims[1], ss.AttnLay)
 	if ss.S1Act > 0 {
 		ss.PctMod = (ss.S1Act - ss.S2Act) / ss.S1Act
-		ss.PctMod = mat32.Max(ss.PctMod, 0)
+		ss.PctMod = math32.Max(ss.PctMod, 0)
 	} else {
 		ss.PctMod = 0
 	}
@@ -923,7 +923,7 @@ func (ss *Sim) ConfigTstRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 	nv.Scene().Camera.Pose.Pos.Set(0, 1.14, 2.13)
-	nv.Scene().Camera.LookAt(mat32.V3(0, -0.14, 0), mat32.V3(0, 1, 0))
+	nv.Scene().Camera.LookAt(math32.V3(0, -0.14, 0), math32.V3(0, 1, 0))
 	// nv.SetMaxRecs(300)
 }
 
@@ -948,7 +948,7 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	ss.ToolBar = tbar
 
 	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
+	split.Dim = math32.X
 	split.SetStretchMax()
 
 	sv := giv.AddNewStructView(split, "sv")

@@ -13,8 +13,8 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/giv"
-	"cogentcore.org/core/glop/indent"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/gox/indent"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/relpos"
@@ -55,7 +55,7 @@ type LayerBase struct {
 	Rel relpos.Rel `tableview:"-" view:"inline"`
 
 	// position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.
-	Ps mat32.Vec3 `tableview:"-"`
+	Ps math32.Vec3 `tableview:"-"`
 
 	// a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.
 	Idx int `view:"-" inactive:"-"`
@@ -147,8 +147,8 @@ func (ly *LayerBase) Shape() *etensor.Shape      { return &ly.Shp }
 func (ly *LayerBase) Is2D() bool                 { return ly.Shp.NumDims() == 2 }
 func (ly *LayerBase) Is4D() bool                 { return ly.Shp.NumDims() == 4 }
 func (ly *LayerBase) RelPos() relpos.Rel         { return ly.Rel }
-func (ly *LayerBase) Pos() mat32.Vec3            { return ly.Ps }
-func (ly *LayerBase) SetPos(pos mat32.Vec3)      { ly.Ps = pos }
+func (ly *LayerBase) Pos() math32.Vec3           { return ly.Ps }
+func (ly *LayerBase) SetPos(pos math32.Vec3)     { ly.Ps = pos }
 func (ly *LayerBase) Index() int                 { return ly.Idx }
 func (ly *LayerBase) SetIndex(idx int)           { ly.Idx = idx }
 func (ly *LayerBase) RecvPrjns() *AxonPrjns      { return &ly.RcvPrjns }
@@ -242,19 +242,19 @@ func (ly *LayerBase) PlaceAbove(other *Layer) {
 	ly.Rel = relpos.NewAbove(other.Name())
 }
 
-func (ly *LayerBase) Size() mat32.Vec2 {
+func (ly *LayerBase) Size() math32.Vec2 {
 	if ly.Rel.Scale == 0 {
 		ly.Rel.Defaults()
 	}
-	var sz mat32.Vec2
+	var sz math32.Vec2
 	switch {
 	case ly.Is2D():
-		sz = mat32.V2(float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))) // Y, X
+		sz = math32.V2(float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))) // Y, X
 	case ly.Is4D():
 		// note: pool spacing is handled internally in display and does not affect overall size
-		sz = mat32.V2(float32(ly.Shp.Dim(1)*ly.Shp.Dim(3)), float32(ly.Shp.Dim(0)*ly.Shp.Dim(2))) // Y, X
+		sz = math32.V2(float32(ly.Shp.Dim(1)*ly.Shp.Dim(3)), float32(ly.Shp.Dim(0)*ly.Shp.Dim(2))) // Y, X
 	default:
-		sz = mat32.V2(float32(ly.Shp.Len()), 1)
+		sz = math32.V2(float32(ly.Shp.Len()), 1)
 	}
 	return sz.MulScalar(ly.Rel.Scale)
 }
@@ -587,13 +587,13 @@ func (ly *LayerBase) UnitVarNum() int {
 // so it is the only one that needs to be updated for derived layer types.
 func (ly *LayerBase) UnitVal1D(varIndex int, idx, di int) float32 {
 	if idx < 0 || idx >= int(ly.NNeurons) {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	if varIndex < 0 || varIndex >= ly.UnitVarNum() {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	if di < 0 || di >= int(ly.MaxData) {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	ni := ly.NeurStIndex + uint32(idx)
 	ctx := &ly.Network.Ctx
@@ -618,7 +618,7 @@ func (ly *LayerBase) UnitVal1D(varIndex int, idx, di int) float32 {
 	} else {
 		return NrnV(ctx, ni, uint32(di), NeuronVars(varIndex))
 	}
-	return mat32.NaN()
+	return math32.NaN()
 }
 
 // UnitValues fills in values of given variable name on unit,
@@ -633,7 +633,7 @@ func (ly *LayerBase) UnitValues(vals *[]float32, varNm string, di int) error {
 	}
 	vidx, err := ly.UnitVarIndex(varNm)
 	if err != nil {
-		nan := mat32.NaN()
+		nan := math32.NaN()
 		for lni := uint32(0); lni < nn; lni++ {
 			(*vals)[lni] = nan
 		}
@@ -665,7 +665,7 @@ func (ly *LayerBase) UnitValuesTensor(tsr etensor.Tensor, varNm string, di int) 
 	}
 	for lni := 0; lni < nn; lni++ {
 		v := ly.UnitVal1D(vidx, lni, di)
-		if mat32.IsNaN(v) {
+		if math32.IsNaN(v) {
 			tsr.SetFloat1D(lni, math.NaN())
 		} else {
 			tsr.SetFloat1D(lni, float64(v))
@@ -708,7 +708,7 @@ func (ly *LayerBase) UnitValuesRepTensor(tsr etensor.Tensor, varNm string, di in
 	}
 	for i, ui := range ly.RepIxs {
 		v := ly.UnitVal1D(vidx, ui, di)
-		if mat32.IsNaN(v) {
+		if math32.IsNaN(v) {
 			tsr.SetFloat1D(i, math.NaN())
 		} else {
 			tsr.SetFloat1D(i, float64(v))
@@ -722,7 +722,7 @@ func (ly *LayerBase) UnitValuesRepTensor(tsr etensor.Tensor, varNm string, di in
 func (ly *LayerBase) UnitValue(varNm string, idx []int, di int) float32 {
 	vidx, err := ly.UnitVarIndex(varNm)
 	if err != nil {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	fidx := ly.Shp.Offset(idx)
 	return ly.UnitVal1D(vidx, fidx, di)
@@ -736,7 +736,7 @@ func (ly *LayerBase) UnitValue(varNm string, idx []int, di int) float32 {
 // useful when there are multiple projections between two layers.
 // Returns error on invalid var name.
 // If the receiving neuron is not connected to the given sending layer or neuron
-// then the value is set to mat32.NaN().
+// then the value is set to math32.NaN().
 // Returns error on invalid var name or lack of recv prjn (vals always set to nan on prjn err).
 func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.Layer, sendIndex1D int, prjnType string) error {
 	var err error
@@ -746,7 +746,7 @@ func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.
 	} else if len(*vals) < nn {
 		*vals = (*vals)[0:nn]
 	}
-	nan := mat32.NaN()
+	nan := math32.NaN()
 	for i := 0; i < nn; i++ {
 		(*vals)[i] = nan
 	}
@@ -782,7 +782,7 @@ func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.
 // useful when there are multiple projections between two layers.
 // Returns error on invalid var name.
 // If the sending neuron is not connected to the given receiving layer or neuron
-// then the value is set to mat32.NaN().
+// then the value is set to math32.NaN().
 // Returns error on invalid var name or lack of recv prjn (vals always set to nan on prjn err).
 func (ly *LayerBase) SendPrjnValues(vals *[]float32, varNm string, recvLay emer.Layer, recvIndex1D int, prjnType string) error {
 	var err error
@@ -792,7 +792,7 @@ func (ly *LayerBase) SendPrjnValues(vals *[]float32, varNm string, recvLay emer.
 	} else if len(*vals) < nn {
 		*vals = (*vals)[0:nn]
 	}
-	nan := mat32.NaN()
+	nan := math32.NaN()
 	for i := 0; i < nn; i++ {
 		(*vals)[i] = nan
 	}

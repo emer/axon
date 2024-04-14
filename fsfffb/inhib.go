@@ -7,7 +7,7 @@ package fsfffb
 import (
 	"log"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/gosl/v2/slbool"
 )
 
@@ -160,13 +160,13 @@ func (fi *Inhib) GiFromFSSS() float32 {
 // with resulting value being the Max of either
 func (fi *Inhib) LayerMax(liGi float32) {
 	fi.LayGi = liGi
-	fi.Gi = mat32.Max(fi.Gi, liGi)
+	fi.Gi = math32.Max(fi.Gi, liGi)
 }
 
 // PoolMax updates given layer-level inhib values from given pool-level
 // with resulting value being the Max of either
 func (fi *Inhib) PoolMax(piGi float32) {
-	fi.Gi = mat32.Max(fi.Gi, piGi)
+	fi.Gi = math32.Max(fi.Gi, piGi)
 }
 
 //////////////////////////////////////////

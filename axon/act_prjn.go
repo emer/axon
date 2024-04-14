@@ -7,7 +7,7 @@ package axon
 import (
 	"log"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/gosl/v2/slbool"
 )
@@ -239,14 +239,14 @@ func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 		ncon = 1
 	}
 	semExtra := 2
-	slayActN := int(mat32.Round(savg * snu)) // sending layer actual # active
+	slayActN := int(math32.Round(savg * snu)) // sending layer actual # active
 	slayActN = max(slayActN, 1)
 	var sc float32
 	if ncon == snu {
 		sc = 1 / float32(slayActN)
 	} else {
-		maxActN := int(mat32.Min(ncon, float32(slayActN))) // max number we could get
-		avgActN := int(mat32.Round(savg * ncon))           // recv average actual # active if uniform
+		maxActN := int(math32.Min(ncon, float32(slayActN))) // max number we could get
+		avgActN := int(math32.Round(savg * ncon))           // recv average actual # active if uniform
 		avgActN = max(avgActN, 1)
 		expActN := avgActN + semExtra // expected
 		expActN = min(expActN, maxActN)

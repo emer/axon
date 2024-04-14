@@ -14,7 +14,7 @@ import (
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/giv"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
@@ -140,7 +140,7 @@ func (ss *Sim) Run() { //gti:add
 		if bugv >= 0 {
 			gbug = 0
 		} else {
-			gbug = 0.15 / (1.0 + float64(ss.NMDAStd.MgFact*mat32.FastExp(float32(-0.062*bugv))))
+			gbug = 0.15 / (1.0 + float64(ss.NMDAStd.MgFact*math32.FastExp(float32(-0.062*bugv))))
 		}
 
 		gs := ss.NMDAStd.Gnmda(1, chans.VFromBio(float32(v)))

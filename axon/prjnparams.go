@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 //gosl: hlsl prjnparams
@@ -415,7 +415,7 @@ func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 	// hebbian-learning part
 	sNrnCap := NrnV(ctx, si, di, NrnCaP)
 	savg := 0.5 + pj.Hip.SAvgCor*(pj.Hip.SNominal-0.5)
-	savg = 0.5 / mat32.Max(pj.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
+	savg = 0.5 / math32.Max(pj.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
 	hebb := rNrnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
 
 	// setting delta weight (note: impossible to be CTCtxtPrjn)

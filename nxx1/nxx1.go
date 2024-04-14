@@ -22,7 +22,7 @@ package nxx1
 //go:generate core generate -add-types
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 // Params are the Noisy X/(X+1) rate-coded activation function parameters.
@@ -83,7 +83,7 @@ type Params struct {
 
 func (xp *Params) Update() {
 	xp.SigGainNVar = xp.SigGain / xp.NVar
-	xp.SigMultEff = xp.SigMult * mat32.Pow(xp.Gain*xp.NVar, xp.SigMultPow)
+	xp.SigMultEff = xp.SigMult * math32.Pow(xp.Gain*xp.NVar, xp.SigMultPow)
 	xp.SigValAt0 = 0.5 * xp.SigMultEff
 	xp.InterpVal = xp.XX1GainCor(xp.InterpRange) - xp.SigValAt0
 }
@@ -123,7 +123,7 @@ func (xp *Params) XX1GainCor(x float32) float32 {
 // but ok for lower gains)
 func (xp *Params) NoisyXX1(x float32) float32 {
 	if x < 0 { // sigmoidal for < 0
-		return xp.SigMultEff / (1 + mat32.FastExp(-(x * xp.SigGainNVar)))
+		return xp.SigMultEff / (1 + math32.FastExp(-(x * xp.SigGainNVar)))
 	} else if x < xp.InterpRange {
 		interp := 1 - ((xp.InterpRange - x) / xp.InterpRange)
 		return xp.SigValAt0 + interp*xp.InterpVal
@@ -150,11 +150,11 @@ func (xp *Params) XX1GainCorGain(x, gain float32) float32 {
 // but ok for lower gains).  Using external gain factor.
 func (xp *Params) NoisyXX1Gain(x, gain float32) float32 {
 	if x < xp.InterpRange {
-		sigMultEffArg := xp.SigMult * mat32.Pow(gain*xp.NVar, xp.SigMultPow)
+		sigMultEffArg := xp.SigMult * math32.Pow(gain*xp.NVar, xp.SigMultPow)
 		sigValAt0Arg := 0.5 * sigMultEffArg
 
 		if x < 0 { // sigmoidal for < 0
-			return sigMultEffArg / (1 + mat32.FastExp(-(x * xp.SigGainNVar)))
+			return sigMultEffArg / (1 + math32.FastExp(-(x * xp.SigGainNVar)))
 		} else { // else x < interp_range
 			interp := 1 - ((xp.InterpRange - x) / xp.InterpRange)
 			return sigValAt0Arg + interp*xp.InterpVal

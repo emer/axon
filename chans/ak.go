@@ -4,7 +4,7 @@
 
 package chans
 
-import "cogentcore.org/core/mat32"
+import "cogentcore.org/core/math32"
 
 // AKParams control an A-type K channel, which is voltage gated with maximal
 // activation around -37 mV.  It has two state variables, M (v-gated opening)
@@ -76,22 +76,22 @@ func (ap *AKParams) Proximal() {
 
 // AlphaFromVK returns the Alpha function from vbio (not normalized, must not exceed 0)
 func (ap *AKParams) AlphaFromVK(vbio, k float32) float32 {
-	return mat32.FastExp(0.03707 * k * (vbio - ap.Voff))
+	return math32.FastExp(0.03707 * k * (vbio - ap.Voff))
 }
 
 // BetaFromVK returns the Beta function from vbio (not normalized, must not exceed 0)
 func (ap *AKParams) BetaFromVK(vbio, k float32) float32 {
-	return mat32.FastExp(ap.Beta * k * (vbio - ap.Voff))
+	return math32.FastExp(ap.Beta * k * (vbio - ap.Voff))
 }
 
 // KFromV returns the K value from vbio (not normalized, must not exceed 0)
 func (ap *AKParams) KFromV(vbio float32) float32 {
-	return -ap.Koff - 1.0/(1.0+mat32.FastExp((vbio+40)/5))
+	return -ap.Koff - 1.0/(1.0+math32.FastExp((vbio+40)/5))
 }
 
 // HFromV returns the H gate value from vbio (not normalized, must not exceed 0)
 func (ap *AKParams) HFromV(vbio float32) float32 {
-	return 1.0 / (1.0 + mat32.FastExp(ap.Hf*(vbio+56)))
+	return 1.0 / (1.0 + math32.FastExp(ap.Hf*(vbio+56)))
 }
 
 // HTauFromV returns the HTau rate constant in msec from vbio (not normalized, must not exceed 0)
@@ -192,7 +192,7 @@ func (ap *AKsParams) MFromV(vbio float32) float32 {
 	if vbio > ap.Vmax {
 		vbio = ap.Vmax
 	}
-	return ap.Hf / (1.0 + mat32.FastExp(-ap.Mf*(vbio+ap.Voff)))
+	return ap.Hf / (1.0 + math32.FastExp(-ap.Mf*(vbio+ap.Voff)))
 }
 
 // MFromVnorm returns the M gate function from vnorm

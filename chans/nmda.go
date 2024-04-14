@@ -4,7 +4,7 @@
 
 package chans
 
-import "cogentcore.org/core/mat32"
+import "cogentcore.org/core/math32"
 
 //gosl: start chans
 
@@ -73,7 +73,7 @@ func (np *NMDAParams) MgGFromVbio(vbio float32) float32 {
 	if vbio >= 0 {
 		return 0
 	}
-	return -vbio / (1.0 + np.MgFact*mat32.FastExp(-0.062*vbio))
+	return -vbio / (1.0 + np.MgFact*math32.FastExp(-0.062*vbio))
 }
 
 // MgGFromV returns the NMDA conductance as a function of normalized membrane potential
@@ -107,7 +107,7 @@ func (np *NMDAParams) CaFromVbio(vbio float32) float32 {
 	if vbio > -0.5 && vbio < 0.5 { // this eliminates div 0 at 0, and numerical "fuzz" around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
 	}
-	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
+	return -vbio / (1.0 - math32.FastExp(0.0756*vbio))
 }
 
 // CaFromV returns the calcium current factor as a function of normalized membrane

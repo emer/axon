@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"cogentcore.org/core/gi"
-	"cogentcore.org/core/glop/indent"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/gox/indent"
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/texteditor"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
@@ -59,10 +59,10 @@ type NetworkBase struct {
 	LayClassMap map[string][]string `view:"-"`
 
 	// minimum display position in network
-	MinPos mat32.Vec3 `view:"-"`
+	MinPos math32.Vec3 `view:"-"`
 
 	// maximum display position in network
-	MaxPos mat32.Vec3 `view:"-"`
+	MaxPos math32.Vec3 `view:"-"`
 
 	// optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save
 	MetaData map[string]string
@@ -168,13 +168,13 @@ type NetworkBase struct {
 }
 
 // emer.Network interface methods:
-func (nt *NetworkBase) Name() string                  { return nt.Nm }
-func (nt *NetworkBase) Label() string                 { return nt.Nm }
-func (nt *NetworkBase) NLayers() int                  { return len(nt.Layers) }
-func (nt *NetworkBase) Layer(idx int) emer.Layer      { return nt.Layers[idx] }
-func (nt *NetworkBase) Bounds() (min, max mat32.Vec3) { min = nt.MinPos; max = nt.MaxPos; return }
-func (nt *NetworkBase) MaxParallelData() int          { return int(nt.MaxData) }
-func (nt *NetworkBase) NParallelData() int            { return int(nt.Ctx.NetIndexes.NData) }
+func (nt *NetworkBase) Name() string                   { return nt.Nm }
+func (nt *NetworkBase) Label() string                  { return nt.Nm }
+func (nt *NetworkBase) NLayers() int                   { return len(nt.Layers) }
+func (nt *NetworkBase) Layer(idx int) emer.Layer       { return nt.Layers[idx] }
+func (nt *NetworkBase) Bounds() (min, max math32.Vec3) { min = nt.MinPos; max = nt.MaxPos; return }
+func (nt *NetworkBase) MaxParallelData() int           { return int(nt.MaxData) }
+func (nt *NetworkBase) NParallelData() int             { return int(nt.Ctx.NetIndexes.NData) }
 
 // LayByName returns a layer by looking it up by name in the layer map (nil if not found).
 // Will create the layer map if it is nil or a different size than layers slice,
@@ -373,8 +373,8 @@ func (nt *NetworkBase) Layout() {
 
 // BoundsUpdate updates the Min / Max display bounds for 3D display
 func (nt *NetworkBase) BoundsUpdate() {
-	mn := mat32.V3Scalar(mat32.Infinity)
-	mx := mat32.Vec3{}
+	mn := math32.V3Scalar(math32.Infinity)
+	mx := math32.Vec3{}
 	for _, ly := range nt.Layers {
 		ps := ly.Pos()
 		sz := ly.Size()

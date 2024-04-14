@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/erand"
@@ -294,9 +294,9 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	if rl.On.IsFalse() || rl.Diff.IsFalse() {
 		return 1.0
 	}
-	smax := mat32.Max(scap, scad)
+	smax := math32.Max(scap, scad)
 	if smax > rl.SpkThr { // avoid div by 0
-		dif := mat32.Abs(scap - scad)
+		dif := math32.Abs(scap - scad)
 		if dif < rl.DiffThr {
 			return rl.Min
 		}
@@ -417,7 +417,7 @@ func SigFun(w, gain, off float32) float32 {
 	if w >= 1 {
 		return 1
 	}
-	return (1 / (1 + mat32.Pow((off*(1-w))/w, gain)))
+	return (1 / (1 + math32.Pow((off*(1-w))/w, gain)))
 }
 
 // SigFun61 is the sigmoid function for value w in 0-1 range, with default gain = 6, offset = 1 params
@@ -440,7 +440,7 @@ func SigInvFun(w, gain, off float32) float32 {
 	if w >= 1 {
 		return 1
 	}
-	return 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1/gain)/off)
+	return 1.0 / (1.0 + math32.Pow((1.0-w)/w, 1/gain)/off)
 }
 
 // SigInvFun61 is the inverse of the sigmoid function, with default gain = 6, offset = 1 params
@@ -451,7 +451,7 @@ func SigInvFun61(w float32) float32 {
 	if w >= 1 {
 		return 1
 	}
-	rval := 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1.0/6.0))
+	rval := 1.0 / (1.0 + math32.Pow((1.0-w)/w, 1.0/6.0))
 	return rval
 }
 

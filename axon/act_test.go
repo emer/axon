@@ -9,7 +9,7 @@ package axon
 import (
 	"testing"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 // TOLERANCE is the numerical difference tolerance for comparing vs. target values
@@ -46,23 +46,23 @@ func TestActUpdate(t *testing.T) {
 		vm[i] = neuron.Vm
 		spike[i] = neuron.Spike
 		act[i] = neuron.Act
-		difge := mat32.Abs(ge[i] - correctGe[i])
+		difge := math32.Abs(ge[i] - correctGe[i])
 		if difge > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("ge err: idx: %v, geinc: %v, ge: %v, corge: %v, dif: %v\n", i, geinc[i], ge[i], correctGe[i], difge)
 		}
-		difinet := mat32.Abs(inet[i] - correctInet[i])
+		difinet := math32.Abs(inet[i] - correctInet[i])
 		if difinet > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("Inet err: idx: %v, geinc: %v, inet: %v, corinet: %v, dif: %v\n", i, geinc[i], inet[i], correctInet[i], difinet)
 		}
-		difvm := mat32.Abs(vm[i] - correctVm[i])
+		difvm := math32.Abs(vm[i] - correctVm[i])
 		if difvm > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("Vm err: idx: %v, geinc: %v, vm: %v, corvm: %v, dif: %v\n", i, geinc[i], vm[i], correctVm[i], difvm)
 		}
-		difspk := mat32.Abs(spike[i] - correctSpike[i])
+		difspk := math32.Abs(spike[i] - correctSpike[i])
 		if difspk > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("Spk err: idx: %v, geinc: %v, spk: %v, corspk: %v, dif: %v\n", i, geinc[i], spike[i], correctSpike[i], difspk)
 		}
-		difact := mat32.Abs(act[i] - correctAct[i])
+		difact := math32.Abs(act[i] - correctAct[i])
 		if difact > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("Act err: idx: %v, geinc: %v, act: %v, coract: %v, dif: %v\n", i, geinc[i], act[i], correctAct[i], difact)
 		}

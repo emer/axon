@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"cogentcore.org/core/giv"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
@@ -396,10 +396,10 @@ func (pj *PrjnBase) Syn1DNum() int {
 // This is the core synapse var access method used by other methods.
 func (pj *PrjnBase) SynVal1D(varIndex int, synIndex int) float32 {
 	if synIndex < 0 || synIndex >= int(pj.NSyns) {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	if varIndex < 0 || varIndex >= pj.SynVarNum() {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	ctx := &pj.Recv.Network.Ctx
 	syni := pj.SynStIndex + uint32(synIndex)
@@ -439,11 +439,11 @@ func (pj *PrjnBase) SynValues(vals *[]float32, varNm string) error {
 
 // SynVal returns value of given variable name on the synapse
 // between given send, recv unit indexes (1D, flat indexes).
-// Returns mat32.NaN() for access errors (see SynValTry for error message)
+// Returns math32.NaN() for access errors (see SynValTry for error message)
 func (pj *PrjnBase) SynValue(varNm string, sidx, ridx int) float32 {
 	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
 	if err != nil {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	syi := pj.SynIndex(sidx, ridx)
 	return pj.AxonPrj.SynVal1D(vidx, syi)
@@ -455,10 +455,10 @@ func (pj *PrjnBase) SynValue(varNm string, sidx, ridx int) float32 {
 // Includes Di data parallel index for data-parallel synaptic values.
 func (pj *PrjnBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 	if synIndex < 0 || synIndex >= int(pj.NSyns) {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	if varIndex < 0 || varIndex >= pj.SynVarNum() {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	ctx := &pj.Recv.Network.Ctx
 	syni := pj.SynStIndex + uint32(synIndex)
@@ -471,12 +471,12 @@ func (pj *PrjnBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 
 // SynValDi returns value of given variable name on the synapse
 // between given send, recv unit indexes (1D, flat indexes).
-// Returns mat32.NaN() for access errors (see SynValTry for error message)
+// Returns math32.NaN() for access errors (see SynValTry for error message)
 // Includes Di data parallel index for data-parallel synaptic values.
 func (pj *PrjnBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
 	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
 	if err != nil {
-		return mat32.NaN()
+		return math32.NaN()
 	}
 	syi := pj.SynIndex(sidx, ridx)
 	return pj.SynVal1DDi(vidx, syi, di)

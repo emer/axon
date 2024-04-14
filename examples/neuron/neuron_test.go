@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"golang.org/x/exp/maps"
 )
 
@@ -42,7 +42,7 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 		}
 		av := va[k]
 		bv := vb[k]
-		dif := mat32.Abs(av - bv)
+		dif := math32.Abs(av - bv)
 		if dif > tolerance { // allow for small numerical diffs
 			if nerrs == 0 {
 				t.Errorf("Diffs found between two runs (10 max): A = %s  B = %s\n", aLabel, bLabel)

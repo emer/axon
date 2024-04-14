@@ -125,7 +125,7 @@ net.ApplyExts(ctx) // now required for GPU mode
 * Configure `looper` with a counter increment equal to the number of parallel data items and a max that is an integer multiple of NData, and use the `AddTimeIncr` method to increment trials by NData each step:
 
 ```Go
-	trls := int(mat32.IntMultipleGE(25, float32(ss.NData))) // 25 nominal trials per epoch
+	trls := int(math32.IntMultipleGE(25, float32(ss.NData))) // 25 nominal trials per epoch
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTimeIncr(etime.Trial, trls, ss.NData).AddTime(etime.Cycle, 200)
 ```

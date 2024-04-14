@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/minmax"
@@ -439,8 +439,8 @@ type SpikeNoiseParams struct {
 }
 
 func (an *SpikeNoiseParams) Update() {
-	an.GeExpInt = mat32.Exp(-1000.0 / an.GeHz)
-	an.GiExpInt = mat32.Exp(-1000.0 / an.GiHz)
+	an.GeExpInt = math32.Exp(-1000.0 / an.GeHz)
+	an.GiExpInt = math32.Exp(-1000.0 / an.GiHz)
 }
 
 func (an *SpikeNoiseParams) Defaults() {
@@ -569,7 +569,7 @@ func (sm *SMaintParams) ExpInt(isi float32) float32 {
 		return 0
 	}
 	isi = max(isi, sm.ISI.Min)
-	return mat32.FastExp(-isi / sm.NNeurons)
+	return math32.FastExp(-isi / sm.NNeurons)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -676,7 +676,7 @@ func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
 	incr := rng / float32(n-1)
 	trg := pc.Min + incr*float32(i)
 	dist := gnrm * (trg - val)
-	return act * mat32.FastExp(-(dist * dist))
+	return act * math32.FastExp(-(dist * dist))
 }
 
 // EncodeGe returns Ge value for given value, for neuron index i
@@ -1263,7 +1263,7 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 			var exVm float32
 			exVm = 0.5 * (nvm + NrnV(ctx, ni, di, Vm)) // midpoint for this
 			expi = ac.Gbar.L * ac.Spikes.ExpSlope *
-				mat32.FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope)
+				math32.FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope)
 			if expi > ac.Dt.VmTau {
 				expi = ac.Dt.VmTau
 			}

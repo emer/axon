@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -46,7 +46,7 @@ func ReportValDiffs(t *testing.T, va, vb map[string]float32, aLabel, bLabel stri
 		}
 		av := va[k]
 		bv := vb[k]
-		dif := mat32.Abs(av - bv)
+		dif := math32.Abs(av - bv)
 
 		if strings.Contains(k, "GvACh") || strings.Contains(k, "GvCeMpos") { // bad variability..
 			continue
@@ -257,7 +257,7 @@ func ReportNDataDiffs(t *testing.T, vals map[string]float32) {
 		d1k := strings.ReplaceAll(k, "Di: 0", "Di: 1")
 		d0v := vals[k]
 		d1v := vals[d1k]
-		dif := mat32.Abs(d0v - d1v)
+		dif := math32.Abs(d0v - d1v)
 
 		tol := float32(0.000001)
 		if dif > tol {

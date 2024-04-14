@@ -8,7 +8,7 @@ import (
 	"log"
 	"strings"
 
-	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/gox/num"
 	"github.com/emer/gosl/v2/slbool"
 )
 

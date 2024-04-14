@@ -16,7 +16,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -250,7 +250,7 @@ func (ss *Sim) ConfigLoops() {
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*VSPatchEnv)
 
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
@@ -648,7 +648,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.15, 2.45)
-	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.V3(0, 0, 0), math32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 

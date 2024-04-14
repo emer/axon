@@ -4,7 +4,7 @@
 
 package chans
 
-import "cogentcore.org/core/mat32"
+import "cogentcore.org/core/math32"
 
 //gosl: start chans
 
@@ -44,7 +44,7 @@ func (mp *MahpParams) Defaults() {
 	mp.Voff = -30
 	mp.Vslope = 9
 	mp.TauMax = 1000
-	mp.Tadj = mat32.Pow(2.3, (37.0-23.0)/10.0) // 3.2 basically
+	mp.Tadj = math32.Pow(2.3, (37.0-23.0)/10.0) // 3.2 basically
 	mp.Update()
 }
 
@@ -63,10 +63,10 @@ func (mp *MahpParams) ShouldShow(field string) bool {
 
 // EFun handles singularities in an elegant way -- from Mainen impl
 func (mp *MahpParams) EFun(z float32) float32 {
-	if mat32.Abs(z) < 1.0e-4 {
+	if math32.Abs(z) < 1.0e-4 {
 		return 1.0 - 0.5*z
 	}
-	return z / (mat32.FastExp(z) - 1.0)
+	return z / (math32.FastExp(z) - 1.0)
 }
 
 // NinfTauFromV returns the target infinite-time N gate value and
@@ -75,8 +75,8 @@ func (mp *MahpParams) NinfTauFromV(vbio float32, ninf, tau *float32) {
 	vo := vbio - mp.Voff
 
 	// logical functions, but have signularity at Voff (vo = 0)
-	// a := mp.DtMax * vo / (1.0 - mat32.FastExp(-vo/mp.Vslope))
-	// b := -mp.DtMax * vo / (1.0 - mat32.FastExp(vo/mp.Vslope))
+	// a := mp.DtMax * vo / (1.0 - math32.FastExp(-vo/mp.Vslope))
+	// b := -mp.DtMax * vo / (1.0 - math32.FastExp(vo/mp.Vslope))
 
 	a := mp.DtMax * mp.Vslope * mp.EFun(-vo/mp.Vslope)
 	b := mp.DtMax * mp.Vslope * mp.EFun(vo/mp.Vslope)
@@ -97,7 +97,7 @@ func (mp *MahpParams) NinfTauFromVnorm(v float32, ninf, tau *float32) {
 func (mp *MahpParams) DNFromV(v, n float32) float32 {
 	var ninf, tau float32
 	mp.NinfTauFromVnorm(v, &ninf, &tau)
-	// dt := 1.0 - mat32.FastExp(-mp.Tadj/tau) // Mainen comments out this form; Poirazi uses
+	// dt := 1.0 - math32.FastExp(-mp.Tadj/tau) // Mainen comments out this form; Poirazi uses
 	// dt := mp.Tadj / tau // simple linear fix
 	dn := (ninf - n) / tau
 	return dn

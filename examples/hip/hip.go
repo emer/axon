@@ -17,9 +17,9 @@ import (
 	"strings"
 
 	"cogentcore.org/core/gi"
-	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -268,7 +268,7 @@ func (ss *Sim) InitRndSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).AddTime(etime.Run, ss.Config.Run.Runs).AddTime(etime.Epoch, ss.Config.Run.Epochs).AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).AddTime(etime.Cycle, 200)
 
@@ -789,7 +789,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.V3(0, 0, 0), math32.V3(0, 1, 0))
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

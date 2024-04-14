@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"cogentcore.org/core/glop/num"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/gox/num"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/erand"
 )
 
@@ -148,7 +148,7 @@ func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32
 	if i == 0 {
 		return GlbUSposV(ctx, di, GvDrives, uint32(0))
 	}
-	return mat32.Max(GlbUSposV(ctx, di, GvDrives, i), dp.DriveMin)
+	return math32.Max(GlbUSposV(ctx, di, GvDrives, i), dp.DriveMin)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -496,7 +496,7 @@ func (gp *GiveUpParams) Defaults() {
 
 // LogisticFun is the sigmoid logistic function
 func LogisticFun(v, gain float32) float32 {
-	return (1.0 / (1.0 + mat32.Exp(-gain*v)))
+	return (1.0 / (1.0 + math32.Exp(-gain*v)))
 }
 
 func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {

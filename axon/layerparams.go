@@ -7,7 +7,7 @@ package axon
 import (
 	"encoding/json"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 //gosl: hlsl layerparams
@@ -500,7 +500,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 		} else {
 			dr = GlbV(ctx, di, GvVSMatrixHasGated)
 		}
-		dr = mat32.Abs(dr)
+		dr = math32.Abs(dr)
 		SetNrnV(ctx, ni, di, GeRaw, dr)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFromRawSteady(dr))
 
@@ -516,9 +516,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	case LHbLayer:
 		geRaw := float32(0)
 		if ni == 0 {
-			geRaw = 0.2 * mat32.Abs(GlbV(ctx, di, GvLHbDip))
+			geRaw = 0.2 * math32.Abs(GlbV(ctx, di, GvLHbDip))
 		} else {
-			geRaw = 0.2 * mat32.Abs(GlbV(ctx, di, GvLHbBurst))
+			geRaw = 0.2 * math32.Abs(GlbV(ctx, di, GvLHbBurst))
 		}
 		SetNrnV(ctx, ni, di, GeRaw, geRaw)
 		SetNrnV(ctx, ni, di, GeSyn, ly.Acts.Dt.GeSynFromRawSteady(geRaw))

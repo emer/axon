@@ -4,7 +4,7 @@
 
 package chans
 
-import "cogentcore.org/core/mat32"
+import "cogentcore.org/core/math32"
 
 //gosl: start chans
 
@@ -68,10 +68,10 @@ func (mp *SahpParams) ShouldShow(field string) bool {
 
 // EFun handles singularities in an elegant way -- from Mainen impl
 func (mp *SahpParams) EFun(z float32) float32 {
-	if mat32.Abs(z) < 1.0e-4 {
+	if math32.Abs(z) < 1.0e-4 {
 		return 1.0 - 0.5*z
 	}
-	return z / (mat32.FastExp(z) - 1.0)
+	return z / (math32.FastExp(z) - 1.0)
 }
 
 // NinfTauFromCa returns the target infinite-time N gate value and
@@ -80,8 +80,8 @@ func (mp *SahpParams) NinfTauFromCa(ca float32, ninf, tau *float32) {
 	co := ca - mp.Off
 
 	// logical functions, but have signularity at Voff (vo = 0)
-	// a := mp.DtMax * vo / (1.0 - mat32.FastExp(-vo/mp.Vslope))
-	// b := -mp.DtMax * vo / (1.0 - mat32.FastExp(vo/mp.Vslope))
+	// a := mp.DtMax * vo / (1.0 - math32.FastExp(-vo/mp.Vslope))
+	// b := -mp.DtMax * vo / (1.0 - math32.FastExp(vo/mp.Vslope))
 
 	a := mp.DtMax * mp.Slope * mp.EFun(-co/mp.Slope)
 	b := mp.DtMax * mp.Slope * mp.EFun(co/mp.Slope)

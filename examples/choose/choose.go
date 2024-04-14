@@ -16,9 +16,9 @@ import (
 	"os"
 
 	"cogentcore.org/core/gi"
-	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/choose/armaze"
 	"github.com/emer/emergent/v2/econfig"
@@ -350,7 +350,7 @@ func (ss *Sim) ApplyParams() {
 	// this is very sensitive param to get right
 	// too little and the hamster does not try CSs at the beginning,
 	// too high and it gets stuck trying the same location over and over
-	pj.Params.PrjnScale.Abs = float32(mat32.Min(2.3+(float32(nCSTot)/10.0), 3.0))
+	pj.Params.PrjnScale.Abs = float32(math32.Min(2.3+(float32(nCSTot)/10.0), 3.0))
 
 	// then apply config-set params.
 	if ss.Config.Params.Network != nil {
@@ -394,7 +394,7 @@ func (ss *Sim) ConfigLoops() {
 	ncyc := ss.Config.Run.NCycles
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
@@ -881,7 +881,7 @@ func (ss *Sim) GatedStats(di int) {
 	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
 	justGatedF := num.FromBool[float32](justGated)
 	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
-	nan := mat32.NaN()
+	nan := math32.NaN()
 	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
 	ss.ActionStatsDi(di)
 
@@ -926,7 +926,7 @@ func (ss *Sim) GatedStats(di int) {
 func (ss *Sim) MaintStats(di int) {
 	ctx := &ss.Context
 	diu := uint32(di)
-	nan := mat32.NaN()
+	nan := math32.NaN()
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 	// should be maintaining while going forward
 	isFwd := ev.LastAct == armaze.Forward
@@ -959,9 +959,9 @@ func (ss *Sim) MaintStats(di int) {
 		if overThr {
 			otherMaint = true
 		}
-		ss.Stats.SetFloat32(pnm, mat32.NaN())
-		ss.Stats.SetFloat32(mnm, mat32.NaN())
-		ss.Stats.SetFloat32(fnm, mat32.NaN())
+		ss.Stats.SetFloat32(pnm, math32.NaN())
+		ss.Stats.SetFloat32(mnm, math32.NaN())
+		ss.Stats.SetFloat32(fnm, math32.NaN())
 		if isFwd {
 			ss.Stats.SetFloat32(mnm, mact)
 			ss.Stats.SetFloat32(fnm, num.FromBool[float32](!overThr))
@@ -1238,7 +1238,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.4, 2.6)
-	nv.SceneXYZ().Camera.LookAt(mat32.Vec3{}, mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3{}, math32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 

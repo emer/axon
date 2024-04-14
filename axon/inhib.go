@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/fsfffb"
 	"github.com/emer/gosl/v2/slbool"
 )
@@ -137,7 +137,7 @@ func (ti *TopoInhibParams) Defaults() {
 func (ti *TopoInhibParams) Update() {
 	ssq := ti.Sigma * float32(ti.Width)
 	ssq *= ssq
-	ti.WidthWt = mat32.FastExp(-0.5 * float32(ti.Width) / ssq)
+	ti.WidthWt = math32.FastExp(-0.5 * float32(ti.Width) / ssq)
 }
 
 func (ti *TopoInhibParams) ShouldShow(field string) bool {

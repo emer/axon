@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"cogentcore.org/core/laser"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
@@ -161,7 +161,7 @@ func TestSynValues(t *testing.T) {
 	fmIn := p.(*Prjn)
 
 	bfWt := fmIn.SynValue("Wt", 1, 1)
-	if mat32.IsNaN(bfWt) {
+	if math32.IsNaN(bfWt) {
 		t.Errorf("Wt syn var not found")
 	}
 	bfLWt := fmIn.SynValue("LWt", 1, 1)
@@ -186,10 +186,10 @@ func CompareFloats(tolerance float32, out, cor []float32, msg string, t *testing
 	t.Helper()
 	hadErr := false
 	for i := range out {
-		if mat32.IsNaN(out[1]) {
+		if math32.IsNaN(out[1]) {
 			t.Errorf("%v err: out: %v is NaN, index: %v\n", msg, out[i], i)
 		}
-		dif := mat32.Abs(out[i] - cor[i])
+		dif := math32.Abs(out[i] - cor[i])
 		if dif > tolerance { // allow for small numerical diffs
 			hadErr = true
 			t.Errorf("%v err: out: %v, cor: %v, dif: %v index: %v\n", msg, out[i], cor[i], dif, i)
@@ -549,7 +549,7 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 		}
 		av := va[k]
 		bv := vb[k]
-		dif := mat32.Abs(av - bv)
+		dif := math32.Abs(av - bv)
 		if dif > tolerance { // allow for small numerical diffs
 			if nerrs == 0 {
 				t.Errorf("Diffs found between two runs (10 max): A = %s  B = %s\n", aLabel, bLabel)

@@ -5,7 +5,7 @@
 package kinase
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/gosl/v2/slbool"
 )
 
@@ -90,18 +90,18 @@ func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
 	pi := *caP
 	di := *caD
 
-	*caM = mi * mat32.FastExp(-t*mdt)
+	*caM = mi * math32.FastExp(-t*mdt)
 
-	em := mat32.FastExp(t * mdt)
-	ep := mat32.FastExp(t * pdt)
+	em := math32.FastExp(t * mdt)
+	ep := math32.FastExp(t * pdt)
 
-	*caP = pi*mat32.FastExp(-t*pdt) - (pdt*mi*mat32.FastExp(-t*(mdt+pdt))*(em-ep))/(pdt-mdt)
+	*caP = pi*math32.FastExp(-t*pdt) - (pdt*mi*math32.FastExp(-t*(mdt+pdt))*(em-ep))/(pdt-mdt)
 
-	epd := mat32.FastExp(t * (pdt + ddt))
-	emd := mat32.FastExp(t * (mdt + ddt))
-	emp := mat32.FastExp(t * (mdt + pdt))
+	epd := math32.FastExp(t * (pdt + ddt))
+	emd := math32.FastExp(t * (mdt + ddt))
+	emp := math32.FastExp(t * (mdt + pdt))
 
-	*caD = pdt*ddt*mi*mat32.FastExp(-t*(mdt+pdt+ddt))*(ddt*(emd-epd)+(pdt*(epd-emp))+mdt*(emp-emd))/((mdt-pdt)*(mdt-ddt)*(pdt-ddt)) - ddt*pi*mat32.FastExp(-t*(pdt+ddt))*(ep-mat32.FastExp(t*ddt))/(ddt-pdt) + di*mat32.FastExp(-t*ddt)
+	*caD = pdt*ddt*mi*math32.FastExp(-t*(mdt+pdt+ddt))*(ddt*(emd-epd)+(pdt*(epd-emp))+mdt*(emp-emd))/((mdt-pdt)*(mdt-ddt)*(pdt-ddt)) - ddt*pi*math32.FastExp(-t*(pdt+ddt))*(ep-math32.FastExp(t*ddt))/(ddt-pdt) + di*math32.FastExp(-t*ddt)
 }
 
 // CaParams has rate constants for integrating spike-driven Ca calcium

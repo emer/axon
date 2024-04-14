@@ -15,9 +15,9 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/gi"
-	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -280,7 +280,7 @@ func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*GoNoEnv)
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
@@ -292,7 +292,7 @@ func (ss *Sim) ConfigLoops() {
 	nTestInc := int(1.0/ev.TestInc) + 1
 	totTstTrls := ev.TestReps * nTestInc * nTestInc
 
-	testTrls := int(mat32.IntMultipleGE(float32(totTstTrls), float32(ss.Config.Run.NData)))
+	testTrls := int(math32.IntMultipleGE(float32(totTstTrls), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Test).
 		AddTime(etime.Epoch, 1).
@@ -437,7 +437,7 @@ func (ss *Sim) GatedAction() {
 	ctx := &ss.Context
 	mtxly := ss.Net.AxonLayerByName("VMtxGo")
 	vmly := ss.Net.AxonLayerByName("ACCPosVM")
-	nan := mat32.NaN()
+	nan := math32.NaN()
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
 		didGate := mtxly.AnyGated(uint32(di))
@@ -666,7 +666,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1.3, 2.4)
-	nv.SceneXYZ().Camera.LookAt(mat32.V3(0, -0.03, 0.02), mat32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.V3(0, -0.03, 0.02), math32.V3(0, 1, 0))
 
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 

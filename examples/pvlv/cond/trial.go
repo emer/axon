@@ -7,7 +7,7 @@ package cond
 import (
 	"math/rand"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/erand"
 )
 
@@ -108,7 +108,7 @@ func GenerateTrials(condNm string) []*Trial {
 		if trl.Context == "" {
 			trl.Context = trl.CS
 		}
-		nRpt := int(mat32.Round(trl.Pct * float32(cond.NTrials)))
+		nRpt := int(math32.Round(trl.Pct * float32(cond.NTrials)))
 		if nRpt < 1 {
 			if trl.Pct > 0.0 {
 				nRpt = 1
@@ -121,7 +121,7 @@ func GenerateTrials(condNm string) []*Trial {
 		if cond.FixedProb {
 			if trl.USProb != 0.0 && trl.USProb != 1.0 {
 				useIsOnList = true
-				pn := int(mat32.Round(float32(nRpt) * trl.USProb))
+				pn := int(math32.Round(float32(nRpt) * trl.USProb))
 				usIsOn = make([]bool, nRpt) // defaults to false
 				for i := 0; i < pn; i++ {
 					usIsOn[i] = true

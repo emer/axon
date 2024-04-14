@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/etable/v2/minmax"
 )
 
@@ -468,8 +468,8 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		vals := ly.LayerValues(di)
 		lpl := ly.Pool(0, di)
-		geIntMinusMax = mat32.Max(geIntMinusMax, lpl.AvgMax.GeInt.Minus.Max)
-		giIntMinusMax = mat32.Max(giIntMinusMax, lpl.AvgMax.GiInt.Minus.Max)
+		geIntMinusMax = math32.Max(geIntMinusMax, lpl.AvgMax.GeInt.Minus.Max)
+		giIntMinusMax = math32.Max(giIntMinusMax, lpl.AvgMax.GiInt.Minus.Max)
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
 			if NrnIsOff(ctx, ni) {
@@ -685,7 +685,7 @@ func (ly *Layer) CorSimFromActs(ctx *Context) {
 			ssm += am * am
 			ssp += ap * ap
 		}
-		dist := mat32.Sqrt(ssm * ssp)
+		dist := math32.Sqrt(ssm * ssp)
 		if dist != 0 {
 			cosv /= dist
 		}
@@ -874,7 +874,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 			adif := apct - NrnAvgV(ctx, ni, TrgAvg)
 			SetNrnAvgV(ctx, ni, AvgPct, apct)
 			SetNrnAvgV(ctx, ni, AvgDif, adif)
-			pl.AvgDif.UpdateValue(mat32.Abs(adif))
+			pl.AvgDif.UpdateValue(math32.Abs(adif))
 		}
 		ppi := pi
 		SetAvgMaxFloatFromIntErr(func() {
@@ -894,7 +894,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 			if NrnIsOff(ctx, ni) {
 				continue
 			}
-			lpl.AvgDif.UpdateValue(mat32.Abs(NrnAvgV(ctx, ni, AvgDif)))
+			lpl.AvgDif.UpdateValue(math32.Abs(NrnAvgV(ctx, ni, AvgDif)))
 		}
 		SetAvgMaxFloatFromIntErr(func() {
 			fmt.Printf("AvgDifFromTrgAvg LayPool Layer: %s\n", ly.Nm)

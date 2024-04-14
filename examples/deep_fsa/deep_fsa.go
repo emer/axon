@@ -14,7 +14,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -241,7 +241,7 @@ func (ss *Sim) InitRndSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	trls := int(mat32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
@@ -595,7 +595,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 	// nv.Scene().Camera.Pose.Pos.Set(0, 1.5, 3.0) // more "head on" than default which is more "top down"
-	// nv.Scene().Camera.LookAt(mat32.V3(0, 0, 0), mat32.V3(0, 1, 0))
+	// nv.Scene().Camera.LookAt(math32.V3(0, 0, 0), math32.V3(0, 1, 0))
 
 	nv.ConfigLabels(ss.Config.Env.InputNames)
 
@@ -606,7 +606,7 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 		lbl.Pose.Pos.Y += .2
 		lbl.Pose.Pos.Z += .02
 		lbl.Pose.Pos.X += 0.05 + float32(li)*.06
-		lbl.Pose.Scale.SetMul(mat32.V3(0.6, 0.4, 0.5))
+		lbl.Pose.Scale.SetMul(math32.V3(0.6, 0.4, 0.5))
 	}
 }
 

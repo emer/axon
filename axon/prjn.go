@@ -9,7 +9,7 @@ import (
 	"io"
 	"strconv"
 
-	"cogentcore.org/core/glop/indent"
+	"cogentcore.org/core/gox/indent"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/weights"

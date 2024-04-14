@@ -11,7 +11,7 @@ import (
 
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/giv"
-	"cogentcore.org/core/glop/num"
+	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"

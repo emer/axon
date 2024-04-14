@@ -5,7 +5,7 @@
 package chans
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 //gosl: start chans
@@ -103,7 +103,7 @@ func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
 	if cai < 0.001 {
 		cai = 0.001
 	}
-	return 0.81 / (1.0 + mat32.FastExp(-(mat32.Log(cai)+0.3))/0.46)
+	return 0.81 / (1.0 + math32.FastExp(-(math32.Log(cai)+0.3))/0.46)
 }
 
 // CaInRFromSpike updates CaIn, CaR from Spiking and CaD time-integrated spiking activity

@@ -5,7 +5,7 @@
 package chans
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 )
 
 //gosl: start chans
@@ -74,7 +74,7 @@ func (kp *KirParams) DM(vbio, m float32) float32 {
 
 // MRates returns Minf as a function of bio voltage
 func (kp *KirParams) Minf(vbio float32) float32 {
-	return 1.0 / (1 + mat32.FastExp((vbio-(kp.MinfOff))/kp.MinfTau))
+	return 1.0 / (1 + math32.FastExp((vbio-(kp.MinfOff))/kp.MinfTau))
 }
 
 // MinfRest returns Minf at nominal resting membrane potential of -70mV
@@ -86,8 +86,8 @@ func (kp *KirParams) MinfRest() float32 {
 // MRates returns minf and mtau as a function of bio voltage
 func (kp *KirParams) MRates(vbio float32, minf, mtau *float32) {
 	*minf = kp.Minf(vbio)
-	alpha := 0.1 * mat32.FastExp((vbio-(kp.RiseOff))/(-kp.RiseTau))
-	beta := 0.27 / (1 + mat32.FastExp((vbio-(kp.DecayOff))/(-kp.DecayTau)))
+	alpha := 0.1 * math32.FastExp((vbio-(kp.RiseOff))/(-kp.RiseTau))
+	beta := 0.27 / (1 + math32.FastExp((vbio-(kp.DecayOff))/(-kp.DecayTau)))
 	sum := alpha + beta
 	*mtau = 1.0 / sum
 	return

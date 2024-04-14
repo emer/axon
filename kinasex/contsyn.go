@@ -4,7 +4,7 @@
 
 package kinasex
 
-import "cogentcore.org/core/mat32"
+import "cogentcore.org/core/math32"
 
 // ContSyn holds extra synaptic state for continuous learning
 type ContSyn struct {
@@ -24,7 +24,7 @@ func (sy *ContSyn) VarByName(varNm string) float32 {
 	case "CaDMax":
 		return sy.CaDMax
 	}
-	return mat32.NaN()
+	return math32.NaN()
 }
 
 // VarByIndex returns synapse variable by index
@@ -35,7 +35,7 @@ func (sy *ContSyn) VarByIndex(varIndex int) float32 {
 	case 1:
 		return sy.CaDMax
 	}
-	return mat32.NaN()
+	return math32.NaN()
 }
 
 var ContSynVars = []string{"TDWt", "CaDMax"}

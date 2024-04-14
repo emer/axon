@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/fsfffb"
 	"github.com/emer/gosl/v2/slbool"
 )
@@ -228,7 +228,7 @@ func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
 	pl.AvgMax.CaSpkP.Cycle.UpdateValue(NrnV(ctx, ni, di, CaSpkP))
 	pl.AvgMax.CaSpkD.Cycle.UpdateValue(NrnV(ctx, ni, di, CaSpkD))
 	pl.AvgMax.SpkMax.Cycle.UpdateValue(NrnV(ctx, ni, di, SpkMax))
-	pl.AvgMax.Act.Cycle.UpdateValue(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
+	pl.AvgMax.Act.Cycle.UpdateValue(math32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
 	pl.AvgMax.GeInt.Cycle.UpdateValue(NrnV(ctx, ni, di, GeInt))
 	pl.AvgMax.GiInt.Cycle.UpdateValue(NrnV(ctx, ni, di, GiInt))
 }

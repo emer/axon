@@ -57,7 +57,7 @@ This function is:
 	if vbio > -37 { // flat response above cutoff -- real function goes back down..
 		vbio = -37
 	}
-	return 0.076 / (1.0 + mat32.FastExp(-0.075*(vbio+2)))
+	return 0.076 / (1.0 + math32.FastExp(-0.075*(vbio+2)))
 ```
 
 

@@ -9,7 +9,7 @@ package main
 import (
 	"fmt"
 
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/efuns"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/evec"
@@ -20,7 +20,7 @@ import (
 type Stim struct {
 
 	// position in normalized coordintes
-	Pos mat32.Vec2
+	Pos math32.Vec2
 
 	// feature number: 0-3 for V1 input, -1 for LIP attn
 	Feat int
@@ -33,8 +33,8 @@ type Stim struct {
 }
 
 // PosXY returns XY position projected into size of grid
-func (st *Stim) PosXY(size evec.Vec2i) mat32.Vec2 {
-	return mat32.V2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
+func (st *Stim) PosXY(size evec.Vec2i) math32.Vec2 {
+	return math32.V2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
 }
 
 // StimSet is a set of stimuli to be presented together
@@ -163,7 +163,7 @@ func (ev *AttnEnv) Init(run int) {
 }
 
 func (ev *AttnEnv) ContrastAct(act, contrast float32) float32 {
-	cact := ev.ContrastMult * act * (mat32.FastExp(ev.ContrastGain*contrast+ev.ContrastOff) - 1)
+	cact := ev.ContrastMult * act * (math32.FastExp(ev.ContrastGain*contrast+ev.ContrastOff) - 1)
 	// fmt.Printf("ctrst: %g  cact: %g\n", contrast, cact)
 	return cact
 }
@@ -176,7 +176,7 @@ func (ev *AttnEnv) RenderV1(stm *Stim, tsr *etensor.Float32) {
 	cact := ev.ContrastAct(ev.Act, stm.Contrast)
 	for yp := 0; yp < ev.V1Pools.Y; yp++ {
 		for xp := 0; xp < ev.V1Pools.X; xp++ {
-			d := mat32.Hypot(float32(xp)-x, float32(yp)-y)
+			d := math32.Hypot(float32(xp)-x, float32(yp)-y)
 			gauss := efuns.Gauss1DNoNorm(d, sig)
 			fi := 0
 			for yf := 0; yf < ev.V1Feats.Y; yf++ {
@@ -202,12 +202,12 @@ func (ev *AttnEnv) RenderV1(stm *Stim, tsr *etensor.Float32) {
 func (ev *AttnEnv) RenderLIP(stm *Stim, tsr *etensor.Float32) {
 	ps := stm.PosXY(ev.V1Pools)
 	sig := stm.Width * float32(ev.V1Pools.X)
-	wd := mat32.Round(sig)
+	wd := math32.Round(sig)
 	for yp := 0; yp < ev.V1Pools.Y; yp++ {
 		for xp := 0; xp < ev.V1Pools.X; xp++ {
-			d := mat32.Hypot(float32(xp)-ps.X, float32(yp)-ps.Y)
+			d := math32.Hypot(float32(xp)-ps.X, float32(yp)-ps.Y)
 			var gauss float32
-			if mat32.Round(d) <= wd {
+			if math32.Round(d) <= wd {
 				if ev.LIPGauss {
 					gauss = efuns.Gauss1DNoNorm(d, sig)
 				} else {

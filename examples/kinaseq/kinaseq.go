@@ -15,7 +15,7 @@ import (
 	"cogentcore.org/core/giv"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/ki"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/etable/v2/agg"
@@ -298,10 +298,10 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 
 		var Sint, Rint float32
 		if rhz > 0 {
-			Rint = mat32.Exp(-1000.0 / float32(rhz))
+			Rint = math32.Exp(-1000.0 / float32(rhz))
 		}
 		if shz > 0 {
-			Sint = mat32.Exp(-1000.0 / float32(shz))
+			Sint = math32.Exp(-1000.0 / float32(shz))
 		}
 		for t := 0; t < maxms; t++ {
 			cyc := ss.Context.Cycle
@@ -355,7 +355,7 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 	ss.ToolBar = tbar
 
 	split := gi.AddNewSplitView(mfr, "split")
-	split.Dim = mat32.X
+	split.Dim = math32.X
 	split.SetStretchMax()
 
 	sv := giv.AddNewStructView(split, "sv")

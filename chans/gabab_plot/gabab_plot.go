@@ -14,7 +14,7 @@ import (
 	"cogentcore.org/core/gi"
 	"cogentcore.org/core/giv"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/mat32"
+	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
@@ -148,7 +148,7 @@ func (ss *Sim) VGRun() { //gti:add
 		g = float64(ss.GABAstd.Gbar) * (v - ss.GABAberev) / (1 + math.Exp(ss.GABAbv*((v-ss.GABAberev)+ss.GABAbo)))
 		gs := ss.GABAstd.Gbar * ss.GABAstd.GFromV(chans.VFromBio(float32(v)))
 
-		gbug := 0.2 / (1.0 + mat32.FastExp(float32(0.1*((v+90)+10))))
+		gbug := 0.2 / (1.0 + math32.FastExp(float32(0.1*((v+90)+10))))
 
 		dt.SetCellFloat("V", vi, v)
 		dt.SetCellFloat("GgabaB", vi, g)
