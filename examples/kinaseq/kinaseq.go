@@ -376,28 +376,28 @@ func (ss *Sim) ConfigGUI() *core.Window {
 
 	split.SetSplits(.2, .8)
 
-	tbar.AddAction(core.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
 		ss.Init()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(core.ActOpts{Label: "Trial", Icon: "step-fwd", Tooltip: "Run one trial of the equations and plot results in TrialPlot."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Trial", Icon: "step-fwd", Tooltip: "Run one trial of the equations and plot results in TrialPlot."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
 		ss.Trial()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(core.ActOpts{Label: "Run", Icon: "play", Tooltip: "Run NTrials of the equations and plot results at end of each trial in RunPlot."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Run", Icon: "play", Tooltip: "Run NTrials of the equations and plot results at end of each trial in RunPlot."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
 		ss.Run()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(core.ActOpts{Label: "Sweep", Icon: "fast-fwd", Tooltip: "Sweep through minus-plus combinations and plot in DWtLogs."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Sweep", Icon: "fast-fwd", Tooltip: "Sweep through minus-plus combinations and plot in DWtLogs."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
 		ss.Sweep()
 		vp.SetNeedsFullRender()
 	})
 
 	tbar.AddAction(core.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send tree.Ki, sig int64, data interface{}) {
+		func(recv, send tree.Node, sig int64, data interface{}) {
 			core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
 		})
 

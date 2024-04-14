@@ -21,7 +21,7 @@ import (
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/views"
 	"cogentcore.org/core/xyz"
-	"cogentcore.org/core/xyzv"
+	"cogentcore.org/core/xyzview"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
@@ -94,7 +94,7 @@ type GUI struct {
 	EnvName string
 
 	// 3D visualization of the Scene
-	SceneView *xyzv.SceneView
+	SceneView *xyzview.SceneView
 
 	// 2D visualization of the Scene
 	Scene2D *core.SVG
@@ -252,7 +252,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	vw.ConfigWorld()
 
-	vw.SceneView = xyzv.NewSceneView(scfr, "sceneview")
+	vw.SceneView = xyzview.NewSceneView(scfr, "sceneview")
 	vw.SceneView.Config()
 	se := vw.SceneView.SceneXYZ()
 	vw.ConfigView3D(se)
