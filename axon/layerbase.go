@@ -55,7 +55,7 @@ type LayerBase struct {
 	Rel relpos.Rel `tableview:"-" view:"inline"`
 
 	// position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.
-	Ps math32.Vec3 `tableview:"-"`
+	Ps math32.Vector3 `tableview:"-"`
 
 	// a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.
 	Idx int `view:"-" inactive:"-"`
@@ -147,8 +147,8 @@ func (ly *LayerBase) Shape() *etensor.Shape      { return &ly.Shp }
 func (ly *LayerBase) Is2D() bool                 { return ly.Shp.NumDims() == 2 }
 func (ly *LayerBase) Is4D() bool                 { return ly.Shp.NumDims() == 4 }
 func (ly *LayerBase) RelPos() relpos.Rel         { return ly.Rel }
-func (ly *LayerBase) Pos() math32.Vec3           { return ly.Ps }
-func (ly *LayerBase) SetPos(pos math32.Vec3)     { ly.Ps = pos }
+func (ly *LayerBase) Pos() math32.Vector3        { return ly.Ps }
+func (ly *LayerBase) SetPos(pos math32.Vector3)  { ly.Ps = pos }
 func (ly *LayerBase) Index() int                 { return ly.Idx }
 func (ly *LayerBase) SetIndex(idx int)           { ly.Idx = idx }
 func (ly *LayerBase) RecvPrjns() *AxonPrjns      { return &ly.RcvPrjns }
@@ -242,19 +242,19 @@ func (ly *LayerBase) PlaceAbove(other *Layer) {
 	ly.Rel = relpos.NewAbove(other.Name())
 }
 
-func (ly *LayerBase) Size() math32.Vec2 {
+func (ly *LayerBase) Size() math32.Vector2 {
 	if ly.Rel.Scale == 0 {
 		ly.Rel.Defaults()
 	}
-	var sz math32.Vec2
+	var sz math32.Vector2
 	switch {
 	case ly.Is2D():
-		sz = math32.V2(float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))) // Y, X
+		sz = math32.Vec2(float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))) // Y, X
 	case ly.Is4D():
 		// note: pool spacing is handled internally in display and does not affect overall size
-		sz = math32.V2(float32(ly.Shp.Dim(1)*ly.Shp.Dim(3)), float32(ly.Shp.Dim(0)*ly.Shp.Dim(2))) // Y, X
+		sz = math32.Vec2(float32(ly.Shp.Dim(1)*ly.Shp.Dim(3)), float32(ly.Shp.Dim(0)*ly.Shp.Dim(2))) // Y, X
 	default:
-		sz = math32.V2(float32(ly.Shp.Len()), 1)
+		sz = math32.Vec2(float32(ly.Shp.Len()), 1)
 	}
 	return sz.MulScalar(ly.Rel.Scale)
 }

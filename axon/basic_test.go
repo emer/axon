@@ -260,7 +260,7 @@ func TestSpikeProp(t *testing.T) {
 
 // StructValues adds field vals to given vals map
 func StructValues(obj any, vals map[string]float32, key string) {
-	v := reflectx.NonPtrValue(reflect.ValueOf(obj))
+	v := reflectx.NonPointerValue(reflect.ValueOf(obj))
 	typ := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		ft := typ.Field(i)

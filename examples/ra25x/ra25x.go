@@ -629,7 +629,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	nv.SceneXYZ().Camera.LookAt(math32.V3(0, 0, 0), math32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

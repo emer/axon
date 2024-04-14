@@ -674,7 +674,7 @@ func (ss *Sim) ConfigGUI() {
 
 	cam := &(nv.SceneXYZ().Camera)
 	cam.Pose.Pos.Set(0.0, 1.733, 2.3)
-	cam.LookAt(math32.V3(0, 0, 0), math32.V3(0, 1, 0))
+	cam.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
 

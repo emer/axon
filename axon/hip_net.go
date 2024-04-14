@@ -17,19 +17,19 @@ import (
 type HipConfig struct {
 
 	// size of EC2
-	EC2Size evec.Vec2i `nest:"+"`
+	EC2Size evec.Vector2i `nest:"+"`
 
 	// number of EC3 pools (outer dimension)
-	EC3NPool evec.Vec2i `nest:"+"`
+	EC3NPool evec.Vector2i `nest:"+"`
 
 	// number of neurons in one EC3 pool
-	EC3NNrn evec.Vec2i `nest:"+"`
+	EC3NNrn evec.Vector2i `nest:"+"`
 
 	// number of neurons in one CA1 pool
-	CA1NNrn evec.Vec2i `nest:"+"`
+	CA1NNrn evec.Vector2i `nest:"+"`
 
 	// size of CA3
-	CA3Size evec.Vec2i `nest:"+"`
+	CA3Size evec.Vector2i `nest:"+"`
 
 	// size of DG / CA3
 	DGRatio float32 `default:"2.236"`

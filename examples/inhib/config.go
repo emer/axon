@@ -28,7 +28,7 @@ type ParamConfig struct {
 	NLayers int `default:"2" min:"1"`
 
 	// size of hidden layers
-	HidSize evec.Vec2i `default:"{'X':10,'Y':10}"`
+	HidSize evec.Vector2i `default:"{'X':10,'Y':10}"`
 
 	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
 	Sheet string

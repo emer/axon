@@ -555,7 +555,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
-	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
+	sz := evec.Vector2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
 	cx := int(pt.X)
 	cy := int(pt.Y)
@@ -580,7 +580,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 
 func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
-	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
+	sz := evec.Vector2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
 	cx := int(math32.Round(pt.X)) - 1
 	cy := int(math32.Round(pt.Y)) - 1
@@ -923,7 +923,7 @@ func (ss *Sim) ConfigTstRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 	nv.Scene().Camera.Pose.Pos.Set(0, 1.14, 2.13)
-	nv.Scene().Camera.LookAt(math32.V3(0, -0.14, 0), math32.V3(0, 1, 0))
+	nv.Scene().Camera.LookAt(math32.Vec3(0, -0.14, 0), math32.Vec3(0, 1, 0))
 	// nv.SetMaxRecs(300)
 }
 

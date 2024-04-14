@@ -13,10 +13,10 @@ type ParamConfig struct {
 	Network map[string]any
 
 	// size of hidden layer -- can use emer.LaySize for 4D layers
-	Hidden1Size evec.Vec2i `default:"{'X':10,'Y':10}" nest:"+"`
+	Hidden1Size evec.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
 	// size of hidden layer -- can use emer.LaySize for 4D layers
-	Hidden2Size evec.Vec2i `default:"{'X':10,'Y':10}" nest:"+"`
+	Hidden2Size evec.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
 	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
 	Sheet string

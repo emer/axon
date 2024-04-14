@@ -20,7 +20,7 @@ import (
 type Stim struct {
 
 	// position in normalized coordintes
-	Pos math32.Vec2
+	Pos math32.Vector2
 
 	// feature number: 0-3 for V1 input, -1 for LIP attn
 	Feat int
@@ -33,8 +33,8 @@ type Stim struct {
 }
 
 // PosXY returns XY position projected into size of grid
-func (st *Stim) PosXY(size evec.Vec2i) math32.Vec2 {
-	return math32.V2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
+func (st *Stim) PosXY(size evec.Vector2i) math32.Vector2 {
+	return math32.Vec2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
 }
 
 // StimSet is a set of stimuli to be presented together
@@ -84,10 +84,10 @@ type AttnEnv struct {
 	Act float32
 
 	// size of V1 Pools
-	V1Pools evec.Vec2i
+	V1Pools evec.Vector2i
 
 	// size of V1 features per pool
-	V1Feats evec.Vec2i
+	V1Feats evec.Vector2i
 
 	// V1 rendered input state, 4D Size x Size
 	V1 etensor.Float32

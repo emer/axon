@@ -26,7 +26,7 @@ type MoveEnv struct {
 	Disp bool
 
 	// size of 2D world
-	Size evec.Vec2i
+	Size evec.Vector2i
 
 	// 2D grid world, each cell is a material (mat)
 	World *etensor.Int `view:"no-inline"`
@@ -68,10 +68,10 @@ type MoveEnv struct {
 	PctBlank float32
 
 	// current location of agent, floating point
-	PosF math32.Vec2 `edit:"-"`
+	PosF math32.Vector2 `edit:"-"`
 
 	// current location of agent, integer
-	PosI evec.Vec2i `edit:"-"`
+	PosI evec.Vector2i `edit:"-"`
 
 	// current angle, in degrees
 	Angle int `edit:"-"`
@@ -175,18 +175,18 @@ func (ev *MoveEnv) String() string {
 // Init is called to restart environment
 func (ev *MoveEnv) Init(run int) {
 	ev.PosI = ev.Size.DivScalar(2) // start in middle -- could be random..
-	ev.PosF = ev.PosI.ToVec2()
+	ev.PosF = ev.PosI.ToVector2()
 	ev.Angle = 0
 	ev.RotAng = 0
 }
 
 // SetWorld sets given mat at given point coord in world
-func (ev *MoveEnv) SetWorld(p evec.Vec2i, mat int) {
+func (ev *MoveEnv) SetWorld(p evec.Vector2i, mat int) {
 	ev.World.Set([]int{p.Y, p.X}, mat)
 }
 
 // GetWorld returns mat at given point coord in world
-func (ev *MoveEnv) GetWorld(p evec.Vec2i) int {
+func (ev *MoveEnv) GetWorld(p evec.Vector2i) int {
 	return ev.World.Value([]int{p.Y, p.X})
 }
 
@@ -202,14 +202,14 @@ func AngMod(ang int) int {
 
 // AngVec returns the incremental vector to use for given angle, in deg
 // such that the largest value is 1.
-func AngVec(ang int) math32.Vec2 {
+func AngVec(ang int) math32.Vector2 {
 	a := math32.DegToRad(float32(AngMod(ang)))
-	v := math32.V2(math32.Cos(a), math32.Sin(a))
+	v := math32.Vec2(math32.Cos(a), math32.Sin(a))
 	return NormVecLine(v)
 }
 
 // NormVec normalize vector for drawing a line
-func NormVecLine(v math32.Vec2) math32.Vec2 {
+func NormVecLine(v math32.Vector2) math32.Vector2 {
 	av := v.Abs()
 	if av.X > av.Y {
 		v = v.DivScalar(av.X)
@@ -222,9 +222,9 @@ func NormVecLine(v math32.Vec2) math32.Vec2 {
 // NextVecPoint returns the next grid point along vector,
 // from given current floating and grid points.  v is normalized
 // such that the largest value is 1.
-func NextVecPoint(cp, v math32.Vec2) (math32.Vec2, evec.Vec2i) {
+func NextVecPoint(cp, v math32.Vector2) (math32.Vector2, evec.Vector2i) {
 	n := cp.Add(v)
-	g := evec.NewVec2iFromVec2Round(n)
+	g := evec.NewVector2iFromVector2Round(n)
 	return n, g
 }
 
@@ -240,7 +240,7 @@ func (ev *MoveEnv) ScanDepth() {
 		v := AngVec(ang + ev.Angle)
 		op := ev.PosF
 		cp := op
-		gp := evec.Vec2i{}
+		gp := evec.Vector2i{}
 		depth := float32(-1)
 		for {
 			cp, gp = NextVecPoint(cp, v)
@@ -382,7 +382,7 @@ var _ env.Env = (*MoveEnv)(nil)
 // Render world
 
 // WorldLineHoriz draw horizontal line
-func (ev *MoveEnv) WorldLineHoriz(st, ed evec.Vec2i, mat int) {
+func (ev *MoveEnv) WorldLineHoriz(st, ed evec.Vector2i, mat int) {
 	sx := min(st.X, ed.X)
 	ex := max(st.X, ed.X)
 	for x := sx; x <= ex; x++ {
@@ -391,7 +391,7 @@ func (ev *MoveEnv) WorldLineHoriz(st, ed evec.Vec2i, mat int) {
 }
 
 // WorldLineVert draw vertical line
-func (ev *MoveEnv) WorldLineVert(st, ed evec.Vec2i, mat int) {
+func (ev *MoveEnv) WorldLineVert(st, ed evec.Vector2i, mat int) {
 	sy := min(st.Y, ed.Y)
 	ey := max(st.Y, ed.Y)
 	for y := sy; y <= ey; y++ {
@@ -400,7 +400,7 @@ func (ev *MoveEnv) WorldLineVert(st, ed evec.Vec2i, mat int) {
 }
 
 // WorldLine draw line in world with given mat
-func (ev *MoveEnv) WorldLine(st, ed evec.Vec2i, mat int) {
+func (ev *MoveEnv) WorldLine(st, ed evec.Vector2i, mat int) {
 	di := ed.Sub(st)
 
 	if di.X == 0 {
@@ -412,12 +412,12 @@ func (ev *MoveEnv) WorldLine(st, ed evec.Vec2i, mat int) {
 		return
 	}
 
-	dv := di.ToVec2()
+	dv := di.ToVector2()
 	dst := dv.Length()
 	v := NormVecLine(dv)
-	op := st.ToVec2()
+	op := st.ToVector2()
 	cp := op
-	gp := evec.Vec2i{}
+	gp := evec.Vector2i{}
 	for {
 		cp, gp = NextVecPoint(cp, v)
 		ev.SetWorld(gp, mat)
@@ -429,18 +429,18 @@ func (ev *MoveEnv) WorldLine(st, ed evec.Vec2i, mat int) {
 }
 
 // WorldRect draw rectangle in world with given mat
-func (ev *MoveEnv) WorldRect(st, ed evec.Vec2i, mat int) {
-	ev.WorldLineHoriz(st, evec.Vec2i{ed.X, st.Y}, mat)
-	ev.WorldLineHoriz(evec.Vec2i{st.X, ed.Y}, evec.Vec2i{ed.X, ed.Y}, mat)
-	ev.WorldLineVert(st, evec.Vec2i{st.X, ed.Y}, mat)
-	ev.WorldLineVert(evec.Vec2i{ed.X, st.Y}, evec.Vec2i{ed.X, ed.Y}, mat)
+func (ev *MoveEnv) WorldRect(st, ed evec.Vector2i, mat int) {
+	ev.WorldLineHoriz(st, evec.Vector2i{ed.X, st.Y}, mat)
+	ev.WorldLineHoriz(evec.Vector2i{st.X, ed.Y}, evec.Vector2i{ed.X, ed.Y}, mat)
+	ev.WorldLineVert(st, evec.Vector2i{st.X, ed.Y}, mat)
+	ev.WorldLineVert(evec.Vector2i{ed.X, st.Y}, evec.Vector2i{ed.X, ed.Y}, mat)
 }
 
 // GenWorld generates a world -- edit to create in way desired
 func (ev *MoveEnv) GenWorld() {
 	ev.World.SetZeros()
 	// always start with a wall around the entire world -- no seeing the turtles..
-	ev.WorldRect(evec.Vec2i{0, 0}, evec.Vec2i{ev.Size.X - 1, ev.Size.Y - 1}, 1)
+	ev.WorldRect(evec.Vector2i{0, 0}, evec.Vector2i{ev.Size.X - 1, ev.Size.Y - 1}, 1)
 }
 
 // ActGen generates an action for current situation based on simple

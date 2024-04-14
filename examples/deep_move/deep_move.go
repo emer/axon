@@ -191,7 +191,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hd, hdp := net.AddInputPulv2D("HeadDir", 1, ev.DepthSize, space)
 	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), axon.InputLayer)
 
-	dpHidSz := evec.Vec2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
+	dpHidSz := evec.Vector2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
 	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).AddClass("CTSelfMaint") // no diff
@@ -602,7 +602,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.1, 2.0)
-	nv.SceneXYZ().Camera.LookAt(math32.V3(0, 0, 0), math32.V3(0, 1, 0))
+	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 }
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
