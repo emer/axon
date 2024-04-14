@@ -15,7 +15,7 @@ import (
 	"os"
 	"strconv"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
@@ -851,7 +851,7 @@ func (ss *Sim) ConfigGUI() {
 	plt.Params.XAxisCol = "Trial"
 	plt.SetTable(tstst)
 
-	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
@@ -872,7 +872,7 @@ func (ss *Sim) ConfigGUI() {
 		})
 
 		////////////////////////////////////////////////
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
@@ -883,7 +883,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
@@ -897,7 +897,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
 			},
 		})
 	})
@@ -905,7 +905,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.TheApp.AddQuitCleanFunc(func() {
+		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
@@ -961,7 +961,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.TestEpoch {
 		dt := ss.Logs.MiscTable("TestTrialStats")
 		fnm := ecmd.LogFilename("tst_epc", netName, runName)
-		dt.SaveCSV(gi.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU

@@ -7,12 +7,11 @@
 // kinaseq plots kinase learning simulation over time
 package main
 
+/*
 import (
 	"fmt"
 	"math/rand"
 
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/ki"
 	"cogentcore.org/core/math32"
@@ -117,10 +116,10 @@ type Sim struct {
 	Plots map[string]*eplot.Plot2D `view:"-"`
 
 	// main GUI window
-	Win *gi.Window `view:"-"`
+	Win *core.Window `view:"-"`
 
 	// the master toolbar
-	ToolBar *gi.ToolBar `view:"-"`
+	ToolBar *core.ToolBar `view:"-"`
 
 	// stop button
 	StopNow bool `view:"-"`
@@ -333,16 +332,16 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 }
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() *core.Window {
 	width := 1600
 	height := 1200
 
-	// gi.WinEventTrace = true
+	// core.WinEventTrace = true
 
-	gi.SetAppName("kinaseq")
-	gi.SetAppAbout(`Exploration of kinase equations. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq"> GitHub</a>.</p>`)
+	core.SetAppName("kinaseq")
+	core.SetAppAbout(`Exploration of kinase equations. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq"> GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("kinaseq", "Kinase Equation Exploration", width, height)
+	win := core.NewMainWindow("kinaseq", "Kinase Equation Exploration", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -350,18 +349,18 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	mfr := win.SetMainFrame()
 
-	tbar := gi.AddNewToolBar(mfr, "tbar")
+	tbar := core.AddNewToolBar(mfr, "tbar")
 	tbar.SetStretchMaxWidth()
 	ss.ToolBar = tbar
 
-	split := gi.AddNewSplitView(mfr, "split")
+	split := core.AddNewSplitView(mfr, "split")
 	split.Dim = math32.X
 	split.SetStretchMax()
 
-	sv := giv.AddNewStructView(split, "sv")
+	sv := views.AddNewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.AddNewTabView(split, "tv")
+	tv := core.AddNewTabView(split, "tv")
 
 	plt := tv.AddNewTab(eplot.KiT_Plot2D, "RunPlot").(*eplot.Plot2D)
 	ss.AddPlot("RunPlot", ss.ConfigRunPlot(plt, ss.Log("RunLog")))
@@ -377,44 +376,45 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	split.SetSplits(.2, .8)
 
-	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Init()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Trial", Icon: "step-fwd", Tooltip: "Run one trial of the equations and plot results in TrialPlot."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Trial", Icon: "step-fwd", Tooltip: "Run one trial of the equations and plot results in TrialPlot."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Trial()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Run", Icon: "play", Tooltip: "Run NTrials of the equations and plot results at end of each trial in RunPlot."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Run", Icon: "play", Tooltip: "Run NTrials of the equations and plot results at end of each trial in RunPlot."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Run()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Sweep", Icon: "fast-fwd", Tooltip: "Sweep through minus-plus combinations and plot in DWtLogs."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(core.ActOpts{Label: "Sweep", Icon: "fast-fwd", Tooltip: "Sweep through minus-plus combinations and plot in DWtLogs."}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Sweep()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
+	tbar.AddAction(core.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
+		func(recv, send tree.Ki, sig int64, data interface{}) {
+			core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
 
 	// main menu
-	appnm := gi.AppName()
+	appnm := core.AppName()
 	mmen := win.MainMenu
 	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
 
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
+	amen := win.MainMenu.ChildByName(appnm, 0).(*core.Action)
 	amen.Menu.AddAppMenu(win)
 
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
+	emen := win.MainMenu.ChildByName("Edit", 1).(*core.Action)
 	emen.Menu.AddCopyCutPaste(win)
 
 	win.MainMenuUpdated()
 	return win
 }
+*/

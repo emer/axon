@@ -7,7 +7,7 @@ package axon
 import (
 	"fmt"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/empi/v2/mpi"
 )
@@ -47,7 +47,7 @@ func SaveWeights(net *Network, ctrString, runName string) string {
 	}
 	fnm := WeightsFilename(net, ctrString, runName)
 	fmt.Printf("Saving Weights to: %s\n", fnm)
-	net.SaveWtsJSON(gi.Filename(fnm))
+	net.SaveWtsJSON(core.Filename(fnm))
 	return fnm
 }
 

@@ -10,9 +10,9 @@ import (
 	"math/rand"
 	"strings"
 
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/etable/v2/etensor"
@@ -892,11 +892,11 @@ func (ly *Layer) LesionNeurons(prop float32) int { //gti:add
 	return nl
 }
 
-func (ly *Layer) ConfigToolbar(tb *gi.Toolbar) {
-	giv.NewFuncButton(tb, ly.Defaults).SetIcon(icons.Reset)
-	giv.NewFuncButton(tb, ly.InitWts).SetIcon(icons.Reset)
-	giv.NewFuncButton(tb, ly.InitActs).SetIcon(icons.Reset)
-	gi.NewSeparator(tb)
-	giv.NewFuncButton(tb, ly.LesionNeurons).SetIcon(icons.Cut)
-	giv.NewFuncButton(tb, ly.UnLesionNeurons).SetIcon(icons.Cut)
+func (ly *Layer) ConfigToolbar(tb *core.Toolbar) {
+	views.NewFuncButton(tb, ly.Defaults).SetIcon(icons.Reset)
+	views.NewFuncButton(tb, ly.InitWts).SetIcon(icons.Reset)
+	views.NewFuncButton(tb, ly.InitActs).SetIcon(icons.Reset)
+	core.NewSeparator(tb)
+	views.NewFuncButton(tb, ly.LesionNeurons).SetIcon(icons.Cut)
+	views.NewFuncButton(tb, ly.UnLesionNeurons).SetIcon(icons.Cut)
 }

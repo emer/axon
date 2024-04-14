@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/etable/v2/etable"
@@ -62,7 +62,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)
-		err := epcLog.SaveCSV(gi.Filename(filename), ',', etable.Headers)
+		err := epcLog.SaveCSV(core.Filename(filename), ',', etable.Headers)
 		if err != nil {
 			b.Log(err)
 		}

@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build notyet
-
 /*
 dls: This project tests Dorsal Lateral Striatum Motor Action Learning.
 */
+
 package main
 
+/*
 //go:generate core generate -add-types
 
 import (
@@ -614,7 +614,7 @@ func (ss *Sim) NewRun() {
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	if ss.Config.OpenWts != "" {
-		ss.Net.OpenWtsJSON(gi.Filename(ss.Config.OpenWts))
+		ss.Net.OpenWtsJSON(core.Filename(ss.Config.OpenWts))
 		log.Println("Opened weights:", ss.Config.OpenWts)
 	}
 }
@@ -964,7 +964,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		}
 		ss.EnvGUI.USposPlot.GoUpdatePlot()
 		ss.EnvGUI.USnegPlot.GoUpdatePlot()
-	*/
+	/
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
@@ -991,7 +991,7 @@ func (ss *Sim) ConfigGUI() {
 
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
-	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
@@ -1004,7 +1004,7 @@ func (ss *Sim) ConfigGUI() {
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
 		////////////////////////////////////////////////
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all NRuns, which are tagged with the ParamSet used",
@@ -1015,7 +1015,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
@@ -1029,14 +1029,14 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/dls/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/dls/README.md")
 			},
 		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.TheApp.AddQuitCleanFunc(func() {
+		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
@@ -1118,3 +1118,5 @@ func (ss *Sim) RunNoGUI() {
 
 	ss.Net.GPU.Destroy() // safe even if no GPU
 }
+
+*/

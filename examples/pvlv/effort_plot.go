@@ -9,10 +9,10 @@ import (
 	"math/rand"
 	"strconv"
 
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/etable/v2/eplot"
@@ -224,14 +224,14 @@ func (ss *DrEffPlot) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.
 }
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *DrEffPlot) ConfigGUI() *gi.Body {
-	b := gi.NewBody("Drive / Effort / Urgency Plotting")
+func (ss *DrEffPlot) ConfigGUI() *core.Body {
+	b := core.NewBody("Drive / Effort / Urgency Plotting")
 
-	split := gi.NewSplits(b, "split")
-	sv := giv.NewStructView(split, "sv")
+	split := core.NewSplits(b, "split")
+	sv := views.NewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.NewTabs(split, "tv")
+	tv := core.NewTabs(split, "tv")
 
 	ss.Plot = eplot.NewSubPlot(tv.NewTab("Effort Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
@@ -241,10 +241,10 @@ func (ss *DrEffPlot) ConfigGUI() *gi.Body {
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *gi.Toolbar) {
-		giv.NewFuncButton(tb, ss.EffortPlot).SetIcon(icons.PlayArrow)
-		giv.NewFuncButton(tb, ss.UrgencyPlot).SetIcon(icons.PlayArrow)
-		giv.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(tb *core.Toolbar) {
+		views.NewFuncButton(tb, ss.EffortPlot).SetIcon(icons.PlayArrow)
+		views.NewFuncButton(tb, ss.UrgencyPlot).SetIcon(icons.PlayArrow)
+		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
 	})
 
 	return b

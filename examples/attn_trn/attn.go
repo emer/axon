@@ -33,9 +33,9 @@ import (
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/split"
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv
-	"cogentcore.org/core/ki"
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/views"
+	"cogentcore.org/core/tree"
 	"cogentcore.org/core/math32"
 )
 
@@ -271,13 +271,13 @@ type Sim struct {
 	PctMod float32
 
 	// main GUI window
-	Win *gi.Window `view:"-"`
+	Win *core.Window `view:"-"`
 
 	// the network viewer
 	NetView *netview.NetView `view:"-"`
 
 	// the master toolbar
-	ToolBar *gi.ToolBar `view:"-"`
+	ToolBar *core.ToolBar `view:"-"`
 
 	// the test-trial plot
 	TstTrlPlot *eplot.Plot2D `view:"-"`
@@ -647,9 +647,9 @@ func (ss *Sim) Stopped() {
 	}
 }
 
-// SaveWts saves the network weights -- when called with giv.CallMethod
+// SaveWts saves the network weights -- when called with views.CallMethod
 // it will auto-prompt for filename
-func (ss *Sim) SaveWts(filename gi.Filename) {
+func (ss *Sim) SaveWts(filename core.Filename) {
 	ss.Net.SaveWtsJSON(filename)
 }
 
@@ -928,14 +928,14 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 }
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *gi.Window {
+func (ss *Sim) ConfigGUI() *core.Window {
 	width := 1600
 	height := 1200
 
-	gi.SetAppName("attn")
-	gi.SetAppAbout(`attn: This simulation illustrates how object recognition (ventral, what) and spatial (dorsal, where) pathways interact to produce spatial attention effects, and accurately capture the effects of brain damage to the spatial pathway. See <a href="https://github.com/emer/axon/blob/master/examples/attn_trn/README.md">README.md on GitHub</a>.</p>`)
+	core.SetAppName("attn")
+	core.SetAppAbout(`attn: This simulation illustrates how object recognition (ventral, what) and spatial (dorsal, where) pathways interact to produce spatial attention effects, and accurately capture the effects of brain damage to the spatial pathway. See <a href="https://github.com/emer/axon/blob/master/examples/attn_trn/README.md">README.md on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("attn", "Attention", width, height)
+	win := core.NewMainWindow("attn", "Attention", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -943,18 +943,18 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	mfr := win.SetMainFrame()
 
-	tbar := gi.AddNewToolBar(mfr, "tbar")
+	tbar := core.AddNewToolBar(mfr, "tbar")
 	tbar.SetStretchMaxWidth()
 	ss.ToolBar = tbar
 
-	split := gi.AddNewSplitView(mfr, "split")
+	split := core.AddNewSplitView(mfr, "split")
 	split.Dim = math32.X
 	split.SetStretchMax()
 
-	sv := giv.AddNewStructView(split, "sv")
+	sv := views.AddNewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.AddNewTabView(split, "tv")
+	tv := core.AddNewTabView(split, "tv")
 
 	nv := tv.AddNewTab(netview.KiT_NetView, "NetView").(*netview.NetView)
 	nv.Var = "Act"
@@ -970,22 +970,22 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	split.SetSplits(.2, .8)
 
-	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Init()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Stop", Icon: "stop", Tooltip: "Interrupts running.  Hitting Train again will pick back up where it left off.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Stop", Icon: "stop", Tooltip: "Interrupts running.  Hitting Train again will pick back up where it left off.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Stop()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Test Trial", Icon: "step-fwd", Tooltip: "Runs the next testing trial.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Test Trial", Icon: "step-fwd", Tooltip: "Runs the next testing trial.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
 			tbar.UpdateActions()
@@ -993,9 +993,9 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 		}
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Test All", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Test All", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
 			tbar.UpdateActions()
@@ -1003,9 +1003,9 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 		}
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Test Runs", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials x runs times for stats.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Test Runs", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials x runs times for stats.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
 			tbar.UpdateActions()
@@ -1015,77 +1015,77 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 
 	tbar.AddSeparator("msep")
 
-	tbar.AddAction(gi.ActOpts{Label: "Lesion", Icon: "cut", Tooltip: "Lesion spatial pathways.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Lesion", Icon: "cut", Tooltip: "Lesion spatial pathways.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		giv.CallMethod(ss, "Lesion", vp)
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+		views.CallMethod(ss, "Lesion", vp)
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Defaults", Icon: icons.Update, Tooltip: "Restore default parameters.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(core.ActOpts{Label: "Defaults", Icon: icons.Update, Tooltip: "Restore default parameters.", UpdateFunc: func(act *core.Action) {
 		act.SetActiveStateUpdate(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	}}, win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
 		ss.Defaults()
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/attn_trn/README.md")
+	tbar.AddAction(core.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
+		func(recv, send tree.Ki, sig int64, data interface{}) {
+			core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/attn_trn/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
 
 	// main menu
-	appnm := gi.AppName()
+	appnm := core.AppName()
 	mmen := win.MainMenu
 	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
 
-	amen := win.MainMenu.ChildByName(appnm, 0).(*gi.Action)
+	amen := win.MainMenu.ChildByName(appnm, 0).(*core.Action)
 	amen.Menu.AddAppMenu(win)
 
-	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
+	emen := win.MainMenu.ChildByName("Edit", 1).(*core.Action)
 	emen.Menu.AddCopyCutPaste(win)
 
 		inQuitPrompt := false
-		gi.SetQuitReqFunc(func() {
+		core.SetQuitReqFunc(func() {
 			if inQuitPrompt {
 				return
 			}
 			inQuitPrompt = true
-			gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Quit?",
-				Prompt: "Are you <i>sure</i> you want to quit and lose any unsaved params, weights, logs, etc?"}, gi.AddOk, gi.AddCancel,
-				win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-					if sig == int64(gi.DialogAccepted) {
-						gi.Quit()
+			core.PromptDialog(vp, core.DlgOpts{Title: "Really Quit?",
+				Prompt: "Are you <i>sure</i> you want to quit and lose any unsaved params, weights, logs, etc?"}, core.AddOk, core.AddCancel,
+				win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+					if sig == int64(core.DialogAccepted) {
+						core.Quit()
 					} else {
 						inQuitPrompt = false
 					}
 				})
 		})
 
-		// gi.SetQuitCleanFunc(func() {
+		// core.SetQuitCleanFunc(func() {
 		// 	fmt.Printf("Doing final Quit cleanup here..\n")
 		// })
 
 		inClosePrompt := false
-		win.SetCloseReqFunc(func(w *gi.Window) {
+		win.SetCloseReqFunc(func(w *core.Window) {
 			if inClosePrompt {
 				return
 			}
 			inClosePrompt = true
-			gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Close Window?",
-				Prompt: "Are you <i>sure</i> you want to close the window?  This will Quit the App as well, losing all unsaved params, weights, logs, etc"}, gi.AddOk, gi.AddCancel,
-				win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-					if sig == int64(gi.DialogAccepted) {
-						gi.Quit()
+			core.PromptDialog(vp, core.DlgOpts{Title: "Really Close Window?",
+				Prompt: "Are you <i>sure</i> you want to close the window?  This will Quit the App as well, losing all unsaved params, weights, logs, etc"}, core.AddOk, core.AddCancel,
+				win.This(), func(recv, send tree.Ki, sig int64, data interface{}) {
+					if sig == int64(core.DialogAccepted) {
+						core.Quit()
 					} else {
 						inClosePrompt = false
 					}
 				})
 		})
 
-	win.SetCloseCleanFunc(func(w *gi.Window) {
-		go gi.Quit() // once main window is closed, quit
+	win.SetCloseCleanFunc(func(w *core.Window) {
+		go core.Quit() // once main window is closed, quit
 	})
 
 	win.MainMenuUpdated()
@@ -1093,24 +1093,24 @@ func (ss *Sim) ConfigGUI() *gi.Window {
 }
 
 // These props register Save methods so they can be used
-var SimProps = ki.Props{
-	"CallMethods": ki.PropSlice{
-		{"SaveWts", ki.Props{
+var SimProps = tree.Props{
+	"CallMethods": tree.PropSlice{
+		{"SaveWts", tree.Props{
 			"desc": "save network weights to file",
 			"icon": "file-save",
-			"Args": ki.PropSlice{
-				{"File Name", ki.Props{
+			"Args": tree.PropSlice{
+				{"File Name", tree.Props{
 					"ext": ".wts",
 				}},
 			},
 		}},
-		{"Lesion", ki.Props{
+		{"Lesion", tree.Props{
 			"desc": "lesions given set of layers (or unlesions for NoLesion) and locations and number of units (Half = partial = 1/2 units, Full = both units)",
 			"icon": "cut",
-			"Args": ki.PropSlice{
-				{"Layers", ki.Props{}},
-				{"Locations", ki.Props{}},
-				{"Units", ki.Props{}},
+			"Args": tree.PropSlice{
+				{"Layers", tree.Props{}},
+				{"Locations", tree.Props{}},
+				{"Units", tree.Props{}},
 			},
 		}},
 	},

@@ -8,8 +8,8 @@ import (
 	"errors"
 	"log"
 
-	"cogentcore.org/core/giv"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
@@ -310,7 +310,7 @@ func (pj *PrjnBase) ApplyDefParams() {
 // are not at their default values -- useful for setting param styles etc.
 func (pj *PrjnBase) NonDefaultParams() string {
 	pth := pj.Recv.Name() + "." + pj.Name() // redundant but clearer..
-	nds := giv.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
+	nds := views.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
 	return nds
 }
 

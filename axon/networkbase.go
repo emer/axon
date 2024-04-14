@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/gox/indent"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/texteditor"
@@ -533,16 +533,16 @@ func (nt *NetworkBase) SaveParamsSnapshot(pars *netparams.Sets, cfg any, good bo
 		log.Println(err) // notify but OK if it exists
 	}
 	econfig.Save(cfg, filepath.Join(dir, "config.toml"))
-	pars.SaveTOML(gi.Filename(filepath.Join(dir, "params.toml")))
-	nt.SaveAllParams(gi.Filename(filepath.Join(dir, "params_all.txt")))
-	nt.SaveNonDefaultParams(gi.Filename(filepath.Join(dir, "params_nondef.txt")))
-	nt.SaveAllLayerInhibs(gi.Filename(filepath.Join(dir, "params_layers.txt")))
-	nt.SaveAllPrjnScales(gi.Filename(filepath.Join(dir, "params_prjns.txt")))
+	pars.SaveTOML(core.Filename(filepath.Join(dir, "params.toml")))
+	nt.SaveAllParams(core.Filename(filepath.Join(dir, "params_all.txt")))
+	nt.SaveNonDefaultParams(core.Filename(filepath.Join(dir, "params_nondef.txt")))
+	nt.SaveAllLayerInhibs(core.Filename(filepath.Join(dir, "params_layers.txt")))
+	nt.SaveAllPrjnScales(core.Filename(filepath.Join(dir, "params_prjns.txt")))
 	return nil
 }
 
 // SaveAllParams saves list of all parameters in Network to given file.
-func (nt *NetworkBase) SaveAllParams(filename gi.Filename) error {
+func (nt *NetworkBase) SaveAllParams(filename core.Filename) error {
 	str := nt.AllParams()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
 	if err != nil {
@@ -552,7 +552,7 @@ func (nt *NetworkBase) SaveAllParams(filename gi.Filename) error {
 }
 
 // SaveNonDefaultParams saves list of all non-default parameters in Network to given file.
-func (nt *NetworkBase) SaveNonDefaultParams(filename gi.Filename) error {
+func (nt *NetworkBase) SaveNonDefaultParams(filename core.Filename) error {
 	str := nt.NonDefaultParams()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
 	if err != nil {
@@ -562,7 +562,7 @@ func (nt *NetworkBase) SaveNonDefaultParams(filename gi.Filename) error {
 }
 
 // SaveAllLayerInhibs saves list of all layer Inhibition parameters to given file
-func (nt *NetworkBase) SaveAllLayerInhibs(filename gi.Filename) error {
+func (nt *NetworkBase) SaveAllLayerInhibs(filename core.Filename) error {
 	str := nt.AllLayerInhibs()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
 	if err != nil {
@@ -575,7 +575,7 @@ func (nt *NetworkBase) SaveAllLayerInhibs(filename gi.Filename) error {
 // in all Layers, Recv projections.  These are among the most important
 // and numerous of parameters (in larger networks) -- this helps keep
 // track of what they all are set to.
-func (nt *NetworkBase) SaveAllPrjnScales(filename gi.Filename) error {
+func (nt *NetworkBase) SaveAllPrjnScales(filename core.Filename) error {
 	str := nt.AllPrjnScales()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
 	if err != nil {
@@ -1140,7 +1140,7 @@ func (nt *NetworkBase) DeleteAll() {
 
 // SaveWtsJSON saves network weights (and any other state that adapts with learning)
 // to a JSON-formatted file.  If filename has .gz extension, then file is gzip compressed.
-func (nt *NetworkBase) SaveWtsJSON(filename gi.Filename) error { //gti:add
+func (nt *NetworkBase) SaveWtsJSON(filename core.Filename) error { //gti:add
 	fp, err := os.Create(string(filename))
 	defer fp.Close()
 	if err != nil {
@@ -1162,7 +1162,7 @@ func (nt *NetworkBase) SaveWtsJSON(filename gi.Filename) error { //gti:add
 
 // OpenWtsJSON opens network weights (and any other state that adapts with learning)
 // from a JSON-formatted file.  If filename has .gz extension, then file is gzip uncompressed.
-func (nt *NetworkBase) OpenWtsJSON(filename gi.Filename) error { //gti:add
+func (nt *NetworkBase) OpenWtsJSON(filename core.Filename) error { //gti:add
 	fp, err := os.Open(string(filename))
 	defer fp.Close()
 	if err != nil {
@@ -1272,7 +1272,7 @@ func (nt *NetworkBase) SetWts(nw *weights.Network) error {
 
 // OpenWtsCpp opens network weights (and any other state that adapts with learning)
 // from old C++ emergent format.  If filename has .gz extension, then file is gzip uncompressed.
-func (nt *NetworkBase) OpenWtsCpp(filename gi.Filename) error {
+func (nt *NetworkBase) OpenWtsCpp(filename core.Filename) error {
 	fp, err := os.Open(string(filename))
 	defer fp.Close()
 	if err != nil {

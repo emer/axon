@@ -12,9 +12,9 @@ import (
 	"math"
 	"strconv"
 
-	"cogentcore.org/core/giv"
 	"cogentcore.org/core/gox/indent"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/relpos"
@@ -423,7 +423,7 @@ func (ly *LayerBase) ApplyDefParams() {
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
 func (ly *LayerBase) NonDefaultParams() string {
-	nds := giv.StructNonDefFieldsStr(ly.AxonLay.AsAxon().Params, ly.Nm)
+	nds := views.StructNonDefFieldsStr(ly.AxonLay.AsAxon().Params, ly.Nm)
 	for _, pj := range ly.RcvPrjns {
 		pnd := pj.NonDefaultParams()
 		nds += pnd

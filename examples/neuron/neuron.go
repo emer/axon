@@ -16,7 +16,7 @@ import (
 	"log"
 	"os"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
@@ -398,7 +398,7 @@ func (ss *Sim) ConfigGUI() {
 	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
 	// ss.TstCycPlot = plt
 
-	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
@@ -427,7 +427,7 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
 			Tooltip: "Reset TstCycPlot.",
 			Active:  egui.ActiveStopped,
@@ -451,7 +451,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
 			},
 		})
 	})
@@ -459,7 +459,7 @@ func (ss *Sim) ConfigGUI() {
 
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.TheApp.AddQuitCleanFunc(func() {
+		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}
@@ -500,7 +500,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.Cycle {
 		dt := ss.Logs.Table(etime.Test, etime.Cycle)
 		fnm := ecmd.LogFilename("cyc", netName, runName)
-		dt.SaveCSV(gi.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
 	}
 
 	// if netdata {

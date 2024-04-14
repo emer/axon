@@ -15,11 +15,11 @@ import (
 	"log"
 	"os"
 
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
-	"cogentcore.org/core/gi"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/laser"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/reflectx"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/pvlv/cond"
 	"github.com/emer/emergent/v2/econfig"
@@ -371,7 +371,7 @@ func (ss *Sim) ApplyInputs() {
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
-		if !laser.AnyIsNil(pats) {
+		if !reflectx.AnyIsNil(pats) {
 			ly.ApplyExt(ctx, 0, pats)
 		}
 		switch lnm {
@@ -428,7 +428,7 @@ func (ss *Sim) LoadCondWeights(cond string) {
 		return
 	}
 	wfn := "wts/" + cond + ".wts.gz"
-	err := ss.Net.OpenWtsJSON(gi.Filename(wfn))
+	err := ss.Net.OpenWtsJSON(core.Filename(wfn))
 	if err != nil {
 		log.Println(err)
 	}
@@ -442,7 +442,7 @@ func (ss *Sim) SaveCondWeights() {
 		return
 	}
 	wfn := "wts/" + cnm + ".wts.gz"
-	err := ss.Net.SaveWtsJSON(gi.Filename(wfn))
+	err := ss.Net.SaveWtsJSON(core.Filename(wfn))
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -758,8 +758,8 @@ func (ss *Sim) ConfigGUI() {
 
 	plt.SetTable(dt)
 
-	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
-		cb := gi.NewChooser(tb, "runs")
+	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
+		cb := core.NewChooser(tb, "runs")
 		cb.SetStrings(cond.RunNames...)
 		ri := 0
 		for i, rn := range cond.RunNames {
@@ -785,7 +785,7 @@ func (ss *Sim) ConfigGUI() {
 
 		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
 
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
 			Tooltip: "Save weights for the current condition name.",
 			Active:  egui.ActiveStopped,
@@ -796,7 +796,7 @@ func (ss *Sim) ConfigGUI() {
 		})
 
 		////////////////////////////////////////////////
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
@@ -807,7 +807,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
@@ -829,7 +829,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
 			},
 		})
 	})
@@ -838,7 +838,7 @@ func (ss *Sim) ConfigGUI() {
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
 		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
-		gi.TheApp.AddQuitCleanFunc(func() {
+		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

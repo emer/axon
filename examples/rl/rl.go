@@ -12,7 +12,7 @@ package main
 import (
 	"os"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
@@ -420,7 +420,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.Body.AddAppBar(func(tb *gi.Toolbar) {
+	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
@@ -444,14 +444,14 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				gi.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
 			},
 		})
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		gi.TheApp.AddQuitCleanFunc(func() {
+		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
 	}

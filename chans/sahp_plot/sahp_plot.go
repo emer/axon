@@ -10,9 +10,9 @@ package main
 import (
 	"strconv"
 
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
@@ -208,14 +208,14 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 }
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *gi.Body {
-	b := gi.NewBody("Sahp Plot")
+func (ss *Sim) ConfigGUI() *core.Body {
+	b := core.NewBody("Sahp Plot")
 
-	split := gi.NewSplits(b, "split")
-	sv := giv.NewStructView(split, "sv")
+	split := core.NewSplits(b, "split")
+	sv := views.NewStructView(split, "sv")
 	sv.SetStruct(ss)
 
-	tv := gi.NewTabs(split, "tv")
+	tv := core.NewTabs(split, "tv")
 
 	ss.Plot = eplot.NewSubPlot(tv.NewTab("Ca-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
@@ -225,9 +225,9 @@ func (ss *Sim) ConfigGUI() *gi.Body {
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *gi.Toolbar) {
-		giv.NewFuncButton(tb, ss.CaRun).SetIcon(icons.PlayArrow)
-		giv.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(tb *core.Toolbar) {
+		views.NewFuncButton(tb, ss.CaRun).SetIcon(icons.PlayArrow)
+		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
 	})
 
 	return b

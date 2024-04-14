@@ -12,13 +12,13 @@ import (
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/colors/colormap"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/errors"
 	"cogentcore.org/core/events"
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/views"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyzv"
 	"github.com/emer/axon/v2/axon"
@@ -96,7 +96,7 @@ type GUI struct {
 	SceneView *xyzv.SceneView
 
 	// 2D visualization of the Scene
-	Scene2D *gi.SVG
+	Scene2D *core.SVG
 
 	// list of material colors
 	MatColors []string
@@ -114,10 +114,10 @@ type GUI struct {
 	Trace StateTrace
 
 	// view of the gui obj
-	StructView *giv.StructView `view:"-"`
+	StructView *views.StructView `view:"-"`
 
 	// ArmMaze TabView
-	WorldTabs *gi.Tabs `view:"-"`
+	WorldTabs *core.Tabs `view:"-"`
 
 	// ArmMaze is running
 	IsRunning bool `view:"-"`
@@ -129,16 +129,16 @@ type GUI struct {
 	Camera evev.Camera
 
 	// color map to use for rendering depth map
-	DepthMap giv.ColorMapName
+	DepthMap views.ColorMapName
 
 	// first-person right-eye full field view
-	EyeRFullImage *gi.Image `view:"-"`
+	EyeRFullImage *core.Image `view:"-"`
 
 	// first-person right-eye fovea view
-	EyeRFovImage *gi.Image `view:"-"`
+	EyeRFovImage *core.Image `view:"-"`
 
 	// depth map bitmap view
-	DepthImage *gi.Image `view:"-"`
+	DepthImage *core.Image `view:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
 	USposPlot *eplot.Plot2D
@@ -179,7 +179,7 @@ type GUI struct {
 
 // ConfigWorldGUI configures all the world view GUI elements
 // pass an initial env to use for configuring
-func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
+func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	vw.Disp = true
 	vw.Env = ev
 	vw.EnvName = ev.Nm
@@ -199,28 +199,28 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	}
 	vw.MatColors = []string{"blue", "orange", "red", "violet", "navy", "brown", "pink", "purple", "olive", "chartreuse", "cyan", "magenta", "salmon", "goldenrod", "SykBlue"}
 
-	b := gi.NewBody("armaze").SetTitle("Arm Maze")
+	b := core.NewBody("armaze").SetTitle("Arm Maze")
 
-	split := gi.NewSplits(b, "split")
+	split := core.NewSplits(b, "split")
 
-	svfr := gi.NewFrame(split, "svfr")
+	svfr := core.NewFrame(split, "svfr")
 	svfr.Style(func(s *styles.Style) {
 		s.Direction = styles.Column
 	})
 
-	vw.StructView = giv.NewStructView(svfr, "sv").SetStruct(vw)
-	imfr := gi.NewFrame(svfr).Style(func(s *styles.Style) {
+	vw.StructView = views.NewStructView(svfr, "sv").SetStruct(vw)
+	imfr := core.NewFrame(svfr).Style(func(s *styles.Style) {
 		s.Display = styles.Grid
 		s.Columns = 2
 		s.Grow.Set(0, 0)
 	})
-	gi.NewLabel(imfr).SetText("Eye-View, Fovea:")
-	gi.NewLabel(imfr).SetText("Full Field:")
+	core.NewLabel(imfr).SetText("Eye-View, Fovea:")
+	core.NewLabel(imfr).SetText("Full Field:")
 
-	vw.EyeRFovImage = gi.NewImage(imfr, "eye-r-fov-img")
+	vw.EyeRFovImage = core.NewImage(imfr, "eye-r-fov-img")
 	vw.EyeRFovImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
 
-	vw.EyeRFullImage = gi.NewImage(imfr, "eye-r-full-img")
+	vw.EyeRFullImage = core.NewImage(imfr, "eye-r-full-img")
 	vw.EyeRFullImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
 
 	wd := float32(300)
@@ -240,7 +240,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	})
 	vw.ConfigUSPlots()
 
-	tv := gi.NewTabs(split)
+	tv := core.NewTabs(split)
 	vw.WorldTabs = tv
 
 	scfr := tv.NewTab("3D View")
@@ -268,7 +268,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 	//////////////////////////////////////////
 	//    2D Scene
 
-	twov := gi.NewSVG(twofr, "sceneview")
+	twov := core.NewSVG(twofr, "sceneview")
 	twov.SVG.Root.ViewBox.Size.Set(vw.Geom.Width+4, vw.Geom.Depth+4)
 	twov.SVG.Root.ViewBox.Min.Set(-0.5*(vw.Geom.Width+4), -0.5*(vw.Geom.Depth+4))
 	twov.SetReadOnly(false)
@@ -278,23 +278,23 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *gi.Body {
 
 	split.SetSplits(.4, .6)
 
-	b.AddAppBar(func(tb *gi.Toolbar) {
-		gi.NewButton(tb).SetText("Init").SetIcon(icons.ClearAll).
+	b.AddAppBar(func(tb *core.Toolbar) {
+		core.NewButton(tb).SetText("Init").SetIcon(icons.ClearAll).
 			SetTooltip("Init env").
 			OnClick(func(e events.Event) {
 				vw.Env.Init(0)
 			})
-		gi.NewButton(tb).SetText("Reset Trace").SetIcon(icons.Undo).
+		core.NewButton(tb).SetText("Reset Trace").SetIcon(icons.Undo).
 			SetTooltip("Reset trace of position, etc, shown in 2D View").
 			OnClick(func(e events.Event) {
 				vw.Trace = nil
 			})
-		giv.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
-		giv.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
-		giv.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
-		giv.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
+		views.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
+		views.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
+		views.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
+		views.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
 
-		gi.NewSeparator(tb)
+		core.NewSeparator(tb)
 	})
 	return b
 }
@@ -551,7 +551,7 @@ func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
 		colormap.AvailableMaps[cnm] = cm
 	}
 	tg.Disp.Defaults()
-	tg.Disp.ColorMap = giv.ColorMapName(cnm)
+	tg.Disp.ColorMap = views.ColorMapName(cnm)
 	tg.Disp.GridFill = 1
 }
 

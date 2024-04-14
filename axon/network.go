@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	"cogentcore.org/core/gi"
-	"cogentcore.org/core/giv"
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/gox/datasize"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/etable/v2/etensor"
@@ -690,14 +690,14 @@ func (nt *Network) SizeReport(detail bool) string {
 	return b.String()
 }
 
-func (nt *Network) ConfigToolbar(tb *gi.Toolbar) {
-	giv.NewFuncButton(tb, nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
-	fb := giv.NewFuncButton(tb, nt.SaveWtsJSON).SetText("Save Weights").SetIcon(icons.Save)
+func (nt *Network) ConfigToolbar(tb *core.Toolbar) {
+	views.NewFuncButton(tb, nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
+	fb := views.NewFuncButton(tb, nt.SaveWtsJSON).SetText("Save Weights").SetIcon(icons.Save)
 	fb.Args[0].SetTag("ext", ".wts,.wts.gz")
-	fb = giv.NewFuncButton(tb, nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
+	fb = views.NewFuncButton(tb, nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
 	fb.Args[0].SetTag("ext", ".wts,.wts.gz")
-	gi.NewSeparator(tb)
-	giv.NewFuncButton(tb, nt.Build).SetIcon(icons.Reset)
-	giv.NewFuncButton(tb, nt.InitWts).SetIcon(icons.Reset)
-	giv.NewFuncButton(tb, nt.InitActs).SetIcon(icons.Reset)
+	core.NewSeparator(tb)
+	views.NewFuncButton(tb, nt.Build).SetIcon(icons.Reset)
+	views.NewFuncButton(tb, nt.InitWts).SetIcon(icons.Reset)
+	views.NewFuncButton(tb, nt.InitActs).SetIcon(icons.Reset)
 }

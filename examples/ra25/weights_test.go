@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"cogentcore.org/core/gi"
+	"cogentcore.org/core/core"
 	"github.com/emer/emergent/v2/etime"
 )
 
@@ -28,7 +28,7 @@ func TestWeightsSave(t *testing.T) {
 	sim.ConfigAll()
 	sim.RunNoGUI()
 
-	sim.Net.SaveWtsJSON(gi.Filename("wtstest.wts.gz"))
+	sim.Net.SaveWtsJSON(core.Filename("wtstest.wts.gz"))
 }
 
 func TestWeightsLoad(t *testing.T) {
@@ -43,7 +43,7 @@ func TestWeightsLoad(t *testing.T) {
 
 	sim.Init()
 
-	sim.Net.OpenWtsJSON(gi.Filename("wtstest.wts.gz"))
+	sim.Net.OpenWtsJSON(core.Filename("wtstest.wts.gz"))
 	sim.Loops.Run(etime.Test)
 
 	epcTable := sim.Logs.Table(etime.Test, etime.Epoch)
@@ -70,7 +70,7 @@ func TestWeightsLoadGPU(t *testing.T) {
 	// gpu version:
 	sim.Net.ConfigGPUnoGUI(&sim.Context) // must happen after gui or no gui
 
-	sim.Net.OpenWtsJSON(gi.Filename("wtstest.wts.gz"))
+	sim.Net.OpenWtsJSON(core.Filename("wtstest.wts.gz"))
 	sim.Loops.Run(etime.Test)
 
 	epcTable := sim.Logs.Table(etime.Test, etime.Epoch)

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"cogentcore.org/core/laser"
+	"cogentcore.org/core/reflectx"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
@@ -44,7 +44,7 @@ func (ss *Sim) RunParamTweak() {
 	}
 
 	if ss.Config.Params.DryRun {
-		fmt.Println("Searching:", laser.StringJSON(srch))
+		fmt.Println("Searching:", reflectx.StringJSON(srch))
 	}
 
 	ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)

@@ -17,8 +17,8 @@ import (
 	"strings"
 	"testing"
 
-	"cogentcore.org/core/laser"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/reflectx"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
@@ -260,7 +260,7 @@ func TestSpikeProp(t *testing.T) {
 
 // StructValues adds field vals to given vals map
 func StructValues(obj any, vals map[string]float32, key string) {
-	v := laser.NonPtrValue(reflect.ValueOf(obj))
+	v := reflectx.NonPtrValue(reflect.ValueOf(obj))
 	typ := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		ft := typ.Field(i)
@@ -269,7 +269,7 @@ func StructValues(obj any, vals map[string]float32, key string) {
 		}
 		fv := v.Field(i)
 		kk := key + fmt.Sprintf("\t%s", ft.Name)
-		vals[kk], _ = laser.ToFloat32(fv.Interface())
+		vals[kk], _ = reflectx.ToFloat32(fv.Interface())
 	}
 }
 
