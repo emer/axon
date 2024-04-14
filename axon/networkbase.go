@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"cogentcore.org/core/gi"
-	"cogentcore.org/core/glop/dedupe"
 	"cogentcore.org/core/glop/indent"
 	"cogentcore.org/core/mat32"
 	"cogentcore.org/core/texteditor"
@@ -275,7 +274,16 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 	for _, lc := range classes {
 		nms = append(nms, nt.LayClassMap[lc]...)
 	}
-	layers := dedupe.DeDupe(nms)
+	// only get unique layers
+	layers := []string{}
+	has := map[string]bool{}
+	for _, nm := range nms {
+		if has[nm] {
+			continue
+		}
+		layers = append(layers, nm)
+		has[nm] = true
+	}
 	if len(layers) == 0 {
 		panic(fmt.Sprintf("No Layers found for query: %#v. Basic layer types have been renamed since v1.7, use LayersByType for forward compatibility.", classes))
 	}
