@@ -91,7 +91,7 @@ func (ss *DrEffPlot) Update() {
 }
 
 // EffortPlot plots the equation as a function of effort / time
-func (ss *DrEffPlot) EffortPlot() { //gti:add
+func (ss *DrEffPlot) EffortPlot() { //types:add
 	ss.Update()
 	ctx := &ss.Context
 	pp := &ss.Rubicon
@@ -110,7 +110,7 @@ func (ss *DrEffPlot) EffortPlot() { //gti:add
 }
 
 // UrgencyPlot plots the equation as a function of effort / time
-func (ss *DrEffPlot) UrgencyPlot() { //gti:add
+func (ss *DrEffPlot) UrgencyPlot() { //types:add
 	ctx := &ss.Context
 	pp := &ss.Rubicon
 	ss.Update()
@@ -153,7 +153,7 @@ func (ss *DrEffPlot) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 /////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *DrEffPlot) TimeRun() { //gti:add
+func (ss *DrEffPlot) TimeRun() { //types:add
 	ss.Update()
 	dt := ss.TimeTable
 	pp := &ss.Rubicon

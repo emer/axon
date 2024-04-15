@@ -17,7 +17,7 @@ import (
 )
 
 // Vis encapsulates specific visual processing pipeline for V1 filtering
-type Vis struct { //gti:add
+type Vis struct { //types:add
 
 	// V1 simple gabor filter parameters
 	V1sGabor gabor.Filter

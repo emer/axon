@@ -90,7 +90,7 @@ type RunConfig struct {
 }
 
 // LogConfig has config parameters related to logging data
-type LogConfig struct { //gti:add
+type LogConfig struct { //types:add
 
 	// if true, save final weights after each run
 	SaveWts bool
@@ -115,7 +115,7 @@ type LogConfig struct { //gti:add
 }
 
 // Config is a standard Sim config -- use as a starting point.
-type Config struct { //gti:add
+type Config struct { //types:add
 
 	// specify include files here, and after configuration, it contains list of include files added
 	Includes []string

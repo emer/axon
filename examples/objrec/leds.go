@@ -15,7 +15,7 @@ import (
 // LEDraw renders old-school "LED" style "letters" composed of a set of horizontal
 // and vertical elements.  All possible such combinations of 3 out of 6 line segments are created.
 // Renders using SVG.
-type LEDraw struct { //gti:add
+type LEDraw struct { //types:add
 
 	// line width of LEDraw as percent of display size
 	Width float32 `default:"4"`

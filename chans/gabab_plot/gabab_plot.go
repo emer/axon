@@ -135,7 +135,7 @@ func (ss *Sim) Update() {
 }
 
 // VGRun runs the V-G equation.
-func (ss *Sim) VGRun() { //gti:add
+func (ss *Sim) VGRun() { //types:add
 	ss.Update()
 	dt := ss.VGTable
 
@@ -188,7 +188,7 @@ func (ss *Sim) ConfigVGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 //////////////////////////////////////////////////
 
 // SGRun runs the spike-g equation.
-func (ss *Sim) SGRun() { //gti:add
+func (ss *Sim) SGRun() { //types:add
 	ss.Update()
 	dt := ss.SGTable
 
@@ -237,7 +237,7 @@ func (ss *Sim) ConfigSGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 //////////////////////////////////////////////////
 
 // TimeRun runs the equation.
-func (ss *Sim) TimeRun() { //gti:add
+func (ss *Sim) TimeRun() { //types:add
 	ss.Update()
 	dt := ss.TimeTable
 

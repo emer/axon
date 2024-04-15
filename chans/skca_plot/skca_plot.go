@@ -90,7 +90,7 @@ func (ss *Sim) Update() {
 }
 
 // CamRun plots the equation as a function of Ca
-func (ss *Sim) CamRun() { //gti:add
+func (ss *Sim) CamRun() { //types:add
 	ss.Update()
 	dt := ss.Table
 
@@ -137,7 +137,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 /////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //gti:add
+func (ss *Sim) TimeRun() { //types:add
 	ss.Update()
 	dt := ss.TimeTable
 

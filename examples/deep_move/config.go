@@ -7,7 +7,7 @@ package main
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
-type EnvConfig struct { //gti:add
+type EnvConfig struct { //types:add
 
 	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
 	Env map[string]any
@@ -17,7 +17,7 @@ type EnvConfig struct { //gti:add
 }
 
 // ParamConfig has config parameters related to sim params
-type ParamConfig struct { //gti:add
+type ParamConfig struct { //types:add
 
 	// network parameters
 	Network map[string]any
@@ -45,7 +45,7 @@ type ParamConfig struct { //gti:add
 }
 
 // RunConfig has config parameters related to running the sim
-type RunConfig struct { //gti:add
+type RunConfig struct { //types:add
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
 	GPU bool `default:"true"`
@@ -76,7 +76,7 @@ type RunConfig struct { //gti:add
 }
 
 // LogConfig has config parameters related to logging data
-type LogConfig struct { //gti:add
+type LogConfig struct { //types:add
 
 	// if true, save final weights after each run
 	SaveWts bool
@@ -101,7 +101,7 @@ type LogConfig struct { //gti:add
 }
 
 // Config is a standard Sim config -- use as a starting point.
-type Config struct { //gti:add
+type Config struct { //types:add
 
 	// specify include files here, and after configuration, it contains list of include files added
 	Includes []string

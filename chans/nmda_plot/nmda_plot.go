@@ -118,7 +118,7 @@ func (ss *Sim) Update() {
 // https://brian2.readthedocs.io/en/stable/examples/frompapers.Brunel_Wang_2001.html
 
 // Run runs the equation.
-func (ss *Sim) Run() { //gti:add
+func (ss *Sim) Run() { //types:add
 	ss.Update()
 	dt := ss.Table
 
@@ -188,7 +188,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 /////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //gti:add
+func (ss *Sim) TimeRun() { //types:add
 	ss.Update()
 	dt := ss.TimeTable
 

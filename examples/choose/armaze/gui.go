@@ -621,7 +621,7 @@ func (vw *GUI) UpdateWorldGUI() {
 	// }
 }
 
-func (vw *GUI) Left() { //gti:add
+func (vw *GUI) Left() { //types:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Left", nil)
@@ -629,7 +629,7 @@ func (vw *GUI) Left() { //gti:add
 	vw.UpdateWorldGUI()
 }
 
-func (vw *GUI) Right() { //gti:add
+func (vw *GUI) Right() { //types:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Right", nil)
@@ -637,7 +637,7 @@ func (vw *GUI) Right() { //gti:add
 	vw.UpdateWorldGUI()
 }
 
-func (vw *GUI) Forward() { //gti:add
+func (vw *GUI) Forward() { //types:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Forward", nil)
@@ -645,7 +645,7 @@ func (vw *GUI) Forward() { //gti:add
 	vw.UpdateWorldGUI()
 }
 
-func (vw *GUI) Consume() { //gti:add
+func (vw *GUI) Consume() { //types:add
 	ev := vw.Env
 	ev.InstinctAct(ev.JustGated, ev.HasGated)
 	ev.Action("Consume", nil)

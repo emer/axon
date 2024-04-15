@@ -36,7 +36,7 @@ func (ly *Layer) Object() any {
 	return ly.Params
 }
 
-func (ly *Layer) Defaults() { //gti:add
+func (ly *Layer) Defaults() { //types:add
 	if ly.Params != nil {
 		ly.Params.LayType = ly.LayerType()
 		ly.Params.Defaults()
@@ -225,7 +225,7 @@ func (ly *Layer) AllParams() string {
 
 // InitWts initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
-func (ly *Layer) InitWts(ctx *Context, nt *Network) { //gti:add
+func (ly *Layer) InitWts(ctx *Context, nt *Network) { //types:add
 	ly.UpdateParams()
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
 	for di := uint32(0); di < ly.MaxData; di++ {
@@ -361,7 +361,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 }
 
 // InitActs fully initializes activation state -- only called automatically during InitWts
-func (ly *Layer) InitActs(ctx *Context) { //gti:add
+func (ly *Layer) InitActs(ctx *Context) { //types:add
 	ly.Params.Acts.Clamp.IsInput.SetBool(ly.Params.IsInput())
 	ly.Params.Acts.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	nn := ly.NNeurons
@@ -852,7 +852,7 @@ func (ly *Layer) TestValues(ctrKey string, vals map[string]float32) {
 //  Lesion
 
 // UnLesionNeurons unlesions (clears the Off flag) for all neurons in the layer
-func (ly *Layer) UnLesionNeurons() { //gti:add
+func (ly *Layer) UnLesionNeurons() { //types:add
 	ctx := &ly.Network.Ctx
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
@@ -866,7 +866,7 @@ func (ly *Layer) UnLesionNeurons() { //gti:add
 // LesionNeurons lesions (sets the Off flag) for given proportion (0-1) of neurons in layer
 // returns number of neurons lesioned.  Emits error if prop > 1 as indication that percent
 // might have been passed
-func (ly *Layer) LesionNeurons(prop float32) int { //gti:add
+func (ly *Layer) LesionNeurons(prop float32) int { //types:add
 	ctx := &ly.Network.Ctx
 	ly.UnLesionNeurons()
 	if prop > 1 {

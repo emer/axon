@@ -97,7 +97,7 @@ func (ss *Sim) Update() {
 }
 
 // VmRun plots the equation as a function of V
-func (ss *Sim) VmRun() { //gti:add
+func (ss *Sim) VmRun() { //types:add
 	ss.Update()
 	dt := ss.Table
 
@@ -155,7 +155,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 /////////////////////////////////////////////////////////////////
 
 // TimeRun runs the equation over time.
-func (ss *Sim) TimeRun() { //gti:add
+func (ss *Sim) TimeRun() { //types:add
 	ss.Update()
 	dt := ss.TimeTable
 

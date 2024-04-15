@@ -289,7 +289,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
-func (nt *Network) InitWts(ctx *Context) { //gti:add
+func (nt *Network) InitWts(ctx *Context) { //types:add
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		nt.Rubicon.Reset(ctx, di)
 	}
@@ -416,7 +416,7 @@ func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, lay
 }
 
 // InitActs fully initializes activation state -- not automatically called
-func (nt *Network) InitActs(ctx *Context) { //gti:add
+func (nt *Network) InitActs(ctx *Context) { //types:add
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
