@@ -19,6 +19,7 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
@@ -29,7 +30,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/empi/v2/mpi"
 	"github.com/emer/etable/v2/etable"
 	_ "github.com/emer/etable/v2/etview" // _ = include to get gui views
 	"github.com/emer/etable/v2/metric"

@@ -12,7 +12,7 @@ import (
 
 	"cogentcore.org/core/system"
 	"cogentcore.org/core/vgpu"
-	"github.com/emer/empi/v2/mpi"
+	"github.com/emer/emergent/v2/empi/mpi"
 	vk "github.com/goki/vulkan"
 )
 

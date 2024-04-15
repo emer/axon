@@ -11,9 +11,9 @@ import (
 	"cogentcore.org/core/reflectx"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/empi/v2/mpi"
 )
 
 func (ss *Sim) RunParamTweak() {

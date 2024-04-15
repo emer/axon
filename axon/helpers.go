@@ -9,7 +9,7 @@ import (
 
 	"cogentcore.org/core/core"
 	"github.com/emer/emergent/v2/ecmd"
-	"github.com/emer/empi/v2/mpi"
+	"github.com/emer/emergent/v2/empi/mpi"
 )
 
 ////////////////////////////////////////////////////

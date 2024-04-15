@@ -6,7 +6,7 @@
 
 package main
 
-import "github.com/emer/empi/v2/mpi"
+import "github.com/emer/emergent/v2/empi/mpi"
 
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env

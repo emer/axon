@@ -8,6 +8,10 @@ dls: This project tests Dorsal Lateral Striatum Motor Action Learning.
 
 package main
 
+func main() {
+
+}
+
 /*
 //go:generate core generate -add-types
 
@@ -36,7 +40,7 @@ import (
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/timer"
-	"github.com/emer/empi/v2/mpi"
+	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/etable/v2/agg"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"

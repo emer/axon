@@ -26,6 +26,7 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
@@ -34,7 +35,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/empi/v2/mpi"
 	"github.com/emer/etable/v2/agg"
 	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
@@ -193,15 +193,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPTp, ofcPosUSPT, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, accCost, accCostCT, accCostPT, accCostPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddRubiconOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPos, ofcPosCT, ofcPosPTp, ofcPosPT, ilPos, ilPosCT, ilPosPT, ilPosPTp, ilPosMD, ofcNeg, ofcNegCT, ofcNegPT, ofcNegPTp, accCost, accCostCT, accCostPT, accCostPTp, accCostMD, ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD, sc := net.AddRubiconOFCus(&ss.Context, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
 	_, _, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatchD1, vSpatchD2, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
 	_, _, _, _ = ilPos, ilPosCT, ilPosPTp, ilPosMD
-	_, _, _ = ofcNegUS, ofcNegUSCT, ofcNegUSPTp
+	_, _, _ = ofcNeg, ofcNegCT, ofcNegPTp
 	_, _, _, _ = ilNeg, ilNegCT, ilNegPTp, ilNegMD
-	_, _, _ = accCost, accCostCT, accCostPTp
-	_, _, _, _, _ = ofcPosUSPT, ofcNegUSPT, ilPosPT, ilNegPT, accCostPT
+	_, _, _, _ = accCost, accCostCT, accCostPTp, accCostMD
+	_, _, _, _, _ = ofcPosPT, ofcNegPT, ilPosPT, ilNegPT, accCostPT
 	// todo: connect more of above
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
@@ -227,18 +227,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
 
 	// OFCus predicts cs
-	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "CSToPFC")
-	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "CSToPFC")
+	net.ConnectToPFCBack(cs, csP, ofcPos, ofcPosCT, ofcPosPT, ofcPosPTp, full, "CSToPFC")
+	net.ConnectToPFCBack(cs, csP, ofcNeg, ofcNegCT, ofcNegPT, ofcNegPTp, full, "CSToPFC")
 
 	///////////////////////////////////////////
 	// OFC predicts time, effort, urgency
 
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
-	net.ConnectToPFCBack(time, timeP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ofcPos, ofcPosCT, ofcPosPT, ofcPosPTp, full, "TimeToPFC")
 	net.ConnectToPFCBack(time, timeP, ilPos, ilPosCT, ilPosPT, ilPosPTp, full, "TimeToPFC")
 
-	net.ConnectToPFCBack(time, timeP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "TimeToPFC")
+	net.ConnectToPFCBack(time, timeP, ofcNeg, ofcNegCT, ofcNegPT, ofcNegPTp, full, "TimeToPFC")
 	net.ConnectToPFCBack(time, timeP, accCost, accCostCT, accCostPT, accCostPTp, full, "TimeToPFC")
 	net.ConnectToPFCBack(time, timeP, ilNeg, ilNegCT, ilNegPT, ilNegPTp, full, "TimeToPFC")
 
