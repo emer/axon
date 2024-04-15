@@ -10,7 +10,7 @@ import (
 	"math"
 	"unsafe"
 
-	"cogentcore.org/core/goosi"
+	"cogentcore.org/core/system"
 	"cogentcore.org/core/vgpu"
 	"github.com/emer/empi/v2/mpi"
 	vk "github.com/goki/vulkan"
@@ -200,7 +200,7 @@ type GPU struct {
 // Configures the GPU -- call after Network is Built, initialized, params are set,
 // and everything is ready to run.
 func (nt *Network) ConfigGPUwithGUI(ctx *Context) {
-	goosi.TheApp.RunOnMain(func() {
+	system.TheApp.RunOnMain(func() {
 		nt.GPU.Config(ctx, nt)
 	})
 	fmt.Printf("Running on GPU: %s\n", TheGPU.DeviceName)
@@ -244,7 +244,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 		TheGPU.Config("axon", &opts)
 	}
 
-	gp.MaxBufferBytes = TheGPU.GPUProps.Limits.MaxStorageBufferRange - 16
+	gp.MaxBufferBytes = TheGPU.GPUProperties.Limits.MaxStorageBufferRange - 16
 	gp.Sys = TheGPU.NewComputeSystem("axon")
 	gp.Sys.StaticVars = true // no diff in perf..
 
