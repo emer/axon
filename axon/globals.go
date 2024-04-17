@@ -129,40 +129,63 @@ const (
 	// in NewState)
 	GvHadNegUSOutcome
 
-	// PVposSum is total weighted positive valence primary value
+	// PVposSum is the total weighted positive valence primary value
 	// = sum of Weight * USpos * Drive
 	GvPVposSum
 
-	// PVpos is normalized positive valence primary value
+	// PVpos is the normalized positive valence primary value
 	// = (1 - 1/(1+PVposGain * PVposSum))
 	GvPVpos
 
-	// PVnegSum is total weighted negative valence primary value
+	// PVnegSum is the total weighted negative valence primary value
 	// = sum of Weight * Cost + Weight * USneg
 	GvPVnegSum
 
-	// PVpos is normalized negative valence primary value
+	// PVpos is the normalized negative valence primary value
 	// = (1 - 1/(1+PVnegGain * PVnegSum))
 	GvPVneg
 
-	// PVposEst is the estimated PVpos value based on OFCposPT and VSMatrix gating
+	// PVposEst is the estimated PVpos final outcome value
+	// decoded from the network PVposFinal layer
 	GvPVposEst
 
-	// PVposEstSum is the sum that goes into computing estimated PVpos
-	// value based on OFCposPT and VSMatrix gating
-	GvPVposEstSum
+	// PVposVar is the estimated variance or uncertainty in the PVpos
+	// final outcome value decoded from the network PVposFinal layer
+	GvPVposVar
 
-	// PVposEstDisc is the discounted version of PVposEst, subtracting VSPatchPosSum,
-	// which represents the accumulated expectation of PVpos to this point.
-	GvPVposEstDisc
+	// PVnegEst is the estimated PVneg final outcome value
+	// decoded from the network PVnegFinal layer
+	GvPVnegEst
 
-	// GiveUpDiff is the difference: PVposEstDisc - PVneg representing the
-	// expected positive outcome up to this point.  When this turns negative,
-	// the chance of giving up goes up proportionally, as a logistic
-	// function of this difference.
-	GvGiveUpDiff
+	// PVnegVar is the estimated variance or uncertainty in the PVneg
+	// final outcome value decoded from the network PVnegFinal layer
+	GvPVnegVar
 
-	// GiveUpProb is the probability from the logistic function of GiveUpDiff
+	// GiveUpUtility
+	GvGiveUpUtility
+
+	// ContUtility
+	GvContUtility
+
+	// GiveUpTiming
+	GvGiveUpTiming
+
+	// ContTiming
+	GvContTiming
+
+	// GiveUpProgress
+	GvGiveUpProgress
+
+	// ContProgress
+	GvContProgress
+
+	// GiveUpSum
+	GvGiveUpSum
+
+	// ContSum
+	GvContSum
+
+	// GiveUpProb is the probability of giving up: 1 / (1 + (GvContSum / GvGiveUpSum))
 	GvGiveUpProb
 
 	// GiveUp is true if a reset was triggered probabilistically based on GiveUpProb
