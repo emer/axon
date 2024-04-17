@@ -161,28 +161,41 @@ const (
 	// final outcome value decoded from the network PVnegFinal layer
 	GvPVnegVar
 
-	// GiveUpUtility
+	// GoalDistEst is the estimate of distance to the goal, in trial step units,
+	// decreasing down to 0 as the goal approaches.
+	GvGoalDistEst
+
+	// GoalDistPrev is the previous estimate of distance to the goal,
+	// in trial step units, decreasing down to 0 as the goal approaches.
+	GvGoalDistPrev
+
+	// ProgressRate is the negative time average change in GoalDistEst,
+	// i.e., positive values indicate continued approach to the goal,
+	// while negative values represent moving away from the goal.
+	GvProgressRate
+
+	// GiveUpUtility is total GiveUp weight as a function of Cost
 	GvGiveUpUtility
 
-	// ContUtility
+	// ContUtility is total Continue weight as a function of expected positive outcome PVposEst
 	GvContUtility
 
-	// GiveUpTiming
+	// GiveUpTiming is total GiveUp weight as a function of VSPatchPosSum * (1 - VSPatchPosVar)
 	GvGiveUpTiming
 
-	// ContTiming
+	// ContTiming is total Continue weight as a function of (1 - VSPatchPosSum) * VSPatchPosVar
 	GvContTiming
 
-	// GiveUpProgress
+	// GiveUpProgress is total GiveUp weight as a function of ProgressRate
 	GvGiveUpProgress
 
-	// ContProgress
+	// ContProgress is total Continue weight as a function of ProgressRate
 	GvContProgress
 
-	// GiveUpSum
+	// GiveUpSum is total GiveUp weight: Utility + Timing + Progress
 	GvGiveUpSum
 
-	// ContSum
+	// ContSum is total Continue weight: Utility + Timing + Progress
 	GvContSum
 
 	// GiveUpProb is the probability of giving up: 1 / (1 + (GvContSum / GvGiveUpSum))
@@ -217,6 +230,13 @@ const (
 	// VSPatchPosSum is the sum of VSPatchPos over goal engaged trials,
 	// representing the integrated prediction that the US is going to occur
 	GvVSPatchPosSum
+
+	// VSPatchPosPrev is the previous trial VSPatchPosSum
+	GvVSPatchPosPrev
+
+	// VSPatchPosVar is the integrated temporal variance of VSPatchPos over goal engaged trials,
+	// which determines when the VSPatchPosSum has stabilized
+	GvVSPatchPosVar
 
 	/////////////////////////////////////////
 	// LHb lateral habenula component of the Rubicon model -- does all US processing

@@ -11,6 +11,7 @@ import (
 	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/erand"
+	"github.com/emer/emergent/v2/popcode"
 )
 
 // DriveParams manages the drive parameters for computing and updating drive state.
@@ -379,6 +380,10 @@ type LHbParams struct {
 	// prediction signal, which goes in VSPatchPos and RewPred global variables
 	VSPatchGain float32 `default:"4"`
 
+	// decay time constant for computing the temporal variance in VSPatch
+	// values over time
+	VSPatchVarTau float32 `default:"2"`
+
 	// threshold factor that multiplies integrated pvNeg value
 	// to establish a threshold for whether the integrated pvPos value
 	// is good enough to drive overall net positive reward.
@@ -393,17 +398,22 @@ type LHbParams struct {
 	// gain multiplier on PVneg for purposes of generating dips
 	// (not for discounting positive bursts).
 	DipGain float32 `default:"1"`
+
+	// 1/tau
+	VSPatchVarDt float32 `view:"-"`
 }
 
 func (lh *LHbParams) Defaults() {
 	lh.VSPatchNonRewThr = 0.1
 	lh.VSPatchGain = 4
+	lh.VSPatchVarTau = 2
 	lh.NegThr = 1
 	lh.BurstGain = 1
 	lh.DipGain = 1
 }
 
 func (lh *LHbParams) Update() {
+	lh.VSPatchVarDt = 1 / lh.VSPatchVarTau
 }
 
 // Reset resets all LHb vars back to 0
@@ -475,34 +485,93 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) floa
 //////////////////////////////////////////////////////////
 //  GiveUpParams
 
-// GiveUpParams are parameters for computing when to give up
+// GiveUpParams are parameters for computing when to give up,
+// based on Utility, Timing and Progress factors.
 type GiveUpParams struct {
 
-	// threshold factor that multiplies integrated pvNeg value to establish a threshold for whether the integrated pvPos value is good enough to drive overall net positive reward
-	NegThr float32 `default:"1"`
+	// the factor multiplying utility values: cost and expected positive outcome
+	Utility float32 `default:"5" `
 
-	// multiplier on pos - neg for logistic probability function -- higher gain values produce more binary give up behavior and lower values produce more graded stochastic behavior around the threshold
-	Gain float32 `default:"10"`
+	// the factor multiplying timing values from VSPatch
+	Timing float32 `default:"2"`
 
-	// minimum estimated PVpos value -- deals with any errors in the estimation process to make sure that erroneous GiveUp doesn't happen.
-	MinPVposEst float32
+	// the factor multiplying progress values based on time-integrated progress
+	// toward the goal
+	Progress float32 `default:"1"`
+
+	// minimum utility cost and reward estimate values -- when they are below
+	// these levels (at the start) then utility is effectively neutral,
+	// so the other factors take precedence.
+	MinUtility float32
+
+	// maximum VSPatchPosSum for normalizing the value for give-up weighing
+	VSPatchSumMax float32 `default:"1"`
+
+	// maximum VSPatchPosVar for normalizing the value for give-up weighing
+	VSPatchVarMax float32 `default:"0.5"`
+
+	// time constant for integrating the ProgressRate
+	// values over time
+	ProgressRateTau float32 `default:"2"`
+
+	// 1/tau
+	ProgressRateDt float32 `view:"-"`
 }
 
 func (gp *GiveUpParams) Defaults() {
-	gp.NegThr = 1
-	gp.Gain = 10
-	gp.MinPVposEst = 0.2
+	gp.Utility = 5
+	gp.Timing = 2
+	gp.Progress = 1
+	gp.MinUtility = 0.2
+	gp.VSPatchSumMax = 1
+	gp.VSPatchVarMax = 0.5
+	gp.ProgressRateTau = 2
 }
 
-// LogisticFun is the sigmoid logistic function
-func LogisticFun(v, gain float32) float32 {
-	return (1.0 / (1.0 + math32.Exp(-gain*v)))
+func (gp *GiveUpParams) Update() {
+	gp.ProgressRateDt = 1 / gp.ProgressRateTau
 }
 
-func (gp *GiveUpParams) Prob(pvDiff float32, rnd erand.Rand) (float32, bool) {
-	prob := LogisticFun(pvDiff, gp.Gain)
+// SigmoidFun is the sigmoid function for computing give up probabilities
+func SigmoidFun(cnSum, guSum float32) float32 {
+	return 1 / (1 + (cnSum / guSum))
+}
+
+// Prob returns the probability and discrete bool give up for giving up based on
+// given sums of continue and give up factors
+func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd erand.Rand) (float32, bool) {
+	prob := SigmoidFun(cnSum, guSum)
 	giveUp := erand.BoolP32(prob, -1, rnd)
 	return prob, giveUp
+}
+
+// Sums computes the summed weighting factors that drive continue and give up
+// contributions to the probability function.
+func (gp *GiveUpParams) Sums(ctx *Context, di uint32) (cnSum, guSum float32) {
+	guU := gp.Utility * max(gp.MinUtility, GlbV(ctx, di, GvCost))
+	cnU := gp.Utility * max(gp.MinUtility, GlbV(ctx, di, GvPVposEst)) // todo: var?
+	SetGlbV(ctx, di, GvGiveUpUtility, guU)
+	SetGlbV(ctx, di, GvContUtility, cnU)
+
+	vspSum := min(GlbV(ctx, di, GvVSPatchPosSum), gp.VSPatchSumMax) / gp.VSPatchSumMax
+	vspVar := min(GlbV(ctx, di, GvVSPatchPosVar), gp.VSPatchVarMax) / gp.VSPatchVarMax
+	guT := gp.Timing * vspSum * (1 - vspVar)
+	cnT := gp.Timing * (1 - vspSum) * vspVar
+	SetGlbV(ctx, di, GvGiveUpTiming, guT)
+	SetGlbV(ctx, di, GvContTiming, cnT)
+
+	prog := GlbV(ctx, di, GvProgressRate)
+	guP := -gp.Progress * prog
+	cnP := gp.Progress * prog
+	SetGlbV(ctx, di, GvGiveUpProgress, guP)
+	SetGlbV(ctx, di, GvContProgress, cnP)
+
+	guSum = guU + guT + guP
+	cnSum = cnU + cnT + cnP
+	SetGlbV(ctx, di, GvGiveUpSum, guSum)
+	SetGlbV(ctx, di, GvContSum, cnSum)
+
+	return
 }
 
 //////////////////////////////////////////////////////////
@@ -561,6 +630,11 @@ type Rubicon struct {
 
 	// parameters for giving up based on PV pos - neg difference
 	GiveUp GiveUpParams
+
+	// population code decoding parameters for estimates from layers
+	ValDecode popcode.OneD
+
+	decodeActs []float32
 }
 
 func (rp *Rubicon) Defaults() {
@@ -572,6 +646,7 @@ func (rp *Rubicon) Defaults() {
 	rp.USs.Defaults()
 	rp.LHb.Defaults()
 	rp.GiveUp.Defaults()
+	rp.ValDecode.Defaults()
 }
 
 func (rp *Rubicon) Update() {
@@ -579,6 +654,7 @@ func (rp *Rubicon) Update() {
 	rp.Urgency.Update()
 	rp.USs.Update()
 	rp.LHb.Update()
+	rp.GiveUp.Update()
 }
 
 // USposIndex adds 1 to the given _simulation specific_ positive US index
@@ -755,7 +831,12 @@ func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 	rp.ResetGiveUp(ctx, di)
 	SetGlbV(ctx, di, GvVSPatchPos, 0)
 	SetGlbV(ctx, di, GvVSPatchPosSum, 0)
+	SetGlbV(ctx, di, GvVSPatchPosPrev, 0)
+	SetGlbV(ctx, di, GvVSPatchPosVar, 0)
 	SetGlbV(ctx, di, GvRewPred, 0)
+	SetGlbV(ctx, di, GvGoalDistEst, 0)
+	SetGlbV(ctx, di, GvGoalDistPrev, 0)
+	SetGlbV(ctx, di, GvProgressRate, 0)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		SetGlbUSposV(ctx, di, GvOFCposPTMaint, i, 0)
@@ -766,9 +847,7 @@ func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 // ResetGiveUp resets all the give-up related global values.
 func (rp *Rubicon) ResetGiveUp(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvPVposEst, 0)
-	SetGlbV(ctx, di, GvPVposEstSum, 0)
-	SetGlbV(ctx, di, GvPVposEstDisc, 0)
-	SetGlbV(ctx, di, GvGiveUpDiff, 0)
+	SetGlbV(ctx, di, GvPVposVar, 0)
 	SetGlbV(ctx, di, GvGiveUpProb, 0)
 	SetGlbV(ctx, di, GvGiveUp, 0)
 }
@@ -808,7 +887,7 @@ func (rp *Rubicon) Step(ctx *Context, di uint32, rnd erand.Rand) {
 
 // SetGoalMaintFromLayer sets the GoalMaint global state variable
 // from the average activity (CaSpkD) of the given layer name.
-// GoalMaintis normalized 0-1 based on the given max activity level,
+// GoalMaint is normalized 0-1 based on the given max activity level,
 // with anything out of range clamped to 0-1 range.
 // Returns (and logs) an error if layer name not found.
 func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, layName string, maxAct float32) error {
@@ -827,6 +906,35 @@ func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, 
 	}
 	SetGlbV(ctx, di, GvGoalMaint, gm)
 	return nil
+}
+
+// DecodeFromLayer decodes value and variance from the average activity (CaSpkD)
+// of the given layer name.  Use for decoding PVposEst and Var, and PVnegEst and Var
+func (rp *Rubicon) DecodeFromLayer(ctx *Context, di uint32, net *Network, layName string) (val, vr float32, err error) {
+	ly := net.AxonLayerByName(layName)
+	if ly == nil {
+		err = fmt.Errorf("DecodeFromLayer: layer named: %q not found", layName)
+		slog.Error(err.Error())
+		return
+	}
+	ly.UnitValues(&rp.decodeActs, "CaSpkD", int(di))
+	val = ly.Params.Acts.PopCode.Decode(rp.decodeActs)
+	vr = ly.Params.Acts.PopCode.Uncertainty(val, rp.decodeActs)
+	return
+}
+
+// SetGoalDistEst sets the current estimated distance to the goal,
+// in trial step units, which should decrease to 0 at the goal.
+// This should be set at the start of every trial.
+// Also computes the
+func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
+	prev := GlbV(ctx, di, GvGoalDistEst)
+	SetGlbV(ctx, di, GvGoalDistPrev, prev)
+	SetGlbV(ctx, di, GvGoalDistEst, dist)
+	rate := GlbV(ctx, di, GvProgressRate)
+	del := math32.Abs(dist - prev)
+	rate += rp.GiveUp.ProgressRateDt * (del - rate)
+	SetGlbV(ctx, di, GvProgressRate, rate)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -895,6 +1003,8 @@ func (rp *Rubicon) PVsFromUSs(ctx *Context, di uint32) {
 // updates global VSPatchPos and VSPatchPosSum, sets to RewPred.
 // uses max across recorded VSPatch activity levels.
 func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
+	prev := GlbV(ctx, di, GvVSPatchPos)
+	SetGlbV(ctx, di, GvVSPatchPosPrev, prev)
 	mx := float32(0)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
@@ -905,29 +1015,17 @@ func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 			mx = vs
 		}
 	}
+	v := math32.Abs(mx - prev)
+	pv := GlbV(ctx, di, GvVSPatchPosVar)
+	if v > pv {
+		pv = v
+	} else {
+		pv += rp.LHb.VSPatchVarDt * (v - pv) // decay -- negative
+	}
+	SetGlbV(ctx, di, GvVSPatchPosVar, pv)
 	SetGlbV(ctx, di, GvVSPatchPos, mx)
 	SetGlbV(ctx, di, GvRewPred, mx)
 	AddGlbV(ctx, di, GvVSPatchPosSum, mx)
-}
-
-// PVposEst returns the estimated positive PV value
-// based on drives and OFCposPT maint and VSMatrix gating
-func (rp *Rubicon) PVposEst(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
-	nd := rp.NPosUSs
-	for i := uint32(0); i < nd; i++ {
-		maint := GlbUSposV(ctx, di, GvOFCposPTMaint, i)    // avg act
-		gate := GlbUSposV(ctx, di, GvVSMatrixPoolGated, i) // bool
-		est := float32(0)
-		if maint > 0.2 || gate > 0 {
-			est = 1 // don't have value
-		}
-		rp.USs.USposEst[i] = est
-	}
-	pvPosSum, pvPos = rp.PVposEstFromUSs(ctx, di, rp.USs.USposEst)
-	if pvPos < rp.GiveUp.MinPVposEst {
-		pvPos = rp.GiveUp.MinPVposEst
-	}
-	return
 }
 
 // PVposEstFromUSs returns the estimated positive PV value
@@ -996,22 +1094,11 @@ func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, 
 	return rp.LHb.DAFromPVs(pvPos, pvNeg, vsPatchPos)
 }
 
-// GiveUpFromPV determines whether to give up on current goal
-// based on balance between estimated PVpos and accumulated PVneg.
-// returns true if give up triggered.
-func (rp *Rubicon) GiveUpFromPV(ctx *Context, di uint32, pvNeg float32, rnd erand.Rand) bool {
-	// now compute give-up
-	posEstSum, posEst := rp.PVposEst(ctx, di)
-	vsPatchSum := GlbV(ctx, di, GvVSPatchPosSum)
-	posDisc := posEst - vsPatchSum
-	// note: cannot do ratio here because discounting can get negative
-	diff := posDisc - pvNeg
-	prob, giveUp := rp.GiveUp.Prob(-diff, rnd)
-
-	SetGlbV(ctx, di, GvPVposEst, posEst)
-	SetGlbV(ctx, di, GvPVposEstSum, posEstSum)
-	SetGlbV(ctx, di, GvPVposEstDisc, posDisc)
-	SetGlbV(ctx, di, GvGiveUpDiff, diff)
+// GiveUpOnGoal determines whether to give up on current goal
+// based on Utility, Timing, and Progress weight factors.
+func (rp *Rubicon) GiveUpOnGoal(ctx *Context, di uint32, rnd erand.Rand) bool {
+	cnSum, guSum := rp.GiveUp.Sums(ctx, di)
+	prob, giveUp := rp.GiveUp.Prob(cnSum, guSum, rnd)
 	SetGlbV(ctx, di, GvGiveUpProb, prob)
 	SetGlbV(ctx, di, GvGiveUp, num.FromBool[float32](giveUp))
 	return giveUp
@@ -1040,7 +1127,7 @@ func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	}
 
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
-		giveUp := rp.GiveUpFromPV(ctx, di, pvNeg, rnd)
+		giveUp := rp.GiveUpOnGoal(ctx, di, rnd)
 		if giveUp {
 			SetGlbV(ctx, di, GvHasRew, 1)                            // key for triggering reset
 			rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual rew

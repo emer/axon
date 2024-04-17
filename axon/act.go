@@ -656,7 +656,7 @@ func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float
 	return minParam + normVal*(maxParam-minParam)
 }
 
-// EncodeVal returns value for given value, for neuron index i
+// EncodeValue returns value for given value, for neuron index i
 // out of n total neurons. n must be 2 or more.
 func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
 	clipVal := pc.ClipValue(val)
@@ -1361,3 +1361,57 @@ func (ac *ActParams) SpikeFromVm(ctx *Context, ni, di uint32) {
 }
 
 //gosl: end act
+
+// Decode decodes value from a pattern of activation
+// as the activation-weighted-average of the unit's preferred
+// tuning values.
+// must have 2 or more values in pattern pat.
+func (pc *PopCodeParams) Decode(acts []float32) float32 {
+	n := len(acts)
+	if n < 2 {
+		return 0
+	}
+	rng := pc.Max - pc.Min
+	incr := rng / float32(n-1)
+	avg := float32(0)
+	sum := float32(0)
+	for i, act := range acts {
+		if act < 0.1 {
+			act = 0
+		}
+		trg := pc.Min + incr*float32(i)
+		avg += trg * act
+		sum += act
+	}
+	sum = math32.Max(sum, 0.2)
+	avg /= sum
+	return avg
+}
+
+// Uncertainty returns the uncertainty of the given distribution of
+// activities relative to a perfect code for the given value.
+// Uncertainty is the average unit-wise standard deviation between the
+// pop code encoding and the max-normalized activities.
+func (pc *PopCodeParams) Uncertainty(val float32, acts []float32) float32 {
+	n := len(acts)
+	if n < 2 {
+		return 0
+	}
+	mx := float32(0)
+	for _, act := range acts {
+		if act > mx {
+			mx = act
+		}
+	}
+	if mx == 0 {
+		mx = 1
+	}
+	vr := float32(0)
+	for i, act := range acts {
+		trg := pc.EncodeValue(uint32(i), uint32(n), val)
+		vi := trg - (act / mx)
+		vr += vi * vi
+	}
+	vr /= float32(n)
+	return math32.Sqrt(vr)
+}
