@@ -66,7 +66,7 @@ type Env struct {
 	Pos int `edit:"-"`
 
 	// distance from US
-	USDist int `edit:"-"`
+	Dist int `edit:"-"`
 
 	// current integer time step since last NewStart
 	Tick int `edit:"-"`
@@ -219,6 +219,7 @@ func (ev *Env) Init(run int) {
 	ev.States = make(map[string]*etensor.Float32)
 	ev.States["CS"] = etensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NCSs}, nil, nil)
 	ev.States["Pos"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
+	ev.States["Dist"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
 	ev.States["Arm"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.Config.NArms}, nil, nil)
 	ev.States["Action"] = etensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
 
@@ -244,6 +245,7 @@ func (ev *Env) NewStart() {
 		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms), -1)
 	}
 	ev.Pos = 0
+	ev.Dist = arm.Length - ev.Pos
 	ev.Tick = 0
 	ev.JustGated = false
 	ev.HasGated = false
@@ -388,6 +390,7 @@ func (ev *Env) RenderLocalist4D(name string, val int) {
 func (ev *Env) RenderState() {
 	ev.RenderLocalist("CS", ev.CurCS())
 	ev.RenderLocalist("Pos", ev.Pos)
+	ev.RenderLocalist("Dist", ev.Dist)
 	ev.RenderLocalist("Arm", ev.Arm)
 }
 
@@ -467,6 +470,9 @@ func (ev *Env) TakeAct(act Actions) {
 			}
 		}
 	}
+	// always update Dist
+	arm = ev.Config.Arms[ev.Arm]
+	ev.Dist = arm.Length - ev.Pos
 }
 
 // ConsumeUS implements the consume action at current position in given arm

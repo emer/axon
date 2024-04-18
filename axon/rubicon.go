@@ -494,7 +494,7 @@ type GiveUpParams struct {
 
 	// minimum GiveUpSum value, which is the denominator in the sigmoidal function.
 	// This minimum prevents division by zero and any other degenerate values.
-	MinGiveUpSum float32 `default:"0.5"`
+	MinGiveUpSum float32 `default:"0.1"`
 
 	// the factor multiplying utility values: cost and expected positive outcome
 	Utility float32 `default:"1"`
@@ -527,7 +527,7 @@ type GiveUpParams struct {
 
 func (gp *GiveUpParams) Defaults() {
 	gp.ProbThr = 0.5
-	gp.MinGiveUpSum = 0.5
+	gp.MinGiveUpSum = 0.1
 	gp.Utility = 1
 	gp.Timing = 2
 	gp.Progress = 1
@@ -551,7 +551,7 @@ func SigmoidFun(cnSum, guSum float32) float32 {
 func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd erand.Rand) (float32, bool) {
 	prob := SigmoidFun(cnSum, guSum)
 	giveUp := erand.BoolP32(prob, -1, rnd)
-	if prob < gp.ProbThr {
+	if prob <= gp.ProbThr {
 		giveUp = false
 	}
 	return prob, giveUp
@@ -962,6 +962,12 @@ func (rp *Rubicon) DecodePVEsts(ctx *Context, di uint32, net *Network) {
 // This should be set at the start of every trial.
 // Also computes the ProgressRate.
 func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
+	if GlbV(ctx, di, GvVSMatrixHasGated) == 0 {
+		SetGlbV(ctx, di, GvGoalDistPrev, dist)
+		SetGlbV(ctx, di, GvGoalDistEst, dist)
+		SetGlbV(ctx, di, GvProgressRate, 0)
+		return
+	}
 	prev := GlbV(ctx, di, GvGoalDistEst)
 	SetGlbV(ctx, di, GvGoalDistPrev, prev)
 	SetGlbV(ctx, di, GvGoalDistEst, dist)

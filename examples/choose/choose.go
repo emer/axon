@@ -224,7 +224,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	plUtilPTp := net.AxonLayerByName("PLutilPTp")
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
-	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
+	dist, distP := net.AddInputPulv2D("Dist", ny, ev.MaxLength+1, space)
 	arm := net.AddLayer2D("Arm", ny, narm, axon.InputLayer) // irrelevant here
 
 	///////////////////////////////////////////
@@ -251,13 +251,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFC(nil, vl, alm, almCT, almPT, almPTp, full, "VLALM") // alm predicts m1
 
 	// sensory inputs guiding action
-	// note: alm gets effort, pos via predictive coding below
+	// note: alm gets effort, dist via predictive coding below
 
-	net.ConnectLayers(pos, m1, full, axon.ForwardPrjn).AddClass("ToM1")
+	net.ConnectLayers(dist, m1, full, axon.ForwardPrjn).AddClass("ToM1")
 	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPrjn).AddClass("ToM1")
 
 	// shortcut: not needed
-	// net.ConnectLayers(pos, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+	// net.ConnectLayers(dist, vl, full, axon.ForwardPrjn).AddClass("ToVL")
 
 	// these projections are *essential* -- must get current state here
 	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).AddClass("ToVL")
@@ -284,18 +284,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBack(cs, csP, ofcNegUS, ofcNegUSCT, ofcPosUSPT, ofcNegUSPTp, full, "CSToPFC")
 
 	///////////////////////////////////////////
-	// OFC, ACC, ALM predicts pos
+	// OFC, ACC, ALM predicts dist
 
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 	// using distance and effort here in the meantime
-	net.ConnectToPFCBack(pos, posP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "PosToPFC")
-	net.ConnectToPFCBack(pos, posP, ilPos, ilPosCT, ilPosPT, ilPosPTp, full, "PosToPFC")
+	net.ConnectToPFCBack(dist, distP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "DistToPFC")
+	net.ConnectToPFCBack(dist, distP, ilPos, ilPosCT, ilPosPT, ilPosPTp, full, "PosToPFC")
 
-	net.ConnectToPFC(pos, posP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "PosToPFC")
-	net.ConnectToPFC(pos, posP, ilNeg, ilNegCT, ilNegPT, ilNegPTp, full, "PosToPFC")
+	net.ConnectToPFC(dist, distP, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, full, "DistToPFC")
+	net.ConnectToPFC(dist, distP, ilNeg, ilNegCT, ilNegPT, ilNegPTp, full, "DistToPFC")
 
 	//	alm predicts all effort, cost, sensory state vars
-	net.ConnectToPFC(pos, posP, alm, almCT, almPT, almPTp, full, "PosToPFC")
+	net.ConnectToPFC(dist, distP, alm, almCT, almPT, almPTp, full, "DistToPFC")
 
 	///////////////////////////////////////////
 	// ALM, M1 <-> OFC, ACC
@@ -315,8 +315,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// position
 
 	cs.PlaceRightOf(pvPos, space)
-	pos.PlaceRightOf(cs, space)
-	arm.PlaceRightOf(pos, space)
+	dist.PlaceRightOf(cs, space)
+	arm.PlaceRightOf(dist, space)
 
 	m1.PlaceRightOf(arm, space)
 	alm.PlaceRightOf(m1, space)
@@ -600,7 +600,7 @@ func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	ss.Stats.SetString("Debug", "") // start clear
 	net := ss.Net
-	lays := []string{"Pos", "Arm", "CS"}
+	lays := []string{"Dist", "Arm", "CS"}
 
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -631,8 +631,7 @@ func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
 	rp.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
 	rp.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.2)
 	rp.DecodePVEsts(ctx, di, ss.Net)
-	dist := float32(ev.USDist)
-	rp.SetGoalDistEst(ctx, di, dist)
+	rp.SetGoalDistEst(ctx, di, float32(ev.Dist))
 	rp.EffortUrgencyUpdate(ctx, di, 1) // note: effort can vary with terrain!
 	if ev.USConsumed >= 0 {
 		rp.SetUS(ctx, di, axon.Positive, ev.USConsumed, ev.USValue)
@@ -671,6 +670,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetInt("Di", 0)
 	ss.Stats.SetFloat("PctCortex", 0)
 	ss.Stats.SetFloat("Pos", 0)
+	ss.Stats.SetFloat("Dist", 0)
 	ss.Stats.SetFloat("Drive", 0)
 	ss.Stats.SetFloat("CS", 0)
 	ss.Stats.SetFloat("US", 0)
@@ -752,6 +752,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	ss.Stats.SetFloat32("PctCortex", ss.Config.Env.PctCortex)
 	ss.Stats.SetFloat32("Pos", float32(ev.Pos))
+	ss.Stats.SetFloat32("Dist", float32(ev.Dist))
 	ss.Stats.SetFloat32("Arm", float32(ev.Arm))
 	// ss.Stats.SetFloat32("Drive", float32(ev.Drive))
 	ss.Stats.SetFloat32("CS", float32(ev.CurCS()))
@@ -997,7 +998,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
-	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "US", "HasRew")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "Dist", "US", "HasRew")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction", "TraceState")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
