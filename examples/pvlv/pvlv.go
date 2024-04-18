@@ -152,19 +152,21 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigRubicon() {
-	pv := &ss.Net.Rubicon
-	pv.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=neg
-	pv.Defaults()
-	pv.USs.PVposGain = 2
-	pv.USs.PVnegGain = 1
-	pv.LHb.VSPatchGain = 4        // 4 def -- needs more for shorter trial count here
-	pv.LHb.VSPatchNonRewThr = 0.1 // 0.1 def
-	pv.USs.USnegGains[0] = 2      // big salient input!
+	rp := &ss.Net.Rubicon
+	rp.SetNUSs(&ss.Context, cond.NUSs, 1) // 1=neg
+	rp.Defaults()
+	rp.USs.PVposGain = 2
+	rp.USs.PVnegGain = 1
+	rp.LHb.VSPatchGain = 4        // 4 def -- needs more for shorter trial count here
+	rp.LHb.VSPatchNonRewThr = 0.1 // 0.1 def
+	rp.USs.USnegGains[0] = 2      // big salient input!
+	// note: costs weights are very low by default..
 
-	pv.Urgency.U50 = 50 // no pressure during regular trials
+	rp.Urgency.U50 = 50 // no pressure during regular trials
 	if ss.Config.Params.Rubicon != nil {
-		params.ApplyMap(pv, ss.Config.Params.Rubicon, ss.Config.Debug)
+		params.ApplyMap(rp, ss.Config.Params.Rubicon, ss.Config.Debug)
 	}
+	rp.Update()
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -386,22 +388,26 @@ func (ss *Sim) ApplyInputs() {
 // ApplyRubicon applies current Rubicon values to Context.Rubicon,
 // from given trial data.
 func (ss *Sim) ApplyRubicon(ctx *axon.Context, trl *cond.Trial) {
-	pv := &ss.Net.Rubicon
-	di := uint32(0)                    // not doing NData here -- otherwise loop over
-	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "ILposPT", 0.3)
-	pv.EffortUrgencyUpdate(ctx, di, 1)
+	rp := &ss.Net.Rubicon
+	di := uint32(0) // not doing NData here -- otherwise loop over
+	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
+	rp.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
+	rp.SetGoalMaintFromLayer(ctx, di, ss.Net, "ILposPT", 0.3)
+	rp.DecodePVEsts(ctx, di, ss.Net)
+	dist := math32.Abs(float32(3 - ev.Tick.Cur))
+	rp.SetGoalDistEst(ctx, di, dist)
+	rp.EffortUrgencyUpdate(ctx, di, 1)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			pv.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)
+			rp.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)
 		} else {
-			pv.SetUS(ctx, di, axon.Negative, trl.US, trl.USMag) // adds to neg us
+			rp.SetUS(ctx, di, axon.Negative, trl.US, trl.USMag) // adds to neg us
 		}
 	}
 	drvs := make([]float32, cond.NUSs)
 	drvs[trl.US] = 1
-	pv.SetDrives(ctx, di, 1, drvs...)
-	pv.Step(ctx, di, &ss.Net.Rand)
+	rp.SetDrives(ctx, di, 1, drvs...)
+	rp.Step(ctx, di, &ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -520,8 +526,10 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
 
 	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
-	ss.Stats.SetFloat32("PVposEstDisc", axon.GlbV(ctx, diu, axon.GvPVposEstDisc))
-	ss.Stats.SetFloat32("GiveUpDiff", axon.GlbV(ctx, diu, axon.GvGiveUpDiff))
+	ss.Stats.SetFloat32("GoalDist", axon.GlbV(ctx, diu, axon.GvGoalDistEst))
+	ss.Stats.SetFloat32("Progress", axon.GlbV(ctx, diu, axon.GvProgressRate))
+	ss.Stats.SetFloat32("GiveUpSum", axon.GlbV(ctx, diu, axon.GvGiveUpSum))
+	ss.Stats.SetFloat32("ContSum", axon.GlbV(ctx, diu, axon.GvContSum))
 	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
 
@@ -604,8 +612,10 @@ func (ss *Sim) ConfigLogItems() []string {
 	ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 
 	ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("PVposEstDisc", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUpDiff", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMin = false
+	ss.Logs.AddStatAggItem("GoalDist", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("Progress", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUpSum", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("ContSum", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 

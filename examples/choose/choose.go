@@ -172,20 +172,20 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
-	pv := &ss.Net.Rubicon
-	pv.SetNUSs(&ss.Context, trn.Config.NDrives, 1)
-	pv.Defaults()
-	pv.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
-	pv.USs.PVnegGain = .1 // global scaling of PV neg level -- was 1
-	pv.LHb.VSPatchGain = 4
-	pv.LHb.VSPatchNonRewThr = 0.2
+	rp := &ss.Net.Rubicon
+	rp.SetNUSs(&ss.Context, trn.Config.NDrives, 1)
+	rp.Defaults()
+	rp.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
+	rp.USs.PVnegGain = .1 // global scaling of RP neg level -- was 1
+	rp.LHb.VSPatchGain = 4
+	rp.LHb.VSPatchNonRewThr = 0.2
 
-	pv.USs.USnegGains[0] = 2 // big salient input!
+	rp.USs.USnegGains[0] = 2 // big salient input!
 
-	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
-	pv.Urgency.U50 = 10
+	rp.Drive.DriveMin = 0.5 // 0.5 -- should be
+	rp.Urgency.U50 = 10
 	if ss.Config.Params.Rubicon != nil {
-		params.ApplyMap(pv, ss.Config.Params.Rubicon, ss.Config.Debug)
+		params.ApplyMap(rp, ss.Config.Params.Rubicon, ss.Config.Debug)
 	}
 }
 
@@ -500,17 +500,17 @@ func (ss *Sim) ConfigLoops() {
 // after this point, so that is dealt with at end of plus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
-	pv := &ss.Net.Rubicon
+	rp := &ss.Net.Rubicon
 	mtxLy := ss.Net.AxonLayerByName("VMtxGo")
 	vlly := ss.Net.AxonLayerByName("VL")
 	threshold := float32(0.1)
 	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
-		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: pv.VSMatrix.JustGated.IsTrue()
+		justGated := mtxLy.AnyGated(diu) // not updated until plus phase: rp.VSMatrix.JustGated.IsTrue()
 		hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 		ev.InstinctAct(justGated, hasGated)
-		csGated := (justGated && !pv.HasPosUS(ctx, diu))
+		csGated := (justGated && !rp.HasPosUS(ctx, diu))
 		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
 		wasDeciding := num.ToBool(ss.Stats.Float32Di("Deciding", di))
 		if wasDeciding {
@@ -560,7 +560,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 			ss.ApplyAction(di)
 
 			switch {
-			case pv.HasPosUS(ctx, diu):
+			case rp.HasPosUS(ctx, diu):
 				trSt = armaze.TrRewarded
 			case actAct == armaze.Consume:
 				trSt = armaze.TrConsuming
@@ -627,15 +627,18 @@ func (ss *Sim) ApplyInputs() {
 // ApplyRubicon applies current Rubicon values to Context.Rubicon,
 // from given trial data.
 func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
-	pv := &ss.Net.Rubicon
-	pv.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
-	pv.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.2)
-	pv.EffortUrgencyUpdate(ctx, di, 1) // note: effort can vary with terrain!
+	rp := &ss.Net.Rubicon
+	rp.NewState(ctx, di, &ss.Net.Rand) // first before anything else is updated
+	rp.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.2)
+	rp.DecodePVEsts(ctx, di, ss.Net)
+	dist := float32(ev.USDist)
+	rp.SetGoalDistEst(ctx, di, dist)
+	rp.EffortUrgencyUpdate(ctx, di, 1) // note: effort can vary with terrain!
 	if ev.USConsumed >= 0 {
-		pv.SetUS(ctx, di, axon.Positive, ev.USConsumed, ev.USValue)
+		rp.SetUS(ctx, di, axon.Positive, ev.USConsumed, ev.USValue)
 	}
-	pv.SetDrives(ctx, di, 0.5, ev.Drives...)
-	pv.Step(ctx, di, &ss.Net.Rand)
+	rp.SetDrives(ctx, di, 0.5, ev.Drives...)
+	rp.Step(ctx, di, &ss.Net.Rand)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -709,8 +712,10 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("PVneg", 0)
 
 	ss.Stats.SetFloat("PVposEst", 0)
-	ss.Stats.SetFloat("PVposEstDisc", 0)
-	ss.Stats.SetFloat("GiveUpDiff", 0)
+	ss.Stats.SetFloat("GoalDist", 0)
+	ss.Stats.SetFloat("Progress", 0)
+	ss.Stats.SetFloat("GiveUpSum", 0)
+	ss.Stats.SetFloat("ContSum", 0)
 	ss.Stats.SetFloat("GiveUpProb", 0)
 	ss.Stats.SetFloat("GiveUp", 0)
 
@@ -775,7 +780,7 @@ func (ss *Sim) TrialStats(di int) {
 
 	diu := uint32(di)
 	ctx := &ss.Context
-	pv := &ss.Net.Rubicon
+	rp := &ss.Net.Rubicon
 	nan := math.NaN()
 	ss.Stats.SetFloat("DA", nan)
 	ss.Stats.SetFloat("RewPred", nan)
@@ -785,7 +790,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("RewPred_NR", nan)
 	ss.Stats.SetFloat("DA_GiveUp", nan)
 	da := axon.GlbV(ctx, diu, axon.GvDA)
-	if pv.HasPosUS(ctx, diu) {
+	if rp.HasPosUS(ctx, diu) {
 		ss.Stats.SetFloat32("DA", da)
 		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
@@ -809,8 +814,10 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
 
 	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
-	ss.Stats.SetFloat32("PVposEstDisc", axon.GlbV(ctx, diu, axon.GvPVposEstDisc))
-	ss.Stats.SetFloat32("GiveUpDiff", axon.GlbV(ctx, diu, axon.GvGiveUpDiff))
+	ss.Stats.SetFloat32("GoalDist", axon.GlbV(ctx, diu, axon.GvGoalDistEst))
+	ss.Stats.SetFloat32("Progress", axon.GlbV(ctx, diu, axon.GvProgressRate))
+	ss.Stats.SetFloat32("GiveUpSum", axon.GlbV(ctx, diu, axon.GvGiveUpSum))
+	ss.Stats.SetFloat32("ContSum", axon.GlbV(ctx, diu, axon.GvContSum))
 	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
 
@@ -875,7 +882,7 @@ func (ss *Sim) ActionStatsDi(di int) {
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats(di int) {
 	ctx := &ss.Context
-	pv := &ss.Net.Rubicon
+	rp := &ss.Net.Rubicon
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
@@ -896,7 +903,7 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("WrongCSGate", nan)
 	ss.Stats.SetFloat32("AChShould", nan)
 	ss.Stats.SetFloat32("AChShouldnt", nan)
-	hasPos := pv.HasPosUS(ctx, diu)
+	hasPos := rp.HasPosUS(ctx, diu)
 	if justGated {
 		ss.Stats.SetFloat32("WrongCSGate", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
 	}
@@ -1065,8 +1072,10 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("PVposEstDisc", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUpDiff", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GoalDist", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Progress", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUpSum", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ContSum", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
 
@@ -1132,7 +1141,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ctx := &ss.Context
-	pv := &ss.Net.Rubicon
+	rp := &ss.Net.Rubicon
 	if mode != etime.Analyze && mode != etime.Debug {
 		ctx.Mode = mode // Also set specifically in a Loop callback.
 	}
@@ -1154,7 +1163,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 				ss.TrialStats(di)
 				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
-				if !pv.HasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
+				if !rp.HasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
 				if ss.ViewUpdate.View != nil && di == ss.ViewUpdate.View.Di {
@@ -1196,11 +1205,11 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	ev := ss.Envs.ByModeDi(mode, di).(*armaze.Env)
 	ctx := &ss.Context
 	net := ss.Net
-	pv := &net.Rubicon
+	rp := &net.Rubicon
 	dp := ss.EnvGUI.USposData
 	ofcPosUS := net.AxonLayerByName("OFCposPT")
 	ofcmul := float32(1)
-	np := pv.NPosUSs
+	np := rp.NPosUSs
 	for i := uint32(0); i < np; i++ {
 		drv := axon.GlbUSposV(ctx, diu, axon.GvDrives, i)
 		us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
@@ -1212,7 +1221,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	}
 	dn := ss.EnvGUI.USnegData
 	ofcNegUS := net.AxonLayerByName("OFCnegPT")
-	nn := pv.NNegUSs
+	nn := rp.NNegUSs
 	for i := uint32(0); i < nn; i++ {
 		us := axon.GlbUSnegV(ctx, diu, axon.GvUSneg, i)
 		ofcP := ofcNegUS.Pool(i+1, diu)

@@ -65,6 +65,9 @@ type Env struct {
 	// current position in the Arm: 0 = at start looking in, otherwise at given distance into the arm
 	Pos int `edit:"-"`
 
+	// distance from US
+	USDist int `edit:"-"`
+
 	// current integer time step since last NewStart
 	Tick int `edit:"-"`
 

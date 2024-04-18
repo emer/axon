@@ -416,6 +416,7 @@ func (nt *NetworkBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error
 			rerr = err
 		}
 	}
+	nt.Rubicon.Update()
 	return applied, rerr
 }
 
@@ -810,6 +811,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	if nt.Rubicon.NPosUSs == 0 {
 		nt.Rubicon.SetNUSs(simCtx, 1, 1)
 	}
+	nt.Rubicon.Update()
 	ctx := &nt.Ctx
 	*ctx = *simCtx
 	ctx.NetIndexes.NetIndex = nt.NetIndex

@@ -489,8 +489,15 @@ func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) floa
 // based on Utility, Timing and Progress factors.
 type GiveUpParams struct {
 
+	// threshold on GiveUp probability, below which no give up is triggered
+	ProbThr float32 `default:"0.5"`
+
+	// minimum GiveUpSum value, which is the denominator in the sigmoidal function.
+	// This minimum prevents division by zero and any other degenerate values.
+	MinGiveUpSum float32 `default:"0.5"`
+
 	// the factor multiplying utility values: cost and expected positive outcome
-	Utility float32 `default:"5" `
+	Utility float32 `default:"1"`
 
 	// the factor multiplying timing values from VSPatch
 	Timing float32 `default:"2"`
@@ -502,7 +509,7 @@ type GiveUpParams struct {
 	// minimum utility cost and reward estimate values -- when they are below
 	// these levels (at the start) then utility is effectively neutral,
 	// so the other factors take precedence.
-	MinUtility float32
+	MinUtility float32 `default:"0.2"`
 
 	// maximum VSPatchPosSum for normalizing the value for give-up weighing
 	VSPatchSumMax float32 `default:"1"`
@@ -519,7 +526,9 @@ type GiveUpParams struct {
 }
 
 func (gp *GiveUpParams) Defaults() {
-	gp.Utility = 5
+	gp.ProbThr = 0.5
+	gp.MinGiveUpSum = 0.5
+	gp.Utility = 1
 	gp.Timing = 2
 	gp.Progress = 1
 	gp.MinUtility = 0.2
@@ -542,13 +551,17 @@ func SigmoidFun(cnSum, guSum float32) float32 {
 func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd erand.Rand) (float32, bool) {
 	prob := SigmoidFun(cnSum, guSum)
 	giveUp := erand.BoolP32(prob, -1, rnd)
+	if prob < gp.ProbThr {
+		giveUp = false
+	}
 	return prob, giveUp
 }
 
 // Sums computes the summed weighting factors that drive continue and give up
 // contributions to the probability function.
 func (gp *GiveUpParams) Sums(ctx *Context, di uint32) (cnSum, guSum float32) {
-	guU := gp.Utility * max(gp.MinUtility, GlbV(ctx, di, GvCost))
+	negSum := GlbV(ctx, di, GvPVnegSum)
+	guU := gp.Utility * max(gp.MinUtility, negSum)
 	cnU := gp.Utility * max(gp.MinUtility, GlbV(ctx, di, GvPVposEst)) // todo: var?
 	SetGlbV(ctx, di, GvGiveUpUtility, guU)
 	SetGlbV(ctx, di, GvContUtility, cnU)
@@ -570,6 +583,10 @@ func (gp *GiveUpParams) Sums(ctx *Context, di uint32) (cnSum, guSum float32) {
 	cnSum = cnU + cnT + cnP
 	SetGlbV(ctx, di, GvGiveUpSum, guSum)
 	SetGlbV(ctx, di, GvContSum, cnSum)
+
+	if guSum < gp.MinGiveUpSum {
+		guSum = gp.MinGiveUpSum
+	}
 
 	return
 }
@@ -611,7 +628,7 @@ type Rubicon struct {
 	// parameters and state for built-in drives that form the core motivations
 	// of the agent, controlled by lateral hypothalamus and associated
 	// body state monitoring such as glucose levels and thirst.
-	Drive DriveParams
+	Drive DriveParams `view:"inline"`
 
 	// urgency (increasing pressure to do something) and parameters for
 	//  updating it. Raw urgency is incremented by same units as effort,
@@ -620,7 +637,7 @@ type Rubicon struct {
 
 	// controls how positive and negative USs are weighted and integrated to
 	// compute an overall PV primary value.
-	USs USParams
+	USs USParams `view:"inline"`
 
 	// lateral habenula (LHb) parameters and state, which drives
 	// dipping / pausing in dopamine when the predicted positive
@@ -629,10 +646,10 @@ type Rubicon struct {
 	LHb LHbParams `view:"inline"`
 
 	// parameters for giving up based on PV pos - neg difference
-	GiveUp GiveUpParams
+	GiveUp GiveUpParams `view:"inline"`
 
 	// population code decoding parameters for estimates from layers
-	ValDecode popcode.OneD
+	ValDecode popcode.OneD `view:"inline"`
 
 	decodeActs []float32
 }
@@ -647,6 +664,7 @@ func (rp *Rubicon) Defaults() {
 	rp.LHb.Defaults()
 	rp.GiveUp.Defaults()
 	rp.ValDecode.Defaults()
+	rp.Update()
 }
 
 func (rp *Rubicon) Update() {
@@ -923,16 +941,32 @@ func (rp *Rubicon) DecodeFromLayer(ctx *Context, di uint32, net *Network, layNam
 	return
 }
 
+// DecodePVEsts decodes estimated PV outcome values from PVposP and PVnegP
+// prediction layers, saves in global PVposEst, Var and PVnegEst, Var
+func (rp *Rubicon) DecodePVEsts(ctx *Context, di uint32, net *Network) {
+	posEst, posVar, err := rp.DecodeFromLayer(ctx, di, net, "PVposP")
+	if err == nil {
+		SetGlbV(ctx, di, GvPVposEst, posEst)
+		SetGlbV(ctx, di, GvPVposVar, posVar)
+	}
+
+	negEst, negVar, err := rp.DecodeFromLayer(ctx, di, net, "PVnegP")
+	if err == nil {
+		SetGlbV(ctx, di, GvPVnegEst, negEst)
+		SetGlbV(ctx, di, GvPVnegVar, negVar)
+	}
+}
+
 // SetGoalDistEst sets the current estimated distance to the goal,
 // in trial step units, which should decrease to 0 at the goal.
 // This should be set at the start of every trial.
-// Also computes the
+// Also computes the ProgressRate.
 func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
 	prev := GlbV(ctx, di, GvGoalDistEst)
 	SetGlbV(ctx, di, GvGoalDistPrev, prev)
 	SetGlbV(ctx, di, GvGoalDistEst, dist)
 	rate := GlbV(ctx, di, GvProgressRate)
-	del := math32.Abs(dist - prev)
+	del := prev - dist
 	rate += rp.GiveUp.ProgressRateDt * (del - rate)
 	SetGlbV(ctx, di, GvProgressRate, rate)
 }
@@ -966,9 +1000,9 @@ func (rp *Rubicon) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 	return
 }
 
-// PVneg returns the summed weighted negative value
-// of current negative US state, where each US
-// is multiplied by a weighting factor and summed (usNegSum)
+// PVneg returns the summed weighted negative value of current
+// costs and negative US state, where each US is multiplied
+// by a weighting factor and summed (usNegSum)
 // and the normalized version of this sum (PVneg = overall negative PV)
 // as 1 / (1 + (PVnegGain * PVnegSum))
 func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {

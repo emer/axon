@@ -137,11 +137,11 @@ const (
 	// = (1 - 1/(1+PVposGain * PVposSum))
 	GvPVpos
 
-	// PVnegSum is the total weighted negative valence primary value
+	// PVnegSum is the total weighted negative valence primary values including costs
 	// = sum of Weight * Cost + Weight * USneg
 	GvPVnegSum
 
-	// PVpos is the normalized negative valence primary value
+	// PVpos is the normalized negative valence primary values, including costs
 	// = (1 - 1/(1+PVnegGain * PVnegSum))
 	GvPVneg
 
