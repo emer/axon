@@ -51,6 +51,12 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 	pj = net.ConnectLayers(acq, ext, prjn.NewOneToOne(), CTCtxtPrjn)
 	pj.AddClass("BLAAcqToExt")
 
+	pj = net.ConnectLayers(acq, acq, NewBLANovelPrjn(), InhibPrjn)
+	pj.AddClass("BLANovelInhib")
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "0.5",
+	}
+
 	if rel == relpos.Behind {
 		ext.PlaceBehind(acq, space)
 	} else {

@@ -106,6 +106,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
 	ss.Context.Defaults()
+	ss.Context.ThetaCycles = int32(ss.Config.Run.NCycles)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,6 +280,8 @@ func (ss *Sim) InitRndSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
+	ncyc := ss.Config.Run.NCycles
+
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*GoNoEnv)
 	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
@@ -287,7 +290,7 @@ func (ss *Sim) ConfigLoops() {
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, 3).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, ncyc)
 
 	nTestInc := int(1.0/ev.TestInc) + 1
 	totTstTrls := ev.TestReps * nTestInc * nTestInc
@@ -651,7 +654,7 @@ func (ss *Sim) TestStats() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// 		Gui
+// 		GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
@@ -660,7 +663,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
-	nv.Params.MaxRecs = 300
+	nv.Params.MaxRecs = ss.Config.Run.NCycles * 2
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)

@@ -32,6 +32,15 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Learn.NeuroMod.DAModGain": "0.5",
 			}},
+		{Sel: ".VSTNLayer", Desc: "all VSTN",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase":      "0.1",
+				"Layer.Acts.Kir.Gbar":         "10", // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":        "2",  // 2 > 5 >> 1 (for Kir = 10)
+				"Layer.Acts.SKCa.CaRDecayTau": "80", // 80 > 150
+				// "Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal":       "0.1",
@@ -95,7 +104,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#BLAposAcqD1", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "2.4", // 2.2 not enough to knock out novelty
+				"Layer.Inhib.Layer.Gi": "2", // 2 fine with BLANovelInhib prjn
 				"Layer.Inhib.Pool.Gi":  "1",
 			}},
 		{Sel: "#BLAnegAcqD2", Desc: "",

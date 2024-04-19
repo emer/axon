@@ -35,6 +35,15 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.BurstGain":  "0.1", // 1 def -- must be smaller given rew dynamics
 				"Layer.Learn.NeuroMod.DAModGain":  "0",   // strongly biases the gating
 			}},
+		{Sel: ".VSTNLayer", Desc: "all VSTN",
+			Params: params.Params{
+				"Layer.Acts.Init.GeBase":           "0.1",
+				"Layer.Acts.Kir.Gbar":              "10", // 10 > 5  > 2 -- key for pause
+				"Layer.Acts.SKCa.Gbar":             "2",  // 2 > 5 >> 1 (for Kir = 10)
+				"Layer.Acts.SKCa.CaRDecayTau":      "80",
+				"Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
+				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
 				// "Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def

@@ -164,7 +164,7 @@ func (ly *Layer) BLADefaults() {
 	lp.Acts.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
 	if isAcq {
-		lp.Inhib.Layer.Gi = 2.4 // acq has more input
+		lp.Inhib.Layer.Gi = 2 // acq has more input
 	} else {
 		lp.Inhib.Layer.Gi = 1.8
 		lp.Acts.Gbar.L = 0.25 // needed to not be active at start

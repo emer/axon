@@ -120,7 +120,7 @@ func (ss *Sim) New() {
 	ss.Context.ThetaCycles = int32(ss.Config.Run.NCycles)
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // 		Configs
 
 // ConfigAll configures all the elements using the standard functions
@@ -1124,7 +1124,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
-	nv.Params.MaxRecs = 300
+	nv.Params.MaxRecs = ss.Config.Run.NCycles * 2
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
