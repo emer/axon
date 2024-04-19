@@ -674,7 +674,6 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Drive", 0)
 	ss.Stats.SetFloat("CS", 0)
 	ss.Stats.SetFloat("US", 0)
-	ss.Stats.SetFloat("HasRew", 0)
 	ss.Stats.SetString("NetAction", "")
 	ss.Stats.SetString("Instinct", "")
 	ss.Stats.SetString("ActAction", "")
@@ -683,7 +682,6 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
 
-	ss.Stats.SetFloat("JustGated", 0)
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
@@ -695,36 +693,12 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("AChShould", 0)
 	ss.Stats.SetFloat("AChShouldnt", 0)
-	ss.Stats.SetFloat("Rew", 0)
+
 	ss.Stats.SetFloat("DA", 0)
-	ss.Stats.SetFloat("GoalMaint", 0)
-	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
 	ss.Stats.SetFloat("DA_GiveUp", 0)
 
-	ss.Stats.SetFloat("Time", 0)
-	ss.Stats.SetFloat("Effort", 0)
-	ss.Stats.SetFloat("Urgency", 0)
-
-	ss.Stats.SetFloat("NegUSOutcome", 0)
-	ss.Stats.SetFloat("PVpos", 0)
-	ss.Stats.SetFloat("PVneg", 0)
-
-	ss.Stats.SetFloat("PVposEst", 0)
-	ss.Stats.SetFloat("GoalDist", 0)
-	ss.Stats.SetFloat("Progress", 0)
-	ss.Stats.SetFloat("GiveUpSum", 0)
-	ss.Stats.SetFloat("ContSum", 0)
-	ss.Stats.SetFloat("GiveUpProb", 0)
-	ss.Stats.SetFloat("GiveUp", 0)
-
-	ss.Stats.SetFloat("LHbDip", 0)
-	ss.Stats.SetFloat("LHbBurst", 0)
-	ss.Stats.SetFloat("LHbDA", 0)
-
-	ss.Stats.SetFloat("CeMpos", 0)
-	ss.Stats.SetFloat("CeMneg", 0)
 	ss.Stats.SetFloat("SC", 0)
 
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
@@ -757,7 +731,6 @@ func (ss *Sim) StatCounters(di int) {
 	// ss.Stats.SetFloat32("Drive", float32(ev.Drive))
 	ss.Stats.SetFloat32("CS", float32(ev.CurCS()))
 	ss.Stats.SetFloat32("US", float32(ev.USConsumed))
-	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, uint32(di), axon.GvHasRew))
 	ss.Stats.SetString("TrialName", "trl") // todo: could have dist, US etc
 }
 
@@ -770,7 +743,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -779,60 +752,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.GatedStats(di)
 	ss.MaintStats(di)
 
-	diu := uint32(di)
-	ctx := &ss.Context
-	rp := &ss.Net.Rubicon
-	nan := math.NaN()
-	ss.Stats.SetFloat("DA", nan)
-	ss.Stats.SetFloat("RewPred", nan)
-	ss.Stats.SetFloat("Rew", nan)
-	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
-	ss.Stats.SetFloat("DA_NR", nan)
-	ss.Stats.SetFloat("RewPred_NR", nan)
-	ss.Stats.SetFloat("DA_GiveUp", nan)
-	da := axon.GlbV(ctx, diu, axon.GvDA)
-	if rp.HasPosUS(ctx, diu) {
-		ss.Stats.SetFloat32("DA", da)
-		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
-		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
-	} else {
-		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 || axon.GlbV(ctx, diu, axon.GvNegUSOutcome) > 0 {
-			ss.Stats.SetFloat32("DA_GiveUp", da)
-		} else {
-			if da <= 0 { // exclude CS da
-				ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
-				ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
-			}
-		}
-	}
-
-	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
-	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
-	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
-
-	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
-	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
-
-	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
-	ss.Stats.SetFloat32("GoalDist", axon.GlbV(ctx, diu, axon.GvGoalDistEst))
-	ss.Stats.SetFloat32("Progress", axon.GlbV(ctx, diu, axon.GvProgressRate))
-	ss.Stats.SetFloat32("GiveUpSum", axon.GlbV(ctx, diu, axon.GvGiveUpSum))
-	ss.Stats.SetFloat32("ContSum", axon.GlbV(ctx, diu, axon.GvContSum))
-	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
-
-	ss.Stats.SetFloat32("LHbDip", axon.GlbV(ctx, diu, axon.GvLHbDip))
-	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbBurst))
-	ss.Stats.SetFloat32("LHbDA", axon.GlbV(ctx, diu, axon.GvLHbPVDA))
-
-	ss.Stats.SetFloat32("CeMpos", axon.GlbV(ctx, diu, axon.GvCeMpos))
-	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))
-
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
-
-	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
-	ss.Stats.SetFloat32("AChRaw", axon.GlbV(ctx, diu, axon.GvAChRaw))
 
 	var allGood float64
 	agN := 0
@@ -998,12 +918,14 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
-	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "Dist", "US", "HasRew")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "Dist", "US")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction", "TraceState")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
+
+	axon.LogAddGlobals(&ss.Logs, &ss.Context, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
@@ -1016,7 +938,7 @@ func (ss *Sim) ConfigLogs() {
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "RewPred_NR", "MaintEarly")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "RewPred_NR", "DA_NR", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -1045,47 +967,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GoalMaint", etime.Run, etime.Epoch, etime.Trial)
 
-	li := ss.Logs.AddStatAggItem("Rew", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("DA", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("ACh", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("AChRaw", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("RewPred", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("DA_NR", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("DA_GiveUp", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-
-	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Urgency", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddStatAggItem("NegUSOutcome", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("PVpos", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GoalDist", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Progress", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUpSum", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ContSum", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddStatAggItem("LHbDip", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("LHbDA", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddStatAggItem("CeMpos", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("CeMneg", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("SC", etime.Run, etime.Epoch, etime.Trial)
 
 	// Add a special debug message -- use of etime.Debug triggers

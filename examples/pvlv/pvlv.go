@@ -509,37 +509,9 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
 	diu := uint32(0)
-	ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
-	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
-	ss.Stats.SetFloat32("VSPatch", axon.GlbV(ctx, diu, axon.GvRewPred))
 	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
-
-	ss.Stats.SetFloat32("GoalMaint", axon.GlbV(ctx, diu, axon.GvGoalMaint))
 	ss.Stats.SetFloat32("Gated", axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated))
-
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
-	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
-	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
-
-	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
-	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
-
-	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
-	ss.Stats.SetFloat32("GoalDist", axon.GlbV(ctx, diu, axon.GvGoalDistEst))
-	ss.Stats.SetFloat32("Progress", axon.GlbV(ctx, diu, axon.GvProgressRate))
-	ss.Stats.SetFloat32("GiveUpSum", axon.GlbV(ctx, diu, axon.GvGiveUpSum))
-	ss.Stats.SetFloat32("ContSum", axon.GlbV(ctx, diu, axon.GvContSum))
-	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
-
-	ss.Stats.SetFloat32("LHbDip", axon.GlbV(ctx, diu, axon.GvLHbDip))
-	ss.Stats.SetFloat32("LHbBurst", axon.GlbV(ctx, diu, axon.GvLHbBurst))
-	ss.Stats.SetFloat32("LHbDA", axon.GlbV(ctx, diu, axon.GvLHbPVDA))
-
-	ss.Stats.SetFloat32("CeMpos", axon.GlbV(ctx, diu, axon.GvCeMpos))
-	ss.Stats.SetFloat32("CeMneg", axon.GlbV(ctx, diu, axon.GvCeMneg))
-
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 
@@ -557,13 +529,15 @@ func (ss *Sim) ConfigLogs() {
 
 	// ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
+	axon.LogAddGlobals(&ss.Logs, &ss.Context, etime.Train, etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+
 	plots := ss.ConfigLogItems()
 
 	// layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	// axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Block, etime.Trial)
 	// axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
-	ss.Logs.PlotItems("DA", "VSPatch")
+	ss.Logs.PlotItems("DA", "RewPred")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -585,46 +559,6 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() []string {
-	li := ss.Logs.AddStatAggItem("DA", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.Range.Min = -1
-	li.Range.Max = 1.2
-	li.FixMin = true
-	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("ACh", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.FixMin = false
-	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("VSPatch", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.Range.Min = -1
-	li.Range.Max = 1.1
-	li.FixMin = true
-	li.FixMax = true
-	ss.Logs.AddStatAggItem("HasRew", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
-
-	ss.Logs.AddStatAggItem("Gated", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
-	ss.Logs.AddStatAggItem("GoalMaint", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
-
-	ss.Logs.AddStatAggItem("Time", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("Effort", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("Urgency", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-
-	ss.Logs.AddStatAggItem("NegUSOutcome", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("PVpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("PVneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-
-	ss.Logs.AddStatAggItem("PVposEst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("GoalDist", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("Progress", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUpSum", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("ContSum", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUpProb", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("GiveUp", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-
-	ss.Logs.AddStatAggItem("LHbDip", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial).FixMax = true
-	ss.Logs.AddStatAggItem("LHbBurst", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("LHbDA", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-
-	ss.Logs.AddStatAggItem("CeMpos", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	ss.Logs.AddStatAggItem("CeMneg", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	ss.Logs.AddStatAggItem("SC", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 
 	var plots []string
@@ -709,7 +643,7 @@ func (ss *Sim) BlockStats() {
 		dt.SetCellString("TrialType", ri, fmt.Sprintf("%s_%d", tt, trl))
 	}
 	dt.SetMetaData("DA:On", "+")
-	dt.SetMetaData("VSPatch:On", "+")
+	dt.SetMetaData("RewPred:On", "+")
 	dt.SetMetaData("DA:FixMin", "+")
 	dt.SetMetaData("DA:Min", "-1")
 	dt.SetMetaData("DA:FixMax", "-")

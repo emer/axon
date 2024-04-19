@@ -82,7 +82,7 @@ type RunConfig struct {
 type LogConfig struct {
 
 	// stats to aggregate at higher levels
-	AggStats []string `default:"['DA','VSPatch']"`
+	AggStats []string `default:"['DA','RewPred']"`
 
 	// if true, save final weights after each run
 	SaveWts bool
