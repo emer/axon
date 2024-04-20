@@ -675,7 +675,7 @@ func (ss *Sim) BlockStats() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// 		Gui
+// 		GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {

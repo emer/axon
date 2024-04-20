@@ -48,10 +48,11 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 	}
 	pj.AddClass("BLAExtToAcq")
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.PrjnScale.Abs":  "1", // 1 needed for inhibition
 		"Prjn.SWts.Init.SPct": "0",
-		"Prjn.SWts.Init.Mean": "0.5",
-		"Prjn.SWts.Init.Var":  "0.4",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
 	}
 
 	pj = net.ConnectLayers(acq, ext, prjn.NewOneToOne(), CTCtxtPrjn)
@@ -162,6 +163,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 
 // ConnectToBLAAcq adds a BLAPrjn from given sending layer to a BLA layer,
 // and configures it for acquisition parameters. Sets class to BLAAcqPrjn.
+// This is for any CS or contextual inputs that drive acquisition.
 func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
 	pj.DefParams = params.Params{
@@ -175,6 +177,8 @@ func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 
 // ConnectToBLAExt adds a BLAPrjn from given sending layer to a BLA layer,
 // and configures it for extinctrion parameters.  Sets class to BLAExtPrjn.
+// This is for any CS or contextual inputs that drive extinction neurons to fire
+// and override the acquisition ones.
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
 	pj.DefParams = params.Params{
@@ -704,11 +708,13 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	}
 	pj.AddClass("BLAToOFC", prjnClass)
 
-	pj = net.ConnectToBLAExt(ofcPosPTp, blaPosExt, p1to1)
-	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
-	pj.DefParams["Prjn.PrjnScale.Abs"] = "1"
-	pj.DefParams["Prjn.SWts.Init.Mean"] = "0.5"
-	pj.DefParams["Prjn.SWts.Init.Var"] = "0.4"
+	pj = net.ConnectLayers(ofcPosPTp, blaPosExt, p1to1, BLAPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.Com.GType":      "ModulatoryG",
+		"Prjn.PrjnScale.Abs":  "1",
+		"Prjn.SWts.Init.Mean": "0.5",
+		"Prjn.SWts.Init.Var":  "0.4",
+	}
 	pj.AddClass("PTpToBLAExt", prjnClass)
 
 	///////////////////////////////////////////

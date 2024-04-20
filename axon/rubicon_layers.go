@@ -139,6 +139,10 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	if ach >= vt.AChThr {
 		achMod = ach
 	}
+	vsPatch := GlbV(ctx, di, GvVSPatchPosThr) // note: critical to use thresholded version
+	if csNet > 0 {
+		csNet = max(0, csNet-vsPatch) // vspatch can shunt positive CS DA, but no dipping!  that is lhb
+	}
 	csDA := achMod * vt.CeMGain * csNet
 
 	// note that ach is only on cs -- should be 1 for PV events anyway..
@@ -184,6 +188,7 @@ func (ly *Layer) BLADefaults() {
 		lp.Learn.NeuroMod.BurstGain = 0.2
 		lp.Learn.NeuroMod.DipGain = 0
 	} else {
+		lp.Learn.NeuroMod.DAModGain = 0 // critical to be 0 here, otherwise penalizes CS onset activity!
 		lp.Learn.NeuroMod.BurstGain = 1
 		lp.Learn.NeuroMod.DipGain = 1
 	}

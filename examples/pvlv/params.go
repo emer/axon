@@ -49,9 +49,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#BLAposExtD2", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":           "1.8",
+				"Layer.Inhib.Layer.Gi":           "1.8", // 1.8 puts just under water
 				"Layer.Inhib.Pool.Gi":            "1.0",
-				"Layer.Learn.NeuroMod.DAModGain": "1",
+				"Layer.Learn.NeuroMod.DAModGain": "0", // critical to be 0 -- otherwise prevents CS onset activity!
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -100,13 +100,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":  "0.05", // 0.02 allows .5 CS for B50
+				"Prjn.Learn.LRate.Base":  "0.05", // 0.05 is fine -- maybe a bit fast
 				"Prjn.BLA.NegDeltaLRate": "1",
 				"Prjn.PrjnScale.Abs":     "4",
-			}},
-		{Sel: ".BLAExtToAcq", Desc: "",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
 			}},
 		// {Sel: ".BLANovelInhib", Desc: "",
 		// 	Params: params.Params{
@@ -116,14 +112,17 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
 			}},
-		{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
+		{Sel: ".PTpToBLAExt", Desc: "modulatory so only active with -da, drives extinction learning based on maintained goal rep",
 			Params: params.Params{
-				// "Prjn.Learn.LRate.Base": "0.0",
 				"Prjn.PrjnScale.Abs": "1", // todo: expt
 			}},
 		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "strong, high variance",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "2", // key param for OFC focusing on current cs -- expt
+			}},
+		{Sel: ".CSToBLApos", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.LRate.Base": "0.05",
 			}},
 		{Sel: ".BLAAcqToGo", Desc: "",
 			Params: params.Params{
@@ -131,13 +130,13 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2.0", // key param for efficacy of inhibition
+				"Prjn.PrjnScale.Abs": "1.0", // key param for efficacy of inhibition
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "3",
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 needed for vspatch test
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 for vspatch -- essential to drive long enough extinction
 			}},
 		// {Sel: ".ToPTp", Desc: "",
 		// 	Params: params.Params{

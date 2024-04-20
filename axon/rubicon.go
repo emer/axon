@@ -440,9 +440,10 @@ func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) 
 			burst = rpe
 		}
 	} else { // not worth it: net negative but moderated (discounted) by strength of positive
-		// with accumulated vs expectation thrown in as well!
-		rew = -lh.DipGain*pvNeg*(1-pvPos) - vsPatchPosSum
-		dip = -rew // magnitude
+		// also ensure that we at least get the accumulated expectation from vspatch
+		neg := max(lh.DipGain*pvNeg*(1-pvPos), vsPatchPosSum)
+		rew = -neg
+		dip = neg // magnitude
 	}
 	da = burst - dip
 	return
@@ -467,7 +468,8 @@ func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos, 
 // In this case, inhibition of VS via tonic ACh is assumed to prevent
 // activity of PVneg (and there is no PVpos).
 // Because the LHb only responds when it decides to GiveUp,
-// there is essentially no response in this case.
+// there is no response in this case.
+// DA is instead driven by CS-based computation, in rubicon_layers.go, VTAParams.VTADA
 func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32) float32 {
 	SetGlbV(ctx, di, GvLHbDip, 0)
 	SetGlbV(ctx, di, GvLHbBurst, 0)
