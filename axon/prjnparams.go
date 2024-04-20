@@ -431,12 +431,7 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 	dwt := float32(0)
 	ach := GlbV(ctx, di, GvACh)
 	if GlbV(ctx, di, GvHasRew) > 0 { // learn and reset
-		ract := float32(0)
-		if subPool.AvgMax.CaSpkD.Plus.Max > pj.Learn.Trace.LearnThr+0.1 {
-			ract = NrnV(ctx, ri, di, CaSpkD)
-		} else {
-			ract = NrnV(ctx, ri, di, GeIntNorm)
-		}
+		ract := NrnV(ctx, ri, di, CaSpkD)
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
 		}

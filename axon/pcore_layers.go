@@ -374,7 +374,8 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Acts.Init.GeVar = 0.1
 	ly.Params.Acts.Init.GiVar = 0.1
 	ly.Params.Acts.SKCa.Gbar = 2
-	ly.Params.Acts.Kir.Gbar = 10 // 10 > 5 -- key for pause
+	ly.Params.Acts.SKCa.CaRDecayTau = 80 // 80 > 150 for longer theta windows
+	ly.Params.Acts.Kir.Gbar = 10         // 10 > 5 -- key for pause
 	ly.Params.Acts.Decay.Act = 0
 	ly.Params.Acts.Decay.Glong = 0
 	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately

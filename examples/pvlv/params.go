@@ -49,8 +49,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#BLAposExtD2", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "1.8",
-				"Layer.Inhib.Pool.Gi":  "1.0",
+				"Layer.Inhib.Layer.Gi":           "1.8",
+				"Layer.Inhib.Pool.Gi":            "1.0",
+				"Layer.Learn.NeuroMod.DAModGain": "1",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -64,7 +65,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
-				"Layer.CT.GeGain": "0.05", // stronger ptp
+				"Layer.CT.GeGain": "0.1", // 0.05 orig; stronger ptp
 			}},
 		{Sel: ".LDTLayer", Desc: "",
 			Params: params.Params{
@@ -73,7 +74,7 @@ var ParamSets = netparams.Sets{
 		{Sel: "#OFCposPTp", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Pool.Gi":        "1",
-				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 -- affects how strongly BLA is driven -- key param
+				"Layer.Inhib.ActAvg.Nominal": "0.025", // 0.1 -- affects how strongly BLA is driven -- key param
 			}},
 		// {Sel: "#OFCposPT", Desc: "",
 		// 	Params: params.Params{
@@ -88,13 +89,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Pulv.DriveScale": "0.2", // 0.1 def
 			}},
 		//////////////////////////////////////////////////
-		// required custom params for this project
-		{Sel: "#ContextInToBLAposExtD2", Desc: "specific to this project",
-			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "4",
-				"Prjn.Learn.LRate.Base": "0.1",
-			}},
-		//////////////////////////////////////////////////
 		// current experimental settings
 		{Sel: ".VSMatrixPrjn", Desc: "",
 			Params: params.Params{
@@ -106,13 +100,18 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":  "0.005", // 0.02 allows .5 CS for B50
+				"Prjn.Learn.LRate.Base":  "0.05", // 0.02 allows .5 CS for B50
 				"Prjn.BLA.NegDeltaLRate": "1",
+				"Prjn.PrjnScale.Abs":     "4",
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Prjn.PrjnScale.Abs": "2",
 			}},
+		// {Sel: ".BLANovelInhib", Desc: "",
+		// 	Params: params.Params{
+		// 		"Prjn.PrjnScale.Abs": "0.2",
+		// 	}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs": "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
@@ -120,7 +119,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 			Params: params.Params{
 				// "Prjn.Learn.LRate.Base": "0.0",
-				"Prjn.PrjnScale.Abs": "0.5", // todo: expt
+				"Prjn.PrjnScale.Abs": "1", // todo: expt
 			}},
 		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "strong, high variance",
 			Params: params.Params{
@@ -132,7 +131,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0", // key param for efficacy of inhibition
+				"Prjn.PrjnScale.Abs": "2.0", // key param for efficacy of inhibition
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{

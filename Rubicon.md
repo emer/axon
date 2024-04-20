@@ -30,6 +30,8 @@ In the goal-driven paradigm, the Pavlovian _conditioned stimulus_ (CS) is a sign
 
 The most relevant and challenging aspect of classical conditioning in this context is recognizing when an expected US is _not_ actually going to happen.  A non-reward trial is, superficially, indistinguishable from any other moment in time when nothing happens.  It is only because of the maintained internal expectation that it takes on significance, when this nothing happens instead of the expected something.  In the Rubicon framework, this expectation is synonymous with the maintained goal state, and thus a non-reward trial represents a goal failure state, and the proper processing of this goal failure requires a decision to [give up](#give-up) on the engaged goal.  The mechanics of this give-up decision and resulting dopamine and other learning effects are thus tested by simple partial reinforcement and extinction conditioning paradigms, in ways that were explored to some extent in the PVLV paper [Mollick et al, 2020](#references).
 
+One of the most important conceptual advances achieved by integrating this goal-engaged framing with the PVLV model is in better understanding the central role of the LHb (lateral habenula), which is hypothesized to be responsible for integrating a variety of different signals to decide when to give up.  For example, the PVLV model incorporated the otherwise obscure distinction that the shunting of phasic DA bursts was driven directly by neurons in the VS, but dips are driven by the LHb.  This now makes complete sense: if a reward is actually delivered, then there is a direct bottom-up sensory input that directly drives DA, and there is no need for any complex decision making about this case: the VS can just shunt the DA drive in proportion to its learned expectations.  However, if the reward is omitted, the decision to recognize and process this as a sense of "disappointment" is a much more active one, requiring the integration of multiple factors, and thus a specialized brain system for doing so (the LHb).
+
 The following sections provide a more detailed overview of the different components of the Rubicon model, followed by implementational details about learning equations and more specific dynamics.  Throughout this document, we focus on the computational and algorithmic interpretation of the known biological systems, without providing a detailed accounting of the relevant neuroscientific literature.  As such, everything stated here represents a crystalized hypothesis about the function of the relevant brain systems, without repeating that important caveat every time.
 
 ## Goal Representations in vmPFC
@@ -132,7 +134,7 @@ This division of labor is consistent with a considerable amount of data [Hazy et
 
 As noted above and articulated in the PVLV papers, a central challenge that any RL model must solve is to make learning dependent on expectations such that the *absence* of an expected outcome can serve as a learning event, with the appropriate effects.  This is critical for **extinction** learning, when an expected reward outcome no longer occurs, and the system must learn to no longer have this expectation of reward.  This issue is particularly challenging for PVLV because extinction learning involves different pathways than initial acquisition (e.g., BLA Ext vs. Acq layers, VSPatch, and the LHb dipping), so indirect effects of expectation are required.
 
-The basic PVLV extinction dynamic involves the sustained goal engaged state, specifically in the OFC PT maintenance layer, driving learned `VSPatch` activity at the time of the expected US outcome.  The VSPatch then drives the LHb which in turn drives dipping (pausing) of VTA activity, which in turn causes widespread new learning to extinguish the CS -- US association.  This seemingly over-elaborate chain of activity, and the need for a separate brain area involved in driving dipping of dopamine firing, makes more sense when we consider the further computations required in determining when goal failure should occur, as discussed below, after first reviewing some of the other effects of LHb firing.
+The basic PVLV extinction dynamic involves the sustained goal engaged state, specifically in the OFC PT maintenance layer, driving learned `VSPatch` activity at the time of the expected US outcome.  The VSPatch then drives the LHb which in turn drives dipping (pausing) of VTA activity, which in turn causes widespread new learning to extinguish the CS -- US association.  As noted above, this seemingly over-elaborate chain of activity, and the need for a separate brain area involved in driving dipping of dopamine firing, makes more sense when we consider the further computations required in determining when goal failure should occur.
 
 ### LHb: The Brain's Extinguisher
 
@@ -388,6 +390,19 @@ There are often multiple ways of implementing a given component, that differ in 
 * BLAExt vs. Acq could be more robust -- Ext activity depends on PT -> Ext strength..
 
 # TODO
+
+* ACh and negative DA are out of sync for GiveUp: key point: LHb doesn't do any dipping *until* the point of give up!   then it sends in the full negative wallop.  don't just read out of VSPatch -- use LHb-mediated signal.  this also relates to NR -- if NR, no VSPatch!  done!  forget about the threshold!
+
+* need threshold on VSPatch to accumulate into Sum for giveup -- ignore small.
+
+* BLA activity is strongly DA modulated instead of ach -- that gives the delta for Ext learning.  Keep -da mod for context too, but NOT for regular CS inputs.  Key: need BLAExt to activate at CS with nothing else going on -- so no DA, ACh mod for direct CS pathway, but do need DA mod for ctxt pathway to activate on giveup.
+
+* add a few more trials at end of pvlv to allow for give up to kick in.
+
+* in general during acq (or acq of ext), BLA should NOT be active, then it is.
+
+* BLAExt not extinguishing in pvlv -- need it to be stronger -- now that BLA Acq inhib is 2 instead of 2.2
+
 
 
 # References

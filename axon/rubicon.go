@@ -428,7 +428,7 @@ func (lh *LHbParams) Reset(ctx *Context, di uint32) {
 // activity from given pvPos, pvNeg, and vsPatchPos values.
 // Also returns the net "reward" value as the discounted PV value,
 // separate from the vsPatchPos prediction error factor.
-func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
+func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) (burst, dip, da, rew float32) {
 	thr := lh.NegThr * pvNeg
 	net := pvPos - thr // if > 0, net positive outcome; else net negative (not worth it)
 	if net > 0 {       // worth it
@@ -440,7 +440,8 @@ func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da
 			burst = rpe
 		}
 	} else { // not worth it: net negative but moderated (discounted) by strength of positive
-		rew = -lh.DipGain * pvNeg * (1 - pvPos)
+		// with accumulated vs expectation thrown in as well!
+		rew = -lh.DipGain*pvNeg*(1-pvPos) - vsPatchPosSum
 		dip = -rew // magnitude
 	}
 	da = burst - dip
@@ -451,8 +452,8 @@ func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da
 // and PVDA ~= Burst - Dip, for case when there is a primary
 // positive reward value or a give-up state has triggered.
 // Returns the overall net reward magnitude, prior to VSPatch discounting.
-func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos float32) float32 {
-	burst, dip, da, rew := lh.DAFromPVs(pvPos, pvNeg, vsPatchPos)
+func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) float32 {
+	burst, dip, da, rew := lh.DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum)
 	SetGlbV(ctx, di, GvLHbDip, dip)
 	SetGlbV(ctx, di, GvLHbBurst, burst)
 	SetGlbV(ctx, di, GvLHbPVDA, da)
@@ -461,25 +462,17 @@ func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos f
 	return rew
 }
 
-// DAforNoUS computes the overall LHb Dip = vsPatchPos,
-// and PVDA ~= -Dip, for case when there is _NOT_ a primary
+// DAforNoUS computes the LHb response when there is _NOT_ a primary
 // positive reward value or a give-up state.
-// In this case, inhibition of VS via ACh is assumed to prevent activity of PVneg
-// (and there is no PVpos), so only vsPatchPos is operative.
-// Returns net dopamine which is -vsPatchPos.
-func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32, vsPatchPos float32) float32 {
-	if vsPatchPos < lh.VSPatchNonRewThr {
-		vsPatchPos = 0
-	}
-	SetGlbV(ctx, di, GvVSPatchPosThr, vsPatchPos) // yes thresholding
-
-	burst := float32(0)
-	dip := vsPatchPos
-	SetGlbV(ctx, di, GvVSPatchPosRPE, -vsPatchPos)
-	SetGlbV(ctx, di, GvLHbDip, dip)
-	SetGlbV(ctx, di, GvLHbBurst, burst)
-	SetGlbV(ctx, di, GvLHbPVDA, burst-dip)
-	return burst - dip
+// In this case, inhibition of VS via tonic ACh is assumed to prevent
+// activity of PVneg (and there is no PVpos).
+// Because the LHb only responds when it decides to GiveUp,
+// there is essentially no response in this case.
+func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32) float32 {
+	SetGlbV(ctx, di, GvLHbDip, 0)
+	SetGlbV(ctx, di, GvLHbBurst, 0)
+	SetGlbV(ctx, di, GvLHbPVDA, 0)
+	return 0
 }
 
 //////////////////////////////////////////////////////////
@@ -1065,7 +1058,13 @@ func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 	SetGlbV(ctx, di, GvVSPatchPosVar, pv)
 	SetGlbV(ctx, di, GvVSPatchPos, mx)
 	SetGlbV(ctx, di, GvRewPred, mx)
-	AddGlbV(ctx, di, GvVSPatchPosSum, mx)
+	thr := mx
+	if mx < rp.LHb.VSPatchNonRewThr {
+		thr = 0
+	}
+	SetGlbV(ctx, di, GvVSPatchPosRPE, -mx) // default for non-us cases
+	SetGlbV(ctx, di, GvVSPatchPosThr, thr)
+	AddGlbV(ctx, di, GvVSPatchPosSum, thr) // key: use thresholded!
 }
 
 // PVposEstFromUSs returns the estimated positive PV value
@@ -1130,8 +1129,8 @@ func (rp *Rubicon) PVcostEstFromCosts(costs []float32) (pvCostSum, pvNeg float32
 // activity from given pvPos, pvNeg, and vsPatchPos values.
 // Also returns the net "reward" value as the discounted PV value,
 // separate from the vsPatchPos prediction error factor.
-func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos float32) (burst, dip, da, rew float32) {
-	return rp.LHb.DAFromPVs(pvPos, pvNeg, vsPatchPos)
+func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) (burst, dip, da, rew float32) {
+	return rp.LHb.DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum)
 }
 
 // GiveUpOnGoal determines whether to give up on current goal
@@ -1158,10 +1157,11 @@ func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	pvPos := GlbV(ctx, di, GvPVpos)
 	pvNeg := GlbV(ctx, di, GvPVneg)
 	vsPatchPos := GlbV(ctx, di, GvVSPatchPos)
+	vsPatchPosSum := GlbV(ctx, di, GvVSPatchPosSum)
 
 	if hasRew {
 		rp.ResetGiveUp(ctx, di)
-		rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual pos rew
+		rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual pos rew
 		SetGlbV(ctx, di, GvRew, rew)
 		return
 	}
@@ -1169,14 +1169,14 @@ func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
 	if GlbV(ctx, di, GvVSMatrixHasGated) > 0 {
 		giveUp := rp.GiveUpOnGoal(ctx, di, rnd)
 		if giveUp {
-			SetGlbV(ctx, di, GvHasRew, 1)                            // key for triggering reset
-			rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos) // only when actual rew
+			SetGlbV(ctx, di, GvHasRew, 1)                                           // key for triggering reset
+			rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual rew
 			SetGlbV(ctx, di, GvRew, rew)
 			return
 		}
 	}
 
 	// no US regular case
-	rp.LHb.DAforNoUS(ctx, di, vsPatchPos)
+	rp.LHb.DAforNoUS(ctx, di)
 	SetGlbV(ctx, di, GvRew, 0)
 }

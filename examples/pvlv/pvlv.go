@@ -512,6 +512,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
 	ss.Stats.SetFloat32("Gated", axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated))
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
+	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 
@@ -651,10 +652,14 @@ func (ss *Sim) BlockStats() {
 	ss.Logs.MiscTables[stnm] = dt
 
 	// grab selected stats at CS and US for higher level aggregation,
-	// assuming 5 trials per sequence etc
-	nseq := dt.Rows / 5
+	nrows := dt.Rows
+	if nrows > 8 {
+		nrows /= 2
+	}
+
+	nseq := dt.Rows / nrows
 	for seq := 0; seq < nseq; seq++ {
-		sst := seq * 5
+		sst := seq * nrows
 		ss.Stats.SetStringDi("TrialType", seq, dt.CellString("Trialtype", sst+1))
 		for _, st := range ss.Config.Log.AggStats {
 			ss.Stats.SetFloatDi("CS_"+st, seq, dt.CellFloat(st, sst+1))

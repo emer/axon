@@ -11,7 +11,7 @@ var (
 
 	NStims = 12
 
-	MaxTime = 6
+	MaxTime = DefTicks + 3
 
 	USShape = []int{1, NUSs}
 

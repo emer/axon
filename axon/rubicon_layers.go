@@ -139,8 +139,7 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	if ach >= vt.AChThr {
 		achMod = ach
 	}
-	vsPatch := GlbV(ctx, di, GvVSPatchPosThr) // note: critical to use thresholded version
-	csDA := achMod*vt.CeMGain*csNet - vsPatch
+	csDA := achMod * vt.CeMGain * csNet
 
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)
@@ -190,14 +189,6 @@ func (ly *Layer) BLADefaults() {
 	}
 	lp.Learn.NeuroMod.AChLRateMod = 1
 	lp.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
-
-	for _, pj := range ly.RcvPrjns {
-		slay := pj.Send
-		if slay.LayerType() == BLALayer && !strings.Contains(slay.Nm, "Novel") { // inhibition from Ext
-			pj.Params.SetFixedWts()
-			pj.Params.PrjnScale.Abs = 2
-		}
-	}
 }
 
 // RubiconPostBuild is used for BLA, VSPatch, and PVLayer types to set NeuroMod params

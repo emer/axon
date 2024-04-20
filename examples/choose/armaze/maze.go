@@ -286,7 +286,7 @@ func (ev *Env) ExValueUtil(pv *axon.Rubicon, ctx *axon.Context) {
 		cost[0] = exTime
 		cost[1] = exTime * arm.Effort.Midpoint()
 		_, pvNeg := pv.PVcostEstFromCosts(cost)
-		burst, dip, da, rew := pv.DAFromPVs(pvPos, pvNeg, 0)
+		burst, dip, da, rew := pv.DAFromPVs(pvPos, pvNeg, 0, 0)
 		_, _, _ = burst, dip, rew
 		arm.ExPVpos = pvPos
 		arm.ExPVneg = pvNeg

@@ -37,12 +37,8 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSTNLayer", Desc: "all VSTN",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase":           "0.1",
-				"Layer.Acts.Kir.Gbar":              "10", // 10 > 5  > 2 -- key for pause
-				"Layer.Acts.SKCa.Gbar":             "2",  // 2 > 5 >> 1 (for Kir = 10)
-				"Layer.Acts.SKCa.CaRDecayTau":      "80",
-				"Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+				"Layer.Acts.Init.GeBase":      "0.1", // todo: re-param with more stn, increase..
+				"Layer.Acts.SKCa.CaRDecayTau": "80",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{

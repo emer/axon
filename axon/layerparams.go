@@ -507,7 +507,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	case BLALayer:
 		// only for ext type:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			geCtxt := GlbV(ctx, di, GvACh) * ly.CT.GeGain * NrnV(ctx, ni, di, CtxtGeOrig)
+			mod := max(-GlbV(ctx, di, GvDA), 0)
+			geCtxt := mod * ly.CT.GeGain * NrnV(ctx, ni, di, CtxtGeOrig)
 			AddNrnV(ctx, ni, di, GeRaw, geCtxt)
 			ctxExt := ly.Acts.Dt.GeSynFromRawSteady(geCtxt)
 			AddNrnV(ctx, ni, di, GeSyn, ctxExt)
@@ -634,8 +635,9 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 		}
 		extraSyn = mod
 	case BLALayer:
-		extraRaw = ach * nrnGModRaw * ly.Acts.Dend.ModGain
-		extraSyn = ach * nrnGModSyn * ly.Acts.Dend.ModGain
+		mod := max(-GlbV(ctx, di, GvDA), 0)
+		extraRaw = mod * nrnGModRaw * ly.Acts.Dend.ModGain
+		extraSyn = mod * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
 		if ly.Acts.Dend.HasMod.IsTrue() {
 			mod := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn

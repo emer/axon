@@ -47,14 +47,37 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 		"Prjn.PrjnScale.Abs": "0.5", // key param for efficacy of inhibition -- may need to tweak
 	}
 	pj.AddClass("BLAExtToAcq")
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs":  "2",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.5",
+		"Prjn.SWts.Init.Var":  "0.4",
+	}
 
 	pj = net.ConnectLayers(acq, ext, prjn.NewOneToOne(), CTCtxtPrjn)
 	pj.AddClass("BLAAcqToExt")
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "2",
+	}
 
 	pj = net.ConnectLayers(acq, acq, NewBLANovelPrjn(), InhibPrjn)
 	pj.AddClass("BLANovelInhib")
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "0.5",
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.PrjnScale.Abs":  "0.5",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
+	}
+
+	pj = net.ConnectLayers(ext, acq, NewBLANovelPrjn(), InhibPrjn)
+	pj.AddClass("BLANovelInhib")
+	pj.DefParams = params.Params{
+		"Prjn.Learn.Learn":    "false",
+		"Prjn.PrjnScale.Abs":  "0.5",
+		"Prjn.SWts.Init.SPct": "0",
+		"Prjn.SWts.Init.Mean": "0.8",
+		"Prjn.SWts.Init.Var":  "0.0",
 	}
 
 	if rel == relpos.Behind {
@@ -155,9 +178,10 @@ func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.LRate.Base":  "0.005", // 0.02 for pvlv CS 50% balance
-		"Prjn.Learn.Trace.Tau":   "1",     // increase for second order conditioning
-		"Prjn.BLA.NegDeltaLRate": "1",     // fast for extinction unlearning -- could be slower
+		"Prjn.PrjnScale.Abs":     "4",
+		"Prjn.Learn.LRate.Base":  "0.05", // 0.02 for pvlv CS 50% balance
+		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "1",    // fast for extinction unlearning -- could be slower
 	}
 	pj.AddClass("BLAExtPrjn")
 	return pj
@@ -682,7 +706,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 
 	pj = net.ConnectToBLAExt(ofcPosPTp, blaPosExt, p1to1)
 	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
-	pj.DefParams["Prjn.PrjnScale.Abs"] = "0.5"
+	pj.DefParams["Prjn.PrjnScale.Abs"] = "1"
 	pj.DefParams["Prjn.SWts.Init.Mean"] = "0.5"
 	pj.DefParams["Prjn.SWts.Init.Var"] = "0.4"
 	pj.AddClass("PTpToBLAExt", prjnClass)
