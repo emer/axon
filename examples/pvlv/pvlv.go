@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
@@ -350,7 +351,7 @@ func (ss *Sim) UpdateLoopMax() {
 	trn := ss.Loops.Stacks[etime.Train]
 	trn.Loops[etime.Condition].Counter.Max = ev.Condition.Max
 	trn.Loops[etime.Block].Counter.Max = ev.Block.Max
-	trn.Loops[etime.Sequence].Counter.Max = ev.Trial.Max
+	trn.Loops[etime.Sequence].Counter.Max = ev.Sequence.Max
 	trn.Loops[etime.Trial].Counter.Max = ev.Tick.Max
 
 	if ss.Config.Env.SetNBlocks {
@@ -378,16 +379,16 @@ func (ss *Sim) ApplyInputs() {
 		}
 		switch lnm {
 		case "CS":
-			ly.Pool(0, 0).Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
+			ly.Pool(0, 0).Inhib.Clamped.SetBool(ev.CurTick.CSOn)
 		}
 	}
-	ss.ApplyRubicon(ctx, &ev.CurTrial)
+	ss.ApplyRubicon(ctx, &ev.CurTick)
 	net.ApplyExts(ctx) // now required for GPU mode
 }
 
 // ApplyRubicon applies current Rubicon values to Context.Rubicon,
 // from given trial data.
-func (ss *Sim) ApplyRubicon(ctx *axon.Context, trl *cond.Trial) {
+func (ss *Sim) ApplyRubicon(ctx *axon.Context, seq *cond.Sequence) {
 	rp := &ss.Net.Rubicon
 	di := uint32(0) // not doing NData here -- otherwise loop over
 	ev := ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
@@ -397,15 +398,15 @@ func (ss *Sim) ApplyRubicon(ctx *axon.Context, trl *cond.Trial) {
 	dist := math32.Abs(float32(3 - ev.Tick.Cur))
 	rp.SetGoalDistEst(ctx, di, dist)
 	rp.EffortUrgencyUpdate(ctx, di, 1)
-	if trl.USOn {
-		if trl.Valence == cond.Pos {
-			rp.SetUS(ctx, di, axon.Positive, trl.US, trl.USMag)
+	if seq.USOn {
+		if seq.Valence == cond.Pos {
+			rp.SetUS(ctx, di, axon.Positive, seq.US, seq.USMag)
 		} else {
-			rp.SetUS(ctx, di, axon.Negative, trl.US, trl.USMag) // adds to neg us
+			rp.SetUS(ctx, di, axon.Negative, seq.US, seq.USMag) // adds to neg us
 		}
 	}
 	drvs := make([]float32, cond.NUSs)
-	drvs[trl.US] = 1
+	drvs[seq.US] = 1
 	rp.SetDrives(ctx, di, 1, drvs...)
 	rp.Step(ctx, di, &ss.Net.Rand)
 }
@@ -481,6 +482,9 @@ func (ss *Sim) NewRun() {
 func (ss *Sim) InitStats() {
 	ss.Stats.SetString("Debug", "") // special debug notes per trial
 	ss.Stats.SetString("Cond", "")
+	ss.Stats.SetString("TrialName", "")
+	ss.Stats.SetString("SeqType", "")
+	ss.Stats.SetString("TickType", "")
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -491,8 +495,10 @@ func (ss *Sim) StatCounters() {
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
-	ss.Stats.SetString("TrialName", ev.TrialName)
-	ss.Stats.SetString("TrialType", ev.TrialType)
+	ss.Stats.SetString("TrialName", ev.SequenceName)
+	ss.Stats.SetString("SeqType", ev.SequenceType)
+	trl := ss.Stats.Int("Trial")
+	ss.Stats.SetString("TickType", fmt.Sprintf("%02d_%s", trl, ev.CurTick.Type.String()))
 	ss.Stats.SetString("Cond", ev.CondName)
 }
 
@@ -501,7 +507,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		return
 	}
 	ss.StatCounters()
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle", "Time", "HasRew", "Gated", "GiveUp"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "SeqType", "TrialName", "TickType", "Cycle", "Time", "HasRew", "Gated", "GiveUp"})
 }
 
 // TrialStats computes the tick-level statistics.
@@ -526,7 +532,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "Cond")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialType")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "SeqType")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TickType")
 
 	// ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -630,18 +637,18 @@ func (ss *Sim) BlockStats() {
 	stnm := "BlockByType"
 
 	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
-	spl := split.GroupBy(ix, []string{"TrialType", "Trial"})
+	spl := split.GroupBy(ix, []string{"SeqType", "TickType"})
 	for _, ts := range ix.Table.ColNames {
-		if ts == "TrialType" || ts == "TrialName" || ts == "Trial" {
+		if ts == "SeqType" || ts == "TrialName" || ts == "TickType" {
 			continue
 		}
 		split.Agg(spl, ts, agg.AggMean)
 	}
 	dt := spl.AggsToTable(etable.ColNameOnly)
 	for ri := 0; ri < dt.Rows; ri++ {
-		tt := dt.CellString("TrialType", ri)
+		tt := dt.CellString("SeqType", ri)
 		trl := int(dt.CellFloat("Trial", ri))
-		dt.SetCellString("TrialType", ri, fmt.Sprintf("%s_%d", tt, trl))
+		dt.SetCellString("SeqType", ri, fmt.Sprintf("%s_%d", tt, trl))
 	}
 	dt.SetMetaData("DA:On", "+")
 	dt.SetMetaData("RewPred:On", "+")
@@ -649,21 +656,32 @@ func (ss *Sim) BlockStats() {
 	dt.SetMetaData("DA:Min", "-1")
 	dt.SetMetaData("DA:FixMax", "-")
 	dt.SetMetaData("DA:Max", "1")
+	dt.SetMetaData("XAxisRot", "45")
 	ss.Logs.MiscTables[stnm] = dt
 
 	// grab selected stats at CS and US for higher level aggregation,
 	nrows := dt.Rows
-	if nrows > 8 {
-		nrows /= 2
-	}
-
-	nseq := dt.Rows / nrows
-	for seq := 0; seq < nseq; seq++ {
-		sst := seq * nrows
-		ss.Stats.SetStringDi("TrialType", seq, dt.CellString("Trialtype", sst+1))
-		for _, st := range ss.Config.Log.AggStats {
-			ss.Stats.SetFloatDi("CS_"+st, seq, dt.CellFloat(st, sst+1))
-			ss.Stats.SetFloatDi("US_"+st, seq, dt.CellFloat(st, sst+3))
+	curSeq := ""
+	seq := -1
+	for ri := 0; ri < nrows; ri++ {
+		st := dt.CellString("SeqType", ri)
+		ui := strings.LastIndex(st, "_")
+		st = st[:ui]
+		if curSeq != st {
+			seq++
+			curSeq = st
+			ss.Stats.SetStringDi("SeqType", seq, curSeq)
+		}
+		tt := dt.CellString("TickType", ri)
+		if strings.Contains(tt, "_CS") {
+			for _, st := range ss.Config.Log.AggStats {
+				ss.Stats.SetFloatDi("CS_"+st, seq, dt.CellFloat(st, ri))
+			}
+		}
+		if strings.Contains(tt, "_US") {
+			for _, st := range ss.Config.Log.AggStats {
+				ss.Stats.SetFloatDi("US_"+st, seq, dt.CellFloat(st, ri))
+			}
 		}
 	}
 
@@ -703,7 +721,7 @@ func (ss *Sim) ConfigGUI() {
 	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
-	plt.Params.XAxisCol = "TrialType"
+	plt.Params.XAxisCol = "SeqType"
 
 	plt.SetTable(dt)
 

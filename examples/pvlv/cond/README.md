@@ -7,7 +7,7 @@ Time hierarchy:
 * `Run` = sequence of 1 or more Conditions
 * `Condition` = specific mix of trial types, generated at start of Condition
 * `Block` = one full pass through all trial types generated for condition (like Epoch)
-* `Trial` = one behavioral trial consisting of CS -> US presentation over time steps (Ticks)
+* `Sequence` = one behavioral trial consisting of CS -> US presentation over time steps (Ticks)
 * `Tick` = discrete time steps within behavioral Trial, typically one Network update (Alpha / Theta cycle)
 
 **Be sure to do `go test` if you modify or add** runs, conds, or blocks -- it tests that everything linked in runs exists etc.
@@ -29,22 +29,22 @@ Which references these cases in AllConditions (`conds_all.go`):
 
 ```Go
 	"PosAcq_A100": {
-		Name:      "PosAcq_A100",
-		Desc:      "Standard positive valence acquisition: A = 100%",
-		Block:     "PosAcq_A100",
-		FixedProb: true,
-		NBlocks:   51,
-		NTrials:   4,
-		Permute:   true,
+		Name:       "PosAcq_A100",
+		Desc:       "Standard positive valence acquisition: A = 100%",
+		Block:      "PosAcq_A100",
+		FixedProb:  true,
+		NBlocks:    51,
+		NSequences: 4,
+		Permute:    true,
 	},
 	"PosExt_A0": {
-		Name:      "PosExt_A0",
-		Desc:      "Pavlovian extinction: A_NR_Pos, A = 0%",
-		Block:     "PosExt_A0",
-		FixedProb: false,
-		NBlocks:   50,
-		NTrials:   8,
-		Permute:   true,
+		Name:       "PosExt_A0",
+		Desc:       "Pavlovian extinction: A_NR_Pos, A = 0%",
+		Block:      "PosExt_A0",
+		FixedProb:  false,
+		NBlocks:    50,
+		NSequences: 8,
+		Permute:    true,
 	},
 ```
 

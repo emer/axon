@@ -22,8 +22,8 @@ type Condition struct {
 	// number of full blocks of different trial types to run (like Epochs)
 	NBlocks int
 
-	// number of behavioral trials per block -- blocks, with the different types of Trials specified in Block allocated across these Trials.  More different trial types and greater stochasticity (lower probability) of US presentation requires more trials.
-	NTrials int
+	// number of sequences (behavioral trials) per block, with the different types of Sequences allocated across these sequences.  More different sequence types and greater stochasticity (lower probability) of US presentation requires more sequences.
+	NSequences int
 
 	// permute list of generated trials in random order after generation -- otherwise presented in order specified in the Block type
 	Permute bool

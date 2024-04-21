@@ -14,16 +14,16 @@ import (
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
-// conditioning experiments involving CS -> US sequences (trials).
+// conditioning experiments involving CS -> US sequences.
 // Has a large database of standard conditioning paradigms
 // parameterized in a controlled manner.
 //
 // Time hierarchy:
 // * Run = sequence of 1 or more Conditions
-// * Condition = specific mix of trial types, generated at start of Condition
-// * Block = one full pass through all trial types generated for condition (like Epoch)
-// * Trial = one behavioral trial consisting of CS -> US presentation over time steps (Ticks)
-// * Tick = discrete time steps within behavioral Trial, typically one Network update (Alpha / Theta cycle)
+// * Condition = specific mix of sequence types, generated at start of Condition
+// * Block = one full pass through all sequence types generated for condition (like Epoch)
+// * Sequence = one behavioral trial consisting of CS -> US presentation over time steps (Ticks)
+// * Tick = discrete time steps within behavioral Sequence, typically one Network update (Alpha / Theta cycle)
 type CondEnv struct {
 
 	// name of this environment
@@ -53,32 +53,32 @@ type CondEnv struct {
 	// counter over Condition within a run -- Max depends on number of conditions specified in given Run
 	Condition env.Ctr `edit:"-" view:"inline"`
 
-	// counter over full blocks of all trial types within a Condition -- like an Epoch
+	// counter over full blocks of all sequence types within a Condition -- like an Epoch
 	Block env.Ctr `edit:"-" view:"inline"`
 
-	// counter of behavioral trials within a Block
-	Trial env.Ctr `edit:"-" view:"inline"`
+	// counter of behavioral sequences within a Block
+	Sequence env.Ctr `edit:"-" view:"inline"`
 
-	// counter of discrete steps within a behavioral trial -- typically maps onto Alpha / Theta cycle in network
+	// counter of discrete steps within a sequence -- typically maps onto Alpha / Theta cycle in network
 	Tick env.Ctr `edit:"-" view:"inline"`
 
-	// name of current trial step
-	TrialName string `edit:"-"`
+	// name of current sequence step
+	SequenceName string `edit:"-"`
 
-	// type of current trial step
-	TrialType string `edit:"-"`
+	// type of current sequence step
+	SequenceType string `edit:"-"`
 
 	// decoded value of USTimeIn
 	USTimeInStr string `edit:"-"`
 
-	// current generated set of trials per Block
-	Trials []*Trial
+	// current generated set of sequences per Block
+	Sequences []*Sequence
 
 	// copy of current run parameters
 	CurRun Run
 
-	// copy of info for current trial
-	CurTrial Trial
+	// the current rendered tick
+	CurTick Sequence
 
 	// current rendered state tensors -- extensible map
 	CurStates map[string]*etensor.Float32
@@ -94,7 +94,7 @@ func (ev *CondEnv) Config(rmax int, rnm string) {
 	ev.Run.Scale = env.Run
 	ev.Condition.Scale = env.Condition
 	ev.Block.Scale = env.Block
-	ev.Trial.Scale = env.Trial
+	ev.Sequence.Scale = env.Sequence
 	ev.Tick.Scale = env.Tick
 
 	ev.CurStates = make(map[string]*etensor.Float32)
@@ -141,11 +141,11 @@ func (ev *CondEnv) InitCond() {
 	ev.CondDesc = cond.Desc
 	ev.Block.Init()
 	ev.Block.Max = cond.NBlocks
-	ev.Trial.Init()
-	ev.Trial.Max = cond.NTrials
-	ev.Trials = GenerateTrials(cnm)
+	ev.Sequence.Init()
+	ev.Sequence.Max = cond.NSequences
+	ev.Sequences = SequenceReps(cnm)
 	ev.Tick.Init()
-	trl := ev.Trials[0]
+	trl := ev.Sequences[0]
 	ev.Tick.Max = trl.NTicks
 }
 
@@ -156,9 +156,9 @@ func (ev *CondEnv) State(element string) etensor.Tensor {
 func (ev *CondEnv) Step() bool {
 	ev.Condition.Same()
 	ev.Block.Same()
-	ev.Trial.Same()
+	ev.Sequence.Same()
 	if ev.Tick.Incr() {
-		if ev.Trial.Incr() {
+		if ev.Sequence.Incr() {
 			if ev.Block.Incr() {
 				if ev.Condition.Incr() {
 					if ev.Run.Incr() {
@@ -168,10 +168,10 @@ func (ev *CondEnv) Step() bool {
 				ev.InitCond()
 			}
 		}
-		trl := ev.Trials[ev.Trial.Cur]
+		trl := ev.Sequences[ev.Sequence.Cur]
 		ev.Tick.Max = trl.NTicks
 	}
-	ev.RenderTrial(ev.Trial.Cur, ev.Tick.Cur)
+	ev.RenderSequence(ev.Sequence.Cur, ev.Tick.Cur)
 	return true
 }
 
@@ -187,23 +187,24 @@ func (ev *CondEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
 		return ev.Condition.Query()
 	case env.Block:
 		return ev.Block.Query()
-	case env.Trial:
-		return ev.Trial.Query()
+	case env.Sequence:
+		return ev.Sequence.Query()
 	case env.Tick:
 		return ev.Tick.Query()
 	}
 	return -1, -1, false
 }
 
-func (ev *CondEnv) RenderTrial(trli, tick int) {
+func (ev *CondEnv) RenderSequence(trli, tick int) {
 	for _, tsr := range ev.CurStates {
 		tsr.SetZeros()
 	}
-	trl := ev.Trials[trli]
-	ev.CurTrial = *trl
+	trl := ev.Sequences[trli]
+	ev.CurTick = *trl
 
-	ev.TrialName = fmt.Sprintf("%s_%d", trl.CS, tick)
-	ev.TrialType = ev.CurTrial.Name
+	ev.SequenceName = fmt.Sprintf("%s_%d", trl.CS, tick)
+	ev.SequenceType = ev.CurTick.Name
+	ev.CurTick.Type = Pre
 
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
@@ -211,13 +212,23 @@ func (ev *CondEnv) RenderTrial(trli, tick int) {
 	time := ev.CurStates["Time"]
 	SetTime(time, ev.NYReps, tick)
 	if tick >= trl.CSStart && tick <= trl.CSEnd {
-		ev.CurTrial.CSOn = true
+		ev.CurTick.CSOn = true
+		if tick == trl.CSStart {
+			ev.CurTick.Type = CS
+		} else {
+			ev.CurTick.Type = Maint
+		}
 		cs := trl.CS[0:1]
 		stidx := SetStim(stim, ev.NYReps, cs)
 		SetUSTime(ustime, ev.NYReps, stidx, tick, trl.CSStart, trl.CSEnd)
 	}
 	if (len(trl.CS) > 1) && (tick >= trl.CS2Start) && (tick <= trl.CS2End) {
-		ev.CurTrial.CSOn = true
+		ev.CurTick.CSOn = true
+		if tick == trl.CS2Start {
+			ev.CurTick.Type = CS
+		} else {
+			ev.CurTick.Type = Maint
+		}
 		cs := trl.CS[1:2]
 		stidx := SetStim(stim, ev.NYReps, cs)
 		SetUSTime(ustime, ev.NYReps, stidx, tick, trl.CSStart, trl.CSEnd)
@@ -237,16 +248,20 @@ func (ev *CondEnv) RenderTrial(trli, tick int) {
 		SetUSTime(ustime, ev.NYReps, NStims-1, MaxTime, 0, MaxTime)
 	}
 
-	ev.CurTrial.USOn = false
+	ev.CurTick.USOn = false
 	if trl.USOn && (tick >= trl.USStart) && (tick <= trl.USEnd) {
-		ev.CurTrial.USOn = true
+		ev.CurTick.USOn = true
+		ev.CurTick.Type = US
 		if trl.Valence == Pos {
 			SetUS(ev.CurStates["USpos"], ev.NYReps, trl.US, trl.USMag)
-			ev.TrialName += fmt.Sprintf("_Pos%d", trl.US)
+			ev.SequenceName += fmt.Sprintf("_Pos%d", trl.US)
 		}
 		if trl.Valence == Neg || trl.MixedUS {
 			SetUS(ev.CurStates["USneg"], ev.NYReps, trl.US, trl.USMag)
-			ev.TrialName += fmt.Sprintf("_Neg%d", trl.US)
+			ev.SequenceName += fmt.Sprintf("_Neg%d", trl.US)
 		}
+	}
+	if tick > trl.USEnd {
+		ev.CurTick.Type = Post
 	}
 }

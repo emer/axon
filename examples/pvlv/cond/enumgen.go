@@ -46,3 +46,46 @@ func (i Valence) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *Valence) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "Valence") }
+
+var _TickTypesValues = []TickTypes{0, 1, 2, 3, 4}
+
+// TickTypesN is the highest valid value for type TickTypes, plus one.
+const TickTypesN TickTypes = 5
+
+var _TickTypesValueMap = map[string]TickTypes{`Pre`: 0, `CS`: 1, `Maint`: 2, `US`: 3, `Post`: 4}
+
+var _TickTypesDescMap = map[TickTypes]string{0: `Pre is before the CS`, 1: `CS is CS onset`, 2: `Maint is after CS before US`, 3: `US is the US`, 4: `Post is after the US`}
+
+var _TickTypesMap = map[TickTypes]string{0: `Pre`, 1: `CS`, 2: `Maint`, 3: `US`, 4: `Post`}
+
+// String returns the string representation of this TickTypes value.
+func (i TickTypes) String() string { return enums.String(i, _TickTypesMap) }
+
+// SetString sets the TickTypes value from its string representation,
+// and returns an error if the string is invalid.
+func (i *TickTypes) SetString(s string) error {
+	return enums.SetString(i, s, _TickTypesValueMap, "TickTypes")
+}
+
+// Int64 returns the TickTypes value as an int64.
+func (i TickTypes) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the TickTypes value from an int64.
+func (i *TickTypes) SetInt64(in int64) { *i = TickTypes(in) }
+
+// Desc returns the description of the TickTypes value.
+func (i TickTypes) Desc() string { return enums.Desc(i, _TickTypesDescMap) }
+
+// TickTypesValues returns all possible values for the type TickTypes.
+func TickTypesValues() []TickTypes { return _TickTypesValues }
+
+// Values returns all possible values for the type TickTypes.
+func (i TickTypes) Values() []enums.Enum { return enums.Values(_TickTypesValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i TickTypes) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *TickTypes) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "TickTypes")
+}

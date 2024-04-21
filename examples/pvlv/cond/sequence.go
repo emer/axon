@@ -19,10 +19,30 @@ const (
 	Neg
 )
 
-// Trial represents one behavioral trial, unfolding over
+// TickTypes
+type TickTypes int32 //enums:enum
+
+const (
+	// Pre is before the CS
+	Pre TickTypes = iota
+
+	// CS is CS onset
+	CS
+
+	// Maint is after CS before US
+	Maint
+
+	// US is the US
+	US
+
+	// Post is after the US
+	Post
+)
+
+// Sequence represents a sequence of ticks for one behavioral trial, unfolding over
 // NTicks individual time steps, with one or more CS's (conditioned stimuli)
 // and a US (unconditioned stimulus -- outcome).
-type Trial struct {
+type Sequence struct {
 
 	// conventional suffixes: _R = reward, _NR = non-reward; _test = test trial (no learning)
 	Name string
@@ -45,7 +65,7 @@ type Trial struct {
 	// US magnitude
 	USMag float32
 
-	// Number of ticks for a trial
+	// Number of ticks for a sequence
 	NTicks int
 
 	// Conditioned stimulus
@@ -75,42 +95,45 @@ type Trial struct {
 	// Context -- typically same as CS -- if blank CS will be copied -- different in certain extinguishing contexts
 	Context string
 
-	// for rendered trials, true if US active
+	// for rendered sequence, true if US active
 	USOn bool
 
-	// for rendered trials, true if CS active
+	// for rendered sequence, true if CS active
 	CSOn bool
+
+	// for rendered sequence, the tick type
+	Type TickTypes
 }
 
-// Block represents a set of trial types
-type Block []*Trial
+// Block represents a set of sequence types
+type Block []*Sequence
 
 func (cd *Block) Length() int {
 	return len(*cd)
 }
 
-func (cd *Block) Append(trl *Trial) {
-	*cd = append(*cd, trl)
+func (cd *Block) Append(seq *Sequence) {
+	*cd = append(*cd, seq)
 }
 
-// GenerateTrials generates repetitions of specific trial types
+// SequenceReps generates repetitions of specific sequence types
 // for given condition name, based on Pct of total blocks,
-// and sets the USOn flag for proportion of trials
+// and sets the USOn flag for proportion of sequences
 // based on USProb probability.
-// If Condition.Permute is true, order of all trials is permuted.
+// If Condition.Permute is true, order of all sequences are permuted.
 // Gets the block name from the condition name.
-func GenerateTrials(condNm string) []*Trial {
-	var trls []*Trial
+func SequenceReps(condNm string) []*Sequence {
+	var seqs []*Sequence
 	cond := AllConditions[condNm]
 	cond.Name = condNm
 	block := AllBlocks[cond.Block]
-	for _, trl := range block {
-		if trl.Context == "" {
-			trl.Context = trl.CS
+	for _, seq := range block {
+		if seq.Context == "" {
+			seq.Context = seq.CS
 		}
-		nRpt := int(math32.Round(trl.Pct * float32(cond.NTrials)))
+		nRpt := int(math32.Round(seq.Pct * float32(cond.NSequences)))
 		if nRpt < 1 {
-			if trl.Pct > 0.0 {
+			if seq.Pct > 0.0 {
 				nRpt = 1
 			} else {
 				continue // shouldn't happen
@@ -119,9 +142,9 @@ func GenerateTrials(condNm string) []*Trial {
 		useIsOnList := false
 		var usIsOn []bool
 		if cond.FixedProb {
-			if trl.USProb != 0.0 && trl.USProb != 1.0 {
+			if seq.USProb != 0.0 && seq.USProb != 1.0 {
 				useIsOnList = true
-				pn := int(math32.Round(float32(nRpt) * trl.USProb))
+				pn := int(math32.Round(float32(nRpt) * seq.USProb))
 				usIsOn = make([]bool, nRpt) // defaults to false
 				for i := 0; i < pn; i++ {
 					usIsOn[i] = true
@@ -132,24 +155,24 @@ func GenerateTrials(condNm string) []*Trial {
 			}
 		}
 		for ri := 0; ri < nRpt; ri++ {
-			trlNm := trl.Name + "_" + trl.Valence.String()
+			trlNm := seq.Name + "_" + seq.Valence.String()
 			usOn := false
 			if !useIsOnList {
-				usOn = erand.BoolP32(trl.USProb, -1)
+				usOn = erand.BoolP32(seq.USProb, -1)
 			} else {
 				usOn = usIsOn[ri]
 			}
-			curTrial := &Trial{}
-			*curTrial = *trl
-			curTrial.Name = trlNm
-			curTrial.USOn = usOn
-			trls = append(trls, curTrial)
+			curSeq := &Sequence{}
+			*curSeq = *seq
+			curSeq.Name = trlNm
+			curSeq.USOn = usOn
+			seqs = append(seqs, curSeq)
 		}
 	}
 	if cond.Permute {
-		rand.Shuffle(len(trls), func(i, j int) {
-			trls[i], trls[j] = trls[j], trls[i]
+		rand.Shuffle(len(seqs), func(i, j int) {
+			seqs[i], seqs[j] = seqs[j], seqs[i]
 		})
 	}
-	return trls
+	return seqs
 }
