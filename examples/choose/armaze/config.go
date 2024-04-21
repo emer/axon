@@ -55,8 +55,11 @@ type Config struct {
 	// number of different arms
 	NArms int
 
-	// maximum arm length (distance)
-	MaxArmLength int
+	// minimum arm length (distance) range (inclusive)
+	ArmLengths minmax.Int
+
+	// If true, group arms by minimum vs. maximum lengths -- provides a better test when using the always left strategy
+	GroupMinMax bool
 
 	// number of different CSs -- typically at least a unique CS per US -- relationship is determined in the US params
 	NCSs int
@@ -75,6 +78,7 @@ func (cfg *Config) Defaults() {
 	if cfg.NDrives == 0 {
 		cfg.NDrives = 4
 	}
+	cfg.ArmLengths.Set(4, 4)
 	cfg.Update()
 	if cfg.NCSs == 0 {
 		cfg.NCSs = cfg.NUSs

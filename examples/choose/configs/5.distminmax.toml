@@ -5,4 +5,7 @@
 NArms = 8
 NDrives = 4
 NCSs = 8
-MaxArmLength = 8
+ArmLengths.Min = 4
+ArmLengths.Max = 8
+GroupMinMax = true
+

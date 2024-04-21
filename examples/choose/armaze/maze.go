@@ -172,28 +172,29 @@ func (ev *Env) ConfigEnv(di int) {
 	cfg.Update()
 
 	ev.Drives = make([]float32, cfg.NDrives)
-	ev.Config.USs = make([]*USParams, cfg.NUSs)
-	ev.Config.Arms = make([]*Arm, cfg.NArms)
+	cfg.USs = make([]*USParams, cfg.NUSs)
+	cfg.Arms = make([]*Arm, cfg.NArms)
 
 	// log.Printf("drives: %d, USs: %d, CSs: %d", cfg.NDrives, cfg.NUSs, cfg.NCSs)
 	// log.Printf("max arm length: %d", cfg.MaxArmLength)
 
 	// defaults
-	for i := range ev.Config.Arms {
+	for i := range cfg.Arms {
 		// TODO: if we permute CSs do we also want to keep the USs aligned?
-		length := 4
-		if ev.Config.MaxArmLength > 0 {
-			length = length + ev.Rand.Intn(ev.Config.MaxArmLength, -1)
+		length := cfg.ArmLengths.Min
+		lrng := cfg.ArmLengths.Range()
+		if lrng > 0 {
+			length += ev.Rand.Intn(lrng, -1)
 		}
 		arm := &Arm{Length: length, CS: i % cfg.NCSs, US: i % cfg.NUSs}
-		ev.Config.Arms[i] = arm
+		cfg.Arms[i] = arm
 		arm.Effort.Set(1, 1)
 	}
 
 	// defaults
-	for i := range ev.Config.USs {
+	for i := range cfg.USs {
 		us := &USParams{Prob: 1}
-		ev.Config.USs[i] = us
+		cfg.USs[i] = us
 		if i < cfg.NDrives {
 			us.Negative = false
 		} else {
@@ -202,7 +203,29 @@ func (ev *Env) ConfigEnv(di int) {
 		us.Mag.Set(1, 1)
 	}
 
+	if cfg.GroupMinMax {
+		ev.ConfigGroupMinMax()
+	}
+
 	ev.UpdateMaxLength()
+}
+
+func (ev *Env) ConfigGroupMinMax() {
+	cfg := &ev.Config
+	// defaults
+	// narms := cfg.NArms
+	// nalts := narms / cfg.NUSs
+	for i, arm := range cfg.Arms {
+		ci := i / cfg.NUSs
+		ui := i % cfg.NUSs
+		arm.CS = i
+		arm.US = ui
+		if ci%2 == 0 {
+			arm.Length = cfg.ArmLengths.Max
+		} else {
+			arm.Length = cfg.ArmLengths.Min
+		}
+	}
 }
 
 func (ev *Env) Validate() error {

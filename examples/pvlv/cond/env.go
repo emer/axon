@@ -251,7 +251,6 @@ func (ev *CondEnv) RenderSequence(trli, tick int) {
 	ev.CurTick.USOn = false
 	if trl.USOn && (tick >= trl.USStart) && (tick <= trl.USEnd) {
 		ev.CurTick.USOn = true
-		ev.CurTick.Type = US
 		if trl.Valence == Pos {
 			SetUS(ev.CurStates["USpos"], ev.NYReps, trl.US, trl.USMag)
 			ev.SequenceName += fmt.Sprintf("_Pos%d", trl.US)
@@ -260,6 +259,9 @@ func (ev *CondEnv) RenderSequence(trli, tick int) {
 			SetUS(ev.CurStates["USneg"], ev.NYReps, trl.US, trl.USMag)
 			ev.SequenceName += fmt.Sprintf("_Neg%d", trl.US)
 		}
+	}
+	if (tick >= trl.USStart) && (tick <= trl.USEnd) {
+		ev.CurTick.Type = US // even if not on, this is the type
 	}
 	if tick > trl.USEnd {
 		ev.CurTick.Type = Post

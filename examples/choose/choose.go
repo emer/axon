@@ -938,7 +938,7 @@ func (ss *Sim) ConfigLogs() {
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "RewPred_NR", "DA_NR", "MaintEarly")
+	ss.Logs.PlotItems("GateCS", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
