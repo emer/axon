@@ -261,7 +261,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	se.Camera.LookAt(math32.Vec3(0, 4, -5), math32.Vec3(0, 1, 0))
 	se.SaveCamera("2")
 
-	se.Camera.Pose.Pos = math32.Vec3(0, 17, 21)
+	se.Camera.Pose.Pos = math32.Vec3(0, 24, 32)
 	se.Camera.LookAt(math32.Vec3(0, 3.6, 0), math32.Vec3(0, 1, 0))
 	se.SaveCamera("1")
 	se.SaveCamera("default")
@@ -558,7 +558,7 @@ func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
 		cm = &colormap.Map{}
 		cm.Name = cnm
 		cm.Indexed = true
-		nc := ev.Config.NCSs
+		nc := ev.Config.NArms
 		cm.Colors = make([]color.RGBA, nc)
 		cm.NoColor = colors.Black
 		for i, cnm := range vw.MatColors {

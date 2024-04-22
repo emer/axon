@@ -12,6 +12,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"math"
 	"os"
 
@@ -111,7 +112,10 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
-	econfig.Config(&ss.Config, "config.toml")
+	_, err := econfig.Config(&ss.Config, "config.toml")
+	if err != nil {
+		slog.Error(err.Error())
+	}
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
@@ -157,7 +161,10 @@ func (ss *Sim) ConfigEnv() {
 		}
 		trn.Config.NDrives = ss.Config.Env.NDrives
 		if ss.Config.Env.Config != "" {
-			econfig.Config(&trn.Config, ss.Config.Env.Config)
+			_, err := econfig.Config(&trn.Config, ss.Config.Env.Config)
+			if err != nil {
+				slog.Error(err.Error())
+			}
 		}
 		trn.ConfigEnv(di)
 		trn.Validate()
@@ -177,8 +184,8 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 	rp.Defaults()
 	rp.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
 	rp.USs.PVnegGain = .1 // global scaling of RP neg level -- was 1
-	rp.LHb.VSPatchGain = 4
-	rp.LHb.VSPatchNonRewThr = 0.2
+	rp.LHb.VSPatchGain = 5
+	rp.LHb.VSPatchNonRewThr = 0.15
 
 	rp.USs.USnegGains[0] = 2 // big salient input!
 
@@ -223,9 +230,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	plUtilPTp := net.AxonLayerByName("PLutilPTp")
 
-	cs, csP := net.AddInputPulv2D("CS", ny, ev.Config.NCSs, space)
+	cs, csP := net.AddInputPulv2D("CS", ny, narm, space)
 	dist, distP := net.AddInputPulv2D("Dist", ny, ev.MaxLength+1, space)
-	arm := net.AddLayer2D("Arm", ny, narm, axon.InputLayer) // irrelevant here
 
 	///////////////////////////////////////////
 	// M1, VL, ALM
@@ -314,11 +320,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	////////////////////////////////////////////////
 	// position
 
-	cs.PlaceRightOf(pvPos, space)
+	cs.PlaceRightOf(pvPos, space*2)
 	dist.PlaceRightOf(cs, space)
-	arm.PlaceRightOf(dist, space)
 
-	m1.PlaceRightOf(arm, space)
+	m1.PlaceRightOf(dist, space)
 	alm.PlaceRightOf(m1, space)
 	vl.PlaceBehind(m1P, space)
 	act.PlaceBehind(vl, space)
@@ -337,7 +342,7 @@ func (ss *Sim) ApplyParams() {
 	// params that vary as number of CSs
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 
-	nCSTot := ev.Config.NCSs
+	nCSTot := ev.Config.NArms
 
 	cs := net.AxonLayerByName("CS")
 	cs.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
@@ -600,7 +605,7 @@ func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	ss.Stats.SetString("Debug", "") // start clear
 	net := ss.Net
-	lays := []string{"Dist", "Arm", "CS"}
+	lays := []string{"Dist", "CS"}
 
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -612,7 +617,6 @@ func (ss *Sim) ApplyInputs() {
 		ev.Step()
 		if ev.Tick == 0 {
 			ss.Stats.SetFloat32Di("CortexDriving", int(di), num.FromBool[float32](erand.BoolP32(ss.Config.Env.PctCortex, -1)))
-			ev.ExValueUtil(&ss.Net.Rubicon, ctx)
 		}
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
@@ -826,7 +830,7 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("AChShouldnt", nan)
 	hasPos := rp.HasPosUS(ctx, diu)
 	if justGated {
-		ss.Stats.SetFloat32("WrongCSGate", num.FromBool[float32](!ev.ArmIsMaxUtil(ev.Arm)))
+		ss.Stats.SetFloat32("WrongCSGate", num.FromBool[float32](!ev.ArmIsBest(ev.Arm)))
 	}
 	if ev.ShouldGate {
 		if hasPos {

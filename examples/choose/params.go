@@ -199,9 +199,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".VSPatchPrjn", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "3", // 4 > 3 > 2 -- key for rapid learning
+				"Prjn.PrjnScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
 				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.05", // 0.02 needed in test
+				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 needed in test
 			}},
 		{Sel: "#CSToBLAposAcqD1", Desc: "",
 			Params: params.Params{

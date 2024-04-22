@@ -5,42 +5,56 @@
 package armaze
 
 // Paradigms is a list of experimental paradigms that
-// govern the configuration and updating of environment
-// state over time and the appropriate evaluation criteria.
+// govern the configuration of the arms.
 type Paradigms int32 //enums:enum
 
 const (
-	// Approach is a basic case where one Drive (chosen at random each trial) is fully active and others are at InactiveDrives levels -- goal is to approach the CS associated with the Drive-satisfying US, and avoid negative any negative USs.  USs are always placed in same Arms (NArms must be >= NUSs -- any additional Arms are filled at random with additional US copies)
-	Approach Paradigms = iota
+	// GroupGoodBad allocates Arms into 2 groups, with first group unambiguously Good
+	// and the second Bad, using the Min, Max values of each Range parameter:
+	// Length, Effort, USMag, USProb. Good has Min cost, Max US, and opposite for Bad.
+	// This also aligns with the ordering of USs, such that negative USs are last.
+	GroupGoodBad Paradigms = iota
+
+	// GroupRisk allocates Arms into 2 groups with conflicting Cost and Benefit
+	// tradeoffs, with the first group having Min cost and Min US, and the second
+	// group having Max cost and Max US.
+	GroupRisk
 )
 
 ///////////////////////////////////////////////
-// Approach
+// GroupGoodBad
 
-// ConfigApproach does initial config for Approach paradigm
-func (ev *Env) ConfigApproach() {
-	if ev.Config.NArms < ev.Config.NUSs {
-		ev.Config.NArms = ev.Config.NUSs
-	}
-	if ev.Config.NCSs < ev.Config.NUSs {
-		ev.Config.NCSs = ev.Config.NUSs
-	}
-}
+// ConfigGroupGoodBad
+func (ev *Env) ConfigGroupGoodBad() {
+	cfg := &ev.Config
+	cfg.Update()
 
-// StartApproach does new start state setting for Approach
-// Selects a new TrgDrive at random, sets that to 1,
-// others to inactive levels
-func (ev *Env) StartApproach() {
-	ev.TrgDrive = ev.Rand.Intn(ev.Config.NDrives, -1)
-	for i := range ev.Drives {
-		if i == ev.TrgDrive {
-			ev.Drives[i] = 1
-		} else {
-			ev.Drives[i] = ev.InactiveValue()
+	cfg.NArms = 2 * cfg.NUSs
+
+	ev.Drives = make([]float32, cfg.NDrives)
+	cfg.Arms = make([]*Arm, cfg.NArms)
+
+	ai := 0
+	for gi := 0; gi < 2; gi++ {
+		length := cfg.LengthRange.Min
+		eff := cfg.EffortRange.Min
+		mag := cfg.USMagRange.Max
+		prob := cfg.USProbRange.Max
+		if gi == 1 {
+			length = cfg.LengthRange.Max
+			eff = cfg.EffortRange.Max
+			mag = cfg.USMagRange.Min
+			prob = cfg.USProbRange.Min
+		}
+
+		for ui := 0; ui < cfg.NUSs; ui++ {
+			arm := &Arm{CS: ai, Length: length, US: ui}
+			arm.Effort.Set(eff, eff)
+			arm.USMag.Set(mag, mag)
+			arm.USProb = prob
+			cfg.Arms[ai] = arm
+			ai++
 		}
 	}
-}
-
-func (ev *Env) StepApproach() {
-
+	ev.UpdateMaxLength()
 }

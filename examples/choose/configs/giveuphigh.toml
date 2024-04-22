@@ -1,6 +1,0 @@
-# giveuphigh = high level of GiveUp trials due to low ThrNonRew param
-
-[Params.Network]
-	".VSPatchLayer:Layer.VSPatch.ThrNonRew" = 1   # allows RewPred_NR to go high
-
-

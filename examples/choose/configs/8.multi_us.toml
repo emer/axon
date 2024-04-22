@@ -1,7 +1,0 @@
-# CS that provides multiple USs when consumed
-# TODO:
-
-NArms = 4
-NDrives = 5
-NCSs = 5
-MultiUS = true

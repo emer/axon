@@ -15,16 +15,25 @@ type Params struct {
 	// effort for consuming US
 	ConsumeEffort minmax.F32 `nest:"+" default:"{'Min':0.5, 'Max':0.5}"`
 
+	// an arbitrary scaling factor for costs relative to values,
+	// used in computing the expected utility ExUtil for an arm.
+	// These utilities are only useful for relative comparisons,
+	// that go into computing the UtilRank, which should be used for evaluating
+	// overall choices.
+	CostFactor float32 `default:"0.2"`
+
+	// threshold for considering a drive to be active; used in evaluating whether
+	// an Arm choice is considered to be a good option.
+	ActiveDriveThr float32 `default:"0.5"`
+
 	// always turn left -- zoolander style -- reduces degrees of freedom in evaluating behavior
 	AlwaysLeft bool `default:"true"`
-
-	// permute the order of CSs prior to applying them to arms -- having this off makes it easier to visually determine match between Drive and arm approach, and shouldn't make any difference to behavior (model doesn't know about this ordering).
-	PermuteCSs bool `default:"false"`
 
 	// after running down an Arm, a new random starting location is selected (otherwise same arm as last run)
 	RandomStart bool `default:"true"`
 
-	// if true, allow movement between arms just by going Left or Right -- otherwise once past the start, no switching is allowed
+	// if true, allow movement between arms just by going Left or Right.
+	// Otherwise once past the start, no switching is allowed
 	OpenArms bool `default:"true"`
 
 	// strength of inactive inputs (e.g., Drives in Approach paradigm)
@@ -37,13 +46,16 @@ type Params struct {
 // Config has environment configuration
 type Config struct {
 
-	// experimental paradigm that governs the configuration and updating of environment state over time and the appropriate evaluation criteria.
+	// experimental paradigm that governs the configuration of environment based on params,
+	// e.g., how the Range values are assigned to different arms.
 	Paradigm Paradigms
 
 	// for debugging, print out key steps including a trace of the action generation logic
 	Debug bool
 
-	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding positive US outcome -- this does not include the first curiosity drive
+	// number of different drive-like body states (hunger, thirst, etc),
+	// that are satisfied by a corresponding positive US outcome.
+	// This is in addition to the first curiosity drive, which is always present.
 	NDrives int
 
 	// number of negative US outcomes -- these are added after NDrives positive USs to total US list
@@ -52,22 +64,23 @@ type Config struct {
 	// total number of USs = NDrives + NNegUSs
 	NUSs int `edit:"-"`
 
-	// number of different arms
-	NArms int
+	// number of different arms, each of which has its own distinctive CS.
+	// This is determined by the Paradigm (e.g., 2*NUSs for the Group cases).
+	NArms int `edit:"-"`
 
-	// minimum arm length (distance) range (inclusive)
-	ArmLengths minmax.Int
+	// range of arm length sallocated across arms, per Paradigm
+	LengthRange minmax.Int `nest:"+"`
 
-	// If true, group arms by minimum vs. maximum lengths -- provides a better test when using the always left strategy
-	GroupMinMax bool
+	// range of effort values allocated across arms, per Paradigm
+	EffortRange minmax.F32 `nest:"+"`
 
-	// number of different CSs -- typically at least a unique CS per US -- relationship is determined in the US params
-	NCSs int
+	// range of US magnitudes allocated across arms, per Paradigm
+	USMagRange minmax.F32 `nest:"+"`
 
-	// parameters associated with each US.  The first NDrives are positive USs, and beyond that are negative USs
-	USs []*USParams
+	// range of US probabilities allocated across arms, per Paradigm
+	USProbRange minmax.F32 `nest:"+"`
 
-	// state of each arm: dist, effort, US, CS
+	// parameters for each arm option: dist, effort, US
 	Arms []*Arm
 
 	// misc params
@@ -77,12 +90,12 @@ type Config struct {
 func (cfg *Config) Defaults() {
 	if cfg.NDrives == 0 {
 		cfg.NDrives = 4
+		cfg.LengthRange.Set(4, 4)
+		cfg.EffortRange.Set(1, 1)
+		cfg.USMagRange.Set(1, 1)
+		cfg.USProbRange.Set(1, 1)
 	}
-	cfg.ArmLengths.Set(4, 4)
 	cfg.Update()
-	if cfg.NCSs == 0 {
-		cfg.NCSs = cfg.NUSs
-	}
 }
 
 func (cfg *Config) Update() {

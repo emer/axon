@@ -1,0 +1,6 @@
+# Basic test of distance cost sensitivity, using GroupGoodBad
+
+Paradigm = "GroupGoodBad"
+LengthRange.Min = 4
+LengthRange.Max = 8
+

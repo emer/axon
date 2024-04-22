@@ -1,0 +1,6 @@
+# Basic test of US magnitude sensitivity, using GroupGoodBad
+
+Paradigm = "GroupGoodBad"
+USMagRange.Min = 0.3
+USMagRange.Max = 1
+

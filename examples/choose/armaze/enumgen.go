@@ -47,16 +47,16 @@ func (i Actions) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *Actions) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "Actions") }
 
-var _ParadigmsValues = []Paradigms{0}
+var _ParadigmsValues = []Paradigms{0, 1}
 
 // ParadigmsN is the highest valid value for type Paradigms, plus one.
-const ParadigmsN Paradigms = 1
+const ParadigmsN Paradigms = 2
 
-var _ParadigmsValueMap = map[string]Paradigms{`Approach`: 0}
+var _ParadigmsValueMap = map[string]Paradigms{`GroupGoodBad`: 0, `GroupRisk`: 1}
 
-var _ParadigmsDescMap = map[Paradigms]string{0: `Approach is a basic case where one Drive (chosen at random each trial) is fully active and others are at InactiveDrives levels -- goal is to approach the CS associated with the Drive-satisfying US, and avoid negative any negative USs. USs are always placed in same Arms (NArms must be &gt;= NUSs -- any additional Arms are filled at random with additional US copies)`}
+var _ParadigmsDescMap = map[Paradigms]string{0: `GroupGoodBad allocates Arms into 2 groups, with first group unambiguously Good and the second Bad, using the Min, Max values of each Range parameter: Length, Effort, USMag, USProb. Good has Min cost, Max US, and opposite for Bad. This also aligns with the ordering of USs, such that negative USs are last.`, 1: `GroupRisk allocates Arms into 2 groups with conflicting Cost and Benefit tradeoffs, with the first group having Min cost and Min US, and the second group having Max cost and Max US.`}
 
-var _ParadigmsMap = map[Paradigms]string{0: `Approach`}
+var _ParadigmsMap = map[Paradigms]string{0: `GroupGoodBad`, 1: `GroupRisk`}
 
 // String returns the string representation of this Paradigms value.
 func (i Paradigms) String() string { return enums.String(i, _ParadigmsMap) }

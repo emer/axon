@@ -1,0 +1,6 @@
+# Basic test of effort cost sensitivity, using GroupGoodBad
+
+Paradigm = "GroupGoodBad"
+EffortRange.Min = 1
+EffortRange.Max = 2
+
