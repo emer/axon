@@ -182,8 +182,8 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 	rp := &ss.Net.Rubicon
 	rp.SetNUSs(&ss.Context, trn.Config.NDrives, 1)
 	rp.Defaults()
-	rp.USs.PVposGain = 2  // higher = more pos reward (saturating logistic func)
-	rp.USs.PVnegGain = .1 // global scaling of RP neg level -- was 1
+	rp.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
+	rp.USs.PVnegGain = 1 // global scaling of RP neg level -- was 1
 	rp.LHb.VSPatchGain = 5
 	rp.LHb.VSPatchNonRewThr = 0.15
 
@@ -224,9 +224,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
 
-	vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc := net.AddRubicon(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNegUS, ofcNegUSCT, ofcNegUSPT, ofcNegUSPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc := net.AddRubicon(ctx, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_, _ = plUtil, urgency
 	_, _ = ofcNegUSCT, ofcNegUSPTp
+	_, _ = vSmtxGo, vSmtxNo
 
 	plUtilPTp := net.AxonLayerByName("PLutilPTp")
 
@@ -284,6 +285,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
 	net.ConnectToBLAExt(cs, blaNegExt, full)
+
+	// net.ConnectToVSMatrix(cs, vSmtxGo, full)
+	// net.ConnectToVSMatrix(cs, vSmtxNo, full)
 
 	// OFCus predicts cs
 	net.ConnectToPFCBack(cs, csP, ofcPosUS, ofcPosUSCT, ofcPosUSPT, ofcPosUSPTp, full, "CSToPFC")

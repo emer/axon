@@ -28,10 +28,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
 				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
 			}},
-		{Sel: ".BLALayer", Desc: "",
-			Params: params.Params{
-				"Layer.Learn.NeuroMod.DAModGain": "0.5",
-			}},
 		{Sel: ".VSTNLayer", Desc: "all VSTN",
 			Params: params.Params{
 				"Layer.Acts.Init.GeBase":      "0.1",
@@ -106,6 +102,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "2", // 2 fine with BLANovelInhib prjn
 				"Layer.Inhib.Pool.Gi":  "1",
+			}},
+		{Sel: "#BLAposExtD2", Desc: "",
+			Params: params.Params{
+				"Layer.CT.GeGain": "0.5",
 			}},
 		{Sel: "#BLAnegAcqD2", Desc: "",
 			Params: params.Params{
@@ -182,7 +182,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.005",
+				"Prjn.Learn.LRate.Base": "0.05",
 			}},
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
@@ -191,7 +191,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // note: key param -- 0.5 > 1
+				"Prjn.PrjnScale.Abs": "2", // note: key param -- 0.5 > 1
 			}},
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{

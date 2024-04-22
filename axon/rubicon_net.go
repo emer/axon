@@ -991,7 +991,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddRubicon(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPos, ofcPosCT, ofcPosPT, ofcPosPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNeg, ofcNegCT, ofcNegPT, ofcNegPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc *Layer) {
+func (net *Network) AddRubicon(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, vSmtxGo, vSmtxNo, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcPos, ofcPosCT, ofcPosPT, ofcPosPTp, ilPos, ilPosCT, ilPosPT, ilPosPTp, ofcNeg, ofcNegCT, ofcNegPT, ofcNegPTp, ilNeg, ilNegCT, ilNegPT, ilNegPTp, accCost, plUtil, sc *Layer) {
 
 	full := prjn.NewFull()
 	var pj *Prjn

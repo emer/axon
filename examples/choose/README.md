@@ -2,6 +2,8 @@
 
 This model implements the [Rubicon](../../Rubicon.md) model for goal-driven motivated behavior, in a decision-making task that requires choosing among options with different cost-benefit tradeoffs.  This exercises the core cost and benefit representations and goal selection and goal maintenance components of the Rubicon model
 
+* TODO: compute us prob at start -- otherwise keeps doing again and again
+
 ## Arm Maze Bandit task
 
 The task paradigm is an N-arm bandit task, implemented as a physical maze-like environment where the simulated rodent must walk down an arm to receive the reward outcome (_US_ = unconditioned stimulus) signalled by the stimulus (_CS_ = conditioned stimulus) visible from the start of the arm.  The arms can vary in length and effort (e.g., an elevated hill) to manipulate the cost, and the US varies in value according to internal _Drive_ states (e.g., hunger, thirst) and qualities of the US itself (e.g., how tasty it is).  Thus, the decision to enter an arm requires balancing the cost vs. benefit tradeoff or net utility, and all of this is learned through the course of exploring the maze over repeated trials.
