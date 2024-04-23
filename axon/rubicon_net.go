@@ -120,9 +120,11 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 	blaNov.SetBuildConfig("DAMod", "D1Mod")
 	blaNov.SetBuildConfig("Valence", "Positive")
 	blaNov.DefParams = params.Params{
-		"Layer.Inhib.ActAvg.Nominal": "0.05",
-		"Layer.Inhib.Layer.Gi":       "0.8",
-		"Layer.Inhib.Pool.On":        "false",
+		"Layer.Inhib.ActAvg.Nominal":     "0.05",
+		"Layer.Inhib.Layer.Gi":           "0.8",
+		"Layer.Inhib.Pool.On":            "false",
+		"Layer.Learn.NeuroMod.DAModGain": "0",
+		"Layer.Learn.RLRate.On":          "false",
 	}
 
 	p1to1 := prjn.NewPoolOneToOne()
@@ -194,7 +196,7 @@ func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 // ConnectCSToBLApos connects the CS input to BLAposAcqD1, BLANovelCS layers
 // using fixed, higher-variance weights, full projection.
 // Sets classes to: CSToBLApos, CSToBLANovel with default params
-func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *Prjn) {
+func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov, novInhib *Prjn) {
 	toAcq = net.ConnectLayers(cs, blaAcq, prjn.NewFull(), BLAPrjn)
 	toAcq.DefParams = params.Params{ // stronger..
 		"Prjn.PrjnScale.Abs":     "1.5",
@@ -213,6 +215,18 @@ func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *
 		"Prjn.Learn.Learn":    "false",
 	}
 	toNov.AddClass("CSToBLANovel")
+
+	novInhib = net.ConnectLayers(cs, blaNov, prjn.NewFull(), InhibPrjn)
+	novInhib.DefParams = params.Params{
+		"Prjn.SWts.Init.SPct":   "0",
+		"Prjn.SWts.Init.Mean":   "0.1",
+		"Prjn.SWts.Init.Var":    "0.05",
+		"Prjn.SWts.Adapt.On":    "false",
+		"Prjn.Learn.LRate.Base": "0.01",
+		"Prjn.Learn.Hebb.On":    "true",
+		"Prjn.Learn.Hebb.Down":  "0", // only goes up
+	}
+	novInhib.AddClass("CSToBLANovelInhib")
 	return
 }
 

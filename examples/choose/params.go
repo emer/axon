@@ -170,7 +170,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Prjn.PrjnScale.Abs":        "1.5", // 3 orig
 				"Prjn.Learn.Trace.LearnThr": "0.1",
-				"Prjn.Learn.LRate.Base":     "0.01", // 0.05 def
+				"Prjn.Learn.LRate.Base":     "0.1", // 0.05 def
 			}},
 		{Sel: ".ToSC", Desc: "",
 			Params: params.Params{
@@ -206,6 +206,10 @@ var ParamSets = netparams.Sets{
 		{Sel: "#CSToBLAposAcqD1", Desc: "",
 			Params: params.Params{
 				"Prjn.Learn.LRate.Base": "0.1", // was 0.5 -- too fast!?
+			}},
+		{Sel: ".CSToBLANovelInhib", Desc: "",
+			Params: params.Params{
+				"Prjn.Learn.LRate.Base": "0.01",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{

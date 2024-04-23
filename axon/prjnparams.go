@@ -326,7 +326,11 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 	case HipPrjn:
 		pj.DWtSynHip(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFromDWtSynNoLimits
 	default:
-		pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+		if pj.Learn.Hebb.On.IsTrue() {
+			pj.DWtSynHebb(ctx, syni, si, ri, di, layPool, subPool)
+		} else {
+			pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+		}
 	}
 }
 
@@ -372,6 +376,18 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 	} else {
 		SetSynCaV(ctx, syni, di, DiDWt, NrnV(ctx, ri, di, RLRate)*pj.Learn.LRate.Eff*err)
 	}
+}
+
+// DWtSynHebb computes the weight change (learning) at given synapse for cortex.
+// Uses synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (pj *PrjnParams) DWtSynHebb(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+	rNrnCaP := NrnV(ctx, ri, di, NrnCaP)
+	sNrnCap := NrnV(ctx, si, di, NrnCaP)
+	lwt := SynV(ctx, syni, LWt) // linear weight
+	hebb := rNrnCaP * (pj.Learn.Hebb.Up*sNrnCap*(1-lwt) - pj.Learn.Hebb.Down*(1-sNrnCap)*lwt)
+
+	SetSynCaV(ctx, syni, di, DiDWt, pj.Learn.LRate.Eff*hebb) // not: NrnV(ctx, ri, di, RLRate)*
 }
 
 // DWtSynHip computes the weight change (learning) at given synapse for cortex + Hip (CPCA Hebb learning).

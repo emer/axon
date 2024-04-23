@@ -716,7 +716,7 @@ func (ls *LRateParams) Init() {
 	ls.UpdateEff()
 }
 
-// TraceParams manages learning rate parameters
+// TraceParams manages parameters associated with temporal trace learning
 type TraceParams struct {
 
 	// time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace
@@ -820,6 +820,43 @@ func (lr *LRateMod) LRateMod(net *Network, fact float32) float32 {
 
 //gosl: start learn
 
+//////////////////////////////////////////////////////////////////////////////////////
+//  HebbParams
+
+// HebbParams for optional hebbian learning that replaces the
+// default learning rule, based on S = sending activity,
+// R = receiving activity
+type HebbParams struct {
+
+	// if On, then the standard learning rule is replaced with a Hebbian learning rule
+	On slbool.Bool
+
+	// strength multiplier for hebbian increases, based on R * S * (1-LWt)
+	Up float32 `default:"0.5"`
+
+	// strength multiplier for hebbian decreases, based on R * (1 - S) * LWt
+	Down float32 `default:"1"`
+
+	pad float32
+}
+
+func (hp *HebbParams) Defaults() {
+	hp.Up = 0.5
+	hp.Down = 1
+}
+
+func (hp *HebbParams) Update() {
+}
+
+func (hp *HebbParams) ShouldShow(field string) bool {
+	switch field {
+	case "On":
+		return true
+	default:
+		return hp.On.IsTrue()
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////
 //  LearnSynParams
 
@@ -832,19 +869,23 @@ type LearnSynParams struct {
 	pad, pad1, pad2 int32
 
 	// learning rate parameters, supporting two levels of modulation on top of base learning rate.
-	LRate LRateParams
+	LRate LRateParams `view:"inline"`
 
 	// trace-based learning parameters
-	Trace TraceParams
+	Trace TraceParams `view:"inline"`
 
 	// kinase calcium Ca integration parameters
 	KinaseCa kinase.CaParams `view:"inline"`
+
+	// hebbian learning option, which overrides the default learning rules
+	Hebb HebbParams `view:"inline"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.LRate.Update()
 	ls.Trace.Update()
 	ls.KinaseCa.Update()
+	ls.Hebb.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
@@ -852,6 +893,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.LRate.Defaults()
 	ls.Trace.Defaults()
 	ls.KinaseCa.Defaults()
+	ls.Hebb.Defaults()
 }
 
 func (ls *LearnSynParams) ShouldShow(field string) bool {
