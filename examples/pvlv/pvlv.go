@@ -722,7 +722,6 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
 	plt.Params.XAxisCol = "SeqType"
-
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {

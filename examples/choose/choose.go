@@ -37,6 +37,7 @@ import (
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/etable/v2/agg"
+	"github.com/emer/etable/v2/eplot"
 	"github.com/emer/etable/v2/etable"
 	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/etable/v2/minmax"
@@ -161,6 +162,8 @@ func (ss *Sim) ConfigEnv() {
 		}
 		trn.Config.NDrives = ss.Config.Env.NDrives
 		if ss.Config.Env.Config != "" {
+			args := os.Args
+			os.Args = args[:1]
 			_, err := econfig.Config(&trn.Config, ss.Config.Env.Config)
 			if err != nil {
 				slog.Error(err.Error())
@@ -184,7 +187,7 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 	rp.Defaults()
 	rp.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
 	rp.USs.PVnegGain = 1 // global scaling of RP neg level -- was 1
-	rp.LHb.VSPatchGain = 5
+	rp.LHb.VSPatchGain = 10
 	rp.LHb.VSPatchNonRewThr = 0.15
 
 	rp.USs.USnegGains[0] = 2 // big salient input!
@@ -286,6 +289,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
 	net.ConnectToBLAExt(cs, blaNegExt, full)
 
+	// for some reason this really makes things worse:
 	// net.ConnectToVSMatrix(cs, vSmtxGo, full)
 	// net.ConnectToVSMatrix(cs, vSmtxNo, full)
 
@@ -435,13 +439,13 @@ func (ss *Sim) ConfigLoops() {
 	/////////////////////////////////////////////
 	// Logging
 
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
-		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if (ss.Config.Run.PCAInterval > 0) && (trnEpc%ss.Config.Run.PCAInterval == 0) {
-			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
-			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
-		}
-	})
+	// man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
+	// 	trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	// 	if (ss.Config.Run.PCAInterval > 0) && (trnEpc%ss.Config.Run.PCAInterval == 0) {
+	// 		axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
+	// 		ss.Logs.ResetLog(etime.Analyze, etime.Trial)
+	// 	}
+	// })
 
 	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
@@ -935,16 +939,16 @@ func (ss *Sim) ConfigLogs() {
 
 	axon.LogAddGlobals(&ss.Logs, &ss.Context, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	// axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	// ss.ConfigActRFs()
 
-	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.CeMLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
+	// layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer, axon.CeMLayer)
+	// axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
 	// todo: PCA items should apply to CT layers too -- pass a type here.
-	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	// axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.PlotItems("GateCS", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "MaintEarly")
 
@@ -982,6 +986,26 @@ func (ss *Sim) ConfigLogItems() {
 	// inclusion
 	if ss.Config.GUI {
 		ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
+	}
+
+	for wrong := 0; wrong < 2; wrong++ {
+		wrong := wrong
+		for _, st := range ss.Config.Log.AggStats {
+			st := st
+			itmName := fmt.Sprintf("Wrong%d_%s", wrong, st)
+			ss.Logs.AddItem(&elog.Item{
+				Name: itmName,
+				Type: etensor.FLOAT64,
+				// FixMin: true,
+				// FixMax: true,
+				Range: minmax.F64{Max: 1},
+				Write: elog.WriteMap{
+					etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+						ctx.SetFloat64(ctx.Stats.Float(itmName))
+					}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+						ctx.SetAgg(ctx.Mode, etime.Epoch, agg.AggMean)
+					}}})
+		}
 	}
 
 	ss.Logs.AddItem(&elog.Item{
@@ -1027,6 +1051,51 @@ func (ss *Sim) ConfigLogItems() {
 		nm = "PreAct" + lnm
 		ss.Logs.AddStatAggItem(nm, etime.Run, etime.Epoch, etime.Trial)
 	}
+}
+
+func (ss *Sim) EpochGoodBad() {
+	lgnm := "EpochGoodBad"
+
+	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
+	ix.Filter(func(et *etable.Table, row int) bool {
+		return !math.IsNaN(et.CellFloat("WrongCSGate", row)) // && (et.CellString("ActAction", row) == "Consume")
+	})
+	spl := split.GroupBy(ix, []string{"WrongCSGate"})
+	for _, ts := range ix.Table.ColNames {
+		col := ix.Table.ColByName(ts)
+		if col.DataType() == etensor.STRING || ts == "WrongCSGate" {
+			continue
+		}
+		split.Agg(spl, ts, agg.AggMean)
+	}
+	dt := spl.AggsToTable(etable.ColNameOnly)
+	dt.SetMetaData("Rew_R:On", "+")
+	dt.SetMetaData("DA_R:On", "+")
+	dt.SetMetaData("RewPred_R:On", "+")
+	dt.SetMetaData("VtaDA:On", "+")
+	dt.SetMetaData("DA_R:FixMin", "+")
+	dt.SetMetaData("DA_R:Min", "-1")
+	dt.SetMetaData("DA_R:FixMax", "-")
+	dt.SetMetaData("DA_R:Max", "1")
+	// dt.SetMetaData("XAxisRot", "45")
+	dt.SetMetaData("Type", "Bar")
+	ss.Logs.MiscTables[lgnm] = dt
+
+	// grab selected stats at CS and US for higher level aggregation,
+	nrows := dt.Rows
+	for ri := 0; ri < nrows; ri++ {
+		wrong := dt.CellFloat("WrongCSGate", ri)
+		for _, st := range ss.Config.Log.AggStats {
+			ss.Stats.SetFloat(fmt.Sprintf("Wrong%d_%s", int(wrong), st), dt.CellFloat(st, ri))
+		}
+	}
+
+	if ss.Config.GUI {
+		plt := ss.GUI.Plots[etime.ScopeKey(lgnm)]
+		plt.SetTable(dt)
+		plt.GoUpdatePlot()
+	}
+
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -1082,6 +1151,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		}
 	case mode == etime.Train && time == etime.Epoch:
 		axon.LayerActsLogAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
+		ss.EpochGoodBad()
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -1147,6 +1217,14 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.AddTableView(&ss.Logs, etime.Debug, etime.Trial)
 
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
+
+	lgnm := "EpochGoodBad"
+	dt := ss.Logs.MiscTable(lgnm)
+	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
+	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
+	plt.Params.Title = lgnm
+	plt.Params.XAxisCol = "WrongCSGate"
+	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
