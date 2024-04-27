@@ -142,7 +142,7 @@ var AllConditions = map[string]*Condition{
 		Permute:    true,
 	},
 	"NegAcq_D100": {
-		Desc:       "Pavlovian conditioning w/ negatively-valenced US: D_R_NEG",
+		Desc:       "Pavlovian conditioning w/ negatively valenced US: D_R_NEG",
 		Block:      "NegAcq_D100",
 		FixedProb:  false,
 		NBlocks:    DefBlocks,
@@ -150,7 +150,7 @@ var AllConditions = map[string]*Condition{
 		Permute:    true,
 	},
 	"NegAcq_D100E25": {
-		Desc:       "Pavlovian conditioning w/ negatively-valenced US: D_R_NEG, E 25%",
+		Desc:       "Pavlovian conditioning w/ negatively valenced US: D_R_NEG, E 25%",
 		Block:      "NegAcq_D100E25",
 		FixedProb:  false,
 		NBlocks:    DefBlocks,
@@ -158,7 +158,7 @@ var AllConditions = map[string]*Condition{
 		Permute:    true,
 	},
 	"NegExt_D0": {
-		Desc:       "Pavlovian conditioning w/ negatively-valenced US: A_R_NEG",
+		Desc:       "Pavlovian conditioning w/ negatively valenced US: A_R_NEG",
 		Block:      "NegExt_D0",
 		FixedProb:  false,
 		NBlocks:    DefBlocks,
@@ -166,7 +166,7 @@ var AllConditions = map[string]*Condition{
 		Permute:    true,
 	},
 	"NegExt_D0E0": {
-		Desc:       "Pavlovian conditioning w/ negatively-valenced US: A_R_NEG",
+		Desc:       "Pavlovian conditioning w/ negatively valenced US: A_R_NEG",
 		Block:      "NegExt_D0E0",
 		FixedProb:  false,
 		NBlocks:    DefBlocks,
@@ -454,7 +454,7 @@ var AllConditions = map[string]*Condition{
 		Permute:    true,
 	},
 	"NegCondInh": {
-		Desc:       "condition inhibition w/ negatively-valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
+		Desc:       "condition inhibition w/ negatively valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
 		Block:      "NegCondInhib",
 		FixedProb:  false,
 		NBlocks:    75,
@@ -462,7 +462,7 @@ var AllConditions = map[string]*Condition{
 		Permute:    true,
 	},
 	"NegCondInh_test": {
-		Desc:       "condition inhibition w/ negatively-valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
+		Desc:       "condition inhibition w/ negatively valenced US: CZ_NR_NEG, C_R_NEG interleaved; i.e.,  Z = security signal",
 		Block:      "NegCondInhib_test",
 		FixedProb:  false,
 		NBlocks:    5,

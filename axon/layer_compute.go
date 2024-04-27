@@ -699,7 +699,7 @@ func (ly *Layer) CorSimFromActs(ctx *Context) {
 //  Learning
 
 // DWt computes the weight change (learning), based on
-// synaptically-integrated spiking, computed at the Theta cycle interval.
+// synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (ly *Layer) DWt(ctx *Context, si uint32) {
 	for _, pj := range ly.SndPrjns {

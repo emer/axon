@@ -4,7 +4,7 @@ The core of this model is the Globus Pallidus (external segment), GPe, which pla
 
 Files: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)}
 
-There are two recently-identified revisions to the standard circuitry diagram that drive this model [(Suryanarayana et al, 2019; others)](#references):
+There are two recently identified revisions to the standard circuitry diagram that drive this model [(Suryanarayana et al, 2019; others)](#references):
 
 * A distinction between outer (GPeOut) and inner (GPeIn) layers of the GPe, with both D1-dominant (Go) and D2-dominant (NoGo / No) projections into the GPe (the classical "direct" vs. "indirect" terminology thus not being quite as applicable).
 
@@ -14,7 +14,7 @@ Thus, the GPe circuitry is clearly capable of doing significant additional compu
 
 * GPeIn is the core of the core: it integrates Go and No striatal signals in consistent terms, with direct No inhibitory inputs, and indirect Go net excitatory inputs, inverted by way of double-inhibition through the GPeOut.  By having both of these signals converging on single neurons, the GPeIn can directly weigh the balance for and against a potential action.  Thus, in many ways, GPeIn is like the GPi / SNr of the classical model, except with the sign reversed (i.e., it is more active for a more net-Go balance).
 
-* The GPeIn then projects inhibition to the GPeTA, which in turn drives the strongest source of broad, diffuse inhibition to the striatum: this provides the long-sought winner-take-all (WTA) action selection dynamic in the BG circuitry, by broadcasting back an effective inhibitory threshold that only the most strongly-activated striatal neurons can withstand.  In addition, the GPeTA sends a weaker inhibitory projection into the striatum, and having both of these is essential to prevent strong oscillatory dynamics.
+* The GPeIn then projects inhibition to the GPeTA, which in turn drives the strongest source of broad, diffuse inhibition to the striatum: this provides the long-sought winner-take-all (WTA) action selection dynamic in the BG circuitry, by broadcasting back an effective inhibitory threshold that only the most strongly activated striatal neurons can withstand.  In addition, the GPeTA sends a weaker inhibitory projection into the striatum, and having both of these is essential to prevent strong oscillatory dynamics.
 
 * The GPi integrates the direct Go inhibition from the striatum, and the integrated Go vs. No balance from the GPeIn, which have the same sign and contribute synergistically to the GPi's release of inhibition on the thalamus, as in the standard model.  In our model, the integrated GPeIn input is stronger than the one from striatum Go pathway.
 

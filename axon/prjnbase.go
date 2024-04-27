@@ -78,7 +78,7 @@ type PrjnBase struct {
 	// number of synapses in this projection
 	NSyns uint32 `view:"-"`
 
-	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage.
+	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage.
 	RecvCon []StartN `view:"-"`
 
 	// index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list
@@ -87,7 +87,7 @@ type PrjnBase struct {
 	// for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
 	RecvConIndex []uint32 `view:"-"`
 
-	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage.
+	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PrjnSendCons slice for GPU usage.
 	SendCon []StartN `view:"-"`
 
 	// index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.

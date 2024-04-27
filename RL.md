@@ -14,7 +14,7 @@ Here's the info from `layertypes.go` -- see `examples/rl` for example usage, and
 
 	// RSalienceAChLayer reads Max layer activity from specified source layer(s)
 	// and optionally the global Context.NeuroMod.Rew or RewPred state variables,
-	// and updates the global ACh = Max of all as the positively-rectified,
+	// and updates the global ACh = Max of all as the positively rectified,
 	// non-prediction-discounted reward salience signal.
 	// Acetylcholine (ACh) is known to represent these values.
 	RSalienceAChLayer
@@ -56,6 +56,6 @@ Some important considerations:
     
 * The RW and TD DA layers use the `CyclePost` layer-level method to send the DA to other layers, at end of each cycle, after activation is updated.  Thus, DA lags by 1 cycle, which typically should not be a problem. 
 
-* See [Rubicon](Rubicon.md) for the full biologically-based PVLV model of phasic dopamine.
+* See [Rubicon](Rubicon.md) for the full biologically based PVLV model of phasic dopamine.
 
 * To encode positive and negative values using spiking, 2 units are used, one for positive and the other for negative.  The `Act` value always represents the (signed) computed value, not the spike rate, where applicable.

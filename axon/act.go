@@ -34,7 +34,7 @@ type SpikeParams struct {
 	// threshold value Theta (Q) for firing output activation (.5 is more accurate value based on AdEx biological parameters and normalization
 	Thr float32 `default:"0.5"`
 
-	// post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters.  See also RTau
+	// post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is appropriate biologically based value for AdEx (Brette & Gurstner, 2005) parameters.  See also RTau
 	VmR float32 `default:"0.3"`
 
 	// post-spiking explicit refractory period, in cycles -- prevents Vm updating for this number of cycles post firing -- Vm is reduced in exponential steps over this period according to RTau, being fixed at Tr to VmR exactly
@@ -396,7 +396,7 @@ func (dp *DtParams) AvgVarUpdate(avg, vr *float32, val float32) {
 		del := val - *avg
 		incr := dp.LongAvgDt * del
 		*avg += incr
-		// following is magic exponentially-weighted incremental variance formula
+		// following is magic exponentially weighted incremental variance formula
 		// derived by Finch, 2009: Incremental calculation of weighted mean and variance
 		if *vr == 0 {
 			*vr = 2 * (1 - dp.LongAvgDt) * del * incr

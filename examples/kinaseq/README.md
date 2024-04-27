@@ -24,7 +24,7 @@ For the rate-code activations in Leabra, the product of these averages is likely
 
 For spiking, the relative timing of pre-post spiking has been an obsession since the discovery of STDP.
 
-However, at a computational level, capturing these pre-post timing interactions clearly requires computationally-expensive synapse-level integration.  Thus, a major technical issue we address is how to more efficiently integrate this synapse-level signal at the theoretically most efficient level which is when either the sender or receiver spikes, with the subsequent integration computed based on time passed instead of incrementally updating.
+However, at a computational level, capturing these pre-post timing interactions clearly requires computationally expensive synapse-level integration.  Thus, a major technical issue we address is how to more efficiently integrate this synapse-level signal at the theoretically most efficient level which is when either the sender or receiver spikes, with the subsequent integration computed based on time passed instead of incrementally updating.
 
 The first issue is how the pre-post spikes interact in computing the Ca and CaM first-level integrations of synaptic activity.  Because each spike is itself a discrete event, there needs to be some kind of time window over which the pre-post spiking interact, if they are to have any interaction at all.  At the most extreme end of the non-interaction spectrum is the simple "OR" rule:
 
@@ -44,7 +44,7 @@ Also, the `SynSpk` value then drives the CaM, CaP, CaD cascade of time integrati
 
 ![20hz SynSpkCa integration](results/fig_synspk_mpd_optimized_fit_20hz_res01.png?raw=true "SynSpkCa for  20hz of both pre-post firing")
 
-These interactions in integration are evident in the above figure.  The blue `CaP` line shows how sequences of closely-spaced spikes ramp up quickly -- thus roughly synchronous firing between pre and post neurons hitting the synapse in rapid succession can produce significantly stronger learning signals relative to more spaced-out spiking.  Due to the common starting point of the spike trains, this rough synchrony is present in the above trace.
+These interactions in integration are evident in the above figure.  The blue `CaP` line shows how sequences of closely spaced spikes ramp up quickly -- thus roughly synchronous firing between pre and post neurons hitting the synapse in rapid succession can produce significantly stronger learning signals relative to more spaced-out spiking.  Due to the common starting point of the spike trains, this rough synchrony is present in the above trace.
 
 Due to the temporal-difference nature of the learning mechanism, LTP will be driven when there is a progression toward increasing synchrony over time, such that the faster `CaP` signal rises above the more slowly adapting `CaD` one toward the end of the 200 msec theta cycle window.
 

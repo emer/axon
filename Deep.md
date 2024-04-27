@@ -32,7 +32,7 @@ This package has 3 primary specialized Layer types:
 
 * `SuperLayer`: implements the superficial layer 2-3 neurons, which function just like standard axon.Layer neurons, and always represent the _current state_ of things.  They learn continuously from predictive learning error signals, are widely interconnected with other cortical areas, and form the basis for the learned representations in other layers.  As a computational simplification, they can also directly compute the Burst activation signal that reflects the deep layer 5IB bursting activation, via thresholding of the superficial layer activations (Bursting is thought to have a higher threshold).  Activity is represented by the `CaSpkP` value -- `Act` is used only for display purposes!
 
-* `CTLayer`: implements the layer 6 regular spiking CT corticothalamic neurons that project into the thalamus.  They receive the Burst activation via a `CTCtxtPrjn` projection type, and integrate that in the CtxtGe value, which is added to other excitatory conductance inputs to drive the overall activation of these neurons. Due to the bursting nature of the Burst inputs, this causes these CT layer neurons to reflect what the superficial layers encoded on the *previous* timestep -- thus they represent a temporally-delayed context state.
+* `CTLayer`: implements the layer 6 regular spiking CT corticothalamic neurons that project into the thalamus.  They receive the Burst activation via a `CTCtxtPrjn` projection type, and integrate that in the CtxtGe value, which is added to other excitatory conductance inputs to drive the overall activation of these neurons. Due to the bursting nature of the Burst inputs, this causes these CT layer neurons to reflect what the superficial layers encoded on the *previous* timestep -- thus they represent a temporally delayed context state.
 
 CTLayer can send Context via self projections to reflect the extensive deep-to-deep lateral connectivity that provides more extensive temporal context information.
 
@@ -58,7 +58,7 @@ There are two primary modes of behavior for the CT layers: **single-step copy** 
 
 The Burst value is computed in SuperLayer during the plus phase, and this is continuously accessed by TRCLayer neurons to drive plus-phase outcome states.
 
-At the *end* of the plus phase, CTCtxt projections convey the Burst signal from Super to CTLayer neurons, where it is integrated into the Ctxt value representing the temporally-delayed context information. 
+At the *end* of the plus phase, CTCtxt projections convey the Burst signal from Super to CTLayer neurons, where it is integrated into the Ctxt value representing the temporally delayed context information. 
 
 # TRN Attention and Learning
 

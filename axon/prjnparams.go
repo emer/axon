@@ -335,7 +335,7 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse for cortex.
-// Uses synaptically-integrated spiking, computed at the Theta cycle interval.
+// Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
 	// credit assignment part
@@ -379,7 +379,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 }
 
 // DWtSynHebb computes the weight change (learning) at given synapse for cortex.
-// Uses synaptically-integrated spiking, computed at the Theta cycle interval.
+// Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSynHebb(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	rNrnCaP := NrnV(ctx, ri, di, NrnCaP)
@@ -391,7 +391,7 @@ func (pj *PrjnParams) DWtSynHebb(ctx *Context, syni, si, ri, di uint32, layPool,
 }
 
 // DWtSynHip computes the weight change (learning) at given synapse for cortex + Hip (CPCA Hebb learning).
-// Uses synaptically-integrated spiking, computed at the Theta cycle interval.
+// Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 // Adds proportional CPCA learning rule for hip-specific prjns
 func (pj *PrjnParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {

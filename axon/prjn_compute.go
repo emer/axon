@@ -96,7 +96,7 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 //  Learn methods
 
 // DWt computes the weight change (learning), based on
-// synaptically-integrated spiking, computed at the Theta cycle interval.
+// synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *Prjn) DWt(ctx *Context, si uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
@@ -157,7 +157,7 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
 }
 
 // WtFromDWt computes the weight change (learning), based on
-// synaptically-integrated spiking, computed at the Theta cycle interval.
+// synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *Prjn) WtFromDWt(ctx *Context, ni uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
@@ -177,7 +177,7 @@ func (pj *Prjn) SlowAdapt(ctx *Context) {
 	pj.SynScale(ctx)
 }
 
-// SWtFromWt updates structural, slowly-adapting SWt value based on
+// SWtFromWt updates structural, slowly adapting SWt value based on
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
 func (pj *Prjn) SWtFromWt(ctx *Context) {

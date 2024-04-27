@@ -677,7 +677,7 @@ func (rp *Rubicon) USposIndex(simUsIndex int) int {
 	return simUsIndex + 1
 }
 
-// USnegIndex allows for the possibility of automatically-managed
+// USnegIndex allows for the possibility of automatically managed
 // negative USs, by adding those to the given _simulation specific_
 // negative US index to get the actual US index.
 func (rp *Rubicon) USnegIndex(simUsIndex int) int {
@@ -1086,7 +1086,7 @@ func (rp *Rubicon) PVposEstFromUSs(ctx *Context, di uint32, uss []float32) (pvPo
 }
 
 // PVposEstFromUSsDrives returns the estimated positive PV value
-// based on given externally-provided drives and US values.
+// based on given externally provided drives and US values.
 // This can be used to compute estimates to compare network performance.
 func (rp *Rubicon) PVposEstFromUSsDrives(uss, drives []float32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
@@ -1102,7 +1102,7 @@ func (rp *Rubicon) PVposEstFromUSsDrives(uss, drives []float32) (pvPosSum, pvPos
 }
 
 // PVnegEstFromUSs returns the estimated negative PV value
-// based on given externally-provided US values.
+// based on given externally provided US values.
 // This can be used to compute estimates to compare network performance.
 func (rp *Rubicon) PVnegEstFromUSs(uss []float32) (pvNegSum, pvNeg float32) {
 	nn := rp.NNegUSs
@@ -1115,7 +1115,7 @@ func (rp *Rubicon) PVnegEstFromUSs(uss []float32) (pvNegSum, pvNeg float32) {
 }
 
 // PVcostEstFromUSs returns the estimated negative PV value
-// based on given externally-provided Cost values.
+// based on given externally provided Cost values.
 // This can be used to compute estimates to compare network performance.
 func (rp *Rubicon) PVcostEstFromCosts(costs []float32) (pvCostSum, pvNeg float32) {
 	nn := rp.NCosts
