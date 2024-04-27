@@ -1283,7 +1283,7 @@ func (ss *Sim) RunGUI() {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	ss.EnvGUI = &armaze.GUI{}
 	eb := ss.EnvGUI.ConfigWorldGUI(ev)
-	eb.NewWindow().Run()
+	eb.RunWindow()
 	ss.GUI.Body.RunMainWindow()
 }
 
