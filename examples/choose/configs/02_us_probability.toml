@@ -1,6 +1,7 @@
 # Basic test of US magnitude sensitivity, using GroupGoodBad
 
+NDrives = 3
 Paradigm = "GroupGoodBad"
-USProbRange.Min = 0.3
+USProbRange.Min = 0.5
 USProbRange.Max = 1
 

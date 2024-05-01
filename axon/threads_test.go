@@ -9,13 +9,14 @@ package axon
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 	"testing"
 
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -61,9 +62,9 @@ func TestCollectAndSetDWts(t *testing.T) {
 	netB := buildNet(ctxB, t, shape, 1)
 	ctxB.SlowInterval = 10000
 
-	runCycle := func(net *Network, ctx *Context, pats *etable.Table) {
-		inPats := pats.ColByName("Input").(*etensor.Float32).SubSpace([]int{0})
-		outPats := pats.ColByName("Output").(*etensor.Float32).SubSpace([]int{0})
+	runCycle := func(net *Network, ctx *Context, pats *table.Table) {
+		inPats := pats.ColumnByName("Input").(*tensor.Float32).SubSpace([]int{0})
+		outPats := pats.ColumnByName("Output").(*tensor.Float32).SubSpace([]int{0})
 		inputLayer := net.AxonLayerByName("Input")
 		outputLayer := net.AxonLayerByName("Output")
 		// we train on a single pattern
@@ -306,28 +307,28 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 	return true
 }
 
-func generateRandomPatterns(nPats int, seed int64) *etable.Table {
+func generateRandomPatterns(nPats int, seed int64) *table.Table {
 	shape := []int{shape1D, shape1D}
 
 	rand.Seed(seed)
 
-	pats := &etable.Table{}
-	pats.SetFromSchema(etable.Schema{
-		{Name: "Name", Type: etensor.STRING, CellShape: nil, DimNames: nil},
-		{Name: "Input", Type: etensor.FLOAT32, CellShape: shape, DimNames: []string{"Y", "X"}},
-		{Name: "Output", Type: etensor.FLOAT32, CellShape: shape, DimNames: []string{"Y", "X"}},
+	pats := &table.Table{}
+	pats.SetFromSchema(table.Schema{
+		{Name: "Name", Type: tensor.STRING, CellShape: nil, DimNames: nil},
+		{Name: "Input", Type: reflect.Float32, CellShape: shape, DimNames: []string{"Y", "X"}},
+		{Name: "Output", Type: reflect.Float32, CellShape: shape, DimNames: []string{"Y", "X"}},
 	}, nPats)
 	numOn := max((shape[0]*shape[1])/4, 1) // ensure min at least 1
-	patgen.PermutedBinaryRows(pats.Cols[1], numOn, 1, 0)
-	patgen.PermutedBinaryRows(pats.Cols[2], numOn, 1, 0)
-	// fmt.Printf("%v\n", pats.Cols[1].(*etensor.Float32).Values)
+	patgen.PermutedBinaryRows(pats.Columns[1], numOn, 1, 0)
+	patgen.PermutedBinaryRows(pats.Columns[2], numOn, 1, 0)
+	// fmt.Printf("%v\n", pats.Columns[1].(*tensor.Float32).Values)
 	return pats
 }
 
 // buildIdenticalNetworks builds two identical nets, one single-threaded and one
 // multi-threaded (parallel). They are seeded with the same RNG, so they are identical.
 // Returns two networks: (sequential, parallel)
-func buildIdenticalNetworks(t *testing.T, pats *etable.Table, nthrs int) (*Network, *Network, *Context, *Context) {
+func buildIdenticalNetworks(t *testing.T, pats *table.Table, nthrs int) (*Network, *Network, *Context, *Context) {
 	shape := []int{shape1D, shape1D}
 
 	ctxA := NewContext()
@@ -379,12 +380,12 @@ func buildNet(ctx *Context, t *testing.T, shape []int, nthrs int) *Network {
 
 // runFunEpochs runs the given function for the given number of iterations over the
 // dataset. The random seed is set once at the beginning of the function.
-func runFunEpochs(ctx *Context, pats *etable.Table, net *Network, fun func(*Network, *Context), epochs int) {
+func runFunEpochs(ctx *Context, pats *table.Table, net *Network, fun func(*Network, *Context), epochs int) {
 	rand.Seed(42)
 	nCycles := 150
 
-	inPats := pats.ColByName("Input").(*etensor.Float32)
-	outPats := pats.ColByName("Output").(*etensor.Float32)
+	inPats := pats.ColumnByName("Input").(*tensor.Float32)
+	outPats := pats.ColumnByName("Output").(*tensor.Float32)
 	inputLayer := net.AxonLayerByName("Input")
 	outputLayer := net.AxonLayerByName("Output")
 	for epoch := 0; epoch < epochs; epoch++ {

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// gabab_plot plots an equation updating over time in a etable.Table and Plot2D.
+// gabab_plot plots an equation updating over time in a table.Table and Plot2D.
 package main
 
 //go:generate core generate -add-types
@@ -14,11 +14,11 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 func main() {
@@ -82,22 +82,22 @@ type Sim struct {
 	TimeInc float64
 
 	// table for plot
-	VGTable *etable.Table `view:"no-inline"`
+	VGTable *table.Table `view:"no-inline"`
 
 	// table for plot
-	SGTable *etable.Table `view:"no-inline"`
+	SGTable *table.Table `view:"no-inline"`
 
 	// table for plot
-	TimeTable *etable.Table `view:"no-inline"`
+	TimeTable *table.Table `view:"no-inline"`
 
 	// the plot
-	VGPlot *eplot.Plot2D `view:"-"`
+	VGPlot *plotview.PlotView `view:"-"`
 
 	// the plot
-	SGPlot *eplot.Plot2D `view:"-"`
+	SGPlot *plotview.PlotView `view:"-"`
 
 	// the plot
-	TimePlot *eplot.Plot2D `view:"-"`
+	TimePlot *plotview.PlotView `view:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -118,13 +118,13 @@ func (ss *Sim) Config() {
 	ss.TimeInc = .001
 	ss.Update()
 
-	ss.VGTable = &etable.Table{}
+	ss.VGTable = &table.Table{}
 	ss.ConfigVGTable(ss.VGTable)
 
-	ss.SGTable = &etable.Table{}
+	ss.SGTable = &table.Table{}
 	ss.ConfigSGTable(ss.SGTable)
 
-	ss.TimeTable = &etable.Table{}
+	ss.TimeTable = &table.Table{}
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
@@ -150,38 +150,38 @@ func (ss *Sim) VGRun() { //types:add
 
 		gbug := 0.2 / (1.0 + math32.FastExp(float32(0.1*((v+90)+10))))
 
-		dt.SetCellFloat("V", vi, v)
-		dt.SetCellFloat("GgabaB", vi, g)
-		dt.SetCellFloat("GgabaB_std", vi, float64(gs))
-		dt.SetCellFloat("GgabaB_bug", vi, float64(gbug))
+		dt.SetFloat("V", vi, v)
+		dt.SetFloat("GgabaB", vi, g)
+		dt.SetFloat("GgabaB_std", vi, float64(gs))
+		dt.SetFloat("GgabaB_bug", vi, float64(gbug))
 	}
 	if ss.VGPlot != nil {
 		ss.VGPlot.UpdatePlot()
 	}
 }
 
-func (ss *Sim) ConfigVGTable(dt *etable.Table) {
+func (ss *Sim) ConfigVGTable(dt *table.Table) {
 	dt.SetMetaData("name", "GABABplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"V", etensor.FLOAT64, nil, nil},
-		{"GgabaB", etensor.FLOAT64, nil, nil},
-		{"GgabaB_std", etensor.FLOAT64, nil, nil},
-		{"GgabaB_bug", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"V", tensor.FLOAT64, nil, nil},
+		{"GgabaB", tensor.FLOAT64, nil, nil},
+		{"GgabaB_std", tensor.FLOAT64, nil, nil},
+		{"GgabaB_bug", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigVGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigVGPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "V-G Function Plot"
-	plt.Params.XAxisCol = "V"
+	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GgabaB", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GgabaB_std", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GgabaB", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GgabaB_std", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -201,36 +201,36 @@ func (ss *Sim) SGRun() { //types:add
 		g = 1.0 / (1.0 + math.Exp(-(s-7.1)/1.4))
 		gs := ss.GABAstd.GFromS(float32(s))
 
-		dt.SetCellFloat("S", si, s)
-		dt.SetCellFloat("GgabaB_max", si, g)
-		dt.SetCellFloat("GgabaBstd_max", si, float64(gs))
+		dt.SetFloat("S", si, s)
+		dt.SetFloat("GgabaB_max", si, g)
+		dt.SetFloat("GgabaBstd_max", si, float64(gs))
 	}
 	if ss.SGPlot != nil {
 		ss.SGPlot.UpdatePlot()
 	}
 }
 
-func (ss *Sim) ConfigSGTable(dt *etable.Table) {
+func (ss *Sim) ConfigSGTable(dt *table.Table) {
 	dt.SetMetaData("name", "SG_GABAplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"S", etensor.FLOAT64, nil, nil},
-		{"GgabaB_max", etensor.FLOAT64, nil, nil},
-		{"GgabaBstd_max", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"S", tensor.FLOAT64, nil, nil},
+		{"GgabaB_max", tensor.FLOAT64, nil, nil},
+		{"GgabaBstd_max", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigSGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigSGPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "S-G Function Plot"
-	plt.Params.XAxisCol = "S"
+	plt.Params.XAxisColumn = "S"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("S", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GgabaB_max", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GgabaBstd_max", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("S", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GgabaB_max", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GgabaBstd_max", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -250,11 +250,11 @@ func (ss *Sim) TimeRun() { //types:add
 	gi := 0.0 // just goes down
 	for t := 0; t < ss.TimeSteps; t++ {
 		// record starting state first, then update
-		dt.SetCellFloat("Time", t, time)
-		dt.SetCellFloat("Gs", t, gs)
-		dt.SetCellFloat("GsX", t, x)
-		dt.SetCellFloat("GABAB", t, float64(gabaB))
-		dt.SetCellFloat("GABABx", t, float64(gabaBx))
+		dt.SetFloat("Time", t, time)
+		dt.SetFloat("Gs", t, gs)
+		dt.SetFloat("GsX", t, x)
+		dt.SetFloat("GABAB", t, float64(gabaB))
+		dt.SetFloat("GABABx", t, float64(gabaBx))
 
 		gis := 1.0 / (1.0 + math.Exp(-(gi-7.1)/1.4))
 		dGs := (ss.TauFact*x - gs) / ss.RiseTau
@@ -264,8 +264,8 @@ func (ss *Sim) TimeRun() { //types:add
 
 		var dG, dX float32
 		ss.GABAstd.BiExp(gabaB, gabaBx, &dG, &dX)
-		dt.SetCellFloat("dG", t, float64(dG))
-		dt.SetCellFloat("dX", t, float64(dX))
+		dt.SetFloat("dG", t, float64(dG))
+		dt.SetFloat("dX", t, float64(dX))
 
 		ss.GABAstd.GABAB(float32(gi), &gabaB, &gabaBx)
 
@@ -276,33 +276,33 @@ func (ss *Sim) TimeRun() { //types:add
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
+func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("name", "TimeGaBabplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Time", etensor.FLOAT64, nil, nil},
-		{"Gs", etensor.FLOAT64, nil, nil},
-		{"GsX", etensor.FLOAT64, nil, nil},
-		{"GABAB", etensor.FLOAT64, nil, nil},
-		{"GABABx", etensor.FLOAT64, nil, nil},
-		{"dG", etensor.FLOAT64, nil, nil},
-		{"dX", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Time", tensor.FLOAT64, nil, nil},
+		{"Gs", tensor.FLOAT64, nil, nil},
+		{"GsX", tensor.FLOAT64, nil, nil},
+		{"GABAB", tensor.FLOAT64, nil, nil},
+		{"GABABx", tensor.FLOAT64, nil, nil},
+		{"dG", tensor.FLOAT64, nil, nil},
+		{"dX", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "G Time Function Plot"
-	plt.Params.XAxisCol = "Time"
+	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gs", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GsX", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GABAB", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GABABx", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Time", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gs", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GsX", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GABAB", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GABABx", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -316,13 +316,13 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split, "tv")
 
-	ss.VGPlot = eplot.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.VGPlot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigVGPlot(ss.VGPlot, ss.VGTable)
 
-	ss.SGPlot = eplot.NewSubPlot(tv.NewTab("S-G Plot"))
+	ss.SGPlot = plotview.NewSubPlot(tv.NewTab("S-G Plot"))
 	ss.ConfigSGPlot(ss.SGPlot, ss.SGTable)
 
-	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

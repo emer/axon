@@ -41,11 +41,11 @@ import (
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/emergent/v2/empi/mpi"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor/stats/split"
 )
 
 func main() {
@@ -530,8 +530,8 @@ func (ss *Sim) DecodeAct(ev *armaze.Env, di int) armaze.Actions {
 	return armaze.Actions(ss.SoftMaxChoose(ev, vt))
 }
 
-func (ss *Sim) SoftMaxChoose(ev *armaze.Env, vt *etensor.Float32) int {
-	dx := vt.Dim(1)
+func (ss *Sim) SoftMaxChoose(ev *armaze.Env, vt *tensor.Float32) int {
+	dx := vt.DimSize(1)
 	var tot float32
 	probs := make([]float32, dx)
 	for i := range probs {
@@ -845,7 +845,7 @@ func (ss *Sim) ConfigLogItems() {
 
 	ss.Logs.AddItem(&elog.Item{
 		Name:      "ActCor",
-		Type:      etensor.FLOAT64,
+		Type:      reflect.Float64,
 		CellShape: []int{int(armaze.ActionsN)},
 		DimNames:  []string{"Acts"},
 		// Plot:      true,
@@ -856,21 +856,21 @@ func (ss *Sim) ConfigLogItems() {
 				ix := ctx.Logs.IndexView(ctx.Mode, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Instinct"})
 				split.AggTry(spl, "ActMatch", agg.AggMean)
-				ags := spl.AggsToTable(etable.ColNameOnly)
+				ags := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
-				ctx.SetTensor(ags.Cols[0]) // cors
+				ctx.SetTensor(ags.Columns[0]) // cors
 			}}})
 	for act := armaze.Actions(0); act < armaze.ActionsN; act++ { // per-action % correct
 		anm := act.String()
 		ss.Logs.AddItem(&elog.Item{
 			Name: anm + "Cor",
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			// Plot:  true,
 			Range: minmax.F64{Min: 0},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
-					rw := ags.RowsByString("Instinct", anm, etable.Equals, etable.UseCase)
+					rw := ags.RowsByString("Instinct", anm, table.Equals, table.UseCase)
 					if len(rw) > 0 {
 						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}
@@ -953,9 +953,9 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 			us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
 			ofcP := ofcPosUS.Pool(i+1, diu)
 			ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
-			dp.SetCellFloat("Drive", int(i), float64(drv))
-			dp.SetCellFloat("USin", int(i), float64(us))
-			dp.SetCellFloat("OFC", int(i), float64(ofc))
+			dp.SetFloat("Drive", int(i), float64(drv))
+			dp.SetFloat("USin", int(i), float64(us))
+			dp.SetFloat("OFC", int(i), float64(ofc))
 		}
 		dn := ss.EnvGUI.USnegData
 		nn := pv.NNegUSs
@@ -963,8 +963,8 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 			us := axon.GlbUSneg(ctx, diu, axon.GvUSneg, i)
 			ofcP := ofcNegUS.Pool(i+1, diu)
 			ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
-			dn.SetCellFloat("USin", int(i), float64(us))
-			dn.SetCellFloat("OFC", int(i), float64(ofc))
+			dn.SetFloat("USin", int(i), float64(us))
+			dn.SetFloat("OFC", int(i), float64(ofc))
 		}
 		ss.EnvGUI.USposPlot.GoUpdatePlot()
 		ss.EnvGUI.USnegPlot.GoUpdatePlot()

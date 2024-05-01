@@ -4,7 +4,7 @@
 
 package armaze
 
-import "github.com/emer/etable/v2/minmax"
+import "cogentcore.org/core/math32/minmax"
 
 // Params are misc environment parameters
 type Params struct {

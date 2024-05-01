@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/etable/v2/etable"
 )
 
 func init() {
@@ -52,17 +52,17 @@ func BenchmarkBenchNetFull(b *testing.B) {
 		log.Println(net.SizeReport(false))
 	}
 
-	pats := &etable.Table{}
+	pats := &table.Table{}
 	ConfigPats(pats, *numPats, *numUnits)
 
-	epcLog := &etable.Table{}
+	epcLog := &table.Table{}
 	ConfigEpcLog(epcLog)
 
 	TrainNet(net, ctx, pats, epcLog, *numEpochs, *verbose, *gpu)
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)
-		err := epcLog.SaveCSV(core.Filename(filename), ',', etable.Headers)
+		err := epcLog.SaveCSV(core.Filename(filename), ',', table.Headers)
 		if err != nil {
 			b.Log(err)
 		}

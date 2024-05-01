@@ -4,7 +4,7 @@
 
 package cond
 
-import "github.com/emer/etable/v2/etensor"
+import "cogentcore.org/core/tensor"
 
 var (
 	NUSs = 4
@@ -88,7 +88,7 @@ func StimYX(stidx int) []int {
 }
 
 // SetStim sets stimulus for given input, returns index
-func SetStim(tsr *etensor.Float32, nyrep int, stm string) int {
+func SetStim(tsr *tensor.Float32, nyrep int, stm string) int {
 	stidx := StimIndex(stm)
 	xy := StimYX(stidx)
 	xy = append(xy, 0)
@@ -113,7 +113,7 @@ func ContextYX(ctidx int) []int {
 }
 
 // SetContext sets context for given input
-func SetContext(tsr *etensor.Float32, nyrep int, ctx string) int {
+func SetContext(tsr *tensor.Float32, nyrep int, ctx string) int {
 	ctidx := ContextIndex(ctx)
 	xy := ContextYX(ctidx)
 	xy = append(xy, 0)
@@ -143,7 +143,7 @@ func USTimeIndex(stidx, tick, start, end int) []int {
 
 // SetUSTime sets USTime based on given values.
 // returns false if not set.
-func SetUSTime(tsr *etensor.Float32, nyrep, stidx, tick, start, end int) bool {
+func SetUSTime(tsr *tensor.Float32, nyrep, stidx, tick, start, end int) bool {
 	idx := USTimeIndex(stidx, tick, start, end)
 	if idx == nil {
 		return false
@@ -156,7 +156,7 @@ func SetUSTime(tsr *etensor.Float32, nyrep, stidx, tick, start, end int) bool {
 }
 
 // SetTime sets Time input
-func SetTime(tsr *etensor.Float32, nyrep int, tick int) {
+func SetTime(tsr *tensor.Float32, nyrep int, tick int) {
 	if tick < 0 {
 		tick = 0
 	}
@@ -168,7 +168,7 @@ func SetTime(tsr *etensor.Float32, nyrep int, tick int) {
 }
 
 // SetUS sets US input
-func SetUS(tsr *etensor.Float32, nyrep int, pv int, mag float32) {
+func SetUS(tsr *tensor.Float32, nyrep int, pv int, mag float32) {
 	idx := []int{0, pv, 0, 0}
 	for y := 0; y < nyrep; y++ {
 		idx[2] = y

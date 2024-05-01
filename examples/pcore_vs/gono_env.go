@@ -7,11 +7,11 @@ package main
 import (
 	"math/rand"
 
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/popcode"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // GoNoEnv implements simple Go vs. NoGo input patterns to test BG learning.
@@ -85,7 +85,7 @@ type GoNoEnv struct {
 	RndSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
-	States map[string]*etensor.Float32
+	States map[string]*tensor.Float32
 
 	// true if Pos - Neg > Thr
 	Should bool `edit:"-"`
@@ -136,11 +136,11 @@ func (ev *GoNoEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
-	ev.States = make(map[string]*etensor.Float32)
-	ev.States["ACCPos"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.States["ACCNeg"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
-	ev.States["SNc"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
+	ev.States = make(map[string]*tensor.Float32)
+	ev.States["ACCPos"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States["ACCNeg"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States["Rew"] = tensor.NewFloat32([]int{1, 1}, nil, nil)
+	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1}, nil, nil)
 }
 
 func (ev *GoNoEnv) Validate() error {
@@ -158,7 +158,7 @@ func (ev *GoNoEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
 	return 0, 0, false
 }
 
-func (ev *GoNoEnv) State(el string) etensor.Tensor {
+func (ev *GoNoEnv) State(el string) tensor.Tensor {
 	return ev.States[el]
 }
 
@@ -200,7 +200,7 @@ func (ev *GoNoEnv) Step() bool {
 	return true
 }
 
-func (ev *GoNoEnv) Action(action string, nop etensor.Tensor) {
+func (ev *GoNoEnv) Action(action string, nop tensor.Tensor) {
 	if action == "Gated" {
 		ev.Gated = true
 	} else {

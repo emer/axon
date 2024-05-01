@@ -16,11 +16,17 @@ import (
 	"os"
 	"strings"
 
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/reflectx"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/pvlv/cond"
 	"github.com/emer/emergent/v2/econfig"
@@ -36,12 +42,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/split"
 )
 
 func main() {
@@ -209,9 +209,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
-	cs, csP := net.AddInputPulv4D("CS", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
+	cs, csP := net.AddInputPulv4D("CS", stim.DimSize(0), stim.DimSize(1), stim.DimSize(2), stim.DimSize(3), space)
 
-	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
+	ctxIn := net.AddLayer4D("ContextIn", ctxt.DimSize(0), ctxt.DimSize(1), ctxt.DimSize(2), ctxt.DimSize(3), axon.InputLayer)
 
 	///////////////////////////////////////////
 	// CS -> BLA, OFC
@@ -581,7 +581,7 @@ func (ss *Sim) ConfigLogItems() []string {
 				statName := fmt.Sprintf("%s_%s", pt, st)
 				ss.Logs.AddItem(&elog.Item{
 					Name: itmName,
-					Type: etensor.FLOAT64,
+					Type: reflect.Float64,
 					// FixMin: true,
 					// FixMax: true,
 					Range: minmax.F64{Max: 1},
@@ -638,17 +638,17 @@ func (ss *Sim) BlockStats() {
 
 	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
 	spl := split.GroupBy(ix, []string{"SeqType", "TickType"})
-	for _, ts := range ix.Table.ColNames {
+	for _, ts := range ix.Table.ColumnNames {
 		if ts == "SeqType" || ts == "TrialName" || ts == "TickType" {
 			continue
 		}
 		split.Agg(spl, ts, agg.AggMean)
 	}
-	dt := spl.AggsToTable(etable.ColNameOnly)
+	dt := spl.AggsToTable(table.ColumnNameOnly)
 	for ri := 0; ri < dt.Rows; ri++ {
-		tt := dt.CellString("SeqType", ri)
+		tt := dt.StringValue("SeqType", ri)
 		trl := int(dt.CellFloat("Trial", ri))
-		dt.SetCellString("SeqType", ri, fmt.Sprintf("%s_%d", tt, trl))
+		dt.SetString("SeqType", ri, fmt.Sprintf("%s_%d", tt, trl))
 	}
 	dt.SetMetaData("DA:On", "+")
 	dt.SetMetaData("RewPred:On", "+")
@@ -664,7 +664,7 @@ func (ss *Sim) BlockStats() {
 	curSeq := ""
 	seq := -1
 	for ri := 0; ri < nrows; ri++ {
-		st := dt.CellString("SeqType", ri)
+		st := dt.StringValue("SeqType", ri)
 		ui := strings.LastIndex(st, "_")
 		st = st[:ui]
 		if curSeq != st {
@@ -672,7 +672,7 @@ func (ss *Sim) BlockStats() {
 			curSeq = st
 			ss.Stats.SetStringDi("SeqType", seq, curSeq)
 		}
-		tt := dt.CellString("TickType", ri)
+		tt := dt.StringValue("TickType", ri)
 		if strings.Contains(tt, "_CS") {
 			for _, st := range ss.Config.Log.AggStats {
 				ss.Stats.SetFloatDi("CS_"+st, seq, dt.CellFloat(st, ri))
@@ -718,10 +718,10 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "BlockByType"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
-	plt.Params.XAxisCol = "SeqType"
+	plt.Params.XAxisColumn = "SeqType"
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {

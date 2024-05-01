@@ -9,8 +9,8 @@ package cond
 import (
 	"fmt"
 
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
@@ -81,7 +81,7 @@ type CondEnv struct {
 	CurTick Sequence
 
 	// current rendered state tensors -- extensible map
-	CurStates map[string]*etensor.Float32
+	CurStates map[string]*tensor.Float32
 }
 
 func (ev *CondEnv) Name() string { return ev.Nm }
@@ -97,20 +97,20 @@ func (ev *CondEnv) Config(rmax int, rnm string) {
 	ev.Sequence.Scale = env.Sequence
 	ev.Tick.Scale = env.Tick
 
-	ev.CurStates = make(map[string]*etensor.Float32)
+	ev.CurStates = make(map[string]*tensor.Float32)
 
 	stsh := []int{StimShape[0], StimShape[1], ev.NYReps, 1}
-	ev.CurStates["CS"] = etensor.NewFloat32(stsh, nil, nil)
+	ev.CurStates["CS"] = tensor.NewFloat32(stsh, nil, nil)
 	ctsh := []int{ContextShape[0], ContextShape[1], ev.NYReps, 1}
-	ev.CurStates["ContextIn"] = etensor.NewFloat32(ctsh, nil, nil)
+	ev.CurStates["ContextIn"] = tensor.NewFloat32(ctsh, nil, nil)
 	ustsh := make([]int, 4)
 	copy(ustsh, USTimeShape)
 	ustsh[2] = ev.NYReps
-	ev.CurStates["USTimeIn"] = etensor.NewFloat32(ustsh, nil, nil)
-	ev.CurStates["Time"] = etensor.NewFloat32([]int{1, MaxTime, ev.NYReps, 1}, nil, nil)
+	ev.CurStates["USTimeIn"] = tensor.NewFloat32(ustsh, nil, nil)
+	ev.CurStates["Time"] = tensor.NewFloat32([]int{1, MaxTime, ev.NYReps, 1}, nil, nil)
 	ussh := []int{USShape[0], USShape[1], ev.NYReps, 1}
-	ev.CurStates["USpos"] = etensor.NewFloat32(ussh, nil, nil)
-	ev.CurStates["USneg"] = etensor.NewFloat32(ussh, nil, nil)
+	ev.CurStates["USpos"] = tensor.NewFloat32(ussh, nil, nil)
+	ev.CurStates["USneg"] = tensor.NewFloat32(ussh, nil, nil)
 }
 
 func (ev *CondEnv) Validate() error {
@@ -149,7 +149,7 @@ func (ev *CondEnv) InitCond() {
 	ev.Tick.Max = trl.NTicks
 }
 
-func (ev *CondEnv) State(element string) etensor.Tensor {
+func (ev *CondEnv) State(element string) tensor.Tensor {
 	return ev.CurStates[element]
 }
 
@@ -175,7 +175,7 @@ func (ev *CondEnv) Step() bool {
 	return true
 }
 
-func (ev *CondEnv) Action(_ string, _ etensor.Tensor) {
+func (ev *CondEnv) Action(_ string, _ tensor.Tensor) {
 	// nop
 }
 

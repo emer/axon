@@ -12,14 +12,14 @@ import (
 	"math"
 	"strconv"
 
-	"cogentcore.org/core/gox/indent"
+	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/relpos"
 	"github.com/emer/emergent/v2/weights"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // LayerBase manages the structural elements of the layer, which are common
@@ -46,7 +46,7 @@ type LayerBase struct {
 	Off bool
 
 	// shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools
-	Shp etensor.Shape
+	Shp tensor.Shape
 
 	// type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)
 	Typ LayerTypes
@@ -76,7 +76,7 @@ type LayerBase struct {
 	RepIxs []int `view:"-"`
 
 	// shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape
-	RepShp etensor.Shape `view:"-"`
+	RepShp tensor.Shape `view:"-"`
 
 	// list of receiving projections into this layer from other layers
 	RcvPrjns AxonPrjns
@@ -143,7 +143,7 @@ func (ly *LayerBase) SetOff(off bool) {
 		pj.SetOff(pj.RecvLay().IsOff() || off)
 	}
 }
-func (ly *LayerBase) Shape() *etensor.Shape      { return &ly.Shp }
+func (ly *LayerBase) Shape() *tensor.Shape       { return &ly.Shp }
 func (ly *LayerBase) Is2D() bool                 { return ly.Shp.NumDims() == 2 }
 func (ly *LayerBase) Is4D() bool                 { return ly.Shp.NumDims() == 4 }
 func (ly *LayerBase) RelPos() relpos.Rel         { return ly.Rel }
@@ -204,8 +204,8 @@ func (ly *LayerBase) RecvNameType(receiver, typ string) *Prjn {
 
 func (ly *LayerBase) Index4DFrom2D(x, y int) ([]int, bool) {
 	lshp := ly.Shape()
-	nux := lshp.Dim(3)
-	nuy := lshp.Dim(2)
+	nux := lshp.DimSize(3)
+	nuy := lshp.DimSize(2)
 	ux := x % nux
 	uy := y % nuy
 	px := x / nux
@@ -249,10 +249,10 @@ func (ly *LayerBase) Size() math32.Vector2 {
 	var sz math32.Vector2
 	switch {
 	case ly.Is2D():
-		sz = math32.Vec2(float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))) // Y, X
+		sz = math32.Vec2(float32(ly.Shp.DimSize(1)), float32(ly.Shp.DimSize(0))) // Y, X
 	case ly.Is4D():
 		// note: pool spacing is handled internally in display and does not affect overall size
-		sz = math32.Vec2(float32(ly.Shp.Dim(1)*ly.Shp.Dim(3)), float32(ly.Shp.Dim(0)*ly.Shp.Dim(2))) // Y, X
+		sz = math32.Vec2(float32(ly.Shp.DimSize(1)*ly.Shp.DimSize(3)), float32(ly.Shp.DimSize(0)*ly.Shp.DimSize(2))) // Y, X
 	default:
 		sz = math32.Vec2(float32(ly.Shp.Len()), 1)
 	}
@@ -283,7 +283,7 @@ func (ly *LayerBase) SetRepIndexesShape(idxs, shape []int) {
 }
 
 // RepShape returns the shape to use for representative units
-func (ly *LayerBase) RepShape() *etensor.Shape {
+func (ly *LayerBase) RepShape() *tensor.Shape {
 	sz := len(ly.RepIxs)
 	if sz == 0 {
 		return &ly.Shp
@@ -302,7 +302,7 @@ func (ly *LayerBase) NSubPools() int {
 	if ly.Shp.NumDims() != 4 {
 		return 0
 	}
-	return ly.Shp.Dim(0) * ly.Shp.Dim(1)
+	return ly.Shp.DimSize(0) * ly.Shp.DimSize(1)
 }
 
 // Pool returns pool at given pool x data index
@@ -481,7 +481,7 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 	if !ly.Is4D() {
 		return
 	}
-	sh := ly.Shp.Shapes()
+	sh := ly.Shp.Shape().Sizes
 	spy := sh[0]
 	spx := sh[1]
 	pi := uint32(1)
@@ -647,7 +647,7 @@ func (ly *LayerBase) UnitValues(vals *[]float32, varNm string, di int) error {
 
 // UnitValuesTensor returns values of given variable name on unit
 // for each unit in the layer, as a float32 tensor in same shape as layer units.
-func (ly *LayerBase) UnitValuesTensor(tsr etensor.Tensor, varNm string, di int) error {
+func (ly *LayerBase) UnitValuesTensor(tsr tensor.Tensor, varNm string, di int) error {
 	if tsr == nil {
 		err := fmt.Errorf("axon.UnitValuesTensor: Tensor is nil")
 		log.Println(err)
@@ -684,7 +684,7 @@ func (ly *LayerBase) UnitValuesTensor(tsr etensor.Tensor, varNm string, di int) 
 // set to RepShape to hold all the values if subset is defined,
 // otherwise it calls UnitValuesTensor and is identical to that.
 // Returns error on invalid var name.
-func (ly *LayerBase) UnitValuesRepTensor(tsr etensor.Tensor, varNm string, di int) error {
+func (ly *LayerBase) UnitValuesRepTensor(tsr tensor.Tensor, varNm string, di int) error {
 	nu := len(ly.RepIxs)
 	if nu == 0 {
 		return ly.UnitValuesTensor(tsr, varNm, di)

@@ -12,10 +12,10 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // index naming:
@@ -322,8 +322,8 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 	tmax := ly.Params.Learn.TrgAvgAct.TrgRange.Max
 	gibinit := ly.Params.Learn.TrgAvgAct.GiBaseInit
 	inc := float32(0)
-	nNy := ly.Shp.Dim(2)
-	nNx := ly.Shp.Dim(3)
+	nNy := ly.Shp.DimSize(2)
+	nNx := ly.Shp.DimSize(3)
 	nn := nNy * nNx
 	if nn > 1 {
 		inc = rng / float32(nn-1)
@@ -446,7 +446,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 	}
 }
 
-// ApplyExt applies external input in the form of an etensor.Float32 or 64.
+// ApplyExt applies external input in the form of an tensor.Float32 or 64.
 // Negative values and NaNs are not valid, and will be interpreted as missing inputs.
 // The given data index di is the data parallel index (0 < di < MaxData):
 // must present inputs separately for each separate data parallel set.
@@ -458,7 +458,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 // otherwise it goes in Ext.
 // Also sets the Exts values on layer, which are used for the GPU version,
 // which requires calling the network ApplyExts() method -- is a no-op for CPU.
-func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext tensor.Tensor) {
 	switch {
 	case ext.NumDims() == 2 && ly.Shp.NumDims() == 4: // special case
 		ly.ApplyExt2Dto4D(ctx, di, ext)
@@ -505,14 +505,14 @@ func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
 }
 
 // ApplyExt2D applies 2D tensor external input
-func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ymx := min(ext.Dim(0), ly.Shp.Dim(0))
-	xmx := min(ext.Dim(1), ly.Shp.Dim(1))
+	ymx := min(ext.DimSize(0), ly.Shp.DimSize(0))
+	xmx := min(ext.DimSize(1), ly.Shp.DimSize(1))
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
-			val := float32(ext.FloatValue(idx))
+			val := float32(ext..Float(idx))
 			lni := uint32(ly.Shp.Offset(idx))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
@@ -520,35 +520,35 @@ func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext etensor.Tensor) {
 }
 
 // ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
-func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	lNy, lNx, _, _ := etensor.Prjn2DShape(&ly.Shp, false)
+	lNy, lNx, _, _ := tensor.Prjn2DShape(&ly.Shp, false)
 
-	ymx := min(ext.Dim(0), lNy)
-	xmx := min(ext.Dim(1), lNx)
+	ymx := min(ext.DimSize(0), lNy)
+	xmx := min(ext.DimSize(1), lNx)
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
-			val := float32(ext.FloatValue(idx))
-			lni := uint32(etensor.Prjn2DIndex(&ly.Shp, false, y, x))
+			val := float32(ext..Float(idx))
+			lni := uint32(tensor.Prjn2DIndex(&ly.Shp, false, y, x))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
 }
 
 // ApplyExt4D applies 4D tensor external input
-func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ypmx := min(ext.Dim(0), ly.Shp.Dim(0))
-	xpmx := min(ext.Dim(1), ly.Shp.Dim(1))
-	ynmx := min(ext.Dim(2), ly.Shp.Dim(2))
-	xnmx := min(ext.Dim(3), ly.Shp.Dim(3))
+	ypmx := min(ext.DimSize(0), ly.Shp.DimSize(0))
+	xpmx := min(ext.DimSize(1), ly.Shp.DimSize(1))
+	ynmx := min(ext.DimSize(2), ly.Shp.DimSize(2))
+	xnmx := min(ext.DimSize(3), ly.Shp.DimSize(3))
 	for yp := 0; yp < ypmx; yp++ {
 		for xp := 0; xp < xpmx; xp++ {
 			for yn := 0; yn < ynmx; yn++ {
 				for xn := 0; xn < xnmx; xn++ {
 					idx := []int{yp, xp, yn, xn}
-					val := float32(ext.FloatValue(idx))
+					val := float32(ext..Float(idx))
 					lni := uint32(ly.Shp.Offset(idx))
 					ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 				}
@@ -560,11 +560,11 @@ func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext etensor.Tensor) {
 // ApplyExt1DTsr applies external input using 1D flat interface into tensor.
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
-func (ly *Layer) ApplyExt1DTsr(ctx *Context, di uint32, ext etensor.Tensor) {
+func (ly *Layer) ApplyExt1DTsr(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(min(ext.Len(), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
-		val := float32(ext.FloatValue1D(int(lni)))
+		val := float32(ext.Float1D(int(lni)))
 		ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 	}
 }
@@ -769,8 +769,8 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 	err = make([]bool, ctx.NetIndexes.NData)
 	minusIndex = make([]int, ctx.NetIndexes.NData)
 	plusIndex = make([]int, ctx.NetIndexes.NData)
-	ydim := ly.Shp.Dim(0)
-	xdim := ly.Shp.Dim(1)
+	ydim := ly.Shp.DimSize(0)
+	xdim := ly.Shp.DimSize(1)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		var maxM, maxP float32
 		var mIndex, pIndex int
@@ -806,8 +806,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 	err = make([]bool, ctx.NetIndexes.NData)
 	minusIndex = make([]int, ctx.NetIndexes.NData)
 	plusIndex = make([]int, ctx.NetIndexes.NData)
-	npool := ly.Shp.Dim(0) * ly.Shp.Dim(1)
-	nun := ly.Shp.Dim(2) * ly.Shp.Dim(3)
+	npool := ly.Shp.DimSize(0) * ly.Shp.DimSize(1)
+	nun := ly.Shp.DimSize(2) * ly.Shp.DimSize(3)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		var maxM, maxP float32
 		var mIndex, pIndex int

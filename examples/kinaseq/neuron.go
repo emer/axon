@@ -11,13 +11,13 @@ import (
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // ParamSets for basic parameters
@@ -337,61 +337,61 @@ func (ss *Sim) InitWts() {
 ///////////////////////////////////////////////////////////////////
 //  Logging
 
-func (ss *Sim) LogSyn(dt *etable.Table, row int, pre string, sy *axon.Synapse) {
-	dt.SetCellFloat(pre+"Ca", row, float64(sy.Ca))
-	dt.SetCellFloat(pre+"CaM", row, float64(sy.CaM))
-	dt.SetCellFloat(pre+"CaP", row, float64(sy.CaP))
-	dt.SetCellFloat(pre+"CaD", row, float64(sy.CaD))
-	dt.SetCellFloat(pre+"CaDMax", row, float64(sy.CaDMax))
-	dt.SetCellFloat(pre+"TDWt", row, float64(sy.TDWt))
-	dt.SetCellFloat(pre+"DWt", row, float64(sy.DWt))
-	dt.SetCellFloat(pre+"Wt", row, float64(sy.Wt))
+func (ss *Sim) LogSyn(dt *table.Table, row int, pre string, sy *axon.Synapse) {
+	dt.SetFloat(pre+"Ca", row, float64(sy.Ca))
+	dt.SetFloat(pre+"CaM", row, float64(sy.CaM))
+	dt.SetFloat(pre+"CaP", row, float64(sy.CaP))
+	dt.SetFloat(pre+"CaD", row, float64(sy.CaD))
+	dt.SetFloat(pre+"CaDMax", row, float64(sy.CaDMax))
+	dt.SetFloat(pre+"TDWt", row, float64(sy.TDWt))
+	dt.SetFloat(pre+"DWt", row, float64(sy.DWt))
+	dt.SetFloat(pre+"Wt", row, float64(sy.Wt))
 }
 
 // LogState records data for given cycle
-func (ss *Sim) LogState(dt *etable.Table, row, trl, cyc int) {
+func (ss *Sim) LogState(dt *table.Table, row, trl, cyc int) {
 	sn := ss.SendNeur
 	rn := ss.RecvNeur
-	dt.SetCellFloat("Trial", row, float64(trl))
-	dt.SetCellFloat("Cycle", row, float64(cyc))
-	dt.SetCellFloat("SSpike", row, float64(ss.SpikeDisp*sn.Spike))
-	dt.SetCellFloat("RSpike", row, float64(ss.SpikeDisp*rn.Spike))
+	dt.SetFloat("Trial", row, float64(trl))
+	dt.SetFloat("Cycle", row, float64(cyc))
+	dt.SetFloat("SSpike", row, float64(ss.SpikeDisp*sn.Spike))
+	dt.SetFloat("RSpike", row, float64(ss.SpikeDisp*rn.Spike))
 
-	dt.SetCellFloat("SnmdaO", row, float64(sn.SnmdaO))
-	dt.SetCellFloat("SnmdaI", row, float64(sn.SnmdaI))
+	dt.SetFloat("SnmdaO", row, float64(sn.SnmdaO))
+	dt.SetFloat("SnmdaI", row, float64(sn.SnmdaI))
 
-	dt.SetCellFloat("Ge", row, float64(rn.Ge))
-	dt.SetCellFloat("Inet", row, float64(rn.Inet))
-	dt.SetCellFloat("Vm", row, float64(rn.Vm))
-	dt.SetCellFloat("Act", row, float64(rn.Act))
-	dt.SetCellFloat("Gk", row, float64(rn.Gk))
-	dt.SetCellFloat("ISI", row, float64(rn.ISI))
-	dt.SetCellFloat("VmDend", row, float64(rn.VmDend))
-	dt.SetCellFloat("Gnmda", row, float64(rn.Gnmda))
-	dt.SetCellFloat("RnmdaSyn", row, float64(rn.RnmdaSyn))
-	dt.SetCellFloat("RCa", row, float64(rn.RCa))
-	// dt.SetCellFloat("NMDAGmg", row, float64(nex.NMDAGmg))
-	// dt.SetCellFloat("GABAB", row, float64(rn.GABAB))
-	// dt.SetCellFloat("GgabaB", row, float64(rn.GgabaB))
-	dt.SetCellFloat("Gvgcc", row, float64(rn.Gvgcc))
-	dt.SetCellFloat("VgccM", row, float64(rn.VgccM))
-	dt.SetCellFloat("VgccH", row, float64(rn.VgccH))
-	dt.SetCellFloat("VgccCa", row, float64(rn.VgccCa))
-	dt.SetCellFloat("Gak", row, float64(rn.Gak))
-	// dt.SetCellFloat("LearnNow", row, float64(nex.LearnNow))
+	dt.SetFloat("Ge", row, float64(rn.Ge))
+	dt.SetFloat("Inet", row, float64(rn.Inet))
+	dt.SetFloat("Vm", row, float64(rn.Vm))
+	dt.SetFloat("Act", row, float64(rn.Act))
+	dt.SetFloat("Gk", row, float64(rn.Gk))
+	dt.SetFloat("ISI", row, float64(rn.ISI))
+	dt.SetFloat("VmDend", row, float64(rn.VmDend))
+	dt.SetFloat("Gnmda", row, float64(rn.Gnmda))
+	dt.SetFloat("RnmdaSyn", row, float64(rn.RnmdaSyn))
+	dt.SetFloat("RCa", row, float64(rn.RCa))
+	// dt.SetFloat("NMDAGmg", row, float64(nex.NMDAGmg))
+	// dt.SetFloat("GABAB", row, float64(rn.GABAB))
+	// dt.SetFloat("GgabaB", row, float64(rn.GgabaB))
+	dt.SetFloat("Gvgcc", row, float64(rn.Gvgcc))
+	dt.SetFloat("VgccM", row, float64(rn.VgccM))
+	dt.SetFloat("VgccH", row, float64(rn.VgccH))
+	dt.SetFloat("VgccCa", row, float64(rn.VgccCa))
+	dt.SetFloat("Gak", row, float64(rn.Gak))
+	// dt.SetFloat("LearnNow", row, float64(nex.LearnNow))
 
 	nst := &ss.SynNeurTheta
 	sst := &ss.SynSpkTheta
 	ssc := &ss.SynSpkCont
 	snc := &ss.SynNMDACont
 
-	dt.SetCellFloat("R_CaM", row, float64(rn.CaM))
-	dt.SetCellFloat("R_CaP", row, float64(rn.CaP))
-	dt.SetCellFloat("R_CaD", row, float64(rn.CaD))
+	dt.SetFloat("R_CaM", row, float64(rn.CaM))
+	dt.SetFloat("R_CaP", row, float64(rn.CaP))
+	dt.SetFloat("R_CaD", row, float64(rn.CaD))
 
-	dt.SetCellFloat("S_CaM", row, float64(sn.CaM))
-	dt.SetCellFloat("S_CaP", row, float64(sn.CaP))
-	dt.SetCellFloat("S_CaD", row, float64(sn.CaD))
+	dt.SetFloat("S_CaM", row, float64(sn.CaM))
+	dt.SetFloat("S_CaP", row, float64(sn.CaP))
+	dt.SetFloat("S_CaD", row, float64(sn.CaD))
 
 	ss.LogSyn(dt, row, "NST_", nst)
 	ss.LogSyn(dt, row, "SST_", sst)
@@ -399,47 +399,47 @@ func (ss *Sim) LogState(dt *etable.Table, row, trl, cyc int) {
 	ss.LogSyn(dt, row, "SNC_", snc)
 }
 
-func (ss *Sim) ConfigTable(dt *etable.Table) {
+func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("name", "Kinase Equations Table")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Cond", etensor.STRING, nil, nil},
-		{"ErrDWt", etensor.FLOAT64, nil, nil},
-		{"Trial", etensor.FLOAT64, nil, nil},
-		{"Cycle", etensor.FLOAT64, nil, nil},
-		{"SSpike", etensor.FLOAT64, nil, nil},
-		{"RSpike", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Cond", tensor.STRING, nil, nil},
+		{"ErrDWt", tensor.FLOAT64, nil, nil},
+		{"Trial", tensor.FLOAT64, nil, nil},
+		{"Cycle", tensor.FLOAT64, nil, nil},
+		{"SSpike", tensor.FLOAT64, nil, nil},
+		{"RSpike", tensor.FLOAT64, nil, nil},
 
-		{"SnmdaO", etensor.FLOAT64, nil, nil},
-		{"SnmdaI", etensor.FLOAT64, nil, nil},
+		{"SnmdaO", tensor.FLOAT64, nil, nil},
+		{"SnmdaI", tensor.FLOAT64, nil, nil},
 
-		{"Ge", etensor.FLOAT64, nil, nil},
-		{"Inet", etensor.FLOAT64, nil, nil},
-		{"Vm", etensor.FLOAT64, nil, nil},
-		{"Act", etensor.FLOAT64, nil, nil},
-		{"Gk", etensor.FLOAT64, nil, nil},
-		{"ISI", etensor.FLOAT64, nil, nil},
-		{"VmDend", etensor.FLOAT64, nil, nil},
-		{"Gnmda", etensor.FLOAT64, nil, nil},
-		{"RnmdaSyn", etensor.FLOAT64, nil, nil},
-		{"RCa", etensor.FLOAT64, nil, nil},
-		// {"NMDAGmg", etensor.FLOAT64, nil, nil},
-		// {"GABAB", etensor.FLOAT64, nil, nil},
-		// {"GgabaB", etensor.FLOAT64, nil, nil},
-		{"Gvgcc", etensor.FLOAT64, nil, nil},
-		{"VgccM", etensor.FLOAT64, nil, nil},
-		{"VgccH", etensor.FLOAT64, nil, nil},
-		{"VgccCa", etensor.FLOAT64, nil, nil},
-		{"Gak", etensor.FLOAT64, nil, nil},
-		// {"LearnNow", etensor.FLOAT64, nil, nil},
-		{"R_CaM", etensor.FLOAT64, nil, nil},
-		{"R_CaP", etensor.FLOAT64, nil, nil},
-		{"R_CaD", etensor.FLOAT64, nil, nil},
-		{"S_CaM", etensor.FLOAT64, nil, nil},
-		{"S_CaP", etensor.FLOAT64, nil, nil},
-		{"S_CaD", etensor.FLOAT64, nil, nil},
+		{"Ge", tensor.FLOAT64, nil, nil},
+		{"Inet", tensor.FLOAT64, nil, nil},
+		{"Vm", tensor.FLOAT64, nil, nil},
+		{"Act", tensor.FLOAT64, nil, nil},
+		{"Gk", tensor.FLOAT64, nil, nil},
+		{"ISI", tensor.FLOAT64, nil, nil},
+		{"VmDend", tensor.FLOAT64, nil, nil},
+		{"Gnmda", tensor.FLOAT64, nil, nil},
+		{"RnmdaSyn", tensor.FLOAT64, nil, nil},
+		{"RCa", tensor.FLOAT64, nil, nil},
+		// {"NMDAGmg", tensor.FLOAT64, nil, nil},
+		// {"GABAB", tensor.FLOAT64, nil, nil},
+		// {"GgabaB", tensor.FLOAT64, nil, nil},
+		{"Gvgcc", tensor.FLOAT64, nil, nil},
+		{"VgccM", tensor.FLOAT64, nil, nil},
+		{"VgccH", tensor.FLOAT64, nil, nil},
+		{"VgccCa", tensor.FLOAT64, nil, nil},
+		{"Gak", tensor.FLOAT64, nil, nil},
+		// {"LearnNow", tensor.FLOAT64, nil, nil},
+		{"R_CaM", tensor.FLOAT64, nil, nil},
+		{"R_CaP", tensor.FLOAT64, nil, nil},
+		{"R_CaD", tensor.FLOAT64, nil, nil},
+		{"S_CaM", tensor.FLOAT64, nil, nil},
+		{"S_CaP", tensor.FLOAT64, nil, nil},
+		{"S_CaD", tensor.FLOAT64, nil, nil},
 	}
 
 	ss.ConfigSynapse(&sch, "NST_")
@@ -450,85 +450,85 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigSynapse(sch *etable.Schema, pre string) {
-	*sch = append(*sch, etable.Column{pre + "Ca", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaP", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaD", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaDMax", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "TDWt", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "DWt", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "Wt", etensor.FLOAT64, nil, nil})
+func (ss *Sim) ConfigSynapse(sch *table.Schema, pre string) {
+	*sch = append(*sch, table.Column{pre + "Ca", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "CaM", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "CaP", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "CaD", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "CaDMax", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "TDWt", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "DWt", tensor.FLOAT64, nil, nil})
+	*sch = append(*sch, table.Column{pre + "Wt", tensor.FLOAT64, nil, nil})
 }
 
-func (ss *Sim) ConfigTrialPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTrialPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Kinase Equations Trial Plot"
-	plt.Params.XAxisCol = "Cycle"
+	plt.Params.XAxisColumn = "Cycle"
 	plt.SetTable(dt)
 
-	for _, cn := range dt.ColNames {
+	for _, cn := range dt.ColumnNames {
 		if cn == "Cycle" {
 			continue
 		}
 		switch {
 		case strings.Contains(cn, "DWt"):
-			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		case cn == "SSC_CaP" || cn == "SSC_CaD":
-			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		default:
-			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
 		}
 	}
-	// plt.SetColParams("SynCSpkCaM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	// plt.SetColParams("SynOSpkCaM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	// plt.SetColParams("SynCSpkCaM", plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	// plt.SetColParams("SynOSpkCaM", plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 
-	plt.SetColParams("SSpike", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("RSpike", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("SSpike", plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("RSpike", plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 
 	return plt
 }
 
-func (ss *Sim) ConfigRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigRunPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Kinase Equations Run Plot"
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisColumn = "Trial"
 	// plt.Params.LegendCol = "Cond"
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	plt.Params.Lines = false
 
-	for _, cn := range dt.ColNames {
+	for _, cn := range dt.ColumnNames {
 		switch {
 		case strings.Contains(cn, "DWt"):
-			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		default:
-			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
 		}
 	}
 
 	return plt
 }
 
-func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigDWtPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Kinase Equations DWt Plot"
-	plt.Params.XAxisCol = "ErrDWt"
+	plt.Params.XAxisColumn = "ErrDWt"
 	plt.Params.LegendCol = "Cond"
 	plt.Params.Scale = 3
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	plt.Params.Lines = false
 
-	for _, cn := range dt.ColNames {
+	for _, cn := range dt.ColumnNames {
 		switch {
 		case cn == "ErrDWt":
-			plt.SetColParams(cn, eplot.Off, eplot.FixMin, -1, eplot.FixMax, 1.5)
+			plt.SetColParams(cn, plotview.Off, plotview.FixMin, -1, plotview.FixMax, 1.5)
 		case cn == "SSC_DWt":
-			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		case strings.Contains(cn, "_DWt"):
-			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		// case strings.HasPrefix(cn, "X_"):
-		// 	plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		// 	plt.SetColParams(cn, plotview.On, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		default:
-			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+			plt.SetColParams(cn, plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
 		}
 	}
 

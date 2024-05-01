@@ -8,12 +8,13 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"reflect"
 	"time"
 
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
@@ -58,13 +59,13 @@ type MusicEnv struct {
 	NNotes int
 
 	// the song encoded into 200 msec increments, with columns as tracks
-	Song etable.Table
+	Song table.Table
 
 	// current time step
 	Time env.Ctr `view:"inline"`
 
 	// current note, rendered as a 4D tensor with shape:
-	Note etensor.Float32
+	Note tensor.Float32
 
 	// current note index
 	NoteIndex int
@@ -123,7 +124,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 
 	// fmt.Printf("got %v tracks\n", len(s.Tracks))
 
-	sch := etable.Schema{}
+	sch := table.Schema{}
 
 	var tslice []int
 
@@ -140,7 +141,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 		}
 		tslice = append(tslice, no)
 		ticks = max(ticks, tick)
-		sch = append(sch, etable.Column{name, etensor.INT64, nil, nil})
+		sch = append(sch, table.Column{name, reflect.Int, nil, nil})
 	}
 
 	if ev.Debug {
@@ -179,7 +180,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 					fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 				}
 				for ri := lastOnRow + 1; ri <= row; ri++ {
-					ev.Song.SetCellFloatIndex(ti, ri, float64(note))
+					ev.Song.SetFloatIndex(ti, ri, float64(note))
 				}
 			case msg.GetNoteOn(&channel, &note, &vel):
 				if ti == ev.Track {
@@ -190,12 +191,12 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 						fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 					}
 					for ri := lastOnRow + 1; ri <= row; ri++ {
-						ev.Song.SetCellFloatIndex(ti, ri, float64(note))
+						ev.Song.SetFloatIndex(ti, ri, float64(note))
 					}
 					lastOnRow = -1
 				} else {
 					lastOnRow = row
-					ev.Song.SetCellFloatIndex(ti, row, float64(note))
+					ev.Song.SetFloatIndex(ti, row, float64(note))
 					if ev.Debug && row < 20 {
 						fmt.Printf("%d\t%d\tnote on:\t%d\n", tick, row, note)
 					}
@@ -206,7 +207,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 	return nil
 }
 
-func (ev *MusicEnv) State(element string) etensor.Tensor {
+func (ev *MusicEnv) State(element string) tensor.Tensor {
 	switch element {
 	case "Note":
 		return &ev.Note
@@ -321,7 +322,7 @@ func (ev *MusicEnv) PlayNote(noteIndex int) {
 
 }
 
-func (ev *MusicEnv) Action(element string, input etensor.Tensor) {
+func (ev *MusicEnv) Action(element string, input tensor.Tensor) {
 	// nop
 }
 

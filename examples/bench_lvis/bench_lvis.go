@@ -12,7 +12,10 @@ package bench
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
@@ -20,8 +23,6 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/timer"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 var ParamSets = params.Sets{
@@ -140,37 +141,37 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 	net.InitWts(ctx)
 }
 
-func ConfigPats(pats *etable.Table, numPats int, inputShape [2]int, outputShape [2]int) {
+func ConfigPats(pats *table.Table, numPats int, inputShape [2]int, outputShape [2]int) {
 
-	pats.SetFromSchema(etable.Schema{
-		{Name: "Name", Type: etensor.STRING, CellShape: nil, DimNames: nil},
-		{Name: "Input", Type: etensor.FLOAT32, CellShape: inputShape[:], DimNames: []string{"Y", "X"}},
-		{Name: "Output", Type: etensor.FLOAT32, CellShape: outputShape[:], DimNames: []string{"Y", "X"}},
+	pats.SetFromSchema(table.Schema{
+		{Name: "Name", Type: tensor.STRING, CellShape: nil, DimNames: nil},
+		{Name: "Input", Type: reflect.Float32, CellShape: inputShape[:], DimNames: []string{"Y", "X"}},
+		{Name: "Output", Type: reflect.Float32, CellShape: outputShape[:], DimNames: []string{"Y", "X"}},
 	}, numPats)
 
 	nOnIn := (inputShape[0] * inputShape[1]) / 16
 	nOnOut := 2
 
-	patgen.PermutedBinaryRows(pats.Cols[1], nOnIn, 1, 0)
-	patgen.PermutedBinaryRows(pats.Cols[2], nOnOut, 1, 0)
+	patgen.PermutedBinaryRows(pats.Columns[1], nOnIn, 1, 0)
+	patgen.PermutedBinaryRows(pats.Columns[2], nOnOut, 1, 0)
 }
 
-func ConfigEpcLog(dt *etable.Table) {
-	dt.SetFromSchema(etable.Schema{
-		{Name: "Epoch", Type: etensor.INT64, CellShape: nil, DimNames: nil},
-		{Name: "CorSim", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "AvgCorSim", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "SSE", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "CountErr", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "PctErr", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "PctCor", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "Hid1ActAvg", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "Hid2ActAvg", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
-		{Name: "OutActAvg", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+func ConfigEpcLog(dt *table.Table) {
+	dt.SetFromSchema(table.Schema{
+		{Name: "Epoch", Type: reflect.Int, CellShape: nil, DimNames: nil},
+		{Name: "CorSim", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "AvgCorSim", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "SSE", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "CountErr", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "PctErr", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "PctCor", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "Hid1ActAvg", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "Hid2ActAvg", Type: reflect.Float32, CellShape: nil, DimNames: nil},
+		{Name: "OutActAvg", Type: reflect.Float32, CellShape: nil, DimNames: nil},
 	}, 0)
 }
 
-func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int, verbose, gpu bool) {
+func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, gpu bool) {
 	net.InitWts(ctx)
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
@@ -193,8 +194,8 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *etable.Table, 
 	te := net.AxonLayerByName("TE_0")
 	outLay := net.AxonLayerByName("Output")
 
-	inPats := pats.ColByName("Input").(*etensor.Float32)
-	outPats := pats.ColByName("Output").(*etensor.Float32)
+	inPats := pats.ColumnByName("Input").(*tensor.Float32)
+	outPats := pats.ColumnByName("Output").(*tensor.Float32)
 
 	cycPerQtr := 50
 
@@ -254,17 +255,17 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *etable.Table, 
 			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Values[0].CorSim.Avg, t)
 		}
 
-		epcLog.SetCellFloat("Epoch", epc, float64(epc))
-		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Values[0].CorSim.Avg))
-		epcLog.SetCellFloat("SSE", epc, sse)
-		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
-		epcLog.SetCellFloat("PctErr", epc, pctErr)
-		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("V2ActAvg", epc, float64(v2.Values[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("V4ActAvg", epc, float64(v4.Values[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("TEActAvg", epc, float64(te.Values[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("Epoch", epc, float64(epc))
+		epcLog.SetFloat("CorSim", epc, float64(outCorSim))
+		epcLog.SetFloat("AvgCorSim", epc, float64(outLay.Values[0].CorSim.Avg))
+		epcLog.SetFloat("SSE", epc, sse)
+		epcLog.SetFloat("CountErr", epc, float64(cntErr))
+		epcLog.SetFloat("PctErr", epc, pctErr)
+		epcLog.SetFloat("PctCor", epc, pctCor)
+		epcLog.SetFloat("V2ActAvg", epc, float64(v2.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("V4ActAvg", epc, float64(v4.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("TEActAvg", epc, float64(te.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {

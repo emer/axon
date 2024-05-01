@@ -13,12 +13,12 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
+	_ "cogentcore.org/core/tensor/tensorview" // include to get gui views
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/kinase"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	_ "github.com/emer/etable/v2/etview"   // include to get gui views
 	_ "github.com/emer/gosl/v2/slboolview" // ditto
 )
 
@@ -55,16 +55,16 @@ type Sim struct {
 	TimeSteps int
 
 	// table for plot
-	Table *etable.Table `view:"no-inline"`
+	Table *table.Table `view:"no-inline"`
 
 	// the plot
-	Plot *eplot.Plot2D `view:"-"`
+	Plot *plotview.PlotView `view:"-"`
 
 	// table for plot
-	TimeTable *etable.Table `view:"no-inline"`
+	TimeTable *table.Table `view:"no-inline"`
 
 	// the plot
-	TimePlot *eplot.Plot2D `view:"-"`
+	TimePlot *plotview.PlotView `view:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -78,9 +78,9 @@ func (ss *Sim) Config() {
 	ss.DdtAdj = 0
 	ss.TimeSteps = 1000
 	ss.Update()
-	ss.Table = &etable.Table{}
+	ss.Table = &table.Table{}
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &etable.Table{}
+	ss.TimeTable = &table.Table{}
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
@@ -132,16 +132,16 @@ func (ss *Sim) Run() { //types:add
 		pi4 := float64(caP)
 		di4 := float64(caD)
 
-		dt.SetCellFloat("t", ti, t)
-		dt.SetCellFloat("mi", ti, mi)
-		dt.SetCellFloat("pi", ti, pi)
-		dt.SetCellFloat("di", ti, di)
-		dt.SetCellFloat("mi4", ti, mi4)
-		dt.SetCellFloat("pi4", ti, pi4)
-		dt.SetCellFloat("di4", ti, di4)
-		dt.SetCellFloat("m", ti, m)
-		dt.SetCellFloat("p", ti, p)
-		dt.SetCellFloat("d", ti, d)
+		dt.SetFloat("t", ti, t)
+		dt.SetFloat("mi", ti, mi)
+		dt.SetFloat("pi", ti, pi)
+		dt.SetFloat("di", ti, di)
+		dt.SetFloat("mi4", ti, mi4)
+		dt.SetFloat("pi4", ti, pi4)
+		dt.SetFloat("di4", ti, di4)
+		dt.SetFloat("m", ti, m)
+		dt.SetFloat("p", ti, p)
+		dt.SetFloat("d", ti, d)
 
 		mi += float64(ss.CaDt.Dt.MDt) * (0 - mi)
 		pi += float64(ss.CaDt.Dt.PDt) * (mi - pi)
@@ -153,41 +153,41 @@ func (ss *Sim) Run() { //types:add
 	}
 }
 
-func (ss *Sim) ConfigTable(dt *etable.Table) {
+func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("name", "SynCa(t)")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"t", etensor.FLOAT64, nil, nil},
-		{"mi", etensor.FLOAT64, nil, nil},
-		{"pi", etensor.FLOAT64, nil, nil},
-		{"di", etensor.FLOAT64, nil, nil},
-		{"mi4", etensor.FLOAT64, nil, nil},
-		{"pi4", etensor.FLOAT64, nil, nil},
-		{"di4", etensor.FLOAT64, nil, nil},
-		{"m", etensor.FLOAT64, nil, nil},
-		{"p", etensor.FLOAT64, nil, nil},
-		{"d", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"t", tensor.FLOAT64, nil, nil},
+		{"mi", tensor.FLOAT64, nil, nil},
+		{"pi", tensor.FLOAT64, nil, nil},
+		{"di", tensor.FLOAT64, nil, nil},
+		{"mi4", tensor.FLOAT64, nil, nil},
+		{"pi4", tensor.FLOAT64, nil, nil},
+		{"di4", tensor.FLOAT64, nil, nil},
+		{"m", tensor.FLOAT64, nil, nil},
+		{"p", tensor.FLOAT64, nil, nil},
+		{"d", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "SynCa Exp Decay Plot"
-	plt.Params.XAxisCol = "t"
+	plt.Params.XAxisColumn = "t"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("t", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("mi", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("pi", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("di", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("mi4", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("pi4", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("di4", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("m", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("p", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("d", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("t", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("mi", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("pi", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("di", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("mi4", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("pi4", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("di4", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("m", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("p", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("d", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -213,35 +213,35 @@ func (ss *Sim) TimeRun() { //types:add
 				synca += gin*(1-synca) - (synca / ss.Tau)
 				g = synca / (1 + math.Exp(-ss.SYNCav*v)/ss.SYNCad)
 
-				dt.SetCellFloat("Time", ti, t)
-				dt.SetCellFloat("Gsynca", ti, g)
-				dt.SetCellFloat("SYNCa", ti, synca)
+				dt.SetFloat("Time", ti, t)
+				dt.SetFloat("Gsynca", ti, g)
+				dt.SetFloat("SYNCa", ti, synca)
 			}
 			ss.TimePlot.Update()
 	*/
 }
 
-func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
+func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("name", "SyNcaplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Time", etensor.FLOAT64, nil, nil},
-		{"Gsynca", etensor.FLOAT64, nil, nil},
-		{"SYNCa", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Time", tensor.FLOAT64, nil, nil},
+		{"Gsynca", tensor.FLOAT64, nil, nil},
+		{"SYNCa", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisCol = "Time"
+	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gsynca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("SYNCa", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gsynca", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("SYNCa", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -255,10 +255,10 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split, "tv")
 
-	ss.Plot = eplot.NewSubPlot(tv.NewTab("T Exp Plot"))
+	ss.Plot = plotview.NewSubPlot(tv.NewTab("T Exp Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

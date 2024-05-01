@@ -15,6 +15,9 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/stats"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -30,10 +33,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/tsragg"
 )
 
 func main() {
@@ -516,7 +515,7 @@ func (ss *Sim) ConfigLogItems() {
 		ly := ss.Net.AxonLayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
@@ -528,7 +527,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gnmda",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -541,7 +540,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_GgabaB",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -554,7 +553,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSGi",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{

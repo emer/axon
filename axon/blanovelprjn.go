@@ -5,8 +5,8 @@
 package axon
 
 import (
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // BLANovelPrjn connects all other pools to the first, Novelty, pool in a BLA layer.
@@ -22,13 +22,13 @@ func (ot *BLANovelPrjn) Name() string {
 	return "BLANovelPrjn"
 }
 
-func (ot *BLANovelPrjn) Connect(send, recv *etensor.Shape, same bool) (sendn, recvn *etensor.Int32, cons *etensor.Bits) {
+func (ot *BLANovelPrjn) Connect(send, recv *tensor.Shape, same bool) (sendn, recvn *tensor.Int32, cons *tensor.Bits) {
 	sendn, recvn, cons = prjn.NewTensors(send, recv)
 	sNtot := send.Len()
 	// rNtot := recv.Len()
-	sNp := send.Dim(0) * send.Dim(1)
-	sNu := send.Dim(2) * send.Dim(3)
-	rNu := recv.Dim(2) * recv.Dim(3)
+	sNp := send.DimSize(0) * send.DimSize(1)
+	sNu := send.DimSize(2) * send.DimSize(3)
+	rNu := recv.DimSize(2) * recv.DimSize(3)
 	rnv := recvn.Values
 	snv := sendn.Values
 	npl := sNp

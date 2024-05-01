@@ -13,7 +13,10 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
@@ -21,8 +24,6 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/timer"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // note: with 2 hidden layers, this simple test case converges to perfect performance:
@@ -104,40 +105,40 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 	net.InitWts(ctx)
 }
 
-func ConfigPats(dt *etable.Table, pats, units int) {
+func ConfigPats(dt *table.Table, pats, units int) {
 	squn := int(math.Sqrt(float64(units)))
 	shp := []int{squn, squn}
 	// fmt.Printf("shape: %v\n", shp)
 
-	dt.SetFromSchema(etable.Schema{
-		{"Name", etensor.STRING, nil, nil},
-		{"Input", etensor.FLOAT32, shp, []string{"Y", "X"}},
-		{"Output", etensor.FLOAT32, shp, []string{"Y", "X"}},
+	dt.SetFromSchema(table.Schema{
+		{"Name", tensor.STRING, nil, nil},
+		{"Input", reflect.Float32, shp, []string{"Y", "X"}},
+		{"Output", reflect.Float32, shp, []string{"Y", "X"}},
 	}, pats)
 
 	// note: actually can learn if activity is .15 instead of .25
 	nOn := units / 8
 
-	patgen.PermutedBinaryRows(dt.Cols[1], nOn, 1, 0)
-	patgen.PermutedBinaryRows(dt.Cols[2], nOn, 1, 0)
+	patgen.PermutedBinaryRows(dt.Columns[1], nOn, 1, 0)
+	patgen.PermutedBinaryRows(dt.Columns[2], nOn, 1, 0)
 }
 
-func ConfigEpcLog(dt *etable.Table) {
-	dt.SetFromSchema(etable.Schema{
-		{"Epoch", etensor.INT64, nil, nil},
-		{"CorSim", etensor.FLOAT32, nil, nil},
-		{"AvgCorSim", etensor.FLOAT32, nil, nil},
-		{"SSE", etensor.FLOAT32, nil, nil},
-		{"CountErr", etensor.FLOAT32, nil, nil},
-		{"PctErr", etensor.FLOAT32, nil, nil},
-		{"PctCor", etensor.FLOAT32, nil, nil},
-		{"Hid1ActAvg", etensor.FLOAT32, nil, nil},
-		{"Hid2ActAvg", etensor.FLOAT32, nil, nil},
-		{"OutActAvg", etensor.FLOAT32, nil, nil},
+func ConfigEpcLog(dt *table.Table) {
+	dt.SetFromSchema(table.Schema{
+		{"Epoch", reflect.Int, nil, nil},
+		{"CorSim", reflect.Float32, nil, nil},
+		{"AvgCorSim", reflect.Float32, nil, nil},
+		{"SSE", reflect.Float32, nil, nil},
+		{"CountErr", reflect.Float32, nil, nil},
+		{"PctErr", reflect.Float32, nil, nil},
+		{"PctCor", reflect.Float32, nil, nil},
+		{"Hid1ActAvg", reflect.Float32, nil, nil},
+		{"Hid2ActAvg", reflect.Float32, nil, nil},
+		{"OutActAvg", reflect.Float32, nil, nil},
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, epcs int, verbose, gpu bool) {
+func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, epcs int, verbose, gpu bool) {
 	net.InitWts(ctx)
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
@@ -153,8 +154,8 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, 
 	hid2Lay := net.LayerByName("Hidden2").(*axon.Layer)
 	outLay := net.LayerByName("Output").(*axon.Layer)
 
-	inPats := pats.ColByName("Input").(*etensor.Float32)
-	outPats := pats.ColByName("Output").(*etensor.Float32)
+	inPats := pats.ColumnByName("Input").(*tensor.Float32)
+	outPats := pats.ColumnByName("Output").(*tensor.Float32)
 
 	cycPerQtr := 50
 
@@ -208,16 +209,16 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *etable.Table, 
 			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Values[0].CorSim.Avg, t)
 		}
 
-		epcLog.SetCellFloat("Epoch", epc, float64(epc))
-		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Values[0].CorSim.Avg))
-		epcLog.SetCellFloat("SSE", epc, sse)
-		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
-		epcLog.SetCellFloat("PctErr", epc, pctErr)
-		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Values[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Values[0].ActAvg.ActMAvg))
-		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("Epoch", epc, float64(epc))
+		epcLog.SetFloat("CorSim", epc, float64(outCorSim))
+		epcLog.SetFloat("AvgCorSim", epc, float64(outLay.Values[0].CorSim.Avg))
+		epcLog.SetFloat("SSE", epc, sse)
+		epcLog.SetFloat("CountErr", epc, float64(cntErr))
+		epcLog.SetFloat("PctErr", epc, pctErr)
+		epcLog.SetFloat("PctCor", epc, pctCor)
+		epcLog.SetFloat("Hid1ActAvg", epc, float64(hid1Lay.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("Hid2ActAvg", epc, float64(hid2Lay.Values[0].ActAvg.ActMAvg))
+		epcLog.SetFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {

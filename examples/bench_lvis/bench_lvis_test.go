@@ -9,9 +9,9 @@ import (
 	"runtime"
 	"testing"
 
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,19 +48,19 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	log.Println(net.SizeReport(false))
 
-	pats := &etable.Table{}
+	pats := &table.Table{}
 	ConfigPats(pats, *numPats, inputShape, outputShape)
 
 	inLay := net.LayerByName("V1_0").(*axon.Layer)
 	outLay := net.LayerByName("Output").(*axon.Layer)
 
-	inPats := pats.ColByName("Input").(*etensor.Float32)
-	outPats := pats.ColByName("Output").(*etensor.Float32)
+	inPats := pats.ColumnByName("Input").(*tensor.Float32)
+	outPats := pats.ColumnByName("Output").(*tensor.Float32)
 
 	require.Equal(b, inLay.Shp.Len(), inPats.Len() / *numPats)
 	require.Equal(b, outLay.Shp.Len(), outPats.Len() / *numPats)
 
-	epcLog := &etable.Table{}
+	epcLog := &table.Table{}
 	ConfigEpcLog(epcLog)
 
 	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)

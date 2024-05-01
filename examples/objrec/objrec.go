@@ -19,6 +19,12 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor/tensorview"
 	"cogentcore.org/core/vgpu"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
@@ -35,13 +41,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/etview"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/split"
-	"github.com/emer/etable/v2/tsragg"
 )
 
 func main() {
@@ -537,7 +536,7 @@ func (ss *Sim) ConfigLogs() {
 func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddItem(&elog.Item{
 		Name: "Err2",
-		Type: etensor.FLOAT64,
+		Type: reflect.Float64,
 		Plot: true,
 		Write: elog.WriteMap{
 			etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
@@ -545,7 +544,7 @@ func (ss *Sim) ConfigLogItems() {
 			}}})
 	ss.Logs.AddItem(&elog.Item{
 		Name: "PctErr2",
-		Type: etensor.FLOAT64,
+		Type: reflect.Float64,
 		Plot: false,
 		Write: elog.WriteMap{
 			etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
@@ -557,7 +556,7 @@ func (ss *Sim) ConfigLogItems() {
 
 	ss.Logs.AddItem(&elog.Item{
 		Name:        "CatErr",
-		Type:        etensor.FLOAT64,
+		Type:        reflect.Float64,
 		CellShape:   []int{20},
 		DimNames:    []string{"Cat"},
 		Plot:        true,
@@ -568,9 +567,9 @@ func (ss *Sim) ConfigLogItems() {
 				ix := ctx.Logs.IndexView(etime.Test, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Cat"})
 				split.AggTry(spl, "Err", agg.AggMean)
-				cats := spl.AggsToTable(etable.ColNameOnly)
+				cats := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables[ctx.Item.Name] = cats
-				ctx.SetTensor(cats.Cols[1])
+				ctx.SetTensor(cats.Columns[1])
 			}}})
 	layers := ss.Net.LayersByType(axon.SuperLayer, axon.TargetLayer)
 	for _, lnm := range layers {
@@ -578,7 +577,7 @@ func (ss *Sim) ConfigLogItems() {
 		ly := ss.Net.AxonLayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
@@ -590,7 +589,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gnmda",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -603,7 +602,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_GgabaB",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -616,7 +615,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSGi",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -680,7 +679,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	tg := etview.NewTensorGrid(ss.GUI.Tabs.NewTab("Image")).
+	tg := tensorview.NewTensorGrid(ss.GUI.Tabs.NewTab("Image")).
 		SetTensor(&ss.Envs.ByMode(etime.Train).(*LEDEnv).Vis.ImgTsr)
 	ss.GUI.SetGrid("Image", tg)
 

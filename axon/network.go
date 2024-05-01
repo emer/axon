@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
+	"cogentcore.org/core/base/datasize"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/datasize"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // axon.Network implements the Axon spiking model,
@@ -323,7 +323,7 @@ func (nt *Network) InitWts(ctx *Context) { //types:add
 // call before InitWts if using Topo wts
 func (nt *Network) InitTopoSWts() {
 	ctx := &nt.Ctx
-	swts := &etensor.Float32{}
+	swts := &tensor.Float32{}
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue

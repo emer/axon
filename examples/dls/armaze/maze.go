@@ -18,13 +18,13 @@ package armaze
 import (
 	"log"
 
-	"cogentcore.org/core/gox/num"
+	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
 )
 
 // Actions is a list of mutually exclusive states
@@ -117,7 +117,7 @@ type Env struct {
 	HasGated bool `edit:"-"`
 
 	// named states -- e.g., USs, CSs, etc
-	States map[string]*etensor.Float32
+	States map[string]*tensor.Float32
 
 	// maximum length of any arm
 	MaxLength int `edit:"-"`
@@ -213,13 +213,13 @@ func (ev *Env) Init(run int) {
 
 	ev.UpdateMaxLength()
 
-	ev.States = make(map[string]*etensor.Float32)
-	ev.States["CS"] = etensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NCSs}, nil, nil)
-	ev.States["Pos"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
-	ev.States["Arm"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.Config.NArms}, nil, nil)
-	ev.States["Action"] = etensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
-	ev.States["VSgpi"] = etensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
-	ev.States["OFC"] = etensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
+	ev.States = make(map[string]*tensor.Float32)
+	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NCSs}, nil, nil)
+	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
+	ev.States["Arm"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.Config.NArms}, nil, nil)
+	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
+	ev.States["VSgpi"] = tensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
+	ev.States["OFC"] = tensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
@@ -229,7 +229,7 @@ func (ev *Env) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
 	return 0, 0, false
 }
 
-func (ev *Env) State(el string) etensor.Tensor {
+func (ev *Env) State(el string) tensor.Tensor {
 	return ev.States[el]
 }
 
@@ -366,7 +366,7 @@ func (ev *Env) Step() bool {
 func (ev *Env) RenderLocalist(name string, val int) {
 	st := ev.States[name]
 	st.SetZeros()
-	if val >= st.Dim(1) || val < 0 {
+	if val >= st.DimSize(1) || val < 0 {
 		return
 	}
 	for y := 0; y < ev.Config.Params.NYReps; y++ {
@@ -402,13 +402,13 @@ func (ev *Env) RenderAction(act Actions) {
 //////////////////////////////////////////////////
 //   Action
 
-func (ev *Env) DecodeAct(vt *etensor.Float32) Actions {
+func (ev *Env) DecodeAct(vt *tensor.Float32) Actions {
 	mxi := ev.DecodeLocalist(vt)
 	return Actions(mxi)
 }
 
-func (ev *Env) DecodeLocalist(vt *etensor.Float32) int {
-	dx := vt.Dim(1)
+func (ev *Env) DecodeLocalist(vt *tensor.Float32) int {
+	dx := vt.DimSize(1)
 	var max float32
 	var mxi int
 	for i := 0; i < dx; i++ {
@@ -426,7 +426,7 @@ func (ev *Env) DecodeLocalist(vt *etensor.Float32) int {
 
 // Action records the LastAct and renders it, but does not
 // update the state accordingly.
-func (ev *Env) Action(action string, nop etensor.Tensor) {
+func (ev *Env) Action(action string, nop tensor.Tensor) {
 	act := None
 	act.SetString(action)
 	ev.LastAct = act

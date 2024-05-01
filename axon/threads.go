@@ -11,7 +11,7 @@ import (
 	"sort"
 	"sync"
 
-	"cogentcore.org/core/gox/atomctr"
+	"cogentcore.org/core/base/atomctr"
 	"github.com/emer/emergent/v2/timer"
 )
 

@@ -6,15 +6,16 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/metric"
+	"cogentcore.org/core/tensor/stats/simat"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/metric"
-	"github.com/emer/etable/v2/simat"
 )
 
 // VSPatchEnv implements simple Go vs. NoGo input patterns to test BG learning.
@@ -60,7 +61,7 @@ type VSPatchEnv struct {
 	NUnits int `view:"-"`
 
 	// condition, time-step patterns
-	Pats *etable.Table
+	Pats *table.Table
 
 	// pattern vocab
 	PatVocab patgen.Vocab
@@ -75,7 +76,7 @@ type VSPatchEnv struct {
 	RndSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
-	States map[string]*etensor.Float32
+	States map[string]*tensor.Float32
 
 	// current reward value -- is 0 until final trial
 	Rew float32 `edit:"-"`
@@ -125,8 +126,8 @@ func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
-	ev.States = make(map[string]*etensor.Float32)
-	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States = make(map[string]*tensor.Float32)
+	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
 	ev.CondValues = make([]float32, ev.NConds)
 	ev.Sequence.Max = ev.NConds
 	ev.Trial.Max = ev.NTrials
@@ -145,11 +146,11 @@ func (ev *VSPatchEnv) ConfigPats() {
 	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
 
 	npats := ev.NConds * ev.NTrials
-	sch := etable.Schema{
-		{"Name", etensor.STRING, nil, nil},
-		{"Input", etensor.FLOAT32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
+	sch := table.Schema{
+		{"Name", tensor.STRING, nil, nil},
+		{"Input", reflect.Float32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
 	}
-	ev.Pats = etable.New(sch, npats)
+	ev.Pats = table.New(sch, npats)
 
 	idx := 0
 	for i := 0; i < ev.NConds; i++ {
@@ -157,13 +158,13 @@ func (ev *VSPatchEnv) ConfigPats() {
 		tsr, _ := patgen.AddVocabRepeat(ev.PatVocab, condNm, ev.NTrials, "Protos", i)
 		patgen.FlipBitsRows(tsr, flipBits, flipBits, 1, 0)
 		for j := 0; j < ev.NTrials; j++ {
-			ev.Pats.SetCellTensor("Input", idx+j, tsr.SubSpace([]int{j}))
-			ev.Pats.SetCellString("Name", idx+j, fmt.Sprintf("Cond%d_Trial%d", i, j))
+			ev.Pats.SetTensor("Input", idx+j, tsr.SubSpace([]int{j}))
+			ev.Pats.SetString("Name", idx+j, fmt.Sprintf("Cond%d_Trial%d", i, j))
 		}
 		idx += ev.NTrials
 	}
 
-	ev.PatSimMat.TableCol(etable.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
+	ev.PatSimMat.TableCol(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
 }
 
 func (ev *VSPatchEnv) Validate() error {
@@ -185,7 +186,7 @@ func (ev *VSPatchEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool)
 	return 0, 0, false
 }
 
-func (ev *VSPatchEnv) State(el string) etensor.Tensor {
+func (ev *VSPatchEnv) State(el string) tensor.Tensor {
 	return ev.States[el]
 }
 
@@ -193,7 +194,7 @@ func (ev *VSPatchEnv) State(el string) etensor.Tensor {
 func (ev *VSPatchEnv) RenderState(cond, trial int) {
 	st := ev.States["State"]
 	idx := cond*ev.NTrials + trial
-	st.CopyFrom(ev.Pats.CellTensor("Input", idx))
+	st.CopyFrom(ev.Pats.Tensor("Input", idx))
 }
 
 // Step does one step -- must set Trial.Cur first if doing testing
@@ -221,7 +222,7 @@ func (ev *VSPatchEnv) Step() bool {
 	return true
 }
 
-func (ev *VSPatchEnv) Action(action string, nop etensor.Tensor) {
+func (ev *VSPatchEnv) Action(action string, nop tensor.Tensor) {
 }
 
 func (ev *VSPatchEnv) ComputeDA(rew float32) {

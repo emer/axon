@@ -14,6 +14,9 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor/stats/metric"
+	"cogentcore.org/core/tensor/table"
+	_ "cogentcore.org/core/tensor/tensorview" // _ = include to get gui views
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -30,9 +33,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/etable/v2/etable"
-	_ "github.com/emer/etable/v2/etview" // _ = include to get gui views
-	"github.com/emer/etable/v2/metric"
 )
 
 func main() {
@@ -496,7 +496,7 @@ func (ss *Sim) SimMat() {
 	lt := ss.Logs.TableDetailsScope(sk)
 	ix, _ := lt.NamedIndexView("AnalyzeTimes")
 	timeMap := make(map[int]bool)
-	ix.Filter(func(et *etable.Table, row int) bool {
+	ix.Filter(func(et *table.Table, row int) bool {
 		time := int(et.CellFloat("Time", row))
 		if _, has := timeMap[time]; has {
 			return false
@@ -504,7 +504,7 @@ func (ss *Sim) SimMat() {
 		timeMap[time] = true
 		return true
 	})
-	ix.SortCol(lt.Table.ColIndex("Time"), etable.Ascending)
+	ix.SortCol(lt.Table.ColIndex("Time"), table.Ascending)
 	times := ix.NewTable()
 	ss.Logs.MiscTables["AnalyzeTimes"] = times
 

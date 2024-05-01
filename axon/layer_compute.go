@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"cogentcore.org/core/math32"
-	"github.com/emer/etable/v2/minmax"
+	"cogentcore.org/core/math32/minmax"
 )
 
 // index naming:

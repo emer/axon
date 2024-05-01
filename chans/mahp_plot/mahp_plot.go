@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// mahp_plot plots an equation updating over time in a etable.Table and Plot2D.
+// mahp_plot plots an equation updating over time in a table.Table and Plot2D.
 package main
 
 //go:generate core generate -add-types
@@ -12,11 +12,11 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 func main() {
@@ -61,16 +61,16 @@ type Sim struct {
 	TimeVend float32
 
 	// table for plot
-	Table *etable.Table `view:"no-inline"`
+	Table *table.Table `view:"no-inline"`
 
 	// the plot
-	Plot *eplot.Plot2D `view:"-"`
+	Plot *plotview.PlotView `view:"-"`
 
 	// table for plot
-	TimeTable *etable.Table `view:"no-inline"`
+	TimeTable *table.Table `view:"no-inline"`
 
 	// the plot
-	TimePlot *eplot.Plot2D `view:"-"`
+	TimePlot *plotview.PlotView `view:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -86,9 +86,9 @@ func (ss *Sim) Config() {
 	ss.TimeVstart = -70
 	ss.TimeVend = -50
 	ss.Update()
-	ss.Table = &etable.Table{}
+	ss.Table = &table.Table{}
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &etable.Table{}
+	ss.TimeTable = &table.Table{}
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
@@ -110,36 +110,36 @@ func (ss *Sim) VmRun() { //types:add
 		var ninf, tau float32
 		mp.NinfTauFromV(vbio, &ninf, &tau)
 
-		dt.SetCellFloat("V", vi, float64(vbio))
-		dt.SetCellFloat("Ninf", vi, float64(ninf))
-		dt.SetCellFloat("Tau", vi, float64(tau))
+		dt.SetFloat("V", vi, float64(vbio))
+		dt.SetFloat("Ninf", vi, float64(ninf))
+		dt.SetFloat("Tau", vi, float64(tau))
 	}
 	if ss.Plot != nil {
 		ss.Plot.UpdatePlot()
 	}
 }
 
-func (ss *Sim) ConfigTable(dt *etable.Table) {
+func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("name", "mAHPplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"V", etensor.FLOAT64, nil, nil},
-		{"Ninf", etensor.FLOAT64, nil, nil},
-		{"Tau", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"V", tensor.FLOAT64, nil, nil},
+		{"Ninf", tensor.FLOAT64, nil, nil},
+		{"Tau", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "mAHP V Function Plot"
-	plt.Params.XAxisCol = "V"
+	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ninf", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Tau", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Ninf", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("Tau", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 1)
 	return plt
 }
 
@@ -170,13 +170,13 @@ func (ss *Sim) TimeRun() { //types:add
 		mp.NinfTauFromV(v, &ninf, &tau)
 		g := mp.GmAHP(vnorm, &n)
 
-		dt.SetCellFloat("Time", ti, float64(t))
-		dt.SetCellFloat("V", ti, float64(v))
-		dt.SetCellFloat("GmAHP", ti, float64(g))
-		dt.SetCellFloat("N", ti, float64(n))
-		dt.SetCellFloat("Ninf", ti, float64(ninf))
-		dt.SetCellFloat("Tau", ti, float64(tau))
-		dt.SetCellFloat("Kna", ti, float64(kna))
+		dt.SetFloat("Time", ti, float64(t))
+		dt.SetFloat("V", ti, float64(v))
+		dt.SetFloat("GmAHP", ti, float64(g))
+		dt.SetFloat("N", ti, float64(n))
+		dt.SetFloat("Ninf", ti, float64(ninf))
+		dt.SetFloat("Tau", ti, float64(tau))
+		dt.SetFloat("Kna", ti, float64(kna))
 
 		if ss.TimeSpike {
 			si := ti % isi
@@ -199,35 +199,35 @@ func (ss *Sim) TimeRun() { //types:add
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
+func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("name", "mAHPplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Time", etensor.FLOAT64, nil, nil},
-		{"V", etensor.FLOAT64, nil, nil},
-		{"GmAHP", etensor.FLOAT64, nil, nil},
-		{"N", etensor.FLOAT64, nil, nil},
-		{"Ninf", etensor.FLOAT64, nil, nil},
-		{"Tau", etensor.FLOAT64, nil, nil},
-		{"Kna", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Time", tensor.FLOAT64, nil, nil},
+		{"V", tensor.FLOAT64, nil, nil},
+		{"GmAHP", tensor.FLOAT64, nil, nil},
+		{"N", tensor.FLOAT64, nil, nil},
+		{"Ninf", tensor.FLOAT64, nil, nil},
+		{"Tau", tensor.FLOAT64, nil, nil},
+		{"Kna", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisCol = "Time"
+	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GmAHP", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ninf", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Tau", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Kna", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("GmAHP", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("N", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Ninf", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Tau", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Kna", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 1)
 	return plt
 }
 
@@ -241,10 +241,10 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split, "tv")
 
-	ss.Plot = eplot.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.Plot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

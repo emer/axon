@@ -9,11 +9,11 @@ import (
 	"io"
 	"strconv"
 
-	"cogentcore.org/core/gox/indent"
+	"cogentcore.org/core/base/indent"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/weights"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
@@ -260,15 +260,15 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 
 // SetSWtsRPool initializes SWt structural weight values using given tensor
 // of values which has unique values for each recv neuron within a given pool.
-func (pj *Prjn) SetSWtsRPool(ctx *Context, swts etensor.Tensor) {
-	rNuY := swts.Dim(0)
-	rNuX := swts.Dim(1)
+func (pj *Prjn) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
+	rNuY := swts.DimSize(0)
+	rNuX := swts.DimSize(1)
 	rNu := rNuY * rNuX
 	rfsz := swts.Len() / rNu
 
 	rsh := pj.Recv.Shape()
-	rNpY := rsh.Dim(0)
-	rNpX := rsh.Dim(1)
+	rNpY := rsh.DimSize(0)
+	rNpX := rsh.DimSize(1)
 	r2d := false
 	if rsh.NumDims() != 4 {
 		r2d = true
@@ -292,7 +292,7 @@ func (pj *Prjn) SetSWtsRPool(ctx *Context, swts etensor.Tensor) {
 					syIndexes := pj.RecvSynIndexes(uint32(ri))
 					for ci, syi := range syIndexes {
 						syni := pj.SynStIndex + syi
-						swt := float32(swts.FloatValue1D((scst + ci) % wsz))
+						swt := float32(swts.Float1D((scst + ci) % wsz))
 						SetSynV(ctx, syni, SWt, float32(swt))
 						wt := pj.Params.SWts.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWts.Init.Mean))
 						SetSynV(ctx, syni, Wt, wt)
@@ -307,7 +307,7 @@ func (pj *Prjn) SetSWtsRPool(ctx *Context, swts etensor.Tensor) {
 // SetWtsFunc initializes synaptic Wt value using given function
 // based on receiving and sending unit indexes.
 // Strongly suggest calling SWtRescale after.
-func (pj *Prjn) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *etensor.Shape) float32) {
+func (pj *Prjn) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *tensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
 	ssh := pj.Send.Shape()
@@ -327,7 +327,7 @@ func (pj *Prjn) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *eten
 
 // SetSWtsFunc initializes structural SWt values using given function
 // based on receiving and sending unit indexes.
-func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *etensor.Shape) float32) {
+func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *tensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
 	ssh := pj.Send.Shape()

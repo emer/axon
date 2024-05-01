@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// ak_plot plots an equation updating over time in a etable.Table and Plot2D.
+// ak_plot plots an equation updating over time in a table.Table and Plot2D.
 package main
 
 //go:generate core generate -add-types
@@ -12,11 +12,11 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 func main() {
@@ -64,16 +64,16 @@ type Sim struct {
 	TimeVend float32
 
 	// table for plot
-	Table *etable.Table `view:"no-inline"`
+	Table *table.Table `view:"no-inline"`
 
 	// the plot
-	Plot *eplot.Plot2D `view:"-"`
+	Plot *plotview.PlotView `view:"-"`
 
 	// table for plot
-	TimeTable *etable.Table `view:"no-inline"`
+	TimeTable *table.Table `view:"no-inline"`
 
 	// the plot
-	TimePlot *eplot.Plot2D `view:"-"`
+	TimePlot *plotview.PlotView `view:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -91,9 +91,9 @@ func (ss *Sim) Config() {
 	ss.TimeVstart = -50
 	ss.TimeVend = -20
 	ss.Update()
-	ss.Table = &etable.Table{}
+	ss.Table = &table.Table{}
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &etable.Table{}
+	ss.TimeTable = &table.Table{}
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
@@ -125,61 +125,61 @@ func (ss *Sim) VmRun() { //types:add
 		ms := ss.AKs.MFromV(vbio)
 		gs := ss.AKs.Gak(vnorm)
 
-		dt.SetCellFloat("V", vi, float64(vbio))
-		dt.SetCellFloat("Gak", vi, float64(g))
-		dt.SetCellFloat("M", vi, float64(m))
-		dt.SetCellFloat("H", vi, float64(h))
-		dt.SetCellFloat("MTau", vi, float64(mt))
-		dt.SetCellFloat("HTau", vi, float64(ht))
-		dt.SetCellFloat("K", vi, float64(k))
-		dt.SetCellFloat("Alpha", vi, float64(a))
-		dt.SetCellFloat("Beta", vi, float64(b))
+		dt.SetFloat("V", vi, float64(vbio))
+		dt.SetFloat("Gak", vi, float64(g))
+		dt.SetFloat("M", vi, float64(m))
+		dt.SetFloat("H", vi, float64(h))
+		dt.SetFloat("MTau", vi, float64(mt))
+		dt.SetFloat("HTau", vi, float64(ht))
+		dt.SetFloat("K", vi, float64(k))
+		dt.SetFloat("Alpha", vi, float64(a))
+		dt.SetFloat("Beta", vi, float64(b))
 
-		dt.SetCellFloat("Ms", vi, float64(ms))
-		dt.SetCellFloat("Gaks", vi, float64(gs))
+		dt.SetFloat("Ms", vi, float64(ms))
+		dt.SetFloat("Gaks", vi, float64(gs))
 	}
 	if ss.Plot != nil {
 		ss.Plot.UpdatePlot()
 	}
 }
 
-func (ss *Sim) ConfigTable(dt *etable.Table) {
+func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("name", "AkplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"V", etensor.FLOAT64, nil, nil},
-		{"Gak", etensor.FLOAT64, nil, nil},
-		{"M", etensor.FLOAT64, nil, nil},
-		{"H", etensor.FLOAT64, nil, nil},
-		{"MTau", etensor.FLOAT64, nil, nil},
-		{"HTau", etensor.FLOAT64, nil, nil},
-		{"K", etensor.FLOAT64, nil, nil},
-		{"Alpha", etensor.FLOAT64, nil, nil},
-		{"Beta", etensor.FLOAT64, nil, nil},
-		{"Ms", etensor.FLOAT64, nil, nil},
-		{"Gaks", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"V", tensor.FLOAT64, nil, nil},
+		{"Gak", tensor.FLOAT64, nil, nil},
+		{"M", tensor.FLOAT64, nil, nil},
+		{"H", tensor.FLOAT64, nil, nil},
+		{"MTau", tensor.FLOAT64, nil, nil},
+		{"HTau", tensor.FLOAT64, nil, nil},
+		{"K", tensor.FLOAT64, nil, nil},
+		{"Alpha", tensor.FLOAT64, nil, nil},
+		{"Beta", tensor.FLOAT64, nil, nil},
+		{"Ms", tensor.FLOAT64, nil, nil},
+		{"Gaks", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "AK V-G Function Plot"
-	plt.Params.XAxisCol = "V"
+	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gak", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gaks", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ms", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("H", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("MTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("HTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("K", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Alpha", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Beta", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gak", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gaks", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("M", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Ms", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("H", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("MTau", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("HTau", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("K", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Alpha", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Beta", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -215,18 +215,18 @@ func (ss *Sim) TimeRun() { //types:add
 
 		dm, dh := ss.AK.DMHFromV(vnorm, m, h)
 
-		dt.SetCellFloat("Time", ti, float64(t))
-		dt.SetCellFloat("V", ti, float64(v))
-		dt.SetCellFloat("Gak", ti, float64(g))
-		dt.SetCellFloat("M", ti, float64(m))
-		dt.SetCellFloat("H", ti, float64(h))
-		dt.SetCellFloat("dM", ti, float64(dm))
-		dt.SetCellFloat("dH", ti, float64(dh))
-		dt.SetCellFloat("MTau", ti, float64(mt))
-		dt.SetCellFloat("HTau", ti, float64(ht))
-		dt.SetCellFloat("K", ti, float64(k))
-		dt.SetCellFloat("Alpha", ti, float64(a))
-		dt.SetCellFloat("Beta", ti, float64(b))
+		dt.SetFloat("Time", ti, float64(t))
+		dt.SetFloat("V", ti, float64(v))
+		dt.SetFloat("Gak", ti, float64(g))
+		dt.SetFloat("M", ti, float64(m))
+		dt.SetFloat("H", ti, float64(h))
+		dt.SetFloat("dM", ti, float64(dm))
+		dt.SetFloat("dH", ti, float64(dh))
+		dt.SetFloat("MTau", ti, float64(mt))
+		dt.SetFloat("HTau", ti, float64(ht))
+		dt.SetFloat("K", ti, float64(k))
+		dt.SetFloat("Alpha", ti, float64(a))
+		dt.SetFloat("Beta", ti, float64(b))
 
 		g = ss.AK.Gak(m, h)
 		m += dm // already in msec time constants
@@ -250,44 +250,44 @@ func (ss *Sim) TimeRun() { //types:add
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
+func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("name", "AkplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Time", etensor.FLOAT64, nil, nil},
-		{"V", etensor.FLOAT64, nil, nil},
-		{"Gak", etensor.FLOAT64, nil, nil},
-		{"M", etensor.FLOAT64, nil, nil},
-		{"H", etensor.FLOAT64, nil, nil},
-		{"dM", etensor.FLOAT64, nil, nil},
-		{"dH", etensor.FLOAT64, nil, nil},
-		{"MTau", etensor.FLOAT64, nil, nil},
-		{"HTau", etensor.FLOAT64, nil, nil},
-		{"K", etensor.FLOAT64, nil, nil},
-		{"Alpha", etensor.FLOAT64, nil, nil},
-		{"Beta", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Time", tensor.FLOAT64, nil, nil},
+		{"V", tensor.FLOAT64, nil, nil},
+		{"Gak", tensor.FLOAT64, nil, nil},
+		{"M", tensor.FLOAT64, nil, nil},
+		{"H", tensor.FLOAT64, nil, nil},
+		{"dM", tensor.FLOAT64, nil, nil},
+		{"dH", tensor.FLOAT64, nil, nil},
+		{"MTau", tensor.FLOAT64, nil, nil},
+		{"HTau", tensor.FLOAT64, nil, nil},
+		{"K", tensor.FLOAT64, nil, nil},
+		{"Alpha", tensor.FLOAT64, nil, nil},
+		{"Beta", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisCol = "Time"
+	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gak", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("M", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("H", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dM", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dH", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("MTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("HTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("K", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Alpha", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Beta", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gak", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("M", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("H", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("dM", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("dH", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("MTau", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("HTau", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("K", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Alpha", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Beta", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -301,10 +301,10 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split, "tv")
 
-	ss.Plot = eplot.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.Plot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

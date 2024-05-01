@@ -16,10 +16,16 @@ import (
 	"math"
 	"os"
 
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/choose/armaze"
 	"github.com/emer/emergent/v2/econfig"
@@ -36,12 +42,6 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/timer"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/split"
 )
 
 func main() {
@@ -187,7 +187,7 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 	rp.Defaults()
 	rp.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
 	rp.USs.PVnegGain = 1 // global scaling of RP neg level -- was 1
-	rp.LHb.VSPatchGain = 10
+	rp.LHb.VSPatchGain = 4
 	rp.LHb.VSPatchNonRewThr = 0.15
 
 	rp.USs.USnegGains[0] = 2 // big salient input!
@@ -764,6 +764,20 @@ func (ss *Sim) TrialStats(di int) {
 	ss.GatedStats(di)
 	ss.MaintStats(di)
 
+	diu := uint32(di)
+	ctx := &ss.Context
+	rp := &ss.Net.Rubicon
+	rp.DecodePVEsts(ctx, diu, ss.Net) // get this for current trial!
+	hasRew := axon.GlbV(ctx, diu, axon.GvHasRew) > 0
+	if hasRew { // exclude data for logging -- will be re-computed at start of next trial
+		// this allows the WrongStats to only record estimates, not actuals
+		nan := math32.NaN()
+		axon.SetGlbV(ctx, diu, axon.GvPVposEst, nan)
+		axon.SetGlbV(ctx, diu, axon.GvPVposVar, nan)
+		axon.SetGlbV(ctx, diu, axon.GvPVnegEst, nan)
+		axon.SetGlbV(ctx, diu, axon.GvPVnegVar, nan)
+	}
+
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 
 	var allGood float64
@@ -950,7 +964,8 @@ func (ss *Sim) ConfigLogs() {
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	// axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("GateCS", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "MaintEarly")
+	// ss.Logs.PlotItems("GateCS", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "MaintEarly")
+	ss.Logs.PlotItems("WrongCSGate", "Wrong0_RewPred_R", "Wrong0_DA_R", "Wrong0_PVposEst", "Wrong0_PVnegEst", "Wrong1_RewPred_R", "Wrong1_DA_R", "Wrong1_PVposEst", "Wrong1_PVnegEst")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -995,7 +1010,7 @@ func (ss *Sim) ConfigLogItems() {
 			itmName := fmt.Sprintf("Wrong%d_%s", wrong, st)
 			ss.Logs.AddItem(&elog.Item{
 				Name: itmName,
-				Type: etensor.FLOAT64,
+				Type: reflect.Float64,
 				// FixMin: true,
 				// FixMax: true,
 				Range: minmax.F64{Max: 1},
@@ -1010,7 +1025,7 @@ func (ss *Sim) ConfigLogItems() {
 
 	ss.Logs.AddItem(&elog.Item{
 		Name:      "ActCor",
-		Type:      etensor.FLOAT64,
+		Type:      reflect.Float64,
 		CellShape: []int{int(armaze.ActionsN)},
 		DimNames:  []string{"Acts"},
 		// Plot:      true,
@@ -1021,21 +1036,21 @@ func (ss *Sim) ConfigLogItems() {
 				ix := ctx.Logs.IndexView(ctx.Mode, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Instinct"})
 				split.AggTry(spl, "ActMatch", agg.AggMean)
-				ags := spl.AggsToTable(etable.ColNameOnly)
+				ags := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
-				ctx.SetTensor(ags.Cols[0]) // cors
+				ctx.SetTensor(ags.Columns[0]) // cors
 			}}})
 	for act := armaze.Actions(0); act < armaze.ActionsN; act++ { // per-action % correct
 		anm := act.String()
 		ss.Logs.AddItem(&elog.Item{
 			Name: anm + "Cor",
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			// Plot:  true,
 			Range: minmax.F64{Min: 0},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
-					rw := ags.RowsByString("Instinct", anm, etable.Equals, etable.UseCase)
+					rw := ags.RowsByString("Instinct", anm, table.Equals, table.UseCase)
 					if len(rw) > 0 {
 						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}
@@ -1053,26 +1068,31 @@ func (ss *Sim) ConfigLogItems() {
 	}
 }
 
-func (ss *Sim) EpochGoodBad() {
-	lgnm := "EpochGoodBad"
+// EpochWrongStats aggregates stats separately for WrongCSGate = 0 vs. 1
+// i.e., for trials when it selects the "wrong" option (not the best) = (Wrong1)
+// vs. when it does select the best option (Wrong0)
+func (ss *Sim) EpochWrongStats() {
+	lgnm := "EpochWrongStats"
 
 	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
-	ix.Filter(func(et *etable.Table, row int) bool {
-		return !math.IsNaN(et.CellFloat("WrongCSGate", row)) // && (et.CellString("ActAction", row) == "Consume")
+	ix.Filter(func(et *table.Table, row int) bool {
+		return !math.IsNaN(et.CellFloat("WrongCSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
 	})
 	spl := split.GroupBy(ix, []string{"WrongCSGate"})
-	for _, ts := range ix.Table.ColNames {
-		col := ix.Table.ColByName(ts)
-		if col.DataType() == etensor.STRING || ts == "WrongCSGate" {
+	for _, ts := range ix.Table.ColumnNames {
+		col := ix.Table.ColumnByName(ts)
+		if col.DataType() == reflect.String || ts == "WrongCSGate" {
 			continue
 		}
 		split.Agg(spl, ts, agg.AggMean)
 	}
-	dt := spl.AggsToTable(etable.ColNameOnly)
+	dt := spl.AggsToTable(table.ColumnNameOnly)
 	dt.SetMetaData("Rew_R:On", "+")
 	dt.SetMetaData("DA_R:On", "+")
 	dt.SetMetaData("RewPred_R:On", "+")
 	dt.SetMetaData("VtaDA:On", "+")
+	dt.SetMetaData("PVposEst:On", "+")
+	dt.SetMetaData("PVnegEst:On", "+")
 	dt.SetMetaData("DA_R:FixMin", "+")
 	dt.SetMetaData("DA_R:Min", "-1")
 	dt.SetMetaData("DA_R:FixMax", "-")
@@ -1151,7 +1171,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		}
 	case mode == etime.Train && time == etime.Epoch:
 		axon.LayerActsLogAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
-		ss.EpochGoodBad()
+		ss.EpochWrongStats()
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -1176,9 +1196,9 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
 		ofcP := ofcPosUS.Pool(i+1, diu)
 		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
-		dp.SetCellFloat("Drive", int(i), float64(drv))
-		dp.SetCellFloat("USin", int(i), float64(us))
-		dp.SetCellFloat("OFC", int(i), float64(ofc))
+		dp.SetFloat("Drive", int(i), float64(drv))
+		dp.SetFloat("USin", int(i), float64(us))
+		dp.SetFloat("OFC", int(i), float64(ofc))
 	}
 	dn := ss.EnvGUI.USnegData
 	ofcNegUS := net.AxonLayerByName("OFCnegPT")
@@ -1187,8 +1207,8 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		us := axon.GlbUSnegV(ctx, diu, axon.GvUSneg, i)
 		ofcP := ofcNegUS.Pool(i+1, diu)
 		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
-		dn.SetCellFloat("USin", int(i), float64(us))
-		dn.SetCellFloat("OFC", int(i), float64(ofc))
+		dn.SetFloat("USin", int(i), float64(us))
+		dn.SetFloat("OFC", int(i), float64(ofc))
 	}
 	ss.EnvGUI.USposPlot.GoUpdatePlot()
 	ss.EnvGUI.USnegPlot.GoUpdatePlot()
@@ -1218,12 +1238,12 @@ func (ss *Sim) ConfigGUI() {
 
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
-	lgnm := "EpochGoodBad"
+	lgnm := "EpochWrongStats"
 	dt := ss.Logs.MiscTable(lgnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
+	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
 	plt.Params.Title = lgnm
-	plt.Params.XAxisCol = "WrongCSGate"
+	plt.Params.XAxisColumn = "WrongCSGate"
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {

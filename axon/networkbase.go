@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/indent"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/texteditor"
 	"github.com/emer/emergent/v2/econfig"
@@ -896,15 +896,15 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 		ly.Params.Indexes.NeurSt = uint32(neurIndex)
 		ly.Params.Indexes.NeurN = uint32(nn)
 		if shp.NumDims() == 2 {
-			ly.Params.Indexes.ShpUnY = int32(shp.Dim(0))
-			ly.Params.Indexes.ShpUnX = int32(shp.Dim(1))
+			ly.Params.Indexes.ShpUnY = int32(shp.DimSize(0))
+			ly.Params.Indexes.ShpUnX = int32(shp.DimSize(1))
 			ly.Params.Indexes.ShpPlY = 1
 			ly.Params.Indexes.ShpPlX = 1
 		} else {
-			ly.Params.Indexes.ShpPlY = int32(shp.Dim(0))
-			ly.Params.Indexes.ShpPlX = int32(shp.Dim(1))
-			ly.Params.Indexes.ShpUnY = int32(shp.Dim(2))
-			ly.Params.Indexes.ShpUnX = int32(shp.Dim(3))
+			ly.Params.Indexes.ShpPlY = int32(shp.DimSize(0))
+			ly.Params.Indexes.ShpPlX = int32(shp.DimSize(1))
+			ly.Params.Indexes.ShpUnY = int32(shp.DimSize(2))
+			ly.Params.Indexes.ShpUnX = int32(shp.DimSize(3))
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Values[di].LayIndex = uint32(li)

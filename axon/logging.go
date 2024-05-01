@@ -8,19 +8,18 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/metric"
+	"cogentcore.org/core/tensor/stats/norm"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/metric"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/norm"
-	"github.com/emer/etable/v2/split"
-	"github.com/emer/etable/v2/tsragg"
 )
 
 // LogTestErrors records all errors made across TestTrials, at Test Epoch scope
@@ -28,7 +27,7 @@ func LogTestErrors(lg *elog.Logs) {
 	sk := etime.Scope(etime.Test, etime.Trial)
 	lt := lg.TableDetailsScope(sk)
 	ix, _ := lt.NamedIndexView("TestErrors")
-	ix.Filter(func(et *etable.Table, row int) bool {
+	ix.Filter(func(et *table.Table, row int) bool {
 		return et.CellFloat("Err", row) > 0 // include error trials
 	})
 	lg.MiscTables["TestErrors"] = ix.NewTable()
@@ -36,7 +35,7 @@ func LogTestErrors(lg *elog.Logs) {
 	allsp := split.All(ix)
 	split.Agg(allsp, "UnitErr", agg.AggSum)
 	// note: can add other stats to compute
-	lg.MiscTables["TestErrorStats"] = allsp.AggsToTable(etable.AddAggName)
+	lg.MiscTables["TestErrorStats"] = allsp.AggsToTable(table.AddAggName)
 }
 
 // PCAStats computes PCA statistics on recorded hidden activation patterns
@@ -59,7 +58,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 
 		itm := lg.AddItem(&elog.Item{
 			Name:   gnm,
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -72,7 +71,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 		if gv == GvDA || gv == GvRew || gv == GvRewPred {
 			itm := lg.AddItem(&elog.Item{
 				Name:   gnm + "_NR",
-				Type:   etensor.FLOAT64,
+				Type:   reflect.Float64,
 				FixMax: false,
 				Range:  minmax.F64{Max: 1},
 				Write: elog.WriteMap{
@@ -90,7 +89,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 
 			itm = lg.AddItem(&elog.Item{
 				Name:   gnm + "_R",
-				Type:   etensor.FLOAT64,
+				Type:   reflect.Float64,
 				FixMax: false,
 				Range:  minmax.F64{Max: 1},
 				Write: elog.WriteMap{
@@ -107,7 +106,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 			if gv == GvDA {
 				itm = lg.AddItem(&elog.Item{
 					Name:   gnm + "_Neg",
-					Type:   etensor.FLOAT64,
+					Type:   reflect.Float64,
 					FixMax: false,
 					Range:  minmax.F64{Max: 1},
 					Write: elog.WriteMap{
@@ -136,7 +135,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 		clnm := lnm
 		itm := lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActMAvg",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -148,7 +147,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActMMax",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -160,7 +159,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
@@ -174,7 +173,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorDiff",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
@@ -185,7 +184,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_GiMult",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
@@ -203,7 +202,7 @@ func LogInputLayer(lg *elog.Logs, net *Network, mode etime.Modes) {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: true,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -225,7 +224,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 		cly := net.AxonLayerByName(clnm)
 		lg.AddItem(&elog.Item{
 			Name:      clnm + "_ActM",
-			Type:      etensor.FLOAT64,
+			Type:      reflect.Float64,
 			CellShape: cly.RepShape().Shp,
 			FixMax:    true,
 			Range:     minmax.F64{Max: 1},
@@ -237,7 +236,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 				}}})
 		itm := lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_NStrong",
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -246,7 +245,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 
 		itm = lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Top5",
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -255,7 +254,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 
 		itm = lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Next5",
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -264,7 +263,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 
 		itm = lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Rest",
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -282,7 +281,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 		clnm := lnm
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Ge.Avg",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
@@ -291,7 +290,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Act.Avg",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
@@ -311,7 +310,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		clnm := lnm
 		itm := lg.AddItem(&elog.Item{
 			Name:   clnm + "_CaSpkPMinusAvg",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -323,7 +322,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_CaSpkPMinusMax",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -335,7 +334,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifAvg",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
@@ -344,7 +343,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifMax",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
@@ -365,7 +364,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		clnm := lnm
 		// ss.Logs.AddItem(&elog.Item{
 		// 	Name:   clnm + "_AvgSpiked",
-		// 	Type:   etensor.FLOAT64,
+		// 	Type:   reflect.Float64,
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
@@ -382,7 +381,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		// 		}}})
 		itm := lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgNmdaCa",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 20},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -394,7 +393,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxNmdaCa",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 20},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -406,7 +405,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgVgccCa",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 20},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -418,7 +417,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxVgccCa",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 20},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -430,7 +429,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgCaLrn",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -442,7 +441,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxCaLrn",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -454,7 +453,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgAbsCaDiff",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -467,7 +466,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxAbsCaDiff",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -480,7 +479,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgCaD",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -492,7 +491,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgCaSpkD",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Range:  minmax.F64{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
@@ -505,7 +504,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
@@ -517,12 +516,12 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CaDiffCorrel",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
-					outvals := ctx.ItemColTensor(etime.Train, times[1], "Output_AvgCaDiff").(*etensor.Float64)
-					lyval := ctx.ItemColTensor(etime.Train, times[1], clnm+"_AvgCaDiff").(*etensor.Float64)
+					outvals := ctx.ItemColTensor(etime.Train, times[1], "Output_AvgCaDiff").(*tensor.Float64)
+					lyval := ctx.ItemColTensor(etime.Train, times[1], clnm+"_AvgCaDiff").(*tensor.Float64)
 					cor := metric.Correlation64(outvals.Values, lyval.Values)
 					ctx.SetFloat64(cor)
 				}}})
@@ -538,7 +537,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 		clnm := lnm
 		lg.AddItem(&elog.Item{
 			Name:   lnm + "_CorSim",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Plot:   false,
 			FixMax: true,
 			Range:  minmax.F64{Max: 1},
@@ -554,7 +553,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			Plot:   false,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
@@ -568,7 +567,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
-			Type:  etensor.FLOAT64,
+			Type:  reflect.Float64,
 			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -583,11 +582,11 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 }
 
 // LayerActsLogConfigMetaData configures meta data for LayerActs table
-func LayerActsLogConfigMetaData(dt *etable.Table) {
+func LayerActsLogConfigMetaData(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	dt.SetMetaData("Type", "Bar")
-	dt.SetMetaData("XAxisCol", "Layer")
+	dt.SetMetaData("XAxisColumn", "Layer")
 	dt.SetMetaData("XAxisRot", "45")
 	dt.SetMetaData("Nominal:On", "+")
 	dt.SetMetaData("Nominal:FixMin", "+")
@@ -622,22 +621,22 @@ func LayerActsLogConfig(net *Network, lg *elog.Logs) {
 	dtAvg.SetMetaData("name", "LayerActsAvg")
 	dtAvg.SetMetaData("desc", "Layer Activations Averaged")
 	LayerActsLogConfigMetaData(dtAvg)
-	sch := etable.Schema{
-		{"Layer", etensor.STRING, nil, nil},
-		{"Nominal", etensor.FLOAT64, nil, nil},
-		{"ActM", etensor.FLOAT64, nil, nil},
-		{"ActP", etensor.FLOAT64, nil, nil},
-		{"MaxGeM", etensor.FLOAT64, nil, nil},
-		{"MaxGeP", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Layer", tensor.STRING, nil, nil},
+		{"Nominal", reflect.Float64, nil, nil},
+		{"ActM", reflect.Float64, nil, nil},
+		{"ActP", reflect.Float64, nil, nil},
+		{"MaxGeM", reflect.Float64, nil, nil},
+		{"MaxGeP", reflect.Float64, nil, nil},
 	}
 	nlay := len(net.Layers)
 	dt.SetFromSchema(sch, nlay)
 	dtRec.SetFromSchema(sch, 0)
 	dtAvg.SetFromSchema(sch, nlay)
 	for li, ly := range net.Layers {
-		dt.SetCellString("Layer", li, ly.Nm)
-		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
-		dtAvg.SetCellString("Layer", li, ly.Nm)
+		dt.SetString("Layer", li, ly.Nm)
+		dt.SetFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
+		dtAvg.SetString("Layer", li, ly.Nm)
 	}
 }
 
@@ -649,18 +648,18 @@ func LayerActsLog(net *Network, lg *elog.Logs, di int, gui *egui.GUI) {
 	dtRec := lg.MiscTable("LayerActsRec")
 	for li, ly := range net.Layers {
 		lpl := ly.Pool(0, uint32(di))
-		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
-		dt.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
-		dt.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
-		dt.SetCellFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
-		dt.SetCellFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
+		dt.SetFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
+		dt.SetFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
+		dt.SetFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
+		dt.SetFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
+		dt.SetFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
 		dtRec.SetNumRows(dtRec.Rows + 1)
-		dtRec.SetCellString("Layer", li, ly.Nm)
-		dtRec.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
-		dtRec.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
-		dtRec.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
-		dtRec.SetCellFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
-		dtRec.SetCellFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
+		dtRec.SetString("Layer", li, ly.Nm)
+		dtRec.SetFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
+		dtRec.SetFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
+		dtRec.SetFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
+		dtRec.SetFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
+		dtRec.SetFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
 	}
 	if gui != nil {
 		gui.UpdatePlotScope(etime.ScopeKey("LayerActs"))
@@ -678,15 +677,15 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 	if dtRec.Rows == 0 {
 		return
 	}
-	ix := etable.NewIndexView(dtRec)
+	ix := table.NewIndexView(dtRec)
 	spl := split.GroupBy(ix, []string{"Layer"})
 	split.AggAllNumericCols(spl, agg.AggMean)
-	ags := spl.AggsToTable(etable.ColNameOnly)
+	ags := spl.AggsToTable(table.ColumnNameOnly)
 	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
 	for li, ly := range net.Layers {
-		rw := ags.RowsByString("Layer", ly.Nm, etable.Equals, etable.UseCase)[0]
+		rw := ags.RowsByString("Layer", ly.Nm, table.Equals, table.UseCase)[0]
 		for _, cn := range cols {
-			dtAvg.SetCellFloat(cn, li, ags.CellFloat(cn, rw))
+			dtAvg.SetFloat(cn, li, ags.CellFloat(cn, rw))
 		}
 	}
 	if recReset {
@@ -707,12 +706,12 @@ func LayerActsLogRecReset(lg *elog.Logs) {
 // LayerActsLogConfigGUI configures GUI for LayerActsLog Plot and LayerActs Avg Plot
 func LayerActsLogConfigGUI(lg *elog.Logs, gui *egui.GUI) {
 	pt := gui.Tabs.NewTab("LayerActs Plot")
-	plt := eplot.NewPlot2D(pt)
+	plt := plotview.NewPlot2D(pt)
 	gui.Plots["LayerActs"] = plt
 	plt.SetTable(lg.MiscTables["LayerActs"])
 
 	pt = gui.Tabs.NewTab("LayerActs Avg Plot")
-	plt = eplot.NewPlot2D(pt)
+	plt = plotview.NewPlot2D(pt)
 	gui.Plots["LayerActsAvg"] = plt
 	plt.SetTable(lg.MiscTables["LayerActsAvg"])
 }

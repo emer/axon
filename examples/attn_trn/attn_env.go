@@ -10,10 +10,10 @@ import (
 	"fmt"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/efuns"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/evec"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // Stim describes a single stimulus
@@ -90,10 +90,10 @@ type AttnEnv struct {
 	V1Feats evec.Vector2i
 
 	// V1 rendered input state, 4D Size x Size
-	V1 etensor.Float32
+	V1 tensor.Float32
 
 	// LIP top-down attention
-	LIP etensor.Float32
+	LIP tensor.Float32
 
 	// current run of model as provided during Init
 	Run env.Ctr `view:"inline"`
@@ -131,7 +131,7 @@ func (ev *AttnEnv) Validate() error {
 	return nil
 }
 
-func (ev *AttnEnv) State(element string) etensor.Tensor {
+func (ev *AttnEnv) State(element string) tensor.Tensor {
 	switch element {
 	case "V1":
 		return &ev.V1
@@ -169,7 +169,7 @@ func (ev *AttnEnv) ContrastAct(act, contrast float32) float32 {
 }
 
 // RenderV1
-func (ev *AttnEnv) RenderV1(stm *Stim, tsr *etensor.Float32) {
+func (ev *AttnEnv) RenderV1(stm *Stim, tsr *tensor.Float32) {
 	x := stm.Pos.X * float32(ev.V1Pools.X-1)
 	y := stm.Pos.Y * float32(ev.V1Pools.Y-1)
 	sig := stm.Width * float32(ev.V1Pools.X)
@@ -199,7 +199,7 @@ func (ev *AttnEnv) RenderV1(stm *Stim, tsr *etensor.Float32) {
 }
 
 // RenderLIP
-func (ev *AttnEnv) RenderLIP(stm *Stim, tsr *etensor.Float32) {
+func (ev *AttnEnv) RenderLIP(stm *Stim, tsr *tensor.Float32) {
 	ps := stm.PosXY(ev.V1Pools)
 	sig := stm.Width * float32(ev.V1Pools.X)
 	wd := math32.Round(sig)
@@ -266,7 +266,7 @@ func (ev *AttnEnv) Step() bool {
 	return true
 }
 
-func (ev *AttnEnv) Action(element string, input etensor.Tensor) {
+func (ev *AttnEnv) Action(element string, input tensor.Tensor) {
 	// nop
 }
 

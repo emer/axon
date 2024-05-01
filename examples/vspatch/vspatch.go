@@ -17,6 +17,12 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -32,12 +38,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/split"
 )
 
 func main() {
@@ -476,13 +476,13 @@ func (ss *Sim) CondStats() {
 	stnm := "CondStats"
 	ix := ss.Logs.IndexView(etime.Train, etime.Sequence)
 	spl := split.GroupBy(ix, []string{"Cond"})
-	for _, ts := range ix.Table.ColNames {
+	for _, ts := range ix.Table.ColumnNames {
 		if ts == "TrialName" || ts == "Cond" || ts == "CondRew" {
 			continue
 		}
 		split.Agg(spl, ts, agg.AggMean)
 	}
-	dt := spl.AggsToTable(etable.ColNameOnly)
+	dt := spl.AggsToTable(table.ColumnNameOnly)
 	dt.SetMetaData("Rew:On", "+")
 	dt.SetMetaData("Rew:FixMax", "+")
 	dt.SetMetaData("Rew:Max", "1")
@@ -582,7 +582,7 @@ func (ss *Sim) ConfigLogItems() {
 			stnm := fmt.Sprintf("Cond_%d_%s", ci, st)
 			ss.Logs.AddItem(&elog.Item{
 				Name: stnm,
-				Type: etensor.FLOAT64,
+				Type: reflect.Float64,
 				// FixMin: true,
 				// FixMax: true,
 				Range: minmax.F64{Max: 1},
@@ -656,11 +656,11 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "CondStats"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
-	plt.Params.XAxisCol = "Cond"
-	plt.Params.Type = eplot.Bar
+	plt.Params.XAxisColumn = "Cond"
+	plt.Params.Type = plotview.Bar
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
@@ -772,7 +772,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.TestEpoch {
 		dt := ss.Logs.MiscTable("TestTrialStats")
 		fnm := ecmd.LogFilename("tst_epc", netName, runName)
-		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU

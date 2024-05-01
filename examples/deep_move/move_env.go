@@ -9,11 +9,11 @@ import (
 	"math/rand"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/popcode"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // MoveEnv is a flat-world grid-based environment
@@ -29,7 +29,7 @@ type MoveEnv struct {
 	Size evec.Vector2i
 
 	// 2D grid world, each cell is a material (mat)
-	World *etensor.Int `view:"no-inline"`
+	World *tensor.Int `view:"no-inline"`
 
 	// list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible
 	Acts []string
@@ -89,10 +89,10 @@ type MoveEnv struct {
 	DepthLogs []float32
 
 	// current rendered state tensors -- extensible map
-	CurStates map[string]*etensor.Float32
+	CurStates map[string]*tensor.Float32
 
 	// next rendered state tensors -- updated from actions
-	NextStates map[string]*etensor.Float32
+	NextStates map[string]*tensor.Float32
 
 	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
 	Rand erand.SysRand `view:"-"`
@@ -128,22 +128,22 @@ func (ev *MoveEnv) Config(unper int) {
 	ev.NFOVRays = (ev.FOV / ev.AngInc) + 1
 	ev.NRotAngles = (360 / ev.AngInc) + 1
 
-	ev.World = &etensor.Int{}
+	ev.World = &tensor.Int{}
 	ev.World.SetShape([]int{ev.Size.Y, ev.Size.X}, nil, []string{"Y", "X"})
 
-	ev.CurStates = make(map[string]*etensor.Float32)
-	ev.NextStates = make(map[string]*etensor.Float32)
+	ev.CurStates = make(map[string]*tensor.Float32)
+	ev.NextStates = make(map[string]*tensor.Float32)
 
-	dv := etensor.NewFloat32([]int{1, ev.NFOVRays, ev.DepthSize, 1}, nil, []string{"1", "Angle", "Depth", "1"})
+	dv := tensor.NewFloat32([]int{1, ev.NFOVRays, ev.DepthSize, 1}, nil, []string{"1", "Angle", "Depth", "1"})
 	ev.NextStates["Depth"] = dv
 
 	ev.Depths = make([]float32, ev.NFOVRays)
 	ev.DepthLogs = make([]float32, ev.NFOVRays)
 
-	hd := etensor.NewFloat32([]int{1, ev.DepthSize}, nil, []string{"1", "Pop"})
+	hd := tensor.NewFloat32([]int{1, ev.DepthSize}, nil, []string{"1", "Pop"})
 	ev.NextStates["HeadDir"] = hd
 
-	av := etensor.NewFloat32([]int{ev.UnitsPer, len(ev.Acts)}, nil, []string{"NUnits", "Acts"})
+	av := tensor.NewFloat32([]int{ev.UnitsPer, len(ev.Acts)}, nil, []string{"NUnits", "Acts"})
 	ev.NextStates["Action"] = av
 
 	ev.CopyNextToCur() // get CurStates from NextStates
@@ -163,7 +163,7 @@ func (ev *MoveEnv) Validate() error {
 	return nil
 }
 
-func (ev *MoveEnv) State(element string) etensor.Tensor {
+func (ev *MoveEnv) State(element string) tensor.Tensor {
 	return ev.CurStates[element]
 }
 
@@ -300,7 +300,7 @@ func (ev *MoveEnv) TakeAct(act int) {
 func (ev *MoveEnv) RenderView() {
 	dv := ev.NextStates["Depth"]
 	for i := 0; i < ev.NFOVRays; i++ {
-		sv := dv.SubSpace([]int{0, i}).(*etensor.Float32)
+		sv := dv.SubSpace([]int{0, i}).(*tensor.Float32)
 		ev.DepthCode.Encode(&sv.Values, ev.DepthLogs[i], ev.DepthSize, popcode.Set)
 	}
 }
@@ -340,7 +340,7 @@ func (ev *MoveEnv) CopyNextToCur() {
 	for k, ns := range ev.NextStates {
 		cs, ok := ev.CurStates[k]
 		if !ok {
-			cs = ns.Clone().(*etensor.Float32)
+			cs = ns.Clone().(*tensor.Float32)
 			ev.CurStates[k] = cs
 		} else {
 			cs.CopyFrom(ns)
@@ -361,7 +361,7 @@ func (ev *MoveEnv) Step() bool {
 	return true
 }
 
-func (ev *MoveEnv) Action(action string, nop etensor.Tensor) {
+func (ev *MoveEnv) Action(action string, nop tensor.Tensor) {
 	a, ok := ev.ActMap[action]
 	if !ok {
 		fmt.Printf("Action not recognized: %s\n", action)

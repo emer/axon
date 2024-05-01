@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// nmda_plot plots an equation updating over time in a etable.Table and Plot2D.
+// nmda_plot plots an equation updating over time in a table.Table and Plot2D.
 package main
 
 //go:generate core generate -add-types
@@ -14,11 +14,11 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 func main() {
@@ -75,16 +75,16 @@ type Sim struct {
 	TimeGin float64
 
 	// table for plot
-	Table *etable.Table `view:"no-inline"`
+	Table *table.Table `view:"no-inline"`
 
 	// the plot
-	Plot *eplot.Plot2D `view:"-"`
+	Plot *plotview.PlotView `view:"-"`
 
 	// table for plot
-	TimeTable *etable.Table `view:"no-inline"`
+	TimeTable *table.Table `view:"no-inline"`
 
 	// the plot
-	TimePlot *eplot.Plot2D `view:"-"`
+	TimePlot *plotview.PlotView `view:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -104,9 +104,9 @@ func (ss *Sim) Config() {
 	ss.TimeV = -50
 	ss.TimeGin = .5
 	ss.Update()
-	ss.Table = &etable.Table{}
+	ss.Table = &table.Table{}
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &etable.Table{}
+	ss.TimeTable = &table.Table{}
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
@@ -146,42 +146,42 @@ func (ss *Sim) Run() { //types:add
 		gs := ss.NMDAStd.Gnmda(1, chans.VFromBio(float32(v)))
 		ca := ss.NMDAStd.CaFromVbio(float32(v))
 
-		dt.SetCellFloat("V", vi, v)
-		dt.SetCellFloat("Gnmda", vi, g)
-		dt.SetCellFloat("Gnmda_std", vi, float64(gs))
-		dt.SetCellFloat("Gnmda_bug", vi, float64(gbug))
-		dt.SetCellFloat("Ca", vi, float64(ca))
+		dt.SetFloat("V", vi, v)
+		dt.SetFloat("Gnmda", vi, g)
+		dt.SetFloat("Gnmda_std", vi, float64(gs))
+		dt.SetFloat("Gnmda_bug", vi, float64(gbug))
+		dt.SetFloat("Ca", vi, float64(ca))
 	}
 	if ss.Plot != nil {
 		ss.Plot.UpdatePlot()
 	}
 }
 
-func (ss *Sim) ConfigTable(dt *etable.Table) {
+func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("name", "NmDaplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"V", etensor.FLOAT64, nil, nil},
-		{"Gnmda", etensor.FLOAT64, nil, nil},
-		{"Gnmda_std", etensor.FLOAT64, nil, nil},
-		{"Gnmda_bug", etensor.FLOAT64, nil, nil},
-		{"Ca", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"V", tensor.FLOAT64, nil, nil},
+		{"Gnmda", tensor.FLOAT64, nil, nil},
+		{"Gnmda_std", tensor.FLOAT64, nil, nil},
+		{"Gnmda_bug", tensor.FLOAT64, nil, nil},
+		{"Ca", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "NMDA V-G Function Plot"
-	plt.Params.XAxisCol = "V"
+	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gnmda", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gnmda_std", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gnmda_bug", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gnmda", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gnmda_std", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gnmda_bug", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Ca", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -206,36 +206,36 @@ func (ss *Sim) TimeRun() { //types:add
 		nmda += gin*(1-nmda) - (nmda / ss.Tau)
 		g = nmda / (1 + math.Exp(-ss.NMDAv*v)/ss.NMDAd)
 
-		dt.SetCellFloat("Time", ti, t)
-		dt.SetCellFloat("Gnmda", ti, g)
-		dt.SetCellFloat("NMDA", ti, nmda)
+		dt.SetFloat("Time", ti, t)
+		dt.SetFloat("Gnmda", ti, g)
+		dt.SetFloat("NMDA", ti, nmda)
 	}
 	if ss.TimePlot != nil {
 		ss.TimePlot.UpdatePlot()
 	}
 }
 
-func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
+func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("name", "NmDaplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Time", etensor.FLOAT64, nil, nil},
-		{"Gnmda", etensor.FLOAT64, nil, nil},
-		{"NMDA", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Time", tensor.FLOAT64, nil, nil},
+		{"Gnmda", tensor.FLOAT64, nil, nil},
+		{"NMDA", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisCol = "Time"
+	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gnmda", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("NMDA", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Gnmda", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("NMDA", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
 	return plt
 }
 
@@ -249,10 +249,10 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split, "tv")
 
-	ss.Plot = eplot.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.Plot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

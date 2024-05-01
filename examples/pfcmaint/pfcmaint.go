@@ -15,6 +15,8 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -30,8 +32,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
 )
 
 func main() {
@@ -513,10 +513,10 @@ func (ss *Sim) ConfigGUI() {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
+	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Params.Title = tststnm
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
@@ -628,7 +628,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.TestEpoch {
 		dt := ss.Logs.MiscTable("TestTrialStats")
 		fnm := ecmd.LogFilename("tst_epc", netName, runName)
-		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU

@@ -5,12 +5,14 @@
 package main
 
 import (
+	"reflect"
+
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // PFCMaintEnv implements a simple store-maintain-recall active maintenance task
@@ -44,7 +46,7 @@ type PFCMaintEnv struct {
 	NUnits int `view:"-"`
 
 	// item patterns
-	Pats etable.Table
+	Pats table.Table
 
 	// pattern vocab
 	PatVocab patgen.Vocab
@@ -56,7 +58,7 @@ type PFCMaintEnv struct {
 	RndSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
-	States map[string]*etensor.Float32
+	States map[string]*tensor.Float32
 }
 
 func (ev *PFCMaintEnv) Name() string {
@@ -80,10 +82,10 @@ func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
-	ev.States = make(map[string]*etensor.Float32)
-	ev.States["Item"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.States["Time"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NTrials}, nil, []string{"Y", "Time"})
-	ev.States["GPi"] = etensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States = make(map[string]*tensor.Float32)
+	ev.States["Item"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States["Time"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NTrials}, nil, []string{"Y", "Time"})
+	ev.States["GPi"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
 	ev.Sequence.Max = ev.NItems
 	ev.Trial.Max = ev.NTrials
 	ev.ConfigPats()
@@ -93,9 +95,9 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	ev.PatVocab = patgen.Vocab{}
 
 	npats := ev.NItems
-	sch := etable.Schema{
-		{"Name", etensor.STRING, nil, nil},
-		{"Item", etensor.FLOAT32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
+	sch := table.Schema{
+		{"Name", tensor.STRING, nil, nil},
+		{"Item", reflect.Float32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
 	}
 	ev.Pats.SetFromSchema(sch, npats)
 
@@ -106,7 +108,7 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	nOn := patgen.NFromPct(pctAct, nUn)
 	minDiff := patgen.NFromPct(minPctDiff, nOn)
 
-	patgen.PermutedBinaryMinDiff(ev.Pats.ColByName("Item").(*etensor.Float32), nOn, 1, 0, minDiff)
+	patgen.PermutedBinaryMinDiff(ev.Pats.ColumnByName("Item").(*tensor.Float32), nOn, 1, 0, minDiff)
 }
 
 func (ev *PFCMaintEnv) Validate() error {
@@ -128,7 +130,7 @@ func (ev *PFCMaintEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool
 	return 0, 0, false
 }
 
-func (ev *PFCMaintEnv) State(el string) etensor.Tensor {
+func (ev *PFCMaintEnv) State(el string) tensor.Tensor {
 	return ev.States[el]
 }
 
@@ -144,10 +146,10 @@ func (ev *PFCMaintEnv) RenderLocalist(name string, idx int) {
 // RenderState renders the given condition, trial
 func (ev *PFCMaintEnv) RenderState(item, trial int) {
 	st := ev.States["Item"]
-	st.CopyFrom(ev.Pats.CellTensor("Item", item))
+	st.CopyFrom(ev.Pats.Tensor("Item", item))
 	ev.RenderLocalist("Time", trial)
 	st = ev.States["GPi"]
-	st.CopyFrom(ev.Pats.CellTensor("Item", item))
+	st.CopyFrom(ev.Pats.Tensor("Item", item))
 	if trial == 0 {
 		st.SetZeros()
 	}
@@ -163,7 +165,7 @@ func (ev *PFCMaintEnv) Step() bool {
 	return true
 }
 
-func (ev *PFCMaintEnv) Action(action string, nop etensor.Tensor) {
+func (ev *PFCMaintEnv) Action(action string, nop tensor.Tensor) {
 }
 
 func (ev *PFCMaintEnv) ComputeDA(rew float32) {

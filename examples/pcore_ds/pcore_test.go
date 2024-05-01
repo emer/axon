@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/emer/etable/v2/tsragg"
+	"cogentcore.org/core/tensor/stats/stats"
 )
 
 func TestPCore(t *testing.T) {
@@ -27,7 +27,7 @@ func TestPCore(t *testing.T) {
 	sim.RunNoGUI()
 
 	tstdt := sim.Logs.MiscTable("TestTrialStats")
-	matchAvg := tsragg.Mean(tstdt.ColByName("Match"))
+	matchAvg := tsragg.Mean(tstdt.ColumnByName("Match"))
 	// fmt.Printf("matchAvg: %g\n", matchAvg)
 	if matchAvg < .8 {
 		t.Errorf("PCore test match: %g is below threshold of .8\n", matchAvg)

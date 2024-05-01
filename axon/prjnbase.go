@@ -9,12 +9,12 @@ import (
 	"log"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
 )
 
 // index naming:
@@ -232,7 +232,7 @@ func (pj *PrjnBase) Build() error {
 
 // SetConStartN sets the *Con StartN values given n tensor from Pat.
 // Returns total number of connections for this direction.
-func (pj *PrjnBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *etensor.Int32) uint32 {
+func (pj *PrjnBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *tensor.Int32) uint32 {
 	ln := tn.Len()
 	tnv := tn.Values
 	*con = make([]StartN, ln)

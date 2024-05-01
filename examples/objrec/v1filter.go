@@ -7,8 +7,8 @@ package main
 import (
 	"image"
 
+	"cogentcore.org/core/tensor"
 	"github.com/anthonynsimon/bild/transform"
-	"github.com/emer/etable/v2/etensor"
 	"github.com/emer/vision/v2/fffb"
 	"github.com/emer/vision/v2/gabor"
 	"github.com/emer/vision/v2/kwta"
@@ -35,43 +35,43 @@ type Vis struct { //types:add
 	ImgSize image.Point
 
 	// V1 simple gabor filter tensor
-	V1sGaborTsr etensor.Float32 `view:"no-inline"`
+	V1sGaborTsr tensor.Float32 `view:"no-inline"`
 
 	// input image as tensor
-	ImgTsr etensor.Float32 `view:"no-inline"`
+	ImgTsr tensor.Float32 `view:"no-inline"`
 
 	// current input image
 	Img image.Image `view:"-"`
 
 	// V1 simple gabor filter output tensor
-	V1sTsr etensor.Float32 `view:"no-inline"`
+	V1sTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 simple extra Gi from neighbor inhibition tensor
-	V1sExtGiTsr etensor.Float32 `view:"no-inline"`
+	V1sExtGiTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 simple gabor filter output, kwta output tensor
-	V1sKwtaTsr etensor.Float32 `view:"no-inline"`
+	V1sKwtaTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 simple gabor filter output, max-pooled 2x2 of V1sKwta tensor
-	V1sPoolTsr etensor.Float32 `view:"no-inline"`
+	V1sPoolTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 simple gabor filter output, un-max-pooled 2x2 of V1sPool tensor
-	V1sUnPoolTsr etensor.Float32 `view:"no-inline"`
+	V1sUnPoolTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 simple gabor filter output, angle-only features tensor
-	V1sAngOnlyTsr etensor.Float32 `view:"no-inline"`
+	V1sAngOnlyTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 simple gabor filter output, max-pooled 2x2 of AngOnly tensor
-	V1sAngPoolTsr etensor.Float32 `view:"no-inline"`
+	V1sAngPoolTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 complex length sum filter output tensor
-	V1cLenSumTsr etensor.Float32 `view:"no-inline"`
+	V1cLenSumTsr tensor.Float32 `view:"no-inline"`
 
 	// V1 complex end stop filter output tensor
-	V1cEndStopTsr etensor.Float32 `view:"no-inline"`
+	V1cEndStopTsr tensor.Float32 `view:"no-inline"`
 
 	// Combined V1 output tensor with V1s simple as first two rows, then length sum, then end stops = 5 rows total
-	V1AllTsr etensor.Float32 `view:"no-inline"`
+	V1AllTsr tensor.Float32 `view:"no-inline"`
 
 	// inhibition values for V1s KWTA
 	V1sInhibs fffb.Inhibs `view:"no-inline"`
@@ -134,12 +134,12 @@ func (vi *Vis) V1Complex() {
 // V1All aggregates all the relevant simple and complex features
 // into the V1AllTsr which is used for input to a network
 func (vi *Vis) V1All() {
-	ny := vi.V1sPoolTsr.Dim(0)
-	nx := vi.V1sPoolTsr.Dim(1)
-	nang := vi.V1sPoolTsr.Dim(3)
+	ny := vi.V1sPoolTsr.DimSize(0)
+	nx := vi.V1sPoolTsr.DimSize(1)
+	nang := vi.V1sPoolTsr.DimSize(3)
 	nrows := 5
 	oshp := []int{ny, nx, nrows, nang}
-	if !etensor.EqualInts(oshp, vi.V1AllTsr.Shp) {
+	if !tensor.EqualInts(oshp, vi.V1AllTsr.Shp) {
 		vi.V1AllTsr.SetShape(oshp, nil, []string{"Y", "X", "Polarity", "Angle"})
 	}
 	// 1 length-sum

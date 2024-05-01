@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"cogentcore.org/core/gox/num"
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/popcode"

@@ -17,13 +17,13 @@ import (
 	"strings"
 	"testing"
 
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/reflectx"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etensor"
 	"golang.org/x/exp/maps"
 )
 
@@ -174,8 +174,8 @@ func TestSynValues(t *testing.T) {
 	CompareFloats(tol, []float32{bfWt, bfLWt, afWt, afLWt}, []float32{0.5, 0.5, 0.15, 0.42822415}, "syn val setting test", t)
 }
 
-func newInPats() *etensor.Float32 {
-	inPats := etensor.NewFloat32([]int{4, 4, 1}, nil, []string{"pat", "Y", "X"})
+func newInPats() *tensor.Float32 {
+	inPats := tensor.NewFloat32([]int{4, 4, 1}, nil, []string{"pat", "Y", "X"})
 	for pi := 0; pi < 4; pi++ {
 		inPats.Set([]int{pi, pi, 0}, 1)
 	}
@@ -222,7 +222,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.InitExt(ctx)
 
-	pat := etensor.NewFloat32([]int{1, 1}, nil, []string{"Y", "X"})
+	pat := tensor.NewFloat32([]int{1, 1}, nil, []string{"Y", "X"})
 	pat.Set([]int{0, 0}, 1)
 
 	for del := 0; del <= 4; del++ {
@@ -1617,12 +1617,12 @@ func TestSWtInit(t *testing.T) {
 	pj.Defaults()
 
 	nsamp := 100
-	sch := etable.Schema{
-		{"Wt", etensor.FLOAT32, nil, nil},
-		{"LWt", etensor.FLOAT32, nil, nil},
-		{"SWt", etensor.FLOAT32, nil, nil},
+	sch := table.Schema{
+		{"Wt", reflect.Float32, nil, nil},
+		{"LWt", reflect.Float32, nil, nil},
+		{"SWt", reflect.Float32, nil, nil},
 	}
-	dt := &etable.Table{}
+	dt := &table.Table{}
 	dt.SetFromSchema(sch, nsamp)
 
 	/////////////////////////////////////////////
@@ -1637,17 +1637,17 @@ func TestSWtInit(t *testing.T) {
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
 		pj.SWts.InitWtsSyn(ctx, &nt.Rand, sy, mean, spct)
-		dt.SetCellFloat("Wt", i, float64(sy.Wt))
-		dt.SetCellFloat("LWt", i, float64(sy.LWt))
-		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+		dt.SetFloat("Wt", i, float64(sy.Wt))
+		dt.SetFloat("LWt", i, float64(sy.LWt))
+		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
-	ix := etable.NewIndexView(dt)
+	ix := table.NewIndexView(dt)
 	desc := agg.DescAll(ix)
 
-	meanRow := desc.RowsByString("Agg", "Mean", etable.Equals, etable.UseCase)[0]
-	minRow := desc.RowsByString("Agg", "Min", etable.Equals, etable.UseCase)[0]
-	maxRow := desc.RowsByString("Agg", "Max", etable.Equals, etable.UseCase)[0]
-	semRow := desc.RowsByString("Agg", "Sem", etable.Equals, etable.UseCase)[0]
+	meanRow := desc.RowsByString("Agg", "Mean", table.Equals, table.UseCase)[0]
+	minRow := desc.RowsByString("Agg", "Min", table.Equals, table.UseCase)[0]
+	maxRow := desc.RowsByString("Agg", "Max", table.Equals, table.UseCase)[0]
+	semRow := desc.RowsByString("Agg", "Sem", table.Equals, table.UseCase)[0]
 
 	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
 		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
@@ -1660,7 +1660,7 @@ func TestSWtInit(t *testing.T) {
 	}
 
 	// b := bytes.NewBuffer(nil)
-	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// desc.WriteCSV(b, table.Tab, table.Headers)
 	// fmt.Printf("%s\n", string(b.Bytes()))
 
 	/////////////////////////////////////////////
@@ -1672,9 +1672,9 @@ func TestSWtInit(t *testing.T) {
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
 		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
-		dt.SetCellFloat("Wt", i, float64(sy.Wt))
-		dt.SetCellFloat("LWt", i, float64(sy.LWt))
-		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+		dt.SetFloat("Wt", i, float64(sy.Wt))
+		dt.SetFloat("LWt", i, float64(sy.LWt))
+		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
 	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
@@ -1690,7 +1690,7 @@ func TestSWtInit(t *testing.T) {
 		t.Errorf("SPct: %g\t LWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
 	}
 	// b.Reset()
-	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// desc.WriteCSV(b, table.Tab, table.Headers)
 	// fmt.Printf("%s\n", string(b.Bytes()))
 
 	/////////////////////////////////////////////
@@ -1702,9 +1702,9 @@ func TestSWtInit(t *testing.T) {
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
 		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
-		dt.SetCellFloat("Wt", i, float64(sy.Wt))
-		dt.SetCellFloat("LWt", i, float64(sy.LWt))
-		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+		dt.SetFloat("Wt", i, float64(sy.Wt))
+		dt.SetFloat("LWt", i, float64(sy.LWt))
+		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
 	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
@@ -1720,7 +1720,7 @@ func TestSWtInit(t *testing.T) {
 		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
 	}
 	// b.Reset()
-	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// desc.WriteCSV(b, table.Tab, table.Headers)
 	// fmt.Printf("%s\n", string(b.Bytes()))
 
 	/////////////////////////////////////////////
@@ -1732,9 +1732,9 @@ func TestSWtInit(t *testing.T) {
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
 		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
-		dt.SetCellFloat("Wt", i, float64(sy.Wt))
-		dt.SetCellFloat("LWt", i, float64(sy.LWt))
-		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+		dt.SetFloat("Wt", i, float64(sy.Wt))
+		dt.SetFloat("LWt", i, float64(sy.LWt))
+		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
 	if desc.CellFloat("Wt", minRow) > 0.08 || desc.CellFloat("Wt", maxRow) < 0.12 {
@@ -1747,7 +1747,7 @@ func TestSWtInit(t *testing.T) {
 		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
 	}
 	// b.Reset()
-	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// desc.WriteCSV(b, table.Tab, table.Headers)
 	// fmt.Printf("%s\n", string(b.Bytes()))
 
 	/////////////////////////////////////////////
@@ -1759,9 +1759,9 @@ func TestSWtInit(t *testing.T) {
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
 		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
-		dt.SetCellFloat("Wt", i, float64(sy.Wt))
-		dt.SetCellFloat("LWt", i, float64(sy.LWt))
-		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+		dt.SetFloat("Wt", i, float64(sy.Wt))
+		dt.SetFloat("LWt", i, float64(sy.LWt))
+		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
 	if desc.CellFloat("Wt", minRow) > 0.76 || desc.CellFloat("Wt", maxRow) < 0.84 {
@@ -1774,7 +1774,7 @@ func TestSWtInit(t *testing.T) {
 		t.Errorf("SPct: %g\t SWt Min and Max should be < 0.76, > 0.83, not: %g, %g\n", spct, desc.CellFloat("SWt", minRow), desc.CellFloat("SWt", maxRow))
 	}
 	// b.Reset()
-	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// desc.WriteCSV(b, table.Tab, table.Headers)
 	// fmt.Printf("%s\n", string(b.Bytes()))
 }
 

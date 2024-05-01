@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // OnOff represents stimulus On / Off timing
@@ -95,10 +95,10 @@ type CondEnv struct {
 	NoRewVal float32
 
 	// one-hot input representation of current option
-	Input etensor.Float64
+	Input tensor.Float64
 
 	// single reward value
-	Reward etensor.Float64
+	Reward tensor.Float64
 
 	// true if a US reward value was set
 	HasRew bool
@@ -146,7 +146,7 @@ func (ev *CondEnv) States() env.Elements {
 	return els
 }
 
-func (ev *CondEnv) State(element string) etensor.Tensor {
+func (ev *CondEnv) State(element string) tensor.Tensor {
 	switch element {
 	case "Input":
 		return &ev.Input
@@ -236,7 +236,7 @@ func (ev *CondEnv) Step() bool {
 	return true
 }
 
-func (ev *CondEnv) Action(element string, input etensor.Tensor) {
+func (ev *CondEnv) Action(element string, input tensor.Tensor) {
 	// nop
 }
 

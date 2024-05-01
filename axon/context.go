@@ -7,7 +7,7 @@ package axon
 import (
 	"math"
 
-	"cogentcore.org/core/gox/num"
+	"cogentcore.org/core/base/num"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/gosl/v2/slbool"
 	"github.com/emer/gosl/v2/slrand"

@@ -133,7 +133,7 @@ The `TrialTypeBlockFirst` graph tracks phasic dopamine signaling (VTAp activity)
 
 Very quickly you should see a transition in the activity of different `Context_In` units in the layer between the acquisition and extinction phases. And, of course, the `PosPV` layer never becomes active again after the transition. These are the only changes to the inputs of the network.
 
-* Switch back to `TrialTypeBlockFirst` to watch the evolution of the CS-onset (light purple) and US-onset (beige) dopamine signals as extinction proceeds.  After extinction training is complete, two renewal test trials are run that expose the network to the CS twice -- once in context A and once in context B.  Since these are uninterpretable in the TrialTypeblockFirst graph go back to the `TrialTypeData` tab.
+* Switch back to `TrialTypeBlockFirst` to watch the evolution of the CS-onset (light purple) and US-onset (beige) dopamine signals as extinction proceeds.  After extinction training is complete, two renewal test trials are run that expose the network to the CS twice -- once in context A and once in context B.  Since these are uninterprtable in the TrialTypeblockFirst graph go back to the `TrialTypeData` tab.
 
 In the `TrialTypeData` graph note the stark contrast in the CS-onset dopamine signals (`VTAp` activity; black line; timestep t1) when the CS is presented in context A (left trial) versus context B. The network has reproduced a version of the ABA renewal effect highlighting the context-specificity of extinction learning.
 

@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/emer/etable/v2/minmax"
+	"cogentcore.org/core/math32/minmax"
 )
 
 //gosl: start rl_layers

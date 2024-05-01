@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func TestLayer(t *testing.T) {
 	assert.Equal(t, uint32(4), hiddenLayer.NNeurons)
 
 	// query the 'Spike' variable for all neurons of the layer
-	tensor := etensor.NewFloat32([]int{2}, nil, nil)
+	tensor := tensor.NewFloat32([]int{2}, nil, nil)
 	assert.Nil(t, hiddenLayer.UnitValuesTensor(tensor, "Spike", 0))
 	for i := 0; i < 4; i++ {
 		// can't have spiked as we haven't run the network yet

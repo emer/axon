@@ -15,9 +15,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -31,9 +34,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
 )
 
 func main() {
@@ -340,7 +340,7 @@ func (ss *Sim) ConfigLogItems() {
 
 	lg.AddItem(&elog.Item{
 		Name:   "Cycle",
-		Type:   etensor.INT64,
+		Type:   reflect.Int,
 		FixMax: false,
 		Range:  minmax.F64{Max: 1},
 		Write: elog.WriteMap{
@@ -354,7 +354,7 @@ func (ss *Sim) ConfigLogItems() {
 		cvnm := vnm // closure
 		lg.AddItem(&elog.Item{
 			Name:   cvnm,
-			Type:   etensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -500,7 +500,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.Cycle {
 		dt := ss.Logs.Table(etime.Test, etime.Cycle)
 		fnm := ecmd.LogFilename("cyc", netName, runName)
-		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
 	}
 
 	// if netdata {

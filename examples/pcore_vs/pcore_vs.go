@@ -14,10 +14,15 @@ import (
 	"os"
 	"strconv"
 
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -33,12 +38,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/split"
-	"github.com/emer/etable/v2/tsragg"
 )
 
 func main() {
@@ -565,11 +564,11 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddItem(&elog.Item{
 		Name: "TestMatch",
-		Type: etensor.FLOAT64,
+		Type: reflect.Float64,
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 				tstrl := ctx.Logs.MiscTable("TestTrialStats")
-				ctx.SetFloat64(tsragg.Mean(tstrl.ColByName("Match")))
+				ctx.SetFloat64(tsragg.Mean(tstrl.ColumnByName("Match")))
 			}}})
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
@@ -632,23 +631,23 @@ func (ss *Sim) TestStats() {
 	tststnm := "TestTrialStats"
 	ix := ss.Logs.IndexView(etime.Test, etime.Sequence)
 	spl := split.GroupBy(ix, []string{"TrialName"})
-	for _, ts := range ix.Table.ColNames {
+	for _, ts := range ix.Table.ColumnNames {
 		if ts == "TrialName" {
 			continue
 		}
 		split.Agg(spl, ts, agg.AggMean)
 	}
-	tstst := spl.AggsToTable(etable.ColNameOnly)
+	tstst := spl.AggsToTable(table.ColumnNameOnly)
 	tstst.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	ss.Logs.MiscTables[tststnm] = tstst
 
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
 		plt.SetTable(tstst)
-		plt.Params.XAxisCol = "Sequence"
-		plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.Params.XAxisColumn = "Sequence"
+		plt.SetColParams("Gated", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+		plt.SetColParams("Should", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+		plt.SetColParams("Match", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 		plt.GoUpdatePlot()
 	}
 }
@@ -677,10 +676,10 @@ func (ss *Sim) ConfigGUI() {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
+	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Params.Title = tststnm
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
@@ -792,7 +791,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.TestEpoch {
 		dt := ss.Logs.MiscTable("TestTrialStats")
 		fnm := ecmd.LogFilename("tst_epc", netName, runName)
-		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU

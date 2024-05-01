@@ -15,10 +15,16 @@ import (
 	"os"
 	"strconv"
 
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
@@ -34,12 +40,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
-	"github.com/emer/etable/v2/split"
 )
 
 func main() {
@@ -511,9 +511,9 @@ func (ss *Sim) DecodeAct(ev *MotorSeqEnv, di int) int {
 
 // SoftMaxChoose2D probabalistically selects column with most activity in layer,
 // using a softmax with Config.Env.ActSoftMaxGain gain factor
-func (ss *Sim) SoftMaxChoose2D(vt *etensor.Float32) int {
-	dy := vt.Dim(0)
-	nact := vt.Dim(1)
+func (ss *Sim) SoftMaxChoose2D(vt *tensor.Float32) int {
+	dy := vt.DimSize(0)
+	nact := vt.DimSize(1)
 	var tot float32
 	probs := make([]float32, nact)
 	for i := range probs {
@@ -534,10 +534,10 @@ func (ss *Sim) SoftMaxChoose2D(vt *etensor.Float32) int {
 
 // SoftMaxChoose4D probabalistically selects column with most activity in layer,
 // using a softmax with Config.Env.ActSoftMaxGain gain factor
-func (ss *Sim) SoftMaxChoose4D(vt *etensor.Float32) int {
-	nact := vt.Dim(1)
-	nuY := vt.Dim(2)
-	nuX := vt.Dim(3)
+func (ss *Sim) SoftMaxChoose4D(vt *tensor.Float32) int {
+	nact := vt.DimSize(1)
+	nuY := vt.DimSize(2)
+	nuX := vt.DimSize(3)
 	var tot float32
 	probs := make([]float32, nact)
 	for i := range probs {
@@ -560,10 +560,10 @@ func (ss *Sim) SoftMaxChoose4D(vt *etensor.Float32) int {
 }
 
 // HardChoose2D deterministically selects column with most activity in layer,
-func (ss *Sim) HardChoose2D(vt *etensor.Float32) int {
-	nact := vt.Dim(1)
-	nuY := vt.Dim(2)
-	nuX := vt.Dim(3)
+func (ss *Sim) HardChoose2D(vt *tensor.Float32) int {
+	nact := vt.DimSize(1)
+	nuY := vt.DimSize(2)
+	nuX := vt.DimSize(3)
 	var mx float32
 	var mxi int
 	for i := 0; i < nact; i++ {
@@ -582,10 +582,10 @@ func (ss *Sim) HardChoose2D(vt *etensor.Float32) int {
 }
 
 // HardChoose4D deterministically selects column with most activity in layer,
-func (ss *Sim) HardChoose4D(vt *etensor.Float32) int {
-	nact := vt.Dim(1)
-	nuY := vt.Dim(2)
-	nuX := vt.Dim(3)
+func (ss *Sim) HardChoose4D(vt *tensor.Float32) int {
+	nact := vt.DimSize(1)
+	nuY := vt.DimSize(2)
+	nuX := vt.DimSize(3)
 	var mx float32
 	var mxi int
 	for i := 0; i < nact; i++ {
@@ -710,7 +710,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddItem(&elog.Item{
 		Name:  "EpochsToCrit",
-		Type:  etensor.FLOAT64,
+		Type:  reflect.Float64,
 		Range: minmax.F64{Min: -1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -728,12 +728,12 @@ func (ss *Sim) ConfigLogs() {
 			}}})
 	ss.Logs.AddItem(&elog.Item{
 		Name:  "NToCrit",
-		Type:  etensor.FLOAT64,
+		Type:  reflect.Float64,
 		Range: minmax.F64{Min: -1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Expt): func(ctx *elog.Context) {
 				ix := ss.Logs.IndexView(etime.Train, etime.Run)
-				ix.Filter(func(et *etable.Table, row int) bool {
+				ix.Filter(func(et *table.Table, row int) bool {
 					return !math.IsNaN(et.CellFloat("EpochsToCrit", row))
 				})
 				ctx.SetInt(len(ix.Indexes))
@@ -799,23 +799,23 @@ func (ss *Sim) TestStats() {
 	tststnm := "TestTrialStats"
 	ix := ss.Logs.IndexView(etime.Test, etime.Sequence)
 	spl := split.GroupBy(ix, []string{"TrialName"})
-	for _, ts := range ix.Table.ColNames {
+	for _, ts := range ix.Table.ColumnNames {
 		if ts == "TrialName" {
 			continue
 		}
 		split.Agg(spl, ts, agg.AggMean)
 	}
-	tstst := spl.AggsToTable(etable.ColNameOnly)
+	tstst := spl.AggsToTable(table.ColumnNameOnly)
 	tstst.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	ss.Logs.MiscTables[tststnm] = tstst
 
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
 		plt.SetTable(tstst)
-		plt.Params.XAxisCol = "Sequence"
-		plt.SetColParams("NCorrect", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams("Rew", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams("RPE", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.Params.XAxisColumn = "Sequence"
+		plt.SetColParams("NCorrect", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+		plt.SetColParams("Rew", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+		plt.SetColParams("RPE", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 		plt.GoUpdatePlot()
 	}
 }
@@ -845,10 +845,10 @@ func (ss *Sim) ConfigGUI() {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := eplot.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
+	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Params.Title = tststnm
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
@@ -961,7 +961,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.TestEpoch {
 		dt := ss.Logs.MiscTable("TestTrialStats")
 		fnm := ecmd.LogFilename("tst_epc", netName, runName)
-		dt.SaveCSV(core.Filename(fnm), etable.Tab, etable.Headers)
+		dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
 	}
 
 	ss.Net.GPU.Destroy() // safe even if no GPU

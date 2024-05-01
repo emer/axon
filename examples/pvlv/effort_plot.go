@@ -9,16 +9,16 @@ import (
 	"math/rand"
 	"strconv"
 
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
 )
 
 func DriveEffortGUI() {
@@ -50,16 +50,16 @@ type DrEffPlot struct {
 	Effort minmax.F32
 
 	// table for plot
-	Table *etable.Table `view:"no-inline"`
+	Table *table.Table `view:"no-inline"`
 
 	// the plot
-	Plot *eplot.Plot2D `view:"-"`
+	Plot *plotview.PlotView `view:"-"`
 
 	// table for plot
-	TimeTable *etable.Table `view:"no-inline"`
+	TimeTable *table.Table `view:"no-inline"`
 
 	// the plot
-	TimePlot *eplot.Plot2D `view:"-"`
+	TimePlot *plotview.PlotView `view:"-"`
 
 	// random number generator
 	Rand erand.SysRand `view:"-"`
@@ -80,9 +80,9 @@ func (ss *DrEffPlot) Config() {
 	ss.USTime.Set(2, 20)
 	ss.Effort.Set(0.5, 1.5)
 	ss.Update()
-	ss.Table = &etable.Table{}
+	ss.Table = &table.Table{}
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &etable.Table{}
+	ss.TimeTable = &table.Table{}
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
@@ -101,8 +101,8 @@ func (ss *DrEffPlot) EffortPlot() { //types:add
 	pp.TimeEffortReset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
 		ev := 1 - axon.RubiconNormFun(0.02)
-		dt.SetCellFloat("X", vi, float64(vi))
-		dt.SetCellFloat("Y", vi, float64(ev))
+		dt.SetFloat("X", vi, float64(vi))
+		dt.SetFloat("Y", vi, float64(ev))
 
 		pp.AddTimeEffort(ctx, 0, 1) // unit
 	}
@@ -120,33 +120,33 @@ func (ss *DrEffPlot) UrgencyPlot() { //types:add
 	pp.Urgency.Reset(ctx, 0)
 	for vi := 0; vi < nv; vi++ {
 		ev := pp.Urgency.Urge(ctx, 0)
-		dt.SetCellFloat("X", vi, float64(vi))
-		dt.SetCellFloat("Y", vi, float64(ev))
+		dt.SetFloat("X", vi, float64(vi))
+		dt.SetFloat("Y", vi, float64(ev))
 
 		pp.Urgency.AddEffort(ctx, 0, 1) // unit
 	}
 	ss.Plot.Update()
 }
 
-func (ss *DrEffPlot) ConfigTable(dt *etable.Table) {
+func (ss *DrEffPlot) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("name", "PlotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"X", etensor.FLOAT64, nil, nil},
-		{"Y", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"X", tensor.FLOAT64, nil, nil},
+		{"Y", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *DrEffPlot) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *DrEffPlot) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Effort Discount or Urgency Function Plot"
-	plt.Params.XAxisCol = "X"
+	plt.Params.XAxisColumn = "X"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("X", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Y", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("X", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Y", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 	return plt
 }
 
@@ -178,12 +178,12 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 			ut = ss.USTime.Min + rand.Intn(ss.USTime.Range())
 			usv = 1
 		}
-		dt.SetCellFloat("T", ti, float64(ti))
-		dt.SetCellFloat("Eff", ti, float64(ev))
-		dt.SetCellFloat("EffInc", ti, float64(ei))
-		dt.SetCellFloat("Urge", ti, float64(urg))
-		dt.SetCellFloat("US", ti, float64(usv))
-		dt.SetCellFloat("Drive", ti, float64(dr))
+		dt.SetFloat("T", ti, float64(ti))
+		dt.SetFloat("Eff", ti, float64(ev))
+		dt.SetFloat("EffInc", ti, float64(ei))
+		dt.SetFloat("Urge", ti, float64(urg))
+		dt.SetFloat("US", ti, float64(usv))
+		dt.SetFloat("Drive", ti, float64(dr))
 
 		axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, usv)
 		axon.SetGlbV(ctx, 0, axon.GvHadRew, num.FromBool[float32](usv > 0))
@@ -193,33 +193,33 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 	ss.TimePlot.Update()
 }
 
-func (ss *DrEffPlot) ConfigTimeTable(dt *etable.Table) {
+func (ss *DrEffPlot) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("name", "TimeTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"T", etensor.FLOAT64, nil, nil},
-		{"Eff", etensor.FLOAT64, nil, nil},
-		{"EffInc", etensor.FLOAT64, nil, nil},
-		{"Urge", etensor.FLOAT64, nil, nil},
-		{"US", etensor.FLOAT64, nil, nil},
-		{"Drive", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"T", tensor.FLOAT64, nil, nil},
+		{"Eff", tensor.FLOAT64, nil, nil},
+		{"EffInc", tensor.FLOAT64, nil, nil},
+		{"Urge", tensor.FLOAT64, nil, nil},
+		{"US", tensor.FLOAT64, nil, nil},
+		{"Drive", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *DrEffPlot) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *DrEffPlot) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Effort / Drive over Time Plot"
-	plt.Params.XAxisCol = "T"
+	plt.Params.XAxisColumn = "T"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("T", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Eff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("EffInc", eplot.Off, eplot.FixMin, 0, eplot.FixMax, float64(ss.Effort.Max))
-	plt.SetColParams("Urge", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("US", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Drive", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("T", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Eff", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("EffInc", plotview.Off, plotview.FixMin, 0, plotview.FixMax, float64(ss.Effort.Max))
+	plt.SetColParams("Urge", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("US", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("Drive", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 	return plt
 }
 
@@ -233,10 +233,10 @@ func (ss *DrEffPlot) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split, "tv")
 
-	ss.Plot = eplot.NewSubPlot(tv.NewTab("Effort Plot"))
+	ss.Plot = plotview.NewSubPlot(tv.NewTab("Effort Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = eplot.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

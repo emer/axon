@@ -16,11 +16,11 @@ package armaze
 //go:generate core generate -add-types
 
 import (
+	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/minmax"
 )
 
 // Actions is a list of mutually exclusive states
@@ -106,7 +106,7 @@ type Env struct {
 	HasGated bool `edit:"-"`
 
 	// named states -- e.g., USs, CSs, etc
-	States map[string]*etensor.Float32
+	States map[string]*tensor.Float32
 
 	// maximum length of any arm
 	MaxLength int `edit:"-"`
@@ -167,11 +167,11 @@ func (ev *Env) Init(run int) {
 
 	ev.UpdateMaxLength()
 
-	ev.States = make(map[string]*etensor.Float32)
-	ev.States["CS"] = etensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NArms}, nil, nil)
-	ev.States["Pos"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
-	ev.States["Dist"] = etensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
-	ev.States["Action"] = etensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
+	ev.States = make(map[string]*tensor.Float32)
+	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NArms}, nil, nil)
+	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
+	ev.States["Dist"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
+	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
@@ -181,12 +181,15 @@ func (ev *Env) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
 	return 0, 0, false
 }
 
-func (ev *Env) State(el string) etensor.Tensor {
+func (ev *Env) State(el string) tensor.Tensor {
 	return ev.States[el]
 }
 
 // NewStart starts a new approach run
 func (ev *Env) NewStart() {
+	for _, arm := range ev.Config.Arms { // do at start so it is consistent
+		arm.USAvail = erand.BoolP32(arm.USProb, -1, &ev.Rand)
+	}
 	if ev.Config.Params.RandomStart {
 		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms), -1)
 	}
@@ -295,7 +298,7 @@ func (ev *Env) Step() bool {
 func (ev *Env) RenderLocalist(name string, val int) {
 	st := ev.States[name]
 	st.SetZeros()
-	if val >= st.Dim(1) {
+	if val >= st.DimSize(1) {
 		return
 	}
 	for y := 0; y < ev.Config.Params.NYReps; y++ {
@@ -327,13 +330,13 @@ func (ev *Env) RenderAction(act Actions) {
 //////////////////////////////////////////////////
 //   Action
 
-func (ev *Env) DecodeAct(vt *etensor.Float32) Actions {
+func (ev *Env) DecodeAct(vt *tensor.Float32) Actions {
 	mxi := ev.DecodeLocalist(vt)
 	return Actions(mxi)
 }
 
-func (ev *Env) DecodeLocalist(vt *etensor.Float32) int {
-	dx := vt.Dim(1)
+func (ev *Env) DecodeLocalist(vt *tensor.Float32) int {
+	dx := vt.DimSize(1)
 	var max float32
 	var mxi int
 	for i := 0; i < dx; i++ {
@@ -351,7 +354,7 @@ func (ev *Env) DecodeLocalist(vt *etensor.Float32) int {
 
 // Action records the LastAct and renders it, but does not
 // update the state accordingly.
-func (ev *Env) Action(action string, nop etensor.Tensor) {
+func (ev *Env) Action(action string, nop tensor.Tensor) {
 	act := None
 	act.SetString(action)
 	ev.LastAct = act
@@ -403,8 +406,7 @@ func (ev *Env) TakeAct(act Actions) {
 // ConsumeUS implements the consume action at current position in given arm
 func (ev *Env) ConsumeUS(arm *Arm) {
 	mag := MinMaxRand(arm.USMag, ev.Rand)
-	got := erand.BoolP32(arm.USProb, -1, &ev.Rand)
-	if got {
+	if arm.USAvail {
 		ev.USConsumed = arm.US
 		ev.USValue = mag
 		ev.JustConsumed = true

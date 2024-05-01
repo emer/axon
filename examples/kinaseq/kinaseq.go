@@ -17,9 +17,9 @@ import (
 	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor/table"
 )
 
 func main() {
@@ -110,10 +110,10 @@ type Sim struct {
 	Context axon.Context
 
 	// all logs
-	Logs map[string]*etable.Table `view:"no-inline"`
+	Logs map[string]*table.Table `view:"no-inline"`
 
 	// all plots
-	Plots map[string]*eplot.Plot2D `view:"-"`
+	Plots map[string]*plotview.PlotView `view:"-"`
 
 	// main GUI window
 	Win *core.Window `view:"-"`
@@ -173,26 +173,26 @@ func (ss *Sim) Init() {
 }
 
 // Log returns / makes log table of given name
-func (ss *Sim) Log(name string) *etable.Table {
+func (ss *Sim) Log(name string) *table.Table {
 	if ss.Logs == nil {
-		ss.Logs = make(map[string]*etable.Table)
+		ss.Logs = make(map[string]*table.Table)
 	}
 	dt, ok := ss.Logs[name]
 	if ok {
 		return dt
 	}
-	dt = &etable.Table{}
+	dt = &table.Table{}
 	ss.Logs[name] = dt
 	return dt
 }
 
-func (ss *Sim) Plot(name string) *eplot.Plot2D {
+func (ss *Sim) Plot(name string) *plotview.PlotView {
 	return ss.Plots[name]
 }
 
-func (ss *Sim) AddPlot(name string, plt *eplot.Plot2D) {
+func (ss *Sim) AddPlot(name string, plt *plotview.PlotView) {
 	if ss.Plots == nil {
-		ss.Plots = make(map[string]*eplot.Plot2D)
+		ss.Plots = make(map[string]*plotview.PlotView)
 	}
 	ss.Plots[name] = plt
 }
@@ -220,18 +220,18 @@ func (ss *Sim) Sweep() {
 
 			cond := fmt.Sprintf("%03d -> %03d", minusHz, plusHz)
 			dwt := float64(plusHz-minusHz) / 100
-			dt.SetCellFloat("ErrDWt", row, float64(dwt))
-			dt.SetCellString("Cond", row, cond)
-			dvt.SetCellFloat("ErrDWt", row, float64(dwt))
-			dvt.SetCellString("Cond", row, cond)
+			dt.SetFloat("ErrDWt", row, float64(dwt))
+			dt.SetString("Cond", row, cond)
+			dvt.SetFloat("ErrDWt", row, float64(dwt))
+			dvt.SetString("Cond", row, cond)
 
-			rix := etable.NewIndexView(rdt)
-			for ci := 2; ci < rdt.NumCols(); ci++ {
-				cnm := rdt.ColName(ci)
+			rix := table.NewIndexView(rdt)
+			for ci := 2; ci < rdt.NumColumns(); ci++ {
+				cnm := rdt.ColumnName(ci)
 				mean := agg.Mean(rix, cnm)[0]
 				sem := agg.Sem(rix, cnm)[0]
-				dt.SetCellFloat(cnm, row, mean)
-				dvt.SetCellFloat(cnm, row, sem)
+				dt.SetFloat(cnm, row, mean)
+				dvt.SetFloat(cnm, row, sem)
 			}
 			row++
 		}
@@ -362,16 +362,16 @@ func (ss *Sim) ConfigGUI() *core.Window {
 
 	tv := core.AddNewTabView(split, "tv")
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "RunPlot").(*eplot.Plot2D)
+	plt := tv.AddNewTab(plotview.KiT_Plot2D, "RunPlot").(*plotview.PlotView)
 	ss.AddPlot("RunPlot", ss.ConfigRunPlot(plt, ss.Log("RunLog")))
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TrialPlot").(*eplot.Plot2D)
+	plt = tv.AddNewTab(plotview.KiT_Plot2D, "TrialPlot").(*plotview.PlotView)
 	ss.AddPlot("TrialPlot", ss.ConfigTrialPlot(plt, ss.Log("TrialLog")))
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "DWtPlot").(*eplot.Plot2D)
+	plt = tv.AddNewTab(plotview.KiT_Plot2D, "DWtPlot").(*plotview.PlotView)
 	ss.AddPlot("DWtPlot", ss.ConfigDWtPlot(plt, ss.Log("DWtLog")))
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "DWtVarPlot").(*eplot.Plot2D)
+	plt = tv.AddNewTab(plotview.KiT_Plot2D, "DWtVarPlot").(*plotview.PlotView)
 	ss.AddPlot("DWtVarPlot", ss.ConfigDWtPlot(plt, ss.Log("DWtVarLog")))
 
 	split.SetSplits(.2, .8)

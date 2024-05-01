@@ -2,7 +2,7 @@
 
 This is a version of the ra25 example that uses MPI to distributed computation across multiple processors (*procs*).  See [Wiki MPI](https://github.com/emer/emergent/wiki/MPI) for more info.
 
-N completely separate instances of the same simulation program are run in parallel, and they communicate weight changes and trial-level log data amongst themselves.  Each proc thus trains on a subset of the total set of training patterns for each epoch.  Thus, dividing the patterns across procs is the most difficult aspect of making this work.  The mechanics of synchronizing the weight changes and etable data are just a few simple method calls.
+N completely separate instances of the same simulation program are run in parallel, and they communicate weight changes and trial-level log data amongst themselves.  Each proc thus trains on a subset of the total set of training patterns for each epoch.  Thus, dividing the patterns across procs is the most difficult aspect of making this work.  The mechanics of synchronizing the weight changes and table data are just a few simple method calls.
 
 Speedups approach linear, because the synchronization is relatively infrequent, especially for larger networks which have more computation per trial.  The biggest cost in MPI is the latency: sending a huge list of weight changes infrequently is much faster overall than sending smaller amounts of data more frequently.
 
@@ -60,7 +60,7 @@ There are some other things added but they are just more of what is already ther
 In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to different nodes, so that each epoch has the same full set of input patterns as with one processor.
 
 ```go
-	ss.TrainEnv.Table = etable.NewIndexView(ss.Pats)
+	ss.TrainEnv.Table = table.NewIndexView(ss.Pats)
 	if ss.Config.Run.MPI {
 		st, ed, _ := empi.AllocN(ss.Pats.Rows)
 		ss.TrainEnv.Table.Indexes = ss.TrainEnv.Table.Indexes[st:ed]

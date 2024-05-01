@@ -12,10 +12,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -32,8 +35,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
 )
 
 func main() {
@@ -192,7 +193,7 @@ type Sim struct {
 	Logs elog.Logs
 
 	// the training patterns to use
-	Pats *etable.Table `view:"no-inline"`
+	Pats *table.Table `view:"no-inline"`
 
 	// Environments
 	Envs env.Envs `view:"no-inline"`
@@ -229,7 +230,7 @@ func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
-	ss.Pats = &etable.Table{}
+	ss.Pats = &table.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.InitRndSeed(0)
 	ss.Context.Defaults()
@@ -267,7 +268,7 @@ func (ss *Sim) ConfigEnv() {
 	// note: names must be standard here!
 	trn.Nm = etime.Train.String()
 	trn.Dsc = "training params and state"
-	trn.Config(etable.NewIndexView(ss.Pats))
+	trn.Config(table.NewIndexView(ss.Pats))
 	if ss.Config.Run.MPI {
 		// this is key mpi step: allocate diff inputs to diff procs
 		st, ed, _ := empi.AllocN(ss.Pats.Rows)
@@ -278,7 +279,7 @@ func (ss *Sim) ConfigEnv() {
 
 	tst.Nm = etime.Test.String()
 	tst.Dsc = "testing params and state"
-	tst.Config(etable.NewIndexView(ss.Pats))
+	tst.Config(table.NewIndexView(ss.Pats))
 	tst.Sequential = true
 	if ss.Config.Run.MPI {
 		st, ed, _ := empi.AllocN(ss.Pats.Rows)
@@ -287,7 +288,7 @@ func (ss *Sim) ConfigEnv() {
 	tst.Validate()
 
 	// note: to create a train / test split of pats, do this:
-	// all := etable.NewIndexView(ss.Pats)
+	// all := table.NewIndexView(ss.Pats)
 	// splits, _ := split.Permuted(all, []float64{.8, .2}, []string{"Train", "Test"})
 	// trn.Table = splits.Splits[0]
 	// tst.Table = splits.Splits[1]
@@ -550,23 +551,23 @@ func (ss *Sim) ConfigPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	sch := etable.Schema{
-		{"Name", etensor.STRING, nil, nil},
-		{"Input", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
-		{"Output", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
+	sch := table.Schema{
+		{"Name", tensor.STRING, nil, nil},
+		{"Input", reflect.Float32, []int{5, 5}, []string{"Y", "X"}},
+		{"Output", reflect.Float32, []int{5, 5}, []string{"Y", "X"}},
 	}
 	dt.SetFromSchema(sch, 24)
 
-	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), 6, 1, 0, 3)
-	patgen.PermutedBinaryMinDiff(dt.Cols[2].(*etensor.Float32), 6, 1, 0, 3)
-	dt.SaveCSV("random_5x5_24_gen.tsv", etable.Tab, etable.Headers)
+	patgen.PermutedBinaryMinDiff(dt.Columns[1].(*tensor.Float32), 6, 1, 0, 3)
+	patgen.PermutedBinaryMinDiff(dt.Columns[2].(*tensor.Float32), 6, 1, 0, 3)
+	dt.SaveCSV("random_5x5_24_gen.tsv", table.Tab, table.Headers)
 }
 
 func (ss *Sim) OpenPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("random_5x5_24.tsv", etable.Tab)
+	err := dt.OpenCSV("random_5x5_24.tsv", table.Tab)
 	if err != nil {
 		log.Println(err)
 	}

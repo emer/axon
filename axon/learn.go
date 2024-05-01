@@ -6,10 +6,10 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/etable/v2/minmax"
 	"github.com/emer/gosl/v2/slbool"
 )
 

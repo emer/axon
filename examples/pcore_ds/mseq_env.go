@@ -7,10 +7,10 @@ package main
 import (
 	"strconv"
 
+	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/etable/v2/etensor"
 )
 
 // MotorSeqEnv implements simple motor sequencing patterns to test DS BG learning.
@@ -93,7 +93,7 @@ type MotorSeqEnv struct {
 	RndSeed int64 `edit:"-"`
 
 	// named states: State, Target, PrevAction, Action
-	States map[string]*etensor.Float32
+	States map[string]*tensor.Float32
 }
 
 func (ev *MotorSeqEnv) Name() string {
@@ -120,13 +120,13 @@ func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
-	ev.States = make(map[string]*etensor.Float32)
-	ev.States["State"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
-	ev.States["Target"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
-	ev.States["Action"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
-	ev.States["PrevAction"] = etensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions + 1}, nil, []string{"Y", "X"})
-	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
-	ev.States["SNc"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
+	ev.States = make(map[string]*tensor.Float32)
+	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["Target"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["Action"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, nil, []string{"Y", "X"})
+	ev.States["PrevAction"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions + 1}, nil, []string{"Y", "X"})
+	ev.States["Rew"] = tensor.NewFloat32([]int{1, 1}, nil, nil)
+	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1}, nil, nil)
 }
 
 func (ev *MotorSeqEnv) Validate() error {
@@ -159,7 +159,7 @@ func (ev *MotorSeqEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool
 	return 0, 0, false
 }
 
-func (ev *MotorSeqEnv) State(el string) etensor.Tensor {
+func (ev *MotorSeqEnv) State(el string) tensor.Tensor {
 	return ev.States[el]
 }
 
@@ -219,7 +219,7 @@ func (ev *MotorSeqEnv) Step() bool {
 
 // Action records the current action taken by model, at end of minus phase
 // Computes Rew* at end of sequence
-func (ev *MotorSeqEnv) Action(action string, nop etensor.Tensor) {
+func (ev *MotorSeqEnv) Action(action string, nop tensor.Tensor) {
 	ev.PrevAction = ev.CurAction
 	ev.CurAction, _ = strconv.Atoi(action)
 	// fmt.Println("act:", ev.Trial.Cur, action, ev.CurAction, ev.Target, ev.NCorrect)
@@ -264,13 +264,13 @@ func (ev *MotorSeqEnv) ComputeReward() {
 	ev.NCorrect = 0
 }
 
-func (ev *MotorSeqEnv) DecodeAct(vt *etensor.Float32) int {
+func (ev *MotorSeqEnv) DecodeAct(vt *tensor.Float32) int {
 	mxi := ev.DecodeLocalist(vt)
 	return mxi
 }
 
-func (ev *MotorSeqEnv) DecodeLocalist(vt *etensor.Float32) int {
-	dx := vt.Dim(1)
+func (ev *MotorSeqEnv) DecodeLocalist(vt *tensor.Float32) int {
+	dx := vt.DimSize(1)
 	var mx float32
 	var mxi int
 	for i := 0; i < dx; i++ {

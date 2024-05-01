@@ -5,12 +5,12 @@
 package axon
 
 import (
+	"cogentcore.org/core/tensor/stats/norm"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/norm"
 )
 
 // HipConfig have the hippocampus size and connectivity parameters

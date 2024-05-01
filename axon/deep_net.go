@@ -87,9 +87,9 @@ func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 	shp := super.Shape()
 	var plv *Layer
 	if shp.NumDims() == 2 {
-		plv = net.AddPulvLayer2D(name+"P", shp.Dim(0), shp.Dim(1))
+		plv = net.AddPulvLayer2D(name+"P", shp.DimSize(0), shp.DimSize(1))
 	} else {
-		plv = net.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		plv = net.AddPulvLayer4D(name+"P", shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	plv.SetBuildConfig("DriveLayName", name)
 	plv.SetRelPos(relpos.NewBehind(name+"CT", space))
@@ -106,9 +106,9 @@ func (net *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 	shp := lay.Shape()
 	var plv *Layer
 	if shp.NumDims() == 2 {
-		plv = net.AddPulvLayer2D(name+"P", shp.Dim(0), shp.Dim(1))
+		plv = net.AddPulvLayer2D(name+"P", shp.DimSize(0), shp.DimSize(1))
 	} else {
-		plv = net.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		plv = net.AddPulvLayer4D(name+"P", shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	plv.SetBuildConfig("DriveLayName", name)
 	plv.PlaceBehind(lay, space)
@@ -241,12 +241,12 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	is4D := false
 	ptExtra := 1 // extra size for pt layers
 	if shp.NumDims() == 2 {
-		pt = net.AddPTMaintLayer2D(name+"PT", shp.Dim(0)*ptExtra, shp.Dim(1)*ptExtra)
-		thal = net.AddBGThalLayer2D(name+thalSuffix, shp.Dim(0), shp.Dim(1))
+		pt = net.AddPTMaintLayer2D(name+"PT", shp.DimSize(0)*ptExtra, shp.DimSize(1)*ptExtra)
+		thal = net.AddBGThalLayer2D(name+thalSuffix, shp.DimSize(0), shp.DimSize(1))
 	} else {
 		is4D = true
-		pt = net.AddPTMaintLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2)*ptExtra, shp.Dim(3)*ptExtra)
-		thal = net.AddBGThalLayer4D(name+thalSuffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		pt = net.AddPTMaintLayer4D(name+"PT", shp.DimSize(0), shp.DimSize(1), shp.DimSize(2)*ptExtra, shp.DimSize(3)*ptExtra)
+		thal = net.AddBGThalLayer4D(name+thalSuffix, shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	pt.AddClass(name)
 	thal.AddClass(name)
@@ -397,9 +397,9 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 	// shp := ptMaint.Shape()
 	shp := ct.Shape()
 	if shp.NumDims() == 2 {
-		ptPred = net.AddPTPredLayer2D(name+"PTp", shp.Dim(0), shp.Dim(1))
+		ptPred = net.AddPTPredLayer2D(name+"PTp", shp.DimSize(0), shp.DimSize(1))
 	} else {
-		ptPred = net.AddPTPredLayer4D(name+"PTp", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		ptPred = net.AddPTPredLayer4D(name+"PTp", shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	ptPred.AddClass(name)
 	ptPred.PlaceBehind(ptMaint, space)

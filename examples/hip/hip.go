@@ -13,13 +13,17 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/gox/num"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/metric"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -34,9 +38,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/metric"
 )
 
 func main() {
@@ -84,28 +85,28 @@ type Sim struct {
 	PoolVocab patgen.Vocab `view:"no-inline"`
 
 	// AB training patterns to use
-	TrainAB *etable.Table `view:"no-inline"`
+	TrainAB *table.Table `view:"no-inline"`
 
 	// AC training patterns to use
-	TrainAC *etable.Table `view:"no-inline"`
+	TrainAC *table.Table `view:"no-inline"`
 
 	// AB testing patterns to use
-	TestAB *etable.Table `view:"no-inline"`
+	TestAB *table.Table `view:"no-inline"`
 
 	// AC testing patterns to use
-	TestAC *etable.Table `view:"no-inline"`
+	TestAC *table.Table `view:"no-inline"`
 
 	// Lure pretrain patterns to use
-	PreTrainLure *etable.Table `view:"no-inline"`
+	PreTrainLure *table.Table `view:"no-inline"`
 
 	// Lure testing patterns to use
-	TestLure *etable.Table `view:"no-inline"`
+	TestLure *table.Table `view:"no-inline"`
 
 	// all training patterns -- for pretrain
-	TrainAll *etable.Table `view:"no-inline"`
+	TrainAll *table.Table `view:"no-inline"`
 
 	// TestAB + TestAC
-	TestABAC *etable.Table `view:"no-inline"`
+	TestABAC *table.Table `view:"no-inline"`
 
 	// Environments
 	Envs env.Envs `view:"no-inline"`
@@ -135,14 +136,14 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 
 	ss.PoolVocab = patgen.Vocab{}
-	ss.TrainAB = &etable.Table{}
-	ss.TrainAC = &etable.Table{}
-	ss.TestAB = &etable.Table{}
-	ss.TestAC = &etable.Table{}
-	ss.PreTrainLure = &etable.Table{}
-	ss.TestLure = &etable.Table{}
-	ss.TrainAll = &etable.Table{}
-	ss.TestABAC = &etable.Table{}
+	ss.TrainAB = &table.Table{}
+	ss.TrainAC = &table.Table{}
+	ss.TestAB = &table.Table{}
+	ss.TestAC = &table.Table{}
+	ss.PreTrainLure = &table.Table{}
+	ss.TestLure = &table.Table{}
+	ss.TrainAll = &table.Table{}
+	ss.TestABAC = &table.Table{}
 	ss.PretrainMode = false
 
 	ss.RndSeeds.Init(100) // max 100 runs
@@ -182,12 +183,12 @@ func (ss *Sim) ConfigEnv() {
 	// note: names must be standard here!
 	trn.Nm = etime.Train.String()
 	trn.Dsc = "training params and state"
-	trn.Config(etable.NewIndexView(ss.TrainAB))
+	trn.Config(table.NewIndexView(ss.TrainAB))
 	trn.Validate()
 
 	tst.Nm = etime.Test.String()
 	tst.Dsc = "testing params and state"
-	tst.Config(etable.NewIndexView(ss.TestABAC))
+	tst.Config(table.NewIndexView(ss.TestABAC))
 	tst.Sequential = true
 	tst.Validate()
 
@@ -303,7 +304,7 @@ func (ss *Sim) ConfigLoops() {
 			abMem := float32(tstEpcLog.Table.CellFloat("ABMem", epc))
 			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (abMem >= ss.Config.Run.StopMem || epc == ss.Config.Run.Epochs/2) {
 				ss.Stats.SetInt("FirstPerfect", epc)
-				trn.Config(etable.NewIndexView(ss.TrainAC))
+				trn.Config(table.NewIndexView(ss.TrainAC))
 				trn.Validate()
 			}
 		}
@@ -476,7 +477,7 @@ func (ss *Sim) OpenPats() {
 	dt := ss.TrainAB
 	dt.SetMetaData("name", "TrainAB")
 	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("random_5x5_25.tsv", etable.Tab)
+	err := dt.OpenCSV("random_5x5_25.tsv", table.Tab)
 	if err != nil {
 		log.Println(err)
 	}
@@ -632,12 +633,12 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	ss.Stats.SetFloat("TrgOffWasOn", trgOffWasOn)
 
 	// take completion pool to do CosDiff
-	var recallPat etensor.Float32
+	var recallPat tensor.Float32
 	ecout.UnitValuesTensor(&recallPat, "ActM", di)
 	mostSimilar := -1
 	highestCosDiff := float32(0)
 	var cosDiff float32
-	var patToComplete *etensor.Float32
+	var patToComplete *tensor.Float32
 	var correctIndex int
 	if isAB {
 		patToComplete, _ = ss.PoolVocab.ByNameTry("B")
@@ -647,7 +648,7 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AC")[1])
 	}
 	for i := 0; i < patToComplete.Shp[0]; i++ { // for each item in the list
-		cosDiff = metric.Correlation32(recallPat.SubSpace([]int{0, 1}).(*etensor.Float32).Values, patToComplete.SubSpace([]int{i}).(*etensor.Float32).Values)
+		cosDiff = metric.Correlation32(recallPat.SubSpace([]int{0, 1}).(*tensor.Float32).Values, patToComplete.SubSpace([]int{i}).(*tensor.Float32).Values)
 		if cosDiff > highestCosDiff {
 			highestCosDiff = cosDiff
 			mostSimilar = i
@@ -672,7 +673,7 @@ func (ss *Sim) AddLogItems() {
 		tonm := "Tst" + st
 		ss.Logs.AddItem(&elog.Item{
 			Name: tonm,
-			Type: etensor.FLOAT64,
+			Type: reflect.Float64,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm))

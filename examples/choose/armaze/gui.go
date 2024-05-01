@@ -18,15 +18,15 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/plot/plotview"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor/tensorview"
 	"cogentcore.org/core/views"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyzview"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/etview"
 	"github.com/emer/eve/v2/eve"
 	"github.com/emer/eve/v2/evev"
 )
@@ -142,16 +142,16 @@ type GUI struct {
 	DepthImage *core.Image `view:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
-	USposPlot *eplot.Plot2D
+	USposPlot *plotview.PlotView
 
 	// data for USPlot
-	USposData *etable.Table
+	USposData *table.Table
 
 	// plot of negative valence active OFC US state, and outcomes
-	USnegPlot *eplot.Plot2D
+	USnegPlot *plotview.PlotView
 
 	// data for USPlot
-	USnegData *etable.Table
+	USnegData *table.Table
 
 	// geometry of world
 	Geom Geom
@@ -226,14 +226,14 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	wd := float32(200)
 	ht := float32(100)
-	vw.USposPlot = eplot.NewPlot2D(svfr, "us-pos")
+	vw.USposPlot = plotview.NewPlot2D(svfr, "us-pos")
 	vw.USposPlot.Style(func(s *styles.Style) {
 		s.Min.X.Px(wd)
 		s.Min.Y.Px(ht)
 		s.Grow.Set(0, 0)
 	})
 
-	vw.USnegPlot = eplot.NewPlot2D(svfr, "us-neg")
+	vw.USnegPlot = plotview.NewPlot2D(svfr, "us-neg")
 	vw.USnegPlot.Style(func(s *styles.Style) {
 		s.Min.X.Px(wd)
 		s.Min.Y.Px(ht)
@@ -465,30 +465,30 @@ func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 }
 
 func (vw *GUI) ConfigUSPlots() {
-	schP := etable.Schema{
-		{"US", etensor.STRING, nil, nil},
-		{"Drive", etensor.FLOAT64, nil, nil},
-		{"OFC", etensor.FLOAT64, nil, nil},
-		{"USin", etensor.FLOAT64, nil, nil},
+	schP := table.Schema{
+		{"US", tensor.STRING, nil, nil},
+		{"Drive", tensor.FLOAT64, nil, nil},
+		{"OFC", tensor.FLOAT64, nil, nil},
+		{"USin", tensor.FLOAT64, nil, nil},
 	}
-	dp := etable.New(schP, vw.Env.Config.NDrives+1)
+	dp := table.New(schP, vw.Env.Config.NDrives+1)
 	vw.USposData = dp
-	vw.USposPlot.Params.Type = eplot.Bar
+	vw.USposPlot.Params.Type = plotview.Bar
 	vw.USposPlot.Params.Title = "Positive USs"
 	vw.USposPlot.Params.Scale = 1
-	vw.USposPlot.Params.XAxisCol = "US"
+	vw.USposPlot.Params.XAxisColumn = "US"
 
-	schN := etable.Schema{
-		{"US", etensor.STRING, nil, nil},
-		{"OFC", etensor.FLOAT64, nil, nil},
-		{"USin", etensor.FLOAT64, nil, nil},
+	schN := table.Schema{
+		{"US", tensor.STRING, nil, nil},
+		{"OFC", tensor.FLOAT64, nil, nil},
+		{"USin", tensor.FLOAT64, nil, nil},
 	}
-	dn := etable.New(schN, vw.Env.Config.NNegUSs+2)
+	dn := table.New(schN, vw.Env.Config.NNegUSs+2)
 	vw.USnegData = dn
-	vw.USnegPlot.Params.Type = eplot.Bar
+	vw.USnegPlot.Params.Type = plotview.Bar
 	vw.USnegPlot.Params.Title = "Negative USs"
 	vw.USnegPlot.Params.Scale = 1
-	vw.USnegPlot.Params.XAxisCol = "US"
+	vw.USnegPlot.Params.XAxisColumn = "US"
 
 	cols := []string{"Drive", "USin", "OFC"}
 	for i, cl := range cols {
@@ -550,7 +550,7 @@ func (vw *GUI) ViewDepth(depth []float32) {
 	evev.DepthImage(vw.DepthImage.Image, depth, cmap, &vw.Camera)
 }
 
-func (vw *GUI) ConfigWorldView(tg *etview.TensorGrid) {
+func (vw *GUI) ConfigWorldView(tg *tensorview.TensorGrid) {
 	cnm := "ArmMazeColors"
 	cm, ok := colormap.AvailableMaps[cnm]
 	if !ok {

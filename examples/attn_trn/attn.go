@@ -28,11 +28,11 @@ import (
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/prjn"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/etable/v2/agg"
-	"github.com/emer/etable/v2/eplot"
-	"github.com/emer/etable/v2/etable"
-	"github.com/emer/etable/v2/etensor"
-	"github.com/emer/etable/v2/split"
+	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/views"
 	"cogentcore.org/core/tree"
@@ -232,13 +232,13 @@ type Sim struct {
 	Test TestType
 
 	// testing trial-level log data -- click to see record of network's response to each input
-	TstTrlLog *etable.Table `view:"no-inline"`
+	TstTrlLog *table.Table `view:"no-inline"`
 
 	// aggregated testing data
-	TstRunLog *etable.Table `view:"no-inline"`
+	TstRunLog *table.Table `view:"no-inline"`
 
 	// aggregate stats on testing data
-	TstStats *etable.Table `view:"no-inline"`
+	TstStats *table.Table `view:"no-inline"`
 
 	// full collection of param sets -- not really interesting for this model
 	Params params.Sets `view:"no-inline"`
@@ -280,13 +280,13 @@ type Sim struct {
 	ToolBar *core.ToolBar `view:"-"`
 
 	// the test-trial plot
-	TstTrlPlot *eplot.Plot2D `view:"-"`
+	TstTrlPlot *plotview.PlotView `view:"-"`
 
 	// the test-trial plot
-	TstRunPlot *eplot.Plot2D `view:"-"`
+	TstRunPlot *plotview.PlotView `view:"-"`
 
 	// for holding layer values
-	ValuesTsrs map[string]*etensor.Float32 `view:"-"`
+	ValuesTsrs map[string]*tensor.Float32 `view:"-"`
 
 	// true if sim is running
 	IsRunning bool `view:"-"`
@@ -303,9 +303,9 @@ func (ss *Sim) New() {
 	ss.Defaults()
 	ss.Net = &axon.Network{}
 	ss.Test = AttnSize
-	ss.TstTrlLog = &etable.Table{}
-	ss.TstRunLog = &etable.Table{}
-	ss.TstStats = &etable.Table{}
+	ss.TstTrlLog = &table.Table{}
+	ss.TstRunLog = &table.Table{}
+	ss.TstStats = &table.Table{}
 	ss.Params = ParamSets
 	ss.ViewOn = true
 	ss.ViewUpdate = axon.AlphaCycle // axon.Cycle // axon.FastSpike
@@ -555,7 +555,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
-	sz := evec.Vector2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
+	sz := evec.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
 	pt := stm.PosXY(sz)
 	cx := int(pt.X)
 	cy := int(pt.Y)
@@ -580,7 +580,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 
 func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
-	sz := evec.Vector2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
+	sz := evec.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
 	pt := stm.PosXY(sz)
 	cx := int(math32.Round(pt.X)) - 1
 	cy := int(math32.Round(pt.Y)) - 1
@@ -789,13 +789,13 @@ func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
 //  TstTrlLog
 
 // ValuesTsr gets value tensor of given name, creating if not yet made
-func (ss *Sim) ValuesTsr(name string) *etensor.Float32 {
+func (ss *Sim) ValuesTsr(name string) *tensor.Float32 {
 	if ss.ValuesTsrs == nil {
-		ss.ValuesTsrs = make(map[string]*etensor.Float32)
+		ss.ValuesTsrs = make(map[string]*tensor.Float32)
 	}
 	tsr, ok := ss.ValuesTsrs[name]
 	if !ok {
-		tsr = &etensor.Float32{}
+		tsr = &tensor.Float32{}
 		ss.ValuesTsrs[name] = tsr
 	}
 	return tsr
@@ -803,7 +803,7 @@ func (ss *Sim) ValuesTsr(name string) *etensor.Float32 {
 
 // LogTstTrl adds data from current trial to the TstTrlLog table.
 // log always contains number of testing items
-func (ss *Sim) LogTstTrl(dt *etable.Table) {
+func (ss *Sim) LogTstTrl(dt *table.Table) {
 	row := dt.Rows
 	if dt.Rows <= row {
 		dt.SetNumRows(row + 1)
@@ -812,63 +812,63 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	trl := ss.TestEnv.Trial.Cur
 	rn := ss.TestEnv.Run.Cur
 
-	dt.SetCellFloat("Run", row, float64(rn))
-	dt.SetCellFloat("Trial", row, float64(trl))
-	dt.SetCellString("TrialName", row, ss.TestEnv.String())
-	dt.SetCellFloat("Cycle", row, float64(ss.Context.Cycle))
-	dt.SetCellFloat("S1Act", row, float64(ss.S1Act))
-	dt.SetCellFloat("S2Act", row, float64(ss.S2Act))
-	dt.SetCellFloat("PctMod", row, float64(ss.PctMod))
+	dt.SetFloat("Run", row, float64(rn))
+	dt.SetFloat("Trial", row, float64(trl))
+	dt.SetString("TrialName", row, ss.TestEnv.String())
+	dt.SetFloat("Cycle", row, float64(ss.Context.Cycle))
+	dt.SetFloat("S1Act", row, float64(ss.S1Act))
+	dt.SetFloat("S2Act", row, float64(ss.S2Act))
+	dt.SetFloat("PctMod", row, float64(ss.PctMod))
 
 	for _, lnm := range ss.TstRecLays {
 		tsr := ss.ValuesTsr(lnm)
 		ly := ss.Net.AxonLayerByName(lnm)
 		ly.UnitValuesTensor(tsr, "Act")
-		dt.SetCellTensor(lnm, row, tsr)
+		dt.SetTensor(lnm, row, tsr)
 	}
 
 	// note: essential to use Go version of update when called from another goroutine
 	ss.TstTrlPlot.GoUpdate()
 }
 
-func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
+func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 	dt.SetMetaData("name", "TstTrlLog")
 	dt.SetMetaData("desc", "Record of testing per input pattern")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Run", etensor.INT64, nil, nil},
-		{"Trial", etensor.INT64, nil, nil},
-		{"TrialName", etensor.STRING, nil, nil},
-		{"Cycle", etensor.INT64, nil, nil},
-		{"S1Act", etensor.FLOAT64, nil, nil},
-		{"S2Act", etensor.FLOAT64, nil, nil},
-		{"PctMod", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Run", tensor.INT64, nil, nil},
+		{"Trial", tensor.INT64, nil, nil},
+		{"TrialName", tensor.STRING, nil, nil},
+		{"Cycle", tensor.INT64, nil, nil},
+		{"S1Act", tensor.FLOAT64, nil, nil},
+		{"S2Act", tensor.FLOAT64, nil, nil},
+		{"PctMod", tensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.TstRecLays {
 		ly := ss.Net.AxonLayerByName(lnm)
-		sch = append(sch, etable.Column{lnm, etensor.FLOAT64, ly.Shp.Shp, nil})
+		sch = append(sch, table.Column{lnm, tensor.FLOAT64, ly.Shp.Shp, nil})
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTstTrlPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTstTrlPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Attn Test Trial Plot"
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 220)
-	plt.SetColParams("S1Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("S2Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("PctMod", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Run", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Trial", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("TrialName", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Cycle", plotview.Off, plotview.FixMin, 0, plotview.FixMax, 220)
+	plt.SetColParams("S1Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("S2Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("PctMod", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 
 	for _, lnm := range ss.TstRecLays {
-		cp := plt.SetColParams(lnm, eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+		cp := plt.SetColParams(lnm, plotview.Off, plotview.FixMin, 0, plotview.FixMax, 1)
 		cp.TensorIndex = -1 // plot all
 	}
 	return plt
@@ -876,44 +876,44 @@ func (ss *Sim) ConfigTstTrlPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 
 func (ss *Sim) TestStats() {
 	dt := ss.TstTrlLog
-	runix := etable.NewIndexView(dt)
+	runix := table.NewIndexView(dt)
 	spl := split.GroupBy(runix, []string{"Trial"})
 	split.Agg(spl, "TrialName", agg.AggMean)
 	split.Agg(spl, "S1Act", agg.AggMean)
 	split.Agg(spl, "S2Act", agg.AggMean)
 	split.Agg(spl, "PctMod", agg.AggMean)
-	ss.TstStats = spl.AggsToTable(etable.ColNameOnly)
+	ss.TstStats = spl.AggsToTable(table.ColumnNameOnly)
 	ss.TstRunLog = ss.TstStats.Clone()
 	ss.TstRunPlot.SetTable(ss.TstRunLog)
 }
 
-func (ss *Sim) ConfigTstRunLog(dt *etable.Table) {
+func (ss *Sim) ConfigTstRunLog(dt *table.Table) {
 	dt.SetMetaData("name", "TstRunLog")
 	dt.SetMetaData("desc", "Record of testing per input pattern")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := etable.Schema{
-		{"Trial", etensor.INT64, nil, nil},
-		{"TrialName", etensor.STRING, nil, nil},
-		{"S1Act", etensor.FLOAT64, nil, nil},
-		{"S2Act", etensor.FLOAT64, nil, nil},
-		{"PctMod", etensor.FLOAT64, nil, nil},
+	sch := table.Schema{
+		{"Trial", tensor.INT64, nil, nil},
+		{"TrialName", tensor.STRING, nil, nil},
+		{"S1Act", tensor.FLOAT64, nil, nil},
+		{"S2Act", tensor.FLOAT64, nil, nil},
+		{"PctMod", tensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigTstRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+func (ss *Sim) ConfigTstRunPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
 	plt.Params.Title = "Attn Test Run Plot"
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("S1Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("S2Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("PctMod", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Trial", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("TrialName", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("S1Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("S2Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("PctMod", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 	return plt
 }
 
@@ -962,10 +962,10 @@ func (ss *Sim) ConfigGUI() *core.Window {
 	ss.NetView = nv
 	ss.ConfigNetView(nv)
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "TstTrlPlot").(*eplot.Plot2D)
+	plt := tv.AddNewTab(plotview.KiT_Plot2D, "TstTrlPlot").(*plotview.PlotView)
 	ss.TstTrlPlot = ss.ConfigTstTrlPlot(plt, ss.TstTrlLog)
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TstRunPlot").(*eplot.Plot2D)
+	plt = tv.AddNewTab(plotview.KiT_Plot2D, "TstRunPlot").(*plotview.PlotView)
 	ss.TstRunPlot = ss.ConfigTstRunPlot(plt, ss.TstRunLog)
 
 	split.SetSplits(.2, .8)

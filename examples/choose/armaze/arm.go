@@ -4,7 +4,7 @@
 
 package armaze
 
-import "github.com/emer/etable/v2/minmax"
+import "cogentcore.org/core/math32/minmax"
 
 // Arm represents the properties of a given arm of the N-maze,
 // representing a different choice option with different cost / benefit
@@ -32,6 +32,10 @@ type Arm struct {
 
 	// probability of delivering the US
 	USProb float32
+
+	// USAvail indicates that the US is available on this trial: this is computed
+	// from the USProb at the start of each behavioral trial
+	USAvail bool `edit:"-"`
 
 	// nominal expected value = US.Prob * US.Mag
 	ExValue float32 `edit:"-"`
