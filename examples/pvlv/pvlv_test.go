@@ -143,7 +143,7 @@ func RunTest(t *testing.T, runName string, expect []Expect) {
 	// dt.OpenCSV("testdata/Rubicon_Base_cnd.tsv", table.Tab) // for tuning tests from saved data
 
 	for _, ex := range expect {
-		cell := dt.CellFloat(ex.Cell, ex.Row)
+		cell := dt.Float(ex.Cell, ex.Row)
 		CheckValue(t, cell, ex.Val, ex.Rel, ex.Label)
 	}
 

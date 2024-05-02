@@ -48,7 +48,7 @@ func TestWeightsLoad(t *testing.T) {
 
 	epcTable := sim.Logs.Table(etime.Test, etime.Epoch)
 	// epcTable.SaveCSV("wtstest.tst.tsv", table.Tab, table.Headers)
-	pctCor := epcTable.CellFloat("PctCor", 0)
+	pctCor := epcTable.Float("PctCor", 0)
 	fmt.Printf("pctCor: %g\n", pctCor)
 	if pctCor < 1 {
 		t.Errorf("loaded weights pct cor < 1: %g\n", pctCor)
@@ -75,7 +75,7 @@ func TestWeightsLoadGPU(t *testing.T) {
 
 	epcTable := sim.Logs.Table(etime.Test, etime.Epoch)
 	// epcTable.SaveCSV("wtstest.tst.tsv", table.Tab, table.Headers)
-	pctCor := epcTable.CellFloat("PctCor", 0)
+	pctCor := epcTable.Float("PctCor", 0)
 	fmt.Printf("pctCor: %g\n", pctCor)
 	if pctCor < 1 {
 		t.Errorf("loaded weights pct cor < 1: %g\n", pctCor)

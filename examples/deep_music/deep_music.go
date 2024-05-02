@@ -492,14 +492,14 @@ func (ss *Sim) SimMat() {
 	ix, _ := lt.NamedIndexView("AnalyzeTimes")
 	timeMap := make(map[int]bool)
 	ix.Filter(func(et *table.Table, row int) bool {
-		time := int(et.CellFloat("Time", row))
+		time := int(et.Float("Time", row))
 		if _, has := timeMap[time]; has {
 			return false
 		}
 		timeMap[time] = true
 		return true
 	})
-	ix.SortCol(lt.Table.ColIndex("Time"), table.Ascending)
+	ix.SortColumn(lt.Table.ColumnIndex("Time"), table.Ascending)
 	times := ix.NewTable()
 	ss.Logs.MiscTables["AnalyzeTimes"] = times
 

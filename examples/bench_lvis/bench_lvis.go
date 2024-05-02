@@ -12,7 +12,6 @@ package bench
 import (
 	"fmt"
 	"math/rand"
-	"reflect"
 
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
@@ -143,11 +142,10 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 
 func ConfigPats(pats *table.Table, numPats int, inputShape [2]int, outputShape [2]int) {
 
-	pats.SetFromSchema(table.Schema{
-		{Name: "Name", Type: tensor.STRING, CellShape: nil, DimNames: nil},
-		{Name: "Input", Type: reflect.Float32, CellShape: inputShape[:], DimNames: []string{"Y", "X"}},
-		{Name: "Output", Type: reflect.Float32, CellShape: outputShape[:], DimNames: []string{"Y", "X"}},
-	}, numPats)
+	pats.AddStringColumn("Name")
+	pats.AddFloat32TensorColumn("Input", inputShape[:], "Y", "X")
+	pats.AddFloat32TensorColumn("Output", outputShape[:], "Y", "X")
+	pats.SetNumRows(numPats)
 
 	nOnIn := (inputShape[0] * inputShape[1]) / 16
 	nOnOut := 2
@@ -157,18 +155,16 @@ func ConfigPats(pats *table.Table, numPats int, inputShape [2]int, outputShape [
 }
 
 func ConfigEpcLog(dt *table.Table) {
-	dt.SetFromSchema(table.Schema{
-		{Name: "Epoch", Type: reflect.Int, CellShape: nil, DimNames: nil},
-		{Name: "CorSim", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "AvgCorSim", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "SSE", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "CountErr", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "PctErr", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "PctCor", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "Hid1ActAvg", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "Hid2ActAvg", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-		{Name: "OutActAvg", Type: reflect.Float32, CellShape: nil, DimNames: nil},
-	}, 0)
+	dt.AddIntColumn("Epoch")
+	dt.AddFloat32Column("CorSim")
+	dt.AddFloat32Column("AvgCorSim")
+	dt.AddFloat32Column("SSE")
+	dt.AddFloat32Column("CountErr")
+	dt.AddFloat32Column("PctErr")
+	dt.AddFloat32Column("PctCor")
+	dt.AddFloat32Column("Hid1ActAvg")
+	dt.AddFloat32Column("Hid2ActAvg")
+	dt.AddFloat32Column("OutActAvg")
 }
 
 func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, gpu bool) {

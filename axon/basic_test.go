@@ -175,7 +175,7 @@ func TestSynValues(t *testing.T) {
 }
 
 func newInPats() *tensor.Float32 {
-	inPats := tensor.NewFloat32([]int{4, 4, 1}, nil, []string{"pat", "Y", "X"})
+	inPats := tensor.NewFloat32([]int{4, 4, 1}, "pat", "Y", "X")
 	for pi := 0; pi < 4; pi++ {
 		inPats.Set([]int{pi, pi, 0}, 1)
 	}
@@ -222,7 +222,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.InitExt(ctx)
 
-	pat := tensor.NewFloat32([]int{1, 1}, nil, []string{"Y", "X"})
+	pat := tensor.NewFloat32([]int{1, 1}, "Y", "X")
 	pat.Set([]int{0, 0}, 1)
 
 	for del := 0; del <= 4; del++ {
@@ -322,10 +322,7 @@ func TestInitWts(t *testing.T) {
 			ctx.NewState(etime.Train)
 			testNet.NewState(ctx)
 
-			inpat, err := inPats.SubSpaceTry([]int{pi})
-			if err != nil {
-				t.Error(err)
-			}
+			inpat := inPats.SubSpace([]int{pi})
 			testNet.InitExt(ctx)
 			for di := 0; di < nData; di++ {
 				inLay.ApplyExt(ctx, uint32(di), inpat)
@@ -426,10 +423,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 		testNet.NewState(ctx)
 		ctx.NewState(etime.Train)
 
-		inpat, err := inPats.SubSpaceTry([]int{pi})
-		if err != nil {
-			t.Fatal(err)
-		}
+		inpat := inPats.SubSpace([]int{pi})
 		testNet.InitExt(ctx)
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
@@ -617,10 +611,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool,
 		testNet.InitExt(ctx)
 		for di := 0; di < nData; di++ {
 			ppi := (pi + di) % 4
-			inpat, err := inPats.SubSpaceTry([]int{ppi})
-			if err != nil {
-				t.Fatal(err)
-			}
+			inpat := inPats.SubSpace([]int{ppi})
 			_ = inpat
 			inLay.ApplyExt(ctx, uint32(di), inpat)
 			outLay.ApplyExt(ctx, uint32(di), inpat)
@@ -762,10 +753,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 		ctx.NewState(etime.Train)
 		testNet.NewState(ctx)
 
-		inpat, err := inPats.SubSpaceTry([]int{pi})
-		if err != nil {
-			t.Error(err)
-		}
+		inpat := inPats.SubSpace([]int{pi})
 		testNet.InitExt(ctx)
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
@@ -929,10 +917,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	testNet.InitExt(ctx)
 
 	for pi := 0; pi < 4; pi++ {
-		inpat, err := inPats.SubSpaceTry([]int{pi})
-		if err != nil {
-			t.Error(err)
-		}
+		inpat := inPats.SubSpace([]int{pi})
 		testNet.InitExt(ctx)
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
@@ -1095,10 +1080,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 		testNet.InitExt(ctx)
 		for di := 0; di < nData; di++ {
 			ppi := (pi + di) % 4
-			inpat, err := inPats.SubSpaceTry([]int{ppi})
-			if err != nil {
-				t.Fatal(err)
-			}
+			inpat := inPats.SubSpace([]int{ppi})
 			_ = inpat
 			inLay.ApplyExt(ctx, uint32(di), inpat)
 			outLay.ApplyExt(ctx, uint32(di), inpat)
@@ -1340,10 +1322,7 @@ func TestInhibAct(t *testing.T) {
 	cycPerQtr := 50
 
 	for pi := 0; pi < 4; pi++ {
-		inpat, err := inPats.SubSpaceTry([]int{pi})
-		if err != nil {
-			t.Error(err)
-		}
+		inpat := inPats.SubSpace([]int{pi})
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
 
@@ -1606,7 +1585,7 @@ func TestRubiconGiveUp(t *testing.T) {
 	gp.Defaults()
 	rnd := erand.NewGlobalRand()
 	for v := float32(-1.0); v <= float32(1); v += 0.01 {
-		p, b := gp.Prob(v, rnd)
+		p, b := gp.Prob(v, 1, rnd)
 		fmt.Printf("%g\tp: %g\tb: %v\n", v, p, b)
 	}
 }
@@ -1617,13 +1596,11 @@ func TestSWtInit(t *testing.T) {
 	pj.Defaults()
 
 	nsamp := 100
-	sch := table.Schema{
-		{"Wt", reflect.Float32, nil, nil},
-		{"LWt", reflect.Float32, nil, nil},
-		{"SWt", reflect.Float32, nil, nil},
-	}
 	dt := &table.Table{}
-	dt.SetFromSchema(sch, nsamp)
+	dt.AddFloat32Column("Wt")
+	dt.AddFloat32Column("LWt")
+	dt.AddFloat32Column("SWt")
+	dt.SetNumRows(nsamp)
 
 	/////////////////////////////////////////////
 	mean := float32(0.5)
@@ -1649,14 +1626,14 @@ func TestSWtInit(t *testing.T) {
 	maxRow := desc.RowsByString("Agg", "Max", table.Equals, table.UseCase)[0]
 	semRow := desc.RowsByString("Agg", "Sem", table.Equals, table.UseCase)[0]
 
-	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
-		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	if desc.Float("Wt", minRow) > 0.3 || desc.Float("Wt", maxRow) < 0.7 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
-	if desc.CellFloat("Wt", meanRow) < 0.45 || desc.CellFloat("Wt", meanRow) > 0.55 {
-		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	if desc.Float("Wt", meanRow) < 0.45 || desc.Float("Wt", meanRow) > 0.55 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.Float("Wt", meanRow))
 	}
-	if desc.CellFloat("Wt", semRow) < 0.01 || desc.CellFloat("Wt", semRow) > 0.02 {
-		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.CellFloat("Wt", semRow))
+	if desc.Float("Wt", semRow) < 0.01 || desc.Float("Wt", semRow) > 0.02 {
+		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.Float("Wt", semRow))
 	}
 
 	// b := bytes.NewBuffer(nil)
@@ -1677,17 +1654,17 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
-	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
-		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	if desc.Float("Wt", minRow) > 0.3 || desc.Float("Wt", maxRow) < 0.7 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
-	if desc.CellFloat("Wt", meanRow) < 0.45 || desc.CellFloat("Wt", meanRow) > 0.55 {
-		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	if desc.Float("Wt", meanRow) < 0.45 || desc.Float("Wt", meanRow) > 0.55 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.Float("Wt", meanRow))
 	}
-	if desc.CellFloat("Wt", semRow) < 0.01 || desc.CellFloat("Wt", semRow) > 0.02 {
-		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.CellFloat("Wt", semRow))
+	if desc.Float("Wt", semRow) < 0.01 || desc.Float("Wt", semRow) > 0.02 {
+		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.Float("Wt", semRow))
 	}
-	if desc.CellFloat("LWt", minRow) != 0.5 || desc.CellFloat("LWt", maxRow) != 0.5 {
-		t.Errorf("SPct: %g\t LWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
+	if desc.Float("LWt", minRow) != 0.5 || desc.Float("LWt", maxRow) != 0.5 {
+		t.Errorf("SPct: %g\t LWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.Float("LWt", minRow), desc.Float("LWt", maxRow))
 	}
 	// b.Reset()
 	// desc.WriteCSV(b, table.Tab, table.Headers)
@@ -1707,17 +1684,17 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
-	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
-		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	if desc.Float("Wt", minRow) > 0.3 || desc.Float("Wt", maxRow) < 0.7 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
-	if desc.CellFloat("Wt", meanRow) < 0.45 || desc.CellFloat("Wt", meanRow) > 0.55 {
-		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	if desc.Float("Wt", meanRow) < 0.45 || desc.Float("Wt", meanRow) > 0.55 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.Float("Wt", meanRow))
 	}
-	if desc.CellFloat("Wt", semRow) < 0.01 || desc.CellFloat("Wt", semRow) > 0.02 {
-		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.CellFloat("Wt", semRow))
+	if desc.Float("Wt", semRow) < 0.01 || desc.Float("Wt", semRow) > 0.02 {
+		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.Float("Wt", semRow))
 	}
-	if desc.CellFloat("SWt", minRow) != 0.5 || desc.CellFloat("SWt", maxRow) != 0.5 {
-		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
+	if desc.Float("SWt", minRow) != 0.5 || desc.Float("SWt", maxRow) != 0.5 {
+		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.Float("LWt", minRow), desc.Float("LWt", maxRow))
 	}
 	// b.Reset()
 	// desc.WriteCSV(b, table.Tab, table.Headers)
@@ -1737,14 +1714,14 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
-	if desc.CellFloat("Wt", minRow) > 0.08 || desc.CellFloat("Wt", maxRow) < 0.12 {
-		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.08, > 0.12 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	if desc.Float("Wt", minRow) > 0.08 || desc.Float("Wt", maxRow) < 0.12 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.08, > 0.12 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
-	if desc.CellFloat("Wt", meanRow) < 0.08 || desc.CellFloat("Wt", meanRow) > 0.12 {
-		t.Errorf("SPct: %g\t Wt Mean should be > 0.08, < 0.12 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	if desc.Float("Wt", meanRow) < 0.08 || desc.Float("Wt", meanRow) > 0.12 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.08, < 0.12 not: %g\n", spct, desc.Float("Wt", meanRow))
 	}
-	if desc.CellFloat("SWt", minRow) != 0.5 || desc.CellFloat("SWt", maxRow) != 0.5 {
-		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
+	if desc.Float("SWt", minRow) != 0.5 || desc.Float("SWt", maxRow) != 0.5 {
+		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.Float("LWt", minRow), desc.Float("LWt", maxRow))
 	}
 	// b.Reset()
 	// desc.WriteCSV(b, table.Tab, table.Headers)
@@ -1764,14 +1741,14 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	desc = agg.DescAll(ix)
-	if desc.CellFloat("Wt", minRow) > 0.76 || desc.CellFloat("Wt", maxRow) < 0.84 {
-		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.66, > 0.74 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	if desc.Float("Wt", minRow) > 0.76 || desc.Float("Wt", maxRow) < 0.84 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.66, > 0.74 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
-	if desc.CellFloat("Wt", meanRow) < 0.79 || desc.CellFloat("Wt", meanRow) > 0.81 {
-		t.Errorf("SPct: %g\t Wt Mean should be > 0.65, < 0.75 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	if desc.Float("Wt", meanRow) < 0.79 || desc.Float("Wt", meanRow) > 0.81 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.65, < 0.75 not: %g\n", spct, desc.Float("Wt", meanRow))
 	}
-	if desc.CellFloat("SWt", minRow) < 0.76 || desc.CellFloat("SWt", maxRow) > 0.83 {
-		t.Errorf("SPct: %g\t SWt Min and Max should be < 0.76, > 0.83, not: %g, %g\n", spct, desc.CellFloat("SWt", minRow), desc.CellFloat("SWt", maxRow))
+	if desc.Float("SWt", minRow) < 0.76 || desc.Float("SWt", maxRow) > 0.83 {
+		t.Errorf("SPct: %g\t SWt Min and Max should be < 0.76, > 0.83, not: %g, %g\n", spct, desc.Float("SWt", minRow), desc.Float("SWt", maxRow))
 	}
 	// b.Reset()
 	// desc.WriteCSV(b, table.Tab, table.Headers)

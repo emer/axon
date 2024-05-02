@@ -139,9 +139,7 @@ func (vi *Vis) V1All() {
 	nang := vi.V1sPoolTsr.DimSize(3)
 	nrows := 5
 	oshp := []int{ny, nx, nrows, nang}
-	if !tensor.EqualInts(oshp, vi.V1AllTsr.Shp) {
-		vi.V1AllTsr.SetShape(oshp, nil, []string{"Y", "X", "Polarity", "Angle"})
-	}
+	vi.V1AllTsr.SetShape(oshp, "Y", "X", "Polarity", "Angle")
 	// 1 length-sum
 	vfilter.FeatAgg([]int{0}, 0, &vi.V1cLenSumTsr, &vi.V1AllTsr)
 	// 2 end-stop

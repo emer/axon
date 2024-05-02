@@ -23,7 +23,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.LrnNMDA.Voff":           "0",      // see above
 				"Layer.Learn.LrnNMDA.Tau":            "100",    // 100 def
 				"Layer.Learn.LrnNMDA.Gbar":           "0.006",
-				"Layer.Learn.RLRate.SigmoidLinear":   "false",
+				"Layer.Learn.RLRate.SigmoidLinear":   "true",
 			}},
 		{Sel: "#V1", Desc: "pool inhib (not used), initial activity",
 			Params: params.Params{

@@ -837,20 +837,18 @@ func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Run", tensor.INT64, nil, nil},
-		{"Trial", tensor.INT64, nil, nil},
-		{"TrialName", tensor.STRING, nil, nil},
-		{"Cycle", tensor.INT64, nil, nil},
-		{"S1Act", tensor.FLOAT64, nil, nil},
-		{"S2Act", tensor.FLOAT64, nil, nil},
-		{"PctMod", tensor.FLOAT64, nil, nil},
-	}
+	dt.AddIntColumn("Run")
+	dt.AddIntColumn("Trial")
+	dt.AddStringColumn("TrialName")
+	dt.AddIntColumn("Cycle")
+	dt.AddFloat64Column("S1Act")
+	dt.AddFloat64Column("S2Act")
+	dt.AddFloat64Column("PctMod")
 	for _, lnm := range ss.TstRecLays {
 		ly := ss.Net.AxonLayerByName(lnm)
-		sch = append(sch, table.Column{lnm, tensor.FLOAT64, ly.Shp.Shp, nil})
+		dt.AddFloat64Column(lnm, ly.Shp.Sizes)
 	}
-	dt.SetFromSchema(sch, 0)
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTstTrlPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -878,10 +876,10 @@ func (ss *Sim) TestStats() {
 	dt := ss.TstTrlLog
 	runix := table.NewIndexView(dt)
 	spl := split.GroupBy(runix, []string{"Trial"})
-	split.Agg(spl, "TrialName", agg.AggMean)
-	split.Agg(spl, "S1Act", agg.AggMean)
-	split.Agg(spl, "S2Act", agg.AggMean)
-	split.Agg(spl, "PctMod", agg.AggMean)
+	split.AggColumn(spl, "TrialName", stats.Mean)
+	split.AggColumn(spl, "S1Act", stats.Mean)
+	split.AggColumn(spl, "S2Act", stats.Mean)
+	split.AggColumn(spl, "PctMod", stats.Mean)
 	ss.TstStats = spl.AggsToTable(table.ColumnNameOnly)
 	ss.TstRunLog = ss.TstStats.Clone()
 	ss.TstRunPlot.SetTable(ss.TstRunLog)
@@ -893,14 +891,12 @@ func (ss *Sim) ConfigTstRunLog(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Trial", tensor.INT64, nil, nil},
-		{"TrialName", tensor.STRING, nil, nil},
-		{"S1Act", tensor.FLOAT64, nil, nil},
-		{"S2Act", tensor.FLOAT64, nil, nil},
-		{"PctMod", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddIntColumn("Trial")
+	dt.AddStringColumn("TrialName")
+	dt.AddFloat64Column("S1Act")
+	dt.AddFloat64Column("S2Act")
+	dt.AddFloat64Column("PctMod")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTstRunPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -962,10 +958,10 @@ func (ss *Sim) ConfigGUI() *core.Window {
 	ss.NetView = nv
 	ss.ConfigNetView(nv)
 
-	plt := tv.AddNewTab(plotview.KiT_Plot2D, "TstTrlPlot").(*plotview.PlotView)
+	plt := tv.AddNewTab(plotview.KiT_PlotView, "TstTrlPlot").(*plotview.PlotView)
 	ss.TstTrlPlot = ss.ConfigTstTrlPlot(plt, ss.TstTrlLog)
 
-	plt = tv.AddNewTab(plotview.KiT_Plot2D, "TstRunPlot").(*plotview.PlotView)
+	plt = tv.AddNewTab(plotview.KiT_PlotView, "TstRunPlot").(*plotview.PlotView)
 	ss.TstRunPlot = ss.ConfigTstRunPlot(plt, ss.TstRunLog)
 
 	split.SetSplits(.2, .8)

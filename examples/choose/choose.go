@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"math"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/core"
@@ -22,7 +23,6 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -1013,12 +1013,12 @@ func (ss *Sim) ConfigLogItems() {
 				Type: reflect.Float64,
 				// FixMin: true,
 				// FixMax: true,
-				Range: minmax.F64{Max: 1},
+				Range: minmax.F32{Max: 1},
 				Write: elog.WriteMap{
 					etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
 						ctx.SetFloat64(ctx.Stats.Float(itmName))
 					}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-						ctx.SetAgg(ctx.Mode, etime.Epoch, agg.AggMean)
+						ctx.SetAgg(ctx.Mode, etime.Epoch, stats.Mean)
 					}}})
 		}
 	}
@@ -1029,13 +1029,13 @@ func (ss *Sim) ConfigLogItems() {
 		CellShape: []int{int(armaze.ActionsN)},
 		DimNames:  []string{"Acts"},
 		// Plot:      true,
-		Range:       minmax.F64{Min: 0},
+		Range:       minmax.F32{Min: 0},
 		TensorIndex: -1, // plot all values
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IndexView(ctx.Mode, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Instinct"})
-				split.AggTry(spl, "ActMatch", agg.AggMean)
+				split.AggColumnTry(spl, "ActMatch", stats.Mean)
 				ags := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
 				ctx.SetTensor(ags.Columns[0]) // cors
@@ -1046,13 +1046,13 @@ func (ss *Sim) ConfigLogItems() {
 			Name: anm + "Cor",
 			Type: reflect.Float64,
 			// Plot:  true,
-			Range: minmax.F64{Min: 0},
+			Range: minmax.F32{Min: 0},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
 					rw := ags.RowsByString("Instinct", anm, table.Equals, table.UseCase)
 					if len(rw) > 0 {
-						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
+						ctx.SetFloat64(ags.Float("ActMatch", rw[0]))
 					}
 				}}})
 	}
@@ -1076,7 +1076,7 @@ func (ss *Sim) EpochWrongStats() {
 
 	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
 	ix.Filter(func(et *table.Table, row int) bool {
-		return !math.IsNaN(et.CellFloat("WrongCSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
+		return !math.IsNaN(et.Float("WrongCSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
 	})
 	spl := split.GroupBy(ix, []string{"WrongCSGate"})
 	for _, ts := range ix.Table.ColumnNames {
@@ -1084,7 +1084,7 @@ func (ss *Sim) EpochWrongStats() {
 		if col.DataType() == reflect.String || ts == "WrongCSGate" {
 			continue
 		}
-		split.Agg(spl, ts, agg.AggMean)
+		split.AggColumn(spl, ts, stats.Mean)
 	}
 	dt := spl.AggsToTable(table.ColumnNameOnly)
 	dt.SetMetaData("Rew_R:On", "+")
@@ -1104,9 +1104,9 @@ func (ss *Sim) EpochWrongStats() {
 	// grab selected stats at CS and US for higher level aggregation,
 	nrows := dt.Rows
 	for ri := 0; ri < nrows; ri++ {
-		wrong := dt.CellFloat("WrongCSGate", ri)
+		wrong := dt.Float("WrongCSGate", ri)
 		for _, st := range ss.Config.Log.AggStats {
-			ss.Stats.SetFloat(fmt.Sprintf("Wrong%d_%s", int(wrong), st), dt.CellFloat(st, ri))
+			ss.Stats.SetFloat(fmt.Sprintf("Wrong%d_%s", int(wrong), st), dt.Float(st, ri))
 		}
 	}
 

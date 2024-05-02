@@ -214,12 +214,12 @@ func (ev *Env) Init(run int) {
 	ev.UpdateMaxLength()
 
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NCSs}, nil, nil)
-	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
-	ev.States["Arm"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.Config.NArms}, nil, nil)
-	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
-	ev.States["VSgpi"] = tensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
-	ev.States["OFC"] = tensor.NewFloat32([]int{cfg.Params.NYReps, 4}, nil, nil)
+	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NCSs})
+	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1})
+	ev.States["Arm"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.Config.NArms})
+	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)})
+	ev.States["VSgpi"] = tensor.NewFloat32([]int{cfg.Params.NYReps, 4})
+	ev.States["OFC"] = tensor.NewFloat32([]int{cfg.Params.NYReps, 4})
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
@@ -283,7 +283,7 @@ func (ev *Env) ExValueUtil(pv *axon.Rubicon, ctx *axon.Context) {
 		usNeg[0] = exTime
 		usNeg[1] = exTime * arm.Effort.Midpoint()
 		_, pvNeg := pv.PVnegEstFromUSs(usNeg)
-		burst, dip, da, rew := pv.DAFromPVs(pvPos, pvNeg, 0)
+		burst, dip, da, rew := pv.DAFromPVs(pvPos, pvNeg, 0, 0)
 		_, _, _ = burst, dip, rew
 		arm.ExPVpos = pvPos
 		arm.ExPVneg = pvNeg

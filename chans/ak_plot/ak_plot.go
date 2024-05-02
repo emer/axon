@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// ak_plot plots an equation updating over time in a table.Table and Plot2D.
+// ak_plot plots an equation updating over time in a table.Table and PlotView.
 package main
 
 //go:generate core generate -add-types
@@ -13,7 +13,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
@@ -148,20 +147,18 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"V", tensor.FLOAT64, nil, nil},
-		{"Gak", tensor.FLOAT64, nil, nil},
-		{"M", tensor.FLOAT64, nil, nil},
-		{"H", tensor.FLOAT64, nil, nil},
-		{"MTau", tensor.FLOAT64, nil, nil},
-		{"HTau", tensor.FLOAT64, nil, nil},
-		{"K", tensor.FLOAT64, nil, nil},
-		{"Alpha", tensor.FLOAT64, nil, nil},
-		{"Beta", tensor.FLOAT64, nil, nil},
-		{"Ms", tensor.FLOAT64, nil, nil},
-		{"Gaks", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("V")
+	dt.AddFloat64Column("Gak")
+	dt.AddFloat64Column("M")
+	dt.AddFloat64Column("H")
+	dt.AddFloat64Column("MTau")
+	dt.AddFloat64Column("HTau")
+	dt.AddFloat64Column("K")
+	dt.AddFloat64Column("Alpha")
+	dt.AddFloat64Column("Beta")
+	dt.AddFloat64Column("Ms")
+	dt.AddFloat64Column("Gaks")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -255,21 +252,19 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Time", tensor.FLOAT64, nil, nil},
-		{"V", tensor.FLOAT64, nil, nil},
-		{"Gak", tensor.FLOAT64, nil, nil},
-		{"M", tensor.FLOAT64, nil, nil},
-		{"H", tensor.FLOAT64, nil, nil},
-		{"dM", tensor.FLOAT64, nil, nil},
-		{"dH", tensor.FLOAT64, nil, nil},
-		{"MTau", tensor.FLOAT64, nil, nil},
-		{"HTau", tensor.FLOAT64, nil, nil},
-		{"K", tensor.FLOAT64, nil, nil},
-		{"Alpha", tensor.FLOAT64, nil, nil},
-		{"Beta", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Time")
+	dt.AddFloat64Column("V")
+	dt.AddFloat64Column("Gak")
+	dt.AddFloat64Column("M")
+	dt.AddFloat64Column("H")
+	dt.AddFloat64Column("dM")
+	dt.AddFloat64Column("dH")
+	dt.AddFloat64Column("MTau")
+	dt.AddFloat64Column("HTau")
+	dt.AddFloat64Column("K")
+	dt.AddFloat64Column("Alpha")
+	dt.AddFloat64Column("Beta")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

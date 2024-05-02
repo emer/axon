@@ -166,8 +166,8 @@ func (ev *CondEnv) String() string {
 }
 
 func (ev *CondEnv) Init(run int) {
-	ev.Input.SetShape([]int{3, ev.TotTime}, nil, []string{"3", "TotTime"})
-	ev.Reward.SetShape([]int{1}, nil, []string{"1"})
+	ev.Input.SetShape([]int{3, ev.TotTime}, "3", "TotTime")
+	ev.Reward.SetShape([]int{1}, "1")
 	ev.Run.Scale = env.Run
 	ev.Epoch.Scale = env.Epoch
 	ev.Trial.Scale = env.Trial

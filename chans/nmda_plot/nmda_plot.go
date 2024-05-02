@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// nmda_plot plots an equation updating over time in a table.Table and Plot2D.
+// nmda_plot plots an equation updating over time in a table.Table and PlotView.
 package main
 
 //go:generate core generate -add-types
@@ -15,7 +15,6 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
@@ -162,14 +161,12 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"V", tensor.FLOAT64, nil, nil},
-		{"Gnmda", tensor.FLOAT64, nil, nil},
-		{"Gnmda_std", tensor.FLOAT64, nil, nil},
-		{"Gnmda_bug", tensor.FLOAT64, nil, nil},
-		{"Ca", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("V")
+	dt.AddFloat64Column("Gnmda")
+	dt.AddFloat64Column("Gnmda_std")
+	dt.AddFloat64Column("Gnmda_bug")
+	dt.AddFloat64Column("Ca")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -220,12 +217,10 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Time", tensor.FLOAT64, nil, nil},
-		{"Gnmda", tensor.FLOAT64, nil, nil},
-		{"NMDA", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Time")
+	dt.AddFloat64Column("Gnmda")
+	dt.AddFloat64Column("NMDA")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

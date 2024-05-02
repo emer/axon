@@ -137,10 +137,10 @@ func (ev *GoNoEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["ACCPos"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.States["ACCNeg"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.States["Rew"] = tensor.NewFloat32([]int{1, 1}, nil, nil)
-	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1}, nil, nil)
+	ev.States["ACCPos"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.States["ACCNeg"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.States["Rew"] = tensor.NewFloat32([]int{1, 1})
+	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1})
 }
 
 func (ev *GoNoEnv) Validate() error {

@@ -168,10 +168,10 @@ func (ev *Env) Init(run int) {
 	ev.UpdateMaxLength()
 
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NArms}, nil, nil)
-	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
-	ev.States["Dist"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1}, nil, nil)
-	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)}, nil, nil)
+	ev.States["CS"] = tensor.NewFloat32([]int{cfg.Params.NYReps, cfg.NArms})
+	ev.States["Pos"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1})
+	ev.States["Dist"] = tensor.NewFloat32([]int{cfg.Params.NYReps, ev.MaxLength + 1})
+	ev.States["Action"] = tensor.NewFloat32([]int{cfg.Params.NYReps, int(ActionsN)})
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step

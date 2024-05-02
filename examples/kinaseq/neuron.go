@@ -404,61 +404,59 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Cond", tensor.STRING, nil, nil},
-		{"ErrDWt", tensor.FLOAT64, nil, nil},
-		{"Trial", tensor.FLOAT64, nil, nil},
-		{"Cycle", tensor.FLOAT64, nil, nil},
-		{"SSpike", tensor.FLOAT64, nil, nil},
-		{"RSpike", tensor.FLOAT64, nil, nil},
+	dt.AddStringColumn(Cond")
+	dt.AddFloat64Column("ErrDWt")
+	dt.AddFloat64Column("Trial")
+	dt.AddFloat64Column("Cycle")
+	dt.AddFloat64Column("SSpike")
+	dt.AddFloat64Column("RSpike")
 
-		{"SnmdaO", tensor.FLOAT64, nil, nil},
-		{"SnmdaI", tensor.FLOAT64, nil, nil},
+	dt.AddFloat64Column("SnmdaO")
+	dt.AddFloat64Column("SnmdaI")
 
-		{"Ge", tensor.FLOAT64, nil, nil},
-		{"Inet", tensor.FLOAT64, nil, nil},
-		{"Vm", tensor.FLOAT64, nil, nil},
-		{"Act", tensor.FLOAT64, nil, nil},
-		{"Gk", tensor.FLOAT64, nil, nil},
-		{"ISI", tensor.FLOAT64, nil, nil},
-		{"VmDend", tensor.FLOAT64, nil, nil},
-		{"Gnmda", tensor.FLOAT64, nil, nil},
-		{"RnmdaSyn", tensor.FLOAT64, nil, nil},
-		{"RCa", tensor.FLOAT64, nil, nil},
-		// {"NMDAGmg", tensor.FLOAT64, nil, nil},
-		// {"GABAB", tensor.FLOAT64, nil, nil},
-		// {"GgabaB", tensor.FLOAT64, nil, nil},
-		{"Gvgcc", tensor.FLOAT64, nil, nil},
-		{"VgccM", tensor.FLOAT64, nil, nil},
-		{"VgccH", tensor.FLOAT64, nil, nil},
-		{"VgccCa", tensor.FLOAT64, nil, nil},
-		{"Gak", tensor.FLOAT64, nil, nil},
-		// {"LearnNow", tensor.FLOAT64, nil, nil},
-		{"R_CaM", tensor.FLOAT64, nil, nil},
-		{"R_CaP", tensor.FLOAT64, nil, nil},
-		{"R_CaD", tensor.FLOAT64, nil, nil},
-		{"S_CaM", tensor.FLOAT64, nil, nil},
-		{"S_CaP", tensor.FLOAT64, nil, nil},
-		{"S_CaD", tensor.FLOAT64, nil, nil},
-	}
+	dt.AddFloat64Column("Ge")
+	dt.AddFloat64Column("Inet")
+	dt.AddFloat64Column("Vm")
+	dt.AddFloat64Column("Act")
+	dt.AddFloat64Column("Gk")
+	dt.AddFloat64Column("ISI")
+	dt.AddFloat64Column("VmDend")
+	dt.AddFloat64Column("Gnmda")
+	dt.AddFloat64Column("RnmdaSyn")
+	dt.AddFloat64Column("RCa")
+		// {"NMDAGmg")
+		// {"GABAB")
+		// {"GgabaB")
+	dt.AddFloat64Column("Gvgcc")
+	dt.AddFloat64Column("VgccM")
+	dt.AddFloat64Column("VgccH")
+	dt.AddFloat64Column("VgccCa")
+	dt.AddFloat64Column("Gak")
+		// {"LearnNow")
+	dt.AddFloat64Column("R_CaM")
+	dt.AddFloat64Column("R_CaP")
+	dt.AddFloat64Column("R_CaD")
+	dt.AddFloat64Column("S_CaM")
+	dt.AddFloat64Column("S_CaP")
+	dt.AddFloat64Column("S_CaD")
 
-	ss.ConfigSynapse(&sch, "NST_")
-	ss.ConfigSynapse(&sch, "SST_")
-	ss.ConfigSynapse(&sch, "SSC_")
-	ss.ConfigSynapse(&sch, "SNC_")
+	ss.ConfigSynapse(dt, "NST_")
+	ss.ConfigSynapse(dt, "SST_")
+	ss.ConfigSynapse(dt, "SSC_")
+	ss.ConfigSynapse(dt, "SNC_")
 
-	dt.SetFromSchema(sch, 0)
+	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigSynapse(sch *table.Schema, pre string) {
-	*sch = append(*sch, table.Column{pre + "Ca", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "CaM", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "CaP", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "CaD", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "CaDMax", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "TDWt", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "DWt", tensor.FLOAT64, nil, nil})
-	*sch = append(*sch, table.Column{pre + "Wt", tensor.FLOAT64, nil, nil})
+func (ss *Sim) ConfigSynapse(dt *table.Table, pre string) {
+	dt.AddFloat64Column(pre + "Ca")
+	dt.AddFloat64Column(pre + "CaM")
+	dt.AddFloat64Column(pre + "CaP")
+	dt.AddFloat64Column(pre + "CaD")
+	dt.AddFloat64Column(pre + "CaDMax")
+	dt.AddFloat64Column(pre + "TDWt")
+	dt.AddFloat64Column(pre + "DWt")
+	dt.AddFloat64Column(pre + "Wt")
 }
 
 func (ss *Sim) ConfigTrialPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

@@ -301,7 +301,7 @@ func (ss *Sim) ConfigLoops() {
 			trn := ss.Envs.ByMode(etime.Train).(*env.FixedTable)
 			tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
 			epc := ss.Stats.Int("Epoch")
-			abMem := float32(tstEpcLog.Table.CellFloat("ABMem", epc))
+			abMem := float32(tstEpcLog.Table.Float("ABMem", epc))
 			if (trn.Table.Table.MetaData["name"] == "TrainAB") && (abMem >= ss.Config.Run.StopMem || epc == ss.Config.Run.Epochs/2) {
 				ss.Stats.SetInt("FirstPerfect", epc)
 				trn.Config(table.NewIndexView(ss.TrainAC))
@@ -314,7 +314,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).IsDone["ACMemStop"] = func() bool {
 		// This is calculated in TrialStats
 		tstEpcLog := ss.Logs.Tables[etime.Scope(etime.Test, etime.Epoch)]
-		acMem := float32(tstEpcLog.Table.CellFloat("ACMem", ss.Stats.Int("Epoch")))
+		acMem := float32(tstEpcLog.Table.Float("ACMem", ss.Stats.Int("Epoch")))
 		stop := acMem >= ss.Config.Run.StopMem
 		return stop
 	}
@@ -645,9 +645,9 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AB")[1])
 	} else {
 		patToComplete, _ = ss.PoolVocab.ByNameTry("C")
-		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AC")[1])
+		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AC")[0])
 	}
-	for i := 0; i < patToComplete.Shp[0]; i++ { // for each item in the list
+	for i := 0; i < patToComplete.DimSize(0); i++ { // for each item in the list
 		cosDiff = metric.Correlation32(recallPat.SubSpace([]int{0, 1}).(*tensor.Float32).Values, patToComplete.SubSpace([]int{i}).(*tensor.Float32).Values)
 		if cosDiff > highestCosDiff {
 			highestCosDiff = cosDiff
@@ -680,7 +680,7 @@ func (ss *Sim) AddLogItems() {
 				},
 				etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 					ctx.SetFloat64(ctx.ItemFloat(etime.Test, etime.Epoch, stnm)) // take the last epoch
-					// ctx.SetAgg(ctx.Mode, etime.Epoch, agg.AggMax) // agg.AggMax for max over epochs
+					// ctx.SetAgg(ctx.Mode, etime.Epoch, stats.Max) // stats.Max for max over epochs
 				}}})
 	}
 }
@@ -947,8 +947,8 @@ func (ss *Sim) TwoFactorRun() {
 			ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
 			// print our info for checking purposes
-			fmt.Println("CA3 shape: ", ss.Net.AxonLayerByName("CA3").Shp.Shp)
-			fmt.Println("EC2 shape: ", ss.Net.AxonLayerByName("EC2").Shp.Shp)
+			fmt.Println("CA3 shape: ", ss.Net.AxonLayerByName("CA3").Shp.Sizes)
+			fmt.Println("EC2 shape: ", ss.Net.AxonLayerByName("EC2").Shp.Sizes)
 			fmt.Println("# of pairs: ", ss.TrainAB.Rows)
 
 			ss.Loops.Run(etime.Train)

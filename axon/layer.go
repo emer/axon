@@ -512,7 +512,7 @@ func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
-			val := float32(ext..Float(idx))
+			val := float32(ext.Float(idx))
 			lni := uint32(ly.Shp.Offset(idx))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
@@ -529,7 +529,7 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
-			val := float32(ext..Float(idx))
+			val := float32(ext.Float(idx))
 			lni := uint32(tensor.Prjn2DIndex(&ly.Shp, false, y, x))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
@@ -548,7 +548,7 @@ func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext tensor.Tensor) {
 			for yn := 0; yn < ynmx; yn++ {
 				for xn := 0; xn < xnmx; xn++ {
 					idx := []int{yp, xp, yn, xn}
-					val := float32(ext..Float(idx))
+					val := float32(ext.Float(idx))
 					lni := uint32(ly.Shp.Offset(idx))
 					ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 				}

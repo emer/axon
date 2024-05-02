@@ -100,17 +100,17 @@ func (ev *CondEnv) Config(rmax int, rnm string) {
 	ev.CurStates = make(map[string]*tensor.Float32)
 
 	stsh := []int{StimShape[0], StimShape[1], ev.NYReps, 1}
-	ev.CurStates["CS"] = tensor.NewFloat32(stsh, nil, nil)
+	ev.CurStates["CS"] = tensor.NewFloat32(stsh)
 	ctsh := []int{ContextShape[0], ContextShape[1], ev.NYReps, 1}
-	ev.CurStates["ContextIn"] = tensor.NewFloat32(ctsh, nil, nil)
+	ev.CurStates["ContextIn"] = tensor.NewFloat32(ctsh)
 	ustsh := make([]int, 4)
 	copy(ustsh, USTimeShape)
 	ustsh[2] = ev.NYReps
-	ev.CurStates["USTimeIn"] = tensor.NewFloat32(ustsh, nil, nil)
-	ev.CurStates["Time"] = tensor.NewFloat32([]int{1, MaxTime, ev.NYReps, 1}, nil, nil)
+	ev.CurStates["USTimeIn"] = tensor.NewFloat32(ustsh)
+	ev.CurStates["Time"] = tensor.NewFloat32([]int{1, MaxTime, ev.NYReps, 1})
 	ussh := []int{USShape[0], USShape[1], ev.NYReps, 1}
-	ev.CurStates["USpos"] = tensor.NewFloat32(ussh, nil, nil)
-	ev.CurStates["USneg"] = tensor.NewFloat32(ussh, nil, nil)
+	ev.CurStates["USpos"] = tensor.NewFloat32(ussh)
+	ev.CurStates["USneg"] = tensor.NewFloat32(ussh)
 }
 
 func (ev *CondEnv) Validate() error {

@@ -849,13 +849,13 @@ func (ss *Sim) ConfigLogItems() {
 		CellShape: []int{int(armaze.ActionsN)},
 		DimNames:  []string{"Acts"},
 		// Plot:      true,
-		Range:       minmax.F64{Min: 0},
+		Range:       minmax.F32{Min: 0},
 		TensorIndex: -1, // plot all values
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IndexView(ctx.Mode, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Instinct"})
-				split.AggTry(spl, "ActMatch", agg.AggMean)
+				split.AggTry(spl, "ActMatch", stats.Mean)
 				ags := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
 				ctx.SetTensor(ags.Columns[0]) // cors
@@ -866,13 +866,13 @@ func (ss *Sim) ConfigLogItems() {
 			Name: anm + "Cor",
 			Type: reflect.Float64,
 			// Plot:  true,
-			Range: minmax.F64{Min: 0},
+			Range: minmax.F32{Min: 0},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
 					rw := ags.RowsByString("Instinct", anm, table.Equals, table.UseCase)
 					if len(rw) > 0 {
-						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
+						ctx.SetFloat64(ags.Float("ActMatch", rw[0]))
 					}
 				}}})
 	}

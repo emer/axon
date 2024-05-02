@@ -82,7 +82,7 @@ func (ev *LEDEnv) Counters() []env.TimeScales {
 func (ev *LEDEnv) States() env.Elements {
 	isz := ev.Draw.ImgSize
 	sz := ev.Vis.V1AllTsr.Shape().Sizes
-	nms := ev.Vis.V1AllTsr.DimNames()
+	nms := ev.Vis.V1AllTsr.Shape().Names
 	els := env.Elements{
 		{"Image", []int{isz.Y, isz.X}, []string{"Y", "X"}},
 		{"V1", sz, nms},
@@ -128,7 +128,7 @@ func (ev *LEDEnv) Init(run int) {
 	ev.Trial.Init()
 	ev.Run.Cur = run
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
-	ev.Output.SetShape([]int{4, 5, ev.NOutPer, 1}, nil, []string{"Y", "X", "N", "1"})
+	ev.Output.SetShape([]int{4, 5, ev.NOutPer, 1}, "Y", "X", "N", "1")
 }
 
 func (ev *LEDEnv) Step() bool {

@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"reflect"
 
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
@@ -110,11 +109,10 @@ func ConfigPats(dt *table.Table, pats, units int) {
 	shp := []int{squn, squn}
 	// fmt.Printf("shape: %v\n", shp)
 
-	dt.SetFromSchema(table.Schema{
-		{"Name", tensor.STRING, nil, nil},
-		{"Input", reflect.Float32, shp, []string{"Y", "X"}},
-		{"Output", reflect.Float32, shp, []string{"Y", "X"}},
-	}, pats)
+	dt.AddStringColumn("Name")
+	dt.AddFloat32TensorColumn("Input", shp, "Y", "X")
+	dt.AddFloat32TensorColumn("Output", shp, "Y", "X")
+	dt.SetNumRows(pats)
 
 	// note: actually can learn if activity is .15 instead of .25
 	nOn := units / 8
@@ -124,18 +122,16 @@ func ConfigPats(dt *table.Table, pats, units int) {
 }
 
 func ConfigEpcLog(dt *table.Table) {
-	dt.SetFromSchema(table.Schema{
-		{"Epoch", reflect.Int, nil, nil},
-		{"CorSim", reflect.Float32, nil, nil},
-		{"AvgCorSim", reflect.Float32, nil, nil},
-		{"SSE", reflect.Float32, nil, nil},
-		{"CountErr", reflect.Float32, nil, nil},
-		{"PctErr", reflect.Float32, nil, nil},
-		{"PctCor", reflect.Float32, nil, nil},
-		{"Hid1ActAvg", reflect.Float32, nil, nil},
-		{"Hid2ActAvg", reflect.Float32, nil, nil},
-		{"OutActAvg", reflect.Float32, nil, nil},
-	}, 0)
+	dt.AddIntColumn("Epoch")
+	dt.AddFloat32Column("CorSim")
+	dt.AddFloat32Column("AvgCorSim")
+	dt.AddFloat32Column("SSE")
+	dt.AddFloat32Column("CountErr")
+	dt.AddFloat32Column("PctErr")
+	dt.AddFloat32Column("PctCor")
+	dt.AddFloat32Column("Hid1ActAvg")
+	dt.AddFloat32Column("Hid2ActAvg")
+	dt.AddFloat32Column("OutActAvg")
 }
 
 func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, epcs int, verbose, gpu bool) {

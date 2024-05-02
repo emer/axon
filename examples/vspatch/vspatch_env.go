@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"reflect"
 
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/metric"
@@ -127,7 +126,7 @@ func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
 	ev.CondValues = make([]float32, ev.NConds)
 	ev.Sequence.Max = ev.NConds
 	ev.Trial.Max = ev.NTrials
@@ -146,11 +145,9 @@ func (ev *VSPatchEnv) ConfigPats() {
 	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
 
 	npats := ev.NConds * ev.NTrials
-	sch := table.Schema{
-		{"Name", tensor.STRING, nil, nil},
-		{"Input", reflect.Float32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
-	}
-	ev.Pats = table.New(sch, npats)
+	ev.Pats = table.NewTable(npats)
+	ev.Pats.AddStringColumn("Name")
+	ev.Pats.AddFloat32TensorColumn("Input", []int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
 
 	idx := 0
 	for i := 0; i < ev.NConds; i++ {

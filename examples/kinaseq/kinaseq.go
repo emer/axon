@@ -362,16 +362,16 @@ func (ss *Sim) ConfigGUI() *core.Window {
 
 	tv := core.AddNewTabView(split, "tv")
 
-	plt := tv.AddNewTab(plotview.KiT_Plot2D, "RunPlot").(*plotview.PlotView)
+	plt := tv.AddNewTab(plotview.KiT_PlotView, "RunPlot").(*plotview.PlotView)
 	ss.AddPlot("RunPlot", ss.ConfigRunPlot(plt, ss.Log("RunLog")))
 
-	plt = tv.AddNewTab(plotview.KiT_Plot2D, "TrialPlot").(*plotview.PlotView)
+	plt = tv.AddNewTab(plotview.KiT_PlotView, "TrialPlot").(*plotview.PlotView)
 	ss.AddPlot("TrialPlot", ss.ConfigTrialPlot(plt, ss.Log("TrialLog")))
 
-	plt = tv.AddNewTab(plotview.KiT_Plot2D, "DWtPlot").(*plotview.PlotView)
+	plt = tv.AddNewTab(plotview.KiT_PlotView, "DWtPlot").(*plotview.PlotView)
 	ss.AddPlot("DWtPlot", ss.ConfigDWtPlot(plt, ss.Log("DWtLog")))
 
-	plt = tv.AddNewTab(plotview.KiT_Plot2D, "DWtVarPlot").(*plotview.PlotView)
+	plt = tv.AddNewTab(plotview.KiT_PlotView, "DWtVarPlot").(*plotview.PlotView)
 	ss.AddPlot("DWtVarPlot", ss.ConfigDWtPlot(plt, ss.Log("DWtVarLog")))
 
 	split.SetSplits(.2, .8)

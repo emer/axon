@@ -342,7 +342,7 @@ func (ss *Sim) ConfigLogItems() {
 		Name:   "Cycle",
 		Type:   reflect.Int,
 		FixMax: false,
-		Range:  minmax.F64{Max: 1},
+		Range:  minmax.F32{Max: 1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 				ctx.SetInt(int(ss.Context.Cycle))
@@ -356,7 +356,7 @@ func (ss *Sim) ConfigLogItems() {
 			Name:   cvnm,
 			Type:   reflect.Float64,
 			FixMax: false,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					vl := ly.UnitValue(cvnm, []int{0, 0}, 0)

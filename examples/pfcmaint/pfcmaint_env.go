@@ -5,8 +5,6 @@
 package main
 
 import (
-	"reflect"
-
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
@@ -48,9 +46,6 @@ type PFCMaintEnv struct {
 	// item patterns
 	Pats table.Table
 
-	// pattern vocab
-	PatVocab patgen.Vocab
-
 	// random number generator for the env -- all random calls must use this
 	Rand erand.SysRand `view:"-"`
 
@@ -83,23 +78,20 @@ func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.RndSeed = rndseed
 	ev.Rand.NewRand(ev.RndSeed)
 	ev.States = make(map[string]*tensor.Float32)
-	ev.States["Item"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
-	ev.States["Time"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NTrials}, nil, []string{"Y", "Time"})
-	ev.States["GPi"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, nil, []string{"Y", "X"})
+	ev.States["Item"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.States["Time"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NTrials}, "Y", "Time")
+	ev.States["GPi"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
 	ev.Sequence.Max = ev.NItems
 	ev.Trial.Max = ev.NTrials
 	ev.ConfigPats()
 }
 
 func (ev *PFCMaintEnv) ConfigPats() {
-	ev.PatVocab = patgen.Vocab{}
-
 	npats := ev.NItems
-	sch := table.Schema{
-		{"Name", tensor.STRING, nil, nil},
-		{"Item", reflect.Float32, []int{ev.NUnitsY, ev.NUnitsX}, []string{"Y", "X"}},
-	}
-	ev.Pats.SetFromSchema(sch, npats)
+	ev.Pats.DeleteAll()
+	ev.Pats.AddStringColumn("Name")
+	ev.Pats.AddFloat32TensorColumn("Item", []int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.Pats.SetNumRows(npats)
 
 	pctAct := float32(0.2)
 	minPctDiff := float32(0.5)

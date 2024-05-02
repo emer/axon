@@ -124,11 +124,10 @@ func (ss *Sim) ConfigPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	sch := table.Schema{
-		{"Name", tensor.STRING, nil, nil},
-		{"Input", reflect.Float32, []int{10, 10}, []string{"Y", "X"}},
-	}
-	dt.SetFromSchema(sch, 10)
+
+	dt.AddStringColumn("Name")
+	dt.AddFloat32TensorColumn("Input", []int{10, 10}, "Y", "X")
+	dt.SetNumRows(10)
 	pc := dt.Columns[1].(*tensor.Float32)
 	patgen.PermutedBinaryRows(pc, int(ss.Config.Env.InputPct), 1, 0)
 	for i, v := range pc.Values {
@@ -396,7 +395,7 @@ func (ss *Sim) ConfigLogItems() {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Spikes",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -405,7 +404,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gi",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -414,7 +413,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SGi",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -423,7 +422,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FFs",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -432,7 +431,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FBs",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -441,7 +440,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FSi",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -450,7 +449,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSi",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -459,7 +458,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSf",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -468,7 +467,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FSGi",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -477,7 +476,7 @@ func (ss *Sim) ConfigLogItems() {
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSGi",
-			Type:   tensor.FLOAT64,
+			Type:   reflect.Float64,
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -516,7 +515,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) ConfigGUI() {
 	title := "Axon Inhibition Test"
 	ss.GUI.MakeBody(ss, "inhib", title, `This tests inhibition based on interneurons and inhibition functions. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
-	ss.GUI.CycleUpdateInterval = 10
+	ss.GUI.CycleUpdateInterval = 1 // 10
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300

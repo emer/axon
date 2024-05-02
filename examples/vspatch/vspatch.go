@@ -13,13 +13,13 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -480,7 +480,7 @@ func (ss *Sim) CondStats() {
 		if ts == "TrialName" || ts == "Cond" || ts == "CondRew" {
 			continue
 		}
-		split.Agg(spl, ts, agg.AggMean)
+		split.AggColumn(spl, ts, stats.Mean)
 	}
 	dt := spl.AggsToTable(table.ColumnNameOnly)
 	dt.SetMetaData("Rew:On", "+")
@@ -506,9 +506,9 @@ func (ss *Sim) CondStats() {
 	nc := dt.Rows
 	for i := 0; i < nc; i++ {
 		for _, st := range ss.Config.Log.AggStats {
-			ci := int(dt.CellFloat("Cond", i))
+			ci := int(dt.Float("Cond", i))
 			stnm := fmt.Sprintf("Cond_%d_%s", ci, st)
-			ss.Stats.SetFloat(stnm, dt.CellFloat(st, i))
+			ss.Stats.SetFloat(stnm, dt.Float(st, i))
 		}
 	}
 	if ss.Config.GUI {
@@ -585,13 +585,13 @@ func (ss *Sim) ConfigLogItems() {
 				Type: reflect.Float64,
 				// FixMin: true,
 				// FixMax: true,
-				Range: minmax.F64{Max: 1},
+				Range: minmax.F32{Max: 1},
 				Write: elog.WriteMap{
 					etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
 						ctx.SetFloat64(ctx.Stats.Float(stnm))
 					}, etime.Scope(etime.AllModes, etime.Run): func(ctx *elog.Context) {
 						ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5) // cached
-						ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+						ctx.SetFloat64(stats.MeanColumn(ix, ctx.Item.Name)[0])
 					}}})
 		}
 	}

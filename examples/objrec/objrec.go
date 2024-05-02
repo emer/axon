@@ -15,12 +15,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -548,10 +548,10 @@ func (ss *Sim) ConfigLogItems() {
 		Plot: false,
 		Write: elog.WriteMap{
 			etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
-				ctx.SetAggItem(ctx.Mode, etime.Trial, "Err2", agg.AggMean)
+				ctx.SetAggItem(ctx.Mode, etime.Trial, "Err2", stats.Mean)
 			}, etime.Scope(etime.AllModes, etime.Run): func(ctx *elog.Context) {
 				ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-				ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				ctx.SetFloat64(stats.MeanColumn(ix, ctx.Item.Name)[0])
 			}}})
 
 	ss.Logs.AddItem(&elog.Item{
@@ -560,13 +560,13 @@ func (ss *Sim) ConfigLogItems() {
 		CellShape:   []int{20},
 		DimNames:    []string{"Cat"},
 		Plot:        true,
-		Range:       minmax.F64{Min: 0},
+		Range:       minmax.F32{Min: 0},
 		TensorIndex: -1, // plot all values
 		Write: elog.WriteMap{
 			etime.Scope(etime.Test, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IndexView(etime.Test, etime.Trial)
 				spl := split.GroupBy(ix, []string{"Cat"})
-				split.AggTry(spl, "Err", agg.AggMean)
+				split.AggColumnTry(spl, "Err", stats.Mean)
 				cats := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables[ctx.Item.Name] = cats
 				ctx.SetTensor(cats.Columns[1])
@@ -578,51 +578,51 @@ func (ss *Sim) ConfigLogItems() {
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  reflect.Float64,
-			Range: minmax.F64{Max: 1},
+			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gnmda",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "Gnmda")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_GgabaB",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "GgabaB")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSGi",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).Inhib.SSGi)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 	}
 }

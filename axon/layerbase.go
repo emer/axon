@@ -267,7 +267,7 @@ func (ly *LayerBase) SetShape(shape []int) {
 	} else if len(shape) == 4 {
 		dnms = emer.LayerDimNames4D
 	}
-	ly.Shp.SetShape(shape, nil, dnms) // row major default
+	ly.Shp.SetShape(shape, dnms...)
 }
 
 // SetRepIndexesShape sets the RepIndexes, and RepShape and as list of dimension sizes
@@ -279,7 +279,7 @@ func (ly *LayerBase) SetRepIndexesShape(idxs, shape []int) {
 	} else if len(shape) == 4 {
 		dnms = emer.LayerDimNames4D
 	}
-	ly.RepShp.SetShape(shape, nil, dnms) // row major default
+	ly.RepShp.SetShape(shape, dnms...)
 }
 
 // RepShape returns the shape to use for representative units
@@ -289,7 +289,7 @@ func (ly *LayerBase) RepShape() *tensor.Shape {
 		return &ly.Shp
 	}
 	if ly.RepShp.Len() < sz {
-		ly.RepShp.SetShape([]int{sz}, nil, nil) // row major default
+		ly.RepShp.SetShape([]int{sz})
 	}
 	return &ly.RepShp
 }
@@ -481,7 +481,7 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 	if !ly.Is4D() {
 		return
 	}
-	sh := ly.Shp.Shape().Sizes
+	sh := ly.Shp.Sizes
 	spy := sh[0]
 	spx := sh[1]
 	pi := uint32(1)
@@ -654,7 +654,7 @@ func (ly *LayerBase) UnitValuesTensor(tsr tensor.Tensor, varNm string, di int) e
 		return err
 	}
 	nn := int(ly.NNeurons)
-	tsr.SetShape(ly.Shp.Shp, ly.Shp.Strd, ly.Shp.Nms)
+	tsr.SetShape(ly.Shp.Sizes, ly.Shp.Names...)
 	vidx, err := ly.UnitVarIndex(varNm)
 	if err != nil {
 		nan := math.NaN()
@@ -696,7 +696,7 @@ func (ly *LayerBase) UnitValuesRepTensor(tsr tensor.Tensor, varNm string, di int
 	}
 	if tsr.Len() != nu {
 		rs := ly.RepShape()
-		tsr.SetShape(rs.Shp, rs.Strd, rs.Nms)
+		tsr.SetShape(rs.Sizes, rs.Names...)
 	}
 	vidx, err := ly.UnitVarIndex(varNm)
 	if err != nil {

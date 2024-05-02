@@ -14,7 +14,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	_ "cogentcore.org/core/tensor/tensorview" // include to get gui views
 	"cogentcore.org/core/views"
@@ -158,19 +157,17 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"t", tensor.FLOAT64, nil, nil},
-		{"mi", tensor.FLOAT64, nil, nil},
-		{"pi", tensor.FLOAT64, nil, nil},
-		{"di", tensor.FLOAT64, nil, nil},
-		{"mi4", tensor.FLOAT64, nil, nil},
-		{"pi4", tensor.FLOAT64, nil, nil},
-		{"di4", tensor.FLOAT64, nil, nil},
-		{"m", tensor.FLOAT64, nil, nil},
-		{"p", tensor.FLOAT64, nil, nil},
-		{"d", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("t")
+	dt.AddFloat64Column("mi")
+	dt.AddFloat64Column("pi")
+	dt.AddFloat64Column("di")
+	dt.AddFloat64Column("mi4")
+	dt.AddFloat64Column("pi4")
+	dt.AddFloat64Column("di4")
+	dt.AddFloat64Column("m")
+	dt.AddFloat64Column("p")
+	dt.AddFloat64Column("d")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -226,12 +223,10 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Time", tensor.FLOAT64, nil, nil},
-		{"Gsynca", tensor.FLOAT64, nil, nil},
-		{"SYNCa", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Time")
+	dt.AddFloat64Column("Gsynca")
+	dt.AddFloat64Column("SYNCa")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

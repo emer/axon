@@ -14,7 +14,6 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/axon"
@@ -133,11 +132,9 @@ func (ss *DrEffPlot) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"X", tensor.FLOAT64, nil, nil},
-		{"Y", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("X")
+	dt.AddFloat64Column("Y")
+	dt.SetNumRows(0)
 }
 
 func (ss *DrEffPlot) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -198,15 +195,13 @@ func (ss *DrEffPlot) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"T", tensor.FLOAT64, nil, nil},
-		{"Eff", tensor.FLOAT64, nil, nil},
-		{"EffInc", tensor.FLOAT64, nil, nil},
-		{"Urge", tensor.FLOAT64, nil, nil},
-		{"US", tensor.FLOAT64, nil, nil},
-		{"Drive", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("T")
+	dt.AddFloat64Column("Eff")
+	dt.AddFloat64Column("EffInc")
+	dt.AddFloat64Column("Urge")
+	dt.AddFloat64Column("US")
+	dt.AddFloat64Column("Drive")
+	dt.SetNumRows(0)
 }
 
 func (ss *DrEffPlot) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -216,7 +211,7 @@ func (ss *DrEffPlot) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *pl
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("T", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
 	plt.SetColParams("Eff", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("EffInc", plotview.Off, plotview.FixMin, 0, plotview.FixMax, float64(ss.Effort.Max))
+	plt.SetColParams("EffInc", plotview.Off, plotview.FixMin, 0, plotview.FixMax, ss.Effort.Max)
 	plt.SetColParams("Urge", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 	plt.SetColParams("US", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
 	plt.SetColParams("Drive", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)

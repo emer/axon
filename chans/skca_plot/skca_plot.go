@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// ska_plot plots an equation updating over time in a table.Table and Plot2D.
+// ska_plot plots an equation updating over time in a table.Table and PlotView.
 package main
 
 //go:generate core generate -add-types
@@ -13,7 +13,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
@@ -115,12 +114,10 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Ca", tensor.FLOAT64, nil, nil},
-		{"Mhill", tensor.FLOAT64, nil, nil},
-		{"Mgw06", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Ca")
+	dt.AddFloat64Column("Mhill")
+	dt.AddFloat64Column("Mgw06")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -187,17 +184,15 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Time", tensor.FLOAT64, nil, nil},
-		{"Spike", tensor.FLOAT64, nil, nil},
-		{"CaM", tensor.FLOAT64, nil, nil},
-		{"CaP", tensor.FLOAT64, nil, nil},
-		{"CaD", tensor.FLOAT64, nil, nil},
-		{"CaIn", tensor.FLOAT64, nil, nil},
-		{"CaR", tensor.FLOAT64, nil, nil},
-		{"M", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Time")
+	dt.AddFloat64Column("Spike")
+	dt.AddFloat64Column("CaM")
+	dt.AddFloat64Column("CaP")
+	dt.AddFloat64Column("CaD")
+	dt.AddFloat64Column("CaIn")
+	dt.AddFloat64Column("CaR")
+	dt.AddFloat64Column("M")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

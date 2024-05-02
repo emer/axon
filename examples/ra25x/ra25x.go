@@ -13,6 +13,7 @@ package main
 import (
 	"log"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
@@ -392,12 +393,10 @@ func (ss *Sim) ConfigPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	sch := table.Schema{
-		{"Name", tensor.STRING, nil, nil},
-		{"Input", reflect.Float32, []int{5, 5}, []string{"Y", "X"}},
-		{"Output", reflect.Float32, []int{5, 5}, []string{"Y", "X"}},
-	}
-	dt.SetFromSchema(sch, 25)
+	dt.AddStringColumn("Name")
+	dt.AddFloat32TensorColumn("Input", []int{5, 5}, "Y", "X")
+	dt.AddFloat32TensorColumn("Output", []int{5, 5}, "Y", "X")
+	dt.SetNumRows(25)
 
 	patgen.PermutedBinaryMinDiff(dt.Columns[1].(*tensor.Float32), 6, 1, 0, 3)
 	patgen.PermutedBinaryMinDiff(dt.Columns[2].(*tensor.Float32), 6, 1, 0, 3)
@@ -517,51 +516,51 @@ func (ss *Sim) ConfigLogItems() {
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  reflect.Float64,
-			Range: minmax.F64{Max: 1},
+			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gnmda",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "Gnmda")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_GgabaB",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "GgabaB")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSGi",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).Inhib.SSGi)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 
 		// ss.Logs.AddItem(&elog.Item{
@@ -577,7 +576,7 @@ func (ss *Sim) ConfigLogItems() {
 		// 			ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(
 		// 			ctx *elog.Context) {
-		// 			ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+		// 			ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 		// 		}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 		// 			ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
 		// 			ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])

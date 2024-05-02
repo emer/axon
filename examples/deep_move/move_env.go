@@ -129,21 +129,21 @@ func (ev *MoveEnv) Config(unper int) {
 	ev.NRotAngles = (360 / ev.AngInc) + 1
 
 	ev.World = &tensor.Int{}
-	ev.World.SetShape([]int{ev.Size.Y, ev.Size.X}, nil, []string{"Y", "X"})
+	ev.World.SetShape([]int{ev.Size.Y, ev.Size.X}, "Y", "X")
 
 	ev.CurStates = make(map[string]*tensor.Float32)
 	ev.NextStates = make(map[string]*tensor.Float32)
 
-	dv := tensor.NewFloat32([]int{1, ev.NFOVRays, ev.DepthSize, 1}, nil, []string{"1", "Angle", "Depth", "1"})
+	dv := tensor.NewFloat32([]int{1, ev.NFOVRays, ev.DepthSize, 1}, "1", "Angle", "Depth", "1")
 	ev.NextStates["Depth"] = dv
 
 	ev.Depths = make([]float32, ev.NFOVRays)
 	ev.DepthLogs = make([]float32, ev.NFOVRays)
 
-	hd := tensor.NewFloat32([]int{1, ev.DepthSize}, nil, []string{"1", "Pop"})
+	hd := tensor.NewFloat32([]int{1, ev.DepthSize}, "1", "Pop")
 	ev.NextStates["HeadDir"] = hd
 
-	av := tensor.NewFloat32([]int{ev.UnitsPer, len(ev.Acts)}, nil, []string{"NUnits", "Acts"})
+	av := tensor.NewFloat32([]int{ev.UnitsPer, len(ev.Acts)}, "NUnits", "Acts")
 	ev.NextStates["Action"] = av
 
 	ev.CopyNextToCur() // get CurStates from NextStates
@@ -252,7 +252,7 @@ func (ev *MoveEnv) ScanDepth() {
 			}
 			mat := ev.GetWorld(gp)
 			if mat > 0 {
-				depth = cp.DistTo(op)
+				depth = cp.DistanceTo(op)
 				break
 			}
 		}
@@ -421,7 +421,7 @@ func (ev *MoveEnv) WorldLine(st, ed evec.Vector2i, mat int) {
 	for {
 		cp, gp = NextVecPoint(cp, v)
 		ev.SetWorld(gp, mat)
-		d := cp.DistTo(op) // not very efficient, but works.
+		d := cp.DistanceTo(op) // not very efficient, but works.
 		if d >= dst {
 			break
 		}

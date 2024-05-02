@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// gabab_plot plots an equation updating over time in a table.Table and Plot2D.
+// gabab_plot plots an equation updating over time in a table.Table and PlotView.
 package main
 
 //go:generate core generate -add-types
@@ -15,7 +15,6 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
@@ -165,13 +164,11 @@ func (ss *Sim) ConfigVGTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"V", tensor.FLOAT64, nil, nil},
-		{"GgabaB", tensor.FLOAT64, nil, nil},
-		{"GgabaB_std", tensor.FLOAT64, nil, nil},
-		{"GgabaB_bug", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("V")
+	dt.AddFloat64Column("GgabaB")
+	dt.AddFloat64Column("GgabaB_std")
+	dt.AddFloat64Column("GgabaB_bug")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigVGPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -215,12 +212,10 @@ func (ss *Sim) ConfigSGTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"S", tensor.FLOAT64, nil, nil},
-		{"GgabaB_max", tensor.FLOAT64, nil, nil},
-		{"GgabaBstd_max", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("S")
+	dt.AddFloat64Column("GgabaB_max")
+	dt.AddFloat64Column("GgabaBstd_max")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigSGPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -281,16 +276,14 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Time", tensor.FLOAT64, nil, nil},
-		{"Gs", tensor.FLOAT64, nil, nil},
-		{"GsX", tensor.FLOAT64, nil, nil},
-		{"GABAB", tensor.FLOAT64, nil, nil},
-		{"GABABx", tensor.FLOAT64, nil, nil},
-		{"dG", tensor.FLOAT64, nil, nil},
-		{"dX", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Time")
+	dt.AddFloat64Column("Gs")
+	dt.AddFloat64Column("GsX")
+	dt.AddFloat64Column("GABAB")
+	dt.AddFloat64Column("GABABx")
+	dt.AddFloat64Column("dG")
+	dt.AddFloat64Column("dX")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

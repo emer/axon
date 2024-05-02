@@ -10,21 +10,20 @@ import (
 	"image/color"
 	"log"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/colors/colormap"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/errors"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/plot/plotview"
 	"cogentcore.org/core/styles"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/tensor/tensorview"
 	"cogentcore.org/core/views"
 	"cogentcore.org/core/xyz"
-	"cogentcore.org/core/xyzview"
+	"cogentcore.org/core/xyz/xyzview"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/eve/v2/eve"
 	"github.com/emer/eve/v2/evev"
@@ -214,8 +213,8 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 		s.Columns = 2
 		s.Grow.Set(0, 0)
 	})
-	core.NewLabel(imfr).SetText("Eye-View, Fovea:")
-	core.NewLabel(imfr).SetText("Full Field:")
+	core.NewText(imfr).SetText("Eye-View, Fovea:")
+	core.NewText(imfr).SetText("Full Field:")
 
 	vw.EyeRFovImage = core.NewImage(imfr, "eye-r-fov-img")
 	vw.EyeRFovImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
@@ -225,14 +224,14 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	wd := float32(300)
 	ht := float32(100)
-	vw.USposPlot = plotview.NewPlot2D(svfr, "us-pos")
+	vw.USposPlot = plotview.NewPlotView(svfr, "us-pos")
 	vw.USposPlot.Style(func(s *styles.Style) {
 		s.Min.X.Px(wd)
 		s.Min.Y.Px(ht)
 		s.Grow.Set(0, 0)
 	})
 
-	vw.USnegPlot = plotview.NewPlot2D(svfr, "us-neg")
+	vw.USnegPlot = plotview.NewPlotView(svfr, "us-neg")
 	vw.USnegPlot.Style(func(s *styles.Style) {
 		s.Min.X.Px(wd)
 		s.Min.Y.Px(ht)
@@ -450,25 +449,23 @@ func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 }
 
 func (vw *GUI) ConfigUSPlots() {
-	schP := table.Schema{
-		{"US", tensor.STRING, nil, nil},
-		{"Drive", tensor.FLOAT64, nil, nil},
-		{"OFC", tensor.FLOAT64, nil, nil},
-		{"USin", tensor.FLOAT64, nil, nil},
-	}
-	dp := table.New(schP, vw.Env.Config.NDrives+1)
+	dp := table.NewTable(vw.Env.Config.NDrives + 1)
+	dp.AddStringColumn("US")
+	dp.AddFloat64Column("Drive")
+	dp.AddFloat64Column("OFC")
+	dp.AddFloat64Column("USin")
+
 	vw.USposData = dp
 	vw.USposPlot.Params.Type = plotview.Bar
 	vw.USposPlot.Params.Title = "Positive USs"
 	vw.USposPlot.Params.Scale = 1
 	vw.USposPlot.Params.XAxisColumn = "US"
 
-	schN := table.Schema{
-		{"US", tensor.STRING, nil, nil},
-		{"OFC", tensor.FLOAT64, nil, nil},
-		{"USin", tensor.FLOAT64, nil, nil},
-	}
-	dn := table.New(schN, vw.Env.Config.NNegUSs+2)
+	dn := table.NewTable(vw.Env.Config.NNegUSs + 2)
+	dn.AddStringColumn("US")
+	dn.AddFloat64Column("OFC")
+	dn.AddFloat64Column("USin")
+
 	vw.USnegData = dn
 	vw.USnegPlot.Params.Type = plotview.Bar
 	vw.USnegPlot.Params.Title = "Negative USs"

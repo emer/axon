@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"reflect"
 	"strconv"
 
 	"cogentcore.org/core/base/num"
@@ -711,11 +712,11 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddItem(&elog.Item{
 		Name:  "EpochsToCrit",
 		Type:  reflect.Float64,
-		Range: minmax.F64{Min: -1},
+		Range: minmax.F32{Min: -1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 				elg := ss.Logs.Table(ctx.Mode, etime.Epoch)
-				epc := int(elg.CellFloat("Epoch", elg.Rows-1))
+				epc := int(elg.Float("Epoch", elg.Rows-1))
 				etc := math.NaN()
 				if epc < ss.Config.Run.NEpochs-1 {
 					etc = float64(epc)
@@ -724,17 +725,17 @@ func (ss *Sim) ConfigLogs() {
 				ctx.SetFloat64(etc)
 			},
 			etime.Scope(etime.Train, etime.Expt): func(ctx *elog.Context) {
-				ctx.SetAgg(ctx.Mode, etime.Run, agg.AggMean)
+				ctx.SetAgg(ctx.Mode, etime.Run, stats.Mean)
 			}}})
 	ss.Logs.AddItem(&elog.Item{
 		Name:  "NToCrit",
 		Type:  reflect.Float64,
-		Range: minmax.F64{Min: -1},
+		Range: minmax.F32{Min: -1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Expt): func(ctx *elog.Context) {
 				ix := ss.Logs.IndexView(etime.Train, etime.Run)
 				ix.Filter(func(et *table.Table, row int) bool {
-					return !math.IsNaN(et.CellFloat("EpochsToCrit", row))
+					return !math.IsNaN(et.Float("EpochsToCrit", row))
 				})
 				ctx.SetInt(len(ix.Indexes))
 			}}})
@@ -790,7 +791,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
 
 	if time == etime.Epoch && mode == etime.Train {
-		rew := dt.CellFloat("Rew", dt.Rows-1)
+		rew := dt.Float("Rew", dt.Rows-1)
 		ss.Stats.SetFloat("RewEpc", rew) // used for stopping criterion
 	}
 }
@@ -803,7 +804,7 @@ func (ss *Sim) TestStats() {
 		if ts == "TrialName" {
 			continue
 		}
-		split.Agg(spl, ts, agg.AggMean)
+		split.AggColumn(spl, ts, stats.Mean)
 	}
 	tstst := spl.AggsToTable(table.ColumnNameOnly)
 	tstst.SetMetaData("precision", strconv.Itoa(elog.LogPrec))

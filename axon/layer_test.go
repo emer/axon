@@ -29,13 +29,13 @@ func TestLayer(t *testing.T) {
 	assert.Equal(t, uint32(4), hiddenLayer.NNeurons)
 
 	// query the 'Spike' variable for all neurons of the layer
-	tensor := tensor.NewFloat32([]int{2}, nil, nil)
+	tensor := tensor.NewFloat32([]int{2})
 	assert.Nil(t, hiddenLayer.UnitValuesTensor(tensor, "Spike", 0))
 	for i := 0; i < 4; i++ {
 		// can't have spiked as we haven't run the network yet
 		assert.Equal(t, float32(0.0), tensor.Values[i])
 	}
-	assert.Equal(t, []int{2, 2}, tensor.Shape.Shp)
+	assert.Equal(t, []int{2, 2}, tensor.Shp.Sizes)
 }
 
 /*

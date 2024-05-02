@@ -76,7 +76,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	}
 	corSimSum := 0.0
 	for epoch := *numEpochs - convergenceTestEpochs; epoch < *numEpochs; epoch++ {
-		corSimSum += epcLog.CellFloat("CorSim", epoch)
+		corSimSum += epcLog.Float("CorSim", epoch)
 		if math.IsNaN(corSimSum) {
 			b.Errorf("CorSim for epoch %d is NaN", epoch)
 		}

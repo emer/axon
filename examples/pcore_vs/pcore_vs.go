@@ -12,6 +12,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 
 	"cogentcore.org/core/base/num"
@@ -19,7 +20,6 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -568,7 +568,7 @@ func (ss *Sim) ConfigLogs() {
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 				tstrl := ctx.Logs.MiscTable("TestTrialStats")
-				ctx.SetFloat64(tsragg.Mean(tstrl.ColumnByName("Match")))
+				ctx.SetFloat64(stats.MeanTensor(tstrl.ColumnByName("Match")))
 			}}})
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
@@ -635,7 +635,7 @@ func (ss *Sim) TestStats() {
 		if ts == "TrialName" {
 			continue
 		}
-		split.Agg(spl, ts, agg.AggMean)
+		split.AggColumn(spl, ts, stats.Mean)
 	}
 	tstst := spl.AggsToTable(table.ColumnNameOnly)
 	tstst.SetMetaData("precision", strconv.Itoa(elog.LogPrec))

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 
 	"cogentcore.org/core/base/reflectx"
@@ -23,7 +24,6 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -584,15 +584,15 @@ func (ss *Sim) ConfigLogItems() []string {
 					Type: reflect.Float64,
 					// FixMin: true,
 					// FixMax: true,
-					Range: minmax.F64{Max: 1},
+					Range: minmax.F32{Max: 1},
 					Write: elog.WriteMap{
 						etime.Scope(etime.AllModes, etime.Block): func(ctx *elog.Context) {
 							ctx.SetFloat64(ctx.Stats.FloatDi(statName, ci))
 						}, etime.Scope(etime.AllModes, etime.Condition): func(ctx *elog.Context) {
 							ix := ctx.LastNRows(ctx.Mode, etime.Block, 5) // cached
-							ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+							ctx.SetFloat64(stats.MeanColumn(ix, ctx.Item.Name)[0])
 						}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-							ctx.SetAgg(ctx.Mode, etime.Condition, agg.AggMean)
+							ctx.SetAgg(ctx.Mode, etime.Condition, stats.Mean)
 						}}})
 			}
 		}
@@ -642,12 +642,12 @@ func (ss *Sim) BlockStats() {
 		if ts == "SeqType" || ts == "TrialName" || ts == "TickType" {
 			continue
 		}
-		split.Agg(spl, ts, agg.AggMean)
+		split.AggColumn(spl, ts, stats.Mean)
 	}
 	dt := spl.AggsToTable(table.ColumnNameOnly)
 	for ri := 0; ri < dt.Rows; ri++ {
 		tt := dt.StringValue("SeqType", ri)
-		trl := int(dt.CellFloat("Trial", ri))
+		trl := int(dt.Float("Trial", ri))
 		dt.SetString("SeqType", ri, fmt.Sprintf("%s_%d", tt, trl))
 	}
 	dt.SetMetaData("DA:On", "+")
@@ -675,12 +675,12 @@ func (ss *Sim) BlockStats() {
 		tt := dt.StringValue("TickType", ri)
 		if strings.Contains(tt, "_CS") {
 			for _, st := range ss.Config.Log.AggStats {
-				ss.Stats.SetFloatDi("CS_"+st, seq, dt.CellFloat(st, ri))
+				ss.Stats.SetFloatDi("CS_"+st, seq, dt.Float(st, ri))
 			}
 		}
 		if strings.Contains(tt, "_US") {
 			for _, st := range ss.Config.Log.AggStats {
-				ss.Stats.SetFloatDi("US_"+st, seq, dt.CellFloat(st, ri))
+				ss.Stats.SetFloatDi("US_"+st, seq, dt.Float(st, ri))
 			}
 		}
 	}

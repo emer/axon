@@ -9,7 +9,6 @@ package axon
 import (
 	"fmt"
 	"math/rand"
-	"reflect"
 	"testing"
 
 	"cogentcore.org/core/tensor"
@@ -313,11 +312,10 @@ func generateRandomPatterns(nPats int, seed int64) *table.Table {
 	rand.Seed(seed)
 
 	pats := &table.Table{}
-	pats.SetFromSchema(table.Schema{
-		{Name: "Name", Type: tensor.STRING, CellShape: nil, DimNames: nil},
-		{Name: "Input", Type: reflect.Float32, CellShape: shape, DimNames: []string{"Y", "X"}},
-		{Name: "Output", Type: reflect.Float32, CellShape: shape, DimNames: []string{"Y", "X"}},
-	}, nPats)
+	pats.AddStringColumn("Name")
+	pats.AddFloat32TensorColumn("Input", shape, "Y", "X")
+	pats.AddFloat32TensorColumn("Output", shape, "Y", "X")
+	pats.SetNumRows(nPats)
 	numOn := max((shape[0]*shape[1])/4, 1) // ensure min at least 1
 	patgen.PermutedBinaryRows(pats.Columns[1], numOn, 1, 0)
 	patgen.PermutedBinaryRows(pats.Columns[2], numOn, 1, 0)

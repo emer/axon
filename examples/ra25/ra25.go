@@ -13,7 +13,6 @@ package main
 import (
 	"log"
 	"os"
-	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
@@ -507,12 +506,10 @@ func (ss *Sim) ConfigPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	sch := table.Schema{
-		{"Name", tensor.STRING, nil, nil},
-		{"Input", reflect.Float32, []int{5, 5}, []string{"Y", "X"}},
-		{"Output", reflect.Float32, []int{5, 5}, []string{"Y", "X"}},
-	}
-	dt.SetFromSchema(sch, 25)
+	dt.AddStringColumn("Name")
+	dt.AddFloat32TensorColumn("Input", []int{5, 5}, "Y", "X")
+	dt.AddFloat32TensorColumn("Output", []int{5, 5}, "Y", "X")
+	dt.SetNumRows(25)
 
 	patgen.PermutedBinaryMinDiff(dt.Columns[1].(*tensor.Float32), 6, 1, 0, 3)
 	patgen.PermutedBinaryMinDiff(dt.Columns[2].(*tensor.Float32), 6, 1, 0, 3)

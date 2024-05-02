@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// kir_plot plots an equation updating over time in a table.Table and Plot2D.
+// kir_plot plots an equation updating over time in a table.Table and PlotView.
 package main
 
 //go:generate core generate -add-types
@@ -13,7 +13,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
@@ -129,14 +128,12 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"V", tensor.FLOAT64, nil, nil},
-		{"GkIR", tensor.FLOAT64, nil, nil},
-		{"M", tensor.FLOAT64, nil, nil},
-		{"Minf", tensor.FLOAT64, nil, nil},
-		{"Mtau", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("V")
+	dt.AddFloat64Column("GkIR")
+	dt.AddFloat64Column("M")
+	dt.AddFloat64Column("Minf")
+	dt.AddFloat64Column("Mtau")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
@@ -208,15 +205,13 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	sch := table.Schema{
-		{"Time", tensor.FLOAT64, nil, nil},
-		{"V", tensor.FLOAT64, nil, nil},
-		{"GkIR", tensor.FLOAT64, nil, nil},
-		{"M", tensor.FLOAT64, nil, nil},
-		{"Minf", tensor.FLOAT64, nil, nil},
-		{"Mtau", tensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
+	dt.AddFloat64Column("Time")
+	dt.AddFloat64Column("V")
+	dt.AddFloat64Column("GkIR")
+	dt.AddFloat64Column("M")
+	dt.AddFloat64Column("Minf")
+	dt.AddFloat64Column("Mtau")
+	dt.SetNumRows(0)
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {

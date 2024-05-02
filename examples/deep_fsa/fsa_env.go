@@ -68,13 +68,13 @@ func (ev *FSAEnv) Desc() string { return ev.Dsc }
 
 // InitTMat initializes matrix and labels to given size
 func (ev *FSAEnv) InitTMat(nst int) {
-	ev.TMat.SetShape([]int{nst, nst}, nil, []string{"cur", "next"})
-	ev.Labels.SetShape([]int{nst, nst}, nil, []string{"cur", "next"})
+	ev.TMat.SetShape([]int{nst, nst}, "cur", "next")
+	ev.Labels.SetShape([]int{nst, nst}, "cur", "next")
 	ev.TMat.SetZeros()
 	ev.Labels.SetZeros()
-	ev.NNext.SetShape([]int{1}, nil, nil)
-	ev.NextStates.SetShape([]int{nst}, nil, nil)
-	ev.NextLabels.SetShape([]int{nst}, nil, nil)
+	ev.NNext.SetShape([]int{1})
+	ev.NextStates.SetShape([]int{nst})
+	ev.NextLabels.SetShape([]int{nst})
 }
 
 // SetTMat sets given transition matrix probability and label

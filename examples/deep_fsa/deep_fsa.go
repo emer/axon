@@ -11,12 +11,12 @@ package main
 import (
 	"log"
 	"os"
+	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/stats"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
@@ -516,51 +516,51 @@ func (ss *Sim) ConfigLogItems() {
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  reflect.Float64,
-			Range: minmax.F64{Max: 1},
+			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gnmda",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "Gnmda")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_GgabaB",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerRepTensor(clnm, "GgabaB")
-					avg := tsragg.Mean(tsr)
+					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_SSGi",
 			Type:   reflect.Float64,
-			Range:  minmax.F64{Max: 1},
+			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSGi)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+					ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
 				}}})
 	}
 }

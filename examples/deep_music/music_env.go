@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"reflect"
 	"time"
 
 	"cogentcore.org/core/math32/minmax"
@@ -124,8 +123,6 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 
 	// fmt.Printf("got %v tracks\n", len(s.Tracks))
 
-	sch := table.Schema{}
-
 	var tslice []int
 
 	var ticks int
@@ -141,7 +138,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 		}
 		tslice = append(tslice, no)
 		ticks = max(ticks, tick)
-		sch = append(sch, table.Column{name, reflect.Int, nil, nil})
+		ev.Song.AddIntColumn(name)
 	}
 
 	if ev.Debug {
@@ -156,7 +153,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 	toggleOn := true
 	ev.NoteRange.SetInfinity()
 
-	ev.Song.SetFromSchema(sch, nrows)
+	ev.Song.SetNumRows(nrows)
 
 	for ti, no := range tslice {
 		track := s.Tracks[no]
@@ -247,7 +244,7 @@ func (ev *MusicEnv) Config(fname string, track, maxRows, unitsper int) {
 	if ev.WrapNotes {
 		ev.NNotes = 12
 	}
-	ev.Note.SetShape([]int{1, ev.NNotes, ev.UnitsPer, 1}, nil, nil)
+	ev.Note.SetShape([]int{1, ev.NNotes, ev.UnitsPer, 1})
 	if ev.Play {
 		ev.ConfigPlay()
 	}
@@ -276,7 +273,7 @@ func (ev *MusicEnv) Step() bool {
 		ev.Time.Set(0)
 		tm = 0
 	}
-	note := int(ev.Song.CellFloatIndex(ev.Track, tm))
+	note := int(ev.Song.FloatIndex(ev.Track, tm))
 	ev.RenderNote(note)
 	return true
 }
@@ -284,7 +281,7 @@ func (ev *MusicEnv) Step() bool {
 // StepDi is data parallel version sampling different offsets from current timestep
 func (ev *MusicEnv) StepDi(di int) bool {
 	tm := (ev.Time.Cur + di*ev.DiOffset) % ev.Song.Rows
-	note := int(ev.Song.CellFloatIndex(ev.Track, tm))
+	note := int(ev.Song.FloatIndex(ev.Track, tm))
 	ev.RenderNote(note)
 	return true
 }
