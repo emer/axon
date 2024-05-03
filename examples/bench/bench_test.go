@@ -90,7 +90,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 // Run just the threading benchmarks with `go test -bench=".*Thread.*" .`
 func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// this benchmark constructs the network just like `bench.go`, but without
-	// setting up the projections (not needed for benching NeuronFun) -> Test setup is much quicker.
+	// setting up the pathways (not needed for benching NeuronFun) -> Test setup is much quicker.
 	ctx := axon.NewContext()
 	net := &axon.Network{}
 	net.InitName(net, "BenchNet")

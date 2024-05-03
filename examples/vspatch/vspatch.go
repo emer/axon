@@ -37,7 +37,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -65,7 +65,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -192,11 +192,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	space := float32(2)
-	full := prjn.NewFull()
+	full := paths.NewFull()
 
-	// mtxRndPrjn := prjn.NewPoolUnifRnd()
-	// mtxRndPrjn.PCon = 0.5
-	// _ = mtxRndPrjn
+	// mtxRndPath := paths.NewPoolUnifRnd()
+	// mtxRndPath.PCon = 0.5
+	// _ = mtxRndPath
 
 	in := net.AddLayer2D("State", ev.NUnitsY, ev.NUnitsX, axon.InputLayer)
 	vSpatchD1, vSpatchD2 := net.AddVSPatchLayers("", 1, 6, 6, space)

@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 )
 
-// prjn_compute.go has the core computational methods, for the CPU.
+// path_compute.go has the core computational methods, for the CPU.
 // On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
 // files, which correspond to different shaders for each different function.
 
@@ -19,9 +19,9 @@ import (
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(ctx *Context, ni, di, maxData uint32) {
+func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
-	if pj.PrjnType() == CTCtxtPrjn {
+	if pj.PathType() == CTCtxtPath {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
 		}
@@ -52,7 +52,7 @@ func (pj *Prjn) SendSpike(ctx *Context, ni, di, maxData uint32) {
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 // Sender will update even if recv neuron spiked -- recv will skip sender spike cases.
-func (pj *Prjn) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
+func (pj *Path) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -72,7 +72,7 @@ func (pj *Prjn) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike,
 // and skips when sender spiked, as those were already done in Send version.
-func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
+func (pj *Path) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -98,7 +98,7 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 // DWt computes the weight change (learning), based on
 // synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) DWt(ctx *Context, si uint32) {
+func (pj *Path) DWt(ctx *Context, si uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -120,9 +120,9 @@ func (pj *Prjn) DWt(ctx *Context, si uint32) {
 	}
 }
 
-// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
-// This is called on *receiving* projections, prior to WtFromDwt.
-func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
+// DWtSubMean subtracts the mean from any pathways that have SubMean > 0.
+// This is called on *receiving* pathways, prior to WtFromDwt.
+func (pj *Path) DWtSubMean(ctx *Context, ri uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -159,7 +159,7 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
 // WtFromDWt computes the weight change (learning), based on
 // synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) WtFromDWt(ctx *Context, ni uint32) {
+func (pj *Path) WtFromDWt(ctx *Context, ni uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -171,7 +171,7 @@ func (pj *Prjn) WtFromDWt(ctx *Context, ni uint32) {
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
-func (pj *Prjn) SlowAdapt(ctx *Context) {
+func (pj *Path) SlowAdapt(ctx *Context) {
 	pj.SynCaReset(ctx)
 	pj.SWtFromWt(ctx)
 	pj.SynScale(ctx)
@@ -180,7 +180,7 @@ func (pj *Prjn) SlowAdapt(ctx *Context) {
 // SWtFromWt updates structural, slowly adapting SWt value based on
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
-func (pj *Prjn) SWtFromWt(ctx *Context) {
+func (pj *Path) SWtFromWt(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWts.Adapt.On.IsFalse() {
 		return
 	}
@@ -227,7 +227,7 @@ func (pj *Prjn) SWtFromWt(ctx *Context) {
 
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFromTrgAvg function must be called first.
-func (pj *Prjn) SynScale(ctx *Context) {
+func (pj *Path) SynScale(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
 		return
 	}
@@ -259,7 +259,7 @@ func (pj *Prjn) SynScale(ctx *Context) {
 }
 
 // SynCaReset resets SynCa values -- called during SlowAdapt
-func (pj *Prjn) SynCaReset(ctx *Context) {
+func (pj *Path) SynCaReset(ctx *Context) {
 	slay := pj.Send
 	for lni := uint32(0); lni < slay.NNeurons; lni++ {
 		scon := pj.SendCon[lni]
@@ -274,7 +274,7 @@ func (pj *Prjn) SynCaReset(ctx *Context) {
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFromDWt, but this call can be used during testing to update failing synapses.
-func (pj *Prjn) SynFail(ctx *Context) {
+func (pj *Path) SynFail(ctx *Context) {
 	slay := pj.Send
 	for lni := uint32(0); lni < slay.NNeurons; lni++ {
 		scon := pj.SendCon[lni]
@@ -289,10 +289,10 @@ func (pj *Prjn) SynFail(ctx *Context) {
 	}
 }
 
-// LRateMod sets the LRate modulation parameter for Prjns, which is
+// LRateMod sets the LRate modulation parameter for Paths, which is
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
-func (pj *Prjn) LRateMod(mod float32) {
+func (pj *Path) LRateMod(mod float32) {
 	pj.Params.Learn.LRate.Mod = mod
 	pj.Params.Learn.LRate.Update()
 }
@@ -300,7 +300,7 @@ func (pj *Prjn) LRateMod(mod float32) {
 // LRateSched sets the schedule-based learning rate multiplier.
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
-func (pj *Prjn) LRateSched(sched float32) {
+func (pj *Path) LRateSched(sched float32) {
 	pj.Params.Learn.LRate.Sched = sched
 	pj.Params.Learn.LRate.Update()
 }

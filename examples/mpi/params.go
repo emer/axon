@@ -38,16 +38,16 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Clamp.Ge":           "0.8",  // 0.8 > 0.6
 				"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 			}},
-		{Sel: "Prjn", Desc: "basic prjn params",
+		{Sel: "Path", Desc: "basic path params",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
-				"Prjn.SWts.Adapt.LRate":    "0.1", // .1 >= .2,
-				"Prjn.SWts.Init.SPct":      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				"Prjn.Learn.Trace.SubMean": "0",   // 1 > 0 for long run stability
+				"Path.Learn.LRate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
+				"Path.SWts.Adapt.LRate":    "0.1", // .1 >= .2,
+				"Path.SWts.Init.SPct":      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				"Path.Learn.Trace.SubMean": "0",   // 1 > 0 for long run stability
 			}},
-		{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				"Path.PathScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 			}},
 	},
 }

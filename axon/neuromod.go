@@ -6,10 +6,10 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
-	"github.com/emer/gosl/v2/slbool"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
-//gosl: start neuromod
+//gosl:start neuromod
 
 // DAModTypes are types of dopamine modulation of neural activity.
 type DAModTypes int32 //enums:enum
@@ -188,4 +188,4 @@ func (nm *NeuroModParams) GiFromACh(ach float32) float32 {
 	return nm.AChDisInhib * ai
 }
 
-//gosl: end neuromod
+//gosl:end neuromod

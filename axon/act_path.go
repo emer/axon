@@ -8,36 +8,36 @@ import (
 	"log"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/gosl/v2/slbool"
 )
 
-//gosl: start act_prjn
+//gosl:start act_path
 
-// PrjnGTypes represents the conductance (G) effects of a given projection,
+// PathGTypes represents the conductance (G) effects of a given pathway,
 // including excitatory, inhibitory, and modulatory.
-type PrjnGTypes int32 //enums:enum
+type PathGTypes int32 //enums:enum
 
-// The projection conductance types
+// The pathway conductance types
 const (
-	// Excitatory projections drive Ge conductance on receiving neurons,
+	// Excitatory pathways drive Ge conductance on receiving neurons,
 	// which send to GiRaw and GiSyn neuron variables.
-	ExcitatoryG PrjnGTypes = iota
+	ExcitatoryG PathGTypes = iota
 
-	// Inhibitory projections drive Gi inhibitory conductance,
+	// Inhibitory pathways drive Gi inhibitory conductance,
 	// which send to GiRaw and GiSyn neuron variables.
 	InhibitoryG
 
-	// Modulatory projections have a multiplicative effect on other inputs,
+	// Modulatory pathways have a multiplicative effect on other inputs,
 	// which send to GModRaw and GModSyn neuron variables.
 	ModulatoryG
 
-	// Maintenance projections drive unique set of NMDA channels that support
+	// Maintenance pathways drive unique set of NMDA channels that support
 	// strong active maintenance abilities.
 	// Send to GMaintRaw and GMaintSyn neuron variables.
 	MaintG
 
-	// Context projections are for inputs to CT layers, which update
+	// Context pathways are for inputs to CT layers, which update
 	// only at the end of the plus phase, and send to CtxtGe.
 	ContextG
 )
@@ -46,18 +46,18 @@ const (
 //  SynComParams
 
 // SynComParams are synaptic communication parameters:
-// used in the Prjn parameters.  Includes delay and
+// used in the Path parameters.  Includes delay and
 // probability of failure, and Inhib for inhibitory connections,
-// and modulatory projections that have multiplicative-like effects.
+// and modulatory pathways that have multiplicative-like effects.
 type SynComParams struct {
 
-	// type of conductance (G) communicated by this projection
-	GType PrjnGTypes
+	// type of conductance (G) communicated by this pathway
+	GType PathGTypes
 
-	// additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value.
+	// additional synaptic delay in msec for inputs arriving at this pathway.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Path in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value.
 	Delay uint32 `min:"0" default:"2"`
 
-	// maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network.
+	// maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any pathway in the network.
 	MaxDelay uint32 `edit:"-"`
 
 	// probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)
@@ -153,7 +153,7 @@ func (sc *SynComParams) FloatToIntFactor() float32 {
 
 // FloatToGBuf converts the given floating point value
 // to a large int32 for accumulating in GBuf.
-// Note: more efficient to bake factor into scale factor per prjn.
+// Note: more efficient to bake factor into scale factor per paths.
 func (sc *SynComParams) FloatToGBuf(val float32) int32 {
 	return int32(val * sc.FloatToIntFactor())
 }
@@ -164,12 +164,12 @@ func (sc *SynComParams) FloatToGBuf(val float32) int32 {
 // there was numerical overflow in the aggregation.
 // If this occurs, the FloatToIntFactor needs to be decreased.
 func (sc *SynComParams) FloatFromGBuf(ival int32) float32 {
-	//gosl: end act_prjn
+	//gosl:end act_path
 	if ival < 0 {
 		log.Printf("axon.SynComParams: FloatFromGBuf is negative, there was an overflow error\n")
 		return 1
 	}
-	//gosl: start act_prjn
+	//gosl:start act_path
 	return float32(ival) / sc.FloatToIntFactor()
 }
 
@@ -181,7 +181,7 @@ func (sc *SynComParams) WtFailP(swt float32) float32 {
 	return sc.PFail * (1 - swt)
 }
 
-//gosl: end act_prjn
+//gosl:end act_path
 
 // WtFail returns true if synapse should fail, as function of SWt value (optionally)
 func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
@@ -202,30 +202,30 @@ func (sc *SynComParams) Fail(ctx *Context, syni uint32, swt float32) {
 	}
 }
 
-//gosl: start act_prjn
+//gosl:start act_path
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  PrjnScaleParams
+//  PathScaleParams
 
-// PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
+// PathScaleParams are pathway scaling parameters: modulates overall strength of pathway,
 // using both absolute and relative factors.
-type PrjnScaleParams struct {
+type PathScaleParams struct {
 
-	// relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling
+	// relative scaling that shifts balance between different pathways -- this is subject to normalization across all other pathways into receiving neuron, and determines the GScale.Target for adapting scaling
 	Rel float32 `min:"0"`
 
-	// absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value
+	// absolute multiplier adjustment factor for the path scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value
 	Abs float32 `default:"1" min:"0"`
 
 	pad, pad1 float32
 }
 
-func (ws *PrjnScaleParams) Defaults() {
+func (ws *PathScaleParams) Defaults() {
 	ws.Rel = 1
 	ws.Abs = 1
 }
 
-func (ws *PrjnScaleParams) Update() {
+func (ws *PathScaleParams) Update() {
 }
 
 // SLayActScale computes scaling factor based on sending layer activity level (savg), number of units
@@ -234,8 +234,8 @@ func (ws *PrjnScaleParams) Update() {
 // to add to the average expected number of active connections to receive,
 // for purposes of computing scaling factors with partial connectivity
 // For 25% layer activity, binomial SEM = sqrt(p(1-p)) = .43, so 3x = 1.3 so 2 is a reasonable default.
-func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
-	if ncon < 1 { // prjn Avg can be < 1 in some cases
+func (ws *PathScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
+	if ncon < 1 { // path Avg can be < 1 in some cases
 		ncon = 1
 	}
 	semExtra := 2
@@ -256,8 +256,8 @@ func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 }
 
 // FullScale returns full scaling factor, which is product of Abs * Rel * SLayActScale
-func (ws *PrjnScaleParams) FullScale(savg, snu, ncon float32) float32 {
+func (ws *PathScaleParams) FullScale(savg, snu, ncon float32) float32 {
 	return ws.Abs * ws.Rel * ws.SLayActScale(savg, snu, ncon)
 }
 
-//gosl: end act_prjn
+//gosl:end act_path

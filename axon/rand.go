@@ -1,14 +1,14 @@
 package axon
 
 import (
-	"github.com/emer/gosl/v2/slrand"
+	"cogentcore.org/core/vgpu/gosl/slrand"
 )
 
-//gosl: hlsl axonrand
+//gosl:hlsl axonrand
 // #include "slrand.hlsl"
-//gosl: end axonrand
+//gosl:end axonrand
 
-//gosl: start axonrand
+//gosl:start axonrand
 
 type RandFunIndex uint32
 
@@ -35,4 +35,4 @@ func GetRandomNumber(index uint32, counter slrand.Counter, funIndex RandFunIndex
 	return slrand.Float(&ctr, index)
 }
 
-//gosl: end axonrand
+//gosl:end axonrand

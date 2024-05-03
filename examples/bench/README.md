@@ -67,7 +67,7 @@ Total time:  21s out of 70s total
   - Our memory access is sort-of random (most of the struct members are fairly spread out) -> from the [benchmarks](https://github.com/siboehm/CPU_bench), doesn't look like this explains more than 2x.
 
 ### SendSpikeFun
-This function sends a spike to receiving projections if the neuron has spiked.
+This function sends a spike to receiving pathways if the neuron has spiked.
 It's called once for every cycle, just like NeuronFun.
 
 Total time: 26s out of 70s total, almost all of it spent in `Axon.SendSpike`
@@ -75,7 +75,7 @@ Total time: 26s out of 70s total, almost all of it spent in `Axon.SendSpike`
 - Projection GBuf (conductance buffer) size is `#RecvNeurons*(timeDelay+1)`. It's a ring buffer, with this layout: `nrn0time0 | nrn0time1 | nrn0time2 | nrn1time0 | nrn1time1 | ...`
 - How many of these entries do we access during each round? Just delay=0 and delay=maxDelay?
 - Could also be represented using maxDelay-many pointers, each to a `#RecvNeuron`-sized array. Then we exchange the pointers during the timestep update (similar to multiple buffering).
-- SendSpike performs a matrix product for each projection: `y=Wx`, where x is a binary vector, indicating whether the Neuron has spiked or not. How sparse is this vector?
+- SendSpike performs a matrix product for each pathway: `y=Wx`, where x is a binary vector, indicating whether the Neuron has spiked or not. How sparse is this vector?
 - FLOPs: `2 * #outputs * #inputs`, where W is a `#outputs x #inputs` matrix
 - Memory demand: ideally, loading only W + x, and storing y.
 - So -> 2n^2 FLOPs, n^2 memory loads -> Constant operational intensity.

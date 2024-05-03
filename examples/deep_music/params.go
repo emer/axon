@@ -73,51 +73,51 @@ var ParamSets = netparams.Sets{
 			}},
 
 		// Projections below
-		{Sel: "Prjn", Desc: "std",
+		{Sel: "Path", Desc: "std",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.005",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
-				"Prjn.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
-				"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
-				"Prjn.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
-				"Prjn.Com.PFail":           "0.0",
-				"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)
+				"Path.Learn.LRate.Base":    "0.005",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
+				"Path.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
+				"Path.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
+				"Path.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
+				"Path.Com.PFail":           "0.0",
+				"Path.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)
 			}},
-		{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
+				"Path.PathScale.Rel": "0.1", // 0.1 > 0.2
 			}},
-		{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
+		{Sel: ".CTCtxtPath", Desc: "all CT context paths",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.001", // 0.001 >> 0.002 for full
-				"Prjn.Learn.Trace.Tau":     "4",     // 4 > 2?
-				"Prjn.Learn.Trace.SubMean": "0",     // 0 > 1 -- 1 is especially bad
-				"Prjn.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
+				"Path.Learn.LRate.Base":    "0.001", // 0.001 >> 0.002 for full
+				"Path.Learn.Trace.Tau":     "4",     // 4 > 2?
+				"Path.Learn.Trace.SubMean": "0",     // 0 > 1 -- 1 is especially bad
+				"Path.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
 			}},
 		{Sel: ".CTFromSuper", Desc: "1to1 > full",
 			Params: params.Params{
-				"Prjn.Learn.Learn":    "true", // learning > fixed 1to1
-				"Prjn.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
-				"Prjn.SWts.Init.Var":  "0.25",
+				"Path.Learn.Learn":    "true", // learning > fixed 1to1
+				"Path.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
+				"Path.SWts.Init.Var":  "0.25",
 			}},
 		{Sel: ".FromPulv", Desc: "defaults to .Back but generally weaker is better",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
+				"Path.PathScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 			}},
 		{Sel: ".CTSelfCtxt", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
-				"Prjn.Com.PFail":     "0.0",  // never useful for random gen
-				"Prjn.SWts.Init.Sym": "true", // true > false
+				"Path.PathScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
+				"Path.Com.PFail":     "0.0",  // never useful for random gen
+				"Path.SWts.Init.Sym": "true", // true > false
 			}},
 		{Sel: ".CTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.2", // 0.2 > lower, higher
-				"Prjn.Com.GType":     "MaintG",
-				"Prjn.SWts.Init.Sym": "true", // no effect?  not sure why
+				"Path.PathScale.Abs": "0.2", // 0.2 > lower, higher
+				"Path.Com.GType":     "MaintG",
+				"Path.SWts.Init.Sym": "true", // no effect?  not sure why
 			}},
 		{Sel: "#HiddenCTToInputP", Desc: "differential contributions",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "1.0", // .5 is almost as good as 1, .1 is a bit worse
+				"Path.PathScale.Rel": "1.0", // .5 is almost as good as 1, .1 is a bit worse
 			}},
 	},
 	"Hid2": {
@@ -137,15 +137,15 @@ var ParamSets = netparams.Sets{
 		// 	}},
 		{Sel: "#Hidden2CTToHiddenCT", Desc: "ct top-down",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
+				"Path.PathScale.Rel": "0.1", // 0.1 > 0.2
 			}},
 		{Sel: "#HiddenToHidden2", Desc: "jack up fwd pathway",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2.0", // this mostly serves to get Hidden2 active -- but why is it so low?
+				"Path.PathScale.Abs": "2.0", // this mostly serves to get Hidden2 active -- but why is it so low?
 			}},
 		{Sel: "#Hidden2CTToInputP", Desc: "differential contributions",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0", // 1 is best..
+				"Path.PathScale.Abs": "1.0", // 1 is best..
 			}},
 	},
 	"30Notes": {

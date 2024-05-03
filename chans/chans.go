@@ -12,11 +12,11 @@ package chans
 
 //go:generate core generate -add-types
 
-//gosl: hlsl chans
+//gosl:hlsl chans
 // #include "fastexp.hlsl"
-//gosl: end chans
+//gosl:end chans
 
-//gosl: start chans
+//gosl:start chans
 
 // Chans are ion channels used in computing point-neuron activation function
 type Chans struct {
@@ -54,7 +54,7 @@ func VFromBio(vm float32) float32 {
 	return (vm + 100) / 100
 }
 
-//gosl: end chans
+//gosl:end chans
 
 // SetFromOtherMinus sets all the values from other Chans minus given value
 func (ch *Chans) SetFromOtherMinus(oth Chans, minus float32) {

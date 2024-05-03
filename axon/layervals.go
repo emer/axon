@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl: start layervals
+//gosl:start layervals
 
 // ActAvgValues are long-running-average activation levels stored in the LayerValues,
 // for monitoring and adapting inhibition and possibly scaling parameters.
@@ -114,4 +114,4 @@ func (lv *LayerValues) Init() {
 	lv.Special.Init()
 }
 
-//gosl: end layervals
+//gosl:end layervals

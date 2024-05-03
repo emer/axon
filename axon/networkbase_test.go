@@ -3,7 +3,7 @@ package axon
 import (
 	"testing"
 
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,8 +22,8 @@ func TestDefaults(t *testing.T) {
 	hidden := net.AddLayer("Hidden", shape, SuperLayer)
 	output := net.AddLayer("Output", shape, TargetLayer)
 
-	full := prjn.NewFull()
-	net.ConnectLayers(input, hidden, full, ForwardPrjn)
+	full := paths.NewFull()
+	net.ConnectLayers(input, hidden, full, ForwardPath)
 	net.BidirConnectLayers(hidden, output, full)
 
 	ctx := NewContext()
@@ -66,10 +66,10 @@ func TestConnectLayers(t *testing.T) {
 	input := net.AddLayer("Input", shape, InputLayer)
 	output := net.AddLayer("Output", shape, TargetLayer)
 	assert.Equal(t, 2, net.NLayers())
-	net.ConnectLayers(input, output, prjn.NewFull(), ForwardPrjn)
+	net.ConnectLayers(input, output, paths.NewFull(), ForwardPath)
 
-	assert.Same(t, output, input.SendPrjn(0).RecvLay())
-	assert.Same(t, input, output.RecvPrjn(0).SendLay())
+	assert.Same(t, output, input.SendPath(0).RecvLay())
+	assert.Same(t, input, output.RecvPath(0).SendLay())
 }
 
 func TestDelete(t *testing.T) {

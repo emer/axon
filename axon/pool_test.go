@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // Note: subsequent params applied after Base
@@ -36,13 +36,13 @@ var PoolParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":  "true", // note: pool only doesn't update layer gi -- just for display
 					"Layer.Inhib.Pool.Gi":  ".7",
 				}},
-			{Sel: "Prjn", Desc: "for reproducibility, identical weights",
+			{Sel: "Path", Desc: "for reproducibility, identical weights",
 				Params: params.Params{
-					"Prjn.SWts.Init.Var": "0",
+					"Path.SWts.Init.Var": "0",
 				}},
-			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Path.PathScale.Rel": "0.2",
 				}},
 		},
 	}},
@@ -126,9 +126,9 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
-	testNet.ConnectLayers(inLay, hidLay, prjn.NewPoolOneToOne(), ForwardPrjn)
-	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
-	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
+	testNet.ConnectLayers(inLay, hidLay, paths.NewPoolOneToOne(), ForwardPath)
+	testNet.ConnectLayers(hidLay, outLay, paths.NewOneToOne(), ForwardPath)
+	testNet.ConnectLayers(outLay, hidLay, paths.NewOneToOne(), BackPath)
 
 	testNet.Build(ctx)
 	ctx.NetIndexes.NData = uint32(nData)

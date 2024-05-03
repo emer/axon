@@ -19,60 +19,60 @@ import (
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
 
 // index naming:
-// syi =  prjn-relative synapse index (per existing usage)
+// syi =  path-relative synapse index (per existing usage)
 // syni = network-relative synapse index -- add SynStIndex to syi
 
-// axon.Prjn is a basic Axon projection with synaptic learning parameters
-type Prjn struct {
-	PrjnBase
+// axon.Path is a basic Axon pathway with synaptic learning parameters
+type Path struct {
+	PathBase
 
-	// all prjn-level parameters -- these must remain constant once configured
-	Params *PrjnParams
+	// all path-level parameters -- these must remain constant once configured
+	Params *PathParams
 }
 
 // Object returns the object with parameters to be set by emer.Params
-func (pj *Prjn) Object() any {
+func (pj *Path) Object() any {
 	return pj.Params
 }
 
-// AsAxon returns this prjn as a axon.Prjn -- all derived prjns must redefine
-// this to return the base Prjn type, so that the AxonPrjn interface does not
+// AsAxon returns this path as a axon.Path -- all derived paths must redefine
+// this to return the base Path type, so that the AxonPath interface does not
 // need to include accessors to all the basic stuff.
-func (pj *Prjn) AsAxon() *Prjn {
+func (pj *Path) AsAxon() *Path {
 	return pj
 }
 
-// PrjnType returns axon specific cast of pj.Typ prjn type
-func (pj *Prjn) PrjnType() PrjnTypes {
-	return PrjnTypes(pj.Typ)
+// PathType returns axon specific cast of pj.Typ path type
+func (pj *Path) PathType() PathTypes {
+	return PathTypes(pj.Typ)
 }
 
-func (pj *Prjn) Class() string {
-	return pj.PrjnType().String() + " " + pj.Cls
+func (pj *Path) Class() string {
+	return pj.PathType().String() + " " + pj.Cls
 }
 
-func (pj *Prjn) Defaults() {
+func (pj *Path) Defaults() {
 	if pj.Params == nil {
 		return
 	}
-	pj.Params.PrjnType = pj.PrjnType()
+	pj.Params.PathType = pj.PathType()
 	pj.Params.Defaults()
-	switch pj.PrjnType() {
-	case InhibPrjn:
+	switch pj.PathType() {
+	case InhibPath:
 		pj.Params.SWts.Adapt.On.SetBool(false)
-	case BackPrjn:
-		pj.Params.PrjnScale.Rel = 0.1
-	case RWPrjn, TDPredPrjn:
+	case BackPath:
+		pj.Params.PathScale.Rel = 0.1
+	case RWPath, TDPredPath:
 		pj.Params.RLPredDefaults()
-	case BLAPrjn:
+	case BLAPath:
 		pj.Params.BLADefaults()
-	case HipPrjn:
+	case HipPath:
 		pj.Params.HipDefaults()
-	case VSPatchPrjn:
+	case VSPatchPath:
 		pj.Params.VSPatchDefaults()
-	case VSMatrixPrjn:
+	case VSMatrixPath:
 		pj.Params.MatrixDefaults()
-	case DSMatrixPrjn:
+	case DSMatrixPath:
 		pj.Params.MatrixDefaults()
 	}
 	pj.ApplyDefParams()
@@ -80,11 +80,11 @@ func (pj *Prjn) Defaults() {
 }
 
 // Update is interface that does local update of struct vals
-func (pj *Prjn) Update() {
+func (pj *Path) Update() {
 	if pj.Params == nil {
 		return
 	}
-	if pj.Params.PrjnType == InhibPrjn {
+	if pj.Params.PathType == InhibPath {
 		pj.Params.Com.GType = InhibitoryG
 	}
 	pj.Params.Update()
@@ -92,26 +92,26 @@ func (pj *Prjn) Update() {
 
 // UpdateParams updates all params given any changes
 // that might have been made to individual values
-func (pj *Prjn) UpdateParams() {
+func (pj *Path) UpdateParams() {
 	pj.Update()
 }
 
 // AllParams returns a listing of all parameters in the Layer
-func (pj *Prjn) AllParams() string {
-	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n" + pj.Params.AllParams()
+func (pj *Path) AllParams() string {
+	str := "///////////////////////////////////////////////////\nPath: " + pj.Name() + "\n" + pj.Params.AllParams()
 	return str
 }
 
 // SetParam sets parameter at given path to given value.
 // returns error if path not found or value cannot be set.
-func (pj *Prjn) SetParam(path, val string) error {
+func (pj *Path) SetParam(path, val string) error {
 	return params.SetParam(pj.Params, path, val)
 }
 
 // SetSynVal sets value of given variable name on the synapse
 // between given send, recv unit indexes (1D, flat indexes)
 // returns error for access errors.
-func (pj *Prjn) SetSynValue(varNm string, sidx, ridx int, val float32) error {
+func (pj *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 	vidx, err := pj.SynVarIndex(varNm)
 	if err != nil {
 		return err
@@ -142,10 +142,10 @@ func (pj *Prjn) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 ///////////////////////////////////////////////////////////////////////
 //  Weights File
 
-// WriteWtsJSON writes the weights from this projection from the receiver-side perspective
+// WriteWtsJSON writes the weights from this pathway from the receiver-side perspective
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
-func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
+func (pj *Path) WriteWtsJSON(w io.Writer, depth int) {
 	ctx := &pj.Recv.Network.Ctx
 	slay := pj.Send
 	rlay := pj.Recv
@@ -221,20 +221,20 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte("}")) // note: leave unterminated as outer loop needs to add , or just \n depending
 }
 
-// ReadWtsJSON reads the weights from this projection from the receiver-side perspective
-// in a JSON text format.  This is for a set of weights that were saved *for one prjn only*
+// ReadWtsJSON reads the weights from this pathway from the receiver-side perspective
+// in a JSON text format.  This is for a set of weights that were saved *for one path only*
 // and is not used for the network-level ReadWtsJSON, which reads into a separate
 // structure -- see SetWts method.
-func (pj *Prjn) ReadWtsJSON(r io.Reader) error {
-	pw, err := weights.PrjnReadJSON(r)
+func (pj *Path) ReadWtsJSON(r io.Reader) error {
+	pw, err := weights.PathReadJSON(r)
 	if err != nil {
 		return err // note: already logged
 	}
 	return pj.SetWts(pw)
 }
 
-// SetWts sets the weights for this projection from weights.Prjn decoded values
-func (pj *Prjn) SetWts(pw *weights.Prjn) error {
+// SetWts sets the weights for this pathway from weights.Path decoded values
+func (pj *Path) SetWts(pw *weights.Path) error {
 	var err error
 	for i := range pw.Rs {
 		pr := &pw.Rs[i]
@@ -260,7 +260,7 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 
 // SetSWtsRPool initializes SWt structural weight values using given tensor
 // of values which has unique values for each recv neuron within a given pool.
-func (pj *Prjn) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
+func (pj *Path) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
 	rNuY := swts.DimSize(0)
 	rNuX := swts.DimSize(1)
 	rNu := rNuY * rNuX
@@ -307,7 +307,7 @@ func (pj *Prjn) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
 // SetWtsFunc initializes synaptic Wt value using given function
 // based on receiving and sending unit indexes.
 // Strongly suggest calling SWtRescale after.
-func (pj *Prjn) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *tensor.Shape) float32) {
+func (pj *Path) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *tensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
 	ssh := pj.Send.Shape()
@@ -327,7 +327,7 @@ func (pj *Prjn) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *tens
 
 // SetSWtsFunc initializes structural SWt values using given function
 // based on receiving and sending unit indexes.
-func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *tensor.Shape) float32) {
+func (pj *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *tensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
 	ssh := pj.Send.Shape()
@@ -349,18 +349,18 @@ func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *te
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
+func (pj *Path) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
 	pj.Params.SWts.InitWtsSyn(ctx, syni, rnd, mean, spct)
 }
 
 // InitSynCa initializes synaptic calcium variables
-func (pj *Prjn) InitSynCa(ctx *Context, syni, di uint32) {
+func (pj *Path) InitSynCa(ctx *Context, syni, di uint32) {
 	InitSynCa(ctx, syni, di)
 }
 
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
-func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
+func (pj *Path) InitWts(ctx *Context, nt *Network) {
 	pj.Params.Learn.LRate.Init()
 	pj.InitGBuffs()
 	rlay := pj.Recv
@@ -392,7 +392,7 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 
 // SWtRescale rescales the SWt values to preserve the target overall mean value,
 // using subtractive normalization.
-func (pj *Prjn) SWtRescale(ctx *Context) {
+func (pj *Path) SWtRescale(ctx *Context) {
 	rlay := pj.Recv
 	smn := pj.Params.SWts.Init.Mean
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
@@ -454,17 +454,17 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 
 // sender based version:
 //                     only looked at recv layers > send layers -- ri is "above" si
-//  for:      ri    <- this is now sender on recip prjn: recipSi
+//  for:      ri    <- this is now sender on recip path: recipSi
 //           ^ \    <- look for send back to original si, now as a receiver
 //          /   v
 // start: si == recipRi <- look in sy.RecvIndex of recipSi's sending cons for recipRi == si
 //
 
 // InitWtSym initializes weight symmetry.
-// Is given the reciprocal projection where
+// Is given the reciprocal pathway where
 // the Send and Recv layers are reversed
-// (see LayerBase RecipToRecvPrjn)
-func (pj *Prjn) InitWtSym(ctx *Context, rpj *Prjn) {
+// (see LayerBase RecipToRecvPath)
+func (pj *Path) InitWtSym(ctx *Context, rpj *Path) {
 	if len(rpj.SendCon) == 0 {
 		return
 	}
@@ -483,7 +483,7 @@ func (pj *Prjn) InitWtSym(ctx *Context, rpj *Prjn) {
 			lastSyni := rpj.SynStIndex + recipc.Start + recipc.N - 1
 			firstRi := rpj.Params.SynRecvLayIndex(ctx, firstSyni)
 			lastRi := rpj.Params.SynRecvLayIndex(ctx, lastSyni)
-			if lni < firstRi || lni > lastRi { // fast reject -- prjns are always in order!
+			if lni < firstRi || lni > lastRi { // fast reject -- paths are always in order!
 				continue
 			}
 			// start at index proportional to ri relative to rist
@@ -531,11 +531,11 @@ func (pj *Prjn) InitWtSym(ctx *Context, rpj *Prjn) {
 	}
 }
 
-// InitGBuffs initializes the per-projection synaptic conductance buffers.
+// InitGBuffs initializes the per-pathway synaptic conductance buffers.
 // This is not typically needed (called during InitWts, InitActs)
 // but can be called when needed.  Must be called to completely initialize
 // prior activity, e.g., full Glong clearing.
-func (pj *Prjn) InitGBuffs() {
+func (pj *Path) InitGBuffs() {
 	for ri := range pj.GBuf {
 		pj.GBuf[ri] = 0
 	}

@@ -4,13 +4,13 @@
 
 package axon
 
-//gosl: start rl_prjns
+//gosl:start rl_paths
 
-// RLPredPrjnParams does dopamine-modulated learning for reward prediction: Da * Send.Act
-// Used by RWPrjn and TDPredPrjn within corresponding RWPredLayer or TDPredLayer
+// RLPredPathParams does dopamine-modulated learning for reward prediction: Da * Send.Act
+// Used by RWPath and TDPredPath within corresponding RWPredLayer or TDPredLayer
 // to generate reward predictions based on its incoming weights, using linear activation
 // function. Has no weight bounds or limits on sign etc.
-type RLPredPrjnParams struct {
+type RLPredPathParams struct {
 
 	// how much to learn on opposite DA sign coding neuron (0..1)
 	OppSignLRate float32
@@ -21,16 +21,16 @@ type RLPredPrjnParams struct {
 	pad, pad1 float32
 }
 
-func (pj *RLPredPrjnParams) Defaults() {
+func (pj *RLPredPathParams) Defaults() {
 	pj.OppSignLRate = 1.0
 }
 
-func (pj *RLPredPrjnParams) Update() {
+func (pj *RLPredPathParams) Update() {
 }
 
-//gosl: end rl_prjns
+//gosl:end rl_paths
 
-func (pj *PrjnParams) RLPredDefaults() {
+func (pj *PathParams) RLPredDefaults() {
 	pj.SWts.Adapt.SigGain = 1
 	pj.SWts.Init.Mean = 0
 	pj.SWts.Init.Var = 0

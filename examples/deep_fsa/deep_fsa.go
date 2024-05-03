@@ -31,7 +31,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 )
 
@@ -56,7 +56,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -164,9 +164,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	full := prjn.NewFull()
+	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
-	// one2one := prjn.NewOneToOne()
+	// one2one := paths.NewOneToOne()
 	// _ = one2one
 
 	in, inp := net.AddInputPulv4D("Input", 1, 7, ss.Config.Env.UnitsPer, 1, 2)
@@ -182,7 +182,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// also 12,12 not better than 10,10
 	net.ConnectCTSelf(hidct, full, "")
 
-	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
+	net.ConnectLayers(in, hid, full, axon.ForwardPath)
 	net.ConnectToPulv(hid, hidct, inp, full, full, "") // inp -> hid and inp -> hidct is *essential*
 	// net.ConnectLayers(inp, hid, full, emer.Back).AddClass("FromPvlv")
 	// net.ConnectLayers(hidct, hid, full, emer.Back)

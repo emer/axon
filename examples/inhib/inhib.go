@@ -34,7 +34,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 )
 
@@ -61,7 +61,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -175,22 +175,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		net.AddLayer2D(InhNm(hi), sz.Y, 2, axon.SuperLayer).AddClass("InhibLay")
 	}
 
-	full := prjn.NewFull()
-	rndcut := prjn.NewUnifRnd()
+	full := paths.NewFull()
+	rndcut := paths.NewUnifRnd()
 	rndcut.PCon = 0.1
 
 	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
 		ll := LayByNm(net, hi-1)
 		tl := LayByNm(net, hi)
 		il := InhByNm(net, hi)
-		net.ConnectLayers(ll, tl, full, axon.ForwardPrjn).AddClass("Excite")
-		net.ConnectLayers(ll, il, full, axon.ForwardPrjn).AddClass("ToInhib")
-		net.ConnectLayers(tl, il, full, axon.BackPrjn).AddClass("ToInhib")
-		net.ConnectLayers(il, tl, full, axon.InhibPrjn)
-		net.ConnectLayers(il, il, full, axon.InhibPrjn)
+		net.ConnectLayers(ll, tl, full, axon.ForwardPath).AddClass("Excite")
+		net.ConnectLayers(ll, il, full, axon.ForwardPath).AddClass("ToInhib")
+		net.ConnectLayers(tl, il, full, axon.BackPath).AddClass("ToInhib")
+		net.ConnectLayers(il, tl, full, axon.InhibPath)
+		net.ConnectLayers(il, il, full, axon.InhibPath)
 
 		// if hi > 1 {
-		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPrjn).AddClass("RndSc")
+		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPath).AddClass("RndSc")
 		// }
 
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
@@ -198,9 +198,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		if hi < ss.Config.Params.NLayers {
 			nl := LayByNm(net, hi+1)
-			net.ConnectLayers(nl, il, full, axon.ForwardPrjn).AddClass("ToInhib")
-			net.ConnectLayers(tl, nl, full, axon.ForwardPrjn).AddClass("Excite")
-			net.ConnectLayers(nl, tl, full, axon.BackPrjn).AddClass("Excite")
+			net.ConnectLayers(nl, il, full, axon.ForwardPath).AddClass("ToInhib")
+			net.ConnectLayers(tl, nl, full, axon.ForwardPath).AddClass("Excite")
+			net.ConnectLayers(nl, tl, full, axon.BackPath).AddClass("Excite")
 		}
 	}
 	net.Build(ctx)

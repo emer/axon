@@ -6,24 +6,24 @@ package axon
 
 import (
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
-// BLANovelPrjn connects all other pools to the first, Novelty, pool in a BLA layer.
+// BLANovelPath connects all other pools to the first, Novelty, pool in a BLA layer.
 // This allows the known US representations to specifically inhibit the novelty pool.
-type BLANovelPrjn struct {
+type BLANovelPath struct {
 }
 
-func NewBLANovelPrjn() *BLANovelPrjn {
-	return &BLANovelPrjn{}
+func NewBLANovelPath() *BLANovelPath {
+	return &BLANovelPath{}
 }
 
-func (ot *BLANovelPrjn) Name() string {
-	return "BLANovelPrjn"
+func (ot *BLANovelPath) Name() string {
+	return "BLANovelPath"
 }
 
-func (ot *BLANovelPrjn) Connect(send, recv *tensor.Shape, same bool) (sendn, recvn *tensor.Int32, cons *tensor.Bits) {
-	sendn, recvn, cons = prjn.NewTensors(send, recv)
+func (ot *BLANovelPath) Connect(send, recv *tensor.Shape, same bool) (sendn, recvn *tensor.Int32, cons *tensor.Bits) {
+	sendn, recvn, cons = paths.NewTensors(send, recv)
 	sNtot := send.Len()
 	// rNtot := recv.Len()
 	sNp := send.DimSize(0) * send.DimSize(1)

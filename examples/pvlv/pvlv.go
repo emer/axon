@@ -41,7 +41,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -67,7 +67,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -187,10 +187,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	popX := 4
 	space := float32(2)
 
-	pone2one := prjn.NewPoolOneToOne()
-	one2one := prjn.NewOneToOne()
+	pone2one := paths.NewPoolOneToOne()
+	one2one := paths.NewOneToOne()
 	_ = one2one
-	full := prjn.NewFull()
+	full := paths.NewFull()
 	_ = pone2one
 
 	stim := ev.CurStates["CS"]
@@ -220,8 +220,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectCSToBLApos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
-	net.ConnectLayers(cs, vSpatchD1, full, axon.ForwardPrjn) // these are critical for discriminating A vs. B
-	net.ConnectLayers(cs, vSpatchD2, full, axon.ForwardPrjn)
+	net.ConnectLayers(cs, vSpatchD1, full, axon.ForwardPath) // these are critical for discriminating A vs. B
+	net.ConnectLayers(cs, vSpatchD2, full, axon.ForwardPath)
 
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction

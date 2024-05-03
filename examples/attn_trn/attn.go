@@ -26,7 +26,7 @@ import (
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/plot/plotview"
@@ -72,12 +72,12 @@ const (
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "no learning",
+			{Sel: "Path", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":    "false",
-					"Prjn.SWts.Init.Mean": "0.8",
-					"Prjn.SWts.Init.Var":  "0",
-					"Prjn.SWts.Init.Sym":  "false", // for lesions, just in case
+					"Path.Learn.Learn":    "false",
+					"Path.SWts.Init.Mean": "0.8",
+					"Path.SWts.Init.Var":  "0",
+					"Path.SWts.Init.Sym":  "false", // for lesions, just in case
 				}},
 			{Sel: "Layer", Desc: "pool etc",
 				Params: params.Params{
@@ -159,37 +159,37 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": ".03",
 					"Layer.Acts.Dt.GTau":         "3",
 				}},
-			{Sel: ".BackPrjn", Desc: "weaker output",
+			{Sel: ".BackPath", Desc: "weaker output",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
+					"Path.PathScale.Rel": "0.1",
 				}},
 			{Sel: "#V2ToV2CTA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // 0.8
+					"Path.PathScale.Rel": "0.2", // 0.8
 				}},
 			{Sel: "#LIPToV2CTA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.5", // 0.5
+					"Path.PathScale.Rel": "0.5", // 0.5
 				}},
 			{Sel: ".Inhib", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
+					"Path.PathScale.Abs": "1",
 				}},
 			{Sel: "#LIPToV2TA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.3", // 0.3
+					"Path.PathScale.Rel": "0.3", // 0.3
 				}},
 			{Sel: "#LIPToV2", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.0",
+					"Path.PathScale.Rel": "0.0",
 				}},
 			{Sel: "#V2CTAToV2CTA", Desc: "lateral within V2CTA",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.0", // 0.4
+					"Path.PathScale.Rel": "0.0", // 0.4
 				}},
 			{Sel: "#V1ToV2", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.2",
+					"Path.PathScale.Abs": "1.2",
 				}},
 		},
 	}},
@@ -219,14 +219,14 @@ type Sim struct {
 	// sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time
 	KNaAdapt bool `default:"true"`
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	//
-	Prjn3x3Skp1 *prjn.PoolTile `view:"Standard same-to-same size topographic projection"`
+	Path3x3Skp1 *paths.PoolTile `view:"Standard same-to-same size topographic pathway"`
 
 	//
-	Prjn5x5Skp1 *prjn.PoolTile `view:"Standard same-to-same size topographic projection"`
+	Path5x5Skp1 *paths.PoolTile `view:"Standard same-to-same size topographic pathway"`
 
 	// select which type of test (input patterns) to use
 	Test TestType
@@ -311,21 +311,21 @@ func (ss *Sim) New() {
 	ss.ViewUpdate = axon.AlphaCycle // axon.Cycle // axon.FastSpike
 	ss.TstRecLays = []string{"V2"}
 
-	ss.Prjn3x3Skp1 = prjn.NewPoolTile()
-	ss.Prjn3x3Skp1.Size.Set(3, 3)
-	ss.Prjn3x3Skp1.Skip.Set(1, 1)
-	ss.Prjn3x3Skp1.Start.Set(-1, -1)
-	ss.Prjn3x3Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
-	ss.Prjn3x3Skp1.GaussInPool.On = false
-	ss.Prjn3x3Skp1.GaussFull.CtrMove = 0
+	ss.Path3x3Skp1 = paths.NewPoolTile()
+	ss.Path3x3Skp1.Size.Set(3, 3)
+	ss.Path3x3Skp1.Skip.Set(1, 1)
+	ss.Path3x3Skp1.Start.Set(-1, -1)
+	ss.Path3x3Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
+	ss.Path3x3Skp1.GaussInPool.On = false
+	ss.Path3x3Skp1.GaussFull.CtrMove = 0
 
-	ss.Prjn5x5Skp1 = prjn.NewPoolTile()
-	ss.Prjn5x5Skp1.Size.Set(5, 5)
-	ss.Prjn5x5Skp1.Skip.Set(1, 1)
-	ss.Prjn5x5Skp1.Start.Set(-2, -2)
-	ss.Prjn5x5Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
-	ss.Prjn5x5Skp1.GaussInPool.On = false
-	ss.Prjn5x5Skp1.GaussFull.CtrMove = 0
+	ss.Path5x5Skp1 = paths.NewPoolTile()
+	ss.Path5x5Skp1.Size.Set(5, 5)
+	ss.Path5x5Skp1.Skip.Set(1, 1)
+	ss.Path5x5Skp1.Start.Set(-2, -2)
+	ss.Path5x5Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
+	ss.Path5x5Skp1.GaussInPool.On = false
+	ss.Path5x5Skp1.GaussFull.CtrMove = 0
 
 	ss.Defaults()
 }
@@ -388,9 +388,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	v2cta.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "V2TA", XAlign: relpos.Left, Space: 2})
 	lip.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "V2", YAlign: relpos.Front, XAlign: relpos.Left})
 
-	one2one := prjn.NewOneToOne()
-	pone2one := prjn.NewPoolOneToOne()
-	circle := prjn.NewCircle()
+	one2one := paths.NewOneToOne()
+	pone2one := paths.NewPoolOneToOne()
+	circle := paths.NewCircle()
 	circle.Radius = 6
 	circle.TopoWts = true
 	circle.Sigma = 1
@@ -398,14 +398,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(v2ct, v2p, one2one, emer.Forward)
 
 	net.ConnectLayers(v1, v2, one2one, emer.Forward)
-	net.ConnectLayers(v2, v2ta, ss.Prjn5x5Skp1, emer.Forward) // or v2cta
-	// net.ConnectLayers(v2, v2, ss.Prjn5x5Skp1, emer.Inhib)
+	net.ConnectLayers(v2, v2ta, ss.Path5x5Skp1, emer.Forward) // or v2cta
+	// net.ConnectLayers(v2, v2, ss.Path5x5Skp1, emer.Inhib)
 	// net.ConnectLayers(v2ta, v2ta, circle, emer.Inhib)
 	// net.ConnectLayers(v2cta, v2cta, circle, emer.Lateral)
-	// net.ConnectLayers(v2cta, v2ta, ss.Prjn5x5Skp1, emer.Forward)
+	// net.ConnectLayers(v2cta, v2ta, ss.Path5x5Skp1, emer.Forward)
 	net.ConnectLayers(lip, v2, pone2one, emer.Back)
-	net.ConnectLayers(lip, v2cta, pone2one, emer.Back) // ss.Prjn5x5Skp1
-	net.ConnectLayers(lip, v2ta, pone2one, emer.Back)  // ss.Prjn5x5Skp1 was ponetoone
+	net.ConnectLayers(lip, v2cta, pone2one, emer.Back) // ss.Path5x5Skp1
+	net.ConnectLayers(lip, v2ta, pone2one, emer.Back)  // ss.Path5x5Skp1 was ponetoone
 
 	err := net.Build()
 	if err != nil {
@@ -746,9 +746,9 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	}
 
 	// spo := ss.Params.SetByName("Base").SheetByName("Network").SelByName(".SpatToObj")
-	// spo.Params.SetParamByName("Prjn.PrjnScale.Rel", fmt.Sprintf("%g", ss.SpatToObj))
+	// spo.Params.SetParamByName("Path.PathScale.Rel", fmt.Sprintf("%g", ss.SpatToObj))
 	// vsp := ss.Params.SetByName("Base").SheetByName("Network").SelByName("#V1ToSpat1")
-	// vsp.Params.SetParamByName("Prjn.PrjnScale.Rel", fmt.Sprintf("%g", ss.V1ToSpat1))
+	// vsp.Params.SetParamByName("Path.PathScale.Rel", fmt.Sprintf("%g", ss.V1ToSpat1))
 
 	err := ss.SetParamsSet("Base", sheet, setMsg)
 

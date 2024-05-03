@@ -17,7 +17,7 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // ParamSets for basic parameters
@@ -53,25 +53,25 @@ var ParamSets = params.Sets{
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
 					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				}},
-			{Sel: "Prjn", Desc: "basic prjn params",
+			{Sel: "Path", Desc: "basic path params",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base":         "0.1",         // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWts.Adapt.LRate":         "0.08",        // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWts.Init.SPct":           "0.5",         // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.SWts.Init.Var":            "0",           // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":    "12",          // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":     "40",          // just to match SynSpk..
-					"Prjn.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",
-					"Prjn.Learn.KinaseCa.MTau":      "5",           // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":      "40",
-					"Prjn.Learn.KinaseCa.DTau":      "40",
-					"Prjn.Learn.KinaseDWt.TWindow":  "10",
-					"Prjn.Learn.KinaseDWt.DMaxPct":  "0.5",
-					"Prjn.Learn.KinaseDWt.TrlDecay": "0.0",
-					"Prjn.Learn.KinaseDWt.DScale":   "1",
-					"Prjn.Learn.XCal.On":            "false",
-					"Prjn.Learn.XCal.PThrMin":       "0.05", // 0.05 best for objrec, higher worse
-					"Prjn.Learn.XCal.LrnThr":        "0.01", // 0.05 best for objrec, higher worse
+					"Path.Learn.LRate.Base":         "0.1",         // 0.1 for SynSpkCa even though dwt equated
+					"Path.SWts.Adapt.LRate":         "0.08",        // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Path.SWts.Init.SPct":           "0.5",         // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Path.SWts.Init.Var":            "0",           // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Path.Learn.KinaseCa.SpikeG":    "12",          // keep at 12 standard, adjust other things
+					"Path.Learn.KinaseCa.NMDAG":     "40",          // just to match SynSpk..
+					"Path.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",
+					"Path.Learn.KinaseCa.MTau":      "5",           // 5 > 10 test more
+					"Path.Learn.KinaseCa.PTau":      "40",
+					"Path.Learn.KinaseCa.DTau":      "40",
+					"Path.Learn.KinaseDWt.TWindow":  "10",
+					"Path.Learn.KinaseDWt.DMaxPct":  "0.5",
+					"Path.Learn.KinaseDWt.TrlDecay": "0.0",
+					"Path.Learn.KinaseDWt.DScale":   "1",
+					"Path.Learn.XCal.On":            "false",
+					"Path.Learn.XCal.PThrMin":       "0.05", // 0.05 best for objrec, higher worse
+					"Path.Learn.XCal.LrnThr":        "0.01", // 0.05 best for objrec, higher worse
 				}},
 		},
 	}},
@@ -148,14 +148,14 @@ func RGeStimForHz(hz float32) float32 {
 // Sim
 
 func (ss *Sim) InitSyn(sy *axon.Synapse) {
-	ss.Prjn.InitWtsSyn(sy, 0.5, 1)
+	ss.Path.InitWtsSyn(sy, 0.5, 1)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
 	sly := net.AddLayer2D("Send", 1, 1, axon.SuperLayer).(*axon.Layer)
 	rly := net.AddLayer2D("Recv", 1, 1, axon.SuperLayer).(*axon.Layer)
-	pj := net.ConnectLayers(sly, rly, prjn.NewFull(), emer.Forward)
+	pj := net.ConnectLayers(sly, rly, paths.NewFull(), emer.Forward)
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
@@ -164,7 +164,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	ss.SendNeur = &sly.Neurons[0]
 	ss.RecvNeur = &rly.Neurons[0]
-	ss.Prjn = pj.(*axon.Prjn)
+	ss.Path = pj.(*axon.Path)
 }
 
 // NeuronUpdate updates the neuron with whether send or recv spiked
@@ -240,7 +240,7 @@ func (ss *Sim) NeuronUpdate(sSpk, rSpk bool, ge, gi float32) {
 // SynUpdate updates the synapses based on current neuron state
 func (ss *Sim) SynUpdate() {
 	// ly := ss.Net.LayByName("Recv")
-	pj := ss.Prjn
+	pj := ss.Path
 	kp := &pj.Params.Learn.KinaseCa
 	twin := pj.Params.Learn.KinaseDWt.TWindow
 	ctime := int32(ss.Context.CycleTot)

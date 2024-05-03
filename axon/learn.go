@@ -7,21 +7,21 @@ package axon
 import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/gosl/v2/slbool"
 )
 
 ///////////////////////////////////////////////////////////////////////
 //  learn.go contains the learning params and functions for axon
 
-//gosl: hlsl learn_neur
+//gosl:hlsl learn_neur
 // #include "kinase.hlsl"
 // #include "neuromod.hlsl"
-//gosl: end learn_neur
+//gosl:end learn_neur
 
-//gosl: start learn_neur
+//gosl:start learn_neur
 
 // CaLrnParams parameterizes the neuron-level calcium signals driving learning:
 // CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or
@@ -104,10 +104,10 @@ func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
 // and RLRate as a proxy for the activation (spiking) based learning signal.
 type CaSpkParams struct {
 
-	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdateThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
+	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdateThr.  Path.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
 	SpikeG float32 `default:"8,12"`
 
-	// time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PrjnParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)
+	// time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PathParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)
 	SynTau float32 `default:"30" min:"1"`
 
 	// rate = 1 / tau
@@ -115,7 +115,7 @@ type CaSpkParams struct {
 
 	pad int32
 
-	// time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor.
+	// time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Path level for synaptic integration, except for the M factor.
 	Dt kinase.CaDtParams `view:"inline"`
 }
 
@@ -392,19 +392,19 @@ func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	ln.CaLearn.CaLrns(ctx, ni, di)
 }
 
-//gosl: end learn_neur
+//gosl:end learn_neur
 
 ///////////////////////////////////////////////////////////////////////
-// Prjn level learning params
+// Path level learning params
 
-//gosl: hlsl learn
+//gosl:hlsl learn
 // #include "minmax.hlsl"
 // #include "kinase.hlsl"
 // #include "synapse.hlsl"
 // #include "neuron.hlsl"
-//gosl: end learn
+//gosl:end learn
 
-//gosl: start learn
+//gosl:start learn
 
 ///////////////////////////////////////////////////////////////////////
 //  SWtParams
@@ -461,13 +461,13 @@ type SWtInitParams struct {
 	// how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values.  1 gives the strongest initial biasing effect, for larger models that need more structural support. 0.5 should work for most models where stronger constraints are not needed.
 	SPct float32 `min:"0" max:"1" default:"0,1,0.5"`
 
-	// target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value.  some projections may benefit from lower mean of .4
+	// target mean weight values across receiving neuron's pathway -- the mean SWt values are constrained to remain at this value.  some pathways may benefit from lower mean of .4
 	Mean float32 `default:"0.5,0.4"`
 
 	// initial variance in weight values, prior to constraints.
 	Var float32 `default:"0.25"`
 
-	// symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections
+	// symmetrize the initial weight values with those in reciprocal pathway -- typically true for bidirectional excitatory connections
 	Sym slbool.Bool `default:"true"`
 }
 
@@ -517,7 +517,7 @@ func (sp *SWtAdaptParams) ShouldShow(field string) bool {
 	}
 }
 
-//gosl: end learn
+//gosl:end learn
 
 // RndVar returns the random variance in weight value (zero mean) based on Var param
 func (sp *SWtInitParams) RndVar(rnd erand.Rand) float32 {
@@ -529,7 +529,7 @@ func (sp *SWtInitParams) RndVar(rnd erand.Rand) float32 {
 // 	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
 // }
 
-//gosl: start learn
+//gosl:start learn
 
 // SWtParams manages structural, slowly adapting weight values (SWt),
 // in terms of initialization and updating over course of learning.
@@ -658,7 +658,7 @@ func DecaySynCa(ctx *Context, syni, di uint32, decay float32) {
 	AddSynCaV(ctx, syni, di, CaD, -decay*SynCaV(ctx, syni, di, CaD))
 }
 
-//gosl: end learn
+//gosl:end learn
 
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
@@ -668,7 +668,7 @@ func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean,
 	wt := mean + wtv
 	SetSynV(ctx, syni, Wt, wt)
 	SetSynV(ctx, syni, SWt, sp.ClipSWt(mean+spct*wtv))
-	if spct == 0 { // this is critical for weak init wt, SPCt = 0 prjns
+	if spct == 0 { // this is critical for weak init wt, SPCt = 0 paths
 		SetSynV(ctx, syni, SWt, 0.5)
 	}
 	SetSynV(ctx, syni, LWt, sp.LWtFromWts(wt, SynV(ctx, syni, SWt)))
@@ -676,12 +676,12 @@ func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean,
 	SetSynV(ctx, syni, DSWt, 0)
 }
 
-//gosl: start learn
+//gosl:start learn
 
 // LRateParams manages learning rate parameters
 type LRateParams struct {
 
-	// base learning rate for this projection -- can be modulated by other factors below -- for larger networks, use slower rates such as 0.04, smaller networks can use faster 0.2.
+	// base learning rate for this pathway -- can be modulated by other factors below -- for larger networks, use slower rates such as 0.04, smaller networks can use faster 0.2.
 	Base float32 `default:"0.04,0.1,0.2"`
 
 	// scheduled learning rate multiplier, simulating reduction in plasticity over aging
@@ -722,7 +722,7 @@ type TraceParams struct {
 	// time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace
 	Tau float32 `default:"1,2,4"`
 
-	// amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always
+	// amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning pathways, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special path types (e.g., Hebb) benefit from SubMean = 1 always
 	SubMean float32 `default:"0,1"`
 
 	// threshold for learning, depending on different algorithms -- in Matrix and VSPatch it applies to normalized GeIntNorm value -- setting this relatively high encourages sparser representations
@@ -800,7 +800,7 @@ func (lr *LRateMod) Mod(fact float32) float32 {
 	return mod
 }
 
-//gosl: end learn
+//gosl:end learn
 
 // LRateMod calls LRateMod on given network, using computed Mod factor
 // based on given normalized modulation factor
@@ -818,7 +818,7 @@ func (lr *LRateMod) LRateMod(net *Network, fact float32) float32 {
 	return mod
 }
 
-//gosl: start learn
+//gosl:start learn
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  HebbParams
@@ -863,7 +863,7 @@ func (hp *HebbParams) ShouldShow(field string) bool {
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
 
-	// enable learning for this projection
+	// enable learning for this pathway
 	Learn slbool.Bool
 
 	pad, pad1, pad2 int32
@@ -921,4 +921,4 @@ func (ls *LearnSynParams) DeltaDWt(plus, minus float32) float32 {
 	return plus - minus
 }
 
-//gosl: end learn
+//gosl:end learn

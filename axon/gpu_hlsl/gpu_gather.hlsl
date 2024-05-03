@@ -6,44 +6,44 @@
 
 // note: all must be visible always because accessor methods refer to them
 [[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
-[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPaths][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
 
-[[vk::binding(2, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
-[[vk::binding(0, 4)]] RWStructuredBuffer<float> SynapseCas0;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(1, 4)]] RWStructuredBuffer<float> SynapseCas1;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(2, 4)]] RWStructuredBuffer<float> SynapseCas2;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(3, 4)]] RWStructuredBuffer<float> SynapseCas3;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(2, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPaths][SendNeurons][Syns]
+[[vk::binding(0, 4)]] RWStructuredBuffer<float> SynapseCas0;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(1, 4)]] RWStructuredBuffer<float> SynapseCas1;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(2, 4)]] RWStructuredBuffer<float> SynapseCas2;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(3, 4)]] RWStructuredBuffer<float> SynapseCas3;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPaths][SendNeurons][Syns][Data]
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
-#include "prjnparams.hlsl"
+#include "pathparams.hlsl"
 
 // note: binding is var, set
 
-// Set 0: uniform layer params -- could not have prjns also be uniform..
+// Set 0: uniform layer params -- could not have paths also be uniform..
 [[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
-[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+[[vk::binding(1, 0)]] StructuredBuffer<PathParams> Paths; // [Layer][SendPaths]
 
-// Set 1: effectively uniform indexes and prjn params as structured buffers in storage
-// [[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIndexes; // [Layer][RecvPrjns][RecvNeurons]
+// Set 1: effectively uniform indexes and path params as structured buffers in storage
+// [[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPaths][SendNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPathIndexes; // [Layer][RecvPaths][RecvNeurons]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
 // [[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
 
-[[vk::binding(0, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1][Data]
-[[vk::binding(1, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons][Data]
+[[vk::binding(0, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPaths][RecvNeurons][MaxDel+1][Data]
+[[vk::binding(1, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPaths][RecvNeurons][Data]
 
-void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, uint di, uint lni) {
+void GatherSpikesPath(in Context ctx, in PathParams pj, in LayerParams ly, uint ni, uint di, uint lni) {
 	uint bi = pj.Indexes.GBufSt + pj.Com.ReadIndex(lni, di, ctx.CyclesTotal, pj.Indexes.RecvNeurN, ly.Indexes.MaxData);
 	float gRaw = pj.Com.FloatFromGBuf(GBuf[bi]);
 	GBuf[bi] = 0;
@@ -81,7 +81,7 @@ void GatherSpikes2(in Context ctx, LayerParams ly, uint ni, uint di) {
 	ly.GatherSpikesInit(ctx, ni, di);
 	
 	for (uint pi = 0; pi < ly.Indexes.RecvN; pi++) {
-		GatherSpikesPrjn(ctx, Prjns[RecvPrjnIndexes[ly.Indexes.RecvSt + pi]], ly, ni, di, lni);
+		GatherSpikesPath(ctx, Paths[RecvPathIndexes[ly.Indexes.RecvSt + pi]], ly, ni, di, lni);
 	}
 	
 	NeuronAvgMax(ctx, ly, ni, di);

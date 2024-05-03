@@ -6,10 +6,10 @@ package kinase
 
 import (
 	"cogentcore.org/core/math32"
-	"github.com/emer/gosl/v2/slbool"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
-//gosl: start kinase
+//gosl:start kinase
 
 // CaDtParams has rate constants for integrating Ca calcium
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
@@ -197,4 +197,4 @@ func (kp *CaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 	return
 }
 
-//gosl: end kinase
+//gosl:end kinase

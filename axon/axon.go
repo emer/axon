@@ -56,23 +56,23 @@ type AxonLayer interface {
 	PostBuild()
 }
 
-// AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
-// These are the methods that the axon.Layer calls on its prjns at each step
-// of processing.  Other Prjn types can selectively re-implement (override) these methods
+// AxonPath defines the essential algorithmic API for Axon, at the pathway level.
+// These are the methods that the axon.Layer calls on its paths at each step
+// of processing.  Other Path types can selectively re-implement (override) these methods
 // to modify the computation, while inheriting the basic behavior for non-overridden methods.
 //
-// All of the structural API is in emer.Prjn, which this interface also inherits for
+// All of the structural API is in emer.Path, which this interface also inherits for
 // convenience.
-type AxonPrjn interface {
-	emer.Prjn
+type AxonPath interface {
+	emer.Path
 
-	// AsAxon returns this prjn as a axon.Prjn -- so that the AxonPrjn
+	// AsAxon returns this path as a axon.Path -- so that the AxonPath
 	// interface does not need to include accessors to all the basic stuff.
-	AsAxon() *Prjn
+	AsAxon() *Path
 }
 
-type AxonPrjns []*Prjn
+type AxonPaths []*Path
 
-func (ap *AxonPrjns) Add(pj *Prjn) {
+func (ap *AxonPaths) Add(pj *Path) {
 	*ap = append(*ap, pj)
 }

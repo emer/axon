@@ -15,9 +15,9 @@ package fsfffb
 
 //go:generate core generate -add-types
 
-import "github.com/emer/gosl/v2/slbool"
+import "cogentcore.org/core/vgpu/gosl/slbool"
 
-//gosl: start fsfffb
+//gosl:start fsfffb
 
 // GiParams parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)
 // based on incoming spikes (FF) and outgoing spikes (FB)
@@ -152,4 +152,4 @@ func (fb *GiParams) Inhib(inh *Inhib, gimult float32) {
 	inh.SaveOrig()
 }
 
-//gosl: end fsfffb
+//gosl:end fsfffb

@@ -100,7 +100,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#BLAposAcqD1", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "2", // 2 fine with BLANovelInhib prjn
+				"Layer.Inhib.Layer.Gi": "2", // 2 fine with BLANovelInhib path
 				"Layer.Inhib.Pool.Gi":  "1",
 			}},
 		{Sel: "#BLAposExtD2", Desc: "",
@@ -129,104 +129,104 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.KNa.Slow.Max": "0.8", // .8 reliable decreases -- could go higher
 			}},
 		////////////////////////////////////////////
-		// Cortical Prjns
-		{Sel: ".PFCPrjn", Desc: "pfc prjn params -- more robust to long-term training",
+		// Cortical Paths
+		{Sel: ".PFCPath", Desc: "pfc path params -- more robust to long-term training",
 			Params: params.Params{
-				"Prjn.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
-				"Prjn.Learn.LRate.Base":    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
+				"Path.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
+				"Path.Learn.LRate.Base":    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
 			}},
 		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.PathScale.Abs": "1",
 			}},
 		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "stronger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.5", // stronger = bad later
+				"Path.PathScale.Abs": "1.5", // stronger = bad later
 			}},
 		{Sel: "#OFCposToILpos", Desc: "stronger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3",
+				"Path.PathScale.Abs": "3",
 			}},
 		{Sel: ".USToBLAExtInhib", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Path.PathScale.Abs": "2",
 			}},
 		{Sel: "#ILposToPLutil", Desc: "not good to make this stronger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // todo: try 3?
+				"Path.PathScale.Abs": "1", // todo: try 3?
 			}},
 		{Sel: ".MToACC", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3",
+				"Path.PathScale.Abs": "3",
 			}},
 		// {Sel: ".PTSelfMaint", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs":    "4",
-		// 		"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
+		// 		"Path.PathScale.Abs":    "4",
+		// 		"Path.Learn.LRate.Base": "0.0001", // this is not a problem
 		// 	}},
 		////////////////////////////////////////////
-		// Rubicon Prjns
-		{Sel: ".VSMatrixPrjn", Desc: "",
+		// Rubicon Paths
+		{Sel: ".VSMatrixPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "1.5", // 3 orig
-				"Prjn.Learn.Trace.LearnThr": "0.1",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.05 def
+				"Path.PathScale.Abs":        "1.5", // 3 orig
+				"Path.Learn.Trace.LearnThr": "0.1",
+				"Path.Learn.LRate.Base":     "0.02", // 0.05 def
 			}},
 		{Sel: ".ToSC", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Path.PathScale.Abs": "2",
 			}},
 		{Sel: ".DrivesToMtx", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.PathScale.Abs": "1",
 			}},
-		{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
+		{Sel: ".BLAExtPath", Desc: "ext learns relatively fast",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.05",
+				"Path.Learn.LRate.Base": "0.05",
 			}},
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "1",
-				"Prjn.PrjnScale.Abs": "4",
+				"Path.PathScale.Rel": "1",
+				"Path.PathScale.Abs": "4",
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // note: key param -- 0.5 > 1
+				"Path.PathScale.Abs": "2", // note: key param -- 0.5 > 1
 			}},
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 def
+				"Path.PathScale.Rel": "0.1", // 0.1 def
 			}},
-		{Sel: ".VSPatchPrjn", Desc: "",
+		{Sel: ".VSPatchPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
-				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 needed in test; better overall
+				"Path.PathScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
+				"Path.Learn.Trace.LearnThr": "0",
+				"Path.Learn.LRate.Base":     "0.02", // 0.02 needed in test; better overall
 			}},
 		{Sel: "#CSToBLAposAcqD1", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.02", // was 0.5 -- too fast!?
+				"Path.Learn.LRate.Base": "0.02", // was 0.5 -- too fast!?
 			}},
 		{Sel: ".CSToBLANovelInhib", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.02", // 0.01 > 0.005 -- too slow is bad
+				"Path.Learn.LRate.Base": "0.02", // 0.01 > 0.005 -- too slow is bad
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 def
+				"Path.PathScale.Abs": "4", // 4 def
 			}},
 		{Sel: ".SuperToPT", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def
+				"Path.PathScale.Abs": "0.5", // 0.5 def
 			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
+				"Path.PathScale.Abs": "5", // with new mod, this can be stronger
 			}},
 		{Sel: ".BLAFromNovel", Desc: "Note: this setting is overwritten in boa.go ApplyParams",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // weak rel to not dilute rest of bla prjns
-				"Prjn.PrjnScale.Abs": "3",   // 2 is good for .CS nominal .1, but 3 needed for .03
+				"Path.PathScale.Rel": "0.1", // weak rel to not dilute rest of bla paths
+				"Path.PathScale.Abs": "3",   // 2 is good for .CS nominal .1, but 3 needed for .03
 			}},
 	},
 }

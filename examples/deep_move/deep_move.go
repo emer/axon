@@ -31,7 +31,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 )
 
@@ -56,7 +56,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -167,9 +167,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	full := prjn.NewFull()
+	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
-	one2one := prjn.NewOneToOne()
+	one2one := paths.NewOneToOne()
 	_ = one2one
 
 	nPerAng := 5 // 30 total > 20 -- small improvement
@@ -177,12 +177,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	rfDepth := 6
 	rfWidth := 3
 
-	rect := prjn.NewRect()
+	rect := paths.NewRect()
 	rect.Size.Set(rfWidth, rfDepth) // 6 > 8 > smaller
 	rect.Scale.Set(1.0/float32(nPerAng), 1.0/float32(nPerDepth))
 	_ = rect
 
-	rectRecip := prjn.NewRectRecip(rect)
+	rectRecip := paths.NewRectRecip(rect)
 	_ = rectRecip
 
 	space := float32(5)
@@ -196,8 +196,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).AddClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect, "") // fmPulv: rect == full
-	net.ConnectLayers(act, dpHid, full, axon.ForwardPrjn)
-	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPrjn)
+	net.ConnectLayers(act, dpHid, full, axon.ForwardPath)
+	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPath)
 	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
 
 	// net.ConnectLayers(dpHidct, dpHid, full, emer.Back)
@@ -207,11 +207,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// attempt at topo in 2nd hidden -- didn't work -- needs pools basically
 		// rfWidth2 := rfWidth * nPerAng
 		// rfDepth2 := rfDepth * nPerDepth
-		// rect2 := prjn.NewRect()
+		// rect2 := paths.NewRect()
 		// rect2.Size.Set(rfWidth2, rfDepth2)
 		// rect2.Scale.Set(0.5*float32(rfWidth2), 0.5*float32(rfDepth2))
 		// _ = rect2
-		// rect2Recip := prjn.NewRectRecip(rect2)
+		// rect2Recip := paths.NewRectRecip(rect2)
 		// _ = rect2Recip
 
 		// dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", (2*dpHidSz.Y)/rfDepth2*nPerDepth, (2*dpHidSz.X)/rfWidth2*nPerAng, 2*space, one2one) // one2one learn > full
@@ -219,20 +219,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		net.ConnectCTSelf(dpHid2ct, full, "")
 		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full, "")
-		net.ConnectLayers(act, dpHid2, full, axon.ForwardPrjn)
+		net.ConnectLayers(act, dpHid2, full, axon.ForwardPath)
 
-		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPrjn)
+		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPath)
 		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, emer.Back)
 
 		net.BidirConnectLayers(dpHid, dpHid2, full)
-		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPrjn)
+		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPath)
 	}
 
 	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", "", 10, 10, 2*space, one2one)
 	// net.ConnectCTSelf(hdHidct, full)
 	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full, "") // shortcut top-down
-	net.ConnectLayers(act, hdHid, full, axon.ForwardPrjn)
-	net.ConnectLayers(hd, hdHid, full, axon.ForwardPrjn)
+	net.ConnectLayers(act, hdHid, full, axon.ForwardPath)
+	net.ConnectLayers(hd, hdHid, full, axon.ForwardPath)
 
 	dpIn.AddClass("DepthIn")
 	dpInp.AddClass("DepthIn")
@@ -515,10 +515,10 @@ func (ss *Sim) SimMat() {
 		sm.TableCol(ix, col, lbls, true, metric.Correlation64)
 		ss.Stats.PCA.TableCol(ix, col, metric.Covariance64)
 
-		pcaprjn := ss.Logs.MiscTable("PCAPrjn")
-		ss.Stats.PCA.ProjectColToTable(pcaprjn, ix, col, lbls, []int{0, 1}) // gets vectors
-		pcaplt := ss.Stats.Plot("PCAPrjn")
-		estats.ConfigPCAPlot(pcaplt, pcaprjn, "HiddenCT")
+		pcapath := ss.Logs.MiscTable("PCAPath")
+		ss.Stats.PCA.ProjectColToTable(pcapath, ix, col, lbls, []int{0, 1}) // gets vectors
+		pcaplt := ss.Stats.Plot("PCAPath")
+		estats.ConfigPCAPlot(pcaplt, pcapath, "HiddenCT")
 		clplt := ss.Stats.Plot("ClustPlot")
 		estats.ClustPlot(clplt, ix, col, lbls)
 	}

@@ -88,7 +88,7 @@ If layer NOT gated:  <- exploration opportunity cost
 
 ## PT Tuning
 
-The PT layer is somewhat sensitive in parameter tuning because it has several potentially conflicting demands: It must exhibit robust active maintenance (requiring strong excitation over time), while also being sensitive to the BG gating signal via MD modulatory projections.  This typically means that `.PTSelfMaint` `Abs` is strong enough to prevent `MaintFail`, but not too strong to cause `MaintEarly` to start happening.  `.SuperToPT` must be relatively weak (use .`Abs`) so super -> PT alone does not cause gating, but not too weak that it fails to gate when MD gets active.  Finally, `PTMaintLayer` `Dend.ModGain` is key for setting the strength of the MD thalamus modulatory projections into the PT -- these target the NMDA channels specifically, and help to "ignite" the active maintenance.
+The PT layer is somewhat sensitive in parameter tuning because it has several potentially conflicting demands: It must exhibit robust active maintenance (requiring strong excitation over time), while also being sensitive to the BG gating signal via MD modulatory pathways.  This typically means that `.PTSelfMaint` `Abs` is strong enough to prevent `MaintFail`, but not too strong to cause `MaintEarly` to start happening.  `.SuperToPT` must be relatively weak (use .`Abs`) so super -> PT alone does not cause gating, but not too weak that it fails to gate when MD gets active.  Finally, `PTMaintLayer` `Dend.ModGain` is key for setting the strength of the MD thalamus modulatory pathways into the PT -- these target the NMDA channels specifically, and help to "ignite" the active maintenance.
 
 ## MD Tuning
 

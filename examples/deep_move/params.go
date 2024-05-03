@@ -41,7 +41,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".DepthIn", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.15", // was .13 -- Ge very high b/c of topo prjn
+				"Layer.Inhib.ActAvg.Nominal": "0.15", // was .13 -- Ge very high b/c of topo path
 				"Layer.Inhib.Layer.Gi":       "0.9",  //
 			}},
 		{Sel: ".HeadDirIn", Desc: "",
@@ -92,67 +92,67 @@ var ParamSets = netparams.Sets{
 			}},
 
 		// Projections below
-		{Sel: "Prjn", Desc: "std",
+		{Sel: "Path", Desc: "std",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.02", // 0.02 == 0.03 == 0.01 > 0.005 > 0.002
-				"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 even with CTCtxt = 0
-				"Prjn.SWts.Adapt.LRate":    "0.01", // 0.01 == 0.0001 but 0.001 not as good..
-				"Prjn.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
-				"Prjn.Com.PFail":           "0.0",
-				"Prjn.Learn.Trace.Tau":     "2", // 4 == 2 > 1
+				"Path.Learn.LRate.Base":    "0.02", // 0.02 == 0.03 == 0.01 > 0.005 > 0.002
+				"Path.Learn.Trace.SubMean": "0",    // 0 > 1 even with CTCtxt = 0
+				"Path.SWts.Adapt.LRate":    "0.01", // 0.01 == 0.0001 but 0.001 not as good..
+				"Path.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
+				"Path.Com.PFail":           "0.0",
+				"Path.Learn.Trace.Tau":     "2", // 4 == 2 > 1
 			}},
-		{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.2",
+				"Path.PathScale.Rel": "0.2",
 			}},
 		// {Sel: "#HeadDirHidCTToDepthHidCT", Desc: "ct top-down",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Rel": "0.2", // not much diff here
+		// 		"Path.PathScale.Rel": "0.2", // not much diff here
 		// 	}},
-		{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
+		{Sel: ".CTCtxtPath", Desc: "all CT context paths",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.002", // has almost no effect in 1to1
-				"Prjn.Learn.Trace.Tau":     "2",     // late in learning 2 does best
-				"Prjn.Learn.Trace.SubMean": "0",     //
-				"Prjn.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
+				"Path.Learn.LRate.Base":    "0.002", // has almost no effect in 1to1
+				"Path.Learn.Trace.Tau":     "2",     // late in learning 2 does best
+				"Path.Learn.Trace.SubMean": "0",     //
+				"Path.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
 			}},
 		{Sel: ".CTFromSuper", Desc: "1to1 > full",
 			Params: params.Params{
-				"Prjn.Learn.Learn":    "true", // learning > fixed 1to1
-				"Prjn.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
-				"Prjn.SWts.Init.Var":  "0.25",
+				"Path.Learn.Learn":    "true", // learning > fixed 1to1
+				"Path.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
+				"Path.SWts.Init.Var":  "0.25",
 			}},
 		{Sel: ".FromPulv", Desc: "defaults to .Back but generally weaker is better",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
+				"Path.PathScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 			}},
 		/* not used
 		{Sel: ".CTSelfCtxt", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
-				"Prjn.Com.PFail":     "0.0",  // never useful for random gen
-				"Prjn.SWts.Init.Sym":  "true", // true > false
+				"Path.PathScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
+				"Path.Com.PFail":     "0.0",  // never useful for random gen
+				"Path.SWts.Init.Sym":  "true", // true > false
 			}},
 		{Sel: ".CTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
-				"Prjn.Com.PFail":     "0.0",
-				"Prjn.SWts.Init.Sym":  "true", // no effect?  not sure why
+				"Path.PathScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
+				"Path.Com.PFail":     "0.0",
+				"Path.SWts.Init.Sym":  "true", // no effect?  not sure why
 			}},
 		*/
 		// {Sel: "#ActionToDepthHidCT", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Rel": "0.2", // 0.5 is not better
+		// 		"Path.PathScale.Rel": "0.2", // 0.5 is not better
 		// 	}},
 		{Sel: "#ActionToDepthHid", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "2.0", // 2.0 > 3.0 > 1.0
+				"Path.PathScale.Rel": "2.0", // 2.0 > 3.0 > 1.0
 			}},
 	},
 	"Hid2": {
 		{Sel: "#DepthHid2CTToDepthP", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
+				"Path.PathScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 			}},
 		{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
 			Params: params.Params{

@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl: start chans
+//gosl:start chans
 
 // KirParams control the Kir potassium inwardly rectifying current,
 // based on the equations from Lindroos et al (2018).
@@ -103,4 +103,4 @@ func (kp *KirParams) Gkir(v float32, m *float32) float32 {
 	return g
 }
 
-//gosl: end chans
+//gosl:end chans

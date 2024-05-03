@@ -4,10 +4,10 @@
 
 package axon
 
-//gosl: start deep_prjns
+//gosl:start deep_paths
 
-//gosl: end deep_prjns
+//gosl:end deep_paths
 
-func (pj *PrjnParams) CTCtxtPrjnDefaults() {
+func (pj *PathParams) CTCtxtPathDefaults() {
 
 }

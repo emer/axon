@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/num"
-	"github.com/emer/gosl/v2/slbool"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
-//gosl: start pcore_layers
+//gosl:start pcore_layers
 
 // MatrixParams has parameters for BG Striatum Matrix MSN layers
 // These are the main Go / NoGo gating units in BG.
@@ -93,7 +93,7 @@ func (gp *GPParams) Defaults() {
 func (gp *GPParams) Update() {
 }
 
-//gosl: end pcore_layers
+//gosl:end pcore_layers
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
 // downloaded from GPU, to set Gated flag based on SpkMax activity
@@ -243,16 +243,16 @@ func (ly *Layer) MatrixDefaults() {
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SWts.Init.SPct = 0
 		if pj.Send.LayerType() == GPLayer { // GPeAkToMtx
 			pj.Params.SetFixedWts()
-			pj.Params.PrjnScale.Abs = 3
+			pj.Params.PathScale.Abs = 3
 			pj.Params.SWts.Init.Mean = 0.75
 			pj.Params.SWts.Init.Var = 0.0
 			if ly.Cls == "DSMatrixLayer" {
 				if strings.Contains(ly.Nm, "No") {
-					pj.Params.PrjnScale.Abs = 6
+					pj.Params.PathScale.Abs = 6
 				}
 			}
 		}
@@ -300,7 +300,7 @@ func (ly *Layer) GPDefaults() {
 		ly.Params.Acts.Init.GeVar = 0.1
 	}
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
 		pj.Params.SWts.Init.Var = 0.25  // 0.25
@@ -308,20 +308,20 @@ func (ly *Layer) GPDefaults() {
 		case GPePr:
 			switch pj.Send.LayerType() {
 			case MatrixLayer:
-				pj.Params.PrjnScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
+				pj.Params.PathScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
 			case GPLayer:
-				pj.Params.PrjnScale.Abs = 4 // 4 best for DS; GPePrToGPePr -- must be very strong
+				pj.Params.PathScale.Abs = 4 // 4 best for DS; GPePrToGPePr -- must be very strong
 			case STNLayer:
-				pj.Params.PrjnScale.Abs = 0.5 // STNToGPePr
+				pj.Params.PathScale.Abs = 0.5 // STNToGPePr
 			}
 		case GPeAk:
 			switch pj.Send.LayerType() {
 			case MatrixLayer:
-				pj.Params.PrjnScale.Abs = 0.5 // MtxGoToGPeAk
+				pj.Params.PathScale.Abs = 0.5 // MtxGoToGPeAk
 			case GPLayer:
-				pj.Params.PrjnScale.Abs = 1 // GPePrToGPeAk
+				pj.Params.PathScale.Abs = 1 // GPePrToGPeAk
 			case STNLayer:
-				pj.Params.PrjnScale.Abs = 0.1 // STNToGPAk
+				pj.Params.PathScale.Abs = 0.1 // STNToGPAk
 			}
 		}
 	}
@@ -335,22 +335,22 @@ func (ly *Layer) GPiDefaults() {
 	ly.Params.Acts.Init.GeBase = 0.3
 	ly.Params.Acts.Init.GeVar = 0.1
 	ly.Params.Acts.Init.GiVar = 0.1
-	// note: GPLayer took care of STN input prjns
+	// note: GPLayer took care of STN input paths
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75         // 0.75  see above
 		pj.Params.SWts.Init.Var = 0.25          // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			if pj.Send.Cls == "VSMatrixLayer" {
-				pj.Params.PrjnScale.Abs = 0.2
+				pj.Params.PathScale.Abs = 0.2
 			} else {
-				pj.Params.PrjnScale.Abs = 1
+				pj.Params.PathScale.Abs = 1
 			}
 		} else if pj.Send.LayerType() == GPLayer { // GPePrToGPi
-			pj.Params.PrjnScale.Abs = 1
+			pj.Params.PathScale.Abs = 1
 		} else if pj.Send.LayerType() == STNLayer { // STNToGPi
-			pj.Params.PrjnScale.Abs = 0.2
+			pj.Params.PathScale.Abs = 0.2
 		}
 	}
 }
@@ -397,14 +397,14 @@ func (ly *Layer) STNDefaults() {
 	// 	ly.Params.Inhib.Layer.On.SetBool(true)
 	// }
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.25
 		if pj.Send.LayerType() == GPLayer { // GPePrToSTN
-			pj.Params.PrjnScale.Abs = 0.5
+			pj.Params.PathScale.Abs = 0.5
 		} else {
-			pj.Params.PrjnScale.Abs = 2.0 // pfc inputs
+			pj.Params.PathScale.Abs = 2.0 // pfc inputs
 		}
 	}
 }
@@ -426,12 +426,12 @@ func (ly *Layer) BGThalDefaults() {
 
 	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.0
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
-			pj.Params.PrjnScale.Abs = 5 // can now be much stronger with PTMaint mod and maint dynamics
+			pj.Params.PathScale.Abs = 5 // can now be much stronger with PTMaint mod and maint dynamics
 			pj.AddClass("GPiToBGThal")
 		}
 	}

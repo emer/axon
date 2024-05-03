@@ -4,7 +4,7 @@
 
 package main
 
-import "github.com/emer/emergent/v2/prjn"
+import "github.com/emer/emergent/v2/paths"
 
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
@@ -43,19 +43,19 @@ type ParamConfig struct { //types:add
 	Good bool `nest:"+"`
 
 	//
-	V1V4Prjn *prjn.PoolTile `nest:"+" view:"projection from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
+	V1V4Path *paths.PoolTile `nest:"+" view:"pathway from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
 }
 
 func (cfg *ParamConfig) Defaults() {
-	cfg.V1V4Prjn = prjn.NewPoolTile()
-	cfg.V1V4Prjn.Size.Set(4, 4)
-	cfg.V1V4Prjn.Skip.Set(2, 2)
-	cfg.V1V4Prjn.Start.Set(-1, -1)
-	cfg.V1V4Prjn.TopoRange.Min = 0.8 // note: none of these make a very big diff
+	cfg.V1V4Path = paths.NewPoolTile()
+	cfg.V1V4Path.Size.Set(4, 4)
+	cfg.V1V4Path.Skip.Set(2, 2)
+	cfg.V1V4Path.Start.Set(-1, -1)
+	cfg.V1V4Path.TopoRange.Min = 0.8 // note: none of these make a very big diff
 	// but using a symmetric scale range .8 - 1.2 seems like it might be good -- otherwise
 	// weights are systematicaly smaller.
-	// ss.V1V4Prjn.GaussFull.DefNoWrap()
-	// ss.V1V4Prjn.GaussInPool.DefNoWrap()
+	// ss.V1V4Path.GaussFull.DefNoWrap()
+	// ss.V1V4Path.GaussInPool.DefNoWrap()
 }
 
 // RunConfig has config parameters related to running the sim

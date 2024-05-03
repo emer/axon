@@ -52,38 +52,38 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Noise.On": "true",
 				"Layer.Acts.Noise.Gi": "0.002", // hard to disrupt strong inputs!
 			}},
-		{Sel: "Prjn", Desc: "no learning",
+		{Sel: "Path", Desc: "no learning",
 			Params: params.Params{
-				"Prjn.Learn.Learn": "false",
-				// "Prjn.SWts.Init.Dist": "Uniform",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
-				"Prjn.Com.Delay":      "2",
+				"Path.Learn.Learn": "false",
+				// "Path.SWts.Init.Dist": "Uniform",
+				"Path.SWts.Init.Mean": "0.5",
+				"Path.SWts.Init.Var":  "0.25",
+				"Path.Com.Delay":      "2",
 			}},
-		{Sel: ".BackPrjn", Desc: "feedback excitatory",
+		{Sel: ".BackPath", Desc: "feedback excitatory",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.2",
+				"Path.PathScale.Rel": "0.2",
 			}},
-		{Sel: ".InhibPrjn", Desc: "inhibitory projections",
+		{Sel: ".InhibPath", Desc: "inhibitory pathways",
 			Params: params.Params{
-				// "Prjn.SWts.Init.Dist": "Uniform",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0",
-				"Prjn.SWts.Init.Sym":  "false",
-				"Prjn.Com.Delay":      "0",
-				"Prjn.PrjnScale.Abs":  "6", // key param
+				// "Path.SWts.Init.Dist": "Uniform",
+				"Path.SWts.Init.Mean": "0.5",
+				"Path.SWts.Init.Var":  "0",
+				"Path.SWts.Init.Sym":  "false",
+				"Path.Com.Delay":      "0",
+				"Path.PathScale.Abs":  "6", // key param
 			}},
-		{Sel: ".ToInhib", Desc: "to inhibitory projections",
+		{Sel: ".ToInhib", Desc: "to inhibitory pathways",
 			Params: params.Params{
-				"Prjn.Com.Delay": "1",
+				"Path.Com.Delay": "1",
 			}},
 		// {Sel: ".RndSc", Desc: "random shortcut",
 		// 	Params: params.Params{
-		// 		"Prjn.Learn.LRate.Base": "0.001", //
-		// 		// "Prjn.Learn.Learn":      "false",
-		// 		"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
-		// 		"Prjn.SWts.Adapt.On": "false", // seems better
-		// 		// "Prjn.SWts.Init.Var":  "0.05",
+		// 		"Path.Learn.LRate.Base": "0.001", //
+		// 		// "Path.Learn.Learn":      "false",
+		// 		"Path.PathScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
+		// 		"Path.SWts.Adapt.On": "false", // seems better
+		// 		// "Path.SWts.Init.Var":  "0.05",
 		// 	}},
 	},
 	"FSFFFB": {
@@ -98,25 +98,25 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.SSfTau": "20",
 				"Layer.Inhib.Layer.SSiTau": "50",
 			}},
-		{Sel: ".InhibPrjn", Desc: "inhibitory projections",
+		{Sel: ".InhibPath", Desc: "inhibitory pathways",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0",
+				"Path.PathScale.Abs": "0",
 			}},
 	},
 	"Untrained": {
 		{Sel: ".Excite", Desc: "excitatory connections",
 			Params: params.Params{
-				// "Prjn.SWts.Init.Dist": "Uniform",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
+				// "Path.SWts.Init.Dist": "Uniform",
+				"Path.SWts.Init.Mean": "0.5",
+				"Path.SWts.Init.Var":  "0.25",
 			}},
 	},
 	"Trained": {
 		{Sel: ".Excite", Desc: "excitatory connections",
 			Params: params.Params{
-				// "Prjn.SWts.Init.Dist": "Gaussian",
-				"Prjn.SWts.Init.Mean": "0.4",
-				"Prjn.SWts.Init.Var":  "0.8",
+				// "Path.SWts.Init.Dist": "Gaussian",
+				"Path.SWts.Init.Mean": "0.4",
+				"Path.SWts.Init.Var":  "0.8",
 			}},
 	},
 }

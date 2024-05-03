@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"cogentcore.org/core/math32"
-	"github.com/emer/gosl/v2/slbool"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
-//gosl: start rubicon_layers
+//gosl:start rubicon_layers
 
 // LDTParams compute reward salience as ACh global neuromodulatory signal
 // as a function of the MAX activation of its inputs from salience detecting
@@ -156,7 +156,7 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	SetGlbV(ctx, di, GvDA, netDA)    // general neuromod DA
 }
 
-//gosl: end rubicon_layers
+//gosl:end rubicon_layers
 
 func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")
@@ -227,9 +227,9 @@ func (ly *Layer) CeMDefaults() {
 	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	lp.Learn.RLRate.SigmoidMin = 1.0 // doesn't matter -- doesn't learn..
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SetFixedWts()
-		pj.Params.PrjnScale.Abs = 1
+		pj.Params.PathScale.Abs = 1
 	}
 }
 
@@ -246,9 +246,9 @@ func (ly *Layer) LDTDefaults() {
 	// lp.Rubicon.Thr = 0.2
 	// lp.Rubicon.Gain = 2
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.Params.SetFixedWts()
-		pj.Params.PrjnScale.Abs = 1
+		pj.Params.PathScale.Abs = 1
 	}
 }
 

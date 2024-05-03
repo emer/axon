@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
@@ -20,19 +21,18 @@ import (
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/emergent/v2/timer"
+	"github.com/emer/emergent/v2/paths"
 )
 
 var ParamSets = params.Sets{
 	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "",
+			{Sel: "Path", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base":    "0.005", // 0.005 is lvis default
-					"Prjn.Learn.Trace.SubMean": "0",     // 1 is very slow on AMD64 -- good to keep testing
-					"Prjn.SWts.Adapt.LRate":    "0.1",   // .1 >= .2,
-					"Prjn.SWts.Init.SPct":      "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Path.Learn.LRate.Base":    "0.005", // 0.005 is lvis default
+					"Path.Learn.Trace.SubMean": "0",     // 1 is very slow on AMD64 -- good to keep testing
+					"Path.SWts.Adapt.LRate":    "0.1",   // .1 >= .2,
+					"Path.SWts.Init.SPct":      "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{
@@ -50,9 +50,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.70",
 					"Layer.Acts.Clamp.Ge":  "0.8",
 				}},
-			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Path.PathScale.Rel": "0.2",
 				}},
 		},
 	}},
@@ -74,18 +74,18 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 	v4Pools := v2Pools / 2
 	teNeurs := hiddenNeurs * 2
 
-	full := prjn.NewFull()
-	sparseRandom := prjn.NewUnifRnd()
+	full := paths.NewFull()
+	sparseRandom := paths.NewUnifRnd()
 	sparseRandom.PCon = 0.1
 
-	Prjn4x4Skp2 := prjn.NewPoolTile()
+	Path4x4Skp2 := paths.NewPoolTile()
 	// skip & size are measured in pools, not individual neurons
-	Prjn4x4Skp2.Size.Set(4, 4)
-	Prjn4x4Skp2.Skip.Set(2, 2) // skip: how many pools to move over
-	Prjn4x4Skp2.Start.Set(-1, -1)
-	Prjn4x4Skp2.TopoRange.Min = 0.8
-	Prjn4x4Skp2Recip := prjn.NewPoolTileRecip(Prjn4x4Skp2)
-	_ = Prjn4x4Skp2Recip
+	Path4x4Skp2.Size.Set(4, 4)
+	Path4x4Skp2.Skip.Set(2, 2) // skip: how many pools to move over
+	Path4x4Skp2.Start.Set(-1, -1)
+	Path4x4Skp2.TopoRange.Min = 0.8
+	Path4x4Skp2Recip := paths.NewPoolTileRecip(Path4x4Skp2)
+	_ = Path4x4Skp2Recip
 
 	var v1, v2, v4, te []*axon.Layer
 
@@ -108,9 +108,9 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		v2[pi].AddClass("V2m V2")
 		v4[pi].AddClass("V4")
 
-		net.ConnectLayers(v1[pi], v2[pi], Prjn4x4Skp2, axon.ForwardPrjn)
-		net.BidirConnectLayers(v2[pi], v4[pi], Prjn4x4Skp2)
-		net.ConnectLayers(v1[pi], v4[pi], sparseRandom, axon.ForwardPrjn).AddClass("V1SC")
+		net.ConnectLayers(v1[pi], v2[pi], Path4x4Skp2, axon.ForwardPath)
+		net.BidirConnectLayers(v2[pi], v4[pi], Path4x4Skp2)
+		net.ConnectLayers(v1[pi], v4[pi], sparseRandom, axon.ForwardPath).AddClass("V1SC")
 		net.BidirConnectLayers(v4[pi], te[pi], full)
 		net.BidirConnectLayers(te[pi], outLay, full)
 	}
@@ -265,10 +265,10 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	}
 	tmr.Stop()
 	if verbose {
-		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
+		fmt.Printf("Took %v for %v epochs, avg per epc: %6.4g\n", tmr.Total, epcs, float64(tmr.Total)/float64(epcs))
 		net.TimerReport()
 	} else {
-		fmt.Printf("Total Secs: %6.3g\n", tmr.TotalSecs())
+		fmt.Printf("Total Secs: %v\n", tmr.Total)
 		net.TimerReport()
 	}
 

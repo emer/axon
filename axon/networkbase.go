@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"cogentcore.org/core/base/indent"
+	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/texteditor"
@@ -30,9 +31,8 @@ import (
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/emergent/v2/timer"
 	"github.com/emer/emergent/v2/weights"
 )
 
@@ -73,7 +73,7 @@ type NetworkBase struct {
 	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
 	NetIndex uint32 `view:"-"`
 
-	// maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer.
+	// maximum synaptic delay across any pathway in the network -- used for sizing the GBuf accumulation buffer.
 	MaxDelay uint32 `edit:"-" view:"-"`
 
 	// maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount during Build process, and this value reflects that.
@@ -109,11 +109,11 @@ type NetworkBase struct {
 	// entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding
 	NeuronIxs []uint32 `view:"-"`
 
-	// pointers to all projections in the network, sender-based
-	Prjns []*Prjn `view:"-"`
+	// pointers to all pathways in the network, sender-based
+	Paths []*Path `view:"-"`
 
-	// array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based
-	PrjnParams []PrjnParams `view:"-"`
+	// array of pathway parameters, in 1-to-1 correspondence with Paths, sender-based
+	PathParams []PathParams `view:"-"`
 
 	// entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function
 	SynapseIxs []uint32 `view:"-"`
@@ -125,21 +125,21 @@ type NetworkBase struct {
 	SynapseCas []float32 `view:"-"`
 
 	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.
-	PrjnSendCon []StartN `view:"-"`
+	PathSendCon []StartN `view:"-"`
 
 	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.
-	PrjnRecvCon []StartN `view:"-"`
+	PathRecvCon []StartN `view:"-"`
 
-	// conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration
-	PrjnGBuf []int32 `view:"-"`
+	// conductance buffer for accumulating spikes -- subslices are allocated to each pathway -- uses int-encoded float values for faster GPU atomic integration
+	PathGBuf []int32 `view:"-"`
 
-	// synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection
-	PrjnGSyns []float32 `view:"-"`
+	// synaptic conductance integrated over time per pathway per recv neurons -- spikes come in via PathBuf -- subslices are allocated to each pathway
+	PathGSyns []float32 `view:"-"`
 
-	// indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU.
-	RecvPrjnIndexes []uint32 `view:"-"`
+	// indexes into Paths (organized by SendPath) organized by recv pathways -- needed for iterating through recv paths efficiently on GPU.
+	RecvPathIndexes []uint32 `view:"-"`
 
-	// indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access.
+	// indexes into Synapses for each recv neuron, organized into blocks according to PathRecvCon, for receiver-based access.
 	RecvSynIndexes []uint32 `view:"-"`
 
 	// external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method.
@@ -220,10 +220,10 @@ func (nt *NetworkBase) MakeLayMap() {
 	}
 }
 
-// AxonPrjnByName returns a Prjn by looking it up by name in the list of projections
+// AxonPathByName returns a Path by looking it up by name in the list of pathways
 // (nil if not found).
-func (nt *NetworkBase) AxonPrjnByName(name string) *Prjn {
-	for _, pj := range nt.Prjns {
+func (nt *NetworkBase) AxonPathByName(name string) *Path {
+	for _, pj := range nt.Paths {
 		if pj.Name() == name {
 			return pj
 		}
@@ -231,10 +231,10 @@ func (nt *NetworkBase) AxonPrjnByName(name string) *Prjn {
 	return nil
 }
 
-// PrjnByNameTry returns a Prjn by looking it up by name in the list of projections
+// PathByNameTry returns a Path by looking it up by name in the list of pathways
 // (nil if not found).
-func (nt *NetworkBase) PrjnByNameTry(name string) (emer.Prjn, error) {
-	pj := nt.AxonPrjnByName(name)
+func (nt *NetworkBase) PathByNameTry(name string) (emer.Path, error) {
+	pj := nt.AxonPathByName(name)
 	if pj != nil {
 		return pj, nil
 	}
@@ -309,7 +309,7 @@ func (nt *NetworkBase) UnitVarProps() map[string]string {
 }
 
 // SynVarNames returns the names of all the variables on the synapses in this network.
-// Not all projections need to support all variables, but must safely return 0's for
+// Not all pathways need to support all variables, but must safely return 0's for
 // unsupported ones.  The order of this list determines NetView variable display order.
 // This is typically a global list so do not modify!
 func (nt *NetworkBase) SynVarNames() []string {
@@ -399,7 +399,7 @@ func (nt *NetworkBase) ParamsHistoryReset() {
 func (nt *NetworkBase) ParamsApplied(sel *params.Sel) {
 }
 
-// ApplyParams applies given parameter style Sheet to layers and prjns in this network.
+// ApplyParams applies given parameter style Sheet to layers and paths in this network.
 // Calls UpdateParams to ensure derived parameters are all updated.
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
 // it always prints a message if a parameter fails to be set.
@@ -447,10 +447,10 @@ func (nt *NetworkBase) KeyLayerParams() string {
 	return nt.AllLayerInhibs()
 }
 
-// KeyPrjnParams returns a listing for all Recv projections in the network,
-// of the most important projection-level params (specific to each algorithm).
-func (nt *NetworkBase) KeyPrjnParams() string {
-	return nt.AllPrjnScales()
+// KeyPathParams returns a listing for all Recv pathways in the network,
+// of the most important pathway-level params (specific to each algorithm).
+func (nt *NetworkBase) KeyPathParams() string {
+	return nt.AllPathScales()
 }
 
 // AllLayerInhibs returns a listing of all Layer Inhibition parameters in the Network
@@ -486,27 +486,27 @@ func (nt *NetworkBase) AllLayerInhibs() string {
 	return str
 }
 
-// AllPrjnScales returns a listing of all PrjnScale parameters in the Network
-// in all Layers, Recv projections.  These are among the most important
+// AllPathScales returns a listing of all PathScale parameters in the Network
+// in all Layers, Recv pathways.  These are among the most important
 // and numerous of parameters (in larger networks) -- this helps keep
 // track of what they all are set to.
-func (nt *NetworkBase) AllPrjnScales() string {
+func (nt *NetworkBase) AllPathScales() string {
 	str := ""
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
 		str += "\nLayer: " + ly.Name() + "\n"
-		for i := 0; i < ly.NRecvPrjns(); i++ {
-			pj := ly.RcvPrjns[i]
+		for i := 0; i < ly.NRecvPaths(); i++ {
+			pj := ly.RcvPaths[i]
 			if pj.IsOff() {
 				continue
 			}
 			sn := pj.Send.Name()
-			str += fmt.Sprintf("\t%15s\t%15s\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.PrjnType().String(), pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
+			str += fmt.Sprintf("\t%15s\t%15s\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.PathType().String(), pj.Params.PathScale.Abs, pj.Params.PathScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
 			ph := pj.ParamsHistory.ParamsHistory()
-			rh := ph["Prjn.PrjnScale.Rel"]
-			ah := ph["Prjn.PrjnScale.Abs"]
+			rh := ph["Path.PathScale.Rel"]
+			ah := ph["Path.PathScale.Abs"]
 			if ah != "" {
 				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
 			}
@@ -538,7 +538,7 @@ func (nt *NetworkBase) SaveParamsSnapshot(pars *netparams.Sets, cfg any, good bo
 	nt.SaveAllParams(core.Filename(filepath.Join(dir, "params_all.txt")))
 	nt.SaveNonDefaultParams(core.Filename(filepath.Join(dir, "params_nondef.txt")))
 	nt.SaveAllLayerInhibs(core.Filename(filepath.Join(dir, "params_layers.txt")))
-	nt.SaveAllPrjnScales(core.Filename(filepath.Join(dir, "params_prjns.txt")))
+	nt.SaveAllPathScales(core.Filename(filepath.Join(dir, "params_paths.txt")))
 	return nil
 }
 
@@ -572,12 +572,12 @@ func (nt *NetworkBase) SaveAllLayerInhibs(filename core.Filename) error {
 	return err
 }
 
-// SavePrjnScales saves a listing of all PrjnScale parameters in the Network
-// in all Layers, Recv projections.  These are among the most important
+// SavePathScales saves a listing of all PathScale parameters in the Network
+// in all Layers, Recv pathways.  These are among the most important
 // and numerous of parameters (in larger networks) -- this helps keep
 // track of what they all are set to.
-func (nt *NetworkBase) SaveAllPrjnScales(filename core.Filename) error {
-	str := nt.AllPrjnScales()
+func (nt *NetworkBase) SaveAllPathScales(filename core.Filename) error {
+	str := nt.AllPathScales()
 	err := os.WriteFile(string(filename), []byte(str), 0666)
 	if err != nil {
 		log.Println(err)
@@ -697,11 +697,11 @@ func (nt *NetworkBase) AddLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 	return nt.AddLayer(name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, typ)
 }
 
-// ConnectLayerNames establishes a projection between two layers, referenced by name
-// adding to the recv and send projection lists on each side of the connection.
+// ConnectLayerNames establishes a pathway between two layers, referenced by name
+// adding to the recv and send pathway lists on each side of the connection.
 // Returns error if not successful.
 // Does not yet actually connect the units within the layers -- that requires Build.
-func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, typ PrjnTypes) (rlay, slay *Layer, pj *Prjn, err error) {
+func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat paths.Pattern, typ PathTypes) (rlay, slay *Layer, pj *Path, err error) {
 	rlay, err = nt.LayByNameTry(recv)
 	if err != nil {
 		return
@@ -714,25 +714,25 @@ func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, ty
 	return
 }
 
-// ConnectLayers establishes a projection between two layers,
-// adding to the recv and send projection lists on each side of the connection.
+// ConnectLayers establishes a pathway between two layers,
+// adding to the recv and send pathway lists on each side of the connection.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) ConnectLayers(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes) *Prjn {
-	pj := &Prjn{}
+func (nt *NetworkBase) ConnectLayers(send, recv *Layer, pat paths.Pattern, typ PathTypes) *Path {
+	pj := &Path{}
 	pj.Init(pj)
 	pj.Connect(send, recv, pat, typ)
-	recv.RcvPrjns.Add(pj)
-	send.SndPrjns.Add(pj)
+	recv.RcvPaths.Add(pj)
+	send.SndPaths.Add(pj)
 	return pj
 }
 
-// BidirConnectLayerNames establishes bidirectional projections between two layers,
-// referenced by name, with low = the lower layer that sends a Forward projection
-// to the high layer, and receives a Back projection in the opposite direction.
+// BidirConnectLayerNames establishes bidirectional pathways between two layers,
+// referenced by name, with low = the lower layer that sends a Forward pathway
+// to the high layer, and receives a Back pathway in the opposite direction.
 // Returns error if not successful.
 // Does not yet actually connect the units within the layers -- that requires Build.
-func (nt *NetworkBase) BidirConnectLayerNames(low, high string, pat prjn.Pattern) (lowlay, highlay *Layer, fwdpj, backpj *Prjn, err error) {
+func (nt *NetworkBase) BidirConnectLayerNames(low, high string, pat paths.Pattern) (lowlay, highlay *Layer, fwdpj, backpj *Path, err error) {
 	lowlay, err = nt.LayByNameTry(low)
 	if err != nil {
 		return
@@ -741,49 +741,49 @@ func (nt *NetworkBase) BidirConnectLayerNames(low, high string, pat prjn.Pattern
 	if err != nil {
 		return
 	}
-	fwdpj = nt.ConnectLayers(lowlay, highlay, pat, ForwardPrjn)
-	backpj = nt.ConnectLayers(highlay, lowlay, pat, BackPrjn)
+	fwdpj = nt.ConnectLayers(lowlay, highlay, pat, ForwardPath)
+	backpj = nt.ConnectLayers(highlay, lowlay, pat, BackPath)
 	return
 }
 
-// BidirConnectLayers establishes bidirectional projections between two layers,
-// with low = lower layer that sends a Forward projection to the high layer,
-// and receives a Back projection in the opposite direction.
+// BidirConnectLayers establishes bidirectional pathways between two layers,
+// with low = lower layer that sends a Forward pathway to the high layer,
+// and receives a Back pathway in the opposite direction.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) BidirConnectLayers(low, high *Layer, pat prjn.Pattern) (fwdpj, backpj *Prjn) {
-	fwdpj = nt.ConnectLayers(low, high, pat, ForwardPrjn)
-	backpj = nt.ConnectLayers(high, low, pat, BackPrjn)
+func (nt *NetworkBase) BidirConnectLayers(low, high *Layer, pat paths.Pattern) (fwdpj, backpj *Path) {
+	fwdpj = nt.ConnectLayers(low, high, pat, ForwardPath)
+	backpj = nt.ConnectLayers(high, low, pat, BackPath)
 	return
 }
 
-// BidirConnectLayersPy establishes bidirectional projections between two layers,
-// with low = lower layer that sends a Forward projection to the high layer,
-// and receives a Back projection in the opposite direction.
+// BidirConnectLayersPy establishes bidirectional pathways between two layers,
+// with low = lower layer that sends a Forward pathway to the high layer,
+// and receives a Back pathway in the opposite direction.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
 // Py = python version with no return vals.
-func (nt *NetworkBase) BidirConnectLayersPy(low, high *Layer, pat prjn.Pattern) {
-	nt.ConnectLayers(low, high, pat, ForwardPrjn)
-	nt.ConnectLayers(high, low, pat, BackPrjn)
+func (nt *NetworkBase) BidirConnectLayersPy(low, high *Layer, pat paths.Pattern) {
+	nt.ConnectLayers(low, high, pat, ForwardPath)
+	nt.ConnectLayers(high, low, pat, BackPath)
 }
 
-// LateralConnectLayer establishes a self-projection within given layer.
+// LateralConnectLayer establishes a self-pathway within given layer.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) LateralConnectLayer(lay *Layer, pat prjn.Pattern) *Prjn {
-	pj := &Prjn{}
-	return nt.LateralConnectLayerPrjn(lay, pat, pj)
+func (nt *NetworkBase) LateralConnectLayer(lay *Layer, pat paths.Pattern) *Path {
+	pj := &Path{}
+	return nt.LateralConnectLayerPath(lay, pat, pj)
 }
 
-// LateralConnectLayerPrjn makes lateral self-projection using given projection.
+// LateralConnectLayerPath makes lateral self-pathway using given pathway.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) LateralConnectLayerPrjn(lay *Layer, pat prjn.Pattern, pj *Prjn) *Prjn {
+func (nt *NetworkBase) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pj *Path) *Path {
 	pj.Init(pj)
-	pj.Connect(lay, lay, pat, LateralPrjn)
-	lay.RcvPrjns.Add(pj)
-	lay.SndPrjns.Add(pj)
+	pj.Connect(lay, lay, pat, LateralPath)
+	lay.RcvPaths.Add(pj)
+	lay.SndPaths.Add(pj)
 	return pj
 }
 
@@ -801,7 +801,7 @@ func (nt *NetworkBase) SetMaxData(simCtx *Context, maxData int) {
 	simCtx.NetIndexes.MaxData = uint32(maxData)
 }
 
-// Build constructs the layer and projection state based on the layer shapes
+// Build constructs the layer and pathway state based on the layer shapes
 // and patterns of interconnectivity. Configures threading using heuristics based
 // on final network size.  Must set UseGPUOrder properly prior to calling.
 // Configures the given Context object used in the simulation with the memory
@@ -820,7 +820,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	maxData := int(nt.MaxData)
 	emsg := ""
 	totNeurons := 0
-	totPrjns := 0
+	totPaths := 0
 	totExts := 0
 	nLayers := len(nt.Layers)
 	totPools := nLayers // layer pool for each layer at least
@@ -834,7 +834,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 		if ly.LayerType().IsExt() {
 			totExts += nn
 		}
-		totPrjns += ly.NSendPrjns() // either way
+		totPaths += ly.NSendPaths() // either way
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
 			ll := nt.LayClassMap[cl]
@@ -852,8 +852,8 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	nt.NeuronAvgs = make([]float32, nneurav)
 	nneuri := uint32(totNeurons) * uint32(NeuronIndexesN)
 	nt.NeuronIxs = make([]uint32, nneuri)
-	nt.Prjns = make([]*Prjn, totPrjns)
-	nt.PrjnParams = make([]PrjnParams, totPrjns)
+	nt.Paths = make([]*Path, totPaths)
+	nt.PathParams = make([]PathParams, totPaths)
 	nt.Exts = make([]float32, totExts*maxData)
 
 	if nt.UseGPUOrder {
@@ -870,8 +870,8 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	totRecvCon := 0
 	totSendCon := 0
 	neurIndex := 0
-	prjnIndex := 0
-	rprjnIndex := 0
+	pathIndex := 0
+	rpathIndex := 0
 	poolIndex := 0
 	extIndex := 0
 	for li, ly := range nt.Layers {
@@ -927,30 +927,30 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 			ly.Exts = nil
 			ly.Params.Indexes.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
 		}
-		sprjns := *ly.SendPrjns()
-		ly.Params.Indexes.SendSt = uint32(prjnIndex)
-		ly.Params.Indexes.SendN = uint32(len(sprjns))
-		for pi, pj := range sprjns {
-			pii := prjnIndex + pi
-			pj.Params = &nt.PrjnParams[pii]
-			nt.Prjns[pii] = pj
+		spaths := *ly.SendPaths()
+		ly.Params.Indexes.SendSt = uint32(pathIndex)
+		ly.Params.Indexes.SendN = uint32(len(spaths))
+		for pi, pj := range spaths {
+			pii := pathIndex + pi
+			pj.Params = &nt.PathParams[pii]
+			nt.Paths[pii] = pj
 		}
-		err := ly.Build() // also builds prjns and sets SubPool indexes
+		err := ly.Build() // also builds paths and sets SubPool indexes
 		if err != nil {
 			emsg += err.Error() + "\n"
 		}
 		// now collect total number of synapses after layer build
-		for _, pj := range sprjns {
+		for _, pj := range spaths {
 			totSynapses += len(pj.SendConIndex)
-			totSendCon += nn // sep vals for each send neuron per prjn
+			totSendCon += nn // sep vals for each send neuron per path
 		}
-		rprjns := *ly.RecvPrjns()
-		ly.Params.Indexes.RecvSt = uint32(rprjnIndex)
-		ly.Params.Indexes.RecvN = uint32(len(rprjns))
-		totRecvCon += nn * len(rprjns)
-		rprjnIndex += len(rprjns)
+		rpaths := *ly.RecvPaths()
+		ly.Params.Indexes.RecvSt = uint32(rpathIndex)
+		ly.Params.Indexes.RecvN = uint32(len(rpaths))
+		totRecvCon += nn * len(rpaths)
+		rpathIndex += len(rpaths)
 		neurIndex += nn
-		prjnIndex += len(sprjns)
+		pathIndex += len(spaths)
 		poolIndex += npd
 	}
 	if totSynapses > math.MaxUint32 {
@@ -963,9 +963,9 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	nSynCaFloat := totSynapses * int(SynapseCaVarsN) * int(nt.MaxData)
 	nt.SynapseCas = make([]float32, nSynCaFloat)
 	nt.SynapseIxs = make([]uint32, totSynapses*int(SynapseIndexesN))
-	nt.PrjnSendCon = make([]StartN, totSendCon)
-	nt.PrjnRecvCon = make([]StartN, totRecvCon)
-	nt.RecvPrjnIndexes = make([]uint32, rprjnIndex)
+	nt.PathSendCon = make([]StartN, totSendCon)
+	nt.PathRecvCon = make([]StartN, totRecvCon)
+	nt.RecvPathIndexes = make([]uint32, rpathIndex)
 	nt.RecvSynIndexes = make([]uint32, totSynapses)
 
 	if nt.UseGPUOrder {
@@ -983,7 +983,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	pjidx := 0
 	sendConIndex := 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.SndPrjns {
+		for _, pj := range ly.SndPaths {
 			rlay := pj.Recv
 			pj.Params.Indexes.RecvLay = uint32(rlay.Idx)
 			pj.Params.Indexes.RecvNeurSt = uint32(rlay.NeurStIndex)
@@ -996,18 +996,18 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 			pj.Params.Indexes.SendConSt = uint32(sendConIndex)
 			pj.Params.Indexes.SynapseSt = uint32(syIndex)
 			pj.SynStIndex = uint32(syIndex)
-			pj.Params.Indexes.PrjnIndex = uint32(pjidx)
+			pj.Params.Indexes.PathIndex = uint32(pjidx)
 			pj.NSyns = uint32(nsyn)
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
 				si := ly.NeurStIndex + sni
 				scon := pj.SendCon[sni]
-				nt.PrjnSendCon[sendConIndex] = scon
+				nt.PathSendCon[sendConIndex] = scon
 				sendConIndex++
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
 					SetSynI(ctx, syni, SynSendIndex, uint32(si)) // network-global idx
 					SetSynI(ctx, syni, SynRecvIndex, pj.SendConIndex[syi]+uint32(rlay.NeurStIndex))
-					SetSynI(ctx, syni, SynPrjnIndex, uint32(pjidx))
+					SetSynI(ctx, syni, SynPathIndex, uint32(pjidx))
 					syIndex++
 				}
 			}
@@ -1015,13 +1015,13 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 		}
 	}
 
-	// update recv synapse / prjn info
-	rprjnIndex = 0
+	// update recv synapse / path info
+	rpathIndex = 0
 	recvConIndex := 0
 	syIndex = 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.RcvPrjns {
-			nt.RecvPrjnIndexes[rprjnIndex] = pj.Params.Indexes.PrjnIndex
+		for _, pj := range ly.RcvPaths {
+			nt.RecvPathIndexes[rpathIndex] = pj.Params.Indexes.PathIndex
 			pj.Params.Indexes.RecvConSt = uint32(recvConIndex)
 			pj.Params.Indexes.RecvSynSt = uint32(syIndex)
 			synSt := pj.Params.Indexes.SynapseSt
@@ -1030,7 +1030,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 					continue
 				}
 				rcon := pj.RecvCon[rni]
-				nt.PrjnRecvCon[recvConIndex] = rcon
+				nt.PathRecvCon[recvConIndex] = rcon
 				recvConIndex++
 				syIndexes := pj.RecvSynIndexes(rni)
 				for _, ssi := range syIndexes {
@@ -1038,7 +1038,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 					syIndex++
 				}
 			}
-			rprjnIndex++
+			rpathIndex++
 		}
 	}
 
@@ -1061,16 +1061,16 @@ func (nt *NetworkBase) Build(simCtx *Context) error { //types:add
 	return nil
 }
 
-// BuildPrjnGBuf builds the PrjnGBuf, PrjnGSyns,
-// based on the MaxDelay values in thePrjnParams,
+// BuildPathGBuf builds the PathGBuf, PathGSyns,
+// based on the MaxDelay values in thePathParams,
 // which should have been configured by this point.
 // Called by default in InitWts()
-func (nt *NetworkBase) BuildPrjnGBuf() {
+func (nt *NetworkBase) BuildPathGBuf() {
 	nt.MaxDelay = 0
 	npjneur := uint32(0)
 	for _, ly := range nt.Layers {
 		nneur := uint32(ly.NNeurons)
-		for _, pj := range ly.RcvPrjns {
+		for _, pj := range ly.RcvPaths {
 			if pj.Params.Com.MaxDelay > nt.MaxDelay {
 				nt.MaxDelay = pj.Params.Com.MaxDelay
 			}
@@ -1080,28 +1080,28 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	mxlen := nt.MaxDelay + 1
 	gbsz := npjneur * mxlen * nt.MaxData
 	gsynsz := npjneur * nt.MaxData
-	if uint32(cap(nt.PrjnGBuf)) >= gbsz {
-		nt.PrjnGBuf = nt.PrjnGBuf[:gbsz]
+	if uint32(cap(nt.PathGBuf)) >= gbsz {
+		nt.PathGBuf = nt.PathGBuf[:gbsz]
 	} else {
-		nt.PrjnGBuf = make([]int32, gbsz)
+		nt.PathGBuf = make([]int32, gbsz)
 	}
-	if uint32(cap(nt.PrjnGSyns)) >= gsynsz {
-		nt.PrjnGSyns = nt.PrjnGSyns[:gsynsz]
+	if uint32(cap(nt.PathGSyns)) >= gsynsz {
+		nt.PathGSyns = nt.PathGSyns[:gsynsz]
 	} else {
-		nt.PrjnGSyns = make([]float32, gsynsz)
+		nt.PathGSyns = make([]float32, gsynsz)
 	}
 
 	gbi := uint32(0)
 	gsi := uint32(0)
 	for _, ly := range nt.Layers {
 		nneur := uint32(ly.NNeurons)
-		for _, pj := range ly.RcvPrjns {
+		for _, pj := range ly.RcvPaths {
 			gbs := nneur * mxlen * nt.MaxData
 			pj.Params.Indexes.GBufSt = gbi
-			pj.GBuf = nt.PrjnGBuf[gbi : gbi+gbs]
+			pj.GBuf = nt.PathGBuf[gbi : gbi+gbs]
 			gbi += gbs
 			pj.Params.Indexes.GSynSt = gsi
-			pj.GSyns = nt.PrjnGSyns[gsi : gsi+nneur*nt.MaxData]
+			pj.GSyns = nt.PathGSyns[gsi : gsi+nneur*nt.MaxData]
 			gsi += nneur * nt.MaxData
 		}
 	}
@@ -1124,16 +1124,16 @@ func (nt *NetworkBase) DeleteAll() {
 	nt.Neurons = nil
 	nt.NeuronAvgs = nil
 	nt.NeuronIxs = nil
-	nt.Prjns = nil
-	nt.PrjnParams = nil
+	nt.Paths = nil
+	nt.PathParams = nil
 	nt.Synapses = nil
 	nt.SynapseCas = nil
 	nt.SynapseIxs = nil
-	nt.PrjnSendCon = nil
-	nt.PrjnRecvCon = nil
-	nt.PrjnGBuf = nil
-	nt.PrjnGSyns = nil
-	nt.RecvPrjnIndexes = nil
+	nt.PathSendCon = nil
+	nt.PathRecvCon = nil
+	nt.PathGBuf = nil
+	nt.PathGSyns = nil
+	nt.RecvPathIndexes = nil
 	nt.Exts = nil
 }
 
@@ -1321,7 +1321,7 @@ func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 	}
 	i := 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.SndPrjns {
+		for _, pj := range ly.SndPaths {
 			for lni := range pj.SendCon {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
@@ -1374,7 +1374,7 @@ func HashEncodeSlice(slice []float32) string {
 }
 
 // VarRange returns the min / max values for given variable
-// todo: support r. s. projection values
+// todo: support r. s. pathway values
 func (nt *NetworkBase) VarRange(varNm string) (min, max float32, err error) {
 	first := true
 	for _, ly := range nt.Layers {

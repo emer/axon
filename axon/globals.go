@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl: start globals
+//gosl:start globals
 
 // GlobalVars are network-wide variables, such as neuromodulators, reward, drives, etc
 // including the state for the Rubicon phasic dopamine model. These are stored
@@ -326,10 +326,10 @@ const (
 	// IMPORTANT: if GvVSMatrixPoolGated is not the last, need to update gosl defn below
 )
 
-//gosl: end globals
+//gosl:end globals
 
-//gosl: hlsl globals
+//gosl:hlsl globals
 /*
 static const GlobalVars GlobalVarsN = GvVSMatrixPoolGated + 1;
 */
-//gosl: end globals
+//gosl:end globals

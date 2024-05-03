@@ -6,7 +6,7 @@ package chans
 
 import "cogentcore.org/core/math32"
 
-//gosl: start chans
+//gosl:start chans
 
 // MahpParams implements an M-type medium afterhyperpolarizing (mAHP) channel,
 // where m also stands for muscarinic due to the ACh inactivation of this channel.
@@ -111,4 +111,4 @@ func (mp *MahpParams) GmAHP(v float32, n *float32) float32 {
 	return g
 }
 
-//gosl: end chans
+//gosl:end chans

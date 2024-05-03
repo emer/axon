@@ -2,7 +2,7 @@
 
 Package hip provides special hippocampus algorithms for implementing the Theta-phase hippocampus model described in [Zheng et al., 2022](#references) and [Ketz, Morkonda, & O'Reilly (2013)](#references).
 
-Files: hip_{[net.go](axon/hip_net.go), [prjns.go](axon/hip_prjns.go)}
+Files: hip_{[net.go](axon/hip_net.go), [paths.go](axon/hip_paths.go)}
 
 Timing of ThetaPhase dynamics -- based on quarter structure:
 
@@ -29,11 +29,11 @@ CA3 -> CA1 = 0, ECin -> CA1 = 1
 ```
 
 * `ActQ1` = auto encoder minus phase state (in both CA1 and ECout
-        used in EcCa1Prjn as minus phase relative to ActP plus phase in CHL)
+        used in EcCa1Path as minus phase relative to ActP plus phase in CHL)
 * `ActM` = recall minus phase (normal minus phase dynamics for CA3 recall learning)
 * `ActP` = plus (serves as plus phase for both auto and recall)
 
-learning just happens at end of trial as usual, but encoder projections use the ActQ1, ActM, ActP variables to learn on the right signals
+learning just happens at end of trial as usual, but encoder pathways use the ActQ1, ActM, ActP variables to learn on the right signals
 
 # References
 

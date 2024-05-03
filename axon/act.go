@@ -7,21 +7,21 @@ package axon
 import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/emergent/v2/erand"
-	"github.com/emer/gosl/v2/slbool"
 )
 
 ///////////////////////////////////////////////////////////////////////
 //  act.go contains the activation params and functions for axon
 
-//gosl: hlsl act
+//gosl:hlsl act
 // #include "chans.hlsl"
 // #include "minmax.hlsl"
 // #include "neuron.hlsl"
-//gosl: end act
+//gosl:end act
 
-//gosl: start act
+//gosl:start act
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  SpikeParams
@@ -142,10 +142,10 @@ type DendParams struct {
 	// SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend) -- this is important for countering a positive feedback loop from NMDA getting stronger over the course of learning -- also typically requires SubMean = 1 for TrgAvgAct and learning to fully counter this feedback loop.
 	SSGi float32 `default:"0,2"`
 
-	// set automatically based on whether this layer has any recv projections that have a GType conductance type of Modulatory -- if so, then multiply GeSyn etc by GModSyn
+	// set automatically based on whether this layer has any recv pathways that have a GType conductance type of Modulatory -- if so, then multiply GeSyn etc by GModSyn
 	HasMod slbool.Bool `edit:"-"`
 
-	// multiplicative gain factor on the total modulatory input -- this can also be controlled by the PrjnScale.Abs factor on ModulatoryG inputs, but it is convenient to be able to control on the layer as well.
+	// multiplicative gain factor on the total modulatory input -- this can also be controlled by the PathScale.Abs factor on ModulatoryG inputs, but it is convenient to be able to control on the layer as well.
 	ModGain float32
 
 	// if true, modulatory signal also includes ACh multiplicative factor
@@ -217,7 +217,7 @@ func (ai *ActInitParams) Defaults() {
 	ai.GiVar = 0
 }
 
-//gosl: end act
+//gosl:end act
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
 func (ai *ActInitParams) GetGeBase(rnd erand.Rand) float32 {
@@ -243,7 +243,7 @@ func (ai *ActInitParams) GetGiBase(rnd erand.Rand) float32 {
 	return gi
 }
 
-//gosl: start act
+//gosl:start act
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  DecayParams
@@ -942,7 +942,7 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	AddNrnV(ctx, ni, di, CtxtGeOrig, -glong*NrnV(ctx, ni, di, CtxtGeOrig))
 }
 
-//gosl: end act
+//gosl:end act
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
 // automatically called (DecayState is used instead)
@@ -1043,7 +1043,7 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, ActP, 0)
 }
 
-//gosl: start act
+//gosl:start act
 
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
@@ -1360,7 +1360,7 @@ func (ac *ActParams) SpikeFromVm(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, Act, nrnAct)
 }
 
-//gosl: end act
+//gosl:end act
 
 // Decode decodes value from a pattern of activation
 // as the activation-weighted-average of the unit's preferred

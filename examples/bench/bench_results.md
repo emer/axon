@@ -258,7 +258,7 @@ OS Threads (=GOMAXPROCS): 4. Gorountines: 4 (Neurons) 4 (SendSpike) 4 (SynCa)
     
 # Axon 1.7.2x (ror/gpu2 branch): everything now receiver-based
 
-In preparation for the GPU version, the synaptic memory structures are all now receiver-based, and all of the Prjn memory structures (Synapses, GBuf, Gsyn) are now subsets of one large global slice.  This did not appear to make much difference for the LARGE case, while still using the sender-based spiking function (which now has to work a bit harder by indirecting through the synapses instead of just sequentially cruising through them).
+In preparation for the GPU version, the synaptic memory structures are all now receiver-based, and all of the Path memory structures (Synapses, GBuf, Gsyn) are now subsets of one large global slice.  This did not appear to make much difference for the LARGE case, while still using the sender-based spiking function (which now has to work a bit harder by indirecting through the synapses instead of just sequentially cruising through them).
 
 For LARGE case, 1 thread, Recv-based synapses
 	Function Name 	   Secs	    Pct
@@ -344,7 +344,7 @@ LARGE:  72.9    64.2    60.1   -- all = max procs
 
 # Axon 1.5.15 NeuronCa = true, 11/8/22: FS-FFFB inhib and network-level compute
 
-For the key HUGE and GINORM cases, we are getting major speedups with threads, but it is about the same as before overall.  Interestingly, GOMAXPROCS, which should determine how the prjn and layer goroutines are deployed, doesn't make any difference.
+For the key HUGE and GINORM cases, we are getting major speedups with threads, but it is about the same as before overall.  Interestingly, GOMAXPROCS, which should determine how the path and layer goroutines are deployed, doesn't make any difference.
 
 ```
 Size     1 thr  2 thr  4 thr
@@ -356,7 +356,7 @@ HUGE:     12.6  7.13  5.84
 GINORM:   13.5  7.19  7.03
 ```
 
-If you compare running -threads=1 vs. -threads=4 without the -silent flag, it is clear that there is about a 2% overhead for running go routines over the prjns:
+If you compare running -threads=1 vs. -threads=4 without the -silent flag, it is clear that there is about a 2% overhead for running go routines over the paths:
 
 ```
 $ ./bench -epochs 5 -pats 10 -units 1024 -threads=4

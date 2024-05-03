@@ -6,15 +6,15 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
-	"github.com/emer/gosl/v2/slbool"
 )
 
-//gosl: hlsl inhib
+//gosl:hlsl inhib
 // #include "fsfffb.hlsl"
-//gosl: end inhib
+//gosl:end inhib
 
-//gosl: start inhib
+//gosl:start inhib
 
 ///////////////////////////////////////////////////////////////////////
 //  ActAvgParams
@@ -24,7 +24,7 @@ import (
 // average activity within a target range.
 type ActAvgParams struct {
 
-	// nominal estimated average activity level in the layer, which is used in computing the scaling factor on sending projections from this layer.  In general it should roughly match the layer ActAvg.ActMAvg value, which can be logged using the axon.LogAddDiagnosticItems function.  If layers receiving from this layer are not getting enough Ge excitation, then this Nominal level can be lowered to increase projection strength (fewer active neurons means each one contributes more, so scaling factor goes as the inverse of activity level), or vice-versa if Ge is too high.  It is also the basis for the target activity level used for the AdaptGi option -- see the Offset which is added to this value.
+	// nominal estimated average activity level in the layer, which is used in computing the scaling factor on sending pathways from this layer.  In general it should roughly match the layer ActAvg.ActMAvg value, which can be logged using the axon.LogAddDiagnosticItems function.  If layers receiving from this layer are not getting enough Ge excitation, then this Nominal level can be lowered to increase pathway strength (fewer active neurons means each one contributes more, so scaling factor goes as the inverse of activity level), or vice-versa if Ge is too high.  It is also the basis for the target activity level used for the AdaptGi option -- see the Offset which is added to this value.
 	Nominal float32 `min:"0" step:"0.01"`
 
 	// enable adapting of layer inhibition Gi multiplier factor (stored in layer GiMult value) to maintain a target layer level of ActAvg.Nominal.  This generally works well and improves the long-term stability of the models.  It is not enabled by default because it depends on having established a reasonable Nominal + Offset target activity level.
@@ -190,4 +190,4 @@ func (ip *InhibParams) Defaults() {
 	ip.Pool.Gi = 1.1
 }
 
-//gosl: end inhib
+//gosl:end inhib

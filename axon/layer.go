@@ -23,7 +23,7 @@ import (
 // ni  = absolute whole network neuron index
 
 // axon.Layer implements the basic Axon spiking activation function,
-// and manages learning in the projections.
+// and manages learning in the pathways.
 type Layer struct {
 	LayerBase
 
@@ -44,7 +44,7 @@ func (ly *Layer) Defaults() { //types:add
 			ly.Values[di].ActAvg.GiMult = 1
 		}
 	}
-	for _, pj := range ly.RcvPrjns { // must do prjn defaults first, then custom
+	for _, pj := range ly.RcvPaths { // must do path defaults first, then custom
 		pj.Defaults()
 	}
 	if ly.Params == nil {
@@ -117,7 +117,7 @@ func (ly *Layer) Defaults() { //types:add
 
 // Update is an interface for generically updating after edits
 // this should be used only for the values on the struct itself.
-// UpdateParams is used to update all parameters, including Prjn.
+// UpdateParams is used to update all parameters, including Path.
 func (ly *Layer) Update() {
 	if ly.Params == nil {
 		return
@@ -130,12 +130,12 @@ func (ly *Layer) Update() {
 
 // UpdateParams updates all params given any changes that might
 // have been made to individual values including those in the
-// receiving projections of this layer.
+// receiving pathways of this layer.
 // This is not called Update because it is not just about the
 // local values in the struct.
 func (ly *Layer) UpdateParams() {
 	ly.Update()
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.UpdateParams()
 	}
 }
@@ -212,13 +212,13 @@ func JsonToParams(b []byte) string {
 // AllParams returns a listing of all parameters in the Layer
 func (ly *Layer) AllParams() string {
 	str := "/////////////////////////////////////////////////\nLayer: " + ly.Nm + "\n" + ly.Params.AllParams()
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		str += pj.AllParams()
 	}
 	return str
 }
 
-// note: all basic computation can be performed on layer-level and prjn level
+// note: all basic computation can be performed on layer-level and path level
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
@@ -237,13 +237,13 @@ func (ly *Layer) InitWts(ctx *Context, nt *Network) { //types:add
 	ly.InitActAvg(ctx)
 	ly.InitActs(ctx)
 	ly.InitGScale(ctx)
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		if pj.IsOff() {
 			continue
 		}
 		pj.InitWts(ctx, nt)
 	}
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -385,13 +385,13 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 			// Target layers are dynamically updated
 		}
 	}
-	ly.InitPrjnGBuffs(ctx)
+	ly.InitPathGBuffs(ctx)
 }
 
-// InitPrjnGBuffs initializes the projection-level conductance buffers and
-// conductance integration values for receiving projections in this layer.
-func (ly *Layer) InitPrjnGBuffs(ctx *Context) {
-	for _, pj := range ly.RcvPrjns {
+// InitPathGBuffs initializes the pathway-level conductance buffers and
+// conductance integration values for receiving pathways in this layer.
+func (ly *Layer) InitPathGBuffs(ctx *Context) {
+	for _, pj := range ly.RcvPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -401,7 +401,7 @@ func (ly *Layer) InitPrjnGBuffs(ctx *Context) {
 
 // InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
 func (ly *Layer) InitWtSym(ctx *Context) {
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -412,7 +412,7 @@ func (ly *Layer) InitWtSym(ctx *Context) {
 		if pj.Recv.Index() < pj.Send.Index() {
 			continue
 		}
-		rpj, has := ly.RecipToSendPrjn(pj)
+		rpj, has := ly.RecipToSendPath(pj)
 		if !has {
 			continue
 		}
@@ -522,7 +522,7 @@ func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
 // ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
 func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	lNy, lNx, _, _ := tensor.Prjn2DShape(&ly.Shp, false)
+	lNy, lNx, _, _ := tensor.Projection2DShape(&ly.Shp, false)
 
 	ymx := min(ext.DimSize(0), lNy)
 	xmx := min(ext.DimSize(1), lNx)
@@ -530,7 +530,7 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
 			val := float32(ext.Float(idx))
-			lni := uint32(tensor.Prjn2DIndex(&ly.Shp, false, y, x))
+			lni := uint32(tensor.Projection2DIndex(&ly.Shp, false, y, x))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
@@ -621,7 +621,7 @@ func (ly *Layer) InitGScale(ctx *Context) {
 	totGiRel := float32(0)
 	totGmRel := float32(0)
 	totGmnRel := float32(0)
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -629,8 +629,8 @@ func (ly *Layer) InitGScale(ctx *Context) {
 		savg := slay.Params.Inhib.ActAvg.Nominal
 		snu := slay.NNeurons
 		ncon := pj.RecvConNAvgMax.Avg
-		pj.Params.GScale.Scale = pj.Params.PrjnScale.FullScale(savg, float32(snu), ncon)
-		// reverting this change: if you want to eliminate a prjn, set the Off flag
+		pj.Params.GScale.Scale = pj.Params.PathScale.FullScale(savg, float32(snu), ncon)
+		// reverting this change: if you want to eliminate a path, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
 		// then set the scale to 0.
 		// if pj.Params.GScale == 0 {
@@ -638,21 +638,21 @@ func (ly *Layer) InitGScale(ctx *Context) {
 		// }
 		switch pj.Params.Com.GType {
 		case InhibitoryG:
-			totGiRel += pj.Params.PrjnScale.Rel
+			totGiRel += pj.Params.PathScale.Rel
 		case ModulatoryG:
-			totGmRel += pj.Params.PrjnScale.Rel
+			totGmRel += pj.Params.PathScale.Rel
 		case MaintG:
-			totGmnRel += pj.Params.PrjnScale.Rel
+			totGmnRel += pj.Params.PathScale.Rel
 		default:
-			totGeRel += pj.Params.PrjnScale.Rel
+			totGeRel += pj.Params.PathScale.Rel
 		}
 	}
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		switch pj.Params.Com.GType {
 		case InhibitoryG:
 			if totGiRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
+				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGiRel
 				pj.Params.GScale.Scale /= totGiRel
 			} else {
 				pj.Params.GScale.Rel = 0
@@ -660,7 +660,7 @@ func (ly *Layer) InitGScale(ctx *Context) {
 			}
 		case ModulatoryG:
 			if totGmRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGmRel
+				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGmRel
 				pj.Params.GScale.Scale /= totGmRel
 			} else {
 				pj.Params.GScale.Rel = 0
@@ -669,7 +669,7 @@ func (ly *Layer) InitGScale(ctx *Context) {
 			}
 		case MaintG:
 			if totGmnRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGmnRel
+				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGmnRel
 				pj.Params.GScale.Scale /= totGmnRel
 			} else {
 				pj.Params.GScale.Rel = 0
@@ -678,7 +678,7 @@ func (ly *Layer) InitGScale(ctx *Context) {
 			}
 		default:
 			if totGeRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
+				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGeRel
 				pj.Params.GScale.Scale /= totGeRel
 			} else {
 				pj.Params.GScale.Rel = 0
@@ -701,7 +701,7 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 	perNeur := 300 // cost per neuron, relative to synapse which is 1
 	neur = int(ly.NNeurons) * perNeur
 	syn = 0
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		syn += int(pj.NSyns)
 	}
 	tot = neur + syn

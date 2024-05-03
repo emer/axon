@@ -4,10 +4,10 @@
 
 package axon
 
-//gosl: start hip_prjns
+//gosl:start hip_paths
 
-// HipPrjnParams define behavior of hippocampus prjns, which have special learning rules
-type HipPrjnParams struct {
+// HipPathParams define behavior of hippocampus paths, which have special learning rules
+type HipPathParams struct {
 
 	// Hebbian learning proportion
 	Hebb float32 `default:"0"`
@@ -27,7 +27,7 @@ type HipPrjnParams struct {
 	pad, pad1, pad2 float32
 }
 
-func (hp *HipPrjnParams) Defaults() {
+func (hp *HipPathParams) Defaults() {
 	hp.Hebb = 0
 	hp.Err = 1
 	hp.SAvgCor = 0.4
@@ -35,12 +35,12 @@ func (hp *HipPrjnParams) Defaults() {
 	hp.SNominal = 0.1
 }
 
-func (hp *HipPrjnParams) Update() {
+func (hp *HipPathParams) Update() {
 
 }
 
-//gosl: end hip_prjns
+//gosl:end hip_paths
 
-func (pj *PrjnParams) HipDefaults() {
+func (pj *PathParams) HipDefaults() {
 	pj.SWts.Init.Sym.SetBool(false)
 }

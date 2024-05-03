@@ -4,90 +4,90 @@
 
 package axon
 
-//gosl: start prjntypes
+//gosl:start pathtypes
 
-// PrjnTypes is an axon-specific prjn type enum,
+// PathTypes is an axon-specific path type enum,
 // that encompasses all the different algorithm types supported.
 // Class parameter styles automatically key off of these types.
-// The first entries must be kept synchronized with the emer.PrjnType.
-type PrjnTypes int32 //enums:enum
+// The first entries must be kept synchronized with the emer.PathType.
+type PathTypes int32 //enums:enum
 
-// The projection types
+// The pathway types
 const (
-	// Forward is a feedforward, bottom-up projection from sensory inputs to higher layers
-	ForwardPrjn PrjnTypes = iota
+	// Forward is a feedforward, bottom-up pathway from sensory inputs to higher layers
+	ForwardPath PathTypes = iota
 
-	// Back is a feedback, top-down projection from higher layers back to lower layers
-	BackPrjn
+	// Back is a feedback, top-down pathway from higher layers back to lower layers
+	BackPath
 
-	// Lateral is a lateral projection within the same layer / area
-	LateralPrjn
+	// Lateral is a lateral pathway within the same layer / area
+	LateralPath
 
-	// Inhib is an inhibitory projection that drives inhibitory
+	// Inhib is an inhibitory pathway that drives inhibitory
 	// synaptic conductances instead of the default excitatory ones.
-	InhibPrjn
+	InhibPath
 
-	// CTCtxt are projections from Superficial layers to CT layers that
+	// CTCtxt are pathways from Superficial layers to CT layers that
 	// send Burst activations drive updating of CtxtGe excitatory conductance,
-	// at end of plus (51B Bursting) phase.  Biologically, this projection
+	// at end of plus (51B Bursting) phase.  Biologically, this pathway
 	// comes from the PT layer 5IB neurons, but it is simpler to use the
 	// Super neurons directly, and PT are optional for most network types.
-	// These projections also use a special learning rule that
+	// These pathways also use a special learning rule that
 	// takes into account the temporal delays in the activation states.
 	// Can also add self context from CT for deeper temporal context.
-	CTCtxtPrjn
+	CTCtxtPath
 
-	// RWPrjn does dopamine-modulated learning for reward prediction:
+	// RWPath does dopamine-modulated learning for reward prediction:
 	// Da * Send.CaSpkP (integrated current spiking activity).
-	// Uses RLPredPrjn parameters.
+	// Uses RLPredPath parameters.
 	// Use in RWPredLayer typically to generate reward predictions.
 	// If the Da sign is positive, the first recv unit learns fully;
 	// for negative, second one learns fully.  Lower lrate applies for
 	// opposite cases.  Weights are positive-only.
-	RWPrjn
+	RWPath
 
-	// TDPredPrjn does dopamine-modulated learning for reward prediction:
+	// TDPredPath does dopamine-modulated learning for reward prediction:
 	// DWt = Da * Send.SpkPrv (activity on *previous* timestep)
-	// Uses RLPredPrjn parameters.
+	// Uses RLPredPath parameters.
 	// Use in TDPredLayer typically to generate reward predictions.
 	// If the Da sign is positive, the first recv unit learns fully;
 	// for negative, second one learns fully.  Lower lrate applies for
 	// opposite cases.  Weights are positive-only.
-	TDPredPrjn
+	TDPredPath
 
-	// BLAPrjn implements the Rubicon BLA learning rule:
+	// BLAPath implements the Rubicon BLA learning rule:
 	// dW = ACh * X_t-1 * (Y_t - Y_t-1)
 	// The recv delta is across trials, where the US should activate on trial
 	// boundary, to enable sufficient time for gating through to OFC, so
 	// BLA initially learns based on US present - US absent.
 	// It can also learn based on CS onset if there is a prior CS that predicts that.
-	BLAPrjn
+	BLAPath
 
-	HipPrjn
+	HipPath
 
-	// VSPatchPrjn implements the VSPatch learning rule:
+	// VSPatchPath implements the VSPatch learning rule:
 	// dW = ACh * DA * X * Y
 	// where DA is D1 vs. D2 modulated DA level, X = sending activity factor,
 	// Y = receiving activity factor, and ACh provides overall modulation.
-	VSPatchPrjn
+	VSPatchPath
 
-	// VSMatrixPrjn is for ventral striatum matrix (SPN / MSN) neurons
+	// VSMatrixPath is for ventral striatum matrix (SPN / MSN) neurons
 	// supporting trace-based learning, where an initial
 	// trace of synaptic co-activity is formed, and then modulated
 	// by subsequent phasic dopamine & ACh when an outcome occurs.
 	// This bridges the temporal gap between gating activity
 	// and subsequent outcomes, and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
-	VSMatrixPrjn
+	VSMatrixPath
 
-	// DSMatrixPrjn is for dorsal striatum matrix (SPN / MSN) neurons
+	// DSMatrixPath is for dorsal striatum matrix (SPN / MSN) neurons
 	// supporting trace-based learning, where an initial
 	// trace of synaptic co-activity is formed, and then modulated
 	// by subsequent phasic dopamine & ACh when an outcome occurs.
 	// This bridges the temporal gap between gating activity
 	// and subsequent outcomes, and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level (from CINs in biology).
-	DSMatrixPrjn
+	DSMatrixPath
 )
 
-//gosl: end prjntypes
+//gosl:end pathtypes

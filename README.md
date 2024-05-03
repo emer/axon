@@ -66,11 +66,11 @@ make -C axon release
 
 * `ActParams` (in [act.go](axon/act.go)), `InhibParams` (in [inhib.go](axon/inhib.go)), and `LearnNeurParams` / `LearnSynParams` (in [learn.go](axon/learn.go)) provide the core parameters and functions used.
 
-* There are 3 main levels of structure: `Network`, `Layer` and `Prjn` (projection).  The network calls methods on its Layers, and Layers iterate over both `Neuron` data structures (which have only a minimal set of methods) and the `Prjn`s, to implement the relevant computations.  The `Prjn` fully manages everything about a projection of connectivity between two layers, including the full list of `Synapse` elements in the connection.  The Layer also has a set of `Pool` elements, one for each level at which inhibition is computed (there is always one for the Layer, and then optionally one for each Sub-Pool of units).
+* There are 3 main levels of structure: `Network`, `Layer` and `Path` (pathway).  The network calls methods on its Layers, and Layers iterate over both `Neuron` data structures (which have only a minimal set of methods) and the `Path`s, to implement the relevant computations.  The `Path` fully manages everything about a pathway of connectivity between two layers, including the full list of `Synapse` elements in the connection.  The Layer also has a set of `Pool` elements, one for each level at which inhibition is computed (there is always one for the Layer, and then optionally one for each Sub-Pool of units).
 
-* The `NetworkBase`, `LayerBase`, and `PrjnBase` structs manage all the core structural aspects (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while directly implementing the algorithm code.  The [layer_compute.go](axon/layer_compute.go) file has the core algorithm specific code, while [layer.go](axon/layer.go) has other algorithm specific maintenance code.
+* The `NetworkBase`, `LayerBase`, and `PathBase` structs manage all the core structural aspects (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while directly implementing the algorithm code.  The [layer_compute.go](axon/layer_compute.go) file has the core algorithm specific code, while [layer.go](axon/layer.go) has other algorithm specific maintenance code.
 
-* To enable the [GPU](GPU.md) implementation, all of the layer parameters are in `LayerParams` (accessed via `Layer.Params`) and prjn params in `PrjnParams` (accessed via `Prjn.Params`), in [layerparams.go](layerparams.go) and [prjnparams.go](prjnparams.go) respectively.  `LayerParams` contains `ActParams` field (named `Act`), etc.
+* To enable the [GPU](GPU.md) implementation, all of the layer parameters are in `LayerParams` (accessed via `Layer.Params`) and path params in `PathParams` (accessed via `Path.Params`), in [layerparams.go](layerparams.go) and [pathparams.go](pathparams.go) respectively.  `LayerParams` contains `ActParams` field (named `Act`), etc.
 
 * The ability to share parameter settings across multiple layers etc is achieved through a **styling**-based paradigm -- you apply parameter "styles" to relevant layers -- see [Params](https://github.com/emer/emergent/wiki/Params) for more info.  We adopt the CSS (cascading-style-sheets) standard where parameters can be specifed in terms of the Name of an object (e.g., `#Hidden`), the *Class* of an object (e.g., `.TopDown` -- where the class name TopDown is manually assigned to relevant elements), and the *Type* of an object (e.g., `Layer` applies to all layers).  Multiple space-separated classes can be assigned to any given element, enabling a powerful combinatorial styling strategy to be used.
 
@@ -220,13 +220,13 @@ Meanwhile, based on extensive experience with Axon and Leabra, here are some lik
 
 * **Longer-acting, bistable NMDA and GABA-B currents:** An essential step for enabling spiking neurons to form suitably stable, selective representations for learning was the inclusion of both NMDA and GABA-B channels, which are voltage dependent in a complementary manner as captured in the [Sanders et al, 2013](#References) model (which provided the basis for the implementation here).  These channels have long time constants and the voltage dependence causes them to promote a bistable activation state, with a smaller subset of neurons that have extra excitatory drive from the NMDA and avoid extra inhibition from GABA-B, while a majority of neurons have the opposite profile: extra inhibition from GABA-B and no additional excitation from NMDA.  With stronger conductance levels, these channels can produce robust active maintenance dynamics characteristic of layer 3 in the prefrontal cortex (PFC), but for posterior cortex, we use lower values that produce a weaker, but still essential, form of bistability.  Without these channels, neurons all just "take turns" firing at different points in time, and there is no sense in which a small subset are engaged to represent a specific input pattern -- that had been a blocking failure in all prior attempts to use spiking in Leabra models.
 
-* **Auto-normalized, relatively scaled Excitatory Conductances:** As in Leabra, the excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized weight values, which are subject to scaling on a projection level to alter relative contributions.  Automatic scaling is performed to compensate for differences in expected activity level in the different projections.  See section on [Projection scaling](#projection-scaling) for details.  All of this makes it much easier to create models of different sizes and configurations with minimal (though still non-zero) need for additional parameter tweaking.
+* **Auto-normalized, relatively scaled Excitatory Conductances:** As in Leabra, the excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized weight values, which are subject to scaling on a pathway level to alter relative contributions.  Automatic scaling is performed to compensate for differences in expected activity level in the different pathways.  See section on [Projection scaling](#pathway-scaling) for details.  All of this makes it much easier to create models of different sizes and configurations with minimal (though still non-zero) need for additional parameter tweaking.
 
 ## Temporal and Spatial Dynamics of Dendritic Integration
 
 A key dividing line in biological realism of neural models concerns the inclusion of separate dynamics for dendrites versus the soma, with a considerable literature arguing that significant computational functionality arises from nonlinear dynamics in the dendritic integration process.  AdEx is a single compartment "point neuron" model (soma only), and obviously there is a major tradeoff in computational cost associated with modeling dendritic dynamics within individual neurons in any detail.  In Axon, we have taken a middle ground (as usual), by including a separate dendritic membrane potential `VmDend` that better reflects the dynamics of depolarization in the dendrites, relative to the standard AdEx `Vm` which reflects full integration in the soma.  Voltage-gated channels localized in the dendrites, including NMDA and GABA-B, are driven by this `VmDend`, and doing so results in significantly better performance vs. using the somatic `Vm`.
 
-Furthermore, synaptic inputs are integrated first by separate projections, and then integrated into the full somatic conductances, and thus it is possible to implement nonlinear interactions among the different dendritic branches where these different projections may be organized.  This is done specifically in the MSN (medium spiny neurons) of the basal ganglia in the `pcore` algorithm, and in the `PT` (pyramidal tract, layer 5IB intrinsic bursting) neurons also implemented in `pcore`.  As noted above, each projection is also subject to different scaling factors, which while still linear, is critical for enabling models to function properly (e.g., top-down projections must in general be significantly weaker than bottom-up projections, to keep the models from hallucinating).  These ways of capturing dendritic dynamics probably capture a reasonable proportion of the relevant functional properties in the biology, but more work with direct comparisons with fully detailed compartmental models is necessary to understand these issues better.  See the [Appendix: Dendritic Dynamics](#appendix-dendritic-dynamics) for more discussion.
+Furthermore, synaptic inputs are integrated first by separate pathways, and then integrated into the full somatic conductances, and thus it is possible to implement nonlinear interactions among the different dendritic branches where these different pathways may be organized.  This is done specifically in the MSN (medium spiny neurons) of the basal ganglia in the `pcore` algorithm, and in the `PT` (pyramidal tract, layer 5IB intrinsic bursting) neurons also implemented in `pcore`.  As noted above, each pathway is also subject to different scaling factors, which while still linear, is critical for enabling models to function properly (e.g., top-down pathways must in general be significantly weaker than bottom-up pathways, to keep the models from hallucinating).  These ways of capturing dendritic dynamics probably capture a reasonable proportion of the relevant functional properties in the biology, but more work with direct comparisons with fully detailed compartmental models is necessary to understand these issues better.  See the [Appendix: Dendritic Dynamics](#appendix-dendritic-dynamics) for more discussion.
 
 ## Inhibitory Competition Function Simulating Effects of Interneurons
 
@@ -236,7 +236,7 @@ Inhibition is provided in the neocortex primarily by the fast-spiking parvalbumi
 
 Thus, we are now using the [FS-FFFB](fsfffb) *fast & slow* FFFB function that more explicitly captures the contributions of the PV+ and SST+ interneurons, and is based directly on FF and FB spikes, without requiring access to the internal Ge and Act rate-code variables in each neuron.  See above link for more info.  This function works even better overall than the original FFFB, in addition to providing a much more direct mapping onto the underlying biology.
 
-While most layers and models use the FS-FFFB approximation, Axon does support explicit modelling of inhibitory neurons by using the `emer.Inhib` value of `emer.PrjnType`.
+While most layers and models use the FS-FFFB approximation, Axon does support explicit modelling of inhibitory neurons by using the `emer.Inhib` value of `emer.PathType`.
 
 See the `examples/inhib` model (from the CCN textbook originally) for an exploration of the basic excitatory and inhibitory dynamics in these models, comparing interneurons with FS-FFFB.
 
@@ -257,7 +257,7 @@ Axon now uses a different formulation of error-driven learning, that accomplishe
 
 The detailed derivation of this *kinase trace* learning mechanism is provided in the [Appendix: Kinase-Trace Learning Rule Derivation](#appendix-kinase-trace-learning-rule-derivation), and summarized here.  The algorithm is presented first at an abstract mathematical level, and then in terms of the underlying biological mechanisms that actually implement it.
 
-Also, deep_{[net.go](axon/deep_net.go), [layer.go](axon/deep_layer.go), [prjns.go](axon/deep_prjns.go)}  implement the extra anatomically motivated mechanisms for *predictive* error-driven learning [OReilly et al., 2021](https://ccnlab.org/papers/OReillyRussinZolfagharEtAl21.pdf), where the minus phase represents a prediction and the plus phase represents the actual outcome.  Biologically, we hypothesize that the two pathways of connectivity into the Pulvinar nucleus of the thalamus convey a top-down prediction and a bottom-up ground-truth outcome, respectively, providing an abundant source of error signals without requiring an explicit teacher.
+Also, deep_{[net.go](axon/deep_net.go), [layer.go](axon/deep_layer.go), [paths.go](axon/deep_paths.go)}  implement the extra anatomically motivated mechanisms for *predictive* error-driven learning [OReilly et al., 2021](https://ccnlab.org/papers/OReillyRussinZolfagharEtAl21.pdf), where the minus phase represents a prediction and the plus phase represents the actual outcome.  Biologically, we hypothesize that the two pathways of connectivity into the Pulvinar nucleus of the thalamus convey a top-down prediction and a bottom-up ground-truth outcome, respectively, providing an abundant source of error signals without requiring an explicit teacher.
 
 ### Error Gradient and Credit Assignment
 
@@ -430,16 +430,16 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 
 * `GeExt` = extra excitatory conductance added to `Ge` -- from `Ext` input and other special layer types that receive special Ext-like input (e.g., PulvinarLayer getting Driver input in plus phase; CTLayer context input).
 * `GeRaw` = raw excitatory conductance (net input) received from senders = current raw spiking drive.
-* `GeSyn` = time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in `GeRaw`) and exponential decay with `Dt.GeTau`, aggregated over projections -- does *not* include `Gbar.E`.
+* `GeSyn` = time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in `GeRaw`) and exponential decay with `Dt.GeTau`, aggregated over pathways -- does *not* include `Gbar.E`.
 * `GeBase` = baseline level of `Ge`, added to `GeRaw`, for intrinsic excitability.
 * `GiRaw` = raw inhibitory conductance (net input) received from senders  = current raw spiking drive.
-* `GiSyn` = time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in `GiRaw`) and exponential decay with `Dt.GiTau`, aggregated over projections -- does *not* include `Gbar.I`.  This is added with computed FFFB inhibition to get the full inhibition in `Gi`.
+* `GiSyn` = time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in `GiRaw`) and exponential decay with `Dt.GiTau`, aggregated over pathways -- does *not* include `Gbar.I`.  This is added with computed FFFB inhibition to get the full inhibition in `Gi`.
 * `GiBase` = baseline level of `Gi`, added to `GiRaw`, for intrinsic excitability.
 * `GeInt` = integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive.
 * `GeIntMax` = maximum GeInt value across one theta cycle time window.
 * `GiInt` = integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive.
-* `GModRaw`  = modulatory conductance, received from GType = ModulatoryG projections.
-* `GModSyn` = modulatory conductance, received from GType = ModulatoryG projections.
+* `GModRaw`  = modulatory conductance, received from GType = ModulatoryG pathways.
+* `GModSyn` = modulatory conductance, received from GType = ModulatoryG pathways.
 
 #### SST somatostatin inhibition factors
 
@@ -510,7 +510,7 @@ There is always at least one [`axon.Pool`](axon/pool.go) pool of neurons over wh
 
 ### Synapse
 
-Neurons are connected via synapses parameterized with the following variables, contained in the [`axon.Synapse`](axon/synapse.go) struct.  The [`axon.Prjn`](axon/prjn.go) contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures.
+Neurons are connected via synapses parameterized with the following variables, contained in the [`axon.Synapse`](axon/synapse.go) struct.  The [`axon.Path`](axon/paths.go) contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures.
 
 * `Wt` = effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  `Wt = SWt * WtSig(LWt)`, where `WtSig` produces values between 0-2 based on `LWt`, centered on 1.
 * `LWt` = rapidly learning, linear weight value -- learns according to the `LRate` specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all `LWt` are .5, which gives 1 from `WtSig` function.
@@ -527,23 +527,23 @@ Neurons are connected via synapses parameterized with the following variables, c
 
 The `axon.Network` `CycleImpl` method in [`axon/network.go`](axon/network.go) calls the following functions in order:
 
-* `GatherSpikes` on all `Neurons`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GValues` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
+* `GatherSpikes` on all `Neurons`s: integrates Raw and Syn conductances for each Path from spikes sent previously, into `GValues` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
 
 * `GiFmSpikes` on all `Layer`s: computes inhibitory conductances based on total incoming FF and FB spikes into the layer, using the [FS-FFFB](fsfffb) summary functions.
 
 * `CycleNeuron` on all `Neuron`s: integrates the Ge and Gi conductances from above, updates all the other channel conductances as described in [chans](chans), and then computes `Inet` as the net current from all these conductances, which then drives updates to `Vm` and `VmDend`.  If `Vm` exceeds threshold then `Spike` = 1.  It also updates the neuron-level calcium variables that drive learning (`CaLrn`, `CaM`, `CaP`, `CaD` and `CaSpk` versions of these).
 
-* `SendSpike` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `PrjnGatherSpikes` then integrates.  This is very expensive computationally because it goes through every synapse.
+* `SendSpike` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `PathGatherSpikes` then integrates.  This is very expensive computationally because it goes through every synapse.
 
 * `CyclePost` on all `Layer`s: a hook for specialized algorithms.
 
-* `SynCaSend` and `SynCaRecv` on all `Prjn`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is expensive computationally because it goes through synapses (but only for neurons that actually spiked).
+* `SynCaSend` and `SynCaRecv` on all `Path`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is expensive computationally because it goes through synapses (but only for neurons that actually spiked).
 
 All of the relevant parameters and most of the equations are in the [`axon/act.go`](axon/act.go),  [`axon/inhib.go`](axon/inhib.go), and [`axon/learn.go`](axon/learn.go) which correspond to the `Act`, `Inhib` and `Learn` fields in the `Layer` struct.  Default values of parameters are shown in comments below.
 
-### PrjnGatherSpikes: for each Prjn
+### PathGatherSpikes: for each Path
 
-`Prjn.GValues` integrates two synaptic conductance values `G` per receiving neuron index, using Ge time constants for excitatory synapses, and Gi for inhibitory.  These values were sent before in `SendSpike` and stored in the `Prjn.GBuf` slice (see below).  In principle synaptic conductance is computed using a standard *alpha function* double-exponential with one time constant for the rise and another for the decay.  In practice, the rise time is < 1 msec and thus it is simpler to just add the new raw and decay (decay tau = 5 msec):
+`Path.GValues` integrates two synaptic conductance values `G` per receiving neuron index, using Ge time constants for excitatory synapses, and Gi for inhibitory.  These values were sent before in `SendSpike` and stored in the `Path.GBuf` slice (see below).  In principle synaptic conductance is computed using a standard *alpha function* double-exponential with one time constant for the rise and another for the decay.  In practice, the rise time is < 1 msec and thus it is simpler to just add the new raw and decay (decay tau = 5 msec):
 * `GRaw = GBuf` at the `Com.Delay` index (e.g., 2 msec)
 * `GSyn += GRaw - Act.Dt.GeDt * GSyn  // GeSynFmRaw or GiSynFmRaw`
 
@@ -572,7 +572,7 @@ Overall inhibition:
 
 There are three major steps here: `GInteg`, `SpikeFmG`, and `CaFmSpike`, the last of which updates Ca values used in learning.
 
-The logic of spike communication is complicated by the presence of synaptic delays, in `Prjn.Com.Delay`, such that spikes are accumulated into one place on a ring buffer that is organized by recv neuron and then delay per each neuron, while being read out of another location in this buffer:
+The logic of spike communication is complicated by the presence of synaptic delays, in `Path.Com.Delay`, such that spikes are accumulated into one place on a ring buffer that is organized by recv neuron and then delay per each neuron, while being read out of another location in this buffer:
 
 ```
 GBuf: [RecvNeuron][MaxDelay]
@@ -584,19 +584,19 @@ C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
 C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around
 ```
 
-Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each projection, so that means that threading can only be projection-parallel (fairly coarse-grained).  For the GPU, an atomic add operation is used to aggregate to GBuf, operating with sending neuron-level parallelism.
+Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each pathway, so that means that threading can only be pathway-parallel (fairly coarse-grained).  For the GPU, an atomic add operation is used to aggregate to GBuf, operating with sending neuron-level parallelism.
 
-The first-pass reading of recv spikes happens in `PrjnGatherSpikes` at the Prjn level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GValues, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
+The first-pass reading of recv spikes happens in `PathGatherSpikes` at the Path level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GValues, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
 
-Finally, `NeuronGatherSpikes` iterates over all recv neurons, and gathers the GRaw and GSyn values across the RecvPrjns into the relevant Neuron-level variables: `GeRaw, GeSyn; GiRaw, GiSyn; GModRaw, GModSyn` for the three different types of projections: `ExcitatoryG`, `InhibitoryG`, and `ModulatoryG`.
+Finally, `NeuronGatherSpikes` iterates over all recv neurons, and gathers the GRaw and GSyn values across the RecvPaths into the relevant Neuron-level variables: `GeRaw, GeSyn; GiRaw, GiSyn; GModRaw, GModSyn` for the three different types of pathways: `ExcitatoryG`, `InhibitoryG`, and `ModulatoryG`.
 
 TODO: inhibition!
 
-#### GInteg: Integrate G\*Raw and G\*Syn from Recv Prjns, other G\*s
+#### GInteg: Integrate G\*Raw and G\*Syn from Recv Paths, other G\*s
 
-Iterates over Recv Prjns:
-* `GeRaw += prjn.GRaw // if excitatory`
-* `GeSyn += prjn.Gsyn`
+Iterates over Recv Paths:
+* `GeRaw += paths.GRaw // if excitatory`
+* `GeSyn += paths.Gsyn`
 * or Gi\* if inhibitory
 
 Then all the special conductances:
@@ -676,7 +676,7 @@ In addition, the Ca trace used for synaptic-level integration for the trace-base
 
 Finally, various peripheral aspects of learning (learning rate modulation, thresholds, etc) and some performance statistics use simple cascaded time-integrals of spike-driven Ca at the Neuron level, in the `CaSpk` variables.  The initial Ca level from spiking is just multiplied by a gain factor:
 
-* `SpikeG` (8 or 12) = gain multiplier on spike for computing `CaSpk`: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on `CaSpk` values: `RLRate`, `UpdateThr`.  `Prjn.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level `CaSpk` values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
+* `SpikeG` (8 or 12) = gain multiplier on spike for computing `CaSpk`: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on `CaSpk` values: `RLRate`, `UpdateThr`.  `Path.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level `CaSpk` values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
 
 The cascaded integration of these variables is:
 ```Go
@@ -687,13 +687,13 @@ The cascaded integration of these variables is:
 
 ### SendSpike
 
-For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, and for each sending Synapse, `Prjn.GScale.Scale` (computed projection scaling, see [Projection scaling](#projection-scaling)) is multiplied by the synaptic weight `Wt`, and added into the `GBuf` buffer for each receiving neuron, at the ring index for `Com.Delay` (such that it will be added that many cycles later in `PrjnGatherSpikes`).  The `PIBuf` for the inhibitory pool of each receiving neuron is also incremented.
+For each Neuron, if `Spike != 0`, then iterate over `SendPaths` for that layer, and for each sending Synapse, `Path.GScale.Scale` (computed pathway scaling, see [Projection scaling](#pathway-scaling)) is multiplied by the synaptic weight `Wt`, and added into the `GBuf` buffer for each receiving neuron, at the ring index for `Com.Delay` (such that it will be added that many cycles later in `PathGatherSpikes`).  The `PIBuf` for the inhibitory pool of each receiving neuron is also incremented.
 
 This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.
 
 ### SynCaSend, SynCaRecv
 
-If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SynCaSend`) and then any receiving neurons that spiked (`SynCaRecv`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdateThr` = 0.01.
+If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two pathway-level functions are called across all pathways, which are optimized to first filter by any sending neurons that have just spiked (`SynCaSend`) and then any receiving neurons that spiked (`SynCaRecv`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdateThr` = 0.01.
 
 After filtering, the basic cascaded integration shown above is performed on synapse-level variables where the immediate driving Ca value is the product of `CaSyn` on the recv and send neurons times a `SpikeG` gain factor:
 * `CaM += (SpikeG * send.CaSyn * recv.CaSyn - CaM) / MTau`
@@ -779,7 +779,7 @@ The `SWt` is updated from `DSWt` which is accumulated from all the ensuing `DWt`
     } else {
     	DSWt *= (SWt - SWt.Limit.Min)
     }
-    SWt += SWt.Adapt.LRate * (DSWt - AVG(DSWt)) // AVG over Recv synapses per Prjn
+    SWt += SWt.Adapt.LRate * (DSWt - AVG(DSWt)) // AVG over Recv synapses per Path
     LWt = SigInverse(Wt / SWt)   // inverse of sigmoid
 ```
 The learning rate here is typically slow, on the order 0.001 or even lower in large networks.
@@ -802,17 +802,17 @@ This updates all the learned weights, and consequently the effective weights, mo
 
 ## Projection scaling
 
-The `Ge` and `Gi` synaptic conductances computed from a given projection from one layer to the next reflect the number of receptors currently open and capable of passing current, which is a function of the activity of the sending layer, and total number of synapses.  We use a set of equations to automatically normalize (rescale) these factors across different projections, so that each projection has roughly an equal influence on the receiving neuron, by default.
+The `Ge` and `Gi` synaptic conductances computed from a given pathway from one layer to the next reflect the number of receptors currently open and capable of passing current, which is a function of the activity of the sending layer, and total number of synapses.  We use a set of equations to automatically normalize (rescale) these factors across different pathways, so that each pathway has roughly an equal influence on the receiving neuron, by default.
 
 The most important factor to be mindful of for this automatic rescaling process is the expected activity level in a given sending layer.  This is set initially to `Layer.Inhib.ActAvg.Nominal`, and adapted from there by the various other parameters in that `Inhib.ActAvg` struct.  It is a good idea in general to set that `Nominal` value to a reasonable estimate of the proportion of activity you expect in the layer, and in very small networks, it is typically much better to just set the `Fixed` flag and keep this `Nominal` value as such, as otherwise the automatically computed averages can fluctuate significantly and thus create corresponding changes in input scaling.  The default `UseFirst` flag tries to avoid the dependence on the `Nominal` values but sometimes the first value may not be very representative, so it is better to set `Nominal` and turn off `UseFirst` for more reliable performance.
 
-Furthermore, we add two tunable parameters that further scale the overall conductance received from a given projection (one in a *relative* way compared to other projections, and the other a simple *absolute* multiplicative scaling factor).  These are some of the most important parameters to configure in the model -- in particular the strength of top-down "back" projections typically must be relatively weak compared to bottom-up forward projections (e.g., a relative scaling factor of 0.1 or 0.2 relative to the forward projections).
+Furthermore, we add two tunable parameters that further scale the overall conductance received from a given pathway (one in a *relative* way compared to other pathways, and the other a simple *absolute* multiplicative scaling factor).  These are some of the most important parameters to configure in the model -- in particular the strength of top-down "back" pathways typically must be relatively weak compared to bottom-up forward pathways (e.g., a relative scaling factor of 0.1 or 0.2 relative to the forward pathways).
 
 The scaling contributions of these two factors are:
 
 * `GScale = WtScale.Abs * (WtScale.Rel / Sum(all WtScale.Rel))`
 
-Thus, all the `Rel` factors contribute in proportion to their relative value compared to the sum of all such factors across all receiving projections into a layer, while `Abs` just multiplies directly.
+Thus, all the `Rel` factors contribute in proportion to their relative value compared to the sum of all such factors across all receiving pathways into a layer, while `Abs` just multiplies directly.
 
 In general, you want to adjust the `Rel` factors, to keep the total `Ge` and `Gi` levels relatively constant, while just shifting the relative contributions.  In the relatively rare case where the overall `Ge` levels are too high or too low, you should adjust the `Abs` values to compensate.
 
@@ -820,7 +820,7 @@ Typically the `Ge` value should be between .5 and 1, to maintain a reasonably re
 
 ### Automatic Rescaling
 
-Here are the relevant factors that are used to compute the automatic rescaling to take into account the expected activity level on the sending layer, and the number of connections in the projection.  The actual code is in [layer.go](axon/layer.go) `GScaleFmAvgAct()` and [act.go](axon/act.go) `SLayActScale`.
+Here are the relevant factors that are used to compute the automatic rescaling to take into account the expected activity level on the sending layer, and the number of connections in the pathway.  The actual code is in [layer.go](axon/layer.go) `GScaleFmAvgAct()` and [act.go](axon/act.go) `SLayActScale`.
 
 * `savg` = sending layer average activation
 * `snu` = sending layer number of units
@@ -848,17 +848,17 @@ The only way to manage the complexity of large spiking nets is to develop advanc
 
 # Appendix: Specialized Algorithms: BG, PFC, DA, etc
 
-This repository contains specialized additions to the core algorithm described above, which are implemented via specific `LayerTypes` and `PrjnTypes`, in `_net.go`, `_layers.go`, and `_prjns.go` files:
+This repository contains specialized additions to the core algorithm described above, which are implemented via specific `LayerTypes` and `PathTypes`, in `_net.go`, `_layers.go`, and `_paths.go` files:
 
-* The [deep cortical layers](Deep.md) and the bidirectional connections with the thalamus, which can support predictive error-driven learning [O'Reilly et al., 2021](#references): deep_{[net.go](axon/deep_net.go), [layers.go](axon/deep_layers.go), [prjns.go](axon/deep_prjns.go)}. The basic Axon represents purely superficial-layer processing, consistent with the `LayerTypes` of `SuperLayer`.
+* The [deep cortical layers](Deep.md) and the bidirectional connections with the thalamus, which can support predictive error-driven learning [O'Reilly et al., 2021](#references): deep_{[net.go](axon/deep_net.go), [layers.go](axon/deep_layers.go), [paths.go](axon/deep_paths.go)}. The basic Axon represents purely superficial-layer processing, consistent with the `LayerTypes` of `SuperLayer`.
 
-* [Reinforcement Learning](RL.md) including as Rescorla-Wagner and TD (temporal differences). rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [prjns.go](axon/rl_prjns.go)}.
+* [Reinforcement Learning](RL.md) including as Rescorla-Wagner and TD (temporal differences). rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [paths.go](axon/rl_paths.go)}.
 
-* The [Rubicon](Rubicon.md) model, including PVLV (Primary Value, Learned Value), which is a biologically detailed model of the brain circuits driving goal-driven motivated behavior and phasic dopamine firing, in: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.
+* The [Rubicon](Rubicon.md) model, including PVLV (Primary Value, Learned Value), which is a biologically detailed model of the brain circuits driving goal-driven motivated behavior and phasic dopamine firing, in: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [paths.go](axon/pvlv_paths.go)}.
 
-* The [PCore](PCoreBG.md) Pallidal Core model of basal ganglia (BG) in: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
+* The [PCore](PCoreBG.md) Pallidal Core model of basal ganglia (BG) in: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [paths.go](axon/pcore_paths.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
 
-* [Hip](Hip.md) implements the hippocampus-specific learning mechanisms, in hip_{[net.go](axon/hip_net.go), [prjns.go](axon/hip_prjns.go)}.
+* [Hip](Hip.md) implements the hippocampus-specific learning mechanisms, in hip_{[net.go](axon/hip_net.go), [paths.go](axon/hip_paths.go)}.
 
 # Appendix: Kinase-Trace Learning Rule Derivation
 
@@ -919,7 +919,7 @@ GABAa rise, decay times:
 
 # Appendix: Dendritic Dynamics
 
-A series of models published around the year 2000 investigated the role of active dendritic channels on signal integration across different dendritic compartments [(Migliore et al, 1999; Poirazi et al, 2003; Jarsky et al, 2005)](#references) -- see [Spruston (2008), Poirazi & Papoutsi (2020)](#references) for reviews.  A common conclusion was that the A-type K channel can be inactivated as a result of elevated Vm in the dendrite, driving a nonlinear gating-like interaction between dendritic inputs: when enough input comes in (e.g., from 2 different projections), then the rest of the inputs are all integrated more-or-less linearly, but below this critical threshold, inputs are much more damped by the active A-type K channels.  There are also other complications associated with VGCC L-type and T-type voltage-gated Ca channels which can drive Ca spikes, to amplify regular AMPA conductances, relative weakness and attenuation of active HH Na spiking channels in dendrites, and issues of where inhibition comes in, etc.  See following figure from Spruston (2008) for a summary of some key traces:
+A series of models published around the year 2000 investigated the role of active dendritic channels on signal integration across different dendritic compartments [(Migliore et al, 1999; Poirazi et al, 2003; Jarsky et al, 2005)](#references) -- see [Spruston (2008), Poirazi & Papoutsi (2020)](#references) for reviews.  A common conclusion was that the A-type K channel can be inactivated as a result of elevated Vm in the dendrite, driving a nonlinear gating-like interaction between dendritic inputs: when enough input comes in (e.g., from 2 different pathways), then the rest of the inputs are all integrated more-or-less linearly, but below this critical threshold, inputs are much more damped by the active A-type K channels.  There are also other complications associated with VGCC L-type and T-type voltage-gated Ca channels which can drive Ca spikes, to amplify regular AMPA conductances, relative weakness and attenuation of active HH Na spiking channels in dendrites, and issues of where inhibition comes in, etc.  See following figure from Spruston (2008) for a summary of some key traces:
 
 <img src="figs/fig_dendrite_coinc_spruston08_fig5.png" width="800">
 

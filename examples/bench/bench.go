@@ -14,6 +14,7 @@ import (
 	"math"
 	"math/rand"
 
+	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
@@ -21,8 +22,7 @@ import (
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/emergent/v2/timer"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // note: with 2 hidden layers, this simple test case converges to perfect performance:
@@ -32,11 +32,11 @@ import (
 var ParamSets = params.Sets{
 	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "",
+			{Sel: "Path", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWts.Adapt.LRate": "0.1", // .1 >= .2,
-					"Prjn.SWts.Init.SPct":   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Path.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+					"Path.SWts.Adapt.LRate": "0.1", // .1 >= .2,
+					"Path.SWts.Init.SPct":   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{
@@ -54,9 +54,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.70",
 					"Layer.Acts.Clamp.Ge":  "0.8",
 				}},
-			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Path.PathScale.Rel": "0.2",
 				}},
 		},
 	}},
@@ -74,9 +74,9 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 	hid3Lay := net.AddLayer("Hidden3", shp, axon.SuperLayer)
 	outLay := net.AddLayer("Output", shp, axon.TargetLayer)
 
-	full := prjn.NewFull()
+	full := paths.NewFull()
 
-	net.ConnectLayers(inLay, hid1Lay, full, axon.ForwardPrjn)
+	net.ConnectLayers(inLay, hid1Lay, full, axon.ForwardPath)
 	net.BidirConnectLayers(hid1Lay, hid2Lay, full)
 	net.BidirConnectLayers(hid2Lay, hid3Lay, full)
 	net.BidirConnectLayers(hid3Lay, outLay, full)
@@ -218,10 +218,10 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 	}
 	tmr.Stop()
 	if verbose {
-		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
+		fmt.Printf("Took %v for %v epochs, avg per epc: %6.4g\n", tmr.Total, epcs, float64(tmr.Total)/float64(epcs))
 		net.TimerReport()
 	} else {
-		fmt.Printf("Total Secs: %6.3g\n", tmr.TotalSecs())
+		fmt.Printf("Total Secs: %v\n", tmr.Total)
 	}
 
 	net.GPU.Destroy()

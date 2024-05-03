@@ -6,7 +6,7 @@ package chans
 
 import "cogentcore.org/core/math32"
 
-//gosl: start chans
+//gosl:start chans
 
 // SahpParams implements a slow afterhyperpolarizing (sAHP) channel,
 // It has a slowly accumulating calcium value, aggregated at the
@@ -110,4 +110,4 @@ func (mp *SahpParams) GsAHP(n float32) float32 {
 	return mp.Gbar * n
 }
 
-//gosl: end chans
+//gosl:end chans

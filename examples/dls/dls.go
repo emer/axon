@@ -37,9 +37,9 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
-	"github.com/emer/emergent/v2/timer"
+	"cogentcore.org/core/base/timer"
 	"github.com/emer/emergent/v2/empi/mpi"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -71,7 +71,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// if true, stop running at end of a sequence (for NetView Di data parallel index)
@@ -214,8 +214,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	popX := 4
 	space := float32(2)
 
-	full := prjn.NewFull()
-	// prjnClass := "PFCPrjn"
+	full := paths.NewFull()
+	// pathClass := "PFCPath"
 
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
@@ -242,8 +242,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// Spiral the BG loops so that goal selection influencces action selection.
 	// vSSTNp := ss.Net.AxonLayerByName("VsSTNp")
 	// vSSTNs := ss.Net.AxonLayerByName("VsSTNs")
-	// net.ConnectLayers(vSSTNp, dSGPi, full, axon.ForwardPrjn).SetClass(vSSTNp.SndPrjns[0].Cls)
-	// net.ConnectLayers(vSSTNs, dSGPi, full, axon.ForwardPrjn).SetClass(vSSTNs.SndPrjns[0].Cls)
+	// net.ConnectLayers(vSSTNp, dSGPi, full, axon.ForwardPath).SetClass(vSSTNp.SndPaths[0].Cls)
+	// net.ConnectLayers(vSSTNs, dSGPi, full, axon.ForwardPath).SetClass(vSSTNs.SndPaths[0].Cls)
 
 	///////////////////////////////////////////
 	// M1, VL, ALM
@@ -258,21 +258,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
 	_ = almPT
 
-	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPrjn)
+	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPath)
 
 	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPTp, full) // alm predicts m1
 
 	// vl is a predictive thalamus but we don't have direct access to its source
-	// net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
+	// net.ConnectToPulv(m1, m1CT, vl, full, full, pathClass)
 	net.ConnectToPFC(nil, vl, m1, m1CT, m1PTp, full)    // m1 predicts vl
 	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts vl
 
 	// sensory inputs guiding action
 	// note: alm gets effort, pos via predictive coding below
 
-	// these projections are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).SetClass("ToVL")
-	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// these pathways are *essential* -- must get current state here
+	net.ConnectLayers(m1, vl, full, axon.ForwardPath).SetClass("ToVL")
+	net.ConnectLayers(alm, vl, full, axon.ForwardPath).SetClass("ToVL")
 
 	// alm predicts cs, pos etc
 	net.ConnectToPFCBack(cs, csP, alm, almCT, almPTp, full)
@@ -283,7 +283,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBack(pos, posP, m1, m1CT, m1PTp, full)
 	net.ConnectToPFCBack(arm, armP, m1, m1CT, m1PTp, full)
 
-	net.ConnectLayers(dSGPi, m1VM, full, axon.InhibPrjn)
+	net.ConnectLayers(dSGPi, m1VM, full, axon.InhibPath)
 
 	// m1 and all of its inputs go to DS.
 	for _, dSLy := range []*axon.Layer{dSMtxGo, dSMtxNo, dSSTNP, dSSTNS} {

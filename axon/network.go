@@ -14,7 +14,7 @@ import (
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // axon.Network implements the Axon spiking model,
@@ -52,12 +52,12 @@ func (nt *Network) NewLayer() emer.Layer {
 	return &Layer{}
 }
 
-// NewPrjn returns new prjn of proper type
-func (nt *Network) NewPrjn() emer.Prjn {
-	return &Prjn{}
+// NewPath returns new path of proper type
+func (nt *Network) NewPath() emer.Path {
+	return &Path{}
 }
 
-// Defaults sets all the default parameters for all layers and projections
+// Defaults sets all the default parameters for all layers and pathways
 func (nt *Network) Defaults() {
 	nt.Rubicon.Defaults()
 	nt.SetNThreads(0) // default
@@ -67,7 +67,7 @@ func (nt *Network) Defaults() {
 }
 
 // UpdateParams updates all the derived parameters if any have changed, for all layers
-// and projections
+// and pathways
 func (nt *Network) UpdateParams() {
 	for _, ly := range nt.Layers {
 		ly.UpdateParams()
@@ -278,7 +278,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 	nt.GPU.SyncAllFromGPU()
 
 	nt.LayerMapSeq(func(ly *Layer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
-	nt.PrjnMapSeq(func(pj *Prjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
+	nt.PathMapSeq(func(pj *Path) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 
 	nt.GPU.SyncAllToGPU()
 	nt.GPU.SyncSynCaToGPU() // was cleared
@@ -293,7 +293,7 @@ func (nt *Network) InitWts(ctx *Context) { //types:add
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		nt.Rubicon.Reset(ctx, di)
 	}
-	nt.BuildPrjnGBuf()
+	nt.BuildPathGBuf()
 	ctx.SlowCtr = 0
 	ctx.SynCaCtr = 0
 	for _, ly := range nt.Layers {
@@ -318,8 +318,8 @@ func (nt *Network) InitWts(ctx *Context) { //types:add
 }
 
 // InitTopoSWts initializes SWt structural weight parameters from
-// prjn types that support topographic weight patterns, having flags set to support it,
-// includes: prjn.PoolTile prjn.Circle.
+// path types that support topographic weight patterns, having flags set to support it,
+// includes: paths.PoolTile paths.Circle.
 // call before InitWts if using Topo wts
 func (nt *Network) InitTopoSWts() {
 	ctx := &nt.Ctx
@@ -328,21 +328,21 @@ func (nt *Network) InitTopoSWts() {
 		if ly.IsOff() {
 			continue
 		}
-		for i := 0; i < ly.NRecvPrjns(); i++ {
-			pj := ly.RcvPrjns[i]
+		for i := 0; i < ly.NRecvPaths(); i++ {
+			pj := ly.RcvPaths[i]
 			if pj.IsOff() {
 				continue
 			}
 			pat := pj.Pattern()
 			switch pt := pat.(type) {
-			case *prjn.PoolTile:
+			case *paths.PoolTile:
 				if !pt.HasTopoWts() {
 					continue
 				}
 				slay := pj.Send
 				pt.TopoWts(slay.Shape(), ly.Shape(), swts)
 				pj.SetSWtsRPool(ctx, swts)
-			case *prjn.Circle:
+			case *paths.Circle:
 				if !pt.TopoWts {
 					continue
 				}
@@ -465,10 +465,10 @@ func (nt *Network) UpdateExtFlags(ctx *Context) {
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctx *Context) {
-	nt.PrjnMapSeq(func(pj *Prjn) { pj.SynFail(ctx) }, "SynFail")
+	nt.PathMapSeq(func(pj *Path) { pj.SynFail(ctx) }, "SynFail")
 }
 
-// LRateMod sets the LRate modulation parameter for Prjns, which is
+// LRateMod sets the LRate modulation parameter for Paths, which is
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
 func (nt *Network) LRateMod(mod float32) {
@@ -494,15 +494,15 @@ func (nt *Network) LRateSched(sched float32) {
 
 // SetSubMean sets the SubMean parameters in all the layers in the network
 // trgAvg is for Learn.TrgAvgAct.SubMean
-// prjn is for the prjns Learn.Trace.SubMean
+// path is for the paths Learn.Trace.SubMean
 // in both cases, it is generally best to have both parameters set to 0
 // at the start of learning
-func (nt *Network) SetSubMean(trgAvg, prjn float32) {
+func (nt *Network) SetSubMean(trgAvg, path float32) {
 	for _, ly := range nt.Layers {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.SetSubMean(trgAvg, prjn)
+		ly.SetSubMean(trgAvg, path)
 	}
 }
 
@@ -548,7 +548,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 			if ly.Params.IsLearnTrgAvg() {
 				nwts += int(ly.NNeurons)
 			}
-			for _, pj := range ly.SndPrjns {
+			for _, pj := range ly.SndPaths {
 				nwts += int(pj.NSyns) + 3 // Scale, AvgAvg, MaxAvg
 			}
 		}
@@ -575,7 +575,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 			}
 			idx += int(nn)
 		}
-		for _, pj := range ly.SndPrjns {
+		for _, pj := range ly.SndPaths {
 			for lni := range pj.SendCon {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
@@ -619,7 +619,7 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 			}
 			idx += int(nn)
 		}
-		for _, pj := range ly.SndPrjns {
+		for _, pj := range ly.SndPaths {
 			for lni := range pj.SendCon {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
@@ -639,9 +639,9 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Misc Reports / Threading Allocation
 
-// SizeReport returns a string reporting the size of each layer and projection
+// SizeReport returns a string reporting the size of each layer and pathway
 // in the network, and total memory footprint.
-// If detail flag is true, details per layer, projection is included.
+// If detail flag is true, details per layer, pathway is included.
 func (nt *Network) SizeReport(detail bool) string {
 	var b strings.Builder
 
@@ -661,7 +661,7 @@ func (nt *Network) SizeReport(detail bool) string {
 			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn,
 				(datasize.Size)(nrnMem).String())
 		}
-		for _, pj := range ly.SndPrjns {
+		for _, pj := range ly.SndPaths {
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
 			//  2. RecvConIndex + RecvSynIndex + SendConIndex (consists of int32 indices = 4B)

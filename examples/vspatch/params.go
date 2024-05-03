@@ -32,13 +32,13 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.NeuroMod.AChLRateMod": "0",
 				"Layer.Learn.NeuroMod.DAModGain":   "0", // this is actual perf mod
 			}},
-		{Sel: ".VSPatchPrjn", Desc: "",
+		{Sel: ".VSPatchPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "2",
-				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 necc to fit closely; no bene for 0.01
-				"Prjn.SWts.Init.Mean":       "0.5",
-				"Prjn.SWts.Init.Var":        "0.25",
+				"Path.PathScale.Abs":        "2",
+				"Path.Learn.Trace.LearnThr": "0",
+				"Path.Learn.LRate.Base":     "0.02", // 0.02 necc to fit closely; no bene for 0.01
+				"Path.SWts.Init.Mean":       "0.5",
+				"Path.SWts.Init.Var":        "0.25",
 			}},
 	},
 }

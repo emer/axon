@@ -23,7 +23,7 @@ func SetAvgMaxFloatFromIntErr(fun func()) {
 	AvgMaxFloatFromIntErrMu.Unlock()
 }
 
-//gosl: start avgmaxi
+//gosl:start avgmaxi
 
 // AvgMaxI32 holds average and max statistics for float32,
 // and values used for computing them incrementally,
@@ -96,7 +96,7 @@ func (am *AvgMaxI32) FloatToIntSum(val float32) int32 {
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)
 func (am *AvgMaxI32) FloatFromInt(ival, refIndex int32) float32 {
-	//gosl: end avgmaxi
+	//gosl:end avgmaxi
 	// note: this is not GPU-portable..
 	if ival < 0 {
 		log.Printf("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIndex: %d\n", refIndex)
@@ -106,7 +106,7 @@ func (am *AvgMaxI32) FloatFromInt(ival, refIndex int32) float32 {
 		}
 		return 1
 	}
-	//gosl: start avgmaxi
+	//gosl:start avgmaxi
 	return float32(ival) * am.FloatFromIntFactor()
 }
 
@@ -130,9 +130,9 @@ func (am *AvgMaxI32) Calc(refIndex int32) {
 	am.Init()                                  // immediately ready to go
 }
 
-//gosl: end avgmaxi
+//gosl:end avgmaxi
 
-//gosl: hlsl avgmaxi
+//gosl:hlsl avgmaxi
 /*
 // // AtomicUpdateAvgMaxI32 provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.
@@ -140,7 +140,7 @@ func (am *AvgMaxI32) Calc(refIndex int32) {
 // // must be directly operating on a RWStorageBuffer entity.
 #define AtomicUpdateAvgMaxI32(am, val) InterlockedAdd(am.Sum, am.FloatToIntSum(val)); InterlockedMax(am.CurMax, am.FloatToInt(val))
 */
-//gosl: end avgmaxi
+//gosl:end avgmaxi
 
 func (am *AvgMaxI32) String() string {
 	return fmt.Sprintf("{Avg: %g, Max: %g, N: %d}", am.Avg, am.Max, am.N)

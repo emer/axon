@@ -9,7 +9,7 @@ import (
 	"github.com/emer/emergent/v2/params"
 )
 
-//gosl: start deep_layers
+//gosl:start deep_layers
 
 // BurstParams determine how the 5IB Burst activation is computed from
 // CaSpkP integrated spiking values in Super layers -- thresholded.
@@ -42,7 +42,7 @@ func (bp *BurstParams) ThrFromAvgMax(avg, mx float32) float32 {
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
 
-	// gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
+	// gain factor for context excitatory input, which is constant as compared to the spiking input from other pathways, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
 	GeGain float32 `default:"0.05,0.1,1,2"`
 
 	// decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50
@@ -105,7 +105,7 @@ func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
 	return 1.0 - math32.Min(1, drvMax/tp.FullDriveAct)
 }
 
-//gosl: end deep_layers
+//gosl:end deep_layers
 
 // note: Defaults not called on GPU
 
@@ -194,7 +194,7 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0
 
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		slay := pj.Send
 		if slay.LayerType() == BGThalLayer {
 			pj.Params.Com.GType = ModulatoryG

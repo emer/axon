@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -46,8 +46,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	inputLayer1 := net.AddLayer("Input1", shape, InputLayer)
 	inputLayer2 := net.AddLayer("Input2", shape, InputLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
-	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), ForwardPrjn)
-	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), ForwardPrjn)
+	net.ConnectLayers(inputLayer1, outputLayer, paths.NewFull(), ForwardPath)
+	net.ConnectLayers(inputLayer2, outputLayer, paths.NewFull(), ForwardPath)
 
 
 	// Input1 -> Output
@@ -68,13 +68,13 @@ func TestLayer_SendSpike(t *testing.T) {
 	// set some of the weights
 	const in1pj0_n1_to_n2_wt = 0.1
 	const in1pj0_scale = 6.6
-	in1pj0 := inputLayer1.SendPrjn(0).(*Prjn)
+	in1pj0 := inputLayer1.SendPath(0).(*Path)
 	// in1pj0.Syns[in1pj0.SendConIndexStart[1]].Wt = in1pj0_n1_to_n2_wt
 	in1pj0.Params.GScale.Scale = in1pj0_scale
 
 	const in2pj0_n0_to_n4_wt = 3.0
 	const in2pj0_scale = 0.4
-	in2pj0 := inputLayer2.SendPrjn(0).(*Prjn)
+	in2pj0 := inputLayer2.SendPath(0).(*Path)
 	in2pj0.Params.GScale.Scale = in2pj0_scale
 	// in2pj0.Syns[in2pj0.SendConIndexStart[0]+4].Wt = in2pj0_n0_to_n4_wt
 
@@ -84,8 +84,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	// the neurons we spiked are connected to 9 neurons in the output layer
 	// make sure they all received the spike
 	recvBuffs := [][]float32{
-		inputLayer1.SndPrjns[0].(*Prjn).GBuf,
-		inputLayer2.SndPrjns[0].(*Prjn).GBuf,
+		inputLayer1.SndPaths[0].(*Path).GBuf,
+		inputLayer2.SndPaths[0].(*Path).GBuf,
 	}
 	for _, recvBuf := range recvBuffs {
 		count := 0
@@ -141,8 +141,8 @@ func TestLayerToJson(t *testing.T) {
 	assert.NoError(t, fh.Close())
 
 	// make sure the synapse weights are the same
-	origProj := hiddenLayer.RcvPrjns[0]
-	copyProj := hiddenLayerC.RcvPrjns[0]
+	origProj := hiddenLayer.RcvPaths[0]
+	copyProj := hiddenLayerC.RcvPaths[0]
 	varIndex, _ := origProj.SynVarIndex("Wt")
 	assert.Equal(t, origProj.Syn1DNum(), copyProj.Syn1DNum())
 	for idx := 0; idx < origProj.Syn1DNum(); idx++ {
@@ -171,8 +171,8 @@ func createNetwork(ctx *Context, shape []int, t *testing.T) *Network {
 	inputLayer := net.AddLayer("Input", shape, InputLayer)
 	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
-	full := prjn.NewFull()
-	net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPrjn)
+	full := paths.NewFull()
+	net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPath)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 	assert.NoError(t, net.Build(ctx))
 	net.Defaults()
@@ -188,9 +188,9 @@ func TestLayerBase_IsOff(t *testing.T) {
 	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 
-	full := prjn.NewFull()
-	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPrjn)
-	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, ForwardPrjn)
+	full := paths.NewFull()
+	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPath)
+	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, ForwardPath)
 	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 
 	ctx := NewContext()

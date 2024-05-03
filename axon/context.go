@@ -8,9 +8,9 @@ import (
 	"math"
 
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/vgpu/gosl/slbool"
+	"cogentcore.org/core/vgpu/gosl/slrand"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/gosl/v2/slbool"
-	"github.com/emer/gosl/v2/slrand"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 // this is key for cases where there are alternative versions of functions
 // in GPU vs. CPU.
 
-//gosl: nohlsl context
+//gosl:nohlsl context
 
 // NeuronVars
 
@@ -243,18 +243,18 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 	ctx.SynapseIndexes = srcCtx.SynapseIndexes
 }
 
-//gosl: end context
+//gosl:end context
 
-//gosl: hlsl context
+//gosl:hlsl context
 // #include "etime.hlsl"
 // #include "axonrand.hlsl"
 // #include "neuron.hlsl"
 // #include "synapse.hlsl"
 // #include "globals.hlsl"
 // #include "neuromod.hlsl"
-//gosl: end context
+//gosl:endhlsl context
 
-//gosl: start context
+//gosl:start context
 
 // NetIndexes are indexes and sizes for processing network
 type NetIndexes struct {
@@ -390,7 +390,7 @@ type Context struct {
 	// cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState
 	Cycle int32
 
-	// length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn).
+	// length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPath).
 	ThetaCycles int32 `default:"200"`
 
 	// total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time
@@ -514,11 +514,11 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 	return ctx.GlobalUSposIndex(0, GlobalVarsN, 0)
 }
 
-//gosl: end context
+//gosl:end context
 
 // note: following is real code, uncommented by gosl
 
-//gosl: hlsl context
+//gosl:hlsl context
 
 /*
 
@@ -759,9 +759,9 @@ void AddGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIndex, float
 
 */
 
-//gosl: end context
+//gosl:end context
 
-//gosl: start context
+//gosl:start context
 
 // GlobalsReset resets all global values to 0, for all NData
 func GlobalsReset(ctx *Context) {
@@ -819,7 +819,7 @@ func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence Valence
 	return us
 }
 
-//gosl: end context
+//gosl:end context
 
 // NewState resets counters at start of new state (trial) of processing.
 // Pass the evaluation model associated with this new state --

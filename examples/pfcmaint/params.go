@@ -22,13 +22,13 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.05",
 			}},
-		{Sel: ".PFCPrjn", Desc: "",
+		{Sel: ".PFCPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0",
+				"Path.PathScale.Abs": "1.0",
 			}},
 		{Sel: "#GPiToPFCThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0",
+				"Path.PathScale.Abs": "4.0",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -62,46 +62,46 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".InputToPFC", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Path.PathScale.Abs": "2",
 			}},
 		{Sel: ".CTtoPred", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 1 def
+				"Path.PathScale.Abs": "2", // 1 def
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PTtoPred", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was 6
+				"Path.PathScale.Abs": "1", // was 6
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".CTToPulv", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0",
-				"Prjn.PrjnScale.Abs": "0",
+				"Path.PathScale.Rel": "0",
+				"Path.PathScale.Abs": "0",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
+				"Path.PathScale.Abs": "4.0", // 4 > 2 for gating sooner
 			}},
 		{Sel: "#PFCPTpToItemP", Desc: "weaker",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.PathScale.Abs": "1",
 			}},
 		{Sel: "#ItemPToPFCCT", Desc: "weaker",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.1",
+				"Path.PathScale.Abs": "0.1",
 			}},
 		{Sel: "#TimePToPFCCT", Desc: "stronger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.5",
+				"Path.PathScale.Rel": "0.5",
 			}},
 		{Sel: "#TimePToPFC", Desc: "stronger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.5",
+				"Path.PathScale.Rel": "0.5",
 			}},
 	},
 }
@@ -119,13 +119,13 @@ var ParamSetsCons = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.ActAvg.Nominal": "0.05",
 			}},
-		{Sel: ".PFCPrjn", Desc: "",
+		{Sel: ".PFCPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0",
+				"Path.PathScale.Abs": "1.0",
 			}},
 		{Sel: "#GPiToPFCThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0",
+				"Path.PathScale.Abs": "4.0",
 			}},
 		{Sel: ".PTMaintLayer", Desc: "time integration params",
 			Params: params.Params{
@@ -141,25 +141,25 @@ var ParamSetsCons = netparams.Sets{
 			}},
 		{Sel: ".InputToPFC", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Path.PathScale.Abs": "2",
 			}},
-		{Sel: ".PFCPrjn", Desc: "",
+		{Sel: ".PFCPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2",
+				"Path.PathScale.Abs": "2",
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "1",
-				"Prjn.PrjnScale.Abs": "5", // needs 5
+				"Path.PathScale.Rel": "1",
+				"Path.PathScale.Abs": "5", // needs 5
 			}},
 		{Sel: ".CTToPulv", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0",
-				"Prjn.PrjnScale.Abs": "0",
+				"Path.PathScale.Rel": "0",
+				"Path.PathScale.Abs": "0",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
+				"Path.PathScale.Abs": "4.0", // 4 > 2 for gating sooner
 			}},
 	},
 }

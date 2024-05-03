@@ -81,55 +81,55 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Decay.AHP":          "0.0", // clear ahp
 				"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > 0.05 with CaSpkD as var
 			}},
-		{Sel: "Prjn", Desc: "std",
+		{Sel: "Path", Desc: "std",
 			Params: params.Params{
-				"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
-				"Prjn.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
-				"Prjn.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
-				"Prjn.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
-				"Prjn.Com.PFail":           "0.0",
-				"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 still 1.7.19
+				"Path.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
+				"Path.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
+				"Path.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
+				"Path.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
+				"Path.Com.PFail":           "0.0",
+				"Path.Learn.Trace.Tau":     "2", // 2 > 1 still 1.7.19
 			}},
-		{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
+				"Path.PathScale.Rel": "0.2", // 0.2 > 0.3
 			}},
-		{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
+		{Sel: ".CTCtxtPath", Desc: "all CT context paths",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.02", // 0.02 >= 0.03 > 0.01
-				"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1  still 1.7.19
-				"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
+				"Path.Learn.LRate.Base":    "0.02", // 0.02 >= 0.03 > 0.01
+				"Path.Learn.Trace.Tau":     "2",    // 2 > 1  still 1.7.19
+				"Path.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 			}},
 		{Sel: ".CTFromSuper", Desc: "full > 1to1",
 			Params: params.Params{
-				"Prjn.Learn.Learn":    "true",
-				"Prjn.SWts.Init.Mean": "0.5",
-				"Prjn.SWts.Init.Var":  "0.25",
+				"Path.Learn.Learn":    "true",
+				"Path.SWts.Init.Mean": "0.5",
+				"Path.SWts.Init.Var":  "0.25",
 			}},
 		{Sel: ".CTSelfCtxt", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
-				"Prjn.SWts.Init.Sym": "true", // true > false
+				"Path.PathScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
+				"Path.SWts.Init.Sym": "true", // true > false
 			}},
 		{Sel: ".CTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 0.4, 0.3 > 0.8 (very bad)
-				"Prjn.Com.GType":     "MaintG",
-				"Prjn.SWts.Init.Sym": "true", // no effect?  not sure why
+				"Path.PathScale.Abs": "0.5", // 0.5 > 0.4, 0.3 > 0.8 (very bad)
+				"Path.Com.GType":     "MaintG",
+				"Path.SWts.Init.Sym": "true", // no effect?  not sure why
 			}},
 		// {Sel: ".CTSelfMaint", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Rel": "0.1",
-		// 		"Prjn.SWts.Init.Sym":  "true", // no effect?  not sure why
+		// 		"Path.PathScale.Rel": "0.1",
+		// 		"Path.SWts.Init.Sym":  "true", // no effect?  not sure why
 		// 	}},
 		{Sel: ".FromPulv", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
+				"Path.PathScale.Rel": "0.1", // 0.1 > 0.2
 			}},
 		// {Sel: ".CTToPulv", Desc: "",
 		// 	Params: params.Params{
-		// 		// "Prjn.Learn.LRate.Base":  "0.1",
-		// 		// "Prjn.SWts.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
+		// 		// "Path.Learn.LRate.Base":  "0.1",
+		// 		// "Path.SWts.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
 		// 	}},
 	},
 }

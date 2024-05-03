@@ -4,16 +4,16 @@
 
 package axon
 
-import "github.com/emer/gosl/v2/slbool"
+import "cogentcore.org/core/vgpu/gosl/slbool"
 
-//gosl: start pcore_prjns
+//gosl:start pcore_paths
 
-// MatrixPrjnParams for trace-based learning in the MatrixPrjn.
+// MatrixPathParams for trace-based learning in the MatrixPath.
 // A trace of synaptic co-activity is formed, and then modulated by dopamine
 // whenever it occurs.  This bridges the temporal gap between gating activity
 // and subsequent activity, and is based biologically on synaptic tags.
 // Trace is applied to DWt and reset at the time of reward.
-type MatrixPrjnParams struct {
+type MatrixPathParams struct {
 
 	// proportion of trace activity driven by the basic credit assignment factor
 	// based on the PF modulatory inputs and activity of the receiving neuron,
@@ -43,19 +43,19 @@ type MatrixPrjnParams struct {
 	VSRewLearn slbool.Bool `default:"true"`
 }
 
-func (tp *MatrixPrjnParams) Defaults() {
+func (tp *MatrixPathParams) Defaults() {
 	tp.Credit = 0.6
 	tp.BasePF = 0.005
 	tp.Delta = 1
 	tp.VSRewLearn.SetBool(true)
 }
 
-func (tp *MatrixPrjnParams) Update() {
+func (tp *MatrixPathParams) Update() {
 }
 
-//gosl: end pcore_pjrns
+//gosl:end pcore_pjrns
 
-func (pj *PrjnParams) MatrixDefaults() {
+func (pj *PathParams) MatrixDefaults() {
 	pj.SWts.Adapt.On.SetBool(false)
 	pj.SWts.Adapt.SigGain = 6 // not 1 -- could be for some cases
 	pj.SWts.Init.Sym.SetBool(false)

@@ -78,11 +78,11 @@ type LayerBase struct {
 	// shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape
 	RepShp tensor.Shape `view:"-"`
 
-	// list of receiving projections into this layer from other layers
-	RcvPrjns AxonPrjns
+	// list of receiving pathways into this layer from other layers
+	RcvPaths AxonPaths
 
-	// list of sending projections from this layer to other layers
-	SndPrjns AxonPrjns
+	// list of sending pathways from this layer to other layers
+	SndPaths AxonPaths
 
 	// layer-level state values that are updated during computation -- one for each data parallel -- is a sub-slice of network full set
 	Values []LayerValues
@@ -134,12 +134,12 @@ func (ly *LayerBase) SetType(typ emer.LayerType) { ly.Typ = LayerTypes(typ) }
 func (ly *LayerBase) IsOff() bool                { return ly.Off }
 func (ly *LayerBase) SetOff(off bool) {
 	ly.Off = off
-	// a Prjn is off if either the sending or the receiving layer is off
-	// or if the prjn has been set to Off directly
-	for _, pj := range ly.RcvPrjns {
+	// a Path is off if either the sending or the receiving layer is off
+	// or if the path has been set to Off directly
+	for _, pj := range ly.RcvPaths {
 		pj.SetOff(pj.SendLay().IsOff() || off)
 	}
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		pj.SetOff(pj.RecvLay().IsOff() || off)
 	}
 }
@@ -151,55 +151,55 @@ func (ly *LayerBase) Pos() math32.Vector3        { return ly.Ps }
 func (ly *LayerBase) SetPos(pos math32.Vector3)  { ly.Ps = pos }
 func (ly *LayerBase) Index() int                 { return ly.Idx }
 func (ly *LayerBase) SetIndex(idx int)           { ly.Idx = idx }
-func (ly *LayerBase) RecvPrjns() *AxonPrjns      { return &ly.RcvPrjns }
-func (ly *LayerBase) NRecvPrjns() int            { return len(ly.RcvPrjns) }
-func (ly *LayerBase) RecvPrjn(idx int) emer.Prjn { return ly.RcvPrjns[idx] }
-func (ly *LayerBase) SendPrjns() *AxonPrjns      { return &ly.SndPrjns }
-func (ly *LayerBase) NSendPrjns() int            { return len(ly.SndPrjns) }
-func (ly *LayerBase) SendPrjn(idx int) emer.Prjn { return ly.SndPrjns[idx] }
+func (ly *LayerBase) RecvPaths() *AxonPaths      { return &ly.RcvPaths }
+func (ly *LayerBase) NRecvPaths() int            { return len(ly.RcvPaths) }
+func (ly *LayerBase) RecvPath(idx int) emer.Path { return ly.RcvPaths[idx] }
+func (ly *LayerBase) SendPaths() *AxonPaths      { return &ly.SndPaths }
+func (ly *LayerBase) NSendPaths() int            { return len(ly.SndPaths) }
+func (ly *LayerBase) SendPath(idx int) emer.Path { return ly.SndPaths[idx] }
 func (ly *LayerBase) RepIndexes() []int          { return ly.RepIxs }
 func (ly *LayerBase) NeurStartIndex() int        { return int(ly.NeurStIndex) }
 
-func (ly *LayerBase) SendNameTry(sender string) (emer.Prjn, error) {
+func (ly *LayerBase) SendNameTry(sender string) (emer.Path, error) {
 	return emer.SendNameTry(ly.AxonLay, sender)
 }
-func (ly *LayerBase) SendNameTypeTry(sender, typ string) (emer.Prjn, error) {
+func (ly *LayerBase) SendNameTypeTry(sender, typ string) (emer.Path, error) {
 	return emer.SendNameTypeTry(ly.AxonLay, sender, typ)
 }
-func (ly *LayerBase) RecvNameTry(receiver string) (emer.Prjn, error) {
+func (ly *LayerBase) RecvNameTry(receiver string) (emer.Path, error) {
 	return emer.RecvNameTry(ly.AxonLay, receiver)
 }
-func (ly *LayerBase) RecvNameTypeTry(receiver, typ string) (emer.Prjn, error) {
+func (ly *LayerBase) RecvNameTypeTry(receiver, typ string) (emer.Path, error) {
 	return emer.RecvNameTypeTry(ly.AxonLay, receiver, typ)
 }
 
-func (ly *LayerBase) SendName(sender string) *Prjn {
+func (ly *LayerBase) SendName(sender string) *Path {
 	pj, err := ly.SendNameTry(sender)
 	if err != nil {
 		log.Println(err)
 	}
-	return pj.(*Prjn) // will panic on nil
+	return pj.(*Path) // will panic on nil
 }
-func (ly *LayerBase) SendNameType(sender, typ string) *Prjn {
+func (ly *LayerBase) SendNameType(sender, typ string) *Path {
 	pj, err := ly.SendNameTypeTry(sender, typ)
 	if err != nil {
 		log.Println(err)
 	}
-	return pj.(*Prjn) // will panic on nil
+	return pj.(*Path) // will panic on nil
 }
-func (ly *LayerBase) RecvName(receiver string) *Prjn {
+func (ly *LayerBase) RecvName(receiver string) *Path {
 	pj, err := ly.RecvNameTry(receiver)
 	if err != nil {
 		log.Println(err)
 	}
-	return pj.(*Prjn) // will panic on nil
+	return pj.(*Path) // will panic on nil
 }
-func (ly *LayerBase) RecvNameType(receiver, typ string) *Prjn {
+func (ly *LayerBase) RecvNameType(receiver, typ string) *Path {
 	pj, err := ly.RecvNameTypeTry(receiver, typ)
 	if err != nil {
 		log.Println(err)
 	}
-	return pj.(*Prjn) // will panic on nil
+	return pj.(*Path) // will panic on nil
 }
 
 func (ly *LayerBase) Index4DFrom2D(x, y int) ([]int, bool) {
@@ -321,10 +321,10 @@ func (ly *LayerBase) LayerValues(di uint32) *LayerValues {
 	return &(ly.Values[di])
 }
 
-// RecipToSendPrjn finds the reciprocal projection to
-// the given sending projection within the ly layer.
+// RecipToSendPath finds the reciprocal pathway to
+// the given sending pathway within the ly layer.
 // i.e., where ly is instead the *receiving* layer from same other layer B
-// that is the receiver of the spj projection we're sending to.
+// that is the receiver of the spj pathway we're sending to.
 //
 //	ly = A,  other layer = B:
 //
@@ -332,8 +332,8 @@ func (ly *LayerBase) LayerValues(di uint32) *LayerValues {
 // rpj: R=A <- S=B
 //
 // returns false if not found.
-func (ly *LayerBase) RecipToSendPrjn(spj *Prjn) (*Prjn, bool) {
-	for _, rpj := range ly.RcvPrjns {
+func (ly *LayerBase) RecipToSendPath(spj *Path) (*Path, bool) {
+	for _, rpj := range ly.RcvPaths {
 		if rpj.SendLay() == spj.RecvLay() { // B = sender of rpj, recv of spj
 			return rpj, true
 		}
@@ -341,10 +341,10 @@ func (ly *LayerBase) RecipToSendPrjn(spj *Prjn) (*Prjn, bool) {
 	return nil, false
 }
 
-// RecipToRecvPrjn finds the reciprocal projection to
-// the given recv projection within the ly layer.
+// RecipToRecvPath finds the reciprocal pathway to
+// the given recv pathway within the ly layer.
 // i.e., where ly is instead the *sending* layer to same other layer B
-// that is the sender of the rpj projection we're receiving from.
+// that is the sender of the rpj pathway we're receiving from.
 //
 //	ly = A, other layer = B:
 //
@@ -352,8 +352,8 @@ func (ly *LayerBase) RecipToSendPrjn(spj *Prjn) (*Prjn, bool) {
 // spj: S=A -> R=B
 //
 // returns false if not found.
-func (ly *LayerBase) RecipToRecvPrjn(rpj *Prjn) (*Prjn, bool) {
-	for _, spj := range ly.SndPrjns {
+func (ly *LayerBase) RecipToRecvPath(rpj *Path) (*Path, bool) {
+	for _, spj := range ly.SndPaths {
 		if spj.RecvLay() == rpj.SendLay() { // B = sender of rpj, recv of spj
 			return spj, true
 		}
@@ -370,7 +370,7 @@ func (ly *LayerBase) Config(shape []int, typ emer.LayerType) {
 // ParamsHistoryReset resets parameter application history
 func (ly *LayerBase) ParamsHistoryReset() {
 	ly.ParamsHistory.ParamsHistoryReset()
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pj.ParamsHistoryReset()
 	}
 }
@@ -380,7 +380,7 @@ func (ly *LayerBase) ParamsApplied(sel *params.Sel) {
 	ly.ParamsHistory.ParamsApplied(sel)
 }
 
-// ApplyParams applies given parameter style Sheet to this layer and its recv projections.
+// ApplyParams applies given parameter style Sheet to this layer and its recv pathways.
 // Calls UpdateParams on anything set to ensure derived parameters are all updated.
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
 // it always prints a message if a parameter fails to be set.
@@ -396,7 +396,7 @@ func (ly *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) 
 	if err != nil {
 		rerr = err
 	}
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		app, err = pj.ApplyParams(pars, setMsg)
 		if app {
 			applied = true
@@ -424,7 +424,7 @@ func (ly *LayerBase) ApplyDefParams() {
 // are not at their default values -- useful for setting param styles etc.
 func (ly *LayerBase) NonDefaultParams() string {
 	nds := views.StructNonDefFieldsStr(ly.AxonLay.AsAxon().Params, ly.Nm)
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		pnd := pj.NonDefaultParams()
 		nds += pnd
 	}
@@ -519,10 +519,10 @@ func (ly *LayerBase) BuildPools(ctx *Context, nn uint32) error {
 	return nil
 }
 
-// BuildPrjns builds the projections, send-side
-func (ly *LayerBase) BuildPrjns(ctx *Context) error {
+// BuildPaths builds the pathways, send-side
+func (ly *LayerBase) BuildPaths(ctx *Context) error {
 	emsg := ""
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -537,7 +537,7 @@ func (ly *LayerBase) BuildPrjns(ctx *Context) error {
 	return nil
 }
 
-// Build constructs the layer state, including calling Build on the projections
+// Build constructs the layer state, including calling Build on the pathways
 func (ly *LayerBase) Build() error {
 	ctx := &ly.Network.Ctx
 	nn := uint32(ly.Shp.Len())
@@ -553,7 +553,7 @@ func (ly *LayerBase) Build() error {
 	if err != nil {
 		return err
 	}
-	err = ly.BuildPrjns(ctx)
+	err = ly.BuildPaths(ctx)
 	ly.AxonLay.PostBuild()
 	return err
 }
@@ -728,17 +728,17 @@ func (ly *LayerBase) UnitValue(varNm string, idx []int, di int) float32 {
 	return ly.UnitVal1D(vidx, fidx, di)
 }
 
-// RecvPrjnValues fills in values of given synapse variable name,
-// for projection into given sending layer and neuron 1D index,
+// RecvPathValues fills in values of given synapse variable name,
+// for pathway into given sending layer and neuron 1D index,
 // for all receiving neurons in this layer,
 // into given float32 slice (only resized if not big enough).
-// prjnType is the string representation of the prjn type -- used if non-empty,
-// useful when there are multiple projections between two layers.
+// pathType is the string representation of the path type -- used if non-empty,
+// useful when there are multiple pathways between two layers.
 // Returns error on invalid var name.
 // If the receiving neuron is not connected to the given sending layer or neuron
 // then the value is set to math32.NaN().
-// Returns error on invalid var name or lack of recv prjn (vals always set to nan on prjn err).
-func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.Layer, sendIndex1D int, prjnType string) error {
+// Returns error on invalid var name or lack of recv path (vals always set to nan on path err).
+func (ly *LayerBase) RecvPathValues(vals *[]float32, varNm string, sendLay emer.Layer, sendIndex1D int, pathType string) error {
 	var err error
 	nn := int(ly.NNeurons)
 	if *vals == nil || cap(*vals) < nn {
@@ -753,9 +753,9 @@ func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.
 	if sendLay == nil {
 		return fmt.Errorf("sending layer is nil")
 	}
-	var pj emer.Prjn
-	if prjnType != "" {
-		pj, err = sendLay.RecvNameTypeTry(ly.Nm, prjnType)
+	var pj emer.Path
+	if pathType != "" {
+		pj, err = sendLay.RecvNameTypeTry(ly.Nm, pathType)
 		if pj == nil {
 			pj, err = sendLay.RecvNameTry(ly.Nm)
 		}
@@ -766,7 +766,7 @@ func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.
 		return err
 	}
 	if pj.IsOff() {
-		return fmt.Errorf("projection is off")
+		return fmt.Errorf("pathway is off")
 	}
 	for ri := 0; ri < nn; ri++ {
 		(*vals)[ri] = pj.SynValue(varNm, sendIndex1D, ri) // this will work with any variable -- slower, but necessary
@@ -774,17 +774,17 @@ func (ly *LayerBase) RecvPrjnValues(vals *[]float32, varNm string, sendLay emer.
 	return nil
 }
 
-// SendPrjnValues fills in values of given synapse variable name,
-// for projection into given receiving layer and neuron 1D index,
+// SendPathValues fills in values of given synapse variable name,
+// for pathway into given receiving layer and neuron 1D index,
 // for all sending neurons in this layer,
 // into given float32 slice (only resized if not big enough).
-// prjnType is the string representation of the prjn type -- used if non-empty,
-// useful when there are multiple projections between two layers.
+// pathType is the string representation of the path type -- used if non-empty,
+// useful when there are multiple pathways between two layers.
 // Returns error on invalid var name.
 // If the sending neuron is not connected to the given receiving layer or neuron
 // then the value is set to math32.NaN().
-// Returns error on invalid var name or lack of recv prjn (vals always set to nan on prjn err).
-func (ly *LayerBase) SendPrjnValues(vals *[]float32, varNm string, recvLay emer.Layer, recvIndex1D int, prjnType string) error {
+// Returns error on invalid var name or lack of recv path (vals always set to nan on path err).
+func (ly *LayerBase) SendPathValues(vals *[]float32, varNm string, recvLay emer.Layer, recvIndex1D int, pathType string) error {
 	var err error
 	nn := int(ly.NNeurons)
 	if *vals == nil || cap(*vals) < nn {
@@ -799,9 +799,9 @@ func (ly *LayerBase) SendPrjnValues(vals *[]float32, varNm string, recvLay emer.
 	if recvLay == nil {
 		return fmt.Errorf("receiving layer is nil")
 	}
-	var pj emer.Prjn
-	if prjnType != "" {
-		pj, err = recvLay.SendNameTypeTry(ly.Nm, prjnType)
+	var pj emer.Path
+	if pathType != "" {
+		pj, err = recvLay.SendNameTypeTry(ly.Nm, pathType)
 		if pj == nil {
 			pj, err = recvLay.SendNameTry(ly.Nm)
 		}
@@ -812,7 +812,7 @@ func (ly *LayerBase) SendPrjnValues(vals *[]float32, varNm string, recvLay emer.
 		return err
 	}
 	if pj.IsOff() {
-		return fmt.Errorf("projection is off")
+		return fmt.Errorf("pathway is off")
 	}
 	for si := 0; si < nn; si++ {
 		(*vals)[si] = pj.SynValue(varNm, si, recvIndex1D)
@@ -821,7 +821,7 @@ func (ly *LayerBase) SendPrjnValues(vals *[]float32, varNm string, recvLay emer.
 }
 
 // VarRange returns the min / max values for given variable
-// todo: support r. s. projection values
+// todo: support r. s. pathway values
 func (ly *LayerBase) VarRange(varNm string) (min, max float32, err error) {
 	ctx := &ly.Network.Ctx
 	nn := ly.NNeurons
@@ -912,20 +912,20 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write(indent.TabBytes(depth))
 	}
 
-	onps := make(emer.Prjns, 0, len(ly.RcvPrjns))
-	for _, pj := range ly.RcvPrjns {
+	onps := make(emer.Paths, 0, len(ly.RcvPaths))
+	for _, pj := range ly.RcvPaths {
 		if !pj.IsOff() {
 			onps = append(onps, pj)
 		}
 	}
 	np := len(onps)
 	if np == 0 {
-		w.Write([]byte(fmt.Sprintf("\"Prjns\": null\n")))
+		w.Write([]byte(fmt.Sprintf("\"Paths\": null\n")))
 	} else {
-		w.Write([]byte(fmt.Sprintf("\"Prjns\": [\n")))
+		w.Write([]byte(fmt.Sprintf("\"Paths\": [\n")))
 		depth++
 		for pi, pj := range onps {
-			pj.WriteWtsJSON(w, depth) // this leaves prjn unterminated
+			pj.WriteWtsJSON(w, depth) // this leaves path unterminated
 			if pi == np-1 {
 				w.Write([]byte("\n"))
 			} else {
@@ -997,18 +997,18 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 		}
 	}
 	var err error
-	if len(lw.Prjns) == ly.NRecvPrjns() { // this is essential if multiple prjns from same layer
-		for pi := range lw.Prjns {
-			pw := &lw.Prjns[pi]
-			pj := ly.RcvPrjns[pi]
+	if len(lw.Paths) == ly.NRecvPaths() { // this is essential if multiple paths from same layer
+		for pi := range lw.Paths {
+			pw := &lw.Paths[pi]
+			pj := ly.RcvPaths[pi]
 			er := pj.SetWts(pw)
 			if er != nil {
 				err = er
 			}
 		}
 	} else {
-		for pi := range lw.Prjns {
-			pw := &lw.Prjns[pi]
+		for pi := range lw.Paths {
+			pw := &lw.Paths[pi]
 			pj, _ := ly.SendNameTry(pw.From)
 			if pj != nil {
 				er := pj.SetWts(pw)

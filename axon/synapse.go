@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-//gosl: start synapse
+//gosl:start synapse
 
 // SynapseVars are the neuron variables representing current synaptic state,
 // specifically weights.
@@ -50,7 +50,7 @@ const (
 	// CaUpT is time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
 	CaUpT
 
-	// Tr is trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
+	// Tr is trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPath this is a tag that is then updated later when US occurs.
 	Tr
 
 	// DTr is delta (change in) Tr trace of synaptic activity over time
@@ -73,23 +73,23 @@ const (
 	// SynSendIndex is sending neuron index in network's global list of neurons
 	SynSendIndex
 
-	// SynPrjnIndex is projection index in global list of projections organized as [Layers][RecvPrjns]
-	SynPrjnIndex
+	// SynPathIndex is pathway index in global list of pathways organized as [Layers][RecvPaths]
+	SynPathIndex
 
-	// IMPORTANT: if SynPrjnIndex is not the last, need to update gosl defn below
+	// IMPORTANT: if SynPathIndex is not the last, need to update gosl defn below
 )
 
-//gosl: end synapse
+//gosl:end synapse
 
-//gosl: hlsl synapse
+//gosl:hlsl synapse
 /*
 static const SynapseVars SynapseVarsN = DSWt + 1;
 static const SynapseCaVars SynapseCaVarsN = DiDWt + 1;
-static const SynapseIndexes SynapseIndexesN = SynPrjnIndex + 1;
+static const SynapseIndexes SynapseIndexesN = SynPathIndex + 1;
 */
-//gosl: end synapse
+//gosl:end synapse
 
-//gosl: start synapse
+//gosl:start synapse
 
 ////////////////////////////////////////////////
 // 	Strides
@@ -199,7 +199,7 @@ func (ns *SynapseIndexStrides) SetIndexOuter(nsyn int) {
 	ns.Synapse = 1
 }
 
-//gosl: end synapse
+//gosl:end synapse
 
 // SynapseVarProps has all of the display properties for synapse variables, including desc tooltips
 var SynapseVarProps = map[string]string{
@@ -211,7 +211,7 @@ var SynapseVarProps = map[string]string{
 	"CaM":   `auto-scale:"+" desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`,
 	"CaP":   `auto-scale:"+"desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`,
 	"CaD":   `auto-scale:"+" desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`,
-	"Tr":    `auto-scale:"+" desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`,
+	"Tr":    `auto-scale:"+" desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPath this is a tag that is then updated later when US occurs."`,
 	"DTr":   `auto-scale:"+" desc:"delta (change in) Tr trace of synaptic activity over time"`,
 	"DiDWt": `auto-scale:"+" desc:"delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values"`,
 }

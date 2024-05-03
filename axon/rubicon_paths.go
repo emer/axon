@@ -4,16 +4,16 @@
 
 package axon
 
-//gosl: start rubicon_prjns
+//gosl:start rubicon_paths
 
-// BLAPrjnParams has parameters for basolateral amygdala learning.
+// BLAPathParams has parameters for basolateral amygdala learning.
 // Learning is driven by the Tr trace as function of ACh * Send Act
 // recorded prior to US, and at US, recv unit delta: CaSpkP - SpkPrv
 // times normalized GeIntNorm for recv unit credit assignment.
 // The Learn.Trace.Tau time constant determines trace updating over trials
 // when ACh is above threshold -- this determines strength of second-order
 // conditioning -- default of 1 means none, but can be increased as needed.
-type BLAPrjnParams struct {
+type BLAPathParams struct {
 
 	// use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier
 	NegDeltaLRate float32 `default:"0.01,1"`
@@ -27,19 +27,19 @@ type BLAPrjnParams struct {
 	pad float32
 }
 
-func (bp *BLAPrjnParams) Defaults() {
+func (bp *BLAPathParams) Defaults() {
 	bp.NegDeltaLRate = 0.01
 	bp.AChThr = 0.1
 	bp.USTrace = 0.5
 }
 
-func (bp *BLAPrjnParams) Update() {
+func (bp *BLAPathParams) Update() {
 
 }
 
-//gosl: end rubicon_prjns
+//gosl:end rubicon_paths
 
-func (pj *PrjnParams) BLADefaults() {
+func (pj *PathParams) BLADefaults() {
 	pj.SWts.Adapt.On.SetBool(false)
 	pj.SWts.Adapt.SigGain = 1
 	pj.SWts.Init.SPct = 0
@@ -51,8 +51,8 @@ func (pj *PrjnParams) BLADefaults() {
 	pj.Learn.LRate.Base = 0.02
 }
 
-func (pj *PrjnParams) VSPatchDefaults() {
-	pj.PrjnScale.Abs = 4 // needs strong drive in general
+func (pj *PathParams) VSPatchDefaults() {
+	pj.PathScale.Abs = 4 // needs strong drive in general
 	pj.SWts.Adapt.On.SetBool(false)
 	pj.SWts.Adapt.SigGain = 1
 	pj.SWts.Init.SPct = 0

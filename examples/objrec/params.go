@@ -67,16 +67,16 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.FB":       "1",      //
 				"Layer.Acts.Clamp.Ge":        "0.8",    // 0.8 > 1.0 > 0.6 1.6.4
 			}},
-		{Sel: "Prjn", Desc: "yes extra learning factors",
+		{Sel: "Path", Desc: "yes extra learning factors",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":    "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-				"Prjn.Learn.Trace.SubMean": "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-				"Prjn.SWts.Adapt.LRate":    "0.0001", // 0.005 == .1 == .01
-				"Prjn.SWts.Init.SPct":      "1",      // 1 >= lower (trace-v11)
+				"Path.Learn.LRate.Base":    "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
+				"Path.Learn.Trace.SubMean": "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				"Path.SWts.Adapt.LRate":    "0.0001", // 0.005 == .1 == .01
+				"Path.SWts.Init.SPct":      "1",      // 1 >= lower (trace-v11)
 			}},
-		{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.2", // .2 >= .3 > .15 > .1 > .05 @176
+				"Path.PathScale.Rel": "0.2", // .2 >= .3 > .15 > .1 > .05 @176
 			}},
 	},
 }

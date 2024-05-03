@@ -37,7 +37,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -63,7 +63,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -207,12 +207,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
 	in := net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, axon.InputLayer)
-	inToEc2 := prjn.NewUnifRnd()
+	inToEc2 := paths.NewUnifRnd()
 	inToEc2.PCon = ss.Config.Mod.InToEc2PCon
-	onetoone := prjn.NewOneToOne()
+	onetoone := paths.NewOneToOne()
 	ec2, ec3, _, _, _, _ := net.AddHip(ctx, hip, 2)
-	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPrjn)
-	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPrjn)
+	net.ConnectLayers(in, ec2, inToEc2, axon.ForwardPath)
+	net.ConnectLayers(in, ec3, onetoone, axon.ForwardPath)
 	ec2.PlaceAbove(in)
 
 	err := net.Build(ctx)

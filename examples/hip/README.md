@@ -10,7 +10,7 @@ Dramatic improvements in learning performance were achieved by optimizing the fo
 
 ## Error-driven CA3
 
-Modified `AlphaCyc` to reduce the strength of DG -> CA3 mossy inputs for the first quarter, then increase back to regular strength in Q2 onward.  This creates a minus phase state in CA3 in ActQ1, where it is driven primarily / exclusively by its ECin -> CA3 inputs.  By contrasting with final ActP state, this drives std error-driven learning in all the CA3 projections.
+Modified `AlphaCyc` to reduce the strength of DG -> CA3 mossy inputs for the first quarter, then increase back to regular strength in Q2 onward.  This creates a minus phase state in CA3 in ActQ1, where it is driven primarily / exclusively by its ECin -> CA3 inputs.  By contrasting with final ActP state, this drives std error-driven learning in all the CA3 pathways.
 
 The best params were a WtScale.Rel = 4 for mossy inputs, which is reduced to 0 during Q1, by setting MossyDel=4.  This is in contrast to the Rel = 8 used in original params.
 
@@ -30,7 +30,7 @@ Reducing MossyPCon = .02 instead of .05 was better, but not further.
 
 ## Adding BCM Hebbian to EC <-> CA1
 
-The standard Leabra BCM hebbian learning works better than the hip.CHLPrjn CPCA Hebbian learning.
+The standard Leabra BCM hebbian learning works better than the hip.CHLPath CPCA Hebbian learning.
 
 ## Performance
 

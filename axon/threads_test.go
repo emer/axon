@@ -15,7 +15,7 @@ import (
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -248,13 +248,13 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 		layerS := netS.Layers[li]
 		layerP := netP.Layers[li]
 
-		for pi := range layerS.SndPrjns {
-			prjnS := layerS.SndPrjns[pi]
-			prjnP := layerP.SndPrjns[pi]
-			for sni := uint32(0); sni < prjnS.NSyns; sni++ {
+		for pi := range layerS.SndPaths {
+			pathS := layerS.SndPaths[pi]
+			pathP := layerP.SndPaths[pi]
+			for sni := uint32(0); sni < pathS.NSyns; sni++ {
 				for fi := 0; fi < int(SynapseVarsN); fi++ {
-					synS := prjnS.SynVal1D(fi, int(sni))
-					synP := prjnP.SynVal1D(fi, int(sni))
+					synS := pathS.SynVal1D(fi, int(sni))
+					synP := pathP.SynVal1D(fi, int(sni))
 					require.Equal(t, synS, synP,
 						"Synapse %d, field %s, single thread: %f, multi thread: %f",
 						sni, SynapseVars(fi).String(), synS, synP)
@@ -289,13 +289,13 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 		layerS := netS.Layers[li]
 		layerP := netP.Layers[li]
 
-		for pi := range layerS.SndPrjns {
-			prjnS := layerS.SndPrjns[pi]
-			prjnP := layerP.SndPrjns[pi]
-			for sni := uint32(0); sni < prjnS.NSyns; sni++ {
+		for pi := range layerS.SndPaths {
+			pathS := layerS.SndPaths[pi]
+			pathP := layerP.SndPaths[pi]
+			for sni := uint32(0); sni < pathS.NSyns; sni++ {
 				for fi := 0; fi < int(SynapseVarsN); fi++ {
-					synS := prjnS.SynVal1D(fi, int(sni))
-					synP := prjnP.SynVal1D(fi, int(sni))
+					synS := pathS.SynVal1D(fi, int(sni))
+					synP := pathP.SynVal1D(fi, int(sni))
 					if synS != synP {
 						return false
 					}
@@ -361,11 +361,11 @@ func buildNet(ctx *Context, t *testing.T, shape []int, nthrs int) *Network {
 	hiddenLayer2 := net.AddLayer("Hidden2", shape, SuperLayer)
 	hiddenLayer3 := net.AddLayer("Hidden3", shape, SuperLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
-	net.ConnectLayers(inputLayer, hiddenLayer, prjn.NewFull(), ForwardPrjn)
-	net.ConnectLayers(inputLayer, hiddenLayer2, prjn.NewFull(), ForwardPrjn)
-	net.BidirConnectLayers(hiddenLayer, hiddenLayer3, prjn.NewFull())
-	net.BidirConnectLayers(hiddenLayer2, hiddenLayer3, prjn.NewFull())
-	net.BidirConnectLayers(hiddenLayer3, outputLayer, prjn.NewFull())
+	net.ConnectLayers(inputLayer, hiddenLayer, paths.NewFull(), ForwardPath)
+	net.ConnectLayers(inputLayer, hiddenLayer2, paths.NewFull(), ForwardPath)
+	net.BidirConnectLayers(hiddenLayer, hiddenLayer3, paths.NewFull())
+	net.BidirConnectLayers(hiddenLayer2, hiddenLayer3, paths.NewFull())
+	net.BidirConnectLayers(hiddenLayer3, outputLayer, paths.NewFull())
 
 	if err := net.Build(ctx); err != nil {
 		t.Fatal(err)

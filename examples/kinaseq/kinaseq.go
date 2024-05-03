@@ -34,7 +34,7 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// the sending neuron
@@ -43,8 +43,8 @@ type Sim struct {
 	// the receiving neuron
 	RecvNeur *axon.Neuron `view:"no-inline"`
 
-	// prjn-level parameters -- for intializing synapse -- other params not used
-	Prjn *axon.Prjn `view:"no-inline"`
+	// path-level parameters -- for intializing synapse -- other params not used
+	Path *axon.Path `view:"no-inline"`
 
 	// extra neuron state
 	NeuronEx NeuronEx `view:"no-inline"`

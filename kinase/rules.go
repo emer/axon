@@ -7,7 +7,7 @@ package kinase
 //go:generate core generate -add-types
 
 // Rules are different options for Kinase-based learning rules
-// These are now implemented using separate Prjn types in kinasex
+// These are now implemented using separate Path types in kinasex
 type Rules int32 //enums:enum
 
 // The different versions of Kinase learning rules

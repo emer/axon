@@ -10,7 +10,7 @@ import (
 	"github.com/emer/emergent/v2/netview"
 )
 
-//gosl: start neuron
+//gosl:start neuron
 
 // NeuronFlags are bit-flags encoding relevant binary state for neurons
 type NeuronFlags int32 //enums:enum
@@ -169,13 +169,13 @@ const (
 	// GeRaw is raw excitatory conductance (net input) received from senders = current raw spiking drive
 	GeRaw
 
-	// GeSyn is time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E
+	// GeSyn is time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E
 	GeSyn
 
 	// GiRaw is raw inhibitory conductance (net input) received from senders  = current raw spiking drive
 	GiRaw
 
-	// GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi
+	// GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi
 	GiSyn
 
 	// SMaintP is accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor
@@ -190,13 +190,13 @@ const (
 	// GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive
 	GiInt
 
-	// GModRaw is raw modulatory conductance, received from GType = ModulatoryG projections
+	// GModRaw is raw modulatory conductance, received from GType = ModulatoryG pathways
 	GModRaw
 
-	// GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG projections
+	// GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG pathways
 	GModSyn
 
-	// GMaintRaw is raw maintenance conductance, received from GType = MaintG projections
+	// GMaintRaw is raw maintenance conductance, received from GType = MaintG pathways
 	GMaintRaw
 
 	// GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.
@@ -386,17 +386,17 @@ const (
 	// IMPORTANT: if NrnSubPool is not the last, need to update gosl defn below
 )
 
-//gosl: end neuron
+//gosl:end neuron
 
-//gosl: hlsl neuron
+//gosl:hlsl neuron
 /*
 static const NeuronVars NeuronVarsN = NrnFlags + 1;
 static const NeuronAvgVars NeuronAvgVarsN = GiBase + 1;
 static const NeuronIndexes NeuronIndexesN = NrnSubPool + 1;
 */
-//gosl: end neuron
+//gosl:end neuron
 
-//gosl: start neuron
+//gosl:start neuron
 
 ////////////////////////////////////////////////
 // 	Strides
@@ -505,7 +505,7 @@ func (ns *NeuronIndexStrides) SetIndexOuter(nneur int) {
 	ns.Neuron = 1
 }
 
-//gosl: end neuron
+//gosl:end neuron
 
 ////////////////////////////////////////////////
 // 	Props
@@ -575,16 +575,16 @@ var NeuronVarProps = map[string]string{
 
 	"GeExt":     `desc:"extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc"`,
 	"GeRaw":     `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`,
-	"GeSyn":     `range:"2" desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`,
+	"GeSyn":     `range:"2" desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E"`,
 	"GiRaw":     `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`,
-	"GiSyn":     `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`,
+	"GiSyn":     `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`,
 	"SMaintP":   `desc:"accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor"`,
 	"GeInt":     `range:"2" desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`,
 	"GeIntNorm": `range:"1" desc:"GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity."`,
 	"GiInt":     `range:"2" desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`,
-	"GModRaw":   `desc:"raw modulatory conductance, received from GType = ModulatoryG projections"`,
-	"GModSyn":   `desc:"syn integrated modulatory conductance, received from GType = ModulatoryG projections"`,
-	"GMaintRaw": `desc:"raw maintenance conductance, received from GType = MaintG projections"`,
+	"GModRaw":   `desc:"raw modulatory conductance, received from GType = ModulatoryG pathways"`,
+	"GModSyn":   `desc:"syn integrated modulatory conductance, received from GType = ModulatoryG pathways"`,
+	"GMaintRaw": `desc:"raw maintenance conductance, received from GType = MaintG pathways"`,
 	"GMaintSyn": `desc:"syn integrated maintenance conductance, integrated using MaintNMDA params."`,
 
 	/////////////////////////////////////////

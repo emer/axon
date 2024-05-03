@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 )
 
@@ -61,7 +61,7 @@ func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float3
 	return
 }
 
-// ConnectToRWPred adds a RWPrjn from given sending layer to a RWPred layer
-func (nt *Network) ConnectToRWPrjn(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return nt.ConnectLayers(send, recv, pat, RWPrjn)
+// ConnectToRWPred adds a RWPath from given sending layer to a RWPred layer
+func (nt *Network) ConnectToRWPath(send, recv *Layer, pat paths.Pattern) *Path {
+	return nt.ConnectLayers(send, recv, pat, RWPath)
 }

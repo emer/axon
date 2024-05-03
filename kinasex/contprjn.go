@@ -14,7 +14,7 @@ import (
 // KinContParams has parameters controlling Kinase-based learning rules
 type KinContParams struct {
 
-	// which learning rule to use -- can select std SynSpkTheta or Cont variants that are only supported in this specialized Prjn
+	// which learning rule to use -- can select std SynSpkTheta or Cont variants that are only supported in this specialized Path
 	Rule kinase.Rules
 
 	// gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values.
@@ -68,7 +68,7 @@ func (kp *KinContParams) DWtFromTDWt(sy *Synapse, lr float32) bool {
 	return true
 }
 
-// ContPrjn is an axon Prjn that does not explicitly depend on the theta cycle
+// ContPath is an axon Path that does not explicitly depend on the theta cycle
 // timing dynamics for learning -- implements SynSpkCont or SynNMDACont
 // in original Kinase rules.
 // It implements synaptic-level Ca signals at an abstract level,
@@ -84,8 +84,8 @@ func (kp *KinContParams) DWtFromTDWt(sy *Synapse, lr float32) bool {
 // at the theta cycle level, in which case the key difference is the use of
 // TDWt, which can remove some variability associated with the arbitrary
 // timing of the end of trials.
-type ContPrjn struct {
-	axon.Prjn // access as .Prjn
+type ContPath struct {
+	axon.Path // access as .Path
 
 	// kinase continuous learning rule params
 	Cont KinContParams `view:"inline"`
@@ -94,17 +94,17 @@ type ContPrjn struct {
 	ContSyns []ContSyn
 }
 
-func (pj *ContPrjn) Defaults() {
-	pj.Prjn.Defaults() // note: used to have other defaults
+func (pj *ContPath) Defaults() {
+	pj.Path.Defaults() // note: used to have other defaults
 	pj.Cont.Rule = kinase.SynSpkCont
 }
 
-func (pj *ContPrjn) UpdateParams() {
-	pj.Prjn.UpdateParams()
+func (pj *ContPath) UpdateParams() {
+	pj.Path.UpdateParams()
 }
 
-func (pj *ContPrjn) Build() error {
-	err := pj.Prjn.Build()
+func (pj *ContPath) Build() error {
+	err := pj.Path.Build()
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (pj *ContPrjn) Build() error {
 	return nil
 }
 
-func (pj *ContPrjn) InitContCa() {
+func (pj *ContPath) InitContCa() {
 	for si := range pj.ContSyns {
 		sy := &pj.ContSyns[si]
 		sy.TDWt = 0
@@ -120,8 +120,8 @@ func (pj *ContPrjn) InitContCa() {
 	}
 }
 
-func (pj *MatrixPrjn) InitWts() {
-	pj.Prjn.InitWts()
+func (pj *MatrixPath) InitWts() {
+	pj.Path.InitWts()
 	pj.InitContCa()
 }
 
@@ -134,14 +134,14 @@ func (pj *MatrixPrjn) InitWts() {
 // at the NMDA N2B site.  When the synaptic activity has fallen from a
 // local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
 // last TDWt value converts to an actual synaptic change: DWt
-func (pj *ContPrjn) SendSynCa(ltime *Time) {
+func (pj *ContPath) SendSynCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	if !pj.Learn.Learn {
 		return
 	}
 	switch pj.Rule {
 	case kinase.SynSpkTheta:
-		pj.Prjn.SendSynCa(ltime)
+		pj.Path.SendSynCa(ltime)
 		return
 	case kinase.NeurSpkTheta:
 		return
@@ -208,16 +208,16 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 	}
 }
 
-// DWt computes the weight change (learning) -- on sending projections
-func (pj *ContPrjn) DWt(ltime *Time) {
+// DWt computes the weight change (learning) -- on sending pathways
+func (pj *ContPath) DWt(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	switch pj.Rule {
 	case kinase.SynSpkTheta:
-		pj.Prjn.DWTSynSpkTheta(ltime)
+		pj.Path.DWTSynSpkTheta(ltime)
 	case kinase.NeurSpkTheta:
-		pj.Prjn.DWTNeurSpkTheta(ltime)
+		pj.Path.DWTNeurSpkTheta(ltime)
 	default:
 		pj.DWtCont(ltime)
 	}
@@ -228,7 +228,7 @@ func (pj *ContPrjn) DWt(ltime *Time) {
 // computed DWt from TDWt.
 // Applies post-trial decay to simulate time passage, and checks
 // for whether learning should occur.
-func (pj *ContPrjn) DWtCont(ltime *axon.Time) {
+func (pj *ContPath) DWtCont(ltime *axon.Time) {
 	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()

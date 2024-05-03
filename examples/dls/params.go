@@ -49,43 +49,43 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Dend.ModGain": "1", // todo: 2 is default
 			}},
 		////////////////////////////////////////////
-		// Cortical Prjns
-		{Sel: ".PFCPrjn", Desc: "pfc prjn params -- more robust to long-term training",
+		// Cortical Paths
+		{Sel: ".PFCPath", Desc: "pfc path params -- more robust to long-term training",
 			Params: params.Params{
-				"Prjn.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
-				"Prjn.Learn.LRate.Base":    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
+				"Path.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
+				"Path.Learn.LRate.Base":    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
 			}},
 		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "6",
+				"Path.PathScale.Abs": "6",
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":    "4",
-				"Prjn.Learn.LRate.Base": "0.0001", // this is not a problem
+				"Path.PathScale.Abs":    "4",
+				"Path.Learn.LRate.Base": "0.0001", // this is not a problem
 			}},
 		{Sel: ".ToPTp", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
+				"Path.PathScale.Abs": "4",
 			}},
 		////////////////////////////////////////////
-		// Rubicon Prjns
-		{Sel: ".MatrixPrjn", Desc: "",
+		// Rubicon Paths
+		{Sel: ".MatrixPath", Desc: "",
 			Params: params.Params{
-				"Prjn.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!
-				"Prjn.Learn.Trace.LearnThr": "0.0",
+				"Path.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!
+				"Path.Learn.Trace.LearnThr": "0.0",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 def
+				"Path.PathScale.Abs": "4", // 4 def
 			}},
 		{Sel: ".SuperToPT", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5", // 0.5 def
+				"Path.PathScale.Abs": "0.5", // 0.5 def
 			}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
+				"Path.PathScale.Abs": "5", // with new mod, this can be stronger
 			}},
 	},
 }

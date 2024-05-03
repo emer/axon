@@ -2,11 +2,11 @@
 
 The core of this model is the Globus Pallidus (external segment), GPe, which plays a central role in integrating Go and NoGo signals from the striatum, in contrast to the standard, "classical" framework which focuses on the GPi or SNr as the primary locus of integration.
 
-Files: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)}
+Files: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [paths.go](axon/pcore_paths.go)}
 
 There are two recently identified revisions to the standard circuitry diagram that drive this model [(Suryanarayana et al, 2019; others)](#references):
 
-* A distinction between outer (GPeOut) and inner (GPeIn) layers of the GPe, with both D1-dominant (Go) and D2-dominant (NoGo / No) projections into the GPe (the classical "direct" vs. "indirect" terminology thus not being quite as applicable).
+* A distinction between outer (GPeOut) and inner (GPeIn) layers of the GPe, with both D1-dominant (Go) and D2-dominant (NoGo / No) pathways into the GPe (the classical "direct" vs. "indirect" terminology thus not being quite as applicable).
 
 * And a third, even more distinct Type A or arkypallidal layer (GPeTA).
 
@@ -14,7 +14,7 @@ Thus, the GPe circuitry is clearly capable of doing significant additional compu
 
 * GPeIn is the core of the core: it integrates Go and No striatal signals in consistent terms, with direct No inhibitory inputs, and indirect Go net excitatory inputs, inverted by way of double-inhibition through the GPeOut.  By having both of these signals converging on single neurons, the GPeIn can directly weigh the balance for and against a potential action.  Thus, in many ways, GPeIn is like the GPi / SNr of the classical model, except with the sign reversed (i.e., it is more active for a more net-Go balance).
 
-* The GPeIn then projects inhibition to the GPeTA, which in turn drives the strongest source of broad, diffuse inhibition to the striatum: this provides the long-sought winner-take-all (WTA) action selection dynamic in the BG circuitry, by broadcasting back an effective inhibitory threshold that only the most strongly activated striatal neurons can withstand.  In addition, the GPeTA sends a weaker inhibitory projection into the striatum, and having both of these is essential to prevent strong oscillatory dynamics.
+* The GPeIn then projects inhibition to the GPeTA, which in turn drives the strongest source of broad, diffuse inhibition to the striatum: this provides the long-sought winner-take-all (WTA) action selection dynamic in the BG circuitry, by broadcasting back an effective inhibitory threshold that only the most strongly activated striatal neurons can withstand.  In addition, the GPeTA sends a weaker inhibitory pathway into the striatum, and having both of these is essential to prevent strong oscillatory dynamics.
 
 * The GPi integrates the direct Go inhibition from the striatum, and the integrated Go vs. No balance from the GPeIn, which have the same sign and contribute synergistically to the GPi's release of inhibition on the thalamus, as in the standard model.  In our model, the integrated GPeIn input is stronger than the one from striatum Go pathway.
 
@@ -72,7 +72,7 @@ The small-conductance calcium-activated potassium channel (SKCa) is widely distr
 
 Specifically, SKCa can be activated by intracellular stores, which require inactivity to recharge the Ca available for release. These intracellular stores can release quickly, have a slow decay once released, and the stores can take a while to rebuild, leading to rapidly triggered, long-lasting pauses that don't recur until stores have rebuilt, which is the observed pattern of firing of STNp pausing neurons, that open up a window for BG gating.  Also, STN can be ACh modulated so neurons are tonically inhibited until ACh bursts disinhibit and allow for gating (just set `NeuroMod.AChDisinhib` to ~2).  See [chans README](chans/README.md#calcium-gated-potassium-channels:-sk-and-bk) for more details.
 
-One critical behavior is the ability of SKCa channels to drive a strong _novelty sensitivity_ for STNp pausing, which requires a topographic coordination between STNp and direct striatum PFC projections to work effectively.  Specifically, the need for inactivity for intracellular Ca stores to be rebuilt means that any sustained STNp activity from a continued PFC input will fail to open the gating window.  Only once a given STNp is inactive for a period of time longer than the ~200 msec pausing window can it recharge.  But to open a gating window, a sufficiently large number of STNp neurons must pause, so a topographic organization would allow for different populations to pause at different points in time, while sustained activity among a specific set of PFC neurons would not open the gating window.
+One critical behavior is the ability of SKCa channels to drive a strong _novelty sensitivity_ for STNp pausing, which requires a topographic coordination between STNp and direct striatum PFC pathways to work effectively.  Specifically, the need for inactivity for intracellular Ca stores to be rebuilt means that any sustained STNp activity from a continued PFC input will fail to open the gating window.  Only once a given STNp is inactive for a period of time longer than the ~200 msec pausing window can it recharge.  But to open a gating window, a sufficiently large number of STNp neurons must pause, so a topographic organization would allow for different populations to pause at different points in time, while sustained activity among a specific set of PFC neurons would not open the gating window.
 
 The [boa](examples/boa) model for example can support this topographic organization according to different BLA / US domains, such that different STNp pools receive from different BLA / OFC US groups.
 

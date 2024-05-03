@@ -31,7 +31,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 )
 
@@ -56,7 +56,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -184,9 +184,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 
-	full := prjn.NewFull()
+	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
-	one2one := prjn.NewOneToOne()
+	one2one := paths.NewOneToOne()
 	_ = one2one
 
 	space := float32(5)
@@ -209,22 +209,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	net.ConnectCTSelf(hidct, full, "")
 	net.ConnectToPulv(hid, hidct, inPulv, full, full, "")
-	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
+	net.ConnectLayers(in, hid, full, axon.ForwardPath)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Config.Params.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", "", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full, "")
 		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full, "") // shortcut top-down
-		projection, _ := inPulv.SendNameTry(hid2ct.Name())
-		projection.AddClass("CTToPulvHigher")
+		pathway, _ := inPulv.SendNameTry(hid2ct.Name())
+		pathway.AddClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
 	if ss.Config.Params.Hid2 {
 		net.BidirConnectLayers(hid, hid2, full)
-		net.ConnectLayers(hid2ct, hidct, full, axon.BackPrjn)
-		// net.ConnectLayers(hid2ct, hid, full, axon.BackPrjn)
+		net.ConnectLayers(hid2ct, hidct, full, axon.BackPath)
+		// net.ConnectLayers(hid2ct, hid, full, axon.BackPath)
 	}
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
@@ -510,10 +510,10 @@ func (ss *Sim) SimMat() {
 		sm.TableCol(ix, col, lbls, true, metric.Correlation64)
 		ss.Stats.PCA.TableCol(ix, col, metric.Covariance64)
 
-		pcaprjn := ss.Logs.MiscTable("PCAPrjn")
-		ss.Stats.PCA.ProjectColToTable(pcaprjn, ix, col, lbls, []int{0, 1}) // gets vectors
-		pcaplt := ss.Stats.Plot("PCAPrjn")
-		estats.ConfigPCAPlot(pcaplt, pcaprjn, "HiddenCT")
+		pcapath := ss.Logs.MiscTable("PCAPath")
+		ss.Stats.PCA.ProjectColToTable(pcapath, ix, col, lbls, []int{0, 1}) // gets vectors
+		pcaplt := ss.Stats.Plot("PCAPath")
+		estats.ConfigPCAPlot(pcaplt, pcapath, "HiddenCT")
 		clplt := ss.Stats.Plot("ClustPlot")
 		estats.ClustPlot(clplt, ix, col, lbls)
 	}

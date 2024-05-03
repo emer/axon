@@ -37,7 +37,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -65,7 +65,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -185,12 +185,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuX := ev.NUnitsX
 	space := float32(2)
 
-	one2one := prjn.NewOneToOne()
-	full := prjn.NewFull()
+	one2one := paths.NewOneToOne()
+	full := paths.NewFull()
 	_ = full
-	mtxRndPrjn := prjn.NewPoolUnifRnd()
-	mtxRndPrjn.PCon = 0.5
-	_ = mtxRndPrjn
+	mtxRndPath := paths.NewPoolUnifRnd()
+	mtxRndPath.PCon = 0.5
+	_ = mtxRndPath
 
 	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
@@ -206,13 +206,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accPos.AddClass("ACC")
 	accNeg.AddClass("ACC")
 
-	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPrjn", one2one, full, one2one, true, space)
+	accPosPT, accPosVM := net.AddPTMaintThalForSuper(accPos, nil, "VM", "PFCPath", one2one, full, one2one, true, space)
 	_ = accPosPT
 
-	net.ConnectLayers(accPos, stn, full, axon.ForwardPrjn).AddClass("CortexToSTN")
-	net.ConnectLayers(accNeg, stn, full, axon.ForwardPrjn).AddClass("CortexToSTN")
+	net.ConnectLayers(accPos, stn, full, axon.ForwardPath).AddClass("CortexToSTN")
+	net.ConnectLayers(accNeg, stn, full, axon.ForwardPath).AddClass("CortexToSTN")
 
-	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPrjn).AddClass("BgFixed")
+	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPath).AddClass("BgFixed")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name())

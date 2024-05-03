@@ -24,10 +24,10 @@ import (
 	"cogentcore.org/core/tensor/tensorview"
 	"cogentcore.org/core/views"
 	"cogentcore.org/core/xyz"
+	"cogentcore.org/core/xyz/physics"
+	"cogentcore.org/core/xyz/physics/world"
 	"cogentcore.org/core/xyz/xyzview"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/eve/v2/eve"
-	"github.com/emer/eve/v2/evev"
 )
 
 // Geom is overall geometry of the space
@@ -126,7 +126,7 @@ type GUI struct {
 	DepthValues []float32
 
 	// offscreen render camera settings
-	Camera evev.Camera
+	Camera world.Camera
 
 	// color map to use for rendering depth map
 	DepthMap views.ColorMapName
@@ -156,25 +156,25 @@ type GUI struct {
 	Geom Geom
 
 	// world
-	World *eve.Group
+	World *physics.Group
 
 	// 3D view of world
-	View3D *evev.View `view:"-"`
+	View3D *world.View `view:"-"`
 
 	// emer group
-	Emery *eve.Group `view:"-"`
+	Emery *physics.Group `view:"-"`
 
 	// arms group
-	Arms *eve.Group `view:"-"`
+	Arms *physics.Group `view:"-"`
 
 	// stims group
-	Stims *eve.Group `view:"-"`
+	Stims *physics.Group `view:"-"`
 
 	// Right eye of emery
-	EyeR eve.Body `view:"-"`
+	EyeR physics.Body `view:"-"`
 
 	// contacts from last step, for body
-	Contacts eve.Contacts `view:"-"`
+	Contacts physics.Contacts `view:"-"`
 }
 
 // ConfigWorldGUI configures all the world view GUI elements
@@ -317,7 +317,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 func (vw *GUI) ConfigWorld() {
 	ev := vw.Env
 
-	vw.World = &eve.Group{}
+	vw.World = &physics.Group{}
 	vw.World.InitName(vw.World, "ArmMaze")
 
 	vw.Geom.Config(ev.Config.NArms, ev.MaxLength)
@@ -327,7 +327,7 @@ func (vw *GUI) ConfigWorld() {
 	vw.Stims = vw.ConfigStims(vw.World, "stims", .9, .1)
 
 	vw.Emery = vw.ConfigEmery(vw.World, 1)
-	vw.EyeR = vw.Emery.ChildByName("head", 1).ChildByName("eye-r", 2).(eve.Body)
+	vw.EyeR = vw.Emery.ChildByName("head", 1).ChildByName("eye-r", 2).(physics.Body)
 
 	vw.World.WorldInit()
 
@@ -335,44 +335,44 @@ func (vw *GUI) ConfigWorld() {
 }
 
 // AddFloor adds a floor
-func (vw *GUI) AddFloor(par *eve.Group, name string) *eve.Group {
+func (vw *GUI) AddFloor(par *physics.Group, name string) *physics.Group {
 	ge := &vw.Geom
 	dp := ge.Depth + 3*ge.LengthScale
-	rm := eve.NewGroup(par, name)
-	eve.NewBox(rm, "floor").SetSize(math32.Vec3(ge.Width, ge.Thick, dp)).
+	rm := physics.NewGroup(par, name)
+	physics.NewBox(rm, "floor").SetSize(math32.Vec3(ge.Width, ge.Thick, dp)).
 		SetColor("grey").SetInitPos(math32.Vec3(0, -ge.Thick/2, -ge.Depth/2-ge.LengthScale))
 	return rm
 }
 
 // ConfigArms adds all the arms
-func (vw *GUI) ConfigArms(par *eve.Group) *eve.Group {
+func (vw *GUI) ConfigArms(par *physics.Group) *physics.Group {
 	ev := vw.Env
-	rm := eve.NewGroup(par, "arms")
+	rm := physics.NewGroup(par, "arms")
 	ge := &vw.Geom
 	exln := ge.LengthScale
 	halfarm := .5 * ge.ArmWidth
 	halfht := .5 * ge.Height
 	for i, arm := range ev.Config.Arms {
 		anm := fmt.Sprintf("arm_%d\n", i)
-		agp := eve.NewGroup(rm, anm)
+		agp := physics.NewGroup(rm, anm)
 		x, _ := ge.Pos(i, 0)
 		ln := ge.LengthScale * float32(arm.Length)
 		halflen := .5*ln + exln
 
-		eve.NewBox(agp, "left-wall").SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
+		physics.NewBox(agp, "left-wall").SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
 			SetColor("black").SetInitPos(math32.Vec3(x-halfarm, halfht, -halflen))
 
-		eve.NewBox(agp, "right-wall").SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
+		physics.NewBox(agp, "right-wall").SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
 			SetColor("black").SetInitPos(math32.Vec3(x+halfarm, halfht, -halflen))
 	}
 	return rm
 }
 
 // ConfigStims constructs stimuli: CSs, USs
-func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *eve.Group {
+func (vw *GUI) ConfigStims(par *physics.Group, name string, width, height float32) *physics.Group {
 	ev := vw.Env
 	ge := &vw.Geom
-	stms := eve.NewGroup(par, name)
+	stms := physics.NewGroup(par, name)
 	exln := ge.LengthScale
 	// halfarm := .5 * ge.ArmWidth
 	usHt := ge.Height
@@ -385,10 +385,10 @@ func (vw *GUI) ConfigStims(par *eve.Group, name string, width, height float32) *
 		usnm := fmt.Sprintf("us_%d\n", i)
 		csnm := fmt.Sprintf("cs_%d\n", i)
 
-		eve.NewBox(stms, usnm).SetSize(math32.Vec3(ge.ArmWidth, usHt, usDp)).
+		physics.NewBox(stms, usnm).SetSize(math32.Vec3(ge.ArmWidth, usHt, usDp)).
 			SetColor(vw.MatColors[arm.US]).SetInitPos(math32.Vec3(x, 0.5*usHt, -ln-1.1*exln))
 
-		eve.NewBox(stms, csnm).SetSize(math32.Vec3(ge.ArmWidth, csHt, ge.Thick)).
+		physics.NewBox(stms, csnm).SetSize(math32.Vec3(ge.ArmWidth, csHt, ge.Thick)).
 			SetColor(vw.MatColors[arm.CS]).SetInitPos(math32.Vec3(x, usHt+0.5*csHt, -ln-2*exln))
 	}
 	return stms
@@ -399,7 +399,7 @@ func (vw *GUI) UpdateStims() {
 	ev := vw.Env
 	stms := *vw.Stims.Children()
 	for i, moi := range stms {
-		mo := moi.(*eve.Box)
+		mo := moi.(*physics.Box)
 		if i%2 == 1 { // CS
 			armi := i / 2
 			arm := ev.Config.Arms[armi]
@@ -416,30 +416,30 @@ func (vw *GUI) UpdateStims() {
 }
 
 // ConfigEmery constructs a new Emery virtual hamster
-func (vw *GUI) ConfigEmery(par *eve.Group, length float32) *eve.Group {
-	emr := eve.NewGroup(par, "emery")
+func (vw *GUI) ConfigEmery(par *physics.Group, length float32) *physics.Group {
+	emr := physics.NewGroup(par, "emery")
 	height := length / 2
 	width := height
 
-	eve.NewBox(emr, "body").SetSize(math32.Vec3(width, height, length)).
+	physics.NewBox(emr, "body").SetSize(math32.Vec3(width, height, length)).
 		SetColor("purple").SetDynamic().
 		SetInitPos(math32.Vec3(0, height/2, 0))
 
 	headsz := height * 0.75
 	hhsz := .5 * headsz
-	hgp := eve.NewGroup(emr, "head").SetInitPos(math32.Vec3(0, hhsz, -(length/2 + hhsz)))
+	hgp := physics.NewGroup(emr, "head").SetInitPos(math32.Vec3(0, hhsz, -(length/2 + hhsz)))
 
-	eve.NewBox(hgp, "head").SetSize(math32.Vec3(headsz, headsz, headsz)).
+	physics.NewBox(hgp, "head").SetSize(math32.Vec3(headsz, headsz, headsz)).
 		SetColor("tan").SetDynamic().SetInitPos(math32.Vec3(0, 0, 0))
 
 	eyesz := headsz * .2
 
-	eve.NewBox(hgp, "eye-l").SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
+	physics.NewBox(hgp, "eye-l").SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
 		SetColor("green").SetDynamic().
 		SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3)))
 
 	// note: centering this in head for now to get straight-on view
-	eve.NewBox(hgp, "eye-r").SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
+	physics.NewBox(hgp, "eye-r").SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
 		SetColor("green").SetDynamic().
 		SetInitPos(math32.Vec3(0, headsz*.1, -(hhsz + eyesz*.3)))
 
@@ -456,7 +456,7 @@ func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 
 	// sc.MultiSample = 1 // we are using depth grab so we need this = 1
 	wgp := xyz.NewGroup(se, "world")
-	vw.View3D = evev.NewView(vw.World, se, wgp)
+	vw.View3D = world.NewView(vw.World, se, wgp)
 	vw.View3D.InitLibrary() // this makes a basic library based on body shapes, sizes
 	// at this point the library can be updated to configure custom visualizations
 	// for any of the named bodies.
@@ -544,7 +544,7 @@ func (vw *GUI) GrabEyeImg() {
 func (vw *GUI) ViewDepth(depth []float32) {
 	cmap := colormap.AvailableMaps[string(vw.DepthMap)]
 	vw.DepthImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
-	evev.DepthImage(vw.DepthImage.Image, depth, cmap, &vw.Camera)
+	world.DepthImage(vw.DepthImage.Image, depth, cmap, &vw.Camera)
 }
 
 func (vw *GUI) ConfigWorldView(tg *tensorview.TensorGrid) {
@@ -589,7 +589,7 @@ func (vw *GUI) SetEmeryPose() {
 	ev := vw.Env
 	x, y := vw.Geom.Pos(ev.Arm, ev.Pos)
 	vw.Emery.Rel.Pos.Set(x, 0, y)
-	bod := vw.Emery.ChildByName("body", 0).(eve.Body).AsBodyBase()
+	bod := vw.Emery.ChildByName("body", 0).(physics.Body).AsBodyBase()
 	bod.Color = vw.StateColors[vw.State.String()]
 }
 

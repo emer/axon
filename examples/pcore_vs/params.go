@@ -54,47 +54,47 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Noise.Gi": "0.01", // 0.01 -- if to strong, rep becomes very weak
 			}},
 		////////////////////////////////////////////
-		// Prjns
-		{Sel: ".VSMatrixPrjn", Desc: "",
+		// Paths
+		{Sel: ".VSMatrixPath", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":     "0.01",  // 0.01, vs .02 default
-				"Prjn.Learn.Trace.LearnThr": "0.1",   // prevents learning below this thr: preserves low act
-				"Prjn.Matrix.VSRewLearn":    "false", // significantly cleaner
-				"Prjn.SWts.Adapt.On":        "false", // not much diff: false >= true
+				"Path.Learn.LRate.Base":     "0.01",  // 0.01, vs .02 default
+				"Path.Learn.Trace.LearnThr": "0.1",   // prevents learning below this thr: preserves low act
+				"Path.Matrix.VSRewLearn":    "false", // significantly cleaner
+				"Path.SWts.Adapt.On":        "false", // not much diff: false >= true
 			},
 			Hypers: params.Hypers{
-				"Prjn.Learn.LRate.Base":     {"Tweak": "-"},
-				"Prjn.Learn.Trace.LearnThr": {"Tweak": "-"},
+				"Path.Learn.LRate.Base":     {"Tweak": "-"},
+				"Path.Learn.Trace.LearnThr": {"Tweak": "-"},
 			}},
 		{Sel: "#UrgencyToVMtxGo", Desc: "strong urgency factor",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
-				"Prjn.PrjnScale.Abs": "0",   // todo: is misbehaving here
-				"Prjn.Learn.Learn":   "false",
+				"Path.PathScale.Rel": "0.1", // don't dilute from others
+				"Path.PathScale.Abs": "0",   // todo: is misbehaving here
+				"Path.Learn.Learn":   "false",
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
+				"Path.PathScale.Abs": "0.5",
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3.0", // was 4
+				"Path.PathScale.Abs": "3.0", // was 4
 			}},
 		{Sel: ".ACCToVMtx", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.5", // 1.5 good; 1.8 causes some breakthrough
+				"Path.PathScale.Abs": "1.5", // 1.5 good; 1.8 causes some breakthrough
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VMtxNoToVMtxGo", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.05",
-				"Prjn.PrjnScale.Abs": "1",
-				"Prjn.Learn.Learn":   "false",
+				"Path.PathScale.Rel": "0.05",
+				"Path.PathScale.Abs": "1",
+				"Path.Learn.Learn":   "false",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Rel": {"Tweak": "log"},
+				"Path.PathScale.Rel": {"Tweak": "log"},
 			}},
 		{Sel: "#VGPi", Desc: "",
 			Params: params.Params{
@@ -106,10 +106,10 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".2",
+				"Path.PathScale.Abs": ".2",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 	},
 }
@@ -176,87 +176,87 @@ var ParamSetsDefs = netparams.Sets{
 			}},
 		{Sel: ".VGPeAkToVMtx", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // 3 >= 2, 4
+				"Path.PathScale.Abs": "3", // 3 >= 2, 4
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VMtxGoToVGPeAk", Desc: "go inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // stronger = more binary
+				"Path.PathScale.Abs": ".5", // stronger = more binary
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VGPePrToVSTN", Desc: "enough to kick off the ping-pong dynamics for VSTN.",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
+				"Path.PathScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VSTNToVGPePr", Desc: "stronger VSTN -> VGPePr to kick it high at start",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
+				"Path.PathScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VSTNToVGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.1",
+				"Path.PathScale.Abs": "0.1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VMtxNoToVGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
+				"Path.PathScale.Abs": "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VGPePrToVGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 best for DS
+				"Path.PathScale.Abs": "4", // 4 best for DS
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VGPePrToVGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.PathScale.Abs": "1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VMtxGoToVGPi", Desc: "go influence on gating",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".2", // .1 too weak
+				"Path.PathScale.Abs": ".2", // .1 too weak
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VGPePrToVGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
+				"Path.PathScale.Abs": "1", // 2 is much worse.. keep at 1
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".2",
+				"Path.PathScale.Abs": ".2",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#VGPiToACCPosVM", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "5", // needs to be very strong -- 5
+				"Path.PathScale.Abs": "5", // needs to be very strong -- 5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 	},
 }

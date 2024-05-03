@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // AddVBG adds Ventral Basal Ganglia layers, using the PCore Pallidal Core
@@ -42,32 +42,32 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxGo.DefParams = mp
 	mtxNo.DefParams = mp
 
-	full := prjn.NewFull()
-	p1to1 := prjn.NewPoolOneToOne()
+	full := paths.NewFull()
+	p1to1 := paths.NewPoolOneToOne()
 
-	net.ConnectLayers(mtxNo, gpePr, full, InhibPrjn)
-	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPrjn)
+	net.ConnectLayers(mtxNo, gpePr, full, InhibPath)
+	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Rel": "0.05",
+		"Path.Learn.Learn":   "false",
+		"Path.PathScale.Rel": "0.05",
 	}
 
 	bgclass := "VBGInhib"
-	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpePr, gpeAk, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpePr, stn, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpePr, gpi, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpi, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpeAk, full, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpePr, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpeAk, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, stn, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpi, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpi, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpeAk, full, InhibPath).AddClass(bgclass)
 	// this doesn't make that much diff -- bit cleaner RT without:
-	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxGo, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxNo, full, InhibPrjn).AddClass(bgclass)
+	// net.ConnectLayers(mtxGo, gpePr, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxGo, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxNo, full, InhibPath).AddClass(bgclass)
 
 	stnclass := "VSTNExcite"
-	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).AddClass(stnclass)
-	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).AddClass(stnclass)
-	net.ConnectLayers(stn, gpi, full, ForwardPrjn).AddClass(stnclass)
+	net.ConnectLayers(stn, gpePr, full, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpeAk, full, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpi, full, ForwardPath).AddClass(stnclass)
 
 	gpeAk.PlaceBehind(gpi, space)
 	gpePr.PlaceRightOf(gpeAk, space)
@@ -107,42 +107,42 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
 
-	p1to1 := prjn.NewPoolOneToOne()
-	full := prjn.NewFull()
+	p1to1 := paths.NewPoolOneToOne()
+	full := paths.NewFull()
 
-	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPrjn)
-	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPrjn)
+	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPath)
+	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Rel": "0.1",
+		"Path.Learn.Learn":   "false",
+		"Path.PathScale.Rel": "0.1",
 	}
 
 	bgclass := "DBGInhib"
-	net.ConnectLayers(gpePr, gpePr, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpePr, stn, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpePr, gpi, p1to1, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPrjn).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpePr, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpeAk, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, stn, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpePr, gpi, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(mtxGo, gpeAk, p1to1, InhibPath).AddClass(bgclass)
 	// not much diff with this: basically is an offset that can be learned
-	// net.ConnectLayers(mtxGo, gpePr, full, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPrjn).AddClass(bgclass)
-	net.ConnectLayers(gpi, pf, p1to1, InhibPrjn).AddClass(bgclass)
+	// net.ConnectLayers(mtxGo, gpePr, full, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxGo, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpeAk, mtxNo, p1to1, InhibPath).AddClass(bgclass)
+	net.ConnectLayers(gpi, pf, p1to1, InhibPath).AddClass(bgclass)
 
 	stnclass := "DSTNExcite"
-	net.ConnectLayers(stn, gpePr, full, ForwardPrjn).AddClass(stnclass)
-	net.ConnectLayers(stn, gpeAk, full, ForwardPrjn).AddClass(stnclass)
-	net.ConnectLayers(stn, gpi, full, ForwardPrjn).AddClass(stnclass)
+	net.ConnectLayers(stn, gpePr, full, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpeAk, full, ForwardPath).AddClass(stnclass)
+	net.ConnectLayers(stn, gpi, full, ForwardPath).AddClass(stnclass)
 
 	pfm := params.Params{
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.Com.GType":     "ModulatoryG",
-		"Prjn.PrjnScale.Abs": "1",
+		"Path.Learn.Learn":   "false",
+		"Path.Com.GType":     "ModulatoryG",
+		"Path.PathScale.Abs": "1",
 	}
-	pj = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPrjn).AddClass("PFToDMtx").(*Prjn)
+	pj = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPath).AddClass("PFToDMtx").(*Path)
 	pj.DefParams = pfm
-	pj = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPrjn).AddClass("PFToDMtx").(*Prjn)
+	pj = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPath).AddClass("PFToDMtx").(*Path)
 	pj.DefParams = pfm
 
 	gpePr.PlaceBehind(gpi, space)
@@ -193,14 +193,14 @@ func (net *Network) AddDMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeur
 	return ly
 }
 
-// ConnectToVSMatrix adds a VSMatrixPrjn from given sending layer to a matrix layer
-func (net *Network) ConnectToVSMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return net.ConnectLayers(send, recv, pat, VSMatrixPrjn)
+// ConnectToVSMatrix adds a VSMatrixPath from given sending layer to a matrix layer
+func (net *Network) ConnectToVSMatrix(send, recv *Layer, pat paths.Pattern) *Path {
+	return net.ConnectLayers(send, recv, pat, VSMatrixPath)
 }
 
-// ConnectToDSMatrix adds a DSMatrixPrjn from given sending layer to a matrix layer
-func (net *Network) ConnectToDSMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return net.ConnectLayers(send, recv, pat, DSMatrixPrjn)
+// ConnectToDSMatrix adds a DSMatrixPath from given sending layer to a matrix layer
+func (net *Network) ConnectToDSMatrix(send, recv *Layer, pat paths.Pattern) *Path {
+	return net.ConnectLayers(send, recv, pat, DSMatrixPath)
 }
 
 // AddGPLayer2D adds a GPLayer of given size, with given name.

@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl: start chans
+//gosl:start chans
 
 // GABABParams control the GABAB dynamics in PFC Maint neurons,
 // based on Brunel & Wang (2001) parameters.
@@ -111,4 +111,4 @@ func (gp *GABABParams) GgabaB(gabaB, vm float32) float32 {
 	return gp.Gbar * gp.GFromV(vm) * (gabaB + gp.Gbase)
 }
 
-//gosl: end chans
+//gosl:end chans

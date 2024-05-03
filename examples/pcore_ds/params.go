@@ -76,17 +76,17 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".CTtoPred", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 1 def
+				"Path.PathScale.Abs": "2", // 1 def
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PTtoPred", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // was 6
+				"Path.PathScale.Abs": "1", // was 6
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#MotorBS", Desc: "",
 			Params: params.Params{
@@ -108,156 +108,156 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
 			}},
 		////////////////////////////////////////////
-		// Prjns
-		// {Sel: "Prjn", Desc: "",
+		// Paths
+		// {Sel: "Path", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.Learn.LRate.Base": "0.02", // 0.04 > 0.02 probably
+		// 		"Path.Learn.LRate.Base": "0.02", // 0.04 > 0.02 probably
 		// 	}},
-		{Sel: ".DSMatrixPrjn", Desc: "",
+		{Sel: ".DSMatrixPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "1.8",   // 1.8 > others
-				"Prjn.Learn.LRate.Base":     "0.02",  // rlr sig: .02 > .015 .025
-				"Prjn.Learn.Trace.LearnThr": "0.1",   // 0.1 > 0 > 0.2
-				"Prjn.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
-				"Prjn.Matrix.BasePF":        "0.005", // 0.005 > 0.01, 0.002 etc
-				"Prjn.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
-				"Prjn.SWts.Adapt.On":        "false", // false > true here
+				"Path.PathScale.Abs":        "1.8",   // 1.8 > others
+				"Path.Learn.LRate.Base":     "0.02",  // rlr sig: .02 > .015 .025
+				"Path.Learn.Trace.LearnThr": "0.1",   // 0.1 > 0 > 0.2
+				"Path.Matrix.Credit":        "0.6",   // key param, 0.6 > 0.5, 0.4, 0.7, 1 with pf modulation
+				"Path.Matrix.BasePF":        "0.005", // 0.005 > 0.01, 0.002 etc
+				"Path.Matrix.Delta":         "1",     // should always be 1 except for testing; adjust lrate to compensate
+				"Path.SWts.Adapt.On":        "false", // false > true here
 			},
 			Hypers: params.Hypers{
-				"Prjn.Learn.LRate.Base": {"Tweak": "-"},
-				"Prjn.PrjnScale.Abs":    {"Tweak": "-"},
-				"Prjn.Matrix.BasePF":    {"Tweak": "-"},
+				"Path.Learn.LRate.Base": {"Tweak": "-"},
+				"Path.PathScale.Abs":    {"Tweak": "-"},
+				"Path.Matrix.BasePF":    {"Tweak": "-"},
 			}},
 		{Sel: ".SuperToPT", Desc: "one-to-one from super",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
+				"Path.PathScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PTSelfMaint", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 def
+				"Path.PathScale.Abs": "1", // 1 def
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3.0", // 3
+				"Path.PathScale.Abs": "3.0", // 3
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".ToM1", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.5", // now 1.5 > 2 > 1 ..
+				"Path.PathScale.Abs": "1.5", // now 1.5 > 2 > 1 ..
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#StateToM1", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 > 1.5, 2, 0.5 etc
+				"Path.PathScale.Abs": "1", // 1 > 1.5, 2, 0.5 etc
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPiToPF", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.4", // 0.4 >= 0.5, 0.3, 0.2 >> higher
+				"Path.PathScale.Abs": "0.4", // 0.4 >= 0.5, 0.3, 0.2 >> higher
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#MotorBSToPF", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 > 1.1 > 0.9 >> 0.5
+				"Path.PathScale.Abs": "1", // 1 > 1.1 > 0.9 >> 0.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		// {Sel: ".StateToDMtx", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "1.5", // 1.8 def
+		// 		"Path.PathScale.Abs": "1.5", // 1.8 def
 		// 	},
 		// 	Hypers: params.Hypers{
-		// 		"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+		// 		"Path.PathScale.Abs": {"Tweak": "-"},
 		// 	}},
 		// {Sel: ".CLToDMtx", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.Learn.Learn":   "false",
-		// 		"Prjn.PrjnScale.Rel": "0.001",
+		// 		"Path.Learn.Learn":   "false",
+		// 		"Path.PathScale.Rel": "0.001",
 		// 	},
 		// 	Hypers: params.Hypers{
-		// 		"Prjn.PrjnScale.Rel": {"Tweak": "-"},
+		// 		"Path.PathScale.Rel": {"Tweak": "-"},
 		// 	}},
 		{Sel: "#DGPiToM1VM", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2
+				"Path.PathScale.Abs": "2", // 2
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPiToMotorBS", Desc: "final inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // 3 > 2.5, 3.5
+				"Path.PathScale.Abs": "3", // 3 > 2.5, 3.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".M1ToMotorBS", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2 > 1.5, 2.5
+				"Path.PathScale.Abs": "2", // 2 > 1.5, 2.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#M1PTToMotorBS", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // 2
-				"Prjn.PrjnScale.Rel": "1", // 1
+				"Path.PathScale.Abs": "2", // 2
+				"Path.PathScale.Rel": "1", // 1
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#M1PTToVL", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",   // 1
-				"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2, .05, 0
+				"Path.PathScale.Abs": "1",   // 1
+				"Path.PathScale.Rel": "0.1", // 0.1 > 0.2, .05, 0
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		// {Sel: "#M1PTpToMotorBS", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "2",
-		// 		"Prjn.PrjnScale.Rel": "1",
+		// 		"Path.PathScale.Abs": "2",
+		// 		"Path.PathScale.Rel": "1",
 		// 	},
 		// 	Hypers: params.Hypers{
-		// 		"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+		// 		"Path.PathScale.Abs": {"Tweak": "-"},
 		// 	}},
 		{Sel: "#M1ToMotorBS", Desc: "weaker; note: this is a proxy for cerebellum etc inputs",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.5", // 1.5 > 1, 2, 2.5
+				"Path.PathScale.Abs": "1.5", // 1.5 > 1, 2, 2.5
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DMtxNoToDMtxGo", Desc: "weakish no->go inhibition is beneficial",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.1",   // 0.1 > 0.05
-				"Prjn.Learn.Learn":   "false", // no-learn better than learn
+				"Path.PathScale.Rel": "0.1",   // 0.1 > 0.05
+				"Path.Learn.Learn":   "false", // no-learn better than learn
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Rel": {"Tweak": "-"},
+				"Path.PathScale.Rel": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPeAkToDMtxNo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "6",
+				"Path.PathScale.Abs": "6",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 	},
 	"NoiseOff": {
@@ -344,93 +344,93 @@ var ParamSetsDefs = netparams.Sets{
 			}},
 		{Sel: "#DGPeAkToDMtxGo", Desc: "go disinhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3",
+				"Path.PathScale.Abs": "3",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DMtxGoToDGPeAk", Desc: "go inhibition",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".5", // stronger = more binary
+				"Path.PathScale.Abs": ".5", // stronger = more binary
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DMtxNoToDGPePr", Desc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 fully inhibits Pr
+				"Path.PathScale.Abs": "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".ToDSTN", Desc: "excitatory inputs",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.PathScale.Abs": "1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DMtxGoToDGPi", Desc: "go influence on gating -- slightly weaker than integrated GPePr",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 > 1.1, .9 and lower (not huge diffs)
+				"Path.PathScale.Abs": "1", // 1 > 1.1, .9 and lower (not huge diffs)
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPePrToDSTN", Desc: "enough to kick off the ping-pong dynamics for STN.",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
+				"Path.PathScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DSTNToDGPePr", Desc: "stronger STN -> DGPePr to kick it high at start",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.5",
+				"Path.PathScale.Abs": "0.5",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DSTNToDGPeAk", Desc: "this is weak biologically -- could try 0",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "0.1",
+				"Path.PathScale.Abs": "0.1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPePrToDGPePr", Desc: "self-inhib -- only source of self reg",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4",
+				"Path.PathScale.Abs": "4",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPePrToDGPeAk", Desc: "just enough to knock down in baseline state",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.PathScale.Abs": "1",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DGPePrToDGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // 1 >> 2
+				"Path.PathScale.Abs": "1", // 1 >> 2
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: "#DSTNToDGPi", Desc: "strong initial phasic activation",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": ".2",
+				"Path.PathScale.Abs": ".2",
 			},
 			Hypers: params.Hypers{
-				"Prjn.PrjnScale.Abs": {"Tweak": "-"},
+				"Path.PathScale.Abs": {"Tweak": "-"},
 			}},
 		{Sel: ".PFToDMtx", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.Learn":   "false",
-				"Prjn.Com.GType":     "ModulatoryG",
-				"Prjn.PrjnScale.Abs": "1",
+				"Path.Learn.Learn":   "false",
+				"Path.Com.GType":     "ModulatoryG",
+				"Path.PathScale.Abs": "1",
 			}},
 	},
 }

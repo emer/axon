@@ -6,7 +6,7 @@ package chans
 
 import "cogentcore.org/core/math32"
 
-//gosl: start chans
+//gosl:start chans
 
 // NMDAParams control the NMDA dynamics, based on Jahr & Stevens (1990) equations
 // which are widely used in models, from Brunel & Wang (2001) to Sanders et al. (2013).
@@ -150,4 +150,4 @@ func (np *NMDAParams) SnmdaFromSpike(spike float32, snmdaO, snmdaI *float32) {
 	}
 }
 
-//gosl: end chans
+//gosl:end chans

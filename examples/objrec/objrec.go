@@ -39,7 +39,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 )
 
@@ -66,7 +66,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -200,16 +200,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	v1.SetRepIndexesShape(emer.CenterPoolIndexes(v1, 2), emer.CenterPoolShape(v1, 2))
 	v4.SetRepIndexesShape(emer.CenterPoolIndexes(v4, 2), emer.CenterPoolShape(v4, 2))
 
-	full := prjn.NewFull()
+	full := paths.NewFull()
 	_ = full
-	rndprjn := prjn.NewUnifRnd() // no advantage
-	rndprjn.PCon = 0.5           // 0.2 > .1
-	_ = rndprjn
+	rndpath := paths.NewUnifRnd() // no advantage
+	rndpath.PCon = 0.5            // 0.2 > .1
+	_ = rndpath
 
-	pool1to1 := prjn.NewPoolOneToOne()
+	pool1to1 := paths.NewPoolOneToOne()
 	_ = pool1to1
 
-	net.ConnectLayers(v1, v4, ss.Config.Params.V1V4Prjn, axon.ForwardPrjn)
+	net.ConnectLayers(v1, v4, ss.Config.Params.V1V4Path, axon.ForwardPath)
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
 

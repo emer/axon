@@ -10,7 +10,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl: hlsl layerparams
+//gosl:hlsl layerparams
 // #include "layertypes.hlsl"
 // #include "act.hlsl"
 // #include "inhib.hlsl"
@@ -21,9 +21,9 @@ import (
 // #include "pcore_layers.hlsl"
 // #include "pool.hlsl"
 // #include "layervals.hlsl"
-//gosl: end layerparams
+//gosl:end layerparams
 
-//gosl: start layerparams
+//gosl:start layerparams
 
 // LayerIndexes contains index access into network global arrays for GPU.
 type LayerIndexes struct {
@@ -43,16 +43,16 @@ type LayerIndexes struct {
 	// number of neurons in layer
 	NeurN uint32 `edit:"-"`
 
-	// start index into RecvPrjns global array
+	// start index into RecvPaths global array
 	RecvSt uint32 `edit:"-"`
 
-	// number of recv projections
+	// number of recv pathways
 	RecvN uint32 `edit:"-"`
 
-	// start index into RecvPrjns global array
+	// start index into RecvPaths global array
 	SendSt uint32 `edit:"-"`
 
-	// number of recv projections
+	// number of recv pathways
 	SendN uint32 `edit:"-"`
 
 	// starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types
@@ -183,7 +183,7 @@ type LayerParams struct {
 	// parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
 	TDDa TDDaParams `view:"inline"`
 
-	// recv and send projection array access info
+	// recv and send pathway array access info
 	Indexes LayerIndexes
 }
 
@@ -634,7 +634,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 		}
 		extraSyn = mod
 	case BLALayer:
-		// modulatory projection from PTp is only used so we can modulate by da
+		// modulatory pathway from PTp is only used so we can modulate by da
 		mod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
 		extraRaw = mod * nrnGModRaw * ly.Acts.Dend.ModGain
 		extraSyn = mod * nrnGModSyn * ly.Acts.Dend.ModGain
@@ -1061,4 +1061,4 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	SetNrnV(ctx, ni, di, Gsahp, ly.Acts.Sahp.GsAHP(sahpN))
 }
 
-//gosl: end layerparams
+//gosl:end layerparams

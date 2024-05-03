@@ -33,7 +33,7 @@ import (
 	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -53,9 +53,9 @@ func main() {
 // selected to apply on top of that
 var ParamSets = netparams.Sets{
 	"Base": {
-		{Sel: "Prjn", Desc: "no learning",
+		{Sel: "Path", Desc: "no learning",
 			Params: params.Params{
-				"Prjn.Learn.Learn": "false",
+				"Path.Learn.Learn": "false",
 			}},
 		{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 			Params: params.Params{
@@ -93,7 +93,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// extra neuron state for additional channels: VGCC, AK
@@ -158,7 +158,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	in := net.AddLayer2D("Input", 1, 1, axon.InputLayer)
 	hid := net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
 
-	net.ConnectLayers(in, hid, prjn.NewFull(), axon.ForwardPrjn)
+	net.ConnectLayers(in, hid, paths.NewFull(), axon.ForwardPath)
 
 	err := net.Build(ctx)
 	if err != nil {

@@ -90,57 +90,57 @@ var ParamSets = netparams.Sets{
 			}},
 		//////////////////////////////////////////////////
 		// current experimental settings
-		{Sel: ".VSMatrixPrjn", Desc: "",
+		{Sel: ".VSMatrixPath", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.Trace.LearnThr": "0.1", // prevents learning below this thr: preserves low act
+				"Path.Learn.Trace.LearnThr": "0.1", // prevents learning below this thr: preserves low act
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
+				"Path.PathScale.Abs": "4.0", // 4 > 2 for gating sooner
 			}},
-		{Sel: ".BLAExtPrjn", Desc: "",
+		{Sel: ".BLAExtPath", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":  "0.05", // 0.05 is fine -- maybe a bit fast
-				"Prjn.BLA.NegDeltaLRate": "1",
-				"Prjn.PrjnScale.Abs":     "4",
+				"Path.Learn.LRate.Base":  "0.05", // 0.05 is fine -- maybe a bit fast
+				"Path.BLA.NegDeltaLRate": "1",
+				"Path.PathScale.Abs":     "4",
 			}},
 		// {Sel: ".BLANovelInhib", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "0.2",
+		// 		"Path.PathScale.Abs": "0.2",
 		// 	}},
 		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
+				"Path.PathScale.Abs": "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
 			}},
 		{Sel: ".PTpToBLAExt", Desc: "modulatory so only active with -da, drives extinction learning based on maintained goal rep",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1", // todo: expt
+				"Path.PathScale.Abs": "1", // todo: expt
 			}},
 		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "strong, high variance",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "2", // key param for OFC focusing on current cs -- expt
+				"Path.PathScale.Abs": "2", // key param for OFC focusing on current cs -- expt
 			}},
 		{Sel: ".CSToBLApos", Desc: "",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base": "0.05",
+				"Path.Learn.LRate.Base": "0.05",
 			}},
 		{Sel: ".BLAAcqToGo", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "4", // 4 def
+				"Path.PathScale.Abs": "4", // 4 def
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs": "1.0", // key param for efficacy of inhibition
+				"Path.PathScale.Abs": "1.0", // key param for efficacy of inhibition
 			}},
-		{Sel: ".VSPatchPrjn", Desc: "",
+		{Sel: ".VSPatchPath", Desc: "",
 			Params: params.Params{
-				"Prjn.PrjnScale.Abs":        "3",
-				"Prjn.Learn.Trace.LearnThr": "0",
-				"Prjn.Learn.LRate.Base":     "0.02", // 0.02 for vspatch -- essential to drive long enough extinction
+				"Path.PathScale.Abs":        "3",
+				"Path.Learn.Trace.LearnThr": "0",
+				"Path.Learn.LRate.Base":     "0.02", // 0.02 for vspatch -- essential to drive long enough extinction
 			}},
 		// {Sel: ".ToPTp", Desc: "",
 		// 	Params: params.Params{
-		// 		"Prjn.PrjnScale.Abs": "2",
+		// 		"Path.PathScale.Abs": "2",
 		// 	}},
 	},
 }

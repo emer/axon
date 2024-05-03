@@ -8,10 +8,10 @@ import (
 	"log"
 
 	"cogentcore.org/core/math32"
-	"github.com/emer/gosl/v2/slbool"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
-//gosl: start fsfffb
+//gosl:start fsfffb
 
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
@@ -195,13 +195,13 @@ func (fi *Inhib) FloatToInt(val float32, nneurons int) int32 {
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)
 func (fi *Inhib) FloatFromInt(ival int32) float32 {
-	//gosl: end fsfffb
+	//gosl:end fsfffb
 	// note: this is not GPU-portable..
 	if ival < 0 {
 		log.Printf("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error\n")
 		return 1
 	}
-	//gosl: start fsfffb
+	//gosl:start fsfffb
 	return float32(ival) * fi.FloatFromIntFactor()
 }
 
@@ -220,9 +220,9 @@ func (fi *Inhib) IntToRaw() {
 	fi.GeExtRaw = fi.FloatFromInt(fi.GeExtRawInt)
 }
 
-//gosl: end fsfffb
+//gosl:end fsfffb
 
-//gosl: hlsl fsfffb
+//gosl:hlsl fsfffb
 /*
 // // AtomicInhibRawIncr provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.
@@ -233,7 +233,7 @@ func (fi *Inhib) IntToRaw() {
 	InterlockedAdd(fi.FFsRawInt, fi.FloatToInt(geRaw, nneurons)); \
 	InterlockedAdd(fi.GeExtRawInt, fi.FloatToInt(geExt, nneurons))
 */
-//gosl: end fsfffb
+//gosl:end fsfffb
 
 // Inhibs is a slice of Inhib records
 type Inhibs []Inhib

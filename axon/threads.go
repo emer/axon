@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"cogentcore.org/core/base/atomctr"
-	"github.com/emer/emergent/v2/timer"
+	"cogentcore.org/core/base/timer"
 )
 
 // Maps the given function across the [0, total) range of items, using
@@ -83,10 +83,10 @@ func (nt *NetworkBase) SetNThreads(nthr int) {
 	nt.NThreads = min(maxProcs, nthr)
 }
 
-// PrjnMapSeq applies function of given name to all projections sequentially.
-func (nt *NetworkBase) PrjnMapSeq(fun func(pj *Prjn), funame string) {
+// PathMapSeq applies function of given name to all pathways sequentially.
+func (nt *NetworkBase) PathMapSeq(fun func(pj *Path), funame string) {
 	nt.FunTimerStart(funame)
-	for _, pj := range nt.Prjns {
+	for _, pj := range nt.Paths {
 		fun(pj)
 	}
 	nt.FunTimerStop(funame)
@@ -166,7 +166,7 @@ func (nt *NetworkBase) TimerReport() {
 	pcts := make([]float64, nfn)
 	tot := 0.0
 	for i, fn := range fnms {
-		pcts[i] = nt.FunTimes[fn].TotalSecs()
+		pcts[i] = float64(nt.FunTimes[fn].Total)
 		tot += pcts[i]
 	}
 	for i, fn := range fnms {

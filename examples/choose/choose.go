@@ -18,6 +18,7 @@ import (
 	"reflect"
 
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
@@ -40,8 +41,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
-	"github.com/emer/emergent/v2/timer"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -67,7 +67,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// if true, stop running at end of a sequence (for NetView Di data parallel index)
@@ -215,14 +215,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	popX := 4
 	space := float32(2)
 
-	pone2one := prjn.NewPoolOneToOne()
-	one2one := prjn.NewOneToOne()
-	full := prjn.NewFull()
-	mtxRndPrjn := prjn.NewPoolUnifRnd()
-	mtxRndPrjn.PCon = 0.75
-	_ = mtxRndPrjn
+	pone2one := paths.NewPoolOneToOne()
+	one2one := paths.NewOneToOne()
+	full := paths.NewFull()
+	mtxRndPath := paths.NewPoolUnifRnd()
+	mtxRndPath.PCon = 0.75
+	_ = mtxRndPath
 	_ = pone2one
-	prjnClass := "PFCPrjn"
+	pathClass := "PFCPath"
 
 	ny := ev.Config.Params.NYReps
 	narm := ev.Config.NArms
@@ -244,37 +244,37 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", act.Name())
 
-	m1, m1CT := net.AddSuperCT2D("M1", "PFCPrjn", nuCtxY, nuCtxX, space, one2one)
+	m1, m1CT := net.AddSuperCT2D("M1", "PFCPath", nuCtxY, nuCtxX, space, one2one)
 	m1P := net.AddPulvForSuper(m1, space)
 
 	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, true, space)
 	_ = almPT
 
-	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPrjn)
+	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPath)
 	// net.ConnectToMatrix(alm, vSmtxGo, full) // todo: explore
 	// net.ConnectToMatrix(alm, vSmtxNo, full)
 
 	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPT, almPTp, full, "M1ALM") // alm predicts m1
 
 	// vl is a predictive thalamus but we don't have direct access to its source
-	net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
+	net.ConnectToPulv(m1, m1CT, vl, full, full, pathClass)
 	net.ConnectToPFC(nil, vl, alm, almCT, almPT, almPTp, full, "VLALM") // alm predicts m1
 
 	// sensory inputs guiding action
 	// note: alm gets effort, dist via predictive coding below
 
-	net.ConnectLayers(dist, m1, full, axon.ForwardPrjn).AddClass("ToM1")
-	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPrjn).AddClass("ToM1")
+	net.ConnectLayers(dist, m1, full, axon.ForwardPath).AddClass("ToM1")
+	net.ConnectLayers(ofcNegUS, m1, full, axon.ForwardPath).AddClass("ToM1")
 
 	// shortcut: not needed
-	// net.ConnectLayers(dist, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+	// net.ConnectLayers(dist, vl, full, axon.ForwardPath).AddClass("ToVL")
 
-	// these projections are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).AddClass("ToVL")
-	net.ConnectLayers(alm, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+	// these pathways are *essential* -- must get current state here
+	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("ToVL")
+	net.ConnectLayers(alm, vl, full, axon.ForwardPath).AddClass("ToVL")
 
-	net.ConnectLayers(m1, accCost, full, axon.ForwardPrjn).AddClass("MToACC")
-	net.ConnectLayers(alm, accCost, full, axon.ForwardPrjn).AddClass("MToACC")
+	net.ConnectLayers(m1, accCost, full, axon.ForwardPath).AddClass("MToACC")
+	net.ConnectLayers(alm, accCost, full, axon.ForwardPath).AddClass("MToACC")
 
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
@@ -317,13 +317,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// action needs to know if maintaining a goal or not
 	// using plUtil as main summary "driver" input to action system
 	// PTp provides good notmaint signal for action.
-	net.ConnectLayers(plUtilPTp, alm, full, axon.ForwardPrjn).AddClass("ToALM")
-	net.ConnectLayers(plUtilPTp, m1, full, axon.ForwardPrjn).AddClass("ToM1")
+	net.ConnectLayers(plUtilPTp, alm, full, axon.ForwardPath).AddClass("ToALM")
+	net.ConnectLayers(plUtilPTp, m1, full, axon.ForwardPath).AddClass("ToM1")
 
 	// note: in Obelisk this helps with the Consume action
 	// but here in this example it produces some instability
 	// at later time points -- todo: investigate later.
-	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+	// net.ConnectLayers(notMaint, vl, full, axon.ForwardPath).AddClass("ToVL")
 
 	////////////////////////////////////////////////
 	// position
@@ -358,12 +358,12 @@ func (ss *Sim) ApplyParams() {
 	csp.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 	bla := net.AxonLayerByName("BLAposAcqD1")
 	pji, _ := bla.SendNameTry("BLANovelCS")
-	pj := pji.(*axon.Prjn)
+	pj := pji.(*axon.Path)
 
 	// this is very sensitive param to get right
 	// too little and the hamster does not try CSs at the beginning,
 	// too high and it gets stuck trying the same location over and over
-	pj.Params.PrjnScale.Abs = float32(math32.Min(2.3+(float32(nCSTot)/10.0), 3.0))
+	pj.Params.PathScale.Abs = float32(math32.Min(2.3+(float32(nCSTot)/10.0), 3.0))
 
 	// then apply config-set params.
 	if ss.Config.Params.Network != nil {
@@ -1362,7 +1362,7 @@ func (ss *Sim) RunNoGUI() {
 	ss.Loops.Run(etime.Train)
 
 	tmr.Stop()
-	fmt.Printf("Total Time: %6.3g\n", tmr.TotalSecs())
+	fmt.Printf("Total Time: %v\n", tmr.Total)
 	ss.Net.TimerReport()
 
 	ss.Logs.CloseLogFiles()

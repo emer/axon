@@ -6,15 +6,15 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
-	"github.com/emer/gosl/v2/slbool"
 )
 
-//gosl: hlsl pool
+//gosl:hlsl pool
 // #include "avgmaxi.hlsl"
-//gosl: end pool
+//gosl:end pool
 
-//gosl: start pool
+//gosl:start pool
 
 // AvgMaxPhases contains the average and maximum values over a Pool of neurons,
 // at different time scales within a standard ThetaCycle of updating.
@@ -147,13 +147,13 @@ func (am *PoolAvgMax) Calc(refIndex int32) {
 	am.GiInt.Calc(refIndex)
 }
 
-//gosl: end pool
+//gosl:end pool
 
 // note: the following is actually being used despite appearing to be
 // commented out!  it is auto-uncommented when copied to hlsl
 // MUST update whenever above UpdateValues code is updated.
 
-//gosl: hlsl pool
+//gosl:hlsl pool
 /*
 // // AtomicUpdatePoolAvgMax provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.
@@ -167,9 +167,9 @@ func (am *PoolAvgMax) Calc(refIndex int32) {
 	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NrnV(ctx, ni, di, GeInt)); \
 	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NrnV(ctx, ni, di, GiInt))
 */
-//gosl: end pool
+//gosl:end pool
 
-//gosl: start pool
+//gosl:start pool
 
 // Pool contains computed values for FS-FFFB inhibition,
 // and various other state values for layers
@@ -221,7 +221,7 @@ func (pl *Pool) NNeurons() int {
 	return int(pl.EdIndex - pl.StIndex)
 }
 
-//gosl: end pool
+//gosl:end pool
 
 // AvgMaxUpdate updates the AvgMax values based on current neuron values
 func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {

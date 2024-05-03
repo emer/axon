@@ -40,7 +40,7 @@ import (
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -68,7 +68,7 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
-	// the network -- click to view / edit parameters for layers, prjns, etc
+	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
 
 	// all parameter management
@@ -196,14 +196,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuCtxX := 6
 	space := float32(2)
 
-	p1to1 := prjn.NewPoolOneToOne()
-	one2one := prjn.NewOneToOne()
+	p1to1 := paths.NewPoolOneToOne()
+	one2one := paths.NewOneToOne()
 	_ = one2one
-	full := prjn.NewFull()
+	full := paths.NewFull()
 	_ = full
-	mtxRndPrjn := prjn.NewUnifRnd()
-	mtxRndPrjn.PCon = 0.5
-	_ = mtxRndPrjn
+	mtxRndPath := paths.NewUnifRnd()
+	mtxRndPath.PCon = 0.5
+	_ = mtxRndPath
 
 	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
@@ -230,28 +230,28 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// vl is a predictive thalamus but we don't have direct access to its source
 	net.ConnectToPFC(nil, vl, m1, m1CT, m1PT, m1PTp, full, "VLM1") // m1 predicts vl
 
-	// these projections are *essential* -- must get current state here
-	net.ConnectLayers(m1, vl, full, axon.ForwardPrjn).AddClass("ToVL")
+	// these pathways are *essential* -- must get current state here
+	net.ConnectLayers(m1, vl, full, axon.ForwardPath).AddClass("ToVL")
 
-	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPrjn)
-	net.ConnectLayers(m1PT, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
-	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
-	net.ConnectLayers(m1, motor, full, axon.ForwardPrjn).AddClass("M1ToMotorBS")
+	net.ConnectLayers(gpi, motor, p1to1, axon.InhibPath)
+	net.ConnectLayers(m1PT, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
+	// net.ConnectLayers(m1PTp, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
+	net.ConnectLayers(m1, motor, full, axon.ForwardPath).AddClass("M1ToMotorBS")
 
-	net.ConnectLayers(motor, pf, one2one, axon.ForwardPrjn)
+	net.ConnectLayers(motor, pf, one2one, axon.ForwardPath)
 
-	net.ConnectLayers(state, stn, full, axon.ForwardPrjn).AddClass("ToDSTN")
-	net.ConnectLayers(state, m1, full, axon.ForwardPrjn).AddClass("ToM1")
-	net.ConnectLayers(s1, stn, full, axon.ForwardPrjn).AddClass("ToDSTN")
-	net.ConnectLayers(s1, m1, full, axon.ForwardPrjn).AddClass("ToM1")
+	net.ConnectLayers(state, stn, full, axon.ForwardPath).AddClass("ToDSTN")
+	net.ConnectLayers(state, m1, full, axon.ForwardPath).AddClass("ToM1")
+	net.ConnectLayers(s1, stn, full, axon.ForwardPath).AddClass("ToDSTN")
+	net.ConnectLayers(s1, m1, full, axon.ForwardPath).AddClass("ToM1")
 
-	net.ConnectLayers(gpi, m1VM, full, axon.InhibPrjn).AddClass("DBGInhib")
+	net.ConnectLayers(gpi, m1VM, full, axon.InhibPath).AddClass("DBGInhib")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
 
 	toMtx := full
-	// toMtx := mtxRndPrjn // works, but not as reliably
+	// toMtx := mtxRndPath // works, but not as reliably
 	net.ConnectToDSMatrix(state, mtxGo, toMtx).AddClass("StateToMtx")
 	net.ConnectToDSMatrix(state, mtxNo, toMtx).AddClass("StateToMtx")
 	net.ConnectToDSMatrix(s1, mtxNo, toMtx).AddClass("S1ToMtx")
@@ -260,7 +260,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToDSMatrix(m1, mtxGo, toMtx).AddClass("M1ToMtx")
 	net.ConnectToDSMatrix(m1, mtxNo, toMtx).AddClass("M1ToMtx")
 
-	// note: just using direct projections here -- theoretically through CL
+	// note: just using direct pathways here -- theoretically through CL
 	// not working! -- need to make these modulatory in the right way.
 	// net.ConnectToDSMatrix(motor, mtxGo, p1to1).AddClass("CLToMtx")
 	// net.ConnectToDSMatrix(motor, mtxNo, p1to1).AddClass("CLToMtx")

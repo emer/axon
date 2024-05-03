@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl: start chans
+//gosl:start chans
 
 // SKCaParams describes the small-conductance calcium-activated potassium channel,
 // activated by intracellular stores in a way that drives pauses in firing,
@@ -129,4 +129,4 @@ func (sp *SKCaParams) MFromCa(caR, mcur float32) float32 {
 	return mcur + sp.DeDt*(mas-mcur)
 }
 
-//gosl: end chans
+//gosl:end chans

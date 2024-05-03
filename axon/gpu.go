@@ -19,7 +19,7 @@ import (
 //go:embed shaders/*.spv
 var content embed.FS
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldShow cogentcore.org/core/math32/fastexp.go cogentcore.org/core/math32/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go rubicon_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go rubicon_prjns.go pcore_prjns.go hip_prjns.go gpu_hlsl
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldShow cogentcore.org/core/math32/fastexp.go cogentcore.org/core/math32/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_path.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go rubicon_layers.go pcore_layers.go pathtypes.go pathparams.go deep_paths.go rl_paths.go rubicon_paths.go pcore_paths.go hip_paths.go gpu_hlsl
 
 // Full vars code -- each gpu_*.hlsl uses a subset
 
@@ -27,17 +27,17 @@ var content embed.FS
 
 // note: binding is var, set
 
-// Set 0: uniform layer params -- could not have prjns also be uniform..
+// Set 0: uniform layer params -- could not have paths also be uniform..
 [[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
-[[vk::binding(1, 0)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+[[vk::binding(1, 0)]] StructuredBuffer<PathParams> Paths; // [Layer][SendPaths]
 
-// Set 1: effectively uniform indexes and prjn params as structured buffers in storage
+// Set 1: effectively uniform indexes and path params as structured buffers in storage
 [[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
-[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
-[[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPrjnIndexes; // [Layer][RecvPrjns]
-[[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIndexes; // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPaths][SendNeurons][Syns]
+[[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPaths][SendNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPathIndexes; // [Layer][RecvPaths]
+[[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPaths][RecvNeurons]
+[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIndexes; // [Layer][RecvPaths][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] RWStructuredBuffer<Context> Ctx; // [0]
@@ -51,32 +51,32 @@ var content embed.FS
 // There might be a limit of 8 buffers per set -- can't remember..
 
 // Set 3: synapse vars
-[[vk::binding(0, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1][Data]
-[[vk::binding(1, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons][Data]
-[[vk::binding(2, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(0, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPaths][RecvNeurons][MaxDel+1][Data]
+[[vk::binding(1, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPaths][RecvNeurons][Data]
+[[vk::binding(2, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPaths][SendNeurons][Syns]
 // todo: future expansion to add more tranches of Synapses
 
 // Set 4: SynCa -- can only access in 2^31 chunks
-[[vk::binding(0, 4)]] RWStructuredBuffer<float> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(1, 4)]] RWStructuredBuffer<float> SynapseCas1;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(2, 4)]] RWStructuredBuffer<float> SynapseCas2;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(3, 4)]] RWStructuredBuffer<float> SynapseCas3;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
+[[vk::binding(0, 4)]] RWStructuredBuffer<float> SynapseCas;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(1, 4)]] RWStructuredBuffer<float> SynapseCas1;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(2, 4)]] RWStructuredBuffer<float> SynapseCas2;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(3, 4)]] RWStructuredBuffer<float> SynapseCas3;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPaths][SendNeurons][Syns][Data]
+[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPaths][SendNeurons][Syns][Data]
 
 
 Set: 0
     Role: Storage
         Var: 0:	Layers	Struct[4]	(size: 1520)	Values: 1
-        Var: 1:	Prjns		Struct[5]	(size: 352)	Values: 1
+        Var: 1:	Paths		Struct[5]	(size: 352)	Values: 1
 Set: 1
     Role: Storage
         Var: 0:	NeuronIxs		Uint32[534]	(size: 4)	Values: 1
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Values: 1
         Var: 2:	SendCon		Struct[242]	(size: 16)	Values: 1
-        Var: 3:	RecvPrjnIndexes	Uint32[5]	(size: 4)	Values: 1
+        Var: 3:	RecvPathIndexes	Uint32[5]	(size: 4)	Values: 1
         Var: 4:	RecvCon		Struct[281]	(size: 16)	Values: 1
         Var: 5:	RecvSynIndexes	Uint32[12992]	(size: 4)	Values: 1
 Set: 2
@@ -146,7 +146,7 @@ type GPU struct {
 	// VarSet = 0: the uniform LayerParams
 	Params *vgpu.VarSet `view:"-"`
 
-	// VarSet = 1: the storage indexes and PrjnParams
+	// VarSet = 1: the storage indexes and PathParams
 	Indexes *vgpu.VarSet `view:"-"`
 
 	// VarSet = 2: the Storage buffer for RW state structs and neuron floats
@@ -262,14 +262,14 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	pcset.AddStruct("PushOff", int(unsafe.Sizeof(PushOff{})), 1, vgpu.Push, vgpu.ComputeShader)
 
 	gp.Params.AddStruct("Layers", int(unsafe.Sizeof(LayerParams{})), len(gp.Net.LayParams), vgpu.Storage, vgpu.ComputeShader)
-	gp.Params.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(gp.Net.PrjnParams), vgpu.Storage, vgpu.ComputeShader)
+	gp.Params.AddStruct("Paths", int(unsafe.Sizeof(PathParams{})), len(gp.Net.PathParams), vgpu.Storage, vgpu.ComputeShader)
 
-	// note: prjns must be in Storage here because couldn't have both Layers and Prjns as uniform.
+	// note: paths must be in Storage here because couldn't have both Layers and Paths as uniform.
 	gp.Indexes.Add("NeuronIxs", vgpu.Uint32, len(gp.Net.NeuronIxs), vgpu.Storage, vgpu.ComputeShader)
 	gp.Indexes.Add("SynapseIxs", vgpu.Uint32, len(gp.Net.SynapseIxs), vgpu.Storage, vgpu.ComputeShader)
-	gp.Indexes.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnSendCon), vgpu.Storage, vgpu.ComputeShader)
-	gp.Indexes.Add("RecvPrjnIndexes", vgpu.Uint32, len(gp.Net.RecvPrjnIndexes), vgpu.Storage, vgpu.ComputeShader)
-	gp.Indexes.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PathSendCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("RecvPathIndexes", vgpu.Uint32, len(gp.Net.RecvPathIndexes), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PathRecvCon), vgpu.Storage, vgpu.ComputeShader)
 	gp.Indexes.Add("RecvSynIndexes", vgpu.Uint32, len(gp.Net.RecvSynIndexes), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, vgpu.Storage, vgpu.ComputeShader)
@@ -281,8 +281,8 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Structs.Add("Globals", vgpu.Float32, len(gp.Net.Globals), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("Exts", vgpu.Float32, len(gp.Net.Exts), vgpu.Storage, vgpu.ComputeShader)
 
-	gp.Syns.Add("GBuf", vgpu.Int32, len(gp.Net.PrjnGBuf), vgpu.Storage, vgpu.ComputeShader)
-	gp.Syns.Add("GSyns", vgpu.Float32, len(gp.Net.PrjnGSyns), vgpu.Storage, vgpu.ComputeShader)
+	gp.Syns.Add("GBuf", vgpu.Int32, len(gp.Net.PathGBuf), vgpu.Storage, vgpu.ComputeShader)
+	gp.Syns.Add("GSyns", vgpu.Float32, len(gp.Net.PathGSyns), vgpu.Storage, vgpu.ComputeShader)
 	gp.Syns.Add("Synapses", vgpu.Float32, len(gp.Net.Synapses), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.SynCas.Add("SynapseCas0", vgpu.Float32, len(gp.SynapseCas0), vgpu.Storage, vgpu.ComputeShader)
@@ -442,7 +442,7 @@ func (gp *GPU) SyncMemToGPU() {
 	gp.Sys.Mem.SyncToGPU()
 }
 
-// CopyParamsToStaging copies the LayerParams and PrjnParams to staging from CPU.
+// CopyParamsToStaging copies the LayerParams and PathParams to staging from CPU.
 // Must call SyncMemToGPU after this (see SyncParamsToGPU).
 func (gp *GPU) CopyParamsToStaging() {
 	if !gp.On {
@@ -451,11 +451,11 @@ func (gp *GPU) CopyParamsToStaging() {
 	_, layv, _ := gp.Params.ValueByIndexTry("Layers", 0)
 	layv.CopyFromBytes(unsafe.Pointer(&gp.Net.LayParams[0]))
 
-	_, pjnv, _ := gp.Params.ValueByIndexTry("Prjns", 0)
-	pjnv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnParams[0]))
+	_, pjnv, _ := gp.Params.ValueByIndexTry("Paths", 0)
+	pjnv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathParams[0]))
 }
 
-// SyncParamsToGPU copies the LayerParams and PrjnParams to the GPU from CPU.
+// SyncParamsToGPU copies the LayerParams and PathParams to the GPU from CPU.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
 func (gp *GPU) SyncParamsToGPU() {
 	if !gp.On {
@@ -479,13 +479,13 @@ func (gp *GPU) CopyIndexesToStaging() {
 	syniv.CopyFromBytes(unsafe.Pointer(&gp.Net.SynapseIxs[0]))
 
 	_, sconv, _ := gp.Indexes.ValueByIndexTry("SendCon", 0)
-	sconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnSendCon[0]))
+	sconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathSendCon[0]))
 
-	_, spiv, _ := gp.Indexes.ValueByIndexTry("RecvPrjnIndexes", 0)
-	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPrjnIndexes[0]))
+	_, spiv, _ := gp.Indexes.ValueByIndexTry("RecvPathIndexes", 0)
+	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPathIndexes[0]))
 
 	_, rconv, _ := gp.Indexes.ValueByIndexTry("RecvCon", 0)
-	rconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnRecvCon[0]))
+	rconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathRecvCon[0]))
 
 	_, ssiv, _ := gp.Indexes.ValueByIndexTry("RecvSynIndexes", 0)
 	ssiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvSynIndexes[0]))
@@ -729,9 +729,9 @@ func (gp *GPU) CopyGBufToStaging() {
 		return
 	}
 	_, gbv, _ := gp.Syns.ValueByIndexTry("GBuf", 0)
-	gbv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGBuf[0]))
+	gbv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathGBuf[0]))
 	_, gsv, _ := gp.Syns.ValueByIndexTry("GSyns", 0)
-	gsv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGSyns[0]))
+	gsv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathGSyns[0]))
 }
 
 // SyncGBufToGPU copies the GBuf and GSyns memory to the GPU.

@@ -4,9 +4,9 @@
 
 package chans
 
-import "github.com/emer/gosl/v2/slbool"
+import "cogentcore.org/core/vgpu/gosl/slbool"
 
-//gosl: start chans
+//gosl:start chans
 
 // KNaParams implements sodium (Na) gated potassium (K) currents
 // that drive adaptation (accommodation) in neural firing.
@@ -121,4 +121,4 @@ func (ka *KNaMedSlow) GcFromSpike(gKNaM, gKNaS *float32, spike bool) {
 	}
 }
 
-//gosl: end chans
+//gosl:end chans

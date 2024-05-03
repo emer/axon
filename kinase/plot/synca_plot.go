@@ -15,10 +15,10 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotview"
 	"cogentcore.org/core/tensor/table"
-	_ "cogentcore.org/core/tensor/tensorview" // include to get gui views
+	_ "cogentcore.org/core/tensor/tensorview"    // include to get gui views
+	_ "cogentcore.org/core/vgpu/gosl/slboolview" // ditto
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/kinase"
-	_ "github.com/emer/gosl/v2/slboolview" // ditto
 )
 
 func main() {

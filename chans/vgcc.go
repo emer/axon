@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl: start chans
+//gosl:start chans
 
 // VGCCParams control the standard L-type Ca channel
 // All functions based on Urakubo et al (2008).
@@ -101,4 +101,4 @@ func (np *VGCCParams) CaFromG(v, g, ca float32) float32 {
 	return -vbio * np.Ca * g
 }
 
-//gosl: end chans
+//gosl:end chans

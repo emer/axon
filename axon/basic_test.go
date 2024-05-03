@@ -23,7 +23,7 @@ import (
 	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 	"golang.org/x/exp/maps"
 )
 
@@ -55,13 +55,13 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLRate.On": "false",
 					"Layer.Inhib.Layer.FB":  "0.5",
 				}},
-			{Sel: "Prjn", Desc: "for reproducibility, identical weights",
+			{Sel: "Path", Desc: "for reproducibility, identical weights",
 				Params: params.Params{
-					"Prjn.SWts.Init.Var": "0",
+					"Path.SWts.Init.Var": "0",
 				}},
-			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Path.PathScale.Rel": "0.2",
 				}},
 		},
 		"InhibOff": &params.Sheet{
@@ -70,9 +70,9 @@ var ParamSets = params.Sets{
 					"Layer.Acts.Gbar.L":    "0.2",
 					"Layer.Inhib.Layer.On": "false",
 				}},
-			{Sel: ".InhibPrjn", Desc: "weaker inhib",
+			{Sel: ".InhibPath", Desc: "weaker inhib",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1",
+					"Path.PathScale.Abs": "0.1",
 				}},
 		},
 	}},
@@ -86,11 +86,11 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	"SubMean": {Desc: "submean on Prjn dwt", Sheets: params.Sheets{
+	"SubMean": {Desc: "submean on Path dwt", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "submean used in some models but not by default",
+			{Sel: "Path", Desc: "submean used in some models but not by default",
 				Params: params.Params{
-					"Prjn.Learn.Trace.SubMean": "1",
+					"Path.Learn.Trace.SubMean": "1",
 				}},
 		},
 	}},
@@ -107,9 +107,9 @@ func newTestNet(ctx *Context, nData int) *Network {
 	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
-	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
-	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
-	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
+	testNet.ConnectLayers(inLay, hidLay, paths.NewOneToOne(), ForwardPath)
+	testNet.ConnectLayers(hidLay, outLay, paths.NewOneToOne(), ForwardPath)
+	testNet.ConnectLayers(outLay, hidLay, paths.NewOneToOne(), BackPath)
 
 	testNet.Rubicon.SetNUSs(ctx, 4, 3)
 	testNet.Rubicon.Defaults()
@@ -135,10 +135,10 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
-	full := prjn.NewFull()
-	testNet.ConnectLayers(inLay, hidLay, full, ForwardPrjn)
-	testNet.ConnectLayers(hidLay, outLay, full, ForwardPrjn)
-	testNet.ConnectLayers(outLay, hidLay, full, BackPrjn)
+	full := paths.NewFull()
+	testNet.ConnectLayers(inLay, hidLay, full, ForwardPath)
+	testNet.ConnectLayers(hidLay, outLay, full, ForwardPath)
+	testNet.ConnectLayers(outLay, hidLay, full, BackPath)
 
 	testNet.Build(ctx)
 	ctx.NetIndexes.NData = uint32(nData)
@@ -158,7 +158,7 @@ func TestSynValues(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmIn := p.(*Prjn)
+	fmIn := p.(*Path)
 
 	bfWt := fmIn.SynValue("Wt", 1, 1)
 	if math32.IsNaN(bfWt) {
@@ -212,7 +212,7 @@ func TestSpikeProp(t *testing.T) {
 	inLay := net.AddLayer("Input", []int{1, 1}, InputLayer)
 	hidLay := net.AddLayer("Hidden", []int{1, 1}, SuperLayer)
 
-	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
+	prj := net.ConnectLayers(inLay, hidLay, paths.NewOneToOne(), ForwardPath)
 
 	ctx := NewContext()
 
@@ -820,8 +820,8 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 
 		didx := pi
 
-		hiddwt[didx] = hidLay.RcvPrjns[0].SynValue("DWt", pi, pi)
-		outdwt[didx] = outLay.RcvPrjns[0].SynValue("DWt", pi, pi)
+		hiddwt[didx] = hidLay.RcvPaths[0].SynValue("DWt", pi, pi)
+		outdwt[didx] = outLay.RcvPaths[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFromDWt(ctx)
 		if gpu {
@@ -829,8 +829,8 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 			testNet.GPU.SyncSynCaFromGPU()
 		}
 
-		hidwt[didx] = hidLay.RcvPrjns[0].SynValue("Wt", pi, pi)
-		outwt[didx] = outLay.RcvPrjns[0].SynValue("Wt", pi, pi)
+		hidwt[didx] = hidLay.RcvPaths[0].SynValue("Wt", pi, pi)
+		outwt[didx] = outLay.RcvPaths[0].SynValue("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, q3hidCaP, qtr3HidCaP, "qtr3HidCaP", t)
@@ -989,16 +989,16 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 
 		didx := pi
 
-		hiddwt[didx] = hidLay.RcvPrjns[0].SynValue("DWt", pi, pi)
-		outdwt[didx] = outLay.RcvPrjns[0].SynValue("DWt", pi, pi)
+		hiddwt[didx] = hidLay.RcvPaths[0].SynValue("DWt", pi, pi)
+		outdwt[didx] = outLay.RcvPaths[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFromDWt(ctx)
 		if gpu {
 			testNet.GPU.SyncSynapsesFromGPU()
 		}
 
-		hidwt[didx] = hidLay.RcvPrjns[0].SynValue("Wt", pi, pi)
-		outwt[didx] = outLay.RcvPrjns[0].SynValue("Wt", pi, pi)
+		hidwt[didx] = hidLay.RcvPaths[0].SynValue("Wt", pi, pi)
+		outwt[didx] = outLay.RcvPaths[0].SynValue("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, hidrlrs, patHidRLRates, "patHidRLRates", t)
@@ -1145,7 +1145,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 						fmt.Printf("\n")
 					}
 					for svi, snm := range SynapseVarNames {
-						val := ly.RcvPrjns[0].SynValDi(snm, ni, ni, di)
+						val := ly.RcvPaths[0].SynValDi(snm, ni, ni, di)
 						vkey := key + fmt.Sprintf("\t%s", snm)
 						valMap[vkey] = val
 						if doPrint {
@@ -1275,12 +1275,12 @@ func TestInhibAct(t *testing.T) {
 	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
 	outLay := InhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
-	one2one := prjn.NewOneToOne()
+	one2one := paths.NewOneToOne()
 
-	InhibNet.ConnectLayers(inLay, hidLay, one2one, ForwardPrjn)
-	InhibNet.ConnectLayers(inLay, hidLay, one2one, InhibPrjn)
-	InhibNet.ConnectLayers(hidLay, outLay, one2one, ForwardPrjn)
-	InhibNet.ConnectLayers(outLay, hidLay, one2one, BackPrjn)
+	InhibNet.ConnectLayers(inLay, hidLay, one2one, ForwardPath)
+	InhibNet.ConnectLayers(inLay, hidLay, one2one, InhibPath)
+	InhibNet.ConnectLayers(hidLay, outLay, one2one, ForwardPath)
+	InhibNet.ConnectLayers(outLay, hidLay, one2one, BackPath)
 
 	ctx := NewContext()
 
@@ -1482,8 +1482,8 @@ func TestSendGatherIndexes(t *testing.T) {
 			for di := uint32(0); di < nData; di++ {
 				li := NrnI(ctx, ni, NrnLayIndex)
 				ly := net.Layers[li]
-				if len(ly.SndPrjns) > 0 {
-					pj := ly.SndPrjns[0]
+				if len(ly.SndPaths) > 0 {
+					pj := ly.SndPaths[0]
 					pjcom := &pj.Params.Com
 					wrOff := pjcom.WriteOff(int32(cyc))
 					scon := pj.SendCon[ni-pj.Send.NeurStIndex]
@@ -1520,9 +1520,9 @@ func TestSendGatherIndexes(t *testing.T) {
 						// }
 					}
 				}
-				if len(ly.RcvPrjns) > 0 {
+				if len(ly.RcvPaths) > 0 {
 					lni := ni - ly.NeurStIndex
-					pj := ly.RcvPrjns[0]
+					pj := ly.RcvPaths[0]
 					bi := pj.Params.Indexes.GBufSt + pj.Params.Com.ReadIndex(lni, di, int32(cyc), pj.Params.Indexes.RecvNeurN, nData)
 					key := fmt.Sprintf("recv: cyc: %d  bi: %03d  di: %d  ri: %02d\n", cyc, bi, di, ni)
 
@@ -1592,7 +1592,7 @@ func TestRubiconGiveUp(t *testing.T) {
 
 /* todo: fixme
 func TestSWtInit(t *testing.T) {
-	pj := &PrjnParams{}
+	pj := &PathParams{}
 	pj.Defaults()
 
 	nsamp := 100
@@ -1756,7 +1756,7 @@ func TestSWtInit(t *testing.T) {
 }
 
 func TestSWtLinLearn(t *testing.T) {
-	pj := &PrjnParams{}
+	pj := &PathParams{}
 	pj.Defaults()
 	sy := &Synapse{}
 

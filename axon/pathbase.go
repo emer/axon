@@ -14,51 +14,51 @@ import (
 	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // index naming:
-// syi =  prjn-relative synapse index (per existing usage)
+// syi =  path-relative synapse index (per existing usage)
 // syni = network-relative synapse index -- add SynStIndex to syi
 
-// PrjnBase contains the basic structural information for specifying a projection of synaptic
+// PathBase contains the basic structural information for specifying a pathway of synaptic
 // connections between two layers, and maintaining all the synaptic connection-level data.
-// The same struct token is added to the Recv and Send layer prjn lists, and it manages everything
-// about the connectivity, and methods on the Prjn handle all the relevant computation.
+// The same struct token is added to the Recv and Send layer path lists, and it manages everything
+// about the connectivity, and methods on the Path handle all the relevant computation.
 // The Base does not have algorithm-specific methods and parameters, so it can be easily
 // reused for different algorithms, and cleanly separates the algorithm-specific code.
-// Any dependency on the algorithm-level Prjn can be captured in the AxonPrjn interface,
+// Any dependency on the algorithm-level Path can be captured in the AxonPath interface,
 // accessed via the AxonPrj field.
-type PrjnBase struct {
+type PathBase struct {
 
-	// we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonPrj AxonPrjn `copier:"-" json:"-" xml:"-" view:"-"`
+	// we need a pointer to ourselves as an AxonPath, which can always be used to extract the true underlying type of object when path is embedded in other structs -- function receivers do not have this ability so this is necessary.
+	AxonPrj AxonPath `copier:"-" json:"-" xml:"-" view:"-"`
 
-	// inactivate this projection -- allows for easy experimentation
+	// inactivate this pathway -- allows for easy experimentation
 	Off bool
 
 	// Class is for applying parameter styles, can be space separated multple tags
 	Cls string
 
-	// can record notes about this projection here
+	// can record notes about this pathway here
 	Notes string
 
-	// sending layer for this projection
+	// sending layer for this pathway
 	Send *Layer
 
-	// receiving layer for this projection
+	// receiving layer for this pathway
 	Recv *Layer
 
 	// pattern of connectivity
-	Pat prjn.Pattern `tableview:"-"`
+	Pat paths.Pattern `tableview:"-"`
 
-	// type of projection:  Forward, Back, Lateral, or extended type in specialized algorithms.
+	// type of pathway:  Forward, Back, Lateral, or extended type in specialized algorithms.
 	// Matches against .Cls parameter styles (e.g., .Back etc)
-	Typ PrjnTypes
+	Typ PathTypes
 
 	// default parameters that are applied prior to user-set parameters.
 	// these are useful for specific functionality in specialized brain areas
-	// (e.g., Rubicon, BG etc) not associated with a prjn type, which otherwise
+	// (e.g., Rubicon, BG etc) not associated with a path type, which otherwise
 	// is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
 	DefParams params.Params `tableview:"-"`
@@ -75,73 +75,73 @@ type PrjnBase struct {
 	// start index into global Synapse array:
 	SynStIndex uint32 `view:"-"`
 
-	// number of synapses in this projection
+	// number of synapses in this pathway
 	NSyns uint32 `view:"-"`
 
-	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage.
+	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PathRecvCons slice for GPU usage.
 	RecvCon []StartN `view:"-"`
 
-	// index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list
+	// index into Syns synaptic state for each sending unit and connection within that, for the sending pathway which does not own the synapses, and instead indexes into recv-ordered list
 	RecvSynIndex []uint32 `view:"-"`
 
 	// for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
 	RecvConIndex []uint32 `view:"-"`
 
-	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PrjnSendCons slice for GPU usage.
+	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PathSendCons slice for GPU usage.
 	SendCon []StartN `view:"-"`
 
 	// index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
 	SendConIndex []uint32 `view:"-"`
 
-	// Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIndex, WriteIndex -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration
+	// Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIndex, WriteIndex -- scale * weight is added with Com delay offset -- a subslice from network PathGBuf. Uses int-encoded float values for faster GPU atomic integration
 	GBuf []int32 `view:"-"`
 
-	// projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn.
+	// pathway-level synaptic conductance values, integrated by path before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PathGSyn.
 	GSyns []float32 `view:"-"`
 }
 
-// emer.Prjn interface
+// emer.Path interface
 
-// Init MUST be called to initialize the prjn's pointer to itself as an emer.Prjn
+// Init MUST be called to initialize the path's pointer to itself as an emer.Path
 // which enables the proper interface methods to be called.
-func (pj *PrjnBase) Init(prjn emer.Prjn) {
-	pj.AxonPrj = prjn.(AxonPrjn)
+func (pj *PathBase) Init(path emer.Path) {
+	pj.AxonPrj = path.(AxonPath)
 }
 
-func (pj *PrjnBase) TypeName() string { return "Prjn" } // always, for params..
-func (pj *PrjnBase) Class() string    { return pj.PrjnTypeName() + " " + pj.Cls }
-func (pj *PrjnBase) Name() string {
+func (pj *PathBase) TypeName() string { return "Path" } // always, for params..
+func (pj *PathBase) Class() string    { return pj.PathTypeName() + " " + pj.Cls }
+func (pj *PathBase) Name() string {
 	return pj.Send.Name() + "To" + pj.Recv.Name()
 }
-func (pj *Prjn) AddClass(cls ...string) emer.Prjn {
+func (pj *Path) AddClass(cls ...string) emer.Path {
 	pj.Cls = params.AddClass(pj.Cls, cls...)
 	return pj
 }
-func (pj *PrjnBase) SetPattern(pat prjn.Pattern) emer.Prjn { pj.Pat = pat; return pj.AxonPrj }
-func (pj *PrjnBase) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = PrjnTypes(typ); return pj.AxonPrj }
-func (pj *PrjnBase) Label() string                         { return pj.Name() }
-func (pj *PrjnBase) RecvLay() emer.Layer                   { return pj.Recv }
-func (pj *PrjnBase) SendLay() emer.Layer                   { return pj.Send }
-func (pj *PrjnBase) Pattern() prjn.Pattern                 { return pj.Pat }
-func (pj *PrjnBase) Type() emer.PrjnType                   { return emer.PrjnType(pj.Typ) }
-func (pj *PrjnBase) PrjnTypeName() string                  { return pj.Typ.String() }
-func (pj *PrjnBase) IsOff() bool                           { return pj.Off }
+func (pj *PathBase) SetPattern(pat paths.Pattern) emer.Path { pj.Pat = pat; return pj.AxonPrj }
+func (pj *PathBase) SetType(typ emer.PathType) emer.Path    { pj.Typ = PathTypes(typ); return pj.AxonPrj }
+func (pj *PathBase) Label() string                          { return pj.Name() }
+func (pj *PathBase) RecvLay() emer.Layer                    { return pj.Recv }
+func (pj *PathBase) SendLay() emer.Layer                    { return pj.Send }
+func (pj *PathBase) Pattern() paths.Pattern                 { return pj.Pat }
+func (pj *PathBase) Type() emer.PathType                    { return emer.PathType(pj.Typ) }
+func (pj *PathBase) PathTypeName() string                   { return pj.Typ.String() }
+func (pj *PathBase) IsOff() bool                            { return pj.Off }
 
-// SetOff individual projection. Careful: Layer.SetOff(true) will reactivate all prjns of that layer,
-// so prjn-level lesioning should always be done last.
-func (pj *PrjnBase) SetOff(off bool) { pj.Off = off }
+// SetOff individual pathway. Careful: Layer.SetOff(true) will reactivate all paths of that layer,
+// so path-level lesioning should always be done last.
+func (pj *PathBase) SetOff(off bool) { pj.Off = off }
 
 // Connect sets the connectivity between two layers and the pattern to use in interconnecting them
-func (pj *PrjnBase) Connect(slay, rlay *Layer, pat prjn.Pattern, typ PrjnTypes) {
+func (pj *PathBase) Connect(slay, rlay *Layer, pat paths.Pattern, typ PathTypes) {
 	pj.Send = slay
 	pj.Recv = rlay
 	pj.Pat = pat
 	pj.Typ = typ
 }
 
-// Validate tests for non-nil settings for the projection -- returns error
+// Validate tests for non-nil settings for the pathway -- returns error
 // message or nil if no problems (and logs them if logmsg = true)
-func (pj *PrjnBase) Validate(logmsg bool) error {
+func (pj *PathBase) Validate(logmsg bool) error {
 	emsg := ""
 	if pj.Pat == nil {
 		emsg += "Pat is nil; "
@@ -164,7 +164,7 @@ func (pj *PrjnBase) Validate(logmsg bool) error {
 
 // RecvSynIndexes returns the receiving synapse indexes for given recv unit index
 // within the receiving layer, to be iterated over for recv-based processing.
-func (pj *PrjnBase) RecvSynIndexes(ri uint32) []uint32 {
+func (pj *PathBase) RecvSynIndexes(ri uint32) []uint32 {
 	rcon := pj.RecvCon[ri]
 	return pj.RecvSynIndex[rcon.Start : rcon.Start+rcon.N]
 }
@@ -174,7 +174,7 @@ func (pj *PrjnBase) RecvSynIndexes(ri uint32) []uint32 {
 // Pat.Connect is called to get the pattern of the connection.
 // Then the connection indexes are configured according to that pattern.
 // Does NOT allocate synapses -- these are set by Network from global slice.
-func (pj *PrjnBase) Build() error {
+func (pj *PathBase) Build() error {
 	if pj.Off {
 		return nil
 	}
@@ -232,7 +232,7 @@ func (pj *PrjnBase) Build() error {
 
 // SetConStartN sets the *Con StartN values given n tensor from Pat.
 // Returns total number of connections for this direction.
-func (pj *PrjnBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *tensor.Int32) uint32 {
+func (pj *PathBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *tensor.Int32) uint32 {
 	ln := tn.Len()
 	tnv := tn.Values
 	*con = make([]StartN, ln)
@@ -248,8 +248,8 @@ func (pj *PrjnBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *ten
 	return idx
 }
 
-// String satisfies fmt.Stringer for prjn
-func (pj *PrjnBase) String() string {
+// String satisfies fmt.Stringer for path
+func (pj *PathBase) String() string {
 	str := ""
 	if pj.Recv == nil {
 		str += "recv=nil; "
@@ -270,23 +270,23 @@ func (pj *PrjnBase) String() string {
 }
 
 // ParamsHistoryReset resets parameter application history
-func (pj *PrjnBase) ParamsHistoryReset() {
+func (pj *PathBase) ParamsHistoryReset() {
 	pj.ParamsHistory.ParamsHistoryReset()
 }
 
 // ParamsApplied is just to satisfy History interface so reset can be applied
-func (pj *PrjnBase) ParamsApplied(sel *params.Sel) {
+func (pj *PathBase) ParamsApplied(sel *params.Sel) {
 	pj.ParamsHistory.ParamsApplied(sel)
 }
 
-// ApplyParams applies given parameter style Sheet to this projection.
+// ApplyParams applies given parameter style Sheet to this pathway.
 // Calls UpdateParams if anything set to ensure derived parameters are all updated.
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
-func (pj *PrjnBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
+func (pj *PathBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 	app, err := pars.Apply(pj.AxonPrj, setMsg)
-	// note: must use AxonPrj to get to actual Prjn, which then uses Styler interface
+	// note: must use AxonPrj to get to actual Path, which then uses Styler interface
 	// to return the Params struct.
 	if app {
 		pj.AxonPrj.UpdateParams()
@@ -295,8 +295,8 @@ func (pj *PrjnBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 }
 
 // ApplyDefParams applies DefParams default parameters if set
-// Called by Prjn.Defaults()
-func (pj *PrjnBase) ApplyDefParams() {
+// Called by Path.Defaults()
+func (pj *PathBase) ApplyDefParams() {
 	if pj.DefParams == nil {
 		return
 	}
@@ -308,18 +308,18 @@ func (pj *PrjnBase) ApplyDefParams() {
 
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
-func (pj *PrjnBase) NonDefaultParams() string {
+func (pj *PathBase) NonDefaultParams() string {
 	pth := pj.Recv.Name() + "." + pj.Name() // redundant but clearer..
 	nds := views.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
 	return nds
 }
 
-func (pj *PrjnBase) SynVarNames() []string {
+func (pj *PathBase) SynVarNames() []string {
 	return SynapseVarNames
 }
 
 // SynVarProps returns properties for variables
-func (pj *PrjnBase) SynVarProps() map[string]string {
+func (pj *PathBase) SynVarProps() map[string]string {
 	return SynapseVarProps
 }
 
@@ -327,7 +327,7 @@ func (pj *PrjnBase) SynVarProps() map[string]string {
 // (1D, flat indexes, layer relative).
 // Returns -1 if synapse not found between these two neurons.
 // Requires searching within connections for sending unit.
-func (pj *PrjnBase) SynIndex(sidx, ridx int) int {
+func (pj *PathBase) SynIndex(sidx, ridx int) int {
 	if sidx >= len(pj.SendCon) {
 		return -1
 	}
@@ -337,7 +337,7 @@ func (pj *PrjnBase) SynIndex(sidx, ridx int) int {
 	}
 	firstRi := int(pj.SendConIndex[scon.Start])
 	lastRi := int(pj.SendConIndex[scon.Start+scon.N-1])
-	if ridx < firstRi || ridx > lastRi { // fast reject -- prjns are always in order!
+	if ridx < firstRi || ridx > lastRi { // fast reject -- paths are always in order!
 		return -1
 	}
 	// start at index proportional to ri relative to rist
@@ -373,28 +373,28 @@ func (pj *PrjnBase) SynIndex(sidx, ridx int) int {
 }
 
 // SynVarIndex returns the index of given variable within the synapse,
-// according to *this prjn's* SynVarNames() list (using a map to lookup index),
+// according to *this path's* SynVarNames() list (using a map to lookup index),
 // or -1 and error message if not found.
-func (pj *PrjnBase) SynVarIndex(varNm string) (int, error) {
+func (pj *PathBase) SynVarIndex(varNm string) (int, error) {
 	return SynapseVarByName(varNm)
 }
 
 // SynVarNum returns the number of synapse-level variables
-// for this prjn.  This is needed for extending indexes in derived types.
-func (pj *PrjnBase) SynVarNum() int {
+// for this paths.  This is needed for extending indexes in derived types.
+func (pj *PathBase) SynVarNum() int {
 	return len(SynapseVarNames)
 }
 
-// Syn1DNum returns the number of synapses for this prjn as a 1D array.
+// Syn1DNum returns the number of synapses for this path as a 1D array.
 // This is the max idx for SynVal1D and the number of vals set by SynValues.
-func (pj *PrjnBase) Syn1DNum() int {
+func (pj *PathBase) Syn1DNum() int {
 	return int(pj.NSyns)
 }
 
 // SynVal1D returns value of given variable index (from SynVarIndex) on given SynIndex.
 // Returns NaN on invalid index.
 // This is the core synapse var access method used by other methods.
-func (pj *PrjnBase) SynVal1D(varIndex int, synIndex int) float32 {
+func (pj *PathBase) SynVal1D(varIndex int, synIndex int) float32 {
 	if synIndex < 0 || synIndex >= int(pj.NSyns) {
 		return math32.NaN()
 	}
@@ -414,7 +414,7 @@ func (pj *PrjnBase) SynVal1D(varIndex int, synIndex int) float32 {
 // using the natural ordering of the synapses (sender based for Axon),
 // into given float32 slice (only resized if not big enough).
 // Returns error on invalid var name.
-func (pj *PrjnBase) SynValues(vals *[]float32, varNm string) error {
+func (pj *PathBase) SynValues(vals *[]float32, varNm string) error {
 	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
 	if err != nil {
 		return err
@@ -440,7 +440,7 @@ func (pj *PrjnBase) SynValues(vals *[]float32, varNm string) error {
 // SynVal returns value of given variable name on the synapse
 // between given send, recv unit indexes (1D, flat indexes).
 // Returns math32.NaN() for access errors (see SynValTry for error message)
-func (pj *PrjnBase) SynValue(varNm string, sidx, ridx int) float32 {
+func (pj *PathBase) SynValue(varNm string, sidx, ridx int) float32 {
 	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
 	if err != nil {
 		return math32.NaN()
@@ -453,7 +453,7 @@ func (pj *PrjnBase) SynValue(varNm string, sidx, ridx int) float32 {
 // Returns NaN on invalid index.
 // This is the core synapse var access method used by other methods.
 // Includes Di data parallel index for data-parallel synaptic values.
-func (pj *PrjnBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
+func (pj *PathBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 	if synIndex < 0 || synIndex >= int(pj.NSyns) {
 		return math32.NaN()
 	}
@@ -473,7 +473,7 @@ func (pj *PrjnBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 // between given send, recv unit indexes (1D, flat indexes).
 // Returns math32.NaN() for access errors (see SynValTry for error message)
 // Includes Di data parallel index for data-parallel synaptic values.
-func (pj *PrjnBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
+func (pj *PathBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
 	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
 	if err != nil {
 		return math32.NaN()

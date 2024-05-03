@@ -47,7 +47,7 @@ The network state (everything except Synapses) is automatically synchronized at 
 
 Also, the `axon.LooperUpdateNetView` method now requires a `ss.Net` argument, to enable grabbing Neuron state if updating at the Cycle level.
 
-The new `LayerTypes` and `PrjnTypes` enums require renaming type selectors in params and other places.  There is now just one layer type, `Layer`, so cases that were different types are now specified by the Class selector (`.` prefix) based on the LayerTypes enum, which is automatically added for each layer.
+The new `LayerTypes` and `PathTypes` enums require renaming type selectors in params and other places.  There is now just one layer type, `Layer`, so cases that were different types are now specified by the Class selector (`.` prefix) based on the LayerTypes enum, which is automatically added for each layer.
 
 ```Go
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
@@ -57,7 +57,7 @@ And it is recommended to use `LayersByType` with type enums instead of `LayersBy
 
 * Here are the types that changed:
     * .Hidden -> .SuperLayer
-    * .Inhib -> .InhibPrjn
+    * .Inhib -> .InhibPath
     * SuperLayer -> .SuperLayer
     * CTLayer -> .CTLayer
     * PulvLayer -> .PulvinarLayer
@@ -74,9 +74,9 @@ Set: 1	Indexes
     Role: Storage
         Var: 0:	NeuronIxs	Uint32[534]	(size: 4)	Values: 1
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Values: 1
-        Var: 2:	Prjns	Struct[5]	(size: 352)	Values: 1
+        Var: 2:	Paths	Struct[5]	(size: 352)	Values: 1
         Var: 3:	SendCon	Struct[242]	(size: 16)	Values: 1
-        Var: 4:	RecvPrjnIndexes	Uint32[5]	(size: 4)	Values: 1
+        Var: 4:	RecvPathIndexes	Uint32[5]	(size: 4)	Values: 1
         Var: 5:	RecvCon	Struct[281]	(size: 16)	Values: 1
         Var: 6:	RecvSynIndexes	Uint32[12992]	(size: 4)	Values: 1
 Set: 2	Structs
@@ -101,7 +101,7 @@ Set: 3	Syns
 
 * Everything must be stored in top-level arrays of structs as shown above -- these are the only variable length data structures.
 
-* The projections and synapses are now organized in a receiver-based ordering, with indexes used to access in a sender-based order. 
+* The pathways and synapses are now organized in a receiver-based ordering, with indexes used to access in a sender-based order. 
 
 * The core computation is invoked via the `RunCycle` method, which can actually run 10 cycles at a time in one GPU command submission, which greatly reduces overhead.  The cycle-level computation is fully implemented all on the GPU, but basic layer-level state is copied back down by default because it is very fast to do so and might be needed.
 
@@ -127,37 +127,37 @@ Set: 3	Syns
 
 * `Layer` in `layer_compute.go` pulls out the core algorithm-specific computational code that is also run GPU-side.  It mostly iterates over Neurons and calls `LayerParams` methods -- GPU-specific code does this on global vars. Also has `CyclePost` which has special computation that only happens on the CPU.
 
-`Prjn`: -- mirrors the same structure as layer
+`Path`: -- mirrors the same structure as layer
 
-* `PrjnBase` in `prjnbase.go` manages basic infrastructure.
+* `PathBase` in `pathbase.go` manages basic infrastructure.
 
-* `Prjn` in `prjn.go` does algorithm-specific CPU-side stuff.
+* `Path` in `paths.go` does algorithm-specific CPU-side stuff.
 
-* `Prjn` in `prjn_compute.go` pulls out core algorithm-specific code that is also run on the GPU, making calls into the `PrjnParams` methods.
+* `Path` in `path_compute.go` pulls out core algorithm-specific code that is also run on the GPU, making calls into the `PathParams` methods.
 
 `Network`: likewise has `NetworkBase` etc.
 
 ### GPU-side 
 
-The following Layer and Prjn level types contain most of the core algorithm specific code, and are used as a `uniform` constant data structure in the GPU shader code:
+The following Layer and Path level types contain most of the core algorithm specific code, and are used as a `uniform` constant data structure in the GPU shader code:
 
 * `LayerParams` in `layerparams.go` has all the core algorithm parameters and methods that run on both the GPU and the CPU.  This file is converted to `shaders/layerparams.hlsl` by [gosl](https://github.com/goki/gosl).  All the methods must have args providing all of the state that is needed for the computation, which is supplied either by the GPU or CPU.  The overall layer-level parameters are further defined in:
     + `ActParams` in `act.go` -- for computing spiking neural activation.
     + `InhibParams` in `inhib.go` -- for simulated inhibitory interneuron inhibition.
     + `LearnNeurParams` in `learn.go` -- learning-related functions at the neuron level.
 
-* `PrjnParams` in `prjnparams.go` has all the core algorithm parameters and methods that run on both the GPU and CPU, likewise converted to `shaders/prjnparams.hlsl`.  The specific params are in:
+* `PathParams` in `pathparams.go` has all the core algorithm parameters and methods that run on both the GPU and CPU, likewise converted to `shaders/pathparams.hlsl`.  The specific params are in:
     + `SynComParams` at the bottom of `act.go` -- synaptic communication params used in computing spiking activation.
-    + `PrjnScaleParams` also at end of `act.go` -- projection scaling params, for `GScale` overall value.
+    + `PathScaleParams` also at end of `act.go` -- pathway scaling params, for `GScale` overall value.
     + `SWtParams` in `learn.go` -- for initializing the slow and regular weight values -- most of the initial weight variation goes into SWt.
     + `LearnSynParams` in `learn.go` -- core learning algorithm at the synapse level.
-    + `GScaleValues` -- these are computed from `PrjnScaleParams` and not user-set directly, but remain constant so are put here.
+    + `GScaleValues` -- these are computed from `PathScaleParams` and not user-set directly, but remain constant so are put here.
 
 Each class of special algorithms has its own set of mostly GPU-side code:
 
-* `deep` predictive learning in pulvinar and cortical deep layers: `deep_layers.go, deep_prjns.go, deep_net.go`
+* `deep` predictive learning in pulvinar and cortical deep layers: `deep_layers.go, deep_paths.go, deep_net.go`
 
-* `rl` reinforcement learning (TD and Rescorla Wagner): `rl_layers.go, rl_prjns.go, rl_net.go`
+* `rl` reinforcement learning (TD and Rescorla Wagner): `rl_layers.go, rl_paths.go, rl_net.go`
 
 * `pcore` pallidal core BG model
 

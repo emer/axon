@@ -1,6 +1,6 @@
 # Reinforcement Learning and Dopamine
 
-The rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [prjns.go](axon/rl_prjns.go)} files in axon provide core infrastructure for dopamine neuromodulation and reinforcement learning, including the Rescorla-Wagner learning algorithm (RW) and Temporal Differences (TD) learning.
+The rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [paths.go](axon/rl_paths.go)} files in axon provide core infrastructure for dopamine neuromodulation and reinforcement learning, including the Rescorla-Wagner learning algorithm (RW) and Temporal Differences (TD) learning.
 
 In the new GPU-based code, the `Context` type, `NeuroModValues` field is used to communicate global neuromodulatory signals around the network: broadcasting new modulatory signals and communicating computed values between specialized layer types.
 
@@ -23,7 +23,7 @@ Here's the info from `layertypes.go` -- see `examples/rl` for example usage, and
 	// learning dynamic (i.e., PV learning in the PVLV framework).
 	// Activity is computed as linear function of excitatory conductance
 	// (which can be negative -- there are no constraints).
-	// Use with RWPrjn which does simple delta-rule learning on minus-plus.
+	// Use with RWPath which does simple delta-rule learning on minus-plus.
 	RWPredLayer
 
 	// RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner
@@ -37,7 +37,7 @@ Here's the info from `layertypes.go` -- see `examples/rl` for example usage, and
 	// TDPredLayer is the temporal differences reward prediction layer.
 	// It represents estimated value V(t) in the minus phase, and computes
 	// estimated V(t+1) based on its learned weights in plus phase,
-	// using the TDPredPrjn projection type for DA modulated learning.
+	// using the TDPredPath pathway type for DA modulated learning.
 	TDPredLayer
 
 	// TDIntegLayer is the temporal differences reward integration layer.

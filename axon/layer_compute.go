@@ -24,12 +24,12 @@ import (
 //  Cycle
 
 // GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
-// while integrating the Recv Prjn-level GSyn integrated values.
+// while integrating the Recv Path-level GSyn integrated values.
 func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 	lni := ni - ly.NeurStIndex
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ly.Params.GatherSpikesInit(ctx, ni, di)
-		for _, pj := range ly.RcvPrjns {
+		for _, pj := range ly.RcvPaths {
 			if pj.IsOff() {
 				continue
 			}
@@ -202,7 +202,7 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32) {
 // last step in Cycle, integrated the next time around.
 // Called directly by Network, iterates over data.
 func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
-	for _, sp := range ly.SndPrjns {
+	for _, sp := range ly.SndPaths {
 		if sp.IsOff() {
 			continue
 		}
@@ -224,13 +224,13 @@ func (ly *Layer) SynCa(ctx *Context, ni uint32) {
 		if NrnV(ctx, ni, di, CaSpkP) < updtThr && NrnV(ctx, ni, di, CaSpkD) < updtThr {
 			continue
 		}
-		for _, sp := range ly.SndPrjns {
+		for _, sp := range ly.SndPaths {
 			if sp.IsOff() {
 				continue
 			}
 			sp.SynCaSend(ctx, ni, di, updtThr)
 		}
-		for _, rp := range ly.RcvPrjns {
+		for _, rp := range ly.RcvPaths {
 			if rp.IsOff() {
 				continue
 			}
@@ -346,7 +346,7 @@ func (ly *Layer) NewState(ctx *Context) {
 
 	// note: would be somewhat more expensive to only clear the di specific subset
 	// but all di are decayed every trial anyway so no big deal
-	ly.InitPrjnGBuffs(ctx)
+	ly.InitPathGBuffs(ctx)
 }
 
 // NewStateNeurons only calls the neurons part of new state -- for misbehaving GPU
@@ -702,7 +702,7 @@ func (ly *Layer) CorSimFromActs(ctx *Context) {
 // synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (ly *Layer) DWt(ctx *Context, si uint32) {
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -712,7 +712,7 @@ func (ly *Layer) DWt(ctx *Context, si uint32) {
 
 // DWtSubMean computes subtractive normalization of the DWts
 func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -722,7 +722,7 @@ func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
 
 // WtFromDWt updates weight values from delta weight changes
 func (ly *Layer) WtFromDWt(ctx *Context, si uint32) {
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -811,7 +811,7 @@ func (ly *Layer) TrgAvgFromD(ctx *Context) {
 }
 
 // WtFromDWtLayer does weight update at the layer level.
-// does NOT call main projection-level WtFromDWt method.
+// does NOT call main pathway-level WtFromDWt method.
 // in base, only calls TrgAvgFromD
 func (ly *Layer) WtFromDWtLayer(ctx *Context) {
 	ly.TrgAvgFromD(ctx)
@@ -819,11 +819,11 @@ func (ly *Layer) WtFromDWtLayer(ctx *Context) {
 
 // SlowAdapt is the layer-level slow adaptation functions.
 // Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
-// Does NOT call projection-level methods.
+// Does NOT call pathway-level methods.
 func (ly *Layer) SlowAdapt(ctx *Context) {
 	ly.AdaptInhib(ctx)
 	ly.AvgDifFromTrgAvg(ctx)
-	// note: prjn level call happens at network level
+	// note: path level call happens at network level
 }
 
 // AdaptInhib adapts inhibition
@@ -838,7 +838,7 @@ func (ly *Layer) AdaptInhib(ctx *Context) {
 }
 
 // AvgDifFromTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
-// which is then used for synaptic scaling of LWt values in Prjn SynScale.
+// which is then used for synaptic scaling of LWt values in Path SynScale.
 func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 	sp := uint32(0)
 	if ly.NPools > 1 {
@@ -911,7 +911,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFromDWt, but this call can be used during testing to update failing synapses.
 func (ly *Layer) SynFail(ctx *Context) {
-	for _, pj := range ly.SndPrjns {
+	for _, pj := range ly.SndPaths {
 		if pj.IsOff() {
 			continue
 		}
@@ -919,11 +919,11 @@ func (ly *Layer) SynFail(ctx *Context) {
 	}
 }
 
-// LRateMod sets the LRate modulation parameter for Prjns, which is
+// LRateMod sets the LRate modulation parameter for Paths, which is
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
 func (ly *Layer) LRateMod(mod float32) {
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
@@ -935,7 +935,7 @@ func (ly *Layer) LRateMod(mod float32) {
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
 func (ly *Layer) LRateSched(sched float32) {
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
@@ -945,15 +945,15 @@ func (ly *Layer) LRateSched(sched float32) {
 
 // SetSubMean sets the SubMean parameters in all the layers in the network
 // trgAvg is for Learn.TrgAvgAct.SubMean
-// prjn is for the prjns Learn.Trace.SubMean
+// path is for the paths Learn.Trace.SubMean
 // in both cases, it is generally best to have both parameters set to 0
 // at the start of learning
-func (ly *Layer) SetSubMean(trgAvg, prjn float32) {
+func (ly *Layer) SetSubMean(trgAvg, path float32) {
 	ly.Params.Learn.TrgAvgAct.SubMean = trgAvg
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.RcvPaths {
 		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		pj.Params.Learn.Trace.SubMean = prjn
+		pj.Params.Learn.Trace.SubMean = path
 	}
 }

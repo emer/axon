@@ -10,7 +10,7 @@ import (
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/looper"
-	"github.com/emer/emergent/v2/prjn"
+	"github.com/emer/emergent/v2/paths"
 )
 
 // HipConfig have the hippocampus size and connectivity parameters
@@ -55,16 +55,16 @@ type HipConfig struct {
 	// lateral gaussian sigma in EC2 for how quickly weights fall off with distance
 	EC2LatSigma float32
 
-	// proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
+	// proportion of full mossy fiber strength (PathScale.Rel) for CA3 EDL in training, applied at the start of a trial to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
 	MossyDelta float32 `default:"1"`
 
-	// proportion of full mossy fiber strength (PrjnScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
+	// proportion of full mossy fiber strength (PathScale.Rel) for CA3 EDL in testing, applied during 2nd-3rd quarters to reduce DG -> CA3 strength.  1 = fully reduce strength, .5 = 50% reduction, etc
 	MossyDeltaTest float32 `default:"0.75"`
 
-	// low theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
+	// low theta modulation value for temporal difference EDL -- sets PathScale.Rel on CA1 <-> EC paths consistent with Theta phase model
 	ThetaLow float32 `default:"0.9"`
 
-	// high theta modulation value for temporal difference EDL -- sets PrjnScale.Rel on CA1 <-> EC prjns consistent with Theta phase model
+	// high theta modulation value for temporal difference EDL -- sets PathScale.Rel on CA1 <-> EC paths consistent with Theta phase model
 	ThetaHigh float32 `default:"1"`
 
 	// flag for clamping the EC5 from EC5ClampSrc
@@ -137,41 +137,41 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	ec5.SetRepIndexesShape(emer.CenterPoolIndexes(ec5, 2), emer.CenterPoolShape(ec5, 2))
 
 	// Input and ECs connections
-	onetoone := prjn.NewOneToOne()
-	ec3Toec2 := prjn.NewUnifRnd()
+	onetoone := paths.NewOneToOne()
+	ec3Toec2 := paths.NewUnifRnd()
 	ec3Toec2.PCon = hip.EC3ToEC2PCon
-	mossy := prjn.NewUnifRnd()
+	mossy := paths.NewUnifRnd()
 	mossy.PCon = hip.DGToCA3PCon
-	net.ConnectLayers(ec3, ec2, ec3Toec2, ForwardPrjn)
-	net.ConnectLayers(ec5, ec3, onetoone, BackPrjn)
+	net.ConnectLayers(ec3, ec2, ec3Toec2, ForwardPath)
+	net.ConnectLayers(ec5, ec3, onetoone, BackPath)
 
 	// recurrent inhbition in EC2
-	lat := prjn.NewCircle()
+	lat := paths.NewCircle()
 	lat.TopoWts = true
 	lat.Radius = hip.EC2LatRadius
 	lat.Sigma = hip.EC2LatSigma
-	inh := net.ConnectLayers(ec2, ec2, lat, InhibPrjn)
+	inh := net.ConnectLayers(ec2, ec2, lat, InhibPath)
 	inh.AddClass("InhibLateral")
 
 	// TSP connections
-	ppathDG := prjn.NewUnifRnd()
+	ppathDG := paths.NewUnifRnd()
 	ppathDG.PCon = hip.EC2ToDGPCon
-	ppathCA3 := prjn.NewUnifRnd()
+	ppathCA3 := paths.NewUnifRnd()
 	ppathCA3.PCon = hip.EC2ToCA3PCon
-	ca3ToCA1 := prjn.NewUnifRnd()
+	ca3ToCA1 := paths.NewUnifRnd()
 	ca3ToCA1.PCon = hip.CA3ToCA1PCon
-	full := prjn.NewFull()
-	net.ConnectLayers(ec2, dg, ppathDG, HipPrjn).AddClass("HippoCHL")
-	net.ConnectLayers(ec2, ca3, ppathCA3, HipPrjn).AddClass("PPath")
-	net.ConnectLayers(ca3, ca3, full, HipPrjn).AddClass("PPath")
-	net.ConnectLayers(dg, ca3, mossy, ForwardPrjn).AddClass("HippoCHL")
-	net.ConnectLayers(ca3, ca1, ca3ToCA1, HipPrjn).AddClass("HippoCHL")
+	full := paths.NewFull()
+	net.ConnectLayers(ec2, dg, ppathDG, HipPath).AddClass("HippoCHL")
+	net.ConnectLayers(ec2, ca3, ppathCA3, HipPath).AddClass("PPath")
+	net.ConnectLayers(ca3, ca3, full, HipPath).AddClass("PPath")
+	net.ConnectLayers(dg, ca3, mossy, ForwardPath).AddClass("HippoCHL")
+	net.ConnectLayers(ca3, ca1, ca3ToCA1, HipPath).AddClass("HippoCHL")
 
 	// MSP connections
-	pool1to1 := prjn.NewPoolOneToOne()
-	net.ConnectLayers(ec3, ca1, pool1to1, HipPrjn).AddClass("EcCA1Prjn")     // HipPrjn makes wt linear
-	net.ConnectLayers(ca1, ec5, pool1to1, ForwardPrjn).AddClass("EcCA1Prjn") // doesn't work w/ HipPrjn
-	net.ConnectLayers(ec5, ca1, pool1to1, HipPrjn).AddClass("EcCA1Prjn")     // HipPrjn makes wt linear
+	pool1to1 := paths.NewPoolOneToOne()
+	net.ConnectLayers(ec3, ca1, pool1to1, HipPath).AddClass("EcCA1Path")     // HipPath makes wt linear
+	net.ConnectLayers(ca1, ec5, pool1to1, ForwardPath).AddClass("EcCA1Path") // doesn't work w/ HipPath
+	net.ConnectLayers(ec5, ca1, pool1to1, HipPath).AddClass("EcCA1Path")     // HipPath makes wt linear
 
 	// positioning
 	ec3.PlaceRightOf(ec2, space)
@@ -203,8 +203,8 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 	ca3FromEc2 := ca3.SendName("EC2")
 	ca3FromCa3 := ca3.SendName("CA3")
 
-	dgPjScale := ca3FromDg.Params.PrjnScale.Rel
-	ca1FromCa3Abs := ca1FromCa3.Params.PrjnScale.Abs
+	dgPjScale := ca3FromDg.Params.PathScale.Rel
+	ca1FromCa3Abs := ca1FromCa3.Params.PathScale.Abs
 
 	// configure events -- note that events are shared between Train, Test
 	// so only need to do it once on Train
@@ -218,28 +218,28 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 			ca3FromEc2.Params.Learn.Learn = 0
 			ca3FromCa3.Params.Learn.Learn = 0
 			ca1FromCa3.Params.Learn.Learn = 0
-			ca1FromCa3.Params.PrjnScale.Abs = 0
+			ca1FromCa3.Params.PathScale.Abs = 0
 		} else {
 			dgFromEc2.Params.Learn.Learn = 1
 			ca3FromEc2.Params.Learn.Learn = 1
 			ca3FromCa3.Params.Learn.Learn = 1
 			ca1FromCa3.Params.Learn.Learn = 1
-			ca1FromCa3.Params.PrjnScale.Abs = ca1FromCa3Abs
+			ca1FromCa3.Params.PathScale.Abs = ca1FromCa3Abs
 		}
-		ca1FromEc3.Params.PrjnScale.Rel = hip.ThetaHigh
-		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaLow
+		ca1FromEc3.Params.PathScale.Rel = hip.ThetaHigh
+		ca1FromCa3.Params.PathScale.Rel = hip.ThetaLow
 
-		ca3FromDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
+		ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
 
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
 	beta1, _ := cyc.EventByName("Beta1")
 	beta1.OnEvent.Add("Hip:Beta1", func() {
-		ca1FromEc3.Params.PrjnScale.Rel = hip.ThetaLow
-		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FromEc3.Params.PathScale.Rel = hip.ThetaLow
+		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
 		if man.Mode == etime.Test {
-			ca3FromDg.Params.PrjnScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
+			ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
 		}
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
@@ -248,9 +248,9 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 	// note: critical for this to come before std start
 	plus.OnEvent.InsertBefore("PlusPhase:Start", "HipPlusPhase:Start", func() {
-		ca3FromDg.Params.PrjnScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
-		ca1FromEc3.Params.PrjnScale.Rel = hip.ThetaHigh
-		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaLow
+		ca3FromDg.Params.PathScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
+		ca1FromEc3.Params.PathScale.Rel = hip.ThetaHigh
+		ca1FromCa3.Params.PathScale.Rel = hip.ThetaLow
 		// clamp EC5 from clamp source (EC3 typically)
 		if hip.EC5Clamp {
 			if mode != etime.Test || hip.EC5ClampTest {
@@ -270,7 +270,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 	trl := stack.Loops[etime.Trial]
 	trl.OnEnd.Prepend("HipPlusPhase:End", func() {
-		ca1FromCa3.Params.PrjnScale.Rel = hip.ThetaHigh
+		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})

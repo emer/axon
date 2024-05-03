@@ -93,27 +93,27 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.RLRate.On":         "true", // beneficial for trace
 				"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 			}},
-		{Sel: "Prjn", Desc: "basic prjn params",
+		{Sel: "Path", Desc: "basic path params",
 			Params: params.Params{
-				"Prjn.Learn.LRate.Base":       "0.1", // .1 def
-				"Prjn.SWts.Adapt.LRate":       "0.1", // .1 >= .2,
-				"Prjn.SWts.Adapt.SubMean":     "1",   // key for stability
-				"Prjn.SWts.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-				"Prjn.Learn.Trace.SubMean":    "1",   // 1 > 0 for long-term stability
-				"Prjn.Learn.KinaseCa.SpikeG":  "12",  // 12 def -- produces reasonable ~1ish max vals
-				"Prjn.Learn.KinaseCa.Dt.MTau": "5",   // 5 ==? 2 > 10
-				"Prjn.Learn.KinaseCa.Dt.PTau": "40",
-				"Prjn.Learn.KinaseCa.Dt.DTau": "40",
+				"Path.Learn.LRate.Base":       "0.1", // .1 def
+				"Path.SWts.Adapt.LRate":       "0.1", // .1 >= .2,
+				"Path.SWts.Adapt.SubMean":     "1",   // key for stability
+				"Path.SWts.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				"Path.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+				"Path.Learn.Trace.SubMean":    "1",   // 1 > 0 for long-term stability
+				"Path.Learn.KinaseCa.SpikeG":  "12",  // 12 def -- produces reasonable ~1ish max vals
+				"Path.Learn.KinaseCa.Dt.MTau": "5",   // 5 ==? 2 > 10
+				"Path.Learn.KinaseCa.Dt.PTau": "40",
+				"Path.Learn.KinaseCa.Dt.DTau": "40",
 			}},
 		{Sel: "#Hidden2ToOutput", Desc: "",
 			Params: params.Params{
-				// "Prjn.Learn.LRate.Base":  "0.1", // 0.1 is default
-				"Prjn.SWts.Adapt.SigGain": "6", // 1 does not work
+				// "Path.Learn.LRate.Base":  "0.1", // 0.1 is default
+				"Path.SWts.Adapt.SigGain": "6", // 1 does not work
 			}},
-		{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				"Path.PathScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 			}},
 	},
 }

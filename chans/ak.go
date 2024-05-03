@@ -138,7 +138,7 @@ func (ap *AKParams) Gak(m, h float32) float32 {
 //////////////////////////////////////////////////////////////////////
 //  Simplified AK
 
-//gosl: start chans
+//gosl:start chans
 
 // AKsParams provides a highly simplified stateless A-type K channel
 // that only has the voltage-gated activation (M) dynamic with a cutoff
@@ -206,4 +206,4 @@ func (ap *AKsParams) Gak(v float32) float32 {
 	return ap.Gbar * ap.MFromVnorm(v)
 }
 
-//gosl: end chans
+//gosl:end chans
