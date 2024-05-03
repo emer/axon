@@ -17,6 +17,7 @@ import (
 	"os"
 	"reflect"
 
+	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32/minmax"
@@ -27,7 +28,6 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/netparams"

@@ -7,9 +7,9 @@ package axon
 import (
 	"fmt"
 
+	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/core"
 	"github.com/emer/emergent/v2/ecmd"
-	"github.com/emer/emergent/v2/empi/mpi"
 )
 
 ////////////////////////////////////////////////////

@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32/minmax"
@@ -17,7 +18,6 @@ import (
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/emergent/v2/erand"
 )
 
 func DriveEffortGUI() {
@@ -61,7 +61,7 @@ type DrEffPlot struct {
 	TimePlot *plotview.PlotView `view:"-"`
 
 	// random number generator
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 }
 
 // Config configures all the elements using the standard functions

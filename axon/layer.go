@@ -10,11 +10,11 @@ import (
 	"math/rand"
 	"strings"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/views"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/params"
 )
 
@@ -290,7 +290,7 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		porder[i] = i
 	}
 	if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-		erand.PermuteInts(porder, &ly.Network.Rand)
+		randx.PermuteInts(porder, &ly.Network.Rand)
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
@@ -335,7 +335,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 	}
 	for pi := uint32(1); pi < np; pi++ {
 		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-			erand.PermuteInts(porder, &ly.Network.Rand)
+			randx.PermuteInts(porder, &ly.Network.Rand)
 		}
 		pl := ly.Pool(pi, 0) // only using for idxs
 		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {

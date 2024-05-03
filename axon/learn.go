@@ -5,12 +5,12 @@
 package axon
 
 import (
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/axon/v2/kinase"
-	"github.com/emer/emergent/v2/erand"
 )
 
 ///////////////////////////////////////////////////////////////////////
@@ -519,13 +519,13 @@ func (sp *SWtAdaptParams) ShouldShow(field string) bool {
 
 //gosl:end learn
 
-// RndVar returns the random variance in weight value (zero mean) based on Var param
-func (sp *SWtInitParams) RndVar(rnd erand.Rand) float32 {
-	return sp.Var * 2.0 * (rnd.Float32(-1) - 0.5)
+// RandVar returns the random variance in weight value (zero mean) based on Var param
+func (sp *SWtInitParams) RandVar(rnd randx.Rand) float32 {
+	return sp.Var * 2.0 * (rnd.Float32() - 0.5)
 }
 
-// // RndVar returns the random variance (zero mean) based on DreamVar param
-// func (sp *SWtAdaptParams) RndVar(rnd erand.Rand) float32 {
+// // RandVar returns the random variance (zero mean) based on DreamVar param
+// func (sp *SWtAdaptParams) RandVar(rnd randx.Rand) float32 {
 // 	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
 // }
 
@@ -663,8 +663,8 @@ func DecaySynCa(ctx *Context, syni, di uint32, decay float32) {
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
-	wtv := sp.Init.RndVar(rnd)
+func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
+	wtv := sp.Init.RandVar(rnd)
 	wt := mean + wtv
 	SetSynV(ctx, syni, Wt, wt)
 	SetSynV(ctx, syni, SWt, sp.ClipSWt(mean+spct*wtv))

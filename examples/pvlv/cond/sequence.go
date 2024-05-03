@@ -7,8 +7,8 @@ package cond
 import (
 	"math/rand"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
-	"github.com/emer/emergent/v2/erand"
 )
 
 // Valence
@@ -158,7 +158,7 @@ func SequenceReps(condNm string) []*Sequence {
 			trlNm := seq.Name + "_" + seq.Valence.String()
 			usOn := false
 			if !useIsOnList {
-				usOn = erand.BoolP32(seq.USProb, -1)
+				usOn = randx.BoolP32(seq.USProb)
 			} else {
 				usOn = usIsOn[ri]
 			}

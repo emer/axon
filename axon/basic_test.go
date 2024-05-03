@@ -17,10 +17,10 @@ import (
 	"strings"
 	"testing"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
@@ -99,7 +99,7 @@ var ParamSets = params.Sets{
 func newTestNet(ctx *Context, nData int) *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
-	testNet.SetRndSeed(42) // critical for ActAvg values
+	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
 	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
@@ -127,7 +127,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 func newTestNetFull(ctx *Context, nData int) *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
-	testNet.SetRndSeed(42) // critical for ActAvg values
+	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
 	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
@@ -293,7 +293,7 @@ func TestInitWts(t *testing.T) {
 		if wi == 1 {
 			valMap = valMapB
 		}
-		testNet.SetRndSeed(42) // critical for ActAvg values
+		testNet.SetRandSeed(42) // critical for ActAvg values
 		testNet.InitWts(ctx)
 		testNet.InitExt(ctx)
 		for ni := 0; ni < 4; ni++ {
@@ -601,7 +601,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool,
 
 	for pi := 0; pi < 4; pi++ {
 		if initWts {
-			testNet.SetRndSeed(42) // critical for ActAvg values
+			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWts(ctx)
 		} else {
 			testNet.NewState(ctx)
@@ -1070,7 +1070,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 
 	for pi := 0; pi < 4; pi++ {
 		if initWts {
-			testNet.SetRndSeed(42) // critical for ActAvg values
+			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWts(ctx)
 		} else {
 			testNet.NewState(ctx)
@@ -1269,7 +1269,7 @@ func TestInhibAct(t *testing.T) {
 	inPats := newInPats()
 	var InhibNet Network
 	InhibNet.InitName(&InhibNet, "InhibNet")
-	InhibNet.SetRndSeed(42) // critical for ActAvg values
+	InhibNet.SetRandSeed(42) // critical for ActAvg values
 
 	inLay := InhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
 	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
@@ -1583,7 +1583,7 @@ func TestRubiconGiveUp(t *testing.T) {
 	t.Skip("")
 	gp := &GiveUpParams{}
 	gp.Defaults()
-	rnd := erand.NewGlobalRand()
+	rnd := randx.NewGlobalRand()
 	for v := float32(-1.0); v <= float32(1); v += 0.01 {
 		p, b := gp.Prob(v, 1, rnd)
 		fmt.Printf("%g\tp: %g\tb: %v\n", v, p, b)
@@ -1609,7 +1609,7 @@ func TestSWtInit(t *testing.T) {
 	pj.SWts.Init.Var = vr
 
 	nt := NewNetwork("test")
-	nt.SetRndSeed(1)
+	nt.SetRandSeed(1)
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
@@ -1761,7 +1761,7 @@ func TestSWtLinLearn(t *testing.T) {
 	sy := &Synapse{}
 
 	nt := NewNetwork("test")
-	nt.SetRndSeed(1)
+	nt.SetRandSeed(1)
 
 	/////////////////////////////////////////////
 	mean := float32(0.1)

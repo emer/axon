@@ -17,6 +17,8 @@ import (
 	"os"
 	"reflect"
 
+	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
@@ -27,8 +29,6 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/empi/mpi"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
@@ -89,7 +89,7 @@ type Sim struct {
 	GUI egui.GUI `view:"-"`
 
 	// a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-"`
+	RandSeeds randx.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -99,8 +99,8 @@ func (ss *Sim) New() {
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &table.Table{}
-	ss.RndSeeds.Init(100) // max 100 runs
-	ss.InitRndSeed(0)
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
 	ss.Context.Defaults()
 }
 
@@ -163,7 +163,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	net.InitName(net, "Inhib")
 	net.SetMaxData(ctx, 1)
-	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
+	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	sz := ss.Config.Params.HidSize
 
@@ -176,7 +176,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 
 	full := paths.NewFull()
-	rndcut := paths.NewUnifRnd()
+	rndcut := paths.NewUniformRand()
 	rndcut.PCon = 0.1
 
 	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
@@ -190,7 +190,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		net.ConnectLayers(il, il, full, axon.InhibPath)
 
 		// if hi > 1 {
-		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPath).AddClass("RndSc")
+		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPath).AddClass("RandSc")
 		// }
 
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
@@ -227,7 +227,7 @@ func (ss *Sim) Init() {
 		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
 	}
 	ss.Loops.ResetCounters()
-	ss.InitRndSeed(0)
+	ss.InitRandSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
@@ -237,10 +237,10 @@ func (ss *Sim) Init() {
 	ss.ViewUpdate.RecordSyns()
 }
 
-// InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed(run int) {
-	ss.RndSeeds.Set(run)
-	ss.RndSeeds.Set(run, &ss.Net.Rand)
+// InitRandSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRandSeed(run int) {
+	ss.RandSeeds.Set(run)
+	ss.RandSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -325,7 +325,7 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed(0)
+	ss.InitRandSeed(0)
 	ctx.Reset()
 	ctx.Mode = etime.Test
 	ss.Net.InitWts(ctx)
@@ -558,7 +558,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				ss.RndSeeds.NewSeeds()
+				ss.RandSeeds.NewSeeds()
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",

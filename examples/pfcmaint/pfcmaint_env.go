@@ -5,10 +5,10 @@
 package main
 
 import (
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
 )
@@ -47,10 +47,10 @@ type PFCMaintEnv struct {
 	Pats table.Table
 
 	// random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
@@ -75,8 +75,8 @@ func (ev *PFCMaintEnv) Defaults() {
 // Config configures the world
 func (ev *PFCMaintEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
-	ev.RndSeed = rndseed
-	ev.Rand.NewRand(ev.RndSeed)
+	ev.RandSeed = rndseed
+	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["Item"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
 	ev.States["Time"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NTrials}, "Y", "Time")

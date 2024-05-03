@@ -118,7 +118,7 @@ var PoolParamSets = params.Sets{
 func newPoolTestNet(ctx *Context, nData int) *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
-	testNet.SetRndSeed(42) // critical for ActAvg values
+	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
 	inLay := testNet.AddLayer4D("Input", 4, 1, 1, 4, InputLayer)

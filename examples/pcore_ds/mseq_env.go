@@ -7,9 +7,9 @@ package main
 import (
 	"strconv"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 )
 
@@ -87,10 +87,10 @@ type MotorSeqEnv struct {
 	NUnits int `view:"-"`
 
 	// random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 
 	// named states: State, Target, PrevAction, Action
 	States map[string]*tensor.Float32
@@ -118,8 +118,8 @@ func (ev *MotorSeqEnv) Defaults() {
 // Config configures the world
 func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
-	ev.RndSeed = rndseed
-	ev.Rand.NewRand(ev.RndSeed)
+	ev.RandSeed = rndseed
+	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, "Y", "X")
 	ev.States["Target"] = tensor.NewFloat32([]int{ev.NUnitsPer, ev.NActions}, "Y", "X")
@@ -242,7 +242,7 @@ func (ev *MotorSeqEnv) ComputeReward() {
 	// fmt.Println("rew, ncor:", ev.NCorrect, ev.SeqLen)
 	if ev.PartialCreditAt > 0 {
 		prew := float32(ev.NCorrect) / float32(ev.SeqLen)
-		doRew := erand.BoolP32(prew, -1, &ev.Rand)
+		doRew := randx.BoolP32(prew, &ev.Rand)
 		if doRew {
 			if ev.PartialGraded {
 				ev.Rew = prew

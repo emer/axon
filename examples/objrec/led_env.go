@@ -136,7 +136,7 @@ func (ev *LEDEnv) Step() bool {
 	if ev.Trial.Incr() { // if true, hit max, reset to 0
 		ev.Epoch.Incr()
 	}
-	ev.DrawRndLED()
+	ev.DrawRandLED()
 	ev.FilterImg()
 	// debug only:
 	// vfilter.RGBToGrey(ev.Draw.Image, &ev.OrigImg, 0, false) // pad for filt, bot zero
@@ -227,8 +227,8 @@ func (ev *LEDEnv) OutErr(tsr *tensor.Float32, corLED int) (maxi int, err, err2 f
 	return
 }
 
-// DrawRndLED picks a new random LED and draws it
-func (ev *LEDEnv) DrawRndLED() {
+// DrawRandLED picks a new random LED and draws it
+func (ev *LEDEnv) DrawRandLED() {
 	rng := 1 + ev.MaxLED - ev.MinLED
 	led := ev.MinLED + rand.Intn(rng)
 	ev.DrawLED(led)

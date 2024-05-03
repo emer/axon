@@ -19,12 +19,12 @@ import (
 	"log"
 
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 )
 
 // Actions is a list of mutually exclusive states
@@ -123,10 +123,10 @@ type Env struct {
 	MaxLength int `edit:"-"`
 
 	// random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 }
 
 const noUS = -1
@@ -156,9 +156,9 @@ func (ev *Env) ConfigEnv(di int) {
 	cfg := &ev.Config
 
 	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RndSeed)
+		ev.Rand.NewRand(ev.RandSeed)
 	} else {
-		ev.Rand.Seed(ev.RndSeed)
+		ev.Rand.Seed(ev.RandSeed)
 	}
 
 	switch cfg.Paradigm {
@@ -180,7 +180,7 @@ func (ev *Env) ConfigEnv(di int) {
 		// TODO: if we permute CSs do we also want to keep the USs aligned?
 		length := 4
 		if ev.Config.MaxArmLength > 0 {
-			length = length + ev.Rand.Intn(ev.Config.MaxArmLength, -1)
+			length = length + ev.Rand.Intn(ev.Config.MaxArmLength)
 		}
 		arm := &Arm{Length: length, CS: i % cfg.NCSs, US: i % cfg.NUSs}
 		ev.Config.Arms[i] = arm
@@ -240,7 +240,7 @@ func (ev *Env) NewStart() {
 	arm.CS = (arm.CS + ev.Config.NCSs) % ev.Config.NCSs
 
 	if ev.Config.Params.RandomStart {
-		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms), -1)
+		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms))
 	}
 	ev.Pos = 0
 	ev.Tick = 0
@@ -478,7 +478,7 @@ func (ev *Env) TakeAct(act Actions) {
 func (ev *Env) ConsumeUS(arm *Arm) {
 	us := ev.Config.USs[arm.US]
 	mag := MinMaxRand(us.Mag, ev.Rand)
-	got := erand.BoolP32(us.Prob, -1, &ev.Rand)
+	got := randx.BoolP32(us.Prob, &ev.Rand)
 	if got {
 		ev.USConsumed = arm.US
 		ev.USValue = mag
@@ -507,7 +507,7 @@ func (ev *Env) InstinctAct() Actions {
 	if ev.LastAct == Left || ev.LastAct == Right {
 		return ev.LastAct
 	}
-	if erand.BoolP(.5, -1, &ev.Rand) {
+	if randx.BoolP(.5, &ev.Rand) {
 		return Left
 	}
 	return Right
@@ -527,8 +527,8 @@ func (ev *Env) CurCS() int {
 }
 
 // MinMaxRand returns a random number in the range between Min and Max
-func MinMaxRand(mm minmax.F32, rand erand.SysRand) float32 {
-	return mm.Min + rand.Float32(-1)*mm.Range()
+func MinMaxRand(mm minmax.F32, rand randx.SysRand) float32 {
+	return mm.Min + rand.Float32()*mm.Range()
 }
 
 // InactiveVal returns a new random inactive value from Config.Params.Inactive

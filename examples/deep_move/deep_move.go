@@ -11,9 +11,12 @@ package main
 import (
 	"os"
 
+	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/table"
 	_ "cogentcore.org/core/tensor/tensorview" // _ = include to get gui views
@@ -22,12 +25,9 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
@@ -84,7 +84,7 @@ type Sim struct {
 	GUI egui.GUI `view:"-"`
 
 	// a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-"`
+	RandSeeds randx.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -96,8 +96,8 @@ func (ss *Sim) New() {
 		ss.Params.ExtraSheets = "Hid2"
 	}
 	ss.Stats.Init()
-	ss.RndSeeds.Init(100) // max 100 runs
-	ss.InitRndSeed(0)
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
 	ss.Context.Defaults()
 }
 
@@ -135,7 +135,7 @@ func (ss *Sim) ConfigEnv() {
 		trn.Defaults()
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Debug = false
-		trn.RndSeed = 73 + int64(di)*73
+		trn.RandSeed = 73 + int64(di)*73
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
@@ -144,7 +144,7 @@ func (ss *Sim) ConfigEnv() {
 
 		tst.Defaults()
 		tst.Nm = env.ModeDi(etime.Test, di)
-		tst.RndSeed = 181 + int64(di)*181
+		tst.RandSeed = 181 + int64(di)*181
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 		}
@@ -165,7 +165,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.InitName(net, "DeepMove")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
-	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
+	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	full := paths.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
@@ -191,7 +191,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hd, hdp := net.AddInputPulv2D("HeadDir", 1, ev.DepthSize, space)
 	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), axon.InputLayer)
 
-	dpHidSz := evec.Vector2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
+	dpHidSz := vecint.Vector2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
 	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).AddClass("CTSelfMaint") // no diff
@@ -275,7 +275,7 @@ func (ss *Sim) Init() {
 		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
 	}
 	ss.Loops.ResetCounters()
-	ss.InitRndSeed(0)
+	ss.InitRandSeed(0)
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
@@ -286,10 +286,10 @@ func (ss *Sim) Init() {
 	ss.ViewUpdate.RecordSyns()
 }
 
-// InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed(run int) {
-	ss.RndSeeds.Set(run)
-	ss.RndSeeds.Set(run, &ss.Net.Rand)
+// InitRandSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRandSeed(run int) {
+	ss.RandSeeds.Set(run)
+	ss.RandSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -414,7 +414,7 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
+	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
 	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
@@ -658,7 +658,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				ss.RndSeeds.NewSeeds()
+				ss.RandSeeds.NewSeeds()
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",

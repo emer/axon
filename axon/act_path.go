@@ -7,9 +7,9 @@ package axon
 import (
 	"log"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/vgpu/gosl/slbool"
-	"github.com/emer/emergent/v2/erand"
 )
 
 //gosl:start act_path
@@ -189,7 +189,7 @@ func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
 	if fp == 0 {
 		return false
 	}
-	return erand.BoolP32(fp, -1)
+	return randx.BoolP32(fp)
 	// return slrand.BoolP(ctx.RandCtr, si) // todo: needs a synapse index
 }
 

@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/base/indent"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/weights"
 )
@@ -349,7 +349,7 @@ func (pj *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *te
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Path) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
+func (pj *Path) InitWtsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
 	pj.Params.SWts.InitWtsSyn(ctx, syni, rnd, mean, spct)
 }
 

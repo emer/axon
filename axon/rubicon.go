@@ -9,8 +9,8 @@ import (
 	"log/slog"
 
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/popcode"
 )
 
@@ -543,9 +543,9 @@ func SigmoidFun(cnSum, guSum float32) float32 {
 
 // Prob returns the probability and discrete bool give up for giving up based on
 // given sums of continue and give up factors
-func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd erand.Rand) (float32, bool) {
+func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd randx.Rand) (float32, bool) {
 	prob := SigmoidFun(cnSum, guSum)
-	giveUp := erand.BoolP32(prob, -1, rnd)
+	giveUp := randx.BoolP32(prob, rnd)
 	if prob <= gp.ProbThr {
 		giveUp = false
 	}
@@ -868,7 +868,7 @@ func (rp *Rubicon) ResetGiveUp(ctx *Context, di uint32) {
 // NewState is called at very start of new state (trial) of processing.
 // sets HadRew = HasRew from last trial -- used to then reset various things
 // after reward.
-func (rp *Rubicon) NewState(ctx *Context, di uint32, rnd erand.Rand) {
+func (rp *Rubicon) NewState(ctx *Context, di uint32, rnd randx.Rand) {
 	hadRewF := GlbV(ctx, di, GvHasRew)
 	hadRew := num.ToBool(hadRewF)
 	SetGlbV(ctx, di, GvHadRew, hadRewF)
@@ -894,7 +894,7 @@ func (rp *Rubicon) NewState(ctx *Context, di uint32, rnd erand.Rand) {
 // Step does one step (trial) after applying USs, Drives,
 // and updating Effort.  It should be the final call in ApplyRubicon.
 // Calls PVDA which does all US, PV, LHb, GiveUp updating.
-func (rp *Rubicon) Step(ctx *Context, di uint32, rnd erand.Rand) {
+func (rp *Rubicon) Step(ctx *Context, di uint32, rnd randx.Rand) {
 	rp.PVDA(ctx, di, rnd)
 }
 
@@ -1137,7 +1137,7 @@ func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) (b
 
 // GiveUpOnGoal determines whether to give up on current goal
 // based on Utility, Timing, and Progress weight factors.
-func (rp *Rubicon) GiveUpOnGoal(ctx *Context, di uint32, rnd erand.Rand) bool {
+func (rp *Rubicon) GiveUpOnGoal(ctx *Context, di uint32, rnd randx.Rand) bool {
 	cnSum, guSum := rp.GiveUp.Sums(ctx, di)
 	prob, giveUp := rp.GiveUp.Prob(cnSum, guSum, rnd)
 	SetGlbV(ctx, di, GvGiveUpProb, prob)
@@ -1151,7 +1151,7 @@ func (rp *Rubicon) GiveUpOnGoal(ctx *Context, di uint32, rnd erand.Rand) bool {
 // and the resulting values are stored in global variables.
 // Called after updating USs, Effort, Drives at start of trial step,
 // in Step.
-func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd erand.Rand) {
+func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd randx.Rand) {
 	rp.USs.USnegCostFromRaw(ctx, di)
 	rp.PVsFromUSs(ctx, di)
 

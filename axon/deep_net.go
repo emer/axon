@@ -432,7 +432,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPath, ctToPredPat
 // use, e.g., pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8" to change default params.
 func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew, selfMaint bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	p1to1 := paths.NewPoolOneToOne()
-	// p1to1rnd := paths.NewPoolUnifRnd()
+	// p1to1rnd := paths.NewPoolUniformRand()
 	// p1to1rnd.PCon = 0.5
 	one2one := paths.NewOneToOne()
 	pathClass := name + "Path"
@@ -509,7 +509,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew, selfMaint bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	one2one := paths.NewOneToOne()
 	full := paths.NewFull()
-	// rnd := paths.NewUnifRnd()
+	// rnd := paths.NewUniformRand()
 	// rnd.PCon = 0.5
 	pathClass := name + "Path"
 	layClass := "PFCLayer"

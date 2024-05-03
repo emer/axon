@@ -10,9 +10,9 @@ import (
 	"math"
 	"unsafe"
 
+	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/system"
 	"cogentcore.org/core/vgpu"
-	"github.com/emer/emergent/v2/empi/mpi"
 	vk "github.com/goki/vulkan"
 )
 

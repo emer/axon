@@ -7,9 +7,9 @@ package main
 import (
 	"math/rand"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/popcode"
 )
@@ -79,10 +79,10 @@ type GoNoEnv struct {
 	PopCode popcode.OneD
 
 	// random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
@@ -134,8 +134,8 @@ func (ev *GoNoEnv) Defaults() {
 // Config configures the world
 func (ev *GoNoEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
-	ev.RndSeed = rndseed
-	ev.Rand.NewRand(ev.RndSeed)
+	ev.RandSeed = rndseed
+	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["ACCPos"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
 	ev.States["ACCNeg"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")

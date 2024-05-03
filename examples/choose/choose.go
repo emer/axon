@@ -17,7 +17,9 @@ import (
 	"os"
 	"reflect"
 
+	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
@@ -33,9 +35,7 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
@@ -104,7 +104,7 @@ type Sim struct {
 	EnvGUI *armaze.GUI `view:"-"`
 
 	// a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-"`
+	RandSeeds randx.Seeds `view:"-"`
 
 	// testing data, from -test arg
 	TestData map[string]float32 `view:"-"`
@@ -119,8 +119,8 @@ func (ss *Sim) New() {
 	}
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
-	ss.RndSeeds.Init(100) // max 100 runs
-	ss.InitRndSeed(0)
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
 	ss.Context.Defaults()
 	ss.Context.ThetaCycles = int32(ss.Config.Run.NCycles)
 }
@@ -156,9 +156,9 @@ func (ss *Sim) ConfigEnv() {
 		// note: names must be standard here!
 		trn.Nm = env.ModeDi(etime.Train, di)
 		trn.Defaults()
-		trn.RndSeed = 73
+		trn.RandSeed = 73
 		if !ss.Config.Env.SameSeed {
-			trn.RndSeed += int64(di) * 73
+			trn.RandSeed += int64(di) * 73
 		}
 		trn.Config.NDrives = ss.Config.Env.NDrives
 		if ss.Config.Env.Config != "" {
@@ -204,7 +204,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 	net.InitName(net, "Choose")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
-	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
+	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	nuBgY := 5
 	nuBgX := 5
@@ -218,9 +218,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pone2one := paths.NewPoolOneToOne()
 	one2one := paths.NewOneToOne()
 	full := paths.NewFull()
-	mtxRndPath := paths.NewPoolUnifRnd()
-	mtxRndPath.PCon = 0.75
-	_ = mtxRndPath
+	mtxRandPath := paths.NewPoolUniformRand()
+	mtxRandPath.PCon = 0.75
+	_ = mtxRandPath
 	_ = pone2one
 	pathClass := "PFCPath"
 
@@ -382,7 +382,7 @@ func (ss *Sim) Init() {
 	}
 	ss.Loops.ResetCounters()
 	ss.Logs.ResetLog(etime.Debug, etime.Trial)
-	ss.InitRndSeed(0)
+	ss.InitRandSeed(0)
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
@@ -393,10 +393,10 @@ func (ss *Sim) Init() {
 	ss.ViewUpdate.RecordSyns()
 }
 
-// InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed(run int) {
-	ss.RndSeeds.Set(run)
-	ss.RndSeeds.Set(run, &ss.Net.Rand)
+// InitRandSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRandSeed(run int) {
+	ss.RandSeeds.Set(run)
+	ss.RandSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -624,7 +624,7 @@ func (ss *Sim) ApplyInputs() {
 		}
 		ev.Step()
 		if ev.Tick == 0 {
-			ss.Stats.SetFloat32Di("CortexDriving", int(di), num.FromBool[float32](erand.BoolP32(ss.Config.Env.PctCortex, -1)))
+			ss.Stats.SetFloat32Di("CortexDriving", int(di), num.FromBool[float32](randx.BoolP32(ss.Config.Env.PctCortex)))
 		}
 		for _, lnm := range lays {
 			ly := net.AxonLayerByName(lnm)
@@ -656,7 +656,7 @@ func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
+	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
 	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 	}
@@ -1276,7 +1276,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				ss.RndSeeds.NewSeeds()
+				ss.RandSeeds.NewSeeds()
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",

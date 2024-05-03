@@ -16,11 +16,11 @@ package armaze
 //go:generate core generate -add-types
 
 import (
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 )
 
 // Actions is a list of mutually exclusive states
@@ -112,10 +112,10 @@ type Env struct {
 	MaxLength int `edit:"-"`
 
 	// random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 }
 
 const noUS = -1
@@ -143,9 +143,9 @@ func (ev *Env) Defaults() {
 func (ev *Env) ConfigEnv(di int) {
 	ev.Di = di
 	if ev.Rand.Rand == nil {
-		ev.Rand.NewRand(ev.RndSeed)
+		ev.Rand.NewRand(ev.RandSeed)
 	} else {
-		ev.Rand.Seed(ev.RndSeed)
+		ev.Rand.Seed(ev.RandSeed)
 	}
 
 	switch ev.Config.Paradigm {
@@ -188,10 +188,10 @@ func (ev *Env) State(el string) tensor.Tensor {
 // NewStart starts a new approach run
 func (ev *Env) NewStart() {
 	for _, arm := range ev.Config.Arms { // do at start so it is consistent
-		arm.USAvail = erand.BoolP32(arm.USProb, -1, &ev.Rand)
+		arm.USAvail = randx.BoolP32(arm.USProb, &ev.Rand)
 	}
 	if ev.Config.Params.RandomStart {
-		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms), -1)
+		ev.Arm = ev.Rand.Intn(len(ev.Config.Arms))
 	}
 	arm := ev.Config.Arms[ev.Arm]
 	ev.Pos = 0
@@ -203,7 +203,7 @@ func (ev *Env) NewStart() {
 	ev.USValue = 0
 	ev.JustConsumed = false
 
-	ev.TrgDrive = ev.Rand.Intn(ev.Config.NDrives, -1)
+	ev.TrgDrive = ev.Rand.Intn(ev.Config.NDrives)
 	for i := range ev.Drives {
 		if i == ev.TrgDrive {
 			ev.Drives[i] = 1
@@ -433,7 +433,7 @@ func (ev *Env) InstinctAct(justGated, hasGated bool) Actions {
 	if ev.LastAct == Left || ev.LastAct == Right {
 		return ev.LastAct
 	}
-	if ev.Config.Params.AlwaysLeft || erand.BoolP(.5, -1, &ev.Rand) {
+	if ev.Config.Params.AlwaysLeft || randx.BoolP(.5, &ev.Rand) {
 		return Left
 	}
 	return Right
@@ -453,8 +453,8 @@ func (ev *Env) CurCS() int {
 }
 
 // MinMaxRand returns a random number in the range between Min and Max
-func MinMaxRand(mm minmax.F32, rand erand.SysRand) float32 {
-	return mm.Min + rand.Float32(-1)*mm.Range()
+func MinMaxRand(mm minmax.F32, rand randx.SysRand) float32 {
+	return mm.Min + rand.Float32()*mm.Range()
 }
 
 // InactiveVal returns a new random inactive value from Config.Params.Inactive

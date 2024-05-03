@@ -33,7 +33,7 @@ The number of processors must divide into 24 for this example (number of pattern
 
 # General tips for MPI usage
 
-* **MOST IMPORTANT:** all procs *must* remain *completely* synchronized in terms of when they call MPI functions -- these functions will block until all procs have called the same function.  The default behavior of setting a saved random number seed for all procs should ensure this.  But you also need to make sure that the same random permutation of item lists, etc takes place across all nodes.  The `empi.FixedTable` environment does this for the case of a table with a set of patterns.
+* **MOST IMPORTANT:** all procs *must* remain *completely* synchronized in terms of when they call MPI functions -- these functions will block until all procs have called the same function.  The default behavior of setting a saved random number seed for all procs should ensure this.  But you also need to make sure that the same random permutation of item lists, etc takes place across all nodes.  The `tensormpi.FixedTable` environment does this for the case of a table with a set of patterns.
 
 * Any logs recording below the Epoch level need to be sync'd across nodes before aggregating data at the Epoch level, using `ss.Logs.MPIGatherTableRows(mode, etime.Trial, ss.Comm)`.
 
@@ -62,16 +62,16 @@ In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to diffe
 ```go
 	ss.TrainEnv.Table = table.NewIndexView(ss.Pats)
 	if ss.Config.Run.MPI {
-		st, ed, _ := empi.AllocN(ss.Pats.Rows)
+		st, ed, _ := tensormpi.AllocN(ss.Pats.Rows)
 		ss.TrainEnv.Table.Indexes = ss.TrainEnv.Table.Indexes[st:ed]
 	}
 ```
 
-In other sims with more complex or interactive environments, it is best to give each environment its own random seed using the `erand.SysRand` which implements the `erand.Rand` interface, and can be passed to any of the `erand` methods (which wrap and extend the go standard `rand` package functions).  See the `boa` model for example.
+In other sims with more complex or interactive environments, it is best to give each environment its own random seed using the `randx.SysRand` which implements the `randx.Rand` interface, and can be passed to any of the `randx` methods (which wrap and extend the go standard `rand` package functions).  See the `boa` model for example.
 
 ```go
-	Rand        erand.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
-	RndSeed     int64         `inactive:"+" desc:"random seed"`
+	Rand        randx.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
+	RandSeed     int64         `inactive:"+" desc:"random seed"`
 ```
 
 The built-in data parallel processing in v1.8 requires coordinating the allocation of inputs across both.  In this example project, there are 24 input patterns, and mpi takes the first cut by allocating subsets of the patterns that each node processes.  Then, the remaining patterns can be learned using data parallel within each node.  It may be important to ensure that these divide the total equally, for example:

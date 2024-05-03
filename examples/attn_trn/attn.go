@@ -23,7 +23,7 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/evec"
+	"cogentcore.org/core/math32/vecint"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
@@ -555,7 +555,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
-	sz := evec.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
+	sz := vecint.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
 	pt := stm.PosXY(sz)
 	cx := int(pt.X)
 	cy := int(pt.Y)
@@ -580,7 +580,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 
 func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.AxonLayerByName(lnm)
-	sz := evec.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
+	sz := vecint.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
 	pt := stm.PosXY(sz)
 	cx := int(math32.Round(pt.X)) - 1
 	cy := int(math32.Round(pt.Y)) - 1

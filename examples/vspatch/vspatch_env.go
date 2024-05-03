@@ -7,12 +7,12 @@ package main
 import (
 	"fmt"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/stats/simat"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/patgen"
 )
@@ -69,10 +69,10 @@ type VSPatchEnv struct {
 	PatSimMat simat.SimMat
 
 	// random number generator for the env -- all random calls must use this
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 
 	// named states: ACCPos, ACCNeg
 	States map[string]*tensor.Float32
@@ -123,8 +123,8 @@ func (ev *VSPatchEnv) SetCondValuesPermute(ord []int) {
 // Config configures the world
 func (ev *VSPatchEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.Mode = mode
-	ev.RndSeed = rndseed
-	ev.Rand.NewRand(ev.RndSeed)
+	ev.RandSeed = rndseed
+	ev.Rand.NewRand(ev.RandSeed)
 	ev.States = make(map[string]*tensor.Float32)
 	ev.States["State"] = tensor.NewFloat32([]int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
 	ev.CondValues = make([]float32, ev.NConds)
@@ -203,7 +203,7 @@ func (ev *VSPatchEnv) Step() bool {
 	ev.CondRew = rv
 	if ev.Trial.Cur == ev.NTrials-1 {
 		if ev.Probs {
-			if erand.BoolP32(rv, -1, &ev.Rand) {
+			if randx.BoolP32(rv, &ev.Rand) {
 				ev.Rew = 1
 			} else {
 				ev.Rew = 0.001

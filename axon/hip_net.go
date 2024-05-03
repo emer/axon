@@ -5,10 +5,10 @@
 package axon
 
 import (
+	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tensor/stats/norm"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -17,19 +17,19 @@ import (
 type HipConfig struct {
 
 	// size of EC2
-	EC2Size evec.Vector2i `nest:"+"`
+	EC2Size vecint.Vector2i `nest:"+"`
 
 	// number of EC3 pools (outer dimension)
-	EC3NPool evec.Vector2i `nest:"+"`
+	EC3NPool vecint.Vector2i `nest:"+"`
 
 	// number of neurons in one EC3 pool
-	EC3NNrn evec.Vector2i `nest:"+"`
+	EC3NNrn vecint.Vector2i `nest:"+"`
 
 	// number of neurons in one CA1 pool
-	CA1NNrn evec.Vector2i `nest:"+"`
+	CA1NNrn vecint.Vector2i `nest:"+"`
 
 	// size of CA3
-	CA3Size evec.Vector2i `nest:"+"`
+	CA3Size vecint.Vector2i `nest:"+"`
 
 	// size of DG / CA3
 	DGRatio float32 `default:"2.236"`
@@ -138,9 +138,9 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 
 	// Input and ECs connections
 	onetoone := paths.NewOneToOne()
-	ec3Toec2 := paths.NewUnifRnd()
+	ec3Toec2 := paths.NewUniformRand()
 	ec3Toec2.PCon = hip.EC3ToEC2PCon
-	mossy := paths.NewUnifRnd()
+	mossy := paths.NewUniformRand()
 	mossy.PCon = hip.DGToCA3PCon
 	net.ConnectLayers(ec3, ec2, ec3Toec2, ForwardPath)
 	net.ConnectLayers(ec5, ec3, onetoone, BackPath)
@@ -154,11 +154,11 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 	inh.AddClass("InhibLateral")
 
 	// TSP connections
-	ppathDG := paths.NewUnifRnd()
+	ppathDG := paths.NewUniformRand()
 	ppathDG.PCon = hip.EC2ToDGPCon
-	ppathCA3 := paths.NewUnifRnd()
+	ppathCA3 := paths.NewUniformRand()
 	ppathCA3.PCon = hip.EC2ToCA3PCon
-	ca3ToCA1 := paths.NewUnifRnd()
+	ca3ToCA1 := paths.NewUniformRand()
 	ca3ToCA1.PCon = hip.CA3ToCA1PCon
 	full := paths.NewFull()
 	net.ConnectLayers(ec2, dg, ppathDG, HipPath).AddClass("HippoCHL")

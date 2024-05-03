@@ -663,7 +663,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	_ = accCostPT
 
 	p1to1 := paths.NewPoolOneToOne()
-	// p1to1rnd := paths.NewPoolUnifRnd()
+	// p1to1rnd := paths.NewPoolUniformRand()
 	// p1to1rnd.PCon = 0.5
 	full := paths.NewFull()
 	var pj, bpj *Path

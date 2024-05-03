@@ -5,11 +5,11 @@
 package axon
 
 import (
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/chans"
-	"github.com/emer/emergent/v2/erand"
 )
 
 ///////////////////////////////////////////////////////////////////////
@@ -220,10 +220,10 @@ func (ai *ActInitParams) Defaults() {
 //gosl:end act
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
-func (ai *ActInitParams) GetGeBase(rnd erand.Rand) float32 {
+func (ai *ActInitParams) GetGeBase(rnd randx.Rand) float32 {
 	ge := ai.GeBase
 	if ai.GeVar > 0 {
-		ge += float32(float64(ai.GeVar) * rnd.NormFloat64(-1))
+		ge += float32(float64(ai.GeVar) * rnd.NormFloat64())
 		if ge < 0 {
 			ge = 0
 		}
@@ -232,10 +232,10 @@ func (ai *ActInitParams) GetGeBase(rnd erand.Rand) float32 {
 }
 
 // GiBase returns the baseline Gi value: Gi + rand(GiVar) > 0
-func (ai *ActInitParams) GetGiBase(rnd erand.Rand) float32 {
+func (ai *ActInitParams) GetGiBase(rnd randx.Rand) float32 {
 	gi := ai.GiBase
 	if ai.GiVar > 0 {
-		gi += float32(float64(ai.GiVar) * rnd.NormFloat64(-1))
+		gi += float32(float64(ai.GiVar) * rnd.NormFloat64())
 		if gi < 0 {
 			gi = 0
 		}

@@ -77,7 +77,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Path.Com.Delay": "1",
 			}},
-		// {Sel: ".RndSc", Desc: "random shortcut",
+		// {Sel: ".RandSc", Desc: "random shortcut",
 		// 	Params: params.Params{
 		// 		"Path.Learn.LRate.Base": "0.001", //
 		// 		// "Path.Learn.Learn":      "false",

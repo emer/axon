@@ -10,10 +10,10 @@ import (
 	"fmt"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/efuns"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/evec"
 )
 
 // Stim describes a single stimulus
@@ -33,7 +33,7 @@ type Stim struct {
 }
 
 // PosXY returns XY position projected into size of grid
-func (st *Stim) PosXY(size evec.Vector2i) math32.Vector2 {
+func (st *Stim) PosXY(size vecint.Vector2i) math32.Vector2 {
 	return math32.Vec2(st.Pos.X*float32(size.X-1), st.Pos.Y*float32(size.Y-1))
 }
 
@@ -84,10 +84,10 @@ type AttnEnv struct {
 	Act float32
 
 	// size of V1 Pools
-	V1Pools evec.Vector2i
+	V1Pools vecint.Vector2i
 
 	// size of V1 features per pool
-	V1Feats evec.Vector2i
+	V1Feats vecint.Vector2i
 
 	// V1 rendered input state, 4D Size x Size
 	V1 tensor.Float32

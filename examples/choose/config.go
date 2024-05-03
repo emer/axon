@@ -4,7 +4,7 @@
 
 package main
 
-import "github.com/emer/emergent/v2/empi/mpi"
+import "cogentcore.org/core/base/mpi"
 
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env

@@ -14,11 +14,11 @@ import (
 	"math"
 	"math/rand"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/patgen"
@@ -158,7 +158,7 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 	tmr := timer.Time{}
 	tmr.Start()
 	for epc := 0; epc < epcs; epc++ {
-		erand.PermuteInts(porder)
+		randx.PermuteInts(porder)
 		outCorSim := float32(0)
 		cntErr := 0
 		sse := 0.0

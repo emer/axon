@@ -13,11 +13,11 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/patgen"
@@ -75,7 +75,7 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 	teNeurs := hiddenNeurs * 2
 
 	full := paths.NewFull()
-	sparseRandom := paths.NewUnifRnd()
+	sparseRandom := paths.NewUniformRand()
 	sparseRandom.PCon = 0.1
 
 	Path4x4Skp2 := paths.NewPoolTile()
@@ -198,7 +198,7 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	tmr := timer.Time{}
 	tmr.Start()
 	for epc := 0; epc < epcs; epc++ {
-		erand.PermuteInts(porder)
+		randx.PermuteInts(porder)
 		outCorSim := float32(0)
 		cntErr := 0
 		sse := 0.0

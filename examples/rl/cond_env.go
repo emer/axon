@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 )
 
 // OnOff represents stimulus On / Off timing
@@ -53,7 +53,7 @@ func (oo *OnOff) TrialUpdate() {
 	if !oo.Act {
 		return
 	}
-	oo.CurAct = erand.BoolP32(oo.P, -1)
+	oo.CurAct = randx.BoolP32(oo.P)
 	oo.CurOn = oo.On - oo.OnVar + 2*rand.Intn(oo.OnVar+1)
 	oo.CurOff = oo.Off - oo.OffVar + 2*rand.Intn(oo.OffVar+1)
 }

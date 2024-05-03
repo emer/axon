@@ -219,7 +219,7 @@ func (pj *Path) SWtFromWt(ctx *Context) {
 				wt := pj.Params.SWts.WtValue(swt, SynV(ctx, syni, LWt))
 				SetSynV(ctx, syni, Wt, wt)
 			}
-			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFromWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWts.Adapt.RndVar()
+			SetSynV(ctx, syni, LWt, pj.Params.SWts.LWtFromWts(SynV(ctx, syni, Wt), swt)) // + pj.Params.SWts.Adapt.RandVar()
 			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtValue(swt, SynV(ctx, syni, LWt)))
 		}
 	}

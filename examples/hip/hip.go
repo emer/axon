@@ -17,7 +17,9 @@ import (
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/num"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
@@ -29,9 +31,7 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
@@ -121,7 +121,7 @@ type Sim struct {
 	GUI egui.GUI `view:"-"`
 
 	// a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-"`
+	RandSeeds randx.Seeds `view:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -146,8 +146,8 @@ func (ss *Sim) New() {
 	ss.TestABAC = &table.Table{}
 	ss.PretrainMode = false
 
-	ss.RndSeeds.Init(100) // max 100 runs
-	ss.InitRndSeed(0)
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
 	ss.Context.Defaults()
 }
 
@@ -204,10 +204,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hip := &ss.Config.Hip
 	net.InitName(net, "Hip_bench")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
-	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
+	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	in := net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, axon.InputLayer)
-	inToEc2 := paths.NewUnifRnd()
+	inToEc2 := paths.NewUniformRand()
 	inToEc2.PCon = ss.Config.Mod.InToEc2PCon
 	onetoone := paths.NewOneToOne()
 	ec2, ec3, _, _, _, _ := net.AddHip(ctx, hip, 2)
@@ -257,12 +257,12 @@ func (ss *Sim) TestInit() {
 	ss.Loops.ResetCountersByMode(etime.Test)
 }
 
-// InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed(run int) {
-	rand.Seed(ss.RndSeeds[run])
-	ss.RndSeeds.Set(run)
-	ss.RndSeeds.Set(run, &ss.Net.Rand)
-	patgen.NewRand(ss.RndSeeds[run])
+// InitRandSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRandSeed(run int) {
+	rand.Seed(ss.RandSeeds[run])
+	ss.RandSeeds.Set(run)
+	ss.RandSeeds.Set(run, &ss.Net.Rand)
+	patgen.NewRand(ss.RandSeeds[run])
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -386,7 +386,7 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
+	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
 	ss.ConfigPats()
 	ss.ConfigEnv()
 	ctx.Reset()
@@ -833,7 +833,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				ss.RndSeeds.NewSeeds()
+				ss.RandSeeds.NewSeeds()
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
@@ -930,7 +930,7 @@ func (ss *Sim) TwoFactorRun() {
 			econfig.OpenWithIncludes(&ss.Config, config+".toml")
 
 			// reconfig for this factor combo
-			ss.InitRndSeed(0)
+			ss.InitRandSeed(0)
 			ss.ConfigPats()
 			ss.ConfigEnv()
 			ss.ConfigNet(ss.Net)

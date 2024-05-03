@@ -7,9 +7,9 @@ package main
 import (
 	"fmt"
 
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 )
 
 // FSAEnv generates states in a finite state automaton (FSA) which is a
@@ -57,10 +57,10 @@ type FSAEnv struct {
 	Trial env.Ctr `view:"inline"`
 
 	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 }
 
 func (ev *FSAEnv) Name() string { return ev.Nm }
@@ -149,7 +149,7 @@ func (ev *FSAEnv) String() string {
 }
 
 func (ev *FSAEnv) Init(run int) {
-	ev.Rand.NewRand(ev.RndSeed)
+	ev.Rand.NewRand(ev.RandSeed)
 	ev.Run.Scale = env.Run
 	ev.Epoch.Scale = env.Epoch
 	ev.Tick.Scale = env.Tick
@@ -174,7 +174,7 @@ func (ev *FSAEnv) NextState() {
 	ri := ev.AState.Cur * nst
 	ps := ev.TMat.Values[ri : ri+nst]
 	ls := ev.Labels.Values[ri : ri+nst]
-	nxt := erand.PChoose64(ps, -1, &ev.Rand) // next state chosen at random
+	nxt := randx.PChoose64(ps, &ev.Rand) // next state chosen at random
 	ev.NextStates.Set1D(0, nxt)
 	ev.NextLabels.Set1D(0, ls[nxt])
 	idx := 1

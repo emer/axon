@@ -13,23 +13,23 @@ import (
 	"log"
 	"os"
 
+	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor/tensormpi"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/empi"
-	"github.com/emer/emergent/v2/empi/mpi"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/evec"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
@@ -56,10 +56,10 @@ type ParamConfig struct {
 	Network map[string]any
 
 	// size of hidden layer -- can use emer.LaySize for 4D layers
-	Hidden1Size evec.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
+	Hidden1Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
 	// size of hidden layer -- can use emer.LaySize for 4D layers
-	Hidden2Size evec.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
+	Hidden2Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
 	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
 	Sheet string
@@ -207,7 +207,7 @@ type Sim struct {
 	GUI egui.GUI `view:"-"`
 
 	// a list of random seeds to use for each run
-	RndSeeds erand.Seeds `view:"-"`
+	RandSeeds randx.Seeds `view:"-"`
 
 	// mpi communicator
 	Comm *mpi.Comm `view:"-"`
@@ -230,8 +230,8 @@ func (ss *Sim) New() {
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &table.Table{}
-	ss.RndSeeds.Init(100) // max 100 runs
-	ss.InitRndSeed(0)
+	ss.RandSeeds.Init(100) // max 100 runs
+	ss.InitRandSeed(0)
 	ss.Context.Defaults()
 }
 
@@ -270,7 +270,7 @@ func (ss *Sim) ConfigEnv() {
 	trn.Config(table.NewIndexView(ss.Pats))
 	if ss.Config.Run.MPI {
 		// this is key mpi step: allocate diff inputs to diff procs
-		st, ed, _ := empi.AllocN(ss.Pats.Rows)
+		st, ed, _ := tensormpi.AllocN(ss.Pats.Rows)
 		trn.Table.Indexes = trn.Table.Indexes[st:ed]
 		// mpi.AllPrintf("st: %d  ed: %d\n", st, ed)
 	}
@@ -281,7 +281,7 @@ func (ss *Sim) ConfigEnv() {
 	tst.Config(table.NewIndexView(ss.Pats))
 	tst.Sequential = true
 	if ss.Config.Run.MPI {
-		st, ed, _ := empi.AllocN(ss.Pats.Rows)
+		st, ed, _ := tensormpi.AllocN(ss.Pats.Rows)
 		tst.Table.Indexes = tst.Table.Indexes[st:ed]
 	}
 	tst.Validate()
@@ -303,7 +303,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	net.InitName(net, "RA25")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
-	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
+	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
 	hid1 := net.AddLayer2D("Hidden1", ss.Config.Params.Hidden1Size.Y, ss.Config.Params.Hidden1Size.X, axon.SuperLayer)
@@ -352,7 +352,7 @@ func (ss *Sim) Init() {
 		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
 	}
 	ss.Loops.ResetCounters()
-	ss.InitRndSeed(0)
+	ss.InitRandSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
@@ -363,10 +363,10 @@ func (ss *Sim) Init() {
 	ss.ViewUpdate.RecordSyns()
 }
 
-// InitRndSeed initializes the random seed based on current training run number
-func (ss *Sim) InitRndSeed(run int) {
-	ss.RndSeeds.Set(run)
-	ss.RndSeeds.Set(run, &ss.Net.Rand)
+// InitRandSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRandSeed(run int) {
+	ss.RandSeeds.Set(run)
+	ss.RandSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -434,7 +434,7 @@ func (ss *Sim) ConfigLoops() {
 
 	trainEpoch.OnEnd.Add("RandCheck", func() {
 		if ss.Config.Run.MPI {
-			empi.RandCheck(ss.Comm) // prints error message
+			tensormpi.RandCheck(ss.Comm) // prints error message
 		}
 	})
 
@@ -524,7 +524,7 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
-	ss.InitRndSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
+	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ctx.Reset()
@@ -743,7 +743,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				ss.RndSeeds.NewSeeds()
+				ss.RandSeeds.NewSeeds()
 			},
 		})
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",

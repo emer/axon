@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"cogentcore.org/core/base/indent"
+	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/texteditor"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/erand"
 	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
@@ -149,10 +149,10 @@ type NetworkBase struct {
 	Ctx Context `view:"-"`
 
 	// random number generator for the network -- all random calls must use this -- set seed here for weight initialization values
-	Rand erand.SysRand `view:"-"`
+	Rand randx.SysRand `view:"-"`
 
 	// random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights
-	RndSeed int64 `edit:"-"`
+	RandSeed int64 `edit:"-"`
 
 	// number of threads to use for parallel processing
 	NThreads int
@@ -1398,19 +1398,19 @@ func (nt *NetworkBase) VarRange(varNm string) (min, max float32, err error) {
 	return
 }
 
-// SetRndSeed sets random seed and calls ResetRndSeed
-func (nt *NetworkBase) SetRndSeed(seed int64) {
-	nt.RndSeed = seed
-	nt.ResetRndSeed()
+// SetRandSeed sets random seed and calls ResetRandSeed
+func (nt *NetworkBase) SetRandSeed(seed int64) {
+	nt.RandSeed = seed
+	nt.ResetRandSeed()
 }
 
-// ResetRndSeed sets random seed to saved RndSeed, ensuring that the
+// ResetRandSeed sets random seed to saved RandSeed, ensuring that the
 // network-specific random seed generator has been created.
-func (nt *NetworkBase) ResetRndSeed() {
+func (nt *NetworkBase) ResetRandSeed() {
 	if nt.Rand.Rand == nil {
-		nt.Rand.NewRand(nt.RndSeed)
+		nt.Rand.NewRand(nt.RandSeed)
 	} else {
-		nt.Rand.Seed(nt.RndSeed)
+		nt.Rand.Seed(nt.RandSeed)
 	}
 }
 
