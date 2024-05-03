@@ -157,7 +157,7 @@ func (ev *MoveEnv) Config(unper int) {
 }
 
 func (ev *MoveEnv) Validate() error {
-	if ev.Size.IsNil() {
+	if ev.Size == (vecint.Vector2i{}) {
 		return fmt.Errorf("MoveEnv: %v has size == 0 -- need to Config", ev.Nm)
 	}
 	return nil
@@ -224,7 +224,7 @@ func NormVecLine(v math32.Vector2) math32.Vector2 {
 // such that the largest value is 1.
 func NextVecPoint(cp, v math32.Vector2) (math32.Vector2, vecint.Vector2i) {
 	n := cp.Add(v)
-	g := vecint.NewVector2iFromVector2Round(n)
+	g := vecint.Vector2iFromVector2Round(n)
 	return n, g
 }
 
