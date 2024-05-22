@@ -11,7 +11,7 @@ import (
 	"sort"
 	"sync"
 
-	"cogentcore.org/core/base/atomctr"
+	"cogentcore.org/core/base/atomiccounter"
 	"cogentcore.org/core/base/timer"
 )
 
@@ -26,7 +26,7 @@ func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
 	}
 	chm1 := chunk - 1
 	wait := sync.WaitGroup{}
-	var cur atomctr.Ctr
+	var cur atomiccounter.Counter
 	cur.Set(-1)
 	for ti := 0; ti < nThreads; ti++ {
 		wait.Add(1)
