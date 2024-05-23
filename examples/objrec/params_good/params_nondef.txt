@@ -1,12 +1,8 @@
 V1.Acts.Decay.Glong: 1 // (Default: 0,0.6)<br>
-V1.Learn.RLRate.SigmoidLinear: false // (Default: true)<br>
-V4.Learn.RLRate.SigmoidLinear: false // (Default: true)<br>
 V4.V1ToV4.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
 V4.ITToV4.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
-IT.Learn.RLRate.SigmoidLinear: false // (Default: true)<br>
 IT.V4ToIT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
 IT.OutputToIT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
 Output.Inhib.ActAvg.Offset: -0.005 // (Default: 0)<br>
 Output.Inhib.Layer.Gi: 1.2 // (Default: 1,1.1,0.75,0.9)<br>
-Output.Learn.RLRate.SigmoidLinear: false // (Default: true)<br>
 Output.ITToOutput.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>

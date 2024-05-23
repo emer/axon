@@ -1,6 +1,4 @@
-Includes = [
-  '30notes.toml'
-]
+Includes = []
 GUI = false
 Debug = false
 

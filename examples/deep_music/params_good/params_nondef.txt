@@ -10,7 +10,7 @@ HiddenCT.HiddenToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0
 HiddenCT.HiddenToHiddenCT.Learn.LRate.Base: 0.001 // (Default: 0.04,0.1,0.2)<br>
 HiddenCT.HiddenCTToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
 HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.001 // (Default: 0.04,0.1,0.2)<br>
-HiddenCT.HiddenCTToHiddenCT.PrjnScale.Abs: 0.2 // (Default: 1)<br>
+HiddenCT.HiddenCTToHiddenCT.PathScale.Abs: 0.2 // (Default: 1)<br>
 HiddenCT.HiddenCTToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>
 HiddenCT.HiddenCTToHiddenCT.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
 HiddenCT.InputPToHiddenCT.SWts.Adapt.LRate: 0.0001 // (Default: 0.1,0.01,0.001,0.0002)<br>

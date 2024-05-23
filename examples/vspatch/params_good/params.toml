@@ -24,11 +24,11 @@
     "Layer.Learn.TrgAvgAct.GiBaseInit" = "0"
 
 [[Base]]
-  Sel = ".VSPatchPrjn"
+  Sel = ".VSPatchPath"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.02"
-    "Prjn.Learn.Trace.LearnThr" = "0"
-    "Prjn.PrjnScale.Abs" = "2"
-    "Prjn.SWts.Init.Mean" = "0.5"
-    "Prjn.SWts.Init.Var" = "0.25"
+    "Path.Learn.LRate.Base" = "0.02"
+    "Path.Learn.Trace.LearnThr" = "0"
+    "Path.PathScale.Abs" = "2"
+    "Path.SWts.Init.Mean" = "0.5"
+    "Path.SWts.Init.Var" = "0.25"

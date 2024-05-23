@@ -38,7 +38,7 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: false  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 /////////////////////////////////////////////////
@@ -81,18 +81,18 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: false  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: V1ToV4
+Path: V1ToV4
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -106,13 +106,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 1  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ITToV4
+Path: ITToV4
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.2 Abs: 1
 }
 SWt: {
@@ -126,6 +127,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 1  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: IT
@@ -167,18 +169,18 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: false  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: V4ToIT
+Path: V4ToIT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -192,13 +194,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 1  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OutputToIT
+Path: OutputToIT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.2 Abs: 1
 }
 SWt: {
@@ -212,6 +215,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 1  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: Output
@@ -253,15 +257,15 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: true  ErrLRate: 0.02  SynScaleRate: 0.0002  SubMean: 0  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: false  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ITToOutput
+Path: ITToOutput
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -275,4 +279,5 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 1  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }

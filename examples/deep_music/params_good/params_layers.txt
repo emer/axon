@@ -8,5 +8,5 @@
 						Layer.Gi:	  0.90	Params: Layer: 0.9
 
        HiddenCT		Nominal:	  0.12	Params: .CTLayer: 0.12 | Layer: 0.1
-						Layer.Gi:	  2.20	Params: .CTLayer: 2.2 | Base:Layer: 0.9
+						Layer.Gi:	  2.20	Params: .CTLayer: 2.2 | Layer: 0.9
 

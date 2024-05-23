@@ -22,15 +22,15 @@
     "Layer.Inhib.Layer.Gi" = "0.2"
 
 [[RW]]
-  Sel = ".RWPrjn"
+  Sel = ".RWPath"
   Desc = "RW pred"
   [RW.Params]
-    "Prjn.Learn.LRate.Base" = "0.1"
-    "Prjn.RLPred.DaTol" = "0.0"
-    "Prjn.RLPred.OppSignLRate" = "1.0"
-    "Prjn.SWts.Init.Mean" = "0"
-    "Prjn.SWts.Init.Sym" = "false"
-    "Prjn.SWts.Init.Var" = "0"
+    "Path.Learn.LRate.Base" = "0.1"
+    "Path.RLPred.DaTol" = "0.0"
+    "Path.RLPred.OppSignLRate" = "1.0"
+    "Path.SWts.Init.Mean" = "0"
+    "Path.SWts.Init.Sym" = "false"
+    "Path.SWts.Init.Var" = "0"
 
 [[TD]]
   Sel = ".TDPredLayer"
@@ -53,8 +53,8 @@
   Sel = "#InputToRewPred"
   Desc = "input to rewpred"
   [TD.Params]
-    "Prjn.Learn.LRate.Base" = "0.1"
-    "Prjn.RLPred.OppSignLRate" = "1.0"
-    "Prjn.SWts.Init.Mean" = "0"
-    "Prjn.SWts.Init.Sym" = "false"
-    "Prjn.SWts.Init.Var" = "0"
+    "Path.Learn.LRate.Base" = "0.1"
+    "Path.RLPred.OppSignLRate" = "1.0"
+    "Path.SWts.Init.Mean" = "0"
+    "Path.SWts.Init.Sym" = "false"
+    "Path.SWts.Init.Var" = "0"

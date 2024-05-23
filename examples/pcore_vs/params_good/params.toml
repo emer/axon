@@ -27,6 +27,13 @@
     "Layer.Matrix.IsVS" = "true"
 
 [[Base]]
+  Sel = ".VSTNLayer"
+  Desc = "all VSTN"
+  [Base.Params]
+    "Layer.Acts.Init.GeBase" = "0.1"
+    "Layer.Acts.SKCa.CaRDecayTau" = "80"
+
+[[Base]]
   Sel = ".PTMaintLayer"
   Desc = "time integration params"
   [Base.Params]
@@ -43,57 +50,57 @@
     "Layer.Acts.Noise.On" = "false"
 
 [[Base]]
-  Sel = ".VSMatrixPrjn"
+  Sel = ".VSMatrixPath"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.01"
-    "Prjn.Learn.Trace.LearnThr" = "0.1"
-    "Prjn.Matrix.VSRewLearn" = "false"
-    "Prjn.SWts.Adapt.On" = "false"
+    "Path.Learn.LRate.Base" = "0.01"
+    "Path.Learn.Trace.LearnThr" = "0.1"
+    "Path.Matrix.VSRewLearn" = "false"
+    "Path.SWts.Adapt.On" = "false"
   [Base.Hypers]
-    [Base.Hypers."Prjn.Learn.LRate.Base"]
+    [Base.Hypers."Path.Learn.LRate.Base"]
       Tweak = "-"
-    [Base.Hypers."Prjn.Learn.Trace.LearnThr"]
+    [Base.Hypers."Path.Learn.Trace.LearnThr"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#UrgencyToVMtxGo"
   Desc = "strong urgency factor"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Abs" = "0"
-    "Prjn.PrjnScale.Rel" = "0.1"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Abs" = "0"
+    "Path.PathScale.Rel" = "0.1"
 
 [[Base]]
   Sel = ".SuperToPT"
   Desc = "one-to-one from super"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "0.5"
+    "Path.PathScale.Abs" = "0.5"
 
 [[Base]]
   Sel = ".SuperToThal"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3.0"
+    "Path.PathScale.Abs" = "3.0"
 
 [[Base]]
   Sel = ".ACCToVMtx"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1.5"
+    "Path.PathScale.Abs" = "1.5"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#VMtxNoToVMtxGo"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Abs" = "1"
-    "Prjn.PrjnScale.Rel" = "0.05"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Abs" = "1"
+    "Path.PathScale.Rel" = "0.05"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Rel"]
+    [Base.Hypers."Path.PathScale.Rel"]
       Tweak = "log"
 
 [[Base]]
@@ -110,7 +117,7 @@
   Sel = "#VSTNToVGPi"
   Desc = "strong initial phasic activation"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = ".2"
+    "Path.PathScale.Abs" = ".2"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"

@@ -131,7 +131,7 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 LDT: {
-  SrcThr: 0.05 Rew: true MaintInhib: 0.8 SrcLay1Index: 25 SrcLay2Index: -1 SrcLay3Index: -1 SrcLay4Index: -1
+  SrcThr: 0.05 Rew: true MaintInhib: 0.8 SrcLay1Index: 26 SrcLay2Index: -1 SrcLay3Index: -1 SrcLay4Index: -1
 }
 /////////////////////////////////////////////////
 Layer: USpos
@@ -260,7 +260,71 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Cost  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+}
+/////////////////////////////////////////////////
+Layer: CostFin
+Act: {
+  Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
+  Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
+  Init: {  Vm: 0.3  Act: 0  GeBase: 0  GiBase: 0  GeVar: 0  GiVar: 0 }
+  Decay: {  Act: 1  Glong: 1  AHP: 0  LearnCa: 0  OnRew: false }
+  Dt: {  Integ: 1  VmTau: 2.81  VmDendTau: 5  VmSteps: 2  GeTau: 5  GiTau: 7  IntTau: 40  LongAvgTau: 20  MaxCycStart: 10 }
+  Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
+  Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
+  Clamp: {  IsInput: false  IsTarget: false  Ge: 0.8  Add: false  ErrThr: 0.5 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001  MaintGe: false }
+  VmRange: {  Min: 0.1  Max: 1 }
+  Mahp: {  Gbar: 0.02  Voff: -30  Vslope: 9  TauMax: 1000  Tadj: 3.209364  DtMax: 0.001 }
+  Sahp: {  Gbar: 0.05  CaTau: 5  Off: 0.8  Slope: 0.02  TauMax: 1  CaDt: 0.2  DtMax: 1 }
+  KNa: {  On: true  TrialSlow: false  Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
+  } }
+  Kir: {  Gbar: 0  MinfOff: -102  MinfTau: 13  RiseOff: -60  RiseTau: 14  DecayOff: -31  DecayTau: 23  Mrest: 0.078599066 }
+  NMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
+  MaintNMDA: {  Gbar: 0.007  Tau: 200  ITau: 1  MgC: 1.4  Voff: 0 }
+  GabaB: {  Gbar: 0.015  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
+  VGCC: {  Gbar: 0.02  Ca: 25 }
+  AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
+  SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
+  SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
+  } }
+  PopCode: {  On: true  Ge: 1  Min: -0.1  Max: 1.1  MinAct: 0.2  MinSigma: 0.08  MaxSigma: 0.12  Clip: true }
+}
+Inhib: {
+  ActAvg: {  Nominal: 0.05  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  Layer: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Pool: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+}
+Learn: {
+  CaLearn: {  Norm: 80  SpkVGCC: true  SpkVgccCa: 35  VgccTau: 10  Dt: {   MTau: 2   PTau: 39   DTau: 41   ExpAdj: true }   UpdateThr: 0.01 }
+  CaSpk: {  SpikeG: 8  SynTau: 30  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
+  TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
+  } }
+  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: D2Mod  Valence: Cost  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+}
+///////////////////////////////////////////////////
+Path: ACCcostPTToCostFin
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 0.2
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: USposP
@@ -309,11 +373,11 @@ Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 3
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToUSposP
+Path: OFCposCTToUSposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -327,13 +391,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToUSposP
+Path: OFCposPTToUSposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -347,13 +412,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToUSposP
+Path: OFCposPTpToUSposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -367,6 +433,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: USnegP
@@ -415,11 +482,11 @@ Pulv:    {
   DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 4
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSCTToUSnegP
+Path: OFCnegCTToUSnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -433,13 +500,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToUSnegP
+Path: OFCnegPTToUSnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -453,13 +521,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToUSnegP
+Path: OFCnegPTpToUSnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -473,6 +542,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: CostP
@@ -518,14 +588,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 5
+  DriveScale: 0.2 FullDriveAct: 0.6 DriveLayIndex: 5
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostCTToCostP
+Path: ACCcostCTToCostP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -539,13 +609,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTToCostP
+Path: ACCcostPTpToCostP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -559,26 +630,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
-}
-///////////////////////////////////////////////////
-Prjn: ACCcostPTpToCostP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: PVpos
@@ -606,11 +658,11 @@ Act: {
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
   SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
   } }
-  PopCode: {  On: true  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
+  PopCode: {  On: true  Ge: 0.4  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
   ActAvg: {  Nominal: 0.2  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 0.5  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
@@ -622,6 +674,48 @@ Learn: {
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+}
+///////////////////////////////////////////////////
+Path: OFCposPTToPVpos
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: ILposPTToPVpos
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: PVneg
@@ -649,11 +743,11 @@ Act: {
   SKCa: {  Gbar: 0  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
   SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
   } }
-  PopCode: {  On: true  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
+  PopCode: {  On: true  Ge: 0.4  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
   ActAvg: {  Nominal: 0.2  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 0.5  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
@@ -665,6 +759,48 @@ Learn: {
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 0.05  Diff: true  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
   NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+}
+///////////////////////////////////////////////////
+Path: OFCnegPTToPVneg
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: ILnegPTToPVneg
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: PVposP
@@ -710,14 +846,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 9
+  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 10
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToPVposP
+Path: OFCposCTToPVposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -731,13 +867,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToPVposP
+Path: OFCposPTpToPVposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -751,13 +888,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToPVposP
+Path: ILposCTToPVposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -771,13 +909,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposCTToPVposP
+Path: ILposPTpToPVposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -791,13 +930,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTToPVposP
+Path: ILposPTpToPVposP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -811,66 +951,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
-}
-///////////////////////////////////////////////////
-Prjn: ILposPTpToPVposP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILposPTToPVposP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILposPTpToPVposP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: PVnegP
@@ -916,14 +997,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 10
+  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 11
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSCTToPVnegP
+Path: OFCnegCTToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -937,13 +1018,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToPVnegP
+Path: OFCnegPTpToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -957,13 +1039,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToPVnegP
+Path: ILnegCTToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -977,13 +1060,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostCTToPVnegP
+Path: ILnegPTpToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -997,13 +1081,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTToPVnegP
+Path: ILnegPTpToPVnegP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1017,126 +1102,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
-}
-///////////////////////////////////////////////////
-Prjn: ACCcostPTpToPVnegP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILnegCTToPVnegP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILnegPTToPVnegP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILnegPTpToPVnegP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILnegPTToPVnegP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: ILnegPTpToPVnegP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: Drives
@@ -1225,14 +1191,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 13
+  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 14
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToDrivesP
+Path: OFCposCTToDrivesP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1246,13 +1212,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToDrivesP
+Path: OFCposPTpToDrivesP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1266,26 +1233,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
-}
-///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToDrivesP
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: Urgency
@@ -1377,11 +1325,11 @@ GP:      {
   GPType: GPi
 }
 ///////////////////////////////////////////////////
-Prjn: VGPePrToVGPi
+Path: VGPePrToVGPi
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1395,13 +1343,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VMtxGoToVGPi
+Path: VMtxGoToVGPi
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.2
 }
 SWt: {
@@ -1415,13 +1364,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VSTNToVGPi
+Path: VSTNToVGPi
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.2
 }
 SWt: {
@@ -1435,6 +1385,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VGPePr
@@ -1483,11 +1434,11 @@ GP:      {
   GPType: GPePr
 }
 ///////////////////////////////////////////////////
-Prjn: VMtxNoToVGPePr
+Path: VMtxNoToVGPePr
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1501,13 +1452,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPePrToVGPePr
+Path: VGPePrToVGPePr
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -1521,13 +1473,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VSTNToVGPePr
+Path: VSTNToVGPePr
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -1541,6 +1494,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VGPeAk
@@ -1589,11 +1543,11 @@ GP:      {
   GPType: GPeAk
 }
 ///////////////////////////////////////////////////
-Prjn: VGPePrToVGPeAk
+Path: VGPePrToVGPeAk
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1607,13 +1561,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VMtxGoToVGPeAk
+Path: VMtxGoToVGPeAk
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -1627,13 +1582,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VSTNToVGPeAk
+Path: VSTNToVGPeAk
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.1
 }
 SWt: {
@@ -1647,6 +1603,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VSTN
@@ -1671,7 +1628,7 @@ Act: {
   GabaB: {  Gbar: 0  RiseTau: 45  DecayTau: 50  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811756  RiseDt: 0.022222223  DecayDt: 0.02 }
   VGCC: {  Gbar: 0.02  Ca: 25 }
   AK: {  Gbar: 0.1  Hf: 0.076  Mf: 0.075  Voff: 2  Vmax: -37 }
-  SKCa: {  Gbar: 2  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 150  CaInThr: 0.01  CaInTau: 50 }
+  SKCa: {  Gbar: 2  C50: 0.5  ActTau: 15  DeTau: 30  KCaR: 0.8  CaRDecayTau: 80  CaInThr: 0.01  CaInTau: 50 }
   SMaint: {  On: false  NNeurons: 10  Gbar: 0.2  Inhib: 1  ISI: {   Min: 1   Max: 20
   } }
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
@@ -1692,11 +1649,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPePrToVSTN
+Path: VGPePrToVSTN
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -1710,13 +1667,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosAcqD1ToVSTN
+Path: BLAposAcqD1ToVSTN
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -1730,13 +1688,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegAcqD2ToVSTN
+Path: BLAnegAcqD2ToVSTN
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -1750,13 +1709,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToVSTN
+Path: OFCposToVSTN
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -1770,13 +1730,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToVSTN
+Path: ILposToVSTN
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -1790,6 +1751,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VMtxGo
@@ -1835,14 +1797,14 @@ Learn: {
   NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 5  BurstGain: 1  DipGain: 1 }
 }
 Matrix:  {
-  GateThr: 0.05 IsVS: true OtherMatrixIndex: 21 ThalLay1Index: 36 ThalLay2Index: 41 ThalLay3Index: 46 ThalLay4Index: 51 ThalLay5Index: 56 ThalLay6Index: -1
+  GateThr: 0.05 IsVS: true OtherMatrixIndex: 22 ThalLay1Index: 37 ThalLay2Index: 42 ThalLay3Index: 47 ThalLay4Index: 52 ThalLay5Index: 57 ThalLay6Index: -1
 }
 ///////////////////////////////////////////////////
-Prjn: VMtxNoToVMtxGo
+Path: VMtxNoToVMtxGo
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.05 Abs: 1
 }
 SWt: {
@@ -1856,13 +1818,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPeAkToVMtxGo
+Path: VGPeAkToVMtxGo
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -1876,13 +1839,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposToVMtxGo
+Path: USposToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1896,16 +1860,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosAcqD1ToVMtxGo
+Path: BLAposAcqD1ToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -1919,16 +1884,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesToVMtxGo
+Path: DrivesToVMtxGo
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1942,16 +1908,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToVMtxGo
+Path: OFCposToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1965,16 +1932,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToVMtxGo
+Path: ILposToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -1988,16 +1956,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSToVMtxGo
+Path: OFCnegToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2011,16 +1980,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToVMtxGo
+Path: ILnegToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2034,16 +2004,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostToVMtxGo
+Path: ACCcostToVMtxGo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2057,6 +2028,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
@@ -2105,14 +2077,14 @@ Learn: {
   NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0  DALRateSign: true  DALRateMod: 1  AChLRateMod: 0  AChDisInhib: 5  BurstGain: 1  DipGain: 1 }
 }
 Matrix:  {
-  GateThr: 0.05 IsVS: true OtherMatrixIndex: 20 ThalLay1Index: 36 ThalLay2Index: 41 ThalLay3Index: 46 ThalLay4Index: 51 ThalLay5Index: 56 ThalLay6Index: -1
+  GateThr: 0.05 IsVS: true OtherMatrixIndex: 21 ThalLay1Index: 37 ThalLay2Index: 42 ThalLay3Index: 47 ThalLay4Index: 52 ThalLay5Index: 57 ThalLay6Index: -1
 }
 ///////////////////////////////////////////////////
-Prjn: VGPeAkToVMtxNo
+Path: VGPeAkToVMtxNo
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2126,13 +2098,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToVMtxNo
+Path: ILnegToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2146,16 +2119,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosAcqD1ToVMtxNo
+Path: BLAposAcqD1ToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2169,16 +2143,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegAcqD2ToVMtxNo
+Path: BLAnegAcqD2ToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -2192,16 +2167,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosExtD2ToVMtxNo
+Path: BLAposExtD2ToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.1
 }
 SWt: {
@@ -2215,16 +2191,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesToVMtxNo
+Path: DrivesToVMtxNo
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2238,16 +2215,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToVMtxNo
+Path: OFCposToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2261,16 +2239,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToVMtxNo
+Path: ILposToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2284,16 +2263,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSToVMtxNo
+Path: OFCnegToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2307,16 +2287,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToVMtxNo
+Path: ILnegToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2330,16 +2311,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostToVMtxNo
+Path: ACCcostToVMtxNo
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2353,6 +2335,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0.1 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 Matrix: {
   Credit: 0.6 BasePF: 0.005 Delta: 1 VSRewLearn: true
@@ -2444,11 +2427,11 @@ Learn: {
   NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTpToVsPatchD1
+Path: ILnegPTpToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2462,13 +2445,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesToVsPatchD1
+Path: DrivesToVsPatchD1
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2482,13 +2466,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToVsPatchD1
+Path: OFCposPTpToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2502,13 +2487,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTpToVsPatchD1
+Path: ILposPTpToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2522,13 +2508,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToVsPatchD1
+Path: OFCnegPTpToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2542,13 +2529,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTpToVsPatchD1
+Path: ILnegPTpToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2562,13 +2550,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToVsPatchD1
+Path: PVposPToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2582,13 +2571,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSToVsPatchD1
+Path: CSToVsPatchD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2602,6 +2592,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: VsPatchD2
@@ -2647,11 +2638,11 @@ Learn: {
   NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTpToVsPatchD2
+Path: ILnegPTpToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2665,13 +2656,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesToVsPatchD2
+Path: DrivesToVsPatchD2
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2685,13 +2677,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToVsPatchD2
+Path: OFCposPTpToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2705,13 +2698,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTpToVsPatchD2
+Path: ILposPTpToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2725,13 +2719,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToVsPatchD2
+Path: OFCnegPTpToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2745,13 +2740,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTpToVsPatchD2
+Path: ILnegPTpToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2765,13 +2761,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToVsPatchD2
+Path: PVposPToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -2785,13 +2782,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSToVsPatchD2
+Path: CSToVsPatchD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2805,6 +2803,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: SC
@@ -2853,11 +2852,11 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: CSToSC
+Path: CSToSC
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -2871,9 +2870,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: BLAPosAcqD1
+Layer: BLAposAcqD1
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -2902,7 +2902,7 @@ Act: {
 }
 Inhib: {
   ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
-  Layer: {  On: true  Gi: 2.4  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
+  Layer: {  On: true  Gi: 2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
 Learn: {
@@ -2919,16 +2919,16 @@ CT:      {
   GeGain: 0.1 DecayTau: 0
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosExtD2ToBLAPosAcqD1
+Path: BLAposExtD2ToBLAposAcqD1
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
-  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: false }
-  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 1 }
+  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
@@ -2937,13 +2937,56 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLANovelCSToBLAPosAcqD1
+Path: BLAposAcqD1ToBLAposAcqD1
+Com: {
+  GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 0.5
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: BLAposExtD2ToBLAposAcqD1
+Com: {
+  GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 0.5
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: BLANovelCSToBLAposAcqD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 2
 }
 SWt: {
@@ -2957,13 +3000,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposToBLAPosAcqD1
+Path: USposToBLAposAcqD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.5 Abs: 6
 }
 SWt: {
@@ -2977,16 +3021,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0.5
 }
 ///////////////////////////////////////////////////
-Prjn: CSToBLAPosAcqD1
+Path: CSToBLAposAcqD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1.5
 }
 SWt: {
@@ -2996,16 +3041,17 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.1  Sched: 1  Mod: 1  Eff: 0.1 }
+  LRate: {  Base: 0.05  Sched: 1  Mod: 1  Eff: 0.05 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0.5
 }
 /////////////////////////////////////////////////
-Layer: BLAPosExtD2
+Layer: BLAposExtD2
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: true  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -3045,37 +3091,38 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D2Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosAcqD1ToBLAPosExtD2
+Path: BLAposAcqD1ToBLAposExtD2
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
-  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: false }
-  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 1 }
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
-  Learn: false
+  Learn: true
   LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposToBLAPosExtD2
+Path: USposToBLAposExtD2
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -3089,14 +3136,15 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToBLAPosExtD2
+Path: OFCposPTpToBLAposExtD2
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
-  Rel: 1 Abs: 0.5
+PathScale: {
+  Rel: 1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -3105,20 +3153,21 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
-  NegDeltaLRate: 1 AChThr: 0.1 USTrace: 0.5
+  NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0.5
 }
 ///////////////////////////////////////////////////
-Prjn: ContextInToBLAPosExtD2
+Path: ContextInToBLAposExtD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -3128,16 +3177,17 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
+  LRate: {  Base: 0.05  Sched: 1  Mod: 1  Eff: 0.05 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 1 AChThr: 0.1 USTrace: 0.5
 }
 /////////////////////////////////////////////////
-Layer: BLANegExtD1
+Layer: BLAnegExtD1
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -3177,37 +3227,38 @@ Learn: {
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
   RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Negative  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Negative  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegAcqD2ToBLANegExtD1
+Path: BLAnegAcqD2ToBLAnegExtD1
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
-  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: false }
-  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 1 }
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
-  Learn: false
+  Learn: true
   LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USnegToBLANegExtD1
+Path: USnegToBLAnegExtD1
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -3221,14 +3272,15 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ContextInToBLANegExtD1
+Path: ContextInToBLAnegExtD1
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
-  Rel: 1 Abs: 1
+PathScale: {
+  Rel: 1 Abs: 4
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: false }
@@ -3237,16 +3289,17 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
+  LRate: {  Base: 0.05  Sched: 1  Mod: 1  Eff: 0.05 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 1 AChThr: 0.1 USTrace: 0.5
 }
 /////////////////////////////////////////////////
-Layer: BLANegAcqD2
+Layer: BLAnegAcqD2
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -3292,16 +3345,16 @@ CT:      {
   GeGain: 0.1 DecayTau: 0
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegExtD1ToBLANegAcqD2
+Path: BLAnegExtD1ToBLAnegAcqD2
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
-  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: false }
-  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 1 }
+  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
@@ -3310,13 +3363,56 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USnegToBLANegAcqD2
+Path: BLAnegAcqD2ToBLAnegAcqD2
+Com: {
+  GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 0.5
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: BLAnegExtD1ToBLAnegAcqD2
+Com: {
+  GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 0.5
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: false
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: USnegToBLAnegAcqD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.5 Abs: 6
 }
 SWt: {
@@ -3330,16 +3426,17 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0.5
 }
 ///////////////////////////////////////////////////
-Prjn: CSToBLANegAcqD2
+Path: CSToBLAnegAcqD2
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3353,6 +3450,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0.5
@@ -3401,11 +3499,11 @@ Learn: {
   NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosAcqD1ToCeMPos
+Path: BLAposAcqD1ToCeMPos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3419,13 +3517,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosExtD2ToCeMPos
+Path: BLAposExtD2ToCeMPos
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3439,6 +3538,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: CeMNeg
@@ -3484,11 +3584,11 @@ Learn: {
   NeuroMod: {  DAMod: D2Mod  Valence: Negative  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegAcqD2ToCeMNeg
+Path: BLAnegAcqD2ToCeMNeg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3502,13 +3602,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegExtD1ToCeMNeg
+Path: BLAnegExtD1ToCeMNeg
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3522,6 +3623,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: BLANovelCS
@@ -3563,18 +3665,18 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  GiBaseInit: 0  RescaleOn: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  Permute: true  Pool: true  TrgRange: {   Min: 0.5   Max: 2
   } }
-  RLRate: {  On: true  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
-  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0.5  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
+  RLRate: {  On: false  SigmoidLinear: true  SigmoidMin: 1  Diff: true  SpkThr: 0.1  DiffThr: 0.01  Min: 0.001 }
+  NeuroMod: {  DAMod: D1Mod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0.5  AChLRateMod: 1  AChDisInhib: 0  BurstGain: 0.2  DipGain: 0 }
 }
 CT:      {
   GeGain: 0.1 DecayTau: 0
 }
 ///////////////////////////////////////////////////
-Prjn: CSToBLANovelCS
+Path: CSToBLANovelCS
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3588,12 +3690,34 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 BLA: {
   NegDeltaLRate: 0.01 AChThr: 0.1 USTrace: 0.5
 }
+///////////////////////////////////////////////////
+Path: CSToBLANovelCS
+Com: {
+  GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.1  Var: 0.05  Sym: true }
+  Adapt: {  On: false  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: true  Up: 0.5  Down: 0 }
+}
 /////////////////////////////////////////////////
-Layer: OFCposUS
+Layer: OFCpos
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -3639,11 +3763,11 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: BLAPosAcqD1ToOFCposUS
+Path: BLAposAcqD1ToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -3657,13 +3781,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesToOFCposUS
+Path: DrivesToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.2 Abs: 1
 }
 SWt: {
@@ -3677,13 +3802,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposToOFCposUS
+Path: PVposToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3697,13 +3823,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposToOFCposUS
+Path: USposToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3717,13 +3844,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesPToOFCposUS
+Path: DrivesPToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3737,13 +3865,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposPToOFCposUS
+Path: USposPToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3757,13 +3886,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToOFCposUS
+Path: PVposPToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3777,13 +3907,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToOFCposUS
+Path: ILposToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3797,13 +3928,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSToOFCposUS
+Path: CSToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3817,13 +3949,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSPToOFCposUS
+Path: CSPToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3837,13 +3970,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToOFCposUS
+Path: TimeToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3857,13 +3991,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToOFCposUS
+Path: TimePToOFCpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3877,9 +4012,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCposUSCT
+Layer: OFCposCT
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -3925,11 +4061,11 @@ CT:      {
   GeGain: 2 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToOFCposUSCT
+Path: OFCposToOFCposCT
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3943,13 +4079,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToOFCposUSCT
+Path: OFCposPTToOFCposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -3963,13 +4100,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesPToOFCposUSCT
+Path: DrivesPToOFCposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -3983,13 +4121,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposPToOFCposUSCT
+Path: USposPToOFCposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4003,13 +4142,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToOFCposUSCT
+Path: PVposPToOFCposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4023,13 +4163,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSPToOFCposUSCT
+Path: CSPToOFCposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4043,13 +4184,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToOFCposUSCT
+Path: TimePToOFCposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4063,9 +4205,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCposUSPT
+Layer: OFCposPT
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: true  ModGain: 1.5  ModACh: true  ModBase: 0 }
@@ -4108,11 +4251,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSMDToOFCposUSPT
+Path: OFCposMDToOFCposPT
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -4126,13 +4269,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToOFCposUSPT
+Path: OFCposToOFCposPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -4146,13 +4290,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSPToOFCposUSPT
+Path: CSPToOFCposPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4166,13 +4311,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSToOFCposUSPT
+Path: CSToOFCposPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -4186,13 +4332,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToOFCposUSPT
+Path: TimePToOFCposPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4206,13 +4353,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToOFCposUSPT
+Path: TimeToOFCposPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -4226,9 +4374,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCposUSMD
+Layer: OFCposMD
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -4271,11 +4420,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToOFCposUSMD
+Path: OFCposPTToOFCposMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -4289,13 +4438,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToOFCposUSMD
+Path: OFCposToOFCposMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -4309,13 +4459,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPiToOFCposUSMD
+Path: VGPiToOFCposMD
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -4329,9 +4480,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCposUSPTp
+Layer: OFCposPTp
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -4359,7 +4511,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 1.2  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -4374,14 +4526,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.05 DecayTau: 50
+  GeGain: 0.1 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToOFCposUSPTp
+Path: OFCposPTToOFCposPTp
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -4395,13 +4547,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToOFCposUSPTp
+Path: OFCposCTToOFCposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -4415,13 +4568,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: DrivesPToOFCposUSPTp
+Path: DrivesPToOFCposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4435,13 +4589,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USposPToOFCposUSPTp
+Path: USposPToOFCposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4455,13 +4610,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToOFCposUSPTp
+Path: PVposPToOFCposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4475,9 +4631,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCnegUS
+Layer: OFCneg
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -4523,11 +4680,11 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: BLANegAcqD2ToOFCnegUS
+Path: BLAnegAcqD2ToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -4541,13 +4698,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegToOFCnegUS
+Path: PVnegToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4561,13 +4719,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USnegToOFCnegUS
+Path: USnegToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4581,13 +4740,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USnegPToOFCnegUS
+Path: USnegPToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4601,13 +4761,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToOFCnegUS
+Path: PVnegPToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4621,13 +4782,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToOFCnegUS
+Path: ILnegToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4641,13 +4803,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSToOFCnegUS
+Path: CSToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4661,13 +4824,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSPToOFCnegUS
+Path: CSPToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4681,13 +4845,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToOFCnegUS
+Path: TimeToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4701,13 +4866,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToOFCnegUS
+Path: TimePToOFCneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4721,9 +4887,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCnegUSCT
+Layer: OFCnegCT
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -4769,11 +4936,11 @@ CT:      {
   GeGain: 2 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSToOFCnegUSCT
+Path: OFCnegToOFCnegCT
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -4787,13 +4954,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToOFCnegUSCT
+Path: OFCnegPTToOFCnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -4807,13 +4975,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USnegPToOFCnegUSCT
+Path: USnegPToOFCnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4827,13 +4996,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToOFCnegUSCT
+Path: PVnegPToOFCnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4847,13 +5017,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSPToOFCnegUSCT
+Path: CSPToOFCnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4867,13 +5038,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToOFCnegUSCT
+Path: TimePToOFCnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -4887,9 +5059,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCnegUSPT
+Layer: OFCnegPT
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 2  HasMod: true  ModGain: 1.5  ModACh: true  ModBase: 0 }
@@ -4932,11 +5105,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSMDToOFCnegUSPT
+Path: OFCnegMDToOFCnegPT
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -4950,13 +5123,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSToOFCnegUSPT
+Path: OFCnegToOFCnegPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -4970,9 +5144,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCnegUSMD
+Layer: OFCnegMD
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -5015,11 +5190,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToOFCnegUSMD
+Path: OFCnegPTToOFCnegMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5033,13 +5208,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSToOFCnegUSMD
+Path: OFCnegToOFCnegMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -5053,13 +5229,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPiToOFCnegUSMD
+Path: VGPiToOFCnegMD
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -5073,9 +5250,10 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
-Layer: OFCnegUSPTp
+Layer: OFCnegPTp
 Act: {
   Spikes: {  Thr: 0.5  VmR: 0.3  Tr: 3  RTau: 1.6667  Exp: true  ExpSlope: 0.02  ExpThr: 0.9  MaxHz: 180  ISITau: 5  ISIDt: 0.2  RDt: 0.599988 }
   Dend: {  GbarExp: 0.2  GbarR: 3  SSGi: 0  HasMod: false  ModGain: 1  ModACh: false  ModBase: 0 }
@@ -5118,14 +5296,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.05 DecayTau: 50
+  GeGain: 0.1 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToOFCnegUSPTp
+Path: OFCnegPTToOFCnegPTp
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5139,13 +5317,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSCTToOFCnegUSPTp
+Path: OFCnegCTToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -5159,13 +5338,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: USnegPToOFCnegUSPTp
+Path: USnegPToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5179,13 +5359,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToOFCnegUSPTp
+Path: PVnegPToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5199,13 +5380,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSPToOFCnegUSPTp
+Path: CSPToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5219,13 +5401,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CSToOFCnegUSPTp
+Path: CSToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -5239,13 +5422,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToOFCnegUSPTp
+Path: TimePToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5259,13 +5443,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToOFCnegUSPTp
+Path: TimeToOFCnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -5279,6 +5464,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILpos
@@ -5327,11 +5513,11 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSToILpos
+Path: OFCposToILpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -5345,13 +5531,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposToILpos
+Path: PVposToILpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5365,13 +5552,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToILpos
+Path: PVposPToILpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5385,13 +5573,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToILpos
+Path: TimeToILpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5405,13 +5594,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToILpos
+Path: TimePToILpos
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5425,6 +5615,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILposCT
@@ -5473,11 +5664,11 @@ CT:      {
   GeGain: 2 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToILposCT
+Path: ILposToILposCT
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5491,13 +5682,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTToILposCT
+Path: ILposPTToILposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5511,13 +5703,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToILposCT
+Path: PVposPToILposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5531,13 +5724,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToILposCT
+Path: TimePToILposCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5551,6 +5745,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILposPT
@@ -5596,11 +5791,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposMDToILposPT
+Path: ILposMDToILposPT
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5614,13 +5809,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToILposPT
+Path: ILposToILposPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -5634,6 +5830,28 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: PVposToILposPT
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 0.1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILposMD
@@ -5679,11 +5897,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTToILposMD
+Path: ILposPTToILposMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5697,13 +5915,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposToILposMD
+Path: ILposToILposMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -5717,13 +5936,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPiToILposMD
+Path: VGPiToILposMD
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -5737,6 +5957,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILposPTp
@@ -5782,14 +6003,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.05 DecayTau: 50
+  GeGain: 0.1 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTToILposPTp
+Path: ILposPTToILposPTp
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -5803,13 +6024,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposCTToILposPTp
+Path: ILposCTToILposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -5823,13 +6045,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposToILposPTp
+Path: PVposToILposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -5843,13 +6066,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToILposPTp
+Path: PVposPToILposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5863,13 +6087,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVposPToILposPTp
+Path: PVposPToILposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5883,13 +6108,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToILposPTp
+Path: TimePToILposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -5903,13 +6129,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToILposPTp
+Path: TimeToILposPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -5923,6 +6150,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILneg
@@ -5971,11 +6199,11 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSToILneg
+Path: OFCnegToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -5989,13 +6217,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostToILneg
+Path: ACCcostToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -6009,13 +6238,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegToILneg
+Path: PVnegToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6029,13 +6259,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToILneg
+Path: PVnegPToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6049,13 +6280,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToILneg
+Path: TimeToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6069,13 +6301,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToILneg
+Path: TimePToILneg
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6089,6 +6322,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILnegCT
@@ -6137,11 +6371,11 @@ CT:      {
   GeGain: 2 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToILnegCT
+Path: ILnegToILnegCT
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6155,13 +6389,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTToILnegCT
+Path: ILnegPTToILnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6175,13 +6410,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToILnegCT
+Path: PVnegPToILnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6195,13 +6431,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToILnegCT
+Path: TimePToILnegCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6215,6 +6452,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILnegPT
@@ -6260,11 +6498,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegMDToILnegPT
+Path: ILnegMDToILnegPT
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6278,13 +6516,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToILnegPT
+Path: ILnegToILnegPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -6298,6 +6537,28 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
+}
+///////////////////////////////////////////////////
+Path: PVnegToILnegPT
+Com: {
+  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
+}
+PathScale: {
+  Rel: 0.1 Abs: 1
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
+  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
+  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
+  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILnegMD
@@ -6343,11 +6604,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTToILnegMD
+Path: ILnegPTToILnegMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6361,13 +6622,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToILnegMD
+Path: ILnegToILnegMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -6381,13 +6643,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPiToILnegMD
+Path: VGPiToILnegMD
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -6401,6 +6664,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ILnegPTp
@@ -6446,14 +6710,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.05 DecayTau: 50
+  GeGain: 0.1 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTToILnegPTp
+Path: ILnegPTToILnegPTp
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6467,13 +6731,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegCTToILnegPTp
+Path: ILnegCTToILnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -6487,13 +6752,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegToILnegPTp
+Path: PVnegToILnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -6507,13 +6773,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToILnegPTp
+Path: PVnegPToILnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6527,13 +6794,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToILnegPTp
+Path: PVnegPToILnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6547,13 +6815,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToILnegPTp
+Path: TimePToILnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6567,13 +6836,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToILnegPTp
+Path: TimeToILnegPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -6587,6 +6857,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ACCcost
@@ -6635,11 +6906,11 @@ Burst:   {
   ThrRel: 0.1 ThrAbs: 0.1
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegToACCcost
+Path: PVnegToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6653,13 +6924,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CostToACCcost
+Path: CostToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6673,13 +6945,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CostPToACCcost
+Path: CostPToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6693,13 +6966,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToACCcost
+Path: ILnegToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6713,13 +6987,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegToACCcost
+Path: TimeToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6733,13 +7008,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimeToACCcost
+Path: TimePToACCcost
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6753,26 +7029,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
-}
-///////////////////////////////////////////////////
-Prjn: TimePToACCcost
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 0.1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ACCcostCT
@@ -6821,11 +7078,11 @@ CT:      {
   GeGain: 2 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostToACCcostCT
+Path: ACCcostToACCcostCT
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6839,13 +7096,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTToACCcostCT
+Path: ACCcostPTToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6859,13 +7117,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CostPToACCcostCT
+Path: CostPToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6879,13 +7138,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToACCcostCT
+Path: TimePToACCcostCT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -6899,26 +7159,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
-}
-///////////////////////////////////////////////////
-Prjn: TimePToACCcostCT
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
-  Rel: 0.1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ACCcostPT
@@ -6964,11 +7205,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostMDToACCcostPT
+Path: ACCcostMDToACCcostPT
 Com: {
   GType: ModulatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -6982,13 +7223,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostToACCcostPT
+Path: ACCcostToACCcostPT
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 0.5
 }
 SWt: {
@@ -7002,6 +7244,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ACCcostMD
@@ -7047,11 +7290,11 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 1  BurstGain: 1  DipGain: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTToACCcostMD
+Path: ACCcostPTToACCcostMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7065,13 +7308,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostToACCcostMD
+Path: ACCcostToACCcostMD
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -7085,13 +7329,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: VGPiToACCcostMD
+Path: VGPiToACCcostMD
 Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 3
 }
 SWt: {
@@ -7105,6 +7350,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ACCcostPTp
@@ -7150,14 +7396,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 CT:      {
-  GeGain: 0.05 DecayTau: 50
+  GeGain: 0.1 DecayTau: 50
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTToACCcostPTp
+Path: ACCcostPTToACCcostPTp
 Com: {
   GType: ContextG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7171,13 +7417,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostCTToACCcostPTp
+Path: ACCcostCTToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 2
 }
 SWt: {
@@ -7191,13 +7438,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: CostPToACCcostPTp
+Path: CostPToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -7211,13 +7459,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: PVnegPToACCcostPTp
+Path: TimePToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 0.1 Abs: 1
 }
 SWt: {
@@ -7231,33 +7480,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: TimePToACCcostPTp
+Path: TimeToACCcostPTp
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
-  Rel: 0.1 Abs: 1
-}
-SWt: {
-  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  LRate: 0.1  SubMean: 1  SigGain: 6 }
-  Limit: {  Min: 0.2  Max: 0.8 }
-}
-Learn: {
-  Learn: true
-  LRate: {  Base: 0.04  Sched: 1  Mod: 1  Eff: 0.04 }
-  Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
-  KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
-  } }
-}
-///////////////////////////////////////////////////
-Prjn: TimeToACCcostPTp
-Com: {
-  GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
-}
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 4
 }
 SWt: {
@@ -7271,6 +7501,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: Time
@@ -7359,14 +7590,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 58
+  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 59
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToTimeP
+Path: OFCposCTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7380,13 +7611,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToTimeP
+Path: OFCposPTpToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7400,13 +7632,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToTimeP
+Path: OFCposPTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7420,13 +7653,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposCTToTimeP
+Path: ILposCTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7440,13 +7674,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTToTimeP
+Path: ILposPTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7460,13 +7695,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILposPTpToTimeP
+Path: ILposPTpToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7480,13 +7716,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSCTToTimeP
+Path: OFCnegCTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7500,13 +7737,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToTimeP
+Path: OFCnegPTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7520,13 +7758,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToTimeP
+Path: OFCnegPTpToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7540,13 +7779,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostCTToTimeP
+Path: ACCcostCTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7560,13 +7800,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTToTimeP
+Path: ACCcostPTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7580,13 +7821,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ACCcostPTpToTimeP
+Path: ACCcostPTpToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7600,13 +7842,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegCTToTimeP
+Path: ILnegCTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7620,13 +7863,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTToTimeP
+Path: ILnegPTToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7640,13 +7884,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: ILnegPTpToTimeP
+Path: ILnegPTpToTimeP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7660,6 +7905,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: CS
@@ -7748,14 +7994,14 @@ Learn: {
   NeuroMod: {  DAMod: NoDAMod  Valence: Positive  DAModGain: 0  DALRateSign: false  DALRateMod: 0  AChLRateMod: 0  AChDisInhib: 0  BurstGain: 1  DipGain: 1 }
 }
 Pulv:    {
-  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 60
+  DriveScale: 0.1 FullDriveAct: 0.6 DriveLayIndex: 61
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSCTToCSP
+Path: OFCposCTToCSP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7769,13 +8015,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTpToCSP
+Path: OFCposPTpToCSP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7789,13 +8036,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCposUSPTToCSP
+Path: OFCposPTToCSP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7809,13 +8057,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSCTToCSP
+Path: OFCnegCTToCSP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7829,13 +8078,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTToCSP
+Path: OFCnegPTToCSP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7849,13 +8099,14 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 ///////////////////////////////////////////////////
-Prjn: OFCnegUSPTpToCSP
+Path: OFCnegPTpToCSP
 Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
-PrjnScale: {
+PathScale: {
   Rel: 1 Abs: 1
 }
 SWt: {
@@ -7869,6 +8120,7 @@ Learn: {
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
+  Hebb: {  On: false  Up: 0.5  Down: 1 }
 }
 /////////////////////////////////////////////////
 Layer: ContextIn

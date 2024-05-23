@@ -13,45 +13,45 @@ Debug = false
   SaveAll = false
   Good = true
 
-  [Params.V1V4Prjn]
+  [Params.V1V4Path]
     Recip = false
     Wrap = true
 
-    [Params.V1V4Prjn.Size]
+    [Params.V1V4Path.Size]
       X = 4
       Y = 4
 
-    [Params.V1V4Prjn.Skip]
+    [Params.V1V4Path.Skip]
       X = 2
       Y = 2
 
-    [Params.V1V4Prjn.Start]
+    [Params.V1V4Path.Start]
       X = -1
       Y = -1
 
-    [Params.V1V4Prjn.GaussFull]
+    [Params.V1V4Path.GaussFull]
       On = true
       Sigma = 0.6
       Wrap = true
       CtrMove = 0.8
 
-    [Params.V1V4Prjn.GaussInPool]
+    [Params.V1V4Path.GaussInPool]
       On = true
       Sigma = 0.6
       Wrap = true
       CtrMove = 0.8
 
-    [Params.V1V4Prjn.SigFull]
+    [Params.V1V4Path.SigFull]
       On = false
       Gain = 0.05
       CtrMove = 0.5
 
-    [Params.V1V4Prjn.SigInPool]
+    [Params.V1V4Path.SigInPool]
       On = false
       Gain = 0.05
       CtrMove = 0.5
 
-    [Params.V1V4Prjn.TopoRange]
+    [Params.V1V4Path.TopoRange]
       Min = 0.8
       Max = 1.0
 

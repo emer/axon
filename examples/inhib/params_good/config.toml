@@ -7,7 +7,7 @@ Debug = false
 
 [Params]
   NLayers = 2
-  Sheet = 'FSFFFB Trained'
+  Sheet = ''
   Tag = ''
   Note = ''
   File = ''

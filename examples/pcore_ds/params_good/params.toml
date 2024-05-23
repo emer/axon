@@ -82,18 +82,18 @@
   Sel = ".CTtoPred"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
+    "Path.PathScale.Abs" = "2"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = ".PTtoPred"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
+    "Path.PathScale.Abs" = "1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
@@ -121,160 +121,160 @@
       Tweak = "-"
 
 [[Base]]
-  Sel = ".DSMatrixPrjn"
+  Sel = ".DSMatrixPath"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.02"
-    "Prjn.Learn.Trace.LearnThr" = "0.1"
-    "Prjn.Matrix.BasePF" = "0.005"
-    "Prjn.Matrix.Credit" = "0.6"
-    "Prjn.Matrix.Delta" = "1"
-    "Prjn.PrjnScale.Abs" = "1.8"
-    "Prjn.SWts.Adapt.On" = "false"
+    "Path.Learn.LRate.Base" = "0.02"
+    "Path.Learn.Trace.LearnThr" = "0.1"
+    "Path.Matrix.BasePF" = "0.005"
+    "Path.Matrix.Credit" = "0.6"
+    "Path.Matrix.Delta" = "1"
+    "Path.PathScale.Abs" = "1.8"
+    "Path.SWts.Adapt.On" = "false"
   [Base.Hypers]
-    [Base.Hypers."Prjn.Learn.LRate.Base"]
+    [Base.Hypers."Path.Learn.LRate.Base"]
       Tweak = "-"
-    [Base.Hypers."Prjn.Matrix.BasePF"]
+    [Base.Hypers."Path.Matrix.BasePF"]
       Tweak = "-"
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = ".SuperToPT"
   Desc = "one-to-one from super"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "0.5"
+    "Path.PathScale.Abs" = "0.5"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = ".PTSelfMaint"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
+    "Path.PathScale.Abs" = "1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = ".SuperToThal"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3.0"
+    "Path.PathScale.Abs" = "3.0"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = ".ToM1"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1.5"
+    "Path.PathScale.Abs" = "1.5"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#StateToM1"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
+    "Path.PathScale.Abs" = "1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#DGPiToPF"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "0.4"
+    "Path.PathScale.Abs" = "0.4"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#MotorBSToPF"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
+    "Path.PathScale.Abs" = "1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#DGPiToM1VM"
   Desc = "final inhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
+    "Path.PathScale.Abs" = "2"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#DGPiToMotorBS"
   Desc = "final inhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3"
+    "Path.PathScale.Abs" = "3"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = ".M1ToMotorBS"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
+    "Path.PathScale.Abs" = "2"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#M1PTToMotorBS"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
-    "Prjn.PrjnScale.Rel" = "1"
+    "Path.PathScale.Abs" = "2"
+    "Path.PathScale.Rel" = "1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#M1PTToVL"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
-    "Prjn.PrjnScale.Rel" = "0.1"
+    "Path.PathScale.Abs" = "1"
+    "Path.PathScale.Rel" = "0.1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#M1ToMotorBS"
   Desc = "weaker; note: this is a proxy for cerebellum etc inputs"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1.5"
+    "Path.PathScale.Abs" = "1.5"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#DMtxNoToDMtxGo"
   Desc = "weakish no->go inhibition is beneficial"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Rel" = "0.1"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Rel" = "0.1"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Rel"]
+    [Base.Hypers."Path.PathScale.Rel"]
       Tweak = "-"
 
 [[Base]]
   Sel = "#DGPeAkToDMtxNo"
   Desc = "go disinhibition"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "6"
+    "Path.PathScale.Abs" = "6"
   [Base.Hypers]
-    [Base.Hypers."Prjn.PrjnScale.Abs"]
+    [Base.Hypers."Path.PathScale.Abs"]
       Tweak = "-"
 
 [[NoiseOff]]

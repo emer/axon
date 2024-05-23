@@ -6,7 +6,7 @@ OpenWts = ''
 [Env]
   Config = ''
   NDrives = 4
-  PctCortexStEpc = 50
+  PctCortexStEpc = 10
   PctCortexNEpc = 1
   PctCortex = 0.0
   SameSeed = false
@@ -20,8 +20,8 @@ OpenWts = ''
   Good = true
 
 [Run]
-  GPU = false
-  NData = 1
+  GPU = true
+  NData = 16
   NThreads = 0
   Run = 0
   NRuns = 5
@@ -31,6 +31,16 @@ OpenWts = ''
   PCAInterval = 10
 
 [Log]
+  AggStats = [
+    'Rew_R',
+    'DA_R',
+    'RewPred_R',
+    'VtaDA',
+    'PVposEst',
+    'PVnegEst',
+    'PVposVar',
+    'PVnegVar'
+  ]
   SaveWts = false
   Epoch = true
   Run = true

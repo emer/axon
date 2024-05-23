@@ -13,7 +13,7 @@
     "Layer.Learn.LrnNMDA.MgC" = "1.4"
     "Layer.Learn.LrnNMDA.Tau" = "100"
     "Layer.Learn.LrnNMDA.Voff" = "0"
-    "Layer.Learn.RLRate.SigmoidLinear" = "false"
+    "Layer.Learn.RLRate.SigmoidLinear" = "true"
     "Layer.Learn.TrgAvgAct.SynScaleRate" = "0.0002"
 
 [[Base]]
@@ -65,16 +65,16 @@
     "Layer.Inhib.Layer.Gi" = "1.2"
 
 [[Base]]
-  Sel = "Prjn"
+  Sel = "Path"
   Desc = "yes extra learning factors"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.2"
-    "Prjn.Learn.Trace.SubMean" = "1"
-    "Prjn.SWts.Adapt.LRate" = "0.0001"
-    "Prjn.SWts.Init.SPct" = "1"
+    "Path.Learn.LRate.Base" = "0.2"
+    "Path.Learn.Trace.SubMean" = "1"
+    "Path.SWts.Adapt.LRate" = "0.0001"
+    "Path.SWts.Init.SPct" = "1"
 
 [[Base]]
-  Sel = ".BackPrjn"
-  Desc = "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger"
+  Sel = ".BackPath"
+  Desc = "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger"
   [Base.Params]
-    "Prjn.PrjnScale.Rel" = "0.2"
+    "Path.PathScale.Rel" = "0.2"

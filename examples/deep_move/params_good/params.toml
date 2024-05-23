@@ -94,56 +94,56 @@
     "Layer.Inhib.Layer.Gi" = "0.9"
 
 [[Base]]
-  Sel = "Prjn"
+  Sel = "Path"
   Desc = "std"
   [Base.Params]
-    "Prjn.Com.PFail" = "0.0"
-    "Prjn.Learn.LRate.Base" = "0.02"
-    "Prjn.Learn.Trace.SubMean" = "0"
-    "Prjn.Learn.Trace.Tau" = "2"
-    "Prjn.SWts.Adapt.LRate" = "0.01"
-    "Prjn.SWts.Init.SPct" = "1.0"
+    "Path.Com.PFail" = "0.0"
+    "Path.Learn.LRate.Base" = "0.02"
+    "Path.Learn.Trace.SubMean" = "0"
+    "Path.Learn.Trace.Tau" = "2"
+    "Path.SWts.Adapt.LRate" = "0.01"
+    "Path.SWts.Init.SPct" = "1.0"
 
 [[Base]]
-  Sel = ".BackPrjn"
-  Desc = "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates"
+  Sel = ".BackPath"
+  Desc = "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates"
   [Base.Params]
-    "Prjn.PrjnScale.Rel" = "0.2"
+    "Path.PathScale.Rel" = "0.2"
 
 [[Base]]
-  Sel = ".CTCtxtPrjn"
-  Desc = "all CT context prjns"
+  Sel = ".CTCtxtPath"
+  Desc = "all CT context paths"
   [Base.Params]
-    "Prjn.Com.PFail" = "0.0"
-    "Prjn.Learn.LRate.Base" = "0.002"
-    "Prjn.Learn.Trace.SubMean" = "0"
-    "Prjn.Learn.Trace.Tau" = "2"
+    "Path.Com.PFail" = "0.0"
+    "Path.Learn.LRate.Base" = "0.002"
+    "Path.Learn.Trace.SubMean" = "0"
+    "Path.Learn.Trace.Tau" = "2"
 
 [[Base]]
-  Sel = ".CTFmSuper"
+  Sel = ".CTFromSuper"
   Desc = "1to1 > full"
   [Base.Params]
-    "Prjn.Learn.Learn" = "true"
-    "Prjn.SWts.Init.Mean" = "0.5"
-    "Prjn.SWts.Init.Var" = "0.25"
+    "Path.Learn.Learn" = "true"
+    "Path.SWts.Init.Mean" = "0.5"
+    "Path.SWts.Init.Var" = "0.25"
 
 [[Base]]
-  Sel = ".FmPulv"
+  Sel = ".FromPulv"
   Desc = "defaults to .Back but generally weaker is better"
   [Base.Params]
-    "Prjn.PrjnScale.Rel" = "0.1"
+    "Path.PathScale.Rel" = "0.1"
 
 [[Base]]
   Sel = "#ActionToDepthHid"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Rel" = "2.0"
+    "Path.PathScale.Rel" = "2.0"
 
 [[Hid2]]
   Sel = "#DepthHid2CTToDepthP"
   Desc = ""
   [Hid2.Params]
-    "Prjn.PrjnScale.Rel" = "0.1"
+    "Path.PathScale.Rel" = "0.1"
 
 [[Hid2]]
   Sel = "#DepthHidP"

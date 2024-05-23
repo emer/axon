@@ -45,11 +45,12 @@
     "Layer.Learn.RLRate.On" = "true"
 
 [[Base]]
-  Sel = "#BLAPosExtD2"
+  Sel = "#BLAposExtD2"
   Desc = ""
   [Base.Params]
     "Layer.Inhib.Layer.Gi" = "1.8"
     "Layer.Inhib.Pool.Gi" = "1.0"
+    "Layer.Learn.NeuroMod.DAModGain" = "0"
 
 [[Base]]
   Sel = ".PTMaintLayer"
@@ -58,7 +59,7 @@
     "Layer.Acts.Dend.ModGain" = "1.5"
 
 [[Base]]
-  Sel = "#OFCposUSPT"
+  Sel = "#OFCposPT"
   Desc = ""
   [Base.Params]
     "Layer.Acts.SMaint.Gbar" = "0.4"
@@ -67,7 +68,7 @@
   Sel = ".PTPredLayer"
   Desc = ""
   [Base.Params]
-    "Layer.CT.GeGain" = "0.05"
+    "Layer.CT.GeGain" = "0.1"
 
 [[Base]]
   Sel = ".LDTLayer"
@@ -76,10 +77,10 @@
     "Layer.LDT.MaintInhib" = "0.8"
 
 [[Base]]
-  Sel = "#OFCposUSPTp"
+  Sel = "#OFCposPTp"
   Desc = ""
   [Base.Params]
-    "Layer.Inhib.ActAvg.Nominal" = "0.1"
+    "Layer.Inhib.ActAvg.Nominal" = "0.025"
     "Layer.Inhib.Pool.Gi" = "1"
 
 [[Base]]
@@ -89,71 +90,71 @@
     "Layer.Acts.KNa.Slow.Max" = "0.5"
 
 [[Base]]
-  Sel = "#ContextInToBLAPosExtD2"
-  Desc = "specific to this project"
-  [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.1"
-    "Prjn.PrjnScale.Abs" = "4"
-
-[[Base]]
-  Sel = ".VSMatrixPrjn"
+  Sel = "#CostP"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.Trace.LearnThr" = "0.1"
+    "Layer.Pulv.DriveScale" = "0.2"
+
+[[Base]]
+  Sel = ".VSMatrixPath"
+  Desc = ""
+  [Base.Params]
+    "Path.Learn.Trace.LearnThr" = "0.1"
 
 [[Base]]
   Sel = ".SuperToThal"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4.0"
+    "Path.PathScale.Abs" = "4.0"
 
 [[Base]]
-  Sel = ".BLAExtPrjn"
+  Sel = ".BLAExtPath"
   Desc = ""
   [Base.Params]
-    "Prjn.BLA.NegDeltaLRate" = "1"
-    "Prjn.Learn.LRate.Base" = "0.005"
-
-[[Base]]
-  Sel = ".BLAExtToAcq"
-  Desc = ""
-  [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1"
+    "Path.BLA.NegDeltaLRate" = "1"
+    "Path.Learn.LRate.Base" = "0.05"
+    "Path.PathScale.Abs" = "4"
 
 [[Base]]
   Sel = ".GPiToBGThal"
   Desc = "inhibition from GPi to MD"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "3"
+    "Path.PathScale.Abs" = "3"
 
 [[Base]]
   Sel = ".PTpToBLAExt"
-  Desc = "modulatory, drives extinction learning based on maintained goal rep"
+  Desc = "modulatory so only active with -da, drives extinction learning based on maintained goal rep"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "0.5"
+    "Path.PathScale.Abs" = "1"
 
 [[Base]]
-  Sel = "#BLAPosAcqD1ToOFCposUS"
+  Sel = "#BLAposAcqD1ToOFCpos"
   Desc = "strong, high variance"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "2"
+    "Path.PathScale.Abs" = "2"
+
+[[Base]]
+  Sel = ".CSToBLApos"
+  Desc = ""
+  [Base.Params]
+    "Path.Learn.LRate.Base" = "0.05"
 
 [[Base]]
   Sel = ".BLAAcqToGo"
   Desc = ""
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "4"
+    "Path.PathScale.Abs" = "4"
 
 [[Base]]
   Sel = ".BLAExtToAcq"
   Desc = "fixed inhibitory"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "1.0"
+    "Path.PathScale.Abs" = "1.0"
 
 [[Base]]
-  Sel = ".VSPatchPrjn"
+  Sel = ".VSPatchPath"
   Desc = ""
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.02"
-    "Prjn.Learn.Trace.LearnThr" = "0"
-    "Prjn.PrjnScale.Abs" = "3"
+    "Path.Learn.LRate.Base" = "0.02"
+    "Path.Learn.Trace.LearnThr" = "0"
+    "Path.PathScale.Abs" = "3"

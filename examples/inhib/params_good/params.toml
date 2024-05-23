@@ -44,35 +44,35 @@
     "Layer.Acts.Noise.On" = "true"
 
 [[Base]]
-  Sel = "Prjn"
+  Sel = "Path"
   Desc = "no learning"
   [Base.Params]
-    "Prjn.Com.Delay" = "2"
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.SWts.Init.Mean" = "0.5"
-    "Prjn.SWts.Init.Var" = "0.25"
+    "Path.Com.Delay" = "2"
+    "Path.Learn.Learn" = "false"
+    "Path.SWts.Init.Mean" = "0.5"
+    "Path.SWts.Init.Var" = "0.25"
 
 [[Base]]
-  Sel = ".BackPrjn"
+  Sel = ".BackPath"
   Desc = "feedback excitatory"
   [Base.Params]
-    "Prjn.PrjnScale.Rel" = "0.2"
+    "Path.PathScale.Rel" = "0.2"
 
 [[Base]]
-  Sel = ".InhibPrjn"
-  Desc = "inhibitory projections"
+  Sel = ".InhibPath"
+  Desc = "inhibitory pathways"
   [Base.Params]
-    "Prjn.Com.Delay" = "0"
-    "Prjn.PrjnScale.Abs" = "6"
-    "Prjn.SWts.Init.Mean" = "0.5"
-    "Prjn.SWts.Init.Sym" = "false"
-    "Prjn.SWts.Init.Var" = "0"
+    "Path.Com.Delay" = "0"
+    "Path.PathScale.Abs" = "6"
+    "Path.SWts.Init.Mean" = "0.5"
+    "Path.SWts.Init.Sym" = "false"
+    "Path.SWts.Init.Var" = "0"
 
 [[Base]]
   Sel = ".ToInhib"
-  Desc = "to inhibitory projections"
+  Desc = "to inhibitory pathways"
   [Base.Params]
-    "Prjn.Com.Delay" = "1"
+    "Path.Com.Delay" = "1"
 
 [[FSFFFB]]
   Sel = "Layer"
@@ -88,21 +88,21 @@
     "Layer.Inhib.Layer.SSiTau" = "50"
 
 [[FSFFFB]]
-  Sel = ".InhibPrjn"
-  Desc = "inhibitory projections"
+  Sel = ".InhibPath"
+  Desc = "inhibitory pathways"
   [FSFFFB.Params]
-    "Prjn.PrjnScale.Abs" = "0"
+    "Path.PathScale.Abs" = "0"
 
 [[Trained]]
   Sel = ".Excite"
   Desc = "excitatory connections"
   [Trained.Params]
-    "Prjn.SWts.Init.Mean" = "0.4"
-    "Prjn.SWts.Init.Var" = "0.8"
+    "Path.SWts.Init.Mean" = "0.4"
+    "Path.SWts.Init.Var" = "0.8"
 
 [[Untrained]]
   Sel = ".Excite"
   Desc = "excitatory connections"
   [Untrained.Params]
-    "Prjn.SWts.Init.Mean" = "0.5"
-    "Prjn.SWts.Init.Var" = "0.25"
+    "Path.SWts.Init.Mean" = "0.5"
+    "Path.SWts.Init.Var" = "0.25"

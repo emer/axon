@@ -3,7 +3,7 @@ GUI = false
 Debug = false
 
 [Env]
-  RunName = 'PosAcq_A100'
+  RunName = 'PosAcq_A100B50'
   SetNBlocks = false
   NBlocks = 0
 
@@ -25,7 +25,7 @@ Debug = false
 [Log]
   AggStats = [
     'DA',
-    'VSPatch'
+    'RewPred'
   ]
   SaveWts = false
   Block = true

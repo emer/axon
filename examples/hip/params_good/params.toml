@@ -2,98 +2,98 @@
   Sel = ".InhibLateral"
   Desc = "circle lateral inhibitory connection -- good params, longer time, more ABmem"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Abs" = "0.1"
-    "Prjn.SWts.Init.Sym" = "false"
-    "Prjn.SWts.Init.Var" = "0"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Abs" = "0.1"
+    "Path.SWts.Init.Sym" = "false"
+    "Path.SWts.Init.Var" = "0"
 
 [[Base]]
   Sel = ".HippoCHL"
-  Desc = "hippo CHL projections -- no norm, moment, but YES wtbal = sig better"
+  Desc = "hippo CHL pathways -- no norm, moment, but YES wtbal = sig better"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.2"
-    "Prjn.Learn.Learn" = "true"
+    "Path.Learn.LRate.Base" = "0.2"
+    "Path.Learn.Learn" = "true"
 
 [[Base]]
   Sel = ".PPath"
-  Desc = "performant path, new Dg error-driven EcCa1Prjn prjns"
+  Desc = "performant path, new Dg error-driven EcCa1Path paths"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.2"
-    "Prjn.Learn.Learn" = "true"
+    "Path.Learn.LRate.Base" = "0.2"
+    "Path.Learn.Learn" = "true"
 
 [[Base]]
   Sel = "#CA1ToEC5"
   Desc = "extra strong from CA1 to EC5"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.4"
-    "Prjn.PrjnScale.Abs" = "3.0"
+    "Path.Learn.LRate.Base" = "0.4"
+    "Path.PathScale.Abs" = "3.0"
 
 [[Base]]
   Sel = "#InputToEC2"
   Desc = "for CAN ec2"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Rel" = "2.0"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Rel" = "2.0"
 
 [[Base]]
   Sel = "#InputToEC3"
   Desc = "one-to-one input to EC"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.SWts.Init.Mean" = "0.8"
-    "Prjn.SWts.Init.Var" = "0.0"
+    "Path.Learn.Learn" = "false"
+    "Path.SWts.Init.Mean" = "0.8"
+    "Path.SWts.Init.Var" = "0.0"
 
 [[Base]]
   Sel = "#EC3ToEC2"
   Desc = "copied from InputToEC2"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Abs" = "0.5"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Abs" = "0.5"
 
 [[Base]]
   Sel = "#EC5ToEC3"
   Desc = "one-to-one out to in"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Rel" = "0.5"
-    "Prjn.SWts.Init.Mean" = "0.9"
-    "Prjn.SWts.Init.Var" = "0.01"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Rel" = "0.5"
+    "Path.SWts.Init.Mean" = "0.9"
+    "Path.SWts.Init.Var" = "0.01"
 
 [[Base]]
   Sel = "#DGToCA3"
   Desc = "Mossy fibers: strong, non-learning"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
-    "Prjn.PrjnScale.Abs" = "0.3"
-    "Prjn.PrjnScale.Rel" = "4"
-    "Prjn.SWts.Init.Var" = "0.01"
+    "Path.Learn.Learn" = "false"
+    "Path.PathScale.Abs" = "0.3"
+    "Path.PathScale.Rel" = "4"
+    "Path.SWts.Init.Var" = "0.01"
 
 [[Base]]
   Sel = "#CA3ToCA3"
   Desc = "CA3 recurrent cons: rel=2 still the best"
   [Base.Params]
-    "Prjn.PrjnScale.Abs" = "0.3"
-    "Prjn.PrjnScale.Rel" = "2"
+    "Path.PathScale.Abs" = "0.3"
+    "Path.PathScale.Rel" = "2"
 
 [[Base]]
   Sel = "#EC2ToDG"
   Desc = "DG learning is surprisingly critical: maxed out fast, hebbian works best"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.2"
-    "Prjn.Learn.Learn" = "true"
-    "Prjn.PrjnScale.Abs" = "0.7"
+    "Path.Learn.LRate.Base" = "0.2"
+    "Path.Learn.Learn" = "true"
+    "Path.PathScale.Abs" = "0.7"
 
 [[Base]]
   Sel = "#CA3ToCA1"
   Desc = "Schaffer collaterals -- slower, less hebb"
   [Base.Params]
-    "Prjn.Learn.LRate.Base" = "0.2"
+    "Path.Learn.LRate.Base" = "0.2"
 
 [[Base]]
   Sel = "#EC5ToCA1"
   Desc = "EC5 Perforant Path"
   [Base.Params]
-    "Prjn.PrjnScale.Rel" = "0.3"
+    "Path.PathScale.Rel" = "0.3"
 
 [[Base]]
   Sel = ".EC"

@@ -5,9 +5,6 @@ Debug = false
 [Env]
   UnitsPer = 4
 
-  [Env.Env]
-    PctBlank = 0
-
 [Params]
   Hid2 = false
   Sheet = ''

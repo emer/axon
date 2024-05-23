@@ -24,6 +24,7 @@ Debug = false
   NRuns = 1
   NEpochs = 30
   NTrials = 128
+  NCycles = 300
 
 [Log]
   SaveWts = false

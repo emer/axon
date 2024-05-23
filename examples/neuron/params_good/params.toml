@@ -1,8 +1,8 @@
 [[Base]]
-  Sel = "Prjn"
+  Sel = "Path"
   Desc = "no learning"
   [Base.Params]
-    "Prjn.Learn.Learn" = "false"
+    "Path.Learn.Learn" = "false"
 
 [[Base]]
   Sel = "Layer"
