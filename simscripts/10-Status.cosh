@@ -26,9 +26,11 @@ func JobStatus(jid string, force bool) {
 			@1 echo "Invalid job id" > job.squeue
 			sstat = "Done"
 		case strings.Contains(stat, "RUNNING"):
-			sstat = "Running"
+			nrep := strings.Count(stat, "RUNNING")
+			sstat = fmt.Sprintf("Running:%d", nrep)
 		case strings.Contains(stat, "PENDING"):
-			sstat = "Pending"
+			nrep := strings.Count(stat, "PENDING")
+			sstat = fmt.Sprintf("Pending:%d", nrep)
 		case strings.Contains(stat, "STATE"): // still visible in queue but done
 			sstat = "Done"
 		}
@@ -45,6 +47,7 @@ func JobStatus(jid string, force bool) {
 	@0
 	if sstat == "Done" {
 		shell.WriteFile("job.status", "Finalized")
+		/bin/rm job.*.out
 	}
 	jfiles = `/bin/ls -1 job.*` // local
 	meta := fmt.Sprintf("%s = %q\n", "Version", Version) + fmt.Sprintf("%s = %q\n", "Server", ServerName)
@@ -57,6 +60,7 @@ func JobStatus(jid string, force bool) {
 			key = "ServerStatus"
 		}
 		val := shell.ReadFile(jf)
+		val = elide.Middle(val, 50)
 		ln := fmt.Sprintf("%s = %q\n", key, val)
 		// fmt.Println(ln)
 		meta += ln

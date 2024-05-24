@@ -1,6 +1,10 @@
-// WriteSBatch writes the contents of a SLURM SBatch for submitting job.
+// This submit script handles the SLURM array job case, with an outer
+// startup job that calls the main array jobs and a final cleanup job.
+
+// WriteSBatchHeader writes the header of a SLURM SBatch script
+// that is common across all three scripts.
 // IMPORTANT: set the job parameters here!
-func WriteSBatch(w io.Writer, args string) {
+func WriteSBatchHeader(w io.Writer, jid string) {
 	// max number of hours -- slurm will terminate if longer, so be generous
 	// 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
 	// full run taking about 60 hrs, so use 72
@@ -29,7 +33,7 @@ func WriteSBatch(w io.Writer, args string) {
 	// qos short is short name for queue if name is cutoff
 	qosShort := "oreillyl"
 
-	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprintf(w, "#SBATCH --job-name=%s_%s\n", Project, jid)
 	fmt.Fprintf(w, "#SBATCH --mem-per-cpu=%s\n", mem)
 	fmt.Fprintf(w, "#SBATCH --time=%d:00:00\n", hours)
 	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", tasks)
@@ -37,26 +41,110 @@ func WriteSBatch(w io.Writer, args string) {
 	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", tasksPerNode)
 	// fmt.Fprintf(w, "#SBATCH --qos=%s\n", qos)
 	// fmt.Fprintf(w, "#SBATCH --partition=%s\n", qosShort)
-	fmt.Fprintf(w, "#SBATCH --output=job.out\n")
 	fmt.Fprintf(w, "#SBATCH --mail-type=FAIL\n")
 	fmt.Fprintf(w, "#SBATCH --mail-user=%s\n", User)
 	// these might be needed depending on environment in head node vs. compute nodes
 	// fmt.Fprintf(w, "#SBATCH --export=NONE\n")
 	// fmt.Fprintf(w, "unset SLURM_EXPORT_ENV\n")
+}
+
+func WriteSBatchSetup(w io.Writer, jid string) {
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprint(w, "#SBATCH --output=job.setup.out\n")
+	// fmt.Fprint(w, "#SBATCH --error=job.%A.setup.err")
+	WriteSBatchHeader(w, jid)
+
+	//////////////////////////////////////////////////////////
+	// now we do all the setup, like building the executable
+	
 	fmt.Fprintf(w, "\n\n")
 	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
 	fmt.Fprintf(w, "go build -mod=mod\n")
 	// fmt.Fprintf(w, "/bin/rm images\n")
 	// fmt.Fprintf(w, "ln -s $HOME/ccn_images/CU3D100_20obj8inst_8tick4sac images\n")
 	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.start")
-	fmt.Fprintf(w, "./%s -nogui %s\n", Project, args)
+}
+
+func WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprintf(w, "#SBATCH --array=0-%d\n", NRuns-1)
+	fmt.Fprint(w, "#SBATCH --output=job.%A_%a.out\n")
+	// fmt.Fprint(w, "#SBATCH --error=job.%A_%a.err\n")
+ 	fmt.Fprintf(w, "#SBATCH --dependency=afterany:%s\n", setup_id)
+	WriteSBatchHeader(w, jid)
+
+	//////////////////////////////////////////////////////////
+	// now we run the job
+	
+	fmt.Fprintf(w, "echo $SLURM_ARRAY_JOB_ID\n")
+	fmt.Fprintf(w, "\n\n")
+	// note: could use srun to run job; -nruns = 1 is number to run from run start
+	fmt.Fprintf(w, "./%s -nogui -run $SLURM_ARRAY_TASK_ID -nruns 1 %s\n", Project, args)
+}
+
+func WriteSBatchCleanup(w io.Writer, jid, array_id string) {
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprint(w, "#SBATCH --output=job.cleanup.out\n")
+	// fmt.Fprint(w, "#SBATCH --error=job.cleanup.err")
+ 	fmt.Fprintf(w, "#SBATCH --dependency=afterany:%s\n", array_id)
+	WriteSBatchHeader(w, jid)
+	fmt.Fprintf(w, "\n\n")
+
+	//////////////////////////////////////////////////////////
+	// now we cleanup after all the jobs have run
+	//	can cat results files etc.
+
+ 	fmt.Fprintf(w, "cat job.*.out > job.out\n")
+ 	fmt.Fprintf(w, "/bin/rm job.*.out\n")
+
+ 	fmt.Fprintf(w, "cat *Base*run.tsv > all_run.tsv\n")
+ 	fmt.Fprintf(w, "/bin/rm *Base*run.tsv\n")
+
+ 	fmt.Fprintf(w, "cat *Base*epc.tsv > all_epc.tsv\n")
+ 	fmt.Fprintf(w, "/bin/rm *Base*epc.tsv\n")
+
 	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.end")
 }
 
-func SaveSBatch(args string) {
-	f, _ := os.Create("job.sbatch")
-	defer f.Close()
-	WriteSBatch(f, args)
+func SubmitSBatch(jid, args string) string {
+	@0
+	f, _ := os.Create("job.setup.sbatch")
+	WriteSBatchSetup(f, jid)
+	f.Close()
+	scp job.setup.sbatch @1:job.setup.sbatch
+	sid := RunSBatch("job.setup.sbatch")
+
+	f, _ = os.Create("job.sbatch")
+	WriteSBatchArray(f, jid, sid, args)
+	f.Close()
+	scp job.sbatch @1:job.sbatch
+	aid := RunSBatch("job.sbatch")
+	
+	f, _ = os.Create("job.cleanup.sbatch")
+	WriteSBatchCleanup(f, jid, aid)
+	f.Close()
+	scp job.cleanup.sbatch @1:job.cleanup.sbatch
+	cid := RunSBatch("job.cleanup.sbatch")
+
+	return aid
+}
+
+// RunSBatch runs sbatch on the given sbatch file, 
+// returning the resulting job id.
+func RunSBatch(sbatch string) string {
+	@1
+	sbatch {sbatch} > job.slurm
+	@0
+	ss := `@1 cat job.slurm`
+	if ss == "" {
+		fmt.Println("JobStatus ERROR: no server job.slurm file to get server job id from")
+		@1	cd
+		@0
+		return ""
+	}
+	ssf := strings.Fields(ss)
+	sj := ssf[len(ssf)-1]
+	return sj
 }
 
 // NextJobNumber returns the next sequential job number to use,
@@ -101,7 +189,6 @@ func NewJob(message, args string) {
 	fmt.Println(jpath)
 	os.MkdirAll(jpath, 0750)
 	os.Chdir(jpath)
-	SaveSBatch(args)
 	shell.WriteFile("job.message", message)
 	shell.WriteFile("job.args", args)
 	shell.WriteFile("job.submit", time.Now().Format(TimeFormat))
@@ -112,8 +199,7 @@ func NewJob(message, args string) {
 	cd {spath}
 	@0
 	cd {jpath}
-	scp job.sbatch @1:job.sbatch
-	
+
 	fls := dirs.ExtFilenames(br.StartDir, ".go")
 	// fmt.Println("uploading files:")
 	for _, f := range fls {
@@ -145,24 +231,15 @@ func NewJob(message, args string) {
 	} else {
 		fmt.Println("go.mod file not found!")
 	}
-	@1
-	sbatch job.sbatch > job.slurm
-	@0
-	ss := `@1 cat job.slurm`
-	if ss == "" {
-		fmt.Println("JobStatus ERROR: no server job.slurm file to get server job id from")
-		@1	cd
-		@0
-		return
-	}
-	ssf := strings.Fields(ss)
-	sj := ssf[len(ssf)-1]
-	shell.WriteFile("job.job", sj)
-	fmt.Println("server job id:", sj)
+
+	sid := SubmitSBatch(jid, args)
+	
+	shell.WriteFile("job.job", sid)
+	fmt.Println("server job id:", sid)
 	scp job.job @1:job.job
+	core.MessageSnackbar(br, "Job: " + sid + " successfully submitted")
 	@1 cd
 	@0
-	core.MessageSnackbar(br, "Job: " + sj + " successfully submitted")
 }
 
 func SubmitPrompt() {

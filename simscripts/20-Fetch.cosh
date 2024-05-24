@@ -20,12 +20,20 @@ func FetchJob(jid string, force bool) {
 		// fmt.Println(ff)
 		rfn := "@1:" + ff
 		scp {rfn} {ff}
+		if strings.HasSuffix(ff, ".tsv") {
+			if strings.Contains(ff, "_run") {
+				databrowser.CleanCatTSV(ff, []string{"Run"})
+			} else if strings.Contains(ff, "_epc") {
+				databrowser.CleanCatTSV(ff, []string{"Run", "Epoch"})
+			} 
+		}
 	}
 	@0
 	if sstat == "Finalized" {
 		// fmt.Println("status finalized")
 		shell.WriteFile("job.status", "Fetched")
 		shell.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
+		
 	} else {
 		fmt.Println("status:", sstat)
 	}
@@ -40,7 +48,7 @@ func FetchJobs(path string) {
 		jobs = dirs.Dirs(dpath)
 	}
 	for _, jid := range jobs {
-		FetchJob(jid, false)
+		FetchJob(jid, true)
 	}
 	core.MessageSnackbar(br, "Fetch Jobs completed")
 	Update()

@@ -1,16 +1,9 @@
-package main
-
-// to run:
+// to run, in numbers:
 // databrowser.NewBrowserWindow("simdata")
 
 // note: put all global stuff here so it is loaded once at start
-
-import (
-	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/tensor/tensorview"
-	"cogentcore.org/core/views"
-)
+// do not need import or package (those just require separate compiling
+// because they put the interpreter in a "declaration" mode)
 
 // Result has info for one loaded result, in form of an etable.Table
 type Result struct {
@@ -53,6 +46,7 @@ var (
 	User             = "oreilly"
 	UserShort        = User[:3]
 	Project          = "ra25" // executable, project directory
+	NRuns            = 10 // number of runs -- array args
 	Version          = "v008"
 	FetchFiles       = "*.tsv" // glob expression for files to fetch from server
 	ExtraFiles       = []string{"random_5x5_25.tsv"} // upload with job submit
