@@ -8,7 +8,7 @@ func WriteSBatchHeader(w io.Writer, jid string) {
 	// max number of hours -- slurm will terminate if longer, so be generous
 	// 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
 	// full run taking about 60 hrs, so use 72
-	hours := 1
+	hours := 10
 
 	// memory per CPU, which is only way to allocate on hpc2 (otherwise per node and doesn't fit)
 	// to tune, look at AveRSS from salloc report
@@ -21,7 +21,7 @@ func WriteSBatchHeader(w io.Writer, jid string) {
 	tasks := 1
 
 	// number of cpu cores (threads) per task
-	cpusPerTask := 1
+	cpusPerTask := 8
 
 	// how to allocate tasks within compute nodes
 	// cpus_per_task * tasks_per_node <= total cores per node
@@ -39,6 +39,8 @@ func WriteSBatchHeader(w io.Writer, jid string) {
 	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", tasks)
 	fmt.Fprintf(w, "#SBATCH --cpus-per-task=%d\n", cpusPerTask)
 	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", tasksPerNode)
+	fmt.Fprint(w, "#SBATCH --exclude=agate-[0,45]\n")
+	// fmt.Fprint(w, "#SBATCH --nodelist=agate-[2,19]\n")
 	// fmt.Fprintf(w, "#SBATCH --qos=%s\n", qos)
 	// fmt.Fprintf(w, "#SBATCH --partition=%s\n", qosShort)
 	fmt.Fprintf(w, "#SBATCH --mail-type=FAIL\n")

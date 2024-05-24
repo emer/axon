@@ -45,11 +45,11 @@ type SubmitParams struct {
 var (
 	User             = "oreilly"
 	UserShort        = User[:3]
-	Project          = "ra25" // executable, project directory
+	Project          = "objrec" // executable, project directory
 	NRuns            = 10 // number of runs -- array args
 	Version          = "v008"
 	FetchFiles       = "*.tsv" // glob expression for files to fetch from server
-	ExtraFiles       = []string{"random_5x5_25.tsv"} // upload with job submit
+	ExtraFiles       = []string{} // upload with job submit
 	ServerName       = "hpc2"
 	ServerRoot       = filepath.Join("simdata", Project, User)
 	JobsTableView    *tensorview.TableView

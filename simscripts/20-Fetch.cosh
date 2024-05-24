@@ -20,7 +20,7 @@ func FetchJob(jid string, force bool) {
 		// fmt.Println(ff)
 		rfn := "@1:" + ff
 		scp {rfn} {ff}
-		if strings.HasSuffix(ff, ".tsv") {
+		if sstat == "Finalized" && strings.HasSuffix(ff, ".tsv") {
 			if strings.Contains(ff, "_run") {
 				databrowser.CleanCatTSV(ff, []string{"Run"})
 			} else if strings.Contains(ff, "_epc") {
