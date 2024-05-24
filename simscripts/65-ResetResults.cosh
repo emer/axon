@@ -1,0 +1,11 @@
+
+func ResetResults() {
+	Results = []*Result{}
+	// TODO: currently crashing:
+	// br.NewTabTableView("Results", &Results)
+	// br.Update()
+	core.MessageSnackbar(br, "for now, delete Results tab manually")
+}
+
+ResetResults()
+

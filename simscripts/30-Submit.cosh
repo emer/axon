@@ -1,0 +1,176 @@
+// WriteSBatch writes the contents of a SLURM SBatch for submitting job.
+// IMPORTANT: set the job parameters here!
+func WriteSBatch(w io.Writer, args string) {
+	// max number of hours -- slurm will terminate if longer, so be generous
+	// 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
+	// full run taking about 60 hrs, so use 72
+	hours := 1
+
+	// memory per CPU, which is only way to allocate on hpc2 (otherwise per node and doesn't fit)
+	// to tune, look at AveRSS from salloc report
+	// on a prior job, and divide that by number of tasks
+	// 7 is max per node x 16 nodes x 2 cpus
+	// full orig requires 7G @ 2 CPU
+	mem := "1G" //  3G @ 2 thr is minimum, 5G reserves a node and is sig faster
+
+	// number of mpi "tasks" (procs in MPI terminology)
+	tasks := 1
+
+	// number of cpu cores (threads) per task
+	cpusPerTask := 1
+
+	// how to allocate tasks within compute nodes
+	// cpus_per_task * tasks_per_node <= total cores per node
+	tasksPerNode := 1
+
+	// qos is the queue name
+	qos := "oreillylab"
+
+	// qos short is short name for queue if name is cutoff
+	qosShort := "oreillyl"
+
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprintf(w, "#SBATCH --mem-per-cpu=%s\n", mem)
+	fmt.Fprintf(w, "#SBATCH --time=%d:00:00\n", hours)
+	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", tasks)
+	fmt.Fprintf(w, "#SBATCH --cpus-per-task=%d\n", cpusPerTask)
+	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", tasksPerNode)
+	// fmt.Fprintf(w, "#SBATCH --qos=%s\n", qos)
+	// fmt.Fprintf(w, "#SBATCH --partition=%s\n", qosShort)
+	fmt.Fprintf(w, "#SBATCH --output=job.out\n")
+	fmt.Fprintf(w, "#SBATCH --mail-type=FAIL\n")
+	fmt.Fprintf(w, "#SBATCH --mail-user=%s\n", User)
+	// these might be needed depending on environment in head node vs. compute nodes
+	// fmt.Fprintf(w, "#SBATCH --export=NONE\n")
+	// fmt.Fprintf(w, "unset SLURM_EXPORT_ENV\n")
+	fmt.Fprintf(w, "\n\n")
+	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
+	fmt.Fprintf(w, "go build -mod=mod\n")
+	// fmt.Fprintf(w, "/bin/rm images\n")
+	// fmt.Fprintf(w, "ln -s $HOME/ccn_images/CU3D100_20obj8inst_8tick4sac images\n")
+	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.start")
+	fmt.Fprintf(w, "./%s -nogui %s\n", Project, args)
+	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.end")
+}
+
+func SaveSBatch(args string) {
+	f, _ := os.Create("job.sbatch")
+	defer f.Close()
+	WriteSBatch(f, args)
+}
+
+// NextJobNumber returns the next sequential job number to use,
+// incrementing value saved in last_job.number file
+func NextJobNumber() int {
+	jf := "last_job.number"
+	jnf := shell.ReadFile(jf)
+	jn := 0
+	if jnf != "" {
+		jn, _ = strconv.Atoi(jnf)
+	}
+	jn++
+	shell.WriteFile(jf, strconv.Itoa(jn))
+	return jn
+}
+
+func NextJobID() string {
+	jn := NextJobNumber()
+	jstr := fmt.Sprintf("%s%05d", UserShort, jn)
+	return jstr
+}
+
+// FindGoMod finds the go.mod file starting from the given directory
+func FindGoMod(dir string) string {
+	for {
+		if shell.FileExists(filepath.Join(dir, "go.mod")) {
+			return dir
+		}
+		dir = filepath.Dir(dir)
+		if dir == "" {
+			return ""
+		}
+	}
+	return ""
+}
+
+func NewJob(message, args string) {
+	os.Chdir(br.DataRoot)
+	jid := NextJobID()
+	spath := ServerJobPath(jid)
+	jpath := JobPath(jid)
+	fmt.Println(jpath)
+	os.MkdirAll(jpath, 0750)
+	os.Chdir(jpath)
+	SaveSBatch(args)
+	shell.WriteFile("job.message", message)
+	shell.WriteFile("job.args", args)
+	shell.WriteFile("job.submit", time.Now().Format(TimeFormat))
+	shell.WriteFile("job.status", "Submitted")
+	@1
+	cd
+	mkdir -p {spath}
+	cd {spath}
+	@0
+	cd {jpath}
+	scp job.sbatch @1:job.sbatch
+	
+	fls := dirs.ExtFilenames(br.StartDir, ".go")
+	// fmt.Println("uploading files:")
+	for _, f := range fls {
+		// fmt.Println(f)
+		sfn := filepath.Join(br.StartDir, f)
+		/bin/cp {sfn} {f}
+		scp {sfn} {"@1:"+f}
+	}
+	for _, f := range ExtraFiles {
+		// fmt.Println(f)
+		sfn := filepath.Join(br.StartDir, f)
+		/bin/cp {sfn} {f}
+		scp {sfn} {"@1:"+f}
+	}
+	
+	gomodDir := FindGoMod(br.StartDir)
+	if gomodDir != "" {
+		sfn := filepath.Join(gomodDir, "go.mod")
+		// fmt.Println("go.mod dir:", gomodDir, sfn)
+		scp {sfn} "@1:go.mod"
+		sfn = filepath.Join(gomodDir, "go.sum")		
+		scp {sfn} "@1:go.sum"
+		@1
+		go mod edit -module {Project}
+		go mod tidy
+		@0
+		scp "@1:go.mod" "go.mod"
+		scp "@1:go.sum" "go.sum"
+	} else {
+		fmt.Println("go.mod file not found!")
+	}
+	@1
+	sbatch job.sbatch > job.slurm
+	@0
+	ss := `@1 cat job.slurm`
+	if ss == "" {
+		fmt.Println("JobStatus ERROR: no server job.slurm file to get server job id from")
+		@1	cd
+		@0
+		return
+	}
+	ssf := strings.Fields(ss)
+	sj := ssf[len(ssf)-1]
+	shell.WriteFile("job.job", sj)
+	fmt.Println("server job id:", sj)
+	scp job.job @1:job.job
+	@1 cd
+	@0
+	core.MessageSnackbar(br, "Job: " + sj + " successfully submitted")
+}
+
+func SubmitPrompt() {
+	databrowser.PromptStruct(br, &Submit, "Submit a new job", func() {
+		NewJob(Submit.Message, Submit.Args)
+	})
+	Update()
+}
+
+SubmitPrompt()
+

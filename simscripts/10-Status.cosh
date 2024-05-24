@@ -1,0 +1,79 @@
+
+// JobStatus gets job status from server for given job id.
+// jobs that are already Finalized are skipped, unless force is true.
+func JobStatus(jid string, force bool) {
+	// fmt.Println("############\nStatus of Job:", jid)
+	spath := ServerJobPath(jid)
+	jpath := JobPath(jid)
+	@1
+	cd
+	@0
+	cd {jpath}
+	sstat := shell.ReadFile("job.status")
+	if !force && (sstat == "Finalized" || sstat == "Fetched") {
+		return
+	}
+	@1	cd {spath}
+	@0
+	sj := `@1 cat job.job`
+	// fmt.Println("server job:", sj)
+	if sstat != "Done" {
+		[@1 squeue -j {sj} -o %T >& job.squeue]
+		stat := `@1 cat job.squeue`
+		// fmt.Println("server status:", stat)
+		switch {
+		case strings.Contains(stat, "Invalid job id"):
+			@1 echo "Invalid job id" > job.squeue
+			sstat = "Done"
+		case strings.Contains(stat, "RUNNING"):
+			sstat = "Running"
+		case strings.Contains(stat, "PENDING"):
+			sstat = "Pending"
+		case strings.Contains(stat, "STATE"): // still visible in queue but done
+			sstat = "Done"
+		}
+		shell.WriteFile("job.status", sstat)
+	}
+	@1 /bin/ls -1 > job.files
+	@0
+	jfiles := `@1 /bin/ls -1 job.*`
+	for _, jf := range shell.SplitLines(jfiles) {
+		// fmt.Println(jf)
+		rfn := "@1:" + jf
+		scp {rfn} {jf}
+	}
+	@0
+	if sstat == "Done" {
+		shell.WriteFile("job.status", "Finalized")
+	}
+	jfiles = `/bin/ls -1 job.*` // local
+	meta := fmt.Sprintf("%s = %q\n", "Version", Version) + fmt.Sprintf("%s = %q\n", "Server", ServerName)
+	for _, jf := range shell.SplitLines(jfiles) {
+		key := strcase.ToCamel(strings.TrimPrefix(jf, "job."))
+		switch key {
+		case "Job":
+			key = "ServerJob"
+		case "Squeue":
+			key = "ServerStatus"
+		}
+		val := shell.ReadFile(jf)
+		ln := fmt.Sprintf("%s = %q\n", key, val)
+		// fmt.Println(ln)
+		meta += ln
+	}
+	shell.WriteFile("dbmeta.toml", meta)
+}
+
+func JobsStatus(path string) {
+	@0
+	dpath := filepath.Join(br.DataRoot, path)
+	ds := dirs.Dirs(dpath)
+	for _, jid := range ds {
+		JobStatus(jid, false)
+	}
+	core.MessageSnackbar(br, "Jobs Status completed")
+	Update()
+}
+
+JobsStatus(Version)
+

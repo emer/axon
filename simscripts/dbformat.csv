@@ -1,0 +1,12 @@
+Name, Type
+JobID, string
+Version, string
+Status, string
+Args, string
+Message, string
+Server, string
+ServerJob, string
+ServerStatus, string
+Submit, string
+Start, string
+End, string

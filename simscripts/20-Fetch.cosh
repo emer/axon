@@ -1,0 +1,50 @@
+
+// FetchJob downloads results files from server.
+// if force == true then will re-get already-Fetched jobs,
+// otherwise these are skipped.
+func FetchJob(jid string, force bool) {
+	spath := ServerJobPath(jid)
+	jpath := JobPath(jid)
+	@1
+	cd
+	@0
+	cd {jpath}
+	sstat := shell.ReadFile("job.status")
+	if !force && sstat == "Fetched" {
+		return
+	}
+	@1	cd {spath}
+	@0
+	ffiles := `@1 /bin/ls -1 {FetchFiles}`
+	for _, ff := range shell.SplitLines(ffiles) {
+		// fmt.Println(ff)
+		rfn := "@1:" + ff
+		scp {rfn} {ff}
+	}
+	@0
+	if sstat == "Finalized" {
+		// fmt.Println("status finalized")
+		shell.WriteFile("job.status", "Fetched")
+		shell.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
+	} else {
+		fmt.Println("status:", sstat)
+	}
+}
+
+func FetchJobs(path string) {
+	@0
+	tv := JobsTableView
+	jobs := tv.SelectedColumnStrings("JobID")
+	if len(jobs) == 0 {
+		dpath := filepath.Join(br.DataRoot, path)
+		jobs = dirs.Dirs(dpath)
+	}
+	for _, jid := range jobs {
+		FetchJob(jid, false)
+	}
+	core.MessageSnackbar(br, "Fetch Jobs completed")
+	Update()
+}
+
+FetchJobs(Version)
+

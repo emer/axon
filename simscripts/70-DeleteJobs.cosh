@@ -1,0 +1,35 @@
+// DeleteJobs deletes the given jobs 
+func DeleteJobs(jobs []string, path string) {
+	@0
+	dpath := filepath.Join(br.DataRoot, path)
+	spath := filepath.Join(ServerRoot, path)
+	for _, jid := range jobs {
+		@1
+		cd
+		cd {spath}
+		[/bin/rm -rf {jid}]
+		@0
+		cd {dpath}
+		[/bin/rm -rf {jid}]
+	}
+	@1
+	cd
+	@0
+	core.MessageSnackbar(br, "Done deleting jobs")
+}
+
+func DeleteJobsPrompt(path string) {
+	tv := JobsTableView
+	jobs := tv.SelectedColumnStrings("JobID")
+	if len(jobs) == 0 {
+		core.MessageSnackbar(br, "No jobs selected for deletion")
+		return
+	}
+	databrowser.PromptOKCancel(br, "Ok to delete these jobs: " + strings.Join(jobs, " "), func() {
+		DeleteJobs(jobs, path)
+		Update()
+	})
+}
+
+DeleteJobsPrompt(Version)
+
