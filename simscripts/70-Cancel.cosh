@@ -29,5 +29,5 @@ func CancelJobsPrompt(path string) {
 	})
 }
 
-CancelJobsPrompt(Version)
+CancelJobsPrompt(Config.Version)
 

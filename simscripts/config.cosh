@@ -1,0 +1,208 @@
+import (
+	"fmt"
+	"path/filepath"
+
+	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tensor/tensorview"
+	"cogentcore.org/core/views"
+)
+
+// to run, in numbers:
+// databrowser.NewBrowserWindow("simdata")
+
+// note: all global types and variables are defined here, in a lower-case
+// (non-button creating)a file that is loaded at the start.
+// A sim-specific defaults.cosh file should be defined that will run after this,
+// due to alphabetical ordering, to set the config settings for a given
+// project.
+// No need to use import or package: everything is automatically included.
+
+// FilterResults specifies which results files to open
+type FilterResults struct {
+	// File name contains this string
+	FileContains string `width:"60"`
+
+	//	extension of files, e.g., .tsv
+	Ext string
+}
+
+func (fp *FilterResults) Defaults() {
+	fp.Ext = ".tsv"
+}
+
+// SubmitParams specifies the parameters for submitting a job
+type SubmitParams struct {
+	// Message describing the simulation:
+	// this is key id for what is special about this job
+	Message string `width:"100"`
+
+	//	arguments to pass on the command line.
+	// -nogui is already passed by default
+	Args string
+}
+
+// JobParams are parameters for running the job
+type JobParams struct {
+	// number of parallel runs; can also set to 1 and run multiple runs per job using args
+	NRuns int
+
+	// max number of hours: slurm will terminate if longer, so be generous
+	// 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
+	Hours int
+
+	// memory per CPU in gigabytes
+	Memory int
+
+	// number of mpi "tasks" (procs in MPI terminology)
+	Tasks int
+
+	// number of cpu cores (threads) per task
+	CPUsPerTask int
+
+	// how to allocate tasks within compute nodes
+	// cpus_per_task * tasks_per_node <= total cores per node
+	TasksPerNode int
+
+	// qos is the queue "quality of service" name
+	Qos string
+}
+
+func (jp *JobParams) Defaults() {
+	jp.NRuns = 10
+	jp.Hours = 1
+	jp.Memory = 1
+	jp.Tasks = 1
+	jp.CPUsPerTask = 8
+	jp.TasksPerNode = 1
+}
+
+// Configuration holds all of the user-settable parameters
+type Configuration struct {
+	// user id as in system login name (i.e., user@system)
+	User string
+
+	// first 3 letters of User, for naming jobs (auto-set from User)
+	UserShort string
+
+	// name of simulation project, lowercase (should be name of source dir)
+	Project string
+
+	// current version string, e.g., v008 or v112: names subdirectory of jobs
+	Version string
+
+	// parameters for job resources etc
+	Job JobParams `view:"inline"`
+
+	// glob expression for files to fetch from server, for Fetch command,
+	// is *.tsv by default
+	FetchFiles string
+
+	//	extra files to upload with job submit, from same dir
+	ExtraFiles []string
+
+	// subdirs with other files to upload with job submit (non-code -- see CodeDirs)
+	ExtraDirs []string
+
+	// subdirs with code to upload with job submit; go.mod auto-updated to use
+	CodeDirs []string
+
+	// name of current server using to run jobs; gets recorded with each job
+	ServerName string
+
+	// root path from user home dir on server.
+	// is auto-set to: filepath.Join("simdata", Project, User)
+	ServerRoot string
+
+	// format for timestamps, defaults to "2006-01-02 15:04:05 MST"
+	TimeFormat string
+
+	// Default Plot settings
+	Plot plotview.PlotParams
+
+	// parameters for filtering results
+	Filter FilterResults
+
+	// parameters for submitting jobs; set from last job run
+	Submit SubmitParams
+}
+
+func (cf *Configuration) Defaults() {
+	cf.Job.Defaults()
+	cf.FetchFiles = "*.tsv"
+	cf.Plot.Defaults()
+	cf.Filter.Defaults()
+	cf.Plot.XAxisColumn = "Run"
+	cf.Plot.LegendColumn = "JobID"
+	cf.TimeFormat = "2006-01-02 15:04:05 MST"
+}
+
+func (cf *Configuration) Update() {
+	if cf.Plot.Title == "" {
+		cf.Plot.Title = cf.Project + " " + cf.Version + " Data"
+	}
+	cf.UserShort = cf.User[:3]
+	cf.ServerRoot = filepath.Join("simdata", cf.Project, cf.User)
+}
+
+// Result has info for one loaded result, as an table.Table
+type Result struct {
+
+	// job id for results
+	JobID string
+
+	// description of job
+	Message string
+
+	// args used in running job
+	Args string
+
+	// path to data
+	Path string
+
+	// result data
+	Table *table.Table
+}
+
+var (
+	Config           Configuration
+	JobsTableView    *tensorview.TableView
+	JobsTable        *table.Table
+	ResultsTableView *views.TableView
+	Results          []*Result
+	// function that is run after any action (e.g., Jobs); typically set in Jobs.cosh
+	UpdateFunc func()
+)
+
+func JobPath(jid string) string {
+	return filepath.Join(br.DataRoot, Config.Version, jid)
+}
+
+func ServerJobPath(jid string) string {
+	return filepath.Join(Config.ServerRoot, Config.Version, jid)
+}
+
+// Call update after each action that affects jobs.
+// UpdateFunc is registered in Jobs
+func Update() {
+	if UpdateFunc != nil {
+		UpdateFunc()
+	}
+}
+
+func JobRow(jid string) int {
+	ixs := JobsTable.RowsByString("JobID", jid, table.Equals, table.UseCase)
+	if len(ixs) != 1 {
+		fmt.Println("JobRow ERROR: job id:", jid, "not found")
+		return -1
+	}
+	return ixs[0]
+}
+
+// ValueForJob returns value in given column for given job id
+func ValueForJob(jid, column string) string {
+	if jrow := JobRow(jid); jrow >= 0 {
+		return JobsTable.StringValue(column, jrow)
+	}
+	return ""
+}

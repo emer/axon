@@ -145,6 +145,10 @@ func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
 	newEnv := (len(ss.Envs) == 0)
 
+	if ss.Config.Env.Config != "" {
+		fmt.Println("Env Config:", ss.Config.Env.Config)
+	}
+
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		var trn *armaze.Env
 		if newEnv {

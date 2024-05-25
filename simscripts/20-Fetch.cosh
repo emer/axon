@@ -15,7 +15,7 @@ func FetchJob(jid string, force bool) {
 	}
 	@1	cd {spath}
 	@0
-	ffiles := `@1 /bin/ls -1 {FetchFiles}`
+	ffiles := `@1 /bin/ls -1 {Config.FetchFiles}`
 	for _, ff := range shell.SplitLines(ffiles) {
 		// fmt.Println(ff)
 		rfn := "@1:" + ff
@@ -54,5 +54,5 @@ func FetchJobs(path string) {
 	Update()
 }
 
-FetchJobs(Version)
+FetchJobs(Config.Version)
 

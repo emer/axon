@@ -50,7 +50,7 @@ func JobStatus(jid string, force bool) {
 		/bin/rm job.*.out
 	}
 	jfiles = `/bin/ls -1 job.*` // local
-	meta := fmt.Sprintf("%s = %q\n", "Version", Version) + fmt.Sprintf("%s = %q\n", "Server", ServerName)
+	meta := fmt.Sprintf("%s = %q\n", "Version", Config.Version) + fmt.Sprintf("%s = %q\n", "Server", Config.ServerName)
 	for _, jf := range shell.SplitLines(jfiles) {
 		key := strcase.ToCamel(strings.TrimPrefix(jf, "job."))
 		switch key {
@@ -79,5 +79,5 @@ func JobsStatus(path string) {
 	Update()
 }
 
-JobsStatus(Version)
+JobsStatus(Config.Version)
 

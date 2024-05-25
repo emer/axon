@@ -1,0 +1,7 @@
+// EditConfig edits the configuration
+func EditConfig() {
+	databrowser.PromptStruct(br, &Config, "Configuration parameters", nil)
+}
+
+EditConfig()
+

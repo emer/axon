@@ -2,7 +2,7 @@
 func DeleteJobs(jobs []string, path string) {
 	@0
 	dpath := filepath.Join(br.DataRoot, path)
-	spath := filepath.Join(ServerRoot, path)
+	spath := filepath.Join(Config.ServerRoot, path)
 	for _, jid := range jobs {
 		@1
 		cd
@@ -31,5 +31,5 @@ func DeleteJobsPrompt(path string) {
 	})
 }
 
-DeleteJobsPrompt(Version)
+DeleteJobsPrompt(Config.Version)
 

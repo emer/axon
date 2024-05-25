@@ -27,16 +27,17 @@ func OpenJobs(path string) {
 	}
 	tv.Table.Sequential()
 	br.Update()
-	if dt.Rows > 0 && Submit.Message == "" {
-		Submit.Message = dt.StringValue("Message", dt.Rows-1)
-		Submit.Args = dt.StringValue("Args", dt.Rows-1)
+	if dt.Rows > 0 && Config.Submit.Message == "" {
+		Config.Submit.Message = dt.StringValue("Message", dt.Rows-1)
+		Config.Submit.Args = dt.StringValue("Args", dt.Rows-1)
 	}
 }
 
-OpenJobs(Version)
 
 // Default update function:
 UpdateFunc = func() {
-	OpenJobs(Version)
+	OpenJobs(Config.Version)
 }
+
+OpenJobs(Config.Version)
 
