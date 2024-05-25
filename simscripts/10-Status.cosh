@@ -38,6 +38,7 @@ func JobStatus(jid string, force bool) {
 	}
 	@1 /bin/ls -1 > job.files
 	@0
+	core.MessageSnackbar(br, "Retrieving job files for: " + jid)
 	jfiles := `@1 /bin/ls -1 job.*`
 	for _, jf := range shell.SplitLines(jfiles) {
 		// fmt.Println(jf)
@@ -46,8 +47,9 @@ func JobStatus(jid string, force bool) {
 	}
 	@0
 	if sstat == "Done" {
-		shell.WriteFile("job.status", "Finalized")
-		/bin/rm job.*.out
+		sstat = "Finalized"
+		shell.WriteFile("job.status", sstat)
+		[/bin/rm job.*.out]
 	}
 	jfiles = `/bin/ls -1 job.*` // local
 	meta := fmt.Sprintf("%s = %q\n", "Version", Config.Version) + fmt.Sprintf("%s = %q\n", "Server", Config.ServerName)
@@ -66,6 +68,7 @@ func JobStatus(jid string, force bool) {
 		meta += ln
 	}
 	shell.WriteFile("dbmeta.toml", meta)
+	core.MessageSnackbar(br, "Job: " + jid + " updated with status: " + sstat)
 }
 
 func JobsStatus(path string) {

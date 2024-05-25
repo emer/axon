@@ -187,7 +187,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
 				"Path.PathScale.Rel": "1",
-				"Path.PathScale.Abs": "4",
+				"Path.PathScale.Abs": "4", // 4 > 2 for urgency early
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{

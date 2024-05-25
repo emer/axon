@@ -128,7 +128,7 @@ func NextJobNumber() int {
 	jnf := shell.ReadFile(jf)
 	jn := 0
 	if jnf != "" {
-		jn, _ = strconv.Atoi(jnf)
+		jn, _ = strconv.Atoi(strings.TrimSpace(jnf))
 	}
 	jn++
 	shell.WriteFile(jf, strconv.Itoa(jn))
@@ -160,7 +160,8 @@ func NewJob(message, args string) {
 	jid := NextJobID()
 	spath := ServerJobPath(jid)
 	jpath := JobPath(jid)
-	fmt.Println(jpath)
+	core.MessageSnackbar(br, "Submitting Job: " + jid)
+	// fmt.Println(jpath)
 	os.MkdirAll(jpath, 0750)
 	os.Chdir(jpath)
 	shell.WriteFile("job.message", message)
@@ -234,6 +235,7 @@ func NewJob(message, args string) {
 	@0
 	cd {jpath}
 	
+	core.MessageSnackbar(br, "Job: " + jid + " files copied, now updating go.mod (slow)")
 	gomodDir := FindGoMod(br.StartDir)
 	if gomodDir != "" {
 		sfn := filepath.Join(gomodDir, "go.mod")
@@ -273,7 +275,7 @@ func NewJob(message, args string) {
 	shell.WriteFile("job.job", sid)
 	fmt.Println("server job id:", sid)
 	scp job.job @1:job.job
-	core.MessageSnackbar(br, "Job: " + sid + " successfully submitted")
+	core.MessageSnackbar(br, "Job: " + jid + " server job: " + sid + " successfully submitted")
 	@1 cd
 	@0
 }

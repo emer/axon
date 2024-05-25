@@ -16,6 +16,9 @@ func FetchJob(jid string, force bool) {
 	@1	cd {spath}
 	@0
 	ffiles := `@1 /bin/ls -1 {Config.FetchFiles}`
+	if len(ffiles) > 0 {
+		core.MessageSnackbar(br, fmt.Sprintf("Fetching %d data files for job: %s", len(ffiles), jid))
+	}
 	for _, ff := range shell.SplitLines(ffiles) {
 		// fmt.Println(ff)
 		rfn := "@1:" + ff
