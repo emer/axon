@@ -54,6 +54,9 @@ func JobStatus(jid string, force bool) {
 	jfiles = `/bin/ls -1 job.*` // local
 	meta := fmt.Sprintf("%s = %q\n", "Version", Config.Version) + fmt.Sprintf("%s = %q\n", "Server", Config.ServerName)
 	for _, jf := range shell.SplitLines(jfiles) {
+		if strings.Contains(jf, "sbatch") || strings.HasSuffix(jf, ".out") {
+			continue
+		}
 		key := strcase.ToCamel(strings.TrimPrefix(jf, "job."))
 		switch key {
 		case "Job":
@@ -62,7 +65,9 @@ func JobStatus(jid string, force bool) {
 			key = "ServerStatus"
 		}
 		val := shell.ReadFile(jf)
-		val = elide.Middle(val, 50)
+		if key == "ServerStatus" {
+			val = strings.ReplaceAll(elide.Middle(val, 50), "…", "...")
+		}
 		ln := fmt.Sprintf("%s = %q\n", key, val)
 		// fmt.Println(ln)
 		meta += ln
@@ -76,11 +81,11 @@ func JobsStatus(path string) {
 	dpath := filepath.Join(br.DataRoot, path)
 	ds := dirs.Dirs(dpath)
 	for _, jid := range ds {
-		JobStatus(jid, false)
+		JobStatus(jid, false) // true = update all
 	}
 	core.MessageSnackbar(br, "Jobs Status completed")
 	Update()
 }
 
-JobsStatus(Config.Version)
+{go JobsStatus(Config.Version)}
 

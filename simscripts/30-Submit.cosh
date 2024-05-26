@@ -11,7 +11,9 @@ func WriteSBatchHeader(w io.Writer, jid string) {
 	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", Config.Job.Tasks)
 	fmt.Fprintf(w, "#SBATCH --cpus-per-task=%d\n", Config.Job.CPUsPerTask)
 	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", Config.Job.TasksPerNode)
-	fmt.Fprint(w, "#SBATCH --exclude=agate-[0,45]\n")
+	if Config.ExcludeNodes != "" {
+		fmt.Fprintf(w, "#SBATCH --exclude=%s\n", Config.ExcludeNodes)
+	}
 	// fmt.Fprint(w, "#SBATCH --nodelist=agate-[2,19]\n")
 	// fmt.Fprintf(w, "#SBATCH --qos=%s\n", qos)
 	// fmt.Fprintf(w, "#SBATCH --partition=%s\n", qosShort)
@@ -278,13 +280,13 @@ func NewJob(message, args string) {
 	core.MessageSnackbar(br, "Job: " + jid + " server job: " + sid + " successfully submitted")
 	@1 cd
 	@0
+	Update()
 }
 
 func SubmitPrompt() {
 	databrowser.PromptStruct(br, &Config.Submit, "Submit a new job", func() {
-		NewJob(Config.Submit.Message, Config.Submit.Args)
+		{go NewJob(Config.Submit.Message, Config.Submit.Args)}
 	})
-	Update()
 }
 
 SubmitPrompt()

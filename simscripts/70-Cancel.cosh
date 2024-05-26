@@ -2,7 +2,7 @@
 func CancelJobs(jobs []string, path string) {
 	@0
 	dpath := filepath.Join(br.DataRoot, path)
-	spath := filepath.Join(ServerRoot, path)
+	spath := filepath.Join(Config.ServerRoot, path)
 	@1
 	for _, jid := range jobs {
 		sjob := ValueForJob(jid, "ServerJob")

@@ -20,7 +20,7 @@ import (
 
 // FilterResults specifies which results files to open
 type FilterResults struct {
-	// File name contains this string
+	// File name contains this string, e.g., "_epc" or "_run"
 	FileContains string `width:"60"`
 
 	//	extension of files, e.g., .tsv
@@ -97,6 +97,9 @@ type Configuration struct {
 	// glob expression for files to fetch from server, for Fetch command,
 	// is *.tsv by default
 	FetchFiles string
+
+	// nodes to exclude from job, based on what is slow
+	ExcludeNodes string
 
 	//	extra files to upload with job submit, from same dir
 	ExtraFiles []string

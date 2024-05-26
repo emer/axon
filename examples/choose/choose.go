@@ -191,7 +191,7 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 	rp.Defaults()
 	rp.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
 	rp.USs.PVnegGain = 1 // global scaling of RP neg level -- was 1
-	rp.LHb.VSPatchGain = 4
+	rp.LHb.VSPatchGain = 5
 	rp.LHb.VSPatchNonRewThr = 0.15
 
 	rp.USs.USnegGains[0] = 2 // big salient input!
@@ -648,7 +648,7 @@ func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
 	rp.SetGoalMaintFromLayer(ctx, di, ss.Net, "PLutilPT", 0.2)
 	rp.DecodePVEsts(ctx, di, ss.Net)
 	rp.SetGoalDistEst(ctx, di, float32(ev.Dist))
-	rp.EffortUrgencyUpdate(ctx, di, 1) // note: effort can vary with terrain!
+	rp.EffortUrgencyUpdate(ctx, di, ev.Effort)
 	if ev.USConsumed >= 0 {
 		rp.SetUS(ctx, di, axon.Positive, ev.USConsumed, ev.USValue)
 	}

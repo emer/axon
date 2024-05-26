@@ -1,6 +1,7 @@
 # Basic test of effort cost sensitivity, using GroupGoodBad
 
+NDrives = 3
 Paradigm = "GroupGoodBad"
 EffortRange.Min = 1
-EffortRange.Max = 2
+EffortRange.Max = 10
 

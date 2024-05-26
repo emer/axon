@@ -57,5 +57,5 @@ func FetchJobs(path string) {
 	Update()
 }
 
-FetchJobs(Config.Version)
+{go FetchJobs(Config.Version)}
 

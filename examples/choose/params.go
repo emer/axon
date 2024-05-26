@@ -196,6 +196,15 @@ var ParamSets = netparams.Sets{
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{
 				"Path.PathScale.Rel": "0.1", // 0.1 def
+				"Path.PathScale.Abs": "1",   // 1.5def
+			}},
+		{Sel: "#OFCposToVMtxGo", Desc: "specific best go signal",
+			Params: params.Params{
+				"Path.PathScale.Abs": "3",
+			}},
+		{Sel: "#ILposToVMtxGo", Desc: "specific best go signal",
+			Params: params.Params{
+				"Path.PathScale.Abs": "3",
 			}},
 		{Sel: ".VSPatchPath", Desc: "",
 			Params: params.Params{
