@@ -191,7 +191,7 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 	rp.Defaults()
 	rp.USs.PVposGain = 2 // higher = more pos reward (saturating logistic func)
 	rp.USs.PVnegGain = 1 // global scaling of RP neg level -- was 1
-	rp.LHb.VSPatchGain = 5
+	rp.LHb.VSPatchGain = 4
 	rp.LHb.VSPatchNonRewThr = 0.15
 
 	rp.USs.USnegGains[0] = 2 // big salient input!

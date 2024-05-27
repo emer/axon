@@ -30,7 +30,7 @@ func PlotResults() {
 		}
 	}
 	pl := br.NewTabPlot("Plot")
-	if pl.Params.Title != "" {
+	if pl.Params.Title == "" {
 		pl.Params = Config.Plot
 	}
 	pl.SetTable(AggTable)

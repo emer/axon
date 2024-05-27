@@ -24,11 +24,17 @@ func FetchJob(jid string, force bool) {
 		rfn := "@1:" + ff
 		scp {rfn} {ff}
 		if sstat == "Finalized" && strings.HasSuffix(ff, ".tsv") {
-			if strings.Contains(ff, "_run") {
-				databrowser.CleanCatTSV(ff, []string{"Run"})
-			} else if strings.Contains(ff, "_epc") {
+			if strings.Contains(ff, "_epc.tsv") {
 				databrowser.CleanCatTSV(ff, []string{"Run", "Epoch"})
-			} 
+				idx := strings.Index(ff, "_epc.tsv")
+				tablecat -colavg -col Epoch -o {ff[:idx+1]+"avg"+ff[idx+1:]} {ff}
+			} else if strings.Contains(ff, "_run.tsv") {
+				databrowser.CleanCatTSV(ff, []string{"Run"})
+				idx := strings.Index(ff, "_run.tsv")
+				tablecat -colavg -o {ff[:idx+1]+"avg"+ff[idx+1:]} {ff}
+			} else {
+				databrowser.CleanCatTSV(ff, []string{"Run"})
+			}
 		}
 	}
 	@0
