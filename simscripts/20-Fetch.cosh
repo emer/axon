@@ -9,7 +9,7 @@ func FetchJob(jid string, force bool) {
 	cd
 	@0
 	cd {jpath}
-	sstat := shell.ReadFile("job.status")
+	sstat := cosh.ReadFile("job.status")
 	if !force && sstat == "Fetched" {
 		return
 	}
@@ -19,7 +19,7 @@ func FetchJob(jid string, force bool) {
 	if len(ffiles) > 0 {
 		core.MessageSnackbar(br, fmt.Sprintf("Fetching %d data files for job: %s", len(ffiles), jid))
 	}
-	for _, ff := range shell.SplitLines(ffiles) {
+	for _, ff := range cosh.SplitLines(ffiles) {
 		// fmt.Println(ff)
 		rfn := "@1:" + ff
 		scp {rfn} {ff}
@@ -40,8 +40,8 @@ func FetchJob(jid string, force bool) {
 	@0
 	if sstat == "Finalized" {
 		// fmt.Println("status finalized")
-		shell.WriteFile("job.status", "Fetched")
-		shell.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
+		cosh.WriteFile("job.status", "Fetched")
+		cosh.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
 		
 	} else {
 		fmt.Println("status:", sstat)

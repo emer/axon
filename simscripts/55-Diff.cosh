@@ -1,0 +1,15 @@
+func DiffJobs() {
+	@0
+	tv := JobsTableView
+	jobs := tv.SelectedColumnStrings("JobID")
+	if len(jobs) < 2 {
+		fmt.Println("Requires two Job rows to be selected")
+		return
+	}
+	ja := JobPath(jobs[0])
+	jb := JobPath(jobs[1])
+	databrowser.NewDiffBrowserDirs(ja, jb)
+}
+
+DiffJobs()
+

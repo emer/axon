@@ -18,7 +18,7 @@ func OpenJobs(path string) {
 		dt.SetString("JobID", i, d)
 		dp := filepath.Join(dpath, d)
 		meta := filepath.Join(dp, "dbmeta.toml")
-		if shell.FileExists(meta) {
+		if cosh.FileExists(meta) {
 			md := br.OpenTOML(meta)
 			for k, v := range md {
 				dt.SetString(k, i, v)

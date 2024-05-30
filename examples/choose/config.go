@@ -12,7 +12,7 @@ import "cogentcore.org/core/base/mpi"
 type EnvConfig struct {
 
 	// name of config file that loads into Env.Config for setting environment parameters directly
-	Config string `desc:"name of config file that loads into Env.Config for setting environment parameters directly"`
+	Config string
 
 	// number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome
 	NDrives int `default:"4"`
@@ -106,7 +106,7 @@ type RunConfig struct {
 type LogConfig struct {
 
 	// stats to aggregate separately for good and bad choices
-	AggStats []string `default:"['Rew_R', 'DA_R', 'RewPred_R', 'VtaDA', 'PVposEst', 'PVnegEst', 'PVposVar', 'PVnegVar']"`
+	AggStats []string `default:"['Rew_R', 'DA_R', 'RewPred_R', 'VtaDA', 'PVposEst', 'PVnegEst', 'PVposVar', 'PVnegVar', 'GateVMtxGo', 'GateVMtxNo', 'GateVMtxGoNo', 'GateBLApos']"`
 
 	// if true, save final weights after each run
 	SaveWts bool

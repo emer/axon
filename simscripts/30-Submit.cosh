@@ -127,13 +127,13 @@ func RunSBatch(sbatch string) string {
 // incrementing value saved in last_job.number file
 func NextJobNumber() int {
 	jf := "last_job.number"
-	jnf := shell.ReadFile(jf)
+	jnf := cosh.ReadFile(jf)
 	jn := 0
 	if jnf != "" {
 		jn, _ = strconv.Atoi(strings.TrimSpace(jnf))
 	}
 	jn++
-	shell.WriteFile(jf, strconv.Itoa(jn))
+	cosh.WriteFile(jf, strconv.Itoa(jn))
 	return jn
 }
 
@@ -146,7 +146,7 @@ func NextJobID() string {
 // FindGoMod finds the go.mod file starting from the given directory
 func FindGoMod(dir string) string {
 	for {
-		if shell.FileExists(filepath.Join(dir, "go.mod")) {
+		if cosh.FileExists(filepath.Join(dir, "go.mod")) {
 			return dir
 		}
 		dir = filepath.Dir(dir)
@@ -166,10 +166,10 @@ func NewJob(message, args string) {
 	// fmt.Println(jpath)
 	os.MkdirAll(jpath, 0750)
 	os.Chdir(jpath)
-	shell.WriteFile("job.message", message)
-	shell.WriteFile("job.args", args)
-	shell.WriteFile("job.submit", time.Now().Format(Config.TimeFormat))
-	shell.WriteFile("job.status", "Submitted")
+	cosh.WriteFile("job.message", message)
+	cosh.WriteFile("job.args", args)
+	cosh.WriteFile("job.submit", time.Now().Format(Config.TimeFormat))
+	cosh.WriteFile("job.status", "Submitted")
 	@1
 	cd
 	mkdir -p {spath}
@@ -274,7 +274,7 @@ func NewJob(message, args string) {
 
 	sid := SubmitSBatch(jid, args)
 	
-	shell.WriteFile("job.job", sid)
+	cosh.WriteFile("job.job", sid)
 	fmt.Println("server job id:", sid)
 	scp job.job @1:job.job
 	core.MessageSnackbar(br, "Job: " + jid + " server job: " + sid + " successfully submitted")

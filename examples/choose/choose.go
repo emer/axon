@@ -706,7 +706,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("MaintEarly", 0)
 	ss.Stats.SetFloat("MaintIncon", 0)
 	ss.Stats.SetFloat("GatedAgain", 0)
-	ss.Stats.SetFloat("WrongCSGate", 0)
+	ss.Stats.SetFloat("BadCSGate", 0)
 	ss.Stats.SetFloat("AChShould", 0)
 	ss.Stats.SetFloat("AChShouldnt", 0)
 
@@ -774,7 +774,7 @@ func (ss *Sim) TrialStats(di int) {
 	rp.DecodePVEsts(ctx, diu, ss.Net) // get this for current trial!
 	hasRew := axon.GlbV(ctx, diu, axon.GvHasRew) > 0
 	if hasRew { // exclude data for logging -- will be re-computed at start of next trial
-		// this allows the WrongStats to only record estimates, not actuals
+		// this allows the BadStats to only record estimates, not actuals
 		nan := math32.NaN()
 		axon.SetGlbV(ctx, diu, axon.GvPVposEst, nan)
 		axon.SetGlbV(ctx, diu, axon.GvPVposVar, nan)
@@ -806,7 +806,7 @@ func (ss *Sim) TrialStats(di int) {
 		allGood += 1 - fv
 		agN++
 	}
-	if fv := ss.Stats.Float("WrongCSGate"); !math.IsNaN(fv) {
+	if fv := ss.Stats.Float("BadCSGate"); !math.IsNaN(fv) {
 		allGood += 1 - fv
 		agN++
 	}
@@ -830,10 +830,24 @@ func (ss *Sim) ActionStatsDi(di int) {
 	ss.Stats.SetInt("TraceStateInt", ss.Stats.IntDi("TraceStateInt", di))
 }
 
+// MaxPoolSpkMax returns the maximum across pools of the SpkMax.Plus.Avg stat
+func (ss *Sim) MaxPoolSpkMax(ly *axon.Layer, diu uint32) float32 {
+	np := ly.NPools
+	mx := float32(0)
+	for pi := uint32(1); pi < np; pi++ {
+		v := ly.Pool(pi, diu).AvgMax.SpkMax.Plus.Avg
+		if v > mx {
+			mx = v
+		}
+	}
+	return mx
+}
+
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats(di int) {
 	ctx := &ss.Context
-	rp := &ss.Net.Rubicon
+	net := ss.Net
+	rp := &net.Rubicon
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
@@ -851,12 +865,27 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("GatedEarly", nan)
 	ss.Stats.SetFloat32("MaintEarly", nan)
 	ss.Stats.SetFloat32("GatedAgain", nan)
-	ss.Stats.SetFloat32("WrongCSGate", nan)
 	ss.Stats.SetFloat32("AChShould", nan)
 	ss.Stats.SetFloat32("AChShouldnt", nan)
+	ss.Stats.SetFloat32("BadCSGate", nan)
+	ss.Stats.SetFloat32("GateVMtxGo", nan)
+	ss.Stats.SetFloat32("GateVMtxNo", nan)
+	ss.Stats.SetFloat32("GateVMtxGoNo", nan)
+	ss.Stats.SetFloat32("GateBLApos", nan)
 	hasPos := rp.HasPosUS(ctx, diu)
-	if justGated {
-		ss.Stats.SetFloat32("WrongCSGate", num.FromBool[float32](!ev.ArmIsBest(ev.Arm)))
+	if justGated && !hasPos {
+		ss.Stats.SetFloat32("BadCSGate", num.FromBool[float32](!ev.ArmIsBest(ev.Arm)))
+		vsgo := net.AxonLayerByName("VMtxGo")
+		vsno := net.AxonLayerByName("VMtxNo")
+		goact := ss.MaxPoolSpkMax(vsgo, diu)
+		noact := ss.MaxPoolSpkMax(vsno, diu)
+		ss.Stats.SetFloat32("GateVMtxGo", goact)
+		ss.Stats.SetFloat32("GateVMtxNo", noact)
+		ss.Stats.SetFloat32("GateVMtxGoNo", goact-noact)
+		bla := net.AxonLayerByName("BLAposAcqD1")
+		blact := ss.MaxPoolSpkMax(bla, diu)
+		ss.Stats.SetFloat32("GateBLApos", blact)
+
 	}
 	if ev.ShouldGate {
 		if hasPos {
@@ -905,13 +934,13 @@ func (ss *Sim) MaintStats(di int) {
 		var mact float32
 		if ptly.Is4D() {
 			for pi := uint32(1); pi < ptly.NPools; pi++ {
-				avg := ptly.Pool(pi, uint32(di)).AvgMax.Act.Plus.Avg
+				avg := ptly.Pool(pi, diu).AvgMax.Act.Plus.Avg
 				if avg > mact {
 					mact = avg
 				}
 			}
 		} else {
-			mact = ptly.Pool(0, uint32(di)).AvgMax.Act.Plus.Avg
+			mact = ptly.Pool(0, diu).AvgMax.Act.Plus.Avg
 		}
 		overThr := mact > actThr
 		if overThr {
@@ -968,8 +997,8 @@ func (ss *Sim) ConfigLogs() {
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	// axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	// ss.Logs.PlotItems("GateCS", "GateUS", "WrongCSGate", "Rew_R", "RewPred_R", "DA_R", "MaintEarly")
-	ss.Logs.PlotItems("WrongCSGate", "Wrong0_RewPred_R", "Wrong0_DA_R", "Wrong0_PVposEst", "Wrong0_PVnegEst", "Wrong1_RewPred_R", "Wrong1_DA_R", "Wrong1_PVposEst", "Wrong1_PVnegEst")
+	// ss.Logs.PlotItems("GateCS", "GateUS", "BadCSGate", "Rew_R", "RewPred_R", "DA_R", "MaintEarly")
+	ss.Logs.PlotItems("BadCSGate", "Good_RewPred_R", "Good_DA_R", "Good_PVposEst", "Good_PVnegEst", "Bad_RewPred_R", "Bad_DA_R", "Bad_PVposEst", "Bad_PVnegEst")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -995,11 +1024,14 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("MaintEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("MaintIncon", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedAgain", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
-
 	ss.Logs.AddStatAggItem("SC", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateVMtxGo", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateVMtxNo", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateVMtxGoNo", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateBLApos", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("BadCSGate", etime.Run, etime.Epoch, etime.Trial)
 
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion
@@ -1007,11 +1039,10 @@ func (ss *Sim) ConfigLogItems() {
 		ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
 	}
 
+	stNm := []string{"Good", "Bad"}
 	for wrong := 0; wrong < 2; wrong++ {
-		wrong := wrong
 		for _, st := range ss.Config.Log.AggStats {
-			st := st
-			itmName := fmt.Sprintf("Wrong%d_%s", wrong, st)
+			itmName := fmt.Sprintf("%s_%s", stNm[wrong], st)
 			ss.Logs.AddItem(&elog.Item{
 				Name: itmName,
 				Type: reflect.Float64,
@@ -1072,25 +1103,26 @@ func (ss *Sim) ConfigLogItems() {
 	}
 }
 
-// EpochWrongStats aggregates stats separately for WrongCSGate = 0 vs. 1
-// i.e., for trials when it selects the "wrong" option (not the best) = (Wrong1)
-// vs. when it does select the best option (Wrong0)
-func (ss *Sim) EpochWrongStats() {
-	lgnm := "EpochWrongStats"
+// EpochBadStats aggregates stats separately for BadCSGate = 0 vs. 1
+// i.e., for trials when it selects the "wrong" option (not the best) = (Bad)
+// vs. when it does select the best option (Good)
+func (ss *Sim) EpochBadStats() {
+	lgnm := "EpochBadStats"
 
 	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
 	ix.Filter(func(et *table.Table, row int) bool {
-		return !math.IsNaN(et.Float("WrongCSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
+		return !math.IsNaN(et.Float("BadCSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
 	})
-	spl := split.GroupBy(ix, []string{"WrongCSGate"})
+	spl := split.GroupBy(ix, []string{"BadCSGate"})
 	for _, ts := range ix.Table.ColumnNames {
 		col := ix.Table.ColumnByName(ts)
-		if col.DataType() == reflect.String || ts == "WrongCSGate" {
+		if col.DataType() == reflect.String || ts == "BadCSGate" {
 			continue
 		}
 		split.AggColumn(spl, ts, stats.Mean)
 	}
 	dt := spl.AggsToTable(table.ColumnNameOnly)
+	ix.Sequential() // return to full table for subsequent use
 	dt.SetMetaData("Rew_R:On", "+")
 	dt.SetMetaData("DA_R:On", "+")
 	dt.SetMetaData("RewPred_R:On", "+")
@@ -1107,10 +1139,11 @@ func (ss *Sim) EpochWrongStats() {
 
 	// grab selected stats at CS and US for higher level aggregation,
 	nrows := dt.Rows
+	stNm := []string{"Good", "Bad"}
 	for ri := 0; ri < nrows; ri++ {
-		wrong := dt.Float("WrongCSGate", ri)
+		wrong := dt.Float("BadCSGate", ri)
 		for _, st := range ss.Config.Log.AggStats {
-			ss.Stats.SetFloat(fmt.Sprintf("Wrong%d_%s", int(wrong), st), dt.Float(st, ri))
+			ss.Stats.SetFloat(fmt.Sprintf("%s_%s", stNm[int(wrong)], st), dt.Float(st, ri))
 		}
 	}
 
@@ -1154,7 +1187,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 					drow := ss.Logs.Table(etime.Debug, time).Rows
 					ss.Logs.LogRow(etime.Debug, time, drow)
 					if ss.StopOnSeq {
-						hasRew := axon.GlbV(ctx, uint32(di), axon.GvHasRew) > 0
+						hasRew := axon.GlbV(ctx, diu, axon.GvHasRew) > 0
 						if hasRew {
 							ss.Loops.Stop(etime.Trial)
 						}
@@ -1175,7 +1208,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		}
 	case mode == etime.Train && time == etime.Epoch:
 		axon.LayerActsLogAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
-		ss.EpochWrongStats()
+		ss.EpochBadStats()
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -1242,12 +1275,12 @@ func (ss *Sim) ConfigGUI() {
 
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
-	lgnm := "EpochWrongStats"
+	lgnm := "EpochBadStats"
 	dt := ss.Logs.MiscTable(lgnm)
 	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
 	plt.Params.Title = lgnm
-	plt.Params.XAxisColumn = "WrongCSGate"
+	plt.Params.XAxisColumn = "BadCSGate"
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {

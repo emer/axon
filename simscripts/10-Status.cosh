@@ -9,7 +9,7 @@ func JobStatus(jid string, force bool) {
 	cd
 	@0
 	cd {jpath}
-	sstat := shell.ReadFile("job.status")
+	sstat := cosh.ReadFile("job.status")
 	if !force && (sstat == "Finalized" || sstat == "Fetched") {
 		return
 	}
@@ -34,13 +34,13 @@ func JobStatus(jid string, force bool) {
 		case strings.Contains(stat, "STATE"): // still visible in queue but done
 			sstat = "Done"
 		}
-		shell.WriteFile("job.status", sstat)
+		cosh.WriteFile("job.status", sstat)
 	}
 	@1 /bin/ls -1 > job.files
 	@0
 	core.MessageSnackbar(br, "Retrieving job files for: " + jid)
 	jfiles := `@1 /bin/ls -1 job.*`
-	for _, jf := range shell.SplitLines(jfiles) {
+	for _, jf := range cosh.SplitLines(jfiles) {
 		// fmt.Println(jf)
 		rfn := "@1:" + jf
 		scp {rfn} {jf}
@@ -48,12 +48,12 @@ func JobStatus(jid string, force bool) {
 	@0
 	if sstat == "Done" {
 		sstat = "Finalized"
-		shell.WriteFile("job.status", sstat)
+		cosh.WriteFile("job.status", sstat)
 		[/bin/rm job.*.out]
 	}
 	jfiles = `/bin/ls -1 job.*` // local
 	meta := fmt.Sprintf("%s = %q\n", "Version", Config.Version) + fmt.Sprintf("%s = %q\n", "Server", Config.ServerName)
-	for _, jf := range shell.SplitLines(jfiles) {
+	for _, jf := range cosh.SplitLines(jfiles) {
 		if strings.Contains(jf, "sbatch") || strings.HasSuffix(jf, ".out") {
 			continue
 		}
@@ -64,7 +64,7 @@ func JobStatus(jid string, force bool) {
 		case "Squeue":
 			key = "ServerStatus"
 		}
-		val := shell.ReadFile(jf)
+		val := cosh.ReadFile(jf)
 		if key == "ServerStatus" {
 			val = strings.ReplaceAll(elide.Middle(val, 50), "…", "...")
 		}
@@ -72,7 +72,7 @@ func JobStatus(jid string, force bool) {
 		// fmt.Println(ln)
 		meta += ln
 	}
-	shell.WriteFile("dbmeta.toml", meta)
+	cosh.WriteFile("dbmeta.toml", meta)
 	core.MessageSnackbar(br, "Job: " + jid + " updated with status: " + sstat)
 }
 
