@@ -195,7 +195,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".CSToBLApos", Desc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.01", // 0.02 > 0.01 for early gating; 0.01 more consistent
+				"Path.Learn.LRate.Base": "0.01", // 0.01 > 0.02 much better long term
 			}},
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{

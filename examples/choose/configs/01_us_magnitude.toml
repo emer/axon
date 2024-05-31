@@ -2,6 +2,6 @@
 
 NDrives = 3
 Paradigm = "GroupGoodBad"
-USMagRange.Min = 0.2 # 0.2 works
+USMagRange.Min = 0.4 # 0.2 works
 USMagRange.Max = 1
 
