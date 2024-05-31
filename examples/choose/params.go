@@ -182,7 +182,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtPath", Desc: "ext learns relatively fast",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.05",
+				"Path.Learn.LRate.Base": "0.05", // 0.05 > 0.02 = 0.01
 			}},
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
@@ -191,7 +191,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "2", // note: key param -- 0.5 > 1
+				"Path.PathScale.Abs": "1", // 1 == 2
+			}},
+		{Sel: ".CSToBLApos", Desc: "",
+			Params: params.Params{
+				"Path.Learn.LRate.Base": "0.01", // 0.02 > 0.01 for early gating; 0.01 more consistent
 			}},
 		{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 			Params: params.Params{
@@ -211,10 +215,6 @@ var ParamSets = netparams.Sets{
 				"Path.PathScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
 				"Path.Learn.Trace.LearnThr": "0",
 				"Path.Learn.LRate.Base":     "0.02", // 0.02 needed in test; better overall
-			}},
-		{Sel: "#CSToBLAposAcqD1", Desc: "",
-			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.02", // was 0.5 -- too fast!?
 			}},
 		{Sel: ".CSToBLANovelInhib", Desc: "",
 			Params: params.Params{

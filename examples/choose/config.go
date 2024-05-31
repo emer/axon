@@ -105,9 +105,6 @@ type RunConfig struct {
 // LogConfig has config parameters related to logging data
 type LogConfig struct {
 
-	// stats to aggregate separately for good and bad choices
-	AggStats []string `default:"['Rew_R', 'DA_R', 'RewPred_R', 'VtaDA', 'PVposEst', 'PVnegEst', 'PVposVar', 'PVnegVar', 'GateVMtxGo', 'GateVMtxNo', 'GateVMtxGoNo', 'GateBLApos']"`
-
 	// if true, save final weights after each run
 	SaveWts bool
 
