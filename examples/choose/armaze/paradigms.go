@@ -36,15 +36,18 @@ func (ev *Env) ConfigGroupGoodBad() {
 
 	ai := 0
 	for gi := 0; gi < 2; gi++ {
-		length := cfg.LengthRange.Min
-		eff := cfg.EffortRange.Min
-		mag := cfg.USMagRange.Max
-		prob := cfg.USProbRange.Max
-		if gi == 1 {
+		var eff, mag, prob float32
+		var length int
+		if gi == 1 { // note: this is critical: if bad is at 0, it can randomly get stuck
 			length = cfg.LengthRange.Max
 			eff = cfg.EffortRange.Max
 			mag = cfg.USMagRange.Min
 			prob = cfg.USProbRange.Min
+		} else { // good case
+			length = cfg.LengthRange.Min
+			eff = cfg.EffortRange.Min
+			mag = cfg.USMagRange.Max
+			prob = cfg.USProbRange.Max
 		}
 
 		for ui := 0; ui < cfg.NUSs; ui++ {

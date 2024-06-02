@@ -691,6 +691,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetInt("Di", 0)
 	ss.Stats.SetFloat("PctCortex", 0)
 	ss.Stats.SetFloat("Pos", 0)
+	ss.Stats.SetFloat("Arm", 0)
 	ss.Stats.SetFloat("Dist", 0)
 	ss.Stats.SetFloat("Drive", 0)
 	ss.Stats.SetFloat("CS", 0)
@@ -746,9 +747,9 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	ss.Stats.SetFloat32("PctCortex", ss.Config.Env.PctCortex)
+	ss.Stats.SetFloat32("Arm", float32(ev.Arm))
 	ss.Stats.SetFloat32("Pos", float32(ev.Pos))
 	ss.Stats.SetFloat32("Dist", float32(ev.Dist))
-	ss.Stats.SetFloat32("Arm", float32(ev.Arm))
 	// ss.Stats.SetFloat32("Drive", float32(ev.Drive))
 	ss.Stats.SetFloat32("CS", float32(ev.CurCS()))
 	ss.Stats.SetFloat32("US", float32(ev.USConsumed))
@@ -881,11 +882,13 @@ func (ss *Sim) GatedStats(di int) {
 	ss.Stats.SetFloat32("GateBLAposExt", nan)
 	ss.Stats.SetFloat32("GateBLAposAcqExt", nan)
 	hasPos := rp.HasPosUS(ctx, diu)
+	armIsBest := ev.ArmIsBest(ev.Arm)
+	armIsBad := num.FromBool[float32](!armIsBest)
 	if justGated {
 		if hasPos {
-			ss.Stats.SetFloat32("BadUSGate", num.FromBool[float32](!ev.ArmIsBest(ev.Arm)))
+			ss.Stats.SetFloat32("BadUSGate", armIsBad)
 		} else {
-			ss.Stats.SetFloat32("BadCSGate", num.FromBool[float32](!ev.ArmIsBest(ev.Arm)))
+			ss.Stats.SetFloat32("BadCSGate", armIsBad)
 			vsgo := net.AxonLayerByName("VMtxGo")
 			vsno := net.AxonLayerByName("VMtxNo")
 			goact := ss.MaxPoolSpkMax(vsgo, diu)
@@ -992,7 +995,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
-	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Pos", "Dist", "US")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Arm", "Pos", "Dist", "US")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction", "TraceState")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)

@@ -27,7 +27,7 @@ func WriteSBatchHeader(w io.Writer, jid string) {
 func WriteSBatchSetup(w io.Writer, jid string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 	fmt.Fprint(w, "#SBATCH --output=job.setup.out\n")
-	// fmt.Fprint(w, "#SBATCH --error=job.%A.setup.err")
+	fmt.Fprint(w, "#SBATCH --error=job.setup.err\n")
 	WriteSBatchHeader(w, jid)
 
 	//////////////////////////////////////////////////////////
@@ -157,12 +157,64 @@ func FindGoMod(dir string) string {
 	return ""
 }
 
+// GoModulePath returns the overall module path for project
+// in given directory, and the full module path to the current
+// project, which is a subdirectory within the module.
+func GoModulePath(dir string) (modpath, fullpath string) {
+	@0
+	os.Chdir(dir)
+	cd {dir}
+	gg := cosh.SplitLines(`go mod graph`)
+	gg = strings.Fields(gg[0])
+	modpath = gg[0]
+
+	// strategy: go up the dir until the dir name matches the last element of modpath
+	dirsp := strings.Split(dir, "/")
+	n := len(dirsp)
+	for i := n-1; i >= 0; i-- {
+		d := dirsp[i]
+		if strings.HasSuffix(modpath, d) {
+			fullpath = filepath.Join(modpath, strings.Join(dirsp[i+1:], "/"))
+			break
+		}
+	}
+	return
+}
+
+// CopyFilesToJob copies files with given extensions (none for all),
+// from localSrc to localJob and remote hostJob (@1).
+// Ensures directories are made in the job locations
+func CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
+	@0
+	mkdir -p {localJob}
+	cd {localJob}
+	@1
+	cd
+	mkdir -p {hostJob}
+	cd {hostJob}
+	@0
+	efls := dirs.ExtFilenames(localSrc, exts...)
+	for _, f := range efls {
+		sfn := filepath.Join(localSrc, f)
+		/bin/cp {sfn} {f}
+		scp {sfn} {"@1:"+f}
+	}
+}
+
 func NewJob(message, args string) {
 	os.Chdir(br.DataRoot)
 	jid := NextJobID()
 	spath := ServerJobPath(jid)
 	jpath := JobPath(jid)
 	core.MessageSnackbar(br, "Submitting Job: " + jid)
+
+	gomodDir := FindGoMod(br.StartDir)
+	modulePath, fullPath := GoModulePath(br.StartDir)
+	projPath := filepath.Join("emer", Config.Project)
+	
+	// fmt.Println("go.mod:", gomodDir, "\nmodule:", modulePath, "\nfull path:", fullPath, "\njob proj:", projPath)
+	
+	@0
 	// fmt.Println(jpath)
 	os.MkdirAll(jpath, 0750)
 	os.Chdir(jpath)
@@ -170,66 +222,45 @@ func NewJob(message, args string) {
 	cosh.WriteFile("job.args", args)
 	cosh.WriteFile("job.submit", time.Now().Format(Config.TimeFormat))
 	cosh.WriteFile("job.status", "Submitted")
+
+	//	need to do sub-code first and update paths in copied files
+	codepaths := make([]string, len(Config.CodeDirs))
+	for i, ed := range Config.CodeDirs {
+		@0
+		loce := filepath.Join(br.StartDir, ed)
+		codepaths[i] = filepath.Join(fullPath, ed)
+		jpathe := filepath.Join(jpath, ed)
+		spathe := filepath.Join(spath, ed)
+		CopyFilesToJob(loce, jpathe, spathe, ".go")
+	}
+	// copy local files:
 	@1
 	cd
 	mkdir -p {spath}
 	cd {spath}
 	@0
 	cd {jpath}
-
 	fls := dirs.ExtFilenames(br.StartDir, ".go")
-	// fmt.Println("uploading files:")
 	for _, f := range fls {
-		// fmt.Println(f)
 		sfn := filepath.Join(br.StartDir, f)
 		/bin/cp {sfn} {f}
-		scp {sfn} {"@1:"+f}
+		for i, ed := range Config.CodeDirs {
+			subpath := filepath.Join(projPath, ed)
+			// fmt.Println("replace in:", f, codepaths[i], "->", subpath)
+			cosh.ReplaceInFile(f, codepaths[i], subpath)
+		}
+		scp {f} {"@1:"+f}
 	}
 	for _, f := range Config.ExtraFiles {
-		// fmt.Println(f)
 		sfn := filepath.Join(br.StartDir, f)
 		/bin/cp {sfn} {f}
 		scp {sfn} {"@1:"+f}
 	}
 	for _, ed := range Config.ExtraDirs {
-		@0
 		jpathe := filepath.Join(jpath, ed)
 		spathe := filepath.Join(spath, ed)
 		loce := filepath.Join(br.StartDir, ed)
-		mkdir -p {jpathe}
-		cd {jpathe}
-		@1
-		cd
-		mkdir -p {spathe}
-		cd {spathe}
-		@0
-		efls := dirs.ExtFilenames(loce)
-		for _, f := range efls {
-			// fmt.Println("extra dir file:", f)
-			sfn := filepath.Join(loce, f)
-			/bin/cp {sfn} {f}
-			scp {sfn} {"@1:"+f}
-		}
-	}
-	for _, ed := range Config.CodeDirs {
-		@0
-		jpathe := filepath.Join(jpath, ed, "v2") // note: v2 required b/c axon/v2
-		spathe := filepath.Join(spath, ed, "v2")
-		loce := filepath.Join(br.StartDir, ed)
-		mkdir -p {jpathe}
-		cd {jpathe}
-		@1
-		cd
-		mkdir -p {spathe}
-		cd {spathe}
-		@0
-		efls := dirs.ExtFilenames(loce, ".go")
-		for _, f := range efls {
-			// fmt.Println(f)
-			sfn := filepath.Join(loce, f)
-			/bin/cp {sfn} {f}
-			scp {sfn} {"@1:"+f}
-		}
+		CopyFilesToJob(loce, jpathe, spathe)
 	}
 	@1
 	cd
@@ -237,8 +268,7 @@ func NewJob(message, args string) {
 	@0
 	cd {jpath}
 	
-	core.MessageSnackbar(br, "Job: " + jid + " files copied, now updating go.mod (slow)")
-	gomodDir := FindGoMod(br.StartDir)
+	core.MessageSnackbar(br, "Job: " + jid + " files copied")
 	if gomodDir != "" {
 		sfn := filepath.Join(gomodDir, "go.mod")
 		// fmt.Println("go.mod dir:", gomodDir, sfn)
@@ -246,24 +276,7 @@ func NewJob(message, args string) {
 		sfn = filepath.Join(gomodDir, "go.sum")		
 		scp {sfn} "@1:go.sum"
 		@1
-		go mod edit -module {Config.Project}
-		for _, ed := range Config.CodeDirs {
-			ed2 := ed+"/v2"
-			cd {ed2}
-			cp ../../go.mod .
-			go mod edit -module {ed}
-			go mod tidy
-			@0
-			scp "@1:go.mod" {ed2+"/go.mod"}
-			scp "@1:go.sum" {ed2+"/go.sum"}
-			@1
-			cd ../../
-		}
-		for _, ed := range Config.CodeDirs {
-			orig := "github.com/emer/axon/v2/examples/" + Config.Project + "/" + ed
-			repl := "./" + ed
-			go mod edit -replace {orig+"="+repl}
-		}
+		go mod edit -module {projPath}
 		go mod tidy
 		@0
 		scp "@1:go.mod" "go.mod"

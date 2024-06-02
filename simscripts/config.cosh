@@ -35,11 +35,11 @@ func (fp *FilterResults) Defaults() {
 type SubmitParams struct {
 	// Message describing the simulation:
 	// this is key id for what is special about this job
-	Message string `width:"100"`
+	Message string `width:"60"`
 
 	//	arguments to pass on the command line.
 	// -nogui is already passed by default
-	Args string
+	Args string `width:"60"`
 }
 
 // JobParams are parameters for running the job
