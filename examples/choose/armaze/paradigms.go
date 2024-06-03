@@ -38,7 +38,7 @@ func (ev *Env) ConfigGroupGoodBad() {
 	for gi := 0; gi < 2; gi++ {
 		var eff, mag, prob float32
 		var length int
-		if gi == 1 { // note: this is critical: if bad is at 0, it can randomly get stuck
+		if gi == 0 { // bad case: there is a small but significant left side bias, so make this on bad
 			length = cfg.LengthRange.Max
 			eff = cfg.EffortRange.Max
 			mag = cfg.USMagRange.Min
