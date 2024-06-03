@@ -1,0 +1,30 @@
+
+Layer: Layer0
+
+Layer: Layer1
+	         Layer0	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.83
+	         Inhib1	      InhibPath	Abs:	  6.00	Rel:	  1.00	GScale:	  0.60	Rel:  1.00
+								    Abs Params: .InhibPath: 6
+	         Layer2	       BackPath	Abs:	  1.00	Rel:	  0.20	GScale:	  0.02	Rel:  0.17
+								    Rel Params: .BackPath: 0.2
+
+Layer: Inhib1
+	         Layer0	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.45
+	         Layer1	       BackPath	Abs:	  1.00	Rel:	  0.20	GScale:	  0.01	Rel:  0.09
+								    Rel Params: .BackPath: 0.2
+	         Inhib1	      InhibPath	Abs:	  6.00	Rel:	  1.00	GScale:	  0.60	Rel:  1.00
+								    Abs Params: .InhibPath: 6
+	         Layer2	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.45
+
+Layer: Layer2
+	         Layer1	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.50
+	         Layer1	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.50
+	         Inhib2	      InhibPath	Abs:	  6.00	Rel:	  1.00	GScale:	  0.60	Rel:  1.00
+								    Abs Params: .InhibPath: 6
+
+Layer: Inhib2
+	         Layer1	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.83
+	         Layer2	       BackPath	Abs:	  1.00	Rel:	  0.20	GScale:	  0.02	Rel:  0.17
+								    Rel Params: .BackPath: 0.2
+	         Inhib2	      InhibPath	Abs:	  6.00	Rel:	  1.00	GScale:	  0.60	Rel:  1.00
+								    Abs Params: .InhibPath: 6

@@ -1,0 +1,38 @@
+
+Layer: Input
+
+Layer: EC2
+	            EC3	    ForwardPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
+								    Abs Params: #EC3ToEC2: 0.5
+	            EC2	      InhibPath	Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
+								    Abs Params: .InhibLateral: 0.1
+	          Input	    ForwardPath	Abs:	  1.00	Rel:	  2.00	GScale:	  0.07	Rel:  0.67
+								    Rel Params: Base:#InputToEC2: 2.0
+
+Layer: DG
+	            EC2	        HipPath	Abs:	  0.70	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
+								    Abs Params: #EC2ToDG: 0.7
+
+Layer: CA3
+	            EC2	        HipPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.14
+	            CA3	        HipPath	Abs:	  0.30	Rel:	  2.00	GScale:	  0.02	Rel:  0.29
+								    Abs Params: #CA3ToCA3: 0.3
+								    Rel Params: #CA3ToCA3: 2
+	             DG	    ForwardPath	Abs:	  0.30	Rel:	  4.00	GScale:	  0.06	Rel:  0.57
+								    Abs Params: #DGToCA3: 0.3
+								    Rel Params: #DGToCA3: 4
+
+Layer: EC3
+	            EC5	       BackPath	Abs:	  1.00	Rel:	  0.50	GScale:	  0.33	Rel:  0.33
+								    Rel Params: #EC5ToEC3: 0.5
+	          Input	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.67	Rel:  0.67
+
+Layer: CA1
+	            CA3	        HipPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.43
+	            EC3	        HipPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.43
+	            EC5	        HipPath	Abs:	  1.00	Rel:	  0.30	GScale:	  0.03	Rel:  0.13
+								    Rel Params: Base:#EC5ToCA1: 0.3
+
+Layer: EC5
+	            CA1	    ForwardPath	Abs:	  3.00	Rel:	  1.00	GScale:	  0.60	Rel:  1.00
+								    Abs Params: Base:#CA1ToEC5: 3.0

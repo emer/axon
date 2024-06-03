@@ -1,0 +1,30 @@
+           Item		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+          ItemP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+           Time		Nominal:	  0.05	Params: .Time: 0.05
+						Layer.Gi:	  0.90	
+
+          TimeP		Nominal:	  0.05	Params: .Time: 0.05
+						Layer.Gi:	  1.00	
+
+            GPi		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+            PFC		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+          PFCCT		Nominal:	  0.10	
+						Layer.Gi:	  1.40	Params: .CTLayer: 1.4
+
+          PFCPT		Nominal:	  0.10	Params: .PTMaintLayer: 0.1
+						Layer.Gi:	  0.50	Params: .PTMaintLayer: 0.5
+
+        PFCThal		Nominal:	  0.10	
+						Layer.Gi:	  0.60	
+
+         PFCPTp		Nominal:	  0.10	
+						Layer.Gi:	  0.80	Params: .PTPredLayer: 0.8
+

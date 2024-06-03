@@ -58,10 +58,10 @@
            VSTN		Nominal:	  0.15	
 						Layer.Gi:	  0.50	
 
-         VMtxGo		Nominal:	  0.02	
+         VMtxGo		Nominal:	  0.03	
 						Pool.Gi: 	  0.50	Params: .VSMatrixLayer: 0.5
 
-         VMtxNo		Nominal:	  0.02	
+         VMtxNo		Nominal:	  0.03	
 						Pool.Gi: 	  0.50	Params: .VSMatrixLayer: 0.5
 
         VSGated		Nominal:	  0.50	
@@ -215,10 +215,10 @@
       PLutilPTp		Nominal:	  0.10	Params: .PTPredLayer: 0.1
 						Layer.Gi:	  0.80	
 
-             CS		Nominal:	  0.04	Params: .CS: 0.1
+             CS		Nominal:	  0.05	Params: .CS: 0.1
 						Layer.Gi:	  0.90	
 
-            CSP		Nominal:	  0.04	Params: .CS: 0.1
+            CSP		Nominal:	  0.05	Params: .CS: 0.1
 						Layer.Gi:	  1.00	
 
            Dist		Nominal:	  0.10	

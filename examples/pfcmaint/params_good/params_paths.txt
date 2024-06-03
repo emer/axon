@@ -1,0 +1,72 @@
+
+Layer: Item
+
+Layer: ItemP
+	          PFCCT	    ForwardPath	Abs:	  0.00	Rel:	  0.00	GScale:	  0.00	Rel:  0.00
+								    Abs Params: .CTToPulv: 0 | .InputToPFC: 2 | Base:.PFCPath: 1.0
+								    Rel Params: .CTToPulv: 0
+	          PFCPT	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.20	Rel:  0.50
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+	         PFCPTp	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+								    Abs Params: #PFCPTpToItemP: 1 | .InputToPFC: 2 | Base:.PFCPath: 1.0
+
+Layer: Time
+
+Layer: TimeP
+	          PFCCT	    ForwardPath	Abs:	  0.00	Rel:	  0.00	GScale:	  0.00	Rel:  0.00
+								    Abs Params: .CTToPulv: 0 | .InputToPFC: 2 | Base:.PFCPath: 1.0
+								    Rel Params: .CTToPulv: 0
+	          PFCPT	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.20	Rel:  0.50
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+	         PFCPTp	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.20	Rel:  0.50
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+
+Layer: GPi
+
+Layer: PFC
+	           Item	       BackPath	Abs:	  2.00	Rel:	  0.10	GScale:	  0.08	Rel:  0.12
+								    Abs Params: Base:.InputToPFC: 2
+	          ItemP	       BackPath	Abs:	  2.00	Rel:	  0.10	GScale:	  0.08	Rel:  0.12
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+	           Time	       BackPath	Abs:	  2.00	Rel:	  0.10	GScale:	  0.08	Rel:  0.12
+								    Abs Params: Base:.InputToPFC: 2
+	          TimeP	       BackPath	Abs:	  2.00	Rel:	  0.50	GScale:	  0.42	Rel:  0.62
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+								    Rel Params: #TimePToPFC: 0.5
+
+Layer: PFCCT
+	            PFC	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.38	Rel:  0.38
+								    Abs Params: Base:.PFCPath: 1.0
+	          PFCPT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.38
+								    Abs Params: Base:.PFCPath: 1.0
+	          ItemP	       BackPath	Abs:	  0.10	Rel:	  0.10	GScale:	  0.00	Rel:  0.04
+								    Abs Params: #ItemPToPFCCT: 0.1 | .InputToPFC: 2 | Base:.PFCPath: 1.0
+	          TimeP	       BackPath	Abs:	  2.00	Rel:	  0.50	GScale:	  0.13	Rel:  0.19
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+								    Rel Params: #TimePToPFCCT: 0.5
+
+Layer: PFCPT
+	        PFCThal	       BackPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+								    Abs Params: Base:.PFCPath: 1.0
+	            PFC	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+								    Abs Params: Base:.PFCPath: 1.0
+
+Layer: PFCThal
+	          PFCPT	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+								    Abs Params: Base:.PFCPath: 1.0
+	            PFC	    ForwardPath	Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
+								    Abs Params: .SuperToThal: 4.0 | Base:.PFCPath: 1.0
+	            GPi	      InhibPath	Abs:	  4.00	Rel:	  1.00	GScale:	  1.33	Rel:  1.00
+								    Abs Params: Base:#GPiToPFCThal: 4.0
+
+Layer: PFCPTp
+	          PFCPT	     CTCtxtPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.24
+								    Abs Params: .PTtoPred: 1 | Base:.PFCPath: 1.0
+	          PFCCT	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.24
+								    Abs Params: .CTtoPred: 2 | Base:.PFCPath: 1.0
+	          ItemP	       BackPath	Abs:	  2.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.02
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+	           Item	    ForwardPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.32	Rel:  0.24
+	          TimeP	       BackPath	Abs:	  2.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.02
+								    Abs Params: .InputToPFC: 2 | Base:.PFCPath: 1.0
+	           Time	    ForwardPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.32	Rel:  0.24

@@ -3,4 +3,4 @@
 NDrives = 3
 Paradigm = "GroupGoodBad"
 EffortRange.Min = 1
-EffortRange.Max = 4
+EffortRange.Max = 8

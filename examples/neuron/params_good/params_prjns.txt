@@ -1,5 +1,0 @@
-
-Layer: Input
-
-Layer: Neuron
-	          Input	    ForwardPrjn	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00

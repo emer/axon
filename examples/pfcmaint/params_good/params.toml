@@ -1,0 +1,122 @@
+[[Base]]
+  Sel = "Layer"
+  Desc = ""
+  [Base.Params]
+    "Layer.Acts.Clamp.Ge" = "1.0"
+
+[[Base]]
+  Sel = ".Time"
+  Desc = ""
+  [Base.Params]
+    "Layer.Inhib.ActAvg.Nominal" = "0.05"
+
+[[Base]]
+  Sel = ".PFCPrjn"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1.0"
+
+[[Base]]
+  Sel = "#GPiToPFCThal"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4.0"
+
+[[Base]]
+  Sel = ".PTMaintLayer"
+  Desc = "time integration params"
+  [Base.Params]
+    "Layer.Acts.Dend.ModGain" = "1.5"
+    "Layer.Acts.GabaB.Gbar" = "0.01"
+    "Layer.Acts.SMaint.Gbar" = "0.2"
+    "Layer.Acts.SMaint.ISI.Max" = "20"
+    "Layer.Acts.SMaint.ISI.Min" = "1"
+    "Layer.Acts.SMaint.Inhib" = "1"
+    "Layer.Acts.SMaint.NNeurons" = "10"
+    "Layer.Acts.SMaint.On" = "true"
+    "Layer.Inhib.ActAvg.Nominal" = "0.1"
+    "Layer.Inhib.Layer.Gi" = "0.5"
+    "Layer.Inhib.Pool.Gi" = "0.5"
+
+[[Base]]
+  Sel = ".PTPredLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.CT.DecayTau" = "50"
+    "Layer.CT.GeGain" = "0.05"
+    "Layer.Inhib.Layer.Gi" = "0.8"
+
+[[Base]]
+  Sel = ".CTLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.CT.DecayTau" = "50"
+    "Layer.CT.GeGain" = "2"
+    "Layer.Inhib.Layer.Gi" = "1.4"
+
+[[Base]]
+  Sel = ".BGThalLayer"
+  Desc = ""
+  [Base.Params]
+    "Layer.Learn.NeuroMod.AChDisInhib" = "0"
+
+[[Base]]
+  Sel = ".InputToPFC"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+
+[[Base]]
+  Sel = ".CTtoPred"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "2"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = ".PTtoPred"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+  [Base.Hypers]
+    [Base.Hypers."Prjn.PrjnScale.Abs"]
+      Tweak = "-"
+
+[[Base]]
+  Sel = ".CTToPulv"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0"
+    "Prjn.PrjnScale.Rel" = "0"
+
+[[Base]]
+  Sel = ".SuperToThal"
+  Desc = ""
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "4.0"
+
+[[Base]]
+  Sel = "#PFCPTpToItemP"
+  Desc = "weaker"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "1"
+
+[[Base]]
+  Sel = "#ItemPToPFCCT"
+  Desc = "weaker"
+  [Base.Params]
+    "Prjn.PrjnScale.Abs" = "0.1"
+
+[[Base]]
+  Sel = "#TimePToPFCCT"
+  Desc = "stronger"
+  [Base.Params]
+    "Prjn.PrjnScale.Rel" = "0.5"
+
+[[Base]]
+  Sel = "#TimePToPFC"
+  Desc = "stronger"
+  [Base.Params]
+    "Prjn.PrjnScale.Rel" = "0.5"

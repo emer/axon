@@ -1,0 +1,5 @@
+
+Layer: Input
+
+Layer: Neuron
+	          Input	    ForwardPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00

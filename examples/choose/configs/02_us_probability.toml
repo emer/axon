@@ -2,6 +2,6 @@
 
 NDrives = 3
 Paradigm = "GroupGoodBad"
-USProbRange.Min = 0.8  # 0.8 = good intermediate results
+USProbRange.Min = 0.9  # 0.8 = good intermediate results
 USProbRange.Max = 1
 

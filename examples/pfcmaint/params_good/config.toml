@@ -1,17 +1,18 @@
 Includes = []
 GUI = false
 Debug = false
-OpenWts = ''
 
 [Env]
-  Config = '01_us_magnitude.toml'
-  NDrives = 4
-  PctCortexStEpc = 50
-  PctCortexNEpc = 1
-  PctCortex = 0.0
-  SameSeed = false
+  [Env.Env]
+    NItems = 10
+    NTrials = 10
 
 [Params]
+  MaintCons = false
+  NUnits = 7
+  Tweak = false
+  Baseline = false
+  DryRun = false
   Sheet = ''
   Tag = ''
   Note = ''
@@ -21,19 +22,19 @@ OpenWts = ''
 
 [Run]
   GPU = false
-  NData = 8
+  NData = 1
   NThreads = 0
   Run = 0
-  NRuns = 5
-  NEpochs = 50
-  NTrials = 128
-  NCycles = 300
-  PCAInterval = 10
+  NRuns = 1
+  NEpochs = 10
+  NTrials = 64
 
 [Log]
   SaveWts = false
   Epoch = true
   Run = true
   Trial = false
+  TestEpoch = false
+  TestTrial = false
   NetData = false
   Testing = false

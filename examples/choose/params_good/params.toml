@@ -202,13 +202,32 @@
   Sel = ".BLAExtToAcq"
   Desc = ""
   [Base.Params]
-    "Path.PathScale.Abs" = "2"
+    "Path.PathScale.Abs" = "1"
+
+[[Base]]
+  Sel = ".CSToBLApos"
+  Desc = ""
+  [Base.Params]
+    "Path.Learn.LRate.Base" = "0.01"
 
 [[Base]]
   Sel = ".PFCToVSMtx"
   Desc = "contextual, should be weaker"
   [Base.Params]
+    "Path.PathScale.Abs" = "1"
     "Path.PathScale.Rel" = "0.1"
+
+[[Base]]
+  Sel = "#OFCposToVMtxGo"
+  Desc = "specific best go signal"
+  [Base.Params]
+    "Path.PathScale.Abs" = "3"
+
+[[Base]]
+  Sel = "#ILposToVMtxGo"
+  Desc = "specific best go signal"
+  [Base.Params]
+    "Path.PathScale.Abs" = "3"
 
 [[Base]]
   Sel = ".VSPatchPath"
@@ -217,12 +236,6 @@
     "Path.Learn.LRate.Base" = "0.02"
     "Path.Learn.Trace.LearnThr" = "0"
     "Path.PathScale.Abs" = "4"
-
-[[Base]]
-  Sel = "#CSToBLAposAcqD1"
-  Desc = ""
-  [Base.Params]
-    "Path.Learn.LRate.Base" = "0.02"
 
 [[Base]]
   Sel = ".CSToBLANovelInhib"

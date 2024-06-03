@@ -1782,7 +1782,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.02  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: false  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: true  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -1919,7 +1919,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 3
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -1943,7 +1943,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 3
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -1967,7 +1967,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -1991,7 +1991,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2015,7 +2015,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2039,7 +2039,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2086,7 +2086,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.02  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: false  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: true  Gi: 0.5  FB: 0  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -2130,7 +2130,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2250,7 +2250,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2274,7 +2274,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2298,7 +2298,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2322,7 +2322,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2346,7 +2346,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2370,7 +2370,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 1.5
+  Rel: 0.1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: false }
@@ -2972,7 +2972,7 @@ Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
@@ -3035,7 +3035,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 0.1 Abs: 3
+  Rel: 0.1 Abs: 2.9
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: true }
@@ -3089,7 +3089,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
+  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -3398,7 +3398,7 @@ Com: {
   GType: InhibitoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PathScale: {
-  Rel: 1 Abs: 2
+  Rel: 1 Abs: 1
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.8  Var: 0  Sym: true }
@@ -8635,7 +8635,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.04  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.05333333  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
@@ -8678,7 +8678,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.04  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.05333333  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
   Pool: {  On: false  Gi: 1  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0  ClampExtMin: 0.05 }
 }
