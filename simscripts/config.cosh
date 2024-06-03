@@ -34,12 +34,15 @@ func (fp *FilterResults) Defaults() {
 // SubmitParams specifies the parameters for submitting a job
 type SubmitParams struct {
 	// Message describing the simulation:
-	// this is key id for what is special about this job
-	Message string `width:"60"`
+	// this is key info for what is special about this job, like a github commit message
+	Message string `width:"80"`
+
+	// Label is brief, unique label used for plots to label this job
+	Label string `width:"80"`
 
 	//	arguments to pass on the command line.
 	// -nogui is already passed by default
-	Args string `width:"60"`
+	Args string `width:"80"`
 }
 
 // JobParams are parameters for running the job
@@ -135,8 +138,8 @@ func (cf *Configuration) Defaults() {
 	cf.FetchFiles = "*.tsv"
 	cf.Plot.Defaults()
 	cf.Filter.Defaults()
-	cf.Plot.XAxisColumn = "Run"
-	cf.Plot.LegendColumn = "JobID"
+	cf.Plot.XAxisColumn = "Epoch"
+	cf.Plot.LegendColumn = "JobLabel"
 	cf.TimeFormat = "2006-01-02 15:04:05 MST"
 }
 
@@ -153,6 +156,9 @@ type Result struct {
 
 	// job id for results
 	JobID string
+
+	// short label used as a legend in the plot
+	Label string
 
 	// description of job
 	Message string

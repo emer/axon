@@ -201,7 +201,7 @@ func CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
 	}
 }
 
-func NewJob(message, args string) {
+func NewJob(message, args, label string) {
 	os.Chdir(br.DataRoot)
 	jid := NextJobID()
 	spath := ServerJobPath(jid)
@@ -220,6 +220,7 @@ func NewJob(message, args string) {
 	os.Chdir(jpath)
 	cosh.WriteFile("job.message", message)
 	cosh.WriteFile("job.args", args)
+	cosh.WriteFile("job.label", label)
 	cosh.WriteFile("job.submit", time.Now().Format(Config.TimeFormat))
 	cosh.WriteFile("job.status", "Submitted")
 
@@ -298,7 +299,7 @@ func NewJob(message, args string) {
 
 func SubmitPrompt() {
 	databrowser.PromptStruct(br, &Config.Submit, "Submit a new job", func() {
-		{go NewJob(Config.Submit.Message, Config.Submit.Args)}
+		{go NewJob(Config.Submit.Message, Config.Submit.Args, Config.Submit.Label)}
 	})
 }
 

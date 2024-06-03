@@ -1,12 +1,23 @@
 
-// TableWithKeyColumn returns a copy of the Table with a new Key
-// column with given column name and value,
-// used for aggregating data across multiple results
-func TableWithKeyColumn(dt *table.Table, colNm, key string) *table.Table {
+// TableWithNewKeyColumns returns a copy of the Table with new columns
+// having given values, inserted at the start, used as legend keys etc.
+// args are column name, value pairs.
+func TableWithNewKeyColumns(dt *table.Table, args ...string) *table.Table {
+	n := len(args)
+	if n % 2 != 0 {
+		fmt.Println("TableWithNewColumns requires even number of args as colnm, value pairs")
+		return dt
+	}
 	c := dt.Clone()
-	jc := c.AddStringColumn(colNm)
-	for i := range jc.Values {
-		jc.Values[i] = key
+	nc := n / 2
+	for j := 0; j < nc; j++ {
+		colNm := args[2 * j]
+		val := args[2 * j+1]
+		col := tensor.NewString([]int{c.Rows})
+		c.InsertColumn(col, colNm, 0)
+		for i := range col.Values {
+			col.Values[i] = val
+		}
 	}
 	return c
 }
@@ -21,8 +32,9 @@ func PlotResults() {
 	var AggTable *table.Table
 	for _, i := range jis {
 		res := Results[i]
-		key := res.JobID
-		dt := TableWithKeyColumn(res.Table, "JobID", key)
+		jid := res.JobID
+		label := res.Label
+		dt := TableWithNewKeyColumns(res.Table, "JobID", jid, "JobLabel", label)
 		if AggTable == nil {
 			AggTable = dt
 		} else {

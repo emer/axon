@@ -17,7 +17,7 @@ func JobStatus(jid string, force bool) {
 	@0
 	sj := `@1 cat job.job`
 	// fmt.Println("server job:", sj)
-	if sstat != "Done" {
+	if sstat != "Done" && !force {
 		[@1 squeue -j {sj} -o %T >& job.squeue]
 		stat := `@1 cat job.squeue`
 		// fmt.Println("server status:", stat)
@@ -43,7 +43,9 @@ func JobStatus(jid string, force bool) {
 	for _, jf := range cosh.SplitLines(jfiles) {
 		// fmt.Println(jf)
 		rfn := "@1:" + jf
-		scp {rfn} {jf}
+		if !force {
+			scp {rfn} {jf}
+		}
 	}
 	@0
 	if sstat == "Done" {
@@ -64,7 +66,7 @@ func JobStatus(jid string, force bool) {
 		case "Squeue":
 			key = "ServerStatus"
 		}
-		val := cosh.ReadFile(jf)
+		val := strings.TrimSpace(cosh.ReadFile(jf))
 		if key == "ServerStatus" {
 			val = strings.ReplaceAll(elide.Middle(val, 50), "…", "...")
 		}
@@ -81,7 +83,7 @@ func JobsStatus(path string) {
 	dpath := filepath.Join(br.DataRoot, path)
 	ds := dirs.Dirs(dpath)
 	for _, jid := range ds {
-		JobStatus(jid, false) // true = update all
+		JobStatus(jid, false) // true = update all -- for format and status edits
 	}
 	core.MessageSnackbar(br, "Jobs Status completed")
 	Update()

@@ -4,6 +4,7 @@ Version, string
 Status, string
 Args, string
 Message, string
+Label, string
 Server, string
 ServerJob, string
 ServerStatus, string

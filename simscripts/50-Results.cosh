@@ -4,6 +4,7 @@ func OpenResultFiles(jobs []string, filter FilterResults) {
 	for i, jid := range jobs {
 		jpath := JobPath(jid)
 		message := ValueForJob(jid, "Message")
+		label := ValueForJob(jid, "Label")
 		args := ValueForJob(jid, "Args")
 		fls := dirs.ExtFilenames(jpath, filter.Ext)
 		ifls := []string{}
@@ -18,7 +19,7 @@ func OpenResultFiles(jobs []string, filter FilterResults) {
 				fmt.Println(err.Error())
 			}
 			rpath := strings.TrimPrefix(fpath, br.DataRoot)
-			Results = append(Results, &Result{JobID: jid, Message: message, Args: args, Path: rpath, Table: dt})
+			Results = append(Results, &Result{JobID: jid, Label: label, Message: message, Args: args, Path: rpath, Table: dt})
 		}
 	}
 	if len(Results) == 0 {

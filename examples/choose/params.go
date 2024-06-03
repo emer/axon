@@ -191,7 +191,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1", // 1 == 2
+				"Path.PathScale.Abs": "0.1", // 1 == 2
 			}},
 		{Sel: ".CSToBLApos", Desc: "",
 			Params: params.Params{
