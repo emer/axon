@@ -25,7 +25,7 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				// "Layer.Inhib.Layer.Gi":             "2.4",
 				// "Layer.Inhib.Pool.Gi":              "2.4",
-				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
+				"Layer.Acts.Dend.ModGain":          "1.5", // 1.5; was 2 min -- reduces maint early
 				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
 			}},
 		{Sel: ".VSTNLayer", Desc: "all VSTN",
@@ -191,7 +191,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0.1", // 1 == 2
+				"Path.PathScale.Abs": "1.0", // 0.5 is min effective
 			}},
 		{Sel: ".CSToBLApos", Desc: "",
 			Params: params.Params{

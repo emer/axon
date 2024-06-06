@@ -30,6 +30,7 @@ func OpenJobs(path string) {
 	if dt.Rows > 0 && Config.Submit.Message == "" {
 		Config.Submit.Message = dt.StringValue("Message", dt.Rows-1)
 		Config.Submit.Args = dt.StringValue("Args", dt.Rows-1)
+		Config.Submit.Label = dt.StringValue("Label", dt.Rows-1)
 	}
 }
 
