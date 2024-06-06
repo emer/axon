@@ -1,3 +1,7 @@
+// Fetch retrieves all the .tsv data files from the server
+// for any jobs not already marked as Fetched.
+// Operates on the jobs selected in the Jobs table, 
+// or on all jobs if none selected.
 
 // FetchJob downloads results files from server.
 // if force == true then will re-get already-Fetched jobs,

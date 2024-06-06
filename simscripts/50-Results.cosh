@@ -1,4 +1,7 @@
-// Loads data for specific jobs results
+// Results loads specific .tsv data files from the jobs selected
+// in the Jobs table, into the Results table.  There are often
+// multiple result files per job, so this step is necessary to
+// choose which such files to select for plotting.
 
 func OpenResultFiles(jobs []string, filter FilterResults) {
 	for i, jid := range jobs {

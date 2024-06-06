@@ -1,5 +1,7 @@
-// This submit script handles the SLURM array job case, with an outer
-// startup job that calls the main array jobs and a final cleanup job.
+// Submit submits a job to SLURM on the server, using an array
+// structure, with an outer startup job that calls the main array
+// jobs and a final cleanup job.  Creates a new job dir based on
+// incrementing counter, synchronizing the job files.
 
 // WriteSBatchHeader writes the header of a SLURM SBatch script
 // that is common across all three scripts.

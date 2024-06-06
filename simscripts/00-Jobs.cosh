@@ -1,3 +1,7 @@
+// Jobs updates the Jobs tab with a Table showing all the Jobs
+// with their meta data.  Uses the dbmeta.toml data compiled from
+// the Status function.
+
 // note: br is browser
 
 func OpenJobs(path string) {

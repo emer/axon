@@ -1,3 +1,8 @@
+// Status gets updated job.* files from the server for any job that 
+// doesn't have a Finalized or Fetched status.  It updates the 
+// status based on the server job status query, assigning a 
+// status of Finalized if job is done.  Updates the dbmeta.toml
+// data based on current job data.
 
 // JobStatus gets job status from server for given job id.
 // jobs that are already Finalized are skipped, unless force is true.

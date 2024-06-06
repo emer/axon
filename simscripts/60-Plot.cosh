@@ -1,26 +1,5 @@
-
-// TableWithNewKeyColumns returns a copy of the Table with new columns
-// having given values, inserted at the start, used as legend keys etc.
-// args are column name, value pairs.
-func TableWithNewKeyColumns(dt *table.Table, args ...string) *table.Table {
-	n := len(args)
-	if n % 2 != 0 {
-		fmt.Println("TableWithNewColumns requires even number of args as colnm, value pairs")
-		return dt
-	}
-	c := dt.Clone()
-	nc := n / 2
-	for j := 0; j < nc; j++ {
-		colNm := args[2 * j]
-		val := args[2 * j+1]
-		col := tensor.NewString([]int{c.Rows})
-		c.InsertColumn(col, colNm, 0)
-		for i := range col.Values {
-			col.Values[i] = val
-		}
-	}
-	return c
-}
+// Plot concatenates selected Results data files and generates a plot
+// of the resulting data.
 
 func PlotResults() {
 	tv := ResultsTableView
@@ -34,7 +13,7 @@ func PlotResults() {
 		res := Results[i]
 		jid := res.JobID
 		label := res.Label
-		dt := TableWithNewKeyColumns(res.Table, "JobID", jid, "JobLabel", label)
+		dt := br.TableWithNewKeyColumns(res.Table, "JobID", jid, "JobLabel", label)
 		if AggTable == nil {
 			AggTable = dt
 		} else {

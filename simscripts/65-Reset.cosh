@@ -1,10 +1,9 @@
+// Reset resets the Results table
 
 func ResetResults() {
 	Results = []*Result{}
-	// TODO: currently crashing:
-	// br.NewTabTableView("Results", &Results)
-	// br.Update()
-	core.MessageSnackbar(br, "for now, delete Results tab manually")
+	br.NewTabTableView("Results", &Results)
+	br.Update()
 }
 
 ResetResults()

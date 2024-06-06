@@ -1,3 +1,6 @@
+// Diff shows the differences between two selected jobs, or if only
+// one job is selected, between that job and the current source directory.
+
 func DiffJobs() {
 	@0
 	tv := JobsTableView

@@ -1,3 +1,6 @@
+// Cancel cancels the jobs selected in the Jobs table,
+// with a confirmation prompt.
+
 // CancelJobs cancels the given jobs 
 func CancelJobs(jobs []string, path string) {
 	@0
