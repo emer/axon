@@ -272,6 +272,18 @@ func (ev *Env) ArmIsBest(armIdx int) bool {
 	return ev.Drives[arm.US] > ev.Config.Params.ActiveDriveThr
 }
 
+func (ev *Env) MaxDrive() int {
+	mx := float32(0)
+	mi := 0
+	for i, d := range ev.Drives {
+		if d > mx {
+			mx = d
+			mi = i
+		}
+	}
+	return mi
+}
+
 // ArmIsNegative returns true if the given arm has a negative outcome
 func (ev *Env) ArmIsNegative(armIdx int) bool {
 	arm := ev.Config.Arms[armIdx]

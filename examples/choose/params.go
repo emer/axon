@@ -141,7 +141,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "stronger",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1.5", // stronger = bad later
+				"Path.PathScale.Abs": "1.5", // 1.5; stronger = bad later
 			}},
 		{Sel: "#OFCposToILpos", Desc: "stronger",
 			Params: params.Params{
@@ -218,7 +218,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".CSToBLANovelInhib", Desc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.02", // 0.01 > 0.005 -- too slow is bad
+				"Path.Learn.LRate.Base": "0.005", // 0.005 > 0.002 > 0.001 > 0.02
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{

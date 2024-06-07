@@ -750,7 +750,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetFloat32("Arm", float32(ev.Arm))
 	ss.Stats.SetFloat32("Pos", float32(ev.Pos))
 	ss.Stats.SetFloat32("Dist", float32(ev.Dist))
-	// ss.Stats.SetFloat32("Drive", float32(ev.Drive))
+	ss.Stats.SetFloat32("Drive", float32(ev.MaxDrive()))
 	ss.Stats.SetFloat32("CS", float32(ev.CurCS()))
 	ss.Stats.SetFloat32("US", float32(ev.USConsumed))
 	ss.Stats.SetString("TrialName", "trl") // todo: could have dist, US etc
@@ -903,6 +903,10 @@ func (ss *Sim) GatedStats(di int) {
 			ss.Stats.SetFloat32("GateBLAposAcq", blaact)
 			ss.Stats.SetFloat32("GateBLAposExt", bleact)
 			ss.Stats.SetFloat32("GateBLAposAcqExt", blaact-bleact)
+
+			blanov := net.AxonLayerByName("BLANovelCS")
+			blanovact := blanov.Pool(0, diu).AvgMax.SpkMax.Plus.Avg
+			ss.Stats.SetFloat32("GateBLANovelCS", blanovact)
 		}
 	}
 	if ev.ShouldGate {
@@ -1051,6 +1055,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("GateBLAposAcq", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateBLAposExt", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateBLAposAcqExt", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateBLANovelCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("BadCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("BadUSGate", etime.Run, etime.Epoch, etime.Trial)
 
@@ -1258,11 +1263,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 						}
 					}
 					ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
+					if ss.StopOnErr && ss.Stats.Float("GatedEarly") > 0 {
+						fmt.Println("STOPPED due to gated early")
+						ss.Loops.Stop(etime.Trial)
+					}
 				}
-				// if ss.Stats.Float("GatedEarly") > 0 {
-				// 	fmt.Printf("STOPPED due to gated early: %d  %g\n", ev.US, ev.Rew)
-				// 	ss.Loops.Stop(etime.Trial)
-				// }
 				// ev := ss.Envs.ByModeDi(etime.Train, di).(*armaze.Env)
 				// if ss.StopOnErr && trnEpc > 5 && ss.Stats.Float("MaintEarly") > 0 {
 				// 	fmt.Printf("STOPPED due to early maint for US: %d\n", ev.US)
