@@ -86,24 +86,24 @@ Layer: VMtxGo
 	          USpos	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.19	Rel:  0.38
 								    Abs Params: Base:.VSMatrixPath: 1.5
 	    BLAposAcqD1	   VSMatrixPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.51	Rel:  0.38
-								    Abs Params: .BLAAcqToGo: 4 | .VSMatrixPath: 1.5
+								    Abs Params: .BLAAcqToGo: 4 | Base:.VSMatrixPath: 1.5
 								    Rel Params: .BLAAcqToGo: 1
 	         Drives	   VSMatrixPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
-								    Abs Params: .DrivesToMtx: 1 | .VSMatrixPath: 1.5
+								    Abs Params: .DrivesToMtx: 1 | Base:.VSMatrixPath: 1.5
 	         OFCpos	   VSMatrixPath	Abs:	  3.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
-								    Abs Params: #OFCposToVMtxGo: 3 | .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
+								    Abs Params: #OFCposToVMtxGo: 3 | .PFCToVSMtx: 1 | .VSMatrixPath: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	          ILpos	   VSMatrixPath	Abs:	  3.00	Rel:	  0.10	GScale:	  0.03	Rel:  0.04
 								    Abs Params: #ILposToVMtxGo: 3 | .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	         OFCneg	   VSMatrixPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
-								    Abs Params: .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
+								    Abs Params: .PFCToVSMtx: 1 | .VSMatrixPath: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	          ILneg	   VSMatrixPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Abs Params: .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
-	        ACCcost	   VSMatrixPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
-								    Abs Params: .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
+	        ACCcost	   VSMatrixPath	Abs:	  3.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+								    Abs Params: #ACCcostToVMtxGo: 3 | .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	         PLutil	   VSMatrixPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
 								    Abs Params: .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
@@ -112,15 +112,15 @@ Layer: VMtxGo
 Layer: VMtxNo
 	         VGPeAk	      InhibPath	Abs:	  3.00	Rel:	  1.00	GScale:	  0.12	Rel:  1.00
 	          ILneg	   VSMatrixPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
-								    Abs Params: .PFCToVSMtx: 1 | .VSMatrixPath: 1.5
+								    Abs Params: .PFCToVSMtx: 1 | Base:.VSMatrixPath: 1.5
 								    Rel Params: .PFCToVSMtx: 0.1
 	    BLAposAcqD1	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.14	Rel:  0.27
 								    Abs Params: Base:.VSMatrixPath: 1.5
 	    BLAnegAcqD2	   VSMatrixPath	Abs:	  4.00	Rel:	  1.00	GScale:	  1.08	Rel:  0.27
-								    Abs Params: .BLAAcqToGo: 4 | .VSMatrixPath: 1.5
+								    Abs Params: .BLAAcqToGo: 4 | Base:.VSMatrixPath: 1.5
 								    Rel Params: .BLAAcqToGo: 1
 	    BLAposExtD2	   VSMatrixPath	Abs:	  1.50	Rel:	  1.00	GScale:	  0.14	Rel:  0.27
-								    Abs Params: .VSMatrixPath: 1.5
+								    Abs Params: Base:.VSMatrixPath: 1.5
 	         Drives	   VSMatrixPath	Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
 								    Abs Params: .DrivesToMtx: 1 | Base:.VSMatrixPath: 1.5
 	         OFCpos	   VSMatrixPath	Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
@@ -148,11 +148,11 @@ Layer: VsPatchD1
 	       ILnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
 	         Drives	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:  1.00
-								    Abs Params: Base:.VSPatchPath: 4
+								    Abs Params: .VSPatchPath: 4
 	      OFCposPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
 	       ILposPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: .VSPatchPath: 4
+								    Abs Params: Base:.VSPatchPath: 4
 	      OFCnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
 	       ILnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
@@ -166,19 +166,19 @@ Layer: VsPatchD2
 	       ILnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
 	         Drives	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  4.00	Rel:  1.00
-								    Abs Params: Base:.VSPatchPath: 4
-	      OFCposPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.14
 								    Abs Params: .VSPatchPath: 4
+	      OFCposPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.14
+								    Abs Params: Base:.VSPatchPath: 4
 	       ILposPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
 	      OFCnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: .VSPatchPath: 4
-	       ILnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
+	       ILnegPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
+								    Abs Params: .VSPatchPath: 4
 	         PVposP	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.19	Rel:  0.14
 								    Abs Params: Base:.VSPatchPath: 4
 	      PLutilPTp	    VSPatchPath	Abs:	  4.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.14
-								    Abs Params: Base:.VSPatchPath: 4
+								    Abs Params: .VSPatchPath: 4
 
 Layer: SC
 	             CS	    ForwardPath	Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
@@ -186,7 +186,7 @@ Layer: SC
 
 Layer: BLAposAcqD1
 	    BLAposExtD2	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.33
-								    Abs Params: Base:.BLAExtToAcq: 1
+								    Abs Params: Base:.BLAExtToAcq: 1.0
 	    BLAposAcqD1	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
 	    BLAposExtD2	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.06	Rel:  0.33
 	     BLANovelCS	    ForwardPath	Abs:	  2.90	Rel:	  0.10	GScale:	  0.18	Rel:  0.06
@@ -210,7 +210,7 @@ Layer: BLAnegExtD1
 
 Layer: BLAnegAcqD2
 	    BLAnegExtD1	      InhibPath	Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.33
-								    Abs Params: Base:.BLAExtToAcq: 1
+								    Abs Params: Base:.BLAExtToAcq: 1.0
 	    BLAnegAcqD2	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.17	Rel:  0.33
 	    BLAnegExtD1	      InhibPath	Abs:	  0.50	Rel:	  1.00	GScale:	  0.17	Rel:  0.33
 	          USneg	        BLAPath	Abs:	  6.00	Rel:	  0.50	GScale:	  2.00	Rel:  0.33

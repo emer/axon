@@ -1,0 +1,42 @@
+// Archive moves the selected Jobs to the Archive directory,
+// locally, and deletes them from the server,
+// for results that are useful but not immediately relevant.
+
+// ArchiveJobs archives the given jobs 
+func ArchiveJobs(jobs []string, path string) {
+	@0
+	dpath := filepath.Join(br.DataRoot, path)
+	apath := filepath.Join(br.DataRoot, "archive", path)
+	mkdir -p {apath}
+	spath := filepath.Join(Config.ServerRoot, path)
+	for _, jid := range jobs {
+		@1
+		cd
+		cd {spath}
+		[/bin/rm -rf {jid}]
+		@0
+		dj := filepath.Join(dpath, jid)
+		aj := filepath.Join(apath, jid)
+		/bin/mv {dj} {aj}
+	}
+	@1
+	cd
+	@0
+	core.MessageSnackbar(br, "Done archiving jobs")
+}
+
+func ArchiveJobsPrompt(path string) {
+	tv := JobsTableView
+	jobs := tv.SelectedColumnStrings("JobID")
+	if len(jobs) == 0 {
+		core.MessageSnackbar(br, "No jobs selected for archiving")
+		return
+	}
+	databrowser.PromptOKCancel(br, "Ok to archive these jobs: " + strings.Join(jobs, " "), func() {
+		ArchiveJobs(jobs, path)
+		Update()
+	})
+}
+
+ArchiveJobsPrompt(Config.Version)
+

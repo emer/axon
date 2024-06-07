@@ -163,6 +163,7 @@ VMtxGo.OFCnegToVMtxGo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
 VMtxGo.ILnegToVMtxGo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
 VMtxGo.ILnegToVMtxGo.SWts.Init.Sym: false // (Default: true)<br>
 VMtxGo.ILnegToVMtxGo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
+VMtxGo.ACCcostToVMtxGo.PathScale.Abs: 3 // (Default: 1)<br>
 VMtxGo.ACCcostToVMtxGo.SWts.Init.Var: 0.4 // (Default: 0.25)<br>
 VMtxGo.ACCcostToVMtxGo.SWts.Init.Sym: false // (Default: true)<br>
 VMtxGo.ACCcostToVMtxGo.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
@@ -415,7 +416,7 @@ BLANovelCS.CSToBLANovelCS.SWts.Adapt.SigGain: 1 // (Default: 6)<br>
 BLANovelCS.CSToBLANovelCS.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
 BLANovelCS.CSToBLANovelCS.SWts.Init.Mean: 0.1 // (Default: 0.5,0.4)<br>
 BLANovelCS.CSToBLANovelCS.SWts.Init.Var: 0.05 // (Default: 0.25)<br>
-BLANovelCS.CSToBLANovelCS.Learn.LRate.Base: 0.02 // (Default: 0.04,0.1,0.2)<br>
+BLANovelCS.CSToBLANovelCS.Learn.LRate.Base: 0.005 // (Default: 0.04,0.1,0.2)<br>
 BLANovelCS.CSToBLANovelCS.Learn.Hebb.Down: 0 // (Default: 1)<br>
 OFCpos.Inhib.Layer.Gi: 2.2 // (Default: 1,1.1,0.75,0.9)<br>
 OFCpos.BLAposAcqD1ToOFCpos.PathScale.Abs: 1.5 // (Default: 1)<br>

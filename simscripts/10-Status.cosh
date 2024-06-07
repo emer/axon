@@ -85,6 +85,7 @@ func JobStatus(jid string, force bool) {
 
 func JobsStatus(path string) {
 	@0
+	br.UpdateFiles()
 	dpath := filepath.Join(br.DataRoot, path)
 	ds := dirs.Dirs(dpath)
 	for _, jid := range ds {

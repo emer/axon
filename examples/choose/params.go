@@ -187,7 +187,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".BLAAcqToGo", Desc: "must dominate",
 			Params: params.Params{
 				"Path.PathScale.Rel": "1",
-				"Path.PathScale.Abs": "4", // 4 > 2 for urgency early
+				"Path.PathScale.Abs": "4", // 4 > 3 > 2 for urgency early
 			}},
 		{Sel: ".BLAExtToAcq", Desc: "",
 			Params: params.Params{
@@ -210,6 +210,10 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Path.PathScale.Abs": "3",
 			}},
+		{Sel: "#ACCcostToVMtxGo", Desc: "costs..",
+			Params: params.Params{
+				"Path.PathScale.Abs": "3",
+			}},
 		{Sel: ".VSPatchPath", Desc: "",
 			Params: params.Params{
 				"Path.PathScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
@@ -218,11 +222,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".CSToBLANovelInhib", Desc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.005", // 0.005 > 0.002 > 0.001 > 0.02
+				"Path.Learn.LRate.Base": "0.005", // 0.005 > 0.002 > 0.01 > 0.001 > 0.02
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "4", // 4 def
+				"Path.PathScale.Abs": "4", // 4 = 3, 2 worse
 			}},
 		{Sel: ".SuperToPT", Desc: "",
 			Params: params.Params{

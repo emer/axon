@@ -1,5 +1,5 @@
 Includes = []
-GUI = false
+GUI = true
 Debug = false
 OpenWts = ''
 
@@ -21,7 +21,7 @@ OpenWts = ''
 
 [Run]
   GPU = false
-  NData = 8
+  NData = 1
   NThreads = 0
   Run = 0
   NRuns = 5

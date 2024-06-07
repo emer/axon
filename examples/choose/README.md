@@ -2,7 +2,11 @@
 
 This model implements the [Rubicon](../../Rubicon.md) model for goal-driven motivated behavior, in a decision-making task that requires choosing among options with different cost-benefit tradeoffs.  This exercises the core cost and benefit representations and goal selection and goal maintenance components of the Rubicon model
 
-* TODO: compute us prob at start -- otherwise keeps doing again and again
+# TODO: 
+* cleanup rest of this readme to just have task-specific items
+* stat for GeMax at gating for VsMtxGo/No
+* rew is not discounted properly.
+
 
 ## Arm Maze Bandit task
 
@@ -72,6 +76,9 @@ If layer NOT gated:  <- exploration opportunity cost
 
 # Stats in the logs
 
+* `BadCSGate` is gating to approach the wrong CS (one that does not satisfy the current drive) -- this can happen if the BG happens to get activated via OFC and ACC patterns even if the CS is not associated with the drive-relevant US.  It will be punished by negative DA and should not keep happening.
+
+
 * `AllGood` = summary stat representing the average of several of the following stats.  If this is around 1, then the model should be performing well, both behaviorally and in terms of what each of the key layers is doing.
 
 * `ActMatch` = match between network's action and the instinct-driven "correct" action.  Usually the `LeftCor` action -- tracking % of time it correctly does the Left action (in zoolander mode where it only goes left to search) -- is the most indicative
@@ -82,7 +89,8 @@ If layer NOT gated:  <- exploration opportunity cost
 
 * `MaintEarly` means the PT layer is getting active prior to BG gating -- need to turn down `.SuperToPT` -- see below.
 
-* `WrongCSGate` is gating to approach the wrong CS (one that does not satisfy the current drive) -- this can happen if the BG happens to get activated via OFC and ACC patterns even if the CS is not associated with the drive-relevant US.  It will be punished by negative DA and should not keep happening.
+
+* Time and Effort restart with Goal engage gating; typically runs straight down the arm, so it doesn't differ unless arms have different params.
 
 # Parameter tuning
 

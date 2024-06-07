@@ -1,5 +1,4 @@
-// Delete deletes the jobs selected in the Jobs table,
-// with a confirmation prompt.
+// Delete deletes the selected Jobs, with a confirmation prompt.
 
 // DeleteJobs deletes the given jobs 
 func DeleteJobs(jobs []string, path string) {

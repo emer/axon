@@ -202,7 +202,7 @@
   Sel = ".BLAExtToAcq"
   Desc = ""
   [Base.Params]
-    "Path.PathScale.Abs" = "1"
+    "Path.PathScale.Abs" = "1.0"
 
 [[Base]]
   Sel = ".CSToBLApos"
@@ -230,6 +230,12 @@
     "Path.PathScale.Abs" = "3"
 
 [[Base]]
+  Sel = "#ACCcostToVMtxGo"
+  Desc = "costs.."
+  [Base.Params]
+    "Path.PathScale.Abs" = "3"
+
+[[Base]]
   Sel = ".VSPatchPath"
   Desc = ""
   [Base.Params]
@@ -241,7 +247,7 @@
   Sel = ".CSToBLANovelInhib"
   Desc = ""
   [Base.Params]
-    "Path.Learn.LRate.Base" = "0.02"
+    "Path.Learn.LRate.Base" = "0.005"
 
 [[Base]]
   Sel = ".SuperToThal"
