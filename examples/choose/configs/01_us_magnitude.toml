@@ -4,4 +4,3 @@ NDrives = 3
 Paradigm = "GroupGoodBad"
 USMagRange.Min = 0.99 # 0.5 shows diffs; 0.99 for control
 USMagRange.Max = 1
-

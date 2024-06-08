@@ -3758,7 +3758,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.005  Sched: 1  Mod: 1  Eff: 0.005 }
+  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }

@@ -247,7 +247,7 @@
   Sel = ".CSToBLANovelInhib"
   Desc = ""
   [Base.Params]
-    "Path.Learn.LRate.Base" = "0.005"
+    "Path.Learn.LRate.Base" = "0.01"
 
 [[Base]]
   Sel = ".SuperToThal"

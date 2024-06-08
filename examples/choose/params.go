@@ -218,11 +218,12 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Path.PathScale.Abs":        "4", // 4 > 3 > 2 -- key for rapid learning
 				"Path.Learn.Trace.LearnThr": "0",
-				"Path.Learn.LRate.Base":     "0.02", // 0.02 needed in test; better overall
+				"Path.Learn.LRate.Base":     "0.02", // 0.02  > 0.01
 			}},
-		{Sel: ".CSToBLANovelInhib", Desc: "",
+		{Sel: ".CSToBLANovelInhib", Desc: "learning rate here is critical to bootstrap & then fade",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.005", // 0.005 > 0.002 > 0.01 > 0.001 > 0.02
+				"Path.Learn.LRate.Base": "0.01", // 0.01 slightly worse for Gate CS, but shows cost effects..
+				// 0.02 too fast and Gate CS suffers significantly. 0.005 best for Gate CS, but inhibits costs
 			}},
 		{Sel: ".SuperToThal", Desc: "",
 			Params: params.Params{
