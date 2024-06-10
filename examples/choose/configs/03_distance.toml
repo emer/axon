@@ -3,5 +3,5 @@
 NDrives = 3
 Paradigm = "GroupGoodBad"
 LengthRange.Min = 4
-LengthRange.Max = 8
+LengthRange.Max = 12
 

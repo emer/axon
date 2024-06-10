@@ -67,7 +67,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 					di := uint32(lctx.Di)
 					lctx.SetFloat32(GlbV(ctx, di, gv))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		if gv == GvDA || gv == GvRew || gv == GvRewPred {
 			itm := lg.AddItem(&elog.Item{
@@ -86,7 +86,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 						}
 						lctx.SetFloat32(v)
 					}}})
-			lg.AddStdAggs(itm, mode, times)
+			lg.AddStdAggs(itm, mode, times...)
 
 			itm = lg.AddItem(&elog.Item{
 				Name:   gnm + "_R",
@@ -103,7 +103,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 						}
 						lctx.SetFloat32(v)
 					}}})
-			lg.AddStdAggs(itm, mode, times)
+			lg.AddStdAggs(itm, mode, times...)
 			if gv == GvDA {
 				itm = lg.AddItem(&elog.Item{
 					Name:   gnm + "_Neg",
@@ -121,7 +121,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 							}
 							lctx.SetFloat32(v)
 						}}})
-				lg.AddStdAggs(itm, mode, times)
+				lg.AddStdAggs(itm, mode, times...)
 			}
 		}
 	}
@@ -144,7 +144,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActMMax",
@@ -156,7 +156,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Max)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
@@ -170,7 +170,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1])
+		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorDiff",
@@ -181,7 +181,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(1.0 - ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_GiMult",
@@ -192,7 +192,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.GiMult)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 	}
 }
 
@@ -242,7 +242,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
 				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1])
+		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Top5",
@@ -251,7 +251,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
 				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1])
+		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Next5",
@@ -260,7 +260,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
 				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1])
+		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Rest",
@@ -269,7 +269,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
 				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1])
+		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
 	}
 }
 
@@ -319,7 +319,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Avg)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_CaSpkPMinusMax",
@@ -331,7 +331,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Max)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifAvg",
@@ -390,7 +390,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxNmdaCa",
@@ -402,7 +402,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgVgccCa",
@@ -414,7 +414,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxVgccCa",
@@ -426,7 +426,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
 					ctx.SetFloat64(stats.MaxTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgCaLrn",
@@ -438,7 +438,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxCaLrn",
@@ -450,7 +450,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
 					ctx.SetFloat64(stats.MaxTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgAbsCaDiff",
@@ -463,7 +463,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					norm.AbsTensor(tsr)
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_MaxAbsCaDiff",
@@ -476,7 +476,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					norm.AbsTensor(tsr)
 					ctx.SetFloat64(stats.MaxTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgCaD",
@@ -488,7 +488,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					tsr := ctx.GetLayerRepTensor(clnm, "CaD")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:   clnm + "_AvgCaSpkD",
@@ -501,7 +501,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
@@ -513,7 +513,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}}})
-		lg.AddStdAggs(itm, mode, times)
+		lg.AddStdAggs(itm, mode, times...)
 
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CaDiffCorrel",

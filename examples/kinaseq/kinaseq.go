@@ -1,299 +1,144 @@
-// Copyright (c) 2020, The Emergent Authors. All rights reserved.
+// Copyright (c) 2019, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build this_is_broken_we_should_fix_or_delete
-
-// kinaseq plots kinase learning simulation over time
 package main
 
-/*
 import (
 	"fmt"
 	"math/rand"
+	"reflect"
 
-	"cogentcore.org/core/icons"
-	"cogentcore.org/core/ki"
 	"cogentcore.org/core/math32"
-	"github.com/emer/axon/v2/axon"
-	"github.com/emer/emergent/v2/emer"
-	"cogentcore.org/core/tensor/stats/stats"
-	"cogentcore.org/core/plot/plotview"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/math32/minmax"
+	"github.com/emer/emergent/v2/elog"
+	"github.com/emer/emergent/v2/etime"
 )
 
-func main() {
-	TheSim.Config()
-	win := TheSim.ConfigGUI()
-	win.StartEventLoop()
+// KinaseState is basic Kinase equation state
+type KinaseState struct {
+
+	// Condition counter
+	Condition int
+
+	// Condition description
+	Cond string
+
+	// Trial counter
+	Trial int
+
+	// Cycle counter
+	Cycle int
+
+	// phase-based firing rates
+	MinusHz, PlusHz float32
+
+	// Neuron spiking
+	SendSpike, RecvSpike float32
+
+	// Neuron probability of spiking
+	SendP, RecvP float32
+
+	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
+	SendCaSyn, RecvCaSyn float32
+
+	// CaM is first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
+	CaM float32
+
+	// CaP is shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
+	CaP float32
+
+	// CaD is longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
+	CaD float32
+
+	// CaUpT is time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
+	CaUpT float32
+
+	// DWt is the CaP - CaD
+	DWt float32
+
+	// ErrDWt is the target error dwt
+	ErrDWt float32
 }
 
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
-// Sim holds the params, table, etc
-type Sim struct {
-
-	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
-
-	// the sending neuron
-	SendNeur *axon.Neuron `view:"no-inline"`
-
-	// the receiving neuron
-	RecvNeur *axon.Neuron `view:"no-inline"`
-
-	// path-level parameters -- for intializing synapse -- other params not used
-	Path *axon.Path `view:"no-inline"`
-
-	// extra neuron state
-	NeuronEx NeuronEx `view:"no-inline"`
-
-	// all parameter management
-	Params emer.Params `view:"inline"`
-
-	// multiplier on product factor to equate to SynC
-	PGain float32
-
-	// spike multiplier for display purposes
-	SpikeDisp float32
-
-	// use current Ge clamping for recv neuron -- otherwise spikes driven externally
-	RGeClamp bool
-
-	// gain multiplier for RGe clamp
-	RGeGain float32
-
-	// baseline recv Ge level
-	RGeBase float32
-
-	// baseline recv Gi level
-	RGiBase float32
-
-	// number of repetitions -- if > 1 then only final @ end of Dur shown
-	NTrials int
-
-	// number of msec in minus phase
-	MinusMsec int
-
-	// number of msec in plus phase
-	PlusMsec int
-
-	// quiet space between spiking
-	ISIMsec int
-
-	// total trial msec: minus, plus isi
-	TrialMsec int `view:"-"`
-
-	// minus phase firing frequency
-	MinusHz int
-
-	// plus phase firing frequency
-	PlusHz int
-
-	// additive difference in sending firing frequency relative to recv (recv has basic minus, plus)
-	SendDiffHz int
-
-	// synapse state values, NST_ in log
-	SynNeurTheta axon.Synapse `view:"no-inline"`
-
-	// synapse state values, SST_ in log
-	SynSpkTheta axon.Synapse `view:"no-inline"`
-
-	// synapse state values, SSC_ in log
-	SynSpkCont axon.Synapse `view:"no-inline"`
-
-	// synapse state values, SNC_ in log
-	SynNMDACont axon.Synapse `view:"no-inline"`
-
-	// axon time recording
-	Context axon.Context
-
-	// all logs
-	Logs map[string]*table.Table `view:"no-inline"`
-
-	// all plots
-	Plots map[string]*plotview.PlotView `view:"-"`
-
-	// main GUI window
-	Win *core.Window `view:"-"`
-
-	// the master toolbar
-	ToolBar *core.ToolBar `view:"-"`
-
-	// stop button
-	StopNow bool `view:"-"`
-}
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
-
-// Config configures all the elements using the standard functions
-func (ss *Sim) Config() {
-	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSets
-	ss.Params.AddNetwork(ss.Net)
-	ss.Context.Defaults()
-	ss.PGain = 1
-	ss.SpikeDisp = 0.1
-	ss.RGeClamp = true
-	ss.RGeGain = 0.2
-	ss.RGeBase = 0
-	ss.RGiBase = 0
-	ss.NTrials = 1000
-	ss.MinusMsec = 150
-	ss.PlusMsec = 50
-	ss.ISIMsec = 200
-	ss.MinusHz = 50
-	ss.PlusHz = 25
-	ss.Update()
-	ss.ConfigNet(ss.Net)
-	ss.ConfigTable(ss.Log("TrialLog"))
-	ss.ConfigTable(ss.Log("RunLog"))
-	ss.ConfigTable(ss.Log("DWtLog"))
-	ss.ConfigTable(ss.Log("DWtVarLog"))
-	ss.Init()
-}
-
-// Update updates computed values
-func (ss *Sim) Update() {
-	ss.TrialMsec = ss.MinusMsec + ss.PlusMsec + ss.ISIMsec
-}
-
-// Init restarts the run and applies current parameters
-func (ss *Sim) Init() {
-	ss.Params.SetAll()
-	ss.Context.Reset()
-	ss.Net.InitWts()
-	ss.NeuronEx.Init()
-	ss.InitSyn(&ss.SynNeurTheta)
-	ss.InitSyn(&ss.SynSpkTheta)
-	ss.InitSyn(&ss.SynSpkCont)
-	ss.InitSyn(&ss.SynNMDACont)
-}
-
-// Log returns / makes log table of given name
-func (ss *Sim) Log(name string) *table.Table {
-	if ss.Logs == nil {
-		ss.Logs = make(map[string]*table.Table)
-	}
-	dt, ok := ss.Logs[name]
-	if ok {
-		return dt
-	}
-	dt = &table.Table{}
-	ss.Logs[name] = dt
-	return dt
-}
-
-func (ss *Sim) Plot(name string) *plotview.PlotView {
-	return ss.Plots[name]
-}
-
-func (ss *Sim) AddPlot(name string, plt *plotview.PlotView) {
-	if ss.Plots == nil {
-		ss.Plots = make(map[string]*plotview.PlotView)
-	}
-	ss.Plots[name] = plt
+func (ks *KinaseState) Init() {
+	ks.SendSpike = 0
+	ks.RecvSpike = 0
+	ks.SendP = 1
+	ks.RecvP = 1
+	ks.SendCaSyn = 0
+	ks.RecvCaSyn = 0
 }
 
 // Sweep runs a sweep through minus-plus ranges
 func (ss *Sim) Sweep() {
-	ss.Update()
-	dt := ss.Log("DWtLog")
-	dvt := ss.Log("DWtVarLog")
-	rdt := ss.Log("RunLog")
-
-	hz := []int{25, 50, 100}
+	hz := []float32{25, 50, 100}
 	nhz := len(hz)
 
-	dt.SetNumRows(nhz * nhz)
-	dvt.SetNumRows(nhz * nhz)
-
-	row := 0
+	cond := 0
 	for mi := 0; mi < nhz; mi++ {
 		minusHz := hz[mi]
 		for pi := 0; pi < nhz; pi++ {
 			plusHz := hz[pi]
-
-			ss.RunImpl(minusHz, plusHz, ss.NTrials)
-
-			cond := fmt.Sprintf("%03d -> %03d", minusHz, plusHz)
-			dwt := float64(plusHz-minusHz) / 100
-			dt.SetFloat("ErrDWt", row, float64(dwt))
-			dt.SetString("Cond", row, cond)
-			dvt.SetFloat("ErrDWt", row, float64(dwt))
-			dvt.SetString("Cond", row, cond)
-
-			rix := table.NewIndexView(rdt)
-			for ci := 2; ci < rdt.NumColumns(); ci++ {
-				cnm := rdt.ColumnName(ci)
-				mean := agg.Mean(rix, cnm)[0]
-				sem := agg.Sem(rix, cnm)[0]
-				dt.SetFloat(cnm, row, mean)
-				dvt.SetFloat(cnm, row, sem)
-			}
-			row++
+			condStr := fmt.Sprintf("%03d -> %03d", minusHz, plusHz)
+			ss.Kinase.Condition = cond
+			ss.Kinase.Cond = condStr
+			ss.RunImpl(minusHz, plusHz, ss.Config.Run.NTrials)
+			cond++
 		}
 	}
-	ss.Plot("DWtPlot").Update()
-	ss.Plot("DWtVarPlot").Update()
+	// ss.Plot("DWtPlot").Update()
+	// ss.Plot("DWtVarPlot").Update()
 }
 
 // Run runs for given parameters
 func (ss *Sim) Run() {
-	ss.Update()
-	ss.RunImpl(ss.MinusHz, ss.PlusHz, ss.NTrials)
+	cr := &ss.Config.Run
+	ss.RunImpl(cr.MinusHz, cr.PlusHz, cr.NTrials)
 }
 
 // RunImpl runs NTrials, recording to RunLog and TrialLog
-func (ss *Sim) RunImpl(minusHz, plusHz, ntrials int) {
-	dt := ss.Log("RunLog")
-	dt.SetNumRows(ntrials)
-	ss.Context.Reset()
-	for nr := 0; nr < ntrials; nr++ {
+func (ss *Sim) RunImpl(minusHz, plusHz float32, ntrials int) {
+	ss.Kinase.Init()
+	for trl := 0; trl < ntrials; trl++ {
+		ss.Kinase.Trial = trl
 		ss.TrialImpl(minusHz, plusHz)
-		ss.LogState(dt, nr, nr, 0)
 	}
-	ss.Plot("RunPlot").Update()
+	ss.Logs.LogRow(etime.Test, etime.Condition, ss.Kinase.Condition)
+	ss.GUI.UpdatePlot(etime.Test, etime.Condition)
 }
 
 func (ss *Sim) Trial() {
-	ss.Update()
-	ss.TrialImpl(ss.MinusHz, ss.PlusHz)
-	ss.Plot("TrialPlot").Update()
+	cr := &ss.Config.Run
+	ss.Kinase.Init()
+	ss.TrialImpl(cr.MinusHz, cr.PlusHz)
 }
 
 // TrialImpl runs one trial for given parameters
-func (ss *Sim) TrialImpl(minusHz, plusHz int) {
-	dt := ss.Log("TrialLog")
-	dt.SetNumRows(ss.TrialMsec)
-
-	nex := &ss.NeuronEx
-	gi := ss.RGiBase
-
-	ss.InitWts()
-
-	ss.Context.NewState(true)
+func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
+	cfg := &ss.Config
+	ks := &ss.Kinase
+	ks.MinusHz = minusHz
+	ks.PlusHz = plusHz
+	ks.Cycle = 0
 	for phs := 0; phs < 3; phs++ {
-		var maxms, rhz int
+		var maxms int
+		var rhz float32
 		switch phs {
 		case 0:
 			rhz = minusHz
-			maxms = ss.MinusMsec
+			maxms = cfg.Run.MinusMSec
 		case 1:
 			rhz = plusHz
-			maxms = ss.PlusMsec
+			maxms = cfg.Run.PlusMSec
 		case 2:
 			rhz = 0
-			maxms = ss.ISIMsec
+			maxms = cfg.Run.ISIMSec
 		}
-		shz := rhz + ss.SendDiffHz
+		shz := rhz + cfg.Run.SendDiffHz
 		if shz < 0 {
 			shz = 0
 		}
-
-		ge := ss.RGeBase + ss.RGeGain*RGeStimForHz(float32(rhz))
 
 		var Sint, Rint float32
 		if rhz > 0 {
@@ -303,118 +148,85 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 			Sint = math32.Exp(-1000.0 / float32(shz))
 		}
 		for t := 0; t < maxms; t++ {
-			cyc := ss.Context.Cycle
-
-			sSpk := false
+			ks.SendSpike = 0
 			if Sint > 0 {
-				nex.Sp *= rand.Float32()
-				if nex.Sp <= Sint {
-					sSpk = true
-					nex.Sp = 1
+				ks.SendP *= rand.Float32()
+				if ks.SendP <= Sint {
+					ks.SendSpike = 1
+					ks.SendP = 1
 				}
 			}
+			ks.SendCaSyn += cfg.Params.SynDt * (cfg.Params.SpikeG*ks.SendSpike - ks.SendCaSyn)
 
-			rSpk := false
+			ks.RecvSpike = 0
 			if Rint > 0 {
-				nex.Rp *= rand.Float32()
-				if nex.Rp <= Rint {
-					rSpk = true
-					nex.Rp = 1
+				ks.RecvP *= rand.Float32()
+				if ks.RecvP <= Rint {
+					ks.RecvSpike = 1
+					ks.RecvP = 1
 				}
 			}
+			ks.RecvCaSyn += cfg.Params.SynDt * (cfg.Params.SpikeG*ks.RecvSpike - ks.RecvCaSyn)
 
-			ss.NeuronUpdate(sSpk, rSpk, ge, gi)
+			ca := ks.SendCaSyn * ks.RecvCaSyn
+			ss.CaParams.FromCa(ca, &ks.CaM, &ks.CaP, &ks.CaD)
 
-			ss.LogState(dt, cyc, 0, cyc)
-			ss.Context.CycleInc()
+			ss.Logs.LogRow(etime.Test, etime.Cycle, ks.Cycle)
+			ks.Cycle++
+		}
+		if phs == 1 {
+			ks.DWt = ks.CaP - ks.CaD
+		}
+	}
+
+	ks.ErrDWt = (plusHz - minusHz) / 100
+
+	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
+	ss.Logs.LogRow(etime.Test, etime.Trial, ks.Trial)
+	ss.GUI.UpdatePlot(etime.Test, etime.Trial)
+}
+
+func (ss *Sim) ConfigKinaseLogItems() {
+	lg := &ss.Logs
+
+	ks := &ss.Kinase
+	typ := reflect.TypeOf(*ks)
+	val := reflect.ValueOf(ks).Elem()
+	nf := typ.NumField()
+	for i := 0; i < nf; i++ {
+		field := typ.Field(i)
+		itm := lg.AddItem(&elog.Item{
+			Name:   field.Name,
+			Type:   field.Type.Kind(),
+			FixMax: false,
+			Range:  minmax.F32{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					switch field.Type.Kind() {
+					case reflect.Float32:
+						ctx.SetFloat32(val.Field(i).Interface().(float32))
+					case reflect.Int:
+						ctx.SetFloat32(float32(val.Field(i).Interface().(int)))
+					case reflect.String:
+						ctx.SetString(val.Field(i).Interface().(string))
+					}
+				},
+			}})
+		times := []etime.Times{etime.Condition, etime.Trial, etime.Cycle}
+		if field.Type.Kind() == reflect.Float32 {
+			lg.AddStdAggs(itm, etime.Test, times...)
+		} else {
+			tn := len(times)
+			for ti := 0; ti < tn-1; ti++ {
+				itm.Write[etime.Scope(etime.Test, times[ti])] = func(ctx *elog.Context) {
+					switch field.Type.Kind() {
+					case reflect.Int:
+						ctx.SetFloat32(float32(val.Field(i).Interface().(int)))
+					case reflect.String:
+						ctx.SetString(val.Field(i).Interface().(string))
+					}
+				}
+			}
 		}
 	}
 }
-
-// ConfigGUI configures the Cogent Core GUI interface for this simulation.
-func (ss *Sim) ConfigGUI() *core.Window {
-	width := 1600
-	height := 1200
-
-	// core.WinEventTrace = true
-
-	core.SetAppName("kinaseq")
-	core.SetAppAbout(`Exploration of kinase equations. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq"> GitHub</a>.</p>`)
-
-	win := core.NewMainWindow("kinaseq", "Kinase Equation Exploration", width, height)
-	ss.Win = win
-
-	vp := win.WinViewport2D()
-	updt := vp.UpdateStart()
-
-	mfr := win.SetMainFrame()
-
-	tbar := core.AddNewToolBar(mfr, "tbar")
-	tbar.SetStretchMaxWidth()
-	ss.ToolBar = tbar
-
-	split := core.AddNewSplitView(mfr, "split")
-	split.Dim = math32.X
-	split.SetStretchMax()
-
-	sv := views.AddNewStructView(split, "sv")
-	sv.SetStruct(ss)
-
-	tv := core.AddNewTabView(split, "tv")
-
-	plt := tv.AddNewTab(plotview.KiT_PlotView, "RunPlot").(*plotview.PlotView)
-	ss.AddPlot("RunPlot", ss.ConfigRunPlot(plt, ss.Log("RunLog")))
-
-	plt = tv.AddNewTab(plotview.KiT_PlotView, "TrialPlot").(*plotview.PlotView)
-	ss.AddPlot("TrialPlot", ss.ConfigTrialPlot(plt, ss.Log("TrialLog")))
-
-	plt = tv.AddNewTab(plotview.KiT_PlotView, "DWtPlot").(*plotview.PlotView)
-	ss.AddPlot("DWtPlot", ss.ConfigDWtPlot(plt, ss.Log("DWtLog")))
-
-	plt = tv.AddNewTab(plotview.KiT_PlotView, "DWtVarPlot").(*plotview.PlotView)
-	ss.AddPlot("DWtVarPlot", ss.ConfigDWtPlot(plt, ss.Log("DWtVarLog")))
-
-	split.SetSplits(.2, .8)
-
-	tbar.AddAction(core.ActOpts{Label: "Init", Icon: icons.Update, Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
-		ss.Init()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(core.ActOpts{Label: "Trial", Icon: "step-fwd", Tooltip: "Run one trial of the equations and plot results in TrialPlot."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
-		ss.Trial()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(core.ActOpts{Label: "Run", Icon: "play", Tooltip: "Run NTrials of the equations and plot results at end of each trial in RunPlot."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
-		ss.Run()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(core.ActOpts{Label: "Sweep", Icon: "fast-fwd", Tooltip: "Sweep through minus-plus combinations and plot in DWtLogs."}, win.This(), func(recv, send tree.Node, sig int64, data interface{}) {
-		ss.Sweep()
-		vp.SetNeedsFullRender()
-	})
-
-	tbar.AddAction(core.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
-		func(recv, send tree.Node, sig int64, data interface{}) {
-			core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
-		})
-
-	vp.UpdateEndNoSig(updt)
-
-	// main menu
-	appnm := core.AppName()
-	mmen := win.MainMenu
-	mmen.ConfigMenus([]string{appnm, "File", "Edit", "Window"})
-
-	amen := win.MainMenu.ChildByName(appnm, 0).(*core.Action)
-	amen.Menu.AddAppMenu(win)
-
-	emen := win.MainMenu.ChildByName("Edit", 1).(*core.Action)
-	emen.Menu.AddCopyCutPaste(win)
-
-	win.MainMenuUpdated()
-	return win
-}
-*/

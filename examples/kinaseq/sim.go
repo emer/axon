@@ -3,17 +3,14 @@
 // license that can be found in the LICENSE file.
 
 /*
-neuron: This simulation illustrates the basic properties of neural spiking and
-rate-code activation, reflecting a balance of excitatory and inhibitory
-influences (including leak and synaptic inhibition).
+kinaseq: Explores calcium-based synaptic learning rules,
+specifically at the synaptic level.
 */
 package main
 
 //go:generate core generate -add-types
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"reflect"
 
@@ -23,6 +20,7 @@ import (
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
+	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -30,10 +28,7 @@ import (
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/netview"
-	"github.com/emer/emergent/v2/params"
-	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
@@ -49,40 +44,6 @@ func main() {
 
 // see config.go for Config
 
-// ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
-// selected to apply on top of that
-var ParamSets = netparams.Sets{
-	"Base": {
-		{Sel: "Path", Desc: "no learning",
-			Params: params.Params{
-				"Path.Learn.Learn": "false",
-			}},
-		{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "false",
-				"Layer.Acts.Init.Vm":   "0.3",
-			}},
-	},
-	"Testing": {
-		{Sel: "Layer", Desc: "",
-			Params: params.Params{
-				"Layer.Acts.NMDA.Gbar":  "0.0",
-				"Layer.Acts.GabaB.Gbar": "0.0",
-			}},
-	},
-}
-
-// Extra state for neuron
-type NeuronEx struct {
-
-	// input ISI countdown for spiking mode -- counts up
-	InISI float32
-}
-
-func (nrn *NeuronEx) Init() {
-	nrn.InISI = 0
-}
-
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
@@ -92,6 +53,12 @@ type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
+
+	// Kinase SynCa params
+	CaParams kinase.CaParams
+
+	// Kinase state
+	Kinase KinaseState
 
 	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
@@ -128,7 +95,9 @@ type Sim struct {
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	econfig.Config(&ss.Config, "config.toml")
+	ss.Config.Params.Update()
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
+	ss.CaParams.Defaults()
 	ss.Stats.Init()
 	ss.ValMap = make(map[string]float32)
 }
@@ -151,189 +120,25 @@ func (ss *Sim) ConfigAll() {
 	}
 }
 
-func (ss *Sim) ConfigNet(net *axon.Network) {
-	ctx := &ss.Context
-
-	net.InitName(net, "Neuron")
-	in := net.AddLayer2D("Input", 1, 1, axon.InputLayer)
-	hid := net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
-
-	net.ConnectLayers(in, hid, paths.NewFull(), axon.ForwardPath)
-
-	err := net.Build(ctx)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	net.Defaults()
-	ss.SetParams("Network", false) // only set Network params
-	ss.InitWts(net)
-}
-
-// InitWts loads the saved weights
-func (ss *Sim) InitWts(net *axon.Network) {
-	net.InitWts(&ss.Context)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// 	    Init, utils
-
-// Init restarts the run, and initializes everything, including network weights
-// and resets the epoch log table
-func (ss *Sim) Init() {
-	ss.Context.Reset()
-	ss.InitWts(ss.Net)
-	ss.NeuronEx.Init()
-	ss.GUI.StopNow = false
-	ss.SetParams("", false) // all sheets
-}
-
-// Counters returns a string of the current counter state
-// use tabs to achieve a reasonable formatting overall
-// and add a few tabs at the end to allow for expansion..
-func (ss *Sim) Counters() string {
-	return fmt.Sprintf("Cycle:\t%d\t\t\t", ss.Context.Cycle)
-}
-
-func (ss *Sim) UpdateView() {
-	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
-	ss.GUI.ViewUpdate.Text = ss.Counters()
-	ss.GUI.ViewUpdate.UpdateCycle(int(ss.Context.Cycle))
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// 	    Running the Network, starting bottom-up..
-
-// RunCycles updates neuron over specified number of cycles
-func (ss *Sim) RunCycles() {
-	ctx := &ss.Context
-	ss.Init()
-	ss.GUI.StopNow = false
-	ss.Net.InitActs(ctx)
-	ctx.NewState(etime.Train)
-	ss.SetParams("", false)
-	// ly := ss.Net.AxonLayerByName("Neuron")
-	// nrn := &(ly.Neurons[0])
-	inputOn := false
-	for cyc := 0; cyc < ss.Config.NCycles; cyc++ {
-		switch cyc {
-		case ss.Config.OnCycle:
-			inputOn = true
-		case ss.Config.OffCycle:
-			inputOn = false
-		}
-		ss.NeuronUpdate(ss.Net, inputOn)
-		ctx.Cycle = int32(cyc)
-		ss.Logs.LogRow(etime.Test, etime.Cycle, cyc)
-		ss.RecordValues(cyc)
-		if cyc%ss.Config.UpdateInterval == 0 {
-			ss.UpdateView()
-		}
-		ss.Context.CycleInc()
-		if ss.GUI.StopNow {
-			break
-		}
-	}
-	ss.UpdateView()
-}
-
-func (ss *Sim) RecordValues(cyc int) {
-	var vals []float32
-	ly := ss.Net.AxonLayerByName("Neuron")
-	key := fmt.Sprintf("cyc: %03d", cyc)
-	for _, vnm := range axon.NeuronVarNames {
-		ly.UnitValues(&vals, vnm, 0)
-		vkey := key + fmt.Sprintf("\t%s", vnm)
-		ss.ValMap[vkey] = vals[0]
-	}
-}
-
-// NeuronUpdate updates the neuron
-// this just calls the relevant code directly, bypassing most other stuff.
-func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
-	ctx := &ss.Context
-	ly := ss.Net.AxonLayerByName("Neuron")
-	ni := ly.NeurStIndex
-	di := uint32(0)
-	ac := &ly.Params.Acts
-	nex := &ss.NeuronEx
-	// nrn.Noise = float32(ly.Params.Act.Noise.Gen(-1))
-	// nrn.Ge += nrn.Noise // GeNoise
-	// nrn.Gi = 0
-	if inputOn {
-		if ss.Config.GeClamp {
-			axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Config.Ge)
-			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFromRawSteady(axon.NrnV(ctx, ni, di, axon.GeRaw)))
-		} else {
-			nex.InISI += 1
-			if nex.InISI > 1000/ss.Config.SpikeHz {
-				axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Config.Ge)
-				nex.InISI = 0
-			} else {
-				axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
-			}
-			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFromRaw(axon.NrnV(ctx, ni, di, axon.GeSyn), axon.NrnV(ctx, ni, di, axon.GeRaw)))
-		}
-	} else {
-		axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
-		axon.SetNrnV(ctx, ni, di, axon.GeSyn, 0)
-	}
-	axon.SetNrnV(ctx, ni, di, axon.GiRaw, ss.Config.Gi)
-	axon.SetNrnV(ctx, ni, di, axon.GiSyn, ac.Dt.GiSynFromRawSteady(axon.NrnV(ctx, ni, di, axon.GiRaw)))
-
-	if ss.Net.GPU.On {
-		ss.Net.GPU.SyncStateToGPU()
-		ss.Net.GPU.RunPipelineWait("Cycle", 2)
-		ss.Net.GPU.SyncStateFromGPU()
-		ctx.CycleInc() // why is this not working!?
-	} else {
-		lpl := ly.Pool(0, di)
-		ly.GInteg(ctx, ni, di, lpl, ly.LayerValues(0))
-		ly.SpikeFromG(ctx, ni, di, lpl)
-	}
-}
-
-// Stop tells the sim to stop running
-func (ss *Sim) Stop() {
-	ss.GUI.StopNow = true
-}
-
-/////////////////////////////////////////////////////////////////////////
-//   Params setting
-
-// SetParams sets the params for "Base" and then current ParamSet.
-// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
-// otherwise just the named sheet
-// if setMsg = true then we output a message for each param that was set.
-func (ss *Sim) SetParams(sheet string, setMsg bool) {
-	ss.Params.SetAll()
-	ly := ss.Net.AxonLayerByName("Neuron")
-	lyp := ly.Params
-	lyp.Acts.Gbar.E = 1
-	lyp.Acts.Gbar.L = 0.2
-	lyp.Acts.Erev.E = float32(ss.Config.ErevE)
-	lyp.Acts.Erev.I = float32(ss.Config.ErevI)
-	// lyp.Acts.Noise.Var = float64(ss.Config.Noise)
-	lyp.Acts.KNa.On.SetBool(ss.Config.KNaAdapt)
-	lyp.Acts.Mahp.Gbar = ss.Config.MahpGbar
-	lyp.Acts.NMDA.Gbar = ss.Config.NMDAGbar
-	lyp.Acts.GabaB.Gbar = ss.Config.GABABGbar
-	lyp.Acts.VGCC.Gbar = ss.Config.VGCCGbar
-	lyp.Acts.AK.Gbar = ss.Config.AKGbar
-	lyp.Acts.Update()
-}
-
 func (ss *Sim) ConfigLogs() {
-	ss.ConfigLogItems()
+	if ss.Config.Run.Neuron {
+		ss.ConfigNeuronLogItems()
+	} else {
+		ss.ConfigKinaseLogItems()
+	}
 	ss.Logs.CreateTables()
 
-	ss.Logs.PlotItems("Vm", "Spike")
+	if ss.Config.Run.Neuron {
+		ss.Logs.PlotItems("Vm", "Spike")
+	} else {
+		ss.Logs.PlotItems("SendSpike", "RecvSpike")
+	}
 
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	ss.Logs.ResetLog(etime.Test, etime.Cycle)
 }
 
-func (ss *Sim) ConfigLogItems() {
+func (ss *Sim) ConfigNeuronLogItems() {
 	ly := ss.Net.AxonLayerByName("Neuron")
 	// nex := &ss.NeuronEx
 	lg := &ss.Logs
@@ -348,22 +153,35 @@ func (ss *Sim) ConfigLogItems() {
 				ctx.SetInt(int(ss.Context.Cycle))
 			}}})
 
-	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow", "GiSyn"}
+	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow", "GiSyn", "CaSyn"}
 
 	for _, vnm := range vars {
-		cvnm := vnm // closure
 		lg.AddItem(&elog.Item{
-			Name:   cvnm,
+			Name:   vnm,
 			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					vl := ly.UnitValue(cvnm, []int{0, 0}, 0)
+					vl := ly.UnitValue(vnm, []int{0, 0}, 0)
 					ctx.SetFloat32(vl)
 				}}})
 	}
 
+	pj := ly.RcvPaths[0]
+	pvars := []string{"CaM", "CaP", "CaD", "CaUpT"}
+	for _, vnm := range pvars {
+		lg.AddItem(&elog.Item{
+			Name:   "Syn." + vnm,
+			Type:   reflect.Float64,
+			FixMax: false,
+			Range:  minmax.F32{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					vl := pj.SynValue(vnm, 0, 0)
+					ctx.SetFloat32(vl)
+				}}})
+	}
 }
 
 func (ss *Sim) ResetTstCycPlot() {
@@ -380,8 +198,8 @@ func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Neuron"
-	ss.GUI.MakeBody(ss, "neuron", title, `This simulation illustrates the basic properties of neural spiking and rate-code activation, reflecting a balance of excitatory and inhibitory influences (including leak and synaptic inhibition). See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
+	title := "Kinase Eq"
+	ss.GUI.MakeBody(ss, "kinaseq", title, `kinaseq: Explores calcium-based synaptic learning rules, specifically at the synaptic level. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -415,7 +233,49 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Cycles", Icon: icons.PlayArrow,
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Sweep", Icon: icons.PlayArrow,
+			Tooltip: "Runs Kinase sweep over set of minus / plus spiking levels.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				if !ss.GUI.IsRunning {
+					go func() {
+						ss.GUI.IsRunning = true
+						ss.Sweep()
+						ss.GUI.IsRunning = false
+						ss.GUI.UpdateWindow()
+					}()
+				}
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run", Icon: icons.PlayArrow,
+			Tooltip: "Runs NTrials of Kinase updating.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				if !ss.GUI.IsRunning {
+					go func() {
+						ss.GUI.IsRunning = true
+						ss.Run()
+						ss.GUI.IsRunning = false
+						ss.GUI.UpdateWindow()
+					}()
+				}
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Trial", Icon: icons.PlayArrow,
+			Tooltip: "Runs one Trial of Kinase updating.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				if !ss.GUI.IsRunning {
+					go func() {
+						ss.GUI.IsRunning = true
+						ss.Trial()
+						ss.GUI.IsRunning = false
+						ss.GUI.UpdateWindow()
+					}()
+				}
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Neuron", Icon: icons.PlayArrow,
 			Tooltip: "Runs neuron updating over NCycles.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
