@@ -16,6 +16,9 @@ type ParamConfig struct {
 	// rate = 1 / tau
 	SynDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
 
+	// learning rate for decoder
+	LRate float32 `default:"0.001"`
+
 	// network parameters
 	Network map[string]any
 
@@ -60,16 +63,13 @@ type RunConfig struct {
 	NRuns int `default:"1" min:"1"`
 
 	// total number of epochs per run
-	NEpochs int `default:"1"`
+	NEpochs int `default:"1000"`
 
 	// total number of epochs per run
-	NTrials int `default:"10"` // 1000
+	NTrials int `default:"1000"`
 
-	MinusMSec int `default:"150"`
-
-	PlusMSec int `default:"50"`
-
-	ISIMSec int `default:"200"`
+	// RandomHz generates random firing rates, for testing
+	RandomHz bool
 
 	// firing rate, for testing
 	MinusHz, PlusHz float32 `default:"50"`
@@ -106,8 +106,11 @@ type Config struct {
 	// Inhibitory conductance
 	Gi float32 `min:"0" step:"0.01" default:"0.1"`
 
-	// total number of cycles to run
+	// total number of cycles (1 MSec) to run
 	NCycles int `min:"10" default:"200"`
+
+	// number of plus cycles
+	PlusCycles int `default:"50"`
 
 	// when does excitatory input into neuron come on?
 	OnCycle int `min:"0" default:"10"`

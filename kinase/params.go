@@ -132,14 +132,6 @@ func (kp *CaParams) Update() {
 	kp.Dt.Update()
 }
 
-// FromSpike computes updates to CaM, CaP, CaD from current spike value.
-// The SpikeG factor determines strength of increase to CaM.
-func (kp *CaParams) FromSpike(spike float32, caM, caP, caD *float32) {
-	*caM += kp.Dt.MDt * (kp.SpikeG*spike - *caM)
-	*caP += kp.Dt.PDt * (*caM - *caP)
-	*caD += kp.Dt.DDt * (*caP - *caD)
-}
-
 // FromCa computes updates to CaM, CaP, CaD from current calcium level.
 // The SpikeG factor is NOT applied to Ca and should be pre-applied
 // as appropriate.

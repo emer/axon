@@ -21,6 +21,7 @@ import (
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/kinase"
+	"github.com/emer/emergent/v2/decoder"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -59,6 +60,9 @@ type Sim struct {
 
 	// Kinase state
 	Kinase KinaseState
+
+	// Linear decoder for CaSyn prediction
+	Linear decoder.Linear
 
 	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`
@@ -112,12 +116,25 @@ func (ss *Sim) Defaults() {
 // ConfigAll configures all the elements using the standard functions
 func (ss *Sim) ConfigAll() {
 	ss.ConfigNet(ss.Net)
+	ss.ConfigKinase()
 	ss.ConfigLogs()
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
+}
+
+// Init restarts the run, and initializes everything, including network weights
+// and resets the epoch log table
+func (ss *Sim) Init() {
+	ss.Context.Reset()
+	ss.InitWts(ss.Net)
+	ss.Kinase.Init()
+	ss.ConfigKinase()
+	ss.NeuronEx.Init()
+	ss.GUI.StopNow = false
+	ss.SetParams("", false) // all sheets
 }
 
 func (ss *Sim) ConfigLogs() {
@@ -131,7 +148,7 @@ func (ss *Sim) ConfigLogs() {
 	if ss.Config.Run.Neuron {
 		ss.Logs.PlotItems("Vm", "Spike")
 	} else {
-		ss.Logs.PlotItems("SendSpike", "RecvSpike")
+		ss.Logs.PlotItems("Send.Spike", "Recv.Spike")
 	}
 
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -269,6 +286,20 @@ func (ss *Sim) ConfigGUI() {
 					go func() {
 						ss.GUI.IsRunning = true
 						ss.Trial()
+						ss.GUI.IsRunning = false
+						ss.GUI.UpdateWindow()
+					}()
+				}
+			},
+		})
+		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Train", Icon: icons.PlayArrow,
+			Tooltip: "Train the Kinase approximation models.",
+			Active:  egui.ActiveStopped,
+			Func: func() {
+				if !ss.GUI.IsRunning {
+					go func() {
+						ss.GUI.IsRunning = true
+						ss.Train()
 						ss.GUI.IsRunning = false
 						ss.GUI.UpdateWindow()
 					}()

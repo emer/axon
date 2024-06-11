@@ -76,16 +76,6 @@ func (ss *Sim) InitWts(net *axon.Network) {
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Init, utils
 
-// Init restarts the run, and initializes everything, including network weights
-// and resets the epoch log table
-func (ss *Sim) Init() {
-	ss.Context.Reset()
-	ss.InitWts(ss.Net)
-	ss.NeuronEx.Init()
-	ss.GUI.StopNow = false
-	ss.SetParams("", false) // all sheets
-}
-
 // Counters returns a string of the current counter state
 // use tabs to achieve a reasonable formatting overall
 // and add a few tabs at the end to allow for expansion..
