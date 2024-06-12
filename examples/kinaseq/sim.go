@@ -56,7 +56,7 @@ type Sim struct {
 	Config Config
 
 	// Kinase SynCa params
-	CaParams kinase.CaParams
+	CaParams kinase.SynCaParams
 
 	// Kinase state
 	Kinase KinaseState

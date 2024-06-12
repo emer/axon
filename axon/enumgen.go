@@ -135,6 +135,49 @@ func (i *LayerTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "LayerTypes")
 }
 
+var _SynCaFunsValues = []SynCaFuns{0, 1, 2}
+
+// SynCaFunsN is the highest valid value for type SynCaFuns, plus one.
+const SynCaFunsN SynCaFuns = 3
+
+var _SynCaFunsValueMap = map[string]SynCaFuns{`StdSynCa`: 0, `LinearSynCa`: 1, `NeurSynCa`: 2}
+
+var _SynCaFunsDescMap = map[SynCaFuns]string{0: `StdSynCa uses standard synaptic calcium integration method`, 1: `LinearSynCa uses linear regression generated calcium integration (much faster)`, 2: `NeurSynCa uses simple product of separately-integrated neuron values (much faster)`}
+
+var _SynCaFunsMap = map[SynCaFuns]string{0: `StdSynCa`, 1: `LinearSynCa`, 2: `NeurSynCa`}
+
+// String returns the string representation of this SynCaFuns value.
+func (i SynCaFuns) String() string { return enums.String(i, _SynCaFunsMap) }
+
+// SetString sets the SynCaFuns value from its string representation,
+// and returns an error if the string is invalid.
+func (i *SynCaFuns) SetString(s string) error {
+	return enums.SetString(i, s, _SynCaFunsValueMap, "SynCaFuns")
+}
+
+// Int64 returns the SynCaFuns value as an int64.
+func (i SynCaFuns) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the SynCaFuns value from an int64.
+func (i *SynCaFuns) SetInt64(in int64) { *i = SynCaFuns(in) }
+
+// Desc returns the description of the SynCaFuns value.
+func (i SynCaFuns) Desc() string { return enums.Desc(i, _SynCaFunsDescMap) }
+
+// SynCaFunsValues returns all possible values for the type SynCaFuns.
+func SynCaFunsValues() []SynCaFuns { return _SynCaFunsValues }
+
+// Values returns all possible values for the type SynCaFuns.
+func (i SynCaFuns) Values() []enums.Enum { return enums.Values(_SynCaFunsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i SynCaFuns) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *SynCaFuns) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "SynCaFuns")
+}
+
 var _DAModTypesValues = []DAModTypes{0, 1, 2, 3}
 
 // DAModTypesN is the highest valid value for type DAModTypes, plus one.

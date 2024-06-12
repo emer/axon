@@ -682,8 +682,25 @@ func (ls *LRateParams) Init() {
 	ls.UpdateEff()
 }
 
+// SynCaFuns are different ways of computing synaptic calcium (experimental)
+type SynCaFuns int32 //enums:enum
+
+const (
+	// StdSynCa uses standard synaptic calcium integration method
+	StdSynCa SynCaFuns = iota
+
+	// LinearSynCa uses linear regression generated calcium integration (much faster)
+	LinearSynCa
+
+	// NeurSynCa uses simple product of separately-integrated neuron values (much faster)
+	NeurSynCa
+)
+
 // TraceParams manages parameters associated with temporal trace learning
 type TraceParams struct {
+
+	// how to compute the synaptic calcium (experimental)
+	SynCa SynCaFuns
 
 	// time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace
 	Tau float32 `default:"1,2,4"`
@@ -696,9 +713,12 @@ type TraceParams struct {
 
 	// rate = 1 / tau
 	Dt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+
+	pad, pad1, pad2 float32
 }
 
 func (tp *TraceParams) Defaults() {
+	tp.SynCa = LinearSynCa
 	tp.Tau = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0

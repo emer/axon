@@ -41,10 +41,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "Path", Desc: "basic path params",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
-				"Path.SWts.Adapt.LRate":    "0.1", // .1 >= .2,
-				"Path.SWts.Init.SPct":      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				"Path.Learn.Trace.SubMean": "0",   // 1 > 0 for long run stability
+				"Path.Learn.Trace.SynCa":   "LinearSynCa",
+				"Path.Learn.LRate.Base":    "0.05", // 0.1 learns fast but dies early, .02 is stable long term
+				"Path.SWts.Adapt.LRate":    "0.1",  // .1 >= .2,
+				"Path.SWts.Init.SPct":      "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				"Path.Learn.Trace.SubMean": "0",    // 1 > 0 for long run stability
 			}},
 		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{

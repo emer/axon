@@ -83,8 +83,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "Path", Desc: "std",
 			Params: params.Params{
+				"Path.Learn.Trace.SynCa":   "LinearSynCa",
 				"Path.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
-				"Path.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
+				"Path.Learn.LRate.Base":    "0.02", // .03 > others -- same as CtCtxt
 				"Path.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
 				"Path.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 				"Path.Com.PFail":           "0.0",

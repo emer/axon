@@ -69,6 +69,7 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "Path", Desc: "yes extra learning factors",
 			Params: params.Params{
+				"Path.Learn.Trace.SynCa":   "LinearSynCa",
 				"Path.Learn.LRate.Base":    "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
 				"Path.Learn.Trace.SubMean": "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 				"Path.SWts.Adapt.LRate":    "0.0001", // 0.005 == .1 == .01

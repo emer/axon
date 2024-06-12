@@ -8,21 +8,13 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strings"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/stats"
-	"github.com/emer/emergent/v2/decoder"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/etime"
-)
-
-const (
-	NBins        = 20
-	CyclesPerBin = 10
-	NOutputs     = 3
-	NInputs      = NBins + 2 // per neuron
 )
 
 // KinaseNeuron has Neuron state
@@ -42,7 +34,7 @@ type KinaseNeuron struct {
 	TotalSpikes float32
 
 	// binned count of spikes, for regression learning
-	BinnedSpikes [NBins]float32
+	BinnedSpikes [4]float32
 }
 
 func (kn *KinaseNeuron) Init() {
@@ -58,13 +50,14 @@ func (kn *KinaseNeuron) StartTrial() {
 	for i := range kn.BinnedSpikes {
 		kn.BinnedSpikes[i] = 0
 	}
+	// kn.CaSyn = 0 // note: better fits with carryover
 }
 
 // Cycle does one cycle of neuron updating, with given exponential spike interval
 // based on target spiking firing rate.
 func (kn *KinaseNeuron) Cycle(expInt float32, params *ParamConfig, cyc int) {
 	kn.Spike = 0
-	bin := cyc / CyclesPerBin
+	bin := cyc / 50
 	if expInt > 0 {
 		kn.SpikeP *= rand.Float32()
 		if kn.SpikeP <= expInt {
@@ -143,8 +136,11 @@ type KinaseState struct {
 	// Standard synapse values
 	StdSyn KinaseSynapse
 
-	// Linearion synapse values
+	// Linear synapse values
 	LinearSyn KinaseSynapse
+
+	// binned integration of send, recv spikes
+	BinnedSums [4]float32
 }
 
 func (ks *KinaseState) Init() {
@@ -160,8 +156,6 @@ func (kn *KinaseState) StartTrial() {
 }
 
 func (ss *Sim) ConfigKinase() {
-	ss.Linear.Init(NOutputs, NInputs*2, 0, decoder.IdentityFunc)
-	ss.Linear.LRate = ss.Config.Params.LRate
 }
 
 // Sweep runs a sweep through minus-plus ranges
@@ -268,20 +262,14 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 	}
 	ks.StdSyn.DWt = ks.StdSyn.CaP - ks.StdSyn.CaD
 
-	ks.Send.SetInput(ss.Linear.Inputs, 0)
-	ks.Recv.SetInput(ss.Linear.Inputs, NInputs)
-	ss.Linear.Forward()
-	out := make([]float32, NOutputs)
-	ss.Linear.Output(&out)
-	ks.LinearSyn.CaM = out[0]
-	ks.LinearSyn.CaP = out[1]
-	ks.LinearSyn.CaD = out[2]
+	for i := range ks.BinnedSums {
+		ks.BinnedSums[i] = 0.1 * (ks.Recv.BinnedSpikes[i] * ks.Send.BinnedSpikes[i])
+	}
+
+	ss.CaParams.FinalCa(ks.BinnedSums[0], ks.BinnedSums[1], ks.BinnedSums[2], ks.BinnedSums[3], &ks.LinearSyn.CaM, &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
 	ks.LinearSyn.DWt = ks.LinearSyn.CaP - ks.LinearSyn.CaD
 
 	if ks.Train {
-		targ := [NOutputs]float32{ks.StdSyn.CaM, ks.StdSyn.CaP, ks.StdSyn.CaD}
-		sse, _ := ss.Linear.Train(targ[:])
-		ks.SSE = sse
 		ss.Logs.LogRow(etime.Train, etime.Cycle, 0)
 		ss.GUI.UpdatePlot(etime.Train, etime.Cycle)
 		ss.Logs.LogRow(etime.Train, etime.Trial, ks.Trial)
@@ -308,7 +296,6 @@ func (ss *Sim) Train() {
 		ss.Logs.LogRow(etime.Train, etime.Condition, ss.Kinase.Condition)
 		ss.GUI.UpdatePlot(etime.Train, etime.Condition)
 	}
-	tensor.SaveCSV(&ss.Linear.Weights, "trained.wts", '\t')
 }
 
 func (ss *Sim) ConfigKinaseLogItems() {
@@ -320,7 +307,7 @@ func (ss *Sim) ConfigKinaseLogItems() {
 	tn := len(times)
 	WalkFields(val,
 		func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool {
-			if field.Name == "BinnedSpikes" {
+			if strings.HasPrefix(field.Name, "Binned") {
 				return false
 			}
 			return true

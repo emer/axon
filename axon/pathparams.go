@@ -277,8 +277,7 @@ func (pj *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32,
 // DoSynCa returns false if should not do synaptic-level calcium updating.
 // Done by default in Cortex, not for some other special pathway types.
 func (pj *PathParams) DoSynCa() bool {
-	if pj.PathType == RWPath || pj.PathType == TDPredPath || pj.PathType == VSMatrixPath ||
-		pj.PathType == DSMatrixPath || pj.PathType == VSPatchPath || pj.PathType == BLAPath {
+	if pj.Learn.Trace.SynCa != StdSynCa || pj.PathType == RWPath || pj.PathType == TDPredPath || pj.PathType == VSMatrixPath || pj.PathType == DSMatrixPath || pj.PathType == VSPatchPath || pj.PathType == BLAPath || pj.Learn.Hebb.On.IsTrue() {
 		return false
 	}
 	return true
@@ -338,28 +337,36 @@ func (pj *PathParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, sub
 // Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
-	// credit assignment part
-	caUpT := SynCaV(ctx, syni, di, CaUpT)                                // time of last update
-	syCaM := SynCaV(ctx, syni, di, CaM)                                  // fast time scale
-	syCaP := SynCaV(ctx, syni, di, CaP)                                  // slower but still fast time scale, drives Potentiation
-	syCaD := SynCaV(ctx, syni, di, CaD)                                  // slow time scale, drives Depression (one trial = 200 cycles)
-	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
+	var syCaM, syCaP, syCaD, caUpT float32
+	switch pj.Learn.Trace.SynCa {
+	case StdSynCa:
+		caUpT = SynCaV(ctx, syni, di, CaUpT)                                 // time of last update
+		syCaM = SynCaV(ctx, syni, di, CaM)                                   // fast time scale
+		syCaP = SynCaV(ctx, syni, di, CaP)                                   // slower but still fast time scale, drives Potentiation
+		syCaD = SynCaV(ctx, syni, di, CaD)                                   // slow time scale, drives Depression (one trial = 200 cycles)
+		pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
+	case LinearSynCa:
+		rb0 := NrnV(ctx, ri, di, SpkBin0)
+		sb0 := NrnV(ctx, si, di, SpkBin0)
+		rb1 := NrnV(ctx, ri, di, SpkBin1)
+		sb1 := NrnV(ctx, si, di, SpkBin1)
+		rb2 := NrnV(ctx, ri, di, SpkBin2)
+		sb2 := NrnV(ctx, si, di, SpkBin2)
+		rb3 := NrnV(ctx, ri, di, SpkBin3)
+		sb3 := NrnV(ctx, si, di, SpkBin3)
 
-	rb0 := NrnV(ctx, ri, di, SpkBin0)
-	sb0 := NrnV(ctx, si, di, SpkBin0)
-	rb1 := NrnV(ctx, ri, di, SpkBin1)
-	sb1 := NrnV(ctx, si, di, SpkBin1)
-	rb2 := NrnV(ctx, ri, di, SpkBin2)
-	sb2 := NrnV(ctx, si, di, SpkBin2)
-	rb3 := NrnV(ctx, ri, di, SpkBin3)
-	sb3 := NrnV(ctx, si, di, SpkBin3)
+		b0 := 0.1 * (rb0 * sb0)
+		b1 := 0.1 * (rb1 * sb1)
+		b2 := 0.1 * (rb2 * sb2)
+		b3 := 0.1 * (rb3 * sb3)
 
-	b0 := 0.1 * (rb0 * sb0)
-	b1 := 0.1 * (rb1 * sb1)
-	b2 := 0.1 * (rb2 * sb2)
-	b3 := 0.1 * (rb3 * sb3)
-
-	pj.Learn.KinaseCa.FinalCa(b0, b1, b2, b3, &syCaM, &syCaP, &syCaD)
+		pj.Learn.KinaseCa.FinalCa(b0, b1, b2, b3, &syCaM, &syCaP, &syCaD)
+	case NeurSynCa:
+		gain := float32(1.0)
+		syCaM = gain * NrnV(ctx, si, di, CaSpkM) * NrnV(ctx, ri, di, CaSpkM)
+		syCaP = gain * NrnV(ctx, si, di, CaSpkP) * NrnV(ctx, ri, di, CaSpkP)
+		syCaD = gain * NrnV(ctx, si, di, CaSpkD) * NrnV(ctx, ri, di, CaSpkD)
+	}
 
 	SetSynCaV(ctx, syni, di, CaM, syCaM)
 	SetSynCaV(ctx, syni, di, CaP, syCaP)

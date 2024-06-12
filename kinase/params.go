@@ -240,7 +240,7 @@ func (kp *SynCaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 
 // FinalCa uses a linear regression to compute the final Ca values
 func (kp *SynCaParams) FinalCa(bin0, bin1, bin2, bin3 float32, caM, caP, caD *float32) {
-	if bin0+bin1+bin2+bin3 < 0.1 {
+	if bin0+bin1+bin2+bin3 < 0.01 {
 		*caM = 0
 		*caP = 0
 		*caD = 0

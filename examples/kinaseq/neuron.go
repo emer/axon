@@ -189,10 +189,10 @@ func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 	syni := uint32(0)
 	pj := ly.RcvPaths[0]
 
-	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * axon.NrnV(ctx, ni, di, axon.CaSyn)
+	snCaSyn := pj.Params.Learn.KinaseCa.CaScale * axon.NrnV(ctx, ni, di, axon.CaSyn)
 	pj.Params.SynCaSyn(ctx, syni, ri, di, snCaSyn, updtThr)
 
-	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * axon.NrnV(ctx, ri, di, axon.CaSyn)
+	rnCaSyn := pj.Params.Learn.KinaseCa.CaScale * axon.NrnV(ctx, ri, di, axon.CaSyn)
 	if axon.NrnV(ctx, si, di, axon.Spike) <= 0 { // NOT already handled in send version
 		pj.Params.SynCaSyn(ctx, syni, si, di, rnCaSyn, updtThr)
 	}
