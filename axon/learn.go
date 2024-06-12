@@ -96,50 +96,6 @@ func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, CaDiff, NrnV(ctx, ni, di, NrnCaP)-NrnV(ctx, ni, di, NrnCaD))
 }
 
-// CaSpkParams parameterizes the neuron-level spike-driven calcium
-// signals, starting with CaSyn that is integrated at the neuron level
-// and drives synapse-level, pre * post Ca integration, which provides the Tr
-// trace that multiplies error signals, and drives learning directly for Target layers.
-// CaSpk* values are integrated separately at the Neuron level and used for UpdateThr
-// and RLRate as a proxy for the activation (spiking) based learning signal.
-type CaSpkParams struct {
-
-	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdateThr.  Path.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
-	SpikeG float32 `default:"8,12"`
-
-	// time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PathParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)
-	SynTau float32 `default:"30" min:"1"`
-
-	// rate = 1 / tau
-	SynDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
-
-	pad int32
-
-	// time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Path level for synaptic integration, except for the M factor.
-	Dt kinase.CaDtParams `view:"inline"`
-}
-
-func (np *CaSpkParams) Defaults() {
-	np.SpikeG = 8
-	np.SynTau = 30
-	np.Dt.Defaults()
-	np.Update()
-}
-
-func (np *CaSpkParams) Update() {
-	np.Dt.Update()
-	np.SynDt = 1 / np.SynTau
-}
-
-// CaFromSpike computes CaSpk* and CaSyn calcium signals based on current spike.
-func (np *CaSpkParams) CaFromSpike(ctx *Context, ni, di uint32) {
-	nsp := np.SpikeG * NrnV(ctx, ni, di, Spike)
-	AddNrnV(ctx, ni, di, CaSyn, np.SynDt*(nsp-NrnV(ctx, ni, di, CaSyn)))
-	AddNrnV(ctx, ni, di, CaSpkM, np.Dt.MDt*(nsp-NrnV(ctx, ni, di, CaSpkM)))
-	AddNrnV(ctx, ni, di, CaSpkP, np.Dt.PDt*(NrnV(ctx, ni, di, CaSpkM)-NrnV(ctx, ni, di, CaSpkP)))
-	AddNrnV(ctx, ni, di, CaSpkD, np.Dt.DDt*(NrnV(ctx, ni, di, CaSpkP)-NrnV(ctx, ni, di, CaSpkD)))
-}
-
 //////////////////////////////////////////////////////////////////////////////////////
 //  TrgAvgActParams
 
@@ -313,7 +269,7 @@ type LearnNeurParams struct {
 	CaLearn CaLrnParams `view:"inline"`
 
 	// parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdateThr and RLRate as a proxy for the activation (spiking) based learning signal.
-	CaSpk CaSpkParams `view:"inline"`
+	CaSpk kinase.NeurCaParams `view:"inline"`
 
 	// NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes
 	LrnNMDA chans.NMDAParams `view:"inline"`
@@ -388,7 +344,17 @@ func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot flo
 // CaFromSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
-	ln.CaSpk.CaFromSpike(ctx, ni, di)
+
+	caSyn := NrnV(ctx, ni, di, CaSyn)
+	caSpkM := NrnV(ctx, ni, di, CaSpkM)
+	caSpkP := NrnV(ctx, ni, di, CaSpkP)
+	caSpkD := NrnV(ctx, ni, di, CaSpkD)
+	ln.CaSpk.CaFromSpike(NrnV(ctx, ni, di, Spike), &caSyn, &caSpkM, &caSpkP, &caSpkD)
+	SetNrnV(ctx, ni, di, CaSyn, caSyn)
+	SetNrnV(ctx, ni, di, CaSpkM, caSpkM)
+	SetNrnV(ctx, ni, di, CaSpkP, caSpkP)
+	SetNrnV(ctx, ni, di, CaSpkD, caSpkD)
+
 	ln.CaLearn.CaLrns(ctx, ni, di)
 }
 
@@ -875,7 +841,7 @@ type LearnSynParams struct {
 	Trace TraceParams `view:"inline"`
 
 	// kinase calcium Ca integration parameters
-	KinaseCa kinase.CaParams `view:"inline"`
+	KinaseCa kinase.SynCaParams `view:"inline"`
 
 	// hebbian learning option, which overrides the default learning rules
 	Hebb HebbParams `view:"inline"`

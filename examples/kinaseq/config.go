@@ -66,7 +66,7 @@ type RunConfig struct {
 	NEpochs int `default:"1000"`
 
 	// total number of epochs per run
-	NTrials int `default:"1000"`
+	NTrials int `default:"10"`
 
 	// RandomHz generates random firing rates, for testing
 	RandomHz bool

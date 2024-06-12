@@ -5,7 +5,6 @@
 package kinase
 
 import (
-	"cogentcore.org/core/math32"
 	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
@@ -71,46 +70,85 @@ func (kp *CaDtParams) Update() {
 	kp.D4Dt = 4.0 * kp.DDt
 }
 
-// Equations for below, courtesy of Rishi Chaudhri:
-// https://www.wolframalpha.com/input?i=dx%2Fdt+%3D+-a*x%2C+dy%2Fdt+%3D+b*x+-+b*y%2C+dz%2Fdt+%3D+c*y+-+c*z
-
-// CaAtT computes the 3 Ca values at (currentTime + ti), assuming 0
-// new Ca incoming (no spiking). It uses closed-form exponential functions.
-func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
-	t := float32(ti)
-	mdt := kp.MDt
-	pdt := kp.PDt
-	ddt := kp.DDt
-	if kp.ExpAdj.IsTrue() { // adjust for discrete
-		mdt *= 1.11
-		pdt *= 1.03
-		ddt *= 1.03
-	}
-	mi := *caM
-	pi := *caP
-	di := *caD
-
-	*caM = mi * math32.FastExp(-t*mdt)
-
-	em := math32.FastExp(t * mdt)
-	ep := math32.FastExp(t * pdt)
-
-	*caP = pi*math32.FastExp(-t*pdt) - (pdt*mi*math32.FastExp(-t*(mdt+pdt))*(em-ep))/(pdt-mdt)
-
-	epd := math32.FastExp(t * (pdt + ddt))
-	emd := math32.FastExp(t * (mdt + ddt))
-	emp := math32.FastExp(t * (mdt + pdt))
-
-	*caD = pdt*ddt*mi*math32.FastExp(-t*(mdt+pdt+ddt))*(ddt*(emd-epd)+(pdt*(epd-emp))+mdt*(emp-emd))/((mdt-pdt)*(mdt-ddt)*(pdt-ddt)) - ddt*pi*math32.FastExp(-t*(pdt+ddt))*(ep-math32.FastExp(t*ddt))/(ddt-pdt) + di*math32.FastExp(-t*ddt)
+// FromCa updates CaM, CaP, CaD from given current calcium value,
+// which is a faster time-integral of calcium typically.
+func (kp *CaDtParams) FromCa(ca float32, caM, caP, caD *float32) {
+	*caM += kp.MDt * (ca - *caM)
+	*caP += kp.PDt * (*caM - *caP)
+	*caD += kp.DDt * (*caP - *caD)
 }
 
-// CaParams has rate constants for integrating spike-driven Ca calcium
+// FromCa4 computes updates to CaM, CaP, CaD from current calcium level
+// using 4x rate constants, to be called at 4 msec intervals.
+// This introduces some error but is significantly faster
+// and does not affect overall learning.
+func (kp *CaDtParams) FromCa4(ca float32, caM, caP, caD *float32) {
+	*caM += kp.M4Dt * (ca - *caM)
+	*caP += kp.P4Dt * (*caM - *caP)
+	*caD += kp.D4Dt * (*caP - *caD)
+}
+
+// NeurCaParams parameterizes the neuron-level spike-driven calcium
+// signals, starting with CaSyn that is integrated at the neuron level
+// and drives synapse-level, pre * post Ca integration, which provides the Tr
+// trace that multiplies error signals, and drives learning directly for Target layers.
+// CaSpk* values are integrated separately at the Neuron level and used for UpdateThr
+// and RLRate as a proxy for the activation (spiking) based learning signal.
+type NeurCaParams struct {
+
+	// SpikeG is a gain multiplier on spike impulses for computing CaSpk:
+	// increasing this directly affects the magnitude of the trace values,
+	// learning rate in Target layers, and other factors that depend on CaSpk
+	// values, including RLRate, UpdateThr.
+	// Larger networks require higher gain factors at the neuron level:
+	// 12, vs 8 for smaller.
+	SpikeG float32 `default:"8,12"`
+
+	// time constant for integrating spike-driven calcium trace at sender and recv
+	// neurons, CaSyn, which then drives synapse-level integration of the
+	// joint pre * post synapse-level activity, in cycles (msec).
+	// Note: if this param is changed, then there will be a change in effective
+	// learning rate that can be compensated for by multiplying
+	// PathParams.Learn.KinaseCa.CaScale by sqrt(30 / sqrt(SynTau)
+	SynTau float32 `default:"30" min:"1"`
+
+	// rate = 1 / tau
+	SynDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+
+	pad int32
+
+	// time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Path level for synaptic integration, except for the M factor.
+	Dt CaDtParams `view:"inline"`
+}
+
+func (np *NeurCaParams) Defaults() {
+	np.SpikeG = 8
+	np.SynTau = 30
+	np.Dt.Defaults()
+	np.Update()
+}
+
+func (np *NeurCaParams) Update() {
+	np.Dt.Update()
+	np.SynDt = 1 / np.SynTau
+}
+
+// CaFromSpike updates Ca variables from spike input which is either 0 or 1
+func (np *NeurCaParams) CaFromSpike(spike float32, caSyn, caM, caP, caD *float32) {
+	nsp := np.SpikeG * spike
+	*caSyn += np.SynDt * (nsp - *caSyn)
+	np.Dt.FromCa(nsp, caM, caP, caD)
+}
+
+// SynCaParams has rate constants for integrating spike-driven Ca calcium
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
-type CaParams struct { //types:add
-
-	// spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate.
-	SpikeG float32 `default:"12"`
+type SynCaParams struct { //types:add
+	// CaScale is a scaling multiplier on synaptic Ca values,
+	// which due to the multiplication of send * recv are smaller in magnitude.
+	// The default 12 value keeps them in roughly the unit scale,
+	// and affects effective learning rate.
+	CaScale float32 `default:"12"`
 
 	// maximum ISI for integrating in Opt mode -- above that just set to 0
 	MaxISI int32 `default:"100"`
@@ -121,43 +159,31 @@ type CaParams struct { //types:add
 	Dt CaDtParams `view:"inline"`
 }
 
-func (kp *CaParams) Defaults() {
-	kp.SpikeG = 12
+func (kp *SynCaParams) Defaults() {
+	kp.CaScale = 12
 	kp.MaxISI = 100
 	kp.Dt.Defaults()
 	kp.Update()
 }
 
-func (kp *CaParams) Update() {
+func (kp *SynCaParams) Update() {
 	kp.Dt.Update()
-}
-
-// FromCa computes updates to CaM, CaP, CaD from current calcium level.
-// The SpikeG factor is NOT applied to Ca and should be pre-applied
-// as appropriate.
-func (kp *CaParams) FromCa(ca float32, caM, caP, caD *float32) {
-	*caM += kp.Dt.MDt * (ca - *caM)
-	*caP += kp.Dt.PDt * (*caM - *caP)
-	*caD += kp.Dt.DDt * (*caP - *caD)
-}
-
-// FromCa4 computes updates to CaM, CaP, CaD from current calcium level
-// using 4x rate constants, to be called at 4 msec intervals.
-// This introduces some error but is significantly faster
-// and does not affect overall learning.
-func (kp *CaParams) FromCa4(ca float32, caM, caP, caD *float32) {
-	*caM += kp.Dt.M4Dt * (ca - *caM)
-	*caP += kp.Dt.P4Dt * (*caM - *caP)
-	*caD += kp.Dt.D4Dt * (*caP - *caD)
 }
 
 // IntFromTime returns the interval from current time
 // and last update time, which is 0 if never updated
-func (kp *CaParams) IntFromTime(ctime, utime float32) int32 {
+func (kp *SynCaParams) IntFromTime(ctime, utime float32) int32 {
 	if utime < 0 {
 		return -1
 	}
 	return int32(ctime - utime)
+}
+
+// FromCa updates CaM, CaP, CaD from given current synaptic calcium value,
+// which is a faster time-integral of calcium typically.
+// ca is multiplied by CaScale.
+func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
+	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
 }
 
 // CurCa returns the current Ca* values, dealing with updating for
@@ -165,7 +191,7 @@ func (kp *CaParams) IntFromTime(ctime, utime float32) int32 {
 // ctime is current time in msec, and utime is last update time (-1 if never)
 // to avoid running out of float32 precision, ctime should be reset periodically
 // along with the Ca values -- in axon this happens during SlowAdapt.
-func (kp *CaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
+func (kp *SynCaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 	isi := kp.IntFromTime(ctime, utime)
 	if isi <= 0 {
 		return
@@ -176,15 +202,14 @@ func (kp *CaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 		*caD = 0
 		return
 	}
-	// kp.Dt.CaAtT(isi, caM, caP, caD) // this is roughly 10% faster than iterating at 1msec
 	// this 4 msec integration is still reasonably accurate and faster than the closed-form expr
 	isi4 := isi / 4
 	rm := isi % 4
 	for i := int32(0); i < isi4; i++ {
-		kp.FromCa4(0, caM, caP, caD) // just decay to 0
+		kp.Dt.FromCa4(0, caM, caP, caD) // just decay to 0
 	}
 	for j := int32(0); j < rm; j++ {
-		kp.FromCa(0, caM, caP, caD) // just decay to 0
+		kp.Dt.FromCa(0, caM, caP, caD) // just decay to 0
 	}
 	return
 }

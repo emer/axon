@@ -18,10 +18,10 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32/minmax"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/kinase"
-	"github.com/emer/emergent/v2/decoder"
 	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -61,8 +61,8 @@ type Sim struct {
 	// Kinase state
 	Kinase KinaseState
 
-	// Linear decoder for CaSyn prediction
-	Linear decoder.Linear
+	// Training data for least squares solver
+	TrainData tensor.Float64
 
 	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `view:"no-inline"`

@@ -12,3 +12,52 @@ See [kinaseq example](https://github.com/emer/axon/tree/master/examples/kinaseq)
 
 * `DTau` (40) = LTD spike-driven Ca factor (`CaD`) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome).
 
+
+# TODO
+
+* remove NMDA and CaLrn from neuron if not used
+* use neuron-level recv, send final CaSpk* values as regressors!  key!
+
+# Closed-form Expression for cascading integration (not faster)
+
+Rishi Chaudhri suggested the following approach:
+
+[Wolfram Alpha Solution](https://www.wolframalpha.com/input?i=dx%2Fdt+%3D+-a*x%2C+dy%2Fdt+%3D+b*x+-+b*y%2C+dz%2Fdt+%3D+c*y+-+c*z)
+
+But unfortunately all the FastExp calls end up being slower than directly computing the cascaded equations.
+
+```go
+// Equations for below, courtesy of Rishi Chaudhri:
+// 
+// CaAtT computes the 3 Ca values at (currentTime + ti), assuming 0
+// new Ca incoming (no spiking). It uses closed-form exponential functions.
+func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
+	t := float32(ti)
+	mdt := kp.MDt
+	pdt := kp.PDt
+	ddt := kp.DDt
+	if kp.ExpAdj.IsTrue() { // adjust for discrete
+		mdt *= 1.11
+		pdt *= 1.03
+		ddt *= 1.03
+	}
+	mi := *caM
+	pi := *caP
+	di := *caD
+
+	*caM = mi * math32.FastExp(-t*mdt)
+
+	em := math32.FastExp(t * mdt)
+	ep := math32.FastExp(t * pdt)
+
+	*caP = pi*math32.FastExp(-t*pdt) - (pdt*mi*math32.FastExp(-t*(mdt+pdt))*(em-ep))/(pdt-mdt)
+
+	epd := math32.FastExp(t * (pdt + ddt))
+	emd := math32.FastExp(t * (mdt + ddt))
+	emp := math32.FastExp(t * (mdt + pdt))
+
+	*caD = pdt*ddt*mi*math32.FastExp(-t*(mdt+pdt+ddt))*(ddt*(emd-epd)+(pdt*(epd-emp))+mdt*(emp-emd))/((mdt-pdt)*(mdt-ddt)*(pdt-ddt)) - ddt*pi*math32.FastExp(-t*(pdt+ddt))*(ep-math32.FastExp(t*ddt))/(ddt-pdt) + di*math32.FastExp(-t*ddt)
+}
+```
+
+

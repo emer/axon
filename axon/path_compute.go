@@ -59,8 +59,7 @@ func (pj *Path) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
 	if !pj.Params.DoSynCa() {
 		return
 	}
-	// todo: rename SpikeG to _anything else_ -- super confusing here!
-	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
+	snCaSyn := NrnV(ctx, ni, di, CaSyn) // pj.Params.Learn.KinaseCa.CaScale *
 	scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIndex + syi
@@ -80,7 +79,7 @@ func (pj *Path) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 	if !pj.Params.DoSynCa() {
 		return
 	}
-	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
+	rnCaSyn := NrnV(ctx, ni, di, CaSyn) // pj.Params.Learn.KinaseCa.CaScale *
 	syIndexes := pj.RecvSynIndexes(ni - pj.Recv.NeurStIndex)
 
 	for _, syi := range syIndexes {

@@ -12,6 +12,7 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tensor/stats/stats"
 	"github.com/emer/emergent/v2/decoder"
 	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/etime"
@@ -166,8 +167,16 @@ func (ss *Sim) ConfigKinase() {
 // Sweep runs a sweep through minus-plus ranges
 func (ss *Sim) Sweep() {
 	ss.Kinase.Train = false
-	hz := []float32{25, 50, 100}
-	nhz := len(hz)
+	// hz := []float32{25, 50, 100}
+	// nhz := len(hz)
+
+	nhz := 100 / 5
+	hz := make([]float32, nhz)
+	i := 0
+	for h := float32(5); h <= 100; h += 5 {
+		hz[i] = h
+		i++
+	}
 
 	cond := 0
 	for mi := 0; mi < nhz; mi++ {
@@ -307,6 +316,8 @@ func (ss *Sim) ConfigKinaseLogItems() {
 	ks := &ss.Kinase
 	val := reflect.ValueOf(ks).Elem()
 	parName := ""
+	times := []etime.Times{etime.Condition, etime.Trial, etime.Cycle}
+	tn := len(times)
 	WalkFields(val,
 		func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool {
 			if field.Name == "BinnedSpikes" {
@@ -343,12 +354,12 @@ func (ss *Sim) ConfigKinaseLogItems() {
 						}
 					},
 				}})
-			times := []etime.Times{etime.Condition, etime.Trial, etime.Cycle}
-			if fkind == reflect.Float32 {
-				lg.AddStdAggs(itm, etime.AllModes, times...)
-			} else {
-				tn := len(times)
-				for ti := 0; ti < tn-1; ti++ {
+			for ti := 0; ti < tn-1; ti++ {
+				if fkind == reflect.Float32 {
+					itm.Write[etime.Scope(etime.AllModes, times[ti])] = func(ctx *elog.Context) {
+						ctx.SetAgg(ctx.Mode, times[ti+1], stats.Mean)
+					}
+				} else {
 					itm.Write[etime.Scope(etime.Train, times[ti])] = func(ctx *elog.Context) {
 						fany := value.Interface()
 						switch fkind {
