@@ -344,8 +344,28 @@ func (pj *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 	syCaP := SynCaV(ctx, syni, di, CaP)                                  // slower but still fast time scale, drives Potentiation
 	syCaD := SynCaV(ctx, syni, di, CaD)                                  // slow time scale, drives Depression (one trial = 200 cycles)
 	pj.Learn.KinaseCa.CurCa(ctx.SynCaCtr, caUpT, &syCaM, &syCaP, &syCaD) // always update, getting current Ca (just optimization)
-	dtr := syCaD                                                         // delta trace, caD reflects entire window
-	if pj.PathType == CTCtxtPath {                                       // layer 6 CT pathway
+
+	rb0 := NrnV(ctx, ri, di, SpkBin0)
+	sb0 := NrnV(ctx, si, di, SpkBin0)
+	rb1 := NrnV(ctx, ri, di, SpkBin1)
+	sb1 := NrnV(ctx, si, di, SpkBin1)
+	rb2 := NrnV(ctx, ri, di, SpkBin2)
+	sb2 := NrnV(ctx, si, di, SpkBin2)
+	rb3 := NrnV(ctx, ri, di, SpkBin3)
+	sb3 := NrnV(ctx, si, di, SpkBin3)
+
+	b0 := 0.1 * (rb0 * sb0)
+	b1 := 0.1 * (rb1 * sb1)
+	b2 := 0.1 * (rb2 * sb2)
+	b3 := 0.1 * (rb3 * sb3)
+
+	pj.Learn.KinaseCa.FinalCa(b0, b1, b2, b3, &syCaM, &syCaP, &syCaD)
+
+	SetSynCaV(ctx, syni, di, CaM, syCaM)
+	SetSynCaV(ctx, syni, di, CaP, syCaP)
+	SetSynCaV(ctx, syni, di, CaD, syCaD)
+	dtr := syCaD                   // delta trace, caD reflects entire window
+	if pj.PathType == CTCtxtPath { // layer 6 CT pathway
 		dtr = NrnV(ctx, si, di, BurstPrv)
 	}
 	SetSynCaV(ctx, syni, di, DTr, dtr)                            // save delta trace for GUI

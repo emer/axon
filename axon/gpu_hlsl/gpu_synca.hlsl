@@ -62,7 +62,7 @@ void SynCaSendPath(in Context ctx, in PathParams pj, in LayerParams ly, uint ni,
 		return;
 	}
 	
-	float snCaSyn = pj.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn);
+	float snCaSyn = pj.Learn.KinaseCa.CaScale * NrnV(ctx, ni, di, CaSyn);
 	uint cni = pj.Indexes.SendConSt + lni;
 	uint synst = pj.Indexes.SynapseSt + SendCon[cni].Start;
 	uint synn = SendCon[cni].N;
@@ -80,7 +80,7 @@ void SynCaRecvPath(in Context ctx, in PathParams pj, in LayerParams ly, uint ni,
 		return;
 	}
 	
-	float rnCaSyn = pj.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn);
+	float rnCaSyn = pj.Learn.KinaseCa.CaScale * NrnV(ctx, ni, di, CaSyn);
 	uint cni = pj.Indexes.RecvConSt + lni;
 	uint synst = pj.Indexes.RecvSynSt + RecvCon[cni].Start;
 	uint synn = RecvCon[cni].N;

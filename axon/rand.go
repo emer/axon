@@ -2,6 +2,7 @@ package axon
 
 import (
 	"cogentcore.org/core/vgpu/gosl/slrand"
+	"cogentcore.org/core/vgpu/gosl/sltype"
 )
 
 //gosl:hlsl axonrand
@@ -31,7 +32,8 @@ func GetRandomNumber(index uint32, counter slrand.Counter, funIndex RandFunIndex
 	var randCtr slrand.Counter
 	randCtr = counter
 	randCtr.Add(uint32(funIndex))
-	ctr := randCtr.Uint2()
+	var ctr sltype.Uint2
+	ctr = randCtr.Uint2()
 	return slrand.Float(&ctr, index)
 }
 

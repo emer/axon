@@ -715,6 +715,18 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 			SetNrnV(ctx, ni, di, SpkMax, spkmax)
 		}
 	}
+	bin := ctx.Cycle / 50
+	spk := NrnV(ctx, ni, di, Spike)
+	switch bin {
+	case 0:
+		AddNrnV(ctx, ni, di, SpkBin0, spk)
+	case 1:
+		AddNrnV(ctx, ni, di, SpkBin1, spk)
+	case 2:
+		AddNrnV(ctx, ni, di, SpkBin2, spk)
+	case 3:
+		AddNrnV(ctx, ni, di, SpkBin3, spk)
+	}
 }
 
 // PostSpikeSpecial does updates at neuron level after spiking has been computed.
@@ -972,6 +984,11 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVa
 	SetNrnV(ctx, ni, di, SpkPrv, NrnV(ctx, ni, di, CaSpkD))
 	SetNrnV(ctx, ni, di, SpkMax, 0)
 	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
+
+	SetNrnV(ctx, ni, di, SpkBin0, 0)
+	SetNrnV(ctx, ni, di, SpkBin1, 0)
+	SetNrnV(ctx, ni, di, SpkBin2, 0)
+	SetNrnV(ctx, ni, di, SpkBin3, 0)
 
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt

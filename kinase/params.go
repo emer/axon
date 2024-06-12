@@ -157,6 +157,12 @@ type SynCaParams struct { //types:add
 
 	// time constants for integrating at M, P, and D cascading levels
 	Dt CaDtParams `view:"inline"`
+
+	// Linear coefficients
+	CaMb, CaPb, CaDb, pad4 float32
+	CaM0, CaM1, CaM2, CaM3 float32
+	CaP0, CaP1, CaP2, CaP3 float32
+	CaD0, CaD1, CaD2, CaD3 float32
 }
 
 func (kp *SynCaParams) Defaults() {
@@ -164,6 +170,24 @@ func (kp *SynCaParams) Defaults() {
 	kp.MaxISI = 100
 	kp.Dt.Defaults()
 	kp.Update()
+
+	kp.CaMb = 0.134963
+	kp.CaM0 = -0.120041
+	kp.CaM1 = 0.219127
+	kp.CaM2 = 0.610898
+	kp.CaM3 = 2.12086
+
+	kp.CaPb = 0.177911
+	kp.CaP0 = 0.078137
+	kp.CaP1 = 0.591
+	kp.CaP2 = 0.986568
+	kp.CaP3 = 1.13846
+
+	kp.CaDb = 0.163643
+	kp.CaD0 = 0.373198
+	kp.CaD1 = 0.890947
+	kp.CaD2 = 1.01732
+	kp.CaD3 = 0.554418
 }
 
 func (kp *SynCaParams) Update() {
@@ -212,6 +236,19 @@ func (kp *SynCaParams) CurCa(ctime, utime float32, caM, caP, caD *float32) {
 		kp.Dt.FromCa(0, caM, caP, caD) // just decay to 0
 	}
 	return
+}
+
+// FinalCa uses a linear regression to compute the final Ca values
+func (kp *SynCaParams) FinalCa(bin0, bin1, bin2, bin3 float32, caM, caP, caD *float32) {
+	if bin0+bin1+bin2+bin3 < 0.1 {
+		*caM = 0
+		*caP = 0
+		*caD = 0
+		return
+	}
+	*caM = kp.CaMb + kp.CaM0*bin0 + kp.CaM1*bin1 + kp.CaM2*bin2 + kp.CaM3*bin3
+	*caP = kp.CaPb + kp.CaP0*bin0 + kp.CaP1*bin1 + kp.CaP2*bin2 + kp.CaP3*bin3
+	*caD = kp.CaDb + kp.CaD0*bin0 + kp.CaD1*bin1 + kp.CaD2*bin2 + kp.CaD3*bin3
 }
 
 //gosl:end kinase

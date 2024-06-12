@@ -35,6 +35,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.2-0.20240227203013-2b69615b5d55 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/sajari/regression v1.0.1 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
