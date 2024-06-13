@@ -353,11 +353,6 @@ func (pj *Path) InitWtsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct
 	pj.Params.SWts.InitWtsSyn(ctx, syni, rnd, mean, spct)
 }
 
-// InitSynCa initializes synaptic calcium variables
-func (pj *Path) InitSynCa(ctx *Context, syni, di uint32) {
-	InitSynCa(ctx, syni, di)
-}
-
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Path) InitWts(ctx *Context, nt *Network) {
@@ -380,9 +375,6 @@ func (pj *Path) InitWts(ctx *Context, nt *Network) {
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi
 			pj.InitWtsSyn(ctx, syni, &nt.Rand, smn, spct)
-			for di := uint32(0); di < rlay.MaxData; di++ {
-				pj.InitSynCa(ctx, syni, di)
-			}
 		}
 	}
 	if pj.Params.SWts.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {

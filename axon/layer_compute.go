@@ -212,33 +212,6 @@ func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 	}
 }
 
-// SynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking, threaded over neurons.
-// Called directly by Network, iterates over data.
-func (ly *Layer) SynCa(ctx *Context, ni uint32) {
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-		if NrnV(ctx, ni, di, Spike) == 0 { // di has to be outer loop b/c of this test
-			continue
-		}
-		updtThr := ly.Params.Learn.CaLearn.UpdateThr
-		if NrnV(ctx, ni, di, CaSpkP) < updtThr && NrnV(ctx, ni, di, CaSpkD) < updtThr {
-			continue
-		}
-		for _, sp := range ly.SndPaths {
-			if sp.IsOff() {
-				continue
-			}
-			sp.SynCaSend(ctx, ni, di, updtThr)
-		}
-		for _, rp := range ly.RcvPaths {
-			if rp.IsOff() {
-				continue
-			}
-			rp.SynCaRecv(ctx, ni, di, updtThr)
-		}
-	}
-}
-
 // LDTSrcLayAct returns the overall activity level for given source layer
 // for purposes of computing ACh salience value.
 // Typically the input is a superior colliculus (SC) layer that rapidly

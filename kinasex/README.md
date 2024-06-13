@@ -2,7 +2,7 @@
 
 This package contains experimental Kinase-based learning rules.
 
-See https://github.com/emer/axon/tree/master/examples/kinaseq for exploration of the implemented equations, and https://github.com/ccnlab/kinase/tree/main/sims/kinase for biophysical basis of the equations.
+See [kinaseq](../examples/kinaseq) for exploration of the implemented equations, and [ccnlab kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase) for biophysical basis of the equations.
 
 In the initially implemented nomenclature (early 2022), the space of algorithms was enumerated in `kinase/rules.go` as follows:
 

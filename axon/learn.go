@@ -315,7 +315,6 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 
 	SetNrnV(ctx, ni, di, CaLrn, 0)
 
-	SetNrnV(ctx, ni, di, CaSyn, 0)
 	SetNrnV(ctx, ni, di, CaSpkM, 0)
 	SetNrnV(ctx, ni, di, CaSpkP, 0)
 	SetNrnV(ctx, ni, di, CaSpkD, 0)
@@ -344,13 +343,11 @@ func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot flo
 // CaFromSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
-
-	caSyn := NrnV(ctx, ni, di, CaSyn)
+	var caSyn float32
 	caSpkM := NrnV(ctx, ni, di, CaSpkM)
 	caSpkP := NrnV(ctx, ni, di, CaSpkP)
 	caSpkD := NrnV(ctx, ni, di, CaSpkD)
 	ln.CaSpk.CaFromSpike(NrnV(ctx, ni, di, Spike), &caSyn, &caSpkM, &caSpkP, &caSpkD)
-	SetNrnV(ctx, ni, di, CaSyn, caSyn)
 	SetNrnV(ctx, ni, di, CaSpkM, caSpkM)
 	SetNrnV(ctx, ni, di, CaSpkP, caSpkP)
 	SetNrnV(ctx, ni, di, CaSpkD, caSpkD)
@@ -608,22 +605,6 @@ func (sp *SWtParams) WtFromDWt(wt, lwt *float32, dwt, swt float32) {
 	*wt = sp.WtValue(swt, *lwt)
 }
 
-// InitSynCa initializes synaptic calcium state, including CaUpT
-func InitSynCa(ctx *Context, syni, di uint32) {
-	SetSynCaV(ctx, syni, di, CaUpT, 0)
-	SetSynCaV(ctx, syni, di, CaM, 0)
-	SetSynCaV(ctx, syni, di, CaP, 0)
-	SetSynCaV(ctx, syni, di, CaD, 0)
-}
-
-// DecaySynCa decays synaptic calcium by given factor (between trials)
-// Not used by default.
-func DecaySynCa(ctx *Context, syni, di uint32, decay float32) {
-	AddSynCaV(ctx, syni, di, CaM, -decay*SynCaV(ctx, syni, di, CaM))
-	AddSynCaV(ctx, syni, di, CaP, -decay*SynCaV(ctx, syni, di, CaP))
-	AddSynCaV(ctx, syni, di, CaD, -decay*SynCaV(ctx, syni, di, CaD))
-}
-
 //gosl:end learn
 
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
@@ -682,27 +663,11 @@ func (ls *LRateParams) Init() {
 	ls.UpdateEff()
 }
 
-// SynCaFuns are different ways of computing synaptic calcium (experimental)
-type SynCaFuns int32 //enums:enum
-
-const (
-	// StdSynCa uses standard synaptic calcium integration method
-	StdSynCa SynCaFuns = iota
-
-	// LinearSynCa uses linear regression generated calcium integration (much faster)
-	LinearSynCa
-
-	// NeurSynCa uses simple product of separately-integrated neuron values (much faster)
-	NeurSynCa
-)
-
 // TraceParams manages parameters associated with temporal trace learning
 type TraceParams struct {
 
-	// how to compute the synaptic calcium (experimental)
-	SynCa SynCaFuns
-
-	// time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace
+	// time constant for integrating trace over theta cycle timescales.
+	// governs the decay rate of syanptic trace
 	Tau float32 `default:"1,2,4"`
 
 	// amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning pathways, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special path types (e.g., Hebb) benefit from SubMean = 1 always
@@ -713,12 +678,9 @@ type TraceParams struct {
 
 	// rate = 1 / tau
 	Dt float32 `view:"-" json:"-" xml:"-" edit:"-"`
-
-	pad, pad1, pad2 float32
 }
 
 func (tp *TraceParams) Defaults() {
-	tp.SynCa = LinearSynCa
 	tp.Tau = 1
 	tp.SubMean = 0
 	tp.LearnThr = 0
@@ -860,8 +822,8 @@ type LearnSynParams struct {
 	// trace-based learning parameters
 	Trace TraceParams `view:"inline"`
 
-	// kinase calcium Ca integration parameters
-	KinaseCa kinase.SynCaParams `view:"inline"`
+	// kinase calcium Ca integration parameters: using linear regression parameters
+	KinaseCa kinase.SynCaLinear `view:"inline"`
 
 	// hebbian learning option, which overrides the default learning rules
 	Hebb HebbParams `view:"inline"`

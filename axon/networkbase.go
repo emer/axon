@@ -1500,7 +1500,7 @@ func (nt *NetworkBase) DiffFrom(ctx *Context, on *NetworkBase, maxDiff int) stri
 	}
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		for si := uint32(0); si < nt.NSyns; si++ {
-			for svar := CaM; svar < SynapseCaVarsN; svar++ {
+			for svar := Tr; svar < SynapseCaVarsN; svar++ {
 				sv := nt.Synapses[ctx.SynapseCaVars.Index(di, si, svar)]
 				ov := on.Synapses[ctx.SynapseCaVars.Index(di, si, svar)]
 				if sv != ov {

@@ -6,12 +6,11 @@ package kinase
 
 import (
 	"fmt"
+	"log/slog"
 	"math/rand"
 
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/chewxy/math32"
-	"github.com/sajari/regression"
 )
 
 // Linear performs a linear regression to approximate the synaptic Ca
@@ -63,7 +62,7 @@ type Linear struct {
 	ErrDWt float32
 
 	// binned integration of send, recv spikes
-	BinnedSums []float32
+	SpikeBins []float32
 
 	// Data to fit the regression
 	Data table.Table
@@ -72,12 +71,13 @@ type Linear struct {
 func (ls *Linear) Defaults() {
 	ls.Neuron.Defaults()
 	ls.Synapse.Defaults()
+	ls.Synapse.CaScale = 6 // 12 is too fast relative to prior std learning rates
 	ls.NCycles = 200
 	ls.PlusCycles = 50
 	ls.CyclesPerBin = 50
 	ls.MaxHz = 100
-	ls.StepHz = 10
-	ls.NTrials = 2
+	ls.StepHz = 10 // note: 5 gives same results
+	ls.NTrials = 2 // 20 "
 	ls.Update()
 }
 
@@ -87,9 +87,9 @@ func (ls *Linear) Update() {
 	ls.NumBins = ls.NCycles / ls.CyclesPerBin
 	nhz := ls.MaxHz / ls.StepHz
 	ls.TotalTrials = nhz * nhz * nhz * nhz * ls.NTrials
-	ls.BinnedSums = make([]float32, ls.NumBins)
-	ls.Send.BinnedSpikes = make([]float32, ls.NumBins)
-	ls.Recv.BinnedSpikes = make([]float32, ls.NumBins)
+	ls.SpikeBins = make([]float32, ls.NumBins)
+	ls.Send.SpikeBins = make([]float32, ls.NumBins)
+	ls.Recv.SpikeBins = make([]float32, ls.NumBins)
 }
 
 func (ls *Linear) Init() {
@@ -108,9 +108,9 @@ func (ls *Linear) InitTable() {
 	ls.Data.AddIntColumn("Trial")
 	ls.Data.AddFloat64TensorColumn("Hz", []int{4}, "Send*Recv*Minus*Plus")
 	ls.Data.AddFloat64TensorColumn("State", []int{nneur}, "States")
-	ls.Data.AddFloat64TensorColumn("StdCa", []int{4}, "CaSyn,M,P,D")
-	ls.Data.AddFloat64TensorColumn("PredCa", []int{4}, "CaSyn,M,P,D")
-	ls.Data.AddFloat64TensorColumn("CaSSE", []int{4}, "CaSyn,M,P,D")
+	ls.Data.AddFloat64TensorColumn("StdCa", []int{2}, "P,D")
+	ls.Data.AddFloat64TensorColumn("PredCa", []int{2}, "P,D")
+	ls.Data.AddFloat64TensorColumn("ErrCa", []int{2}, "P,D")
 	ls.Data.AddFloat64Column("SSE") // total SSE
 	ls.Data.SetNumRows(ls.TotalTrials)
 }
@@ -128,7 +128,12 @@ type Neuron struct {
 	// Neuron probability of spiking
 	SpikeP float32
 
-	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
+	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning:
+	// exponential integration of SpikeG * Spike at SynTau time constant (typically 30).
+	// Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for
+	// the synaptic trace driving credit assignment in learning.
+	// Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically,
+	// and determines time window where pre * post spiking must overlap to drive learning.
 	CaSyn float32
 
 	// neuron-level spike-driven Ca integration
@@ -137,7 +142,7 @@ type Neuron struct {
 	TotalSpikes float32
 
 	// binned count of spikes, for regression learning
-	BinnedSpikes []float32
+	SpikeBins []float32
 }
 
 func (kn *Neuron) Init() {
@@ -152,8 +157,8 @@ func (kn *Neuron) Init() {
 
 func (kn *Neuron) StartTrial() {
 	kn.TotalSpikes = 0
-	for i := range kn.BinnedSpikes {
-		kn.BinnedSpikes[i] = 0
+	for i := range kn.SpikeBins {
+		kn.SpikeBins[i] = 0
 	}
 }
 
@@ -168,7 +173,7 @@ func (ls *Linear) Cycle(nr *Neuron, expInt float32, cyc int) {
 			nr.Spike = 1
 			nr.SpikeP = 1
 			nr.TotalSpikes += 1
-			nr.BinnedSpikes[bin] += 1
+			nr.SpikeBins[bin] += 1
 		}
 	}
 	ls.Neuron.CaFromSpike(nr.Spike, &nr.CaSyn, &nr.CaSpkM, &nr.CaSpkP, &nr.CaSpkD)
@@ -229,17 +234,15 @@ func (ls *Linear) Run() {
 }
 
 func (ls *Linear) SetSynState(sy *Synapse, row int) {
-	ls.Data.SetTensorFloat1D("StdCa", row, 0, float64(sy.CaSyn))
-	ls.Data.SetTensorFloat1D("StdCa", row, 1, float64(sy.CaM))
-	ls.Data.SetTensorFloat1D("StdCa", row, 2, float64(sy.CaP))
-	ls.Data.SetTensorFloat1D("StdCa", row, 3, float64(sy.CaD))
+	ls.Data.SetTensorFloat1D("StdCa", row, 0, float64(sy.CaP))
+	ls.Data.SetTensorFloat1D("StdCa", row, 1, float64(sy.CaD))
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
-	for i, s := range sn.BinnedSpikes {
-		r := rn.BinnedSpikes[i]
+	for i, s := range sn.SpikeBins {
+		r := rn.SpikeBins[i]
 		bs := (r * s) / 10.0
-		ls.BinnedSums[i] = bs
+		ls.SpikeBins[i] = bs
 		ls.Data.SetTensorFloat1D("State", row, off+i, float64(bs))
 	}
 }
@@ -284,11 +287,6 @@ func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32
 	}
 	ls.StdSyn.DWt = ls.StdSyn.CaP - ls.StdSyn.CaD
 
-	// capture final
-	// ls.SetNeurState(&ls.Send, int(FinalCa), row)
-	// ls.SetNeurState(&ls.Recv, int(NLinearState+FinalCa), row)
-	// ls.Data.SetTensorFloat1D("State", row, int(TotalSpikes), float64(ls.Send.TotalSpikes))
-	// ls.Data.SetTensorFloat1D("State", row, int(NLinearState+TotalSpikes), float64(ls.Recv.TotalSpikes))
 	ls.SetSynState(&ls.StdSyn, row)
 
 	ls.SetBins(&ls.Send, &ls.Recv, 0, row)
@@ -296,26 +294,50 @@ func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32
 
 // Regress runs the linear regression on the data
 func (ls *Linear) Regress() {
-	for vi := 0; vi < 4; vi++ {
-		r := new(regression.Regression)
-		r.SetObserved("CaD")
-		for bi := 0; bi < ls.NumBins; bi++ {
-			r.SetVar(bi, fmt.Sprintf("Bin_%d", bi))
-		}
-
-		for row := 0; row < ls.Data.Rows; row++ {
-			st := ls.Data.Tensor("State", row).(*tensor.Float64)
-			cad := ls.Data.TensorFloat1D("StdCa", row, vi)
-			r.Train(regression.DataPoint(cad, st.Values))
-		}
-		r.Run()
-		fmt.Printf("Regression formula:\n%v\n", r.Formula)
-		fmt.Printf("Variance observed = %v\nVariance Predicted = %v", r.Varianceobserved, r.VariancePredicted)
-		fmt.Printf("\nR2 = %v\n", r.R2)
-		str := "{"
-		for ci := 0; ci <= ls.NumBins; ci++ {
-			str += fmt.Sprintf("%8.6g, ", r.Coeff(ci))
-		}
-		fmt.Println(str + "}")
+	r := NewRegression()
+	err := r.SetTable(table.NewIndexView(&ls.Data), "State", "StdCa", "PredCa", "ErrCa")
+	if err != nil {
+		slog.Error(err.Error())
+		return
 	}
+	r.DepNames = []string{"CaP", "CaD"}
+	r.L1Cost = 0.1
+	r.L2Cost = 0.1
+	r.StopTolerance = 0.00001
+	r.ZeroOffset = true
+
+	r.Coeff.Values = []float64{
+		0.05, 0.25, 0.5, 0.6, 0, // linear progression
+		0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
+
+	r.Run()
+
+	fmt.Println(r.Variance())
+	fmt.Println(r.Coeffs())
+
+	/*
+		for vi := 0; vi < 2; vi++ {
+			r := new(regression.Regression)
+			r.SetObserved("CaD")
+			for bi := 0; bi < ls.NumBins; bi++ {
+				r.SetVar(bi, fmt.Sprintf("Bin_%d", bi))
+			}
+
+			for row := 0; row < ls.Data.Rows; row++ {
+				st := ls.Data.Tensor("State", row).(*tensor.Float64)
+				cad := ls.Data.TensorFloat1D("StdCa", row, vi)
+				r.Train(regression.DataPoint(cad, st.Values))
+			}
+			r.Run()
+			fmt.Printf("Regression formula:\n%v\n", r.Formula)
+			fmt.Printf("Variance observed = %v\nVariance Predicted = %v", r.Varianceobserved, r.VariancePredicted)
+			fmt.Printf("\nR2 = %v\n", r.R2)
+			str := "{"
+			for ci := 0; ci <= ls.NumBins; ci++ {
+				str += fmt.Sprintf("%8.6g, ", r.Coeff(ci))
+			}
+			fmt.Println(str + "}")
+		}
+	*/
+	ls.Data.SaveCSV("linear_data.tsv", table.Tab, table.Headers)
 }

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
-	"strings"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -34,7 +33,7 @@ type KinaseNeuron struct {
 	TotalSpikes float32
 
 	// binned count of spikes, for regression learning
-	BinnedSpikes [4]float32
+	SpikeBins [4]float32
 }
 
 func (kn *KinaseNeuron) Init() {
@@ -47,8 +46,8 @@ func (kn *KinaseNeuron) Init() {
 func (kn *KinaseNeuron) StartTrial() {
 	kn.StartCaSyn = kn.CaSyn
 	kn.TotalSpikes = 0
-	for i := range kn.BinnedSpikes {
-		kn.BinnedSpikes[i] = 0
+	for i := range kn.SpikeBins {
+		kn.SpikeBins[i] = 0
 	}
 	// kn.CaSyn = 0 // note: better fits with carryover
 }
@@ -64,7 +63,7 @@ func (kn *KinaseNeuron) Cycle(expInt float32, params *ParamConfig, cyc int) {
 			kn.Spike = 1
 			kn.SpikeP = 1
 			kn.TotalSpikes += 1
-			kn.BinnedSpikes[bin] += 1
+			kn.SpikeBins[bin] += 1
 		}
 	}
 	kn.CaSyn += params.SynDt * (params.SpikeG*kn.Spike - kn.CaSyn)
@@ -73,7 +72,7 @@ func (kn *KinaseNeuron) Cycle(expInt float32, params *ParamConfig, cyc int) {
 func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {
 	inputs[off] = kn.StartCaSyn
 	inputs[off+1] = kn.TotalSpikes
-	for i, s := range kn.BinnedSpikes {
+	for i, s := range kn.SpikeBins {
 		inputs[off+2+i] = s
 	}
 }
@@ -140,7 +139,7 @@ type KinaseState struct {
 	LinearSyn KinaseSynapse
 
 	// binned integration of send, recv spikes
-	BinnedSums [4]float32
+	SpikeBins [4]float32
 }
 
 func (ks *KinaseState) Init() {
@@ -262,11 +261,11 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 	}
 	ks.StdSyn.DWt = ks.StdSyn.CaP - ks.StdSyn.CaD
 
-	for i := range ks.BinnedSums {
-		ks.BinnedSums[i] = 0.1 * (ks.Recv.BinnedSpikes[i] * ks.Send.BinnedSpikes[i])
+	for i := range ks.SpikeBins {
+		ks.SpikeBins[i] = 0.1 * (ks.Recv.SpikeBins[i] * ks.Send.SpikeBins[i])
 	}
 
-	ss.CaParams.FinalCa(ks.BinnedSums[0], ks.BinnedSums[1], ks.BinnedSums[2], ks.BinnedSums[3], &ks.LinearSyn.CaM, &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
+	ss.CaParams.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], &ks.LinearSyn.CaM, &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
 	ks.LinearSyn.DWt = ks.LinearSyn.CaP - ks.LinearSyn.CaD
 
 	if ks.Train {
@@ -307,7 +306,7 @@ func (ss *Sim) ConfigKinaseLogItems() {
 	tn := len(times)
 	WalkFields(val,
 		func(parent reflect.Value, field reflect.StructField, value reflect.Value) bool {
-			if strings.HasPrefix(field.Name, "Binned") {
+			if field.Name == "SpikeBins" {
 				return false
 			}
 			return true

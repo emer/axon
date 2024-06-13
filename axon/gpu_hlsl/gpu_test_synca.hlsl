@@ -50,18 +50,10 @@ void WriteSynCa(in Context ctx, uint syni, uint di) {
 	// uint pi = SynI(ctx, syni, SynPathIndex);
 	// uint si = SynI(ctx, syni, SynSendIndex);
 	// uint ri = SynI(ctx, syni, SynRecvIndex);
-	// SetSynCaV(ctx, syni, di, CaM, asfloat(pi));
-	// SetSynCaV(ctx, syni, di, CaP, asfloat(si));
-	// SetSynCaV(ctx, syni, di, CaD, asfloat(ri));
-	// SetSynCaV(ctx, syni, di, CaUpT, asfloat(syni));
 	// SetSynCaV(ctx, syni, di, Tr, asfloat(di));
 	// SetSynCaV(ctx, syni, di, DTr, asfloat(bank));
 	// SetSynCaV(ctx, syni, di, DiDWt, asfloat(res));
 
-	SetSynCaV(ctx, syni, di, CaM, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaM) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, CaP, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaP) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, CaD, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaD) % 0xFFFFFFFF)));
-	SetSynCaV(ctx, syni, di, CaUpT, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, CaUpT) % 0xFFFFFFFF)));
 	SetSynCaV(ctx, syni, di, Tr, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, Tr) % 0xFFFFFFFF)));
 	SetSynCaV(ctx, syni, di, DTr, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, DTr) % 0xFFFFFFFF)));
 	SetSynCaV(ctx, syni, di, DiDWt, asfloat(uint(ctx.SynapseCaVars.Index(syni, di, DiDWt) % 0xFFFFFFFF)));

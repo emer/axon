@@ -95,16 +95,12 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "Path", Desc: "basic path params",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":       "0.1", // .1 def
-				"Path.SWts.Adapt.LRate":       "0.1", // .1 >= .2,
-				"Path.SWts.Adapt.SubMean":     "1",   // key for stability
-				"Path.SWts.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				"Path.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-				"Path.Learn.Trace.SubMean":    "1",   // 1 > 0 for long-term stability
-				"Path.Learn.KinaseCa.SpikeG":  "12",  // 12 def -- produces reasonable ~1ish max vals
-				"Path.Learn.KinaseCa.Dt.MTau": "5",   // 5 ==? 2 > 10
-				"Path.Learn.KinaseCa.Dt.PTau": "40",
-				"Path.Learn.KinaseCa.Dt.DTau": "40",
+				"Path.Learn.LRate.Base":    "0.1", // .1 def
+				"Path.SWts.Adapt.LRate":    "0.1", // .1 >= .2,
+				"Path.SWts.Adapt.SubMean":  "1",   // key for stability
+				"Path.SWts.Init.SPct":      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				"Path.Learn.Trace.Tau":     "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+				"Path.Learn.Trace.SubMean": "1",   // 1 > 0 for long-term stability
 			}},
 		{Sel: "#Hidden2ToOutput", Desc: "",
 			Params: params.Params{

@@ -308,7 +308,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
 	gp.Sys.NewComputePipelineEmbed("CycleInc", content, "shaders/gpu_cycleinc.spv")
 	gp.Sys.NewComputePipelineEmbed("SendSpike", content, "shaders/gpu_sendspike.spv")
-	gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
 	gp.Sys.NewComputePipelineEmbed("CyclePost", content, "shaders/gpu_cyclepost.spv")
 
 	gp.Sys.NewComputePipelineEmbed("NewStatePool", content, "shaders/gpu_newstate_pool.spv")
@@ -1217,7 +1216,6 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 		gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
 	} else {
 		gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
-		gp.RunPipelineMemWait(cmd, "SynCa", neurDataN)
 	}
 
 	gp.Sys.ComputeCopyFromGPU(cmd, cxr, glr, lvr, plr, nrr, nrar)
@@ -1282,7 +1280,6 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 			gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
 		} else {
 			gp.RunPipelineMemWait(cmd, "CyclePost", maxData)
-			gp.RunPipelineMemWait(cmd, "SynCa", neurDataN)
 		}
 		if ci < CyclesN-1 {
 			gp.RunPipelineMemWait(cmd, "CycleInc", 1) // we do
@@ -1315,7 +1312,6 @@ func (gp *GPU) RunCycleSeparateFuns() {
 	gp.RunPipelineWait("CyclePost", maxData)
 	if !gp.Ctx.Testing.IsTrue() {
 		gp.RunPipelineWait("CyclePost", maxData)
-		gp.RunPipelineWait("SynCa", neurDataN)
 	}
 	gp.SyncLayerStateFromGPU()
 }
@@ -1649,7 +1645,7 @@ func (gp *GPU) TestSynCa() bool {
 	limit := 2
 	failed := false
 
-	for vr := CaM; vr < SynapseCaVarsN; vr++ {
+	for vr := Tr; vr < SynapseCaVarsN; vr++ {
 		nfail := 0
 		for syni := uint32(0); syni < uint32(4); syni++ {
 			for di := uint32(0); di < gp.Net.MaxData; di++ {

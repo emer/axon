@@ -114,9 +114,6 @@ func (nt *Network) Cycle(ctx *Context) {
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
-	if ctx.Testing.IsFalse() {
-		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SynCa(ctx, ni) }, "SynCa")
-	}
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {
 		if ly.LayerType() == VTALayer {

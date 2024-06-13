@@ -44,55 +44,6 @@ func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  SynCa methods
-
-// note: important to exclude doing SynCa for types that don't use it!
-
-// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in sending order, filtering on sending spike.
-// Sender will update even if recv neuron spiked -- recv will skip sender spike cases.
-func (pj *Path) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
-	if pj.Params.Learn.Learn.IsFalse() {
-		return
-	}
-	if !pj.Params.DoSynCa() {
-		return
-	}
-	snCaSyn := NrnV(ctx, ni, di, CaSyn) // pj.Params.Learn.KinaseCa.CaScale *
-	scon := pj.SendCon[ni-pj.Send.NeurStIndex]
-	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-		syni := pj.SynStIndex + syi
-		ri := SynI(ctx, syni, SynRecvIndex)
-		pj.Params.SynCaSyn(ctx, syni, ri, di, snCaSyn, updtThr)
-	}
-}
-
-// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in recv order, filtering on recv spike,
-// and skips when sender spiked, as those were already done in Send version.
-func (pj *Path) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
-	if pj.Params.Learn.Learn.IsFalse() {
-		return
-	}
-	if !pj.Params.DoSynCa() {
-		return
-	}
-	rnCaSyn := NrnV(ctx, ni, di, CaSyn) // pj.Params.Learn.KinaseCa.CaScale *
-	syIndexes := pj.RecvSynIndexes(ni - pj.Recv.NeurStIndex)
-
-	for _, syi := range syIndexes {
-		syni := pj.SynStIndex + syi
-		si := SynI(ctx, syni, SynSendIndex)
-		if NrnV(ctx, si, di, Spike) > 0 { // already handled in send version
-			continue
-		}
-		pj.Params.SynCaSyn(ctx, syni, si, di, rnCaSyn, updtThr)
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
 // DWt computes the weight change (learning), based on
@@ -172,7 +123,6 @@ func (pj *Path) WtFromDWt(ctx *Context, ni uint32) {
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
 func (pj *Path) SlowAdapt(ctx *Context) {
-	pj.SynCaReset(ctx)
 	pj.SWtFromWt(ctx)
 	pj.SynScale(ctx)
 }
@@ -254,20 +204,6 @@ func (pj *Path) SynScale(ctx *Context) {
 				AddSynV(ctx, syni, LWt, lwt*adif*swt)
 			}
 			SetSynV(ctx, syni, Wt, pj.Params.SWts.WtValue(swt, SynV(ctx, syni, LWt)))
-		}
-	}
-}
-
-// SynCaReset resets SynCa values -- called during SlowAdapt
-func (pj *Path) SynCaReset(ctx *Context) {
-	slay := pj.Send
-	for lni := uint32(0); lni < slay.NNeurons; lni++ {
-		scon := pj.SendCon[lni]
-		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-			syni := pj.SynStIndex + syi
-			for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-				InitSynCa(ctx, syni, di)
-			}
 		}
 	}
 }

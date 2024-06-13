@@ -103,9 +103,6 @@ const (
 	// CaSpkD is continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.
 	CaSpkD
 
-	// CaSyn is spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
-	CaSyn
-
 	// CaSpkPM is minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.
 	CaSpkPM
 
@@ -133,13 +130,14 @@ const (
 	// SpkMaxCa is Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover.  This is the input to SpkMax
 	SpkMaxCa
 
+	// SpkMax is maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons.
+	SpkMax
+
+	// SpkBin has aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently
 	SpkBin0
 	SpkBin1
 	SpkBin2
 	SpkBin3
-
-	// SpkMax is maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons.
-	SpkMax
 
 	// SpkPrv is final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
 	SpkPrv
@@ -149,6 +147,11 @@ const (
 
 	// SpkSt2 is the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning
 	SpkSt2
+
+	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
+	// These need to be in Vars because they can be differential per data (for ext inputs)
+	// and are writable (indexes are read only).
+	NrnFlags
 
 	/////////////////////////////////////////
 	// Noise
@@ -330,11 +333,6 @@ const (
 
 	// CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.
 	CtxtGeOrig
-
-	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
-	// These need to be in Vars because they can be differential per data (for ext inputs)
-	// and are writable (indexes are read only).
-	NrnFlags
 
 	// IMPORTANT: if NrnFlags is not the last, need to update gosl defn below
 )
@@ -544,7 +542,6 @@ var NeuronVarProps = map[string]string{
 	/////////////////////////////////////////
 	// Calcium for learning
 
-	"CaSyn":   `desc:"spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning."`,
 	"CaSpkM":  `desc:"spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level."`,
 	"CaSpkP":  `desc:"continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`,
 	"CaSpkD":  `desc:"continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`,
@@ -562,10 +559,16 @@ var NeuronVarProps = map[string]string{
 
 	"SpkMaxCa": `desc:"Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover.  This is the input to SpkMax"`,
 	"SpkMax":   `desc:"maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons."`,
-	"SpkPrv":   `desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`,
-	"SpkSt1":   `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`,
-	"SpkSt2":   `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`,
-	"DASign":   `desc:"sign of dopamine-based learning effects for this neuron -- 1 = D1, -1 = D2"`,
+
+	"SpkBin0": `desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin1": `desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin2": `desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin3": `desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
+
+	"SpkPrv": `desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`,
+	"SpkSt1": `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`,
+	"SpkSt2": `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`,
+	"DASign": `desc:"sign of dopamine-based learning effects for this neuron -- 1 = D1, -1 = D2"`,
 
 	/////////////////////////////////////////
 	// Noise

@@ -38,25 +38,18 @@ const (
 type SynapseCaVars int32 //enums:enum
 
 const (
-	// CaM is first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
-	CaM SynapseCaVars = iota
-
-	// CaP is shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
-	CaP
-
-	// CaD is longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
-	CaD
-
-	// CaUpT is time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
-	CaUpT
-
-	// Tr is trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPath this is a tag that is then updated later when US occurs.
-	Tr
+	// Tr is trace of synaptic activity over time, which is used for
+	// credit assignment in learning.
+	// In MatrixPath this is a tag that is then updated later when US occurs.
+	Tr SynapseCaVars = iota
 
 	// DTr is delta (change in) Tr trace of synaptic activity over time
 	DTr
 
-	// DiDWt is delta weight for each data parallel index (Di) -- this is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values
+	// DiDWt is delta weight for each data parallel index (Di).
+	// This is directly computed from the Ca values (in cortical version)
+	// and then aggregated into the overall DWt (which may be further
+	// integrated across MPI nodes), which then drives changes in Wt values.
 	DiDWt
 
 	// IMPORTANT: if DiDWt is not the last, need to update gosl defn below
@@ -228,7 +221,7 @@ func init() {
 		SynapseVarNames = append(SynapseVarNames, vnm)
 		SynapseVarsMap[vnm] = int(i)
 	}
-	for i := CaM; i < SynapseCaVarsN; i++ {
+	for i := Tr; i < SynapseCaVarsN; i++ {
 		vnm := i.String()
 		SynapseVarNames = append(SynapseVarNames, vnm)
 		SynapseVarsMap[vnm] = int(SynapseVarsN) + int(i)
