@@ -1,5 +1,6 @@
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"cogentcore.org/core/plot/plotview"
@@ -134,6 +135,7 @@ type Configuration struct {
 }
 
 func (cf *Configuration) Defaults() {
+	cf.User = os.Getenv("USER")
 	cf.Job.Defaults()
 	cf.FetchFiles = "*.tsv"
 	cf.Plot.Defaults()

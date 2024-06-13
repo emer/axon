@@ -5,7 +5,7 @@ go 1.22
 require (
 	cogentcore.org/core v0.1.5-0.20240603004634-4abf15efe8da
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240525080340-15f9ee8a1786
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240613190136-96708b8129c9
 	github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240503073705-0a4335dca72b
 	github.com/goki/vulkan v1.0.7
 	github.com/stretchr/testify v1.9.0
@@ -35,7 +35,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.2-0.20240227203013-2b69615b5d55 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/sajari/regression v1.0.1 // indirect
 	golang.org/x/image v0.15.0 // indirect
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.23.0 // indirect

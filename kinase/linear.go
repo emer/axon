@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"math/rand"
 
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor/table"
-	"github.com/chewxy/math32"
 )
 
 // Linear performs a linear regression to approximate the synaptic Ca

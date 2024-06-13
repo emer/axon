@@ -75,12 +75,12 @@ var ParamSets = netparams.Sets{
 		// Projections below
 		{Sel: "Path", Desc: "std",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":    "0.005",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
+				"Path.Learn.LRate.Base":    "0.002",  // full song and 30n: 0.002 > 0.005, 0.001 in the end
 				"Path.Learn.Trace.SubMean": "0",      // 0 > 1 -- doesn't work at all with 1
 				"Path.SWts.Adapt.LRate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 				"Path.SWts.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
 				"Path.Com.PFail":           "0.0",
-				"Path.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)
+				"Path.Learn.Trace.Tau":     "1", // 1 > 2 v0.0.9
 			}},
 		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
@@ -89,7 +89,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".CTCtxtPath", Desc: "all CT context paths",
 			Params: params.Params{
 				"Path.Learn.LRate.Base":    "0.001", // 0.001 >> 0.002 for full
-				"Path.Learn.Trace.Tau":     "4",     // 4 > 2?
+				"Path.Learn.Trace.Tau":     "1",     // 1 > 2 > 4 v0.0.9
 				"Path.Learn.Trace.SubMean": "0",     // 0 > 1 -- 1 is especially bad
 				"Path.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
 			}},

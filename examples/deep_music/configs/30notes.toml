@@ -3,5 +3,5 @@
 
 [Run]
 	NTrials = 128
-	NEpochs = 100
+	NEpochs = 200
 
