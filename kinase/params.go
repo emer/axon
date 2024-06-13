@@ -132,26 +132,12 @@ type SynCaParams struct { //types:add
 
 	// time constants for integrating at M, P, and D cascading levels
 	Dt CaDtParams `view:"inline"`
-
-	// Linear coefficients
-	CaP0, CaP1, CaP2, CaP3 float32
-	CaD0, CaD1, CaD2, CaD3 float32
 }
 
 func (kp *SynCaParams) Defaults() {
 	kp.CaScale = 12
 	kp.Dt.Defaults()
 	kp.Update()
-
-	kp.CaP0 = 0.07
-	kp.CaP1 = 0.3
-	kp.CaP2 = 0.5
-	kp.CaP3 = 0.6
-
-	kp.CaD0 = 0.25
-	kp.CaD1 = 0.5
-	kp.CaD2 = 0.5
-	kp.CaD3 = 0.3
 }
 
 func (kp *SynCaParams) Update() {
@@ -163,12 +149,6 @@ func (kp *SynCaParams) Update() {
 // ca is multiplied by CaScale.
 func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
 	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
-}
-
-// FinalCa uses a linear regression to compute the final Ca values
-func (kp *SynCaParams) FinalCa(bin0, bin1, bin2, bin3 float32, caP, caD *float32) {
-	*caP = kp.CaP0*bin0 + kp.CaP1*bin1 + kp.CaP2*bin2 + kp.CaP3*bin3
-	*caD = kp.CaD0*bin0 + kp.CaD1*bin1 + kp.CaD2*bin2 + kp.CaD3*bin3
 }
 
 // BinWeights are coefficients for computing Ca based on binned

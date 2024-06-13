@@ -6,22 +6,6 @@ package main
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
-
-	// gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdateThr.  Path.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
-	SpikeG float32 `default:"8"`
-
-	// time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PathParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)
-	SynTau float32 `default:"30" min:"1"`
-
-	// rate = 1 / tau
-	SynDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
-
-	// learning rate for decoder
-	LRate float32 `default:"0.001"`
-
-	// network parameters
-	Network map[string]any
-
 	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
 	Sheet string
 
@@ -41,15 +25,8 @@ type ParamConfig struct {
 	Good bool `nest:"+"`
 }
 
-func (pc *ParamConfig) Update() {
-	pc.SynDt = 1.0 / pc.SynTau
-}
-
 // RunConfig has config parameters related to running the sim
 type RunConfig struct {
-	// Neuron runs the standard Neuron update equations, vs. Kinase experimental equations
-	Neuron bool `default:"false"`
-
 	// use the GPU for computation -- only for testing in this model -- not faster
 	GPU bool `default:"false"`
 

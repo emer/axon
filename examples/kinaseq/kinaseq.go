@@ -54,7 +54,7 @@ func (kn *KinaseNeuron) StartTrial() {
 
 // Cycle does one cycle of neuron updating, with given exponential spike interval
 // based on target spiking firing rate.
-func (kn *KinaseNeuron) Cycle(expInt float32, params *ParamConfig, cyc int) {
+func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 	kn.Spike = 0
 	bin := cyc / 50
 	if expInt > 0 {
@@ -66,7 +66,7 @@ func (kn *KinaseNeuron) Cycle(expInt float32, params *ParamConfig, cyc int) {
 			kn.SpikeBins[bin] += 1
 		}
 	}
-	kn.CaSyn += params.SynDt * (params.SpikeG*kn.Spike - kn.CaSyn)
+	kn.CaSyn += ss.NeurCa.SynDt * (ss.NeurCa.SpikeG*kn.Spike - kn.CaSyn)
 }
 
 func (kn *KinaseNeuron) SetInput(inputs []float32, off int) {
@@ -101,9 +101,6 @@ func (ks *KinaseSynapse) Init() {
 
 // KinaseState is basic Kinase equation state
 type KinaseState struct {
-
-	// if true, training decoder
-	Train bool
 
 	// SSE for decoder
 	SSE float32
@@ -159,7 +156,6 @@ func (ss *Sim) ConfigKinase() {
 
 // Sweep runs a sweep through minus-plus ranges
 func (ss *Sim) Sweep() {
-	ss.Kinase.Train = false
 	// hz := []float32{25, 50, 100}
 	// nhz := len(hz)
 
@@ -196,7 +192,6 @@ func (ss *Sim) Run() {
 
 // RunImpl runs NTrials, recording to RunLog and TrialLog
 func (ss *Sim) RunImpl(minusHz, plusHz float32, ntrials int) {
-	ss.Kinase.Train = false
 	ss.Kinase.Init()
 	for trl := 0; trl < ntrials; trl++ {
 		ss.Kinase.Trial = trl
@@ -248,14 +243,12 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			Sint = math32.Exp(-1000.0 / float32(shz))
 		}
 		for t := 0; t < maxcyc; t++ {
-			ks.Send.Cycle(Sint, &cfg.Params, ks.Cycle)
-			ks.Recv.Cycle(Rint, &cfg.Params, ks.Cycle)
+			ss.Cycle(&ks.Send, Sint, ks.Cycle)
+			ss.Cycle(&ks.Recv, Rint, ks.Cycle)
 
 			ca := ks.Send.CaSyn * ks.Recv.CaSyn
-			ss.CaParams.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
-			if !ks.Train {
-				ss.Logs.LogRow(etime.Test, etime.Cycle, ks.Cycle)
-			}
+			ss.SynCa.FromCa(ca, &ks.StdSyn.CaM, &ks.StdSyn.CaP, &ks.StdSyn.CaD)
+			ss.Logs.LogRow(etime.Test, etime.Cycle, ks.Cycle)
 			ks.Cycle++
 		}
 	}
@@ -265,36 +258,12 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 		ks.SpikeBins[i] = 0.1 * (ks.Recv.SpikeBins[i] * ks.Send.SpikeBins[i])
 	}
 
-	ss.CaParams.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], &ks.LinearSyn.CaM, &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
+	ss.LinearSynCa.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
 	ks.LinearSyn.DWt = ks.LinearSyn.CaP - ks.LinearSyn.CaD
 
-	if ks.Train {
-		ss.Logs.LogRow(etime.Train, etime.Cycle, 0)
-		ss.GUI.UpdatePlot(etime.Train, etime.Cycle)
-		ss.Logs.LogRow(etime.Train, etime.Trial, ks.Trial)
-		ss.GUI.UpdatePlot(etime.Train, etime.Trial)
-	} else {
-		ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
-		ss.Logs.LogRow(etime.Test, etime.Trial, ks.Trial)
-		ss.GUI.UpdatePlot(etime.Test, etime.Trial)
-	}
-}
-
-// Train trains the linear decoder
-func (ss *Sim) Train() {
-	ss.Kinase.Train = true
-	ss.Kinase.Init()
-	for epc := 0; epc < ss.Config.Run.NEpochs; epc++ {
-		ss.Kinase.Condition = epc
-		for trl := 0; trl < ss.Config.Run.NTrials; trl++ {
-			ss.Kinase.Trial = trl
-			minusHz := 100 * rand.Float32()
-			plusHz := 100 * rand.Float32()
-			ss.TrialImpl(minusHz, plusHz)
-		}
-		ss.Logs.LogRow(etime.Train, etime.Condition, ss.Kinase.Condition)
-		ss.GUI.UpdatePlot(etime.Train, etime.Condition)
-	}
+	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)
+	ss.Logs.LogRow(etime.Test, etime.Trial, ks.Trial)
+	ss.GUI.UpdatePlot(etime.Test, etime.Trial)
 }
 
 func (ss *Sim) ConfigKinaseLogItems() {
@@ -346,15 +315,6 @@ func (ss *Sim) ConfigKinaseLogItems() {
 						ctx.SetAgg(ctx.Mode, times[ti+1], stats.Mean)
 					}
 				} else {
-					itm.Write[etime.Scope(etime.Train, times[ti])] = func(ctx *elog.Context) {
-						fany := value.Interface()
-						switch fkind {
-						case reflect.Int:
-							ctx.SetFloat32(float32(fany.(int)))
-						case reflect.String:
-							ctx.SetString(fany.(string))
-						}
-					}
 					itm.Write[etime.Scope(etime.Test, times[ti])] = func(ctx *elog.Context) {
 						fany := value.Interface()
 						switch fkind {

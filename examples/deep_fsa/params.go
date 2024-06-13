@@ -88,7 +88,7 @@ var ParamSets = netparams.Sets{
 				"Path.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
 				"Path.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 				"Path.Com.PFail":           "0.0",
-				"Path.Learn.Trace.Tau":     "2", // 2 > 1 still 1.7.19
+				"Path.Learn.Trace.Tau":     "1", // 1 >> 2 v0.0.9
 			}},
 		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{

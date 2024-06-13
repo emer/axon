@@ -12,24 +12,18 @@ package main
 
 import (
 	"os"
-	"reflect"
 
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/kinase"
-	"github.com/emer/emergent/v2/ecmd"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/elog"
-	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/netview"
 )
 
 func main() {
@@ -55,20 +49,20 @@ type Sim struct {
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config
 
+	// Kinase NeurCa params
+	NeurCa kinase.NeurCaParams
+
 	// Kinase SynCa params
-	CaParams kinase.SynCaParams
+	SynCa kinase.SynCaParams
+
+	// Kinase LinearSynCa params
+	LinearSynCa kinase.SynCaLinear
 
 	// Kinase state
 	Kinase KinaseState
 
 	// Training data for least squares solver
 	TrainData tensor.Float64
-
-	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
-
-	// extra neuron state for additional channels: VGCC, AK
-	NeuronEx NeuronEx `view:"no-inline"`
 
 	// axon timing parameters and state
 	Context axon.Context
@@ -79,15 +73,6 @@ type Sim struct {
 	// logging
 	Logs elog.Logs `view:"no-inline"`
 
-	// all parameter management
-	Params emer.NetParams `view:"inline"`
-
-	// current cycle of updating
-	Cycle int `edit:"-"`
-
-	// netview update parameters
-	ViewUpdate netview.ViewUpdate `view:"inline"`
-
 	// manages all the gui elements
 	GUI egui.GUI `view:"-"`
 
@@ -97,17 +82,15 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Config.Params.Update()
-	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
-	ss.CaParams.Defaults()
+	ss.SynCa.Defaults()
+	ss.NeurCa.Defaults()
+	ss.LinearSynCa.Defaults()
 	ss.Stats.Init()
 	ss.ValMap = make(map[string]float32)
 }
 
 func (ss *Sim) Defaults() {
-	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,12 +98,10 @@ func (ss *Sim) Defaults() {
 
 // ConfigAll configures all the elements using the standard functions
 func (ss *Sim) ConfigAll() {
-	ss.ConfigNet(ss.Net)
 	ss.ConfigKinase()
 	ss.ConfigLogs()
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
-		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
 }
@@ -129,76 +110,19 @@ func (ss *Sim) ConfigAll() {
 // and resets the epoch log table
 func (ss *Sim) Init() {
 	ss.Context.Reset()
-	ss.InitWts(ss.Net)
 	ss.Kinase.Init()
 	ss.ConfigKinase()
-	ss.NeuronEx.Init()
 	ss.GUI.StopNow = false
-	ss.SetParams("", false) // all sheets
 }
 
 func (ss *Sim) ConfigLogs() {
-	if ss.Config.Run.Neuron {
-		ss.ConfigNeuronLogItems()
-	} else {
-		ss.ConfigKinaseLogItems()
-	}
+	ss.ConfigKinaseLogItems()
 	ss.Logs.CreateTables()
 
-	if ss.Config.Run.Neuron {
-		ss.Logs.PlotItems("Vm", "Spike")
-	} else {
-		ss.Logs.PlotItems("Send.Spike", "Recv.Spike")
-	}
+	ss.Logs.PlotItems("Send.Spike", "Recv.Spike")
 
-	ss.Logs.SetContext(&ss.Stats, ss.Net)
+	ss.Logs.SetContext(&ss.Stats, nil)
 	ss.Logs.ResetLog(etime.Test, etime.Cycle)
-}
-
-func (ss *Sim) ConfigNeuronLogItems() {
-	ly := ss.Net.AxonLayerByName("Neuron")
-	// nex := &ss.NeuronEx
-	lg := &ss.Logs
-
-	lg.AddItem(&elog.Item{
-		Name:   "Cycle",
-		Type:   reflect.Int,
-		FixMax: false,
-		Range:  minmax.F32{Max: 1},
-		Write: elog.WriteMap{
-			etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-				ctx.SetInt(int(ss.Context.Cycle))
-			}}})
-
-	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow", "GiSyn", "CaSyn"}
-
-	for _, vnm := range vars {
-		lg.AddItem(&elog.Item{
-			Name:   vnm,
-			Type:   reflect.Float64,
-			FixMax: false,
-			Range:  minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					vl := ly.UnitValue(vnm, []int{0, 0}, 0)
-					ctx.SetFloat32(vl)
-				}}})
-	}
-
-	pj := ly.RcvPaths[0]
-	pvars := []string{"CaM", "CaP", "CaD", "CaUpT"}
-	for _, vnm := range pvars {
-		lg.AddItem(&elog.Item{
-			Name:   "Syn." + vnm,
-			Type:   reflect.Float64,
-			FixMax: false,
-			Range:  minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					vl := pj.SynValue(vnm, 0, 0)
-					ctx.SetFloat32(vl)
-				}}})
-	}
 }
 
 func (ss *Sim) ResetTstCycPlot() {
@@ -207,24 +131,13 @@ func (ss *Sim) ResetTstCycPlot() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// 		Gui
-
-func (ss *Sim) ConfigNetView(nv *netview.NetView) {
-	nv.ViewDefaults()
-}
+// 		GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Kinase Eq"
 	ss.GUI.MakeBody(ss, "kinaseq", title, `kinaseq: Explores calcium-based synaptic learning rules, specifically at the synaptic level. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
-
-	nv := ss.GUI.AddNetView("NetView")
-	nv.Var = "Act"
-	nv.SetNet(ss.Net)
-	ss.ConfigNetView(nv) // add labels etc
-	ss.ViewUpdate.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
-	ss.GUI.ViewUpdate = &ss.ViewUpdate
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 	// key := etime.Scope(etime.Test, etime.Cycle)
@@ -246,7 +159,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Stops running.",
 			Active:  egui.ActiveRunning,
 			Func: func() {
-				ss.Stop()
+				// ss.Stop()
 				ss.GUI.UpdateWindow()
 			},
 		})
@@ -292,34 +205,6 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Train", Icon: icons.PlayArrow,
-			Tooltip: "Train the Kinase approximation models.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				if !ss.GUI.IsRunning {
-					go func() {
-						ss.GUI.IsRunning = true
-						ss.Train()
-						ss.GUI.IsRunning = false
-						ss.GUI.UpdateWindow()
-					}()
-				}
-			},
-		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Neuron", Icon: icons.PlayArrow,
-			Tooltip: "Runs neuron updating over NCycles.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				if !ss.GUI.IsRunning {
-					go func() {
-						ss.GUI.IsRunning = true
-						ss.RunCycles()
-						ss.GUI.IsRunning = false
-						ss.GUI.UpdateWindow()
-					}()
-				}
-			},
-		})
 		core.NewSeparator(tb)
 		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
 			Tooltip: "Reset TstCycPlot.",
@@ -349,13 +234,6 @@ func (ss *Sim) ConfigGUI() {
 		})
 	})
 	ss.GUI.FinalizeGUI(false)
-
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUwithGUI(&ss.Context)
-		core.TheApp.AddQuitCleanFunc(func() {
-			ss.Net.GPU.Destroy()
-		})
-	}
 }
 
 func (ss *Sim) RunGUI() {
@@ -371,34 +249,11 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Log.SaveWts {
 		mpi.Printf("Saving final weights per run\n")
 	}
-	runName := ss.Params.RunName(ss.Config.Run.Run)
-	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
-
-	// netdata := ss.Config.Log.NetData
-	// if netdata {
-	// 	mpi.Printf("Saving NetView data from testing\n")
-	// 	ss.GUI.InitNetData(ss.Net, 200)
-	// }
 
 	ss.Init()
-
-	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUnoGUI(&ss.Context)
-	}
-	mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
-	ss.RunCycles()
-
-	if ss.Config.Log.Cycle {
-		dt := ss.Logs.Table(etime.Test, etime.Cycle)
-		fnm := ecmd.LogFilename("cyc", netName, runName)
-		dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
-	}
-
-	// if netdata {
-	// 	ss.GUI.SaveNetData(ss.Stats.String("RunName"))
+	// if ss.Config.Log.Cycle {
+	// 	dt := ss.Logs.Table(etime.Test, etime.Cycle)
+	// 	// fnm := ecmd.LogFilename("cyc", netName, runName)
+	// 	dt.SaveCSV(core.Filename(fnm), table.Tab, table.Headers)
 	// }
-
-	ss.Net.GPU.Destroy() // safe even if no GPU
 }
