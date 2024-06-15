@@ -14,9 +14,8 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
 )
 
@@ -74,16 +73,16 @@ type Sim struct {
 	TimeGin float64
 
 	// table for plot
-	Table *table.Table `view:"no-inline"`
+	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotview.PlotView `view:"-"`
+	Plot *plotcore.PlotEditor `display:"-"`
 
 	// table for plot
-	TimeTable *table.Table `view:"no-inline"`
+	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotview.PlotView `view:"-"`
+	TimePlot *plotcore.PlotEditor `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -169,16 +168,16 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "NMDA V-G Function Plot"
 	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gnmda", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gnmda_std", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gnmda_bug", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Ca", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gnmda", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gnmda_std", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gnmda_bug", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Ca", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -223,14 +222,14 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Time Function Plot"
 	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gnmda", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("NMDA", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gnmda", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("NMDA", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -238,23 +237,26 @@ func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview
 func (ss *Sim) ConfigGUI() *core.Body {
 	b := core.NewBody("Nmda plot")
 
-	split := core.NewSplits(b, "split")
-	sv := views.NewStructView(split, "sv")
-	sv.SetStruct(ss)
+	split := core.NewSplits(b)
+	core.NewForm(split).SetStruct(ss)
 
-	tv := core.NewTabs(split, "tv")
+	tv := core.NewTabs(split)
 
-	ss.Plot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.Plot = plotcore.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		views.NewFuncButton(tb, ss.Run).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.Run).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+		})
 	})
 
 	return b

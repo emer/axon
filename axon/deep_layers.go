@@ -49,7 +49,7 @@ type CTParams struct {
 	DecayTau float32 `default:"0,50"`
 
 	// 1 / tau
-	DecayDt float32 `view:"-" json:"-" xml:"-"`
+	DecayDt float32 `display:"-" json:"-" xml:"-"`
 
 	pad float32
 }

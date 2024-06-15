@@ -113,16 +113,16 @@ type Config struct {
 	Debug bool
 
 	// environment configuration options
-	Env EnvConfig `view:"add-fields"`
+	Env EnvConfig `display:"add-fields"`
 
 	// parameter related configuration options
-	Params ParamConfig `view:"add-fields"`
+	Params ParamConfig `display:"add-fields"`
 
 	// sim running related configuration options
-	Run RunConfig `view:"add-fields"`
+	Run RunConfig `display:"add-fields"`
 
 	// data logging related configuration options
-	Log LogConfig `view:"add-fields"`
+	Log LogConfig `display:"add-fields"`
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }

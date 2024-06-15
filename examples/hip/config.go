@@ -153,7 +153,7 @@ type Config struct {
 	Debug bool
 
 	// misc model parameters
-	Mod ModConfig `view:"inline"`
+	Mod ModConfig `display:"inline"`
 
 	// Hippocampus sizing parameters
 	Hip axon.HipConfig
@@ -162,13 +162,13 @@ type Config struct {
 	Pat PatConfig
 
 	// parameter related configuration options
-	Params ParamConfig `view:"add-fields"`
+	Params ParamConfig `display:"add-fields"`
 
 	// sim running related configuration options
-	Run RunConfig `view:"add-fields"`
+	Run RunConfig `display:"add-fields"`
 
 	// data logging related configuration options
-	Log LogConfig `view:"add-fields"`
+	Log LogConfig `display:"add-fields"`
 }
 
 func (cfg *Config) Defaults() {

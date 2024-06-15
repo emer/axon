@@ -46,7 +46,7 @@ type Params struct {
 	FFEx0 float32 `default:"0.15"`
 
 	// rate = 1 / tau
-	FBDt float32 `edit:"-" view:"-" json:"-" xml:"-"`
+	FBDt float32 `edit:"-" display:"-" json:"-" xml:"-"`
 }
 
 func (fb *Params) Update() {

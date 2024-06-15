@@ -71,13 +71,13 @@ type Sim struct {
 	Stats estats.Stats
 
 	// logging
-	Logs elog.Logs `view:"no-inline"`
+	Logs elog.Logs `display:"no-inline"`
 
 	// manages all the gui elements
-	GUI egui.GUI `view:"-"`
+	GUI egui.GUI `display:"-"`
 
 	// map of values for detailed debugging / testing
-	ValMap map[string]float32 `view:"-"`
+	ValMap map[string]float32 `display:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -146,8 +146,8 @@ func (ss *Sim) ConfigGUI() {
 	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
 	// ss.TstCycPlot = plt
 
-	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -155,7 +155,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
 			Tooltip: "Stops running.",
 			Active:  egui.ActiveRunning,
 			Func: func() {
@@ -163,7 +163,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Sweep", Icon: icons.PlayArrow,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Sweep", Icon: icons.PlayArrow,
 			Tooltip: "Runs Kinase sweep over set of minus / plus spiking levels.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -177,7 +177,7 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run", Icon: icons.PlayArrow,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Run", Icon: icons.PlayArrow,
 			Tooltip: "Runs NTrials of Kinase updating.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -191,7 +191,7 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Trial", Icon: icons.PlayArrow,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Trial", Icon: icons.PlayArrow,
 			Tooltip: "Runs one Trial of Kinase updating.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -205,8 +205,8 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
 			Tooltip: "Reset TstCycPlot.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -215,7 +215,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
 			Tooltip: "Restore initial default parameters.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -224,7 +224,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
 			Icon:    "file-markdown",
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,

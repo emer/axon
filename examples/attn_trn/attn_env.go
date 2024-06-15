@@ -96,13 +96,13 @@ type AttnEnv struct {
 	LIP tensor.Float32
 
 	// current run of model as provided during Init
-	Run env.Ctr `view:"inline"`
+	Run env.Ctr `display:"inline"`
 
 	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline"`
+	Epoch env.Ctr `display:"inline"`
 
 	// trial increments over input states -- could add Event as a lower level
-	Trial env.Ctr `view:"inline"`
+	Trial env.Ctr `display:"inline"`
 }
 
 func (ev *AttnEnv) Name() string { return ev.Nm }

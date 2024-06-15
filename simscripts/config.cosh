@@ -3,9 +3,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/tensor/tensorview"
+	"cogentcore.org/core/tensor/tensorcore"
 	"cogentcore.org/core/views"
 )
 
@@ -96,7 +96,7 @@ type Configuration struct {
 	Version string
 
 	// parameters for job resources etc
-	Job JobParams `view:"inline"`
+	Job JobParams `display:"inline"`
 
 	// glob expression for files to fetch from server, for Fetch command,
 	// is *.tsv by default
@@ -125,7 +125,7 @@ type Configuration struct {
 	TimeFormat string
 
 	// Default Plot settings
-	Plot plotview.PlotParams
+	Plot plotcore.PlotParams
 
 	// parameters for filtering results
 	Filter FilterResults
@@ -177,7 +177,7 @@ type Result struct {
 
 var (
 	Config           Configuration
-	JobsTableView    *tensorview.TableView
+	JobsTableView    *tensorcore.Table
 	JobsTable        *table.Table
 	ResultsTableView *views.TableView
 	Results          []*Result

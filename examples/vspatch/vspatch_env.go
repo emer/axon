@@ -27,10 +27,10 @@ type VSPatchEnv struct {
 	Mode etime.Modes
 
 	// sequence counter is for the condition
-	Sequence env.Ctr `view:"inline"`
+	Sequence env.Ctr `display:"inline"`
 
 	// trial counter is for the step within condition
-	Trial env.Ctr `view:"inline"`
+	Trial env.Ctr `display:"inline"`
 
 	// current condition index
 	Cond int
@@ -51,13 +51,13 @@ type VSPatchEnv struct {
 	CondValues []float32
 
 	// state rep, number of units, Y
-	NUnitsY int `view:"-"`
+	NUnitsY int `display:"-"`
 
 	// state rep, number of units, X
-	NUnitsX int `view:"-"`
+	NUnitsX int `display:"-"`
 
 	// total number of units
-	NUnits int `view:"-"`
+	NUnits int `display:"-"`
 
 	// condition, time-step patterns
 	Pats *table.Table
@@ -69,7 +69,7 @@ type VSPatchEnv struct {
 	PatSimMat simat.SimMat
 
 	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`
@@ -145,9 +145,10 @@ func (ev *VSPatchEnv) ConfigPats() {
 	patgen.AddVocabPermutedBinary(ev.PatVocab, "Protos", ev.NConds, ev.NUnitsY, ev.NUnitsX, pctAct, minDiff)
 
 	npats := ev.NConds * ev.NTrials
-	ev.Pats = table.NewTable(npats)
+	ev.Pats = table.NewTable()
 	ev.Pats.AddStringColumn("Name")
 	ev.Pats.AddFloat32TensorColumn("Input", []int{ev.NUnitsY, ev.NUnitsX}, "Y", "X")
+	ev.Pats.SetNumRows(npats)
 
 	idx := 0
 	for i := 0; i < ev.NConds; i++ {

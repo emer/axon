@@ -13,11 +13,10 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	_ "cogentcore.org/core/tensor/tensorview"    // include to get gui views
-	_ "cogentcore.org/core/vgpu/gosl/slboolview" // ditto
-	"cogentcore.org/core/views"
+	_ "cogentcore.org/core/tensor/tensorcore"           // include to get gui views
+	_ "cogentcore.org/core/vgpu/gosl/slbool/slboolcore" // ditto
 	"github.com/emer/axon/v2/kinase"
 )
 
@@ -36,7 +35,7 @@ const LogPrec = 4
 type Sim struct {
 
 	// Ca time constants
-	CaDt  kinase.CaParams `view:"inline"`
+	CaDt  kinase.SynCaParams `display:"inline"`
 	Minit float64
 	Pinit float64
 	Dinit float64
@@ -54,16 +53,16 @@ type Sim struct {
 	TimeSteps int
 
 	// table for plot
-	Table *table.Table `view:"no-inline"`
+	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotview.PlotView `view:"-"`
+	Plot *plotcore.PlotEditor `display:"-"`
 
 	// table for plot
-	TimeTable *table.Table `view:"no-inline"`
+	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotview.PlotView `view:"-"`
+	TimePlot *plotcore.PlotEditor `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -118,7 +117,7 @@ func (ss *Sim) Run() { //types:add
 		caM := float32(ss.Minit)
 		caP := float32(ss.Pinit)
 		caD := float32(ss.Dinit)
-		ss.CaDt.Dt.CaAtT(int32(ti), &caM, &caP, &caD)
+		// ss.CaDt.Dt.CaAtT(int32(ti), &caM, &caP, &caD)
 		m = float64(caM)
 		p = float64(caP)
 		d = float64(caD)
@@ -126,7 +125,7 @@ func (ss *Sim) Run() { //types:add
 		caM = float32(ss.Minit)
 		caP = float32(ss.Pinit)
 		caD = float32(ss.Dinit)
-		ss.CaDt.CurCa(float32(ti), 0, &caM, &caP, &caD)
+		// ss.CaDt.CurCa(float32(ti), 0, &caM, &caP, &caD)
 		mi4 := float64(caM)
 		pi4 := float64(caP)
 		di4 := float64(caD)
@@ -170,21 +169,21 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "SynCa Exp Decay Plot"
 	plt.Params.XAxisColumn = "t"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("t", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("mi", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("pi", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("di", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("mi4", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("pi4", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("di4", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("m", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("p", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("d", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("t", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("mi", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("pi", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("di", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("mi4", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("pi4", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("di4", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("m", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("p", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("d", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -229,14 +228,14 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Time Function Plot"
 	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gsynca", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("SYNCa", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gsynca", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("SYNCa", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -244,23 +243,26 @@ func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview
 func (ss *Sim) ConfigGUI() *core.Body {
 	b := core.NewBody("Synca Plot")
 
-	split := core.NewSplits(b, "split")
-	sv := views.NewStructView(split, "sv")
-	sv.SetStruct(ss)
+	split := core.NewSplits(b)
+	core.NewForm(split).SetStruct(ss)
 
-	tv := core.NewTabs(split, "tv")
+	tv := core.NewTabs(split)
 
-	ss.Plot = plotview.NewSubPlot(tv.NewTab("T Exp Plot"))
+	ss.Plot = plotcore.NewSubPlot(tv.NewTab("T Exp Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		views.NewFuncButton(tb, ss.Run).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.Run).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+		})
 	})
 
 	return b

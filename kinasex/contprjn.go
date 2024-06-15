@@ -88,7 +88,7 @@ type ContPath struct {
 	axon.Path // access as .Path
 
 	// kinase continuous learning rule params
-	Cont KinContParams `view:"inline"`
+	Cont KinContParams `display:"inline"`
 
 	// continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIndex array
 	ContSyns []ContSyn

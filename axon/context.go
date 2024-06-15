@@ -417,25 +417,25 @@ type Context struct {
 	pad, pad1 float32
 
 	// indexes and sizes of current network
-	NetIndexes NetIndexes `view:"inline"`
+	NetIndexes NetIndexes `display:"inline"`
 
 	// stride offsets for accessing neuron variables
-	NeuronVars NeuronVarStrides `view:"-"`
+	NeuronVars NeuronVarStrides `display:"-"`
 
 	// stride offsets for accessing neuron average variables
-	NeuronAvgVars NeuronAvgVarStrides `view:"-"`
+	NeuronAvgVars NeuronAvgVarStrides `display:"-"`
 
 	// stride offsets for accessing neuron indexes
-	NeuronIndexes NeuronIndexStrides `view:"-"`
+	NeuronIndexes NeuronIndexStrides `display:"-"`
 
 	// stride offsets for accessing synapse variables
-	SynapseVars SynapseVarStrides `view:"-"`
+	SynapseVars SynapseVarStrides `display:"-"`
 
 	// stride offsets for accessing synapse Ca variables
-	SynapseCaVars SynapseCaStrides `view:"-"`
+	SynapseCaVars SynapseCaStrides `display:"-"`
 
 	// stride offsets for accessing synapse indexes
-	SynapseIndexes SynapseIndexStrides `view:"-"`
+	SynapseIndexes SynapseIndexStrides `display:"-"`
 
 	// random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.
 	RandCtr slrand.Counter

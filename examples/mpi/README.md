@@ -51,8 +51,8 @@ Here are the main diffs that transform the ra25.go example into this mpi version
 There are some other things added but they are just more of what is already there -- these are the uniquely MPI parts, at end of Sim struct type:
 
 ```go
-	Comm    *mpi.Comm `view:"-" desc:"mpi communicator"`
-	AllDWts []float32 `view:"-" desc:"buffer of all dwt weight changes -- for mpi sharing"`
+	Comm    *mpi.Comm `display:"-" desc:"mpi communicator"`
+	AllDWts []float32 `display:"-" desc:"buffer of all dwt weight changes -- for mpi sharing"`
 ```
 
 ## Allocating Patterns Across Nodes
@@ -70,7 +70,7 @@ In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to diffe
 In other sims with more complex or interactive environments, it is best to give each environment its own random seed using the `randx.SysRand` which implements the `randx.Rand` interface, and can be passed to any of the `randx` methods (which wrap and extend the go standard `rand` package functions).  See the `boa` model for example.
 
 ```go
-	Rand        randx.SysRand `view:"-" desc:"random number generator for the env -- all random calls must use this"`
+	Rand        randx.SysRand `display:"-" desc:"random number generator for the env -- all random calls must use this"`
 	RandSeed     int64         `inactive:"+" desc:"random seed"`
 ```
 

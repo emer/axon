@@ -23,7 +23,7 @@ type Vis struct { //types:add
 	V1sGabor gabor.Filter
 
 	// geometry of input, output for V1 simple-cell processing
-	V1sGeom vfilter.Geom `edit:"-" view:"inline"`
+	V1sGeom vfilter.Geom `edit:"-" display:"inline"`
 
 	// neighborhood inhibition for V1s -- each unit gets inhibition from same feature in nearest orthogonal neighbors -- reduces redundancy of feature code
 	V1sNeighInhib kwta.NeighInhib
@@ -35,46 +35,46 @@ type Vis struct { //types:add
 	ImgSize image.Point
 
 	// V1 simple gabor filter tensor
-	V1sGaborTsr tensor.Float32 `view:"no-inline"`
+	V1sGaborTsr tensor.Float32 `display:"no-inline"`
 
 	// input image as tensor
-	ImgTsr tensor.Float32 `view:"no-inline"`
+	ImgTsr tensor.Float32 `display:"no-inline"`
 
 	// current input image
-	Img image.Image `view:"-"`
+	Img image.Image `display:"-"`
 
 	// V1 simple gabor filter output tensor
-	V1sTsr tensor.Float32 `view:"no-inline"`
+	V1sTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 simple extra Gi from neighbor inhibition tensor
-	V1sExtGiTsr tensor.Float32 `view:"no-inline"`
+	V1sExtGiTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 simple gabor filter output, kwta output tensor
-	V1sKwtaTsr tensor.Float32 `view:"no-inline"`
+	V1sKwtaTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 simple gabor filter output, max-pooled 2x2 of V1sKwta tensor
-	V1sPoolTsr tensor.Float32 `view:"no-inline"`
+	V1sPoolTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 simple gabor filter output, un-max-pooled 2x2 of V1sPool tensor
-	V1sUnPoolTsr tensor.Float32 `view:"no-inline"`
+	V1sUnPoolTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 simple gabor filter output, angle-only features tensor
-	V1sAngOnlyTsr tensor.Float32 `view:"no-inline"`
+	V1sAngOnlyTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 simple gabor filter output, max-pooled 2x2 of AngOnly tensor
-	V1sAngPoolTsr tensor.Float32 `view:"no-inline"`
+	V1sAngPoolTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 complex length sum filter output tensor
-	V1cLenSumTsr tensor.Float32 `view:"no-inline"`
+	V1cLenSumTsr tensor.Float32 `display:"no-inline"`
 
 	// V1 complex end stop filter output tensor
-	V1cEndStopTsr tensor.Float32 `view:"no-inline"`
+	V1cEndStopTsr tensor.Float32 `display:"no-inline"`
 
 	// Combined V1 output tensor with V1s simple as first two rows, then length sum, then end stops = 5 rows total
-	V1AllTsr tensor.Float32 `view:"no-inline"`
+	V1AllTsr tensor.Float32 `display:"no-inline"`
 
 	// inhibition values for V1s KWTA
-	V1sInhibs fffb.Inhibs `view:"no-inline"`
+	V1sInhibs fffb.Inhibs `display:"no-inline"`
 }
 
 func (vi *Vis) Defaults() {

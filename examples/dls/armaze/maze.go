@@ -123,7 +123,7 @@ type Env struct {
 	MaxLength int `edit:"-"`
 
 	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`

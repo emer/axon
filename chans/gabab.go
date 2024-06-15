@@ -33,13 +33,13 @@ type GABABParams struct {
 	MaxTime float32 `edit:"-"`
 
 	// time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))
-	TauFact float32 `view:"-"`
+	TauFact float32 `display:"-"`
 
 	// 1/Tau
-	RiseDt float32 `view:"-" edit:"-"`
+	RiseDt float32 `display:"-" edit:"-"`
 
 	// 1/Tau
-	DecayDt float32 `view:"-" edit:"-"`
+	DecayDt float32 `display:"-" edit:"-"`
 
 	pad, pad1, pad2 float32
 }

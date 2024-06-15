@@ -59,10 +59,10 @@ type SpikeParams struct {
 	ISITau float32 `default:"5" min:"1"`
 
 	// rate = 1 / tau
-	ISIDt float32 `view:"-"`
+	ISIDt float32 `display:"-"`
 
 	// rate = 1 / tau
-	RDt float32 `view:"-"`
+	RDt float32 `display:"-"`
 
 	pad int32
 }
@@ -314,25 +314,25 @@ type DtParams struct {
 	MaxCycStart int32 `default:"10" min:"0"`
 
 	// nominal rate = Integ / tau
-	VmDt float32 `view:"-" json:"-" xml:"-"`
+	VmDt float32 `display:"-" json:"-" xml:"-"`
 
 	// nominal rate = Integ / tau
-	VmDendDt float32 `view:"-" json:"-" xml:"-"`
+	VmDendDt float32 `display:"-" json:"-" xml:"-"`
 
 	// 1 / VmSteps
-	DtStep float32 `view:"-" json:"-" xml:"-"`
+	DtStep float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = Integ / tau
-	GeDt float32 `view:"-" json:"-" xml:"-"`
+	GeDt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = Integ / tau
-	GiDt float32 `view:"-" json:"-" xml:"-"`
+	GiDt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = Integ / tau
-	IntDt float32 `view:"-" json:"-" xml:"-"`
+	IntDt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	LongAvgDt float32 `view:"-" json:"-" xml:"-"`
+	LongAvgDt float32 `display:"-" json:"-" xml:"-"`
 }
 
 func (dp *DtParams) Update() {
@@ -432,10 +432,10 @@ type SpikeNoiseParams struct {
 	MaintGe slbool.Bool
 
 	// Exp(-Interval) which is the threshold for GeNoiseP as it is updated
-	GeExpInt float32 `view:"-" json:"-" xml:"-"`
+	GeExpInt float32 `display:"-" json:"-" xml:"-"`
 
 	// Exp(-Interval) which is the threshold for GiNoiseP as it is updated
-	GiExpInt float32 `view:"-" json:"-" xml:"-"`
+	GiExpInt float32 `display:"-" json:"-" xml:"-"`
 }
 
 func (an *SpikeNoiseParams) Update() {
@@ -539,7 +539,7 @@ type SMaintParams struct {
 	Inhib float32 `default:"1"`
 
 	// ISI (inter spike interval) range -- min is used as min ISIAvg for poisson spike rate expected from the population, and above max, no additional maintenance conductance is added
-	ISI minmax.F32 `view:"inline"`
+	ISI minmax.F32 `display:"inline"`
 }
 
 func (sm *SMaintParams) Defaults() {
@@ -694,74 +694,74 @@ func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
 type ActParams struct {
 
 	// Spiking function parameters
-	Spikes SpikeParams `view:"inline"`
+	Spikes SpikeParams `display:"inline"`
 
 	// dendrite-specific parameters
-	Dend DendParams `view:"inline"`
+	Dend DendParams `display:"inline"`
 
 	// initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState
-	Init ActInitParams `view:"inline"`
+	Init ActInitParams `display:"inline"`
 
 	// amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora)
-	Decay DecayParams `view:"inline"`
+	Decay DecayParams `display:"inline"`
 
 	// time and rate constants for temporal derivatives / updating of activation state
-	Dt DtParams `view:"inline"`
+	Dt DtParams `display:"inline"`
 
 	// maximal conductances levels for channels
-	Gbar chans.Chans `view:"inline"`
+	Gbar chans.Chans `display:"inline"`
 
 	// reversal potentials for each channel
-	Erev chans.Chans `view:"inline"`
+	Erev chans.Chans `display:"inline"`
 
 	// how external inputs drive neural activations
-	Clamp ClampParams `view:"inline"`
+	Clamp ClampParams `display:"inline"`
 
 	// how, where, when, and how much noise to add
-	Noise SpikeNoiseParams `view:"inline"`
+	Noise SpikeNoiseParams `display:"inline"`
 
 	// range for Vm membrane potential -- -- important to keep just at extreme range of reversal potentials to prevent numerical instability
-	VmRange minmax.F32 `view:"inline"`
+	VmRange minmax.F32 `display:"inline"`
 
 	// M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes
-	Mahp chans.MahpParams `view:"inline"`
+	Mahp chans.MahpParams `display:"inline"`
 
 	// slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron
-	Sahp chans.SahpParams `view:"inline"`
+	Sahp chans.SahpParams `display:"inline"`
 
 	// sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)
-	KNa chans.KNaMedSlow `view:"inline"`
+	KNa chans.KNaMedSlow `display:"inline"`
 
 	// potassium (K) inwardly rectifying (ir) current, which is similar to GABAB
 	// (which is a GABA modulated Kir channel).  This channel is off by default
 	// but plays a critical role in making medium spiny neurons (MSNs) relatively
 	// quiet in the striatum.
-	Kir chans.KirParams `view:"inline"`
+	Kir chans.KirParams `display:"inline"`
 
 	// NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.
-	NMDA chans.NMDAParams `view:"inline"`
+	NMDA chans.NMDAParams `display:"inline"`
 
 	// NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning.
-	MaintNMDA chans.NMDAParams `view:"inline"`
+	MaintNMDA chans.NMDAParams `display:"inline"`
 
 	// GABA-B / GIRK channel parameters
-	GabaB chans.GABABParams `view:"inline"`
+	GabaB chans.GABABParams `display:"inline"`
 
 	// voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons
-	VGCC chans.VGCCParams `view:"inline"`
+	VGCC chans.VGCCParams `display:"inline"`
 
 	// A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels
-	AK chans.AKsParams `view:"inline"`
+	AK chans.AKsParams `display:"inline"`
 
 	// small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting.
-	SKCa chans.SKCaParams `view:"inline"`
+	SKCa chans.SKCaParams `display:"inline"`
 
 	// for self-maintenance simulating a population of
 	// NMDA-interconnected spiking neurons
-	SMaint SMaintParams `view:"inline"`
+	SMaint SMaintParams `display:"inline"`
 
 	// provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)
-	PopCode PopCodeParams `view:"inline"`
+	PopCode PopCodeParams `display:"inline"`
 }
 
 func (ac *ActParams) Defaults() {

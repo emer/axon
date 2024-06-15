@@ -81,13 +81,13 @@ type MotorSeqEnv struct {
 	RPE float32 `edit:"-"`
 
 	// number of units per localist representation, in Y axis
-	NUnitsPer int `view:"-"`
+	NUnitsPer int `display:"-"`
 
 	// total number of units: NActions * NUnitsPer
-	NUnits int `view:"-"`
+	NUnits int `display:"-"`
 
 	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`

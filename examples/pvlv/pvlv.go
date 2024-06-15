@@ -25,7 +25,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -68,13 +68,13 @@ type Sim struct {
 	Config Config
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
+	Net *axon.Network `display:"no-inline"`
 
 	// all parameter management
-	Params emer.NetParams `view:"inline"`
+	Params emer.NetParams `display:"inline"`
 
 	// contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline"`
+	Loops *looper.Manager `display:"no-inline"`
 
 	// contains computed statistic values
 	Stats estats.Stats
@@ -83,19 +83,19 @@ type Sim struct {
 	Logs elog.Logs
 
 	// Environments
-	Envs env.Envs `view:"no-inline"`
+	Envs env.Envs `display:"no-inline"`
 
 	// axon timing parameters and state
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdate netview.ViewUpdate `view:"inline"`
+	ViewUpdate netview.ViewUpdate `display:"inline"`
 
 	// manages all the gui elements
-	GUI egui.GUI `view:"-"`
+	GUI egui.GUI `display:"-"`
 
 	// a list of random seeds to use for each run
-	RandSeeds randx.Seeds `view:"-"`
+	RandSeeds randx.Seeds `display:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -637,7 +637,7 @@ func (ss *Sim) BlockStats() {
 	stnm := "BlockByType"
 
 	ix := ss.Logs.IndexView(etime.Train, etime.Trial)
-	spl := split.GroupBy(ix, []string{"SeqType", "TickType"})
+	spl := split.GroupBy(ix, "SeqType", "TickType")
 	for _, ts := range ix.Table.ColumnNames {
 		if ts == "SeqType" || ts == "TrialName" || ts == "TickType" {
 			continue
@@ -718,29 +718,30 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "BlockByType"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
 	plt.Params.XAxisColumn = "SeqType"
 	plt.SetTable(dt)
 
-	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
-		cb := core.NewChooser(tb, "runs")
-		cb.SetStrings(cond.RunNames...)
-		ri := 0
-		for i, rn := range cond.RunNames {
-			if rn == ss.Config.Env.RunName {
-				ri = i
-				break
+	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.Chooser) {
+			w.SetStrings(cond.RunNames...)
+			ri := 0
+			for i, rn := range cond.RunNames {
+				if rn == ss.Config.Env.RunName {
+					ri = i
+					break
+				}
 			}
-		}
-		cb.SelectItem(ri)
-		cb.OnChange(func(e events.Event) {
-			ss.Config.Env.RunName = cb.CurrentItem.Value.(string)
-			ss.InitEnvRun()
+			w.SelectItem(ri)
+			w.OnChange(func(e events.Event) {
+				ss.Config.Env.RunName = w.CurrentItem.Value.(string)
+				ss.InitEnvRun()
+			})
 		})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -749,10 +750,10 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train})
+		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train})
 
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
 			Tooltip: "Save weights for the current condition name.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -762,8 +763,8 @@ func (ss *Sim) ConfigGUI() {
 		})
 
 		////////////////////////////////////////////////
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 			Active:  egui.ActiveAlways,
@@ -773,8 +774,8 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
@@ -782,7 +783,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.RandSeeds.NewSeeds()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Plot Drive & Effort",
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Plot Drive & Effort",
 			Icon:    icons.PlayArrow,
 			Tooltip: "Opens a new window to plot Rubicon Drive and Effort dynamics.",
 			Active:  egui.ActiveAlways,
@@ -790,7 +791,7 @@ func (ss *Sim) ConfigGUI() {
 				go DriveEffortGUI()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
 			Icon:    icons.FileMarkdown,
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,

@@ -53,13 +53,13 @@ type LEDEnv struct {
 	XForm vxform.XForm
 
 	// current run of model as provided during Init
-	Run env.Ctr `view:"inline"`
+	Run env.Ctr `display:"inline"`
 
 	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline"`
+	Epoch env.Ctr `display:"inline"`
 
 	// trial is the step counter within epoch
-	Trial env.Ctr `view:"inline"`
+	Trial env.Ctr `display:"inline"`
 
 	// original image prior to random transforms
 	OrigImg tensor.Float32

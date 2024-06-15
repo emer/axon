@@ -14,7 +14,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/params"
 )
 
@@ -892,11 +891,21 @@ func (ly *Layer) LesionNeurons(prop float32) int { //types:add
 	return nl
 }
 
-func (ly *Layer) ConfigToolbar(tb *core.Toolbar) {
-	views.NewFuncButton(tb, ly.Defaults).SetIcon(icons.Reset)
-	views.NewFuncButton(tb, ly.InitWts).SetIcon(icons.Reset)
-	views.NewFuncButton(tb, ly.InitActs).SetIcon(icons.Reset)
-	core.NewSeparator(tb)
-	views.NewFuncButton(tb, ly.LesionNeurons).SetIcon(icons.Cut)
-	views.NewFuncButton(tb, ly.UnLesionNeurons).SetIcon(icons.Cut)
+func (ly *Layer) MakeToolbar(p *core.Plan) {
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(ly.Defaults).SetIcon(icons.Reset)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(ly.InitWts).SetIcon(icons.Reset)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(ly.InitActs).SetIcon(icons.Reset)
+	})
+	core.Add(p, func(w *core.Separator) {})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(ly.LesionNeurons).SetIcon(icons.Cut)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(ly.UnLesionNeurons).SetIcon(icons.Cut)
+	})
 }

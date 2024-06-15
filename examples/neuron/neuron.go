@@ -94,10 +94,10 @@ type Sim struct {
 	Config Config
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
+	Net *axon.Network `display:"no-inline"`
 
 	// extra neuron state for additional channels: VGCC, AK
-	NeuronEx NeuronEx `view:"no-inline"`
+	NeuronEx NeuronEx `display:"no-inline"`
 
 	// axon timing parameters and state
 	Context axon.Context
@@ -106,22 +106,22 @@ type Sim struct {
 	Stats estats.Stats
 
 	// logging
-	Logs elog.Logs `view:"no-inline"`
+	Logs elog.Logs `display:"no-inline"`
 
 	// all parameter management
-	Params emer.NetParams `view:"inline"`
+	Params emer.NetParams `display:"inline"`
 
 	// current cycle of updating
 	Cycle int `edit:"-"`
 
 	// netview update parameters
-	ViewUpdate netview.ViewUpdate `view:"inline"`
+	ViewUpdate netview.ViewUpdate `display:"inline"`
 
 	// manages all the gui elements
-	GUI egui.GUI `view:"-"`
+	GUI egui.GUI `display:"-"`
 
 	// map of values for detailed debugging / testing
-	ValMap map[string]float32 `view:"-"`
+	ValMap map[string]float32 `display:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -375,7 +375,7 @@ func (ss *Sim) ResetTstCycPlot() {
 // 		Gui
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
-	nv.ViewDefaults()
+	// nv.ViewDefaults()
 }
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
@@ -398,8 +398,8 @@ func (ss *Sim) ConfigGUI() {
 	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
 	// ss.TstCycPlot = plt
 
-	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -407,7 +407,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
 			Tooltip: "Stops running.",
 			Active:  egui.ActiveRunning,
 			Func: func() {
@@ -415,7 +415,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Run Cycles", Icon: icons.PlayArrow,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Run Cycles", Icon: icons.PlayArrow,
 			Tooltip: "Runs neuron updating over NCycles.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -429,8 +429,8 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
 			Tooltip: "Reset TstCycPlot.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -439,7 +439,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
 			Tooltip: "Restore initial default parameters.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -448,7 +448,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.GUI.UpdateWindow()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
 			Icon:    "file-markdown",
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,

@@ -17,15 +17,14 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/tensor/tensorview"
-	"cogentcore.org/core/views"
+	"cogentcore.org/core/tensor/tensorcore"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyz/physics"
 	"cogentcore.org/core/xyz/physics/world"
-	"cogentcore.org/core/xyz/xyzview"
+	"cogentcore.org/core/xyz/xyzcore"
 	"github.com/emer/axon/v2/axon"
 )
 
@@ -92,7 +91,7 @@ type GUI struct {
 	EnvName string
 
 	// 3D visualization of the Scene
-	SceneView *xyzview.SceneView
+	SceneView *xyzcore.SceneView
 
 	// 2D visualization of the Scene
 	Scene2D *core.SVG
@@ -113,13 +112,13 @@ type GUI struct {
 	Trace StateTrace
 
 	// view of the gui obj
-	StructView *views.StructView `view:"-"`
+	StructView *core.Form `display:"-"`
 
 	// ArmMaze TabView
-	WorldTabs *core.Tabs `view:"-"`
+	WorldTabs *core.Tabs `display:"-"`
 
 	// ArmMaze is running
-	IsRunning bool `view:"-"`
+	IsRunning bool `display:"-"`
 
 	// current depth map
 	DepthValues []float32
@@ -128,25 +127,25 @@ type GUI struct {
 	Camera world.Camera
 
 	// color map to use for rendering depth map
-	DepthMap views.ColorMapName
+	DepthMap core.ColorMapName
 
 	// first-person right-eye full field view
-	EyeRFullImage *core.Image `view:"-"`
+	EyeRFullImage *core.Image `display:"-"`
 
 	// first-person right-eye fovea view
-	EyeRFovImage *core.Image `view:"-"`
+	EyeRFovImage *core.Image `display:"-"`
 
 	// depth map bitmap view
-	DepthImage *core.Image `view:"-"`
+	DepthImage *core.Image `display:"-"`
 
 	// plot of positive valence drives, active OFC US state, and reward
-	USposPlot *plotview.PlotView
+	USposPlot *plotcore.PlotEditor
 
 	// data for USPlot
 	USposData *table.Table
 
 	// plot of negative valence active OFC US state, and outcomes
-	USnegPlot *plotview.PlotView
+	USnegPlot *plotcore.PlotEditor
 
 	// data for USPlot
 	USnegData *table.Table
@@ -158,22 +157,22 @@ type GUI struct {
 	World *physics.Group
 
 	// 3D view of world
-	View3D *world.View `view:"-"`
+	View3D *world.View `display:"-"`
 
 	// emer group
-	Emery *physics.Group `view:"-"`
+	Emery *physics.Group `display:"-"`
 
 	// arms group
-	Arms *physics.Group `view:"-"`
+	Arms *physics.Group `display:"-"`
 
 	// stims group
-	Stims *physics.Group `view:"-"`
+	Stims *physics.Group `display:"-"`
 
 	// Right eye of emery
-	EyeR physics.Body `view:"-"`
+	EyeR physics.Body `display:"-"`
 
 	// contacts from last step, for body
-	Contacts physics.Contacts `view:"-"`
+	Contacts physics.Contacts `display:"-"`
 }
 
 // ConfigWorldGUI configures all the world view GUI elements
@@ -200,15 +199,15 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	b := core.NewBody("armaze").SetTitle("Arm Maze")
 
-	split := core.NewSplits(b, "split")
+	split := core.NewSplits(b)
 
 	svfr := core.NewFrame(split, "svfr")
-	svfr.Style(func(s *styles.Style) {
+	svfr.Styler(func(s *styles.Style) {
 		s.Direction = styles.Column
 	})
 
-	vw.StructView = views.NewStructView(svfr, "sv").SetStruct(vw)
-	imfr := core.NewFrame(svfr).Style(func(s *styles.Style) {
+	vw.StructView = core.NewForm(svfr).SetStruct(vw)
+	imfr := core.NewFrame(svfr).Styler(func(s *styles.Style) {
 		s.Display = styles.Grid
 		s.Columns = 2
 		s.Grow.Set(0, 0)
@@ -224,15 +223,15 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	wd := float32(300)
 	ht := float32(100)
-	vw.USposPlot = plotview.NewPlotView(svfr, "us-pos")
-	vw.USposPlot.Style(func(s *styles.Style) {
+	vw.USposPlot = plotcore.NewPlotEditor(svfr, "us-pos")
+	vw.USposPlot.Styler(func(s *styles.Style) {
 		s.Min.X.Px(wd)
 		s.Min.Y.Px(ht)
 		s.Grow.Set(0, 0)
 	})
 
-	vw.USnegPlot = plotview.NewPlotView(svfr, "us-neg")
-	vw.USnegPlot.Style(func(s *styles.Style) {
+	vw.USnegPlot = plotcore.NewPlotEditor(svfr, "us-neg")
+	vw.USnegPlot.Styler(func(s *styles.Style) {
 		s.Min.X.Px(wd)
 		s.Min.Y.Px(ht)
 		s.Grow.Set(0, 0)
@@ -250,7 +249,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	vw.ConfigWorld()
 
-	vw.SceneView = xyzview.NewSceneView(scfr, "sceneview")
+	vw.SceneView = xyzcore.NewSceneView(scfr, "sceneview")
 	vw.SceneView.Config()
 	se := vw.SceneView.SceneXYZ()
 	vw.ConfigView3D(se)
@@ -277,23 +276,35 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	split.SetSplits(.4, .6)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		core.NewButton(tb).SetText("Init").SetIcon(icons.ClearAll).
-			SetTooltip("Init env").
-			OnClick(func(e events.Event) {
-				vw.Env.Init(0)
-			})
-		core.NewButton(tb).SetText("Reset Trace").SetIcon(icons.Undo).
-			SetTooltip("Reset trace of position, etc, shown in 2D View").
-			OnClick(func(e events.Event) {
-				vw.Trace = nil
-			})
-		views.NewFuncButton(tb, vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
-		views.NewFuncButton(tb, vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
-		views.NewFuncButton(tb, vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
-		views.NewFuncButton(tb, vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.Button) {
+			w.SetText("Init").SetIcon(icons.ClearAll).
+				SetTooltip("Init env").
+				OnClick(func(e events.Event) {
+					vw.Env.Init(0)
+				})
+		})
+		core.Add(p, func(w *core.Button) {
+			w.SetText("Reset Trace").SetIcon(icons.Undo).
+				SetTooltip("Reset trace of position, etc, shown in 2D View").
+				OnClick(func(e events.Event) {
+					vw.Trace = nil
+				})
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited)
+		})
 
-		core.NewSeparator(tb)
+		core.Add(p, func(w *core.Separator) {})
 	})
 	return b
 }
@@ -382,7 +393,7 @@ func (vw *GUI) ConfigStims(par *physics.Group, name string, width, height float3
 func (vw *GUI) UpdateStims() {
 	var updts []string
 	ev := vw.Env
-	stms := *vw.Stims.Children()
+	stms := *vw.Stims.Children
 	for i, moi := range stms {
 		mo := moi.(*physics.Box)
 		if i%2 == 1 { // CS
@@ -456,7 +467,7 @@ func (vw *GUI) ConfigUSPlots() {
 	dp.AddFloat64Column("USin")
 
 	vw.USposData = dp
-	vw.USposPlot.Params.Type = plotview.Bar
+	vw.USposPlot.Params.Type = plotcore.Bar
 	vw.USposPlot.Params.Title = "Positive USs"
 	vw.USposPlot.Params.Scale = 1
 	vw.USposPlot.Params.XAxisColumn = "US"
@@ -467,7 +478,7 @@ func (vw *GUI) ConfigUSPlots() {
 	dn.AddFloat64Column("USin")
 
 	vw.USnegData = dn
-	vw.USnegPlot.Params.Type = plotview.Bar
+	vw.USnegPlot.Params.Type = plotcore.Bar
 	vw.USnegPlot.Params.Title = "Negative USs"
 	vw.USnegPlot.Params.Scale = 1
 	vw.USnegPlot.Params.XAxisColumn = "US"
@@ -531,7 +542,7 @@ func (vw *GUI) ViewDepth(depth []float32) {
 	world.DepthImage(vw.DepthImage.Image, depth, cmap, &vw.Camera)
 }
 
-func (vw *GUI) ConfigWorldView(tg *tensorview.TensorGrid) {
+func (vw *GUI) ConfigWorldView(tg *tensorcore.TensorGrid) {
 	cnm := "ArmMazeColors"
 	cm, ok := colormap.AvailableMaps[cnm]
 	if !ok {
@@ -548,7 +559,7 @@ func (vw *GUI) ConfigWorldView(tg *tensorview.TensorGrid) {
 		colormap.AvailableMaps[cnm] = cm
 	}
 	tg.Disp.Defaults()
-	tg.Disp.ColorMap = views.ColorMapName(cnm)
+	tg.Disp.ColorMap = core.ColorMapName(cnm)
 	tg.Disp.GridFill = 1
 }
 

@@ -15,7 +15,6 @@ import (
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/relpos"
@@ -31,10 +30,10 @@ import (
 type LayerBase struct {
 
 	// we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonLay AxonLayer `copier:"-" json:"-" xml:"-" view:"-"`
+	AxonLay AxonLayer `copier:"-" json:"-" xml:"-" display:"-"`
 
 	// our parent network, in case we need to use it to find other layers etc -- set when added by network
-	Network *Network `copier:"-" json:"-" xml:"-" view:"-"`
+	Network *Network `copier:"-" json:"-" xml:"-" display:"-"`
 
 	// Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name
 	Nm string
@@ -52,31 +51,31 @@ type LayerBase struct {
 	Typ LayerTypes
 
 	// Spatial relationship to other layer, determines positioning
-	Rel relpos.Rel `tableview:"-" view:"inline"`
+	Rel relpos.Rel `tabledisplay:"-" display:"inline"`
 
 	// position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.
-	Ps math32.Vector3 `tableview:"-"`
+	Ps math32.Vector3 `tabledisplay:"-"`
 
 	// a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.
-	Idx int `view:"-" inactive:"-"`
+	Idx int `display:"-" inactive:"-"`
 
 	// number of neurons in the layer
-	NNeurons uint32 `view:"-"`
+	NNeurons uint32 `display:"-"`
 
 	// starting index of neurons for this layer within the global Network list
-	NeurStIndex uint32 `view:"-" inactive:"-"`
+	NeurStIndex uint32 `display:"-" inactive:"-"`
 
 	// number of pools based on layer shape -- at least 1 for layer pool + 4D subpools
-	NPools uint32 `view:"-"`
+	NPools uint32 `display:"-"`
 
 	// maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Values storage is allocated to hold this amount.
-	MaxData uint32 `view:"-"`
+	MaxData uint32 `display:"-"`
 
 	// indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp
-	RepIxs []int `view:"-"`
+	RepIxs []int `display:"-"`
 
 	// shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape
-	RepShp tensor.Shape `view:"-"`
+	RepShp tensor.Shape `display:"-"`
 
 	// list of receiving pathways into this layer from other layers
 	RcvPaths AxonPaths
@@ -91,16 +90,16 @@ type LayerBase struct {
 	Pools []Pool
 
 	// external input values for this layer, allocated from network global Exts slice
-	Exts []float32 `view:"-"`
+	Exts []float32 `display:"-"`
 
 	// configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,
-	BuildConfig map[string]string `tableview:"-"`
+	BuildConfig map[string]string `tabledisplay:"-"`
 
 	// default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., Rubicon, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
-	DefParams params.Params `tableview:"-"`
+	DefParams params.Params `tabledisplay:"-"`
 
 	// provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `tableview:"-"`
+	ParamsHistory params.HistoryImpl `tabledisplay:"-"`
 }
 
 // emer.Layer interface methods
@@ -423,7 +422,9 @@ func (ly *LayerBase) ApplyDefParams() {
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
 func (ly *LayerBase) NonDefaultParams() string {
-	nds := views.StructNonDefFieldsStr(ly.AxonLay.AsAxon().Params, ly.Nm)
+	// ndfs := reflectx.NonDefaultFields(ly.AxonLay.AsAxon().Params)
+	nds := "non default field strings todo"
+	//Str(ly.AxonLay.AsAxon().Params, ly.Nm)
 	for _, pj := range ly.RcvPaths {
 		pnd := pj.NonDefaultParams()
 		nds += pnd

@@ -67,7 +67,7 @@ type SynComParams struct {
 	PFailSWt slbool.Bool
 
 	// delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed
-	DelLen uint32 `view:"-"`
+	DelLen uint32 `display:"-"`
 
 	pad, pad1 float32
 }

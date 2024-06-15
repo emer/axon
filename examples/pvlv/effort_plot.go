@@ -14,9 +14,8 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/axon"
 )
 
@@ -49,19 +48,19 @@ type DrEffPlot struct {
 	Effort minmax.F32
 
 	// table for plot
-	Table *table.Table `view:"no-inline"`
+	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotview.PlotView `view:"-"`
+	Plot *plotcore.PlotEditor `display:"-"`
 
 	// table for plot
-	TimeTable *table.Table `view:"no-inline"`
+	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotview.PlotView `view:"-"`
+	TimePlot *plotcore.PlotEditor `display:"-"`
 
 	// random number generator
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -137,13 +136,13 @@ func (ss *DrEffPlot) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *DrEffPlot) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *DrEffPlot) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Effort Discount or Urgency Function Plot"
 	plt.Params.XAxisColumn = "X"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("X", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Y", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("X", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Y", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 
@@ -204,17 +203,17 @@ func (ss *DrEffPlot) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *DrEffPlot) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *DrEffPlot) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Effort / Drive over Time Plot"
 	plt.Params.XAxisColumn = "T"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("T", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Eff", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("EffInc", plotview.Off, plotview.FixMin, 0, plotview.FixMax, ss.Effort.Max)
-	plt.SetColParams("Urge", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("US", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("Drive", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("T", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Eff", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("EffInc", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, ss.Effort.Max)
+	plt.SetColParams("Urge", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("US", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("Drive", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 
@@ -222,24 +221,28 @@ func (ss *DrEffPlot) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *pl
 func (ss *DrEffPlot) ConfigGUI() *core.Body {
 	b := core.NewBody("Drive / Effort / Urgency Plotting")
 
-	split := core.NewSplits(b, "split")
-	sv := views.NewStructView(split, "sv")
-	sv.SetStruct(ss)
+	split := core.NewSplits(b)
+	core.NewForm(split).SetStruct(ss)
+	tv := core.NewTabs(split)
 
-	tv := core.NewTabs(split, "tv")
-
-	ss.Plot = plotview.NewSubPlot(tv.NewTab("Effort Plot"))
+	ss.Plot = plotcore.NewSubPlot(tv.NewTab("Effort Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		views.NewFuncButton(tb, ss.EffortPlot).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.UrgencyPlot).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.EffortPlot).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.UrgencyPlot).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+		})
 	})
 
 	return b

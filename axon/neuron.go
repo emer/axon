@@ -655,7 +655,7 @@ var NeuronVarProps = map[string]string{
 	"CtxtGeRawa": `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`,
 	"CtxtGeOrig": `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`,
 
-	"NrnFlags": `view:"-" desc:"bit flags for external input and other neuron status state"`,
+	"NrnFlags": `display:"-" desc:"bit flags for external input and other neuron status state"`,
 
 	/////////////////////////////////////////
 	// Long-term average activation, set point for synaptic scaling

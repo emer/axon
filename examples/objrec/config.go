@@ -43,7 +43,7 @@ type ParamConfig struct { //types:add
 	Good bool `nest:"+"`
 
 	//
-	V1V4Path *paths.PoolTile `nest:"+" view:"pathway from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
+	V1V4Path *paths.PoolTile `nest:"+" display:"pathway from V1 to V4 which is tiled 4x4 skip 2 with topo scale values"`
 }
 
 func (cfg *ParamConfig) Defaults() {
@@ -127,16 +127,16 @@ type Config struct { //types:add
 	Debug bool
 
 	// environment configuration options
-	Env EnvConfig `view:"add-fields"`
+	Env EnvConfig `display:"add-fields"`
 
 	// parameter related configuration options
-	Params ParamConfig `view:"add-fields"`
+	Params ParamConfig `display:"add-fields"`
 
 	// sim running related configuration options
-	Run RunConfig `view:"add-fields"`
+	Run RunConfig `display:"add-fields"`
 
 	// data logging related configuration options
-	Log LogConfig `view:"add-fields"`
+	Log LogConfig `display:"add-fields"`
 }
 
 func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }

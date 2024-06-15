@@ -40,7 +40,7 @@ type DriveParams struct {
 	Satisfaction []float32
 
 	// 1/Tau
-	Dt []float32 `view:"-"`
+	Dt []float32 `display:"-"`
 }
 
 func (dp *DriveParams) Alloc(nDrives int) {
@@ -400,7 +400,7 @@ type LHbParams struct {
 	DipGain float32 `default:"1"`
 
 	// 1/tau
-	VSPatchVarDt float32 `view:"-"`
+	VSPatchVarDt float32 `display:"-"`
 }
 
 func (lh *LHbParams) Defaults() {
@@ -517,7 +517,7 @@ type GiveUpParams struct {
 	ProgressRateTau float32 `default:"2"`
 
 	// 1/tau
-	ProgressRateDt float32 `view:"-"`
+	ProgressRateDt float32 `display:"-"`
 }
 
 func (gp *GiveUpParams) Defaults() {
@@ -623,28 +623,28 @@ type Rubicon struct {
 	// parameters and state for built-in drives that form the core motivations
 	// of the agent, controlled by lateral hypothalamus and associated
 	// body state monitoring such as glucose levels and thirst.
-	Drive DriveParams `view:"inline"`
+	Drive DriveParams `display:"inline"`
 
 	// urgency (increasing pressure to do something) and parameters for
 	//  updating it. Raw urgency is incremented by same units as effort,
 	// but is only reset with a positive US.
-	Urgency UrgencyParams `view:"inline"`
+	Urgency UrgencyParams `display:"inline"`
 
 	// controls how positive and negative USs are weighted and integrated to
 	// compute an overall PV primary value.
-	USs USParams `view:"inline"`
+	USs USParams `display:"inline"`
 
 	// lateral habenula (LHb) parameters and state, which drives
 	// dipping / pausing in dopamine when the predicted positive
 	// outcome > actual, or actual negative outcome > predicted.
 	// Can also drive bursting for the converse, and via matrix phasic firing.
-	LHb LHbParams `view:"inline"`
+	LHb LHbParams `display:"inline"`
 
 	// parameters for giving up based on PV pos - neg difference
-	GiveUp GiveUpParams `view:"inline"`
+	GiveUp GiveUpParams `display:"inline"`
 
 	// population code decoding parameters for estimates from layers
-	ValDecode popcode.OneD `view:"inline"`
+	ValDecode popcode.OneD `display:"inline"`
 
 	decodeActs []float32
 }

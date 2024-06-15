@@ -11,7 +11,6 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
@@ -32,7 +31,7 @@ import (
 type PathBase struct {
 
 	// we need a pointer to ourselves as an AxonPath, which can always be used to extract the true underlying type of object when path is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonPrj AxonPath `copier:"-" json:"-" xml:"-" view:"-"`
+	AxonPrj AxonPath `copier:"-" json:"-" xml:"-" display:"-"`
 
 	// inactivate this pathway -- allows for easy experimentation
 	Off bool
@@ -50,7 +49,7 @@ type PathBase struct {
 	Recv *Layer
 
 	// pattern of connectivity
-	Pat paths.Pattern `tableview:"-"`
+	Pat paths.Pattern `tabledisplay:"-"`
 
 	// type of pathway:  Forward, Back, Lateral, or extended type in specialized algorithms.
 	// Matches against .Cls parameter styles (e.g., .Back etc)
@@ -61,43 +60,43 @@ type PathBase struct {
 	// (e.g., Rubicon, BG etc) not associated with a path type, which otherwise
 	// is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
-	DefParams params.Params `tableview:"-"`
+	DefParams params.Params `tabledisplay:"-"`
 
 	// provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `tableview:"-"`
+	ParamsHistory params.HistoryImpl `tabledisplay:"-"`
 
 	// average and maximum number of recv connections in the receiving layer
-	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" edit:"-" view:"inline"`
+	RecvConNAvgMax minmax.AvgMax32 `tabledisplay:"-" edit:"-" display:"inline"`
 
 	// average and maximum number of sending connections in the sending layer
-	SendConNAvgMax minmax.AvgMax32 `tableview:"-" edit:"-" view:"inline"`
+	SendConNAvgMax minmax.AvgMax32 `tabledisplay:"-" edit:"-" display:"inline"`
 
 	// start index into global Synapse array:
-	SynStIndex uint32 `view:"-"`
+	SynStIndex uint32 `display:"-"`
 
 	// number of synapses in this pathway
-	NSyns uint32 `view:"-"`
+	NSyns uint32 `display:"-"`
 
 	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PathRecvCons slice for GPU usage.
-	RecvCon []StartN `view:"-"`
+	RecvCon []StartN `display:"-"`
 
 	// index into Syns synaptic state for each sending unit and connection within that, for the sending pathway which does not own the synapses, and instead indexes into recv-ordered list
-	RecvSynIndex []uint32 `view:"-"`
+	RecvSynIndex []uint32 `display:"-"`
 
 	// for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
-	RecvConIndex []uint32 `view:"-"`
+	RecvConIndex []uint32 `display:"-"`
 
 	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PathSendCons slice for GPU usage.
-	SendCon []StartN `view:"-"`
+	SendCon []StartN `display:"-"`
 
 	// index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
-	SendConIndex []uint32 `view:"-"`
+	SendConIndex []uint32 `display:"-"`
 
 	// Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIndex, WriteIndex -- scale * weight is added with Com delay offset -- a subslice from network PathGBuf. Uses int-encoded float values for faster GPU atomic integration
-	GBuf []int32 `view:"-"`
+	GBuf []int32 `display:"-"`
 
 	// pathway-level synaptic conductance values, integrated by path before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PathGSyn.
-	GSyns []float32 `view:"-"`
+	GSyns []float32 `display:"-"`
 }
 
 // emer.Path interface
@@ -310,8 +309,10 @@ func (pj *PathBase) ApplyDefParams() {
 // are not at their default values -- useful for setting param styles etc.
 func (pj *PathBase) NonDefaultParams() string {
 	pth := pj.Recv.Name() + "." + pj.Name() // redundant but clearer..
-	nds := views.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
-	return nds
+	_ = pth
+	// nds := views.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
+	// todo: see layerbase for new impl
+	return "todo need to do"
 }
 
 func (pj *PathBase) SynVarNames() []string {

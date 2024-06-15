@@ -61,7 +61,7 @@ type MusicEnv struct {
 	Song table.Table
 
 	// current time step
-	Time env.Ctr `view:"inline"`
+	Time env.Ctr `display:"inline"`
 
 	// current note, rendered as a 4D tensor with shape:
 	Note tensor.Float32
@@ -70,10 +70,10 @@ type MusicEnv struct {
 	NoteIndex int
 
 	// the function for playing midi
-	Player func(msg midi.Message) error `view:"-"`
+	Player func(msg midi.Message) error `display:"-"`
 
 	// for playing notes
-	LastNotePlayed int `view:"-"`
+	LastNotePlayed int `display:"-"`
 }
 
 func (ev *MusicEnv) Name() string { return ev.Nm }

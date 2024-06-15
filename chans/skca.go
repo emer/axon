@@ -48,16 +48,16 @@ type SKCaParams struct {
 	CaInTau float32 `default:"50"`
 
 	// rate = 1 / tau
-	ActDt float32 `view:"-" json:"-" xml:"-"`
+	ActDt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	DeDt float32 `view:"-" json:"-" xml:"-"`
+	DeDt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	CaRDecayDt float32 `view:"-" json:"-" xml:"-"`
+	CaRDecayDt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	CaInDt float32 `view:"-" json:"-" xml:"-"`
+	CaInDt float32 `display:"-" json:"-" xml:"-"`
 }
 
 func (sp *SKCaParams) Defaults() {

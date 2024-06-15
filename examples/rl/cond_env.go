@@ -35,10 +35,10 @@ type OnOff struct {
 	OffVar int
 
 	// current active status based on P probability
-	CurAct bool `view:"-"`
+	CurAct bool `display:"-"`
 
 	// current on / off values using Var variability
-	CurOn, CurOff int `view:"-"`
+	CurOn, CurOff int `display:"-"`
 }
 
 func (oo *OnOff) Set(act bool, on, off int) {
@@ -77,16 +77,16 @@ type CondEnv struct {
 	TotTime int
 
 	// Conditioned stimulus A (e.g., Tone)
-	CSA OnOff `view:"inline"`
+	CSA OnOff `display:"inline"`
 
 	// Conditioned stimulus B (e.g., Light)
-	CSB OnOff `view:"inline"`
+	CSB OnOff `display:"inline"`
 
 	// Conditioned stimulus C
-	CSC OnOff `view:"inline"`
+	CSC OnOff `display:"inline"`
 
 	// Unconditioned stimulus -- reward
-	US OnOff `view:"inline"`
+	US OnOff `display:"inline"`
 
 	// value for reward
 	RewVal float32
@@ -104,16 +104,16 @@ type CondEnv struct {
 	HasRew bool
 
 	// current run of model as provided during Init
-	Run env.Ctr `view:"inline"`
+	Run env.Ctr `display:"inline"`
 
 	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline"`
+	Epoch env.Ctr `display:"inline"`
 
 	// one trial is a pass through all TotTime Events
-	Trial env.Ctr `view:"inline"`
+	Trial env.Ctr `display:"inline"`
 
 	// event is one time step within Trial -- e.g., CS turning on, etc
-	Event env.Ctr `view:"inline"`
+	Event env.Ctr `display:"inline"`
 }
 
 func (ev *CondEnv) Name() string { return ev.Nm }

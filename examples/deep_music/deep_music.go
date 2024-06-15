@@ -19,7 +19,7 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/table"
-	_ "cogentcore.org/core/tensor/tensorview" // _ = include to get gui views
+	_ "cogentcore.org/core/tensor/tensorcore" // _ = include to get gui views
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -57,13 +57,13 @@ type Sim struct {
 	Config Config
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
+	Net *axon.Network `display:"no-inline"`
 
 	// all parameter management
-	Params emer.NetParams `view:"inline"`
+	Params emer.NetParams `display:"inline"`
 
 	// contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline"`
+	Loops *looper.Manager `display:"no-inline"`
 
 	// contains computed statistic values
 	Stats estats.Stats
@@ -72,19 +72,19 @@ type Sim struct {
 	Logs elog.Logs
 
 	// Environments
-	Envs env.Envs `view:"no-inline"`
+	Envs env.Envs `display:"no-inline"`
 
 	// axon timing parameters and state
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdate netview.ViewUpdate `view:"inline"`
+	ViewUpdate netview.ViewUpdate `display:"inline"`
 
 	// manages all the gui elements
-	GUI egui.GUI `view:"-"`
+	GUI egui.GUI `display:"-"`
 
 	// a list of random seeds to use for each run
-	RandSeeds randx.Seeds `view:"-"`
+	RandSeeds randx.Seeds `display:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -592,7 +592,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // 		Gui
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
-	nv.ViewDefaults()
+	// nv.ViewDefaults()
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 2.1, 2.0)
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 }
@@ -612,8 +612,8 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -622,8 +622,8 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train, etime.Test})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Test Init",
+		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train, etime.Test})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Test Init",
 			Icon:    icons.Reset,
 			Tooltip: "restart testing",
 			Active:  egui.ActiveAlways,
@@ -633,8 +633,8 @@ func (ss *Sim) ConfigGUI() {
 		})
 
 		////////////////////////////////////////////////
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 			Active:  egui.ActiveAlways,
@@ -644,8 +644,8 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
@@ -653,7 +653,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.RandSeeds.NewSeeds()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
 			Icon:    "file-markdown",
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,

@@ -43,16 +43,16 @@ type CaLrnParams struct {
 	VgccTau float32 `default:"10"`
 
 	// time constants for integrating CaLrn across M, P and D cascading levels
-	Dt kinase.CaDtParams `view:"inline"`
+	Dt kinase.CaDtParams `display:"inline"`
 
 	// Threshold on CaSpkP CaSpkD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default.
 	UpdateThr float32 `default:"0.01,0.02,0.5"`
 
 	// rate = 1 / tau
-	VgccDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	VgccDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
 	// = 1 / Norm
-	NormInv float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	NormInv float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
 	pad int32
 }
@@ -266,22 +266,22 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 type LearnNeurParams struct {
 
 	// parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
-	CaLearn CaLrnParams `view:"inline"`
+	CaLearn CaLrnParams `display:"inline"`
 
 	// parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdateThr and RLRate as a proxy for the activation (spiking) based learning signal.
-	CaSpk kinase.NeurCaParams `view:"inline"`
+	CaSpk kinase.NeurCaParams `display:"inline"`
 
 	// NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes
-	LrnNMDA chans.NMDAParams `view:"inline"`
+	LrnNMDA chans.NMDAParams `display:"inline"`
 
 	// synaptic scaling parameters for regulating overall average activity compared to neuron's own target level
-	TrgAvgAct TrgAvgActParams `view:"inline"`
+	TrgAvgAct TrgAvgActParams `display:"inline"`
 
 	// recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |CaSpkP - CaSpkD| / Max(CaSpkP, CaSpkD)
-	RLRate RLRateParams `view:"inline"`
+	RLRate RLRateParams `display:"inline"`
 
 	// neuromodulation effects on learning rate and activity, as a function of layer-level DA and ACh values, which are updated from global Context values, and computed from reinforcement learning algorithms
-	NeuroMod NeuroModParams `view:"inline"`
+	NeuroMod NeuroModParams `display:"inline"`
 }
 
 func (ln *LearnNeurParams) Update() {
@@ -504,13 +504,13 @@ func (sp *SWtInitParams) RandVar(rnd randx.Rand) float32 {
 type SWtParams struct {
 
 	// initialization of SWt values
-	Init SWtInitParams `view:"inline"`
+	Init SWtInitParams `display:"inline"`
 
 	// adaptation of SWt values in response to LWt learning
-	Adapt SWtAdaptParams `view:"inline"`
+	Adapt SWtAdaptParams `display:"inline"`
 
 	// range limits for SWt values
-	Limit minmax.F32 `default:"{'Min':0.2,'Max':0.8}" view:"inline"`
+	Limit minmax.F32 `default:"{'Min':0.2,'Max':0.8}" display:"inline"`
 }
 
 func (sp *SWtParams) Defaults() {
@@ -677,7 +677,7 @@ type TraceParams struct {
 	LearnThr float32
 
 	// rate = 1 / tau
-	Dt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	Dt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 }
 
 func (tp *TraceParams) Defaults() {
@@ -817,16 +817,16 @@ type LearnSynParams struct {
 	pad, pad1, pad2 int32
 
 	// learning rate parameters, supporting two levels of modulation on top of base learning rate.
-	LRate LRateParams `view:"inline"`
+	LRate LRateParams `display:"inline"`
 
 	// trace-based learning parameters
-	Trace TraceParams `view:"inline"`
+	Trace TraceParams `display:"inline"`
 
 	// kinase calcium Ca integration parameters: using linear regression parameters
-	KinaseCa kinase.SynCaLinear `view:"inline"`
+	KinaseCa kinase.SynCaLinear `display:"inline"`
 
 	// hebbian learning option, which overrides the default learning rules
-	Hebb HebbParams `view:"inline"`
+	Hebb HebbParams `display:"inline"`
 }
 
 func (ls *LearnSynParams) Update() {

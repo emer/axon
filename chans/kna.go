@@ -28,7 +28,7 @@ type KNaParams struct {
 	Tau float32
 
 	// 1/Tau rate constant
-	Dt float32 `view:"-"`
+	Dt float32 `display:"-"`
 
 	pad, pad1, pad2 int32
 }
@@ -81,10 +81,10 @@ type KNaMedSlow struct {
 	pad, pad1 int32
 
 	// medium time-scale adaptation
-	Med KNaParams `view:"inline"`
+	Med KNaParams `display:"inline"`
 
 	// slow time-scale adaptation
-	Slow KNaParams `view:"inline"`
+	Slow KNaParams `display:"inline"`
 }
 
 func (ka *KNaMedSlow) Defaults() {

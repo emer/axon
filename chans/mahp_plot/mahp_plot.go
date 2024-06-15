@@ -12,9 +12,8 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
 )
 
@@ -33,7 +32,7 @@ const LogPrec = 4
 type Sim struct {
 
 	// mAHP function
-	Mahp chans.MahpParams `view:"inline"`
+	Mahp chans.MahpParams `display:"inline"`
 
 	// starting voltage
 	Vstart float32 `default:"-100"`
@@ -60,16 +59,16 @@ type Sim struct {
 	TimeVend float32
 
 	// table for plot
-	Table *table.Table `view:"no-inline"`
+	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotview.PlotView `view:"-"`
+	Plot *plotcore.PlotEditor `display:"-"`
 
 	// table for plot
-	TimeTable *table.Table `view:"no-inline"`
+	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotview.PlotView `view:"-"`
+	TimePlot *plotcore.PlotEditor `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -129,14 +128,14 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "mAHP V Function Plot"
 	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Ninf", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("Tau", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 1)
+	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Ninf", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("Tau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
 	return plt
 }
 
@@ -211,18 +210,18 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Time Function Plot"
 	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("GmAHP", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("N", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Ninf", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Tau", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Kna", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 1)
+	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("GmAHP", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("N", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Ninf", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Tau", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Kna", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
 	return plt
 }
 
@@ -230,23 +229,26 @@ func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview
 func (ss *Sim) ConfigGUI() *core.Body {
 	b := core.NewBody("Mahp Plot")
 
-	split := core.NewSplits(b, "split")
-	sv := views.NewStructView(split, "sv")
-	sv.SetStruct(ss)
+	split := core.NewSplits(b)
+	core.NewForm(split).SetStruct(ss)
 
-	tv := core.NewTabs(split, "tv")
+	tv := core.NewTabs(split)
 
-	ss.Plot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.Plot = plotcore.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		views.NewFuncButton(tb, ss.VmRun).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.VmRun).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+		})
 	})
 
 	return b

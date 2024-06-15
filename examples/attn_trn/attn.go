@@ -29,7 +29,7 @@ import (
 	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/relpos"
 	"cogentcore.org/core/tensor/stats/stats"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/split"
@@ -220,28 +220,28 @@ type Sim struct {
 	KNaAdapt bool `default:"true"`
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
+	Net *axon.Network `display:"no-inline"`
 
 	//
-	Path3x3Skp1 *paths.PoolTile `view:"Standard same-to-same size topographic pathway"`
+	Path3x3Skp1 *paths.PoolTile `display:"Standard same-to-same size topographic pathway"`
 
 	//
-	Path5x5Skp1 *paths.PoolTile `view:"Standard same-to-same size topographic pathway"`
+	Path5x5Skp1 *paths.PoolTile `display:"Standard same-to-same size topographic pathway"`
 
 	// select which type of test (input patterns) to use
 	Test TestType
 
 	// testing trial-level log data -- click to see record of network's response to each input
-	TstTrlLog *table.Table `view:"no-inline"`
+	TstTrlLog *table.Table `display:"no-inline"`
 
 	// aggregated testing data
-	TstRunLog *table.Table `view:"no-inline"`
+	TstRunLog *table.Table `display:"no-inline"`
 
 	// aggregate stats on testing data
-	TstStats *table.Table `view:"no-inline"`
+	TstStats *table.Table `display:"no-inline"`
 
 	// full collection of param sets -- not really interesting for this model
-	Params params.Sets `view:"no-inline"`
+	Params params.Sets `display:"no-inline"`
 
 	// Testing environment -- manages iterating over testing
 	TestEnv AttnEnv
@@ -271,28 +271,28 @@ type Sim struct {
 	PctMod float32
 
 	// main GUI window
-	Win *core.Window `view:"-"`
+	Win *core.Window `display:"-"`
 
 	// the network viewer
-	NetView *netview.NetView `view:"-"`
+	NetView *netview.NetView `display:"-"`
 
 	// the master toolbar
-	ToolBar *core.ToolBar `view:"-"`
+	ToolBar *core.ToolBar `display:"-"`
 
 	// the test-trial plot
-	TstTrlPlot *plotview.PlotView `view:"-"`
+	TstTrlPlot *plotcore.PlotEditor `display:"-"`
 
 	// the test-trial plot
-	TstRunPlot *plotview.PlotView `view:"-"`
+	TstRunPlot *plotcore.PlotEditor `display:"-"`
 
 	// for holding layer values
-	ValuesTsrs map[string]*tensor.Float32 `view:"-"`
+	ValuesTsrs map[string]*tensor.Float32 `display:"-"`
 
 	// true if sim is running
-	IsRunning bool `view:"-"`
+	IsRunning bool `display:"-"`
 
 	// flag to stop running
-	StopNow bool `view:"-"`
+	StopNow bool `display:"-"`
 }
 
 // TheSim is the overall state for this simulation
@@ -851,22 +851,22 @@ func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTstTrlPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTstTrlPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Attn Test Trial Plot"
 	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Run", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Trial", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("TrialName", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Cycle", plotview.Off, plotview.FixMin, 0, plotview.FixMax, 220)
-	plt.SetColParams("S1Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("S2Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("PctMod", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("Run", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Trial", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("TrialName", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Cycle", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 220)
+	plt.SetColParams("S1Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("S2Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("PctMod", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 
 	for _, lnm := range ss.TstRecLays {
-		cp := plt.SetColParams(lnm, plotview.Off, plotview.FixMin, 0, plotview.FixMax, 1)
+		cp := plt.SetColParams(lnm, plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		cp.TensorIndex = -1 // plot all
 	}
 	return plt
@@ -899,17 +899,17 @@ func (ss *Sim) ConfigTstRunLog(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTstRunPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTstRunPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Attn Test Run Plot"
 	plt.Params.XAxisColumn = "Trial"
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Trial", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("TrialName", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("S1Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("S2Act", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("PctMod", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("Trial", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("TrialName", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("S1Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("S2Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("PctMod", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 
@@ -958,10 +958,10 @@ func (ss *Sim) ConfigGUI() *core.Window {
 	ss.NetView = nv
 	ss.ConfigNetView(nv)
 
-	plt := tv.AddNewTab(plotview.KiT_PlotView, "TstTrlPlot").(*plotview.PlotView)
+	plt := tv.AddNewTab(plotcore.KiT_PlotView, "TstTrlPlot").(*plotcore.PlotEditor)
 	ss.TstTrlPlot = ss.ConfigTstTrlPlot(plt, ss.TstTrlLog)
 
-	plt = tv.AddNewTab(plotview.KiT_PlotView, "TstRunPlot").(*plotview.PlotView)
+	plt = tv.AddNewTab(plotcore.KiT_PlotView, "TstRunPlot").(*plotcore.PlotEditor)
 	ss.TstRunPlot = ss.ConfigTstRunPlot(plt, ss.TstRunLog)
 
 	split.SetSplits(.2, .8)

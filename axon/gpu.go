@@ -135,64 +135,64 @@ type GPU struct {
 	CycleByCycle bool
 
 	// the network we operate on -- we live under this net
-	Net *Network `view:"-"`
+	Net *Network `display:"-"`
 
 	// the context we use
-	Ctx *Context `view:"-"`
+	Ctx *Context `display:"-"`
 
 	// the vgpu compute system
-	Sys *vgpu.System `view:"-"`
+	Sys *vgpu.System `display:"-"`
 
 	// VarSet = 0: the uniform LayerParams
-	Params *vgpu.VarSet `view:"-"`
+	Params *vgpu.VarSet `display:"-"`
 
 	// VarSet = 1: the storage indexes and PathParams
-	Indexes *vgpu.VarSet `view:"-"`
+	Indexes *vgpu.VarSet `display:"-"`
 
 	// VarSet = 2: the Storage buffer for RW state structs and neuron floats
-	Structs *vgpu.VarSet `view:"-"`
+	Structs *vgpu.VarSet `display:"-"`
 
 	// Varset = 3: the Storage buffer for synapses
-	Syns *vgpu.VarSet `view:"-"`
+	Syns *vgpu.VarSet `display:"-"`
 
 	// Varset = 4: the Storage buffer for SynCa banks
-	SynCas *vgpu.VarSet `view:"-"`
+	SynCas *vgpu.VarSet `display:"-"`
 
 	// for sequencing commands
-	Semaphores map[string]vk.Semaphore `view:"-"`
+	Semaphores map[string]vk.Semaphore `display:"-"`
 
 	// number of warp threads -- typically 64 -- must update all hlsl files if changed!
-	NThreads int `view:"-" inactive:"-" default:"64"`
+	NThreads int `display:"-" inactive:"-" default:"64"`
 
 	// maximum number of bytes per individual storage buffer element, from GPUProps.Limits.MaxStorageBufferRange
-	MaxBufferBytes uint32 `view:"-"`
+	MaxBufferBytes uint32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas0 []float32 `view:"-"`
+	SynapseCas0 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas1 []float32 `view:"-"`
+	SynapseCas1 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas2 []float32 `view:"-"`
+	SynapseCas2 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas3 []float32 `view:"-"`
+	SynapseCas3 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas4 []float32 `view:"-"`
+	SynapseCas4 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas5 []float32 `view:"-"`
+	SynapseCas5 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas6 []float32 `view:"-"`
+	SynapseCas6 []float32 `display:"-"`
 
 	// bank of floats for GPU access
-	SynapseCas7 []float32 `view:"-"`
+	SynapseCas7 []float32 `display:"-"`
 
 	// tracks var binding
-	DidBind map[string]bool `view:"-"`
+	DidBind map[string]bool `display:"-"`
 }
 
 // ConfigGPUwithGUI turns on GPU mode in context of an active GUI where Vulkan

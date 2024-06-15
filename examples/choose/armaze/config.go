@@ -37,7 +37,7 @@ type Params struct {
 	OpenArms bool `default:"true"`
 
 	// strength of inactive inputs (e.g., Drives in Approach paradigm)
-	Inactive minmax.F32 `nest:"+" default:"{'Min':0, 'Max':0}" view:"inline"`
+	Inactive minmax.F32 `nest:"+" default:"{'Min':0, 'Max':0}" display:"inline"`
 
 	// number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets
 	NYReps int `default:"4"`
@@ -84,7 +84,7 @@ type Config struct {
 	Arms []*Arm
 
 	// misc params
-	Params Params `view:"add-fields"`
+	Params Params `display:"add-fields"`
 }
 
 func (cfg *Config) Defaults() {

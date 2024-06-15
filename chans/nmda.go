@@ -31,13 +31,13 @@ type NMDAParams struct {
 	Voff float32 `default:"0"`
 
 	// rate = 1 / tau
-	Dt float32 `view:"-" json:"-" xml:"-"`
+	Dt float32 `display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	IDt float32 `view:"-" json:"-" xml:"-"`
+	IDt float32 `display:"-" json:"-" xml:"-"`
 
 	// MgFact = MgC / 3.57
-	MgFact float32 `view:"-" json:"-" xml:"-"`
+	MgFact float32 `display:"-" json:"-" xml:"-"`
 }
 
 func (np *NMDAParams) Defaults() {

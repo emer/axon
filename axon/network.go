@@ -12,7 +12,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/views"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -687,14 +686,29 @@ func (nt *Network) SizeReport(detail bool) string {
 	return b.String()
 }
 
-func (nt *Network) ConfigToolbar(tb *core.Toolbar) {
-	views.NewFuncButton(tb, nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
-	fb := views.NewFuncButton(tb, nt.SaveWtsJSON).SetText("Save Weights").SetIcon(icons.Save)
-	fb.Args[0].SetTag("ext", ".wts,.wts.gz")
-	fb = views.NewFuncButton(tb, nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
-	fb.Args[0].SetTag("ext", ".wts,.wts.gz")
-	core.NewSeparator(tb)
-	views.NewFuncButton(tb, nt.Build).SetIcon(icons.Reset)
-	views.NewFuncButton(tb, nt.InitWts).SetIcon(icons.Reset)
-	views.NewFuncButton(tb, nt.InitActs).SetIcon(icons.Reset)
+func (nt *Network) MakeToolbar(p *core.Plan) {
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.SaveWtsJSON).
+			SetText("Save Weights").SetIcon(icons.Save)
+		w.Args[0].SetTag(`"ext:".wts,.wts.gz"`)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
+		w.Args[0].SetTag(`"ext:".wts,.wts.gz"`)
+	})
+
+	core.Add(p, func(w *core.Separator) {})
+
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.Build).SetIcon(icons.Reset)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.InitWts).SetIcon(icons.Reset)
+	})
+	core.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.InitActs).SetIcon(icons.Reset)
+	})
 }

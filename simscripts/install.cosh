@@ -1,18 +1,21 @@
-// install.cosh is a cosh "makefile" script: run by typing in cosh: install path/to/sim
-// or cosh install.cosh path/to/sim from a different shell
-
-// todo: not able to pass args to install command apparently
+#!/usr/bin/env cosh
+// install.cosh makes a new simdata directory, for simulation project 
+// directory specified in the one required argument:
+// install path/to/sim
 
 command install {
 	if len(args) != 1 {
-		fmt.Println("install requires one arg: path to simulation directory to install in")
+		fmt.Println("install requires 1 argument: path to simulation project")
 		return
 	}
+	
 	simd := args[0]
 	_, proj := filepath.Split(simd)
-	user := os.Getenv("USER")
+	user := `echo $USER`
 	fmt.Println("installing into:", simd, "project name:", proj, "user:", user)
 }
 
-install
+fmt.Println(args)
+
+install {args...}
 

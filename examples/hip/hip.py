@@ -318,59 +318,59 @@ class Sim(pyviews.ClassViewObj):
     def __init__(self):
         super(Sim, self).__init__()
         self.Net = leabra.Network()
-        self.SetTags("Net", 'view:"no-inline"')
+        self.SetTags("Net", 'display:"no-inline"')
         self.Hip = HipParams()
         self.SetTags("Hip", 'desc:"hippocampus sizing parameters"')
         self.Pat = PatParams()
         self.SetTags("Pat", 'desc:"parameters for the input patterns"')
         self.PoolVocab = patgen.Vocab()
-        self.SetTags("PoolVocab", 'view:"no-inline" desc:"pool patterns vocabulary"')
+        self.SetTags("PoolVocab", 'display:"no-inline" desc:"pool patterns vocabulary"')
         self.TrainAB = etable.Table()
-        self.SetTags("TrainAB", 'view:"no-inline" desc:"AB training patterns to use"')
+        self.SetTags("TrainAB", 'display:"no-inline" desc:"AB training patterns to use"')
         self.TrainAC = etable.Table()
-        self.SetTags("TrainAC", 'view:"no-inline" desc:"AC training patterns to use"')
+        self.SetTags("TrainAC", 'display:"no-inline" desc:"AC training patterns to use"')
         self.TestAB = etable.Table()
-        self.SetTags("TestAB", 'view:"no-inline" desc:"AB testing patterns to use"')
+        self.SetTags("TestAB", 'display:"no-inline" desc:"AB testing patterns to use"')
         self.TestAC = etable.Table()
-        self.SetTags("TestAC", 'view:"no-inline" desc:"AC testing patterns to use"')
+        self.SetTags("TestAC", 'display:"no-inline" desc:"AC testing patterns to use"')
         self.TestLure = etable.Table()
-        self.SetTags("TestLure", 'view:"no-inline" desc:"Lure testing patterns to use"')
+        self.SetTags("TestLure", 'display:"no-inline" desc:"Lure testing patterns to use"')
         self.TrainAll = etable.Table()
         self.SetTags(
-            "TrainAll", 'view:"no-inline" desc:"all training patterns -- for pretrain"'
+            "TrainAll", 'display:"no-inline" desc:"all training patterns -- for pretrain"'
         )
         self.TrnTrlLog = etable.Table()
         self.SetTags(
-            "TrnTrlLog", 'view:"no-inline" desc:"training trial-level log data"'
+            "TrnTrlLog", 'display:"no-inline" desc:"training trial-level log data"'
         )
         self.TrnEpcLog = etable.Table()
         self.SetTags(
-            "TrnEpcLog", 'view:"no-inline" desc:"training epoch-level log data"'
+            "TrnEpcLog", 'display:"no-inline" desc:"training epoch-level log data"'
         )
         self.TstEpcLog = etable.Table()
         self.SetTags(
-            "TstEpcLog", 'view:"no-inline" desc:"testing epoch-level log data"'
+            "TstEpcLog", 'display:"no-inline" desc:"testing epoch-level log data"'
         )
         self.TstTrlLog = etable.Table()
         self.SetTags(
-            "TstTrlLog", 'view:"no-inline" desc:"testing trial-level log data"'
+            "TstTrlLog", 'display:"no-inline" desc:"testing trial-level log data"'
         )
         self.TstCycLog = etable.Table()
         self.SetTags(
-            "TstCycLog", 'view:"no-inline" desc:"testing cycle-level log data"'
+            "TstCycLog", 'display:"no-inline" desc:"testing cycle-level log data"'
         )
         self.RunLog = etable.Table()
-        self.SetTags("RunLog", 'view:"no-inline" desc:"summary log of each run"')
+        self.SetTags("RunLog", 'display:"no-inline" desc:"summary log of each run"')
         self.RunStats = etable.Table()
-        self.SetTags("RunStats", 'view:"no-inline" desc:"aggregate stats on all runs"')
+        self.SetTags("RunStats", 'display:"no-inline" desc:"aggregate stats on all runs"')
         self.TstStats = etable.Table()
-        self.SetTags("TstStats", 'view:"no-inline" desc:"testing stats"')
+        self.SetTags("TstStats", 'display:"no-inline" desc:"testing stats"')
         self.SimMats = {}
         self.SetTags(
-            "SimMats", 'view:"no-inline" desc:"similarity matrix results for layers"'
+            "SimMats", 'display:"no-inline" desc:"similarity matrix results for layers"'
         )
         self.Params = params.Sets()
-        self.SetTags("Params", 'view:"no-inline" desc:"full collection of param sets"')
+        self.SetTags("Params", 'display:"no-inline" desc:"full collection of param sets"')
         self.ParamSet = str()
         self.SetTags(
             "ParamSet",
@@ -504,104 +504,104 @@ class Sim(pyviews.ClassViewObj):
             "NZero", 'inactive:"+" desc:"number of epochs in a row with zero Mem err"'
         )
 
-        # internal state - view:"-"
+        # internal state - display:"-"
         self.SumSSE = float()
         self.SetTags(
             "SumSSE",
-            'view:"-" inactive:"+" desc:"sum to increment as we go through epoch"',
+            'display:"-" inactive:"+" desc:"sum to increment as we go through epoch"',
         )
         self.SumAvgSSE = float()
         self.SetTags(
             "SumAvgSSE",
-            'view:"-" inactive:"+" desc:"sum to increment as we go through epoch"',
+            'display:"-" inactive:"+" desc:"sum to increment as we go through epoch"',
         )
         self.SumCosDiff = float()
         self.SetTags(
             "SumCosDiff",
-            'view:"-" inactive:"+" desc:"sum to increment as we go through epoch"',
+            'display:"-" inactive:"+" desc:"sum to increment as we go through epoch"',
         )
         self.CntErr = int()
         self.SetTags(
             "CntErr",
-            'view:"-" inactive:"+" desc:"sum of errs to increment as we go through epoch"',
+            'display:"-" inactive:"+" desc:"sum of errs to increment as we go through epoch"',
         )
         self.Win = 0
-        self.SetTags("Win", 'view:"-" desc:"main GUI window"')
+        self.SetTags("Win", 'display:"-" desc:"main GUI window"')
         self.NetView = 0
-        self.SetTags("NetView", 'view:"-" desc:"the network viewer"')
+        self.SetTags("NetView", 'display:"-" desc:"the network viewer"')
         self.ToolBar = 0
-        self.SetTags("ToolBar", 'view:"-" desc:"the master toolbar"')
+        self.SetTags("ToolBar", 'display:"-" desc:"the master toolbar"')
         self.TrnTrlPlot = 0
-        self.SetTags("TrnTrlPlot", 'view:"-" desc:"the training trial plot"')
+        self.SetTags("TrnTrlPlot", 'display:"-" desc:"the training trial plot"')
         self.TrnEpcPlot = 0
-        self.SetTags("TrnEpcPlot", 'view:"-" desc:"the training epoch plot"')
+        self.SetTags("TrnEpcPlot", 'display:"-" desc:"the training epoch plot"')
         self.TstEpcPlot = 0
-        self.SetTags("TstEpcPlot", 'view:"-" desc:"the testing epoch plot"')
+        self.SetTags("TstEpcPlot", 'display:"-" desc:"the testing epoch plot"')
         self.TstTrlPlot = 0
-        self.SetTags("TstTrlPlot", 'view:"-" desc:"the test-trial plot"')
+        self.SetTags("TstTrlPlot", 'display:"-" desc:"the test-trial plot"')
         self.TstCycPlot = 0
-        self.SetTags("TstCycPlot", 'view:"-" desc:"the test-cycle plot"')
+        self.SetTags("TstCycPlot", 'display:"-" desc:"the test-cycle plot"')
         self.RunPlot = 0
-        self.SetTags("RunPlot", 'view:"-" desc:"the run plot"')
+        self.SetTags("RunPlot", 'display:"-" desc:"the run plot"')
         self.RunStatsPlot = 0
-        self.SetTags("RunStatsPlot", 'view:"-" desc:"the run stats plot"')
+        self.SetTags("RunStatsPlot", 'display:"-" desc:"the run stats plot"')
         self.TrnEpcFile = 0
-        self.SetTags("TrnEpcFile", 'view:"-" desc:"log file"')
+        self.SetTags("TrnEpcFile", 'display:"-" desc:"log file"')
         self.TrnEpcHdrs = False
-        self.SetTags("TrnEpcHdrs", 'view:"-" desc:"headers written"')
+        self.SetTags("TrnEpcHdrs", 'display:"-" desc:"headers written"')
         self.TstEpcFile = 0
-        self.SetTags("TstEpcFile", 'view:"-" desc:"log file"')
+        self.SetTags("TstEpcFile", 'display:"-" desc:"log file"')
         self.TstEpcHdrs = False
-        self.SetTags("TstEpcHdrs", 'view:"-" desc:"headers written"')
+        self.SetTags("TstEpcHdrs", 'display:"-" desc:"headers written"')
         self.RunFile = 0
-        self.SetTags("RunFile", 'view:"-" desc:"log file"')
+        self.SetTags("RunFile", 'display:"-" desc:"log file"')
         self.TmpValues = go.Slice_float32()
         self.SetTags(
             "TmpValues",
-            'view:"-" desc:"temp slice for holding values -- prevent mem allocs"',
+            'display:"-" desc:"temp slice for holding values -- prevent mem allocs"',
         )
         self.LayStatNms = go.Slice_string(["ECin", "ECout", "DG", "CA3", "CA1"])
         self.SetTags(
             "LayStatNms",
-            'view:"-" desc:"names of layers to collect more detailed stats on (avg act, etc)"',
+            'display:"-" desc:"names of layers to collect more detailed stats on (avg act, etc)"',
         )
         self.TstNms = go.Slice_string(["AB", "AC", "Lure"])
-        self.SetTags("TstNms", 'view:"-" desc:"names of test tables"')
+        self.SetTags("TstNms", 'display:"-" desc:"names of test tables"')
         self.SimMatStats = go.Slice_string(["Within", "Between"])
-        self.SetTags("SimMatStats", 'view:"-" desc:"names of sim mat stats"')
+        self.SetTags("SimMatStats", 'display:"-" desc:"names of sim mat stats"')
         self.TstStatNms = go.Slice_string(["Mem", "TrgOnWasOff", "TrgOffWasOn"])
-        self.SetTags("TstStatNms", 'view:"-" desc:"names of test stats"')
+        self.SetTags("TstStatNms", 'display:"-" desc:"names of test stats"')
         self.ValuesTsrs = {}
-        self.SetTags("ValuesTsrs", 'view:"-" desc:"for holding layer values"')
+        self.SetTags("ValuesTsrs", 'display:"-" desc:"for holding layer values"')
         self.SaveWts = False
         self.SetTags(
             "SaveWts",
-            'view:"-" desc:"for command-line run only, auto-save final weights after each run"',
+            'display:"-" desc:"for command-line run only, auto-save final weights after each run"',
         )
         self.PreTrainWts = ""
-        self.SetTags("PreTrainWts", 'view:"-" desc:"name of pretrained wts file"')
+        self.SetTags("PreTrainWts", 'display:"-" desc:"name of pretrained wts file"')
         self.NoGui = False
-        self.SetTags("NoGui", 'view:"-" desc:"if true, runing in no GUI mode"')
+        self.SetTags("NoGui", 'display:"-" desc:"if true, runing in no GUI mode"')
         self.LogSetParams = False
         self.SetTags(
             "LogSetParams",
-            'view:"-" desc:"if true, print message for all params that are set"',
+            'display:"-" desc:"if true, print message for all params that are set"',
         )
         self.IsRunning = False
-        self.SetTags("IsRunning", 'view:"-" desc:"true if sim is running"')
+        self.SetTags("IsRunning", 'display:"-" desc:"true if sim is running"')
         self.StopNow = False
-        self.SetTags("StopNow", 'view:"-" desc:"flag to stop running"')
+        self.SetTags("StopNow", 'display:"-" desc:"flag to stop running"')
         self.NeedsNewRun = False
         self.SetTags(
             "NeedsNewRun",
-            'view:"-" desc:"flag to initialize NewRun if last one finished"',
+            'display:"-" desc:"flag to initialize NewRun if last one finished"',
         )
         self.RndSeed = int(2)
-        self.SetTags("RndSeed", 'view:"-" desc:"the current random seed"')
+        self.SetTags("RndSeed", 'display:"-" desc:"the current random seed"')
         self.LastEpcTime = 0
-        self.SetTags("LastEpcTime", 'view:"-" desc:"timer for last epoch"')
+        self.SetTags("LastEpcTime", 'display:"-" desc:"timer for last epoch"')
         self.vp = 0
-        self.SetTags("vp", 'view:"-" desc:"viewport"')
+        self.SetTags("vp", 'display:"-" desc:"viewport"')
 
     def InitParams(ss):
         """
@@ -2304,7 +2304,7 @@ class Sim(pyviews.ClassViewObj):
         nv.Var = "Act"
         nv.SetNet(ss.Net)
         ss.NetView = nv
-        nv.ViewDefaults()
+        # nv.ViewDefaults()
 
         plt = eplot.Plot2D()
         tv.AddTab(plt, "TrnTrlPlot")

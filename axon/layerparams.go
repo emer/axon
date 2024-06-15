@@ -139,49 +139,49 @@ type LayerParams struct {
 	pad, pad1, pad2 int32
 
 	// Activation parameters and methods for computing activations
-	Acts ActParams `view:"add-fields"`
+	Acts ActParams `display:"add-fields"`
 
 	// Inhibition parameters and methods for computing layer-level inhibition
-	Inhib InhibParams `view:"add-fields"`
+	Inhib InhibParams `display:"add-fields"`
 
 	// indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)
-	LayInhib LayerInhibIndexes `view:"inline"`
+	LayInhib LayerInhibIndexes `display:"inline"`
 
 	// Learning parameters and methods that operate at the neuron level
-	Learn LearnNeurParams `view:"add-fields"`
+	Learn LearnNeurParams `display:"add-fields"`
 
 	// BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.
-	Bursts BurstParams `view:"inline"`
+	Bursts BurstParams `display:"inline"`
 
 	// ] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace
-	CT CTParams `view:"inline"`
+	CT CTParams `display:"inline"`
 
 	// provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)
-	Pulv PulvParams `view:"inline"`
+	Pulv PulvParams `display:"inline"`
 
 	// parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
-	Matrix MatrixParams `view:"inline"`
+	Matrix MatrixParams `display:"inline"`
 
 	// type of GP Layer.
-	GP GPParams `view:"inline"`
+	GP GPParams `display:"inline"`
 
 	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
-	LDT LDTParams `view:"inline"`
+	LDT LDTParams `display:"inline"`
 
 	// parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.
-	VTA VTAParams `view:"inline"`
+	VTA VTAParams `display:"inline"`
 
 	// parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
-	RWPred RWPredParams `view:"inline"`
+	RWPred RWPredParams `display:"inline"`
 
 	// parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
-	RWDa RWDaParams `view:"inline"`
+	RWDa RWDaParams `display:"inline"`
 
 	// parameterizes TD reward integration layer
-	TDInteg TDIntegParams `view:"inline"`
+	TDInteg TDIntegParams `display:"inline"`
 
 	// parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
-	TDDa TDDaParams `view:"inline"`
+	TDDa TDDaParams `display:"inline"`
 
 	// recv and send pathway array access info
 	Indexes LayerIndexes

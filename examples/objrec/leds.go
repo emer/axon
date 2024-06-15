@@ -33,10 +33,10 @@ type LEDraw struct { //types:add
 	ImgSize image.Point
 
 	// rendered image
-	Image *image.RGBA `view:"-"`
+	Image *image.RGBA `display:"-"`
 
 	// painting context object
-	Paint *paint.Context `view:"-"`
+	Paint *paint.Context `display:"-"`
 }
 
 func (ld *LEDraw) Defaults() {

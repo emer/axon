@@ -165,13 +165,13 @@ func (ti *TopoInhibParams) GiFromGeAct(ge, act, ff0 float32) float32 {
 type InhibParams struct {
 
 	// layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors.
-	ActAvg ActAvgParams `view:"inline"`
+	ActAvg ActAvgParams `display:"inline"`
 
 	// inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers.  If the layer has sub-pools (4D shape) then this is effectively between-pool inhibition.
-	Layer fsfffb.GiParams `view:"inline"`
+	Layer fsfffb.GiParams `display:"inline"`
 
 	// inhibition within sub-pools of units, for layers with 4D shape -- almost always need this if the layer has pools.
-	Pool fsfffb.GiParams `view:"inline"`
+	Pool fsfffb.GiParams `display:"inline"`
 }
 
 func (ip *InhibParams) Update() {

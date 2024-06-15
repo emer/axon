@@ -12,9 +12,8 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
 	"github.com/emer/axon/v2/kinase"
 )
@@ -37,7 +36,7 @@ type Sim struct {
 	SKCa chans.SKCaParams
 
 	// time constants for integrating Ca from spiking across M, P and D cascading levels
-	CaParams kinase.CaParams
+	CaParams kinase.NeurCaParams
 
 	// threshold of SK M gating factor above which the neuron cannot spike
 	NoSpikeThr float32 `default:"0.5"`
@@ -55,16 +54,16 @@ type Sim struct {
 	SpikeFreq float32
 
 	// table for plot
-	Table *table.Table `view:"no-inline"`
+	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotview.PlotView `view:"-"`
+	Plot *plotcore.PlotEditor `display:"-"`
 
 	// table for plot
-	TimeTable *table.Table `view:"no-inline"`
+	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotview.PlotView `view:"-"`
+	TimePlot *plotcore.PlotEditor `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -120,14 +119,14 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "SKCa Ca-G Function Plot"
 	plt.Params.XAxisColumn = "Ca"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Ca", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Mhill", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("Mgw06", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 1)
+	plt.SetColParams("Ca", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Mhill", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("Mgw06", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
 	return plt
 }
 
@@ -172,7 +171,8 @@ func (ss *Sim) TimeRun() { //types:add
 		} else {
 			spike = 0
 		}
-		ss.CaParams.FromSpike(spike, &caM, &caP, &caD)
+		// todo: update
+		// ss.CaParams.FromSpike(spike, &caM, &caP, &caD)
 	}
 	if ss.TimePlot != nil {
 		ss.TimePlot.UpdatePlot()
@@ -195,19 +195,19 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Time Function Plot"
 	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Spike", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("CaM", plotview.Off, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("CaP", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("CaD", plotview.Off, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("CaIn", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("CaR", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
-	plt.SetColParams("M", plotview.On, plotview.FixMin, 0, plotview.FixMax, 1)
+	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Spike", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("CaM", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("CaP", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("CaD", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("CaIn", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("CaR", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColParams("M", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 
@@ -215,23 +215,26 @@ func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview
 func (ss *Sim) ConfigGUI() *core.Body {
 	b := core.NewBody("Skca Plot")
 
-	split := core.NewSplits(b, "split")
-	sv := views.NewStructView(split, "sv")
-	sv.SetStruct(ss)
+	split := core.NewSplits(b)
+	core.NewForm(split).SetStruct(ss)
 
-	tv := core.NewTabs(split, "tv")
+	tv := core.NewTabs(split)
 
-	ss.Plot = plotview.NewSubPlot(tv.NewTab("Ca-G Plot"))
+	ss.Plot = plotcore.NewSubPlot(tv.NewTab("Ca-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		views.NewFuncButton(tb, ss.CamRun).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.CamRun).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+		})
 	})
 
 	return b

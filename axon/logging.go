@@ -10,7 +10,7 @@ import (
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/stats/norm"
@@ -680,7 +680,7 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 		return
 	}
 	ix := table.NewIndexView(dtRec)
-	spl := split.GroupBy(ix, []string{"Layer"})
+	spl := split.GroupBy(ix, "Layer")
 	split.AggAllNumericCols(spl, stats.Mean)
 	ags := spl.AggsToTable(table.ColumnNameOnly)
 	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
@@ -708,12 +708,12 @@ func LayerActsLogRecReset(lg *elog.Logs) {
 // LayerActsLogConfigGUI configures GUI for LayerActsLog Plot and LayerActs Avg Plot
 func LayerActsLogConfigGUI(lg *elog.Logs, gui *egui.GUI) {
 	pt := gui.Tabs.NewTab("LayerActs Plot")
-	plt := plotview.NewPlotView(pt)
+	plt := plotcore.NewPlotEditor(pt)
 	gui.Plots["LayerActs"] = plt
 	plt.SetTable(lg.MiscTables["LayerActs"])
 
 	pt = gui.Tabs.NewTab("LayerActs Avg Plot")
-	plt = plotview.NewPlotView(pt)
+	plt = plotcore.NewPlotEditor(pt)
 	gui.Plots["LayerActsAvg"] = plt
 	plt.SetTable(lg.MiscTables["LayerActsAvg"])
 }

@@ -33,13 +33,13 @@ type CaDtParams struct { //types:add
 	DTau float32 `default:"40" min:"1"`
 
 	// rate = 1 / tau
-	MDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	MDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
 	// rate = 1 / tau
-	PDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	PDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
 	// rate = 1 / tau
-	DDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	DDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
 	pad, pad1 int32
 }
@@ -90,13 +90,13 @@ type NeurCaParams struct {
 	SynTau float32 `default:"30" min:"1"`
 
 	// rate = 1 / tau
-	SynDt float32 `view:"-" json:"-" xml:"-" edit:"-"`
+	SynDt float32 `display:"-" json:"-" xml:"-" edit:"-"`
 
 	pad int32
 
 	// time constants for integrating CaSpk across M, P and D cascading levels.
 	// Typically the same as in CaLrn and Path level for synaptic integration.
-	Dt CaDtParams `view:"inline"`
+	Dt CaDtParams `display:"inline"`
 }
 
 func (np *NeurCaParams) Defaults() {
@@ -131,7 +131,7 @@ type SynCaParams struct { //types:add
 	pad, pad1, pad2 int32
 
 	// time constants for integrating at M, P, and D cascading levels
-	Dt CaDtParams `view:"inline"`
+	Dt CaDtParams `display:"inline"`
 }
 
 func (kp *SynCaParams) Defaults() {
@@ -173,8 +173,8 @@ func (bw *BinWeights) Product(b0, b1, b2, b3 float32) float32 {
 // cascading Ca integration, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
 type SynCaLinear struct { //types:add
-	CaP BinWeights `view:"inline"`
-	CaD BinWeights `view:"inline"`
+	CaP BinWeights `display:"inline"`
+	CaD BinWeights `display:"inline"`
 }
 
 func (kp *SynCaLinear) Defaults() {

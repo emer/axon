@@ -29,7 +29,7 @@ type MoveEnv struct {
 	Size vecint.Vector2i
 
 	// 2D grid world, each cell is a material (mat)
-	World *tensor.Int `view:"no-inline"`
+	World *tensor.Int `display:"no-inline"`
 
 	// list of actions: starts with: Stay, Left, Right, Forward, Back, then extensible
 	Acts []string
@@ -95,7 +95,7 @@ type MoveEnv struct {
 	NextStates map[string]*tensor.Float32
 
 	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`

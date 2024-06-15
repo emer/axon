@@ -89,23 +89,23 @@ func (lv *LaySpecialValues) Init() {
 type LayerValues struct {
 
 	// layer index for these vals
-	LayIndex uint32 `view:"-"`
+	LayIndex uint32 `display:"-"`
 
 	// data index for these vals
-	DataIndex uint32 `view:"-"`
+	DataIndex uint32 `display:"-"`
 
 	// reaction time for this layer in cycles, which is -1 until the Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold
 	RT  float32 `edit:"-"`
 	pad uint32
 
 	// running-average activation levels used for adaptive inhibition, and other adapting values
-	ActAvg ActAvgValues `view:"inline"`
+	ActAvg ActAvgValues `display:"inline"`
 
 	// correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states
 	CorSim CorSimStats
 
 	// special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc
-	Special LaySpecialValues `view:"inline"`
+	Special LaySpecialValues `display:"inline"`
 }
 
 func (lv *LayerValues) Init() {

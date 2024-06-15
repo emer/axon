@@ -12,9 +12,8 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/views"
 	"github.com/emer/axon/v2/chans"
 )
 
@@ -60,16 +59,16 @@ type Sim struct {
 	TimeVend float32
 
 	// table for plot
-	Table *table.Table `view:"no-inline"`
+	Table *table.Table `display:"no-inline"`
 
 	// the plot
-	Plot *plotview.PlotView `view:"-"`
+	Plot *plotcore.PlotEditor `display:"-"`
 
 	// table for plot
-	TimeTable *table.Table `view:"no-inline"`
+	TimeTable *table.Table `display:"no-inline"`
 
 	// the plot
-	TimePlot *plotview.PlotView `view:"-"`
+	TimePlot *plotcore.PlotEditor `display:"-"`
 }
 
 // Config configures all the elements using the standard functions
@@ -137,15 +136,15 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigPlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "VGCC V-G Function Plot"
 	plt.Params.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gvgcc", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("M", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("H", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gvgcc", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("M", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("H", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -216,17 +215,17 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 	dt.SetNumRows(0)
 }
 
-func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview.PlotView {
+func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Params.Title = "Time Function Plot"
 	plt.Params.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("Gvgcc", plotview.On, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("M", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("H", plotview.Off, plotview.FixMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("dM", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
-	plt.SetColParams("dH", plotview.Off, plotview.FloatMin, 0, plotview.FloatMax, 0)
+	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("Gvgcc", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("M", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("H", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("dM", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColParams("dH", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -234,23 +233,26 @@ func (ss *Sim) ConfigTimePlot(plt *plotview.PlotView, dt *table.Table) *plotview
 func (ss *Sim) ConfigGUI() *core.Body {
 	b := core.NewBody("Vgcc Plot")
 
-	split := core.NewSplits(b, "split")
-	sv := views.NewStructView(split, "sv")
-	sv.SetStruct(ss)
+	split := core.NewSplits(b)
+	core.NewForm(split).SetStruct(ss)
 
-	tv := core.NewTabs(split, "tv")
+	tv := core.NewTabs(split)
 
-	ss.Plot = plotview.NewSubPlot(tv.NewTab("V-G Plot"))
+	ss.Plot = plotcore.NewSubPlot(tv.NewTab("V-G Plot"))
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotview.NewSubPlot(tv.NewTab("TimePlot"))
+	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(tb *core.Toolbar) {
-		views.NewFuncButton(tb, ss.VmRun).SetIcon(icons.PlayArrow)
-		views.NewFuncButton(tb, ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddAppBar(func(p *core.Plan) {
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.VmRun).SetIcon(icons.PlayArrow)
+		})
+		core.Add(p, func(w *core.FuncButton) {
+			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+		})
 	})
 
 	return b

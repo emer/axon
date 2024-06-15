@@ -48,19 +48,19 @@ type CondEnv struct {
 	CondDesc string
 
 	// counter over runs
-	Run env.Ctr `edit:"-" view:"inline"`
+	Run env.Ctr `edit:"-" display:"inline"`
 
 	// counter over Condition within a run -- Max depends on number of conditions specified in given Run
-	Condition env.Ctr `edit:"-" view:"inline"`
+	Condition env.Ctr `edit:"-" display:"inline"`
 
 	// counter over full blocks of all sequence types within a Condition -- like an Epoch
-	Block env.Ctr `edit:"-" view:"inline"`
+	Block env.Ctr `edit:"-" display:"inline"`
 
 	// counter of behavioral sequences within a Block
-	Sequence env.Ctr `edit:"-" view:"inline"`
+	Sequence env.Ctr `edit:"-" display:"inline"`
 
 	// counter of discrete steps within a sequence -- typically maps onto Alpha / Theta cycle in network
-	Tick env.Ctr `edit:"-" view:"inline"`
+	Tick env.Ctr `edit:"-" display:"inline"`
 
 	// name of current sequence step
 	SequenceName string `edit:"-"`

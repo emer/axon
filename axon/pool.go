@@ -25,16 +25,16 @@ import (
 type AvgMaxPhases struct {
 
 	// updated every cycle -- this is the source of all subsequent time scales
-	Cycle AvgMaxI32 `view:"inline"`
+	Cycle AvgMaxI32 `display:"inline"`
 
 	// at the end of the minus phase
-	Minus AvgMaxI32 `view:"inline"`
+	Minus AvgMaxI32 `display:"inline"`
 
 	// at the end of the plus phase
-	Plus AvgMaxI32 `view:"inline"`
+	Plus AvgMaxI32 `display:"inline"`
 
 	// at the end of the previous plus phase
-	Prev AvgMaxI32 `view:"inline"`
+	Prev AvgMaxI32 `display:"inline"`
 }
 
 // CycleToMinus grabs current Cycle values into the Minus phase values
@@ -68,22 +68,22 @@ func (am *AvgMaxPhases) Zero() {
 type PoolAvgMax struct {
 
 	// avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity
-	CaSpkP AvgMaxPhases `edit:"-" view:"inline"`
+	CaSpkP AvgMaxPhases `edit:"-" display:"inline"`
 
 	// avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer
-	CaSpkD AvgMaxPhases `edit:"-" view:"inline"`
+	CaSpkD AvgMaxPhases `edit:"-" display:"inline"`
 
 	// avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle
-	SpkMax AvgMaxPhases `edit:"-" view:"inline"`
+	SpkMax AvgMaxPhases `edit:"-" display:"inline"`
 
 	// avg and maximum Act firing rate value
-	Act AvgMaxPhases `edit:"-" view:"inline"`
+	Act AvgMaxPhases `edit:"-" display:"inline"`
 
 	// avg and maximum GeInt integrated running-average excitatory conductance value
-	GeInt AvgMaxPhases `edit:"-" view:"inline"`
+	GeInt AvgMaxPhases `edit:"-" display:"inline"`
 
 	// avg and maximum GiInt integrated running-average inhibitory conductance value
-	GiInt AvgMaxPhases `edit:"-" view:"inline"`
+	GiInt AvgMaxPhases `edit:"-" display:"inline"`
 }
 
 // SetN sets the N for aggregation
@@ -180,13 +180,13 @@ type Pool struct {
 	StIndex, EdIndex uint32 `edit:"-"`
 
 	// layer index in global layer list
-	LayIndex uint32 `view:"-"`
+	LayIndex uint32 `display:"-"`
 
 	// data parallel index (innermost index per layer)
-	DataIndex uint32 `view:"-"`
+	DataIndex uint32 `display:"-"`
 
 	// pool index in global pool list:
-	PoolIndex uint32 `view:"-"`
+	PoolIndex uint32 `display:"-"`
 
 	// is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer
 	IsLayPool slbool.Bool `edit:"-"`
@@ -203,7 +203,7 @@ type Pool struct {
 	AvgMax PoolAvgMax
 
 	// absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg
-	AvgDif AvgMaxI32 `edit:"-" view:"inline"`
+	AvgDif AvgMaxI32 `edit:"-" display:"inline"`
 }
 
 // Init is callled during InitActs

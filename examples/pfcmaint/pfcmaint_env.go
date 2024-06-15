@@ -23,10 +23,10 @@ type PFCMaintEnv struct {
 	Mode etime.Modes
 
 	// sequence counter is for the outer loop of maint per item
-	Sequence env.Ctr `view:"inline"`
+	Sequence env.Ctr `display:"inline"`
 
 	// trial counter is for the maint step within item
-	Trial env.Ctr `view:"inline"`
+	Trial env.Ctr `display:"inline"`
 
 	// number of different items to maintain
 	NItems int
@@ -35,19 +35,19 @@ type PFCMaintEnv struct {
 	NTrials int
 
 	// state rep, number of units, Y
-	NUnitsY int `view:"-"`
+	NUnitsY int `display:"-"`
 
 	// state rep, number of units, X
-	NUnitsX int `view:"-"`
+	NUnitsX int `display:"-"`
 
 	// total number of units
-	NUnits int `view:"-"`
+	NUnits int `display:"-"`
 
 	// item patterns
 	Pats table.Table
 
 	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`

@@ -67,19 +67,19 @@ type GoNoEnv struct {
 	TestReps int
 
 	// number of units, Y
-	NUnitsY int `view:"-"`
+	NUnitsY int `display:"-"`
 
 	// number of units, X
-	NUnitsX int `view:"-"`
+	NUnitsX int `display:"-"`
 
 	// total number of units
-	NUnits int `view:"-"`
+	NUnits int `display:"-"`
 
 	// pop code the values in ACCPos and Neg
 	PopCode popcode.OneD
 
 	// random number generator for the env -- all random calls must use this
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`

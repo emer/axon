@@ -18,7 +18,7 @@ type Bg struct {
 	Tau float32 `default:"10"`
 
 	// rate = 1 / tau
-	Dt float32 `edit:"-" view:"-" json:"-" xml:"-"`
+	Dt float32 `edit:"-" display:"-" json:"-" xml:"-"`
 }
 
 func (bg *Bg) Update() {

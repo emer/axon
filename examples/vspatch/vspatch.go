@@ -21,7 +21,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot/plotview"
+	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
@@ -66,13 +66,13 @@ type Sim struct {
 	Config Config
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `view:"no-inline"`
+	Net *axon.Network `display:"no-inline"`
 
 	// all parameter management
-	Params emer.NetParams `view:"inline"`
+	Params emer.NetParams `display:"inline"`
 
 	// contains looper control loops for running sim
-	Loops *looper.Manager `view:"no-inline"`
+	Loops *looper.Manager `display:"no-inline"`
 
 	// contains computed statistic values
 	Stats estats.Stats
@@ -81,19 +81,19 @@ type Sim struct {
 	Logs elog.Logs
 
 	// Environments
-	Envs env.Envs `view:"no-inline"`
+	Envs env.Envs `display:"no-inline"`
 
 	// axon timing parameters and state
 	Context axon.Context
 
 	// netview update parameters
-	ViewUpdate netview.ViewUpdate `view:"inline"`
+	ViewUpdate netview.ViewUpdate `display:"inline"`
 
 	// manages all the gui elements
-	GUI egui.GUI `view:"-"`
+	GUI egui.GUI `display:"-"`
 
 	// a list of random seeds to use for each run
-	RandSeeds randx.Seeds `view:"-"`
+	RandSeeds randx.Seeds `display:"-"`
 }
 
 // New creates new blank elements and initializes defaults
@@ -475,7 +475,7 @@ func (ss *Sim) SeqStats(di int) {
 func (ss *Sim) CondStats() {
 	stnm := "CondStats"
 	ix := ss.Logs.IndexView(etime.Train, etime.Sequence)
-	spl := split.GroupBy(ix, []string{"Cond"})
+	spl := split.GroupBy(ix, "Cond")
 	for _, ts := range ix.Table.ColumnNames {
 		if ts == "TrialName" || ts == "Cond" || ts == "CondRew" {
 			continue
@@ -656,15 +656,15 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "CondStats"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := plotview.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Params.Title = stnm
 	plt.Params.XAxisColumn = "Cond"
-	plt.Params.Type = plotview.Bar
+	plt.Params.Type = plotcore.Bar
 	plt.SetTable(dt)
 
-	ss.GUI.Body.AddAppBar(func(tb *core.Toolbar) {
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -673,8 +673,8 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 
-		ss.GUI.AddLooperCtrl(tb, ss.Loops, []etime.Modes{etime.Train, etime.Test})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "TestInit", Icon: icons.Update,
+		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train, etime.Test})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "TestInit", Icon: icons.Update,
 			Tooltip: "reinitialize the testing control so it re-runs.",
 			Active:  egui.ActiveStopped,
 			Func: func() {
@@ -684,8 +684,8 @@ func (ss *Sim) ConfigGUI() {
 		})
 
 		////////////////////////////////////////////////
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "Reset RunLog",
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
 			Active:  egui.ActiveAlways,
@@ -695,8 +695,8 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		core.NewSeparator(tb)
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "New Seed",
+		core.Add(p, func(w *core.Separator) {})
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 			Active:  egui.ActiveAlways,
@@ -704,7 +704,7 @@ func (ss *Sim) ConfigGUI() {
 				ss.RandSeeds.NewSeeds()
 			},
 		})
-		ss.GUI.AddToolbarItem(tb, egui.ToolbarItem{Label: "README",
+		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
 			Icon:    "file-markdown",
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,

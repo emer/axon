@@ -97,25 +97,25 @@ type PathParams struct {
 	pad, pad1, pad2 int32
 
 	// recv and send neuron-level pathway index array access info
-	Indexes PathIndexes `view:"-"`
+	Indexes PathIndexes `display:"-"`
 
 	// synaptic communication parameters: delay, probability of failure
-	Com SynComParams `view:"inline"`
+	Com SynComParams `display:"inline"`
 
 	// pathway scaling parameters for computing GScale:
 	// modulates overall strength of pathway, using both
 	// absolute and relative factors, with adaptation option to maintain target max conductances
-	PathScale PathScaleParams `view:"inline"`
+	PathScale PathScaleParams `display:"inline"`
 
 	// slowly adapting, structural weight value parameters,
 	// which control initial weight values and slower outer-loop adjustments
-	SWts SWtParams `view:"add-fields"`
+	SWts SWtParams `display:"add-fields"`
 
 	// synaptic-level learning parameters for learning in the fast LWt values.
-	Learn LearnSynParams `view:"add-fields"`
+	Learn LearnSynParams `display:"add-fields"`
 
 	// conductance scaling values
-	GScale GScaleValues `view:"inline"`
+	GScale GScaleValues `display:"inline"`
 
 	// Params for RWPath and TDPredPath for doing dopamine-modulated learning
 	// for reward prediction: Da * Send activity.
@@ -123,20 +123,20 @@ type PathParams struct {
 	// If the Da sign is positive, the first recv unit learns fully; for negative,
 	// second one learns fully.
 	// Lower lrate applies for opposite cases.  Weights are positive-only.
-	RLPred RLPredPathParams `view:"inline"`
+	RLPred RLPredPathParams `display:"inline"`
 
 	// for trace-based learning in the MatrixPath. A trace of synaptic co-activity
 	// is formed, and then modulated by dopamine whenever it occurs.
 	// This bridges the temporal gap between gating activity and subsequent activity,
 	// and is based biologically on synaptic tags.
 	// Trace is reset at time of reward based on ACh level from CINs.
-	Matrix MatrixPathParams `view:"inline"`
+	Matrix MatrixPathParams `display:"inline"`
 
 	// Basolateral Amygdala pathway parameters.
-	BLA BLAPathParams `view:"inline"`
+	BLA BLAPathParams `display:"inline"`
 
 	// Hip bench parameters.
-	Hip HipPathParams `view:"inline"`
+	Hip HipPathParams `display:"inline"`
 }
 
 func (pj *PathParams) Defaults() {

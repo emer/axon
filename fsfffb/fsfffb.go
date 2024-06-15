@@ -59,16 +59,16 @@ type GiParams struct {
 	ClampExtMin float32 `default:"0.05"`
 
 	// rate = 1 / tau
-	FSDt float32 `edit:"-" view:"-" json:"-" xml:"-"`
+	FSDt float32 `edit:"-" display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	SSfDt float32 `edit:"-" view:"-" json:"-" xml:"-"`
+	SSfDt float32 `edit:"-" display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	SSiDt float32 `edit:"-" view:"-" json:"-" xml:"-"`
+	SSiDt float32 `edit:"-" display:"-" json:"-" xml:"-"`
 
 	// rate = 1 / tau
-	FFAvgDt float32 `edit:"-" view:"-" json:"-" xml:"-"`
+	FFAvgDt float32 `edit:"-" display:"-" json:"-" xml:"-"`
 
 	pad float32
 }

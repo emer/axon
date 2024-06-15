@@ -41,7 +41,7 @@ import (
 type NetworkBase struct {
 
 	// we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	EmerNet emer.Network `copier:"-" json:"-" xml:"-" view:"-"`
+	EmerNet emer.Network `copier:"-" json:"-" xml:"-" display:"-"`
 
 	// overall name of network -- helps discriminate if there are multiple
 	Nm string
@@ -53,16 +53,16 @@ type NetworkBase struct {
 	Rubicon Rubicon
 
 	// map of name to layers -- layer names must be unique
-	LayMap map[string]*Layer `view:"-"`
+	LayMap map[string]*Layer `display:"-"`
 
 	// map of layer classes -- made during Build
-	LayClassMap map[string][]string `view:"-"`
+	LayClassMap map[string][]string `display:"-"`
 
 	// minimum display position in network
-	MinPos math32.Vector3 `view:"-"`
+	MinPos math32.Vector3 `display:"-"`
 
 	// maximum display position in network
-	MaxPos math32.Vector3 `view:"-"`
+	MaxPos math32.Vector3 `display:"-"`
 
 	// optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save
 	MetaData map[string]string
@@ -71,10 +71,10 @@ type NetworkBase struct {
 	UseGPUOrder bool `edit:"-"`
 
 	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
-	NetIndex uint32 `view:"-"`
+	NetIndex uint32 `display:"-"`
 
 	// maximum synaptic delay across any pathway in the network -- used for sizing the GBuf accumulation buffer.
-	MaxDelay uint32 `edit:"-" view:"-"`
+	MaxDelay uint32 `edit:"-" display:"-"`
 
 	// maximum number of data inputs that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount during Build process, and this value reflects that.
 	MaxData uint32 `edit:"-"`
@@ -86,70 +86,70 @@ type NetworkBase struct {
 	NSyns uint32 `edit:"-"`
 
 	// storage for global vars
-	Globals []float32 `view:"-"`
+	Globals []float32 `display:"-"`
 
 	// array of layers
 	Layers []*Layer
 
 	// array of layer parameters, in 1-to-1 correspondence with Layers
-	LayParams []LayerParams `view:"-"`
+	LayParams []LayerParams `display:"-"`
 
 	// array of layer values, with extra per data
-	LayValues []LayerValues `view:"-"`
+	LayValues []LayerValues `display:"-"`
 
 	// array of inhibitory pools for all layers.
-	Pools []Pool `view:"-"`
+	Pools []Pool `display:"-"`
 
 	// entire network's allocation of neuron variables, accessed via NrnV function with flexible striding
-	Neurons []float32 `view:"-"`
+	Neurons []float32 `display:"-"`
 
 	// ] entire network's allocation of neuron average avariables, accessed via NrnAvgV function with flexible striding
-	NeuronAvgs []float32 `view:"-"`
+	NeuronAvgs []float32 `display:"-"`
 
 	// entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding
-	NeuronIxs []uint32 `view:"-"`
+	NeuronIxs []uint32 `display:"-"`
 
 	// pointers to all pathways in the network, sender-based
-	Paths []*Path `view:"-"`
+	Paths []*Path `display:"-"`
 
 	// array of pathway parameters, in 1-to-1 correspondence with Paths, sender-based
-	PathParams []PathParams `view:"-"`
+	PathParams []PathParams `display:"-"`
 
 	// entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function
-	SynapseIxs []uint32 `view:"-"`
+	SynapseIxs []uint32 `display:"-"`
 
 	// entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function
-	Synapses []float32 `view:"-"`
+	Synapses []float32 `display:"-"`
 
 	// entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function
-	SynapseCas []float32 `view:"-"`
+	SynapseCas []float32 `display:"-"`
 
 	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.
-	PathSendCon []StartN `view:"-"`
+	PathSendCon []StartN `display:"-"`
 
 	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.
-	PathRecvCon []StartN `view:"-"`
+	PathRecvCon []StartN `display:"-"`
 
 	// conductance buffer for accumulating spikes -- subslices are allocated to each pathway -- uses int-encoded float values for faster GPU atomic integration
-	PathGBuf []int32 `view:"-"`
+	PathGBuf []int32 `display:"-"`
 
 	// synaptic conductance integrated over time per pathway per recv neurons -- spikes come in via PathBuf -- subslices are allocated to each pathway
-	PathGSyns []float32 `view:"-"`
+	PathGSyns []float32 `display:"-"`
 
 	// indexes into Paths (organized by SendPath) organized by recv pathways -- needed for iterating through recv paths efficiently on GPU.
-	RecvPathIndexes []uint32 `view:"-"`
+	RecvPathIndexes []uint32 `display:"-"`
 
 	// indexes into Synapses for each recv neuron, organized into blocks according to PathRecvCon, for receiver-based access.
-	RecvSynIndexes []uint32 `view:"-"`
+	RecvSynIndexes []uint32 `display:"-"`
 
 	// external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method.
 	Exts []float32
 
 	// context used only for accessing neurons for display -- NetIndexes.NData in here is copied from active context in NewState
-	Ctx Context `view:"-"`
+	Ctx Context `display:"-"`
 
 	// random number generator for the network -- all random calls must use this -- set seed here for weight initialization values
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights
 	RandSeed int64 `edit:"-"`
@@ -158,13 +158,13 @@ type NetworkBase struct {
 	NThreads int
 
 	// GPU implementation
-	GPU GPU `view:"inline"`
+	GPU GPU `display:"inline"`
 
 	// record function timer information
-	RecFunTimes bool `view:"-"`
+	RecFunTimes bool `display:"-"`
 
 	// timers for each major function (step of processing)
-	FunTimes map[string]*timer.Time `view:"-"`
+	FunTimes map[string]*timer.Time `display:"-"`
 }
 
 // emer.Network interface methods:

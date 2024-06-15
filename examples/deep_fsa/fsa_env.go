@@ -24,7 +24,7 @@ type FSAEnv struct {
 	Dsc string
 
 	// transition matrix, which is a square NxN tensor with outer dim being current state and inner dim having probability of transitioning to that state
-	TMat tensor.Float64 `view:"no-inline"`
+	TMat tensor.Float64 `display:"no-inline"`
 
 	// transition labels, one for each transition cell in TMat matrix
 	Labels tensor.String
@@ -42,22 +42,22 @@ type FSAEnv struct {
 	NextLabels tensor.String
 
 	// current run of model as provided during Init
-	Run env.Ctr `view:"inline"`
+	Run env.Ctr `display:"inline"`
 
 	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `view:"inline"`
+	Epoch env.Ctr `display:"inline"`
 
 	// sequence counter within epoch
-	Seq env.Ctr `view:"inline"`
+	Seq env.Ctr `display:"inline"`
 
 	// tick counter within sequence
-	Tick env.Ctr `view:"inline"`
+	Tick env.Ctr `display:"inline"`
 
 	// trial is the step counter within sequence - how many steps taken within current sequence -- it resets to 0 at start of each sequence
-	Trial env.Ctr `view:"inline"`
+	Trial env.Ctr `display:"inline"`
 
 	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
-	Rand randx.SysRand `view:"-"`
+	Rand randx.SysRand `display:"-"`
 
 	// random seed
 	RandSeed int64 `edit:"-"`
