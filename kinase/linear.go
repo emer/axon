@@ -10,6 +10,7 @@ import (
 	"math/rand"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor/stats/glm"
 	"cogentcore.org/core/tensor/table"
 )
 
@@ -294,7 +295,7 @@ func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32
 
 // Regress runs the linear regression on the data
 func (ls *Linear) Regress() {
-	r := NewRegression()
+	r := glm.NewGLM()
 	err := r.SetTable(table.NewIndexView(&ls.Data), "State", "StdCa", "PredCa", "ErrCa")
 	if err != nil {
 		slog.Error(err.Error())
