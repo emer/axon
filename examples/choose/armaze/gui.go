@@ -92,7 +92,7 @@ type GUI struct {
 	EnvName string
 
 	// 3D visualization of the Scene
-	SceneView *xyzcore.SceneEditor
+	SceneEditor *xyzcore.SceneEditor
 
 	// 2D visualization of the Scene
 	Scene2D *core.SVG
@@ -255,10 +255,9 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	vw.ConfigWorld()
 
-	vw.SceneView = xyzcore.NewSceneEditor(scfr)
-	vw.SceneView.Name = "sceneview"
-	vw.SceneView.Config()
-	se := vw.SceneView.SceneXYZ()
+	vw.SceneEditor = xyzcore.NewSceneEditor(scfr)
+	vw.SceneEditor.UpdateWidget()
+	se := vw.SceneEditor.SceneXYZ()
 	vw.ConfigView3D(se)
 
 	se.Camera.Pose.Pos = math32.Vec3(0, 29, -4)
@@ -335,8 +334,8 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 func (vw *GUI) ConfigWorld() {
 	ev := vw.Env
 
-	vw.World = &physics.Group{}
-	vw.World.InitName(vw.World, "ArmMaze")
+	vw.World = physics.NewGroup()
+	vw.World.SetName("RoomWorld")
 
 	vw.Geom.Config(ev.Config.NArms, ev.MaxLength)
 
@@ -345,7 +344,7 @@ func (vw *GUI) ConfigWorld() {
 	vw.Stims = vw.ConfigStims(vw.World, "stims", .9, .1)
 
 	vw.Emery = vw.ConfigEmery(vw.World, 1)
-	vw.EyeR = vw.Emery.ChildByName("head", 1).ChildByName("eye-r", 2).(physics.Body)
+	vw.EyeR = vw.Emery.ChildByName("head", 1).AsTree().ChildByName("eye-r", 2).(physics.Body)
 
 	vw.World.WorldInit()
 
@@ -356,32 +355,36 @@ func (vw *GUI) ConfigWorld() {
 func (vw *GUI) AddFloor(par *physics.Group, name string) *physics.Group {
 	ge := &vw.Geom
 	dp := ge.Depth + 3*ge.LengthScale
-	rm := physics.NewGroup(par, name)
-	physics.NewBox(rm, "floor").SetSize(math32.Vec3(ge.Width, ge.Thick, dp)).
-		SetColor("grey").SetInitPos(math32.Vec3(0, -ge.Thick/2, -ge.Depth/2-ge.LengthScale))
+	rm := physics.NewGroup(par)
+	rm.SetName(name)
+	physics.NewBox(rm).SetSize(math32.Vec3(ge.Width, ge.Thick, dp)).
+		SetColor("grey").SetInitPos(math32.Vec3(0, -ge.Thick/2, -ge.Depth/2-ge.LengthScale)).SetName("floor")
+
 	return rm
 }
 
 // ConfigArms adds all the arms
 func (vw *GUI) ConfigArms(par *physics.Group) *physics.Group {
 	ev := vw.Env
-	rm := physics.NewGroup(par, "arms")
+	rm := physics.NewGroup(par)
+	rm.SetName("arms")
 	ge := &vw.Geom
 	exln := ge.LengthScale
 	halfarm := .5 * ge.ArmWidth
 	halfht := .5 * ge.Height
 	for i, arm := range ev.Config.Arms {
 		anm := fmt.Sprintf("arm_%d\n", i)
-		agp := physics.NewGroup(rm, anm)
+		agp := physics.NewGroup(rm)
+		agp.SetName(anm)
 		x, _ := ge.Pos(i, 0)
 		ln := ge.LengthScale * float32(arm.Length)
 		halflen := .5*ln + exln
 
-		physics.NewBox(agp, "left-wall").SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
-			SetColor("black").SetInitPos(math32.Vec3(x-halfarm, halfht, -halflen))
+		physics.NewBox(agp).SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
+			SetColor("black").SetInitPos(math32.Vec3(x-halfarm, halfht, -halflen)).SetName("left-wall")
 
-		physics.NewBox(agp, "right-wall").SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
-			SetColor("black").SetInitPos(math32.Vec3(x+halfarm, halfht, -halflen))
+		physics.NewBox(agp).SetSize(math32.Vec3(ge.Thick, ge.Height, ln)).
+			SetColor("black").SetInitPos(math32.Vec3(x+halfarm, halfht, -halflen)).SetName("right-wall")
 	}
 	return rm
 }
@@ -390,7 +393,8 @@ func (vw *GUI) ConfigArms(par *physics.Group) *physics.Group {
 func (vw *GUI) ConfigStims(par *physics.Group, name string, width, height float32) *physics.Group {
 	ev := vw.Env
 	ge := &vw.Geom
-	stms := physics.NewGroup(par, name)
+	stms := physics.NewGroup(par)
+	stms.SetName(name)
 	exln := ge.LengthScale
 	// halfarm := .5 * ge.ArmWidth
 	usHt := ge.Height
@@ -403,11 +407,11 @@ func (vw *GUI) ConfigStims(par *physics.Group, name string, width, height float3
 		usnm := fmt.Sprintf("us_%d\n", i)
 		csnm := fmt.Sprintf("cs_%d\n", i)
 
-		physics.NewBox(stms, usnm).SetSize(math32.Vec3(ge.ArmWidth, usHt, usDp)).
-			SetColor(vw.MatColors[arm.US]).SetInitPos(math32.Vec3(x, 0.5*usHt, -ln-1.1*exln))
+		physics.NewBox(stms).SetSize(math32.Vec3(ge.ArmWidth, usHt, usDp)).
+			SetColor(vw.MatColors[arm.US]).SetInitPos(math32.Vec3(x, 0.5*usHt, -ln-1.1*exln)).SetName(usnm)
 
-		physics.NewBox(stms, csnm).SetSize(math32.Vec3(ge.ArmWidth, csHt, ge.Thick)).
-			SetColor(vw.MatColors[arm.CS]).SetInitPos(math32.Vec3(x, usHt+0.5*csHt, -ln-2*exln))
+		physics.NewBox(stms).SetSize(math32.Vec3(ge.ArmWidth, csHt, ge.Thick)).
+			SetColor(vw.MatColors[arm.CS]).SetInitPos(math32.Vec3(x, usHt+0.5*csHt, -ln-2*exln)).SetName(csnm)
 	}
 	return stms
 }
@@ -415,7 +419,7 @@ func (vw *GUI) ConfigStims(par *physics.Group, name string, width, height float3
 func (vw *GUI) UpdateStims() {
 	var updts []string
 	ev := vw.Env
-	stms := *vw.Stims.Children
+	stms := vw.Stims.Children
 	for i, moi := range stms {
 		mo := moi.(*physics.Box)
 		if i%2 == 1 { // CS
@@ -424,42 +428,46 @@ func (vw *GUI) UpdateStims() {
 			clr := vw.MatColors[arm.CS]
 			if mo.Color != clr {
 				mo.Color = clr
-				updts = append(updts, mo.Name())
+				updts = append(updts, mo.Name)
 			}
 		}
 	}
 	if len(updts) > 0 {
-		vw.View3D.UpdateBodyView(updts)
+		vw.View3D.UpdateBodyView(updts...)
 	}
 }
 
 // ConfigEmery constructs a new Emery virtual hamster
 func (vw *GUI) ConfigEmery(par *physics.Group, length float32) *physics.Group {
-	emr := physics.NewGroup(par, "emery")
+	emr := physics.NewGroup(par)
+	emr.SetName("emery")
 	height := length / 2
 	width := height
 
-	physics.NewBox(emr, "body").SetSize(math32.Vec3(width, height, length)).
-		SetColor("purple").SetDynamic().
-		SetInitPos(math32.Vec3(0, height/2, 0))
+	physics.NewBox(emr).SetSize(math32.Vec3(width, height, length)).
+		SetColor("purple").SetDynamic(true).
+		SetInitPos(math32.Vec3(0, height/2, 0)).SetName("body")
 
 	headsz := height * 0.75
 	hhsz := .5 * headsz
-	hgp := physics.NewGroup(emr, "head").SetInitPos(math32.Vec3(0, hhsz, -(length/2 + hhsz)))
-
-	physics.NewBox(hgp, "head").SetSize(math32.Vec3(headsz, headsz, headsz)).
-		SetColor("tan").SetDynamic().SetInitPos(math32.Vec3(0, 0, 0))
+	hgp := physics.NewGroup(emr).SetInitPos(math32.Vec3(0, hhsz, -(length/2 + hhsz)))
+	hgp.SetName("head")
+	physics.NewBox(hgp).SetSize(math32.Vec3(headsz, headsz, headsz)).
+		SetColor("tan").SetDynamic(true).SetInitPos(math32.Vec3(0, 0, 0)).
+		SetName("head")
 
 	eyesz := headsz * .2
 
-	physics.NewBox(hgp, "eye-l").SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
-		SetColor("green").SetDynamic().
-		SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3)))
+	physics.NewBox(hgp).SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
+		SetColor("green").SetDynamic(true).
+		SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3))).
+		SetName("eye-l")
 
 	// note: centering this in head for now to get straight-on view
-	physics.NewBox(hgp, "eye-r").SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
-		SetColor("green").SetDynamic().
-		SetInitPos(math32.Vec3(0, headsz*.1, -(hhsz + eyesz*.3)))
+	physics.NewBox(hgp).SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
+		SetColor("green").SetDynamic(true).
+		SetInitPos(math32.Vec3(0, headsz*.1, -(hhsz + eyesz*.3))).
+		SetName("eye-r")
 
 	return emr
 }
@@ -473,7 +481,8 @@ func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
 
 	// sc.MultiSample = 1 // we are using depth grab so we need this = 1
-	wgp := xyz.NewGroup(se, "world")
+	wgp := xyz.NewGroup(se)
+	wgp.SetName("world")
 	vw.View3D = world.NewView(vw.World, se, wgp)
 	vw.View3D.InitLibrary() // this makes a basic library based on body shapes, sizes
 	// at this point the library can be updated to configure custom visualizations
@@ -482,11 +491,12 @@ func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 }
 
 func (vw *GUI) ConfigUSPlots() {
-	dp := table.NewTable(vw.Env.Config.NDrives + 1)
+	dp := table.NewTable()
 	dp.AddStringColumn("US")
 	dp.AddFloat64Column("Drive")
 	dp.AddFloat64Column("OFC")
 	dp.AddFloat64Column("USin")
+	dp.SetNumRows(vw.Env.Config.NDrives + 1)
 
 	vw.USposData = dp
 	vw.USposPlot.Params.Type = plotcore.Bar
@@ -494,10 +504,11 @@ func (vw *GUI) ConfigUSPlots() {
 	vw.USposPlot.Params.Scale = 1
 	vw.USposPlot.Params.XAxisColumn = "US"
 
-	dn := table.NewTable(vw.Env.Config.NNegUSs + 2)
+	dn := table.NewTable()
 	dn.AddStringColumn("US")
 	dn.AddFloat64Column("OFC")
 	dn.AddFloat64Column("USin")
+	dn.SetNumRows(vw.Env.Config.NNegUSs + 2)
 
 	vw.USnegData = dn
 	vw.USnegPlot.Params.Type = plotcore.Bar
@@ -581,15 +592,15 @@ func (vw *GUI) ConfigWorldView(tg *tensorcore.TensorGrid) {
 		}
 		colormap.AvailableMaps[cnm] = cm
 	}
-	tg.Disp.Defaults()
-	tg.Disp.ColorMap = core.ColorMapName(cnm)
-	tg.Disp.GridFill = 1
+	tg.Display.Defaults()
+	tg.Display.ColorMap = core.ColorMapName(cnm)
+	tg.Display.GridFill = 1
 }
 
 func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state TraceStates) {
 	vw.State = state
 	vw.Trace.AddRec(ctx, uint32(ev.Di), ev, net, state)
-	if vw.SceneView == nil || !vw.Disp {
+	if vw.SceneEditor == nil || !vw.Disp {
 		return
 	}
 
@@ -597,7 +608,7 @@ func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state 
 		vw.Env = ev
 		vw.EnvName = ev.Nm
 		vw.Trace = nil
-		vw.StructView.UpdateFields()
+		vw.StructView.Update()
 	}
 
 	vw.UpdateWorldGUI()
@@ -612,24 +623,24 @@ func (vw *GUI) SetEmeryPose() {
 }
 
 func (vw *GUI) UpdateWorldGUI() {
-	if vw.SceneView == nil || !vw.Disp {
+	if vw.SceneEditor == nil || !vw.Disp {
 		return
 	}
-	vw.SceneView.AsyncLock()
-	defer vw.SceneView.AsyncUnlock()
+	vw.SceneEditor.AsyncLock()
+	defer vw.SceneEditor.AsyncUnlock()
 
 	// update state:
 	vw.SetEmeryPose()
 	vw.UpdateStims()
 	vw.World.WorldRelToAbs()
 	vw.View3D.UpdatePose()
-	vw.View3D.UpdateBodyView([]string{"body"})
+	vw.View3D.UpdateBodyView("body")
 	// vw.View2D.UpdatePose()
 
 	// update views:
 	vw.GrabEyeImg()
-	if vw.SceneView.IsVisible() {
-		vw.SceneView.NeedsRender()
+	if vw.SceneEditor.IsVisible() {
+		vw.SceneEditor.NeedsRender()
 	}
 	// if vw.Scene2D.IsVisible() {
 	// 	vw.Scene2D.SetNeedsRender(true)

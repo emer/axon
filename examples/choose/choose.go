@@ -1096,7 +1096,7 @@ func (ss *Sim) ConfigLogItems() {
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IndexView(ctx.Mode, etime.Trial)
-				spl := split.GroupBy(ix, []string{"Instinct"})
+				spl := split.GroupBy(ix, "Instinct")
 				split.AggColumnTry(spl, "ActMatch", stats.Mean)
 				ags := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
@@ -1140,7 +1140,7 @@ func (ss *Sim) EpochCSBadStats() {
 	ix.Filter(func(et *table.Table, row int) bool {
 		return !math.IsNaN(et.Float("BadCSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
 	})
-	spl := split.GroupBy(ix, []string{"BadCSGate"})
+	spl := split.GroupBy(ix, "BadCSGate")
 	for _, ts := range ix.Table.ColumnNames {
 		col := ix.Table.ColumnByName(ts)
 		if col.DataType() == reflect.String || ts == "BadCSGate" {
@@ -1185,7 +1185,7 @@ func (ss *Sim) EpochUSBadStats() {
 	ix.Filter(func(et *table.Table, row int) bool {
 		return !math.IsNaN(et.Float("BadUSGate", row)) // && (et.StringValue("ActAction", row) == "Consume")
 	})
-	spl := split.GroupBy(ix, []string{"BadUSGate"})
+	spl := split.GroupBy(ix, "BadUSGate")
 	for _, ts := range ix.Table.ColumnNames {
 		col := ix.Table.ColumnByName(ts)
 		if col.DataType() == reflect.String || ts == "BadUSGate" {
