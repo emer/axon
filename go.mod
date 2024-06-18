@@ -3,10 +3,10 @@ module github.com/emer/axon/v2
 go 1.22
 
 require (
-	cogentcore.org/core v0.1.5-0.20240618055648-247c7f04b7c6
+	cogentcore.org/core v0.1.5-0.20240618090428-8a24e602ee2b
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618065140-818a70cd1e3c
-	github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240615002009-932108fbb2af
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618090608-b56cc32ae098
+	github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240618090911-239078f1e9a7
 	github.com/goki/vulkan v1.0.7
 	github.com/stretchr/testify v1.9.0
 	gitlab.com/gomidi/midi/v2 v2.0.30

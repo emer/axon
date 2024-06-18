@@ -16,7 +16,7 @@ func OpenJobs(path string) {
 		br.FormatTableFromCSV(dt, filepath.Join(br.DataRoot, "dbformat.csv"))
 	}
 	
-	ds := dirs.Dirs(dpath)
+	ds := fsx.Dirs(dpath)
 	dt.SetNumRows(len(ds))
 	for i, d := range ds {
 		dt.SetString("JobID", i, d)

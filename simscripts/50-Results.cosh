@@ -9,7 +9,7 @@ func OpenResultFiles(jobs []string, filter FilterResults) {
 		message := ValueForJob(jid, "Message")
 		label := ValueForJob(jid, "Label")
 		args := ValueForJob(jid, "Args")
-		fls := dirs.ExtFilenames(jpath, filter.Ext)
+		fls := fsx.Filenames(jpath, filter.Ext)
 		ifls := []string{}
 		for _, fn := range fls {
 			if filter.FileContains != "" && !strings.Contains(fn, filter.FileContains) {

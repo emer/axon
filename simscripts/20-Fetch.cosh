@@ -58,7 +58,7 @@ func FetchJobs(path string) {
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
 		dpath := filepath.Join(br.DataRoot, path)
-		jobs = dirs.Dirs(dpath)
+		jobs = fsx.Dirs(dpath)
 	}
 	for _, jid := range jobs {
 		FetchJob(jid, true)

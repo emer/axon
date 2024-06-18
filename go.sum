@@ -1,5 +1,5 @@
-cogentcore.org/core v0.1.5-0.20240618055648-247c7f04b7c6 h1:NdUK3ct01slXmWuXvrD9BVIx5ACrbL0blOkvK1VnoyA=
-cogentcore.org/core v0.1.5-0.20240618055648-247c7f04b7c6/go.mod h1:oZ69LVMXeTb6Tq39AphvDlZkkltfuI/kgk9euC5I6z0=
+cogentcore.org/core v0.1.5-0.20240618090428-8a24e602ee2b h1:YQwo7t/5c9CogFJKb3dUHkBjN0orde/vIHFeaHzgpEU=
+cogentcore.org/core v0.1.5-0.20240618090428-8a24e602ee2b/go.mod h1:oZ69LVMXeTb6Tq39AphvDlZkkltfuI/kgk9euC5I6z0=
 github.com/Bios-Marcel/wastebasket v0.0.4-0.20240213135800-f26f1ae0a7c4 h1:6lx9xzJAhdjq0LvVfbITeC3IH9Fzvo1aBahyPu2FuG8=
 github.com/Bios-Marcel/wastebasket v0.0.4-0.20240213135800-f26f1ae0a7c4/go.mod h1:FChzXi1izqzdPb6BiNZmcZLGyTYiT61iGx9Rxx9GNeI=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -32,10 +32,10 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.11.0 h1:G/nrcoOa7ZXlpoa/91N3X7mM3r8eIlMBBJZvsz/mxKI=
 github.com/dlclark/regexp2 v1.11.0/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
-github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618065140-818a70cd1e3c h1:xfCTZGMv7MIgPGGxU6EFGKYR3WoTqDiqfx5vOKNVMXM=
-github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618065140-818a70cd1e3c/go.mod h1:KlbXwPgy9hIIiCVFMz2mXgjfX34ud4/UHf6rP+QeKi0=
-github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240615002009-932108fbb2af h1:EygCJa/2UHXazkv2HX7yJ79TKXzwjX3nxGNhl+V5mn4=
-github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240615002009-932108fbb2af/go.mod h1:p1JsCly+knLmWoUv9O2GSvF+WHqV4wK9OdGSJWeQi3E=
+github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618090608-b56cc32ae098 h1:fP+033srf3dhnnIdvT8EWEBG8JZ52yZ6Y+7U8jkob4E=
+github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618090608-b56cc32ae098/go.mod h1:MbGxAkloXcN15xD4j+TbkyqdH2rZHzIYUsm2m0O1hPo=
+github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240618090911-239078f1e9a7 h1:pd45FWGufAHQ3G5CEzWH9qIAiG9MEvleIz8JdI+K78E=
+github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240618090911-239078f1e9a7/go.mod h1:+PQE+bMfpzyemHq/8brdyEbDq+qDaAeBO0CjWuBX/nU=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=

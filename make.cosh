@@ -2,7 +2,7 @@
 
 // RunInExamples runs given function in examples directory
 func RunInExamples(fun func(d string)) {
-	ex := dirs.Dirs("examples")
+	ex := fsx.Dirs("examples")
 	cwd := `pwd`
 	for _, d := range ex {
 		fd := filepath.Join(cwd, "examples", d)

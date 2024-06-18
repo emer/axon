@@ -195,7 +195,7 @@ func CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
 	mkdir -p {hostJob}
 	cd {hostJob}
 	@0
-	efls := dirs.ExtFilenames(localSrc, exts...)
+	efls := fsx.Filenames(localSrc, exts...)
 	for _, f := range efls {
 		sfn := filepath.Join(localSrc, f)
 		/bin/cp {sfn} {f}
@@ -243,7 +243,7 @@ func NewJob(message, args, label string) {
 	cd {spath}
 	@0
 	cd {jpath}
-	fls := dirs.ExtFilenames(br.StartDir, ".go")
+	fls := fsx.Filenames(br.StartDir, ".go")
 	for _, f := range fls {
 		sfn := filepath.Join(br.StartDir, f)
 		/bin/cp {sfn} {f}

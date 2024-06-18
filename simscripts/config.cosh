@@ -3,10 +3,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"cogentcore.org/core/core"
 	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/tensor/tensorcore"
-	"cogentcore.org/core/views"
 )
 
 // to run, in numbers:
@@ -180,7 +180,7 @@ var (
 	Config           Configuration
 	JobsTableView    *tensorcore.Table
 	JobsTable        *table.Table
-	ResultsTableView *views.TableView
+	ResultsTableView *core.Table
 	Results          []*Result
 	// function that is run after any action (e.g., Jobs); typically set in Jobs.cosh
 	UpdateFunc func()
