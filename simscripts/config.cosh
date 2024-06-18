@@ -29,6 +29,7 @@ type FilterResults struct {
 }
 
 func (fp *FilterResults) Defaults() {
+	fp.FileContains = "_avgepc"
 	fp.Ext = ".tsv"
 }
 
