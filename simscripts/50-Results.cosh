@@ -29,7 +29,7 @@ func OpenResultFiles(jobs []string, filter FilterResults) {
 		core.MessageSnackbar(br, "No files containing: " + filter.FileContains + " with extension: " + filter.Ext)
 		return
 	}
-	ResultsTableView = br.NewTabTableView("Results", &Results)
+	ResultsTableView = br.NewTabTable("Results", &Results)
 	br.Update()
 }
 

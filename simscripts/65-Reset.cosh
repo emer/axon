@@ -2,7 +2,7 @@
 
 func ResetResults() {
 	Results = []*Result{}
-	br.NewTabTableView("Results", &Results)
+	br.NewTabTable("Results", &Results)
 	br.Update()
 }
 

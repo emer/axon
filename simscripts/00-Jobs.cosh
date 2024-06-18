@@ -5,7 +5,7 @@
 // note: br is browser
 
 func OpenJobs(path string) {
-	tv := br.NewTabTable("Jobs")
+	tv := br.NewTabTensorTable("Jobs")
 	dt := tv.Table.Table
 	JobsTableView = tv
 	JobsTable = dt
@@ -43,6 +43,8 @@ func OpenJobs(path string) {
 UpdateFunc = func() {
 	OpenJobs(Config.Version)
 }
+
+fmt.Println(Config.Version)
 
 OpenJobs(Config.Version)
 
