@@ -75,11 +75,11 @@ func WriteSBatchCleanup(w io.Writer, jid, array_id string) {
  	fmt.Fprintf(w, "cat job.*.out > job.out\n")
  	fmt.Fprintf(w, "/bin/rm job.*.out\n")
 
- 	fmt.Fprintf(w, "cat *Base*run.tsv > all_run.tsv\n")
- 	fmt.Fprintf(w, "/bin/rm *Base*run.tsv\n")
+ 	fmt.Fprintf(w, "cat *_[0-9][0-9][0-9]_run.tsv > all_run.tsv\n")
+ 	fmt.Fprintf(w, "/bin/rm *_[0-9][0-9][0-9]_run.tsv\n")
 
- 	fmt.Fprintf(w, "cat *Base*epc.tsv > all_epc.tsv\n")
- 	fmt.Fprintf(w, "/bin/rm *Base*epc.tsv\n")
+ 	fmt.Fprintf(w, "cat *_[0-9][0-9][0-9]_epc.tsv > all_epc.tsv\n")
+ 	fmt.Fprintf(w, "/bin/rm *_[0-9][0-9][0-9]_epc.tsv\n")
 
 	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.end")
 }

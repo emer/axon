@@ -89,7 +89,7 @@ var ParamSets = netparams.Sets{
 		{Sel: ".CTCtxtPath", Desc: "all CT context paths",
 			Params: params.Params{
 				"Path.Learn.LRate.Base":    "0.001", // 0.001 >> 0.002 for full
-				"Path.Learn.Trace.Tau":     "1",     // 1 > 2 > 4 v0.0.9
+				"Path.Learn.Trace.Tau":     "2",     // 1 > 2 > 4 v0.0.9
 				"Path.Learn.Trace.SubMean": "0",     // 0 > 1 -- 1 is especially bad
 				"Path.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
 			}},

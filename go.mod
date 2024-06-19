@@ -5,7 +5,7 @@ go 1.22
 require (
 	cogentcore.org/core v0.1.5-0.20240618090428-8a24e602ee2b
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618090608-b56cc32ae098
+	github.com/emer/emergent/v2 v2.0.0-dev0.0.14.0.20240618225002-60f0fb5350d3
 	github.com/emer/vision/v2 v2.0.0-dev0.0.10.0.20240618090911-239078f1e9a7
 	github.com/goki/vulkan v1.0.7
 	github.com/stretchr/testify v1.9.0

@@ -39,7 +39,7 @@ func (ev *Env) ConfigGroupGoodBad() {
 		var eff, mag, prob float32
 		var length int
 		// todo: with BLANovelInhib lr=0.01, this bias has reversed!?
-		if gi == 0 { // bad case: there is a small but significant left side bias, so make this on bad
+		if gi == 1 { // bad case: there is a small but significant left side bias, so make this on bad
 			length = cfg.LengthRange.Max
 			eff = cfg.EffortRange.Max
 			mag = cfg.USMagRange.Min

@@ -61,7 +61,7 @@ func FetchJobs(path string) {
 		jobs = fsx.Dirs(dpath)
 	}
 	for _, jid := range jobs {
-		FetchJob(jid, true)
+		FetchJob(jid, false)
 	}
 	core.MessageSnackbar(br, "Fetch Jobs completed")
 	Update()
