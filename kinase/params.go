@@ -13,6 +13,7 @@ type CaDtParams struct { //types:add
 
 	// CaM (calmodulin) time constant in cycles (msec),
 	// which is the first level integration.
+	// For CaLearn, 2 is best; for CaSpk, 5 is best.
 	// For synaptic-level integration this integrates on top of Ca
 	// signal from send->CaSyn * recv->CaSyn, each of which are
 	// typically integrated with a 30 msec Tau.
@@ -20,17 +21,22 @@ type CaDtParams struct { //types:add
 
 	// LTP spike-driven potentiation Ca factor (CaP) time constant
 	// in cycles (msec), simulating CaMKII in the Kinase framework,
-	// with 40 on top of MTau, roughly tracking the biophysical rise time.
+	// cascading on top of MTau.
 	// Computationally, CaP represents the plus phase learning signal that
 	// reflects the most recent past information.
-	PTau float32 `default:"40" min:"1"`
+	// Value tracks linearly with number of cycles per learning trial:
+	// 200 = 40, 300 = 60, 400 = 80
+	PTau float32 `default:"40,60,80" min:"1"`
 
 	// LTD spike-driven depression Ca factor (CaD) time constant
-	// in cycles (msec), simulating DAPK1 in Kinase framework.
+	// in cycles (msec), simulating DAPK1 in Kinase framework,
+	// cascading on top of PTau.
 	// Computationally, CaD represents the minus phase learning signal that
 	// reflects the expectation representation prior to experiencing the
 	// outcome (in addition to the outcome).
-	DTau float32 `default:"40" min:"1"`
+	// Value tracks linearly with number of cycles per learning trial:
+	// 200 = 40, 300 = 60, 400 = 80
+	DTau float32 `default:"40,60,80" min:"1"`
 
 	// rate = 1 / tau
 	MDt float32 `display:"-" json:"-" xml:"-" edit:"-"`

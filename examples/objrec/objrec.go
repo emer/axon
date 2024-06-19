@@ -267,6 +267,7 @@ func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
 	ncyc := ss.Config.Run.NCycles
+	nplus := ss.Config.Run.NPlusCycles
 	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
@@ -280,7 +281,7 @@ func (ss *Sim) ConfigLoops() {
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
 		AddTime(etime.Cycle, ncyc)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-50, ncyc-1)       // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-nplus, ncyc-1)    // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for mode := range man.Stacks {

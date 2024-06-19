@@ -28,12 +28,12 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.CaLearn.SpkVGCC":        "true", // sig better..
 				"Layer.Learn.CaLearn.SpkVgccCa":      "35",   // 70 / 5 or 35 / 10 both work
 				"Layer.Learn.CaLearn.VgccTau":        "10",   // 10 > 5 ?
-				"Layer.Learn.CaLearn.Dt.MTau":        "2",
-				"Layer.Learn.CaLearn.Dt.PTau":        "50",
-				"Layer.Learn.CaLearn.Dt.DTau":        "50",
-				"Layer.Learn.CaSpk.Dt.MTau":          "5",
-				"Layer.Learn.CaSpk.Dt.PTau":          "50",
-				"Layer.Learn.CaSpk.Dt.DTau":          "50",
+				"Layer.Learn.CaLearn.Dt.MTau":        "2",    // 2 > 4 even with more ncycles
+				"Layer.Learn.CaLearn.Dt.PTau":        "60",   // 60 for 300 cyc, 40 for 200 (scales linearly)
+				"Layer.Learn.CaLearn.Dt.DTau":        "60",   // "
+				"Layer.Learn.CaSpk.Dt.MTau":          "5",    // 5 > 10 even with more ncycles
+				"Layer.Learn.CaSpk.Dt.PTau":          "60",   // "
+				"Layer.Learn.CaSpk.Dt.DTau":          "60",   // "
 			}},
 		{Sel: "#V1", Desc: "pool inhib (not used), initial activity",
 			Params: params.Params{
