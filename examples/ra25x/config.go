@@ -64,6 +64,9 @@ type RunConfig struct {
 	// total number of trials per epoch.  Should be an even multiple of NData.
 	NTrials int `default:"32"`
 
+	// total number of cycles per trial.
+	NCycles int `default:"300"`
+
 	// how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing
 	TestInterval int `default:"5"`
 

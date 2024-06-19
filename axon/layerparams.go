@@ -715,7 +715,8 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 			SetNrnV(ctx, ni, di, SpkMax, spkmax)
 		}
 	}
-	bin := ctx.Cycle / 50
+	spksper := ctx.ThetaCycles / 4
+	bin := ctx.Cycle / spksper
 	spk := NrnV(ctx, ni, di, Spike)
 	switch bin {
 	case 0:
@@ -724,7 +725,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 		AddNrnV(ctx, ni, di, SpkBin1, spk)
 	case 2:
 		AddNrnV(ctx, ni, di, SpkBin2, spk)
-	case 3:
+	default:
 		AddNrnV(ctx, ni, di, SpkBin3, spk)
 	}
 }

@@ -1,3 +1,48 @@
+# v2.0.0-dev0.2.0
+
+Linear approximation to synaptic calcium integration:
+
+## MacBook Pro M3 Max
+
+Major improvements for GPU at all NData, major for NData 32 (5x), 16 (4x):
+```
+GPU:
+* NData  1: 59
+* NData  2: 39
+* NData  4: 27
+* NData  8: 20
+* NData 16: 15
+* NData 32: 12
+```
+
+Not much diff for ndata now on CPU beyond 4, NThreads = 16
+```
+CPU:
+* NData  1: 90
+* NData  2: 76
+* NData  4: 69
+* NData  8: 63
+* NData 16: 62
+* NData 32: 62
+```
+
+## HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+```
+GPU:
+* NData 4: 105
+* NData 8:  83
+* NData 16: 76
+* NData 32: 77
+```
+
+```
+CPU:
+* NData 16: 180 (ccnl-0)
+* NData 16: 280 (Node 3)
+* NData 16: 385 (Node 3, v0.0.8 -- previous SynCa)
+```
+
 # v1.8.0
 
 results are PerTrlMSec

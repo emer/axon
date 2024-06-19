@@ -105,6 +105,7 @@ func (ss *Sim) New() {
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	ss.Context.Defaults()
+	ss.Context.ThetaCycles = int32(ss.Config.Run.NCycles)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -235,20 +236,21 @@ func (ss *Sim) InitRandSeed(run int) {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
+	ncyc := ss.Config.Run.NCycles
 	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
 		AddTime(etime.Run, ss.Config.Run.NRuns).
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, ncyc)
 
 	man.AddStack(etime.Test).
 		AddTime(etime.Epoch, 1).
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, ncyc)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-50, ncyc-1)       // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {
