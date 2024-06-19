@@ -52,12 +52,12 @@ func FetchJob(jid string, force bool) {
 	}
 }
 
-func FetchJobs(path string) {
+func FetchJobs() {
 	@0
 	tv := JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
-		dpath := filepath.Join(br.DataRoot, path)
+		dpath := filepath.Join(br.DataRoot, "jobs")
 		jobs = fsx.Dirs(dpath)
 	}
 	for _, jid := range jobs {
@@ -67,5 +67,5 @@ func FetchJobs(path string) {
 	Update()
 }
 
-{go FetchJobs(Config.Version)}
+{go FetchJobs()}
 

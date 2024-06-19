@@ -32,7 +32,38 @@ The general workflow is as follows, assuming a standard [install](#install) has 
 
 # Install
 
+From this `simscripts` directory, run:
 
+```sh
+> ./install.cosh ~/full/path/to/sim
+```
+
+Which creates a project directory in `~/simdata/projname/username` that has a symbolic link in the sim directory so it is accessible directly from there, but is not actually located there so there are no issues with git ownership of these files.
+
+You then need to create a `defaults.cosh` file that sets various parameters on the `Config` object specific to this project, including extra non-Go file and sub-directories that might need to be copied up to the server to run it.  There are also job configuration parameters (e.g., max runtime).  Here is an example, for a sim in `axon/examples`, that requires the extra `go get`:
+
+```go
+// to run, in numbers:
+// databrowser.NewBrowserWindow("simdata")
+
+// primary remote server: avail as @1
+cossh hpc2.engr.ucdavis.edu
+
+func defaults() {
+	cf := &Config
+	cf.Defaults()
+	cf.ServerName = "hpc2"
+	cf.ExtraGoGet = "github.com/emer/axon/v2@main"
+	cf.Job.Hours = 1
+	cf.Job.Qos = "oreillylab"
+	cf.ExcludeNodes = "agate-[0,17-19,28,41-45]"
+	cf.ExtraFiles = []string{"config_job.toml"}
+
+	cf.Update()
+}
+
+defaults()
+```
 
 # Example `cosh` code
 

@@ -2,10 +2,10 @@
 // with a confirmation prompt.
 
 // CancelJobs cancels the given jobs 
-func CancelJobs(jobs []string, path string) {
+func CancelJobs(jobs []string) {
 	@0
-	dpath := filepath.Join(br.DataRoot, path)
-	spath := filepath.Join(Config.ServerRoot, path)
+	dpath := filepath.Join(br.DataRoot, "jobs")
+	spath := filepath.Join(Config.ServerRoot, "jobs")
 	@1
 	for _, jid := range jobs {
 		sjob := ValueForJob(jid, "ServerJob")
@@ -19,7 +19,7 @@ func CancelJobs(jobs []string, path string) {
 	core.MessageSnackbar(br, "Done canceling jobs")
 }
 
-func CancelJobsPrompt(path string) {
+func CancelJobsPrompt() {
 	tv := JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
@@ -27,10 +27,10 @@ func CancelJobsPrompt(path string) {
 		return
 	}
 	databrowser.PromptOKCancel(br, "Ok to cancel these jobs: " + strings.Join(jobs, " "), func() {
-		CancelJobs(jobs, path)
+		CancelJobs(jobs)
 		Update()
 	})
 }
 
-CancelJobsPrompt(Config.Version)
+CancelJobsPrompt()
 

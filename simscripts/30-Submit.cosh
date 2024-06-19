@@ -280,6 +280,9 @@ func NewJob(message, args, label string) {
 		scp {sfn} "@1:go.sum"
 		@1
 		go mod edit -module {projPath}
+		if Config.ExtraGoGet != "" {
+			go get {Config.ExtraGoGet}
+		}
 		go mod tidy
 		@0
 		scp "@1:go.mod" "go.mod"

@@ -1,7 +1,7 @@
 import (
 	"fmt"
-	"os"
 	"path/filepath"
+	"strings"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/plot/plotcore"
@@ -93,7 +93,7 @@ type Configuration struct {
 	// name of simulation project, lowercase (should be name of source dir)
 	Project string
 
-	// current version string, e.g., v008 or v112: names subdirectory of jobs
+	// current git version string, from git describe --tags
 	Version string
 
 	// parameters for job resources etc
@@ -118,6 +118,11 @@ type Configuration struct {
 	// name of current server using to run jobs; gets recorded with each job
 	ServerName string
 
+	// ExtraGoGet is an extra package to do "go get" with, for launching the job.
+	// Typically set this to the parent packge if running within a larger package
+	// upon which this simulation depends, e.g., "github.com/emer/axon/v2@main"
+	ExtraGoGet string
+	
 	// root path from user home dir on server.
 	// is auto-set to: filepath.Join("simdata", Project, User)
 	ServerRoot string
@@ -136,7 +141,14 @@ type Configuration struct {
 }
 
 func (cf *Configuration) Defaults() {
-	cf.User = os.Getenv("USER")
+	@0
+	cd
+	cd {br.StartDir}
+	Config.Version = strings.TrimSpace(`git describe --tags`)
+	cd {br.DataRoot}
+	cf.User = strings.TrimSpace(`echo $USER`)
+	_, pj := filepath.Split(br.StartDir)
+	cf.Project = pj
 	cf.Job.Defaults()
 	cf.FetchFiles = "*.tsv"
 	cf.Plot.Defaults()
@@ -187,11 +199,11 @@ var (
 )
 
 func JobPath(jid string) string {
-	return filepath.Join(br.DataRoot, Config.Version, jid)
+	return filepath.Join(br.DataRoot, "jobs", jid)
 }
 
 func ServerJobPath(jid string) string {
-	return filepath.Join(Config.ServerRoot, Config.Version, jid)
+	return filepath.Join(Config.ServerRoot, "jobs", jid)
 }
 
 // Call update after each action that affects jobs.

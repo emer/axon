@@ -3,12 +3,12 @@
 // for results that are useful but not immediately relevant.
 
 // ArchiveJobs archives the given jobs 
-func ArchiveJobs(jobs []string, path string) {
+func ArchiveJobs(jobs []string) {
 	@0
-	dpath := filepath.Join(br.DataRoot, path)
-	apath := filepath.Join(br.DataRoot, "archive", path)
+	dpath := filepath.Join(br.DataRoot, "jobs")
+	apath := filepath.Join(br.DataRoot, "archive", "jobs")
 	mkdir -p {apath}
-	spath := filepath.Join(Config.ServerRoot, path)
+	spath := filepath.Join(Config.ServerRoot, "jobs")
 	for _, jid := range jobs {
 		@1
 		cd
@@ -25,7 +25,7 @@ func ArchiveJobs(jobs []string, path string) {
 	core.MessageSnackbar(br, "Done archiving jobs")
 }
 
-func ArchiveJobsPrompt(path string) {
+func ArchiveJobsPrompt() {
 	tv := JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
@@ -33,10 +33,10 @@ func ArchiveJobsPrompt(path string) {
 		return
 	}
 	databrowser.PromptOKCancel(br, "Ok to archive these jobs: " + strings.Join(jobs, " "), func() {
-		ArchiveJobs(jobs, path)
+		ArchiveJobs(jobs)
 		Update()
 	})
 }
 
-ArchiveJobsPrompt(Config.Version)
+ArchiveJobsPrompt()
 

@@ -4,12 +4,12 @@
 
 // note: br is browser
 
-func OpenJobs(path string) {
+func OpenJobs() {
 	tv := br.NewTabTensorTable("Jobs")
 	dt := tv.Table.Table
 	JobsTableView = tv
 	JobsTable = dt
-	dpath := filepath.Join(br.DataRoot, path)
+	dpath := filepath.Join(br.DataRoot, "jobs")
 	// fmt.Println("opening data at:", dpath)
 
 	if dt.NumColumns() == 0 {
@@ -41,10 +41,8 @@ func OpenJobs(path string) {
 
 // Default update function:
 UpdateFunc = func() {
-	OpenJobs(Config.Version)
+	OpenJobs()
 }
 
-fmt.Println(Config.Version)
-
-OpenJobs(Config.Version)
+OpenJobs()
 

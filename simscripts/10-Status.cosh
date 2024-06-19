@@ -83,10 +83,10 @@ func JobStatus(jid string, force bool) {
 	core.MessageSnackbar(br, "Job: " + jid + " updated with status: " + sstat)
 }
 
-func JobsStatus(path string) {
+func JobsStatus() {
 	@0
 	br.UpdateFiles()
-	dpath := filepath.Join(br.DataRoot, path)
+	dpath := filepath.Join(br.DataRoot, "jobs")
 	ds := fsx.Dirs(dpath)
 	for _, jid := range ds {
 		JobStatus(jid, false) // true = update all -- for format and status edits
@@ -95,5 +95,5 @@ func JobsStatus(path string) {
 	Update()
 }
 
-{go JobsStatus(Config.Version)}
+{go JobsStatus()}
 
