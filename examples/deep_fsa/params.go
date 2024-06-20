@@ -40,6 +40,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Sahp.Off":                "0.8",  //
 				"Layer.Acts.Sahp.Slope":              "0.02", //
 				"Layer.Acts.Sahp.CaTau":              "10",   //
+				"Layer.Learn.CaLearn.Dt.PTau":        "60",   // 60 for 300 cyc, 40 for 200 (scales linearly)
+				"Layer.Learn.CaLearn.Dt.DTau":        "60",   // "
+				"Layer.Learn.CaSpk.Dt.PTau":          "60",   // "
+				"Layer.Learn.CaSpk.Dt.DTau":          "60",   // "
 			}},
 		{Sel: ".SuperLayer", Desc: "super layer params",
 			Params: params.Params{
@@ -58,7 +62,7 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.FB":               "1",
 				"Layer.Acts.Dend.SSGi":               "0",   // 0 > higher -- kills nmda maint!
 				"Layer.CT.GeGain":                    "2.0", // 2.0 > 1.5 for sure
-				"Layer.CT.DecayTau":                  "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+				"Layer.CT.DecayTau":                  "100", // 50 > 30 -- 30 ok but takes a bit to get going
 				"Layer.Acts.Decay.Act":               "0.0",
 				"Layer.Acts.Decay.Glong":             "0.0",
 				"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 def > 0.01
@@ -68,6 +72,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.NMDA.Tau":                "200",   // 200 > 100
 				"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > 0.0002 (much worse)
 				"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
+				"Layer.Learn.CaLearn.Dt.PTau":        "60",    // 60 for 300 cyc, 40 for 200 (scales linearly)
+				"Layer.Learn.CaLearn.Dt.DTau":        "60",    // "
+				"Layer.Learn.CaSpk.Dt.PTau":          "60",    // "
+				"Layer.Learn.CaSpk.Dt.DTau":          "60",    // "
 			}},
 		{Sel: ".PulvinarLayer", Desc: "pulvinar",
 			Params: params.Params{

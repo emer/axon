@@ -414,6 +414,7 @@ func (ss *Sim) ConfigLoops() {
 	// ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
 
 	ncyc := ss.Config.Run.NCycles
+	nplus := ss.Config.Run.NPlusCycles
 
 	// note: sequence stepping does not work in NData > 1 mode -- just going back to raw trials
 	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
@@ -424,7 +425,7 @@ func (ss *Sim) ConfigLoops() {
 		AddTimeIncr(etime.Trial, trls, ss.Config.Run.NData).
 		AddTime(etime.Cycle, ncyc)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-50, ncyc-1)       // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-nplus, ncyc-1)    // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m := range man.Stacks {
