@@ -15,7 +15,8 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
-	_ "cogentcore.org/core/tensor/tensorcore"           // include to get gui views
+	_ "cogentcore.org/core/tensor/tensorcore" // include to get gui views
+	"cogentcore.org/core/tree"
 	_ "cogentcore.org/core/vgpu/gosl/slbool/slboolcore" // ditto
 	"github.com/emer/axon/v2/kinase"
 )
@@ -256,11 +257,11 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(p *core.Plan) {
-		core.Add(p, func(w *core.FuncButton) {
+	b.AddAppBar(func(p *tree.Plan) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(ss.Run).SetIcon(icons.PlayArrow)
 		})
-		core.Add(p, func(w *core.FuncButton) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
 		})
 	})

@@ -22,6 +22,7 @@ import (
 	"cogentcore.org/core/styles/abilities"
 	"cogentcore.org/core/tensor/table"
 	"cogentcore.org/core/tensor/tensorcore"
+	"cogentcore.org/core/tree"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyz/physics"
 	"cogentcore.org/core/xyz/physics/world"
@@ -285,47 +286,47 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 
 	split.SetSplits(.4, .6)
 
-	b.AddAppBar(func(p *core.Plan) {
-		core.Add(p, func(w *core.Button) {
+	b.AddAppBar(func(p *tree.Plan) {
+		tree.Add(p, func(w *core.Button) {
 			w.SetText("Init").SetIcon(icons.ClearAll).
 				SetTooltip("Init env").
 				OnClick(func(e events.Event) {
 					vw.Env.Init(0)
 				})
 		})
-		core.Add(p, func(w *core.Button) {
+		tree.Add(p, func(w *core.Button) {
 			w.SetText("Reset Trace").SetIcon(icons.Undo).
 				SetTooltip("Reset trace of position, etc, shown in 2D View").
 				OnClick(func(e events.Event) {
 					vw.Trace = nil
 				})
 		})
-		core.Add(p, func(w *core.FuncButton) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(vw.Forward).SetText("Fwd").SetIcon(icons.SkipNext).
 				Styler(func(s *styles.Style) {
 					s.SetAbilities(true, abilities.RepeatClickable)
 				})
 		})
-		core.Add(p, func(w *core.FuncButton) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(vw.Left).SetText("Left").SetIcon(icons.KeyboardArrowLeft).
 				Styler(func(s *styles.Style) {
 					s.SetAbilities(true, abilities.RepeatClickable)
 				})
 		})
-		core.Add(p, func(w *core.FuncButton) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(vw.Right).SetText("Right").SetIcon(icons.KeyboardArrowRight).
 				Styler(func(s *styles.Style) {
 					s.SetAbilities(true, abilities.RepeatClickable)
 				})
 		})
-		core.Add(p, func(w *core.FuncButton) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(vw.Consume).SetText("Consume").SetIcon(icons.SentimentExcited).
 				Styler(func(s *styles.Style) {
 					s.SetAbilities(true, abilities.RepeatClickable)
 				})
 		})
 
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 	})
 	return b
 }

@@ -17,6 +17,7 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/kinase"
 	"github.com/emer/emergent/v2/econfig"
@@ -146,7 +147,7 @@ func (ss *Sim) ConfigGUI() {
 	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
 	// ss.TstCycPlot = plt
 
-	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
@@ -205,7 +206,7 @@ func (ss *Sim) ConfigGUI() {
 				}
 			},
 		})
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
 			Tooltip: "Reset TstCycPlot.",
 			Active:  egui.ActiveStopped,

@@ -16,6 +16,7 @@ import (
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -420,7 +421,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,

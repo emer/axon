@@ -26,6 +26,7 @@ import (
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
@@ -794,7 +795,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
+	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
 			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
 			Active:  egui.ActiveStopped,
@@ -816,7 +817,7 @@ func (ss *Sim) ConfigGUI() {
 		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train, etime.Test})
 
 		////////////////////////////////////////////////
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
@@ -827,7 +828,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",

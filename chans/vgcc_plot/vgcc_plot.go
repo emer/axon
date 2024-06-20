@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/chans"
 )
 
@@ -246,11 +247,11 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(p *core.Plan) {
-		core.Add(p, func(w *core.FuncButton) {
+	b.AddAppBar(func(p *tree.Plan) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(ss.VmRun).SetIcon(icons.PlayArrow)
 		})
-		core.Add(p, func(w *core.FuncButton) {
+		tree.Add(p, func(w *core.FuncButton) {
 			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
 		})
 	})

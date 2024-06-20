@@ -29,6 +29,7 @@ import (
 	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/axon/v2/examples/pvlv/cond"
 	"github.com/emer/emergent/v2/econfig"
@@ -724,8 +725,8 @@ func (ss *Sim) ConfigGUI() {
 	plt.Params.XAxisColumn = "SeqType"
 	plt.SetTable(dt)
 
-	ss.GUI.Body.AddAppBar(func(p *core.Plan) {
-		core.Add(p, func(w *core.Chooser) {
+	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
+		tree.Add(p, func(w *core.Chooser) {
 			w.SetStrings(cond.RunNames...)
 			ri := 0
 			for i, rn := range cond.RunNames {
@@ -752,7 +753,7 @@ func (ss *Sim) ConfigGUI() {
 
 		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train})
 
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
 			Tooltip: "Save weights for the current condition name.",
 			Active:  egui.ActiveStopped,
@@ -763,7 +764,7 @@ func (ss *Sim) ConfigGUI() {
 		})
 
 		////////////////////////////////////////////////
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
 			Icon:    icons.Reset,
 			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
@@ -774,7 +775,7 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		////////////////////////////////////////////////
-		core.Add(p, func(w *core.Separator) {})
+		tree.Add(p, func(w *core.Separator) {})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
 			Icon:    icons.Add,
 			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
