@@ -157,13 +157,13 @@ func (kp *SynCaParams) FromCa(ca float32, caM, caP, caD *float32) {
 	kp.Dt.FromCa(kp.CaScale*ca, caM, caP, caD)
 }
 
-// BinWeights are coefficients for computing Ca based on binned
+// BinWeights4 are 4 coefficients for computing Ca based on binned
 // spike counts, for linear regression computation.
-type BinWeights struct { //types:add
+type BinWeights4 struct { //types:add
 	Bin0, Bin1, Bin2, Bin3 float32
 }
 
-func (bw *BinWeights) Init(b0, b1, b2, b3 float32) {
+func (bw *BinWeights4) Init(b0, b1, b2, b3 float32) {
 	bw.Bin0 = b0
 	bw.Bin1 = b1
 	bw.Bin2 = b2
@@ -171,30 +171,65 @@ func (bw *BinWeights) Init(b0, b1, b2, b3 float32) {
 }
 
 // Product returns product of weights times bin values
-func (bw *BinWeights) Product(b0, b1, b2, b3 float32) float32 {
+func (bw *BinWeights4) Product(b0, b1, b2, b3 float32) float32 {
 	return bw.Bin0*b0 + bw.Bin1*b1 + bw.Bin2*b2 + bw.Bin3*b3
+}
+
+// BinWeights8 are 8 coefficients for computing Ca based on binned
+// spike counts, for linear regression computation.
+type BinWeights8 struct { //types:add
+	Bin0, Bin1, Bin2, Bin3, Bin4, Bin5, Bin6, Bin7 float32
+}
+
+func (bw *BinWeights8) Init(b0, b1, b2, b3, b4, b5, b6, b7 float32) {
+	bw.Bin0 = b0
+	bw.Bin1 = b1
+	bw.Bin2 = b2
+	bw.Bin3 = b3
+	bw.Bin4 = b4
+	bw.Bin5 = b5
+	bw.Bin6 = b6
+	bw.Bin7 = b7
+}
+
+// Product returns product of weights times bin values
+func (bw *BinWeights8) Product(b0, b1, b2, b3, b4, b5, b6, b7 float32) float32 {
+	return bw.Bin0*b0 + bw.Bin1*b1 + bw.Bin2*b2 + bw.Bin3*b3 + bw.Bin4*b4 + bw.Bin5*b5 + bw.Bin6*b6 + bw.Bin7*b7
 }
 
 // SynCaLinear computes synaptic calcium using linear equations from
 // cascading Ca integration, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
 type SynCaLinear struct { //types:add
-	CaP BinWeights `display:"inline"`
-	CaD BinWeights `display:"inline"`
+	CaP BinWeights8 `display:"inline"`
+	CaD BinWeights8 `display:"inline"`
+
+	// CaGain is extra multiplier for Synaptic Ca
+	CaGain          float32 `default:"1"`
+	pad, pad1, pad2 float32
 }
 
 func (kp *SynCaLinear) Defaults() {
-	kp.CaP.Init(0.07, 0.3, 0.5, 0.6) // linear progression
-	kp.CaD.Init(0.25, 0.5, 0.5, 0.3) // up and down
+	// kp.CaP.Init(0.07, 0.3, 0.5, 0.6) // linear progression
+	// kp.CaD.Init(0.25, 0.5, 0.5, 0.3) // up and down
+	kp.CaP.Init(0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0) // linear progression
+	kp.CaD.Init(0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55) // up and down
+	kp.CaGain = 1
 }
 
 func (kp *SynCaLinear) Update() {
 }
 
+// // FinalCa4 uses a linear regression to compute the final Ca values
+// func (kp *SynCaLinear) FinalCa4(b0, b1, b2, b3 float32, caP, caD *float32) {
+// 	*caP = kp.CaP.Product(b0, b1, b2, b3)
+// 	*caD = kp.CaD.Product(b0, b1, b2, b3)
+// }
+
 // FinalCa uses a linear regression to compute the final Ca values
-func (kp *SynCaLinear) FinalCa(b0, b1, b2, b3 float32, caP, caD *float32) {
-	*caP = kp.CaP.Product(b0, b1, b2, b3)
-	*caD = kp.CaD.Product(b0, b1, b2, b3)
+func (kp *SynCaLinear) FinalCa(b0, b1, b2, b3, b4, b5, b6, b7 float32, caP, caD *float32) {
+	*caP = kp.CaGain * kp.CaP.Product(b0, b1, b2, b3, b4, b5, b6, b7)
+	*caD = kp.CaGain * kp.CaD.Product(b0, b1, b2, b3, b4, b5, b6, b7)
 }
 
 //gosl:end kinase

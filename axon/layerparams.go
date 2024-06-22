@@ -715,7 +715,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 			SetNrnV(ctx, ni, di, SpkMax, spkmax)
 		}
 	}
-	spksper := ctx.ThetaCycles / 4
+	spksper := ctx.ThetaCycles / 8
 	bin := ctx.Cycle / spksper
 	spk := NrnV(ctx, ni, di, Spike)
 	switch bin {
@@ -725,8 +725,16 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 		AddNrnV(ctx, ni, di, SpkBin1, spk)
 	case 2:
 		AddNrnV(ctx, ni, di, SpkBin2, spk)
-	default:
+	case 3:
 		AddNrnV(ctx, ni, di, SpkBin3, spk)
+	case 4:
+		AddNrnV(ctx, ni, di, SpkBin4, spk)
+	case 5:
+		AddNrnV(ctx, ni, di, SpkBin5, spk)
+	case 6:
+		AddNrnV(ctx, ni, di, SpkBin6, spk)
+	default:
+		AddNrnV(ctx, ni, di, SpkBin7, spk)
 	}
 }
 
@@ -990,6 +998,10 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerVa
 	SetNrnV(ctx, ni, di, SpkBin1, 0)
 	SetNrnV(ctx, ni, di, SpkBin2, 0)
 	SetNrnV(ctx, ni, di, SpkBin3, 0)
+	SetNrnV(ctx, ni, di, SpkBin4, 0)
+	SetNrnV(ctx, ni, di, SpkBin5, 0)
+	SetNrnV(ctx, ni, di, SpkBin6, 0)
+	SetNrnV(ctx, ni, di, SpkBin7, 0)
 
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt

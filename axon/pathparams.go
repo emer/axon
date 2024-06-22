@@ -313,13 +313,25 @@ func (pj *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 	sb2 := NrnV(ctx, si, di, SpkBin2)
 	rb3 := NrnV(ctx, ri, di, SpkBin3)
 	sb3 := NrnV(ctx, si, di, SpkBin3)
+	rb4 := NrnV(ctx, ri, di, SpkBin4)
+	sb4 := NrnV(ctx, si, di, SpkBin4)
+	rb5 := NrnV(ctx, ri, di, SpkBin5)
+	sb5 := NrnV(ctx, si, di, SpkBin5)
+	rb6 := NrnV(ctx, ri, di, SpkBin6)
+	sb6 := NrnV(ctx, si, di, SpkBin6)
+	rb7 := NrnV(ctx, ri, di, SpkBin7)
+	sb7 := NrnV(ctx, si, di, SpkBin7)
 
 	b0 := 0.1 * (rb0 * sb0)
 	b1 := 0.1 * (rb1 * sb1)
 	b2 := 0.1 * (rb2 * sb2)
 	b3 := 0.1 * (rb3 * sb3)
+	b4 := 0.1 * (rb4 * sb4)
+	b5 := 0.1 * (rb5 * sb5)
+	b6 := 0.1 * (rb6 * sb6)
+	b7 := 0.1 * (rb7 * sb7)
 
-	pj.Learn.KinaseCa.FinalCa(b0, b1, b2, b3, syCaP, syCaD)
+	pj.Learn.KinaseCa.FinalCa(b0, b1, b2, b3, b4, b5, b6, b7, syCaP, syCaD)
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse for cortex.

@@ -138,6 +138,10 @@ const (
 	SpkBin1
 	SpkBin2
 	SpkBin3
+	SpkBin4
+	SpkBin5
+	SpkBin6
+	SpkBin7
 
 	// SpkPrv is final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
 	SpkPrv

@@ -30,10 +30,10 @@ type Linear struct {
 	PlusCycles int `default:"50"`
 
 	// CyclesPerBin specifies the bin size for accumulating spikes
-	CyclesPerBin int `default:"25"`
+	CyclesPerBin int `edit:"-"`
 
 	// NumBins = NCycles / CyclesPerBin
-	NumBins int `edit:"-"`
+	NumBins int `default:"8"`
 
 	// MaxHz is the maximum firing rate to sample in minus, plus phases
 	MaxHz int `default:"120"`
@@ -79,13 +79,14 @@ func (ls *Linear) Defaults() {
 	ls.MaxHz = 100
 	ls.StepHz = 10 // note: 5 gives same results
 	ls.NTrials = 2 // 20 "
+	ls.NumBins = 8
 	ls.Update()
 }
 
 func (ls *Linear) Update() {
+	ls.CyclesPerBin = ls.NCycles / ls.NumBins
 	ls.Neuron.Update()
 	ls.Synapse.Update()
-	ls.NumBins = ls.NCycles / ls.CyclesPerBin
 	nhz := ls.MaxHz / ls.StepHz
 	ls.TotalTrials = nhz * nhz * nhz * nhz * ls.NTrials
 	ls.SpikeBins = make([]float32, ls.NumBins)
@@ -307,9 +308,17 @@ func (ls *Linear) Regress() {
 	r.StopTolerance = 0.00001
 	r.ZeroOffset = true
 
+	// NBins = 4
+	// r.Coeff.Values = []float64{
+	// 	0.05, 0.25, 0.5, 0.6, 0, // linear progression
+	// 	0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
+
+	// NBins = 8
 	r.Coeff.Values = []float64{
-		0.05, 0.25, 0.5, 0.6, 0, // linear progression
-		0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
+		0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0, 0, // linear progression
+		0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55, .0} // hump in the middle
+
+	fmt.Println(r.Coeffs())
 
 	r.Run()
 
