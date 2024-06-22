@@ -16,6 +16,9 @@ import (
 	"github.com/emer/emergent/v2/etime"
 )
 
+// NBins is the number of spike bins
+const NBins = 8
+
 // KinaseNeuron has Neuron state
 type KinaseNeuron struct {
 	// Neuron spiking (0,1)
@@ -33,7 +36,7 @@ type KinaseNeuron struct {
 	TotalSpikes float32
 
 	// binned count of spikes, for regression learning
-	SpikeBins [4]float32
+	SpikeBins [NBins]float32
 }
 
 func (kn *KinaseNeuron) Init() {
@@ -56,7 +59,8 @@ func (kn *KinaseNeuron) StartTrial() {
 // based on target spiking firing rate.
 func (ss *Sim) Cycle(kn *KinaseNeuron, expInt float32, cyc int) {
 	kn.Spike = 0
-	bin := cyc / 50
+	cycPerBin := ss.Config.Run.NCycles / NBins
+	bin := cyc / cycPerBin
 	if expInt > 0 {
 		kn.SpikeP *= rand.Float32()
 		if kn.SpikeP <= expInt {
@@ -136,7 +140,7 @@ type KinaseState struct {
 	LinearSyn KinaseSynapse
 
 	// binned integration of send, recv spikes
-	SpikeBins [4]float32
+	SpikeBins [NBins]float32
 }
 
 func (ks *KinaseState) Init() {
@@ -216,7 +220,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 	ks.Cycle = 0
 	ks.ErrDWt = (plusHz - minusHz) / 100
 
-	minusCycles := cfg.NCycles - cfg.PlusCycles
+	minusCycles := cfg.Run.NCycles - cfg.Run.PlusCycles
 
 	ks.StartTrial()
 	for phs := 0; phs < 2; phs++ {
@@ -228,7 +232,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 			maxcyc = minusCycles
 		case 1:
 			rhz = plusHz
-			maxcyc = cfg.PlusCycles
+			maxcyc = cfg.Run.PlusCycles
 		}
 		shz := rhz + cfg.Run.SendDiffHz
 		if shz < 0 {
@@ -258,7 +262,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz float32) {
 		ks.SpikeBins[i] = 0.1 * (ks.Recv.SpikeBins[i] * ks.Send.SpikeBins[i])
 	}
 
-	ss.LinearSynCa.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
+	ss.LinearSynCa.FinalCa(ks.SpikeBins[0], ks.SpikeBins[1], ks.SpikeBins[2], ks.SpikeBins[3], ks.SpikeBins[4], ks.SpikeBins[5], ks.SpikeBins[6], ks.SpikeBins[7], &ks.LinearSyn.CaP, &ks.LinearSyn.CaD)
 	ks.LinearSyn.DWt = ks.LinearSyn.CaP - ks.LinearSyn.CaD
 
 	ss.GUI.UpdatePlot(etime.Test, etime.Cycle)

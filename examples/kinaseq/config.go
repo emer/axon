@@ -45,6 +45,18 @@ type RunConfig struct {
 	// total number of epochs per run
 	NTrials int `default:"10"`
 
+	// total number of cycles (1 MSec) to run
+	NCycles int `min:"10" default:"200"`
+
+	// number of plus cycles
+	PlusCycles int `default:"50"`
+
+	// when does excitatory input into neuron come on?
+	OnCycle int `min:"0" default:"10"`
+
+	// when does excitatory input into neuron go off?
+	OffCycle int `min:"0" default:"190"`
+
 	// RandomHz generates random firing rates, for testing
 	RandomHz bool
 
@@ -82,18 +94,6 @@ type Config struct {
 
 	// Inhibitory conductance
 	Gi float32 `min:"0" step:"0.01" default:"0.1"`
-
-	// total number of cycles (1 MSec) to run
-	NCycles int `min:"10" default:"200"`
-
-	// number of plus cycles
-	PlusCycles int `default:"50"`
-
-	// when does excitatory input into neuron come on?
-	OnCycle int `min:"0" default:"10"`
-
-	// when does excitatory input into neuron go off?
-	OffCycle int `min:"0" default:"190"`
 
 	// how often to update display (in cycles)
 	UpdateInterval int `min:"1" default:"10"`

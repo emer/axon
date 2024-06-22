@@ -37,12 +37,15 @@ func (ly *Layer) Object() any {
 }
 
 func (ly *Layer) Defaults() { //types:add
+	ctx := &ly.Network.Ctx
 	if ly.Params != nil {
 		ly.Params.LayType = ly.LayerType()
 		ly.Params.Defaults()
 		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Values[di].ActAvg.GiMult = 1
 		}
+		ly.Params.Learn.CaLearn.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
+		ly.Params.Learn.CaSpk.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
 	}
 	for _, pj := range ly.RcvPaths { // must do path defaults first, then custom
 		pj.Defaults()

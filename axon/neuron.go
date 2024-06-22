@@ -564,10 +564,14 @@ var NeuronVarProps = map[string]string{
 	"SpkMaxCa": `desc:"Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover.  This is the input to SpkMax"`,
 	"SpkMax":   `desc:"maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons."`,
 
-	"SpkBin0": `min:"0" max:"10" desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin1": `min:"0" max:"10" desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin2": `min:"0" max:"10" desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin3": `min:"0" max:"10" desc:"aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin0": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin1": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin2": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin3": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin4": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin5": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin6": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin7": `min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
 
 	"SpkPrv": `desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`,
 	"SpkSt1": `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`,

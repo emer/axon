@@ -55,8 +55,10 @@ func (pj *Path) Defaults() {
 	if pj.Params == nil {
 		return
 	}
+	ctx := &pj.Recv.Network.Ctx
 	pj.Params.PathType = pj.PathType()
 	pj.Params.Defaults()
+	pj.Params.Learn.KinaseCa.WtsForNCycles(int(ctx.ThetaCycles))
 	switch pj.PathType() {
 	case InhibPath:
 		pj.Params.SWts.Adapt.On.SetBool(false)

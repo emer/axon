@@ -29,11 +29,11 @@ var ParamSets = netparams.Sets{
 				"Layer.Learn.CaLearn.SpkVgccCa":      "35",   // 70 / 5 or 35 / 10 both work
 				"Layer.Learn.CaLearn.VgccTau":        "10",   // 10 > 5 ?
 				"Layer.Learn.CaLearn.Dt.MTau":        "2",    // 2 > 4 even with more ncycles
-				"Layer.Learn.CaLearn.Dt.PTau":        "60",   // 60 for 300 cyc, 40 for 200 (scales linearly)
-				"Layer.Learn.CaLearn.Dt.DTau":        "60",   // "
 				"Layer.Learn.CaSpk.Dt.MTau":          "5",    // 5 > 10 even with more ncycles
-				"Layer.Learn.CaSpk.Dt.PTau":          "60",   // "
-				"Layer.Learn.CaSpk.Dt.DTau":          "60",   // "
+				"Layer.Learn.CaLearn.Dt.PTau":        "40",   // 60 for 300 cyc, 40 for 200 (scales linearly)
+				"Layer.Learn.CaLearn.Dt.DTau":        "40",   // "
+				"Layer.Learn.CaSpk.Dt.PTau":          "40",   // "
+				"Layer.Learn.CaSpk.Dt.DTau":          "40",   // "
 			}},
 		{Sel: "#V1", Desc: "pool inhib (not used), initial activity",
 			Params: params.Params{
@@ -79,10 +79,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "Path", Desc: "yes extra learning factors",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":    "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-				"Path.Learn.Trace.SubMean": "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-				"Path.SWts.Adapt.LRate":    "0.0001", // 0.005 == .1 == .01
-				"Path.SWts.Init.SPct":      "1",      // 1 >= lower (trace-v11)
+				"Path.Learn.LRate.Base":      "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
+				"Path.Learn.Trace.SubMean":   "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				"Path.SWts.Adapt.LRate":      "0.0001", // 0.005 == .1 == .01
+				"Path.SWts.Init.SPct":        "1",      // 1 >= lower (trace-v11)
+				"Path.Learn.KinaseCa.CaGain": "1.0",    // 1 > higher
 			}},
 		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 			Params: params.Params{

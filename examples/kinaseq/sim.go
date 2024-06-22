@@ -87,6 +87,9 @@ func (ss *Sim) New() {
 	ss.SynCa.Defaults()
 	ss.NeurCa.Defaults()
 	ss.LinearSynCa.Defaults()
+	ss.SynCa.Dt.PDTauForNCycles(ss.Config.Run.NCycles)
+	ss.NeurCa.Dt.PDTauForNCycles(ss.Config.Run.NCycles)
+	ss.LinearSynCa.WtsForNCycles(ss.Config.Run.NCycles)
 	ss.Stats.Init()
 	ss.ValMap = make(map[string]float32)
 }

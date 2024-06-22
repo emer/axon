@@ -13,6 +13,9 @@ import (
 func TestLinear(t *testing.T) {
 	var ls Linear
 	ls.Defaults()
+	ls.NCycles = 280
+	ls.PlusCycles = 70
+	ls.Update()
 	ls.Init()
 	ls.Run()
 	ls.Data.SaveCSV("linear_data.tsv", table.Tab, table.Headers)

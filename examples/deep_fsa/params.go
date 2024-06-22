@@ -40,10 +40,10 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.Sahp.Off":                "0.8",  //
 				"Layer.Acts.Sahp.Slope":              "0.02", //
 				"Layer.Acts.Sahp.CaTau":              "10",   //
-				"Layer.Learn.CaLearn.Dt.PTau":        "60",   // 60 for 300 cyc, 40 for 200 (scales linearly)
-				"Layer.Learn.CaLearn.Dt.DTau":        "60",   // "
-				"Layer.Learn.CaSpk.Dt.PTau":          "60",   // "
-				"Layer.Learn.CaSpk.Dt.DTau":          "60",   // "
+				// "Layer.Learn.CaLearn.Dt.PTau":        "60",   // 60 for 300 cyc, 40 for 200 (scales linearly)
+				// "Layer.Learn.CaLearn.Dt.DTau":        "60",   // "
+				// "Layer.Learn.CaSpk.Dt.PTau":          "60",   // "
+				// "Layer.Learn.CaSpk.Dt.DTau":          "60",   // "
 			}},
 		{Sel: ".SuperLayer", Desc: "super layer params",
 			Params: params.Params{
@@ -61,8 +61,8 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.Layer.Gi":               "2.2", // 2.2 > others
 				"Layer.Inhib.Layer.FB":               "1",
 				"Layer.Acts.Dend.SSGi":               "0",   // 0 > higher -- kills nmda maint!
-				"Layer.CT.GeGain":                    "2.0", // 2.0 > 1.5 for sure
-				"Layer.CT.DecayTau":                  "80",  // 50 > 30 -- 30 ok but takes a bit to get going
+				"Layer.CT.GeGain":                    "1.5", // 2.0 > 1.5 for sure
+				"Layer.CT.DecayTau":                  "80",  // 50 for 200, 80 for 300
 				"Layer.Acts.Decay.Act":               "0.0",
 				"Layer.Acts.Decay.Glong":             "0.0",
 				"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 def > 0.01
@@ -72,10 +72,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Acts.NMDA.Tau":                "200",   // 200 > 100
 				"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > 0.0002 (much worse)
 				"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
-				"Layer.Learn.CaLearn.Dt.PTau":        "60",    // 60 for 300 cyc, 40 for 200 (scales linearly)
-				"Layer.Learn.CaLearn.Dt.DTau":        "60",    // "
-				"Layer.Learn.CaSpk.Dt.PTau":          "60",    // "
-				"Layer.Learn.CaSpk.Dt.DTau":          "60",    // "
 			}},
 		{Sel: ".PulvinarLayer", Desc: "pulvinar",
 			Params: params.Params{
@@ -91,12 +87,13 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: "Path", Desc: "std",
 			Params: params.Params{
-				"Path.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
-				"Path.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
-				"Path.SWts.Adapt.LRate":    "0.01", // 0.01 or 0.0001 music
-				"Path.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
-				"Path.Com.PFail":           "0.0",
-				"Path.Learn.Trace.Tau":     "1", // 1 >> 2 v0.0.9
+				"Path.Learn.Trace.SubMean":   "0",    // 0 > 1 -- even with CTCtxt = 0
+				"Path.Learn.LRate.Base":      "0.03", // .03 > others -- same as CtCtxt
+				"Path.SWts.Adapt.LRate":      "0.01", // 0.01 or 0.0001 music
+				"Path.SWts.Init.SPct":        "1.0",  // 1 works fine here -- .5 also ok
+				"Path.Com.PFail":             "0.0",
+				"Path.Learn.Trace.Tau":       "1",   // 1 >> 2 v0.0.9
+				"Path.Learn.KinaseCa.CaGain": "1.0", // 1 > higher, lower
 			}},
 		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{

@@ -23,17 +23,17 @@ type Linear struct {
 	// Kinase Synapse params
 	Synapse SynCaParams
 
-	// total number of cycles (1 MSec) to run
+	// total number of cycles (1 MSec) to run per learning trial
 	NCycles int `min:"10" default:"200"`
 
 	// number of plus cycles
 	PlusCycles int `default:"50"`
 
-	// CyclesPerBin specifies the bin size for accumulating spikes
-	CyclesPerBin int `edit:"-"`
-
-	// NumBins = NCycles / CyclesPerBin
+	// NumBins is the number of bins to accumulate spikes over NCycles
 	NumBins int `default:"8"`
+
+	// CyclesPerBin = NCycles / NumBins
+	CyclesPerBin int `edit:"-"`
 
 	// MaxHz is the maximum firing rate to sample in minus, plus phases
 	MaxHz int `default:"120"`
@@ -85,8 +85,8 @@ func (ls *Linear) Defaults() {
 
 func (ls *Linear) Update() {
 	ls.CyclesPerBin = ls.NCycles / ls.NumBins
-	ls.Neuron.Update()
-	ls.Synapse.Update()
+	ls.Neuron.Dt.PDTauForNCycles(ls.NCycles)
+	ls.Synapse.Dt.PDTauForNCycles(ls.NCycles)
 	nhz := ls.MaxHz / ls.StepHz
 	ls.TotalTrials = nhz * nhz * nhz * nhz * ls.NTrials
 	ls.SpikeBins = make([]float32, ls.NumBins)
@@ -313,10 +313,15 @@ func (ls *Linear) Regress() {
 	// 	0.05, 0.25, 0.5, 0.6, 0, // linear progression
 	// 	0.25, 0.5, 0.5, 0.25, 0} // hump in the middle
 
-	// NBins = 8
+	// NBins = 8, 200+50 cycles
+	// r.Coeff.Values = []float64{
+	// 	0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0, 0, // linear progression
+	// 	0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55, .0} // hump in the middle
+
+	// NBins = 8, 280+70 cycles
 	r.Coeff.Values = []float64{
-		0.3, 0.4, 0.55, 0.65, 0.75, 0.85, 1.0, 1.0, 0, // linear progression
-		0.5, 0.65, 0.75, 0.9, 0.9, 0.9, 0.65, 0.55, .0} // hump in the middle
+		0.0, 0.1, 0.23, 0.35, 0.45, 0.55, 0.75, 0.75, 0, // linear progression
+		0.2, 0.3, 0.4, 0.5, 0.5, 0.5, 0.4, 0.3, .0} // hump in the middle
 
 	fmt.Println(r.Coeffs())
 
