@@ -96,10 +96,10 @@ type RunConfig struct {
 	NTrials int `default:"128"`
 
 	// total number of cycles per trial.  needs more time to decide, also for actions.
-	NCycles int `default:"300"`
+	NCycles int `default:"280"`
 
-	// total number of plus-phase cycles per trial. for NCycles=300, use 100; 200 = 50
-	NPlusCycles int `default:"50"`
+	// total number of plus-phase cycles per trial. for NCycles=300, use 70; 200 = 50
+	NPlusCycles int `default:"70"`
 
 	// how frequently (in epochs) to compute PCA on hidden representations to measure variance?
 	PCAInterval int `default:"10"`

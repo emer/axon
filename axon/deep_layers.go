@@ -45,8 +45,8 @@ type CTParams struct {
 	// gain factor for context excitatory input, which is constant as compared to the spiking input from other pathways, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down.
 	GeGain float32 `default:"0.05,0.1,1,2"`
 
-	// decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50
-	DecayTau float32 `default:"0,50"`
+	// decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50 (80 for 280 cycles)
+	DecayTau float32 `default:"0,50,70"`
 
 	// 1 / tau
 	DecayDt float32 `display:"-" json:"-" xml:"-"`
@@ -122,6 +122,11 @@ func (ly *LayerParams) CTDefaults() {
 	// ly.Acts.GABAB.Gbar = 0.008
 }
 
+func (cp *CTParams) DecayForNCycles(ncycles int) {
+	cp.DecayTau = 50 * (float32(ncycles) / float32(200))
+	cp.Update()
+}
+
 // CTDefParamsFast sets fast time-integration parameters for CTLayer.
 // This is what works best in the deep_move 1 trial history case,
 // vs Medium and Long
@@ -146,7 +151,6 @@ func (ly *Layer) CTDefParamsFast() {
 func (ly *Layer) CTDefParamsMedium() {
 	ly.DefParams = params.Params{
 		"Layer.CT.GeGain":        "2",
-		"Layer.CT.DecayTau":      "50",
 		"Layer.Inhib.Layer.Gi":   "2.2",
 		"Layer.Inhib.Pool.Gi":    "2.2",
 		"Layer.Acts.GabaB.Gbar":  "0.009",
@@ -164,7 +168,6 @@ func (ly *Layer) CTDefParamsMedium() {
 func (ly *Layer) CTDefParamsLong() {
 	ly.DefParams = params.Params{
 		"Layer.CT.GeGain":        "1.0",
-		"Layer.CT.DecayTau":      "50",
 		"Layer.Inhib.Layer.Gi":   "2.8",
 		"Layer.Inhib.Pool.Gi":    "2.8",
 		"Layer.Acts.GabaB.Gbar":  "0.01",

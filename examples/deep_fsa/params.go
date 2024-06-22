@@ -58,11 +58,11 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":               "2.2", // 2.2 > others
-				"Layer.Inhib.Layer.FB":               "1",
-				"Layer.Acts.Dend.SSGi":               "0",   // 0 > higher -- kills nmda maint!
-				"Layer.CT.GeGain":                    "1.5", // 2.0 > 1.5 for sure
-				"Layer.CT.DecayTau":                  "80",  // 50 for 200, 80 for 300
+				"Layer.Inhib.Layer.Gi": "2.2", // 2.2 > others
+				"Layer.Inhib.Layer.FB": "1",
+				"Layer.Acts.Dend.SSGi": "0",   // 0 > higher -- kills nmda maint!
+				"Layer.CT.GeGain":      "2.0", // 2.0 > 1.5 for sure
+				// "Layer.CT.DecayTau":                  "80",  // now auto-set
 				"Layer.Acts.Decay.Act":               "0.0",
 				"Layer.Acts.Decay.Glong":             "0.0",
 				"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 def > 0.01

@@ -15,11 +15,7 @@ var ParamSets = netparams.Sets{
 	"Base": {
 		{Sel: "Layer", Desc: "generic params for all layers",
 			Params: params.Params{
-				"Layer.Acts.Clamp.Ge":         "1.5",
-				"Layer.Learn.CaLearn.Dt.PTau": "60", // 60 for 300 cyc, 40 for 200 (scales linearly)
-				"Layer.Learn.CaLearn.Dt.DTau": "60", // "
-				"Layer.Learn.CaSpk.Dt.PTau":   "60", // "
-				"Layer.Learn.CaSpk.Dt.DTau":   "60", // "
+				"Layer.Acts.Clamp.Ge": "1.5",
 			}},
 		{Sel: ".PFCLayer", Desc: "pfc layers: slower trgavgact",
 			Params: params.Params{
@@ -31,10 +27,6 @@ var ParamSets = netparams.Sets{
 				// "Layer.Inhib.Pool.Gi":              "2.4",
 				"Layer.Acts.Dend.ModGain":          "1.5", // 1.5; was 2 min -- reduces maint early
 				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
-				"Layer.Learn.CaLearn.Dt.PTau":      "40",
-				"Layer.Learn.CaLearn.Dt.DTau":      "40",
-				"Layer.Learn.CaSpk.Dt.PTau":        "40",
-				"Layer.Learn.CaSpk.Dt.DTau":        "40",
 			}},
 		{Sel: ".VSTNLayer", Desc: "all VSTN",
 			Params: params.Params{
@@ -47,9 +39,9 @@ var ParamSets = netparams.Sets{
 			}},
 		{Sel: ".PTPredLayer", Desc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal":       "0.1",
-				"Layer.CT.GeGain":                  "0.05", // 0.05 key for stronger activity
-				"Layer.CT.DecayTau":                "50",
+				"Layer.Inhib.ActAvg.Nominal": "0.1",
+				"Layer.CT.GeGain":            "0.05", // 0.05 key for stronger activity
+				// "Layer.CT.DecayTau":                "50",
 				"Layer.Learn.NeuroMod.AChDisInhib": "0", // 0.2, 0.5 not much diff
 			}},
 		{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",

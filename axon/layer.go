@@ -114,6 +114,7 @@ func (ly *Layer) Defaults() { //types:add
 	case VSGatedLayer:
 		ly.Params.VSGatedDefaults()
 	}
+	ly.Params.CT.DecayForNCycles(int(ctx.ThetaCycles))
 	ly.ApplyDefParams()
 	ly.UpdateParams()
 }
