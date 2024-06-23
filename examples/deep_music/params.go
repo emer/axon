@@ -49,7 +49,6 @@ var ParamSets = netparams.Sets{
 				"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
 				"Layer.Inhib.Layer.Gi":       "2.2",  // 2.2 >= 2.4 > 2.8
 				"Layer.CT.GeGain":            "1.0",  // 1.0 >= 1.5 > 2.0 (very bad) > 0.5
-				"Layer.CT.DecayTau":          "50",   // 50 > 30 -- 30 ok but takes a bit to get going
 				"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
 				"Layer.Acts.Decay.Act":       "0.0",
 				"Layer.Acts.Decay.Glong":     "0.0",
