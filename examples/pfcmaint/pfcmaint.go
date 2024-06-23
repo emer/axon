@@ -104,6 +104,7 @@ func (ss *Sim) New() {
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	ss.Context.Defaults()
+	ss.Context.ThetaCycles = int32(ss.Config.Run.NCycles)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -247,6 +248,8 @@ func (ss *Sim) ConfigLoops() {
 
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*PFCMaintEnv)
 
+	ncyc := ss.Config.Run.NCycles
+	nplus := ss.Config.Run.NPlusCycles
 	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	man.AddStack(etime.Train).
@@ -254,15 +257,15 @@ func (ss *Sim) ConfigLoops() {
 		AddTime(etime.Epoch, ss.Config.Run.NEpochs).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, ev.NTrials).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, ncyc)
 
 	man.AddStack(etime.Test).
 		AddTime(etime.Epoch, 1).
 		AddTimeIncr(etime.Sequence, trls, ss.Config.Run.NData).
 		AddTime(etime.Trial, ev.NTrials).
-		AddTime(etime.Cycle, 200)
+		AddTime(etime.Cycle, ncyc)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)              // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, ncyc-nplus, ncyc-1)
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {

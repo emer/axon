@@ -48,13 +48,11 @@ var ParamSets = netparams.Sets{
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "0.8",  // 0.8 def
 				"Layer.CT.GeGain":      "0.05", // 0.05 def
-				"Layer.CT.DecayTau":    "50",   // 50 def
 			}},
 		{Sel: ".CTLayer", Desc: "",
 			Params: params.Params{
 				"Layer.Inhib.Layer.Gi": "1.4", // 0.8 def
 				"Layer.CT.GeGain":      "2",   // 2 def
-				"Layer.CT.DecayTau":    "50",  // 50 def
 			}},
 		{Sel: ".BGThalLayer", Desc: "",
 			Params: params.Params{

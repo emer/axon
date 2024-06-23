@@ -76,6 +76,12 @@ type RunConfig struct {
 
 	// total number of trials per epoch.  Should be an even multiple of NData.
 	NTrials int `default:"64"`
+
+	// total number of cycles per trial.  at least 200
+	NCycles int `default:"200"`
+
+	// total number of plus-phase cycles per trial. for NCycles=300, use 100
+	NPlusCycles int `default:"50"`
 }
 
 // LogConfig has config parameters related to logging data

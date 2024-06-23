@@ -204,13 +204,14 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	split := core.NewSplits(b)
 
 	svfr := core.NewFrame(split)
-	svfr.Name = "svfr"
+	svfr.SetName("svfr")
 	svfr.Styler(func(s *styles.Style) {
 		s.Direction = styles.Column
 	})
 
 	vw.StructView = core.NewForm(svfr).SetStruct(vw)
-	imfr := core.NewFrame(svfr).Styler(func(s *styles.Style) {
+	imfr := core.NewFrame(svfr)
+	imfr.Styler(func(s *styles.Style) {
 		s.Display = styles.Grid
 		s.Columns = 2
 		s.Grow.Set(0, 0)
