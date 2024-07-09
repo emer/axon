@@ -65,7 +65,7 @@ func (fb *Params) Defaults() {
 	fb.Update()
 }
 
-func (fb *Params) ShouldShow(field string) bool {
+func (fb *Params) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true

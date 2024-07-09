@@ -32,7 +32,7 @@ func (bg *Bg) Defaults() {
 	bg.Update()
 }
 
-func (bg *Bg) ShouldShow(field string) bool {
+func (bg *Bg) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true

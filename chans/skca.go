@@ -79,7 +79,7 @@ func (sp *SKCaParams) Update() {
 	sp.CaInDt = 1.0 / sp.CaInTau
 }
 
-func (sp *SKCaParams) ShouldShow(field string) bool {
+func (sp *SKCaParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

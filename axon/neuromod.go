@@ -98,7 +98,7 @@ func (nm *NeuroModParams) Update() {
 	nm.AChLRateMod = math32.Clamp(nm.AChLRateMod, 0, 1)
 }
 
-func (nm *NeuroModParams) ShouldShow(field string) bool {
+func (nm *NeuroModParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "DAModGain":
 		return nm.DAMod != NoDAMod

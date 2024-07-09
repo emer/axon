@@ -57,7 +57,7 @@ func (mp *SahpParams) Update() {
 	mp.CaDt = 1.0 / mp.CaTau
 }
 
-func (mp *SahpParams) ShouldShow(field string) bool {
+func (mp *SahpParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

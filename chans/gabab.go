@@ -60,7 +60,7 @@ func (gp *GABABParams) Update() {
 	gp.DecayDt = 1.0 / gp.DecayTau
 }
 
-func (gp *GABABParams) ShouldShow(field string) bool {
+func (gp *GABABParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

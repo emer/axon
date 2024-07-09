@@ -45,7 +45,7 @@ func (ka *KNaParams) Update() {
 	ka.Dt = 1 / ka.Tau
 }
 
-func (ka *KNaParams) ShouldShow(field string) bool {
+func (ka *KNaParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -104,7 +104,7 @@ func (ka *KNaMedSlow) Update() {
 	ka.Slow.Update()
 }
 
-func (ka *KNaMedSlow) ShouldShow(field string) bool {
+func (ka *KNaMedSlow) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true

@@ -88,7 +88,7 @@ func (sk *SpikeParams) Update() {
 	sk.RDt = 1 / sk.RTau
 }
 
-func (sk *SpikeParams) ShouldShow(field string) bool {
+func (sk *SpikeParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "ExpSlope", "ExpThr":
 		return sk.Exp.IsTrue()
@@ -168,7 +168,7 @@ func (dp *DendParams) Defaults() {
 func (dp *DendParams) Update() {
 }
 
-func (dp *DendParams) ShouldShow(field string) bool {
+func (dp *DendParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "ModGain", "ModACh", "ModBase":
 		return dp.HasMod.IsTrue()
@@ -451,7 +451,7 @@ func (an *SpikeNoiseParams) Defaults() {
 	an.Update()
 }
 
-func (an *SpikeNoiseParams) ShouldShow(field string) bool {
+func (an *SpikeNoiseParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -552,7 +552,7 @@ func (sm *SMaintParams) Defaults() {
 func (sm *SMaintParams) Update() {
 }
 
-func (sm *SMaintParams) ShouldShow(field string) bool {
+func (sm *SMaintParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -621,7 +621,7 @@ func (pc *PopCodeParams) Defaults() {
 func (pc *PopCodeParams) Update() {
 }
 
-func (pc *PopCodeParams) ShouldShow(field string) bool {
+func (pc *PopCodeParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true

@@ -165,7 +165,7 @@ func (pj *PathParams) Update() {
 	}
 }
 
-func (pj *PathParams) ShouldShow(field string) bool {
+func (pj *PathParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "RLPred":
 		return pj.PathType == RWPath || pj.PathType == TDPredPath

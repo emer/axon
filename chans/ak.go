@@ -47,7 +47,7 @@ func (ap *AKParams) Defaults() {
 func (ap *AKParams) Update() {
 }
 
-func (ap *AKParams) ShouldShow(field string) bool {
+func (ap *AKParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true
@@ -178,7 +178,7 @@ func (ap *AKsParams) Defaults() {
 func (ap *AKsParams) Update() {
 }
 
-func (ap *AKsParams) ShouldShow(field string) bool {
+func (ap *AKsParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

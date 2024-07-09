@@ -145,7 +145,7 @@ func (ta *TrgAvgActParams) Defaults() {
 	ta.Update()
 }
 
-func (ta *TrgAvgActParams) ShouldShow(field string) bool {
+func (ta *TrgAvgActParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "RescaleOn", "GiBaseInit":
 		return true
@@ -206,7 +206,7 @@ func (rl *RLRateParams) Defaults() {
 	rl.Update()
 }
 
-func (rl *RLRateParams) ShouldShow(field string) bool {
+func (rl *RLRateParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -471,7 +471,7 @@ func (sp *SWtAdaptParams) Defaults() {
 func (sp *SWtAdaptParams) Update() {
 }
 
-func (sp *SWtAdaptParams) ShouldShow(field string) bool {
+func (sp *SWtAdaptParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -728,7 +728,7 @@ func (lr *LRateMod) Defaults() {
 func (lr *LRateMod) Update() {
 }
 
-func (lr *LRateMod) ShouldShow(field string) bool {
+func (lr *LRateMod) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -796,7 +796,7 @@ func (hp *HebbParams) Defaults() {
 func (hp *HebbParams) Update() {
 }
 
-func (hp *HebbParams) ShouldShow(field string) bool {
+func (hp *HebbParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true
@@ -844,7 +844,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Hebb.Defaults()
 }
 
-func (ls *LearnSynParams) ShouldShow(field string) bool {
+func (ls *LearnSynParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Learn":
 		return true

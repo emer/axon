@@ -57,7 +57,7 @@ func (aa *ActAvgParams) Defaults() {
 	aa.Update()
 }
 
-func (aa *ActAvgParams) ShouldShow(field string) bool {
+func (aa *ActAvgParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Nominal", "AdaptGi":
 		return true
@@ -140,7 +140,7 @@ func (ti *TopoInhibParams) Update() {
 	ti.WidthWt = math32.FastExp(-0.5 * float32(ti.Width) / ssq)
 }
 
-func (ti *TopoInhibParams) ShouldShow(field string) bool {
+func (ti *TopoInhibParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true

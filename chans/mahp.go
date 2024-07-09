@@ -52,7 +52,7 @@ func (mp *MahpParams) Update() {
 	mp.DtMax = 1.0 / mp.TauMax
 }
 
-func (mp *MahpParams) ShouldShow(field string) bool {
+func (mp *MahpParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

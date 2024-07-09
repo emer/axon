@@ -232,7 +232,7 @@ func (ly *LayerParams) Defaults() {
 	ly.TDDa.Defaults()
 }
 
-func (ly *LayerParams) ShouldShow(field string) bool {
+func (ly *LayerParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Bursts":
 		return ly.LayType == SuperLayer

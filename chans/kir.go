@@ -55,7 +55,7 @@ func (kp *KirParams) Update() {
 	kp.Mrest = kp.MinfRest()
 }
 
-func (kp *KirParams) ShouldShow(field string) bool {
+func (kp *KirParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

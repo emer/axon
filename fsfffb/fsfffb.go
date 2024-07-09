@@ -94,7 +94,7 @@ func (fb *GiParams) Defaults() {
 	fb.Update()
 }
 
-func (fb *GiParams) ShouldShow(field string) bool {
+func (fb *GiParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "On":
 		return true

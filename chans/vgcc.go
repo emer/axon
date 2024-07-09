@@ -33,7 +33,7 @@ func (np *VGCCParams) Defaults() {
 func (np *VGCCParams) Update() {
 }
 
-func (np *VGCCParams) ShouldShow(field string) bool {
+func (np *VGCCParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

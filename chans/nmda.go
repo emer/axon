@@ -55,7 +55,7 @@ func (np *NMDAParams) Update() {
 	np.MgFact = np.MgC / 3.57
 }
 
-func (np *NMDAParams) ShouldShow(field string) bool {
+func (np *NMDAParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Gbar":
 		return true

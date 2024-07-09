@@ -22,7 +22,7 @@ type EnvConfig struct {
 	NBlocks int
 }
 
-func (ec *EnvConfig) ShouldShow(field string) bool {
+func (ec *EnvConfig) ShouldDisplay(field string) bool {
 	switch field {
 	case "NBlocks":
 		return ec.SetNBlocks
