@@ -966,8 +966,8 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 			dn.SetFloat("USin", int(i), float64(us))
 			dn.SetFloat("OFC", int(i), float64(ofc))
 		}
-		ss.EnvGUI.USposPlot.GoUpdatePlot()
-		ss.EnvGUI.USnegPlot.GoUpdatePlot()
+		ss.EnvGUI.USposPlot.Async(ss.EnvGUI.USposPlot.UpdatePlot)
+		ss.EnvGUI.USnegPlot.Async(ss.EnvGUI.USnegPlot.UpdatePlot)
 	/
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }

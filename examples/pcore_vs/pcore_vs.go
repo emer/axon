@@ -649,7 +649,7 @@ func (ss *Sim) TestStats() {
 		plt.SetColParams("Gated", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		plt.SetColParams("Should", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		plt.SetColParams("Match", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-		plt.GoUpdatePlot()
+		plt.Async(plt.UpdatePlot)
 	}
 }
 

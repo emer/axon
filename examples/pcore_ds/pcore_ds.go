@@ -818,7 +818,7 @@ func (ss *Sim) TestStats() {
 		plt.SetColParams("NCorrect", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		plt.SetColParams("Rew", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		plt.SetColParams("RPE", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-		plt.GoUpdatePlot()
+		plt.Async(plt.UpdatePlot)
 	}
 }
 

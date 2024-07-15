@@ -689,7 +689,7 @@ func (ss *Sim) BlockStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
 		plt.SetTable(dt)
-		plt.GoUpdatePlot()
+		plt.Async(plt.UpdatePlot)
 	}
 }
 
