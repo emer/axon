@@ -170,15 +170,15 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "NMDA V-G Function Plot"
-	plt.Params.XAxisColumn = "V"
+	plt.Options.Title = "NMDA V-G Function Plot"
+	plt.Options.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Gnmda", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Gnmda_std", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Gnmda_bug", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Ca", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Gnmda", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Gnmda_std", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Gnmda_bug", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Ca", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -224,13 +224,13 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisColumn = "Time"
+	plt.Options.Title = "Time Function Plot"
+	plt.Options.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Gnmda", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("NMDA", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Gnmda", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("NMDA", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 

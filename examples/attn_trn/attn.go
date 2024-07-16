@@ -852,21 +852,21 @@ func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigTstTrlPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Attn Test Trial Plot"
-	plt.Params.XAxisColumn = "Trial"
+	plt.Options.Title = "Attn Test Trial Plot"
+	plt.Options.XAxisColumn = "Trial"
 	plt.SetTable(dt)
-	plt.Params.Points = true
+	plt.Options.Points = true
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Run", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Trial", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("TrialName", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Cycle", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 220)
-	plt.SetColParams("S1Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("S2Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("PctMod", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("Run", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Trial", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("TrialName", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Cycle", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 220)
+	plt.SetColumnOptions("S1Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("S2Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("PctMod", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 
 	for _, lnm := range ss.TstRecLays {
-		cp := plt.SetColParams(lnm, plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
+		cp := plt.SetColumnOptions(lnm, plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		cp.TensorIndex = -1 // plot all
 	}
 	return plt
@@ -900,16 +900,16 @@ func (ss *Sim) ConfigTstRunLog(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigTstRunPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Attn Test Run Plot"
-	plt.Params.XAxisColumn = "Trial"
+	plt.Options.Title = "Attn Test Run Plot"
+	plt.Options.XAxisColumn = "Trial"
 	plt.SetTable(dt)
-	plt.Params.Points = true
+	plt.Options.Points = true
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Trial", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("TrialName", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("S1Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("S2Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("PctMod", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("Trial", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("TrialName", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("S1Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("S2Act", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("PctMod", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 

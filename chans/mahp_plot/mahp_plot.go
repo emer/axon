@@ -130,13 +130,13 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "mAHP V Function Plot"
-	plt.Params.XAxisColumn = "V"
+	plt.Options.Title = "mAHP V Function Plot"
+	plt.Options.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Ninf", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("Tau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
+	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Ninf", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("Tau", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 1)
 	return plt
 }
 
@@ -212,17 +212,17 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisColumn = "Time"
+	plt.Options.Title = "Time Function Plot"
+	plt.Options.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GmAHP", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("N", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Ninf", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Tau", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Kna", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
+	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GmAHP", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("N", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Ninf", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Tau", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Kna", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
 	return plt
 }
 

@@ -519,8 +519,8 @@ func (ss *Sim) ConfigGUI() {
 	tstst := ss.Logs.MiscTable(tststnm)
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
-	plt.Params.Title = tststnm
-	plt.Params.XAxisColumn = "Trial"
+	plt.Options.Title = tststnm
+	plt.Options.XAxisColumn = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {

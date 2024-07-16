@@ -27,11 +27,11 @@ import (
 // The Base does not have algorithm-specific methods and parameters, so it can be easily
 // reused for different algorithms, and cleanly separates the algorithm-specific code.
 // Any dependency on the algorithm-level Path can be captured in the AxonPath interface,
-// accessed via the AxonPrj field.
+// accessed via the AxonPth field.
 type PathBase struct {
 
 	// we need a pointer to ourselves as an AxonPath, which can always be used to extract the true underlying type of object when path is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonPrj AxonPath `copier:"-" json:"-" xml:"-" display:"-"`
+	AxonPth AxonPath `copier:"-" json:"-" xml:"-" display:"-"`
 
 	// inactivate this pathway -- allows for easy experimentation
 	Off bool
@@ -49,7 +49,7 @@ type PathBase struct {
 	Recv *Layer
 
 	// pattern of connectivity
-	Pat paths.Pattern `tabledisplay:"-"`
+	Pat paths.Pattern `table:"-"`
 
 	// type of pathway:  Forward, Back, Lateral, or extended type in specialized algorithms.
 	// Matches against .Cls parameter styles (e.g., .Back etc)
@@ -60,16 +60,16 @@ type PathBase struct {
 	// (e.g., Rubicon, BG etc) not associated with a path type, which otherwise
 	// is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
-	DefParams params.Params `tabledisplay:"-"`
+	DefParams params.Params `table:"-"`
 
 	// provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `tabledisplay:"-"`
+	ParamsHistory params.HistoryImpl `table:"-"`
 
 	// average and maximum number of recv connections in the receiving layer
-	RecvConNAvgMax minmax.AvgMax32 `tabledisplay:"-" edit:"-" display:"inline"`
+	RecvConNAvgMax minmax.AvgMax32 `table:"-" edit:"-" display:"inline"`
 
 	// average and maximum number of sending connections in the sending layer
-	SendConNAvgMax minmax.AvgMax32 `tabledisplay:"-" edit:"-" display:"inline"`
+	SendConNAvgMax minmax.AvgMax32 `table:"-" edit:"-" display:"inline"`
 
 	// start index into global Synapse array:
 	SynStIndex uint32 `display:"-"`
@@ -104,7 +104,7 @@ type PathBase struct {
 // Init MUST be called to initialize the path's pointer to itself as an emer.Path
 // which enables the proper interface methods to be called.
 func (pj *PathBase) Init(path emer.Path) {
-	pj.AxonPrj = path.(AxonPath)
+	pj.AxonPth = path.(AxonPath)
 }
 
 func (pj *PathBase) TypeName() string { return "Path" } // always, for params..
@@ -116,8 +116,8 @@ func (pj *Path) AddClass(cls ...string) emer.Path {
 	pj.Cls = params.AddClass(pj.Cls, cls...)
 	return pj
 }
-func (pj *PathBase) SetPattern(pat paths.Pattern) emer.Path { pj.Pat = pat; return pj.AxonPrj }
-func (pj *PathBase) SetType(typ emer.PathType) emer.Path    { pj.Typ = PathTypes(typ); return pj.AxonPrj }
+func (pj *PathBase) SetPattern(pat paths.Pattern) emer.Path { pj.Pat = pat; return pj.AxonPth }
+func (pj *PathBase) SetType(typ emer.PathType) emer.Path    { pj.Typ = PathTypes(typ); return pj.AxonPth }
 func (pj *PathBase) Label() string                          { return pj.Name() }
 func (pj *PathBase) RecvLay() emer.Layer                    { return pj.Recv }
 func (pj *PathBase) SendLay() emer.Layer                    { return pj.Send }
@@ -284,11 +284,11 @@ func (pj *PathBase) ParamsApplied(sel *params.Sel) {
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
 func (pj *PathBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	app, err := pars.Apply(pj.AxonPrj, setMsg)
-	// note: must use AxonPrj to get to actual Path, which then uses Styler interface
+	app, err := pars.Apply(pj.AxonPth, setMsg)
+	// note: must use AxonPth to get to actual Path, which then uses Styler interface
 	// to return the Params struct.
 	if app {
-		pj.AxonPrj.UpdateParams()
+		pj.AxonPth.UpdateParams()
 	}
 	return app, err
 }
@@ -299,7 +299,7 @@ func (pj *PathBase) ApplyDefParams() {
 	if pj.DefParams == nil {
 		return
 	}
-	err := pj.DefParams.Apply(pj.AxonPrj, false)
+	err := pj.DefParams.Apply(pj.AxonPth, false)
 	if err != nil {
 		log.Printf("programmer error -- fix DefParams: %s\n", err)
 	}
@@ -310,7 +310,7 @@ func (pj *PathBase) ApplyDefParams() {
 func (pj *PathBase) NonDefaultParams() string {
 	pth := pj.Recv.Name() + "." + pj.Name() // redundant but clearer..
 	_ = pth
-	// nds := views.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
+	// nds := views.StructNonDefFieldsStr(pj.AxonPth.AsAxon().Params, pth)
 	// todo: see layerbase for new impl
 	return "todo need to do"
 }
@@ -416,7 +416,7 @@ func (pj *PathBase) SynVal1D(varIndex int, synIndex int) float32 {
 // into given float32 slice (only resized if not big enough).
 // Returns error on invalid var name.
 func (pj *PathBase) SynValues(vals *[]float32, varNm string) error {
-	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
+	vidx, err := pj.AxonPth.SynVarIndex(varNm)
 	if err != nil {
 		return err
 	}
@@ -431,7 +431,7 @@ func (pj *PathBase) SynValues(vals *[]float32, varNm string) error {
 	for lni := uint32(0); lni < slay.NNeurons; lni++ {
 		scon := pj.SendCon[lni]
 		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-			(*vals)[i] = pj.AxonPrj.SynVal1D(vidx, i)
+			(*vals)[i] = pj.AxonPth.SynVal1D(vidx, i)
 			i++
 		}
 	}
@@ -442,12 +442,12 @@ func (pj *PathBase) SynValues(vals *[]float32, varNm string) error {
 // between given send, recv unit indexes (1D, flat indexes).
 // Returns math32.NaN() for access errors (see SynValTry for error message)
 func (pj *PathBase) SynValue(varNm string, sidx, ridx int) float32 {
-	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
+	vidx, err := pj.AxonPth.SynVarIndex(varNm)
 	if err != nil {
 		return math32.NaN()
 	}
 	syi := pj.SynIndex(sidx, ridx)
-	return pj.AxonPrj.SynVal1D(vidx, syi)
+	return pj.AxonPth.SynVal1D(vidx, syi)
 }
 
 // SynVal1DDi returns value of given variable index (from SynVarIndex) on given SynIndex.
@@ -475,7 +475,7 @@ func (pj *PathBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 // Returns math32.NaN() for access errors (see SynValTry for error message)
 // Includes Di data parallel index for data-parallel synaptic values.
 func (pj *PathBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
-	vidx, err := pj.AxonPrj.SynVarIndex(varNm)
+	vidx, err := pj.AxonPth.SynVarIndex(varNm)
 	if err != nil {
 		return math32.NaN()
 	}

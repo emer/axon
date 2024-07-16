@@ -1352,16 +1352,16 @@ func (ss *Sim) ConfigGUI() {
 	dt := ss.Logs.MiscTable(lgnm)
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
-	plt.Params.Title = lgnm
-	plt.Params.XAxisColumn = "BadCSGate"
+	plt.Options.Title = lgnm
+	plt.Options.XAxisColumn = "BadCSGate"
 	plt.SetTable(dt)
 
 	lgnm = "EpochUSBadStats"
 	dt = ss.Logs.MiscTable(lgnm)
 	plt = plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
-	plt.Params.Title = lgnm
-	plt.Params.XAxisColumn = "BadUSGate"
+	plt.Options.Title = lgnm
+	plt.Options.XAxisColumn = "BadUSGate"
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {

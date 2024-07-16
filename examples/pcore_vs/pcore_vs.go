@@ -645,11 +645,11 @@ func (ss *Sim) TestStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
 		plt.SetTable(tstst)
-		plt.Params.XAxisColumn = "Sequence"
-		plt.SetColParams("Gated", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-		plt.SetColParams("Should", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-		plt.SetColParams("Match", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-		plt.Async(plt.UpdatePlot)
+		plt.Options.XAxisColumn = "Sequence"
+		plt.SetColumnOptions("Gated", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+		plt.SetColumnOptions("Should", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+		plt.SetColumnOptions("Match", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+		plt.GoUpdatePlot()
 	}
 }
 
@@ -679,8 +679,8 @@ func (ss *Sim) ConfigGUI() {
 	tstst := ss.Logs.MiscTable(tststnm)
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
-	plt.Params.Title = tststnm
-	plt.Params.XAxisColumn = "Trial"
+	plt.Options.Title = tststnm
+	plt.Options.XAxisColumn = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {

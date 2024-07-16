@@ -1654,21 +1654,21 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, nt)
 
     def ConfigTrnTrlPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Train Trial Plot"
-        plt.Params.XAxisCol = "Trial"
+        plt.Options.Title = "Hippocampus Train Trial Plot"
+        plt.Options.XAxisCol = "Trial"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 
-        plt.SetColParams("Mem", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("TrgOnWasOff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("TrgOffWasOn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Mem", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("TrgOnWasOff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("TrgOffWasOn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 
         return plt
 
@@ -1751,30 +1751,30 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, 0)
 
     def ConfigTrnEpcPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Epoch Plot"
-        plt.Params.XAxisCol = "Epoch"
+        plt.Options.Title = "Hippocampus Epoch Plot"
+        plt.Options.XAxisCol = "Epoch"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 
-        plt.SetColParams(
+        plt.SetColumnOptions(
             "Mem", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
         )  # default plot
-        plt.SetColParams(
+        plt.SetColumnOptions(
             "TrgOnWasOff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
         )  # default plot
-        plt.SetColParams(
+        plt.SetColumnOptions(
             "TrgOffWasOn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
         )  # default plot
 
         for lnm in ss.LayStatNms:
-            plt.SetColParams(
+            plt.SetColumnOptions(
                 lnm + " ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
         return plt
@@ -1856,31 +1856,31 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, nt)
 
     def ConfigTstTrlPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Test Trial Plot"
-        plt.Params.XAxisCol = "TrialName"
-        plt.Params.Type = eplot.Bar
+        plt.Options.Title = "Hippocampus Test Trial Plot"
+        plt.Options.XAxisCol = "TrialName"
+        plt.Options.Type = eplot.Bar
         plt.SetTable(dt)  # this sets defaults so set params after
-        plt.Params.XAxisRot = 45
+        plt.Options.XAxisRot = 45
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("TestNm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("TestNm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 
-        plt.SetColParams("Mem", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("TrgOnWasOff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("TrgOffWasOn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Mem", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("TrgOnWasOff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("TrgOffWasOn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 
         for lnm in ss.LayStatNms:
-            plt.SetColParams(
+            plt.SetColumnOptions(
                 lnm + " ActM.Avg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
         for lnm in ss.LayStatNms:
-            plt.SetColParams(lnm + " Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+            plt.SetColumnOptions(lnm + " Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 
         return plt
 
@@ -2030,32 +2030,32 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, 0)
 
     def ConfigTstEpcPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Testing Epoch Plot"
-        plt.Params.XAxisCol = "Epoch"
+        plt.Options.Title = "Hippocampus Testing Epoch Plot"
+        plt.Options.XAxisCol = "Epoch"
         plt.SetTable(dt)  # this sets defaults so set params after
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 
         for tn in ss.TstNms:
             for ts in ss.TstStatNms:
                 if ts == "Mem":
-                    plt.SetColParams(
+                    plt.SetColumnOptions(
                         tn + " " + ts, eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
                     )
                 else:
-                    plt.SetColParams(
+                    plt.SetColumnOptions(
                         tn + " " + ts, eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1
                     )
         for lnm in ss.LayStatNms:
             for ts in ss.SimMatStats:
-                plt.SetColParams(
+                plt.SetColumnOptions(
                     lnm + " " + ts, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1
                 )
         return plt
@@ -2093,16 +2093,16 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, np)
 
     def ConfigTstCycPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Test Cycle Plot"
-        plt.Params.XAxisCol = "Cycle"
+        plt.Options.Title = "Hippocampus Test Cycle Plot"
+        plt.Options.XAxisCol = "Cycle"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
         for lnm in ss.LayStatNms:
-            plt.SetColParams(
+            plt.SetColumnOptions(
                 lnm + " Ge.Avg", eplot.On, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
-            plt.SetColParams(
+            plt.SetColumnOptions(
                 lnm + " Act.Avg", eplot.On, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
         return plt
@@ -2193,32 +2193,32 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, 0)
 
     def ConfigRunPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Run Plot"
-        plt.Params.XAxisCol = "Run"
+        plt.Options.Title = "Hippocampus Run Plot"
+        plt.Options.XAxisCol = "Run"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("NEpochs", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("FirstZero", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("NEpochs", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("FirstZero", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 
         for tn in ss.TstNms:
             for ts in ss.TstStatNms:
                 if ts == "Mem":
-                    plt.SetColParams(
+                    plt.SetColumnOptions(
                         tn + " " + ts, eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
                     )  # default plot
                 else:
-                    plt.SetColParams(
+                    plt.SetColumnOptions(
                         tn + " " + ts, eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1
                     )
         for lnm in ss.LayStatNms:
             for ts in ss.SimMatStats:
-                plt.SetColParams(
+                plt.SetColumnOptions(
                     lnm + " " + ts, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1
                 )
         return plt
@@ -2243,22 +2243,22 @@ class Sim(pyviews.ClassViewObj):
             ss.ConfigRunStatsPlot(ss.RunStatsPlot, ss.RunStats)
 
     def ConfigRunStatsPlot(ss, plt, dt):
-        plt.Params.Title = "Hippocampus Run Stats Plot"
-        plt.Params.XAxisCol = "Params"
+        plt.Options.Title = "Hippocampus Run Stats Plot"
+        plt.Options.XAxisCol = "Params"
         plt.SetTable(dt)
-        plt.Params.BarWidth = 10
-        plt.Params.Type = eplot.Bar
-        plt.Params.XAxisRot = 45
+        plt.Options.BarWidth = 10
+        plt.Options.Type = eplot.Bar
+        plt.Options.XAxisRot = 45
 
-        cp = plt.SetColParams("AB Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        cp = plt.SetColumnOptions("AB Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
         cp.ErrCol = "AB Mem:Sem"
-        cp = plt.SetColParams("AC Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        cp = plt.SetColumnOptions("AC Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
         cp.ErrCol = "AC Mem:Sem"
-        cp = plt.SetColParams(
+        cp = plt.SetColumnOptions(
             "FirstZero:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 30
         )
         cp.ErrCol = "FirstZero:Sem"
-        cp = plt.SetColParams(
+        cp = plt.SetColumnOptions(
             "NEpochs:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 30
         )
         cp.ErrCol = "NEpochs:Sem"

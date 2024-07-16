@@ -172,13 +172,13 @@ func (ss *Sim) ConfigVGTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigVGPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "V-G Function Plot"
-	plt.Params.XAxisColumn = "V"
+	plt.Options.Title = "V-G Function Plot"
+	plt.Options.XAxisColumn = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GgabaB", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GgabaB_std", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GgabaB", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GgabaB_std", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -219,13 +219,13 @@ func (ss *Sim) ConfigSGTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigSGPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "S-G Function Plot"
-	plt.Params.XAxisColumn = "S"
+	plt.Options.Title = "S-G Function Plot"
+	plt.Options.XAxisColumn = "S"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("S", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GgabaB_max", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GgabaBstd_max", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("S", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GgabaB_max", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GgabaBstd_max", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 
@@ -287,15 +287,15 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "G Time Function Plot"
-	plt.Params.XAxisColumn = "Time"
+	plt.Options.Title = "G Time Function Plot"
+	plt.Options.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Gs", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GsX", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GABAB", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("GABABx", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Gs", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GsX", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GABAB", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("GABABx", plotcore.On, plotcore.FixMin, 0, plotcore.FloatMax, 0)
 	return plt
 }
 

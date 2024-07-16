@@ -138,12 +138,12 @@ func (ss *DrEffPlot) ConfigTable(dt *table.Table) {
 }
 
 func (ss *DrEffPlot) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Effort Discount or Urgency Function Plot"
-	plt.Params.XAxisColumn = "X"
+	plt.Options.Title = "Effort Discount or Urgency Function Plot"
+	plt.Options.XAxisColumn = "X"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("X", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Y", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("X", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Y", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 
@@ -205,16 +205,16 @@ func (ss *DrEffPlot) ConfigTimeTable(dt *table.Table) {
 }
 
 func (ss *DrEffPlot) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Effort / Drive over Time Plot"
-	plt.Params.XAxisColumn = "T"
+	plt.Options.Title = "Effort / Drive over Time Plot"
+	plt.Options.XAxisColumn = "T"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("T", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Eff", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("EffInc", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, ss.Effort.Max)
-	plt.SetColParams("Urge", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("US", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("Drive", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("T", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Eff", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("EffInc", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, ss.Effort.Max)
+	plt.SetColumnOptions("Urge", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("US", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("Drive", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 

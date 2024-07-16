@@ -121,13 +121,13 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "SKCa Ca-G Function Plot"
-	plt.Params.XAxisColumn = "Ca"
+	plt.Options.Title = "SKCa Ca-G Function Plot"
+	plt.Options.XAxisColumn = "Ca"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Ca", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Mhill", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("Mgw06", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
+	plt.SetColumnOptions("Ca", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Mhill", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("Mgw06", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 1)
 	return plt
 }
 
@@ -197,18 +197,18 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 }
 
 func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
-	plt.Params.Title = "Time Function Plot"
-	plt.Params.XAxisColumn = "Time"
+	plt.Options.Title = "Time Function Plot"
+	plt.Options.XAxisColumn = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
-	plt.SetColParams("Spike", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("CaM", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("CaP", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("CaD", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("CaIn", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("CaR", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
-	plt.SetColParams("M", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
+	plt.SetColumnOptions("Spike", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("CaM", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("CaP", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("CaD", plotcore.Off, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("CaIn", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("CaR", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
+	plt.SetColumnOptions("M", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 	return plt
 }
 

@@ -51,10 +51,10 @@ type LayerBase struct {
 	Typ LayerTypes
 
 	// Spatial relationship to other layer, determines positioning
-	Rel relpos.Rel `tabledisplay:"-" display:"inline"`
+	Rel relpos.Rel `table:"-" display:"inline"`
 
 	// position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis.
-	Ps math32.Vector3 `tabledisplay:"-"`
+	Ps math32.Vector3 `table:"-"`
 
 	// a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers.
 	Idx int `display:"-" inactive:"-"`
@@ -93,13 +93,13 @@ type LayerBase struct {
 	Exts []float32 `display:"-"`
 
 	// configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,
-	BuildConfig map[string]string `tabledisplay:"-"`
+	BuildConfig map[string]string `table:"-"`
 
 	// default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., Rubicon, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map.
-	DefParams params.Params `tabledisplay:"-"`
+	DefParams params.Params `table:"-"`
 
 	// provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `tabledisplay:"-"`
+	ParamsHistory params.HistoryImpl `table:"-"`
 }
 
 // emer.Layer interface methods

@@ -1051,21 +1051,21 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, 0)
 
     def ConfigTrnEpcPlot(ss, plt, dt):
-        plt.Params.Title = "Leabra Random Associator 25 Epoch Plot"
-        plt.Params.XAxisCol = "Epoch"
+        plt.Options.Title = "Leabra Random Associator 25 Epoch Plot"
+        plt.Options.XAxisCol = "Epoch"
         plt.SetTable(dt)
 
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("PctErr", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("PctCor", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("PctErr", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("PctCor", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
         for lnm in ss.LayStatNms:
-            plt.SetColParams(
+            plt.SetColumnOptions(
                 lnm + "_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
         return plt
@@ -1142,27 +1142,27 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, nt)
 
     def ConfigTstTrlPlot(ss, plt, dt):
-        plt.Params.Title = "Leabra Random Associator 25 Test Trial Plot"
-        plt.Params.XAxisCol = "Trial"
+        plt.Options.Title = "Leabra Random Associator 25 Test Trial Plot"
+        plt.Options.XAxisCol = "Trial"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Err", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("CosDiff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Err", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("CosDiff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 
         for lnm in ss.LayStatNms:
-            plt.SetColParams(
+            plt.SetColumnOptions(
                 lnm + " ActM.Avg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
 
-        plt.SetColParams("InAct", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("OutActM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("OutActP", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("InAct", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("OutActM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("OutActP", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
         return plt
 
     def LogTstEpc(ss, dt):
@@ -1221,21 +1221,21 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, 0)
 
     def ConfigTstEpcPlot(ss, plt, dt):
-        plt.Params.Title = "Leabra Random Associator 25 Testing Epoch Plot"
-        plt.Params.XAxisCol = "Epoch"
+        plt.Options.Title = "Leabra Random Associator 25 Testing Epoch Plot"
+        plt.Options.XAxisCol = "Epoch"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams(
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions(
             "PctErr", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
         )  # default plot
-        plt.SetColParams(
+        plt.SetColumnOptions(
             "PctCor", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
         )  # default plot
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
         return plt
 
     def LogTstCyc(ss, dt, cyc):
@@ -1270,14 +1270,14 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, np)
 
     def ConfigTstCycPlot(ss, plt, dt):
-        plt.Params.Title = "Leabra Random Associator 25 Test Cycle Plot"
-        plt.Params.XAxisCol = "Cycle"
+        plt.Options.Title = "Leabra Random Associator 25 Test Cycle Plot"
+        plt.Options.XAxisCol = "Cycle"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
         for lnm in ss.LayStatNms:
-            plt.SetColParams(lnm + " Ge.Avg", True, True, 0, True, 0.5)
-            plt.SetColParams(lnm + " Act.Avg", True, True, 0, True, 0.5)
+            plt.SetColumnOptions(lnm + " Ge.Avg", True, True, 0, True, 0.5)
+            plt.SetColumnOptions(lnm + " Act.Avg", True, True, 0, True, 0.5)
         return plt
 
     def LogRun(ss, dt):
@@ -1345,19 +1345,19 @@ class Sim(pyviews.ClassViewObj):
         dt.SetFromSchema(sch, 0)
 
     def ConfigRunPlot(ss, plt, dt):
-        plt.Params.Title = "Leabra Random Associator 25 Run Plot"
-        plt.Params.XAxisCol = "Run"
+        plt.Options.Title = "Leabra Random Associator 25 Run Plot"
+        plt.Options.XAxisCol = "Run"
         plt.SetTable(dt)
         # order of params: on, fixMin, min, fixMax, max
-        plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams(
+        plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions(
             "FirstZero", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0
         )  # default plot
-        plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColParams("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+        plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
         return plt
 
     def ConfigGUI(ss):
