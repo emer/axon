@@ -728,14 +728,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
 		tree.Add(p, func(w *core.Chooser) {
 			w.SetStrings(cond.RunNames...)
-			ri := 0
-			for i, rn := range cond.RunNames {
-				if rn == ss.Config.Env.RunName {
-					ri = i
-					break
-				}
-			}
-			w.SelectItem(ri)
+			w.SetCurrentValue(ss.Config.Env.RunName)
 			w.OnChange(func(e events.Event) {
 				ss.Config.Env.RunName = w.CurrentItem.Value.(string)
 				ss.InitEnvRun()

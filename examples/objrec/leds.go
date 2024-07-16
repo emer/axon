@@ -63,8 +63,8 @@ func (ld *LEDraw) Init() {
 	}
 	ld.Paint = paint.NewContextFromImage(ld.Image)
 	ld.Paint.StrokeStyle.Width.Pw(ld.Width)
-	ld.Paint.StrokeStyle.Color = colors.C(ld.LineColor)
-	ld.Paint.FillStyle.Color = colors.C(ld.BgColor)
+	ld.Paint.StrokeStyle.Color = colors.Uniform(ld.LineColor)
+	ld.Paint.FillStyle.Color = colors.Uniform(ld.BgColor)
 	ld.Paint.SetUnitContextExt(ld.ImgSize)
 }
 

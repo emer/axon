@@ -476,7 +476,7 @@ func (vw *GUI) ConfigEmery(par *physics.Group, length float32) *physics.Group {
 
 // ConfigView3D makes the 3D view
 func (vw *GUI) ConfigView3D(se *xyz.Scene) {
-	se.BackgroundColor = colors.FromRGB(230, 230, 255) // sky blue-ish
+	se.Background = colors.Uniform(colors.FromRGB(230, 230, 255)) // sky blue-ish
 	xyz.NewAmbientLight(se, "ambient", 0.3, xyz.DirectSun)
 
 	dir := xyz.NewDirLight(se, "dir", 1, xyz.DirectSun)
@@ -501,10 +501,10 @@ func (vw *GUI) ConfigUSPlots() {
 	dp.SetNumRows(vw.Env.Config.NDrives + 1)
 
 	vw.USposData = dp
-	vw.USposPlot.Params.Type = plotcore.Bar
-	vw.USposPlot.Params.Title = "Positive USs"
-	vw.USposPlot.Params.Scale = 1
-	vw.USposPlot.Params.XAxisColumn = "US"
+	vw.USposPlot.Options.Type = plotcore.Bar
+	vw.USposPlot.Options.Title = "Positive USs"
+	vw.USposPlot.Options.Scale = 1
+	vw.USposPlot.Options.XAxisColumn = "US"
 
 	dn := table.NewTable()
 	dn.AddStringColumn("US")
@@ -513,10 +513,10 @@ func (vw *GUI) ConfigUSPlots() {
 	dn.SetNumRows(vw.Env.Config.NNegUSs + 2)
 
 	vw.USnegData = dn
-	vw.USnegPlot.Params.Type = plotcore.Bar
-	vw.USnegPlot.Params.Title = "Negative USs"
-	vw.USnegPlot.Params.Scale = 1
-	vw.USnegPlot.Params.XAxisColumn = "US"
+	vw.USnegPlot.Options.Type = plotcore.Bar
+	vw.USnegPlot.Options.Title = "Negative USs"
+	vw.USnegPlot.Options.Scale = 1
+	vw.USnegPlot.Options.XAxisColumn = "US"
 
 	cols := []string{"Drive", "USin", "OFC"}
 	for i, cl := range cols {
@@ -575,7 +575,7 @@ func (vw *GUI) GrabEyeImg() {
 func (vw *GUI) ViewDepth(depth []float32) {
 	cmap := colormap.AvailableMaps[string(vw.DepthMap)]
 	vw.DepthImage.Image = image.NewRGBA(image.Rectangle{Max: vw.Camera.Size})
-	world.DepthImage(vw.DepthImage.Image, depth, cmap, &vw.Camera)
+	world.DepthImage(vw.DepthImage.Image.(*image.RGBA), depth, cmap, &vw.Camera)
 }
 
 func (vw *GUI) ConfigWorldView(tg *tensorcore.TensorGrid) {
