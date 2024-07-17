@@ -694,11 +694,11 @@ func (nt *Network) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(nt.SaveWtsJSON).
 			SetText("Save Weights").SetIcon(icons.Save)
-		w.Args[0].SetTag(`"ext:".wts,.wts.gz"`)
+		w.Args[0].SetTag(`extension:".wts,.wts.gz"`)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
-		w.Args[0].SetTag(`"ext:".wts,.wts.gz"`)
+		w.Args[0].SetTag(`extension:".wts,.wts.gz"`)
 	})
 
 	tree.Add(p, func(w *core.Separator) {})
