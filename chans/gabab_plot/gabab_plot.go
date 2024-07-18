@@ -173,7 +173,7 @@ func (ss *Sim) ConfigVGTable(dt *table.Table) {
 
 func (ss *Sim) ConfigVGPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "V-G Function Plot"
-	plt.Options.XAxisColumn = "V"
+	plt.Options.XAxis = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("V", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
@@ -220,7 +220,7 @@ func (ss *Sim) ConfigSGTable(dt *table.Table) {
 
 func (ss *Sim) ConfigSGPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "S-G Function Plot"
-	plt.Options.XAxisColumn = "S"
+	plt.Options.XAxis = "S"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("S", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
@@ -288,7 +288,7 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 
 func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "G Time Function Plot"
-	plt.Options.XAxisColumn = "Time"
+	plt.Options.XAxis = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FixMin, 0, plotcore.FloatMax, 0)

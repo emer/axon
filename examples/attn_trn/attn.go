@@ -853,7 +853,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 
 func (ss *Sim) ConfigTstTrlPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "Attn Test Trial Plot"
-	plt.Options.XAxisColumn = "Trial"
+	plt.Options.XAxis = "Trial"
 	plt.SetTable(dt)
 	plt.Options.Points = true
 	// order of params: on, fixMin, min, fixMax, max
@@ -901,7 +901,7 @@ func (ss *Sim) ConfigTstRunLog(dt *table.Table) {
 
 func (ss *Sim) ConfigTstRunPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "Attn Test Run Plot"
-	plt.Options.XAxisColumn = "Trial"
+	plt.Options.XAxis = "Trial"
 	plt.SetTable(dt)
 	plt.Options.Points = true
 	// order of params: on, fixMin, min, fixMax, max

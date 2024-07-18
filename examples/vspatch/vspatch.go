@@ -660,7 +660,7 @@ func (ss *Sim) ConfigGUI() {
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Options.Title = stnm
-	plt.Options.XAxisColumn = "Cond"
+	plt.Options.XAxis = "Cond"
 	plt.Options.Type = plotcore.Bar
 	plt.SetTable(dt)
 

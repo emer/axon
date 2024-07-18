@@ -645,7 +645,7 @@ func (ss *Sim) TestStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
 		plt.SetTable(tstst)
-		plt.Options.XAxisColumn = "Sequence"
+		plt.Options.XAxis = "Sequence"
 		plt.SetColumnOptions("Gated", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		plt.SetColumnOptions("Should", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
 		plt.SetColumnOptions("Match", plotcore.On, plotcore.FixMin, 0, plotcore.FixMax, 1)
@@ -680,7 +680,7 @@ func (ss *Sim) ConfigGUI() {
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Options.Title = tststnm
-	plt.Options.XAxisColumn = "Trial"
+	plt.Options.XAxis = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {

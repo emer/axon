@@ -587,7 +587,7 @@ func LayerActsLogConfigMetaData(dt *table.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	dt.SetMetaData("Type", "Bar")
-	dt.SetMetaData("XAxisColumn", "Layer")
+	dt.SetMetaData("XAxis", "Layer")
 	dt.SetMetaData("XAxisRot", "45")
 	dt.SetMetaData("Nominal:On", "+")
 	dt.SetMetaData("Nominal:FixMin", "+")

@@ -520,7 +520,7 @@ func (ss *Sim) ConfigGUI() {
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Options.Title = tststnm
-	plt.Options.XAxisColumn = "Trial"
+	plt.Options.XAxis = "Trial"
 	plt.SetTable(tstst)
 
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {

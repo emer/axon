@@ -139,7 +139,7 @@ func (ss *DrEffPlot) ConfigTable(dt *table.Table) {
 
 func (ss *DrEffPlot) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "Effort Discount or Urgency Function Plot"
-	plt.Options.XAxisColumn = "X"
+	plt.Options.XAxis = "X"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("X", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
@@ -206,7 +206,7 @@ func (ss *DrEffPlot) ConfigTimeTable(dt *table.Table) {
 
 func (ss *DrEffPlot) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "Effort / Drive over Time Plot"
-	plt.Options.XAxisColumn = "T"
+	plt.Options.XAxis = "T"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("T", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)

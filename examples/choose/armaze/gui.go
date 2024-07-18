@@ -504,7 +504,7 @@ func (vw *GUI) ConfigUSPlots() {
 	vw.USposPlot.Options.Type = plotcore.Bar
 	vw.USposPlot.Options.Title = "Positive USs"
 	vw.USposPlot.Options.Scale = 1
-	vw.USposPlot.Options.XAxisColumn = "US"
+	vw.USposPlot.Options.XAxis = "US"
 
 	dn := table.NewTable()
 	dn.AddStringColumn("US")
@@ -516,7 +516,7 @@ func (vw *GUI) ConfigUSPlots() {
 	vw.USnegPlot.Options.Type = plotcore.Bar
 	vw.USnegPlot.Options.Title = "Negative USs"
 	vw.USnegPlot.Options.Scale = 1
-	vw.USnegPlot.Options.XAxisColumn = "US"
+	vw.USnegPlot.Options.XAxis = "US"
 
 	cols := []string{"Drive", "USin", "OFC"}
 	for i, cl := range cols {

@@ -153,8 +153,8 @@ func (cf *Configuration) Defaults() {
 	cf.FetchFiles = "*.tsv"
 	cf.Plot.Defaults()
 	cf.Filter.Defaults()
-	cf.Plot.XAxisColumn = "Epoch"
-	cf.Plot.LegendColumn = "JobLabel"
+	cf.Plot.XAxis = "Epoch"
+	cf.Plot.Legend = "JobLabel"
 	cf.TimeFormat = "2006-01-02 15:04:05 MST"
 }
 

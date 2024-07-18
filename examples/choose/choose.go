@@ -1353,7 +1353,7 @@ func (ss *Sim) ConfigGUI() {
 	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
 	plt.Options.Title = lgnm
-	plt.Options.XAxisColumn = "BadCSGate"
+	plt.Options.XAxis = "BadCSGate"
 	plt.SetTable(dt)
 
 	lgnm = "EpochUSBadStats"
@@ -1361,7 +1361,7 @@ func (ss *Sim) ConfigGUI() {
 	plt = plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
 	plt.Options.Title = lgnm
-	plt.Options.XAxisColumn = "BadUSGate"
+	plt.Options.XAxis = "BadUSGate"
 	plt.SetTable(dt)
 
 	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {

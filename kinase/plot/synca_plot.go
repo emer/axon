@@ -172,7 +172,7 @@ func (ss *Sim) ConfigTable(dt *table.Table) {
 
 func (ss *Sim) ConfigPlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "SynCa Exp Decay Plot"
-	plt.Options.XAxisColumn = "t"
+	plt.Options.XAxis = "t"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("t", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
@@ -231,7 +231,7 @@ func (ss *Sim) ConfigTimeTable(dt *table.Table) {
 
 func (ss *Sim) ConfigTimePlot(plt *plotcore.PlotEditor, dt *table.Table) *plotcore.PlotEditor {
 	plt.Options.Title = "Time Function Plot"
-	plt.Options.XAxisColumn = "Time"
+	plt.Options.XAxis = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColumnOptions("Time", plotcore.Off, plotcore.FloatMin, 0, plotcore.FloatMax, 0)
