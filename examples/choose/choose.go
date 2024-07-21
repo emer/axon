@@ -1173,7 +1173,7 @@ func (ss *Sim) EpochCSBadStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(lgnm)]
 		plt.SetTable(dt)
-		plt.Async(plt.UpdatePlot)
+		plt.GoUpdatePlot()
 	}
 }
 
@@ -1223,7 +1223,7 @@ func (ss *Sim) EpochUSBadStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(lgnm)]
 		plt.SetTable(dt)
-		plt.Async(plt.UpdatePlot)
+		plt.GoUpdatePlot()
 	}
 }
 
@@ -1320,8 +1320,8 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		dn.SetFloat("USin", int(i), float64(us))
 		dn.SetFloat("OFC", int(i), float64(ofc))
 	}
-	ss.EnvGUI.USposPlot.Async(ss.EnvGUI.USposPlot.UpdatePlot)
-	ss.EnvGUI.USnegPlot.Async(ss.EnvGUI.USnegPlot.UpdatePlot)
+	ss.EnvGUI.USposPlot.GoUpdatePlot()
+	ss.EnvGUI.USnegPlot.GoUpdatePlot()
 	ss.EnvGUI.UpdateWorld(ctx, ev, net, armaze.TraceStates(ss.Stats.IntDi("TraceStateInt", di)))
 }
 
