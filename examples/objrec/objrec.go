@@ -41,7 +41,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 )
 
 func main() {
@@ -102,7 +101,7 @@ type Sim struct {
 func (ss *Sim) New() {
 	ss.Config.Defaults()
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("Objrec")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RandSeeds.Init(100) // max 100 runs
@@ -190,7 +189,6 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "Objrec")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -215,8 +213,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
 
-	it.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "V4", YAlign: relpos.Front, Space: 2})
-	out.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "IT", YAlign: relpos.Front, Space: 2})
+	it.PlaceRightOf(v4, 2)
+	out.PlaceRightOf(it, 2)
 
 	v4IT.AddClass("NovLearn")
 	itOut.AddClass("NovLearn")
@@ -747,7 +745,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		vgpu.Debug = ss.Config.Debug
-		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

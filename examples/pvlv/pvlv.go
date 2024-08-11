@@ -101,7 +101,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("PVLV")
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
@@ -173,7 +173,6 @@ func (ss *Sim) ConfigRubicon() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "Rubicon")
 	net.SetMaxData(ctx, 1)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -436,7 +435,7 @@ func (ss *Sim) LoadCondWeights(cond string) {
 		return
 	}
 	wfn := "wts/" + cond + ".wts.gz"
-	err := ss.Net.OpenWtsJSON(core.Filename(wfn))
+	err := ss.Net.OpenWeightsJSON(core.Filename(wfn))
 	if err != nil {
 		log.Println(err)
 	}
@@ -450,7 +449,7 @@ func (ss *Sim) SaveCondWeights() {
 		return
 	}
 	wfn := "wts/" + cnm + ".wts.gz"
-	err := ss.Net.SaveWtsJSON(core.Filename(wfn))
+	err := ss.Net.SaveWeightsJSON(core.Filename(wfn))
 	if err != nil {
 		log.Println(err)
 	} else {
@@ -689,7 +688,7 @@ func (ss *Sim) BlockStats() {
 	if ss.Config.GUI {
 		plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
 		plt.SetTable(dt)
-		plt.Async(plt.UpdatePlot)
+		plt.GoUpdatePlot()
 	}
 }
 

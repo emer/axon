@@ -82,6 +82,7 @@ type Path struct {
 
 // emer.Path interface
 
+func (pt *Path) StyleObject() any      { return pt.Params }
 func (pt *Path) RecvLayer() emer.Layer { return pt.Recv }
 func (pt *Path) SendLayer() emer.Layer { return pt.Send }
 func (pt *Path) TypeName() string      { return pt.Type.String() }

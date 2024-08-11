@@ -33,7 +33,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 )
 
 func main() {
@@ -91,7 +90,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("DeepFSA")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RandSeeds.Init(100) // max 100 runs
@@ -162,7 +161,6 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "DeepFSA")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -192,10 +190,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// not useful:
 	// net.ConnectCtxtToCT(in, hidct, full)
 
-	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
-	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
-	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
+	hid.PlaceAbove(in)
+	hidct.PlaceRightOf(hid, 2)
+	inp.PlaceBehind(in, 2)
+	trg.PlaceBehind(inp, 2)
 
 	net.Build(ctx)
 	net.Defaults()
@@ -672,7 +670,7 @@ func (ss *Sim) ConfigGUI() {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

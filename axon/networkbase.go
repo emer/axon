@@ -527,7 +527,7 @@ func (nt *Network) ConnectLayers(send, recv *Layer, pat paths.Pattern, typ PathT
 	emer.InitPath(pt)
 	pt.Connect(send, recv, pat, typ)
 	recv.RecvPaths = append(recv.RecvPaths, pt)
-	recv.SendPaths = append(recv.SendPaths, pt)
+	send.SendPaths = append(send.SendPaths, pt)
 	return pt
 }
 
@@ -662,7 +662,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		shp := ly.Shape
 		nn := shp.Len()
-		fmt.Println(ly.Name, nn, shp)
 		ly.NNeurons = uint32(nn)
 		ly.NeurStIndex = uint32(neurIndex)
 		ly.MaxData = nt.MaxData
@@ -748,8 +747,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nt.RecvPathIndexes = make([]uint32, rpathIndex)
 	nt.RecvSynIndexes = make([]uint32, totSynapses)
 
-	fmt.Println("tot:", totSendCon, totRecvCon)
-
 	// note: GPU optimized order
 	ctx.SynapseVars.SetVarOuter(totSynapses)
 	ctx.SynapseCaVars.SetVarOuter(totSynapses, maxData)
@@ -780,7 +777,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			pt.SynStIndex = uint32(syIndex)
 			pt.Params.Indexes.PathIndex = uint32(pjidx)
 			pt.NSyns = uint32(nsyn)
-			fmt.Println(ly.Name, ly.NNeurons, pt.Name)
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
 				si := ly.NeurStIndex + sni
 				scon := pt.SendCon[sni]
