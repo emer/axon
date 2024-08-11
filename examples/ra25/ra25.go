@@ -214,7 +214,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("RA25")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &table.Table{}
@@ -279,7 +279,6 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "RA25")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -755,7 +754,7 @@ func (ss *Sim) RunNoGUI() {
 
 	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
 		ss.Loops.Step(etime.Train, 1, etime.Trial) // get past NewRun
-		ss.Net.OpenWtsJSON(core.Filename(ss.Config.Run.StartWts))
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
 		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
 	}
 

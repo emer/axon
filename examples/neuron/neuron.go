@@ -31,7 +31,6 @@ import (
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/estats"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
@@ -52,7 +51,7 @@ func main() {
 
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
-var ParamSets = netparams.Sets{
+var ParamSets = params.Sets{
 	"Base": {
 		{Sel: "Path", Desc: "no learning",
 			Params: params.Params{

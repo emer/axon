@@ -23,7 +23,6 @@ import (
 	"cogentcore.org/core/texteditor"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -348,7 +347,7 @@ func (nt *Network) AllPathScales() string {
 // or `params_2006_01_02` (year, month, day) datestamp,
 // providing a snapshot of the simulation params for easy diffs and later reference.
 // Also saves current Config and Params state.
-func (nt *Network) SaveParamsSnapshot(pars *netparams.Sets, cfg any, good bool) error {
+func (nt *Network) SaveParamsSnapshot(pars *params.Sets, cfg any, good bool) error {
 	date := time.Now().Format("2006_01_02")
 	if good {
 		date = "good"
@@ -663,6 +662,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		shp := ly.Shape
 		nn := shp.Len()
+		fmt.Println(ly.Name, nn, shp)
 		ly.NNeurons = uint32(nn)
 		ly.NeurStIndex = uint32(neurIndex)
 		ly.MaxData = nt.MaxData
@@ -748,6 +748,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nt.RecvPathIndexes = make([]uint32, rpathIndex)
 	nt.RecvSynIndexes = make([]uint32, totSynapses)
 
+	fmt.Println("tot:", totSendCon, totRecvCon)
+
 	// note: GPU optimized order
 	ctx.SynapseVars.SetVarOuter(totSynapses)
 	ctx.SynapseCaVars.SetVarOuter(totSynapses, maxData)
@@ -778,6 +780,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			pt.SynStIndex = uint32(syIndex)
 			pt.Params.Indexes.PathIndex = uint32(pjidx)
 			pt.NSyns = uint32(nsyn)
+			fmt.Println(ly.Name, ly.NNeurons)
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
 				si := ly.NeurStIndex + sni
 				scon := pt.SendCon[sni]

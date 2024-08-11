@@ -1,13 +1,12 @@
 package main
 
 import (
-	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/params"
 )
 
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
-var ParamSets = netparams.Sets{
+var ParamSets = params.Sets{
 	"Base": {
 		{Sel: "Layer", Desc: "needs some special inhibition and learning params",
 			Params: params.Params{

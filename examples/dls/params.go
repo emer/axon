@@ -7,13 +7,12 @@
 package main
 
 import (
-	"github.com/emer/emergent/v2/netparams"
 	"github.com/emer/emergent/v2/params"
 )
 
 // ParamSets is the active set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
-var ParamSets = netparams.Sets{
+var ParamSets = params.Sets{
 	"Base": {
 		{Sel: "Layer", Desc: "generic params for all layers",
 			Params: params.Params{
