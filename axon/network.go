@@ -13,66 +13,8 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tree"
-	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/paths"
 )
-
-// axon.Network implements the Axon spiking model,
-// building on the algorithm-independent NetworkBase that manages
-// all the infrastructure.
-type Network struct {
-	NetworkBase
-}
-
-// InitName MUST be called to initialize the network's pointer to itself as an emer.Network
-// which enables the proper interface methods to be called.  Also sets the name,
-// and initializes NetIndex in global list of Network
-func (nt *Network) InitName(net emer.Network, name string) {
-	nt.EmerNet = net
-	nt.Nm = name
-	nt.MaxData = 1
-	nt.NetIndex = uint32(len(Networks))
-	Networks = append(Networks, nt)
-	TheNetwork = nt
-}
-
-// NewNetwork returns a new axon Network
-func NewNetwork(name string) *Network {
-	net := &Network{}
-	net.InitName(net, name)
-	return net
-}
-
-func (nt *Network) AsAxon() *Network {
-	return nt
-}
-
-// NewLayer returns new layer of proper type
-func (nt *Network) NewLayer() emer.Layer {
-	return &Layer{}
-}
-
-// NewPath returns new path of proper type
-func (nt *Network) NewPath() emer.Path {
-	return &Path{}
-}
-
-// Defaults sets all the default parameters for all layers and pathways
-func (nt *Network) Defaults() {
-	nt.Rubicon.Defaults()
-	nt.SetNThreads(0) // default
-	for _, ly := range nt.Layers {
-		ly.Defaults()
-	}
-}
-
-// UpdateParams updates all the derived parameters if any have changed, for all layers
-// and pathways
-func (nt *Network) UpdateParams() {
-	for _, ly := range nt.Layers {
-		ly.UpdateParams()
-	}
-}
 
 // ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -92,7 +34,7 @@ func (nt *Network) NewState(ctx *Context) {
 	// 	return
 	// }
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.NewState(ctx)
@@ -116,9 +58,9 @@ func (nt *Network) Cycle(ctx *Context) {
 	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {
-		if ly.LayerType() == VTALayer {
+		if ly.Type == VTALayer {
 			vta = ly
-		} else if ly.LayerType() == LDTLayer {
+		} else if ly.Type == LDTLayer {
 			ldt = ly
 		} else {
 			ly.CyclePost(ctx)
@@ -140,7 +82,7 @@ func (nt *Network) MinusPhase(ctx *Context) {
 	} else {
 		// not worth threading this probably
 		for _, ly := range nt.Layers {
-			if ly.IsOff() {
+			if ly.Off {
 				continue
 			}
 			ly.MinusPhase(ctx)
@@ -148,7 +90,7 @@ func (nt *Network) MinusPhase(ctx *Context) {
 	}
 	// Post happens on the CPU always
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.MinusPhasePost(ctx)
@@ -166,7 +108,7 @@ func (nt *Network) PlusPhaseStart(ctx *Context) {
 	} else {
 		// not worth threading this probably
 		for _, ly := range nt.Layers {
-			if ly.IsOff() {
+			if ly.Off {
 				continue
 			}
 			ly.PlusPhaseStart(ctx)
@@ -181,7 +123,7 @@ func (nt *Network) PlusPhase(ctx *Context) {
 	} else {
 		// not worth threading this probably
 		for _, ly := range nt.Layers {
-			if ly.IsOff() {
+			if ly.Off {
 				continue
 			}
 			ly.PlusPhase(ctx)
@@ -189,7 +131,7 @@ func (nt *Network) PlusPhase(ctx *Context) {
 	}
 	// Post happens on the CPU always
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.PlusPhasePost(ctx)
@@ -202,7 +144,7 @@ func (nt *Network) PlusPhase(ctx *Context) {
 // This can be called separately to simulate alpha cycles within theta cycles, for example.
 func (nt *Network) TargToExt(ctx *Context) {
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.TargToExt(ctx)
@@ -213,7 +155,7 @@ func (nt *Network) TargToExt(ctx *Context) {
 // This can be called to simulate alpha cycles within theta cycles, for example.
 func (nt *Network) ClearTargExt(ctx *Context) {
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.ClearTargExt(ctx)
@@ -223,7 +165,7 @@ func (nt *Network) ClearTargExt(ctx *Context) {
 // SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
 func (nt *Network) SpkSt1(ctx *Context) {
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.SpkSt1(ctx)
@@ -233,7 +175,7 @@ func (nt *Network) SpkSt1(ctx *Context) {
 // SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
 func (nt *Network) SpkSt2(ctx *Context) {
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.SpkSt2(ctx)
@@ -284,9 +226,9 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
-// InitWts initializes synaptic weights and all other associated long-term state variables
+// InitWeights initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
-func (nt *Network) InitWts(ctx *Context) { //types:add
+func (nt *Network) InitWeights(ctx *Context) { //types:add
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		nt.Rubicon.Reset(ctx, di)
 	}
@@ -294,15 +236,15 @@ func (nt *Network) InitWts(ctx *Context) { //types:add
 	ctx.SlowCtr = 0
 	ctx.SynCaCtr = 0
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
-		ly.InitWts(ctx, nt) // calls InitActs too
+		ly.InitWeights(ctx, nt) // calls InitActs too
 	}
 	// separate pass to enforce symmetry
 	// st := time.Now()
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.InitWtSym(ctx)
@@ -317,30 +259,30 @@ func (nt *Network) InitWts(ctx *Context) { //types:add
 // InitTopoSWts initializes SWt structural weight parameters from
 // path types that support topographic weight patterns, having flags set to support it,
 // includes: paths.PoolTile paths.Circle.
-// call before InitWts if using Topo wts
+// call before InitWeights if using Topo wts
 func (nt *Network) InitTopoSWts() {
 	ctx := &nt.Ctx
 	swts := &tensor.Float32{}
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
-		for i := 0; i < ly.NRecvPaths(); i++ {
-			pj := ly.RcvPaths[i]
-			if pj.IsOff() {
+		for i := 0; i < ly.NumRecvPaths(); i++ {
+			pj := ly.RecvPaths[i]
+			if pj.Off {
 				continue
 			}
-			pat := pj.Pattern()
+			pat := pj.Pattern
 			switch pt := pat.(type) {
 			case *paths.PoolTile:
-				if !pt.HasTopoWts() {
+				if !pt.HasTopoWeights() {
 					continue
 				}
 				slay := pj.Send
-				pt.TopoWts(slay.Shape(), ly.Shape(), swts)
+				pt.TopoWeights(&slay.Shape, &ly.Shape, swts)
 				pj.SetSWtsRPool(ctx, swts)
 			case *paths.Circle:
-				if !pt.TopoWts {
+				if !pt.TopoWeights {
 					continue
 				}
 				pj.SetSWtsFunc(ctx, pt.GaussWts)
@@ -353,7 +295,7 @@ func (nt *Network) InitTopoSWts() {
 // stored in GScale.Scale, based on sending layer initial activation.
 func (nt *Network) InitGScale(ctx *Context) {
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.InitGScale(ctx)
@@ -368,7 +310,7 @@ func (nt *Network) InitGScale(ctx *Context) {
 func (nt *Network) DecayState(ctx *Context, decay, glong, ahp float32) {
 	nt.GPU.SyncStateFromGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -401,8 +343,8 @@ func (nt *Network) DecayStateByClass(ctx *Context, decay, glong, ahp float32, cl
 func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, layers ...string) {
 	nt.GPU.SyncStateFromGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, lynm := range layers {
-		ly := nt.AxonLayerByName(lynm)
-		if ly.IsOff() {
+		ly := nt.LayerByName(lynm)
+		if ly.Off {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -415,7 +357,7 @@ func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, lay
 // InitActs fully initializes activation state -- not automatically called
 func (nt *Network) InitActs(ctx *Context) { //types:add
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.InitActs(ctx)
@@ -430,7 +372,7 @@ func (nt *Network) InitExt(ctx *Context) {
 	// note: important to do this for GPU
 	// to ensure partial inputs work the same way on CPU and GPU.
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.InitExt(ctx)
@@ -453,7 +395,7 @@ func (nt *Network) ApplyExts(ctx *Context) {
 // ApplyExt* method call.
 func (nt *Network) UpdateExtFlags(ctx *Context) {
 	for _, ly := range nt.Layers {
-		if ly.IsOff() {
+		if ly.Off {
 			continue
 		}
 		ly.UpdateExtFlags(ctx)
@@ -470,7 +412,7 @@ func (nt *Network) SynFail(ctx *Context) {
 // Updates the effective learning rate factor accordingly.
 func (nt *Network) LRateMod(mod float32) {
 	for _, ly := range nt.Layers {
-		// if ly.IsOff() { // keep all sync'd
+		// if ly.Off { // keep all sync'd
 		// 	continue
 		// }
 		ly.LRateMod(mod)
@@ -482,7 +424,7 @@ func (nt *Network) LRateMod(mod float32) {
 // Updates the effective learning rate factor accordingly.
 func (nt *Network) LRateSched(sched float32) {
 	for _, ly := range nt.Layers {
-		// if ly.IsOff() { // keep all sync'd
+		// if ly.Off { // keep all sync'd
 		// 	continue
 		// }
 		ly.LRateSched(sched)
@@ -496,7 +438,7 @@ func (nt *Network) LRateSched(sched float32) {
 // at the start of learning
 func (nt *Network) SetSubMean(trgAvg, path float32) {
 	for _, ly := range nt.Layers {
-		// if ly.IsOff() { // keep all sync'd
+		// if ly.Off { // keep all sync'd
 		// 	continue
 		// }
 		ly.SetSubMean(trgAvg, path)
@@ -517,7 +459,7 @@ func (nt *Network) LayersSetOff(off bool) {
 // Provides a clean starting point for subsequent lesion experiments.
 func (nt *Network) UnLesionNeurons(ctx *Context) {
 	for _, ly := range nt.Layers {
-		// if ly.IsOff() { // keep all sync'd
+		// if ly.Off { // keep all sync'd
 		// 	continue
 		// }
 		ly.UnLesionNeurons()
@@ -545,7 +487,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 			if ly.Params.IsLearnTrgAvg() {
 				nwts += int(ly.NNeurons)
 			}
-			for _, pj := range ly.SndPaths {
+			for _, pj := range ly.SendPaths {
 				nwts += int(pj.NSyns) + 3 // Scale, AvgAvg, MaxAvg
 			}
 		}
@@ -572,7 +514,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 			}
 			idx += int(nn)
 		}
-		for _, pj := range ly.SndPaths {
+		for _, pj := range ly.SendPaths {
 			for lni := range pj.SendCon {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
@@ -616,7 +558,7 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 			}
 			idx += int(nn)
 		}
-		for _, pj := range ly.SndPaths {
+		for _, pj := range ly.SendPaths {
 			for lni := range pj.SendCon {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
@@ -655,10 +597,10 @@ func (nt *Network) SizeReport(detail bool) string {
 			nn := int(ly.NNeurons)
 			// Sizeof returns size of struct in bytes
 			nrnMem := nn * memNeuron
-			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn,
+			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Name, nn,
 				(datasize.Size)(nrnMem).String())
 		}
-		for _, pj := range ly.SndPaths {
+		for _, pj := range ly.SendPaths {
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
 			//  2. RecvConIndex + RecvSynIndex + SendConIndex (consists of int32 indices = 4B)
@@ -670,7 +612,7 @@ func (nt *Network) SizeReport(detail bool) string {
 			if detail {
 				nSyn := int(pj.NSyns)
 				synMem := nSyn*memSynapse + projMemIndexes
-				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
+				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name,
 					nSyn, (datasize.Size)(synMem).String())
 			}
 		}
@@ -682,7 +624,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	synCaMem := (len(nt.SynapseCas)) * synVarBytes
 
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynCa: %v\n",
-		nt.Nm, nt.NNeurons, (datasize.Size)(nrnMem).String(), nt.NSyns,
+		nt.Name, nt.NNeurons, (datasize.Size)(nrnMem).String(), nt.NSyns,
 		(datasize.Size)(synIndexMem).String(), (datasize.Size)(synWtMem).String(), (datasize.Size)(synCaMem).String())
 	return b.String()
 }
@@ -692,12 +634,12 @@ func (nt *Network) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(nt.SaveWtsJSON).
+		w.SetFunc(nt.SaveWeightsJSON).
 			SetText("Save Weights").SetIcon(icons.Save)
 		w.Args[0].SetTag(`extension:".wts,.wts.gz"`)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(nt.OpenWtsJSON).SetText("Open Weights").SetIcon(icons.Open)
+		w.SetFunc(nt.OpenWeightsJSON).SetText("Open Weights").SetIcon(icons.Open)
 		w.Args[0].SetTag(`extension:".wts,.wts.gz"`)
 	})
 
@@ -707,7 +649,7 @@ func (nt *Network) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(nt.Build).SetIcon(icons.Reset)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(nt.InitWts).SetIcon(icons.Reset)
+		w.SetFunc(nt.InitWeights).SetIcon(icons.Reset)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(nt.InitActs).SetIcon(icons.Reset)

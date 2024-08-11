@@ -120,8 +120,8 @@ func (pj *ContPath) InitContCa() {
 	}
 }
 
-func (pj *MatrixPath) InitWts() {
-	pj.Path.InitWts()
+func (pj *MatrixPath) InitWeights() {
+	pj.Path.InitWeights()
 	pj.InitContCa()
 }
 

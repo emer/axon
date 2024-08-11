@@ -101,7 +101,7 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 		net.SetNThreads(threads)
 	}
 
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func ConfigPats(dt *table.Table, pats, units int) {
@@ -135,7 +135,7 @@ func ConfigEpcLog(dt *table.Table) {
 }
 
 func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, epcs int, verbose, gpu bool) {
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 

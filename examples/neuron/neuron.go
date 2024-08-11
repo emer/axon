@@ -168,12 +168,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	net.Defaults()
 	ss.SetParams("Network", false) // only set Network params
-	ss.InitWts(net)
+	ss.InitWeights(net)
 }
 
-// InitWts loads the saved weights
-func (ss *Sim) InitWts(net *axon.Network) {
-	net.InitWts(&ss.Context)
+// InitWeights loads the saved weights
+func (ss *Sim) InitWeights(net *axon.Network) {
+	net.InitWeights(&ss.Context)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -183,7 +183,7 @@ func (ss *Sim) InitWts(net *axon.Network) {
 // and resets the epoch log table
 func (ss *Sim) Init() {
 	ss.Context.Reset()
-	ss.InitWts(ss.Net)
+	ss.InitWeights(ss.Net)
 	ss.NeuronEx.Init()
 	ss.GUI.StopNow = false
 	ss.SetParams("", false) // all sheets
@@ -213,7 +213,7 @@ func (ss *Sim) RunCycles() {
 	ss.Net.InitActs(ctx)
 	ctx.NewState(etime.Train)
 	ss.SetParams("", false)
-	// ly := ss.Net.AxonLayerByName("Neuron")
+	// ly := ss.Net.LayerByName("Neuron")
 	// nrn := &(ly.Neurons[0])
 	inputOn := false
 	for cyc := 0; cyc < ss.Config.NCycles; cyc++ {
@@ -240,7 +240,7 @@ func (ss *Sim) RunCycles() {
 
 func (ss *Sim) RecordValues(cyc int) {
 	var vals []float32
-	ly := ss.Net.AxonLayerByName("Neuron")
+	ly := ss.Net.LayerByName("Neuron")
 	key := fmt.Sprintf("cyc: %03d", cyc)
 	for _, vnm := range axon.NeuronVarNames {
 		ly.UnitValues(&vals, vnm, 0)
@@ -253,7 +253,7 @@ func (ss *Sim) RecordValues(cyc int) {
 // this just calls the relevant code directly, bypassing most other stuff.
 func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 	ctx := &ss.Context
-	ly := ss.Net.AxonLayerByName("Neuron")
+	ly := ss.Net.LayerByName("Neuron")
 	ni := ly.NeurStIndex
 	di := uint32(0)
 	ac := &ly.Params.Acts
@@ -308,7 +308,7 @@ func (ss *Sim) Stop() {
 // if setMsg = true then we output a message for each param that was set.
 func (ss *Sim) SetParams(sheet string, setMsg bool) {
 	ss.Params.SetAll()
-	ly := ss.Net.AxonLayerByName("Neuron")
+	ly := ss.Net.LayerByName("Neuron")
 	lyp := ly.Params
 	lyp.Acts.Gbar.E = 1
 	lyp.Acts.Gbar.L = 0.2
@@ -335,7 +335,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ly := ss.Net.AxonLayerByName("Neuron")
+	ly := ss.Net.LayerByName("Neuron")
 	// nex := &ss.NeuronEx
 	lg := &ss.Logs
 
@@ -483,7 +483,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	// netdata := ss.Config.Log.NetData
 	// if netdata {

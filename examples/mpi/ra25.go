@@ -333,7 +333,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -511,8 +511,8 @@ func (ss *Sim) ApplyInputs() {
 		// note: must save env state for logging / stats due to data parallel re-use of same env
 		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
 		for _, lnm := range lays {
-			ly := ss.Net.AxonLayerByName(lnm)
-			pats := ev.State(ly.Nm)
+			ly := ss.Net.LayerByName(lnm)
+			pats := ev.State(ly.Name)
 			if pats != nil {
 				ly.ApplyExt(ctx, di, pats)
 			}
@@ -530,7 +530,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -614,7 +614,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
-	out := ss.Net.AxonLayerByName("Output")
+	out := ss.Net.LayerByName("Output")
 
 	ss.Stats.SetFloat("CorSim", float64(out.Values[di].CorSim.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
@@ -781,7 +781,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	if mpi.WorldRank() == 0 {
 		elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

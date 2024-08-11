@@ -134,7 +134,7 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(PoolParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts(ctx)                                                // get GScale here
+	testNet.InitWeights(ctx)                                            // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }

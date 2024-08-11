@@ -103,8 +103,8 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 	blaPosAcq, blaPosExt = net.AddBLALayers(prefix, true, nUSpos, nNeurY, nNeurX, relpos.Behind, space)
 	if neg {
 		blaNegAcq, blaNegExt = net.AddBLALayers(prefix, false, nUSneg, nNeurY, nNeurX, relpos.Behind, space)
-		blaPosAcq.SetBuildConfig("LayInhib1Name", blaNegAcq.Name())
-		blaNegAcq.SetBuildConfig("LayInhib1Name", blaPosAcq.Name())
+		blaPosAcq.SetBuildConfig("LayInhib1Name", blaNegAcq.Name)
+		blaNegAcq.SetBuildConfig("LayInhib1Name", blaPosAcq.Name)
 	}
 	cemPos = net.AddLayer4D(prefix+"CeMPos", 1, nUSpos, 1, nNeurX, CeMLayer)
 	cemPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
@@ -469,7 +469,7 @@ func (net *Network) ConnectToSC(send, recv *Layer, pat paths.Pattern) *Path {
 // a SC layer, copying the geometry of the sending layer,
 // setting class as ToSC.  The conection weights are set to uniform.
 func (net *Network) ConnectToSC1to1(send, recv *Layer) *Path {
-	recv.Shp.CopyShape(&send.Shp)
+	recv.Shape.CopyShape(&send.Shape)
 	pj := net.ConnectLayers(send, recv, paths.NewOneToOne(), ForwardPath)
 	pj.DefParams = params.Params{
 		"Path.Learn.Learn":    "false",
@@ -639,7 +639,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 
 	sc = net.AddSCLayer2D("", ofcY, ofcX)
 	vSgated.PlaceRightOf(sc, space)
-	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
+	ldt.SetBuildConfig("SrcLay1Name", sc.Name)
 
 	blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, ofcY, ofcX, space)
 	_, _, _, _, _ = blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov
@@ -669,24 +669,24 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	var pj, bpj *Path
 	pathClass := "PFCPath"
 
-	vSmtxGo.SetBuildConfig("ThalLay1Name", ofcPosMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay1Name", ofcPosMD.Name())
+	vSmtxGo.SetBuildConfig("ThalLay1Name", ofcPosMD.Name)
+	vSmtxNo.SetBuildConfig("ThalLay1Name", ofcPosMD.Name)
 	net.ConnectLayers(vSgpi, ofcPosMD, full, InhibPath) // BGThal sets defaults for this
 
-	vSmtxGo.SetBuildConfig("ThalLay2Name", ofcNegMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay2Name", ofcNegMD.Name())
+	vSmtxGo.SetBuildConfig("ThalLay2Name", ofcNegMD.Name)
+	vSmtxNo.SetBuildConfig("ThalLay2Name", ofcNegMD.Name)
 	net.ConnectLayers(vSgpi, ofcNegMD, full, InhibPath)
 
-	vSmtxGo.SetBuildConfig("ThalLay3Name", ilPosMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay3Name", ilPosMD.Name())
+	vSmtxGo.SetBuildConfig("ThalLay3Name", ilPosMD.Name)
+	vSmtxNo.SetBuildConfig("ThalLay3Name", ilPosMD.Name)
 	net.ConnectLayers(vSgpi, ilPosMD, full, InhibPath)
 
-	vSmtxGo.SetBuildConfig("ThalLay4Name", ilNegMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay4Name", ilNegMD.Name())
+	vSmtxGo.SetBuildConfig("ThalLay4Name", ilNegMD.Name)
+	vSmtxNo.SetBuildConfig("ThalLay4Name", ilNegMD.Name)
 	net.ConnectLayers(vSgpi, ilNegMD, full, InhibPath) // BGThal configs
 
-	vSmtxGo.SetBuildConfig("ThalLay5Name", accCostMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay5Name", accCostMD.Name())
+	vSmtxGo.SetBuildConfig("ThalLay5Name", accCostMD.Name)
+	vSmtxNo.SetBuildConfig("ThalLay5Name", accCostMD.Name)
 	net.ConnectLayers(vSgpi, accCostMD, full, InhibPath) // BGThal configs
 
 	pfc2m := params.Params{ // contextual, not driving -- weaker
@@ -1030,8 +1030,8 @@ func (net *Network) AddRubicon(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY,
 	}
 
 	plUtil, plUtilCT, plUtilPT, plUtilPTp, plUtilMD := net.AddPFC2D("PLutil", "MD", pfcY, pfcX, true, true, space)
-	vSmtxGo.SetBuildConfig("ThalLay5Name", plUtilMD.Name())
-	vSmtxNo.SetBuildConfig("ThalLay5Name", plUtilMD.Name())
+	vSmtxGo.SetBuildConfig("ThalLay5Name", plUtilMD.Name)
+	vSmtxNo.SetBuildConfig("ThalLay5Name", plUtilMD.Name)
 	net.ConnectLayers(vSgpi, plUtilMD, full, InhibPath)
 
 	plUtilPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"

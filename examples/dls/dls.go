@@ -240,17 +240,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	dSMtxNo.SetClass("DLSMatrixLayer")
 
 	// Spiral the BG loops so that goal selection influencces action selection.
-	// vSSTNp := ss.Net.AxonLayerByName("VsSTNp")
-	// vSSTNs := ss.Net.AxonLayerByName("VsSTNs")
-	// net.ConnectLayers(vSSTNp, dSGPi, full, axon.ForwardPath).SetClass(vSSTNp.SndPaths[0].Cls)
-	// net.ConnectLayers(vSSTNs, dSGPi, full, axon.ForwardPath).SetClass(vSSTNs.SndPaths[0].Cls)
+	// vSSTNp := ss.Net.LayerByName("VsSTNp")
+	// vSSTNs := ss.Net.LayerByName("VsSTNs")
+	// net.ConnectLayers(vSSTNp, dSGPi, full, axon.ForwardPath).SetClass(vSSTNp.SendPaths[0].Cls)
+	// net.ConnectLayers(vSSTNs, dSGPi, full, axon.ForwardPath).SetClass(vSSTNs.SendPaths[0].Cls)
 
 	///////////////////////////////////////////
 	// M1, VL, ALM
 
 	act := net.AddLayer2D("Act", ny, nAct, axon.InputLayer) // Action: what is actually done
 	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
-	vl.SetBuildConfig("DriveLayName", act.Name())
+	vl.SetBuildConfig("DriveLayName", act.Name)
 
 	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, space)
 	m1P := net.AddPulvForSuper(m1, space)
@@ -323,7 +323,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -335,9 +335,9 @@ func (ss *Sim) ApplyParams() {
 
 	nCSTot := ev.Config.NCSs
 
-	cs := net.AxonLayerByName("CS")
+	cs := net.LayerByName("CS")
 	cs.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
-	csp := net.AxonLayerByName("CSP")
+	csp := net.LayerByName("CSP")
 	csp.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 
 	// then apply config-set params.
@@ -481,7 +481,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
 	pv := &ss.Net.Rubicon
-	// vlly := ss.Net.AxonLayerByName("VL")
+	// vlly := ss.Net.LayerByName("VL")
 	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
@@ -555,7 +555,7 @@ func (ss *Sim) ApplyAction(di int) {
 	net := ss.Net
 	ev := ss.Envs.ByModeDi(ss.Context.Mode, di).(*armaze.Env)
 	ap := ev.State("Action")
-	ly := net.AxonLayerByName("Act")
+	ly := net.LayerByName("Act")
 	ly.ApplyExt(ctx, uint32(di), ap)
 }
 
@@ -581,7 +581,7 @@ func (ss *Sim) ApplyInputs() {
 			ev.ExValueUtil(&ss.Net.Rubicon, ctx)
 		}
 		for _, lnm := range lays {
-			ly := net.AxonLayerByName(lnm)
+			ly := net.LayerByName(lnm)
 			itsr := ev.State(lnm)
 			ly.ApplyExt(ctx, di, itsr)
 		}
@@ -613,7 +613,7 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -1065,7 +1065,7 @@ func (ss *Sim) RecordTestData() {
 
 	net.AllGlobalValues(key, ss.TestData)
 	for _, lnm := range lays {
-		ly := net.AxonLayerByName(lnm)
+		ly := net.LayerByName(lnm)
 		ly.TestValues(key, ss.TestData)
 	}
 }
@@ -1079,7 +1079,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

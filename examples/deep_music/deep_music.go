@@ -218,7 +218,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", "", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full, "")
 		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full, "") // shortcut top-down
-		pathway, _ := inPulv.SendNameTry(hid2ct.Name())
+		pathway, _ := inPulv.SendNameTry(hid2ct.Name)
 		pathway.AddClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
@@ -229,16 +229,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// net.ConnectLayers(hid2ct, hid, full, axon.BackPath)
 	}
 
-	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
+	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name, XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
 	if ss.Config.Params.Hid2 {
-		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: hid.Name(), YAlign: relpos.Front, Space: 2})
+		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: hid.Name, YAlign: relpos.Front, Space: 2})
 	}
 
 	net.Build(ctx)
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -391,7 +391,7 @@ func (ss *Sim) ApplyInputs() {
 			// net.SynFail(&ss.Context) // not actually such a generative source of noise..
 		}
 		for _, lnm := range lays {
-			ly := ss.Net.AxonLayerByName(lnm)
+			ly := ss.Net.LayerByName(lnm)
 			pats := ev.State("Note")
 			if pats != nil {
 				ly.ApplyExt(ctx, di, pats)
@@ -409,7 +409,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -467,7 +467,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
-	inp := ss.Net.AxonLayerByName("InputP")
+	inp := ss.Net.LayerByName("InputP")
 	err, minusIndex, plusIndex := inp.LocalistErr4D(ctx)
 	ss.Stats.SetInt("TargNote", plusIndex[di])
 	ss.Stats.SetInt("OutNote", minusIndex[di])
@@ -690,7 +690,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

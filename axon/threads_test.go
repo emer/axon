@@ -64,8 +64,8 @@ func TestCollectAndSetDWts(t *testing.T) {
 	runCycle := func(net *Network, ctx *Context, pats *table.Table) {
 		inPats := pats.ColumnByName("Input").(*tensor.Float32).SubSpace([]int{0})
 		outPats := pats.ColumnByName("Output").(*tensor.Float32).SubSpace([]int{0})
-		inputLayer := net.AxonLayerByName("Input")
-		outputLayer := net.AxonLayerByName("Output")
+		inputLayer := net.LayerByName("Input")
+		outputLayer := net.LayerByName("Output")
 		// we train on a single pattern
 		input := inPats.SubSpace([]int{0})
 		output := outPats.SubSpace([]int{0})
@@ -89,7 +89,7 @@ func TestCollectAndSetDWts(t *testing.T) {
 		}
 		net.PlusPhase(ctx)
 		// for _, ly := range net.Layers {
-		// 	fmt.Printf("ly: %s  actm: %g  actp: %g\n", ly.Nm, ly.Pool(0, 0).AvgMax.CaSpkD.Minus.Max, ly.Pool(0, 0).AvgMax.CaSpkD.Plus.Max)
+		// 	fmt.Printf("ly: %s  actm: %g  actp: %g\n", ly.Name, ly.Pool(0, 0).AvgMax.CaSpkD.Minus.Max, ly.Pool(0, 0).AvgMax.CaSpkD.Plus.Max)
 		// }
 		net.DWt(ctx)
 	}
@@ -101,7 +101,7 @@ func TestCollectAndSetDWts(t *testing.T) {
 	runCycle(netB, ctxB, patsB)
 
 	// No DWt applied, hence networks still equal
-	assert.Equal(t, netA.WtsHash(), netB.WtsHash())
+	assert.Equal(t, netA.WeightsHash(), netB.WeightsHash())
 	var dwts []float32
 
 	// for debugging
@@ -115,13 +115,13 @@ func TestCollectAndSetDWts(t *testing.T) {
 	// }
 
 	netA.WtFromDWt(ctxA)
-	assert.False(t, netA.WtsHash() == netB.WtsHash())
+	assert.False(t, netA.WeightsHash() == netB.WeightsHash())
 
 	netB.WtFromDWt(ctxB)
 	// if CompareWtsAll(netA, netB) {
 	// 	t.Errorf("WtFromDWt failed\n")
 	// }
-	assert.True(t, netA.WtsHash() == netB.WtsHash())
+	assert.True(t, netA.WeightsHash() == netB.WeightsHash())
 
 	netA.SlowAdapt(ctxA)
 	netB.SlowAdapt(ctxB)
@@ -134,11 +134,11 @@ func TestCollectAndSetDWts(t *testing.T) {
 	runCycle(netB, ctxB, patsB)
 	netA.WtFromDWt(ctxA)
 	netA.SlowAdapt(ctxA)
-	assert.False(t, netA.WtsHash() == netB.WtsHash())
+	assert.False(t, netA.WeightsHash() == netB.WeightsHash())
 	// netB is trained on a different pattern, hence different DWt, hence different Wt
 	netB.WtFromDWt(ctxB)
 	netB.SlowAdapt(ctxB)
-	assert.False(t, netA.WtsHash() == netB.WtsHash())
+	assert.False(t, netA.WeightsHash() == netB.WeightsHash())
 }
 
 // returns true if a diff
@@ -214,13 +214,13 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 
 	// compare the resulting networks
 	assertNeuronsSynsEqual(t, netA, netB)
-	assert.Equal(t, netA.WtsHash(), netB.WtsHash())
+	assert.Equal(t, netA.WeightsHash(), netB.WeightsHash())
 
 	// sanity check, to make sure we're not accidentally sharing pointers etc.
 	assert.True(t, neuronsSynsAreEqual(netA, netB))
 	runFunEpochs(ctxA, pats, netA, fun, 1)
 	assert.False(t, neuronsSynsAreEqual(netA, netB))
-	assert.False(t, netA.WtsHash() == netB.WtsHash())
+	assert.False(t, netA.WeightsHash() == netB.WeightsHash())
 }
 
 // assert that all Neuron fields and all Synapse fields are bit-equal between
@@ -248,9 +248,9 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 		layerS := netS.Layers[li]
 		layerP := netP.Layers[li]
 
-		for pi := range layerS.SndPaths {
-			pathS := layerS.SndPaths[pi]
-			pathP := layerP.SndPaths[pi]
+		for pi := range layerS.SendPaths {
+			pathS := layerS.SendPaths[pi]
+			pathP := layerP.SendPaths[pi]
 			for sni := uint32(0); sni < pathS.NSyns; sni++ {
 				for fi := 0; fi < int(SynapseVarsN); fi++ {
 					synS := pathS.SynVal1D(fi, int(sni))
@@ -289,9 +289,9 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 		layerS := netS.Layers[li]
 		layerP := netP.Layers[li]
 
-		for pi := range layerS.SndPaths {
-			pathS := layerS.SndPaths[pi]
-			pathP := layerP.SndPaths[pi]
+		for pi := range layerS.SendPaths {
+			pathS := layerS.SendPaths[pi]
+			pathP := layerP.SendPaths[pi]
 			for sni := uint32(0); sni < pathS.NSyns; sni++ {
 				for fi := 0; fi < int(SynapseVarsN); fi++ {
 					synS := pathS.SynVal1D(fi, int(sni))
@@ -371,7 +371,7 @@ func buildNet(ctx *Context, t *testing.T, shape []int, nthrs int) *Network {
 		t.Fatal(err)
 	}
 	net.Defaults() // Initializes threading defaults, but we override below
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 	net.SetNThreads(nthrs)
 	return net
 }
@@ -384,8 +384,8 @@ func runFunEpochs(ctx *Context, pats *table.Table, net *Network, fun func(*Netwo
 
 	inPats := pats.ColumnByName("Input").(*tensor.Float32)
 	outPats := pats.ColumnByName("Output").(*tensor.Float32)
-	inputLayer := net.AxonLayerByName("Input")
-	outputLayer := net.AxonLayerByName("Output")
+	inputLayer := net.LayerByName("Input")
+	outputLayer := net.LayerByName("Output")
 	for epoch := 0; epoch < epochs; epoch++ {
 		for pi := 0; pi < pats.NumRows(); pi++ {
 			input := inPats.SubSpace([]int{pi})

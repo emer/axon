@@ -904,7 +904,7 @@ func (rp *Rubicon) Step(ctx *Context, di uint32, rnd randx.Rand) {
 // with anything out of range clamped to 0-1 range.
 // Returns (and logs) an error if layer name not found.
 func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, layName string, maxAct float32) error {
-	ly := net.AxonLayerByName(layName)
+	ly := net.LayerByName(layName)
 	if ly == nil {
 		err := fmt.Errorf("SetGoalMaintFromLayer: layer named: %q not found", layName)
 		slog.Error(err.Error())
@@ -924,7 +924,7 @@ func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, 
 // DecodeFromLayer decodes value and variance from the average activity (CaSpkD)
 // of the given layer name.  Use for decoding PVposEst and Var, and PVnegEst and Var
 func (rp *Rubicon) DecodeFromLayer(ctx *Context, di uint32, net *Network, layName string) (val, vr float32, err error) {
-	ly := net.AxonLayerByName(layName)
+	ly := net.LayerByName(layName)
 	if ly == nil {
 		err = fmt.Errorf("DecodeFromLayer: layer named: %q not found", layName)
 		slog.Error(err.Error())

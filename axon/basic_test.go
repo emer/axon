@@ -118,7 +118,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts(ctx)                                            // get GScale here
+	testNet.InitWeights(ctx)                                        // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }
@@ -144,7 +144,7 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts(ctx)                                            // get GScale here
+	testNet.InitWeights(ctx)                                        // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }
@@ -153,7 +153,7 @@ func TestSynValues(t *testing.T) {
 	tol := Tol8
 	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
-	hidLay := testNet.AxonLayerByName("Hidden")
+	hidLay := testNet.LayerByName("Hidden")
 	p, err := hidLay.SendNameTry("Input")
 	if err != nil {
 		t.Error(err)
@@ -228,7 +228,7 @@ func TestSpikeProp(t *testing.T) {
 	for del := 0; del <= 4; del++ {
 		prj.Params.Com.Delay = uint32(del)
 		prj.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
-		net.InitWts(ctx)                      // resets Gbuf
+		net.InitWeights(ctx)                  // resets Gbuf
 		net.NewState(ctx)
 
 		inLay.ApplyExt(ctx, 0, pat)
@@ -273,8 +273,8 @@ func StructValues(obj any, vals map[string]float32, key string) {
 	}
 }
 
-// TestInitWts tests that initializing the weights results in same state
-func TestInitWts(t *testing.T) {
+// TestInitWeights tests that initializing the weights results in same state
+func TestInitWeights(t *testing.T) {
 	nData := 4
 	ctx := NewContext()
 	testNet := newTestNet(ctx, nData)
@@ -283,8 +283,8 @@ func TestInitWts(t *testing.T) {
 	valMapA := make(map[string]float32)
 	valMapB := make(map[string]float32)
 
-	inLay := testNet.AxonLayerByName("Input")
-	outLay := testNet.AxonLayerByName("Output")
+	inLay := testNet.LayerByName("Input")
+	outLay := testNet.LayerByName("Output")
 
 	var vals []float32
 
@@ -294,13 +294,13 @@ func TestInitWts(t *testing.T) {
 			valMap = valMapB
 		}
 		testNet.SetRandSeed(42) // critical for ActAvg values
-		testNet.InitWts(ctx)
+		testNet.InitWeights(ctx)
 		testNet.InitExt(ctx)
 		for ni := 0; ni < 4; ni++ {
 			for li := 0; li < 3; li++ {
 				ly := testNet.Layers[li]
 				for di := 0; di < nData; di++ {
-					key := fmt.Sprintf("Layer: %s\tUnit: %d\tDi: %d", ly.Nm, ni, di)
+					key := fmt.Sprintf("Layer: %s\tUnit: %d\tDi: %d", ly.Name, ni, di)
 					for _, vnm := range NeuronVarNames {
 						ly.UnitValues(&vals, vnm, di)
 						vkey := key + fmt.Sprintf("\t%s", vnm)
@@ -313,7 +313,7 @@ func TestInitWts(t *testing.T) {
 			ly := testNet.Layers[li]
 			for di := 0; di < nData; di++ {
 				lpl := ly.Pool(0, uint32(di))
-				lnm := fmt.Sprintf("%s: di: %d", ly.Nm, di)
+				lnm := fmt.Sprintf("%s: di: %d", ly.Name, di)
 				StructValues(&lpl.Inhib, valMap, lnm)
 			}
 		}
@@ -371,9 +371,9 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	testNet.InitExt(ctx)
 	inPats := newInPats()
 
-	inLay := testNet.AxonLayerByName("Input")
-	hidLay := testNet.AxonLayerByName("Hidden")
-	outLay := testNet.AxonLayerByName("Output")
+	inLay := testNet.LayerByName("Input")
+	hidLay := testNet.LayerByName("Hidden")
+	outLay := testNet.LayerByName("Output")
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
@@ -576,9 +576,9 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool,
 	nData := int(ctx.NetIndexes.NData)
 	valMap := make(map[string]float32)
 	inPats := newInPats()
-	inLay := testNet.AxonLayerByName("Input")
-	// hidLay := testNet.AxonLayerByName("Hidden")
-	outLay := testNet.AxonLayerByName("Output")
+	inLay := testNet.LayerByName("Input")
+	// hidLay := testNet.LayerByName("Hidden")
+	outLay := testNet.LayerByName("Output")
 	_, _ = inLay, outLay
 
 	var vals []float32
@@ -602,7 +602,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool,
 	for pi := 0; pi < 4; pi++ {
 		if initWts {
 			testNet.SetRandSeed(42) // critical for ActAvg values
-			testNet.InitWts(ctx)
+			testNet.InitWeights(ctx)
 		} else {
 			testNet.NewState(ctx)
 		}
@@ -629,7 +629,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool,
 						ly := testNet.Layers[li]
 						for di := 0; di < nData; di++ {
 							ppi := (pi + di) % 4
-							key := fmt.Sprintf("pat: %d\tqtr: %d\tcyc: %02d\tLayer: %s\tUnit: %d", ppi, qtr, cyc, ly.Nm, ni)
+							key := fmt.Sprintf("pat: %d\tqtr: %d\tcyc: %02d\tLayer: %s\tUnit: %d", ppi, qtr, cyc, ly.Name, ni)
 							doPrint := (printValues && pi < nPats && qtr < nQtrs && cyc < cycPerQtr && ni < nNeurs && li >= stLayer && li < edLayer)
 							if doPrint {
 								fmt.Println(key)
@@ -656,7 +656,7 @@ func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool,
 					for di := 0; di < nData; di++ {
 						ppi := (pi + di) % 4
 						lpl := ly.Pool(0, uint32(di))
-						key := fmt.Sprintf("pat: %d\tqtr: %d\tcyc: %02d\tLayer: %s", ppi, qtr, cyc, ly.Nm)
+						key := fmt.Sprintf("pat: %d\tqtr: %d\tcyc: %02d\tLayer: %s", ppi, qtr, cyc, ly.Name)
 						StructValues(&lpl.Inhib, valMap, key)
 					}
 				}
@@ -694,9 +694,9 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	// fmt.Printf("synbanks: %d\n", ctx.NetIndexes.NSynCaBanks)
 
 	inPats := newInPats()
-	inLay := testNet.AxonLayerByName("Input")
-	hidLay := testNet.AxonLayerByName("Hidden")
-	outLay := testNet.AxonLayerByName("Output")
+	inLay := testNet.LayerByName("Input")
+	hidLay := testNet.LayerByName("Hidden")
+	outLay := testNet.LayerByName("Output")
 
 	// allp := testNet.AllParams()
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
@@ -740,7 +740,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // always apply base
-	testNet.InitWts(ctx)
+	testNet.InitWeights(ctx)
 	testNet.InitExt(ctx)
 
 	if gpu {
@@ -820,8 +820,8 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 
 		didx := pi
 
-		hiddwt[didx] = hidLay.RcvPaths[0].SynValue("DWt", pi, pi)
-		outdwt[didx] = outLay.RcvPaths[0].SynValue("DWt", pi, pi)
+		hiddwt[didx] = hidLay.RecvPaths[0].SynValue("DWt", pi, pi)
+		outdwt[didx] = outLay.RecvPaths[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFromDWt(ctx)
 		if gpu {
@@ -829,8 +829,8 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 			testNet.GPU.SyncSynCaFromGPU()
 		}
 
-		hidwt[didx] = hidLay.RcvPaths[0].SynValue("Wt", pi, pi)
-		outwt[didx] = outLay.RcvPaths[0].SynValue("Wt", pi, pi)
+		hidwt[didx] = hidLay.RecvPaths[0].SynValue("Wt", pi, pi)
+		outwt[didx] = outLay.RecvPaths[0].SynValue("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, q3hidCaP, qtr3HidCaP, "qtr3HidCaP", t)
@@ -861,9 +861,9 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 	inPats := newInPats()
-	inLay := testNet.AxonLayerByName("Input")
-	hidLay := testNet.AxonLayerByName("Hidden")
-	outLay := testNet.AxonLayerByName("Output")
+	inLay := testNet.LayerByName("Input")
+	hidLay := testNet.LayerByName("Hidden")
+	outLay := testNet.LayerByName("Output")
 
 	// allp := testNet.AllParams()
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
@@ -913,7 +913,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // always apply base
 	hidLay.Params.Learn.RLRate.On.SetBool(true)
-	testNet.InitWts(ctx)
+	testNet.InitWeights(ctx)
 	testNet.InitExt(ctx)
 
 	for pi := 0; pi < 4; pi++ {
@@ -989,16 +989,16 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 
 		didx := pi
 
-		hiddwt[didx] = hidLay.RcvPaths[0].SynValue("DWt", pi, pi)
-		outdwt[didx] = outLay.RcvPaths[0].SynValue("DWt", pi, pi)
+		hiddwt[didx] = hidLay.RecvPaths[0].SynValue("DWt", pi, pi)
+		outdwt[didx] = outLay.RecvPaths[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFromDWt(ctx)
 		if gpu {
 			testNet.GPU.SyncSynapsesFromGPU()
 		}
 
-		hidwt[didx] = hidLay.RcvPaths[0].SynValue("Wt", pi, pi)
-		outwt[didx] = outLay.RcvPaths[0].SynValue("Wt", pi, pi)
+		hidwt[didx] = hidLay.RecvPaths[0].SynValue("Wt", pi, pi)
+		outwt[didx] = outLay.RecvPaths[0].SynValue("Wt", pi, pi)
 	}
 
 	CompareFloats(tol, hidrlrs, patHidRLRates, "patHidRLRates", t)
@@ -1047,9 +1047,9 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 	nData := int(ctx.NetIndexes.NData)
 	valMap := make(map[string]float32)
 	inPats := newInPats()
-	inLay := testNet.AxonLayerByName("Input")
-	// hidLay := testNet.AxonLayerByName("Hidden")
-	outLay := testNet.AxonLayerByName("Output")
+	inLay := testNet.LayerByName("Input")
+	// hidLay := testNet.LayerByName("Hidden")
+	outLay := testNet.LayerByName("Output")
 	_, _ = inLay, outLay
 
 	if gpu {
@@ -1071,7 +1071,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 	for pi := 0; pi < 4; pi++ {
 		if initWts {
 			testNet.SetRandSeed(42) // critical for ActAvg values
-			testNet.InitWts(ctx)
+			testNet.InitWeights(ctx)
 		} else {
 			testNet.NewState(ctx)
 		}
@@ -1120,7 +1120,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 				ly := testNet.Layers[li]
 				for di := 0; di < nData; di++ {
 					ppi := (pi + di) % 4
-					key := fmt.Sprintf("pat: %d\tLayer: %s\tUnit: %d", ppi, ly.Nm, ni)
+					key := fmt.Sprintf("pat: %d\tLayer: %s\tUnit: %d", ppi, ly.Name, ni)
 					doPrint := (printValues && pi < nPats && ni < nNeurs && li >= stLayer && li < edLayer)
 					if doPrint {
 						fmt.Println(key + fmt.Sprintf("  di: %d", di))
@@ -1136,7 +1136,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 							}
 						}
 					}
-					lnm := fmt.Sprintf("%s: di: %d", ly.Nm, di)
+					lnm := fmt.Sprintf("%s: di: %d", ly.Name, di)
 					lpl := ly.Pool(0, uint32(di))
 					StructValues(&lpl.Inhib, valMap, lnm)
 					lval := ly.LayerValues(uint32(di))
@@ -1145,7 +1145,7 @@ func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues boo
 						fmt.Printf("\n")
 					}
 					for svi, snm := range SynapseVarNames {
-						val := ly.RcvPaths[0].SynValDi(snm, ni, ni, di)
+						val := ly.RecvPaths[0].SynValDi(snm, ni, ni, di)
 						vkey := key + fmt.Sprintf("\t%s", snm)
 						valMap[vkey] = val
 						if doPrint {
@@ -1288,10 +1288,10 @@ func TestInhibAct(t *testing.T) {
 	InhibNet.Defaults()
 	InhibNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false)
 	InhibNet.ApplyParams(ParamSets["Base"].Sheets["InhibOff"], false)
-	InhibNet.InitWts(ctx) // get GScale
+	InhibNet.InitWeights(ctx) // get GScale
 	InhibNet.NewState(ctx)
 
-	InhibNet.InitWts(ctx)
+	InhibNet.InitWeights(ctx)
 	InhibNet.InitExt(ctx)
 
 	printCycs := false
@@ -1482,14 +1482,14 @@ func TestSendGatherIndexes(t *testing.T) {
 			for di := uint32(0); di < nData; di++ {
 				li := NrnI(ctx, ni, NrnLayIndex)
 				ly := net.Layers[li]
-				if len(ly.SndPaths) > 0 {
-					pj := ly.SndPaths[0]
+				if len(ly.SendPaths) > 0 {
+					pj := ly.SendPaths[0]
 					pjcom := &pj.Params.Com
 					wrOff := pjcom.WriteOff(int32(cyc))
 					scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 					for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 						syni := pj.SynStIndex + syi
-						recvIndex := pj.Params.SynRecvLayIndex(ctx, syni) // note: layer-specific is ok here
+						recvIndex := pj.Params.SynRecvLayerIndex(ctx, syni) // note: layer-specific is ok here
 						ri := SynI(ctx, syni, SynRecvIndex)
 						bio := pj.Params.Indexes.GBufSt + pjcom.WriteIndexOff(recvIndex, di, wrOff, pj.Params.Indexes.RecvNeurN, nData)
 						bi := pj.Params.Indexes.GBufSt + pjcom.WriteIndex(recvIndex, di, int32(cyc), pj.Params.Indexes.RecvNeurN, nData)
@@ -1520,9 +1520,9 @@ func TestSendGatherIndexes(t *testing.T) {
 						// }
 					}
 				}
-				if len(ly.RcvPaths) > 0 {
+				if len(ly.RecvPaths) > 0 {
 					lni := ni - ly.NeurStIndex
-					pj := ly.RcvPaths[0]
+					pj := ly.RecvPaths[0]
 					bi := pj.Params.Indexes.GBufSt + pj.Params.Com.ReadIndex(lni, di, int32(cyc), pj.Params.Indexes.RecvNeurN, nData)
 					key := fmt.Sprintf("recv: cyc: %d  bi: %03d  di: %d  ri: %02d\n", cyc, bi, di, ni)
 
@@ -1613,7 +1613,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWts.InitWtsSyn(ctx, &nt.Rand, sy, mean, spct)
+		pj.SWts.InitWeightsSyn(ctx, &nt.Rand, sy, mean, spct)
 		dt.SetFloat("Wt", i, float64(sy.Wt))
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
@@ -1648,7 +1648,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetFloat("Wt", i, float64(sy.Wt))
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
@@ -1678,7 +1678,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetFloat("Wt", i, float64(sy.Wt))
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
@@ -1708,7 +1708,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetFloat("Wt", i, float64(sy.Wt))
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
@@ -1735,7 +1735,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetFloat("Wt", i, float64(sy.Wt))
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
@@ -1773,7 +1773,7 @@ func TestSWtLinLearn(t *testing.T) {
 	nlrn := 10
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 
-	pj.SWts.InitWtsSyn(&nt.Rand, sy, mean, spct)
+	pj.SWts.InitWeightsSyn(&nt.Rand, sy, mean, spct)
 	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	for i := 0; i < nlrn; i++ {
 		sy.DWt = dwt

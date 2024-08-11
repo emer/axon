@@ -29,8 +29,8 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 	lni := ni - ly.NeurStIndex
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ly.Params.GatherSpikesInit(ctx, ni, di)
-		for _, pj := range ly.RcvPaths {
-			if pj.IsOff() {
+		for _, pj := range ly.RecvPaths {
+			if pj.Off {
 				continue
 			}
 			bi := pj.Params.Com.ReadIndex(lni, di, ctx.CyclesTotal, pj.Params.Indexes.RecvNeurN, ctx.NetIndexes.MaxData)
@@ -77,10 +77,10 @@ func (ly *Layer) GiFromSpikes(ctx *Context) {
 			ppi := pi
 			ddi := di
 			SetAvgMaxFloatFromIntErr(func() {
-				fmt.Printf("GiFromSpikes: Layer: %s  pool: %d  di: %d\n", ly.Nm, ppi, ddi)
+				fmt.Printf("GiFromSpikes: Layer: %s  pool: %d  di: %d\n", ly.Name, ppi, ddi)
 			})
 			pl := ly.Pool(pi, di)
-			pl.AvgMax.Calc(int32(ly.Idx))
+			pl.AvgMax.Calc(int32(ly.Index))
 		}
 	}
 	for di := uint32(0); di < ctx.NetIndexes.MaxData; di++ {
@@ -154,7 +154,7 @@ func (ly *Layer) PulvinarDriver(ctx *Context, lni, di uint32) (drvGe, nonDrivePc
 func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues) {
 	drvGe := float32(0)
 	nonDrivePct := float32(0)
-	if ly.LayerType() == PulvinarLayer {
+	if ly.Type == PulvinarLayer {
 		drvGe, nonDrivePct = ly.PulvinarDriver(ctx, ni-ly.NeurStIndex, di)
 		SetNrnV(ctx, ni, di, Ext, nonDrivePct) // use for regulating inhibition
 	}
@@ -202,8 +202,8 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32) {
 // last step in Cycle, integrated the next time around.
 // Called directly by Network, iterates over data.
 func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
-	for _, sp := range ly.SndPaths {
-		if sp.IsOff() {
+	for _, sp := range ly.SendPaths {
+		if sp.Off {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -239,7 +239,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		vals := ly.LayerValues(di)
 		lpl := ly.Pool(0, di)
 		ly.Params.CyclePostLayer(ctx, di, lpl, vals)
-		switch ly.LayerType() {
+		switch ly.Type {
 		case CeMLayer:
 			ly.Params.CyclePostCeMLayer(ctx, di, lpl)
 		case VSPatchLayer:
@@ -348,7 +348,7 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		// Note: synapse-level Ca decay happens in DWt
 		if ahp == 1 {
-			lt := ly.LayerType()
+			lt := ly.Type
 			if lt == PTMaintLayer {
 				SetNrnV(ctx, ni, di, CtxtGe, 0)
 				SetNrnV(ctx, ni, di, CtxtGeRaw, 0)
@@ -460,7 +460,7 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 
 // MinusPhasePost does special algorithm processing at end of minus
 func (ly *Layer) MinusPhasePost(ctx *Context) {
-	switch ly.LayerType() {
+	switch ly.Type {
 	case MatrixLayer:
 		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
 	case PulvinarLayer:
@@ -514,7 +514,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
 	ly.CorSimFromActs(ctx) // GPU syncs down the state before this
 	np := ly.NPools
-	if ly.LayerType() == PTMaintLayer && ly.Nm == "OFCposPT" {
+	if ly.Type == PTMaintLayer && ly.Name == "OFCposPT" {
 		for pi := uint32(1); pi < np; pi++ {
 			for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 				pl := ly.Pool(pi, di)
@@ -537,7 +537,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 			}
 		}
 	}
-	switch ly.LayerType() {
+	switch ly.Type {
 	case MatrixLayer:
 		ly.MatrixGated(ctx)
 	}
@@ -675,8 +675,8 @@ func (ly *Layer) CorSimFromActs(ctx *Context) {
 // synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (ly *Layer) DWt(ctx *Context, si uint32) {
-	for _, pj := range ly.SndPaths {
-		if pj.IsOff() {
+	for _, pj := range ly.SendPaths {
+		if pj.Off {
 			continue
 		}
 		pj.DWt(ctx, si)
@@ -685,8 +685,8 @@ func (ly *Layer) DWt(ctx *Context, si uint32) {
 
 // DWtSubMean computes subtractive normalization of the DWts
 func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
-	for _, pj := range ly.RcvPaths {
-		if pj.IsOff() {
+	for _, pj := range ly.RecvPaths {
+		if pj.Off {
 			continue
 		}
 		pj.DWtSubMean(ctx, ri)
@@ -695,8 +695,8 @@ func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
 
 // WtFromDWt updates weight values from delta weight changes
 func (ly *Layer) WtFromDWt(ctx *Context, si uint32) {
-	for _, pj := range ly.SndPaths {
-		if pj.IsOff() {
+	for _, pj := range ly.SendPaths {
+		if pj.Off {
 			continue
 		}
 		pj.WtFromDWt(ctx, si)
@@ -851,9 +851,9 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		}
 		ppi := pi
 		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFromTrgAvg Pool Layer: %s  pool: %d\n", ly.Nm, ppi)
+			fmt.Printf("AvgDifFromTrgAvg Pool Layer: %s  pool: %d\n", ly.Name, ppi)
 		})
-		pl.AvgDif.Calc(int32(ly.Idx))                          // ref in case of crash
+		pl.AvgDif.Calc(int32(ly.Index))                        // ref in case of crash
 		for di := uint32(1); di < ctx.NetIndexes.NData; di++ { // copy to other datas
 			pld := ly.Pool(pi, di)
 			pld.AvgDif = pl.AvgDif
@@ -870,9 +870,9 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 			lpl.AvgDif.UpdateValue(math32.Abs(NrnAvgV(ctx, ni, AvgDif)))
 		}
 		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFromTrgAvg LayPool Layer: %s\n", ly.Nm)
+			fmt.Printf("AvgDifFromTrgAvg LayPool Layer: %s\n", ly.Name)
 		})
-		lpl.AvgDif.Calc(int32(ly.Idx))
+		lpl.AvgDif.Calc(int32(ly.Index))
 
 		for di := uint32(1); di < ctx.NetIndexes.NData; di++ { // copy to other datas
 			lpld := ly.Pool(0, di)
@@ -884,8 +884,8 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFromDWt, but this call can be used during testing to update failing synapses.
 func (ly *Layer) SynFail(ctx *Context) {
-	for _, pj := range ly.SndPaths {
-		if pj.IsOff() {
+	for _, pj := range ly.SendPaths {
+		if pj.Off {
 			continue
 		}
 		pj.SynFail(ctx)
@@ -896,8 +896,8 @@ func (ly *Layer) SynFail(ctx *Context) {
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
 func (ly *Layer) LRateMod(mod float32) {
-	for _, pj := range ly.RcvPaths {
-		// if pj.IsOff() { // keep all sync'd
+	for _, pj := range ly.RecvPaths {
+		// if pj.Off { // keep all sync'd
 		// 	continue
 		// }
 		pj.LRateMod(mod)
@@ -908,8 +908,8 @@ func (ly *Layer) LRateMod(mod float32) {
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
 func (ly *Layer) LRateSched(sched float32) {
-	for _, pj := range ly.RcvPaths {
-		// if pj.IsOff() { // keep all sync'd
+	for _, pj := range ly.RecvPaths {
+		// if pj.Off { // keep all sync'd
 		// 	continue
 		// }
 		pj.LRateSched(sched)
@@ -923,8 +923,8 @@ func (ly *Layer) LRateSched(sched float32) {
 // at the start of learning
 func (ly *Layer) SetSubMean(trgAvg, path float32) {
 	ly.Params.Learn.TrgAvgAct.SubMean = trgAvg
-	for _, pj := range ly.RcvPaths {
-		// if pj.IsOff() { // keep all sync'd
+	for _, pj := range ly.RecvPaths {
+		// if pj.Off { // keep all sync'd
 		// 	continue
 		// }
 		pj.Params.Learn.Trace.SubMean = path

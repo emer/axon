@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !offscreen && ((darwin && !ios) || windows || (linux && !android) || dragonfly || openbsd)
+
 package axon
 
 import (
@@ -1196,7 +1198,7 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 	nrar := gp.SyncRegionStruct("NeuronAvgs") // not strictly needed but consistency..
 
 	maxData := int(gp.Net.MaxData)
-	layDataN := gp.Net.NLayers() * maxData
+	layDataN := gp.Net.EmerNetwork.NumLayers() * maxData
 	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
@@ -1255,7 +1257,7 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 	plr := gp.SyncRegionStruct("Pools")
 
 	maxData := int(gp.Net.MaxData)
-	layDataN := gp.Net.NLayers() * maxData
+	layDataN := gp.Net.EmerNetwork.NumLayers() * maxData
 	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 
@@ -1296,7 +1298,7 @@ func (gp *GPU) RunCycleSeparateFuns() {
 	gp.SyncContextToGPU()
 
 	maxData := int(gp.Net.MaxData)
-	layDataN := gp.Net.NLayers() * maxData
+	layDataN := gp.Net.EmerNetwork.NumLayers() * maxData
 	neurDataN := int(gp.Net.NNeurons) * maxData
 	poolDataN := len(gp.Net.Pools)
 

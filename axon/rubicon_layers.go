@@ -159,7 +159,7 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 //gosl:end rubicon_layers
 
 func (ly *Layer) BLADefaults() {
-	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")
+	isAcq := strings.Contains(ly.Name, "Acq") || strings.Contains(ly.Name, "Novel")
 
 	lp := ly.Params
 	lp.Acts.Decay.Act = 0.2
@@ -227,7 +227,7 @@ func (ly *Layer) CeMDefaults() {
 	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	lp.Learn.RLRate.SigmoidMin = 1.0 // doesn't matter -- doesn't learn..
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.PathScale.Abs = 1
 	}
@@ -246,7 +246,7 @@ func (ly *Layer) LDTDefaults() {
 	// lp.Rubicon.Thr = 0.2
 	// lp.Rubicon.Gain = 2
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.PathScale.Abs = 1
 	}

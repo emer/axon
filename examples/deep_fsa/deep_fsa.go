@@ -201,7 +201,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -354,8 +354,8 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ctx := &ss.Context
 
-	in := net.AxonLayerByName("Input")
-	trg := net.AxonLayerByName("Targets")
+	in := net.LayerByName("Input")
+	trg := net.LayerByName("Targets")
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 
 	net.InitExt(ctx)
@@ -393,7 +393,7 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -450,8 +450,8 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
-	inp := ss.Net.AxonLayerByName("InputP")
-	trg := ss.Net.AxonLayerByName("Targets")
+	inp := ss.Net.LayerByName("InputP")
+	trg := ss.Net.LayerByName("Targets")
 
 	ss.Stats.SetFloat("CorSim", float64(inp.Values[di].CorSim.Cor))
 	_, minusIndexes, _ := inp.LocalistErr4D(ctx)
@@ -516,14 +516,14 @@ func (ss *Sim) ConfigLogItems() {
 	layers := ss.Net.LayersByType(axon.SuperLayer, axon.TargetLayer, axon.CTLayer, axon.PulvinarLayer)
 	for _, lnm := range layers {
 		clnm := lnm
-		ly := ss.Net.AxonLayerByName(clnm)
+		ly := ss.Net.LayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  reflect.Float64,
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
@@ -536,7 +536,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "Gnmda")
+					tsr := ctx.GetLayerSampleTensor(clnm, "Gnmda")
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
@@ -549,7 +549,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "GgabaB")
+					tsr := ctx.GetLayerSampleTensor(clnm, "GgabaB")
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
@@ -694,7 +694,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

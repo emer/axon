@@ -208,7 +208,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -339,7 +339,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 		ev := ss.Envs.ByModeDi(mode, di).(*VSPatchEnv)
 		ev.Step()
 		for _, lnm := range lays {
-			ly := net.AxonLayerByName(lnm)
+			ly := net.LayerByName(lnm)
 			itsr := ev.State(lnm)
 			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
@@ -391,7 +391,7 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -739,7 +739,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

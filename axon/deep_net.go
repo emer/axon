@@ -10,7 +10,6 @@ import (
 
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 	"golang.org/x/exp/maps"
 )
 
@@ -83,8 +82,8 @@ func (net *Network) AddSuperCT4D(name, pathClass string, nPoolsY, nPoolsX, nNeur
 // The Pulv layer needs other CT connections from higher up to predict this layer.
 // Pulvinar is positioned behind the CT layer.
 func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
-	name := super.Name()
-	shp := super.Shape()
+	name := super.Name
+	shp := super.Shape
 	var plv *Layer
 	if shp.NumDims() == 2 {
 		plv = net.AddPulvLayer2D(name+"P", shp.DimSize(0), shp.DimSize(1))
@@ -92,7 +91,7 @@ func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 		plv = net.AddPulvLayer4D(name+"P", shp.DimSize(0), shp.DimSize(1), shp.DimSize(2), shp.DimSize(3))
 	}
 	plv.SetBuildConfig("DriveLayName", name)
-	plv.SetRelPos(relpos.NewBehind(name+"CT", space))
+	plv.Pos.SetBehind(name+"CT", space)
 	plv.AddClass(name)
 	return plv
 }
@@ -102,8 +101,8 @@ func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 // The Pulv layer needs other CT connections from higher up to predict this layer.
 // Pulvinar is positioned behind the given Layer.
 func (net *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
-	name := lay.Name()
-	shp := lay.Shape()
+	name := lay.Name
+	shp := lay.Shape
 	var plv *Layer
 	if shp.NumDims() == 2 {
 		plv = net.AddPulvLayer2D(name+"P", shp.DimSize(0), shp.DimSize(1))
@@ -228,16 +227,16 @@ func (net *Network) ConnectPTMaintSelf(ly *Layer, pat paths.Pattern, pathClass s
 // AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer
 // and a BG gated Thalamus layer for given superficial layer (SuperLayer)
 // and associated CT, with given thal suffix (e.g., MD, VM).
-// PT and Thal have SetClass(super.Name()) called to allow shared params.
-// Projections are made with given classes: SuperToPT, PTSelfMaint, PTtoThal, ThalToPT,
+// PT and Thal have SetClass(super.Name) called to allow shared params.
+// Pathways are made with given classes: SuperToPT, PTSelfMaint, PTtoThal, ThalToPT,
 // with optional extra class.
 // if selfMaint is true, the SMaint self-maintenance mechanism is used
 // instead of lateral connections.
 // The PT and BGThal layers are positioned behind the CT layer.
 func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathClass string, superToPT, ptSelf, ptThal paths.Pattern, selfMaint bool, space float32) (pt, thal *Layer) {
 	pathClass = params.AddClass(pathClass, "PFCPath")
-	name := super.Name()
-	shp := super.Shape()
+	name := super.Name
+	shp := super.Shape
 	is4D := false
 	ptExtra := 1 // extra size for pt layers
 	if shp.NumDims() == 2 {
@@ -326,7 +325,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathCla
 	} else {
 		pt.PlaceBehind(super, space)
 	}
-	pt.Rel.Scale = float32(1) / float32(ptExtra)
+	pt.Pos.Scale = float32(1) / float32(ptExtra)
 	thal.PlaceBehind(pt, space)
 
 	return
@@ -350,7 +349,7 @@ func (net *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // ConnectPTPredSelf adds a Self (Lateral) pathway within a PTPredLayer,
 // which supports active maintenance, with a class of PTSelfMaint
 func (net *Network) ConnectPTPredSelf(ly *Layer, pat paths.Pattern) *Path {
-	return net.LateralConnectLayer(ly, pat).AddClass("PTSelfMaint").(AxonPath).AsAxon()
+	return net.LateralConnectLayer(ly, pat).AddClass("PTSelfMaint").EmerPath.(*Path)
 }
 
 // ConnectPTToPulv connects PT, PTPred with given Pulv:
@@ -388,14 +387,14 @@ func (net *Network) ConnectPTpToPulv(ptPred, pulv *Layer, toPulvPat, fmPulvPat p
 
 // AddPTPredLayer adds a PTPred pyramidal tract prediction layer
 // for given PTMaint layer and associated CT.
-// Sets SetClass(super.Name()) to allow shared params.
-// Projections are made with given classes: PTtoPred, CTtoPred
+// Sets SetClass(super.Name) to allow shared params.
+// Pathways are made with given classes: PTtoPred, CTtoPred
 // The PTPred layer is positioned behind the PT layer.
 func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPath, ctToPredPath paths.Pattern, pathClass string, space float32) (ptPred *Layer) {
 	pathClass = params.AddClass(pathClass, "PFCPath")
-	name := strings.TrimSuffix(ptMaint.Name(), "PT")
-	// shp := ptMaint.Shape()
-	shp := ct.Shape()
+	name := strings.TrimSuffix(ptMaint.Name, "PT")
+	// shp := ptMaint.Shape
+	shp := ct.Shape
 	if shp.NumDims() == 2 {
 		ptPred = net.AddPTPredLayer2D(name+"PTp", shp.DimSize(0), shp.DimSize(1))
 	} else {

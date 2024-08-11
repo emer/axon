@@ -392,7 +392,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pone2one := paths.NewPoolOneToOne()
 	circle := paths.NewCircle()
 	circle.Radius = 6
-	circle.TopoWts = true
+	circle.TopoWeights = true
 	circle.Sigma = 1
 
 	// net.ConnectLayers(v2ct, v2p, one2one, emer.Forward)
@@ -414,13 +414,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	net.Defaults()
 	ss.SetParams("Network", false) // only set Network params
-	ss.InitWts()
+	ss.InitWeights()
 }
 
-// InitWts initialize weights
-func (ss *Sim) InitWts() {
+// InitWeights initialize weights
+func (ss *Sim) InitWeights() {
 	net := ss.Net
-	net.InitWts()
+	net.InitWeights()
 	net.InitTopoSWts() //  sets all wt scales
 }
 
@@ -434,7 +434,7 @@ func (ss *Sim) Init() {
 	ss.TestEnv.Init(0)
 	ss.Context.Reset()
 	// ss.Context.CycPerQtr = 55 // 220 total
-	ss.InitWts()
+	ss.InitWeights()
 	ss.StopNow = false
 	ss.SetParams("", false) // all sheets
 	ss.TstTrlLog.SetNumRows(0)
@@ -545,8 +545,8 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 	lays := []string{"V1", "LIP"}
 	for _, lnm := range lays {
-		ly := ss.Net.AxonLayerByName(lnm)
-		pats := en.State(ly.Nm)
+		ly := ss.Net.LayerByName(lnm)
+		pats := en.State(ly.Name)
 		if pats != nil {
 			ly.ApplyExt(pats)
 		}
@@ -554,7 +554,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 }
 
 func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
-	ly := ss.Net.AxonLayerByName(lnm)
+	ly := ss.Net.LayerByName(lnm)
 	sz := vecint.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
 	pt := stm.PosXY(sz)
 	cx := int(pt.X)
@@ -579,7 +579,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 }
 
 func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
-	ly := ss.Net.AxonLayerByName(lnm)
+	ly := ss.Net.LayerByName(lnm)
 	sz := vecint.Vector2i{ly.Shp.DimSize(1), ly.Shp.DimSize(0)}
 	pt := stm.PosXY(sz)
 	cx := int(math32.Round(pt.X)) - 1
@@ -822,7 +822,7 @@ func (ss *Sim) LogTstTrl(dt *table.Table) {
 
 	for _, lnm := range ss.TstRecLays {
 		tsr := ss.ValuesTsr(lnm)
-		ly := ss.Net.AxonLayerByName(lnm)
+		ly := ss.Net.LayerByName(lnm)
 		ly.UnitValuesTensor(tsr, "Act")
 		dt.SetTensor(lnm, row, tsr)
 	}
@@ -845,7 +845,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *table.Table) {
 	dt.AddFloat64Column("S2Act")
 	dt.AddFloat64Column("PctMod")
 	for _, lnm := range ss.TstRecLays {
-		ly := ss.Net.AxonLayerByName(lnm)
+		ly := ss.Net.LayerByName(lnm)
 		dt.AddFloat64Column(lnm, ly.Shp.Sizes)
 	}
 	dt.SetNumRows(0)

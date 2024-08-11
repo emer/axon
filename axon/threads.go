@@ -71,7 +71,7 @@ func ParallelRun(fun func(st, ed uint32), total uint32, nThreads int) {
 // SetNThreads sets number of threads to use for CPU parallel processing.
 // pass 0 to use a default heuristic number based on current GOMAXPROCS
 // processors and the number of neurons in the network (call after building)
-func (nt *NetworkBase) SetNThreads(nthr int) {
+func (nt *Network) SetNThreads(nthr int) {
 	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 	if nthr <= 0 {
 		nneur := len(nt.Neurons)
@@ -84,7 +84,7 @@ func (nt *NetworkBase) SetNThreads(nthr int) {
 }
 
 // PathMapSeq applies function of given name to all pathways sequentially.
-func (nt *NetworkBase) PathMapSeq(fun func(pj *Path), funame string) {
+func (nt *Network) PathMapSeq(fun func(pj *Path), funame string) {
 	nt.FunTimerStart(funame)
 	for _, pj := range nt.Paths {
 		fun(pj)
@@ -93,7 +93,7 @@ func (nt *NetworkBase) PathMapSeq(fun func(pj *Path), funame string) {
 }
 
 // LayerMapSeq applies function of given name to all layers sequentially.
-func (nt *NetworkBase) LayerMapSeq(fun func(ly *Layer), funame string) {
+func (nt *Network) LayerMapSeq(fun func(ly *Layer), funame string) {
 	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
 		fun(ly)
@@ -103,7 +103,7 @@ func (nt *NetworkBase) LayerMapSeq(fun func(ly *Layer), funame string) {
 
 // LayerMapPar applies function of given name to all layers
 // using as many go routines as configured in NetThreads.Neurons.
-func (nt *NetworkBase) LayerMapPar(fun func(ly *Layer), funame string) {
+func (nt *Network) LayerMapPar(fun func(ly *Layer), funame string) {
 	if nt.NThreads <= 1 {
 		nt.LayerMapSeq(fun, funame)
 	} else {
@@ -119,7 +119,7 @@ func (nt *NetworkBase) LayerMapPar(fun func(ly *Layer), funame string) {
 }
 
 // NeuronMapSeq applies function of given name to all neurons sequentially.
-func (nt *NetworkBase) NeuronMapSeq(ctx *Context, fun func(ly *Layer, ni uint32), funame string) {
+func (nt *Network) NeuronMapSeq(ctx *Context, fun func(ly *Layer, ni uint32), funame string) {
 	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
 		for lni := uint32(0); lni < ly.NNeurons; lni++ {
@@ -132,7 +132,7 @@ func (nt *NetworkBase) NeuronMapSeq(ctx *Context, fun func(ly *Layer, ni uint32)
 
 // NeuronMapPar applies function of given name to all neurons
 // using as many go routines as configured in NetThreads.Neurons.
-func (nt *NetworkBase) NeuronMapPar(ctx *Context, fun func(ly *Layer, ni uint32), funame string) {
+func (nt *Network) NeuronMapPar(ctx *Context, fun func(ly *Layer, ni uint32), funame string) {
 	if nt.NThreads <= 1 {
 		nt.NeuronMapSeq(ctx, fun, funame)
 	} else {
@@ -152,8 +152,8 @@ func (nt *NetworkBase) NeuronMapPar(ctx *Context, fun func(ly *Layer, ni uint32)
 // Timing reports
 
 // TimerReport reports the amount of time spent in each function, and in each thread
-func (nt *NetworkBase) TimerReport() {
-	fmt.Printf("TimerReport: %v  %d threads\n", nt.Nm, nt.NThreads)
+func (nt *Network) TimerReport() {
+	fmt.Printf("TimerReport: %v  %d threads\n", nt.Name, nt.NThreads)
 	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
 	nfn := len(nt.FunTimes)
 	fnms := make([]string, nfn)
@@ -176,7 +176,7 @@ func (nt *NetworkBase) TimerReport() {
 }
 
 // FunTimerStart starts function timer for given function name -- ensures creation of timer
-func (nt *NetworkBase) FunTimerStart(fun string) {
+func (nt *Network) FunTimerStart(fun string) {
 	if !nt.RecFunTimes {
 		return
 	}
@@ -189,7 +189,7 @@ func (nt *NetworkBase) FunTimerStart(fun string) {
 }
 
 // FunTimerStop stops function timer -- timer must already exist
-func (nt *NetworkBase) FunTimerStop(fun string) {
+func (nt *Network) FunTimerStop(fun string) {
 	if !nt.RecFunTimes {
 		return
 	}

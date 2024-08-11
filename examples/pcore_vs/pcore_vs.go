@@ -215,8 +215,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(gpi, accPosVM, full, axon.InhibPath).AddClass("BgFixed")
 
-	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
-	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name())
+	mtxGo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
+	mtxNo.SetBuildConfig("ThalLay1Name", accPosVM.Name)
 
 	net.ConnectToVSMatrix(accPos, mtxGo, full).AddClass("ACCToVMtx")
 	net.ConnectToVSMatrix(accNeg, mtxNo, full).AddClass("ACCToVMtx")
@@ -239,7 +239,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -382,7 +382,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 			ev.Step()
 		} else {
 			for _, lnm := range lays {
-				ly := net.AxonLayerByName(lnm)
+				ly := net.LayerByName(lnm)
 				itsr := ev.State(lnm)
 				ly.ApplyExt(ctx, uint32(di), itsr)
 			}
@@ -438,8 +438,8 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 // so that the reward is present during the final trial when learning occurs.
 func (ss *Sim) GatedAction() {
 	ctx := &ss.Context
-	mtxly := ss.Net.AxonLayerByName("VMtxGo")
-	vmly := ss.Net.AxonLayerByName("ACCPosVM")
+	mtxly := ss.Net.LayerByName("VMtxGo")
+	vmly := ss.Net.LayerByName("ACCPosVM")
 	nan := math32.NaN()
 	for di := 0; di < ss.Config.Run.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*GoNoEnv)
@@ -471,7 +471,7 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -758,7 +758,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

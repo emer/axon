@@ -30,8 +30,8 @@ type ActAvgValues struct {
 }
 
 func (lv *ActAvgValues) Init() {
-	lv.ActMAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWts
-	lv.ActPAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWts
+	lv.ActMAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWeights
+	lv.ActPAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWeights
 	lv.AvgMaxGeM = 1
 	lv.AvgMaxGiM = 1
 	lv.GiMult = 1

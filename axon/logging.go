@@ -141,7 +141,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -153,7 +153,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Max)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -164,10 +164,10 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(mode, times[ntimes-2]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
 		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
@@ -178,7 +178,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(1.0 - ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -189,7 +189,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.GiMult)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -208,7 +208,7 @@ func LogInputLayer(lg *elog.Logs, net *Network, mode etime.Modes) {
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.ActMAvg)
 				}}})
 	}
@@ -222,18 +222,18 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer)
 	for _, lnm := range layers {
 		clnm := lnm
-		cly := net.AxonLayerByName(clnm)
+		cly := net.LayerByName(clnm)
 		lg.AddItem(&elog.Item{
 			Name:      clnm + "_ActM",
 			Type:      reflect.Float64,
-			CellShape: cly.RepShape().Sizes,
+			CellShape: cly.SampleShape.Sizes,
 			FixMax:    true,
 			Range:     minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Analyze, times[ntimes-1]): func(ctx *elog.Context) {
-					ctx.SetLayerRepTensor(clnm, "ActM")
+					ctx.SetLayerSampleTensor(clnm, "ActM")
 				}, etime.Scope(etime.Test, times[ntimes-1]): func(ctx *elog.Context) {
-					ctx.SetLayerRepTensor(clnm, "ActM")
+					ctx.SetLayerSampleTensor(clnm, "ActM")
 				}}})
 		itm := lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_NStrong",
@@ -286,7 +286,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.AvgMaxVarByPool(&net.Ctx, "Ge", 0, ctx.Di).Avg)
 				}}})
 		lg.AddItem(&elog.Item{
@@ -295,7 +295,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.AvgMaxVarByPool(&net.Ctx, "Act", 0, ctx.Di).Avg)
 				}}})
 	}
@@ -316,7 +316,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Avg)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -328,7 +328,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Max)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -339,7 +339,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgDif.Avg) // only updt w slow wts
 				}}})
 		lg.AddItem(&elog.Item{
@@ -348,7 +348,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgDif.Max)
 				}}})
 	}
@@ -369,10 +369,10 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := net.AxonLayerByName(clnm)
+		// 			ly := net.LayerByName(clnm)
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := net.AxonLayerByName(clnm)
+		// 			ly := net.LayerByName(clnm)
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 		// 			ctx.SetAgg(ctx.Mode, etime.Trial, stats.Mean)
@@ -387,7 +387,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
+					tsr := ctx.GetLayerSampleTensor(clnm, "NmdaCa")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -399,7 +399,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
+					tsr := ctx.GetLayerSampleTensor(clnm, "NmdaCa")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -411,7 +411,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
+					tsr := ctx.GetLayerSampleTensor(clnm, "VgccCaInt")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -423,7 +423,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
+					tsr := ctx.GetLayerSampleTensor(clnm, "VgccCaInt")
 					ctx.SetFloat64(stats.MaxTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -435,7 +435,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaLrn")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -447,7 +447,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaLrn")
 					ctx.SetFloat64(stats.MaxTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -459,7 +459,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
 					norm.AbsTensor(tsr)
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
@@ -472,7 +472,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
 					norm.AbsTensor(tsr)
 					ctx.SetFloat64(stats.MaxTensor(tsr))
 				}}})
@@ -485,7 +485,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaD")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaD")
 					ctx.SetFloat64(stats.MeanTensor(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -497,7 +497,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaSpkD")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaSpkD")
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}}})
@@ -509,7 +509,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
 					avg := stats.MeanTensor(tsr)
 					ctx.SetFloat64(avg)
 				}}})
@@ -544,7 +544,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[2], stats.Mean)
@@ -560,10 +560,10 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.ActMAvg)
 				}}})
 		lg.AddItem(&elog.Item{
@@ -573,10 +573,10 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Range: minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(*Layer)
 					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
 				}}})
 	}
@@ -636,9 +636,9 @@ func LayerActsLogConfig(net *Network, lg *elog.Logs) {
 	dtRec.SetNumRows(0)
 	dtAvg.SetNumRows(nlay)
 	for li, ly := range net.Layers {
-		dt.SetString("Layer", li, ly.Nm)
+		dt.SetString("Layer", li, ly.Name)
 		dt.SetFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
-		dtAvg.SetString("Layer", li, ly.Nm)
+		dtAvg.SetString("Layer", li, ly.Name)
 	}
 }
 
@@ -656,7 +656,7 @@ func LayerActsLog(net *Network, lg *elog.Logs, di int, gui *egui.GUI) {
 		dt.SetFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
 		dt.SetFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
 		dtRec.SetNumRows(dtRec.Rows + 1)
-		dtRec.SetString("Layer", li, ly.Nm)
+		dtRec.SetString("Layer", li, ly.Name)
 		dtRec.SetFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
 		dtRec.SetFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
 		dtRec.SetFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
@@ -685,7 +685,7 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 	ags := spl.AggsToTable(table.ColumnNameOnly)
 	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
 	for li, ly := range net.Layers {
-		rw := ags.RowsByString("Layer", ly.Nm, table.Equals, table.UseCase)[0]
+		rw := ags.RowsByString("Layer", ly.Name, table.Equals, table.UseCase)[0]
 		for _, cn := range cols {
 			dtAvg.SetFloat(cn, li, ags.Float(cn, rw))
 		}

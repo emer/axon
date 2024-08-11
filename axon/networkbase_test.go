@@ -12,7 +12,7 @@ func TestAddLayer(t *testing.T) {
 	shape := []int{5, 5}
 	layer := net.AddLayer("Input", shape, InputLayer)
 	assert.Equal(t, 1, net.NLayers())
-	assert.Same(t, layer, net.AxonLayerByName("Input"))
+	assert.Same(t, layer, net.LayerByName("Input"))
 }
 
 func TestDefaults(t *testing.T) {
@@ -29,18 +29,18 @@ func TestDefaults(t *testing.T) {
 	ctx := NewContext()
 	assert.Nil(t, net.Build(ctx))
 	net.Defaults()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 
 	assert.Equal(t, 100, int(ctx.SlowInterval))
 	assert.Equal(t, 0, int(ctx.SlowCtr))
 	assert.Equal(t, uint32(12), net.NNeurons)
 
 	// test layer access
-	assert.Equal(t, net.Layers[0], net.AxonLayerByName("Input"))
-	assert.Equal(t, net.Layers[1], net.AxonLayerByName("Hidden"))
-	assert.Equal(t, net.Layers[2], net.AxonLayerByName("Output"))
-	assert.Nil(t, net.AxonLayerByName("DoesNotExist"))
-	_, err := net.LayByNameTry("DoesNotExist")
+	assert.Equal(t, net.Layers[0], net.LayerByName("Input"))
+	assert.Equal(t, net.Layers[1], net.LayerByName("Hidden"))
+	assert.Equal(t, net.Layers[2], net.LayerByName("Output"))
+	assert.Nil(t, net.LayerByName("DoesNotExist"))
+	_, err := net.LayerByName("DoesNotExist")
 	assert.Error(t, err)
 	val := net.LayersByType(InputLayer)
 	assert.Equal(t, 1, len(val))
@@ -68,8 +68,8 @@ func TestConnectLayers(t *testing.T) {
 	assert.Equal(t, 2, net.NLayers())
 	net.ConnectLayers(input, output, paths.NewFull(), ForwardPath)
 
-	assert.Same(t, output, input.SendPath(0).RecvLay())
-	assert.Same(t, input, output.RecvPath(0).SendLay())
+	assert.Same(t, output, input.SendPath(0).RecvLayer())
+	assert.Same(t, input, output.RecvPath(0).SendLayer())
 }
 
 func TestDelete(t *testing.T) {

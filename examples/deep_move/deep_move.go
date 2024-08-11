@@ -244,19 +244,19 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(hdHid, dpHid, full, emer.Back)
 	// net.ConnectLayers(hdHidct, dpHidct, full, emer.Back)
 
-	hd.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: act.Name(), XAlign: relpos.Left, Space: 2 * space})
-	act.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpIn.Name(), YAlign: relpos.Front, Space: 2})
-	dpHid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: dpIn.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	hdHid.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpHid.Name(), YAlign: relpos.Front, Space: 2})
+	hd.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: act.Name, XAlign: relpos.Left, Space: 2 * space})
+	act.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpIn.Name, YAlign: relpos.Front, Space: 2})
+	dpHid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: dpIn.Name, XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
+	hdHid.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpHid.Name, YAlign: relpos.Front, Space: 2})
 	if ss.Config.Params.Hid2 {
-		dpHid2.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: hdHidct.Name(), XAlign: relpos.Left, Space: 2 * space})
+		dpHid2.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: hdHidct.Name, XAlign: relpos.Left, Space: 2 * space})
 	}
 
 	net.Build(ctx)
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -401,7 +401,7 @@ func (ss *Sim) ApplyInputs() {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*MoveEnv)
 		ev.Step()
 		for _, lnm := range lays {
-			ly := ss.Net.AxonLayerByName(lnm)
+			ly := ss.Net.LayerByName(lnm)
 			pats := ev.State(lnm)
 			if pats != nil {
 				ly.ApplyExt(ctx, di, pats)
@@ -422,7 +422,7 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -485,7 +485,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat32("HeadDirP_PrvMCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "SpkPrv", "ActM", di))
 	ss.Stats.SetFloat32("HeadDirP_PrvPCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "SpkPrv", "ActP", di))
 
-	inp := ss.Net.AxonLayerByName("DepthP")
+	inp := ss.Net.LayerByName("DepthP")
 	ss.Stats.SetFloat("TrlErr", 1)
 	ss.Stats.SetFloat32("CorSim", inp.Values[di].CorSim.Cor)
 	ss.Stats.SetFloat("UnitErr", inp.PctUnitErr(ctx)[di])
@@ -695,7 +695,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

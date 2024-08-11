@@ -225,7 +225,7 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.NeuroMod.BurstGain = 0.1
 	ly.Params.Learn.RLRate.SigmoidMin = 0.001
 
-	if ly.Cls == "VSMatrixLayer" {
+	if ly.Class == "VSMatrixLayer" {
 		ly.Params.Inhib.Layer.On.SetBool(true)
 		ly.Params.Matrix.IsVS.SetBool(true)
 		ly.Params.Acts.Dend.ModBase = 0
@@ -243,15 +243,15 @@ func (ly *Layer) MatrixDefaults() {
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SWts.Init.SPct = 0
-		if pj.Send.LayerType() == GPLayer { // GPeAkToMtx
+		if pj.Send.Type == GPLayer { // GPeAkToMtx
 			pj.Params.SetFixedWts()
 			pj.Params.PathScale.Abs = 3
 			pj.Params.SWts.Init.Mean = 0.75
 			pj.Params.SWts.Init.Var = 0.0
-			if ly.Cls == "DSMatrixLayer" {
-				if strings.Contains(ly.Nm, "No") {
+			if ly.Class == "DSMatrixLayer" {
+				if strings.Contains(ly.Name, "No") {
 					pj.Params.PathScale.Abs = 6
 				}
 			}
@@ -300,13 +300,13 @@ func (ly *Layer) GPDefaults() {
 		ly.Params.Acts.Init.GeVar = 0.1
 	}
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
 		pj.Params.SWts.Init.Var = 0.25  // 0.25
 		switch ly.Params.GP.GPType {
 		case GPePr:
-			switch pj.Send.LayerType() {
+			switch pj.Send.Type {
 			case MatrixLayer:
 				pj.Params.PathScale.Abs = 1 // MtxNoToGPePr -- primary NoGo pathway
 			case GPLayer:
@@ -315,7 +315,7 @@ func (ly *Layer) GPDefaults() {
 				pj.Params.PathScale.Abs = 0.5 // STNToGPePr
 			}
 		case GPeAk:
-			switch pj.Send.LayerType() {
+			switch pj.Send.Type {
 			case MatrixLayer:
 				pj.Params.PathScale.Abs = 0.5 // MtxGoToGPeAk
 			case GPLayer:
@@ -337,19 +337,19 @@ func (ly *Layer) GPiDefaults() {
 	ly.Params.Acts.Init.GiVar = 0.1
 	// note: GPLayer took care of STN input paths
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
-		pj.Params.SWts.Init.Mean = 0.75         // 0.75  see above
-		pj.Params.SWts.Init.Var = 0.25          // 0.25
-		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
-			if pj.Send.Cls == "VSMatrixLayer" {
+		pj.Params.SWts.Init.Mean = 0.75  // 0.75  see above
+		pj.Params.SWts.Init.Var = 0.25   // 0.25
+		if pj.Send.Type == MatrixLayer { // MtxGoToGPi
+			if pj.Send.Class == "VSMatrixLayer" {
 				pj.Params.PathScale.Abs = 0.2
 			} else {
 				pj.Params.PathScale.Abs = 1
 			}
-		} else if pj.Send.LayerType() == GPLayer { // GPePrToGPi
+		} else if pj.Send.Type == GPLayer { // GPePrToGPi
 			pj.Params.PathScale.Abs = 1
-		} else if pj.Send.LayerType() == STNLayer { // STNToGPi
+		} else if pj.Send.Type == STNLayer { // STNToGPi
 			pj.Params.PathScale.Abs = 0.2
 		}
 	}
@@ -397,11 +397,11 @@ func (ly *Layer) STNDefaults() {
 	// 	ly.Params.Inhib.Layer.On.SetBool(true)
 	// }
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.25
-		if pj.Send.LayerType() == GPLayer { // GPePrToSTN
+		if pj.Send.Type == GPLayer { // GPePrToSTN
 			pj.Params.PathScale.Abs = 0.5
 		} else {
 			pj.Params.PathScale.Abs = 2.0 // pfc inputs
@@ -426,11 +426,11 @@ func (ly *Layer) BGThalDefaults() {
 
 	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		pj.Params.SetFixedWts()
 		pj.Params.SWts.Init.Mean = 0.75
 		pj.Params.SWts.Init.Var = 0.0
-		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
+		if strings.HasSuffix(pj.Send.Name, "GPi") { // GPiToBGThal
 			pj.Params.PathScale.Abs = 5 // can now be much stronger with PTMaint mod and maint dynamics
 			pj.AddClass("GPiToBGThal")
 		}

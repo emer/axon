@@ -21,7 +21,7 @@ import (
 // sending and receiving spikes.
 func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
-	if pj.PathType() == CTCtxtPath {
+	if pj.Type == CTCtxtPath {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
 		}
@@ -36,7 +36,7 @@ func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 	scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIndex + syi
-		recvIndex := pj.Params.SynRecvLayIndex(ctx, syni) // note: layer-specific is ok here
+		recvIndex := pj.Params.SynRecvLayerIndex(ctx, syni) // note: layer-specific is ok here
 		sv := int32(scale * SynV(ctx, syni, Wt))
 		bi := pjcom.WriteIndexOff(recvIndex, di, wrOff, pj.Params.Indexes.RecvNeurN, maxData)
 		atomic.AddInt32(&pj.GBuf[bi], sv)

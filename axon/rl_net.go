@@ -29,8 +29,8 @@ func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float3
 	rp = nt.AddLayer2D(prefix+"RewPred", 1, 2, TDPredLayer)
 	ri = nt.AddLayer2D(prefix+"RewInteg", 1, 2, TDIntegLayer)
 	td = nt.AddLayer2D(prefix+"TD", 1, 1, TDDaLayer)
-	ri.SetBuildConfig("TDPredLayName", rp.Name())
-	td.SetBuildConfig("TDIntegLayName", ri.Name())
+	ri.SetBuildConfig("TDPredLayName", rp.Name)
+	td.SetBuildConfig("TDIntegLayName", ri.Name)
 	if rel == relpos.Behind {
 		rp.PlaceBehind(rew, space)
 		ri.PlaceBehind(rp, space)
@@ -50,7 +50,7 @@ func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float3
 	rew = nt.AddRewLayer(prefix + "Rew")
 	rp = nt.AddLayer2D(prefix+"RWPred", 1, 2, RWPredLayer)
 	da = nt.AddLayer2D(prefix+"DA", 1, 1, RWDaLayer)
-	da.SetBuildConfig("RWPredLayName", rp.Name())
+	da.SetBuildConfig("RWPredLayName", rp.Name)
 	if rel == relpos.Behind {
 		rp.PlaceBehind(rew, space)
 		da.PlaceBehind(rp, space)

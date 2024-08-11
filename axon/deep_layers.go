@@ -197,9 +197,9 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0
 
-	for _, pj := range ly.RcvPaths {
+	for _, pj := range ly.RecvPaths {
 		slay := pj.Send
-		if slay.LayerType() == BGThalLayer {
+		if slay.Type == BGThalLayer {
 			pj.Params.Com.GType = ModulatoryG
 		}
 	}

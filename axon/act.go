@@ -181,7 +181,7 @@ func (dp *DendParams) ShouldDisplay(field string) bool {
 //  ActInitParams
 
 // ActInitParams are initial values for key network state variables.
-// Initialized in InitActs called by InitWts, and provides target values for DecayState.
+// Initialized in InitActs called by InitWeights, and provides target values for DecayState.
 type ActInitParams struct {
 
 	// initial membrane potential -- see Erev.L for the resting potential (typically .3)
@@ -699,7 +699,7 @@ type ActParams struct {
 	// dendrite-specific parameters
 	Dend DendParams `display:"inline"`
 
-	// initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState
+	// initial values for key network state variables -- initialized in InitActs called by InitWeights, and provides target values for DecayState
 	Init ActInitParams `display:"inline"`
 
 	// amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora)
@@ -943,7 +943,7 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 
 //gosl:end act
 
-// InitActs initializes activation state in neuron -- called during InitWts but otherwise not
+// InitActs initializes activation state in neuron -- called during InitWeights but otherwise not
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, Spike, 0)
@@ -1031,7 +1031,7 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 
 // InitLongActs initializes longer time-scale activation states in neuron
 // (SpkPrv, SpkSt*, ActM, ActP)
-// Called from InitActs, which is called from InitWts,
+// Called from InitActs, which is called from InitWeights,
 // but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {

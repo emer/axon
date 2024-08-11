@@ -18,7 +18,7 @@ import (
 // ToggleLayersOff can be used to disable layers in a Network, for example if you are doing an ablation study.
 func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 	for _, lnm := range layerNames {
-		lyi := net.AxonLayerByName(lnm)
+		lyi := net.LayerByName(lnm)
 		if lyi == nil {
 			fmt.Printf("layer not found: %s\n", lnm)
 			continue
@@ -34,7 +34,7 @@ func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 // using train run and epoch counters from looper
 // and the RunName string identifying tag, parameters and starting run,
 func WeightsFilename(net *Network, ctrString, runName string) string {
-	return net.Name() + "_" + runName + "_" + ctrString + ".wts.gz"
+	return net.Name + "_" + runName + "_" + ctrString + ".wts.gz"
 }
 
 // SaveWeights saves network weights to filename with WeightsFilename information
@@ -47,7 +47,7 @@ func SaveWeights(net *Network, ctrString, runName string) string {
 	}
 	fnm := WeightsFilename(net, ctrString, runName)
 	fmt.Printf("Saving Weights to: %s\n", fnm)
-	net.SaveWtsJSON(core.Filename(fnm))
+	net.SaveWeightsJSON(core.Filename(fnm))
 	return fnm
 }
 

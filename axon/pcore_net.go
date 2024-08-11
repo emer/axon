@@ -31,8 +31,8 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxGo = net.AddVMatrixLayer(prefix+"VMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = net.AddVMatrixLayer(prefix+"VMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
-	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
-	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
+	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
+	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
 
 	mp := params.Params{
 		"Layer.Matrix.IsVS":          "true",
@@ -46,8 +46,8 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	p1to1 := paths.NewPoolOneToOne()
 
 	net.ConnectLayers(mtxNo, gpePr, full, InhibPath)
-	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
-	pj.DefParams = params.Params{
+	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
+	pt.DefParams = params.Params{
 		"Path.Learn.Learn":   "false",
 		"Path.PathScale.Rel": "0.05",
 	}
@@ -104,15 +104,15 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	pf = net.AddLayer4D(prefix+"PF", nPoolsY, nPoolsX, nNeurY, 1, SuperLayer)
 	pf.DefParams = pfp
 
-	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
-	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
+	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
+	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
 
 	p1to1 := paths.NewPoolOneToOne()
 	full := paths.NewFull()
 
 	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPath)
-	pj := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
-	pj.DefParams = params.Params{
+	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
+	pt.DefParams = params.Params{
 		"Path.Learn.Learn":   "false",
 		"Path.PathScale.Rel": "0.1",
 	}
@@ -140,10 +140,10 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 		"Path.Com.GType":     "ModulatoryG",
 		"Path.PathScale.Abs": "1",
 	}
-	pj = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPath).AddClass("PFToDMtx").(*Path)
-	pj.DefParams = pfm
-	pj = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPath).AddClass("PFToDMtx").(*Path)
-	pj.DefParams = pfm
+	pt = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
+	pt.DefParams = pfm
+	pt = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
+	pt.DefParams = pfm
 
 	gpePr.PlaceBehind(gpi, space)
 	gpeAk.PlaceRightOf(gpePr, space)

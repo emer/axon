@@ -305,7 +305,7 @@ func (ln *LearnNeurParams) Defaults() {
 }
 
 // InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.
-// Called by InitWts (at start of learning).
+// Called by InitWeights (at start of learning).
 func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, GnmdaLrn, 0)
 	SetNrnV(ctx, ni, di, NmdaCa, 0)
@@ -607,10 +607,10 @@ func (sp *SWtParams) WtFromDWt(wt, lwt *float32, dwt, swt float32) {
 
 //gosl:end learn
 
-// InitWtsSyn initializes weight values based on WtInit randomness parameters
+// InitWeightsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
+func (sp *SWtParams) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
 	wtv := sp.Init.RandVar(rnd)
 	wt := mean + wtv
 	SetSynV(ctx, syni, Wt, wt)

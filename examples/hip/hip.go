@@ -224,7 +224,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 	net.InitTopoSWts()
 }
 
@@ -373,8 +373,8 @@ func (ss *Sim) ApplyInputs() {
 		// note: must save env state for logging / stats due to data parallel re-use of same env
 		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
 		for _, lnm := range lays {
-			ly := ss.Net.AxonLayerByName(lnm)
-			pats := ev.State(ly.Nm)
+			ly := ss.Net.LayerByName(lnm)
+			pats := ev.State(ly.Name)
 			if pats != nil {
 				ly.ApplyExt(ctx, di, pats)
 			}
@@ -392,7 +392,7 @@ func (ss *Sim) NewRun() {
 	ss.ConfigEnv()
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -537,7 +537,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats(di int) {
-	out := ss.Net.AxonLayerByName("EC5")
+	out := ss.Net.LayerByName("EC5")
 
 	ss.Stats.SetFloat("CorSim", float64(out.Values[di].CorSim.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
@@ -556,9 +556,9 @@ func (ss *Sim) TrialStats(di int) {
 // values clamped from ECin activations
 func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	memthr := ss.Config.Mod.MemThr
-	ecout := ss.Net.AxonLayerByName("EC5")
-	inp := ss.Net.AxonLayerByName("Input") // note: must be input b/c ECin can be active
-	nn := ecout.Shape().Len()
+	ecout := ss.Net.LayerByName("EC5")
+	inp := ss.Net.LayerByName("Input") // note: must be input b/c ECin can be active
+	nn := ecout.Shape.Len()
 	actThr := float32(0.2)
 	trgOnWasOffAll := 0.0 // all units
 	trgOnWasOffCmp := 0.0 // only those that required completion, missing in ECin
@@ -871,7 +871,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)
@@ -948,8 +948,8 @@ func (ss *Sim) TwoFactorRun() {
 			ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
 			// print our info for checking purposes
-			fmt.Println("CA3 shape: ", ss.Net.AxonLayerByName("CA3").Shp.Sizes)
-			fmt.Println("EC2 shape: ", ss.Net.AxonLayerByName("EC2").Shp.Sizes)
+			fmt.Println("CA3 shape: ", ss.Net.LayerByName("CA3").Shp.Sizes)
+			fmt.Println("EC2 shape: ", ss.Net.LayerByName("EC2").Shp.Sizes)
 			fmt.Println("# of pairs: ", ss.TrainAB.Rows)
 
 			ss.Loops.Run(etime.Train)

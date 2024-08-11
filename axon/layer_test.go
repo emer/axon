@@ -56,7 +56,7 @@ func TestLayer_SendSpike(t *testing.T) {
 
 	assert.NoError(t, net.Build())
 	net.Defaults()
-	net.InitWts()
+	net.InitWeights()
 
 	ctx := NewContext()
 	net.NewState(ctx)
@@ -84,8 +84,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	// the neurons we spiked are connected to 9 neurons in the output layer
 	// make sure they all received the spike
 	recvBuffs := [][]float32{
-		inputLayer1.SndPaths[0].(*Path).GBuf,
-		inputLayer2.SndPaths[0].(*Path).GBuf,
+		inputLayer1.SendPaths[0].(*Path).GBuf,
+		inputLayer2.SendPaths[0].(*Path).GBuf,
 	}
 	for _, recvBuf := range recvBuffs {
 		count := 0
@@ -118,11 +118,11 @@ func TestLayerToJson(t *testing.T) {
 	// and syncing them by dumping the weights from net A and loading the weights
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(ctx, shape, t)
-	hiddenLayer := net.AxonLayerByName("Hidden")
+	hiddenLayer := net.LayerByName("Hidden")
 	net.Cycle(ctx) // run one cycle to make the weights more different
 
 	netC := createNetwork(ctxC, shape, t)
-	hiddenLayerC := netC.AxonLayerByName("Hidden")
+	hiddenLayerC := netC.LayerByName("Hidden")
 
 	// save to JSON
 	filename := t.TempDir() + "/layer.json"
@@ -141,11 +141,11 @@ func TestLayerToJson(t *testing.T) {
 	assert.NoError(t, fh.Close())
 
 	// make sure the synapse weights are the same
-	origProj := hiddenLayer.RcvPaths[0]
-	copyProj := hiddenLayerC.RcvPaths[0]
+	origProj := hiddenLayer.RecvPaths[0]
+	copyProj := hiddenLayerC.RecvPaths[0]
 	varIndex, _ := origProj.SynVarIndex("Wt")
-	assert.Equal(t, origProj.Syn1DNum(), copyProj.Syn1DNum())
-	for idx := 0; idx < origProj.Syn1DNum(); idx++ {
+	assert.Equal(t, origProj.NumSyns(), copyProj.NumSyns())
+	for idx := 0; idx < origProj.NumSyns(); idx++ {
 		origWeight := origProj.SynVal1D(varIndex, idx)
 		copyWeight := copyProj.SynVal1D(varIndex, idx)
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
@@ -176,7 +176,7 @@ func createNetwork(ctx *Context, shape []int, t *testing.T) *Network {
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 	assert.NoError(t, net.Build(ctx))
 	net.Defaults()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 	return net
 }
 
@@ -198,28 +198,28 @@ func TestLayerBase_IsOff(t *testing.T) {
 	assert.NoError(t, net.Build(ctx))
 	net.Defaults()
 
-	assert.False(t, inputLayer.IsOff())
+	assert.False(t, inputLayer.Off)
 
 	inputLayer.SetOff(true)
-	assert.True(t, inputLayer.IsOff())
-	assert.False(t, hiddenLayer.IsOff())
-	assert.True(t, inToHid.IsOff())
-	assert.False(t, in2ToHid.IsOff())
+	assert.True(t, inputLayer.Off)
+	assert.False(t, hiddenLayer.Off)
+	assert.True(t, inToHid.Off)
+	assert.False(t, in2ToHid.Off)
 
 	inputLayer2.SetOff(true)
-	assert.True(t, inputLayer2.IsOff())
-	assert.False(t, hiddenLayer.IsOff())
-	assert.True(t, in2ToHid.IsOff())
+	assert.True(t, inputLayer2.Off)
+	assert.False(t, hiddenLayer.Off)
+	assert.True(t, in2ToHid.Off)
 
 	hiddenLayer.SetOff(true)
-	assert.True(t, hiddenLayer.IsOff())
-	assert.True(t, hidToOut.IsOff())
-	assert.True(t, outToHid.IsOff())
+	assert.True(t, hiddenLayer.Off)
+	assert.True(t, hidToOut.Off)
+	assert.True(t, outToHid.Off)
 
 	hiddenLayer.SetOff(false)
-	assert.False(t, hiddenLayer.IsOff())
-	assert.False(t, hidToOut.IsOff())
-	assert.False(t, outToHid.IsOff())
-	assert.True(t, inToHid.IsOff())
-	assert.True(t, in2ToHid.IsOff())
+	assert.False(t, hiddenLayer.Off)
+	assert.False(t, hidToOut.Off)
+	assert.False(t, outToHid.Off)
+	assert.True(t, inToHid.Off)
+	assert.True(t, in2ToHid.Off)
 }

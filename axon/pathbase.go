@@ -20,27 +20,12 @@ import (
 // syi =  path-relative synapse index (per existing usage)
 // syni = network-relative synapse index -- add SynStIndex to syi
 
-// PathBase contains the basic structural information for specifying a pathway of synaptic
-// connections between two layers, and maintaining all the synaptic connection-level data.
-// The same struct token is added to the Recv and Send layer path lists, and it manages everything
-// about the connectivity, and methods on the Path handle all the relevant computation.
-// The Base does not have algorithm-specific methods and parameters, so it can be easily
-// reused for different algorithms, and cleanly separates the algorithm-specific code.
-// Any dependency on the algorithm-level Path can be captured in the AxonPath interface,
-// accessed via the AxonPth field.
-type PathBase struct {
+// Path implements axon spiking communication and learning.
+type Path struct {
+	emer.PathBase
 
-	// we need a pointer to ourselves as an AxonPath, which can always be used to extract the true underlying type of object when path is embedded in other structs -- function receivers do not have this ability so this is necessary.
-	AxonPth AxonPath `copier:"-" json:"-" xml:"-" display:"-"`
-
-	// inactivate this pathway -- allows for easy experimentation
-	Off bool
-
-	// Class is for applying parameter styles, can be space separated multple tags
-	Cls string
-
-	// can record notes about this pathway here
-	Notes string
+	// path parameters.
+	Params *PathParams
 
 	// sending layer for this pathway
 	Send *Layer
@@ -48,12 +33,8 @@ type PathBase struct {
 	// receiving layer for this pathway
 	Recv *Layer
 
-	// pattern of connectivity
-	Pat paths.Pattern `table:"-"`
-
-	// type of pathway:  Forward, Back, Lateral, or extended type in specialized algorithms.
-	// Matches against .Cls parameter styles (e.g., .Back etc)
-	Typ PathTypes
+	// type of pathway.
+	Type PathTypes
 
 	// default parameters that are applied prior to user-set parameters.
 	// these are useful for specific functionality in specialized brain areas
@@ -101,54 +82,32 @@ type PathBase struct {
 
 // emer.Path interface
 
-// Init MUST be called to initialize the path's pointer to itself as an emer.Path
-// which enables the proper interface methods to be called.
-func (pj *PathBase) Init(path emer.Path) {
-	pj.AxonPth = path.(AxonPath)
-}
-
-func (pj *PathBase) TypeName() string { return "Path" } // always, for params..
-func (pj *PathBase) Class() string    { return pj.PathTypeName() + " " + pj.Cls }
-func (pj *PathBase) Name() string {
-	return pj.Send.Name() + "To" + pj.Recv.Name()
-}
-func (pj *Path) AddClass(cls ...string) emer.Path {
-	pj.Cls = params.AddClass(pj.Cls, cls...)
-	return pj
-}
-func (pj *PathBase) SetPattern(pat paths.Pattern) emer.Path { pj.Pat = pat; return pj.AxonPth }
-func (pj *PathBase) SetType(typ emer.PathType) emer.Path    { pj.Typ = PathTypes(typ); return pj.AxonPth }
-func (pj *PathBase) Label() string                          { return pj.Name() }
-func (pj *PathBase) RecvLay() emer.Layer                    { return pj.Recv }
-func (pj *PathBase) SendLay() emer.Layer                    { return pj.Send }
-func (pj *PathBase) Pattern() paths.Pattern                 { return pj.Pat }
-func (pj *PathBase) Type() emer.PathType                    { return emer.PathType(pj.Typ) }
-func (pj *PathBase) PathTypeName() string                   { return pj.Typ.String() }
-func (pj *PathBase) IsOff() bool                            { return pj.Off }
-
-// SetOff individual pathway. Careful: Layer.SetOff(true) will reactivate all paths of that layer,
-// so path-level lesioning should always be done last.
-func (pj *PathBase) SetOff(off bool) { pj.Off = off }
+func (pt *Path) RecvLayer() emer.Layer { return pt.Recv }
+func (pt *Path) SendLayer() emer.Layer { return pt.Send }
+func (pt *Path) TypeName() string      { return pt.Type.String() }
 
 // Connect sets the connectivity between two layers and the pattern to use in interconnecting them
-func (pj *PathBase) Connect(slay, rlay *Layer, pat paths.Pattern, typ PathTypes) {
-	pj.Send = slay
-	pj.Recv = rlay
-	pj.Pat = pat
-	pj.Typ = typ
+func (pt *Path) Connect(slay, rlay *Layer, pat paths.Pattern, typ PathTypes) {
+	pt.Send = slay
+	pt.Recv = rlay
+	pt.Pattern = pat
+	pt.Type = typ
+	pt.Name = pt.Send.Name + "To" + pt.Recv.Name
 }
+
+// todo: move to emer?
 
 // Validate tests for non-nil settings for the pathway -- returns error
 // message or nil if no problems (and logs them if logmsg = true)
-func (pj *PathBase) Validate(logmsg bool) error {
+func (pt *Path) Validate(logmsg bool) error {
 	emsg := ""
-	if pj.Pat == nil {
-		emsg += "Pat is nil; "
+	if pt.Pattern == nil {
+		emsg += "Pattern is nil; "
 	}
-	if pj.Recv == nil {
+	if pt.Recv == nil {
 		emsg += "Recv is nil; "
 	}
-	if pj.Send == nil {
+	if pt.Send == nil {
 		emsg += "Send is nil; "
 	}
 	if emsg != "" {
@@ -163,9 +122,9 @@ func (pj *PathBase) Validate(logmsg bool) error {
 
 // RecvSynIndexes returns the receiving synapse indexes for given recv unit index
 // within the receiving layer, to be iterated over for recv-based processing.
-func (pj *PathBase) RecvSynIndexes(ri uint32) []uint32 {
-	rcon := pj.RecvCon[ri]
-	return pj.RecvSynIndex[rcon.Start : rcon.Start+rcon.N]
+func (pt *Path) RecvSynIndexes(ri uint32) []uint32 {
+	rcon := pt.RecvCon[ri]
+	return pt.RecvSynIndex[rcon.Start : rcon.Start+rcon.N]
 }
 
 // Build constructs the full connectivity among the layers.
@@ -173,55 +132,55 @@ func (pj *PathBase) RecvSynIndexes(ri uint32) []uint32 {
 // Pat.Connect is called to get the pattern of the connection.
 // Then the connection indexes are configured according to that pattern.
 // Does NOT allocate synapses -- these are set by Network from global slice.
-func (pj *PathBase) Build() error {
-	if pj.Off {
+func (pt *Path) Build() error {
+	if pt.Off {
 		return nil
 	}
-	err := pj.Validate(true)
+	err := pt.Validate(true)
 	if err != nil {
 		return err
 	}
-	ssh := pj.Send.Shape()
-	rsh := pj.Recv.Shape()
-	sendn, recvn, cons := pj.Pat.Connect(ssh, rsh, pj.Recv == pj.Send)
+	ssh := &pt.Send.Shape
+	rsh := &pt.Recv.Shape
+	sendn, recvn, cons := pt.Pattern.Connect(ssh, rsh, pt.Recv == pt.Send)
 	slen := ssh.Len()
 	rlen := rsh.Len()
-	tcons := pj.SetConStartN(&pj.SendCon, &pj.SendConNAvgMax, sendn)
-	tconr := pj.SetConStartN(&pj.RecvCon, &pj.RecvConNAvgMax, recvn)
+	tcons := pt.SetConStartN(&pt.SendCon, &pt.SendConNAvgMax, sendn)
+	tconr := pt.SetConStartN(&pt.RecvCon, &pt.RecvConNAvgMax, recvn)
 	if tconr != tcons {
-		log.Printf("%v programmer error: total recv cons %v != total send cons %v\n", pj.String(), tconr, tcons)
+		log.Printf("%v programmer error: total recv cons %v != total send cons %v\n", pt.String(), tconr, tcons)
 	}
 	// these are large allocs, as number of connections tends to be ~quadratic
 	// These indexes are not used in GPU computation -- only for CPU side.
-	pj.RecvConIndex = make([]uint32, tconr)
-	pj.RecvSynIndex = make([]uint32, tcons)
-	pj.SendConIndex = make([]uint32, tcons)
+	pt.RecvConIndex = make([]uint32, tconr)
+	pt.RecvSynIndex = make([]uint32, tcons)
+	pt.SendConIndex = make([]uint32, tcons)
 
 	sconN := make([]uint32, slen) // temporary mem needed to tracks cur n of sending cons
 
 	cbits := cons.Values
 	for ri := 0; ri < rlen; ri++ {
 		rbi := ri * slen // recv bit index
-		rcon := pj.RecvCon[ri]
+		rcon := pt.RecvCon[ri]
 		rci := uint32(0)
 		for si := 0; si < slen; si++ {
 			if !cbits.Index(rbi + si) { // no connection
 				continue
 			}
 			if rci >= rcon.N {
-				log.Printf("%v programmer error: recv target total con number: %v exceeded at recv idx: %v, send idx: %v\n", pj.String(), rcon.N, ri, si)
+				log.Printf("%v programmer error: recv target total con number: %v exceeded at recv idx: %v, send idx: %v\n", pt.String(), rcon.N, ri, si)
 				break
 			}
-			pj.RecvConIndex[rcon.Start+rci] = uint32(si)
+			pt.RecvConIndex[rcon.Start+rci] = uint32(si)
 
 			sci := sconN[si]
-			scon := pj.SendCon[si]
+			scon := pt.SendCon[si]
 			if sci >= scon.N {
-				log.Printf("%v programmer error: send target total con number: %v exceeded at recv idx: %v, send idx: %v\n", pj.String(), scon.N, ri, si)
+				log.Printf("%v programmer error: send target total con number: %v exceeded at recv idx: %v, send idx: %v\n", pt.String(), scon.N, ri, si)
 				break
 			}
-			pj.SendConIndex[scon.Start+sci] = uint32(ri)
-			pj.RecvSynIndex[rcon.Start+rci] = scon.Start + sci
+			pt.SendConIndex[scon.Start+sci] = uint32(ri)
+			pt.RecvSynIndex[rcon.Start+rci] = scon.Start + sci
 			(sconN[si])++
 			rci++
 		}
@@ -231,7 +190,7 @@ func (pj *PathBase) Build() error {
 
 // SetConStartN sets the *Con StartN values given n tensor from Pat.
 // Returns total number of connections for this direction.
-func (pj *PathBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *tensor.Int32) uint32 {
+func (pt *Path) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *tensor.Int32) uint32 {
 	ln := tn.Len()
 	tnv := tn.Values
 	*con = make([]StartN, ln)
@@ -248,34 +207,34 @@ func (pj *PathBase) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *ten
 }
 
 // String satisfies fmt.Stringer for path
-func (pj *PathBase) String() string {
+func (pt *Path) String() string {
 	str := ""
-	if pj.Recv == nil {
+	if pt.Recv == nil {
 		str += "recv=nil; "
 	} else {
-		str += pj.Recv.Name() + " <- "
+		str += pt.Recv.Name + " <- "
 	}
-	if pj.Send == nil {
+	if pt.Send == nil {
 		str += "send=nil"
 	} else {
-		str += pj.Send.Name()
+		str += pt.Send.Name
 	}
-	if pj.Pat == nil {
+	if pt.Pattern == nil {
 		str += " Pat=nil"
 	} else {
-		str += " Pat=" + pj.Pat.Name()
+		str += " Pat=" + pt.Pattern.Name()
 	}
 	return str
 }
 
 // ParamsHistoryReset resets parameter application history
-func (pj *PathBase) ParamsHistoryReset() {
-	pj.ParamsHistory.ParamsHistoryReset()
+func (pt *Path) ParamsHistoryReset() {
+	pt.ParamsHistory.ParamsHistoryReset()
 }
 
 // ParamsApplied is just to satisfy History interface so reset can be applied
-func (pj *PathBase) ParamsApplied(sel *params.Sel) {
-	pj.ParamsHistory.ParamsApplied(sel)
+func (pt *Path) ParamsApplied(sel *params.Sel) {
+	pt.ParamsHistory.ParamsApplied(sel)
 }
 
 // ApplyParams applies given parameter style Sheet to this pathway.
@@ -283,23 +242,23 @@ func (pj *PathBase) ParamsApplied(sel *params.Sel) {
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
-func (pj *PathBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	app, err := pars.Apply(pj.AxonPth, setMsg)
-	// note: must use AxonPth to get to actual Path, which then uses Styler interface
+func (pt *Path) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
+	app, err := pars.Apply(pt.EmerPath, setMsg)
+	// note: must use EmerPath to get to actual Path, which then uses Styler interface
 	// to return the Params struct.
 	if app {
-		pj.AxonPth.UpdateParams()
+		pt.EmerPath.UpdateParams()
 	}
 	return app, err
 }
 
 // ApplyDefParams applies DefParams default parameters if set
 // Called by Path.Defaults()
-func (pj *PathBase) ApplyDefParams() {
-	if pj.DefParams == nil {
+func (pt *Path) ApplyDefParams() {
+	if pt.DefParams == nil {
 		return
 	}
-	err := pj.DefParams.Apply(pj.AxonPth, false)
+	err := pt.DefParams.Apply(pt.EmerPath, false)
 	if err != nil {
 		log.Printf("programmer error -- fix DefParams: %s\n", err)
 	}
@@ -307,20 +266,20 @@ func (pj *PathBase) ApplyDefParams() {
 
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
-func (pj *PathBase) NonDefaultParams() string {
-	pth := pj.Recv.Name() + "." + pj.Name() // redundant but clearer..
+func (pt *Path) NonDefaultParams() string {
+	pth := pt.Recv.Name + "." + pt.Name // redundant but clearer..
 	_ = pth
-	// nds := views.StructNonDefFieldsStr(pj.AxonPth.AsAxon().Params, pth)
+	// nds := views.StructNonDefFieldsStr(pj.EmerPath.AsAxon().Params, pth)
 	// todo: see layerbase for new impl
 	return "todo need to do"
 }
 
-func (pj *PathBase) SynVarNames() []string {
+func (pt *Path) SynVarNames() []string {
 	return SynapseVarNames
 }
 
 // SynVarProps returns properties for variables
-func (pj *PathBase) SynVarProps() map[string]string {
+func (pt *Path) SynVarProps() map[string]string {
 	return SynapseVarProps
 }
 
@@ -328,16 +287,16 @@ func (pj *PathBase) SynVarProps() map[string]string {
 // (1D, flat indexes, layer relative).
 // Returns -1 if synapse not found between these two neurons.
 // Requires searching within connections for sending unit.
-func (pj *PathBase) SynIndex(sidx, ridx int) int {
-	if sidx >= len(pj.SendCon) {
+func (pt *Path) SynIndex(sidx, ridx int) int {
+	if sidx >= len(pt.SendCon) {
 		return -1
 	}
-	scon := pj.SendCon[sidx]
+	scon := pt.SendCon[sidx]
 	if scon.N == 0 {
 		return -1
 	}
-	firstRi := int(pj.SendConIndex[scon.Start])
-	lastRi := int(pj.SendConIndex[scon.Start+scon.N-1])
+	firstRi := int(pt.SendConIndex[scon.Start])
+	lastRi := int(pt.SendConIndex[scon.Start+scon.N-1])
 	if ridx < firstRi || ridx > lastRi { // fast reject -- paths are always in order!
 		return -1
 	}
@@ -353,7 +312,7 @@ func (pj *PathBase) SynIndex(sidx, ridx int) int {
 		if up < int32(scon.N) {
 			doing = true
 			sconi := int32(scon.Start) + up
-			if int(pj.SendConIndex[sconi]) == ridx {
+			if int(pt.SendConIndex[sconi]) == ridx {
 				return int(sconi)
 			}
 			up++
@@ -361,7 +320,7 @@ func (pj *PathBase) SynIndex(sidx, ridx int) int {
 		if dn >= 0 {
 			doing = true
 			sconi := int32(scon.Start) + dn
-			if int(pj.SendConIndex[sconi]) == ridx {
+			if int(pt.SendConIndex[sconi]) == ridx {
 				return int(sconi)
 			}
 			dn--
@@ -376,34 +335,34 @@ func (pj *PathBase) SynIndex(sidx, ridx int) int {
 // SynVarIndex returns the index of given variable within the synapse,
 // according to *this path's* SynVarNames() list (using a map to lookup index),
 // or -1 and error message if not found.
-func (pj *PathBase) SynVarIndex(varNm string) (int, error) {
+func (pt *Path) SynVarIndex(varNm string) (int, error) {
 	return SynapseVarByName(varNm)
 }
 
 // SynVarNum returns the number of synapse-level variables
 // for this paths.  This is needed for extending indexes in derived types.
-func (pj *PathBase) SynVarNum() int {
+func (pt *Path) SynVarNum() int {
 	return len(SynapseVarNames)
 }
 
-// Syn1DNum returns the number of synapses for this path as a 1D array.
+// NumSyns returns the number of synapses for this path as a 1D array.
 // This is the max idx for SynVal1D and the number of vals set by SynValues.
-func (pj *PathBase) Syn1DNum() int {
-	return int(pj.NSyns)
+func (pt *Path) NumSyns() int {
+	return int(pt.NSyns)
 }
 
-// SynVal1D returns value of given variable index (from SynVarIndex) on given SynIndex.
+// SynValue1D returns value of given variable index (from SynVarIndex) on given SynIndex.
 // Returns NaN on invalid index.
 // This is the core synapse var access method used by other methods.
-func (pj *PathBase) SynVal1D(varIndex int, synIndex int) float32 {
-	if synIndex < 0 || synIndex >= int(pj.NSyns) {
+func (pt *Path) SynValue1D(varIndex int, synIndex int) float32 {
+	if synIndex < 0 || synIndex >= int(pt.NSyns) {
 		return math32.NaN()
 	}
-	if varIndex < 0 || varIndex >= pj.SynVarNum() {
+	if varIndex < 0 || varIndex >= pt.SynVarNum() {
 		return math32.NaN()
 	}
-	ctx := &pj.Recv.Network.Ctx
-	syni := pj.SynStIndex + uint32(synIndex)
+	ctx := &pt.Recv.Network.Ctx
+	syni := pt.SynStIndex + uint32(synIndex)
 	if varIndex < int(SynapseVarsN) {
 		return SynV(ctx, syni, SynapseVars(varIndex))
 	} else {
@@ -415,54 +374,42 @@ func (pj *PathBase) SynVal1D(varIndex int, synIndex int) float32 {
 // using the natural ordering of the synapses (sender based for Axon),
 // into given float32 slice (only resized if not big enough).
 // Returns error on invalid var name.
-func (pj *PathBase) SynValues(vals *[]float32, varNm string) error {
-	vidx, err := pj.AxonPth.SynVarIndex(varNm)
+func (pt *Path) SynValues(vals *[]float32, varNm string) error {
+	vidx, err := pt.EmerPath.SynVarIndex(varNm)
 	if err != nil {
 		return err
 	}
-	ns := int(pj.NSyns)
+	ns := int(pt.NSyns)
 	if *vals == nil || cap(*vals) < ns {
 		*vals = make([]float32, ns)
 	} else if len(*vals) < ns {
 		*vals = (*vals)[0:ns]
 	}
-	slay := pj.Send
+	slay := pt.Send
 	i := 0
 	for lni := uint32(0); lni < slay.NNeurons; lni++ {
-		scon := pj.SendCon[lni]
+		scon := pt.SendCon[lni]
 		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-			(*vals)[i] = pj.AxonPth.SynVal1D(vidx, i)
+			(*vals)[i] = pt.SynValue1D(vidx, i)
 			i++
 		}
 	}
 	return nil
 }
 
-// SynVal returns value of given variable name on the synapse
-// between given send, recv unit indexes (1D, flat indexes).
-// Returns math32.NaN() for access errors (see SynValTry for error message)
-func (pj *PathBase) SynValue(varNm string, sidx, ridx int) float32 {
-	vidx, err := pj.AxonPth.SynVarIndex(varNm)
-	if err != nil {
-		return math32.NaN()
-	}
-	syi := pj.SynIndex(sidx, ridx)
-	return pj.AxonPth.SynVal1D(vidx, syi)
-}
-
 // SynVal1DDi returns value of given variable index (from SynVarIndex) on given SynIndex.
 // Returns NaN on invalid index.
 // This is the core synapse var access method used by other methods.
 // Includes Di data parallel index for data-parallel synaptic values.
-func (pj *PathBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
-	if synIndex < 0 || synIndex >= int(pj.NSyns) {
+func (pt *Path) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
+	if synIndex < 0 || synIndex >= int(pt.NSyns) {
 		return math32.NaN()
 	}
-	if varIndex < 0 || varIndex >= pj.SynVarNum() {
+	if varIndex < 0 || varIndex >= pt.SynVarNum() {
 		return math32.NaN()
 	}
-	ctx := &pj.Recv.Network.Ctx
-	syni := pj.SynStIndex + uint32(synIndex)
+	ctx := &pt.Recv.Network.Ctx
+	syni := pt.SynStIndex + uint32(synIndex)
 	if varIndex < int(SynapseVarsN) {
 		return SynV(ctx, syni, SynapseVars(varIndex))
 	} else {
@@ -474,11 +421,11 @@ func (pj *PathBase) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 // between given send, recv unit indexes (1D, flat indexes).
 // Returns math32.NaN() for access errors (see SynValTry for error message)
 // Includes Di data parallel index for data-parallel synaptic values.
-func (pj *PathBase) SynValDi(varNm string, sidx, ridx int, di int) float32 {
-	vidx, err := pj.AxonPth.SynVarIndex(varNm)
+func (pt *Path) SynValDi(varNm string, sidx, ridx int, di int) float32 {
+	vidx, err := pt.EmerPath.SynVarIndex(varNm)
 	if err != nil {
 		return math32.NaN()
 	}
-	syi := pj.SynIndex(sidx, ridx)
-	return pj.SynVal1DDi(vidx, syi, di)
+	syi := pt.SynIndex(sidx, ridx)
+	return pt.SynVal1DDi(vidx, syi, di)
 }

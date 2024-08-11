@@ -42,10 +42,10 @@ type StartN struct {
 // PathIndexes contains path-level index information into global memory arrays
 type PathIndexes struct {
 	PathIndex  uint32 // index of the pathway in global path list: [Layer][SendPaths]
-	RecvLay    uint32 // index of the receiving layer in global list of layers
+	RecvLayer  uint32 // index of the receiving layer in global list of layers
 	RecvNeurSt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
 	RecvNeurN  uint32 // number of neurons in recv layer
-	SendLay    uint32 // index of the sending layer in global list of layers
+	SendLayer  uint32 // index of the sending layer in global list of layers
 	SendNeurSt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
 	SendNeurN  uint32 // number of neurons in send layer
 	SynapseSt  uint32 // start index into global Synapse array: [Layer][SendPaths][Synapses]
@@ -228,17 +228,17 @@ func (pj *PathParams) SetFixedWts() {
 	pj.SWts.Init.Sym.SetBool(false)
 }
 
-// SynRecvLayIndex converts the Synapse RecvIndex of recv neuron's index
+// SynRecvLayerIndex converts the Synapse RecvIndex of recv neuron's index
 // in network level global list of all neurons to receiving
 // layer-specific index.
-func (pj *PathParams) SynRecvLayIndex(ctx *Context, syni uint32) uint32 {
+func (pj *PathParams) SynRecvLayerIndex(ctx *Context, syni uint32) uint32 {
 	return pj.Indexes.RecvNIndexToLayIndex(SynI(ctx, syni, SynRecvIndex))
 }
 
-// SynSendLayIndex converts the Synapse SendIndex of sending neuron's index
+// SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
-func (pj *PathParams) SynSendLayIndex(ctx *Context, syni uint32) uint32 {
+func (pj *PathParams) SynSendLayerIndex(ctx *Context, syni uint32) uint32 {
 	return pj.Indexes.SendNIndexToLayIndex(SynI(ctx, syni, SynSendIndex))
 }
 

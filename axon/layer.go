@@ -22,24 +22,10 @@ import (
 // lni = layer-based neuron index (0 = first neuron in layer)
 // ni  = absolute whole network neuron index
 
-// axon.Layer implements the basic Axon spiking activation function,
-// and manages learning in the pathways.
-type Layer struct {
-	LayerBase
-
-	// all layer-level parameters -- these must remain constant once configured
-	Params *LayerParams
-}
-
-// Object returns the object with parameters to be set by emer.Params
-func (ly *Layer) Object() any {
-	return ly.Params
-}
-
 func (ly *Layer) Defaults() { //types:add
 	ctx := &ly.Network.Ctx
 	if ly.Params != nil {
-		ly.Params.LayType = ly.LayerType()
+		ly.Params.LayType = ly.Type
 		ly.Params.Defaults()
 		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Values[di].ActAvg.GiMult = 1
@@ -47,13 +33,13 @@ func (ly *Layer) Defaults() { //types:add
 		ly.Params.Learn.CaLearn.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
 		ly.Params.Learn.CaSpk.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
 	}
-	for _, pj := range ly.RcvPaths { // must do path defaults first, then custom
-		pj.Defaults()
+	for _, pt := range ly.RecvPaths { // must do path defaults first, then custom
+		pt.Defaults()
 	}
 	if ly.Params == nil {
 		return
 	}
-	switch ly.LayerType() {
+	switch ly.Type {
 	case InputLayer:
 		ly.Params.Acts.Clamp.Ge = 1.5
 		ly.Params.Inhib.Layer.Gi = 0.9
@@ -139,8 +125,8 @@ func (ly *Layer) Update() {
 // local values in the struct.
 func (ly *Layer) UpdateParams() {
 	ly.Update()
-	for _, pj := range ly.RcvPaths {
-		pj.UpdateParams()
+	for _, pt := range ly.RecvPaths {
+		pt.UpdateParams()
 	}
 }
 
@@ -158,7 +144,7 @@ func (ly *Layer) PostBuild() {
 	ly.Params.LayInhib.Index3 = ly.BuildConfigFindLayer("LayInhib3Name", false) // optional
 	ly.Params.LayInhib.Index4 = ly.BuildConfigFindLayer("LayInhib4Name", false) // optional
 
-	switch ly.LayerType() {
+	switch ly.Type {
 	case PulvinarLayer:
 		ly.PulvPostBuild()
 
@@ -215,9 +201,9 @@ func JsonToParams(b []byte) string {
 
 // AllParams returns a listing of all parameters in the Layer
 func (ly *Layer) AllParams() string {
-	str := "/////////////////////////////////////////////////\nLayer: " + ly.Nm + "\n" + ly.Params.AllParams()
-	for _, pj := range ly.RcvPaths {
-		str += pj.AllParams()
+	str := "/////////////////////////////////////////////////\nLayer: " + ly.Name + "\n" + ly.Params.AllParams()
+	for _, pt := range ly.RecvPaths {
+		str += pt.AllParams()
 	}
 	return str
 }
@@ -227,9 +213,9 @@ func (ly *Layer) AllParams() string {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
-// InitWts initializes the weight values in the network, i.e., resetting learning
+// InitWeights initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
-func (ly *Layer) InitWts(ctx *Context, nt *Network) { //types:add
+func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
 	ly.UpdateParams()
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
 	for di := uint32(0); di < ly.MaxData; di++ {
@@ -241,17 +227,17 @@ func (ly *Layer) InitWts(ctx *Context, nt *Network) { //types:add
 	ly.InitActAvg(ctx)
 	ly.InitActs(ctx)
 	ly.InitGScale(ctx)
-	for _, pj := range ly.SndPaths {
-		if pj.IsOff() {
+	for _, pt := range ly.SendPaths {
+		if pt.Off {
 			continue
 		}
-		pj.InitWts(ctx, nt)
+		pt.InitWeights(ctx, nt)
 	}
-	for _, pj := range ly.RcvPaths {
-		if pj.IsOff() {
+	for _, pt := range ly.RecvPaths {
+		if pt.Off {
 			continue
 		}
-		if pj.Params.Com.GType == ModulatoryG {
+		if pt.Params.Com.GType == ModulatoryG {
 			ly.Params.Acts.Dend.HasMod.SetBool(true)
 			break
 		}
@@ -326,8 +312,8 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 	tmax := ly.Params.Learn.TrgAvgAct.TrgRange.Max
 	gibinit := ly.Params.Learn.TrgAvgAct.GiBaseInit
 	inc := float32(0)
-	nNy := ly.Shp.DimSize(2)
-	nNx := ly.Shp.DimSize(3)
+	nNy := ly.Shape.DimSize(2)
+	nNx := ly.Shape.DimSize(3)
 	nn := nNy * nNx
 	if nn > 1 {
 		inc = rng / float32(nn-1)
@@ -364,7 +350,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 	}
 }
 
-// InitActs fully initializes activation state -- only called automatically during InitWts
+// InitActs fully initializes activation state -- only called automatically during InitWeights
 func (ly *Layer) InitActs(ctx *Context) { //types:add
 	ly.Params.Acts.Clamp.IsInput.SetBool(ly.Params.IsInput())
 	ly.Params.Acts.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
@@ -395,35 +381,35 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 // InitPathGBuffs initializes the pathway-level conductance buffers and
 // conductance integration values for receiving pathways in this layer.
 func (ly *Layer) InitPathGBuffs(ctx *Context) {
-	for _, pj := range ly.RcvPaths {
-		if pj.IsOff() {
+	for _, pt := range ly.RecvPaths {
+		if pt.Off {
 			continue
 		}
-		pj.InitGBuffs()
+		pt.InitGBuffs()
 	}
 }
 
-// InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
+// InitWeightsSym initializes the weight symmetry -- higher layers copy weights from lower layers
 func (ly *Layer) InitWtSym(ctx *Context) {
-	for _, pj := range ly.SndPaths {
-		if pj.IsOff() {
+	for _, pt := range ly.SendPaths {
+		if pt.Off {
 			continue
 		}
-		if pj.Params.SWts.Init.Sym.IsFalse() {
+		if pt.Params.SWts.Init.Sym.IsFalse() {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
-		if pj.Recv.Index() < pj.Send.Index() {
+		if pt.Recv.Index < pt.Send.Index {
 			continue
 		}
-		rpj, has := ly.RecipToSendPath(pj)
+		rpj, has := ly.RecipToSendPath(pt)
 		if !has {
 			continue
 		}
 		if rpj.Params.SWts.Init.Sym.IsFalse() {
 			continue
 		}
-		pj.InitWtSym(ctx, rpj)
+		pt.InitWtSym(ctx, rpj)
 	}
 }
 
@@ -433,7 +419,7 @@ func (ly *Layer) InitWtSym(ctx *Context) {
 // InitExt initializes external input state.
 // Should be called prior to ApplyExt on all layers receiving Ext input.
 func (ly *Layer) InitExt(ctx *Context) {
-	if !ly.LayerType().IsExt() {
+	if !ly.Type.IsExt() {
 		return
 	}
 	nn := ly.NNeurons
@@ -464,9 +450,9 @@ func (ly *Layer) InitExt(ctx *Context) {
 // which requires calling the network ApplyExts() method -- is a no-op for CPU.
 func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext tensor.Tensor) {
 	switch {
-	case ext.NumDims() == 2 && ly.Shp.NumDims() == 4: // special case
+	case ext.NumDims() == 2 && ly.Shape.NumDims() == 4: // special case
 		ly.ApplyExt2Dto4D(ctx, di, ext)
-	case ext.NumDims() != ly.Shp.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
+	case ext.NumDims() != ly.Shape.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
 		ly.ApplyExt1DTsr(ctx, di, ext)
 	case ext.NumDims() == 2:
 		ly.ApplyExt2D(ctx, di, ext)
@@ -485,7 +471,7 @@ func (ly *Layer) ApplyExtValue(ctx *Context, lni, di uint32, val float32, clearM
 	}
 	ei := ly.Params.Indexes.ExtIndex(lni, di)
 	if uint32(len(ly.Exts)) <= ei {
-		log.Printf("Layer named: %s Type: %s does not have allocated Exts vals -- is likely not registered to receive external input in LayerTypes.IsExt() -- will not be presented to GPU", ly.Name(), ly.LayerType().String())
+		log.Printf("Layer named: %s Type: %s does not have allocated Exts vals -- is likely not registered to receive external input in LayerTypes.IsExt() -- will not be presented to GPU", ly.Name, ly.Type.String())
 	} else {
 		ly.Exts[ei] = val
 	}
@@ -511,13 +497,13 @@ func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
 // ApplyExt2D applies 2D tensor external input
 func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ymx := min(ext.DimSize(0), ly.Shp.DimSize(0))
-	xmx := min(ext.DimSize(1), ly.Shp.DimSize(1))
+	ymx := min(ext.DimSize(0), ly.Shape.DimSize(0))
+	xmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
 			val := float32(ext.Float(idx))
-			lni := uint32(ly.Shp.Offset(idx))
+			lni := uint32(ly.Shape.Offset(idx))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
@@ -526,7 +512,7 @@ func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
 // ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
 func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	lNy, lNx, _, _ := tensor.Projection2DShape(&ly.Shp, false)
+	lNy, lNx, _, _ := tensor.Projection2DShape(&ly.Shape, false)
 
 	ymx := min(ext.DimSize(0), lNy)
 	xmx := min(ext.DimSize(1), lNx)
@@ -534,7 +520,7 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
 			val := float32(ext.Float(idx))
-			lni := uint32(tensor.Projection2DIndex(&ly.Shp, false, y, x))
+			lni := uint32(tensor.Projection2DIndex(&ly.Shape, false, y, x))
 			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
@@ -543,17 +529,17 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 // ApplyExt4D applies 4D tensor external input
 func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ypmx := min(ext.DimSize(0), ly.Shp.DimSize(0))
-	xpmx := min(ext.DimSize(1), ly.Shp.DimSize(1))
-	ynmx := min(ext.DimSize(2), ly.Shp.DimSize(2))
-	xnmx := min(ext.DimSize(3), ly.Shp.DimSize(3))
+	ypmx := min(ext.DimSize(0), ly.Shape.DimSize(0))
+	xpmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
+	ynmx := min(ext.DimSize(2), ly.Shape.DimSize(2))
+	xnmx := min(ext.DimSize(3), ly.Shape.DimSize(3))
 	for yp := 0; yp < ypmx; yp++ {
 		for xp := 0; xp < xpmx; xp++ {
 			for yn := 0; yn < ynmx; yn++ {
 				for xn := 0; xn < xnmx; xn++ {
 					idx := []int{yp, xp, yn, xn}
 					val := float32(ext.Float(idx))
-					lni := uint32(ly.Shp.Offset(idx))
+					lni := uint32(ly.Shape.Offset(idx))
 					ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
 				}
 			}
@@ -625,68 +611,68 @@ func (ly *Layer) InitGScale(ctx *Context) {
 	totGiRel := float32(0)
 	totGmRel := float32(0)
 	totGmnRel := float32(0)
-	for _, pj := range ly.RcvPaths {
-		if pj.IsOff() {
+	for _, pt := range ly.RecvPaths {
+		if pt.Off {
 			continue
 		}
-		slay := pj.Send
+		slay := pt.Send
 		savg := slay.Params.Inhib.ActAvg.Nominal
 		snu := slay.NNeurons
-		ncon := pj.RecvConNAvgMax.Avg
-		pj.Params.GScale.Scale = pj.Params.PathScale.FullScale(savg, float32(snu), ncon)
+		ncon := pt.RecvConNAvgMax.Avg
+		pt.Params.GScale.Scale = pt.Params.PathScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a path, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
 		// then set the scale to 0.
 		// if pj.Params.GScale == 0 {
 		// 	continue
 		// }
-		switch pj.Params.Com.GType {
+		switch pt.Params.Com.GType {
 		case InhibitoryG:
-			totGiRel += pj.Params.PathScale.Rel
+			totGiRel += pt.Params.PathScale.Rel
 		case ModulatoryG:
-			totGmRel += pj.Params.PathScale.Rel
+			totGmRel += pt.Params.PathScale.Rel
 		case MaintG:
-			totGmnRel += pj.Params.PathScale.Rel
+			totGmnRel += pt.Params.PathScale.Rel
 		default:
-			totGeRel += pj.Params.PathScale.Rel
+			totGeRel += pt.Params.PathScale.Rel
 		}
 	}
 
-	for _, pj := range ly.RcvPaths {
-		switch pj.Params.Com.GType {
+	for _, pt := range ly.RecvPaths {
+		switch pt.Params.Com.GType {
 		case InhibitoryG:
 			if totGiRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGiRel
-				pj.Params.GScale.Scale /= totGiRel
+				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGiRel
+				pt.Params.GScale.Scale /= totGiRel
 			} else {
-				pj.Params.GScale.Rel = 0
-				pj.Params.GScale.Scale = 0
+				pt.Params.GScale.Rel = 0
+				pt.Params.GScale.Scale = 0
 			}
 		case ModulatoryG:
 			if totGmRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGmRel
-				pj.Params.GScale.Scale /= totGmRel
+				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGmRel
+				pt.Params.GScale.Scale /= totGmRel
 			} else {
-				pj.Params.GScale.Rel = 0
-				pj.Params.GScale.Scale = 0
+				pt.Params.GScale.Rel = 0
+				pt.Params.GScale.Scale = 0
 
 			}
 		case MaintG:
 			if totGmnRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGmnRel
-				pj.Params.GScale.Scale /= totGmnRel
+				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGmnRel
+				pt.Params.GScale.Scale /= totGmnRel
 			} else {
-				pj.Params.GScale.Rel = 0
-				pj.Params.GScale.Scale = 0
+				pt.Params.GScale.Rel = 0
+				pt.Params.GScale.Scale = 0
 
 			}
 		default:
 			if totGeRel > 0 {
-				pj.Params.GScale.Rel = pj.Params.PathScale.Rel / totGeRel
-				pj.Params.GScale.Scale /= totGeRel
+				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGeRel
+				pt.Params.GScale.Scale /= totGeRel
 			} else {
-				pj.Params.GScale.Rel = 0
-				pj.Params.GScale.Scale = 0
+				pt.Params.GScale.Rel = 0
+				pt.Params.GScale.Scale = 0
 			}
 		}
 	}
@@ -705,8 +691,8 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 	perNeur := 300 // cost per neuron, relative to synapse which is 1
 	neur = int(ly.NNeurons) * perNeur
 	syn = 0
-	for _, pj := range ly.SndPaths {
-		syn += int(pj.NSyns)
+	for _, pt := range ly.SendPaths {
+		syn += int(pt.NSyns)
 	}
 	tot = neur + syn
 	return
@@ -738,7 +724,7 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 				continue
 			}
 			trg := false
-			if ly.Typ == CompareLayer || ly.Typ == TargetLayer {
+			if ly.Type == CompareLayer || ly.Type == TargetLayer {
 				if NrnV(ctx, ni, di, Target) > thr {
 					trg = true
 				}
@@ -773,8 +759,8 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 	err = make([]bool, ctx.NetIndexes.NData)
 	minusIndex = make([]int, ctx.NetIndexes.NData)
 	plusIndex = make([]int, ctx.NetIndexes.NData)
-	ydim := ly.Shp.DimSize(0)
-	xdim := ly.Shp.DimSize(1)
+	ydim := ly.Shape.DimSize(0)
+	xdim := ly.Shape.DimSize(1)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		var maxM, maxP float32
 		var mIndex, pIndex int
@@ -810,8 +796,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 	err = make([]bool, ctx.NetIndexes.NData)
 	minusIndex = make([]int, ctx.NetIndexes.NData)
 	plusIndex = make([]int, ctx.NetIndexes.NData)
-	npool := ly.Shp.DimSize(0) * ly.Shp.DimSize(1)
-	nun := ly.Shp.DimSize(2) * ly.Shp.DimSize(3)
+	npool := ly.Shape.DimSize(0) * ly.Shape.DimSize(1)
+	nun := ly.Shape.DimSize(2) * ly.Shape.DimSize(3)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		var maxM, maxP float32
 		var mIndex, pIndex int
@@ -846,7 +832,7 @@ func (ly *Layer) TestValues(ctrKey string, vals map[string]float32) {
 	for pi := uint32(0); pi < ly.NPools; pi++ {
 		for di := uint32(0); di < ly.MaxData; di++ {
 			pl := ly.Pool(pi, di)
-			key := fmt.Sprintf("%s  Lay: %s\tPool: %d\tDi: %d", ctrKey, ly.Nm, pi, di)
+			key := fmt.Sprintf("%s  Lay: %s\tPool: %d\tDi: %d", ctrKey, ly.Name, pi, di)
 			pl.TestValues(key, vals)
 		}
 	}
@@ -901,7 +887,7 @@ func (ly *Layer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(ly.Defaults).SetIcon(icons.Reset)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(ly.InitWts).SetIcon(icons.Reset)
+		w.SetFunc(ly.InitWeights).SetIcon(icons.Reset)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(ly.InitActs).SetIcon(icons.Reset)

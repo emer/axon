@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32/vecint"
 	"cogentcore.org/core/tensor/stats/norm"
 	"github.com/emer/emergent/v2/emer"
@@ -116,25 +117,25 @@ func (hip *HipConfig) Defaults() {
 func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
 	// Trisynaptic Pathway (TSP)
 	ec2 = net.AddLayer2D("EC2", hip.EC2Size.Y, hip.EC2Size.X, SuperLayer)
-	ec2.SetRepIndexesShape(emer.Layer2DRepIndexes(ec2, 10))
+	ec2.SetSampleIndexesShape(emer.Layer2DSampleIndexes(ec2, 10))
 	dg = net.AddLayer2D("DG", int(float32(hip.CA3Size.Y)*hip.DGRatio), int(float32(hip.CA3Size.X)*hip.DGRatio), SuperLayer)
-	dg.SetRepIndexesShape(emer.Layer2DRepIndexes(dg, 10))
+	dg.SetSampleIndexesShape(emer.Layer2DSampleIndexes(dg, 10))
 	ca3 = net.AddLayer2D("CA3", hip.CA3Size.Y, hip.CA3Size.X, SuperLayer)
-	ca3.SetRepIndexesShape(emer.Layer2DRepIndexes(ca3, 10))
+	ca3.SetSampleIndexesShape(emer.Layer2DSampleIndexes(ca3, 10))
 
 	// Monosynaptic Pathway (MSP)
 	ec3 = net.AddLayer4D("EC3", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
 	ec3.AddClass("EC")
-	ec3.SetRepIndexesShape(emer.CenterPoolIndexes(ec3, 2), emer.CenterPoolShape(ec3, 2))
+	ec3.SetSampleIndexesShape(emer.CenterPoolIndexes(ec3, 2), emer.CenterPoolShape(ec3, 2))
 	ca1 = net.AddLayer4D("CA1", hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X, SuperLayer)
-	ca1.SetRepIndexesShape(emer.CenterPoolIndexes(ca1, 2), emer.CenterPoolShape(ca1, 2))
+	ca1.SetSampleIndexesShape(emer.CenterPoolIndexes(ca1, 2), emer.CenterPoolShape(ca1, 2))
 	if hip.EC5Clamp {
 		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, TargetLayer) // clamped in plus phase
 	} else {
 		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
 	}
 	ec5.AddClass("EC")
-	ec5.SetRepIndexesShape(emer.CenterPoolIndexes(ec5, 2), emer.CenterPoolShape(ec5, 2))
+	ec5.SetSampleIndexesShape(emer.CenterPoolIndexes(ec5, 2), emer.CenterPoolShape(ec5, 2))
 
 	// Input and ECs connections
 	onetoone := paths.NewOneToOne()
@@ -147,7 +148,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 
 	// recurrent inhbition in EC2
 	lat := paths.NewCircle()
-	lat.TopoWts = true
+	lat.TopoWeights = true
 	lat.Radius = hip.EC2LatRadius
 	lat.Sigma = hip.EC2LatSigma
 	inh := net.ConnectLayers(ec2, ec2, lat, InhibPath)
@@ -191,17 +192,17 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipConfig, pretrain *bool) {
 	var tmpValues []float32
 
-	clampSrc := net.AxonLayerByName(hip.EC5ClampSrc)
-	ec5 := net.AxonLayerByName("EC5")
-	ca1 := net.AxonLayerByName("CA1")
-	ca3 := net.AxonLayerByName("CA3")
-	dg := net.AxonLayerByName("DG")
-	dgFromEc2 := dg.SendName("EC2")
-	ca1FromEc3 := ca1.SendName("EC3")
-	ca1FromCa3 := ca1.SendName("CA3")
-	ca3FromDg := ca3.SendName("DG")
-	ca3FromEc2 := ca3.SendName("EC2")
-	ca3FromCa3 := ca3.SendName("CA3")
+	clampSrc := net.LayerByName(hip.EC5ClampSrc)
+	ec5 := net.LayerByName("EC5")
+	ca1 := net.LayerByName("CA1")
+	ca3 := net.LayerByName("CA3")
+	dg := net.LayerByName("DG")
+	dgFromEc2 := errors.Log1(dg.RecvPathBySendName("EC2")).(*Path)
+	ca1FromEc3 := errors.Log1(ca1.RecvPathBySendName("EC3")).(*Path)
+	ca1FromCa3 := errors.Log1(ca1.RecvPathBySendName("CA3")).(*Path)
+	ca3FromDg := errors.Log1(ca3.RecvPathBySendName("DG")).(*Path)
+	ca3FromEc2 := errors.Log1(ca3.RecvPathBySendName("EC2")).(*Path)
+	ca3FromCa3 := errors.Log1(ca3.RecvPathBySendName("CA3")).(*Path)
 
 	dgPjScale := ca3FromDg.Params.PathScale.Rel
 	ca1FromCa3Abs := ca1FromCa3.Params.PathScale.Abs

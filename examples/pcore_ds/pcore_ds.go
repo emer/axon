@@ -221,7 +221,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pf.Shp.CopyShape(&motor.Shp)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
-	vl.SetBuildConfig("DriveLayName", motor.Name())
+	vl.SetBuildConfig("DriveLayName", motor.Name)
 
 	// bool before space is selfmaint or not: selfcons much better (false)
 	m1, m1CT, m1PT, m1PTp, m1VM := net.AddPFC2D("M1", "VM", nuCtxY, nuCtxX, false, false, space)
@@ -248,8 +248,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(gpi, m1VM, full, axon.InhibPath).AddClass("DBGInhib")
 
-	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name())
-	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name())
+	mtxGo.SetBuildConfig("ThalLay1Name", m1VM.Name)
+	mtxNo.SetBuildConfig("ThalLay1Name", m1VM.Name)
 
 	toMtx := full
 	// toMtx := mtxRandPath // works, but not as reliably
@@ -287,7 +287,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -299,7 +299,7 @@ func (ss *Sim) ApplyParams() {
 	lnms := []string{"State", "S1", "MotorBS", "VL"}
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MotorSeqEnv)
 	for _, lnm := range lnms {
-		ly := ss.Net.AxonLayerByName(lnm)
+		ly := ss.Net.LayerByName(lnm)
 		// fmt.Println(ly.Params.Inhib.ActAvg.Nominal)
 		ly.Params.Inhib.ActAvg.Nominal = 0.5 / float32(ev.NActions)
 	}
@@ -307,7 +307,7 @@ func (ss *Sim) ApplyParams() {
 
 func (ss *Sim) TurnOffTheNoise() {
 	return // not doing this now -- not better
-	mtxGo := ss.Net.AxonLayerByName("MtxGo")
+	mtxGo := ss.Net.LayerByName("MtxGo")
 	if mtxGo.Params.Acts.Noise.On.IsFalse() {
 		return
 	}
@@ -451,7 +451,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, seq, trial int) {
 		ev.Step()
 		for li, lnm := range lays {
 			snm := states[li]
-			ly := net.AxonLayerByName(lnm)
+			ly := net.LayerByName(lnm)
 			itsr := ev.State(snm)
 			ly.ApplyExt(ctx, uint32(di), itsr)
 		}
@@ -610,7 +610,7 @@ func (ss *Sim) ApplyAction(di int) {
 	net := ss.Net
 	ev := ss.Envs.ByModeDi(ss.Context.Mode, di).(*MotorSeqEnv)
 	ap := ev.State("Action")
-	ly := net.AxonLayerByName("MotorBS")
+	ly := net.LayerByName("MotorBS")
 	ly.ApplyExt(ctx, uint32(di), ap)
 }
 
@@ -625,7 +625,7 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -928,7 +928,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, etime.Train, etime.Trial, "trl", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, etime.Train, etime.Epoch, "epc", netName, runName)

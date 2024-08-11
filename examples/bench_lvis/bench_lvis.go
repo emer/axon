@@ -118,8 +118,6 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 	net.RecFunTimes = true // verbose -- always do
 	net.GPU.RecFunTimes = verbose
 
-	net.UseGPUOrder = true // might be best with synapses one way and neurons the other..
-
 	// builds with default threads
 	if err := net.Build(ctx); err != nil {
 		panic(err)
@@ -137,7 +135,7 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		net.SetNThreads(threads)
 	}
 
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func ConfigPats(pats *table.Table, numPats int, inputShape [2]int, outputShape [2]int) {
@@ -168,7 +166,7 @@ func ConfigEpcLog(dt *table.Table) {
 }
 
 func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, gpu bool) {
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 
@@ -183,12 +181,12 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 
 	for pi := 0; pi < pathways; pi++ {
 		pnm := fmt.Sprintf("%d", pi)
-		v1[pi] = net.AxonLayerByName("V1_" + pnm)
+		v1[pi] = net.LayerByName("V1_" + pnm)
 	}
-	v2 := net.AxonLayerByName("V2_0")
-	v4 := net.AxonLayerByName("V4_0")
-	te := net.AxonLayerByName("TE_0")
-	outLay := net.AxonLayerByName("Output")
+	v2 := net.LayerByName("V2_0")
+	v4 := net.LayerByName("V4_0")
+	te := net.LayerByName("TE_0")
+	outLay := net.LayerByName("Output")
 
 	inPats := pats.ColumnByName("Input").(*tensor.Float32)
 	outPats := pats.ColumnByName("Output").(*tensor.Float32)

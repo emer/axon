@@ -257,7 +257,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(ss.Config.Run.NThreads)
 	ss.ApplyParams()
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 }
 
 func (ss *Sim) ApplyParams() {
@@ -373,8 +373,8 @@ func (ss *Sim) ApplyInputs() {
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.AxonLayerByName(lnm)
-		pats := ev.State(ly.Nm)
+		ly := ss.Net.LayerByName(lnm)
+		pats := ev.State(ly.Name)
 		if !reflectx.AnyIsNil(pats) {
 			ly.ApplyExt(ctx, 0, pats)
 		}
@@ -466,7 +466,7 @@ func (ss *Sim) NewRun() {
 	ss.InitEnvRun()
 	ctx.Reset()
 	ctx.Mode = etime.Train
-	ss.Net.InitWts(ctx)
+	ss.Net.InitWeights(ctx)
 	ss.LoadRunWeights()
 	ss.InitStats()
 	ss.StatCounters()
@@ -520,7 +520,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("Gated", axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated))
 	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
 	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
-	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
+	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -820,7 +820,7 @@ func (ss *Sim) RunNoGUI() {
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)
 	ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	netName := ss.Net.Name()
+	netName := ss.Net.Name
 
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Block, etime.Train, etime.Block, "blk", netName, runName)
 	elog.SetLogFile(&ss.Logs, ss.Config.Log.Cond, etime.Train, etime.Condition, "cnd", netName, runName)

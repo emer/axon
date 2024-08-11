@@ -117,7 +117,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 
 	net.SetNThreads(numThread)
 
-	net.InitWts(ctx)
+	net.InitWeights(ctx)
 
 	// reset timer to avoid counting setup time
 	b.ResetTimer()
