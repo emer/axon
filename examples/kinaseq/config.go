@@ -71,7 +71,7 @@ type RunConfig struct {
 type LogConfig struct {
 
 	// if true, save final weights after each run
-	SaveWts bool
+	SaveWeights bool
 
 	// if true, save cycle log to file, as .cyc.tsv typically
 	Cycle bool `default:"true" nest:"+"`

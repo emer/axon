@@ -109,7 +109,7 @@ type RunConfig struct {
 type LogConfig struct {
 
 	// if true, save final weights after each run
-	SaveWts bool
+	SaveWeights bool
 
 	// if true, save train epoch log to file, as .epc.tsv typically
 	Epoch bool `default:"true" nest:"+"`
@@ -140,7 +140,7 @@ type Config struct {
 	Debug bool
 
 	// if set, open given weights file at start of training
-	OpenWts string
+	OpenWeights string
 
 	// environment configuration options
 	Env EnvConfig `display:"add-fields"`

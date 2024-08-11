@@ -70,7 +70,7 @@ var ParamSets = params.Sets{
 				"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > .05
 			}},
 
-		// Projections below
+		// Pathways below
 		{Sel: "Path", Desc: "std",
 			Params: params.Params{
 				"Path.Learn.LRate.Base":    "0.002",  // full song and 30n: 0.002 > 0.005, 0.001 in the end

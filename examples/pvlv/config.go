@@ -85,7 +85,7 @@ type LogConfig struct {
 	AggStats []string `default:"['DA','RewPred']"`
 
 	// if true, save final weights after each run
-	SaveWts bool
+	SaveWeights bool
 
 	// if true, save block log to file, as .blk.tsv typically
 	Block bool `default:"true" nest:"+"`

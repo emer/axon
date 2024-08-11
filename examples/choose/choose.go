@@ -486,7 +486,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWts, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.Stats.String("RunName"))
 	})
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
@@ -678,9 +678,9 @@ func (ss *Sim) NewRun() {
 	ss.InitStats()
 	ss.StatCounters(0)
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
-	if ss.Config.OpenWts != "" {
-		ss.Net.OpenWtsJSON(core.Filename(ss.Config.OpenWts))
-		log.Println("Opened weights:", ss.Config.OpenWts)
+	if ss.Config.OpenWeights != "" {
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.OpenWeights))
+		log.Println("Opened weights:", ss.Config.OpenWeights)
 	}
 }
 
@@ -1443,7 +1443,7 @@ func (ss *Sim) RunNoGUI() {
 	if ss.Config.Params.Note != "" {
 		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
 	}
-	if ss.Config.Log.SaveWts {
+	if ss.Config.Log.SaveWeights {
 		mpi.Printf("Saving final weights per run\n")
 	}
 	runName := ss.Params.RunName(ss.Config.Run.Run)

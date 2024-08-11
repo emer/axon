@@ -647,10 +647,10 @@ func (ss *Sim) Stopped() {
 	}
 }
 
-// SaveWts saves the network weights -- when called with views.CallMethod
+// SaveWeights saves the network weights -- when called with views.CallMethod
 // it will auto-prompt for filename
-func (ss *Sim) SaveWts(filename core.Filename) {
-	ss.Net.SaveWtsJSON(filename)
+func (ss *Sim) SaveWeights(filename core.Filename) {
+	ss.Net.SaveWeightsJSON(filename)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1091,7 +1091,7 @@ func (ss *Sim) ConfigGUI() *core.Window {
 // These props register Save methods so they can be used
 var SimProps = tree.Props{
 	"CallMethods": tree.PropSlice{
-		{"SaveWts", tree.Props{
+		{"SaveWeights", tree.Props{
 			"desc": "save network weights to file",
 			"icon": "file-save",
 			"Args": tree.PropSlice{

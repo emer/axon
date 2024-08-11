@@ -90,7 +90,7 @@ var ParamSets = params.Sets{
 				"Layer.Inhib.Layer.Gi":       "0.9",  //
 			}},
 
-		// Projections below
+		// Pathways below
 		{Sel: "Path", Desc: "std",
 			Params: params.Params{
 				"Path.Learn.LRate.Base":    "0.02", // 0.02 == 0.03 == 0.01 > 0.005 > 0.002

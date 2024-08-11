@@ -82,7 +82,7 @@ type LogConfig struct {
 	AggStats []string `default:"['Rew', 'RewPred', 'DA', 'RewPred_NR', 'DA_NR']"`
 
 	// if true, save final weights after each run
-	SaveWts bool
+	SaveWeights bool
 
 	// if true, save train epoch log to file, as .epc.tsv typically
 	Epoch bool `default:"true" nest:"+"`
