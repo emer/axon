@@ -780,7 +780,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			pt.SynStIndex = uint32(syIndex)
 			pt.Params.Indexes.PathIndex = uint32(pjidx)
 			pt.NSyns = uint32(nsyn)
-			fmt.Println(ly.Name, ly.NNeurons)
+			fmt.Println(ly.Name, ly.NNeurons, pt.Name)
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
 				si := ly.NeurStIndex + sni
 				scon := pt.SendCon[sni]
