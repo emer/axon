@@ -36,7 +36,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 )
 
 func main() {
@@ -96,7 +95,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("Inhib")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &table.Table{}
@@ -162,7 +161,6 @@ func InhByNm(net *axon.Network, n int) *axon.Layer {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "Inhib")
 	net.SetMaxData(ctx, 1)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -194,8 +192,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPath).AddClass("RandSc")
 		// }
 
-		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name, YAlign: relpos.Front, XAlign: relpos.Middle})
-		il.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: tl.Name, YAlign: relpos.Front, Space: 1})
+		tl.PlaceAbove(ll)
+		il.PlaceRightOf(tl, 1)
 
 		if hi < ss.Config.Params.NLayers {
 			nl := LayByNm(net, hi+1)
@@ -349,7 +347,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters() {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 }
 

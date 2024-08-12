@@ -301,7 +301,7 @@ var TheSim Sim
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Defaults()
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("")
 	ss.Test = AttnSize
 	ss.TstTrlLog = &table.Table{}
 	ss.TstRunLog = &table.Table{}
@@ -350,8 +350,7 @@ func (ss *Sim) Config() {
 }
 
 func (ss *Sim) ConfigEnv() {
-	ss.TestEnv.Nm = "TestEnv"
-	ss.TestEnv.Dsc = "testing params and state"
+	ss.TestEnv.Name = "TestEnv"
 	ss.TestEnv.Defaults()
 	ss.TestEnv.V1Pools.Set(16, 16)
 	ss.TestEnv.V1Feats.Set(4, 2)

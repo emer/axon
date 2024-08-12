@@ -137,14 +137,11 @@ func (ss *Sim) ConfigEnv() {
 	}
 
 	// note: names must be standard here!
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
+	trn.Name = etime.Train.String()
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 	}
 	trn.Config(ss.Config.Run.NRuns, ss.Config.Env.RunName)
-	trn.Validate()
-
 	trn.Init(0)
 
 	ss.ConfigRubicon()
@@ -492,7 +489,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters() {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	ev := ss.Envs.ByMode(ctx.Mode).(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.SequenceName)
@@ -797,7 +794,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
-		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

@@ -182,7 +182,7 @@ type GUI struct {
 func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	vw.Disp = true
 	vw.Env = ev
-	vw.EnvName = ev.Nm
+	vw.EnvName = ev.Name
 	vw.WallSize.Set(0.1, 2)
 	vw.Camera.Defaults()
 	vw.Camera.FOV = 90
@@ -608,7 +608,7 @@ func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state 
 
 	if vw.Env != ev {
 		vw.Env = ev
-		vw.EnvName = ev.Nm
+		vw.EnvName = ev.Name
 		vw.Trace = nil
 		vw.StructView.Update()
 	}

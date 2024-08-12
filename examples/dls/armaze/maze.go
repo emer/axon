@@ -51,7 +51,7 @@ const (
 type Env struct {
 
 	// name of environment -- Train or Test
-	Nm string
+	Name string
 
 	// our data parallel index
 	Di int `edit:"-"`
@@ -130,14 +130,6 @@ type Env struct {
 }
 
 const noUS = -1
-
-func (ev *Env) Name() string {
-	return ev.Nm
-}
-
-func (ev *Env) Desc() string {
-	return "N-Arm Maze Environment"
-}
 
 // Defaults sets default params
 func (ev *Env) Defaults() {

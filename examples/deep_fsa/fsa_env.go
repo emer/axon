@@ -10,6 +10,7 @@ import (
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 )
 
 // FSAEnv generates states in a finite state automaton (FSA) which is a
@@ -18,53 +19,46 @@ import (
 type FSAEnv struct {
 
 	// name of this environment
-	Nm string
+	Name string
 
-	// description of this environment
-	Dsc string
-
-	// transition matrix, which is a square NxN tensor with outer dim being current state and inner dim having probability of transitioning to that state
+	// transition matrix, which is a square NxN tensor with outer dim being
+	// current state and inner dim having probability of transitioning to that state.
 	TMat tensor.Float64 `display:"no-inline"`
 
-	// transition labels, one for each transition cell in TMat matrix
+	// transition labels, one for each transition cell in TMat matrix.
 	Labels tensor.String
 
-	// automaton state within FSA that we're in
+	// automaton state within FSA that we're in.
 	AState env.CurPrvInt
 
-	// number of next states in current state output (scalar)
+	// number of next states in current state output (scalar).
 	NNext tensor.Int
 
-	// next states that have non-zero probability, with actual randomly chosen next state at start
+	// next states that have non-zero probability, with actual randomly
+	// chosen next state at start.
 	NextStates tensor.Int
 
-	// transition labels for next states that have non-zero probability, with actual randomly chosen one for next state at start
+	// transition labels for next states that have non-zero probability,
+	// with actual randomly chosen one for next state at start.
 	NextLabels tensor.String
 
-	// current run of model as provided during Init
-	Run env.Ctr `display:"inline"`
+	// sequence counter within epoch.
+	Seq env.Counter `display:"inline"`
 
-	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `display:"inline"`
+	// tick counter within sequence.
+	Tick env.Counter `display:"inline"`
 
-	// sequence counter within epoch
-	Seq env.Ctr `display:"inline"`
+	// trial is the step counter within sequence, which is how many steps taken
+	// within current sequence. It resets to 0 at start of each sequence.
+	Trial env.Counter `display:"inline"`
 
-	// tick counter within sequence
-	Tick env.Ctr `display:"inline"`
-
-	// trial is the step counter within sequence - how many steps taken within current sequence -- it resets to 0 at start of each sequence
-	Trial env.Ctr `display:"inline"`
-
-	// random number generator for the env -- all random calls must use this -- set seed here for weight initialization values
+	// random number generator for the env. all random calls must use this.
+	// set seed here for weight initialization values.
 	Rand randx.SysRand `display:"-"`
 
-	// random seed
+	// random seed.
 	RandSeed int64 `edit:"-"`
 }
-
-func (ev *FSAEnv) Name() string { return ev.Nm }
-func (ev *FSAEnv) Desc() string { return ev.Dsc }
 
 // InitTMat initializes matrix and labels to given size
 func (ev *FSAEnv) InitTMat(nst int) {
@@ -103,27 +97,12 @@ func (ev *FSAEnv) TMatReber() {
 
 func (ev *FSAEnv) Validate() error {
 	if ev.TMat.Len() == 0 {
-		return fmt.Errorf("FSAEnv: %v has no transition matrix TMat set", ev.Nm)
+		return fmt.Errorf("FSAEnv: %v has no transition matrix TMat set", ev.Name)
 	}
 	return nil
 }
 
-func (ev *FSAEnv) Counters() []env.TimeScales {
-	return []env.TimeScales{env.Run, env.Epoch, env.Sequence, env.Tick, env.Trial}
-}
-
-func (ev *FSAEnv) States() env.Elements {
-	nst := ev.TMat.DimSize(0)
-	if nst < 2 {
-		nst = 2 // at least usu
-	}
-	els := env.Elements{
-		{"NNext", []int{1}, nil},
-		{"NextStates", []int{nst}, []string{"nstates"}},
-		{"NextLabels", []int{nst}, []string{"nstates"}},
-	}
-	return els
-}
+func (ev *FSAEnv) Label() string { return ev.Name }
 
 func (ev *FSAEnv) State(element string) tensor.Tensor {
 	switch element {
@@ -150,16 +129,11 @@ func (ev *FSAEnv) String() string {
 
 func (ev *FSAEnv) Init(run int) {
 	ev.Rand.NewRand(ev.RandSeed)
-	ev.Run.Scale = env.Run
-	ev.Epoch.Scale = env.Epoch
-	ev.Tick.Scale = env.Tick
-	ev.Trial.Scale = env.Trial
-	ev.Run.Init()
-	ev.Epoch.Init()
+	ev.Tick.Scale = etime.Tick
+	ev.Trial.Scale = etime.Trial
 	ev.Seq.Init()
 	ev.Tick.Init()
 	ev.Trial.Init()
-	ev.Run.Cur = run
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
 	ev.AState.Cur = 0
 	ev.AState.Prv = -1
@@ -190,37 +164,18 @@ func (ev *FSAEnv) NextState() {
 }
 
 func (ev *FSAEnv) Step() bool {
-	ev.Epoch.Same() // good idea to just reset all non-inner-most counters at start
 	ev.NextState()
 	ev.Trial.Incr()
 	ev.Tick.Incr()
 	if ev.AState.Prv == 0 {
 		ev.Tick.Init()
-		if ev.Seq.Incr() {
-			ev.Epoch.Incr()
-		}
+		ev.Seq.Incr()
 	}
 	return true
 }
 
 func (ev *FSAEnv) Action(element string, input tensor.Tensor) {
 	// nop
-}
-
-func (ev *FSAEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
-	switch scale {
-	case env.Run:
-		return ev.Run.Query()
-	case env.Epoch:
-		return ev.Epoch.Query()
-	case env.Sequence:
-		return ev.Seq.Query()
-	case env.Tick:
-		return ev.Tick.Query()
-	case env.Trial:
-		return ev.Trial.Query()
-	}
-	return -1, -1, false
 }
 
 // Compile-time check that implements Env interface

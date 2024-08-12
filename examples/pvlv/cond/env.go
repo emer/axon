@@ -11,6 +11,7 @@ import (
 
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 )
 
 // CondEnv provides a flexible implementation of standard Pavlovian
@@ -27,10 +28,7 @@ import (
 type CondEnv struct {
 
 	// name of this environment
-	Nm string
-
-	// description of this environment
-	Dsc string
+	Name string
 
 	// number of Y repetitions for localist reps
 	NYReps int
@@ -48,19 +46,19 @@ type CondEnv struct {
 	CondDesc string
 
 	// counter over runs
-	Run env.Ctr `edit:"-" display:"inline"`
+	Run env.Counter `edit:"-" display:"inline"`
 
 	// counter over Condition within a run -- Max depends on number of conditions specified in given Run
-	Condition env.Ctr `edit:"-" display:"inline"`
+	Condition env.Counter `edit:"-" display:"inline"`
 
 	// counter over full blocks of all sequence types within a Condition -- like an Epoch
-	Block env.Ctr `edit:"-" display:"inline"`
+	Block env.Counter `edit:"-" display:"inline"`
 
 	// counter of behavioral sequences within a Block
-	Sequence env.Ctr `edit:"-" display:"inline"`
+	Sequence env.Counter `edit:"-" display:"inline"`
 
 	// counter of discrete steps within a sequence -- typically maps onto Alpha / Theta cycle in network
-	Tick env.Ctr `edit:"-" display:"inline"`
+	Tick env.Counter `edit:"-" display:"inline"`
 
 	// name of current sequence step
 	SequenceName string `edit:"-"`
@@ -84,18 +82,15 @@ type CondEnv struct {
 	CurStates map[string]*tensor.Float32
 }
 
-func (ev *CondEnv) Name() string { return ev.Nm }
-func (ev *CondEnv) Desc() string { return ev.Dsc }
-
 func (ev *CondEnv) Config(rmax int, rnm string) {
 	ev.RunName = rnm
 	ev.Run.Max = rmax
 	ev.NYReps = 4
-	ev.Run.Scale = env.Run
-	ev.Condition.Scale = env.Condition
-	ev.Block.Scale = env.Block
-	ev.Sequence.Scale = env.Sequence
-	ev.Tick.Scale = env.Tick
+	ev.Run.Scale = etime.Run
+	ev.Condition.Scale = etime.Condition
+	ev.Block.Scale = etime.Block
+	ev.Sequence.Scale = etime.Sequence
+	ev.Tick.Scale = etime.Tick
 
 	ev.CurStates = make(map[string]*tensor.Float32)
 
@@ -113,9 +108,7 @@ func (ev *CondEnv) Config(rmax int, rnm string) {
 	ev.CurStates["USneg"] = tensor.NewFloat32(ussh)
 }
 
-func (ev *CondEnv) Validate() error {
-	return nil
-}
+func (ev *CondEnv) Label() string { return ev.Name }
 
 // Init sets current run index and max
 func (ev *CondEnv) Init(ridx int) {
@@ -177,22 +170,6 @@ func (ev *CondEnv) Step() bool {
 
 func (ev *CondEnv) Action(_ string, _ tensor.Tensor) {
 	// nop
-}
-
-func (ev *CondEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
-	switch scale {
-	case env.Run:
-		return ev.Run.Query()
-	case env.Condition:
-		return ev.Condition.Query()
-	case env.Block:
-		return ev.Block.Query()
-	case env.Sequence:
-		return ev.Sequence.Query()
-	case env.Tick:
-		return ev.Tick.Query()
-	}
-	return -1, -1, false
 }
 
 func (ev *CondEnv) RenderSequence(trli, tick int) {

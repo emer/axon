@@ -10,6 +10,7 @@ import (
 
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/vision/v2/vfilter"
 	"github.com/emer/vision/v2/vxform"
 )
@@ -20,10 +21,7 @@ import (
 type LEDEnv struct {
 
 	// name of this environment
-	Nm string
-
-	// description of this environment
-	Dsc string
+	Name string
 
 	// draws LEDs onto image
 	Draw LEDraw
@@ -52,14 +50,8 @@ type LEDEnv struct {
 	// current -- prev transforms
 	XForm vxform.XForm
 
-	// current run of model as provided during Init
-	Run env.Ctr `display:"inline"`
-
-	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `display:"inline"`
-
-	// trial is the step counter within epoch
-	Trial env.Ctr `display:"inline"`
+	// trial is the step counter for items
+	Trial env.Counter `display:"inline"`
 
 	// original image prior to random transforms
 	OrigImg tensor.Float32
@@ -68,16 +60,7 @@ type LEDEnv struct {
 	Output tensor.Float32
 }
 
-func (ev *LEDEnv) Name() string { return ev.Nm }
-func (ev *LEDEnv) Desc() string { return ev.Dsc }
-
-func (ev *LEDEnv) Validate() error {
-	return nil
-}
-
-func (ev *LEDEnv) Counters() []env.TimeScales {
-	return []env.TimeScales{env.Run, env.Epoch, env.Sequence, env.Trial}
-}
+func (ev *LEDEnv) Label() string { return ev.Name }
 
 func (ev *LEDEnv) States() env.Elements {
 	isz := ev.Draw.ImgSize
@@ -120,22 +103,14 @@ func (ev *LEDEnv) Defaults() {
 
 func (ev *LEDEnv) Init(run int) {
 	ev.Draw.Init()
-	ev.Run.Scale = env.Run
-	ev.Epoch.Scale = env.Epoch
-	ev.Trial.Scale = env.Trial
-	ev.Run.Init()
-	ev.Epoch.Init()
+	ev.Trial.Scale = etime.Trial
 	ev.Trial.Init()
-	ev.Run.Cur = run
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
 	ev.Output.SetShape([]int{4, 5, ev.NOutPer, 1}, "Y", "X", "N", "1")
 }
 
 func (ev *LEDEnv) Step() bool {
-	ev.Epoch.Same()      // good idea to just reset all non-inner-most counters at start
-	if ev.Trial.Incr() { // if true, hit max, reset to 0
-		ev.Epoch.Incr()
-	}
+	ev.Trial.Incr()
 	ev.DrawRandLED()
 	ev.FilterImg()
 	// debug only:
@@ -151,18 +126,6 @@ func (ev *LEDEnv) DoObject(objno int) {
 
 func (ev *LEDEnv) Action(element string, input tensor.Tensor) {
 	// nop
-}
-
-func (ev *LEDEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
-	switch scale {
-	case env.Run:
-		return ev.Run.Query()
-	case env.Epoch:
-		return ev.Epoch.Query()
-	case env.Trial:
-		return ev.Trial.Query()
-	}
-	return -1, -1, false
 }
 
 // Compile-time check that implements Env interface

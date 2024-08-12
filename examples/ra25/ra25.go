@@ -253,13 +253,11 @@ func (ss *Sim) ConfigEnv() {
 	}
 
 	// note: names must be standard here!
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
+	trn.Name = etime.Train.String()
 	trn.Config(table.NewIndexView(ss.Pats))
 	trn.Validate()
 
-	tst.Nm = etime.Test.String()
-	tst.Dsc = "testing params and state"
+	tst.Name = etime.Test.String()
 	tst.Config(table.NewIndexView(ss.Pats))
 	tst.Sequential = true
 	tst.Validate()
@@ -543,7 +541,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
@@ -711,7 +709,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
-		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

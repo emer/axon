@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
@@ -33,7 +34,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 )
 
 func main() {
@@ -91,7 +91,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("DeepMusic")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.RandSeeds.Init(100) // max 100 runs
@@ -148,27 +148,25 @@ func (ss *Sim) ConfigEnv() {
 	// note: names must be standard here!
 	trn.Defaults()
 	trn.WrapNotes = wrapNotes
-	trn.Nm = etime.Train.String()
+	trn.Name = etime.Train.String()
 	trn.Debug = false
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 	}
 	trn.Config(song, track, maxRows, ss.Config.Env.UnitsPer)
 	trn.ConfigNData(ss.Config.Run.NData)
-	trn.Validate()
 
 	fmt.Printf("song rows: %d\n", trn.Song.Rows)
 
 	tst.Defaults()
 	tst.WrapNotes = wrapNotes
-	tst.Nm = etime.Test.String()
+	tst.Name = etime.Test.String()
 	tst.Play = true // see notes in README for getting this to work
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 	}
 	tst.Config(song, track, maxRows, ss.Config.Env.UnitsPer)
 	tst.ConfigNData(ss.Config.Run.NData)
-	tst.Validate()
 
 	trn.Init(0)
 	tst.Init(0)
@@ -182,7 +180,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs.ByMode(etime.Train).(*MusicEnv)
 	nnotes := ev.NNotes
 
-	net.InitName(net, "DeepMusic")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -218,8 +215,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", "", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full, "")
 		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full, "") // shortcut top-down
-		pathway, _ := inPulv.SendNameTry(hid2ct.Name)
-		pathway.AddClass("CTToPulvHigher")
+		errors.Log1(inPulv.RecvPathBySendName(hid2ct.Name)).AsEmer().AddClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
@@ -229,9 +225,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// net.ConnectLayers(hid2ct, hid, full, axon.BackPath)
 	}
 
-	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name, XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
+	hid.PlaceAbove(in)
 	if ss.Config.Params.Hid2 {
-		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: hid.Name, YAlign: relpos.Front, Space: 2})
+		hid2.PlaceRightOf(hid, 2)
 	}
 
 	net.Build(ctx)
@@ -438,7 +434,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	ev := ss.Envs.ByMode(ctx.Mode).(*MusicEnv)
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
@@ -668,7 +664,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

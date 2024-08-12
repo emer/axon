@@ -23,14 +23,14 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	if len(trial) > 0 {
 		trl = trial[0]
 	}
-	minusPhase := &looper.Event{Name: "MinusPhase", AtCtr: 0}
+	minusPhase := &looper.Event{Name: "MinusPhase", AtCounter: 0}
 	minusPhase.OnEvent.Add("MinusPhase:Start", func() {
 		ctx.PlusPhase.SetBool(false)
 		ctx.NewPhase(false)
 	})
 	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1(ctx) })
 	beta2 := looper.NewEvent("Beta2", 100, func() { net.SpkSt2(ctx) })
-	plusPhase := &looper.Event{Name: "PlusPhase", AtCtr: plusStart}
+	plusPhase := &looper.Event{Name: "PlusPhase", AtCounter: plusStart}
 	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase(ctx) })
 	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
 		ctx.PlusPhase.SetBool(true)

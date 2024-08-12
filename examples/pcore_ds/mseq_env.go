@@ -20,13 +20,13 @@ import (
 type MotorSeqEnv struct {
 
 	// name of environment -- Train or Test
-	Nm string
+	Name string
 
 	// training or testing env?
 	Mode etime.Modes
 
 	// trial counter for index into sequence
-	Trial env.Ctr
+	Trial env.Counter
 
 	// sequence length.
 	SeqLen int
@@ -96,13 +96,7 @@ type MotorSeqEnv struct {
 	States map[string]*tensor.Float32
 }
 
-func (ev *MotorSeqEnv) Name() string {
-	return ev.Nm
-}
-
-func (ev *MotorSeqEnv) Desc() string {
-	return "MotorSeqEnv"
-}
+func (ev *MotorSeqEnv) Label() string { return ev.Name }
 
 func (ev *MotorSeqEnv) Defaults() {
 	ev.SeqLen = 3           // 2x5 is easily solved, 3x5 is 100% with 49u
@@ -129,10 +123,6 @@ func (ev *MotorSeqEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1})
 }
 
-func (ev *MotorSeqEnv) Validate() error {
-	return nil
-}
-
 func (ev *MotorSeqEnv) InitSeqMap() {
 	// pord := ev.Rand.Perm(ev.NActions, -1)
 	ev.SeqMap = make([]int, ev.SeqLen)
@@ -150,13 +140,6 @@ func (ev *MotorSeqEnv) Init(run int) {
 	ev.InitSeqMap()
 	ev.NCorrect, ev.Rew, ev.RPE = 0, 0, 0
 	ev.RewPred = ev.RewPredMin
-}
-
-func (ev *MotorSeqEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
-	if scale == env.Trial {
-		return ev.Trial.Query()
-	}
-	return 0, 0, false
 }
 
 func (ev *MotorSeqEnv) State(el string) tensor.Tensor {

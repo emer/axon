@@ -46,7 +46,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	rand.Seed(42)
 
 	ctx := axon.NewContext()
-	net := &axon.Network{}
+	net := axon.NewNetwork("BenchNet")
 	ConfigNet(net, ctx, *threads, *numUnits, *verbose)
 	if *verbose {
 		log.Println(net.SizeReport(false))
@@ -92,8 +92,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// this benchmark constructs the network just like `bench.go`, but without
 	// setting up the pathways (not needed for benching NeuronFun) -> Test setup is much quicker.
 	ctx := axon.NewContext()
-	net := &axon.Network{}
-	net.InitName(net, "BenchNet")
+	net := axon.NewNetwork("")
 
 	squn := int(math.Sqrt(float64(numUnits)))
 	shp := []int{squn, squn}
@@ -111,7 +110,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets["Base"].Sheets["Network"], false); err != nil {
+	if _, err := net.ApplyParams(ParamSets["Base"], false); err != nil {
 		panic(err)
 	}
 

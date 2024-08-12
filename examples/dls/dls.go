@@ -116,7 +116,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("")
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
@@ -154,7 +154,7 @@ func (ss *Sim) ConfigEnv() {
 		}
 
 		// note: names must be standard here!
-		trn.Nm = env.ModeDi(etime.Train, di)
+		trn.Name = env.ModeDi(etime.Train, di)
 		trn.Defaults()
 		trn.RandSeed = 73
 		if !ss.Config.Env.SameSeed {
@@ -672,7 +672,7 @@ func (ss *Sim) StatCounters(di int) {
 	mode := ctx.Mode
 	ss.ActionStatsDi(di)
 	ev := ss.Envs.ByModeDi(mode, di).(*armaze.Env)
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
@@ -1039,7 +1039,7 @@ func (ss *Sim) ConfigGUI() {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

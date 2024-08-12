@@ -132,7 +132,7 @@ func (ss *Sim) New() {
 	ss.Config.Hip.EC5Clamp = true      // must be true in hip.go to have a target layer
 	ss.Config.Hip.EC5ClampTest = false // key to be off for cmp stats on completion region
 
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("Hip")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 
@@ -182,13 +182,11 @@ func (ss *Sim) ConfigEnv() {
 	}
 
 	// note: names must be standard here!
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
+	trn.Name = etime.Train.String()
 	trn.Config(table.NewIndexView(ss.TrainAB))
 	trn.Validate()
 
-	tst.Nm = etime.Test.String()
-	tst.Dsc = "testing params and state"
+	tst.Name = etime.Test.String()
 	tst.Config(table.NewIndexView(ss.TestABAC))
 	tst.Sequential = true
 	tst.Validate()
@@ -203,7 +201,6 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	hip := &ss.Config.Hip
-	net.InitName(net, "Hip_bench")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -511,7 +508,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
@@ -849,7 +846,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
-		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
@@ -920,7 +917,7 @@ func (ss *Sim) TwoFactorRun() {
 		for _, listSize := range ListSizes {
 
 			ss.Net.GPU.Destroy()
-			ss.Net = &axon.Network{}
+			ss.Net = axon.NewNetwork("")
 			ss.Params.Network = ss.Net
 
 			// setting name for this factor combo
@@ -948,8 +945,8 @@ func (ss *Sim) TwoFactorRun() {
 			ss.Loops.GetLoop(etime.Train, etime.Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
 			// print our info for checking purposes
-			fmt.Println("CA3 shape: ", ss.Net.LayerByName("CA3").Shp.Sizes)
-			fmt.Println("EC2 shape: ", ss.Net.LayerByName("EC2").Shp.Sizes)
+			fmt.Println("CA3 shape: ", ss.Net.LayerByName("CA3").Shape.Sizes)
+			fmt.Println("EC2 shape: ", ss.Net.LayerByName("EC2").Shape.Sizes)
 			fmt.Println("# of pairs: ", ss.TrainAB.Rows)
 
 			ss.Loops.Run(etime.Train)

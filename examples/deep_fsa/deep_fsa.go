@@ -131,8 +131,7 @@ func (ss *Sim) ConfigEnv() {
 		}
 
 		// note: names must be standard here!
-		trn.Nm = env.ModeDi(etime.Train, di)
-		trn.Dsc = "training params and state"
+		trn.Name = env.ModeDi(etime.Train, di)
 		trn.Seq.Max = 25 // 25 sequences per epoch training
 		trn.RandSeed = 73 + int64(di)*73
 		trn.TMatReber()
@@ -141,8 +140,7 @@ func (ss *Sim) ConfigEnv() {
 		}
 		trn.Validate()
 
-		tst.Nm = env.ModeDi(etime.Test, di)
-		tst.Dsc = "testing params and state"
+		tst.Name = env.ModeDi(etime.Test, di)
 		tst.Seq.Max = 10
 		tst.RandSeed = 181 + int64(di)*181
 		tst.TMatReber() // todo: random
@@ -420,7 +418,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ss.Context.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)

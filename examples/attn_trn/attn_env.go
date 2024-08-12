@@ -95,18 +95,9 @@ type AttnEnv struct {
 	// LIP top-down attention
 	LIP tensor.Float32
 
-	// current run of model as provided during Init
-	Run env.Ctr `display:"inline"`
-
-	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `display:"inline"`
-
 	// trial increments over input states -- could add Event as a lower level
-	Trial env.Ctr `display:"inline"`
+	Trial env.Counter `display:"inline"`
 }
-
-func (ev *AttnEnv) Name() string { return ev.Nm }
-func (ev *AttnEnv) Desc() string { return ev.Dsc }
 
 func (ev *AttnEnv) Defaults() {
 	ev.V1Pools.Set(16, 16)
@@ -126,7 +117,7 @@ func (ev *AttnEnv) Config() {
 
 func (ev *AttnEnv) Validate() error {
 	if ev.V1Pools.IsNil() {
-		return fmt.Errorf("AttnEnv: %v has size == 0 -- need to Config", ev.Nm)
+		return fmt.Errorf("AttnEnv: %v has size == 0 -- need to Config", ev.Name)
 	}
 	return nil
 }

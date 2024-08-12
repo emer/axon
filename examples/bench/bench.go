@@ -30,41 +30,37 @@ import (
 // so these params below are reasonable for actually learning (eventually)
 
 var ParamSets = params.Sets{
-	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Path", Desc: "",
-				Params: params.Params{
-					"Path.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Path.SWts.Adapt.LRate": "0.1", // .1 >= .2,
-					"Path.SWts.Init.SPct":   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				}},
-			{Sel: "Layer", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.08",
-					"Layer.Inhib.Layer.Gi":       "1.05",
-					"Layer.Acts.Gbar.L":          "0.2",
-				}},
-			{Sel: "#Input", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
-					"Layer.Acts.Clamp.Ge":  "1.5",
-				}},
-			{Sel: "#Output", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.70",
-					"Layer.Acts.Clamp.Ge":  "0.8",
-				}},
-			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-				Params: params.Params{
-					"Path.PathScale.Rel": "0.2",
-				}},
-		},
-	}},
+	"Base": {
+		{Sel: "Path", Desc: "",
+			Params: params.Params{
+				"Path.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+				"Path.SWts.Adapt.LRate": "0.1", // .1 >= .2,
+				"Path.SWts.Init.SPct":   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+			}},
+		{Sel: "Layer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.ActAvg.Nominal": "0.08",
+				"Layer.Inhib.Layer.Gi":       "1.05",
+				"Layer.Acts.Gbar.L":          "0.2",
+			}},
+		{Sel: "#Input", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
+				"Layer.Acts.Clamp.Ge":  "1.5",
+			}},
+		{Sel: "#Output", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "0.70",
+				"Layer.Acts.Clamp.Ge":  "0.8",
+			}},
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+			Params: params.Params{
+				"Path.PathScale.Rel": "0.2",
+			}},
+	},
 }
 
 func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose bool) {
-	net.InitName(net, "BenchNet")
-
 	squn := int(math.Sqrt(float64(units)))
 	shp := []int{squn, squn}
 
@@ -89,7 +85,7 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets["Base"].Sheets["Network"], false); err != nil {
+	if _, err := net.ApplyParams(ParamSets["Base"], false); err != nil {
 		panic(err)
 	}
 
@@ -145,10 +141,10 @@ func TrainNet(net *axon.Network, ctx *axon.Context, pats, epcLog *table.Table, e
 
 	epcLog.SetNumRows(epcs)
 
-	inLay := net.LayerByName("Input").(*axon.Layer)
-	hid1Lay := net.LayerByName("Hidden1").(*axon.Layer)
-	hid2Lay := net.LayerByName("Hidden2").(*axon.Layer)
-	outLay := net.LayerByName("Output").(*axon.Layer)
+	inLay := net.LayerByName("Input")
+	hid1Lay := net.LayerByName("Hidden1")
+	hid2Lay := net.LayerByName("Hidden2")
+	outLay := net.LayerByName("Output")
 
 	inPats := pats.ColumnByName("Input").(*tensor.Float32)
 	outPats := pats.ColumnByName("Output").(*tensor.Float32)

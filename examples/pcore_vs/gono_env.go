@@ -18,13 +18,13 @@ import (
 type GoNoEnv struct {
 
 	// name of environment -- Train or Test
-	Nm string
+	Name string
 
 	// training or testing env?
 	Mode etime.Modes
 
 	// trial counter -- set by caller for testing
-	Trial env.Ctr
+	Trial env.Counter
 
 	// if true, ACCPos and Neg are set manually for testing specific cases;
 	// do not generate random vals for training or auto-increment ACCPos / Neg values during test
@@ -106,13 +106,7 @@ type GoNoEnv struct {
 	RPE float32 `edit:"-"`
 }
 
-func (ev *GoNoEnv) Name() string {
-	return ev.Nm
-}
-
-func (ev *GoNoEnv) Desc() string {
-	return "GoNoEnv"
-}
+func (ev *GoNoEnv) Label() string { return ev.Name }
 
 func (ev *GoNoEnv) Defaults() {
 	ev.TestInc = 0.1
@@ -143,19 +137,8 @@ func (ev *GoNoEnv) Config(mode etime.Modes, rndseed int64) {
 	ev.States["SNc"] = tensor.NewFloat32([]int{1, 1})
 }
 
-func (ev *GoNoEnv) Validate() error {
-	return nil
-}
-
 func (ev *GoNoEnv) Init(run int) {
 	ev.Trial.Init()
-}
-
-func (ev *GoNoEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
-	if scale == env.Trial {
-		return ev.Trial.Query()
-	}
-	return 0, 0, false
 }
 
 func (ev *GoNoEnv) State(el string) tensor.Tensor {

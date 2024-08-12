@@ -21,16 +21,16 @@ import (
 type VSPatchEnv struct {
 
 	// name of environment -- Train or Test
-	Nm string
+	Name string
 
 	// training or testing env?
 	Mode etime.Modes
 
 	// sequence counter is for the condition
-	Sequence env.Ctr `display:"inline"`
+	Sequence env.Counter `display:"inline"`
 
 	// trial counter is for the step within condition
-	Trial env.Ctr `display:"inline"`
+	Trial env.Counter `display:"inline"`
 
 	// current condition index
 	Cond int
@@ -87,13 +87,7 @@ type VSPatchEnv struct {
 	DA float32 `edit:"-"`
 }
 
-func (ev *VSPatchEnv) Name() string {
-	return ev.Nm
-}
-
-func (ev *VSPatchEnv) Desc() string {
-	return "VSPatchEnv"
-}
+func (ev *VSPatchEnv) Label() string { return ev.Name }
 
 func (ev *VSPatchEnv) Defaults() {
 	ev.Probs = true
@@ -165,23 +159,9 @@ func (ev *VSPatchEnv) ConfigPats() {
 	ev.PatSimMat.TableCol(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
 }
 
-func (ev *VSPatchEnv) Validate() error {
-	return nil
-}
-
 func (ev *VSPatchEnv) Init(run int) {
 	ev.Sequence.Init()
 	ev.Trial.Init()
-}
-
-func (ev *VSPatchEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
-	switch scale {
-	case env.Sequence:
-		return ev.Sequence.Query()
-	case env.Trial:
-		return ev.Trial.Query()
-	}
-	return 0, 0, false
 }
 
 func (ev *VSPatchEnv) State(el string) tensor.Tensor {

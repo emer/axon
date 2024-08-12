@@ -140,8 +140,7 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(etime.Test).(*LEDEnv)
 	}
 
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
+	trn.Name = etime.Train.String()
 	trn.Defaults()
 	trn.MinLED = 0
 	trn.MaxLED = 17 // exclude last 2 by default
@@ -149,11 +148,9 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 	}
-	trn.Validate()
 	trn.Trial.Max = ss.Config.Run.NTrials
 
-	novTrn.Nm = etime.Analyze.String()
-	novTrn.Dsc = "novel items training params and state"
+	novTrn.Name = etime.Analyze.String()
 	novTrn.Defaults()
 	novTrn.MinLED = 18
 	novTrn.MaxLED = 19 // only last 2 items
@@ -161,15 +158,13 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(novTrn, ss.Config.Env.Env, ss.Config.Debug)
 	}
-	novTrn.Validate()
 	novTrn.Trial.Max = ss.Config.Run.NTrials
 	novTrn.XFormRand.TransX.Set(-0.125, 0.125)
 	novTrn.XFormRand.TransY.Set(-0.125, 0.125)
 	novTrn.XFormRand.Scale.Set(0.775, 0.925) // 1/2 around midpoint
 	novTrn.XFormRand.Rot.Set(-2, 2)
 
-	tst.Nm = etime.Test.String()
-	tst.Dsc = "testing params and state"
+	tst.Name = etime.Test.String()
 	tst.Defaults()
 	tst.MinLED = 0
 	tst.MaxLED = 19 // all by default
@@ -178,7 +173,6 @@ func (ss *Sim) ConfigEnv() {
 	if ss.Config.Env.Env != nil {
 		params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 	}
-	tst.Validate()
 
 	trn.Init(0)
 	novTrn.Init(0)
@@ -445,7 +439,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)

@@ -102,7 +102,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("PCore")
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
@@ -143,7 +143,7 @@ func (ss *Sim) ConfigEnv() {
 		}
 
 		// note: names must be standard here!
-		trn.Nm = env.ModeDi(etime.Train, di)
+		trn.Name = env.ModeDi(etime.Train, di)
 		trn.Defaults()
 		trn.NActions = ss.Config.Env.NActions
 		trn.SeqLen = ss.Config.Env.SeqLen
@@ -151,9 +151,8 @@ func (ss *Sim) ConfigEnv() {
 			params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
 		}
 		trn.Config(etime.Train, 73+int64(di)*73)
-		trn.Validate()
 
-		tst.Nm = env.ModeDi(etime.Test, di)
+		tst.Name = env.ModeDi(etime.Test, di)
 		tst.Defaults()
 		tst.NActions = ss.Config.Env.NActions
 		tst.SeqLen = ss.Config.Env.SeqLen
@@ -161,7 +160,6 @@ func (ss *Sim) ConfigEnv() {
 			params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
 		}
 		tst.Config(etime.Test, 181+int64(di)*181)
-		tst.Validate()
 
 		trn.Init(0)
 		tst.Init(0)
@@ -184,7 +182,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MotorSeqEnv)
 
-	net.InitName(net, "PCore")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -218,7 +215,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
 
 	motor := net.AddLayer4D("MotorBS", 1, nAct, nuPer, 1, axon.TargetLayer)
-	pf.Shp.CopyShape(&motor.Shp)
+	pf.Shape.CopyShape(&motor.Shape)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", motor.Name)
@@ -653,7 +650,7 @@ func (ss *Sim) InitStats() {
 // Also saves a string rep of them for ViewUpdate.Text
 func (ss *Sim) StatCounters(di int) {
 	mode := ss.Context.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
@@ -906,7 +903,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
-		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

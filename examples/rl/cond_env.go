@@ -11,6 +11,7 @@ import (
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 )
 
 // OnOff represents stimulus On / Off timing
@@ -68,10 +69,7 @@ func (oo *OnOff) IsOn(tm int) bool {
 type CondEnv struct {
 
 	// name of this environment
-	Nm string
-
-	// description of this environment
-	Dsc string
+	Name string
 
 	// total time for trial
 	TotTime int
@@ -103,21 +101,14 @@ type CondEnv struct {
 	// true if a US reward value was set
 	HasRew bool
 
-	// current run of model as provided during Init
-	Run env.Ctr `display:"inline"`
-
-	// number of times through Seq.Max number of sequences
-	Epoch env.Ctr `display:"inline"`
-
 	// one trial is a pass through all TotTime Events
-	Trial env.Ctr `display:"inline"`
+	Trial env.Counter `display:"inline"`
 
 	// event is one time step within Trial -- e.g., CS turning on, etc
-	Event env.Ctr `display:"inline"`
+	Event env.Counter `display:"inline"`
 }
 
-func (ev *CondEnv) Name() string { return ev.Nm }
-func (ev *CondEnv) Desc() string { return ev.Dsc }
+func (ev *CondEnv) Label() string { return ev.Name }
 
 func (ev *CondEnv) Defaults() {
 	ev.TotTime = 20
@@ -132,10 +123,6 @@ func (ev *CondEnv) Validate() error {
 		ev.Defaults()
 	}
 	return nil
-}
-
-func (ev *CondEnv) Counters() []env.TimeScales {
-	return []env.TimeScales{env.Run, env.Epoch, env.Trial, env.Event}
 }
 
 func (ev *CondEnv) States() env.Elements {
@@ -168,15 +155,10 @@ func (ev *CondEnv) String() string {
 func (ev *CondEnv) Init(run int) {
 	ev.Input.SetShape([]int{3, ev.TotTime}, "3", "TotTime")
 	ev.Reward.SetShape([]int{1}, "1")
-	ev.Run.Scale = env.Run
-	ev.Epoch.Scale = env.Epoch
-	ev.Trial.Scale = env.Trial
-	ev.Event.Scale = env.Event
-	ev.Run.Init()
-	ev.Epoch.Init()
+	ev.Trial.Scale = etime.Trial
+	ev.Event.Scale = etime.Event
 	ev.Trial.Init()
 	ev.Event.Init()
-	ev.Run.Cur = run
 	ev.Event.Max = ev.TotTime
 	ev.Event.Cur = -1 // init state -- key so that first Step() = 0
 	ev.TrialUpdate()
@@ -220,7 +202,6 @@ func (ev *CondEnv) SetReward() bool {
 }
 
 func (ev *CondEnv) Step() bool {
-	ev.Epoch.Same() // good idea to just reset all non-inner-most counters at start
 	ev.Trial.Same() // this ensures that they only report changed when actually changed
 
 	incr := ev.Event.Incr()
@@ -229,29 +210,13 @@ func (ev *CondEnv) Step() bool {
 
 	if incr {
 		ev.TrialUpdate()
-		if ev.Trial.Incr() {
-			ev.Epoch.Incr()
-		}
+		ev.Trial.Incr()
 	}
 	return true
 }
 
 func (ev *CondEnv) Action(element string, input tensor.Tensor) {
 	// nop
-}
-
-func (ev *CondEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
-	switch scale {
-	case env.Run:
-		return ev.Run.Query()
-	case env.Epoch:
-		return ev.Epoch.Query()
-	case env.Trial:
-		return ev.Trial.Query()
-	case env.Event:
-		return ev.Event.Query()
-	}
-	return -1, -1, false
 }
 
 // Compile-time check that implements Env interface

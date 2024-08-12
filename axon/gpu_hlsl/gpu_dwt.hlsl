@@ -53,7 +53,7 @@ void DWtSyn(in Context ctx, uint syni, uint di) {
 	uint pi = SynI(ctx, syni, SynPathIndex);
 	uint si = SynI(ctx, syni, SynSendIndex);
 	uint ri = SynI(ctx, syni, SynRecvIndex);
-	DWtSyn2(ctx, Layers[Paths[pi].Indexes.RecvLay], Paths[pi], syni, di, si, ri);
+	DWtSyn2(ctx, Layers[Paths[pi].Indexes.RecvLayer], Paths[pi], syni, di, si, ri);
 }
 
 

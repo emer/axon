@@ -227,7 +227,7 @@ func (ss *Sim) New() {
 		ss.Config.Log.SaveWeights = false
 		ss.Config.Log.NetData = false
 	}
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("RA25 MPI")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
 	ss.Pats = &table.Table{}
@@ -266,8 +266,7 @@ func (ss *Sim) ConfigEnv() {
 	}
 
 	// note: names must be standard here!
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
+	trn.Name = etime.Train.String()
 	trn.Config(table.NewIndexView(ss.Pats))
 	if ss.Config.Run.MPI {
 		// this is key mpi step: allocate diff inputs to diff procs
@@ -277,8 +276,7 @@ func (ss *Sim) ConfigEnv() {
 	}
 	trn.Validate()
 
-	tst.Nm = etime.Test.String()
-	tst.Dsc = "testing params and state"
+	tst.Name = etime.Test.String()
 	tst.Config(table.NewIndexView(ss.Pats))
 	tst.Sequential = true
 	if ss.Config.Run.MPI {
@@ -302,7 +300,6 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
-	net.InitName(net, "RA25")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -588,7 +585,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
@@ -759,7 +756,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
-		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

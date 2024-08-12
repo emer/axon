@@ -126,7 +126,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("Neuron")
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
@@ -154,7 +154,6 @@ func (ss *Sim) ConfigAll() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 
-	net.InitName(net, "Neuron")
 	in := net.AddLayer2D("Input", 1, 1, axon.InputLayer)
 	hid := net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
 
@@ -460,7 +459,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 
 	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

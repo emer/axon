@@ -33,7 +33,6 @@ import (
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
-	"github.com/emer/emergent/v2/relpos"
 )
 
 func main() {
@@ -91,7 +90,7 @@ type Sim struct {
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
-	ss.Net = &axon.Network{}
+	ss.Net = axon.NewNetwork("DeepMove")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	if ss.Config.Params.Hid2 {
 		ss.Params.ExtraSheets = "Hid2"
@@ -134,7 +133,7 @@ func (ss *Sim) ConfigEnv() {
 
 		// note: names must be standard here!
 		trn.Defaults()
-		trn.Nm = env.ModeDi(etime.Train, di)
+		trn.Name = env.ModeDi(etime.Train, di)
 		trn.Debug = false
 		trn.RandSeed = 73 + int64(di)*73
 		if ss.Config.Env.Env != nil {
@@ -144,7 +143,7 @@ func (ss *Sim) ConfigEnv() {
 		trn.Validate()
 
 		tst.Defaults()
-		tst.Nm = env.ModeDi(etime.Test, di)
+		tst.Name = env.ModeDi(etime.Test, di)
 		tst.RandSeed = 181 + int64(di)*181
 		if ss.Config.Env.Env != nil {
 			params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
@@ -164,7 +163,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MoveEnv)
 
-	net.InitName(net, "DeepMove")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -244,12 +242,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(hdHid, dpHid, full, emer.Back)
 	// net.ConnectLayers(hdHidct, dpHidct, full, emer.Back)
 
-	hd.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: act.Name, XAlign: relpos.Left, Space: 2 * space})
-	act.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpIn.Name, YAlign: relpos.Front, Space: 2})
-	dpHid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: dpIn.Name, XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	hdHid.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpHid.Name, YAlign: relpos.Front, Space: 2})
+	hd.PlaceBehind(act, space)
+	act.PlaceRightOf(dpIn, space)
+	dpHid.PlaceAbove(dpIn)
+	hdHid.PlaceRightOf(dpHid, space)
 	if ss.Config.Params.Hid2 {
-		dpHid2.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: hdHidct.Name, XAlign: relpos.Left, Space: 2 * space})
+		dpHid2.PlaceBehind(hdHidct, 2*space)
 	}
 
 	net.Build(ctx)
@@ -452,7 +450,7 @@ func (ss *Sim) InitStats() {
 func (ss *Sim) StatCounters(di int) {
 	ctx := &ss.Context
 	mode := ctx.Mode
-	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
@@ -673,7 +671,7 @@ func (ss *Sim) ConfigGUI() {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
-		ss.Net.ConfigGPUwithGUI(&ss.Context)
+		ss.Net.ConfigGPUnoGUI(&ss.Context)
 		core.TheApp.AddQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})

@@ -25,41 +25,38 @@ import (
 )
 
 var ParamSets = params.Sets{
-	"Base": {Desc: "these are the best params", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Path", Desc: "",
-				Params: params.Params{
-					"Path.Learn.LRate.Base":    "0.005", // 0.005 is lvis default
-					"Path.Learn.Trace.SubMean": "0",     // 1 is very slow on AMD64 -- good to keep testing
-					"Path.SWts.Adapt.LRate":    "0.1",   // .1 >= .2,
-					"Path.SWts.Init.SPct":      "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				}},
-			{Sel: "Layer", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.08",
-					"Layer.Inhib.Layer.Gi":       "1.05",
-					"Layer.Acts.Gbar.L":          "0.2",
-				}},
-			{Sel: "#Input", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
-					"Layer.Acts.Clamp.Ge":  "1.5",
-				}},
-			{Sel: "#Output", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.70",
-					"Layer.Acts.Clamp.Ge":  "0.8",
-				}},
-			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-				Params: params.Params{
-					"Path.PathScale.Rel": "0.2",
-				}},
-		},
-	}},
+	"Base": {
+		{Sel: "Path", Desc: "",
+			Params: params.Params{
+				"Path.Learn.LRate.Base":    "0.005", // 0.005 is lvis default
+				"Path.Learn.Trace.SubMean": "0",     // 1 is very slow on AMD64 -- good to keep testing
+				"Path.SWts.Adapt.LRate":    "0.1",   // .1 >= .2,
+				"Path.SWts.Init.SPct":      "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+			}},
+		{Sel: "Layer", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.ActAvg.Nominal": "0.08",
+				"Layer.Inhib.Layer.Gi":       "1.05",
+				"Layer.Acts.Gbar.L":          "0.2",
+			}},
+		{Sel: "#Input", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
+				"Layer.Acts.Clamp.Ge":  "1.5",
+			}},
+		{Sel: "#Output", Desc: "",
+			Params: params.Params{
+				"Layer.Inhib.Layer.Gi": "0.70",
+				"Layer.Acts.Clamp.Ge":  "0.8",
+			}},
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+			Params: params.Params{
+				"Path.PathScale.Rel": "0.2",
+			}},
+	},
 }
 
 func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
-	net.InitName(net, "BenchLvisNet")
 	net.SetMaxData(ctx, maxData)
 
 	/*
@@ -123,7 +120,7 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets["Base"].Sheets["Network"], false); err != nil {
+	if _, err := net.ApplyParams(ParamSets["Base"], false); err != nil {
 		panic(err)
 	}
 

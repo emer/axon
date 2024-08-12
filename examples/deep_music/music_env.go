@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
+	"github.com/emer/emergent/v2/etime"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
@@ -25,7 +26,7 @@ import (
 type MusicEnv struct {
 
 	// name of this environment
-	Nm string
+	Name string
 
 	// emit debugging messages about the music file
 	Debug bool
@@ -61,7 +62,7 @@ type MusicEnv struct {
 	Song table.Table
 
 	// current time step
-	Time env.Ctr `display:"inline"`
+	Time env.Counter `display:"inline"`
 
 	// current note, rendered as a 4D tensor with shape:
 	Note tensor.Float32
@@ -76,8 +77,7 @@ type MusicEnv struct {
 	LastNotePlayed int `display:"-"`
 }
 
-func (ev *MusicEnv) Name() string { return ev.Nm }
-func (ev *MusicEnv) Desc() string { return "" }
+func (ev *MusicEnv) Label() string { return ev.Name }
 
 func (ev *MusicEnv) Defaults() {
 	ev.TicksPer = 120
@@ -258,12 +258,8 @@ func (ev *MusicEnv) ConfigNData(ndata int) {
 }
 
 func (ev *MusicEnv) Init(run int) {
-	ev.Time.Scale = env.Trial
+	ev.Time.Scale = etime.Trial
 	ev.Time.Init()
-}
-
-func (ev *MusicEnv) Validate() error {
-	return nil
 }
 
 func (ev *MusicEnv) Step() bool {
@@ -321,14 +317,6 @@ func (ev *MusicEnv) PlayNote(noteIndex int) {
 
 func (ev *MusicEnv) Action(element string, input tensor.Tensor) {
 	// nop
-}
-
-func (ev *MusicEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
-	switch scale {
-	case env.Trial:
-		return ev.Time.Query()
-	}
-	return -1, -1, false
 }
 
 // Compile-time check that implements Env interface

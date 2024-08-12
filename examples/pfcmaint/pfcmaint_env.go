@@ -17,16 +17,16 @@ import (
 type PFCMaintEnv struct {
 
 	// name of environment -- Train or Test
-	Nm string
+	Name string
 
 	// training or testing env?
 	Mode etime.Modes
 
 	// sequence counter is for the outer loop of maint per item
-	Sequence env.Ctr `display:"inline"`
+	Sequence env.Counter `display:"inline"`
 
 	// trial counter is for the maint step within item
-	Trial env.Ctr `display:"inline"`
+	Trial env.Counter `display:"inline"`
 
 	// number of different items to maintain
 	NItems int
@@ -56,13 +56,7 @@ type PFCMaintEnv struct {
 	States map[string]*tensor.Float32
 }
 
-func (ev *PFCMaintEnv) Name() string {
-	return ev.Nm
-}
-
-func (ev *PFCMaintEnv) Desc() string {
-	return "PFCMaintEnv"
-}
+func (ev *PFCMaintEnv) Label() string { return ev.Name }
 
 func (ev *PFCMaintEnv) Defaults() {
 	ev.NItems = 10
@@ -103,23 +97,9 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	patgen.PermutedBinaryMinDiff(ev.Pats.ColumnByName("Item").(*tensor.Float32), nOn, 1, 0, minDiff)
 }
 
-func (ev *PFCMaintEnv) Validate() error {
-	return nil
-}
-
 func (ev *PFCMaintEnv) Init(run int) {
 	ev.Sequence.Init()
 	ev.Trial.Init()
-}
-
-func (ev *PFCMaintEnv) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
-	switch scale {
-	case env.Sequence:
-		return ev.Sequence.Query()
-	case env.Trial:
-		return ev.Trial.Query()
-	}
-	return 0, 0, false
 }
 
 func (ev *PFCMaintEnv) State(el string) tensor.Tensor {

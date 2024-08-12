@@ -16,14 +16,11 @@ import (
 	"github.com/emer/emergent/v2/popcode"
 )
 
-// MoveEnv is a flat-world grid-based environment
+// MoveEnv is a flat-world grid-based environment.
 type MoveEnv struct {
 
 	// name of this environment
-	Nm string
-
-	// update display -- turn off to make it faster
-	Disp bool
+	Name string
 
 	// size of 2D world
 	Size vecint.Vector2i
@@ -101,8 +98,7 @@ type MoveEnv struct {
 	RandSeed int64 `edit:"-"`
 }
 
-func (ev *MoveEnv) Name() string { return ev.Nm }
-func (ev *MoveEnv) Desc() string { return "" }
+func (ev *MoveEnv) Label() string { return ev.Name }
 
 // Defaults sets default values
 func (ev *MoveEnv) Defaults() {
@@ -158,7 +154,7 @@ func (ev *MoveEnv) Config(unper int) {
 
 func (ev *MoveEnv) Validate() error {
 	if ev.Size == (vecint.Vector2i{}) {
-		return fmt.Errorf("MoveEnv: %v has size == 0 -- need to Config", ev.Nm)
+		return fmt.Errorf("MoveEnv: %v has size == 0 -- need to Config", ev.Name)
 	}
 	return nil
 }
@@ -369,10 +365,6 @@ func (ev *MoveEnv) Action(action string, nop tensor.Tensor) {
 	}
 	ev.Act = a
 	ev.TakeAct(ev.Act)
-}
-
-func (ev *MoveEnv) Counter(scale env.TimeScales) (cur, prv int, chg bool) {
-	return -1, -1, false
 }
 
 // Compile-time check that implements Env interface

@@ -44,21 +44,21 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	rand.Seed(42)
 
 	ctx := axon.NewContext()
-	net := &axon.Network{}
+	net := axon.NewNetwork("LVisBench")
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	log.Println(net.SizeReport(false))
 
 	pats := &table.Table{}
 	ConfigPats(pats, *numPats, inputShape, outputShape)
 
-	inLay := net.LayerByName("V1_0").(*axon.Layer)
-	outLay := net.LayerByName("Output").(*axon.Layer)
+	inLay := net.LayerByName("V1_0")
+	outLay := net.LayerByName("Output")
 
 	inPats := pats.ColumnByName("Input").(*tensor.Float32)
 	outPats := pats.ColumnByName("Output").(*tensor.Float32)
 
-	require.Equal(b, inLay.Shp.Len(), inPats.Len() / *numPats)
-	require.Equal(b, outLay.Shp.Len(), outPats.Len() / *numPats)
+	require.Equal(b, inLay.Shape.Len(), inPats.Len() / *numPats)
+	require.Equal(b, outLay.Shape.Len(), outPats.Len() / *numPats)
 
 	epcLog := &table.Table{}
 	ConfigEpcLog(epcLog)
@@ -75,7 +75,7 @@ func TestGPUSynCa(t *testing.T) {
 	rand.Seed(42)
 
 	ctx := axon.NewContext()
-	net := &axon.Network{}
+	net := axon.NewNetwork("")
 	ConfigNet(ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *ndata, *verbose)
 	log.Println(net.SizeReport(false))
 
