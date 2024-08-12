@@ -12,7 +12,6 @@ import (
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/weights"
 )
 
@@ -48,7 +47,7 @@ func (pt *Path) Defaults() {
 	case DSMatrixPath:
 		pt.Params.MatrixDefaults()
 	}
-	pt.ApplyDefParams()
+	pt.ApplyDefaultParams()
 	pt.UpdateParams()
 }
 
@@ -73,12 +72,6 @@ func (pt *Path) UpdateParams() {
 func (pt *Path) AllParams() string {
 	str := "///////////////////////////////////////////////////\nPath: " + pt.Name + "\n" + pt.Params.AllParams()
 	return str
-}
-
-// SetParam sets parameter at given path to given value.
-// returns error if path not found or value cannot be set.
-func (pt *Path) SetParam(path, val string) error {
-	return params.SetParam(pt.Params, path, val)
 }
 
 // SetSynVal sets value of given variable name on the synapse

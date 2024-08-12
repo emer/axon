@@ -35,7 +35,7 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 		d2 := net.AddLayer4D(prefix+"BLAnegAcqD2", 1, nUs, nNeurY, nNeurX, BLALayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
 		d2.SetBuildConfig("Valence", "Negative")
-		d2.DefParams = params.Params{
+		d2.DefaultParams = params.Params{
 			"Layer.Inhib.Layer.Gi": "1.2", // weaker
 		}
 		acq = d2
@@ -43,11 +43,11 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 	}
 
 	pj := net.ConnectLayers(ext, acq, paths.NewPoolOneToOne(), InhibPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "0.5", // key param for efficacy of inhibition -- may need to tweak
 	}
 	pj.AddClass("BLAExtToAcq")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Learn.Learn":    "false",
 		"Path.PathScale.Abs":  "1", // 1 needed for inhibition
 		"Path.SWts.Init.SPct": "0",
@@ -57,13 +57,13 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 
 	pj = net.ConnectLayers(acq, ext, paths.NewOneToOne(), CTCtxtPath)
 	pj.AddClass("BLAAcqToExt")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "2",
 	}
 
 	pj = net.ConnectLayers(acq, acq, NewBLANovelPath(), InhibPath)
 	pj.AddClass("BLANovelInhib")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Learn.Learn":    "false",
 		"Path.PathScale.Abs":  "0.5",
 		"Path.SWts.Init.SPct": "0",
@@ -73,7 +73,7 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 
 	pj = net.ConnectLayers(ext, acq, NewBLANovelPath(), InhibPath)
 	pj.AddClass("BLANovelInhib")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Learn.Learn":    "false",
 		"Path.PathScale.Abs":  "0.5",
 		"Path.SWts.Init.SPct": "0",
@@ -119,7 +119,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 	blaNov = net.AddLayer4D(prefix+"BLANovelCS", 1, 1, 4, 4, BLALayer)
 	blaNov.SetBuildConfig("DAMod", "D1Mod")
 	blaNov.SetBuildConfig("Valence", "Positive")
-	blaNov.DefParams = params.Params{
+	blaNov.DefaultParams = params.Params{
 		"Layer.Inhib.ActAvg.Nominal":     "0.05",
 		"Layer.Inhib.Layer.Gi":           "0.8",
 		"Layer.Inhib.Pool.On":            "false",
@@ -139,7 +139,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 	}
 
 	pj := net.ConnectLayers(blaNov, blaPosAcq, p1to1, ForwardPath)
-	pj.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
+	pj.DefaultParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
 		"Path.Learn.Learn":    "false",
 		"Path.SWts.Adapt.On":  "false",
 		"Path.PathScale.Rel":  "0.1",
@@ -168,7 +168,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 // This is for any CS or contextual inputs that drive acquisition.
 func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat paths.Pattern) *Path {
 	pj := net.ConnectLayers(send, recv, pat, BLAPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Learn.LRate.Base":  "0.02",
 		"Path.Learn.Trace.Tau":   "1",    // increase for second order conditioning
 		"Path.BLA.NegDeltaLRate": "0.01", // slow for acq -- could be 0
@@ -183,7 +183,7 @@ func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat paths.Pattern) *Path 
 // and override the acquisition ones.
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat paths.Pattern) *Path {
 	pj := net.ConnectLayers(send, recv, pat, BLAPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs":     "4",
 		"Path.Learn.LRate.Base":  "0.05", // 0.02 for pvlv CS 50% balance
 		"Path.Learn.Trace.Tau":   "1",    // increase for second order conditioning
@@ -198,7 +198,7 @@ func (net *Network) ConnectToBLAExt(send, recv *Layer, pat paths.Pattern) *Path 
 // Sets classes to: CSToBLApos, CSToBLANovel with default params
 func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov, novInhib *Path) {
 	toAcq = net.ConnectLayers(cs, blaAcq, paths.NewFull(), BLAPath)
-	toAcq.DefParams = params.Params{ // stronger..
+	toAcq.DefaultParams = params.Params{ // stronger..
 		"Path.PathScale.Abs":     "1.5",
 		"Path.Learn.LRate.Base":  "0.1",  // faster learning
 		"Path.Learn.Trace.Tau":   "1",    // increase for second order conditioning
@@ -207,7 +207,7 @@ func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov, 
 	toAcq.AddClass("CSToBLApos")
 
 	toNov = net.ConnectLayers(cs, blaNov, paths.NewFull(), BLAPath)
-	toNov.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
+	toNov.DefaultParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
 		"Path.SWts.Init.SPct": "0",
 		"Path.SWts.Init.Mean": "0.75",
 		"Path.SWts.Init.Var":  "0.25",
@@ -217,7 +217,7 @@ func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov, 
 	toNov.AddClass("CSToBLANovel")
 
 	novInhib = net.ConnectLayers(cs, blaNov, paths.NewFull(), InhibPath)
-	novInhib.DefParams = params.Params{
+	novInhib.DefaultParams = params.Params{
 		"Path.SWts.Init.SPct":   "0",
 		"Path.SWts.Init.Mean":   "0.1",
 		"Path.SWts.Init.Var":    "0.05",
@@ -236,7 +236,7 @@ func (net *Network) ConnectCSToBLApos(cs, blaAcq, blaNov *Layer) (toAcq, toNov, 
 // Sets classes to: USToBLAAcq and USToBLAExt
 func (net *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Path) {
 	toAcq = net.ConnectLayers(us, blaAcq, paths.NewPoolOneToOne(), BLAPath)
-	toAcq.DefParams = params.Params{
+	toAcq.DefaultParams = params.Params{
 		"Path.PathScale.Rel":     "0.5",
 		"Path.PathScale.Abs":     "6",
 		"Path.SWts.Init.SPct":    "0",
@@ -249,7 +249,7 @@ func (net *Network) ConnectUSToBLA(us, blaAcq, blaExt *Layer) (toAcq, toExt *Pat
 	toAcq.AddClass("USToBLAAcq")
 
 	toExt = net.ConnectLayers(us, blaExt, paths.NewPoolOneToOne(), InhibPath)
-	toExt.DefParams = params.Params{ // actual US inhibits exinction -- must be strong enough to block ACh enh Ge
+	toExt.DefaultParams = params.Params{ // actual US inhibits exinction -- must be strong enough to block ACh enh Ge
 		"Path.PathScale.Abs":  "0.5", // note: key param
 		"Path.SWts.Init.SPct": "0",
 		"Path.SWts.Init.Mean": "0.8",
@@ -317,13 +317,13 @@ func (net *Network) AddUSPulvLayers(popY, popX int, rel relpos.Relations, space 
 		"Layer.Inhib.Pool.On":        "true",
 		"Layer.Inhib.Pool.Gi":        "0.5",
 	}
-	usPosP.DefParams = usParams
+	usPosP.DefaultParams = usParams
 	usPosP.AddClass("USLayer")
-	usNegP.DefParams = usParams
+	usNegP.DefaultParams = usParams
 	usNegP.AddClass("USLayer")
-	costP.DefParams = usParams
+	costP.DefaultParams = usParams
 	costP.AddClass("USLayer")
-	costFinal.DefParams = params.Params{
+	costFinal.DefaultParams = params.Params{
 		"Layer.Inhib.Pool.Gi":   "1",
 		"Layer.Acts.PopCode.Ge": "1.0",
 	}
@@ -367,9 +367,9 @@ func (net *Network) AddPVPulvLayers(nNeurY, nNeurX int, rel relpos.Relations, sp
 		"Layer.Inhib.ActAvg.Nominal": "0.2",
 		"Layer.Inhib.Layer.Gi":       "0.5",
 	}
-	pvPosP.DefParams = pvParams
+	pvPosP.DefaultParams = pvParams
 	pvPosP.AddClass("PVLayer")
-	pvNegP.DefParams = pvParams
+	pvNegP.DefaultParams = pvParams
 	pvNegP.AddClass("PVLayer")
 	return
 }
@@ -416,7 +416,7 @@ func (net *Network) AddVTALHbLDTLayers(rel relpos.Relations, space float32) (vta
 // Must set Inhib.FFPrv > 0 and Act.Decay.* = 0
 func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 	sc := net.AddLayer2D(prefix+"SC", nNeurY, nNeurX, SuperLayer)
-	sc.DefParams = params.Params{
+	sc.DefaultParams = params.Params{
 		"Layer.Inhib.ActAvg.Nominal": "0.1",
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "1.2",
@@ -439,7 +439,7 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 // Must set Inhib.FFPrv > 0 and Act.Decay.* = 0
 func (net *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	sc := net.AddLayer4D(prefix+"SC", nPoolsY, nPoolsX, nNeurY, nNeurX, SuperLayer)
-	sc.DefParams = params.Params{
+	sc.DefaultParams = params.Params{
 		"Layer.Inhib.ActAvg.Nominal": "0.1",
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "1.2",
@@ -471,7 +471,7 @@ func (net *Network) ConnectToSC(send, recv *Layer, pat paths.Pattern) *Path {
 func (net *Network) ConnectToSC1to1(send, recv *Layer) *Path {
 	recv.Shape.CopyShape(&send.Shape)
 	pj := net.ConnectLayers(send, recv, paths.NewOneToOne(), ForwardPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Learn.Learn":    "false",
 		"Path.SWts.Init.SPct": "0",
 		"Path.SWts.Adapt.On":  "false",
@@ -499,7 +499,7 @@ func (net *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
 func (net *Network) AddDrivesPulvLayer(ctx *Context, nNeurY, nNeurX int, space float32) (drv, drvP *Layer) {
 	drv = net.AddDrivesLayer(ctx, nNeurY, nNeurX)
 	drvP = net.AddPulvForLayer(drv, space)
-	drvP.DefParams = params.Params{
+	drvP.DefaultParams = params.Params{
 		"Layer.Inhib.ActAvg.Nominal": "0.01",
 		"Layer.Inhib.Layer.On":       "false",
 		"Layer.Inhib.Pool.On":        "true",
@@ -550,13 +550,13 @@ func (net *Network) AddRubiconPulvLayers(ctx *Context, nYneur, popY, popX int, s
 // with given number of units per pool.
 func (net *Network) AddOFCpos(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCpos", "MD", 1, nUSs, ofcY, ofcX, true, true, space)
-	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
-	ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.02"
-	ofcPT.DefParams["Layer.Inhib.Pool.On"] = "true"
-	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
-	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.0"
-	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	ofc.DefaultParams["Layer.Inhib.Pool.Gi"] = "1"
+	ofcPT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.02"
+	ofcPT.DefaultParams["Layer.Inhib.Pool.On"] = "true"
+	// ofcPT.DefaultParams["Layer.Inhib.Pool.Gi"] = "2.0"
+	ofcPT.DefaultParams["Layer.Acts.Dend.ModACh"] = "true"
+	ofcPTp.DefaultParams["Layer.Inhib.Pool.Gi"] = "1.0"
+	ofcPTp.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
 	return
 }
@@ -566,14 +566,14 @@ func (net *Network) AddOFCpos(ctx *Context, nUSs, nY, ofcY, ofcX int, space floa
 func (net *Network) AddOFCneg(ctx *Context, nUSs, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD *Layer) {
 	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCneg", "MD", 1, nUSs, ofcY, ofcX, true, true, space)
 
-	ofc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
-	ofc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
-	ofc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
-	// ofcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	// ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
-	ofcPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
-	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.4"
-	ofcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	ofc.DefaultParams["Layer.Inhib.Pool.Gi"] = "1"
+	ofc.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	ofc.DefaultParams["Layer.Inhib.Layer.Gi"] = "1.2"
+	// ofcPT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	// ofcPT.DefaultParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	ofcPT.DefaultParams["Layer.Acts.Dend.ModACh"] = "true"
+	ofcPTp.DefaultParams["Layer.Inhib.Pool.Gi"] = "1.4"
+	ofcPTp.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 
 	return
 }
@@ -584,22 +584,22 @@ func (net *Network) AddOFCneg(ctx *Context, nUSs, ofcY, ofcX int, space float32)
 func (net *Network) AddACCost(ctx *Context, nCosts, accY, accX int, space float32) (acc, accCT, accPT, accPTp, accMD *Layer) {
 	acc, accCT, accPT, accPTp, accMD = net.AddPFC4D("ACCcost", "MD", 1, nCosts, accY, accX, true, true, space)
 
-	acc.DefParams["Layer.Inhib.Layer.On"] = "false" // no match
-	acc.DefParams["Layer.Inhib.Pool.Gi"] = "1"
-	acc.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
-	acc.DefParams["Layer.Inhib.Layer.Gi"] = "1.2"
+	acc.DefaultParams["Layer.Inhib.Layer.On"] = "false" // no match
+	acc.DefaultParams["Layer.Inhib.Pool.Gi"] = "1"
+	acc.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	acc.DefaultParams["Layer.Inhib.Layer.Gi"] = "1.2"
 
-	accCT.DefParams["Layer.Inhib.Layer.On"] = "false"
-	accCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.8"
+	accCT.DefaultParams["Layer.Inhib.Layer.On"] = "false"
+	accCT.DefaultParams["Layer.Inhib.Pool.Gi"] = "1.8"
 
-	// accPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
-	// accPT.DefParams["Layer.Inhib.Pool.Gi"] = "3.0"
-	accPT.DefParams["Layer.Inhib.Layer.On"] = "false"
-	accPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	// accPT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.2"
+	// accPT.DefaultParams["Layer.Inhib.Pool.Gi"] = "3.0"
+	accPT.DefaultParams["Layer.Inhib.Layer.On"] = "false"
+	accPT.DefaultParams["Layer.Acts.Dend.ModACh"] = "true"
 
-	accPTp.DefParams["Layer.Inhib.Layer.On"] = "false"
-	accPTp.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	accPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	accPTp.DefaultParams["Layer.Inhib.Layer.On"] = "false"
+	accPTp.DefaultParams["Layer.Inhib.Pool.Gi"] = "1.2"
+	accPTp.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
 	return
 }
 
@@ -656,8 +656,8 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	ilNeg, ilNegCT, ilNegPT, ilNegPTp, ilNegMD = net.AddPFC2D("ILneg", "MD", ofcY, ofcX, true, true, space)
 	_ = ilNegPT
 
-	ilPosPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
-	ilNegPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	ilPosPT.DefaultParams["Layer.Acts.Dend.ModACh"] = "true"
+	ilNegPT.DefaultParams["Layer.Acts.Dend.ModACh"] = "true"
 
 	accCost, accCostCT, accCostPT, accCostPTp, accCostMD = net.AddACCost(ctx, nCosts, ofcY, ofcX, space)
 	_ = accCostPT
@@ -695,7 +695,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 
 	// neg val goes to nogo
 	pj = net.ConnectToVSMatrix(ilNeg, vSmtxNo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
 	net.ConnectToVSPatch(ilNegPTp, vSpatchD1, vSpatchD2, full)
@@ -707,7 +707,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	net.ConnectUSToBLA(usNeg, blaNegAcq, blaNegExt)
 
 	pj = net.ConnectLayers(blaPosAcq, ofcPos, p1to1, ForwardPath) // main driver strong input
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs":  "2",
 		"Path.SWts.Init.Mean": "0.5",
 		"Path.SWts.Init.Var":  "0.4",
@@ -715,7 +715,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	pj.AddClass("BLAToOFC", pathClass)
 
 	pj = net.ConnectLayers(blaNegAcq, ofcNeg, p1to1, ForwardPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs":  "2",
 		"Path.SWts.Init.Mean": "0.5",
 		"Path.SWts.Init.Var":  "0.4",
@@ -723,7 +723,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	pj.AddClass("BLAToOFC", pathClass)
 
 	pj = net.ConnectLayers(ofcPosPTp, blaPosExt, p1to1, BLAPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Com.GType":      "ModulatoryG",
 		"Path.PathScale.Abs":  "1",
 		"Path.SWts.Init.Mean": "0.5",
@@ -745,8 +745,8 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 		"Path.SWts.Init.Var":  "0.0",
 		"Path.Com.GType":      "ModulatoryG",
 	}
-	d1.DefParams = driveToVsp
-	d2.DefParams = driveToVsp
+	d1.DefaultParams = driveToVsp
+	d2.DefaultParams = driveToVsp
 	d1.AddClass("DrivesToVSPatch")
 	d2.AddClass("DrivesToVSPatch")
 
@@ -759,14 +759,14 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	// same paths to stn as mtxgo
 	net.ConnectToVSMatrix(usPos, vSmtxGo, p1to1)
 	// net.ConnectToVSMatrix(usPos, vSmtxNo, p1to1)
-	// pj.DefParams = params.Params{
+	// pj.DefaultParams = params.Params{
 	// 	"Path.PathScale.Abs": "2", // strong
 	// 	"Path.PathScale.Rel": ".2",
 	// }
 	net.ConnectToVSMatrix(blaPosAcq, vSmtxNo, p1to1)
 	pj = net.ConnectToVSMatrix(blaPosAcq, vSmtxGo, p1to1)
 	pj.AddClass("BLAAcqToGo")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "2", // key strength driver
 		"Path.PathScale.Rel": "1",
 	}
@@ -774,12 +774,12 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	// The usPos version is needed for US gating to clear goal.
 	// it is not clear that direct usNeg should drive nogo directly.
 	// pj = net.ConnectToVSMatrix(usNeg, vSmtxNo, full)
-	// pj.DefParams = params.Params{
+	// pj.DefaultParams = params.Params{
 	// 	"Path.PathScale.Abs": "2", // strong
 	// 	"Path.PathScale.Rel": ".2",
 	// }
 	net.ConnectToVSMatrix(blaNegAcq, vSmtxNo, full).AddClass("BLAAcqToGo") // neg -> nogo
-	// pj.DefParams = params.Params{
+	// pj.DefaultParams = params.Params{
 	// 	"Path.PathScale.Abs": "2",
 	// 	"Path.PathScale.Rel": "1",
 	// }
@@ -790,14 +790,14 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	// todo: ofc -> STN?
 
 	pj = net.ConnectToVSMatrix(blaPosExt, vSmtxNo, p1to1)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "0.1", // extinction is mostly within BLA
 		"Path.PathScale.Rel": "1",
 	}
 	pj.AddClass("BLAExtToNo")
 	// pj = net.ConnectToVSMatrix(blaNegExt, vSmtxGo, full) // no neg -> go
 	// Note: this impairs perf in basic examples/boa, and is questionable functionally
-	// pj.DefParams = params.Params{
+	// pj.DefaultParams = params.Params{
 	// 	"Path.PathScale.Abs": "0.1", // extinction is mostly within BLA
 	// 	"Path.PathScale.Rel": "1",
 	// }
@@ -814,51 +814,51 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 		"Path.Com.GType":      "ModulatoryG",
 	}
 	pj = net.ConnectToVSMatrix(drives, vSmtxGo, p1to1)
-	pj.DefParams = d2m
+	pj.DefaultParams = d2m
 	pj.AddClass("DrivesToMtx")
 	pj = net.ConnectToVSMatrix(drives, vSmtxNo, p1to1)
-	pj.DefParams = d2m
+	pj.DefaultParams = d2m
 	pj.AddClass("DrivesToMtx")
 
 	pj = net.ConnectToVSMatrix(ofcPos, vSmtxGo, p1to1)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	pj = net.ConnectToVSMatrix(ofcPos, vSmtxNo, p1to1)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	net.ConnectLayers(ofcPos, vSstn, full, ForwardPath)
 
 	pj = net.ConnectToVSMatrix(ilPos, vSmtxGo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	pj = net.ConnectToVSMatrix(ilPos, vSmtxNo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	net.ConnectLayers(ilPos, vSstn, full, ForwardPath)
 
 	pj = net.ConnectToVSMatrix(ofcNeg, vSmtxGo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	pj = net.ConnectToVSMatrix(ofcNeg, vSmtxNo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
 	pj = net.ConnectToVSMatrix(ilNeg, vSmtxGo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	pj = net.ConnectToVSMatrix(ilNeg, vSmtxNo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
 	pj = net.ConnectToVSMatrix(accCost, vSmtxGo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 	pj = net.ConnectToVSMatrix(accCost, vSmtxNo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
 	// pj = net.ConnectToVSMatrix(urgency, vSmtxGo, full)
-	// pj.DefParams = params.Params{
+	// pj.DefaultParams = params.Params{
 	// 	"Path.PathScale.Rel":  "0.1", // don't dilute from others
 	// 	"Path.PathScale.Abs":  "4",   // but make it strong
 	// 	"Path.SWts.Init.SPct": "0",
@@ -874,7 +874,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	// to reflect either current CS or maintained CS but not just echoing drive state.
 	// and not adding drives -> deep layers
 	pj = net.ConnectLayers(drives, ofcPos, p1to1, ForwardPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Rel": "0.2", // weaker to not drive in absence of BLA
 	}
 	pj.AddClass("DrivesToOFC ", pathClass)
@@ -904,7 +904,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 
 	pj, bpj = net.BidirConnectLayers(ofcPos, ilPos, full)
 	pj.AddClass("ILPath", pathClass)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "3", // val needs stronger input
 	}
 	bpj.AddClass("ILPath", pathClass)
@@ -947,7 +947,7 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 	pj = net.ConnectLayers(accCostPT, costFinal, p1to1, ForwardPath)
 	// pj, _ = net.BidirConnectLayers(accCostPT, costFinal, p1to1)
 	pj.AddClass("ACCCostToFinal")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": ".2", // PT is too strong
 	}
 
@@ -958,14 +958,14 @@ func (net *Network) AddRubiconOFCus(ctx *Context, nYneur, popY, popX, bgY, bgX, 
 
 	pj, bpj = net.BidirConnectLayers(ofcNeg, ilNeg, full)
 	pj.AddClass("ILPath", pathClass)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "3", // val needs stronger input
 	}
 	bpj.AddClass("ILPath", pathClass)
 
 	pj, bpj = net.BidirConnectLayers(accCost, ilNeg, full)
 	pj.AddClass("ACCPath", pathClass)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "3", // val needs stronger input
 	}
 	bpj.AddClass("ILPath", pathClass)
@@ -1034,14 +1034,14 @@ func (net *Network) AddRubicon(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY,
 	vSmtxNo.SetBuildConfig("ThalLay5Name", plUtilMD.Name)
 	net.ConnectLayers(vSgpi, plUtilMD, full, InhibPath)
 
-	plUtilPT.DefParams["Layer.Acts.Dend.ModACh"] = "true"
+	plUtilPT.DefaultParams["Layer.Acts.Dend.ModACh"] = "true"
 
 	pj = net.ConnectToVSMatrix(plUtil, vSmtxGo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
 	pj = net.ConnectToVSMatrix(plUtil, vSmtxNo, full)
-	pj.DefParams = pfc2m
+	pj.DefaultParams = pfc2m
 	pj.AddClass("PFCToVSMtx")
 
 	net.ConnectToVSPatch(plUtilPTp, vSpatchD1, vSpatchD2, full)
@@ -1062,15 +1062,15 @@ func (net *Network) AddRubicon(ctx *Context, nYneur, popY, popX, bgY, bgX, pfcY,
 
 	// util predicts OFCval and ILneg
 	pj, _ = net.ConnectToPFCBidir(ilPos, ilPosP, plUtil, plUtilCT, plUtilPT, plUtilPTp, full, "ILToPL")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "1", // not good to make this stronger actually
 	}
 	pj, _ = net.ConnectToPFCBidir(ilNeg, ilNegP, plUtil, plUtilCT, plUtilPT, plUtilPTp, full, "ILToPL")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "3", // drive pl stronger -- only this one works well
 	}
 	pj, _ = net.ConnectToPFCBidir(accCost, accCostP, plUtil, plUtilCT, plUtilPT, plUtilPTp, full, "ACCToPL")
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "3", // drive pl stronger?
 	}
 

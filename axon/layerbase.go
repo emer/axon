@@ -88,10 +88,7 @@ type Layer struct {
 	// brain areas (e.g., Rubicon, BG etc) not associated with a layer type,
 	// which otherwise is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
-	DefParams params.Params `table:"-"`
-
-	// provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `table:"-"`
+	DefaultParams params.Params `table:"-"`
 }
 
 // emer.Layer interface methods
@@ -172,76 +169,28 @@ func (ly *Layer) RecipToRecvPath(rpj *Path) (*Path, bool) {
 	return nil, false
 }
 
-////////////////////////////////////////////////////////////////////
-//		Params
-
-// ParamsHistoryReset resets parameter application history
-func (ly *Layer) ParamsHistoryReset() {
-	ly.ParamsHistory.ParamsHistoryReset()
-	for _, pt := range ly.RecvPaths {
-		pt.ParamsHistoryReset()
-	}
-}
-
-// ParamsApplied is just to satisfy History interface so reset can be applied
-func (ly *Layer) ParamsApplied(sel *params.Sel) {
-	ly.ParamsHistory.ParamsApplied(sel)
-}
-
-// ApplyParams applies given parameter style Sheet to this layer and its recv pathways.
-// Calls UpdateParams on anything set to ensure derived parameters are all updated.
-// If setMsg is true, then a message is printed to confirm each parameter that is set.
-// it always prints a message if a parameter fails to be set.
-// returns true if any params were set, and error if there were any errors.
-func (ly *Layer) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	applied := false
-	var rerr error
-	app, err := pars.Apply(ly.EmerLayer, setMsg) // essential to go through AxonLay
-	if app {
-		ly.EmerLayer.UpdateParams()
-		applied = true
-	}
-	if err != nil {
-		rerr = err
-	}
-	for _, pt := range ly.RecvPaths {
-		app, err = pt.ApplyParams(pars, setMsg)
-		if app {
-			applied = true
-		}
-		if err != nil {
-			rerr = err
-		}
-	}
-	return applied, rerr
-}
-
-// ApplyDefParams applies DefParams default parameters if set
+// ApplyDefaultParams applies DefaultParams default parameters if set
 // Called by Layer.Defaults()
-func (ly *Layer) ApplyDefParams() {
-	if ly.DefParams == nil {
+func (ly *Layer) ApplyDefaultParams() {
+	if ly.DefaultParams == nil {
 		return
 	}
-	err := ly.DefParams.Apply(ly.EmerLayer, false)
+	err := ly.DefaultParams.Apply(ly.EmerLayer, false)
 	if err != nil {
-		log.Printf("programmer error -- fix DefParams: %s\n", err)
+		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
 	}
 }
 
-// NonDefaultParams returns a listing of all parameters in the Layer that
-// are not at their default values -- useful for setting param styles etc.
-func (ly *Layer) NonDefaultParams() string {
-	// nds := reflectx.NonDefaultFields(ly.Params) // todo:
-	nds := "non default field strings todo"
-	//Str(ly.AxonLay.AsAxon().Params, ly.Name)
+// AllParams returns a listing of all parameters in the Layer
+func (ly *Layer) AllParams() string {
+	str := "/////////////////////////////////////////////////\nLayer: " + ly.Name + "\n" + ly.Params.AllParams()
 	for _, pt := range ly.RecvPaths {
-		pnd := pt.NonDefaultParams()
-		nds += pnd
+		str += pt.AllParams()
 	}
-	return nds
+	return str
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
 //  Build
 
 // SetBuildConfig sets named configuration parameter to given string value

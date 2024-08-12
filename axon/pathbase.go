@@ -41,7 +41,7 @@ type Path struct {
 	// (e.g., Rubicon, BG etc) not associated with a path type, which otherwise
 	// is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
-	DefParams params.Params `table:"-"`
+	DefaultParams params.Params `table:"-"`
 
 	// provides a history of parameters applied to the layer
 	ParamsHistory params.HistoryImpl `table:"-"`
@@ -228,40 +228,15 @@ func (pt *Path) String() string {
 	return str
 }
 
-// ParamsHistoryReset resets parameter application history
-func (pt *Path) ParamsHistoryReset() {
-	pt.ParamsHistory.ParamsHistoryReset()
-}
-
-// ParamsApplied is just to satisfy History interface so reset can be applied
-func (pt *Path) ParamsApplied(sel *params.Sel) {
-	pt.ParamsHistory.ParamsApplied(sel)
-}
-
-// ApplyParams applies given parameter style Sheet to this pathway.
-// Calls UpdateParams if anything set to ensure derived parameters are all updated.
-// If setMsg is true, then a message is printed to confirm each parameter that is set.
-// it always prints a message if a parameter fails to be set.
-// returns true if any params were set, and error if there were any errors.
-func (pt *Path) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	app, err := pars.Apply(pt.EmerPath, setMsg)
-	// note: must use EmerPath to get to actual Path, which then uses Styler interface
-	// to return the Params struct.
-	if app {
-		pt.EmerPath.UpdateParams()
-	}
-	return app, err
-}
-
-// ApplyDefParams applies DefParams default parameters if set
+// ApplyDefaultParams applies DefaultParams default parameters if set
 // Called by Path.Defaults()
-func (pt *Path) ApplyDefParams() {
-	if pt.DefParams == nil {
+func (pt *Path) ApplyDefaultParams() {
+	if pt.DefaultParams == nil {
 		return
 	}
-	err := pt.DefParams.Apply(pt.EmerPath, false)
+	err := pt.DefaultParams.Apply(pt.EmerPath, false)
 	if err != nil {
-		log.Printf("programmer error -- fix DefParams: %s\n", err)
+		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
 	}
 }
 

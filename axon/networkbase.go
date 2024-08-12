@@ -459,8 +459,7 @@ func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
 	}
 }
 
-// AddLayerInit is implementation routine that takes a given layer and
-// adds it to the network, and initializes and configures it properly.
+// AddLayerInit adds layer to network with proper initialization.
 func (nt *Network) AddLayerInit(ly *Layer, name string, shape []int, typ LayerTypes) {
 	if nt.EmerNetwork == nil {
 		log.Printf("Network EmerNetwork is nil: MUST call emer.InitNetwork on network, passing a pointer to the network to initialize properly!")

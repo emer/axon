@@ -39,15 +39,15 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 		"Layer.Inhib.ActAvg.Nominal": fmt.Sprintf("%g", .1/float32(nPoolsX*nPoolsY)),
 		"Layer.Acts.Dend.ModACh":     "true",
 	}
-	mtxGo.DefParams = mp
-	mtxNo.DefParams = mp
+	mtxGo.DefaultParams = mp
+	mtxNo.DefaultParams = mp
 
 	full := paths.NewFull()
 	p1to1 := paths.NewPoolOneToOne()
 
 	net.ConnectLayers(mtxNo, gpePr, full, InhibPath)
 	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
-	pt.DefParams = params.Params{
+	pt.DefaultParams = params.Params{
 		"Path.Learn.Learn":   "false",
 		"Path.PathScale.Rel": "0.05",
 	}
@@ -102,7 +102,7 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 		"Layer.Inhib.Pool.On":  "false",
 	}
 	pf = net.AddLayer4D(prefix+"PF", nPoolsY, nPoolsX, nNeurY, 1, SuperLayer)
-	pf.DefParams = pfp
+	pf.DefaultParams = pfp
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
@@ -112,7 +112,7 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 
 	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPath)
 	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
-	pt.DefParams = params.Params{
+	pt.DefaultParams = params.Params{
 		"Path.Learn.Learn":   "false",
 		"Path.PathScale.Rel": "0.1",
 	}
@@ -141,9 +141,9 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 		"Path.PathScale.Abs": "1",
 	}
 	pt = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
-	pt.DefParams = pfm
+	pt.DefaultParams = pfm
 	pt = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
-	pt.DefParams = pfm
+	pt.DefaultParams = pfm
 
 	gpePr.PlaceBehind(gpi, space)
 	gpeAk.PlaceRightOf(gpePr, space)

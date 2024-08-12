@@ -127,11 +127,11 @@ func (cp *CTParams) DecayForNCycles(ncycles int) {
 	cp.Update()
 }
 
-// CTDefParamsFast sets fast time-integration parameters for CTLayer.
+// CTDefaultParamsFast sets fast time-integration parameters for CTLayer.
 // This is what works best in the deep_move 1 trial history case,
 // vs Medium and Long
-func (ly *Layer) CTDefParamsFast() {
-	ly.DefParams = params.Params{
+func (ly *Layer) CTDefaultParamsFast() {
+	ly.DefaultParams = params.Params{
 		"Layer.CT.GeGain":        "1",
 		"Layer.CT.DecayTau":      "0",
 		"Layer.Inhib.Layer.Gi":   "2.0",
@@ -145,11 +145,11 @@ func (ly *Layer) CTDefParamsFast() {
 	}
 }
 
-// CTDefParamsMedium sets medium time-integration parameters for CTLayer.
+// CTDefaultParamsMedium sets medium time-integration parameters for CTLayer.
 // This is what works best in the FSA test case, compared to Fast (deep_move)
 // and Long (deep_music) time integration.
-func (ly *Layer) CTDefParamsMedium() {
-	ly.DefParams = params.Params{
+func (ly *Layer) CTDefaultParamsMedium() {
+	ly.DefaultParams = params.Params{
 		"Layer.CT.GeGain":        "2",
 		"Layer.Inhib.Layer.Gi":   "2.2",
 		"Layer.Inhib.Pool.Gi":    "2.2",
@@ -162,11 +162,11 @@ func (ly *Layer) CTDefParamsMedium() {
 	}
 }
 
-// CTDefParamsLong sets long time-integration parameters for CTLayer.
+// CTDefaultParamsLong sets long time-integration parameters for CTLayer.
 // This is what works best in the deep_music test case integrating over
 // long time windows, compared to Medium and Fast.
-func (ly *Layer) CTDefParamsLong() {
-	ly.DefParams = params.Params{
+func (ly *Layer) CTDefaultParamsLong() {
+	ly.DefaultParams = params.Params{
 		"Layer.CT.GeGain":        "1.0",
 		"Layer.Inhib.Layer.Gi":   "2.8",
 		"Layer.Inhib.Pool.Gi":    "2.8",

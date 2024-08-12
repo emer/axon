@@ -15,7 +15,6 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tree"
-	"github.com/emer/emergent/v2/params"
 )
 
 // index naming:
@@ -101,7 +100,7 @@ func (ly *Layer) Defaults() { //types:add
 		ly.Params.VSGatedDefaults()
 	}
 	ly.Params.CT.DecayForNCycles(int(ctx.ThetaCycles))
-	ly.ApplyDefParams()
+	ly.ApplyDefaultParams()
 	ly.UpdateParams()
 }
 
@@ -128,12 +127,6 @@ func (ly *Layer) UpdateParams() {
 	for _, pt := range ly.RecvPaths {
 		pt.UpdateParams()
 	}
-}
-
-// SetParam sets parameter at given path to given value.
-// returns error if path not found or value cannot be set.
-func (ly *Layer) SetParam(path, val string) error {
-	return params.SetParam(ly.Params, path, val)
 }
 
 // PostBuild performs special post-Build() configuration steps for specific algorithms,
@@ -197,15 +190,6 @@ func JsonToParams(b []byte) string {
 	br = strings.Replace(br, "\n }", " }", -1)
 	br = strings.Replace(br, "\n  }\n", " }", -1)
 	return br[1:] + "\n"
-}
-
-// AllParams returns a listing of all parameters in the Layer
-func (ly *Layer) AllParams() string {
-	str := "/////////////////////////////////////////////////\nLayer: " + ly.Name + "\n" + ly.Params.AllParams()
-	for _, pt := range ly.RecvPaths {
-		str += pt.AllParams()
-	}
-	return str
 }
 
 // note: all basic computation can be performed on layer-level and path level

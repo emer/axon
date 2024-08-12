@@ -148,7 +148,7 @@ func (net *Network) ConnectCTSelf(ly *Layer, pat paths.Pattern, pathClass string
 	ctxt = net.ConnectLayers(ly, ly, pat, CTCtxtPath)
 	ctxt.AddClass("CTSelfCtxt", pathClass)
 	maint = net.LateralConnectLayer(ly, pat)
-	maint.DefParams = params.Params{
+	maint.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "0.5", // normalized separately
 		"Path.Com.GType":     "MaintG",
 	}
@@ -212,7 +212,7 @@ func (net *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNe
 func (net *Network) ConnectPTMaintSelf(ly *Layer, pat paths.Pattern, pathClass string) *Path {
 	pathClass = params.AddClass(pathClass, "PFCPath")
 	pj := net.LateralConnectLayer(ly, pat)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.Com.GType":        "MaintG",
 		"Path.PathScale.Rel":    "1",      // use abs to manipulate
 		"Path.PathScale.Abs":    "4",      // strong..
@@ -250,20 +250,20 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathCla
 	pt.AddClass(name)
 	thal.AddClass(name)
 	if selfMaint {
-		pt.DefParams = params.Params{
+		pt.DefaultParams = params.Params{
 			"Layer.Acts.SMaint.On":  "true",
 			"Layer.Acts.GabaB.Gbar": "0.015",
 			"Layer.Inhib.Layer.Gi":  "0.5",
 			"Layer.Inhib.Pool.Gi":   "0.5",
 		}
 		if is4D {
-			pt.DefParams["Layer.Inhib.Pool.On"] = "true"
+			pt.DefaultParams["Layer.Inhib.Pool.On"] = "true"
 		}
 	}
 
 	pthal, thalpt := net.BidirConnectLayers(pt, thal, ptThal)
 	pthal.AddClass("PTtoThal", pathClass)
-	thalpt.DefParams = params.Params{
+	thalpt.DefaultParams = params.Params{
 		"Path.PathScale.Rel":  "1.0",
 		"Path.Com.GType":      "ModulatoryG", // modulatory -- control with extra ModGain factor
 		"Path.Learn.Learn":    "false",
@@ -285,14 +285,14 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathCla
 	// }
 	// note: holding off on these for now -- thal modulation should handle..
 	// ti := net.ConnectLayers(thal, pt, full, InhibPath)
-	// ti.DefParams = fmThalInhib
+	// ti.DefaultParams = fmThalInhib
 	// ti.AddClass("ThalToPFCInhib")
 	// ti = net.ConnectLayers(thal, ct, full, InhibPath)
-	// ti.DefParams = fmThalInhib
+	// ti.DefaultParams = fmThalInhib
 	// ti.AddClass("ThalToPFCInhib")
 
 	sthal := net.ConnectLayers(super, thal, superToPT, ForwardPath) // shortcuts
-	sthal.DefParams = params.Params{
+	sthal.DefaultParams = params.Params{
 		"Path.PathScale.Rel":  "1.0",
 		"Path.PathScale.Abs":  "4.0", // key param for driving gating -- if too strong, premature gating
 		"Path.Learn.Learn":    "false",
@@ -304,7 +304,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathCla
 	sthal.AddClass("SuperToThal", pathClass)
 
 	pj := net.ConnectLayers(super, pt, superToPT, ForwardPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		// one-to-one from super -- just use fixed nonlearning path so can control behavior easily
 		"Path.PathScale.Rel":  "1",   // irrelevant -- only normal path
 		"Path.PathScale.Abs":  "0.5", // BGThal modulates this so strength doesn't cause wrong CS gating
@@ -406,7 +406,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPath, ctToPredPat
 	pj.AddClass("PTtoPred", pathClass)
 
 	pj = net.ConnectLayers(ct, ptPred, ctToPredPath, ForwardPath)
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Rel": "1",   // 1 > 0.5
 		"Path.PathScale.Abs": "2.0", // 2?
 	}
@@ -428,7 +428,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPath, ctToPredPat
 // if selfMaint is true, the SMaint self-maintenance mechanism is used
 // instead of lateral connections.
 // CT layer uses the Medium timescale params.
-// use, e.g., pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8" to change default params.
+// use, e.g., pfcCT.DefaultParams["Layer.Inhib.Layer.Gi"] = "2.8" to change default params.
 func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew, selfMaint bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	p1to1 := paths.NewPoolOneToOne()
 	// p1to1rnd := paths.NewPoolUniformRand()
@@ -466,29 +466,29 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 		"Layer.Acts.Dend.SSGi":               "0",
 		"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
 	}
-	pfc.DefParams = maps.Clone(pfcParams)
+	pfc.DefaultParams = maps.Clone(pfcParams)
 
-	pfcCT.CTDefParamsMedium()
-	pfcCT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.025"
-	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "4" // 4?  2.8 orig
-	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "true"
-	pfcCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
-	pfcCT.DefParams["Layer.Learn.TrgAvgAct.SynScaleRate"] = "0.0002"
+	pfcCT.CTDefaultParamsMedium()
+	pfcCT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.025"
+	pfcCT.DefaultParams["Layer.Inhib.Layer.Gi"] = "4" // 4?  2.8 orig
+	pfcCT.DefaultParams["Layer.Inhib.Pool.On"] = "true"
+	pfcCT.DefaultParams["Layer.Inhib.Pool.Gi"] = "1.2"
+	pfcCT.DefaultParams["Layer.Acts.Decay.OnRew"] = onRew
+	pfcCT.DefaultParams["Layer.Learn.TrgAvgAct.SynScaleRate"] = "0.0002"
 
-	// pfcPT.DefParams = maps.Clone(pfcParams)
-	// pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
-	// pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"        // 2.4 orig
-	// pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
-	// pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
+	// pfcPT.DefaultParams = maps.Clone(pfcParams)
+	// pfcPT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
+	// pfcPT.DefaultParams["Layer.Inhib.Layer.Gi"] = "2.4"        // 2.4 orig
+	// pfcPT.DefaultParams["Layer.Inhib.Pool.Gi"] = "2.4"
+	// pfcPT.DefaultParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
 
-	pfcPTp.DefParams = maps.Clone(pfcParams)
-	pfcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "1.2" // 0.8 orig
-	pfcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "0.8"
+	pfcPTp.DefaultParams = maps.Clone(pfcParams)
+	pfcPTp.DefaultParams["Layer.Inhib.Layer.Gi"] = "1.2" // 0.8 orig
+	pfcPTp.DefaultParams["Layer.Inhib.Pool.Gi"] = "0.8"
 
-	pfcThal.DefParams = maps.Clone(pfcParams)
-	pfcThal.DefParams["Layer.Inhib.Layer.Gi"] = "2.0" // 1.1 orig
-	pfcThal.DefParams["Layer.Inhib.Pool.Gi"] = "0.6"
+	pfcThal.DefaultParams = maps.Clone(pfcParams)
+	pfcThal.DefaultParams["Layer.Inhib.Layer.Gi"] = "2.0" // 1.1 orig
+	pfcThal.DefaultParams["Layer.Inhib.Pool.Gi"] = "0.6"
 
 	return
 }
@@ -540,27 +540,27 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 		"Layer.Inhib.Pool.On":        "false",
 		"Layer.Acts.Dend.SSGi":       "0",
 	}
-	pfc.DefParams = pfcParams
+	pfc.DefaultParams = pfcParams
 
-	pfcCT.CTDefParamsMedium()
-	pfcCT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
-	pfcCT.DefParams["Layer.Inhib.Layer.On"] = "true"
-	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "1.4"
-	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "false"
-	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
+	pfcCT.CTDefaultParamsMedium()
+	pfcCT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	pfcCT.DefaultParams["Layer.Inhib.Layer.On"] = "true"
+	pfcCT.DefaultParams["Layer.Inhib.Layer.Gi"] = "1.4"
+	pfcCT.DefaultParams["Layer.Inhib.Pool.On"] = "false"
+	pfcCT.DefaultParams["Layer.Acts.Decay.OnRew"] = onRew
 
-	// pfcPT.DefParams = maps.Clone(pfcParams)
-	// pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active
-	// pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"
-	// pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.4"
-	// pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
+	// pfcPT.DefaultParams = maps.Clone(pfcParams)
+	// pfcPT.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active
+	// pfcPT.DefaultParams["Layer.Inhib.Layer.Gi"] = "2.4"
+	// pfcPT.DefaultParams["Layer.Inhib.Pool.Gi"] = "2.4"
+	// pfcPT.DefaultParams["Layer.Learn.NeuroMod.AChDisInhib"] = "0" // maybe better -- test further
 
-	pfcPTp.DefParams = maps.Clone(pfcParams)
-	pfcPTp.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
-	pfcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "0.8"
+	pfcPTp.DefaultParams = maps.Clone(pfcParams)
+	pfcPTp.DefaultParams["Layer.Inhib.ActAvg.Nominal"] = "0.1"
+	pfcPTp.DefaultParams["Layer.Inhib.Layer.Gi"] = "0.8"
 
-	pfcThal.DefParams = maps.Clone(pfcParams)
-	pfcThal.DefParams["Layer.Inhib.Layer.Gi"] = "0.6"
+	pfcThal.DefaultParams = maps.Clone(pfcParams)
+	pfcThal.DefaultParams["Layer.Inhib.Layer.Gi"] = "0.6"
 
 	return
 }
@@ -579,7 +579,7 @@ func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Layer, pa
 	if lay != nil {
 		net.ConnectLayers(lay, pfc, pat, ForwardPath).AddClass(pathClass)
 		pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPath) // ptp needs more input
-		pj.DefParams = params.Params{
+		pj.DefaultParams = params.Params{
 			"Path.PathScale.Abs": "4",
 		}
 		pj.AddClass("ToPTp ", pathClass)
@@ -606,7 +606,7 @@ func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Layer
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, pathClass)
 	net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, pathClass)
 	pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPath) // ptp needs more input
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "4",
 	}
 	pj.AddClass("ToPTp ", pathClass)
@@ -627,7 +627,7 @@ func (net *Network) ConnectToPFCBidir(lay, layP, pfc, pfcCT, pfcPT, pfcPTp *Laye
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, pathClass)
 	net.ConnectPTToPulv(pfcPT, pfcPTp, layP, pat, pat, pathClass)
 	pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPath) // ptp needs more input
-	pj.DefParams = params.Params{
+	pj.DefaultParams = params.Params{
 		"Path.PathScale.Abs": "4",
 	}
 	pj.AddClass("ToPTp ", pathClass)
