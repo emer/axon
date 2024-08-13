@@ -253,8 +253,8 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 			pathP := layerP.SendPaths[pi]
 			for sni := uint32(0); sni < pathS.NSyns; sni++ {
 				for fi := 0; fi < int(SynapseVarsN); fi++ {
-					synS := pathS.SynVal1D(fi, int(sni))
-					synP := pathP.SynVal1D(fi, int(sni))
+					synS := pathS.SynValue1D(fi, int(sni))
+					synP := pathP.SynValue1D(fi, int(sni))
 					require.Equal(t, synS, synP,
 						"Synapse %d, field %s, single thread: %f, multi thread: %f",
 						sni, SynapseVars(fi).String(), synS, synP)
@@ -294,8 +294,8 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 			pathP := layerP.SendPaths[pi]
 			for sni := uint32(0); sni < pathS.NSyns; sni++ {
 				for fi := 0; fi < int(SynapseVarsN); fi++ {
-					synS := pathS.SynVal1D(fi, int(sni))
-					synP := pathP.SynVal1D(fi, int(sni))
+					synS := pathS.SynValue1D(fi, int(sni))
+					synP := pathP.SynValue1D(fi, int(sni))
 					if synS != synP {
 						return false
 					}

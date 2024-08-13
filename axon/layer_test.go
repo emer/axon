@@ -129,7 +129,7 @@ func TestLayerToJson(t *testing.T) {
 	fh, err := os.Create(filename)
 	require.NoError(t, err)
 	bw := bufio.NewWriter(fh)
-	hiddenLayer.WriteWtsJSON(bw, 0)
+	hiddenLayer.WriteWeightsJSON(bw, 0)
 	assert.NoError(t, bw.Flush())
 	assert.NoError(t, fh.Close())
 
@@ -137,7 +137,7 @@ func TestLayerToJson(t *testing.T) {
 	fh, err = os.Open(filename)
 	require.NoError(t, err)
 	br := bufio.NewReader(fh)
-	assert.NoError(t, hiddenLayerC.ReadWtsJSON(br))
+	assert.NoError(t, hiddenLayerC.ReadWeightsJSON(br))
 	assert.NoError(t, fh.Close())
 
 	// make sure the synapse weights are the same
@@ -146,8 +146,8 @@ func TestLayerToJson(t *testing.T) {
 	varIndex, _ := origProj.SynVarIndex("Wt")
 	assert.Equal(t, origProj.NumSyns(), copyProj.NumSyns())
 	for idx := 0; idx < origProj.NumSyns(); idx++ {
-		origWeight := origProj.SynVal1D(varIndex, idx)
-		copyWeight := copyProj.SynVal1D(varIndex, idx)
+		origWeight := origProj.SynValue1D(varIndex, idx)
+		copyWeight := copyProj.SynValue1D(varIndex, idx)
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
 

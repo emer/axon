@@ -16,108 +16,93 @@ import (
 
 // Note: subsequent params applied after Base
 var PoolParamSets = params.Sets{
-	"Base": {Desc: "base testing", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Acts.Gbar.L":     "0.2",
-					"Layer.Learn.RLRate.On": "false",
-					"Layer.Inhib.Layer.FB":  "0.5",
-				}},
-			{Sel: ".InputLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Pool.On":  "true",
-				}},
-			{Sel: ".SuperLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "1",
-					"Layer.Inhib.Pool.On":  "true", // note: pool only doesn't update layer gi -- just for display
-					"Layer.Inhib.Pool.Gi":  ".7",
-				}},
-			{Sel: "Path", Desc: "for reproducibility, identical weights",
-				Params: params.Params{
-					"Path.SWts.Init.Var": "0",
-				}},
-			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-				Params: params.Params{
-					"Path.PathScale.Rel": "0.2",
-				}},
-		},
-	}},
-	"FullDecay": {Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Acts.Decay.Act":   "1",
-					"Layer.Acts.Decay.Glong": "1",
-					"Layer.Acts.Decay.AHP":   "1",
-				}},
-		},
-	}},
-	"LayerOnly": {Desc: "only layer inhibition", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".SuperLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On":  "true",
-					"Layer.Inhib.Layer.Gi":  "1",
-					"Layer.Inhib.Pool.On":   "false",
-					"Layer.Inhib.Pool.Gi":   ".7",
-					"Layer.Acts.NMDA.Gbar":  "0.0", // <- avoid larger numerical issues by turning these off
-					"Layer.Acts.GabaB.Gbar": "0.0",
-				}},
-		},
-	}},
-	"PoolOnly": {Desc: "only pool inhibition", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".SuperLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "false",
-					"Layer.Inhib.Layer.Gi": "1",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Pool.Gi":  "1",
-				}},
-		},
-	}},
-	"LayerPoolSame": {Desc: "same strength both", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".SuperLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "1",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Pool.Gi":  "1",
-				}},
-		},
-	}},
-	"LayerWeakPoolStrong": {Desc: "both diff strength", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".SuperLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": ".7",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Pool.Gi":  "1",
-				}},
-		},
-	}},
-	"LayerStrongPoolWeak": {Desc: "both diff strength", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".SuperLayer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "1",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Pool.Gi":  ".7",
-				}},
-		},
-	}},
+	"Base": {
+		{Sel: "Layer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Acts.Gbar.L":     "0.2",
+				"Layer.Learn.RLRate.On": "false",
+				"Layer.Inhib.Layer.FB":  "0.5",
+			}},
+		{Sel: ".InputLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "true",
+				"Layer.Inhib.Pool.On":  "true",
+			}},
+		{Sel: ".SuperLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "true",
+				"Layer.Inhib.Layer.Gi": "1",
+				"Layer.Inhib.Pool.On":  "true", // note: pool only doesn't update layer gi -- just for display
+				"Layer.Inhib.Pool.Gi":  ".7",
+			}},
+		{Sel: "Path", Desc: "for reproducibility, identical weights",
+			Params: params.Params{
+				"Path.SWts.Init.Var": "0",
+			}},
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+			Params: params.Params{
+				"Path.PathScale.Rel": "0.2",
+			}},
+	},
+	"FullDecay": {
+		{Sel: "Layer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Acts.Decay.Act":   "1",
+				"Layer.Acts.Decay.Glong": "1",
+				"Layer.Acts.Decay.AHP":   "1",
+			}},
+	},
+	"LayerOnly": {
+		{Sel: ".SuperLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On":  "true",
+				"Layer.Inhib.Layer.Gi":  "1",
+				"Layer.Inhib.Pool.On":   "false",
+				"Layer.Inhib.Pool.Gi":   ".7",
+				"Layer.Acts.NMDA.Gbar":  "0.0", // <- avoid larger numerical issues by turning these off
+				"Layer.Acts.GabaB.Gbar": "0.0",
+			}},
+	},
+	"PoolOnly": {
+		{Sel: ".SuperLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "false",
+				"Layer.Inhib.Layer.Gi": "1",
+				"Layer.Inhib.Pool.On":  "true",
+				"Layer.Inhib.Pool.Gi":  "1",
+			}},
+	},
+	"LayerPoolSame": {
+		{Sel: ".SuperLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "true",
+				"Layer.Inhib.Layer.Gi": "1",
+				"Layer.Inhib.Pool.On":  "true",
+				"Layer.Inhib.Pool.Gi":  "1",
+			}},
+	},
+	"LayerWeakPoolStrong": {
+		{Sel: ".SuperLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "true",
+				"Layer.Inhib.Layer.Gi": ".7",
+				"Layer.Inhib.Pool.On":  "true",
+				"Layer.Inhib.Pool.Gi":  "1",
+			}},
+	},
+	"LayerStrongPoolWeak": {
+		{Sel: ".SuperLayer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Inhib.Layer.On": "true",
+				"Layer.Inhib.Layer.Gi": "1",
+				"Layer.Inhib.Pool.On":  "true",
+				"Layer.Inhib.Pool.Gi":  ".7",
+			}},
+	},
 }
 
 func newPoolTestNet(ctx *Context, nData int) *Network {
-	var testNet Network
-	testNet.InitName(&testNet, "testNet")
+	testNet := NewNetwork("testNet")
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
@@ -133,10 +118,10 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet.Build(ctx)
 	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
-	testNet.ApplyParams(PoolParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWeights(ctx)                                            // get GScale here
+	testNet.ApplyParams(PoolParamSets["Base"], false) // false) // true) // no msg
+	testNet.InitWeights(ctx)                          // get GScale here
 	testNet.NewState(ctx)
-	return &testNet
+	return testNet
 }
 
 func TestPoolGPUDiffsLayerOnly(t *testing.T) {
@@ -196,8 +181,8 @@ func TestPoolGPUDiffsLayerStrongPoolWeak(t *testing.T) {
 func netDebugAct(t *testing.T, params string, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	ctx := NewContext()
 	testNet := newPoolTestNet(ctx, nData)
-	testNet.ApplyParams(PoolParamSets.SetByName("FullDecay").Sheets["Network"], false)
-	testNet.ApplyParams(PoolParamSets.SetByName(params).Sheets["Network"], false)
+	testNet.ApplyParams(PoolParamSets["FullDecay"], false)
+	testNet.ApplyParams(PoolParamSets[params], false)
 
 	return RunDebugAct(t, ctx, testNet, printValues, gpu, initWts)
 }

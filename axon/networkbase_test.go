@@ -1,6 +1,9 @@
+//go:build multinet
+
 package axon
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/emer/emergent/v2/paths"
@@ -11,7 +14,7 @@ func TestAddLayer(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
 	layer := net.AddLayer("Input", shape, InputLayer)
-	assert.Equal(t, 1, net.NLayers())
+	assert.Equal(t, 1, net.NumLayers())
 	assert.Same(t, layer, net.LayerByName("Input"))
 }
 
@@ -40,7 +43,7 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, net.Layers[1], net.LayerByName("Hidden"))
 	assert.Equal(t, net.Layers[2], net.LayerByName("Output"))
 	assert.Nil(t, net.LayerByName("DoesNotExist"))
-	_, err := net.LayerByName("DoesNotExist")
+	_, err := net.EmerLayerByName("DoesNotExist")
 	assert.Error(t, err)
 	val := net.LayersByType(InputLayer)
 	assert.Equal(t, 1, len(val))
@@ -48,12 +51,12 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, 1, len(val))
 
 	for layerIndex, lyr := range net.Layers {
-		assert.Equal(t, layerIndex, lyr.Index())
+		assert.Equal(t, layerIndex, lyr.Index)
 		assert.Equal(t, uint32(4), lyr.NNeurons)
 		for lni := uint32(0); lni < lyr.NNeurons; lni++ {
 			ni := lyr.NeurStIndex + lni
 			li := NrnI(ctx, ni, NrnLayIndex)
-			assert.Equal(t, uint32(lyr.Index()), li)
+			assert.Equal(t, uint32(lyr.Index), li)
 		}
 	}
 }
@@ -65,7 +68,7 @@ func TestConnectLayers(t *testing.T) {
 	shape := []int{5, 5}
 	input := net.AddLayer("Input", shape, InputLayer)
 	output := net.AddLayer("Output", shape, TargetLayer)
-	assert.Equal(t, 2, net.NLayers())
+	assert.Equal(t, 2, net.NumLayers())
 	net.ConnectLayers(input, output, paths.NewFull(), ForwardPath)
 
 	assert.Same(t, output, input.SendPath(0).RecvLayer())
@@ -76,7 +79,163 @@ func TestDelete(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
 	net.AddLayer("Input", shape, InputLayer)
-	assert.Equal(t, 1, net.NLayers())
+	assert.Equal(t, 1, net.NumLayers())
 	net.DeleteAll()
-	assert.Equal(t, 0, net.NLayers())
+	assert.Equal(t, 0, net.NumLayers())
+}
+
+var stdWeights = `{
+	"Network": "testNet",
+	"Layers": [
+		{
+			"Layer": "Input",
+			"MetaData": {
+				"ActMAvg": "0.1",
+				"ActPAvg": "0.1",
+				"GiMult": "1"
+			},
+			"Paths": null
+		},
+		{
+			"Layer": "Hidden",
+			"MetaData": {
+				"ActMAvg": "0.1",
+				"ActPAvg": "0.1",
+				"GiMult": "1"
+			},
+			"Units": {
+				"ActAvg": [ 0.05, 0.15, 0.2, 0.1 ],
+				"TrgAvg": [ 0.5, 1.5, 2, 1 ]
+			},
+			"Paths": [
+				{
+					"From": "Input",
+					"Rs": [
+						{
+							"Ri": 0,
+							"N": 1,
+							"Si": [ 0 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 1,
+							"N": 1,
+							"Si": [ 1 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 2,
+							"N": 1,
+							"Si": [ 2 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 3,
+							"N": 1,
+							"Si": [ 3 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						}
+					]
+				},
+				{
+					"From": "Output",
+					"Rs": [
+						{
+							"Ri": 0,
+							"N": 1,
+							"Si": [ 0 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 1,
+							"N": 1,
+							"Si": [ 1 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 2,
+							"N": 1,
+							"Si": [ 2 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 3,
+							"N": 1,
+							"Si": [ 3 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						}
+					]
+				}
+			 ]
+		},
+		{
+			"Layer": "Output",
+			"MetaData": {
+				"ActMAvg": "0.1",
+				"ActPAvg": "0.1",
+				"GiMult": "1"
+			},
+			"Paths": [
+				{
+					"From": "Hidden",
+					"Rs": [
+						{
+							"Ri": 0,
+							"N": 1,
+							"Si": [ 0 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 1,
+							"N": 1,
+							"Si": [ 1 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 2,
+							"N": 1,
+							"Si": [ 2 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						},
+						{
+							"Ri": 3,
+							"N": 1,
+							"Si": [ 3 ],
+							"Wt": [ 0.5 ],
+							"Wt1": [ 0.5 ]
+						}
+					]
+				}
+			 ]
+		}
+	]
+}
+`
+
+func TestSaveWeights(t *testing.T) {
+	var b bytes.Buffer
+	ctx := NewContext()
+	testNet := newTestNet(ctx, 1)
+	err := testNet.WriteWeightsJSON(&b)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	assert.Equal(t, stdWeights, string(b.Bytes()))
+
+	loadNet := newTestNet(ctx, 1)
+	err = loadNet.ReadWeightsJSON(&b)
+	if err != nil {
+		t.Error(err.Error())
+	}
 }

@@ -47,58 +47,51 @@ const NLrnPars = 1
 
 // Note: subsequent params applied after Base
 var ParamSets = params.Sets{
-	"Base": {Desc: "base testing", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Acts.Gbar.L":     "0.2",
-					"Layer.Learn.RLRate.On": "false",
-					"Layer.Inhib.Layer.FB":  "0.5",
-				}},
-			{Sel: "Path", Desc: "for reproducibility, identical weights",
-				Params: params.Params{
-					"Path.SWts.Init.Var": "0",
-				}},
-			{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-				Params: params.Params{
-					"Path.PathScale.Rel": "0.2",
-				}},
-		},
-		"InhibOff": &params.Sheet{
-			{Sel: "Layer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Acts.Gbar.L":    "0.2",
-					"Layer.Inhib.Layer.On": "false",
-				}},
-			{Sel: ".InhibPath", Desc: "weaker inhib",
-				Params: params.Params{
-					"Path.PathScale.Abs": "0.1",
-				}},
-		},
-	}},
-	"FullDecay": {Desc: "decay state completely for ndata testing", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "layer defaults",
-				Params: params.Params{
-					"Layer.Acts.Decay.Act":   "1",
-					"Layer.Acts.Decay.Glong": "1",
-					"Layer.Acts.Decay.AHP":   "1",
-				}},
-		},
-	}},
-	"SubMean": {Desc: "submean on Path dwt", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Path", Desc: "submean used in some models but not by default",
-				Params: params.Params{
-					"Path.Learn.Trace.SubMean": "1",
-				}},
-		},
-	}},
+	"Base": {
+		{Sel: "Layer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Acts.Gbar.L":     "0.2",
+				"Layer.Learn.RLRate.On": "false",
+				"Layer.Inhib.Layer.FB":  "0.5",
+			}},
+		{Sel: "Path", Desc: "for reproducibility, identical weights",
+			Params: params.Params{
+				"Path.SWts.Init.Var": "0",
+			}},
+		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+			Params: params.Params{
+				"Path.PathScale.Rel": "0.2",
+			}},
+	},
+	"InhibOff": &params.Sheet{
+		{Sel: "Layer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Acts.Gbar.L":    "0.2",
+				"Layer.Inhib.Layer.On": "false",
+			}},
+		{Sel: ".InhibPath", Desc: "weaker inhib",
+			Params: params.Params{
+				"Path.PathScale.Abs": "0.1",
+			}},
+	},
+	"FullDecay": {
+		{Sel: "Layer", Desc: "layer defaults",
+			Params: params.Params{
+				"Layer.Acts.Decay.Act":   "1",
+				"Layer.Acts.Decay.Glong": "1",
+				"Layer.Acts.Decay.AHP":   "1",
+			}},
+	},
+	"SubMean": {
+		{Sel: "Path", Desc: "submean used in some models but not by default",
+			Params: params.Params{
+				"Path.Learn.Trace.SubMean": "1",
+			}},
+	},
 }
 
 func newTestNet(ctx *Context, nData int) *Network {
-	var testNet Network
-	testNet.InitName(&testNet, "testNet")
+	testNet := NewNetwork("testNet")
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
@@ -117,16 +110,15 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.Build(ctx)
 	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWeights(ctx)                                        // get GScale here
+	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
+	testNet.InitWeights(ctx)                      // get GScale here
 	testNet.NewState(ctx)
-	return &testNet
+	return testNet
 }
 
 // full connectivity
 func newTestNetFull(ctx *Context, nData int) *Network {
-	var testNet Network
-	testNet.InitName(&testNet, "testNet")
+	testNet := NewNetwork("testNetFull")
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
@@ -143,10 +135,10 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	testNet.Build(ctx)
 	ctx.NetIndexes.NData = uint32(nData)
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWeights(ctx)                                        // get GScale here
+	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
+	testNet.InitWeights(ctx)                      // get GScale here
 	testNet.NewState(ctx)
-	return &testNet
+	return testNet
 }
 
 func TestSynValues(t *testing.T) {
@@ -154,7 +146,7 @@ func TestSynValues(t *testing.T) {
 	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 	hidLay := testNet.LayerByName("Hidden")
-	p, err := hidLay.SendNameTry("Input")
+	p, err := hidLay.RecvPathBySendName("Input")
 	if err != nil {
 		t.Error(err)
 	}
@@ -218,7 +210,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.Build(ctx)
 	net.Defaults()
-	net.ApplyParams(ParamSets["Base"].Sheets["Network"], false)
+	net.ApplyParams(ParamSets["Base"], false)
 
 	net.InitExt(ctx)
 
@@ -564,7 +556,7 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	ctx := NewContext()
 	testNet := newTestNet(ctx, nData)
-	testNet.ApplyParams(ParamSets.SetByName("FullDecay").Sheets["Network"], false)
+	testNet.ApplyParams(ParamSets["FullDecay"], false)
 	return RunDebugAct(t, ctx, testNet, printValues, gpu, initWts)
 }
 
@@ -739,7 +731,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // always apply base
+	testNet.ApplyParams(ParamSets["Base"], false) // always apply base
 	testNet.InitWeights(ctx)
 	testNet.InitExt(ctx)
 
@@ -911,7 +903,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false) // always apply base
+	testNet.ApplyParams(ParamSets["Base"], false) // always apply base
 	hidLay.Params.Learn.RLRate.On.SetBool(true)
 	testNet.InitWeights(ctx)
 	testNet.InitExt(ctx)
@@ -1029,10 +1021,10 @@ func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int,
 	} else {
 		testNet = newTestNet(ctx, maxData)
 	}
-	testNet.ApplyParams(ParamSets.SetByName("FullDecay").Sheets["Network"], false)
+	testNet.ApplyParams(ParamSets["FullDecay"], false)
 
 	if submean {
-		testNet.ApplyParams(ParamSets.SetByName("SubMean").Sheets["Network"], false)
+		testNet.ApplyParams(ParamSets["SubMean"], false)
 	}
 
 	ctx.NetIndexes.NData = uint32(nData)
@@ -1267,32 +1259,31 @@ func TestInhibAct(t *testing.T) {
 	tol := Tol6
 
 	inPats := newInPats()
-	var InhibNet Network
-	InhibNet.InitName(&InhibNet, "InhibNet")
-	InhibNet.SetRandSeed(42) // critical for ActAvg values
+	inhibNet := NewNetwork("InhibNet")
+	inhibNet.SetRandSeed(42) // critical for ActAvg values
 
-	inLay := InhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
-	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
-	outLay := InhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
+	inLay := inhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
+	hidLay := inhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
+	outLay := inhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	one2one := paths.NewOneToOne()
 
-	InhibNet.ConnectLayers(inLay, hidLay, one2one, ForwardPath)
-	InhibNet.ConnectLayers(inLay, hidLay, one2one, InhibPath)
-	InhibNet.ConnectLayers(hidLay, outLay, one2one, ForwardPath)
-	InhibNet.ConnectLayers(outLay, hidLay, one2one, BackPath)
+	inhibNet.ConnectLayers(inLay, hidLay, one2one, ForwardPath)
+	inhibNet.ConnectLayers(inLay, hidLay, one2one, InhibPath)
+	inhibNet.ConnectLayers(hidLay, outLay, one2one, ForwardPath)
+	inhibNet.ConnectLayers(outLay, hidLay, one2one, BackPath)
 
 	ctx := NewContext()
 
-	InhibNet.Build(ctx)
-	InhibNet.Defaults()
-	InhibNet.ApplyParams(ParamSets["Base"].Sheets["Network"], false)
-	InhibNet.ApplyParams(ParamSets["Base"].Sheets["InhibOff"], false)
-	InhibNet.InitWeights(ctx) // get GScale
-	InhibNet.NewState(ctx)
+	inhibNet.Build(ctx)
+	inhibNet.Defaults()
+	inhibNet.ApplyParams(ParamSets["Base"], false)
+	inhibNet.ApplyParams(ParamSets["Base"], false)
+	inhibNet.InitWeights(ctx) // get GScale
+	inhibNet.NewState(ctx)
 
-	InhibNet.InitWeights(ctx)
-	InhibNet.InitExt(ctx)
+	inhibNet.InitWeights(ctx)
+	inhibNet.InitExt(ctx)
 
 	printCycs := false
 	printQtrs := false
@@ -1326,11 +1317,11 @@ func TestInhibAct(t *testing.T) {
 		inLay.ApplyExt(ctx, 0, inpat)
 		outLay.ApplyExt(ctx, 0, inpat)
 
-		InhibNet.NewState(ctx)
+		inhibNet.NewState(ctx)
 		ctx.NewState(etime.Train)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				InhibNet.Cycle(ctx)
+				inhibNet.Cycle(ctx)
 				ctx.CycleInc()
 
 				if printCycs {
@@ -1345,9 +1336,9 @@ func TestInhibAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				InhibNet.MinusPhase(ctx)
+				inhibNet.MinusPhase(ctx)
 				ctx.NewPhase(false)
-				InhibNet.PlusPhaseStart(ctx)
+				inhibNet.PlusPhaseStart(ctx)
 			}
 
 			if printCycs && printQtrs {
@@ -1387,7 +1378,7 @@ func TestInhibAct(t *testing.T) {
 				CompareFloats(tol, outGis, qtr3OutGis, "qtr3OutGis", t)
 			}
 		}
-		InhibNet.PlusPhase(ctx)
+		inhibNet.PlusPhase(ctx)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
@@ -1397,7 +1388,7 @@ func TestInhibAct(t *testing.T) {
 
 func saveToFile(net *Network, t *testing.T) {
 	var buf bytes.Buffer
-	net.WriteWtsJSON(&buf)
+	net.WriteWeightsJSON(&buf)
 	wb := buf.Bytes()
 	fmt.Printf("testNet Trained Weights:\n\n%v\n", string(wb))
 
