@@ -419,7 +419,7 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		vl := ly.UnitVal1D(vidx, int(ni), di)
+		vl := ly.UnitValue1D(vidx, int(ni), di)
 		am.UpdateValue(vl, int32(ni))
 	}
 	am.CalcAvg()

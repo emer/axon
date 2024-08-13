@@ -11,7 +11,6 @@ import (
 	"log"
 	"strconv"
 
-	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
@@ -338,11 +337,11 @@ func (ly *Layer) UnitVarNum() int {
 	return len(NeuronVarNames)
 }
 
-// UnitVal1D returns value of given variable index on given unit, using 1-dimensional index.
+// UnitValue1D returns value of given variable index on given unit, using 1-dimensional index.
 // returns NaN on invalid index.
 // This is the core unit var access method used by other methods,
 // so it is the only one that needs to be updated for derived layer types.
-func (ly *Layer) UnitVal1D(varIndex int, idx, di int) float32 {
+func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	if idx < 0 || idx >= int(ly.NNeurons) {
 		return math32.NaN()
 	}
@@ -502,106 +501,22 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 }
 
 ////////////////////////////////////////////
-//  Weight Saving
+//		Weights
 
 // WriteWeightsJSON writes the weights from this layer from the receiver-side perspective
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (ly *Layer) WriteWeightsJSON(w io.Writer, depth int) {
-	ctx := &ly.Network.Ctx
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("{\n"))
-	depth++
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"Layer\": %q,\n", ly.Name)))
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
-	depth++
-	w.Write(indent.TabBytes(depth)) // note: ActAvg all sync'd so using first one is fine
-	w.Write([]byte(fmt.Sprintf("\"ActMAvg\": \"%g\",\n", ly.Values[0].ActAvg.ActMAvg)))
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.Values[0].ActAvg.ActPAvg)))
-	w.Write(indent.TabBytes(depth))
-	// note: last one has no comma
-	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.Values[0].ActAvg.GiMult)))
-	depth--
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("},\n"))
-	w.Write(indent.TabBytes(depth))
+	ly.MetaData = make(map[string]string)
+	ly.MetaData["ActMAvg"] = fmt.Sprintf("%g", ly.Values[0].ActAvg.ActMAvg)
+	ly.MetaData["ActPAvg"] = fmt.Sprintf("%g", ly.Values[0].ActAvg.ActPAvg)
+	ly.MetaData["GiMult"] = fmt.Sprintf("%g", ly.Values[0].ActAvg.GiMult)
+
 	if ly.Params.IsLearnTrgAvg() {
-		w.Write([]byte(fmt.Sprintf("\"Units\": {\n")))
-		depth++
-
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte(fmt.Sprintf("\"ActAvg\": [ ")))
-		nn := ly.NNeurons
-		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
-			nrnActAvg := NrnAvgV(ctx, ni, ActAvg)
-			w.Write([]byte(fmt.Sprintf("%g", nrnActAvg)))
-			if lni < nn-1 {
-				w.Write([]byte(", "))
-			}
-		}
-		w.Write([]byte(" ],\n"))
-
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte(fmt.Sprintf("\"TrgAvg\": [ ")))
-		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
-			nrnTrgAvg := NrnAvgV(ctx, ni, TrgAvg)
-			w.Write([]byte(fmt.Sprintf("%g", nrnTrgAvg)))
-			if lni < nn-1 {
-				w.Write([]byte(", "))
-			}
-		}
-		w.Write([]byte(" ]\n"))
-
-		depth--
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte("},\n"))
-		w.Write(indent.TabBytes(depth))
-	}
-
-	onps := make([]*Path, 0, len(ly.RecvPaths))
-	for _, pt := range ly.RecvPaths {
-		if !pt.Off {
-			onps = append(onps, pt)
-		}
-	}
-	np := len(onps)
-	if np == 0 {
-		w.Write([]byte(fmt.Sprintf("\"Paths\": null\n")))
+		ly.LayerBase.WriteWeightsJSONBase(w, depth, "ActAvg", "TrgAvg")
 	} else {
-		w.Write([]byte(fmt.Sprintf("\"Paths\": [\n")))
-		depth++
-		for pi, pt := range onps {
-			pt.WriteWeightsJSON(w, depth) // this leaves path unterminated
-			if pi == np-1 {
-				w.Write([]byte("\n"))
-			} else {
-				w.Write([]byte(",\n"))
-			}
-		}
-		depth--
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte(" ]\n"))
+		ly.LayerBase.WriteWeightsJSONBase(w, depth)
 	}
-	depth--
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("}")) // note: leave unterminated as outer loop needs to add , or just \n depending
-}
-
-// ReadWeightsJSON reads the weights from this layer from the receiver-side perspective
-// in a JSON text format.  This is for a set of weights that were saved *for one layer only*
-// and is not used for the network-level ReadWeightsJSON, which reads into a separate
-// structure -- see SetWeights method.
-func (ly *Layer) ReadWeightsJSON(r io.Reader) error {
-	lw, err := weights.LayReadJSON(r)
-	if err != nil {
-		return err // note: already logged
-	}
-	return ly.SetWeights(lw)
 }
 
 // SetWeights sets the weights for this layer from weights.Layer decoded values

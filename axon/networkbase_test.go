@@ -232,6 +232,7 @@ func TestSaveWeights(t *testing.T) {
 		t.Error(err.Error())
 	}
 	assert.Equal(t, stdWeights, string(b.Bytes()))
+	// fmt.Println(string(b.Bytes()))
 
 	loadNet := newTestNet(ctx, 1)
 	err = loadNet.ReadWeightsJSON(&b)

@@ -6,14 +6,19 @@ package axon
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"log"
+	"strconv"
 
+	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
+	"github.com/emer/emergent/v2/weights"
 )
 
 // index naming:
@@ -404,4 +409,107 @@ func (pt *Path) SynValDi(varNm string, sidx, ridx int, di int) float32 {
 	}
 	syi := pt.SynIndex(sidx, ridx)
 	return pt.SynVal1DDi(vidx, syi, di)
+}
+
+///////////////////////////////////////////////////////////////////////
+//  	Weights
+
+// WriteWeightsJSON writes the weights from this pathway
+// from the receiver-side perspective in a JSON text format.
+func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
+	ctx := &pt.Recv.Network.Ctx
+	slay := pt.Send
+	rlay := pt.Recv
+	nr := int(rlay.NNeurons)
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("{\n"))
+	depth++
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"From\": %q,\n", slay.Name)))
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"Rs\": [\n")))
+	depth++
+	for ri := 0; ri < nr; ri++ {
+		rc := pt.RecvCon[ri]
+		syIndexes := pt.RecvSynIndexes(uint32(ri))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("{\n"))
+		depth++
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte(fmt.Sprintf("\"Ri\": %v,\n", ri)))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte(fmt.Sprintf("\"N\": %v,\n", rc.N)))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Si\": [ "))
+		for ci, syi := range syIndexes {
+			syni := pt.SynStIndex + syi
+			si := pt.Params.SynSendLayerIndex(ctx, syni)
+			w.Write([]byte(fmt.Sprintf("%v", si)))
+			if ci == int(rc.N-1) {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("],\n"))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Wt\": [ "))
+		for ci, syi := range syIndexes {
+			syni := pt.SynStIndex + syi
+			w.Write([]byte(strconv.FormatFloat(float64(SynV(ctx, syni, Wt)), 'g', weights.Prec, 32)))
+			if ci == int(rc.N-1) {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("],\n"))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
+		for ci, syi := range syIndexes {
+			syni := pt.SynStIndex + syi
+			w.Write([]byte(strconv.FormatFloat(float64(SynV(ctx, syni, SWt)), 'g', weights.Prec, 32)))
+			if ci == int(rc.N-1) {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("]\n"))
+		depth--
+		w.Write(indent.TabBytes(depth))
+		if ri == nr-1 {
+			w.Write([]byte("}\n"))
+		} else {
+			w.Write([]byte("},\n"))
+		}
+	}
+	depth--
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("]\n"))
+	depth--
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("}")) // note: leave unterminated as outer loop needs to add , or just \n depending
+}
+
+// SetWeights sets the weights for this pathway from weights.Path decoded values
+func (pt *Path) SetWeights(pw *weights.Path) error {
+	var err error
+	for i := range pw.Rs {
+		pr := &pw.Rs[i]
+		hasWt1 := len(pr.Wt1) >= len(pr.Si)
+		for si := range pr.Si {
+			if hasWt1 {
+				er := pt.SetSynValue("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
+				if er != nil {
+					err = er
+				}
+			}
+			er := pt.SetSynValue("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
+			if er != nil {
+				err = er
+			}
+		}
+	}
+	return err
 }

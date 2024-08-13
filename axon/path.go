@@ -5,14 +5,8 @@
 package axon
 
 import (
-	"fmt"
-	"io"
-	"strconv"
-
-	"cogentcore.org/core/base/indent"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/weights"
 )
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
@@ -103,122 +97,6 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 		SetSynV(ctx, syni, LWt, pt.Params.SWts.LWtFromWts(wt, SynV(ctx, syni, SWt)))
 	}
 	return nil
-}
-
-///////////////////////////////////////////////////////////////////////
-//  Weights File
-
-// WriteWeightsJSON writes the weights from this pathway from the receiver-side perspective
-// in a JSON text format.  We build in the indentation logic to make it much faster and
-// more efficient.
-func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
-	ctx := &pt.Recv.Network.Ctx
-	slay := pt.Send
-	rlay := pt.Recv
-	nr := int(rlay.NNeurons)
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("{\n"))
-	depth++
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"From\": %q,\n", slay.Name)))
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"Rs\": [\n")))
-	depth++
-	for ri := 0; ri < nr; ri++ {
-		rc := pt.RecvCon[ri]
-		syIndexes := pt.RecvSynIndexes(uint32(ri))
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte("{\n"))
-		depth++
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte(fmt.Sprintf("\"Ri\": %v,\n", ri)))
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte(fmt.Sprintf("\"N\": %v,\n", rc.N)))
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte("\"Si\": [ "))
-		for ci, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			si := pt.Params.SynSendLayerIndex(ctx, syni)
-			w.Write([]byte(fmt.Sprintf("%v", si)))
-			if ci == int(rc.N-1) {
-				w.Write([]byte(" "))
-			} else {
-				w.Write([]byte(", "))
-			}
-		}
-		w.Write([]byte("],\n"))
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte("\"Wt\": [ "))
-		for ci, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			w.Write([]byte(strconv.FormatFloat(float64(SynV(ctx, syni, Wt)), 'g', weights.Prec, 32)))
-			if ci == int(rc.N-1) {
-				w.Write([]byte(" "))
-			} else {
-				w.Write([]byte(", "))
-			}
-		}
-		w.Write([]byte("],\n"))
-		w.Write(indent.TabBytes(depth))
-		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
-		for ci, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			w.Write([]byte(strconv.FormatFloat(float64(SynV(ctx, syni, SWt)), 'g', weights.Prec, 32)))
-			if ci == int(rc.N-1) {
-				w.Write([]byte(" "))
-			} else {
-				w.Write([]byte(", "))
-			}
-		}
-		w.Write([]byte("]\n"))
-		depth--
-		w.Write(indent.TabBytes(depth))
-		if ri == nr-1 {
-			w.Write([]byte("}\n"))
-		} else {
-			w.Write([]byte("},\n"))
-		}
-	}
-	depth--
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("]\n"))
-	depth--
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("}")) // note: leave unterminated as outer loop needs to add , or just \n depending
-}
-
-// ReadWeightsJSON reads the weights from this pathway from the receiver-side perspective
-// in a JSON text format.  This is for a set of weights that were saved *for one path only*
-// and is not used for the network-level ReadWeightsJSON, which reads into a separate
-// structure -- see SetWeights method.
-func (pt *Path) ReadWeightsJSON(r io.Reader) error {
-	pw, err := weights.PathReadJSON(r)
-	if err != nil {
-		return err // note: already logged
-	}
-	return pt.SetWeights(pw)
-}
-
-// SetWeights sets the weights for this pathway from weights.Path decoded values
-func (pt *Path) SetWeights(pw *weights.Path) error {
-	var err error
-	for i := range pw.Rs {
-		pr := &pw.Rs[i]
-		hasWt1 := len(pr.Wt1) >= len(pr.Si)
-		for si := range pr.Si {
-			if hasWt1 {
-				er := pt.SetSynValue("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
-				if er != nil {
-					err = er
-				}
-			}
-			er := pt.SetSynValue("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
-			if er != nil {
-				err = er
-			}
-		}
-	}
-	return err
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

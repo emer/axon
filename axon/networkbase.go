@@ -962,7 +962,7 @@ func (nt *Network) NeuronsSlice(vals *[]float32, nrnVar string, di int) {
 		varIndex, _ := ly.UnitVarIndex(nrnVar)
 		nn := int(ly.NNeurons)
 		for lni := 0; lni < nn; lni++ {
-			(*vals)[i] = ly.UnitVal1D(varIndex, lni, di)
+			(*vals)[i] = ly.UnitValue1D(varIndex, lni, di)
 			i++
 		}
 	}

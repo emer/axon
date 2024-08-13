@@ -575,9 +575,9 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	isAB := strings.Contains(trialnm, "AB")
 
 	for ni := 0; ni < nn; ni++ {
-		actm := ecout.UnitVal1D(actMi, ni, di)
-		trg := ecout.UnitVal1D(targi, ni, di) // full pattern target
-		inact := inp.UnitVal1D(actMi, ni, di)
+		actm := ecout.UnitValue1D(actMi, ni, di)
+		trg := ecout.UnitValue1D(targi, ni, di) // full pattern target
+		inact := inp.UnitValue1D(actMi, ni, di)
 		if trg < actThr { // trgOff
 			trgOffN += 1
 			if actm > actThr {
