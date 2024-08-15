@@ -1610,7 +1610,7 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
 	ix := table.NewIndexView(dt)
-	desc := agg.DescAll(ix)
+	desc := stats.DescAll(ix)
 
 	meanRow := desc.RowsByString("Agg", "Mean", table.Equals, table.UseCase)[0]
 	minRow := desc.RowsByString("Agg", "Min", table.Equals, table.UseCase)[0]
@@ -1644,7 +1644,7 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
-	desc = agg.DescAll(ix)
+	desc = stats.DescAll(ix)
 	if desc.Float("Wt", minRow) > 0.3 || desc.Float("Wt", maxRow) < 0.7 {
 		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
@@ -1674,7 +1674,7 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
-	desc = agg.DescAll(ix)
+	desc = stats.DescAll(ix)
 	if desc.Float("Wt", minRow) > 0.3 || desc.Float("Wt", maxRow) < 0.7 {
 		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
@@ -1704,7 +1704,7 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
-	desc = agg.DescAll(ix)
+	desc = stats.DescAll(ix)
 	if desc.Float("Wt", minRow) > 0.08 || desc.Float("Wt", maxRow) < 0.12 {
 		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.08, > 0.12 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}
@@ -1731,7 +1731,7 @@ func TestSWtInit(t *testing.T) {
 		dt.SetFloat("LWt", i, float64(sy.LWt))
 		dt.SetFloat("SWt", i, float64(sy.SWt))
 	}
-	desc = agg.DescAll(ix)
+	desc = stats.DescAll(ix)
 	if desc.Float("Wt", minRow) > 0.76 || desc.Float("Wt", maxRow) < 0.84 {
 		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.66, > 0.74 not: %g, %g\n", spct, desc.Float("Wt", minRow), desc.Float("Wt", maxRow))
 	}

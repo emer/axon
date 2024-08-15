@@ -91,7 +91,7 @@ type GScaleValues struct {
 type PathParams struct {
 
 	// functional type of path, which determines functional code path
-	// for specialized layer types, and is synchronized with the Path.Typ value
+	// for specialized layer types, and is synchronized with the Path.Type value
 	PathType PathTypes
 
 	pad, pad1, pad2 int32

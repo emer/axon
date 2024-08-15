@@ -402,14 +402,15 @@ func (ly *Layer) RecvPathValues(vals *[]float32, varNm string, sendLay emer.Laye
 	if sendLay == nil {
 		return fmt.Errorf("sending layer is nil")
 	}
+	slay := sendLay.AsEmer()
 	var pt emer.Path
 	if pathType != "" {
-		pt, err = sendLay.AsEmer().SendPathByRecvNameType(ly.Name, pathType)
+		pt, err = slay.SendPathByRecvNameType(ly.Name, pathType)
 		if pt == nil {
-			pt, err = sendLay.AsEmer().SendPathByRecvName(ly.Name)
+			pt, err = slay.SendPathByRecvName(ly.Name)
 		}
 	} else {
-		pt, err = sendLay.AsEmer().SendPathByRecvName(ly.Name)
+		pt, err = slay.SendPathByRecvName(ly.Name)
 	}
 	if pt == nil {
 		return err
@@ -448,14 +449,15 @@ func (ly *Layer) SendPathValues(vals *[]float32, varNm string, recvLay emer.Laye
 	if recvLay == nil {
 		return fmt.Errorf("receiving layer is nil")
 	}
+	rlay := recvLay.AsEmer()
 	var pt emer.Path
 	if pathType != "" {
-		pt, err = recvLay.AsEmer().RecvPathBySendNameType(ly.Name, pathType)
+		pt, err = rlay.RecvPathBySendNameType(ly.Name, pathType)
 		if pt == nil {
-			pt, err = recvLay.AsEmer().RecvPathBySendName(ly.Name)
+			pt, err = rlay.RecvPathBySendName(ly.Name)
 		}
 	} else {
-		pt, err = recvLay.AsEmer().RecvPathBySendName(ly.Name)
+		pt, err = rlay.RecvPathBySendName(ly.Name)
 	}
 	if pt == nil {
 		return err

@@ -209,7 +209,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectCTSelf(hidct, full, "")
 	net.ConnectToPulv(hid, hidct, inPulv, full, full, "")
 	net.ConnectLayers(in, hid, full, axon.ForwardPath)
-	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
+	// net.ConnectLayers(hidct, hid, full, BackPath) // not useful
 
 	if ss.Config.Params.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", "", 20, nUnits, space, one2one) // one2one learn > full

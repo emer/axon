@@ -133,7 +133,7 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 // On the GPU, they are loaded into a uniform.
 type LayerParams struct {
 
-	// functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Typ value
+	// functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Type value
 	LayType LayerTypes
 
 	pad, pad1, pad2 int32

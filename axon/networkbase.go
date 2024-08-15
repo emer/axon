@@ -85,7 +85,7 @@ type Network struct {
 	// accessed via NrnV function with flexible striding.
 	Neurons []float32 `display:"-"`
 
-	// network's allocation of neuron average avariables,
+	// network's allocation of neuron average variables,
 	// accessed via NrnAvgV function with flexible striding.
 	NeuronAvgs []float32 `display:"-"`
 
@@ -602,7 +602,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	ctx.NetIndexes.NetIndex = nt.NetIndex
 	nt.FunTimes = make(map[string]*timer.Time)
 	maxData := int(nt.MaxData)
-	emsg := ""
+	var errs []error
 	totNeurons := 0
 	totPaths := 0
 	totExts := 0
@@ -715,7 +715,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		err := ly.Build() // also builds paths and sets SubPool indexes
 		if err != nil {
-			emsg += err.Error() + "\n"
+			errs = append(errs, err)
 		}
 		// now collect total number of synapses after layer build
 		for _, pt := range spaths {
@@ -833,10 +833,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nt.BuildGlobals(simCtx)
 
 	nt.LayoutLayers()
-	if emsg != "" {
-		return errors.New(emsg)
-	}
-	return nil
+	return errors.Join(errs...)
 }
 
 // BuildPathGBuf builds the PathGBuf, PathGSyns,

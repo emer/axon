@@ -6,10 +6,9 @@ package axon
 
 //gosl:start pathtypes
 
-// PathTypes is an axon-specific path type enum,
-// that encompasses all the different algorithm types supported.
+// PathTypes enumerates all the different types of axon pathways,
+// for the different algorithm types supported.
 // Class parameter styles automatically key off of these types.
-// The first entries must be kept synchronized with the emer.PathType.
 type PathTypes int32 //enums:enum
 
 // The pathway types

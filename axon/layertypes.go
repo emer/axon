@@ -6,11 +6,9 @@ package axon
 
 //gosl:start layertypes
 
-// LayerTypes is an axon-specific layer type enum,
-// that encompasses all the different algorithm types supported.
+// LayerTypes enumerates all the different types of layers,
+// for the different algorithm types supported.
 // Class parameter styles automatically key off of these types.
-// The first entries must be kept synchronized with the emer.LayerType,
-// although we replace Hidden -> Super.
 type LayerTypes int32 //enums:enum
 
 // note: we need to add the Layer extension to avoid naming
@@ -21,7 +19,7 @@ const (
 	// Super is a superficial cortical layer (lamina 2-3-4)
 	// which does not receive direct input or targets.
 	// In more generic models, it should be used as a Hidden layer,
-	// and maps onto the Hidden type in emer.LayerType.
+	// and maps onto the Hidden type in LayerTypes.
 	SuperLayer LayerTypes = iota
 
 	// Input is a layer that receives direct external input

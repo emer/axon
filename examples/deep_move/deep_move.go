@@ -199,7 +199,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPath)
 	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
 
-	// net.ConnectLayers(dpHidct, dpHid, full, emer.Back)
+	// net.ConnectLayers(dpHidct, dpHid, full, BackPath)
 
 	var dpHid2, dpHid2ct *axon.Layer
 	if ss.Config.Params.Hid2 {
@@ -221,7 +221,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		net.ConnectLayers(act, dpHid2, full, axon.ForwardPath)
 
 		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPath)
-		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, emer.Back)
+		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, BackPath)
 
 		net.BidirConnectLayers(dpHid, dpHid2, full)
 		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPath)
@@ -239,8 +239,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hdp.AddClass("HeadDirIn")
 
 	// no benefit from these:
-	// net.ConnectLayers(hdHid, dpHid, full, emer.Back)
-	// net.ConnectLayers(hdHidct, dpHidct, full, emer.Back)
+	// net.ConnectLayers(hdHid, dpHid, full, BackPath)
+	// net.ConnectLayers(hdHidct, dpHidct, full, BackPath)
 
 	hd.PlaceBehind(act, space)
 	act.PlaceRightOf(dpIn, space)

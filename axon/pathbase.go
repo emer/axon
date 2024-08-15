@@ -32,10 +32,10 @@ type Path struct {
 	// path parameters.
 	Params *PathParams
 
-	// sending layer for this pathway
+	// sending layer for this pathway.
 	Send *Layer
 
-	// receiving layer for this pathway
+	// receiving layer for this pathway.
 	Recv *Layer
 
 	// type of pathway.
@@ -243,16 +243,6 @@ func (pt *Path) ApplyDefaultParams() {
 	if err != nil {
 		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
 	}
-}
-
-// NonDefaultParams returns a listing of all parameters in the Layer that
-// are not at their default values -- useful for setting param styles etc.
-func (pt *Path) NonDefaultParams() string {
-	pth := pt.Recv.Name + "." + pt.Name // redundant but clearer..
-	_ = pth
-	// nds := views.StructNonDefFieldsStr(pj.EmerPath.AsAxon().Params, pth)
-	// todo: see layerbase for new impl
-	return "todo need to do"
 }
 
 func (pt *Path) SynVarNames() []string {

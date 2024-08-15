@@ -11,42 +11,8 @@ import (
 	"sort"
 	"sync"
 
-	"cogentcore.org/core/base/atomiccounter"
 	"cogentcore.org/core/base/timer"
 )
-
-// Maps the given function across the [0, total) range of items, using
-// nThreads goroutines, in smaller-sized chunks for better load balancing.
-// this may be better for larger number of threads, but is not better for small N
-func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
-	chunk := total / (nThreads * 2)
-	if chunk <= 1 {
-		fun(0, total)
-		return
-	}
-	chm1 := chunk - 1
-	wait := sync.WaitGroup{}
-	var cur atomiccounter.Counter
-	cur.Set(-1)
-	for ti := 0; ti < nThreads; ti++ {
-		wait.Add(1)
-		go func() {
-			for {
-				c := int(cur.Add(int64(chunk)))
-				if c-chm1 >= total {
-					wait.Done()
-					return
-				}
-				max := c + 1
-				if max > total {
-					max = total
-				}
-				fun(c-chm1, max) // end is exclusive
-			}
-		}()
-	}
-	wait.Wait()
-}
 
 // Maps the given function across the [0, total) range of items, using
 // nThreads goroutines.

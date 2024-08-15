@@ -296,7 +296,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 
-	// net.LateralConnectLayerPath(hid1, full, &axon.HebbPath{}).SetType(emer.Inhib)
+	// net.LateralConnectLayerPath(hid1, full, &axon.HebbPath{}).SetType(InhibPath)
 
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
