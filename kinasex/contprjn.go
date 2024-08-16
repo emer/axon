@@ -134,14 +134,14 @@ func (pj *MatrixPath) InitWeights() {
 // at the NMDA N2B site.  When the synaptic activity has fallen from a
 // local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
 // last TDWt value converts to an actual synaptic change: DWt
-func (pj *ContPath) SendSynCa(ltime *Time) {
+func (pj *ContPath) SendSynCa(ctx *Time) {
 	kp := &pj.Learn.KinaseCa
 	if !pj.Learn.Learn {
 		return
 	}
 	switch pj.Rule {
 	case kinase.SynSpkTheta:
-		pj.Path.SendSynCa(ltime)
+		pj.Path.SendSynCa(ctx)
 		return
 	case kinase.NeurSpkTheta:
 		return
@@ -209,17 +209,17 @@ func (pj *ContPath) SendSynCa(ltime *Time) {
 }
 
 // DWt computes the weight change (learning) -- on sending pathways
-func (pj *ContPath) DWt(ltime *Time) {
+func (pj *ContPath) DWt(ctx *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	switch pj.Rule {
 	case kinase.SynSpkTheta:
-		pj.Path.DWTSynSpkTheta(ltime)
+		pj.Path.DWTSynSpkTheta(ctx)
 	case kinase.NeurSpkTheta:
-		pj.Path.DWTNeurSpkTheta(ltime)
+		pj.Path.DWTNeurSpkTheta(ctx)
 	default:
-		pj.DWtCont(ltime)
+		pj.DWtCont(ctx)
 	}
 }
 
@@ -228,7 +228,7 @@ func (pj *ContPath) DWt(ltime *Time) {
 // computed DWt from TDWt.
 // Applies post-trial decay to simulate time passage, and checks
 // for whether learning should occur.
-func (pj *ContPath) DWtCont(ltime *axon.Time) {
+func (pj *ContPath) DWtCont(ctx *axon.Time) {
 	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
