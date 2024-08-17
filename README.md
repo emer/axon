@@ -1,21 +1,21 @@
-# Axon in Go emergent
+# Axon Neural Modeling Framework
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/emer/axon)](https://goreportcard.com/report/github.com/emer/axon)
 [![GoDoc](https://godoc.org/github.com/emer/axon?status.svg)](https://godoc.org/github.com/emer/axon)
 [![codecov](https://codecov.io/gh/emer/axon/branch/master/graph/badge.svg)](https://codecov.io/gh/emer/axon)
 ![CI](https://github.com/emer/axon/actions/workflows/build.yml/badge.svg?branch=master)
 
-This is the Go implementation of the Axon algorithm for spiking, biologically based models of cognition, based on the [emergent](https://github.com/emer/emergent) framework (with optional Python interface), and the  [Leabra](https://github.com/emer/leabra) framework for rate-code models.
+This is the Go implementation of the Axon algorithm for spiking, biologically based models of cognition, based on the [emergent](https://github.com/emer/emergent) framework.  Development of Axon is supported by the Obelisk project at https://astera.org/ and by collaborations with scientists at the University of California Davis, and other institutions around the world.
 
-Axon is the spiking version of [Leabra](https://github.com/emer/leabra), with several advances.  As an acronym, *axon* could stand for *Adaptive eXcitation Of Noise*, reflecting the ability to learn using the power of error-backpropagation in the context of noisy spiking activation.  The spiking function of the axon is what was previously missing from Leabra.
+Axon is the spiking version of [Leabra](https://github.com/emer/leabra), with several advances.  As a backcronym, *axon* could stand for *Adaptive eXcitation Of Noise*, reflecting the ability to learn using the power of error-backpropagation in the context of noisy spiking activation.  The spiking function of the axon is what was previously missing from Leabra.  Axon is used to develop large-scale systems-neuroscience models of the brain, i.e., [Computational Cognitive Neuroscience](CompCogNeuro.org), centered around the [Rubicon](Rubicon.md) model of goal-driven, motivated cognition.
 
-Axon and emergent use the [Cogent Core](https://cogentcore.org/) GUI framework.  See [install](https://www.cogentcore.org/core/setup/install) instructions there.  Once those prerequisites are in place, then the simplest way to run a simulation is:
+Axon and emergent use the [Cogent Core](https://cogentcore.org/core) GUI framework.  See [install](https://www.cogentcore.org/core/setup/install) instructions there.  Once those prerequisites are in place, then the simplest way to run a simulation is:
 
 ```sh
-$ core run <platform>
+$ core run [platform]
 ```
 
-where `<platform>` is optional (defaults to your local system), and can include `android`, `ios` and `web`!
+where `[platform]` is optional (defaults to your local system), and can include `android`, `ios` and `web`!
 
 See the [ra25 example](examples/ra25/README.md) for a complete working example, which is intended to be a good starting point for creating your own models.
 
