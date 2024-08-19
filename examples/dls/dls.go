@@ -978,7 +978,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "dls", title, `This project tests motor sequence learning in the DLS dorsal lateral striatum and associated motor cortex. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.04
 	nv.SetNet(ss.Net)

@@ -383,7 +383,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "neuron", title, `This simulation illustrates the basic properties of neural spiking and rate-code activation, reflecting a balance of excitatory and inhibitory influences (including leak and synaptic inhibition). See <a href="https://github.com/emer/axon/blob/main/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Var = "Act"
 	nv.SetNet(ss.Net)
 	ss.ConfigNetView(nv) // add labels etc

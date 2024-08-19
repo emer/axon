@@ -610,7 +610,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "DeepMove", title, `This demonstrates a basic DeepAxon model on move prediction. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)

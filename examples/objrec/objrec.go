@@ -661,7 +661,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "objrec", title, `This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images. See <a href="https://github.com/CompCogNeuro/sims/blob/main/ch6/objrec/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)

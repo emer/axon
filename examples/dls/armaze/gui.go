@@ -114,7 +114,7 @@ type GUI struct {
 	Trace StateTrace
 
 	// view of the gui obj
-	StructView *core.Form `display:"-"`
+	SimForm *core.Form `display:"-"`
 
 	// ArmMaze TabView
 	WorldTabs *core.Tabs `display:"-"`
@@ -209,7 +209,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 		s.Direction = styles.Column
 	})
 
-	vw.StructView = core.NewForm(svfr).SetStruct(vw)
+	vw.SimForm = core.NewForm(svfr).SetStruct(vw)
 	imfr := core.NewFrame(svfr)
 	imfr.Styler(func(s *styles.Style) {
 		s.Display = styles.Grid
@@ -610,7 +610,7 @@ func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state 
 		vw.Env = ev
 		vw.EnvName = ev.Name
 		vw.Trace = nil
-		vw.StructView.Update()
+		vw.SimForm.Update()
 	}
 
 	vw.UpdateWorldGUI()

@@ -118,7 +118,7 @@ type Sim struct {
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = axon.NewNetwork("")
+	ss.Net = axon.NewNetwork("Choose")
 	_, err := econfig.Config(&ss.Config, "config.toml")
 	if err != nil {
 		slog.Error(err.Error())
@@ -212,7 +212,6 @@ func (ss *Sim) ConfigRubicon(trn *armaze.Env) {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 	ev := ss.Envs.ByModeDi(etime.Train, 0).(*armaze.Env)
-	net.InitName(net, "Choose")
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
@@ -367,7 +366,7 @@ func (ss *Sim) ApplyParams() {
 	csp := net.LayerByName("CSP")
 	csp.Params.Inhib.ActAvg.Nominal = 0.32 / float32(nCSTot)
 	bla := net.LayerByName("BLAposAcqD1")
-	pji, _ := bla.SendNameTry("BLANovelCS")
+	pji, _ := bla.RecvPathBySendName("BLANovelCS")
 	pj := pji.(*axon.Path)
 
 	// this is very sensitive param to get right
@@ -1331,7 +1330,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "choose", title, `This project tests the Rubicon framework in simple cost-benefit choice scenarios, using an N-arm bandit maze task. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = ss.Config.Run.NCycles * 2
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)

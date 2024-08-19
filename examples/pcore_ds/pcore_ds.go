@@ -828,7 +828,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the Dorsal Basal Ganglia, starting with the Dorsal Striatum, centered on the Pallidum Core (GPe) areas that drive disinhibitory motor plan selection in descending motor pathways. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = 400
 	nv.Params.Raster.Max = ss.Config.Run.ThetaCycles
 	nv.Params.LayNmSize = 0.03

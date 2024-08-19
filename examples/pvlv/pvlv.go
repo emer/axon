@@ -698,7 +698,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "pvlv", title, `This is the PVLV test model in Axon, in the Rubicon framework. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = 400
 	nv.Params.Raster.Max = ss.Config.Run.ThetaCycles
 	nv.Params.LayNmSize = 0.02

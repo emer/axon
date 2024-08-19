@@ -664,7 +664,7 @@ func LayerActsLog(net *Network, lg *elog.Logs, di int, gui *egui.GUI) {
 		dtRec.SetFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
 	}
 	if gui != nil {
-		gui.UpdatePlotScope(etime.ScopeKey("LayerActs"))
+		gui.GoUpdatePlotScope(etime.ScopeKey("LayerActs"))
 	}
 }
 
@@ -694,7 +694,7 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 		dtRec.SetNumRows(0)
 	}
 	if gui != nil {
-		gui.UpdatePlotScope(etime.ScopeKey("LayerActsAvg"))
+		gui.GoUpdatePlotScope(etime.ScopeKey("LayerActsAvg"))
 	}
 }
 

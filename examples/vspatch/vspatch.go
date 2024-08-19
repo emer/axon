@@ -639,7 +639,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "vspatch", title, `This project simulates the VS Patch reward prediction learning. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)

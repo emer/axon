@@ -20,7 +20,6 @@ import (
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/econfig"
-	"github.com/emer/emergent/v2/env"
 )
 
 // Actions is a list of mutually exclusive states
@@ -47,7 +46,7 @@ const (
 type Env struct {
 
 	// name of environment -- Train or Test
-	Nm string
+	Name string
 
 	// our data parallel index
 	Di int `edit:"-"`
@@ -118,7 +117,7 @@ type Env struct {
 	RandSeed int64 `edit:"-"`
 }
 
-const noUS = -1
+func (ev *Env) Label() string { return ev.Name }
 
 // Defaults sets default params
 func (ev *Env) Defaults() {
@@ -167,10 +166,6 @@ func (ev *Env) Init(run int) {
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
-}
-
-func (ev *Env) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
-	return 0, 0, false
 }
 
 func (ev *Env) State(el string) tensor.Tensor {

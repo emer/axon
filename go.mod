@@ -3,9 +3,9 @@ module github.com/emer/axon/v2
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.2-0.20240811064529-4a22c2f0a3e9
+	cogentcore.org/core v0.3.3-0.20240819201856-14e5d78556c3
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.0.0.20240812035510-2e85a3e81ef5
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.0.0.20240819205648-250dd483d63c
 	github.com/emer/vision/v2 v2.0.0-dev0.1.0
 	github.com/goki/vulkan v1.0.8
 	github.com/stretchr/testify v1.9.0
@@ -20,7 +20,7 @@ require (
 	github.com/alecthomas/chroma/v2 v2.13.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/chewxy/math32 v1.10.1 // indirect
-	github.com/cogentcore/webgpu v0.0.0-20240809053032-52c74d0c674c // indirect
+	github.com/cogentcore/webgpu v0.0.0-20240812054109-ca2e8adebe15 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

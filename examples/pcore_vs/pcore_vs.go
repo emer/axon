@@ -659,7 +659,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.MakeBody(ss, "pcore", title, `This project simulates the Ventral Basal Ganglia, starting with the Ventral Striatum, centered on the Pallidum Core (GPe) areas that drive Go vs. No engagement in a goal. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
-	nv := ss.GUI.AddNetView("NetView")
+	nv := ss.GUI.AddNetView("Network")
 	nv.Params.MaxRecs = ss.Config.Run.NCycles * 2
 	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)

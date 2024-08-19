@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"log"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/colors"
@@ -114,7 +113,7 @@ type GUI struct {
 	Trace StateTrace
 
 	// view of the gui obj
-	StructView *core.Form `display:"-"`
+	EnvForm *core.Form `display:"-"`
 
 	// ArmMaze TabView
 	WorldTabs *core.Tabs `display:"-"`
@@ -209,7 +208,7 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 		s.Direction = styles.Column
 	})
 
-	vw.StructView = core.NewForm(svfr).SetStruct(vw)
+	vw.EnvForm = core.NewForm(svfr).SetStruct(vw)
 	imfr := core.NewFrame(svfr)
 	imfr.Styler(func(s *styles.Style) {
 		s.Display = styles.Grid
@@ -477,9 +476,9 @@ func (vw *GUI) ConfigEmery(par *physics.Group, length float32) *physics.Group {
 // ConfigView3D makes the 3D view
 func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 	se.Background = colors.Uniform(colors.FromRGB(230, 230, 255)) // sky blue-ish
-	xyz.NewAmbientLight(se, "ambient", 0.3, xyz.DirectSun)
+	xyz.NewAmbient(se, "ambient", 0.3, xyz.DirectSun)
 
-	dir := xyz.NewDirLight(se, "dir", 1, xyz.DirectSun)
+	dir := xyz.NewDirectional(se, "dir", 1, xyz.DirectSun)
 	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
 
 	// sc.MultiSample = 1 // we are using depth grab so we need this = 1
@@ -540,7 +539,7 @@ func (vw *GUI) GrabEyeImg() {
 	vw.Camera.FOV = 90
 	err := vw.View3D.RenderOffNode(vw.EyeR, &vw.Camera)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		return
 	}
 	img, err := vw.View3D.Image()
@@ -548,20 +547,20 @@ func (vw *GUI) GrabEyeImg() {
 		vw.EyeRFullImage.SetImage(img)
 		vw.EyeRFullImage.NeedsRender()
 	} else {
-		log.Println(err)
+		// log.Println(err)
 	}
 
 	vw.Camera.FOV = 10
 	err = vw.View3D.RenderOffNode(vw.EyeR, &vw.Camera)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		return
 	}
 	img, err = vw.View3D.Image()
 	if err == nil && img != nil {
 		vw.EyeRFovImage.SetImage(img)
 	} else {
-		log.Println(err)
+		// log.Println(err)
 	}
 
 	// depth, err := vw.View3D.DepthImage()
@@ -610,7 +609,7 @@ func (vw *GUI) UpdateWorld(ctx *axon.Context, ev *Env, net *axon.Network, state 
 		vw.Env = ev
 		vw.EnvName = ev.Name
 		vw.Trace = nil
-		vw.StructView.Update()
+		vw.EnvForm.Update()
 	}
 
 	vw.UpdateWorldGUI()
