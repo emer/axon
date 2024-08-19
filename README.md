@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/emer/axon)](https://goreportcard.com/report/github.com/emer/axon)
 [![GoDoc](https://godoc.org/github.com/emer/axon?status.svg)](https://godoc.org/github.com/emer/axon)
-[![codecov](https://codecov.io/gh/emer/axon/branch/master/graph/badge.svg)](https://codecov.io/gh/emer/axon)
+[![codecov](https://codecov.io/gh/emer/axon/branch/main/graph/badge.svg)](https://codecov.io/gh/emer/axon)
 ![CI](https://github.com/emer/axon/actions/workflows/build.yml/badge.svg?branch=master)
 
 This is the Go implementation of the Axon algorithm for spiking, biologically based models of cognition, based on the [emergent](https://github.com/emer/emergent) framework.  Development of Axon is supported by the Obelisk project at https://astera.org/ and by collaborations with scientists at the University of California Davis, and other institutions around the world.
@@ -156,7 +156,7 @@ Axon is the spiking version of [Leabra](https://github.com/emer/leabra), which u
 You can copy the markdown source of this README into a file, and run [pandoc](https://pandoc.org/) on it to convert to LaTeX (or other formats) for inclusion in a paper.  As this page is always kept updated, it is best to regenerate from this source -- very easy:
 
 ```bash
-curl "https://raw.githubusercontent.com/emer/axon/master/README.md" -o appendix.md
+curl "https://raw.githubusercontent.com/emer/axon/main/README.md" -o appendix.md
 pandoc appendix.md -f gfm -t latex -o appendix.tex
 ```
 

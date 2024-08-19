@@ -658,7 +658,7 @@ func (ss *Sim) ConfigActRFs() {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Object Recognition"
-	ss.GUI.MakeBody(ss, "objrec", title, `This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images. See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch6/objrec/README.md">README.md on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "objrec", title, `This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images. See <a href="https://github.com/CompCogNeuro/sims/blob/main/ch6/objrec/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -728,11 +728,11 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
-			Icon:    "file-markdown",
+			Icon:    icons.FileMarkdown,
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/bench_objrec/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/bench_objrec/README.md")
 			},
 		})
 	})

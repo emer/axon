@@ -177,7 +177,7 @@ def NewRndSeedCB(recv, send, sig, data):
 
 def ReadmeCB(recv, send, sig, data):
     core.TheApp.OpenURL(
-        "https://github.com/emer/leabra/blob/master/examples/hip/README.md"
+        "https://github.com/emer/leabra/blob/main/examples/hip/README.md"
     )
 
 
@@ -326,18 +326,25 @@ class Sim(pyviews.ClassViewObj):
         self.PoolVocab = patgen.Vocab()
         self.SetTags("PoolVocab", 'display:"no-inline" desc:"pool patterns vocabulary"')
         self.TrainAB = etable.Table()
-        self.SetTags("TrainAB", 'display:"no-inline" desc:"AB training patterns to use"')
+        self.SetTags(
+            "TrainAB", 'display:"no-inline" desc:"AB training patterns to use"'
+        )
         self.TrainAC = etable.Table()
-        self.SetTags("TrainAC", 'display:"no-inline" desc:"AC training patterns to use"')
+        self.SetTags(
+            "TrainAC", 'display:"no-inline" desc:"AC training patterns to use"'
+        )
         self.TestAB = etable.Table()
         self.SetTags("TestAB", 'display:"no-inline" desc:"AB testing patterns to use"')
         self.TestAC = etable.Table()
         self.SetTags("TestAC", 'display:"no-inline" desc:"AC testing patterns to use"')
         self.TestLure = etable.Table()
-        self.SetTags("TestLure", 'display:"no-inline" desc:"Lure testing patterns to use"')
+        self.SetTags(
+            "TestLure", 'display:"no-inline" desc:"Lure testing patterns to use"'
+        )
         self.TrainAll = etable.Table()
         self.SetTags(
-            "TrainAll", 'display:"no-inline" desc:"all training patterns -- for pretrain"'
+            "TrainAll",
+            'display:"no-inline" desc:"all training patterns -- for pretrain"',
         )
         self.TrnTrlLog = etable.Table()
         self.SetTags(
@@ -362,7 +369,9 @@ class Sim(pyviews.ClassViewObj):
         self.RunLog = etable.Table()
         self.SetTags("RunLog", 'display:"no-inline" desc:"summary log of each run"')
         self.RunStats = etable.Table()
-        self.SetTags("RunStats", 'display:"no-inline" desc:"aggregate stats on all runs"')
+        self.SetTags(
+            "RunStats", 'display:"no-inline" desc:"aggregate stats on all runs"'
+        )
         self.TstStats = etable.Table()
         self.SetTags("TstStats", 'display:"no-inline" desc:"testing stats"')
         self.SimMats = {}
@@ -370,7 +379,9 @@ class Sim(pyviews.ClassViewObj):
             "SimMats", 'display:"no-inline" desc:"similarity matrix results for layers"'
         )
         self.Params = params.Sets()
-        self.SetTags("Params", 'display:"no-inline" desc:"full collection of param sets"')
+        self.SetTags(
+            "Params", 'display:"no-inline" desc:"full collection of param sets"'
+        )
         self.ParamSet = str()
         self.SetTags(
             "ParamSet",
@@ -1880,7 +1891,9 @@ class Sim(pyviews.ClassViewObj):
                 lnm + " ActM.Avg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5
             )
         for lnm in ss.LayStatNms:
-            plt.SetColumnOptions(lnm + " Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+            plt.SetColumnOptions(
+                lnm + " Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1
+            )
 
         return plt
 
@@ -2036,7 +2049,9 @@ class Sim(pyviews.ClassViewObj):
         # order of params: on, fixMin, min, fixMax, max
         plt.SetColumnOptions("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
         plt.SetColumnOptions("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-        plt.SetColumnOptions("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions(
+            "PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0
+        )
         plt.SetColumnOptions("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
         plt.SetColumnOptions("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
         plt.SetColumnOptions("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
@@ -2250,9 +2265,13 @@ class Sim(pyviews.ClassViewObj):
         plt.Options.Type = eplot.Bar
         plt.Options.XAxisRot = 45
 
-        cp = plt.SetColumnOptions("AB Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        cp = plt.SetColumnOptions(
+            "AB Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
+        )
         cp.ErrCol = "AB Mem:Sem"
-        cp = plt.SetColumnOptions("AC Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+        cp = plt.SetColumnOptions(
+            "AC Mem:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1
+        )
         cp.ErrCol = "AC Mem:Sem"
         cp = plt.SetColumnOptions(
             "FirstZero:Mean", eplot.On, eplot.FixMin, 0, eplot.FixMax, 30
@@ -2465,7 +2484,7 @@ class Sim(pyviews.ClassViewObj):
         tbar.AddAction(
             core.ActOpts(
                 Label="README",
-                Icon="file-markdown",
+                Icon=icons.FileMarkdown,
                 Tooltip="Opens your browser on the README file that contains instructions for how to run this model.",
             ),
             recv,

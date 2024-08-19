@@ -786,7 +786,7 @@ func (ss *Sim) ConfigGUI() {
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/pvlv/README.md")
 			},
 		})
 	})

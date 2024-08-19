@@ -665,11 +665,11 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
-			Icon:    "file-markdown",
+			Icon:    icons.FileMarkdown,
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25x/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/ra25x/README.md")
 			},
 		})
 	})

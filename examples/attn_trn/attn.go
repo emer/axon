@@ -928,7 +928,7 @@ func (ss *Sim) ConfigGUI() *core.Window {
 	height := 1200
 
 	core.SetAppName("attn")
-	core.SetAppAbout(`attn: This simulation illustrates how object recognition (ventral, what) and spatial (dorsal, where) pathways interact to produce spatial attention effects, and accurately capture the effects of brain damage to the spatial pathway. See <a href="https://github.com/emer/axon/blob/master/examples/attn_trn/README.md">README.md on GitHub</a>.</p>`)
+	core.SetAppAbout(`attn: This simulation illustrates how object recognition (ventral, what) and spatial (dorsal, where) pathways interact to produce spatial attention effects, and accurately capture the effects of brain damage to the spatial pathway. See <a href="https://github.com/emer/axon/blob/main/examples/attn_trn/README.md">README.md on GitHub</a>.</p>`)
 
 	win := core.NewMainWindow("attn", "Attention", width, height)
 	ss.Win = win
@@ -1023,9 +1023,9 @@ func (ss *Sim) ConfigGUI() *core.Window {
 		vp.SetNeedsFullRender()
 	})
 
-	tbar.AddAction(core.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
+	tbar.AddAction(core.ActOpts{Label: "README", Icon: icons.FileMarkdown, Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send tree.Node, sig int64, data interface{}) {
-			core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/attn_trn/README.md")
+			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/attn_trn/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

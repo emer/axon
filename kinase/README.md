@@ -2,7 +2,7 @@
 
 This implements central elements of the Kinase learning rule, including variables with associated time constants used for integrating calcium signals through the cascade of progressively longer time-integrals, from `Ca` -> `CaM` calmodulin (at `MTau`) -> CaMKII (`CaP` at `PTau` for LTP role) -> DAPK1 (`CaD` at `DTau` for LTD role).
 
-See [kinaseq example](https://github.com/emer/axon/tree/master/examples/kinaseq) for an exploration of the implemented equations, and [kinase repository](https://github.com/ccnlab/kinase/tree/main/sims/kinase) for documentation and simulations about the biophysical basis of the equations.
+See [kinaseq example](https://github.com/emer/axon/tree/main/examples/kinaseq) for an exploration of the implemented equations, and [kinase repository](https://github.com/ccnlab/kinase/tree/main/sims/kinase) for documentation and simulations about the biophysical basis of the equations.
 
 # Time constants and Variables
 

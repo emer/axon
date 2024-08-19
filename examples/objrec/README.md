@@ -12,4 +12,4 @@ Changes:
 
 TODOs:
 - [ ] Delete lots of the unnecessary code (like everything in logging, except the most basic stats e.g. `CorSim`)
-- [ ] Instead of being `package main`, turn the `main()` into a `BenchmarkObjrec(b *testing.B)` to make it easier to run & profile. Currently, this prohibits the use of a GUI (the window never gets created, just blocks [here](https://github.com/go-gl/glfw/blob/master/v3.3/glfw/window.go#L348) forever).
+- [ ] Instead of being `package main`, turn the `main()` into a `BenchmarkObjrec(b *testing.B)` to make it easier to run & profile. Currently, this prohibits the use of a GUI (the window never gets created, just blocks [here](https://github.com/go-gl/glfw/blob/main/v3.3/glfw/window.go#L348) forever).

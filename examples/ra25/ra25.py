@@ -184,7 +184,7 @@ def NewRndSeedCB(recv, send, sig, data):
 
 def ReadmeCB(recv, send, sig, data):
     core.TheApp.OpenURL(
-        "https://github.com/emer/leabra/blob/master/examples/ra25/README.md"
+        "https://github.com/emer/leabra/blob/main/examples/ra25/README.md"
     )
 
 
@@ -251,9 +251,13 @@ class Sim(pyviews.ClassViewObj):
         self.RunLog = etable.Table()
         self.SetTags("RunLog", 'display:"no-inline" desc:"summary log of each run"')
         self.RunStats = etable.Table()
-        self.SetTags("RunStats", 'display:"no-inline" desc:"aggregate stats on all runs"')
+        self.SetTags(
+            "RunStats", 'display:"no-inline" desc:"aggregate stats on all runs"'
+        )
         self.Params = params.Sets()
-        self.SetTags("Params", 'display:"no-inline" desc:"full collection of param sets"')
+        self.SetTags(
+            "Params", 'display:"no-inline" desc:"full collection of param sets"'
+        )
         self.ParamSet = str()
         self.SetTags(
             "ParamSet",
@@ -1062,7 +1066,9 @@ class Sim(pyviews.ClassViewObj):
         plt.SetColumnOptions("PctErr", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
         plt.SetColumnOptions("PctCor", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
         plt.SetColumnOptions("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-        plt.SetColumnOptions("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+        plt.SetColumnOptions(
+            "PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0
+        )
 
         for lnm in ss.LayStatNms:
             plt.SetColumnOptions(
@@ -1561,7 +1567,7 @@ class Sim(pyviews.ClassViewObj):
         tbar.AddAction(
             core.ActOpts(
                 Label="README",
-                Icon="file-markdown",
+                Icon=icons.FileMarkdown,
                 Tooltip="Opens your browser on the README file that contains instructions for how to run this model.",
             ),
             recv,

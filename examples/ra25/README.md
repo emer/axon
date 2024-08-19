@@ -10,7 +10,7 @@ First, see [Wiki Install](https://github.com/emer/axon/wiki/Install) for install
 ./ra25
 ```
 
-You can also run the [Python](https://github.com/emer/axon/blob/master/python/README.md) version of the model by following those instructions.
+You can also run the [Python](https://github.com/emer/axon/blob/main/python/README.md) version of the model by following those instructions.
 
 ## Basic running and graphing
 

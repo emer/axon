@@ -140,7 +140,7 @@ func (ss *Sim) ResetTstCycPlot() {
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
 	title := "Kinase Eq"
-	ss.GUI.MakeBody(ss, "kinaseq", title, `kinaseq: Explores calcium-based synaptic learning rules, specifically at the synaptic level. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq/README.md">README.md on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, "kinaseq", title, `kinaseq: Explores calcium-based synaptic learning rules, specifically at the synaptic level. See <a href="https://github.com/emer/axon/blob/main/examples/kinaseq/README.md">README.md on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	ss.GUI.AddPlots(title, &ss.Logs)
@@ -229,11 +229,11 @@ func (ss *Sim) ConfigGUI() {
 			},
 		})
 		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
-			Icon:    "file-markdown",
+			Icon:    icons.FileMarkdown,
 			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 			Active:  egui.ActiveAlways,
 			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/neuron/README.md")
 			},
 		})
 	})
