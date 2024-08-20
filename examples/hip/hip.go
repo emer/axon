@@ -639,10 +639,10 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 	var patToComplete *tensor.Float32
 	var correctIndex int
 	if isAB {
-		patToComplete, _ = ss.PoolVocab.ByNameTry("B")
+		patToComplete, _ = ss.PoolVocab.ByName("B")
 		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AB")[1])
 	} else {
-		patToComplete, _ = ss.PoolVocab.ByNameTry("C")
+		patToComplete, _ = ss.PoolVocab.ByName("C")
 		correctIndex, _ = strconv.Atoi(strings.Split(trialnm, "AC")[0])
 	}
 	for i := 0; i < patToComplete.DimSize(0); i++ { // for each item in the list

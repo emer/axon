@@ -77,15 +77,18 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 			ctx.CycleInc()
 		})
 	}
-	man.GetLoop(etime.Train, trl).OnEnd.Add("UpdateWeights", func() {
-		net.DWt(ctx)
-		if viewupdt.IsViewingSynapse() {
-			net.GPU.SyncSynapsesFromGPU()
-			net.GPU.SyncSynCaFromGPU() // note: only time we call this
-			viewupdt.RecordSyns()      // note: critical to update weights here so DWt is visible
-		}
-		net.WtFromDWt(ctx)
-	})
+	ttrl := man.GetLoop(etime.Train, trl)
+	if ttrl != nil {
+		ttrl.OnEnd.Add("UpdateWeights", func() {
+			net.DWt(ctx)
+			if viewupdt.IsViewingSynapse() {
+				net.GPU.SyncSynapsesFromGPU()
+				net.GPU.SyncSynCaFromGPU() // note: only time we call this
+				viewupdt.RecordSyns()      // note: critical to update weights here so DWt is visible
+			}
+			net.WtFromDWt(ctx)
+		})
+	}
 
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
 	for m, loops := range man.Stacks {

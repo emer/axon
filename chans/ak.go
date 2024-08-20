@@ -161,7 +161,7 @@ type AKsParams struct {
 	Voff float32 `default:"2"`
 
 	//
-	Vmax float32 `def:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
+	Vmax float32 `default:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
 
 	pad, pad1, pad2 int32
 }
