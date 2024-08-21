@@ -34,7 +34,7 @@ const LogPrec = 4
 type DrEffPlot struct {
 
 	// context just for plotting
-	Context axon.Context
+	Context axon.Context `new-window:"+"`
 
 	// Rubicon params
 	Rubicon axon.Rubicon

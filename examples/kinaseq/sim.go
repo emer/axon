@@ -48,7 +48,7 @@ func main() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config
+	Config Config `new-window:"+"`
 
 	// Kinase NeurCa params
 	NeurCa kinase.NeurCaParams
@@ -66,13 +66,13 @@ type Sim struct {
 	TrainData tensor.Float64
 
 	// axon timing parameters and state
-	Context axon.Context
+	Context axon.Context `new-window:"+"`
 
 	// contains computed statistic values
-	Stats estats.Stats
+	Stats estats.Stats `new-window:"+"`
 
 	// logging
-	Logs elog.Logs `display:"no-inline"`
+	Logs elog.Logs `new-window:"+"`
 
 	// manages all the gui elements
 	GUI egui.GUI `display:"-"`

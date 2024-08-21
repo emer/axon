@@ -91,31 +91,31 @@ func (nrn *NeuronEx) Init() {
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config
+	Config Config `new-window:"+"`
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `display:"no-inline"`
+	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// extra neuron state for additional channels: VGCC, AK
 	NeuronEx NeuronEx `display:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context
+	Context axon.Context `new-window:"+"`
 
 	// contains computed statistic values
-	Stats estats.Stats
+	Stats estats.Stats `new-window:"+"`
 
 	// logging
-	Logs elog.Logs `display:"no-inline"`
+	Logs elog.Logs `new-window:"+"`
 
 	// all parameter management
-	Params emer.NetParams `display:"inline"`
+	Params emer.NetParams `display:"add-fields"`
 
 	// current cycle of updating
 	Cycle int `edit:"-"`
 
 	// netview update parameters
-	ViewUpdate netview.ViewUpdate `display:"inline"`
+	ViewUpdate netview.ViewUpdate `display:"add-fields"`
 
 	// manages all the gui elements
 	GUI egui.GUI `display:"-"`

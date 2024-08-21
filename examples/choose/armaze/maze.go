@@ -52,7 +52,7 @@ type Env struct {
 	Di int `edit:"-"`
 
 	// configuration parameters
-	Config Config
+	Config Config `new-window:"+"`
 
 	// current drive strength for each of Config.NDrives in normalized
 	// 0-1 units of each drive (beyond built-in curiosity drive)

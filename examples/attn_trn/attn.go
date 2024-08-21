@@ -220,7 +220,7 @@ type Sim struct {
 	KNaAdapt bool `default:"true"`
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `display:"no-inline"`
+	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	//
 	Path3x3Skp1 *paths.PoolTile `display:"Standard same-to-same size topographic pathway"`
@@ -247,7 +247,7 @@ type Sim struct {
 	TestEnv AttnEnv
 
 	// axon timing parameters and state
-	Context axon.Context
+	Context axon.Context `new-window:"+"`
 
 	// whether to update the network view while running
 	ViewOn bool

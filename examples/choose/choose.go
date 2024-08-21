@@ -71,10 +71,10 @@ var (
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config
+	Config Config `new-window:"+"`
 
 	// the network -- click to view / edit parameters for layers, paths, etc
-	Net *axon.Network `display:"no-inline"`
+	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// if true, stop running at end of a sequence (for NetView Di data parallel index)
 	StopOnSeq bool
@@ -83,25 +83,25 @@ type Sim struct {
 	StopOnErr bool
 
 	// network parameter management
-	Params emer.NetParams `display:"inline"`
+	Params emer.NetParams `display:"add-fields"`
 
 	// contains looper control loops for running sim
-	Loops *looper.Manager `display:"no-inline"`
+	Loops *looper.Manager `new-window:"+" display:"no-inline"`
 
 	// contains computed statistic values
-	Stats estats.Stats
+	Stats estats.Stats `new-window:"+"`
 
 	// Contains all the logs and information about the logs.'
-	Logs elog.Logs
+	Logs elog.Logs `new-window:"+"`
 
 	// Environments
-	Envs env.Envs `display:"no-inline"`
+	Envs env.Envs `new-window:"+" display:"no-inline"`
 
 	// axon timing parameters and state
-	Context axon.Context
+	Context axon.Context `new-window:"+"`
 
 	// netview update parameters
-	ViewUpdate netview.ViewUpdate `display:"inline"`
+	ViewUpdate netview.ViewUpdate `display:"add-fields"`
 
 	// manages all the gui elements
 	GUI egui.GUI `display:"-"`

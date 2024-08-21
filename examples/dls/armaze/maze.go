@@ -57,7 +57,7 @@ type Env struct {
 	Di int `edit:"-"`
 
 	// configuration parameters
-	Config Config
+	Config Config `new-window:"+"`
 
 	// current drive strength for each of Config.NDrives in normalized 0-1 units of each drive: 0 = first sim drive, not curiosity
 	Drives []float32
