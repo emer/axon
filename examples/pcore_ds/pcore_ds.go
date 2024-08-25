@@ -844,7 +844,8 @@ func (ss *Sim) ConfigGUI() {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
+	ttp, _ := ss.GUI.Tabs.NewTab(tststnm + " Plot")
+	plt := plotcore.NewSubPlot(ttp)
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Options.Title = tststnm
 	plt.Options.XAxis = "Trial"

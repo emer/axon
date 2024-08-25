@@ -248,8 +248,8 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	tv := core.NewTabs(split)
 	vw.WorldTabs = tv
 
-	scfr := tv.NewTab("3D View")
-	twofr := tv.NewTab("2D View")
+	scfr, _ := tv.NewTab("3D View")
+	twofr, _ := tv.NewTab("2D View")
 
 	//////////////////////////////////////////
 	//    3D Scene

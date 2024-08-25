@@ -11,6 +11,7 @@ package main
 import (
 	"os"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
@@ -503,7 +504,7 @@ func (ss *Sim) SimMat() {
 		timeMap[time] = true
 		return true
 	})
-	ix.SortColumn(lt.Table.ColumnIndex("Time"), table.Ascending)
+	ix.SortColumn(errors.Log1(lt.Table.ColumnIndex("Time")), table.Ascending)
 	times := ix.NewTable()
 	ss.Logs.MiscTables["AnalyzeTimes"] = times
 

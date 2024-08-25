@@ -562,7 +562,7 @@ func (ss *Sim) ConfigLogItems() {
 			etime.Scope(etime.Test, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IndexView(etime.Test, etime.Trial)
 				spl := split.GroupBy(ix, "Cat")
-				split.AggColumnTry(spl, "Err", stats.Mean)
+				split.AggColumn(spl, "Err", stats.Mean)
 				cats := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables[ctx.Item.Name] = cats
 				ctx.SetTensor(cats.Columns[1])
@@ -675,7 +675,8 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	tg := tensorcore.NewTensorGrid(ss.GUI.Tabs.NewTab("Image")).
+	itb, _ := ss.GUI.Tabs.NewTab("Image")
+	tg := tensorcore.NewTensorGrid(itb).
 		SetTensor(&ss.Envs.ByMode(etime.Train).(*LEDEnv).Vis.ImgTsr)
 	ss.GUI.SetGrid("Image", tg)
 

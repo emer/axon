@@ -715,7 +715,8 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "BlockByType"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	bcp, _ := ss.GUI.Tabs.NewTab(stnm + " Plot")
+	plt := plotcore.NewSubPlot(bcp)
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Options.Title = stnm
 	plt.Options.XAxis = "SeqType"

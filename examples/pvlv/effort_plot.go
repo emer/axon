@@ -226,10 +226,12 @@ func (ss *DrEffPlot) ConfigGUI() *core.Body {
 	core.NewForm(split).SetStruct(ss)
 	tv := core.NewTabs(split)
 
-	ss.Plot = plotcore.NewSubPlot(tv.NewTab("Effort Plot"))
+	ept, _ := tv.NewTab("Effort Plot")
+	ss.Plot = plotcore.NewSubPlot(ept)
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
+	ttp, _ := tv.NewTab("TimePlot")
+	ss.TimePlot = plotcore.NewSubPlot(ttp)
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

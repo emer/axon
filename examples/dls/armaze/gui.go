@@ -249,8 +249,8 @@ func (vw *GUI) ConfigWorldGUI(ev *Env) *core.Body {
 	tv := core.NewTabs(split)
 	vw.WorldTabs = tv
 
-	scfr := tv.NewTab("3D View")
-	twofr := tv.NewTab("2D View")
+	scfr, _ := tv.NewTab("3D View")
+	twofr, _ := tv.NewTab("2D View")
 
 	//////////////////////////////////////////
 	//    3D Scene
@@ -477,9 +477,9 @@ func (vw *GUI) ConfigEmery(par *physics.Group, length float32) *physics.Group {
 // ConfigView3D makes the 3D view
 func (vw *GUI) ConfigView3D(se *xyz.Scene) {
 	se.Background = colors.Uniform(colors.FromRGB(230, 230, 255)) // sky blue-ish
-	xyz.NewAmbientLight(se, "ambient", 0.3, xyz.DirectSun)
+	xyz.NewAmbient(se, "ambient", 0.3, xyz.DirectSun)
 
-	dir := xyz.NewDirLight(se, "dir", 1, xyz.DirectSun)
+	dir := xyz.NewDirectional(se, "dir", 1, xyz.DirectSun)
 	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
 
 	// sc.MultiSample = 1 // we are using depth grab so we need this = 1

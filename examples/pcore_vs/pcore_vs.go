@@ -15,6 +15,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/randx"
@@ -566,7 +567,7 @@ func (ss *Sim) ConfigLogs() {
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 				tstrl := ctx.Logs.MiscTable("TestTrialStats")
-				ctx.SetFloat64(stats.MeanTensor(tstrl.ColumnByName("Match")))
+				ctx.SetFloat64(stats.MeanTensor(errors.Log1(tstrl.ColumnByName("Match"))))
 			}}})
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
@@ -674,7 +675,8 @@ func (ss *Sim) ConfigGUI() {
 
 	tststnm := "TestTrialStats"
 	tstst := ss.Logs.MiscTable(tststnm)
-	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(tststnm + " Plot"))
+	tsp, _ := ss.GUI.Tabs.NewTab(tststnm + " Plot")
+	plt := plotcore.NewSubPlot(tsp)
 	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
 	plt.Options.Title = tststnm
 	plt.Options.XAxis = "Trial"

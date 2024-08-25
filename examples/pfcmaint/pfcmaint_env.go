@@ -5,6 +5,7 @@
 package main
 
 import (
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
@@ -94,7 +95,7 @@ func (ev *PFCMaintEnv) ConfigPats() {
 	nOn := patgen.NFromPct(pctAct, nUn)
 	minDiff := patgen.NFromPct(minPctDiff, nOn)
 
-	patgen.PermutedBinaryMinDiff(ev.Pats.ColumnByName("Item").(*tensor.Float32), nOn, 1, 0, minDiff)
+	patgen.PermutedBinaryMinDiff(errors.Log1(ev.Pats.ColumnByName("Item")).(*tensor.Float32), nOn, 1, 0, minDiff)
 }
 
 func (ev *PFCMaintEnv) Init(run int) {

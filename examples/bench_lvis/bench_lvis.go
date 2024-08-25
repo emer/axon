@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/tensor"
@@ -185,8 +186,8 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	te := net.LayerByName("TE_0")
 	outLay := net.LayerByName("Output")
 
-	inPats := pats.ColumnByName("Input").(*tensor.Float32)
-	outPats := pats.ColumnByName("Output").(*tensor.Float32)
+	inPats := errors.Log1(pats.ColumnByName("Input")).(*tensor.Float32)
+	outPats := errors.Log1(pats.ColumnByName("Output")).(*tensor.Float32)
 
 	cycPerQtr := 50
 

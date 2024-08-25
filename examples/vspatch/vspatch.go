@@ -654,7 +654,8 @@ func (ss *Sim) ConfigGUI() {
 
 	stnm := "CondStats"
 	dt := ss.Logs.MiscTable(stnm)
-	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(stnm + " Plot"))
+	csp, _ := ss.GUI.Tabs.NewTab(stnm + " Plot")
+	plt := plotcore.NewSubPlot(csp)
 	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
 	plt.Options.Title = stnm
 	plt.Options.XAxis = "Cond"

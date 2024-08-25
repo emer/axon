@@ -24,7 +24,6 @@ import (
 	"cogentcore.org/core/tensor"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
-	"github.com/emer/emergent/v2/env"
 )
 
 // Actions is a list of mutually exclusive states
@@ -215,10 +214,6 @@ func (ev *Env) Init(run int) {
 
 	ev.NewStart()
 	ev.JustConsumed = true // will trigger a new start again on Step
-}
-
-func (ev *Env) Counter(scale env.TimeScales) (cur, prv int, changed bool) {
-	return 0, 0, false
 }
 
 func (ev *Env) State(el string) tensor.Tensor {

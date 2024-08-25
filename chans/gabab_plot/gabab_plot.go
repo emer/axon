@@ -308,13 +308,16 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split)
 
-	ss.VGPlot = plotcore.NewSubPlot(tv.NewTab("V-G Plot"))
+	tvg, _ := tv.NewTab("V-G Plot")
+	ss.VGPlot = plotcore.NewSubPlot(tvg)
 	ss.ConfigVGPlot(ss.VGPlot, ss.VGTable)
 
-	ss.SGPlot = plotcore.NewSubPlot(tv.NewTab("S-G Plot"))
+	tsg, _ := tv.NewTab("S-G Plot")
+	ss.SGPlot = plotcore.NewSubPlot(tsg)
 	ss.ConfigSGPlot(ss.SGPlot, ss.SGTable)
 
-	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
+	ttp, _ := tv.NewTab("TimePlot")
+	ss.TimePlot = plotcore.NewSubPlot(ttp)
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

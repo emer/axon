@@ -17,6 +17,7 @@ import (
 	"os"
 	"reflect"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/randx"
@@ -1098,7 +1099,7 @@ func (ss *Sim) ConfigLogItems() {
 			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IndexView(ctx.Mode, etime.Trial)
 				spl := split.GroupBy(ix, "Instinct")
-				split.AggColumnTry(spl, "ActMatch", stats.Mean)
+				split.AggColumn(spl, "ActMatch", stats.Mean)
 				ags := spl.AggsToTable(table.ColumnNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
 				ctx.SetTensor(ags.Columns[0]) // cors
@@ -1113,7 +1114,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
-					rw := ags.RowsByString("Instinct", anm, table.Equals, table.UseCase)
+					rw, _ := ags.RowsByString("Instinct", anm, table.Equals, table.UseCase)
 					if len(rw) > 0 {
 						ctx.SetFloat64(ags.Float("ActMatch", rw[0]))
 					}
@@ -1143,7 +1144,7 @@ func (ss *Sim) EpochCSBadStats() {
 	})
 	spl := split.GroupBy(ix, "BadCSGate")
 	for _, ts := range ix.Table.ColumnNames {
-		col := ix.Table.ColumnByName(ts)
+		col := errors.Log1(ix.Table.ColumnByName(ts))
 		if col.DataType() == reflect.String || ts == "BadCSGate" {
 			continue
 		}
@@ -1188,7 +1189,7 @@ func (ss *Sim) EpochUSBadStats() {
 	})
 	spl := split.GroupBy(ix, "BadUSGate")
 	for _, ts := range ix.Table.ColumnNames {
-		col := ix.Table.ColumnByName(ts)
+		col := errors.Log1(ix.Table.ColumnByName(ts))
 		if col.DataType() == reflect.String || ts == "BadUSGate" {
 			continue
 		}
@@ -1349,7 +1350,8 @@ func (ss *Sim) ConfigGUI() {
 
 	lgnm := "EpochCSBadStats"
 	dt := ss.Logs.MiscTable(lgnm)
-	plt := plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
+	eus, _ := ss.GUI.Tabs.NewTab(lgnm + " Plot")
+	plt := plotcore.NewSubPlot(eus)
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
 	plt.Options.Title = lgnm
 	plt.Options.XAxis = "BadCSGate"
@@ -1357,7 +1359,8 @@ func (ss *Sim) ConfigGUI() {
 
 	lgnm = "EpochUSBadStats"
 	dt = ss.Logs.MiscTable(lgnm)
-	plt = plotcore.NewSubPlot(ss.GUI.Tabs.NewTab(lgnm + " Plot"))
+	ecs, _ := ss.GUI.Tabs.NewTab(lgnm + " Plot")
+	plt = plotcore.NewSubPlot(ecs)
 	ss.GUI.Plots[etime.ScopeKey(lgnm)] = plt
 	plt.Options.Title = lgnm
 	plt.Options.XAxis = "BadUSGate"

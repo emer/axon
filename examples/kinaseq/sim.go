@@ -145,7 +145,8 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 	// key := etime.Scope(etime.Test, etime.Cycle)
-	// plt := ss.GUI.NewPlot(key, ss.GUI.Tabs.NewTab("TstCycPlot"))
+	// tcp, _ := ss.GUI.Tabs.NewTab("TstCycPlot")
+	// plt := ss.GUI.NewPlot(key, tcp)
 	// plt.SetTable(ss.Logs.Table(etime.Test, etime.Cycle))
 	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
 	// ss.TstCycPlot = plt

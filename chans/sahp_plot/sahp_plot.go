@@ -211,10 +211,12 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	tv := core.NewTabs(split)
 
-	ss.Plot = plotcore.NewSubPlot(tv.NewTab("Ca-G Plot"))
+	cgp, _ := tv.NewTab("Ca-G Plot")
+	ss.Plot = plotcore.NewSubPlot(cgp)
 	ss.ConfigPlot(ss.Plot, ss.Table)
 
-	ss.TimePlot = plotcore.NewSubPlot(tv.NewTab("TimePlot"))
+	ttp, _ := tv.NewTab("TimePlot")
+	ss.TimePlot = plotcore.NewSubPlot(ttp)
 	ss.ConfigTimePlot(ss.TimePlot, ss.TimeTable)
 
 	split.SetSplits(.3, .7)

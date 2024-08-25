@@ -4,6 +4,8 @@
 
 package axon
 
+//go:generate core generate -add-types
+
 import (
 	"crypto/md5"
 	"encoding/binary"
@@ -228,6 +230,10 @@ func (nt *Network) LayerValues(li, di uint32) *LayerValues {
 // This is typically a global list so do not modify!
 func (nt *Network) UnitVarNames() []string {
 	return NeuronVarNames
+}
+
+func (nt *Network) VarCategories() []emer.VarCategory {
+	return VarCategories
 }
 
 // UnitVarProps returns properties for variables
