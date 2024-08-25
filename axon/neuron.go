@@ -85,11 +85,6 @@ const (
 	// Target is the target value: drives learning to produce this activation value
 	Target
 
-	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
-	// These need to be in Vars because they can be differential per data (for ext inputs)
-	// and are writable (indexes are read only).
-	NrnFlags
-
 	/////////////////////////////////////////
 	// Calcium for learning
 
@@ -198,39 +193,24 @@ const (
 	// SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)
 	SSGiDend
 
-	/////////////////////////////////////////
-	// AHP channels: Mahp, Sahp, Gkna
-
-	// MahpN is accumulating voltage-gated gating value for the medium time scale AHP
-	MahpN
-
-	// Gmahp is medium time scale AHP conductance
-	Gmahp
-
-	// SahpCa is slowly accumulating calcium value that drives the slow AHP
-	SahpCa
-
-	// SahpN is the sAHP gating value
-	SahpN
-
-	// Gsahp is slow time scale AHP conductance
-	Gsahp
-
 	// GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick), which produces accommodation / adaptation of firing
 	GknaMed
 
 	// GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack), which produces accommodation / adaptation of firing
 	GknaSlow
 
-	// KirM is the Kir potassium (K) inwardly rectifying gating value
-	KirM
-
 	// Gkir is the conductance of the potassium (K) inwardly rectifying channel,
 	// which is strongest at low membrane potentials.  Can be modulated by DA.
 	Gkir
 
+	// KirM is the Kir potassium (K) inwardly rectifying gating value
+	KirM
+
 	/////////////////////////////////////////
 	//  SKCa small conductance calcium-gated potassium channels
+
+	// Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.
+	Gsk
 
 	// SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold
 	SKCaIn
@@ -241,8 +221,23 @@ const (
 	// SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.
 	SKCaM
 
-	// Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.
-	Gsk
+	/////////////////////////////////////////
+	// AHP channels: Mahp, Sahp, Gkna
+
+	// Gmahp is medium time scale AHP conductance
+	Gmahp
+
+	// MahpN is accumulating voltage-gated gating value for the medium time scale AHP
+	MahpN
+
+	// Gsahp is slow time scale AHP conductance
+	Gsahp
+
+	// SahpCa is slowly accumulating calcium value that drives the slow AHP
+	SahpCa
+
+	// SahpN is the sAHP gating value
+	SahpN
 
 	/////////////////////////////////////////
 	// Stats, aggregate values
@@ -311,9 +306,6 @@ const (
 	// GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi
 	GiSyn
 
-	// SMaintP is accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor
-	SMaintP
-
 	// GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive
 	GeInt
 
@@ -329,13 +321,19 @@ const (
 	// GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG pathways
 	GModSyn
 
+	// SMaintP is accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor
+	SMaintP
+
 	// GMaintRaw is raw maintenance conductance, received from GType = MaintG pathways
 	GMaintRaw
 
 	// GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.
 	GMaintSyn
 
-	// IMPORTANT: if NrnFlags is not the last, need to update gosl defn below
+	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
+	// These need to be in Vars because they can be differential per data (for ext inputs)
+	// and are writable (indexes are read only).
+	NrnFlags
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
@@ -518,7 +516,7 @@ var VarCategories = []emer.VarCategory{
 	{"Act", "basic activation variables, including conductances, current, Vm, spiking"},
 	{"Learn", "calcium-based learning variables and other related learning factors"},
 	{"Excite", "excitatory channels including NMDA, Vgcc and other excitatory inputs"},
-	{"Inhib", "inhibitory channels including after hyperpolarization (AHP) and other K channels; GABA inhibition"},
+	{"Inhib", "inhibitory channels including GABA inhibition, after hyperpolarization (AHP) and other K channels"},
 	{"Stats", "statistics and aggregate values"},
 	{"Gmisc", "more detailed conductance (G) variables for integration and other computational values"},
 	{"Avg", "longer-term average variables and homeostatic regulation"},
@@ -600,26 +598,27 @@ var NeuronVarProps = map[string]string{
 	"SSGi":     `cat:"Inhib" auto-scale:"+" desc:"SST+ somatostatin positive slow spiking inhibition"`,
 	"SSGiDend": `cat:"Inhib" auto-scale:"+" desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`,
 
-	/////////////////////////////////////////
-	// AHP channels: Mahp, Sahp, Gkna
-
-	"Gmahp":    `cat:"Inhib" auto-scale:"+" desc:"medium time scale AHP conductance"`,
-	"MahpN":    `cat:"Inhib" auto-scale:"+" desc:"accumulating voltage-gated gating value for the medium time scale AHP"`,
-	"SahpCa":   `cat:"Inhib" desc:"slowly accumulating calcium value that drives the slow AHP"`,
-	"SahpN":    `cat:"Inhib" desc:"sAHP gating value"`,
-	"Gsahp":    `cat:"Inhib" auto-scale:"+" desc:"slow time scale AHP conductance"`,
 	"GknaMed":  `cat:"Inhib" auto-scale:"+" desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`,
 	"GknaSlow": `cat:"Inhib" auto-scale:"+" desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`,
-	"KirM":     `cat:"Inhib" desc:"the Kir gating value"`,
 	"Gkir":     `cat:"Inhib" desc:"the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials.  Can be modulated by DA."`,
+	"KirM":     `cat:"Inhib" desc:"the Kir gating value"`,
 
 	/////////////////////////////////////////
 	//  SKCa small conductance calcium-gated potassium channels
 
+	"Gsk":    `cat:"Inhib" desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`,
 	"SKCaIn": `cat:"Inhib" desc:"intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold"`,
 	"SKCaR":  `cat:"Inhib" desc:"released amount of intracellular calcium, from SKCaIn, as a function of spiking events.  this can bind to SKCa channels and drive K currents."`,
 	"SKCaM":  `cat:"Inhib" desc:"Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams."`,
-	"Gsk":    `cat:"Inhib" desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`,
+
+	/////////////////////////////////////////
+	// AHP channels: Mahp, Sahp
+
+	"Gmahp":  `cat:"Inhib" auto-scale:"+" desc:"medium time scale AHP conductance"`,
+	"MahpN":  `cat:"Inhib" auto-scale:"+" desc:"accumulating voltage-gated gating value for the medium time scale AHP"`,
+	"Gsahp":  `cat:"Inhib" auto-scale:"+" desc:"slow time scale AHP conductance"`,
+	"SahpCa": `cat:"Inhib" desc:"slowly accumulating calcium value that drives the slow AHP"`,
+	"SahpN":  `cat:"Inhib" desc:"sAHP gating value"`,
 
 	/////////////////////////////////////////
 	// Stats, aggregate values
@@ -658,14 +657,16 @@ var NeuronVarProps = map[string]string{
 	"GeSyn":     `cat:"Gmisc" range:"2" desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E"`,
 	"GiRaw":     `cat:"Gmisc" desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`,
 	"GiSyn":     `cat:"Gmisc" desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`,
-	"SMaintP":   `cat:"Gmisc" desc:"accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor"`,
 	"GeInt":     `cat:"Gmisc" range:"2" desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`,
 	"GeIntNorm": `cat:"Gmisc" range:"1" desc:"GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity."`,
 	"GiInt":     `cat:"Gmisc" range:"2" desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`,
 	"GModRaw":   `cat:"Gmisc" desc:"raw modulatory conductance, received from GType = ModulatoryG pathways"`,
 	"GModSyn":   `cat:"Gmisc" desc:"syn integrated modulatory conductance, received from GType = ModulatoryG pathways"`,
+	"SMaintP":   `cat:"Gmisc" desc:"accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor"`,
 	"GMaintRaw": `cat:"Gmisc" desc:"raw maintenance conductance, received from GType = MaintG pathways"`,
 	"GMaintSyn": `cat:"Gmisc" desc:"syn integrated maintenance conductance, integrated using MaintNMDA params."`,
+
+	"NrnFlags": `display:"-" desc:"bit flags for external input and other neuron status state"`,
 
 	/////////////////////////////////////////
 	// Long-term average activation, set point for synaptic scaling
@@ -678,13 +679,14 @@ var NeuronVarProps = map[string]string{
 	"GeBase":  `cat:"Avg" desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`,
 	"GiBase":  `cat:"Avg" desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`,
 
+	/////////////////////////////////////////
+	// Layer-level variables
+
 	"DA":    `cat:"Learn" desc:"dopamine neuromodulation (layer-level variable)"`,
 	"ACh":   `cat:"Learn" desc:"cholinergic neuromodulation (layer-level variable)"`,
 	"NE":    `cat:"Learn" desc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
 	"Ser":   `cat:"Learn" desc:"serotonin neuromodulation (layer-level variable)"`,
 	"Gated": `cat:"Learn" desc:"signals whether the layer gated"`,
-
-	"NrnFlags": `display:"-" desc:"bit flags for external input and other neuron status state"`,
 }
 
 var (
