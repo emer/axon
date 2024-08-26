@@ -48,9 +48,6 @@ type Path struct {
 	// Typically just set to a literal map.
 	DefaultParams params.Params `table:"-"`
 
-	// provides a history of parameters applied to the layer
-	ParamsHistory params.HistoryImpl `table:"-"`
-
 	// average and maximum number of recv connections in the receiving layer
 	RecvConNAvgMax minmax.AvgMax32 `table:"-" edit:"-" display:"inline"`
 
@@ -91,6 +88,7 @@ func (pt *Path) StyleObject() any      { return pt.Params }
 func (pt *Path) RecvLayer() emer.Layer { return pt.Recv }
 func (pt *Path) SendLayer() emer.Layer { return pt.Send }
 func (pt *Path) TypeName() string      { return pt.Type.String() }
+func (pt *Path) TypeNumber() int       { return int(pt.Type) }
 
 // Connect sets the connectivity between two layers and the pattern to use in interconnecting them
 func (pt *Path) Connect(slay, rlay *Layer, pat paths.Pattern, typ PathTypes) {

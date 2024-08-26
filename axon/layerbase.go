@@ -94,6 +94,7 @@ type Layer struct {
 
 func (ly *Layer) StyleObject() any           { return ly.Params }
 func (ly *Layer) TypeName() string           { return ly.Type.String() }
+func (ly *Layer) TypeNumber() int            { return int(ly.Type) }
 func (ly *Layer) NumRecvPaths() int          { return len(ly.RecvPaths) }
 func (ly *Layer) RecvPath(idx int) emer.Path { return ly.RecvPaths[idx] }
 func (ly *Layer) NumSendPaths() int          { return len(ly.SendPaths) }
