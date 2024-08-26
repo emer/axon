@@ -528,165 +528,165 @@ var NeuronVarProps = map[string]string{
 	/////////////////////////////////////////
 	// Spiking, Activation, Major conductances, Vm
 
-	"Spike":  `cat:"Act" desc:"whether neuron has spiked or not on this cycle (0 or 1)"`,
-	"Spiked": `cat:"Act" desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`,
-	"Act":    `cat:"Act" desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations."`,
-	"ActInt": `cat:"Act" desc:"integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`,
-	"Ge":     `cat:"Act" range:"2" desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`,
-	"Gi":     `cat:"Act" auto-scale:"+" desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`,
-	"Gk":     `cat:"Act" auto-scale:"+" desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`,
-	"Inet":   `cat:"Act" desc:"net current produced by all channels -- drives update of Vm"`,
-	"Vm":     `cat:"Act" min:"0" max:"1" desc:"membrane potential -- integrates Inet current over time"`,
-	"VmDend": `cat:"Act" min:"0" max:"1" desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`,
-	"ISI":    `cat:"Act" auto-scale:"+" desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`,
-	"ISIAvg": `cat:"Act" auto-scale:"+" desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`,
-	"Ext":    `cat:"Act" desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`,
-	"Target": `cat:"Act" desc:"target value: drives learning to produce this activation value"`,
+	"Spike":  `cat:"Act"`,
+	"Spiked": `cat:"Act"`,
+	"Act":    `cat:"Act"`,
+	"ActInt": `cat:"Act"`,
+	"Ge":     `cat:"Act" range:"2"`,
+	"Gi":     `cat:"Act" auto-scale:"+"`,
+	"Gk":     `cat:"Act" auto-scale:"+"`,
+	"Inet":   `cat:"Act"`,
+	"Vm":     `cat:"Act" min:"0" max:"1"`,
+	"VmDend": `cat:"Act" min:"0" max:"1"`,
+	"ISI":    `cat:"Act" auto-scale:"+"`,
+	"ISIAvg": `cat:"Act" auto-scale:"+"`,
+	"Ext":    `cat:"Act"`,
+	"Target": `cat:"Act"`,
 
 	/////////////////////////////////////////
 	// Calcium for learning
 
-	"CaSpkM":  `cat:"Learn" desc:"spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level."`,
-	"CaSpkP":  `cat:"Learn" desc:"continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`,
-	"CaSpkD":  `cat:"Learn" desc:"continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`,
-	"CaSpkPM": `cat:"Learn" desc:"minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value."`,
-	"CaLrn":   `cat:"Learn" desc:"recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component).  This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales."`,
-	"NrnCaM":  `cat:"Learn" desc:"integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning."`,
-	"NrnCaP":  `cat:"Learn" desc:"cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule."`,
-	"NrnCaD":  `cat:"Learn" desc:"cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule."`,
-	"CaDiff":  `cat:"Learn" desc:"difference between CaP - CaD -- this is the error signal that drives error-driven learning."`,
-	"RLRate":  `cat:"Learn" auto-scale:"+" desc:"recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD)."`,
+	"CaSpkM":  `cat:"Learn"`,
+	"CaSpkP":  `cat:"Learn"`,
+	"CaSpkD":  `cat:"Learn"`,
+	"CaSpkPM": `cat:"Learn"`,
+	"CaLrn":   `cat:"Learn"`,
+	"NrnCaM":  `cat:"Learn"`,
+	"NrnCaP":  `cat:"Learn"`,
+	"NrnCaD":  `cat:"Learn"`,
+	"CaDiff":  `cat:"Learn"`,
+	"RLRate":  `cat:"Learn" auto-scale:"+"`,
 
 	/////////////////////////////////////////
 	// NMDA channels
 
-	"GnmdaSyn":   `cat:"Excite" auto-scale:"+" desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`,
-	"Gnmda":      `cat:"Excite" auto-scale:"+" desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`,
-	"GnmdaLrn":   `cat:"Excite" auto-scale:"+" desc:"learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning"`,
-	"GnmdaMaint": `cat:"Excite" auto-scale:"+" desc:"net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`,
-	"NmdaCa":     `cat:"Excite" auto-scale:"+" desc:"NMDA calcium computed from GnmdaLrn, drives learning via CaM"`,
+	"GnmdaSyn":   `cat:"Excite" auto-scale:"+"`,
+	"Gnmda":      `cat:"Excite" auto-scale:"+"`,
+	"GnmdaLrn":   `cat:"Excite" auto-scale:"+"`,
+	"GnmdaMaint": `cat:"Excite" auto-scale:"+"`,
+	"NmdaCa":     `cat:"Excite" auto-scale:"+"`,
 
 	/////////////////////////////////////////
 	//  VGCC voltage gated calcium channels
 
-	"Gvgcc":     `cat:"Excite" auto-scale:"+" desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`,
-	"VgccM":     `cat:"Excite" desc:"activation gate of VGCC channels"`,
-	"VgccH":     `cat:"Excite" desc:"inactivation gate of VGCC channels"`,
-	"VgccCa":    `cat:"Excite" auto-scale:"+" desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`,
-	"VgccCaInt": `cat:"Excite" auto-scale:"+" desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`,
+	"Gvgcc":     `cat:"Excite" auto-scale:"+"`,
+	"VgccM":     `cat:"Excite"`,
+	"VgccH":     `cat:"Excite"`,
+	"VgccCa":    `cat:"Excite" auto-scale:"+"`,
+	"VgccCaInt": `cat:"Excite" auto-scale:"+"`,
 
 	/////////////////////////////////////////
 	//  Misc Excitatory Vars
 
-	"Burst":      `cat:"Excite" desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`,
-	"BurstPrv":   `cat:"Excite" desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`,
-	"CtxtGe":     `cat:"Excite" desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`,
-	"CtxtGeRaw":  `cat:"Excite" desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`,
-	"CtxtGeOrig": `cat:"Excite" desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`,
+	"Burst":      `cat:"Excite"`,
+	"BurstPrv":   `cat:"Excite"`,
+	"CtxtGe":     `cat:"Excite"`,
+	"CtxtGeRaw":  `cat:"Excite"`,
+	"CtxtGeOrig": `cat:"Excite"`,
 
 	/////////////////////////////////////////
 	// GABA channels
 
-	"GgabaB": `cat:"Inhib" auto-scale:"+" desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`,
-	"GABAB":  `cat:"Inhib" auto-scale:"+" desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`,
-	"GABABx": `cat:"Inhib" auto-scale:"+" desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`,
+	"GgabaB": `cat:"Inhib" auto-scale:"+"`,
+	"GABAB":  `cat:"Inhib" auto-scale:"+"`,
+	"GABABx": `cat:"Inhib" auto-scale:"+"`,
 
 	/////////////////////////////////////////
 	// SST somatostatin inhibition factors
 
-	"Gak":      `cat:"Inhib" auto-scale:"+" desc:"conductance of A-type K potassium channels"`,
-	"SSGi":     `cat:"Inhib" auto-scale:"+" desc:"SST+ somatostatin positive slow spiking inhibition"`,
-	"SSGiDend": `cat:"Inhib" auto-scale:"+" desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`,
+	"Gak":      `cat:"Inhib" auto-scale:"+"`,
+	"SSGi":     `cat:"Inhib" auto-scale:"+"`,
+	"SSGiDend": `cat:"Inhib" auto-scale:"+"`,
 
-	"GknaMed":  `cat:"Inhib" auto-scale:"+" desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`,
-	"GknaSlow": `cat:"Inhib" auto-scale:"+" desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`,
-	"Gkir":     `cat:"Inhib" desc:"the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials.  Can be modulated by DA."`,
-	"KirM":     `cat:"Inhib" desc:"the Kir gating value"`,
+	"GknaMed":  `cat:"Inhib" auto-scale:"+"`,
+	"GknaSlow": `cat:"Inhib" auto-scale:"+"`,
+	"Gkir":     `cat:"Inhib"`,
+	"KirM":     `cat:"Inhib"`,
 
 	/////////////////////////////////////////
 	//  SKCa small conductance calcium-gated potassium channels
 
-	"Gsk":    `cat:"Inhib" desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`,
-	"SKCaIn": `cat:"Inhib" desc:"intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold"`,
-	"SKCaR":  `cat:"Inhib" desc:"released amount of intracellular calcium, from SKCaIn, as a function of spiking events.  this can bind to SKCa channels and drive K currents."`,
-	"SKCaM":  `cat:"Inhib" desc:"Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams."`,
+	"Gsk":    `cat:"Inhib"`,
+	"SKCaIn": `cat:"Inhib"`,
+	"SKCaR":  `cat:"Inhib"`,
+	"SKCaM":  `cat:"Inhib"`,
 
 	/////////////////////////////////////////
 	// AHP channels: Mahp, Sahp
 
-	"Gmahp":  `cat:"Inhib" auto-scale:"+" desc:"medium time scale AHP conductance"`,
-	"MahpN":  `cat:"Inhib" auto-scale:"+" desc:"accumulating voltage-gated gating value for the medium time scale AHP"`,
-	"Gsahp":  `cat:"Inhib" auto-scale:"+" desc:"slow time scale AHP conductance"`,
-	"SahpCa": `cat:"Inhib" desc:"slowly accumulating calcium value that drives the slow AHP"`,
-	"SahpN":  `cat:"Inhib" desc:"sAHP gating value"`,
+	"Gmahp":  `cat:"Inhib" auto-scale:"+"`,
+	"MahpN":  `cat:"Inhib" auto-scale:"+"`,
+	"Gsahp":  `cat:"Inhib" auto-scale:"+"`,
+	"SahpCa": `cat:"Inhib"`,
+	"SahpN":  `cat:"Inhib"`,
 
 	/////////////////////////////////////////
 	// Stats, aggregate values
 
-	"ActM":     `cat:"Stats" desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`,
-	"ActP":     `cat:"Stats" desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`,
-	"SpkSt1":   `cat:"Stats" desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`,
-	"SpkSt2":   `cat:"Stats" desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`,
-	"SpkMax":   `cat:"Stats" desc:"maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons."`,
-	"SpkMaxCa": `cat:"Stats" desc:"Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover.  This is the input to SpkMax"`,
+	"ActM":     `cat:"Stats"`,
+	"ActP":     `cat:"Stats"`,
+	"SpkSt1":   `cat:"Stats"`,
+	"SpkSt2":   `cat:"Stats"`,
+	"SpkMax":   `cat:"Stats"`,
+	"SpkMaxCa": `cat:"Stats"`,
 
-	"SpkBin0": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin1": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin2": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin3": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin4": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin5": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin6": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
-	"SpkBin7": `cat:"Stats" min:"0" max:"10" desc:"aggregated spikes within 8 bins across the theta cycle, for computing synaptic calcium efficiently."`,
+	"SpkBin0": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin1": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin2": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin3": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin4": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin5": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin6": `cat:"Stats" min:"0" max:"10"`,
+	"SpkBin7": `cat:"Stats" min:"0" max:"10"`,
 
-	"SpkPrv": `cat:"Stats" desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`,
+	"SpkPrv": `cat:"Stats"`,
 
 	/////////////////////////////////////////
 	// Noise
 
-	"GeNoise":  `cat:"Gmisc" desc:"integrated noise excitatory conductance, added into Ge"`,
-	"GeNoiseP": `cat:"Gmisc" desc:"accumulating poisson probability factor for driving excitatory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`,
-	"GiNoise":  `cat:"Gmisc" desc:"integrated noise inhibotyr conductance, added into Gi"`,
-	"GiNoiseP": `cat:"Gmisc" desc:"accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`,
+	"GeNoise":  `cat:"Gmisc"`,
+	"GeNoiseP": `cat:"Gmisc"`,
+	"GiNoise":  `cat:"Gmisc"`,
+	"GiNoiseP": `cat:"Gmisc"`,
 
 	/////////////////////////////////////////
 	// Ge, Gi integration
 
-	"GeExt":     `cat:"Gmisc" desc:"extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc"`,
-	"GeRaw":     `cat:"Gmisc" desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`,
-	"GeSyn":     `cat:"Gmisc" range:"2" desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E"`,
-	"GiRaw":     `cat:"Gmisc" desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`,
-	"GiSyn":     `cat:"Gmisc" desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`,
-	"GeInt":     `cat:"Gmisc" range:"2" desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`,
-	"GeIntNorm": `cat:"Gmisc" range:"1" desc:"GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity."`,
-	"GiInt":     `cat:"Gmisc" range:"2" desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`,
-	"GModRaw":   `cat:"Gmisc" desc:"raw modulatory conductance, received from GType = ModulatoryG pathways"`,
-	"GModSyn":   `cat:"Gmisc" desc:"syn integrated modulatory conductance, received from GType = ModulatoryG pathways"`,
-	"SMaintP":   `cat:"Gmisc" desc:"accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons.  multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor"`,
-	"GMaintRaw": `cat:"Gmisc" desc:"raw maintenance conductance, received from GType = MaintG pathways"`,
-	"GMaintSyn": `cat:"Gmisc" desc:"syn integrated maintenance conductance, integrated using MaintNMDA params."`,
+	"GeExt":     `cat:"Gmisc"`,
+	"GeRaw":     `cat:"Gmisc"`,
+	"GeSyn":     `cat:"Gmisc" range:"2"`,
+	"GiRaw":     `cat:"Gmisc"`,
+	"GiSyn":     `cat:"Gmisc"`,
+	"GeInt":     `cat:"Gmisc" range:"2"`,
+	"GeIntNorm": `cat:"Gmisc" range:"1"`,
+	"GiInt":     `cat:"Gmisc" range:"2"`,
+	"GModRaw":   `cat:"Gmisc"`,
+	"GModSyn":   `cat:"Gmisc"`,
+	"SMaintP":   `cat:"Gmisc"`,
+	"GMaintRaw": `cat:"Gmisc"`,
+	"GMaintSyn": `cat:"Gmisc"`,
 
-	"NrnFlags": `display:"-" desc:"bit flags for external input and other neuron status state"`,
+	"NrnFlags": `display:"-"`,
 
 	/////////////////////////////////////////
 	// Long-term average activation, set point for synaptic scaling
 
-	"ActAvg":  `cat:"Avg" desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`,
-	"AvgPct":  `cat:"Avg" range:"2" desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`,
-	"TrgAvg":  `cat:"Avg" range:"2" desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`,
-	"DTrgAvg": `cat:"Avg" auto-scale:"+" desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`,
-	"AvgDif":  `cat:"Avg" desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`,
-	"GeBase":  `cat:"Avg" desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`,
-	"GiBase":  `cat:"Avg" desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`,
+	"ActAvg":  `cat:"Avg"`,
+	"AvgPct":  `cat:"Avg" range:"2"`,
+	"TrgAvg":  `cat:"Avg" range:"2"`,
+	"DTrgAvg": `cat:"Avg" auto-scale:"+"`,
+	"AvgDif":  `cat:"Avg"`,
+	"GeBase":  `cat:"Avg"`,
+	"GiBase":  `cat:"Avg"`,
 
 	/////////////////////////////////////////
 	// Layer-level variables
 
-	"DA":    `cat:"Learn" desc:"dopamine neuromodulation (layer-level variable)"`,
-	"ACh":   `cat:"Learn" desc:"cholinergic neuromodulation (layer-level variable)"`,
-	"NE":    `cat:"Learn" desc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
-	"Ser":   `cat:"Learn" desc:"serotonin neuromodulation (layer-level variable)"`,
-	"Gated": `cat:"Learn" desc:"signals whether the layer gated"`,
+	"DA":    `cat:"Learn" doc:"dopamine neuromodulation (layer-level variable)"`,
+	"ACh":   `cat:"Learn" doc:"cholinergic neuromodulation (layer-level variable)"`,
+	"NE":    `cat:"Learn" doc:"norepinepherine (noradrenaline) neuromodulation  (layer-level variable)"`,
+	"Ser":   `cat:"Learn" doc:"serotonin neuromodulation (layer-level variable)"`,
+	"Gated": `cat:"Learn" doc:"signals whether the layer gated"`,
 }
 
 var (
@@ -706,11 +706,15 @@ func init() {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(i)
+		tag := NeuronVarProps[vnm]
+		NeuronVarProps[vnm] = tag + ` doc:"` + i.Desc() + `"`
 	}
 	for i := ActAvg; i < NeuronAvgVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(NeuronVarsN) + int(i)
+		tag := NeuronVarProps[vnm]
+		NeuronVarProps[vnm] = tag + ` doc:"` + i.Desc() + `"`
 	}
 	for i, vnm := range NeuronLayerVars {
 		NeuronVarNames = append(NeuronVarNames, vnm)
