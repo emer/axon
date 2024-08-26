@@ -6,6 +6,7 @@ package axon
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/emer/emergent/v2/emer"
 )
@@ -334,6 +335,8 @@ const (
 	// These need to be in Vars because they can be differential per data (for ext inputs)
 	// and are writable (indexes are read only).
 	NrnFlags
+
+	// IMPORTANT: if NrnFlags is not the last, need to update gosl defn below
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
@@ -707,14 +710,14 @@ func init() {
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(i)
 		tag := NeuronVarProps[vnm]
-		NeuronVarProps[vnm] = tag + ` doc:"` + i.Desc() + `"`
+		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
 	for i := ActAvg; i < NeuronAvgVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(NeuronVarsN) + int(i)
 		tag := NeuronVarProps[vnm]
-		NeuronVarProps[vnm] = tag + ` doc:"` + i.Desc() + `"`
+		NeuronVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
 	for i, vnm := range NeuronLayerVars {
 		NeuronVarNames = append(NeuronVarNames, vnm)
