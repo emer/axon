@@ -286,7 +286,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	out := net.AddLayer2D("Output", 5, 5, axon.TargetLayer)
 
 	// use this to position layers relative to each other
-	// hid2.PlaceRightOf(hid1, 2)
+	hid2.PlaceRightOf(hid1, 2)
 
 	// note: see emergent/path module for all the options on how to connect
 	// NewFull returns a new paths.Full connectivity pattern
@@ -654,7 +654,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Params.MaxRecs = 300
+	nv.Options.MaxRecs = 300
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 	ss.GUI.ViewUpdate = &ss.ViewUpdate

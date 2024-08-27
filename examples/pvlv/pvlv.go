@@ -699,9 +699,9 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Params.MaxRecs = 400
-	nv.Params.Raster.Max = ss.Config.Run.ThetaCycles
-	nv.Params.LayNmSize = 0.02
+	nv.Options.MaxRecs = 400
+	nv.Options.Raster.Max = ss.Config.Run.ThetaCycles
+	nv.Options.LayerNameSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 	ss.GUI.ViewUpdate = &ss.ViewUpdate

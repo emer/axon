@@ -1332,8 +1332,8 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Params.MaxRecs = ss.Config.Run.NCycles * 2
-	nv.Params.LayNmSize = 0.02
+	nv.Options.MaxRecs = ss.Config.Run.NCycles * 2
+	nv.Options.LayerNameSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.Phase, etime.Phase)
 

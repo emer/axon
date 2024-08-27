@@ -517,7 +517,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.CycleUpdateInterval = 1 // 10
 
 	nv := ss.GUI.AddNetView("Network")
-	nv.Params.MaxRecs = 300
+	nv.Options.MaxRecs = 300
 	nv.SetNet(ss.Net)
 	ss.ViewUpdate.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.GUI.ViewUpdate = &ss.ViewUpdate
