@@ -212,7 +212,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 	mode := etime.Train
 	stack := man.Stacks[mode]
 	cyc, _ := stack.Loops[etime.Cycle]
-	minusStart, _ := cyc.EventByName("MinusPhase")
+	minusStart := cyc.EventByName("MinusPhase")
 	minusStart.OnEvent.Add("HipMinusPhase:Start", func() {
 		if *pretrain {
 			dgFromEc2.Params.Learn.Learn = 0
@@ -235,7 +235,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
-	beta1, _ := cyc.EventByName("Beta1")
+	beta1 := cyc.EventByName("Beta1")
 	beta1.OnEvent.Add("Hip:Beta1", func() {
 		ca1FromEc3.Params.PathScale.Rel = hip.ThetaLow
 		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
@@ -245,7 +245,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		net.InitGScale(ctx) // update computed scaling factors
 		net.GPU.SyncParamsToGPU()
 	})
-	plus, _ := cyc.EventByName("PlusPhase")
+	plus := cyc.EventByName("PlusPhase")
 
 	// note: critical for this to come before std start
 	plus.OnEvent.InsertBefore("PlusPhase:Start", "HipPlusPhase:Start", func() {

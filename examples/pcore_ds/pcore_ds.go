@@ -379,7 +379,7 @@ func (ss *Sim) ConfigLoops() {
 		})
 	}
 	// note: auto applies to all
-	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
+	plusPhase := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
 	plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() {
 		// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
 		// because minus phase end has gated info, and plus phase start applies action input
