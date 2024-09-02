@@ -156,7 +156,7 @@ func (ev *VSPatchEnv) ConfigPats() {
 		idx += ev.NTrials
 	}
 
-	ev.PatSimMat.TableCol(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
+	ev.PatSimMat.TableColumn(table.NewIndexView(ev.Pats), "Input", "Name", true, metric.Correlation64)
 }
 
 func (ev *VSPatchEnv) Init(run int) {

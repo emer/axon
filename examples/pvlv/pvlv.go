@@ -280,8 +280,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdate.Update()
 	ss.ViewUpdate.RecordSyns()
+	ss.ViewUpdate.Update()
 }
 
 // InitRandSeed initializes the random seed based on current training run number
@@ -722,76 +722,6 @@ func (ss *Sim) ConfigGUI() {
 	plt.Options.XAxis = "SeqType"
 	plt.SetTable(dt)
 
-	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
-		tree.Add(p, func(w *core.Chooser) {
-			w.SetStrings(cond.RunNames...)
-			w.SetCurrentValue(ss.Config.Env.RunName)
-			w.OnChange(func(e events.Event) {
-				ss.Config.Env.RunName = w.CurrentItem.Value.(string)
-				ss.InitEnvRun()
-			})
-		})
-
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
-			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				ss.Init()
-				ss.GUI.UpdateWindow()
-			},
-		})
-
-		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train})
-
-		tree.Add(p, func(w *core.Separator) {})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
-			Tooltip: "Save weights for the current condition name.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				ss.SaveCondWeights()
-				// ss.GUI.UpdateWindow()
-			},
-		})
-
-		////////////////////////////////////////////////
-		tree.Add(p, func(w *core.Separator) {})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
-			Icon:    icons.Reset,
-			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				ss.Logs.ResetLog(etime.Train, etime.Run)
-				ss.GUI.UpdatePlot(etime.Train, etime.Run)
-			},
-		})
-		////////////////////////////////////////////////
-		tree.Add(p, func(w *core.Separator) {})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
-			Icon:    icons.Add,
-			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				ss.RandSeeds.NewSeeds()
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Plot Drive & Effort",
-			Icon:    icons.PlayArrow,
-			Tooltip: "Opens a new window to plot Rubicon Drive and Effort dynamics.",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				go DriveEffortGUI()
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
-			Icon:    icons.FileMarkdown,
-			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/pvlv/README.md")
-			},
-		})
-	})
-
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		// vgpu.Debug = ss.Config.Debug
@@ -800,6 +730,76 @@ func (ss *Sim) ConfigGUI() {
 			ss.Net.GPU.Destroy()
 		})
 	}
+}
+
+func (ss *Sim) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.Chooser) {
+		w.SetStrings(cond.RunNames...)
+		w.SetCurrentValue(ss.Config.Env.RunName)
+		w.OnChange(func(e events.Event) {
+			ss.Config.Env.RunName = w.CurrentItem.Value.(string)
+			ss.InitEnvRun()
+		})
+	})
+
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Init()
+			ss.GUI.UpdateWindow()
+		},
+	})
+
+	ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train})
+
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Save Wts", Icon: icons.Save,
+		Tooltip: "Save weights for the current condition name.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.SaveCondWeights()
+			// ss.GUI.UpdateWindow()
+		},
+	})
+
+	////////////////////////////////////////////////
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
+		Icon:    icons.Reset,
+		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.Logs.ResetLog(etime.Train, etime.Run)
+			ss.GUI.UpdatePlot(etime.Train, etime.Run)
+		},
+	})
+	////////////////////////////////////////////////
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
+		Icon:    icons.Add,
+		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.RandSeeds.NewSeeds()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Plot Drive & Effort",
+		Icon:    icons.PlayArrow,
+		Tooltip: "Opens a new window to plot Rubicon Drive and Effort dynamics.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			go DriveEffortGUI()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
+		Icon:    icons.FileMarkdown,
+		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/pvlv/README.md")
+		},
+	})
 }
 
 func (ss *Sim) RunGUI() {

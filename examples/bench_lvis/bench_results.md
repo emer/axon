@@ -14,6 +14,67 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
+# v2.0.0-dev0.2.1 vgpu final 09/02/24 (linear SynCa approx)
+
+## MacBook Pro M3
+
+### GPU
+
+`go test -gpu -verbose=false -ndata=1 -bench=. -run not`   reporting Total Secs
+
+* ndata=1 (371mb): 2.13
+* ndata=2 (742mb): 2.49 = 1.7x
+* ndata=4 (1.5gb): 3.44 = 2.5x
+* ndata=8 (2.9gb): 5.65 = 3x
+
+Output for -ndata=8:
+
+```
+P0: Running on GPU: Apple M3 Max: id=235275249 idx=0
+Total Secs: 5.647090249s
+TimerReport: LVisBench  2 threads
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.026	    0.5
+	   GPU:Cycles 	  4.805	   91.6
+	      GPU:DWt 	  0.257	    4.9
+	GPU:MinusPhase 	  0.043	    0.8
+	GPU:PlusPhase 	  0.040	    0.8
+	GPU:PlusStart 	  0.003	    0.0
+	GPU:WtFromDWt 	  0.074	    1.4
+	WtFromDWtLayer 	  0.001	    0.0
+	        Total 	  5.248
+```
+
+### CPU
+
+`go test -threads=16 -verbose=false -ndata=1 -bench=. -run not`
+
+* ndata=1: 5.77
+* ndata=2: 9.94
+* ndata=4: 18.56 -- 2x no gain
+* ndata=8: 35.76 -- ditto
+* ndata=8, threads=32: 35.52
+* ndata=8, threads=8:  41.5
+
+For ndata=8 (very consistent %s across ndata):
+
+```
+Total Secs: 35.764117s
+TimerReport: LVisBench  16 threads
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 16.031	   45.3
+	          DWt 	  7.016	   19.8
+	   DWtSubMean 	  0.001	    0.0
+	 GatherSpikes 	  1.369	    3.9
+	 GiFromSpikes 	  4.241	   12.0
+	PoolGiFromSpikes 	  0.382	    1.1
+	    PostSpike 	  0.973	    2.8
+	    SendSpike 	  4.904	   13.9
+	    WtFromDWt 	  0.440	    1.2
+	WtFromDWtLayer 	  0.001	    0.0
+	        Total 	 35.358
+```
+
 # 1.8.2  PoolGi and SynCas access fixes: works for large models (Lvis)
 
 ## MacBook Pro M1

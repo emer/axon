@@ -151,94 +151,95 @@ func (ss *Sim) ConfigGUI() {
 	// egui.ConfigPlotFromLog("Neuron", plt, &ss.Logs, key)
 	// ss.TstCycPlot = plt
 
-	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
-			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				ss.Init()
-				ss.GUI.UpdateWindow()
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
-			Tooltip: "Stops running.",
-			Active:  egui.ActiveRunning,
-			Func: func() {
-				// ss.Stop()
-				ss.GUI.UpdateWindow()
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Sweep", Icon: icons.PlayArrow,
-			Tooltip: "Runs Kinase sweep over set of minus / plus spiking levels.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				if !ss.GUI.IsRunning {
-					go func() {
-						ss.GUI.IsRunning = true
-						ss.Sweep()
-						ss.GUI.IsRunning = false
-						ss.GUI.UpdateWindow()
-					}()
-				}
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Run", Icon: icons.PlayArrow,
-			Tooltip: "Runs NTrials of Kinase updating.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				if !ss.GUI.IsRunning {
-					go func() {
-						ss.GUI.IsRunning = true
-						ss.Run()
-						ss.GUI.IsRunning = false
-						ss.GUI.UpdateWindow()
-					}()
-				}
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Trial", Icon: icons.PlayArrow,
-			Tooltip: "Runs one Trial of Kinase updating.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				if !ss.GUI.IsRunning {
-					go func() {
-						ss.GUI.IsRunning = true
-						ss.Trial()
-						ss.GUI.IsRunning = false
-						ss.GUI.UpdateWindow()
-					}()
-				}
-			},
-		})
-		tree.Add(p, func(w *core.Separator) {})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
-			Tooltip: "Reset TstCycPlot.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				ss.ResetTstCycPlot()
-				ss.GUI.UpdateWindow()
-			},
-		})
-
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
-			Tooltip: "Restore initial default parameters.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				ss.Defaults()
-				ss.Init()
-				ss.GUI.UpdateWindow()
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
-			Icon:    icons.FileMarkdown,
-			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/neuron/README.md")
-			},
-		})
-	})
 	ss.GUI.FinalizeGUI(false)
+}
+
+func (ss *Sim) MakeToolbar(p *tree.Plan) {
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Init()
+			ss.GUI.UpdateWindow()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Stop", Icon: icons.Stop,
+		Tooltip: "Stops running.",
+		Active:  egui.ActiveRunning,
+		Func: func() {
+			// ss.Stop()
+			ss.GUI.UpdateWindow()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Sweep", Icon: icons.PlayArrow,
+		Tooltip: "Runs Kinase sweep over set of minus / plus spiking levels.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			if !ss.GUI.IsRunning {
+				go func() {
+					ss.GUI.IsRunning = true
+					ss.Sweep()
+					ss.GUI.IsRunning = false
+					ss.GUI.UpdateWindow()
+				}()
+			}
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Run", Icon: icons.PlayArrow,
+		Tooltip: "Runs NTrials of Kinase updating.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			if !ss.GUI.IsRunning {
+				go func() {
+					ss.GUI.IsRunning = true
+					ss.Run()
+					ss.GUI.IsRunning = false
+					ss.GUI.UpdateWindow()
+				}()
+			}
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Trial", Icon: icons.PlayArrow,
+		Tooltip: "Runs one Trial of Kinase updating.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			if !ss.GUI.IsRunning {
+				go func() {
+					ss.GUI.IsRunning = true
+					ss.Trial()
+					ss.GUI.IsRunning = false
+					ss.GUI.UpdateWindow()
+				}()
+			}
+		},
+	})
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset Plot", Icon: icons.Update,
+		Tooltip: "Reset TstCycPlot.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.ResetTstCycPlot()
+			ss.GUI.UpdateWindow()
+		},
+	})
+
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Defaults", Icon: icons.Update,
+		Tooltip: "Restore initial default parameters.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Defaults()
+			ss.Init()
+			ss.GUI.UpdateWindow()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
+		Icon:    icons.FileMarkdown,
+		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/neuron/README.md")
+		},
+	})
 }
 
 func (ss *Sim) RunGUI() {

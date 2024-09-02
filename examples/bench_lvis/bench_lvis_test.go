@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"testing"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
@@ -17,7 +18,7 @@ import (
 
 var gpu = flag.Bool("gpu", false, "whether to run gpu or not")
 var maxProcs = flag.Int("maxProcs", 0, "GOMAXPROCS value to set -- 0 = use current default -- better to set threads instead, as long as it is < GOMAXPROCS")
-var threads = flag.Int("threads", 2, "number of goroutines for parallel processing -- 2, 4 give good results typically")
+var threads = flag.Int("threads", 16, "number of goroutines for parallel processing -- 16 best")
 var ndata = flag.Int("ndata", 1, "number of inputs to run in parallel")
 var numEpochs = flag.Int("epochs", 1, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
@@ -54,8 +55,8 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	inLay := net.LayerByName("V1_0")
 	outLay := net.LayerByName("Output")
 
-	inPats := pats.ColumnByName("Input").(*tensor.Float32)
-	outPats := pats.ColumnByName("Output").(*tensor.Float32)
+	inPats := errors.Log1(pats.ColumnByName("Input")).(*tensor.Float32)
+	outPats := errors.Log1(pats.ColumnByName("Output")).(*tensor.Float32)
 
 	require.Equal(b, inLay.Shape.Len(), inPats.Len() / *numPats)
 	require.Equal(b, outLay.Shape.Len(), outPats.Len() / *numPats)

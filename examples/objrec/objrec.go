@@ -245,8 +245,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdate.Update()
 	ss.ViewUpdate.RecordSyns()
+	ss.ViewUpdate.Update()
 }
 
 // InitRandSeed initializes the random seed based on current training run number
@@ -489,6 +489,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
+	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.Trial, "Di")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "Cat", "TrialName")
@@ -500,8 +501,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.ConfigLogItems()
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
-
-	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigActRFs()
 
@@ -682,61 +681,6 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.AddActRFGridTabs(&ss.Stats.ActRFs)
 
-	ss.GUI.Body.AddAppBar(func(p *tree.Plan) {
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
-			Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				ss.Init()
-				ss.GUI.UpdateWindow()
-			},
-		})
-
-		ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train, etime.Test})
-
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Test All",
-			Icon:    icons.PlayArrow,
-			Tooltip: "Tests a large same of testing items and records ActRFs.",
-			Active:  egui.ActiveStopped,
-			Func: func() {
-				if !ss.GUI.IsRunning {
-					ss.GUI.IsRunning = true
-					ss.GUI.UpdateWindow()
-					go ss.RunTestAll()
-				}
-			},
-		})
-
-		////////////////////////////////////////////////
-		tree.Add(p, func(w *core.Separator) {})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
-			Icon:    icons.Reset,
-			Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				ss.Logs.ResetLog(etime.Train, etime.Run)
-				ss.GUI.UpdatePlot(etime.Train, etime.Run)
-			},
-		})
-		////////////////////////////////////////////////
-		tree.Add(p, func(w *core.Separator) {})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
-			Icon:    icons.Add,
-			Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				ss.RandSeeds.NewSeeds()
-			},
-		})
-		ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
-			Icon:    icons.FileMarkdown,
-			Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
-			Active:  egui.ActiveAlways,
-			Func: func() {
-				core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/bench_objrec/README.md")
-			},
-		})
-	})
 	ss.GUI.FinalizeGUI(false)
 	if ss.Config.Run.GPU {
 		vgpu.Debug = ss.Config.Debug
@@ -745,6 +689,62 @@ func (ss *Sim) ConfigGUI() {
 			ss.Net.GPU.Destroy()
 		})
 	}
+}
+
+func (ss *Sim) MakeToolbar(p *tree.Plan) {
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Init", Icon: icons.Update,
+		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Init()
+			ss.GUI.UpdateWindow()
+		},
+	})
+
+	ss.GUI.AddLooperCtrl(p, ss.Loops, []etime.Modes{etime.Train, etime.Test})
+
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Test All",
+		Icon:    icons.PlayArrow,
+		Tooltip: "Tests a large same of testing items and records ActRFs.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			if !ss.GUI.IsRunning {
+				ss.GUI.IsRunning = true
+				ss.GUI.UpdateWindow()
+				go ss.RunTestAll()
+			}
+		},
+	})
+
+	////////////////////////////////////////////////
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Reset RunLog",
+		Icon:    icons.Reset,
+		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.Logs.ResetLog(etime.Train, etime.Run)
+			ss.GUI.UpdatePlot(etime.Train, etime.Run)
+		},
+	})
+	////////////////////////////////////////////////
+	tree.Add(p, func(w *core.Separator) {})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "New Seed",
+		Icon:    icons.Add,
+		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.RandSeeds.NewSeeds()
+		},
+	})
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "README",
+		Icon:    icons.FileMarkdown,
+		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/bench_objrec/README.md")
+		},
+	})
 }
 
 func (ss *Sim) RunGUI() {

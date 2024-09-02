@@ -231,12 +231,14 @@ func (ss *Sim) ConfigGUI() *core.Body {
 
 	split.SetSplits(.3, .7)
 
-	b.AddAppBar(func(p *tree.Plan) {
-		tree.Add(p, func(w *core.FuncButton) {
-			w.SetFunc(ss.CamRun).SetIcon(icons.PlayArrow)
-		})
-		tree.Add(p, func(w *core.FuncButton) {
-			w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+	b.AddTopBar(func(bar *core.Frame) {
+		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
+			tree.Add(p, func(w *core.FuncButton) {
+				w.SetFunc(ss.CamRun).SetIcon(icons.PlayArrow)
+			})
+			tree.Add(p, func(w *core.FuncButton) {
+				w.SetFunc(ss.TimeRun).SetIcon(icons.PlayArrow)
+			})
 		})
 	})
 

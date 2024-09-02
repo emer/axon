@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+	"time"
 
 	"cogentcore.org/core/base/timer"
 )
@@ -132,7 +133,7 @@ func (nt *Network) TimerReport() {
 	pcts := make([]float64, nfn)
 	tot := 0.0
 	for i, fn := range fnms {
-		pcts[i] = float64(nt.FunTimes[fn].Total)
+		pcts[i] = float64(nt.FunTimes[fn].Total) / float64(time.Second)
 		tot += pcts[i]
 	}
 	for i, fn := range fnms {

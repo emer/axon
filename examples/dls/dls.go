@@ -363,8 +363,8 @@ func (ss *Sim) Init() {
 	ss.ApplyParams()
 	ss.Net.GPU.SyncParamsToGPU()
 	ss.NewRun()
-	ss.ViewUpdate.Update()
 	ss.ViewUpdate.RecordSyns()
+	ss.ViewUpdate.Update()
 }
 
 // InitRandSeed initializes the random seed based on current training run number
