@@ -132,7 +132,7 @@ func (am *AvgMaxI32) Calc(refIndex int32) {
 
 //gosl:end avgmaxi
 
-//gosl:hlsl avgmaxi
+//gosl:wgsl avgmaxi
 /*
 // // AtomicUpdateAvgMaxI32 provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.

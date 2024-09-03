@@ -12,8 +12,8 @@ package chans
 
 //go:generate core generate -add-types
 
-//gosl:hlsl chans
-// #include "fastexp.hlsl"
+//gosl:wgsl chans
+// #include "fastexp.wgsl"
 //gosl:end chans
 
 //gosl:start chans

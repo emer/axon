@@ -26,12 +26,12 @@ var (
 	Networks []*Network
 )
 
-// note: the following nohlsl is included for the Go type inference processing
-// but is then excluded from the final .hlsl file.
+// note: the following nowgsl is included for the Go type inference processing
+// but is then excluded from the final .wgsl file.
 // this is key for cases where there are alternative versions of functions
 // in GPU vs. CPU.
 
-//gosl:nohlsl context
+//gosl:nowgsl context
 
 // NeuronVars
 
@@ -245,14 +245,14 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 
 //gosl:end context
 
-//gosl:hlsl context
-// #include "etime.hlsl"
-// #include "axonrand.hlsl"
-// #include "neuron.hlsl"
-// #include "synapse.hlsl"
-// #include "globals.hlsl"
-// #include "neuromod.hlsl"
-//gosl:endhlsl context
+//gosl:wgsl context
+// #include "etime.wgsl"
+// #include "axonrand.wgsl"
+// #include "neuron.wgsl"
+// #include "synapse.wgsl"
+// #include "globals.wgsl"
+// #include "neuromod.wgsl"
+//gosl:endwgsl context
 
 //gosl:start context
 
@@ -463,7 +463,7 @@ func (ctx *Context) CycleInc() {
 	ctx.CyclesTotal++
 	ctx.Time += ctx.TimePerCycle
 	ctx.SynCaCtr += 1
-	ctx.RandCtr.Add(uint32(RandFunIndexN))
+	// ctx.RandCtr.Add(uint32(RandFunIndexN))  TODO: gosl
 }
 
 // SlowInc increments the Slow counter and returns true if time
@@ -518,26 +518,26 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 
 // note: following is real code, uncommented by gosl
 
-//gosl:hlsl context
+//gosl:wgsl context
 
 /*
 
 // // NeuronVars
 
-float NrnV(in Context ctx, uint ni, uint di, NeuronVars nvar) {
-   return Neurons[ctx.NeuronVars.Index(ni, di, nvar)];
+fn NrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars) -> f32 {
+   return Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)];
 }
 
-void SetNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
- 	Neurons[ctx.NeuronVars.Index(ni, di, nvar)] = val;
+fn SetNrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars, val: f32) {
+   Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)] = val;
 }
 
-void AddNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
- 	Neurons[ctx.NeuronVars.Index(ni, di, nvar)] += val;
+fn AddNrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars, val: f32) {
+   Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)] += val;
 }
 
-void MulNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
- 	Neurons[ctx.NeuronVars.Index(ni, di, nvar)] *= val;
+fn MulNrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars, val: f32) {
+   Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)] *= val;
 }
 
 bool NrnHasFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {

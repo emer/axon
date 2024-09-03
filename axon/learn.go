@@ -16,9 +16,9 @@ import (
 ///////////////////////////////////////////////////////////////////////
 //  learn.go contains the learning params and functions for axon
 
-//gosl:hlsl learn_neur
-// #include "kinase.hlsl"
-// #include "neuromod.hlsl"
+//gosl:wgsl learn_neur
+// #include "kinase.wgsl"
+// #include "neuromod.wgsl"
 //gosl:end learn_neur
 
 //gosl:start learn_neur
@@ -360,11 +360,11 @@ func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
 ///////////////////////////////////////////////////////////////////////
 // Path level learning params
 
-//gosl:hlsl learn
-// #include "minmax.hlsl"
-// #include "kinase.hlsl"
-// #include "synapse.hlsl"
-// #include "neuron.hlsl"
+//gosl:wgsl learn
+// #include "minmax.wgsl"
+// #include "kinase.wgsl"
+// #include "synapse.wgsl"
+// #include "neuron.wgsl"
 //gosl:end learn
 
 //gosl:start learn

@@ -144,13 +144,13 @@ func (nm *NeuroModParams) DASign() float32 {
 // If DALRateMod is true and DAMod == D1Mod or D2Mod, then the sign is a function
 // of the DA
 func (nm *NeuroModParams) LRMod(da, ach float32) float32 {
-	mod := nm.LRModFact(nm.AChLRateMod, ach)
+	lmod := nm.LRModFact(nm.AChLRateMod, ach)
 	if nm.DALRateSign.IsTrue() {
-		mod *= nm.DAGain(da) * nm.DASign()
+		lmod *= nm.DAGain(da) * nm.DASign()
 	} else {
-		mod *= nm.LRModFact(nm.DALRateMod, da)
+		lmod *= nm.LRModFact(nm.DALRateMod, da)
 	}
-	return mod
+	return lmod
 }
 
 // GGain returns effective Ge and Gi gain factor given

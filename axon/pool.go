@@ -10,8 +10,8 @@ import (
 	"github.com/emer/axon/v2/fsfffb"
 )
 
-//gosl:hlsl pool
-// #include "avgmaxi.hlsl"
+//gosl:wgsl pool
+// #include "avgmaxi.wgsl"
 //gosl:end pool
 
 //gosl:start pool
@@ -150,10 +150,10 @@ func (am *PoolAvgMax) Calc(refIndex int32) {
 //gosl:end pool
 
 // note: the following is actually being used despite appearing to be
-// commented out!  it is auto-uncommented when copied to hlsl
+// commented out!  it is auto-uncommented when copied to wgsl
 // MUST update whenever above UpdateValues code is updated.
 
-//gosl:hlsl pool
+//gosl:wgsl pool
 /*
 // // AtomicUpdatePoolAvgMax provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.

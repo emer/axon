@@ -9,7 +9,7 @@ import (
 )
 
 // path_compute.go has the core computational methods, for the CPU.
-// On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
+// On GPU, this same functionality is implemented in corresponding gpu_*.wgsl
 // files, which correspond to different shaders for each different function.
 
 //////////////////////////////////////////////////////////////////////////////////////

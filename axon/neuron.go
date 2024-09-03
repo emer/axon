@@ -393,11 +393,11 @@ const (
 
 //gosl:end neuron
 
-//gosl:hlsl neuron
+//gosl:wgsl neuron
 /*
-static const NeuronVars NeuronVarsN = NrnFlags + 1;
-static const NeuronAvgVars NeuronAvgVarsN = GiBase + 1;
-static const NeuronIndexes NeuronIndexesN = NrnSubPool + 1;
+const NeuronVarsN: NeuronVars = NrnFlags + 1;
+const NeuronAvgVarsN: NeuronAvgVars = GiBase + 1;
+const NeuronIndexesN: NeuronIndexes = NrnSubPool + 1;
 */
 //gosl:end neuron
 

@@ -15,10 +15,10 @@ import (
 ///////////////////////////////////////////////////////////////////////
 //  act.go contains the activation params and functions for axon
 
-//gosl:hlsl act
-// #include "chans.hlsl"
-// #include "minmax.hlsl"
-// #include "neuron.hlsl"
+//gosl:wgsl act
+// #include "chans.wgsl"
+// #include "minmax.wgsl"
+// #include "neuron.wgsl"
 //gosl:end act
 
 //gosl:start act

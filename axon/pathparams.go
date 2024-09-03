@@ -11,15 +11,15 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl:hlsl pathparams
-// #include "pathtypes.hlsl"
-// #include "act_path.hlsl"
-// #include "learn.hlsl"
-// #include "deep_paths.hlsl"
-// #include "rl_paths.hlsl"
-// #include "rubicon_paths.hlsl"
-// #include "pcore_paths.hlsl"
-// #include "hip_paths.hlsl"
+//gosl:wgsl pathparams
+// #include "pathtypes.wgsl"
+// #include "act_path.wgsl"
+// #include "learn.wgsl"
+// #include "deep_paths.wgsl"
+// #include "rl_paths.wgsl"
+// #include "rubicon_paths.wgsl"
+// #include "pcore_paths.wgsl"
+// #include "hip_paths.wgsl"
 
 //gosl:end pathparams
 

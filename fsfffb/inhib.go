@@ -222,7 +222,7 @@ func (fi *Inhib) IntToRaw() {
 
 //gosl:end fsfffb
 
-//gosl:hlsl fsfffb
+//gosl:wgsl fsfffb
 /*
 // // AtomicInhibRawIncr provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.

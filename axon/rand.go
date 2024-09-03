@@ -4,9 +4,9 @@ import (
 	"cogentcore.org/core/vgpu/gosl/slrand"
 )
 
-//gosl:hlsl axonrand
-// #include "slrand.hlsl"
-//gosl:end axonrand
+//gosl wgsl axonrand
+// #include "slrand.wgsl"
+//gosl end axonrand
 
 //gosl:start axonrand
 
@@ -28,11 +28,12 @@ const (
 // This whole scheme exists to ensure equal results under different multithreading settings.
 func GetRandomNumber(index uint32, counter slrand.Counter, funIndex RandFunIndex) float32 {
 	// todo: gpu needs to have the shortcut to work directly on uint2
-	var randCtr slrand.Counter
-	randCtr = counter
-	randCtr.Add(uint32(funIndex))
-	ctr := randCtr.Uint2()
-	return slrand.Float(&ctr, index)
+	// var randCtr slrand.Counter
+	// randCtr = counter
+	// randCtr.Add(uint32(funIndex))
+	// ctr := randCtr.Uint2()
+	// return slrand.Float(&ctr, index)
+	return 0.0
 }
 
 //gosl:end axonrand

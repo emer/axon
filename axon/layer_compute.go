@@ -17,7 +17,7 @@ import (
 // ni  = absolute network-level neuron index
 
 // layer_compute.go has the core computational methods, for the CPU.
-// On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
+// On GPU, this same functionality is implemented in corresponding gpu_*.wgsl
 // files, which correspond to different shaders for each different function.
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -232,7 +232,7 @@ func (ly *Layer) LDTSrcLayAct(net *Network, layIndex int32, di uint32) float32 {
 // need to do something special after Spiking is finally computed and Sent.
 // Typically used for updating global values in the Context state,
 // such as updating a neuromodulatory signal such as dopamine.
-// Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
+// Any updates here must also be done in gpu_wgsl/gpu_cyclepost.wgsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	net := ly.Network
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {

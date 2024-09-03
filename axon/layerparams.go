@@ -10,17 +10,17 @@ import (
 	"cogentcore.org/core/math32"
 )
 
-//gosl:hlsl layerparams
-// #include "layertypes.hlsl"
-// #include "act.hlsl"
-// #include "inhib.hlsl"
-// #include "learn_neur.hlsl"
-// #include "deep_layers.hlsl"
-// #include "rl_layers.hlsl"
-// #include "rubicon_layers.hlsl"
-// #include "pcore_layers.hlsl"
-// #include "pool.hlsl"
-// #include "layervals.hlsl"
+//gosl:wgsl layerparams
+// #include "layertypes.wgsl"
+// #include "act.wgsl"
+// #include "inhib.wgsl"
+// #include "learn_neur.wgsl"
+// #include "deep_layers.wgsl"
+// #include "rl_layers.wgsl"
+// #include "rubicon_layers.wgsl"
+// #include "pcore_layers.wgsl"
+// #include "pool.wgsl"
+// #include "layervals.wgsl"
 //gosl:end layerparams
 
 //gosl:start layerparams
@@ -875,7 +875,7 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, vals *La
 /////////////////////////////////////////////////////////////////////////
 //  Special CyclePost methods for different layer types
 //  call these in layer_compute.go/CyclePost and
-//  gpu_hlsl/gpu_cyclepost.hlsl
+//  gpu_wgsl/gpu_cyclepost.wgsl
 
 // CyclePostLayer is called for all layer types
 func (ly *LayerParams) CyclePostLayer(ctx *Context, di uint32, lpl *Pool, vals *LayerValues) {

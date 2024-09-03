@@ -18,56 +18,82 @@ import (
 	vk "github.com/goki/vulkan"
 )
 
-//go:embed shaders/*.spv
+//go:embed shaders/*.wgsl
 var content embed.FS
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay cogentcore.org/core/math32/fastexp.go cogentcore.org/core/math32/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_path.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go rubicon_layers.go pcore_layers.go pathtypes.go pathparams.go deep_paths.go rl_paths.go rubicon_paths.go pcore_paths.go hip_paths.go gpu_hlsl
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay cogentcore.org/core/math32/fastexp.go cogentcore.org/core/math32/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_path.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go rubicon_layers.go pcore_layers.go pathtypes.go pathparams.go deep_paths.go rl_paths.go rubicon_paths.go pcore_paths.go hip_paths.go gpu_wgsl/gpu_applyext.wgsl
 
-// Full vars code -- each gpu_*.hlsl uses a subset
+// Full vars code -- each gpu_*.wgsl uses a subset
 
 /*
 
 // note: binding is var, set
 
 // Set 0: uniform layer params -- could not have paths also be uniform..
-[[vk::binding(0, 0)]] StructuredBuffer<LayerParams> Layers; // [Layer]
-[[vk::binding(1, 0)]] StructuredBuffer<PathParams> Paths; // [Layer][SendPaths]
+@group(0) @binding(0)
+var<storage, read_write> Layers: array<LayerParams>;
+@group(0) @binding(1)
+var<storage, read_write> Paths: array<PathParams>;
 
 // Set 1: effectively uniform indexes and path params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Indexes]
-[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPaths][SendNeurons][Syns]
-[[vk::binding(2, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPaths][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<uint> RecvPathIndexes; // [Layer][RecvPaths]
-[[vk::binding(4, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPaths][RecvNeurons]
-[[vk::binding(5, 1)]] StructuredBuffer<uint> RecvSynIndexes; // [Layer][RecvPaths][RecvNeurons][Syns]
+@group(1) @binding(0)
+var<storage, read_write> NeuronIxs: array<u32>; // [Neurons][Indexes]
+@group(1) @binding(1)
+var<storage, read_write> SynapseIxs: array<u32>; // [Layer][SendPaths][SendNeurons][Syns]
+@group(1) @binding(2)
+var<storage, read_write> SendCon: array<StartN>; // [Layer][SendPaths][SendNeurons]
+@group(1) @binding(3)
+var<storage, read_write> RecvPathIndexes: array<u32>; // [Layer][RecvPaths]
+@group(1) @binding(4)
+var<storage, read_write> RecvCon: array<StartN>; // [Layer][RecvPaths][RecvNeurons]
+@group(1) @binding(5)
+var<storage, read_write> RecvSynIndexes: array<u32>; // [Layer][RecvPaths][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
-[[vk::binding(0, 2)]] RWStructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
-[[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
-[[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
-[[vk::binding(4, 2)]] RWStructuredBuffer<LayerValues> LayValues; // [Layer][Data]
-[[vk::binding(5, 2)]] RWStructuredBuffer<float> Globals;  // [NGlobals]
-[[vk::binding(6, 2)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons][Data]
+@group(2) @binding(0)
+var<storage, read_write> Ctx: array<Context>; // [0]
+@group(2) @binding(1)
+var<storage, read_write> Neurons: array<f32>; // [Neurons][Vars][Data]
+@group(2) @binding(2)
+var<storage, read_write> NeuronAvgs: array<f32>; // [Neurons][Vars]
+@group(2) @binding(3)
+var<storage, read_write> Pools: array<f32>; // [Layer][Pools][Data]
+@group(2) @binding(4)
+var<storage, read_write> LayValues: array<LayerValues>; // [Layer][Data]
+@group(2) @binding(5)
+var<storage, read_write> Globals: array<f32>; // [NGlobals]
+@group(2) @binding(6)
+var<storage, read_write> Exts: array<f32>; // [In / Out Layers][Neurons][Data]
 
 // There might be a limit of 8 buffers per set -- can't remember..
 
 // Set 3: synapse vars
-[[vk::binding(0, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPaths][RecvNeurons][MaxDel+1][Data]
-[[vk::binding(1, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPaths][RecvNeurons][Data]
-[[vk::binding(2, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPaths][SendNeurons][Syns]
+@group(3) @binding(0)
+var<storage, read_write> GBuf: array<i32>; // [Layer][RecvPaths][RecvNeurons][MaxDel+1][Data]
+@group(3) @binding(1)
+var<storage, read_write> GSyns: array<f32>; // [Layer][RecvPaths][RecvNeurons][Data]
+@group(3) @binding(2)
+var<storage, read_write> Synapses: array<f32>; // [Layer][SendPaths][SendNeurons][Syns]
+
 // todo: future expansion to add more tranches of Synapses
 
 // Set 4: SynCa -- can only access in 2^31 chunks
-[[vk::binding(0, 4)]] RWStructuredBuffer<float> SynapseCas;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(1, 4)]] RWStructuredBuffer<float> SynapseCas1;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(2, 4)]] RWStructuredBuffer<float> SynapseCas2;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(3, 4)]] RWStructuredBuffer<float> SynapseCas3;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(4, 4)]] RWStructuredBuffer<float> SynapseCas4;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(5, 4)]] RWStructuredBuffer<float> SynapseCas5;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(6, 4)]] RWStructuredBuffer<float> SynapseCas6;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-[[vk::binding(7, 4)]] RWStructuredBuffer<float> SynapseCas7;  // [Layer][SendPaths][SendNeurons][Syns][Data]
-
+@group(4) @binding(0)
+var<storage, read_write> SynapseCas: array<f32>; // [Layer][SendPaths][SendNeurons][Syns][Data]
+@group(4) @binding(1)
+var<storage, read_write> SynapseCas1: array<f32>;
+@group(4) @binding(2)
+var<storage, read_write> SynapseCas2: array<f32>;
+@group(4) @binding(3)
+var<storage, read_write> SynapseCas3: array<f32>;
+@group(4) @binding(4)
+var<storage, read_write> SynapseCas4: array<f32>;
+@group(4) @binding(5)
+var<storage, read_write> SynapseCas5: array<f32>;
+@group(4) @binding(6)
+var<storage, read_write> SynapseCas6: array<f32>;
+@group(4) @binding(7)
+var<storage, read_write> SynapseCas7: array<f32>;
 
 Set: 0
     Role: Storage
@@ -163,7 +189,7 @@ type GPU struct {
 	// for sequencing commands
 	Semaphores map[string]vk.Semaphore `display:"-"`
 
-	// number of warp threads -- typically 64 -- must update all hlsl files if changed!
+	// number of warp threads -- typically 64 -- must update all wgsl files if changed!
 	NThreads int `display:"-" inactive:"-" default:"64"`
 
 	// maximum number of bytes per individual storage buffer element, from GPUProps.Limits.MaxStorageBufferRange

@@ -10,8 +10,8 @@ import (
 	"github.com/emer/axon/v2/fsfffb"
 )
 
-//gosl:hlsl inhib
-// #include "fsfffb.hlsl"
+//gosl:wgsl inhib
+// #include "fsfffb.wgsl"
 //gosl:end inhib
 
 //gosl:start inhib

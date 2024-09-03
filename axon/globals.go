@@ -328,8 +328,8 @@ const (
 
 //gosl:end globals
 
-//gosl:hlsl globals
+//gosl:wgsl globals
 /*
-static const GlobalVars GlobalVarsN = GvVSMatrixPoolGated + 1;
+const GlobalVarsN: GlobalVars = GvVSMatrixPoolGated + 1;
 */
 //gosl:end globals

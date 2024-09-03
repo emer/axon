@@ -75,11 +75,11 @@ const (
 
 //gosl:end synapse
 
-//gosl:hlsl synapse
+//gosl:wgsl synapse
 /*
-static const SynapseVars SynapseVarsN = DSWt + 1;
-static const SynapseCaVars SynapseCaVarsN = DiDWt + 1;
-static const SynapseIndexes SynapseIndexesN = SynPathIndex + 1;
+const SynapseVarsN: SynapseVars = DSWt + 1;
+const SynapseCaVarsN: SynapseCaVars = DiDWt + 1;
+const SynapseIndexesN: SynapseIndexes = SynPathIndex + 1;
 */
 //gosl:end synapse
 
