@@ -1056,10 +1056,7 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if ac.NMDA.Gbar == 0 {
 		return
 	}
-	geT := geTot
-	if geT < 0 {
-		geT = 0
-	}
+	geT := max(geTot, 0)
 	SetNrnV(ctx, ni, di, GnmdaSyn, ac.NMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaSyn), geT))
 	SetNrnV(ctx, ni, di, Gnmda, ac.NMDA.Gnmda(NrnV(ctx, ni, di, GnmdaSyn), NrnV(ctx, ni, di, VmDend)))
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
@@ -1216,11 +1213,7 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFromSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
 	ac.AddGiNoise(ctx, ni, di)
-	giS := giSyn
-	if giS < 0 { // negative inhib G doesn't make any sense
-		giS = 0
-	}
-	return giS
+	return max(giSyn, 0) // negative inhib G doesn't make any sense
 }
 
 // InetFromG computes net current from conductances and Vm

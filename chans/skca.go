@@ -100,10 +100,7 @@ func (sp *SKCaParams) MAsympHill(cai float32) float32 {
 // for the GilliesWillshaw06 equation version -- not used by default.
 // this is a log-saturating function
 func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
-	caia := cai
-	if caia < 0.001 {
-		caia = 0.001
-	}
+	caia := max(cai, 0.001)
 	return 0.81 / (1.0 + math32.FastExp(-(math32.Log(caia)+0.3))/0.46)
 }
 
