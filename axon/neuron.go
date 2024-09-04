@@ -463,14 +463,14 @@ func (ns *NeuronAvgVarStrides) Index(neurIndex uint32, nvar NeuronAvgVars) uint3
 // [Neurons][Vars], which is optimal for CPU-based computation.
 func (ns *NeuronAvgVarStrides) SetNeuronOuter() {
 	ns.Neuron = uint32(NeuronAvgVarsN)
-	ns.Var = 1
+	ns.Var = uint32(1)
 }
 
 // SetVarOuter sets strides with vars as outer loop:
 // [Vars][Neurons], which is optimal for GPU-based computation.
 func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
 	ns.Var = uint32(nneur)
-	ns.Neuron = 1
+	ns.Neuron = uint32(1)
 }
 
 ////////////////////////////////////////////////
@@ -499,7 +499,7 @@ func (ns *NeuronIndexStrides) Index(neurIdx uint32, idx NeuronIndexes) uint32 {
 // computation.
 func (ns *NeuronIndexStrides) SetNeuronOuter() {
 	ns.Neuron = uint32(NeuronIndexesN)
-	ns.Idx = 1
+	ns.Idx = uint32(1)
 }
 
 // SetIndexOuter sets strides with indexes as outer dimension:
@@ -507,7 +507,7 @@ func (ns *NeuronIndexStrides) SetNeuronOuter() {
 // computation.
 func (ns *NeuronIndexStrides) SetIndexOuter(nneur int) {
 	ns.Idx = uint32(nneur)
-	ns.Neuron = 1
+	ns.Neuron = uint32(1)
 }
 
 //gosl:end neuron

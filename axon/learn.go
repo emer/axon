@@ -331,11 +331,9 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
-	if geTot < 0 {
-		geTot = 0
-	}
+	ge := max(geTot, 0)
 	vmd := NrnV(ctx, ni, di, VmDend)
-	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaLrn), geTot))
+	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaLrn), ge))
 	gnmda := ln.LrnNMDA.Gnmda(NrnV(ctx, ni, di, GnmdaLrn), vmd)
 	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFromV(vmd))
 }
@@ -743,9 +741,9 @@ func (lr *LRateMod) ShouldDisplay(field string) bool {
 // If fact >= Range.Max, returns 1
 // otherwise, returns proportional value between Base..1
 func (lr *LRateMod) Mod(fact float32) float32 {
-	lrm := lr.Range.NormValue(fact)  // clips to 0-1 range
-	mod := lr.Base + lrm*(1-lr.Base) // resulting mod is in Base-1 range
-	return mod
+	lrm := lr.Range.NormValue(fact)   // clips to 0-1 range
+	lmod := lr.Base + lrm*(1-lr.Base) // resulting mod is in Base-1 range
+	return lmod
 }
 
 //gosl:end learn
@@ -761,9 +759,9 @@ func (lr *LRateMod) LRateMod(net *Network, fact float32) float32 {
 	if lr.On.IsFalse() {
 		return 1
 	}
-	mod := lr.Mod(fact)
-	net.LRateMod(mod)
-	return mod
+	lmod := lr.Mod(fact)
+	net.LRateMod(lmod)
+	return lmod
 }
 
 //gosl:start learn

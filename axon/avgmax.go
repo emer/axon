@@ -138,7 +138,8 @@ func (am *AvgMaxI32) Calc(refIndex int32) {
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
-#define AtomicUpdateAvgMaxI32(am, val) InterlockedAdd(am.Sum, am.FloatToIntSum(val)); InterlockedMax(am.CurMax, am.FloatToInt(val))
+// // TODO:gosl do atomics!
+// // #define AtomicUpdateAvgMaxI32(am, val) InterlockedAdd(am.Sum, am.FloatToIntSum(val)); InterlockedMax(am.CurMax, am.FloatToInt(val))
 */
 //gosl:end avgmaxi
 

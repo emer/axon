@@ -117,14 +117,15 @@ func (sk *SpikeParams) ActFromISI(isi, timeInc, integ float32) float32 {
 
 // AvgFromISI returns updated spiking ISI from current isi interval value
 func (sk *SpikeParams) AvgFromISI(avg float32, isi float32) float32 {
-	if avg <= 0 {
-		avg = isi
-	} else if isi < 0.8*avg {
-		avg = isi // if significantly less than we take that
+	av := avg
+	if av <= 0 {
+		av = isi
+	} else if isi < 0.8*av {
+		av = isi // if significantly less than we take that
 	} else { // integrate on slower
-		avg += sk.ISIDt * (isi - avg) // running avg updt
+		av += sk.ISIDt * (isi - av) // running avg updt
 	}
-	return avg
+	return av
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -463,8 +464,9 @@ func (an *SpikeNoiseParams) ShouldDisplay(field string) bool {
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*ctx.NetIndexes.NNeurons + ni
-	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
+	// ndi := di*ctx.NetIndexes.NNeurons + ni
+	// TODO:gosl
+	// *p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
 		return an.Ge
@@ -475,8 +477,9 @@ func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*ctx.NetIndexes.NNeurons + ni
-	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
+	// ndi := di*ctx.NetIndexes.NNeurons + ni
+	// TODO:gosl
+	// *p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
 		return an.Gi
@@ -568,8 +571,7 @@ func (sm *SMaintParams) ExpInt(isi float32) float32 {
 	if isi <= 0 {
 		return 0
 	}
-	isi = max(isi, sm.ISI.Min)
-	return math32.FastExp(-isi / sm.NNeurons)
+	return math32.FastExp(-max(isi, sm.ISI.Min) / sm.NNeurons)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -659,9 +661,10 @@ func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float
 // EncodeValue returns value for given value, for neuron index i
 // out of n total neurons. n must be 2 or more.
 func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
-	clipVal := pc.ClipValue(val)
+	av := val
+	clipVal := pc.ClipValue(av)
 	if pc.Clip.IsTrue() {
-		val = clipVal
+		av = clipVal
 	}
 	rng := pc.Max - pc.Min
 	act := float32(1)
@@ -675,7 +678,7 @@ func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
 	gnrm := 1.0 / (rng * sig)
 	incr := rng / float32(n-1)
 	trg := pc.Min + incr*float32(i)
-	dist := gnrm * (trg - val)
+	dist := gnrm * (trg - av)
 	return act * math32.FastExp(-(dist * dist))
 }
 
@@ -1053,10 +1056,11 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if ac.NMDA.Gbar == 0 {
 		return
 	}
-	if geTot < 0 {
-		geTot = 0
+	geT := geTot
+	if geT < 0 {
+		geT = 0
 	}
-	SetNrnV(ctx, ni, di, GnmdaSyn, ac.NMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaSyn), geTot))
+	SetNrnV(ctx, ni, di, GnmdaSyn, ac.NMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaSyn), geT))
 	SetNrnV(ctx, ni, di, Gnmda, ac.NMDA.Gnmda(NrnV(ctx, ni, di, GnmdaSyn), NrnV(ctx, ni, di, VmDend)))
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
@@ -1080,9 +1084,10 @@ func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
-	ndi := di*ctx.NetIndexes.NNeurons + ni
+	// ndi := di*ctx.NetIndexes.NNeurons + ni
 	smp := NrnV(ctx, ni, di, SMaintP)
-	smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
+	// TODO:gosl
+	// smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)
 	if smp <= trg {
 		smp = 1
@@ -1164,18 +1169,20 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
 	SetNrnV(ctx, ni, di, GeExt, 0)
+	geS := geSyn
+	geE := geExt
 	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ctx, ni, di, NeuronHasExt) {
 		SetNrnV(ctx, ni, di, GeExt, NrnV(ctx, ni, di, Ext)*ac.Clamp.Ge)
-		geSyn += NrnV(ctx, ni, di, GeExt)
+		geS += NrnV(ctx, ni, di, GeExt)
 	}
 
 	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ctx, ni, di, NeuronHasExt) { // todo: this flag check is not working
-		geSyn = NrnV(ctx, ni, di, Ext) * ac.Clamp.Ge
-		SetNrnV(ctx, ni, di, GeExt, geSyn)
-		geExt = 0 // no extra in this case
+		geS = NrnV(ctx, ni, di, Ext) * ac.Clamp.Ge
+		SetNrnV(ctx, ni, di, GeExt, geS)
+		geE = 0 // no extra in this case
 	}
 
-	SetNrnV(ctx, ni, di, Ge, geSyn+geExt)
+	SetNrnV(ctx, ni, di, Ge, geS+geE)
 	if NrnV(ctx, ni, di, Ge) < 0.0 {
 		SetNrnV(ctx, ni, di, Ge, 0)
 	}
@@ -1209,10 +1216,11 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFromSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
 	ac.AddGiNoise(ctx, ni, di)
-	if giSyn < 0 { // negative inhib G doesn't make any sense
-		giSyn = 0
+	giS := giSyn
+	if giS < 0 { // negative inhib G doesn't make any sense
+		giS = 0
 	}
-	return giSyn
+	return giS
 }
 
 // InetFromG computes net current from conductances and Vm
@@ -1234,11 +1242,11 @@ func (ac *ActParams) VmFromInet(vm, dt, inet float32) float32 {
 // VmInteg integrates Vm over VmSteps to obtain a more stable value
 // Returns the new Vm and inet values.
 func (ac *ActParams) VmInteg(vm, dt, ge, gl, gi, gk float32, nvm, inet *float32) {
-	dt *= ac.Dt.DtStep
+	dta := dt * ac.Dt.DtStep
 	*nvm = vm
 	for i := int32(0); i < ac.Dt.VmSteps; i++ {
 		*inet = ac.InetFromG(*nvm, ge, gl, gi, gk)
-		*nvm = ac.VmFromInet(*nvm, dt, *inet)
+		*nvm = ac.VmFromInet(*nvm, dta, *inet)
 	}
 }
 

@@ -92,8 +92,7 @@ func (mp *SahpParams) NinfTauFromCa(ca float32, ninf, tau *float32) {
 
 // CaInt returns the updated time-integrated Ca value from current value and current Ca
 func (mp *SahpParams) CaInt(caInt, ca float32) float32 {
-	caInt += mp.CaDt * (ca - caInt)
-	return caInt
+	return caInt + mp.CaDt*(ca-caInt)
 }
 
 // DNFromCa returns the change in gating factor N based on integrated Ca

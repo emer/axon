@@ -10,20 +10,21 @@
 // Set 0: uniform layer params -- could not have paths also be uniform..
 @group(0) @binding(0)
 var<storage, read_write> Layers: array<LayerParams>;
-@group(0) @binding(1)
-var<storage, read_write> Paths: array<PathParams>;
+// @group(0) @binding(1)
+// var<storage, read_write> Paths: array<PathParams>;
 
 // Set 1: effectively uniform indexes and path params as structured buffers in storage
 @group(1) @binding(0)
 var<storage, read_write> NeuronIxs: array<u32>; // [Neurons][Indexes]
+
 @group(1) @binding(1)
 var<storage, read_write> SynapseIxs: array<u32>; // [Layer][SendPaths][SendNeurons][Syns]
-@group(1) @binding(2)
-var<storage, read_write> SendCon: array<StartN>; // [Layer][SendPaths][SendNeurons]
+// @group(1) @binding(2)
+// var<storage, read_write> SendCon: array<StartN>; // [Layer][SendPaths][SendNeurons]
 @group(1) @binding(3)
 var<storage, read_write> RecvPathIndexes: array<u32>; // [Layer][RecvPaths]
-@group(1) @binding(4)
-var<storage, read_write> RecvCon: array<StartN>; // [Layer][RecvPaths][RecvNeurons]
+// @group(1) @binding(4)
+// var<storage, read_write> RecvCon: array<StartN>; // [Layer][RecvPaths][RecvNeurons]
 @group(1) @binding(5)
 var<storage, read_write> RecvSynIndexes: array<u32>; // [Layer][RecvPaths][RecvNeurons][Syns]
 
@@ -73,11 +74,11 @@ var<storage, read_write> SynapseCas6: array<f32>;
 @group(4) @binding(7)
 var<storage, read_write> SynapseCas7: array<f32>;
 
-fn ApplyExt2(ctx: ptr<function,Context>, ly: ptr<function,LayerParams), ni: u32, di: u32) {
+fn ApplyExt2(ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32, di: u32) {
 	let lni = ni - (*ly).Indexes.NeurSt; // layer-based 
 	LayerParams_InitExt(ly, ctx, ni, di);
-	if (IsExtLayerType(ly.LayType)) {
-		let = LayerIndexes_ExtIndex(ly.Indexes, lni, di) + ly.Indexes.ExtsSt;
+	if (IsExtLayerType((*ly).LayType)) {
+		let ei = LayerIndexes_ExtIndex((*ly).Indexes, lni, di) + (*ly).Indexes.ExtsSt;
 		LayerParams_ApplyExtValue(ly, ctx, ni, di, Exts[ei]);
 	}
 }

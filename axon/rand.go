@@ -23,6 +23,10 @@ const (
 	RandFunIndexN
 )
 
+//gosl:end axonrand
+
+// TODO:gosl fixme
+
 // GetRandomNumber returns a random number that depends on the index, counter and function index.
 // We increment the counter after each cycle, so that we get new random numbers.
 // This whole scheme exists to ensure equal results under different multithreading settings.
@@ -35,5 +39,3 @@ func GetRandomNumber(index uint32, counter slrand.Counter, funIndex RandFunIndex
 	// return slrand.Float(&ctr, index)
 	return 0.0
 }
-
-//gosl:end axonrand

@@ -222,18 +222,19 @@ func (fi *Inhib) IntToRaw() {
 
 //gosl:end fsfffb
 
-//gosl:wgsl fsfffb
+// todo gosl:wgsl fsfffb
 /*
 // // AtomicInhibRawIncr provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
+// // TODO:gosl do atomics!
 #define AtomicInhibRawIncr(fi, spike, geRaw, geExt, nneurons) \
 	InterlockedAdd(fi.FBsRawInt, int(spike)); \
 	InterlockedAdd(fi.FFsRawInt, fi.FloatToInt(geRaw, nneurons)); \
 	InterlockedAdd(fi.GeExtRawInt, fi.FloatToInt(geExt, nneurons))
 */
-//gosl:end fsfffb
+// todo gosl:end fsfffb
 
 // Inhibs is a slice of Inhib records
 type Inhibs []Inhib

@@ -59,11 +59,11 @@ func (lp *LDTParams) Update() {
 
 // Thr applies SrcThr threshold to given value
 func (lp *LDTParams) Thr(val float32) float32 {
-	val = math32.Abs(val) // only abs makes sense -- typically positive anyway
+	vl := math32.Abs(val) // only abs makes sense -- typically positive anyway
 	if lp.SrcThr <= 0 {
-		return val
+		return vl
 	}
-	if val < lp.SrcThr {
+	if vl < lp.SrcThr {
 		return 0
 	}
 	return 1
@@ -73,10 +73,7 @@ func (lp *LDTParams) Thr(val float32) float32 {
 // source layer activity value.
 func (lp *LDTParams) MaxSrcAct(maxSrcAct, srcLayAct float32) float32 {
 	act := lp.Thr(srcLayAct)
-	if act > maxSrcAct {
-		maxSrcAct = act
-	}
-	return maxSrcAct
+	return max(act, maxSrcAct)
 }
 
 // ACh returns the computed ACh salience value based on given

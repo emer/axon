@@ -131,29 +131,36 @@ func (ns *SynapseVarStrides) SetVarOuter(nsyn int) {
 type SynapseCaStrides struct {
 
 	// synapse level
-	Synapse uint64
+	Synapse uint32 // TODO:gosl workaround 64bit
 
 	// variable level
-	Var uint64
+	Var uint32
+
+	pad, pad1 uint32
 }
 
 // Index returns the index into network float32 array for given synapse, data, and variable
-func (ns *SynapseCaStrides) Index(synIndex, di uint32, nvar SynapseCaVars) uint64 {
-	return uint64(synIndex)*ns.Synapse + uint64(nvar)*ns.Var + uint64(di)
+func (ns *SynapseCaStrides) Index(synIndex, di uint32, nvar SynapseCaVars) uint32 {
+	// return uint64(synIndex)*ns.Synapse + uint64(nvar)*ns.Var + uint64(di)
+	return synIndex*ns.Synapse + uint32(nvar)*ns.Var + di
 }
 
 // SetSynapseOuter sets strides with synapses as outer loop:
 // [Synapses][Vars][Data], which is optimal for CPU-based computation.
 func (ns *SynapseCaStrides) SetSynapseOuter(ndata int) {
-	ns.Synapse = uint64(ndata) * uint64(SynapseCaVarsN)
-	ns.Var = uint64(ndata)
+	// ns.Synapse = uint64(ndata) * uint64(SynapseCaVarsN)
+	// ns.Var = uint64(ndata)
+	ns.Synapse = uint32(ndata) * uint32(SynapseCaVarsN)
+	ns.Var = uint32(ndata)
 }
 
 // SetVarOuter sets strides with vars as outer loop:
 // [Vars][Synapses][Data], which is optimal for GPU-based computation.
 func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
-	ns.Var = uint64(ndata) * uint64(nsyn)
-	ns.Synapse = uint64(ndata)
+	// ns.Var = uint64(ndata) * uint64(nsyn)
+	// ns.Synapse = uint64(ndata)
+	ns.Var = uint32(ndata) * uint32(nsyn)
+	ns.Synapse = uint32(ndata)
 }
 
 ////////////////////////////////////////////////

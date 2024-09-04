@@ -470,9 +470,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	nrnGeRaw := NrnV(ctx, ni, di, GeRaw)
 	hasRew := GlbV(ctx, di, GvHasRew) > 0
 	switch ly.LayType {
-	case CTLayer:
-		fallthrough
-	case PTPredLayer:
+	case CTLayer, PTPredLayer:
 		geCtxt := ly.CT.GeGain * nrnCtxtGe
 		AddNrnV(ctx, ni, di, GeRaw, geCtxt)
 		if ly.CT.DecayDt > 0 {
@@ -506,8 +504,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 
 	case BLALayer:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			mod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
-			geCtxt := mod * ly.CT.GeGain * NrnV(ctx, ni, di, CtxtGeOrig)
+			gmod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
+			geCtxt := gmod * ly.CT.GeGain * NrnV(ctx, ni, di, CtxtGeOrig)
 			AddNrnV(ctx, ni, di, GeRaw, geCtxt)
 			ctxExt := ly.Acts.Dt.GeSynFromRawSteady(geCtxt)
 			AddNrnV(ctx, ni, di, GeSyn, ctxExt)
@@ -593,13 +591,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 // It is passed the saveVal from SpecialPreGs
 func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float32) {
 	switch ly.LayType {
-	case BLALayer:
-		fallthrough
-	case CTLayer:
-		fallthrough
-	case PTMaintLayer:
-		fallthrough
-	case PulvinarLayer:
+	case BLALayer, CTLayer, PTMaintLayer, PulvinarLayer:
 		SetNrnV(ctx, ni, di, GeExt, saveVal)
 	case PTPredLayer:
 		SetNrnV(ctx, ni, di, GeExt, saveVal)
@@ -621,31 +613,31 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 	ach := GlbV(ctx, di, GvACh)
 	switch ly.LayType {
 	case PTMaintLayer:
-		mod := ly.Acts.Dend.ModGain * nrnGModSyn
+		gmod := ly.Acts.Dend.ModGain * nrnGModSyn
 		if ly.Acts.Dend.ModACh.IsTrue() {
-			mod *= ach
+			gmod *= ach
 		}
-		mod += ly.Acts.Dend.ModBase
-		MulNrnV(ctx, ni, di, GeRaw, mod) // key: excluding GModMaint here, so active maintenance can persist
-		MulNrnV(ctx, ni, di, GeSyn, mod)
+		gmod += ly.Acts.Dend.ModBase
+		MulNrnV(ctx, ni, di, GeRaw, gmod) // key: excluding GModMaint here, so active maintenance can persist
+		MulNrnV(ctx, ni, di, GeSyn, gmod)
 		extraRaw = ly.Acts.Dend.ModGain * nrnGModRaw
 		if ly.Acts.Dend.ModACh.IsTrue() {
 			extraRaw *= ach
 		}
-		extraSyn = mod
+		extraSyn = gmod
 	case BLALayer:
 		// modulatory pathway from PTp is only used so we can modulate by da
-		mod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
-		extraRaw = mod * nrnGModRaw * ly.Acts.Dend.ModGain
-		extraSyn = mod * nrnGModSyn * ly.Acts.Dend.ModGain
+		gmod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
+		extraRaw = gmod * nrnGModRaw * ly.Acts.Dend.ModGain
+		extraSyn = gmod * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
 		if ly.Acts.Dend.HasMod.IsTrue() {
-			mod := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn
-			if mod > 1 {
-				mod = 1
+			gmod := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn
+			if gmod > 1 {
+				gmod = 1
 			}
-			MulNrnV(ctx, ni, di, GeRaw, mod)
-			MulNrnV(ctx, ni, di, GeSyn, mod)
+			MulNrnV(ctx, ni, di, GeRaw, gmod)
+			MulNrnV(ctx, ni, di, GeSyn, gmod)
 		}
 	}
 	geRaw := NrnV(ctx, ni, di, GeRaw)
@@ -756,9 +748,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 				SetNrnV(ctx, ni, di, Burst, 0)
 			}
 		}
-	case CTLayer:
-		fallthrough
-	case PTPredLayer:
+	case CTLayer, PTPredLayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			if ly.CT.DecayTau == 0 {
 				SetNrnV(ctx, ni, di, CtxtGe, NrnV(ctx, ni, di, CtxtGeRaw))
