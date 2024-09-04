@@ -880,7 +880,7 @@ func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	SetNrnV(ctx, ni, di, ISIAvg, -1)
+	SetNrnV(ctx, ni, di, ISIAvg, -1.0)
 	SetNrnV(ctx, ni, di, ActInt, ac.Init.Act) // start fresh
 	SetNrnV(ctx, ni, di, Spiked, 0)           // always fresh
 
@@ -1056,7 +1056,7 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if ac.NMDA.Gbar == 0 {
 		return
 	}
-	geT := max(geTot, 0)
+	geT := max(geTot, 0.0)
 	SetNrnV(ctx, ni, di, GnmdaSyn, ac.NMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaSyn), geT))
 	SetNrnV(ctx, ni, di, Gnmda, ac.NMDA.Gnmda(NrnV(ctx, ni, di, GnmdaSyn), NrnV(ctx, ni, di, VmDend)))
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
@@ -1213,7 +1213,7 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFromSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
 	ac.AddGiNoise(ctx, ni, di)
-	return max(giSyn, 0) // negative inhib G doesn't make any sense
+	return max(giSyn, 0.0) // negative inhib G doesn't make any sense
 }
 
 // InetFromG computes net current from conductances and Vm

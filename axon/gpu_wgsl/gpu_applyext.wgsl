@@ -78,27 +78,28 @@ fn ApplyExt2(ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,
 	let lni = ni - (*ly).Indexes.NeurSt; // layer-based 
 	LayerParams_InitExt(ly, ctx, ni, di);
 	if (IsExtLayerType((*ly).LayType)) {
-		let ei = LayerIndexes_ExtIndex((*ly).Indexes, lni, di) + (*ly).Indexes.ExtsSt;
+		let ei = LayerIndexes_ExtIndex(&(*ly).Indexes, lni, di) + (*ly).Indexes.ExtsSt;
 		LayerParams_ApplyExtValue(ly, ctx, ni, di, Exts[ei]);
 	}
 }
 
 fn ApplyExt(ctx: ptr<function,Context>, ni: u32, di: u32) {
-	ApplyExt2(ctx, Layers[NrnI(ctx, ni, NrnLayIndex)], ni, di);
+	var ly = Layers[NrnI(ctx, ni, NrnLayIndex)];
+	ApplyExt2(ctx, &ly, ni, di);
 }
 
 @compute
 @workgroup_size(64)
 fn main(@builtin(global_invocation_id) idx: vec3<u32>) { // over Neurons x Data
 	var ctx = Ctx[0];
-	let ni = NetIndexes_ItemIndex(ctx, idx.x);
-	if (!NetIndexes_NeurIndexIsValid(ctx, ni)) {
+	var ni = NetIndexes_ItemIndex(&ctx.NetIndexes, idx.x);
+	if (!NetIndexes_NeurIndexIsValid(&ctx.NetIndexes, ni)) {
 		return;
 	}
-	let di = NetIndexes_DataIndex(ctx, idx.x);
-	if (!NetIndexes_DataIndexIsValid(ctx, di)) {
+	let di = NetIndexes_DataIndex(&ctx.NetIndexes, idx.x);
+	if (!NetIndexes_DataIndexIsValid(&ctx.NetIndexes, di)) {
 		return;
 	}
-	ApplyExt(ctx, ni, di);
+	ApplyExt(&ctx, ni, di);
 }
 

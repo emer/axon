@@ -117,7 +117,7 @@ func (nm *NeuroModParams) IsBLAExt() bool {
 
 // LRModFact returns learning rate modulation factor for given inputs.
 func (nm *NeuroModParams) LRModFact(pct, val float32) float32 {
-	aval := math32.Clamp(math32.Abs(val), 0, 1)
+	aval := math32.Clamp(math32.Abs(val), 0.0, 1.0)
 	return 1.0 - pct*(1.0-aval)
 }
 

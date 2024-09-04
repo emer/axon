@@ -553,7 +553,7 @@ fn NrnClearFlag(ctx: ptr<function,Context>, ni: u32, di: u32, flag: NeuronFlags)
 }
 
 fn NrnIsOff(ctx: ptr<function,Context>, ni: u32) -> bool {
-	return NrnHasFlag(ctx, ni, 0, NeuronOff);
+	return NrnHasFlag(ctx, ni, u32(0), NeuronOff);
 }
 
 // // NeuronAvgVars
@@ -782,6 +782,7 @@ func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence Valence
 		if usIndex < ctx.NetIndexes.RubiconNCosts {
 			us = GlbCostV(ctx, di, GvCost, usIndex)
 		}
+	default:
 	}
 	return us
 }

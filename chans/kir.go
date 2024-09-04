@@ -80,7 +80,7 @@ func (kp *KirParams) Minf(vbio float32) float32 {
 // MinfRest returns Minf at nominal resting membrane potential of -70mV
 // which serves as the initial value
 func (kp *KirParams) MinfRest() float32 {
-	return kp.Minf(-70)
+	return kp.Minf(-70.0)
 }
 
 // MRates returns minf and mtau as a function of bio voltage

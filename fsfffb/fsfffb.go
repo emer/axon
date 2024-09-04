@@ -110,7 +110,7 @@ func (fb *GiParams) FSiFromFFs(fsi *float32, ffs, fbs float32) {
 
 // FS0Thr applies FS0 threshold to given value
 func (fb *GiParams) FS0Thr(val float32) float32 {
-	return max(val-fb.FS0, 0)
+	return max(val-fb.FS0, 0.0)
 }
 
 // FS returns the current effective FS value based on fsi and fsd

@@ -227,7 +227,7 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 	if rl.On.IsFalse() || laymax == 0 {
 		return 1.0
 	}
-	ca := min(act/laymax, 1)
+	ca := min(act/laymax, 1.0)
 	var lr float32
 	if rl.SigmoidLinear.IsTrue() {
 		if ca < 0.5 {
@@ -331,7 +331,7 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
-	ge := max(geTot, 0)
+	ge := max(geTot, 0.0)
 	vmd := NrnV(ctx, ni, di, VmDend)
 	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaLrn), ge))
 	gnmda := ln.LrnNMDA.Gnmda(NrnV(ctx, ni, di, GnmdaLrn), vmd)

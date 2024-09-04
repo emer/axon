@@ -504,7 +504,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 
 	case BLALayer:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			gmod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
+			gmod := max(-GlbV(ctx, di, GvDA), 0.0) // ext is modulated by negative da
 			geCtxt := gmod * ly.CT.GeGain * NrnV(ctx, ni, di, CtxtGeOrig)
 			AddNrnV(ctx, ni, di, GeRaw, geCtxt)
 			ctxExt := ly.Acts.Dt.GeSynFromRawSteady(geCtxt)
@@ -582,6 +582,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 	case TDIntegLayer:
 		NrnSetFlag(ctx, ni, di, NeuronHasExt)
 		SetNeuronExtPosNeg(ctx, ni, di, GlbV(ctx, di, GvRewPred))
+	default:
 	}
 	return saveVal
 }
@@ -599,6 +600,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		if orig < 0.05 {
 			SetNrnV(ctx, ni, di, Ge, 0) // gated by context input
 		}
+	default:
 	}
 }
 
@@ -627,7 +629,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 		extraSyn = gmod
 	case BLALayer:
 		// modulatory pathway from PTp is only used so we can modulate by da
-		gmod := max(-GlbV(ctx, di, GvDA), 0) // ext is modulated by negative da
+		gmod := max(-GlbV(ctx, di, GvDA), 0.0) // ext is modulated by negative da
 		extraRaw = gmod * nrnGModRaw * ly.Acts.Dend.ModGain
 		extraSyn = gmod * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
@@ -845,6 +847,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvRewPred))
 	case TDDaLayer:
 		SetNrnV(ctx, ni, di, Act, GlbV(ctx, di, GvDA)) // I set this in CyclePost
+	default:
 	}
 }
 
@@ -1025,8 +1028,8 @@ func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32, pl *Poo
 	if NrnHasFlag(ctx, ni, di, NeuronHasTarg) { // will be clamped in plus phase
 		SetNrnV(ctx, ni, di, Ext, NrnV(ctx, ni, di, Target))
 		NrnSetFlag(ctx, ni, di, NeuronHasExt)
-		SetNrnV(ctx, ni, di, ISI, -1) // get fresh update on plus phase output acts
-		SetNrnV(ctx, ni, di, ISIAvg, -1)
+		SetNrnV(ctx, ni, di, ISI, -1.0) // get fresh update on plus phase output acts
+		SetNrnV(ctx, ni, di, ISIAvg, -1.0)
 		SetNrnV(ctx, ni, di, ActInt, ly.Acts.Init.Act) // reset for plus phase
 	}
 }

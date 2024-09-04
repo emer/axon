@@ -150,7 +150,7 @@ func (ti *TopoInhibParams) ShouldDisplay(field string) bool {
 }
 
 func (ti *TopoInhibParams) GiFromGeAct(ge, act, ff0 float32) float32 {
-	g := max(ge-ff0, 0)
+	g := max(ge-ff0, 0.0)
 	return ti.Gi * (ti.FF*g + ti.FB*act)
 }
 

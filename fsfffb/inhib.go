@@ -176,14 +176,14 @@ func (fi *Inhib) PoolMax(piGi float32) {
 // to int32 for summing, assuming that
 // the overall value is in the general order of 0-1 (512 is the max).
 func (fi *Inhib) FloatToIntFactor() float32 {
-	return float32(1 << 24) // leaves 9 bits = 512 to cover extreme values
+	return float32(uint32(1) << 24) // leaves 9 bits = 512 to cover extreme values
 }
 
 // FloatFromIntFactor returns the factor used for converting int32
 // back to float32 -- this is 1 / FloatToIntFactor for faster multiplication
 // instead of dividing.
 func (fi *Inhib) FloatFromIntFactor() float32 {
-	return 1.0 / float32(1<<24)
+	return 1.0 / float32(uint32(1)<<24)
 }
 
 // FloatToInt converts the given floating point value
