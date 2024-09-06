@@ -3,9 +3,9 @@ module github.com/emer/axon/v2
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.3-0.20240828192310-4322e1aa7196
+	cogentcore.org/core v0.3.3-0.20240902213628-48df10901467
 	github.com/anthonynsimon/bild v0.13.0
-	github.com/emer/emergent/v2 v2.0.0-dev0.1.0.0.20240828203321-c67ca550ce89
+	github.com/emer/emergent/v2 v2.0.0-dev0.1.0.0.20240902221812-7068c809e099
 	github.com/emer/vision/v2 v2.0.0-dev0.1.0
 	github.com/goki/vulkan v1.0.8
 	github.com/stretchr/testify v1.9.0

@@ -17,7 +17,7 @@ $ core run [platform]
 
 where `[platform]` is optional (defaults to your local system), and can include `android`, `ios` and `web`!
 
-See the [ra25 example](examples/ra25/README.md) for a complete working example, which is intended to be a good starting point for creating your own models.
+See the [ra25 example](examples/ra25/README.md) for a complete working example, which is intended to be a good starting point for creating your own models.  The [emergent wiki install](https://github.com/emer/emergent/wiki/Install) page has a tutorial for how to create your own simulation starting from the ra25 example.
 
 # Current Status / News
 
