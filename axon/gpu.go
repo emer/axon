@@ -18,7 +18,7 @@ import (
 	vk "github.com/goki/vulkan"
 )
 
-//go:embed shaders/*.wgsl
+// nogo:embed shaders/*.wgsl
 var content embed.FS
 
 //go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay cogentcore.org/core/math32/fastexp.go cogentcore.org/core/math32/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/v2/etime github.com/emer/emergent/v2/ringidx rand.go avgmax.go neuromod.go globals.go context.go neuron.go synapse.go pool.go layervals.go act.go act_path.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go rubicon_layers.go pcore_layers.go pathtypes.go pathparams.go deep_paths.go rl_paths.go rubicon_paths.go pcore_paths.go hip_paths.go gpu_wgsl/gpu_applyext.wgsl
