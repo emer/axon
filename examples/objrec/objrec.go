@@ -62,6 +62,8 @@ func main() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+	// Probability of training on novel items (0 for first phase, then .5 = 50%)
+	PNovel float64
 
 	// simulation configuration parameters -- set by .toml config file and / or args
 	Config Config `new-window:"+"`
@@ -370,6 +372,9 @@ func (ss *Sim) ApplyInputs() {
 	ctx := &ss.Context
 	net := ss.Net
 	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
+	if ctx.Mode == etime.Train && randx.BoolP(ss.PNovel) {
+		ev = ss.Envs.ByMode(etime.Analyze).(*LEDEnv)
+	}
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -448,7 +453,7 @@ func (ss *Sim) StatCounters(di int) {
 	ss.Stats.SetInt("Di", di)
 	ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
-	ss.Stats.SetString("Cat", fmt.Sprintf("%d", ss.Stats.IntDi("Cat", di)))
+	ss.Stats.SetString("Cat", fmt.Sprintf("%02d", ss.Stats.IntDi("Cat", di)))
 }
 
 func (ss *Sim) NetViewCounters(tm etime.Times) {
@@ -713,6 +718,30 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 				ss.GUI.UpdateWindow()
 				go ss.RunTestAll()
 			}
+		},
+	})
+
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Open Trained Wts", Icon: icons.Open,
+		Tooltip: "Opened weights from the first phase of training, which excludes novel objects",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			// ss.Net.OpenWeightsFS(content, "objrec_train1.wts.gz")
+		},
+	})
+
+	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{Label: "Train Novel", Icon: icons.Update,
+		Tooltip: "Configure for training novel objects: loads phase 1 weights and sets PNovel = .5, etc",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.NewRun()
+			ss.Params.SetAllSheet("NovelLearn")
+			ss.PNovel = 0.5
+			ss.GUI.SimForm.Update()
+			ss.GUI.UpdateWindow()
+			go func() {
+				ss.Loops.Step(etime.Train, 1, etime.Trial)
+				// ss.Net.OpenWeightsFS(content, "objrec_train1.wts.gz")
+			}()
 		},
 	})
 
