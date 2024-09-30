@@ -279,8 +279,7 @@ func (ss *Sim) ConfigLoops() {
 	ss.Net.ConfigLoopsHip(&ss.Context, man, &ss.Config.Hip, &ss.PretrainMode)
 
 	for m, _ := range man.Stacks {
-		mode := m // For closures
-		stack := man.Stacks[mode]
+		stack := man.Stacks[m]
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})

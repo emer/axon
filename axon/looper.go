@@ -41,11 +41,10 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase)
 
 	for m, _ := range man.Stacks {
-		mode := m // For closures
-		stack := man.Stacks[mode]
+		stack := man.Stacks[m]
 		stack.Loops[trl].OnStart.Add("NewState", func() {
 			net.NewState(ctx)
-			ctx.NewState(mode)
+			ctx.NewState(m)
 		})
 		stack.Loops[trl].OnEnd.Add("PlusPhase:End", func() {
 			net.PlusPhase(ctx)
@@ -92,10 +91,9 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
 	for m, loops := range man.Stacks {
-		curMode := m // For closures.
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetCtxMode", func() {
-				ctx.Mode = curMode
+				ctx.Mode = m
 			})
 		}
 	}
@@ -107,7 +105,6 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 // then Epoch does not reset the log below it
 func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.Times) {
 	for m, stack := range man.Stacks {
-		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
 			isExcept := false
@@ -119,7 +116,7 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.T
 			}
 			if below := stack.TimeBelow(curTime); !isExcept && below != etime.NoTime {
 				loop.OnStart.Add("ResetLog"+below.String(), func() {
-					logs.ResetLog(curMode, below)
+					logs.ResetLog(m, below)
 				})
 			}
 		}
@@ -129,7 +126,6 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.T
 // LooperUpdateNetView adds netview update calls at each time level
 func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net *Network, ctrUpdateFunc func(tm etime.Times)) {
 	for m, stack := range man.Stacks {
-		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
 			if curTime != etime.Cycle {
@@ -139,7 +135,7 @@ func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net 
 				})
 			}
 		}
-		cycLoop := man.GetLoop(curMode, etime.Cycle)
+		cycLoop := man.GetLoop(m, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
 			cyc := cycLoop.Counter.Cur
 			ctrUpdateFunc(etime.Cycle)
@@ -151,18 +147,17 @@ func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net 
 // LooperUpdatePlots adds plot update calls at each time level
 func LooperUpdatePlots(man *looper.Manager, gui *egui.GUI) {
 	for m, stack := range man.Stacks {
-		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
 			curLoop := loop
 			if curTime == etime.Cycle {
 				curLoop.OnEnd.Add("GUI:UpdatePlot", func() {
 					cyc := curLoop.Counter.Cur
-					gui.GoUpdateCyclePlot(curMode, cyc)
+					gui.GoUpdateCyclePlot(m, cyc)
 				})
 			} else {
 				curLoop.OnEnd.Add("GUI:UpdatePlot", func() {
-					gui.GoUpdatePlot(curMode, curTime)
+					gui.GoUpdatePlot(m, curTime)
 				})
 			}
 		}

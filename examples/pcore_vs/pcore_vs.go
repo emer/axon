@@ -305,15 +305,14 @@ func (ss *Sim) ConfigLoops() {
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdate) // std algo code
 
 	for m, _ := range man.Stacks {
-		mode := m // For closures
-		stack := man.Stacks[mode]
+		stack := man.Stacks[m]
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
-			seq := man.Stacks[mode].Loops[etime.Sequence].Counter.Cur
-			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur
-			ss.ApplyInputs(mode, seq, trial)
+			seq := man.Stacks[m].Loops[etime.Sequence].Counter.Cur
+			trial := man.Stacks[m].Loops[etime.Trial].Counter.Cur
+			ss.ApplyInputs(m, seq, trial)
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("GatedAction", func() {
-			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur
+			trial := man.Stacks[m].Loops[etime.Trial].Counter.Cur
 			if trial == 1 {
 				ss.GatedAction()
 			}

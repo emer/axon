@@ -262,17 +262,15 @@ func (ss *Sim) ConfigLoops() {
 		})
 	}
 	for m, loops := range man.Stacks {
-		curMode := m // For closures.
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetTimeVal", func() {
-				time.Mode = curMode
+				time.Mode = m
 			})
 		}
 	}
 
 	for m, _ := range man.Stacks {
-		mode := m // For closures
-		stack := man.Stacks[mode]
+		stack := man.Stacks[m]
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
