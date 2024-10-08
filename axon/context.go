@@ -152,32 +152,32 @@ func AddGlbV(ctx *Context, di uint32, gvar GlobalVars, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalIndex(di, gvar)] += val
 }
 
-// GlbCost is the CPU version of the global Cost variable accessor
+// GlbCostV is the CPU version of the global Cost variable accessor
 func GlbCostV(ctx *Context, di uint32, gvar GlobalVars, negIndex uint32) float32 {
 	return GlobalNetwork(ctx).Globals[ctx.GlobalCostIndex(di, gvar, negIndex)]
 }
 
-// SetGlbCost is the CPU version of the global Cost variable settor
+// SetGlbCostV is the CPU version of the global Cost variable settor
 func SetGlbCostV(ctx *Context, di uint32, gvar GlobalVars, negIndex uint32, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalCostIndex(di, gvar, negIndex)] = val
 }
 
-// AddGlbCost is the CPU version of the global Cost variable addor
+// AddGlbCostV is the CPU version of the global Cost variable addor
 func AddGlbCostV(ctx *Context, di uint32, gvar GlobalVars, negIndex uint32, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalCostIndex(di, gvar, negIndex)] += val
 }
 
-// GlbUSneg is the CPU version of the global USneg variable accessor
+// GlbUSnegV is the CPU version of the global USneg variable accessor
 func GlbUSnegV(ctx *Context, di uint32, gvar GlobalVars, negIndex uint32) float32 {
 	return GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIndex(di, gvar, negIndex)]
 }
 
-// SetGlbUSneg is the CPU version of the global USneg variable settor
+// SetGlbUSnegV is the CPU version of the global USneg variable settor
 func SetGlbUSnegV(ctx *Context, di uint32, gvar GlobalVars, negIndex uint32, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIndex(di, gvar, negIndex)] = val
 }
 
-// AddGlbUSneg is the CPU version of the global USneg variable addor
+// AddGlbUSnegV is the CPU version of the global USneg variable addor
 func AddGlbUSnegV(ctx *Context, di uint32, gvar GlobalVars, negIndex uint32, val float32) {
 	GlobalNetwork(ctx).Globals[ctx.GlobalUSnegIndex(di, gvar, negIndex)] += val
 }
@@ -406,7 +406,8 @@ type Context struct {
 	SynapseIndexes SynapseIndexStrides `display:"-"`
 
 	// random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.
-	RandCtr slrand.Counter
+	// RandCtr slrand.Counter
+	// TODO:gosl
 }
 
 // Defaults sets default values
@@ -499,52 +500,52 @@ void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
 	Neurons[NrnFlags, ni, di] =  asfloat(asuint(Neurons[NrnFlags, ni, di])& ~uint(flag)));
 }
 
-bool NrnIsOff(in Context ctx, uint ni) {
-	return NrnHasFlag(ctx, ni, 0, NeuronOff);
+fn NrnIsOff(ctx: ptr<function,Context>, ni: u32) -> bool {
+	return NrnHasFlag(ctx, ni, u32(0), NeuronOff);
 }
 
 // // NeuronAvgVars
 
-float NrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar) {
-   return NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)];
+fn NrnAvgV(ctx: ptr<function,Context>, ni: u32, nvar: NeuronAvgVars) -> f32 {
+   return NeuronAvgs[NeuronAvgVarStrides_Index(&(*ctx).NeuronAvgVars, ni, nvar)];
 }
 
-void SetNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
- 	NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)] = val;
+fn SetNrnAvgV(ctx: ptr<function,Context>, ni: u32, nvar: NeuronAvgVars, val: f32) {
+ 	NeuronAvgs[NeuronAvgVarStrides_Index(&(*ctx).NeuronAvgVars, ni, nvar)] = val;
 }
 
-void AddNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
- 	NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)] += val;
+fn AddNrnAvgV(ctx: ptr<function,Context>, ni: u32, nvar: NeuronAvgVars, val: f32) {
+ 	NeuronAvgs[NeuronAvgVarStrides_Index(&(*ctx).NeuronAvgVars, ni, nvar)] += val;
 }
 
-void MulNrnAvgV(in Context ctx, uint ni, NeuronAvgVars nvar, float val) {
- 	NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)] *= val;
+fn MulNrnAvgV(ctx: ptr<function,Context>, ni: u32, nvar: NeuronAvgVars, val: f32) {
+ 	NeuronAvgs[NeuronAvgVarStrides_Index(&(*ctx).NeuronAvgVars, ni, nvar)] *= val;
 }
 
 // // NeuronIndexes
 
-uint NrnI(in Context ctx, uint ni, NeuronIndexes idx) {
-	return NeuronIxs[ctx.NeuronIndexes.Index(ni, idx)];
+fn NrnI(ctx: ptr<function,Context>, ni: u32, idx: NeuronIndexes) -> u32 {
+	return NeuronIxs[NeuronIndexStrides_Index(&(*ctx).NeuronIndexes, ni, idx)];
 }
 
 // // note: no SetNrnI in GPU mode -- all init done in CPU
 
 // // SynapseVars
 
-float SynV(in Context ctx, uint syni, SynapseVars svar) {
-	return Synapses[ctx.SynapseVars.Index(syni, svar)];
+fn SynV(ctx: ptr<function,Context>, syni: u32, svar: SynapseVars) -> f32 {
+	return Synapses[SynapseVarStrides_Index(&(*ctx).SynapseVars, syni, svar)];
 }
 
-void SetSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
- 	Synapses[ctx.SynapseVars.Index(syni, svar)] = val;
+fn SetSynV(ctx: ptr<function,Context>, syni: u32, svar: SynapseVars, val: f32) {
+	Synapses[SynapseVarStrides_Index(&(*ctx).SynapseVars, syni, svar)] = val;
 }
 
-void AddSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
- 	Synapses[ctx.SynapseVars.Index(syni, svar)] += val;
+fn AddSynV(ctx: ptr<function,Context>, syni: u32, svar: SynapseVars, val: f32) {
+	Synapses[SynapseVarStrides_Index(&(*ctx).SynapseVars, syni, svar)] += val;
 }
 
-void MulSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
- 	Synapses[ctx.SynapseVars.Index(syni, svar)] *= val;
+fn MulSynV(ctx: ptr<function,Context>, syni: u32, svar: SynapseVars, val: f32) {
+	Synapses[SynapseVarStrides_Index(&(*ctx).SynapseVars, syni, svar)] *= val;
 }
 
 // // SynapseCaVars
@@ -552,103 +553,70 @@ void MulSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
 // // note: with NData repetition, SynCa can easily exceed the nominal 2^31 capacity
 // // for buffer access.  Also, if else is significantly faster than switch case here.
 
-float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
-	uint64 ix = ctx.SynapseCaVars.Index(syni, di, svar);
-	uint bank = uint(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	uint res = uint(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	if (bank == 0) {
-		return SynapseCas0[res];
-	} else if (bank == 1) {
-		return SynapseCas1[res];
-	} else if (bank == 2) {
-		return SynapseCas2[res];
-	} else if (bank == 3) {
-		return SynapseCas3[res];
-	} else if (bank == 4) {
-		return SynapseCas4[res];
-	} else if (bank == 5) {
-		return SynapseCas5[res];
-	} else if (bank == 6) {
-		return SynapseCas6[res];
-	} else if (bank == 7) {
-		return SynapseCas7[res];
-	}
-	return 0;
+fn SynCaV(ctx: ptr<function,Context>, syni: u32, di: u32, svar: SynapseCaVars) -> f32 {
+	let ix = SynapseCaStrides_Index(&(*ctx).SynapseCaVars, syni, di, svar); // TODO:gosl -- this has to be 64 bit!!
+	// let bank = u32(ix / (ctx.NetIndexes.GPUMaxBuffFloats));
+	// let res = uint(ix % (ctx.NetIndexes.GPUMaxBuffFloats));
+	// if (bank == 0) {
+	return SynapseCas[ix];
+	// }
+	// } else if (bank == 1) {
+	// 	return SynapseCas1[res];
+	// } else if (bank == 2) {
+	// 	return SynapseCas2[res];
+	// } else if (bank == 3) {
+	// 	return SynapseCas3[res];
+	// } else if (bank == 4) {
+	// 	return SynapseCas4[res];
+	// } else if (bank == 5) {
+	// 	return SynapseCas5[res];
+	// } else if (bank == 6) {
+	// 	return SynapseCas6[res];
+	// } else if (bank == 7) {
+	// 	return SynapseCas7[res];
+	// }
+	// return 0;
 }
 
-void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
-	uint64 ix = ctx.SynapseCaVars.Index(syni, di, svar);
-	uint bank = uint(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	uint res = uint(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	if (bank == 0) {
-		SynapseCas0[res] = val;
-	} else if (bank == 1) {
-		SynapseCas1[res] = val;
-	} else if (bank == 2) {
-		SynapseCas2[res] = val;
-	} else if (bank == 3) {
-		SynapseCas3[res] = val;
-	} else if (bank == 4) {
-		SynapseCas4[res] = val;
-	} else if (bank == 5) {
-		SynapseCas5[res] = val;
-	} else if (bank == 6) {
-		SynapseCas6[res] = val;
-	} else if (bank == 7) {
-		SynapseCas7[res] = val;
-	}
+fn SetSynCaV(ctx: ptr<function,Context>, syni: u32, di: u32, svar: SynapseCaVars, val: f32) {
+	let ix = SynapseCaStrides_Index(&(*ctx).SynapseCaVars, syni, di, svar); // TODO:gosl -- this has to be 64 bit!!
+	// uint bank = uint(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats));
+	// uint res = uint(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats));
+	// if (bank == 0) {
+	SynapseCas[ix] = val;
+	// } else if (bank == 1) {
+	// 	SynapseCas1[res] = val;
+	// } else if (bank == 2) {
+	// 	SynapseCas2[res] = val;
+	// } else if (bank == 3) {
+	// 	SynapseCas3[res] = val;
+	// } else if (bank == 4) {
+	// 	SynapseCas4[res] = val;
+	// } else if (bank == 5) {
+	// 	SynapseCas5[res] = val;
+	// } else if (bank == 6) {
+	// 	SynapseCas6[res] = val;
+	// } else if (bank == 7) {
+	// 	SynapseCas7[res] = val;
+	// }
 }
 
-void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
-	uint64 ix = ctx.SynapseCaVars.Index(syni, di, svar);
-	uint bank = uint(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	uint res = uint(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	if (bank == 0) {
-		SynapseCas0[res] += val;
-	} else if (bank == 1) {
-		SynapseCas1[res] += val;
-	} else if (bank == 2) {
-		SynapseCas2[res] += val;
-	} else if (bank == 3) {
-		SynapseCas3[res] += val;
-	} else if (bank == 4) {
-		SynapseCas4[res] += val;
-	} else if (bank == 5) {
-		SynapseCas5[res] += val;
-	} else if (bank == 6) {
-		SynapseCas6[res] += val;
-	} else if (bank == 7) {
-		SynapseCas7[res] += val;
-	}
+// // TODO:gosl fixme
+
+fn AddSynCaV(ctx: ptr<function,Context>, syni: u32, di: u32, svar: SynapseCaVars, val: f32) {
+	let ix = SynapseCaStrides_Index(&(*ctx).SynapseCaVars, syni, di, svar); // TODO:gosl -- this has to be 64 bit!!
+	SynapseCas[ix] += val;
 }
 
-void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
-	uint64 ix = ctx.SynapseCaVars.Index(syni, di, svar);
-	uint bank = uint(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	uint res = uint(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats));
-	if (bank == 0) {
-		SynapseCas0[res] *= val;
-	} else if (bank == 1) {
-		SynapseCas1[res] *= val;
-	} else if (bank == 2) {
-		SynapseCas2[res] *= val;
-	} else if (bank == 3) {
-		SynapseCas3[res] *= val;
-	} else if (bank == 4) {
-		SynapseCas4[res] *= val;
-	} else if (bank == 5) {
-		SynapseCas5[res] *= val;
-	} else if (bank == 6) {
-		SynapseCas6[res] *= val;
-	} else if (bank == 7) {
-		SynapseCas7[res] *= val;
-	}
+fn MulSynCaV(ctx: ptr<function,Context>, syni: u32, di: u32, svar: SynapseCaVars, val: f32) {
+	let ix = SynapseCaStrides_Index(&(*ctx).SynapseCaVars, syni, di, svar); // TODO:gosl -- this has to be 64 bit!!
+	SynapseCas[ix] *= val;
 }
 
 // // SynapseIndexes
 
-uint SynI(in Context ctx, uint syni, SynapseIndexes idx) {
-	return SynapseIxs[ctx.SynapseIndexes.Index(syni, idx)];
+fn SynI(ctx: ptr<function,Context>, syni: u32, idx: SynapseIndexes) -> u32 {
+	return SynapseIxs[SynapseIndexStrides_Index(&(*ctx).SynapseIndexes, syni, idx)];
 }
 
 // // note: no SetSynI in GPU mode -- all init done in CPU
@@ -656,52 +624,52 @@ uint SynI(in Context ctx, uint syni, SynapseIndexes idx) {
 // /////////////////////////////////
 // //  Global Vars
 
-float GlbV(in Context ctx, uint di, GlobalVars gvar) {
-	return Globals[ctx.GlobalIndex(di, gvar)];
+fn GlbV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars) -> f32 {
+	return Globals[Context_GlobalIndex(ctx, di, gvar)];
 }
 
-void SetGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalIndex(di, gvar)] = val;
+fn SetGlbV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, val: f32) {
+	Globals[Context_GlobalIndex(ctx, di, gvar)] = val;
 }
 
-void AddGlbV(in Context ctx, uint di, GlobalVars gvar, float val) {
-	Globals[ctx.GlobalIndex(di, gvar)] += val;
+fn AddGlbV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, val: f32) {
+	Globals[Context_GlobalIndex(ctx, di, gvar)] += val;
 }
 
-float GlbCostV(in Context ctx, uint di, GlobalVars gvar, uint negIndex) {
-	return Globals[ctx.GlobalCostIndex(di, gvar, negIndex)];
+fn GlbCostV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, negIndex: u32) -> f32 {
+	return Globals[Context_GlobalCostIndex(ctx, di, gvar, negIndex)];
 }
 
-void SetGlbCostV(in Context ctx, uint di, GlobalVars gvar, uint negIndex, float val) {
-	Globals[ctx.GlobalCostIndex(di, gvar, negIndex)] = val;
+fn SetGlbCostV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, negIndex: u32, val: f32) {
+	Globals[Context_GlobalCostIndex(ctx, di, gvar, negIndex)] = val;
 }
 
-void AddGlbCostV(in Context ctx, uint di, GlobalVars gvar, uint negIndex, float val) {
-	Globals[ctx.GlobalCostIndex(di, gvar, negIndex)] += val;
+fn AddGlbCostV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, negIndex: u32, val: f32) {
+	Globals[Context_GlobalCostIndex(ctx, di, gvar, negIndex)] += val;
 }
 
-float GlbUSnegV(in Context ctx, uint di, GlobalVars gvar, uint negIndex) {
-	return Globals[ctx.GlobalUSnegIndex(di, gvar, negIndex)];
+fn GlbUSnegV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, negIndex: u32) -> f32 {
+	return Globals[Context_GlobalUSnegIndex(ctx, di, gvar, negIndex)];
 }
 
-void SetGlbUSnegV(in Context ctx, uint di, GlobalVars gvar, uint negIndex, float val) {
-	Globals[ctx.GlobalUSnegIndex(di, gvar, negIndex)] = val;
+fn SetGlbUSnegV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, negIndex: u32, val: f32) {
+	Globals[Context_GlobalUSnegIndex(ctx, di, gvar, negIndex)] = val;
 }
 
-void AddGlbUSnegV(in Context ctx, uint di, GlobalVars gvar, uint negIndex, float val) {
-	Globals[ctx.GlobalUSnegIndex(di, gvar, negIndex)] += val;
+fn AddGlbUSnegV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, negIndex: u32, val: f32) {
+	Globals[Context_GlobalUSnegIndex(ctx, di, gvar, negIndex)] += val;
 }
 
-float GlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIndex) {
-	return Globals[ctx.GlobalUSposIndex(di, gvar, posIndex)];
+fn GlbUSposV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, posIndex: u32) -> f32 {
+	return Globals[Context_GlobalUSposIndex(ctx, di, gvar, posIndex)];
 }
 
-void SetGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIndex, float val) {
-	Globals[ctx.GlobalUSposIndex(di, gvar, posIndex)] = val;
+fn SetGlbUSposV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, posIndex: u32, val: f32) {
+	Globals[Context_GlobalUSposIndex(ctx, di, gvar, posIndex)] = val;
 }
 
-void AddGlbUSposV(in Context ctx, uint di, GlobalVars gvar, uint posIndex, float val) {
-	Globals[ctx.GlobalUSposIndex(di, gvar, posIndex)] += val;
+fn AddGlbUSposV(ctx: ptr<function,Context>, di: u32, gvar: GlobalVars, posIndex: u32, val: f32) {
+	Globals[Context_GlobalUSposIndex(ctx, di, gvar, posIndex)] += val;
 }
 
 */
@@ -762,6 +730,7 @@ func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence Valence
 		if usIndex < ctx.NetIndexes.RubiconNCosts {
 			us = GlbCostV(ctx, di, GvCost, usIndex)
 		}
+	default:
 	}
 	return us
 }
@@ -798,7 +767,7 @@ func (ctx *Context) Reset() {
 	if ctx.TimePerCycle == 0 {
 		ctx.Defaults()
 	}
-	ctx.RandCtr.Reset()
+	// ctx.RandCtr.Reset()
 	GlobalsReset(ctx)
 }
 

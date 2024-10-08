@@ -153,12 +153,13 @@ func (am *PoolAvgMax) Calc(refIndex int32) {
 // commented out!  it is auto-uncommented when copied to wgsl
 // MUST update whenever above UpdateValues code is updated.
 
-//gosl:wgsl pool
+// todo gosl:wgsl pool
 /*
 // // AtomicUpdatePoolAvgMax provides an atomic update using atomic ints
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
+// // TODO:gosl do atomics!
 #define AtomicUpdatePoolAvgMax(am, ctx, ni, di) \
 	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, Neurons[CaSpkP, ni, di]); \
 	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, Neurons[CaSpkD, ni, di]); \
@@ -167,7 +168,7 @@ func (am *PoolAvgMax) Calc(refIndex int32) {
 	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, Neurons[GeInt, ni, di]); \
 	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, Neurons[GiInt, ni, di])
 */
-//gosl:end pool
+// todo gosl:end pool
 
 //gosl:start pool
 

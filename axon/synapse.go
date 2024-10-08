@@ -61,7 +61,138 @@ const (
 	SynIndexesN
 )
 
+<<<<<<< HEAD
 //gosl:end
+=======
+//gosl:end synapse
+
+//gosl:wgsl synapse
+/*
+const SynapseVarsN: SynapseVars = DSWt + 1;
+const SynapseCaVarsN: SynapseCaVars = DiDWt + 1;
+const SynapseIndexesN: SynapseIndexes = SynPathIndex + 1;
+*/
+//gosl:end synapse
+
+//gosl:start synapse
+
+////////////////////////////////////////////////
+// 	Strides
+
+// SynapseVarStrides encodes the stride offsets for synapse variable access
+// into network float32 array.
+type SynapseVarStrides struct {
+
+	// synapse level
+	Synapse uint32
+
+	// variable level
+	Var uint32
+
+	pad, pad1 uint32
+}
+
+// note: when increasing synapse var capacity beyond 2^31, change back to uint64
+
+// Index returns the index into network float32 array for given synapse, and variable
+func (ns *SynapseVarStrides) Index(synIndex uint32, nvar SynapseVars) uint32 {
+	// return uint64(synIndex)*uint64(ns.Synapse) + uint64(nvar)*uint64(ns.Var)
+	return synIndex*ns.Synapse + uint32(nvar)*ns.Var
+}
+
+// SetSynapseOuter sets strides with synapses as outer loop:
+// [Synapses][Vars], which is optimal for CPU-based computation.
+func (ns *SynapseVarStrides) SetSynapseOuter() {
+	ns.Synapse = uint32(SynapseVarsN)
+	ns.Var = 1
+}
+
+// SetVarOuter sets strides with vars as outer loop:
+// [Vars][Synapses], which is optimal for GPU-based computation.
+func (ns *SynapseVarStrides) SetVarOuter(nsyn int) {
+	ns.Var = uint32(nsyn)
+	ns.Synapse = 1
+}
+
+////////////////////////////////////////////////
+// 	SynapseCaVars
+
+// SynapseCaStrides encodes the stride offsets for synapse variable access
+// into network float32 array.  Data is always the inner-most variable.
+type SynapseCaStrides struct {
+
+	// synapse level
+	Synapse uint32 // TODO:gosl workaround 64bit
+
+	// variable level
+	Var uint32
+
+	pad, pad1 uint32
+}
+
+// Index returns the index into network float32 array for given synapse, data, and variable
+func (ns *SynapseCaStrides) Index(synIndex, di uint32, nvar SynapseCaVars) uint32 {
+	// return uint64(synIndex)*ns.Synapse + uint64(nvar)*ns.Var + uint64(di)
+	return synIndex*ns.Synapse + uint32(nvar)*ns.Var + di
+}
+
+// SetSynapseOuter sets strides with synapses as outer loop:
+// [Synapses][Vars][Data], which is optimal for CPU-based computation.
+func (ns *SynapseCaStrides) SetSynapseOuter(ndata int) {
+	// ns.Synapse = uint64(ndata) * uint64(SynapseCaVarsN)
+	// ns.Var = uint64(ndata)
+	ns.Synapse = uint32(ndata) * uint32(SynapseCaVarsN)
+	ns.Var = uint32(ndata)
+}
+
+// SetVarOuter sets strides with vars as outer loop:
+// [Vars][Synapses][Data], which is optimal for GPU-based computation.
+func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
+	// ns.Var = uint64(ndata) * uint64(nsyn)
+	// ns.Synapse = uint64(ndata)
+	ns.Var = uint32(ndata) * uint32(nsyn)
+	ns.Synapse = uint32(ndata)
+}
+
+////////////////////////////////////////////////
+// 	Indexes
+
+// SynapseIndexStrides encodes the stride offsets for synapse index access
+// into network uint32 array.
+type SynapseIndexStrides struct {
+
+	// synapse level
+	Synapse uint32
+
+	// index value level
+	Idx uint32
+
+	pad, pad1 uint32
+}
+
+// Index returns the index into network uint32 array for given synapse, index value
+func (ns *SynapseIndexStrides) Index(synIdx uint32, idx SynapseIndexes) uint32 {
+	return synIdx*ns.Synapse + uint32(idx)*ns.Idx
+}
+
+// SetSynapseOuter sets strides with synapses as outer dimension:
+// [Synapses][Indexes] (outer to inner), which is optimal for CPU-based
+// computation.
+func (ns *SynapseIndexStrides) SetSynapseOuter() {
+	ns.Synapse = uint32(SynapseIndexesN)
+	ns.Idx = 1
+}
+
+// SetIndexOuter sets strides with indexes as outer dimension:
+// [Indexes][Synapses] (outer to inner), which is optimal for GPU-based
+// computation.
+func (ns *SynapseIndexStrides) SetIndexOuter(nsyn int) {
+	ns.Idx = uint32(nsyn)
+	ns.Synapse = 1
+}
+
+//gosl:end synapse
+>>>>>>> gosl
 
 // SynapseVarProps has all of the display properties for synapse variables, including desc tooltips
 var SynapseVarProps = map[string]string{

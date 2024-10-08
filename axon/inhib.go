@@ -150,12 +150,8 @@ func (ti *TopoInhibParams) ShouldDisplay(field string) bool {
 }
 
 func (ti *TopoInhibParams) GiFromGeAct(ge, act, ff0 float32) float32 {
-	if ge < ff0 {
-		ge = 0
-	} else {
-		ge -= ff0
-	}
-	return ti.Gi * (ti.FF*ge + ti.FB*act)
+	g := max(ge-ff0, 0.0)
+	return ti.Gi * (ti.FF*g + ti.FB*act)
 }
 
 // axon.InhibParams contains all the inhibition computation params and functions for basic Axon

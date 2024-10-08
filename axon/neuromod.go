@@ -117,18 +117,19 @@ func (nm *NeuroModParams) IsBLAExt() bool {
 
 // LRModFact returns learning rate modulation factor for given inputs.
 func (nm *NeuroModParams) LRModFact(pct, val float32) float32 {
-	val = math32.Clamp(math32.Abs(val), 0, 1)
-	return 1.0 - pct*(1.0-val)
+	aval := math32.Clamp(math32.Abs(val), 0.0, 1.0)
+	return 1.0 - pct*(1.0-aval)
 }
 
 // DAGain returns DA dopamine value with Burst / Dip Gain factors applied
 func (nm *NeuroModParams) DAGain(da float32) float32 {
+	ada := da
 	if da > 0 {
-		da *= nm.BurstGain
+		ada *= nm.BurstGain
 	} else {
-		da *= nm.DipGain
+		ada *= nm.DipGain
 	}
-	return da
+	return ada
 }
 
 // DASign returns the sign of dopamine effects: D2Mod = -1, else 1
@@ -157,20 +158,22 @@ func (nm *NeuroModParams) LRMod(da, ach float32) float32 {
 // total dopamine (DA) value: tonic + phasic.
 // factor is 1 for no modulation, otherwise higher or lower.
 func (nm *NeuroModParams) GGain(da float32) float32 {
+	ada := da
 	if da > 0 {
-		da *= nm.BurstGain
+		ada *= nm.BurstGain
 	} else {
-		da *= nm.DipGain
+		ada *= nm.DipGain
 	}
 	gain := float32(1)
 	switch nm.DAMod {
 	case NoDAMod:
 	case D1Mod:
-		gain += nm.DAModGain * da
+		gain += nm.DAModGain * ada
 	case D2Mod:
-		gain -= nm.DAModGain * da
+		gain -= nm.DAModGain * ada
 	case D1AbsMod:
-		gain += nm.DAModGain * math32.Abs(da)
+		gain += nm.DAModGain * math32.Abs(ada)
+	default:
 	}
 	if gain < 0 {
 		gain = 0

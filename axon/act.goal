@@ -1049,10 +1049,8 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if ac.NMDA.Gbar == 0 {
 		return
 	}
-	if geTot < 0 {
-		geTot = 0
-	}
-	Neurons[GnmdaSyn, ni, di] = ac.NMDA.NMDASyn(Neurons[GnmdaSyn, ni, di], geTot)
+	geT := max(geTot, 0.0)
+	Neurons[GnmdaSyn, ni, di] = ac.NMDA.NMDASyn(Neurons[GnmdaSyn, ni, di], geT)
 	Neurons[Gnmda, ni, di] = ac.NMDA.Gnmda(Neurons[GnmdaSyn, ni, di], Neurons[VmDend, ni, di])
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
@@ -1161,18 +1159,20 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
 	Neurons[GeExt, ni, di] = 0
+	geS := geSyn
+	geE := geExt
 	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ctx, ni, di, NeuronHasExt) {
 		Neurons[GeExt, ni, di] = Neurons[Ext, ni, di] * ac.Clamp.Ge
-		geSyn += Neurons[GeExt, ni, di]
+		geS += Neurons[GeExt, ni, di]
 	}
 
 	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ctx, ni, di, NeuronHasExt) { // todo: this flag check is not working
-		geSyn = Neurons[Ext, ni, di] * ac.Clamp.Ge
-		Neurons[GeExt, ni, di] = geSyn
-		geExt = 0 // no extra in this case
+		geS = Neurons[Ext, ni, di] * ac.Clamp.Ge
+		Neurons[GeExt, ni, di] = geS
+		geE = 0 // no extra in this case
 	}
 
-	Neurons[Ge, ni, di] = geSyn + geExt
+	Neurons[Ge, ni, di] = geS + geE
 	if Neurons[Ge, ni, di] < 0.0 {
 		Neurons[Ge, ni, di] = 0
 	}

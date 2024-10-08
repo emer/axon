@@ -189,10 +189,11 @@ func (ap *AKsParams) ShouldDisplay(field string) bool {
 
 // MFromV returns the M gate function from vbio
 func (ap *AKsParams) MFromV(vbio float32) float32 {
+	av := vbio
 	if vbio > ap.Vmax {
-		vbio = ap.Vmax
+		av = ap.Vmax
 	}
-	return ap.Hf / (1.0 + math32.FastExp(-ap.Mf*(vbio+ap.Voff)))
+	return ap.Hf / (1.0 + math32.FastExp(-ap.Mf*(av+ap.Voff)))
 }
 
 // MFromVnorm returns the M gate function from vnorm

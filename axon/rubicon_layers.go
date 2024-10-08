@@ -59,11 +59,11 @@ func (lp *LDTParams) Update() {
 
 // Thr applies SrcThr threshold to given value
 func (lp *LDTParams) Thr(val float32) float32 {
-	val = math32.Abs(val) // only abs makes sense -- typically positive anyway
+	vl := math32.Abs(val) // only abs makes sense -- typically positive anyway
 	if lp.SrcThr <= 0 {
-		return val
+		return vl
 	}
-	if val < lp.SrcThr {
+	if vl < lp.SrcThr {
 		return 0
 	}
 	return 1
@@ -73,10 +73,7 @@ func (lp *LDTParams) Thr(val float32) float32 {
 // source layer activity value.
 func (lp *LDTParams) MaxSrcAct(maxSrcAct, srcLayAct float32) float32 {
 	act := lp.Thr(srcLayAct)
-	if act > maxSrcAct {
-		maxSrcAct = act
-	}
-	return maxSrcAct
+	return max(act, maxSrcAct)
 }
 
 // ACh returns the computed ACh salience value based on given
@@ -89,7 +86,7 @@ func (lp *LDTParams) ACh(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay
 	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
 
 	maintInh := lp.MaintInhib * GlbV(ctx, di, GvGoalMaint)
-	maintInh = min(1, maintInh)
+	maintInh = min(1.0, maintInh)
 	maxSrcAct *= (1.0 - maintInh)
 
 	ach := maxSrcAct
@@ -141,7 +138,7 @@ func (vt *VTAParams) VTADA(ctx *Context, di uint32, ach float32, hasRew bool) {
 	}
 	vsPatch := GlbV(ctx, di, GvVSPatchPosThr) // note: critical to use thresholded version
 	if csNet > 0 {
-		csNet = max(0, csNet-vsPatch) // vspatch can shunt positive CS DA, but no dipping!  that is lhb
+		csNet = max(0.0, csNet-vsPatch) // vspatch can shunt positive CS DA, but no dipping!  that is lhb
 	}
 	csDA := achMod * vt.CeMGain * csNet
 

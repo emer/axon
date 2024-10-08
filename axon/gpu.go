@@ -1679,8 +1679,8 @@ func (gp *GPU) TestSynCa() bool {
 		for syni := uint32(0); syni < uint32(4); syni++ {
 			for di := uint32(0); di < gp.Net.MaxData; di++ {
 				ix := ctx.SynapseCaVars.Index(syni, di, vr)
-				bank := uint32(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats))
-				res := uint32(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats))
+				bank := uint32(ix / uint32(ctx.NetIndexes.GPUMaxBuffFloats)) // TODO:gosl was 64
+				res := uint32(ix % uint32(ctx.NetIndexes.GPUMaxBuffFloats))
 				iix := math.Float32bits(SynCaV(ctx, syni, di, vr))
 				ix32 := uint32(ix % 0xFFFFFFFF)
 				if ix32 != iix {

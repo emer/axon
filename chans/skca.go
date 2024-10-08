@@ -91,8 +91,8 @@ func (sp *SKCaParams) ShouldDisplay(field string) bool {
 // MAsympHill gives the asymptotic (driving) gating factor M as a function of CAi
 // for the Hill equation version used in Fujita et al (2012)
 func (sp *SKCaParams) MAsympHill(cai float32) float32 {
-	cai /= sp.C50
-	capow := cai * cai * cai * cai
+	caia := cai / sp.C50
+	capow := caia * caia * caia * caia
 	return capow / (1 + capow)
 }
 
@@ -100,10 +100,8 @@ func (sp *SKCaParams) MAsympHill(cai float32) float32 {
 // for the GilliesWillshaw06 equation version -- not used by default.
 // this is a log-saturating function
 func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
-	if cai < 0.001 {
-		cai = 0.001
-	}
-	return 0.81 / (1.0 + math32.FastExp(-(math32.Log(cai)+0.3))/0.46)
+	caia := max(cai, 0.001)
+	return 0.81 / (1.0 + math32.FastExp(-(math32.Log(caia)+0.3))/0.46)
 }
 
 // CaInRFromSpike updates CaIn, CaR from Spiking and CaD time-integrated spiking activity

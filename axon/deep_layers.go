@@ -102,7 +102,7 @@ func (tp *PulvParams) DriveGe(act float32) float32 {
 // NonDrivePct returns the multiplier proportion of the non-driver based Ge to
 // keep around, based on FullDriveAct and the max activity in driver layer.
 func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
-	return 1.0 - math32.Min(1, drvMax/tp.FullDriveAct)
+	return 1.0 - math32.Min(1.0, drvMax/tp.FullDriveAct)
 }
 
 //gosl:end deep_layers

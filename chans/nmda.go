@@ -69,11 +69,11 @@ func (np *NMDAParams) ShouldDisplay(field string) bool {
 // Using parameters from Brunel & Wang (2001)
 // see also Urakubo et al (2008)
 func (np *NMDAParams) MgGFromVbio(vbio float32) float32 {
-	vbio += np.Voff
-	if vbio >= 0 {
+	av := vbio + np.Voff
+	if av >= 0 {
 		return 0
 	}
-	return -vbio / (1.0 + np.MgFact*math32.FastExp(-0.062*vbio))
+	return -av / (1.0 + np.MgFact*math32.FastExp(-0.062*av))
 }
 
 // MgGFromV returns the NMDA conductance as a function of normalized membrane potential
@@ -103,11 +103,11 @@ func (np *NMDAParams) MgGFromV(v float32) float32 {
 // based on implementation in Urakubo et al (2008).
 // http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/
 func (np *NMDAParams) CaFromVbio(vbio float32) float32 {
-	vbio += np.Voff
-	if vbio > -0.5 && vbio < 0.5 { // this eliminates div 0 at 0, and numerical "fuzz" around 0
-		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
+	av := vbio + np.Voff
+	if av > -0.5 && av < 0.5 { // this eliminates div 0 at 0, and numerical "fuzz" around 0
+		return 1.0 / (0.0756 * (1 + 0.0378*av))
 	}
-	return -vbio / (1.0 - math32.FastExp(0.0756*vbio))
+	return -av / (1.0 - math32.FastExp(0.0756*av))
 }
 
 // CaFromV returns the calcium current factor as a function of normalized membrane

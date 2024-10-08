@@ -71,14 +71,14 @@ func (am *AvgMaxI32) Zero() {
 // to int32 for Max updating, assuming that
 // the overall value is in the general order of 0-1 (127 is the max).
 func (am *AvgMaxI32) FloatToIntFactor() float32 {
-	return float32(1 << 20) // leaves 7 bits = 128 to cover extreme values
+	return float32(uint32(1) << 20) // leaves 7 bits = 128 to cover extreme values
 }
 
 // FloatFromIntFactor returns the factor used for converting int32
 // back to float32 -- this is 1 / FloatToIntFactor for faster multiplication
 // instead of dividing.
 func (am *AvgMaxI32) FloatFromIntFactor() float32 {
-	return 1.0 / float32(1<<20)
+	return 1.0 / float32(uint32(1)<<20)
 }
 
 // FloatToInt converts the given floating point value
@@ -138,7 +138,8 @@ func (am *AvgMaxI32) Calc(refIndex int32) {
 // // implemented by InterlockedAdd HLSL intrinsic.
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
-#define AtomicUpdateAvgMaxI32(am, val) InterlockedAdd(am.Sum, am.FloatToIntSum(val)); InterlockedMax(am.CurMax, am.FloatToInt(val))
+// // TODO:gosl do atomics!
+// // #define AtomicUpdateAvgMaxI32(am, val) InterlockedAdd(am.Sum, am.FloatToIntSum(val)); InterlockedMax(am.CurMax, am.FloatToInt(val))
 */
 //gosl:end avgmaxi
 

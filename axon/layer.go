@@ -150,15 +150,7 @@ func (ly *Layer) PostBuild() {
 	case TDDaLayer:
 		ly.TDDaPostBuild()
 
-	case BLALayer:
-		fallthrough
-	case CeMLayer:
-		fallthrough
-	case USLayer:
-		fallthrough
-	case PVLayer:
-		fallthrough
-	case VSPatchLayer:
+	case BLALayer, CeMLayer, USLayer, PVLayer, VSPatchLayer:
 		ly.RubiconPostBuild()
 
 	case MatrixLayer:
