@@ -9,7 +9,6 @@ import (
 
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/core"
-	"github.com/emer/emergent/v2/ecmd"
 )
 
 ////////////////////////////////////////////////////
@@ -51,6 +50,7 @@ func SaveWeights(net *Network, ctrString, runName string) string {
 	return fnm
 }
 
+/*
 // SaveWeightsIfArgSet saves network weights if the "wts" arg has been set to true.
 // uses WeightsFilename information to identify the weights.
 // only for 0 rank MPI if running mpi
@@ -61,6 +61,7 @@ func SaveWeightsIfArgSet(net *Network, args *ecmd.Args, ctrString, runName strin
 	}
 	return ""
 }
+*/
 
 // SaveWeightsIfConfigSet saves network weights if the given config
 // bool value has been set to true.

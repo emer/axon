@@ -6,7 +6,6 @@ package axon
 
 import (
 	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/elog"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
@@ -99,6 +98,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 	}
 }
 
+/*
 // LooperResetLogBelow adds a function in OnStart to all stacks and loops
 // to reset the log at the level below each loop -- this is good default behavior.
 // Exceptions can be passed to exclude specific levels -- e.g., if except is Epoch
@@ -122,6 +122,7 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.T
 		}
 	}
 }
+*/
 
 // LooperUpdateNetView adds netview update calls at each time level
 func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net *Network, ctrUpdateFunc func(tm etime.Times)) {

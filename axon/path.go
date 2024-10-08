@@ -92,11 +92,11 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 		}
 	}
 	if varNm == "Wt" {
-		wt := Synapses.Value(Wt, syni)
-		if Synapses.Value(SWt, syni) == 0 {
-			Synapses.Set(wt, SWt, syni)
+		wt := Synapses.Value(int(Wt), int(syni))
+		if Synapses.Value(int(SWt), int(syni)) == 0 {
+			Synapses.Set(wt, int(SWt), int(syni))
 		}
-		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses[SWt, syni]), LWt, syni)
+		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses[SWt, syni]), int(LWt), int(syni))
 	}
 	return nil
 }
@@ -139,10 +139,10 @@ func (pt *Path) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
 					for ci, syi := range syIndexes {
 						syni := pt.SynStIndex + syi
 						swt := float32(swts.Float1D((scst + ci) % wsz))
-						Synapses.Set(float32(swt), SWt, syni)
-						wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(Wt, syni) - pt.Params.SWts.Init.Mean))
-						Synapses.Set(wt, Wt, syni)
-						Synapses.Set(pt.Params.SWts.LWtFromWts(wt, swt), LWt, syni)
+						Synapses.Set(float32(swt), int(SWt), int(syni))
+						wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(int(Wt), int(syni)) - pt.Params.SWts.Init.Mean))
+						Synapses.Set(wt, int(Wt), int(syni))
+						Synapses.Set(pt.Params.SWts.LWtFromWts(wt, swt), int(LWt), int(syni))
 					}
 				}
 			}
@@ -164,9 +164,9 @@ func (pt *Path) SetWeightsFunc(ctx *Context, wtFun func(si, ri int, send, recv *
 			syni := pt.SynStIndex + syi
 			si := pt.Params.SynSendLayerIndex(ctx, syni)
 			wt := wtFun(int(si), ri, ssh, rsh)
-			Synapses.Set(wt, SWt, syni)
-			Synapses.Set(wt, Wt, syni)
-			Synapses.Set(0.5, LWt, syni)
+			Synapses.Set(wt, int(SWt), int(syni))
+			Synapses.Set(wt, int(Wt), int(syni))
+			Synapses.Set(0.5, int(LWt), int(syni))
 		}
 	}
 }
@@ -184,10 +184,10 @@ func (pt *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *te
 			syni := pt.SynStIndex + syi
 			si := int(pt.Params.SynSendLayerIndex(ctx, syni))
 			swt := swtFun(si, ri, ssh, rsh)
-			Synapses.Set(swt, SWt, syni)
-			wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(Wt, syni) - pt.Params.SWts.Init.Mean))
-			Synapses.Set(wt, Wt, syni)
-			Synapses.Set(pt.Params.SWts.LWtFromWts(wt, swt), LWt, syni)
+			Synapses.Set(swt, int(SWt), int(syni))
+			wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(int(Wt), int(syni)) - pt.Params.SWts.Init.Mean))
+			Synapses.Set(wt, int(Wt), int(syni))
+			Synapses.Set(pt.Params.SWts.LWtFromWts(wt, swt), int(LWt), int(syni))
 		}
 	}
 }
@@ -247,7 +247,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 		}
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			swt := Synapses.Value(SWt, syni)
+			swt := Synapses.Value(int(SWt), int(syni))
 			sum += swt
 			if swt <= pt.Params.SWts.Limit.Min {
 				nmin++
@@ -267,10 +267,10 @@ func (pt *Path) SWtRescale(ctx *Context) {
 			}
 			for _, syi := range syIndexes {
 				syni := pt.SynStIndex + syi
-				if Synapses.Value(SWt, syni) <= pt.Params.SWts.Limit.Max {
-					swt := pt.Params.SWts.ClipSWt(Synapses.Value(SWt, syni) + mdf)
-					Synapses.Set(swt, SWt, syni)
-					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses[LWt, syni]), Wt, syni)
+				if Synapses.Value(int(SWt), int(syni)) <= pt.Params.SWts.Limit.Max {
+					swt := pt.Params.SWts.ClipSWt(Synapses.Value(int(SWt), int(syni)) + mdf)
+					Synapses.Set(swt, int(SWt), int(syni))
+					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
 				}
 			}
 		} else {
@@ -280,10 +280,10 @@ func (pt *Path) SWtRescale(ctx *Context) {
 			}
 			for _, syi := range syIndexes {
 				syni := pt.SynStIndex + syi
-				if Synapses.Value(SWt, syni) >= pt.Params.SWts.Limit.Min {
-					swt := pt.Params.SWts.ClipSWt(Synapses.Value(SWt, syni) + mdf)
-					Synapses.Set(swt, SWt, syni)
-					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses[LWt, syni]), Wt, syni)
+				if Synapses.Value(int(SWt), int(syni)) >= pt.Params.SWts.Limit.Min {
+					swt := pt.Params.SWts.ClipSWt(Synapses.Value(int(SWt), int(syni)) + mdf)
+					Synapses.Set(swt, int(SWt), int(syni))
+					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
 				}
 			}
 		}
@@ -339,9 +339,9 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 					recipSyni := rpj.SynStIndex + recipCi
 					recipRi := rpj.Params.SynRecvLayerIndex(ctx, recipSyni)
 					if recipRi == lni {
-						SetSynV(ctx, recipSyni, Wt, Synapses.Value(Wt, syni))
-						SetSynV(ctx, recipSyni, LWt, Synapses.Value(LWt, syni))
-						SetSynV(ctx, recipSyni, SWt, Synapses.Value(SWt, syni))
+						SetSynV(ctx, recipSyni, Wt, Synapses.Value(int(Wt), int(syni)))
+						SetSynV(ctx, recipSyni, LWt, Synapses.Value(int(LWt), int(syni)))
+						SetSynV(ctx, recipSyni, SWt, Synapses.Value(int(SWt), int(syni)))
 						// note: if we support SymFromTop then can have option to go other way
 						break
 					}
@@ -353,9 +353,9 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 					recipSyni := rpj.SynStIndex + recipCi
 					recipRi := rpj.Params.SynRecvLayerIndex(ctx, recipSyni)
 					if recipRi == lni {
-						SetSynV(ctx, recipSyni, Wt, Synapses.Value(Wt, syni))
-						SetSynV(ctx, recipSyni, LWt, Synapses.Value(LWt, syni))
-						SetSynV(ctx, recipSyni, SWt, Synapses.Value(SWt, syni))
+						SetSynV(ctx, recipSyni, Wt, Synapses.Value(int(Wt), int(syni)))
+						SetSynV(ctx, recipSyni, LWt, Synapses.Value(int(LWt), int(syni)))
+						SetSynV(ctx, recipSyni, SWt, Synapses.Value(int(SWt), int(syni)))
 						// note: if we support SymFromTop then can have option to go other way
 						break
 					}

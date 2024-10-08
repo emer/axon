@@ -4,6 +4,7 @@
 
 package axon
 
+/*
 import (
 	"reflect"
 	"strconv"
@@ -14,8 +15,6 @@ import (
 	"cogentcore.org/core/plot/plotcore"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/metric"
-	"cogentcore.org/core/tensor/stats/norm"
-	"cogentcore.org/core/tensor/stats/split"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/egui"
@@ -34,10 +33,10 @@ func LogTestErrors(lg *elog.Logs) {
 	})
 	lg.MiscTables["TestErrors"] = ix.NewTable()
 
-	allsp := split.All(ix)
-	split.AggColumn(allsp, "UnitErr", stats.Sum)
-	// note: can add other stats to compute
-	lg.MiscTables["TestErrorStats"] = allsp.AggsToTable(table.AddAggName)
+	// allsp := split.All(ix) // todo:
+	// split.AggColumn(allsp, "UnitErr", stats.Sum)
+	// // note: can add other stats to compute
+	// lg.MiscTables["TestErrorStats"] = allsp.AggsToTable(table.AddAggName)
 }
 
 // PCAStats computes PCA statistics on recorded hidden activation patterns
@@ -389,7 +388,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "NmdaCa")
-					ctx.SetFloat64(stats.MeanTensor(tsr))
+					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -401,7 +400,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "NmdaCa")
-					ctx.SetFloat64(stats.MeanTensor(tsr))
+					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -413,7 +412,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "VgccCaInt")
-					ctx.SetFloat64(stats.MeanTensor(tsr))
+					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -437,7 +436,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaLrn")
-					ctx.SetFloat64(stats.MeanTensor(tsr))
+					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -449,7 +448,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaLrn")
-					ctx.SetFloat64(stats.MaxTensor(tsr))
+					ctx.SetFloat64(stats.Max(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -461,8 +460,8 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
-					norm.AbsTensor(tsr)
-					ctx.SetFloat64(stats.MeanTensor(tsr))
+					tmath.Abs(tsr)
+					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -474,8 +473,8 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
-					norm.AbsTensor(tsr)
-					ctx.SetFloat64(stats.MaxTensor(tsr))
+					tmath.Abs(tsr)
+					ctx.SetFloat64(stats.Max(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -487,7 +486,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaD")
-					ctx.SetFloat64(stats.MeanTensor(tsr))
+					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -499,7 +498,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaSpkD")
-					avg := stats.MeanTensor(tsr)
+					avg := stats.Mean(tsr)
 					ctx.SetFloat64(avg)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -511,7 +510,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					tsr := ctx.GetLayerSampleTensor(clnm, "CaDiff")
-					avg := stats.MeanTensor(tsr)
+					avg := stats.Mean(tsr)
 					ctx.SetFloat64(avg)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -681,9 +680,9 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 		return
 	}
 	ix := table.NewIndexView(dtRec)
-	spl := split.GroupBy(ix, "Layer")
-	split.AggAllNumericColumns(spl, stats.Mean)
-	ags := spl.AggsToTable(table.ColumnNameOnly)
+	// spl := split.GroupBy(ix, "Layer") // todo:
+	// split.AggAllNumericColumns(spl, stats.Mean)
+	// ags := spl.AggsToTable(table.ColumnNameOnly)
 	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
 	for li, ly := range net.Layers {
 		rw := errors.Log1(ags.RowsByString("Layer", ly.Name, table.Equals, table.UseCase))[0]
@@ -718,3 +717,5 @@ func LayerActsLogConfigGUI(lg *elog.Logs, gui *egui.GUI) {
 	gui.Plots["LayerActsAvg"] = plt
 	plt.SetTable(lg.MiscTables["LayerActsAvg"])
 }
+
+*/

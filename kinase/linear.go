@@ -10,6 +10,7 @@ import (
 	"math/rand"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/glm"
 	"cogentcore.org/core/tensor/table"
 )
@@ -108,11 +109,11 @@ func (ls *Linear) InitTable() {
 	}
 	nneur := ls.NumBins
 	ls.Data.AddIntColumn("Trial")
-	ls.Data.AddFloat64TensorColumn("Hz", []int{4}, "Send*Recv*Minus*Plus")
-	ls.Data.AddFloat64TensorColumn("State", []int{nneur}, "States")
-	ls.Data.AddFloat64TensorColumn("StdCa", []int{2}, "P,D")
-	ls.Data.AddFloat64TensorColumn("PredCa", []int{2}, "P,D")
-	ls.Data.AddFloat64TensorColumn("ErrCa", []int{2}, "P,D")
+	ls.Data.AddFloat64Column("Hz", 4)
+	ls.Data.AddFloat64Column("State", nneur)
+	ls.Data.AddFloat64Column("StdCa", 2)
+	ls.Data.AddFloat64Column("PredCa", 2)
+	ls.Data.AddFloat64Column("ErrCa", 2)
 	ls.Data.AddFloat64Column("SSE") // total SSE
 	ls.Data.SetNumRows(ls.TotalTrials)
 }
@@ -236,8 +237,8 @@ func (ls *Linear) Run() {
 }
 
 func (ls *Linear) SetSynState(sy *Synapse, row int) {
-	ls.Data.SetTensorFloat1D("StdCa", row, 0, float64(sy.CaP))
-	ls.Data.SetTensorFloat1D("StdCa", row, 1, float64(sy.CaD))
+	ls.Data.Column("StdCa").SetFloatRowCell(float64(sy.CaP), row, 0)
+	ls.Data.Column("StdCa").SetFloatRowCell(float64(sy.CaD), row, 1)
 }
 
 func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
@@ -245,7 +246,7 @@ func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
 		r := rn.SpikeBins[i]
 		bs := (r * s) / 10.0
 		ls.SpikeBins[i] = bs
-		ls.Data.SetTensorFloat1D("State", row, off+i, float64(bs))
+		ls.Data.Column("State").SetFloatRowCell(float64(bs), row, off+i)
 	}
 }
 
@@ -253,11 +254,11 @@ func (ls *Linear) SetBins(sn, rn *Neuron, off, row int) {
 func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32, ti, row int) {
 	// ls.ErrDWt = (plusHz - minusHz) / 100
 
-	ls.Data.SetFloat("Trial", row, float64(ti))
-	ls.Data.SetTensorFloat1D("Hz", row, 0, float64(sendMinusHz))
-	ls.Data.SetTensorFloat1D("Hz", row, 1, float64(sendPlusHz))
-	ls.Data.SetTensorFloat1D("Hz", row, 2, float64(recvMinusHz))
-	ls.Data.SetTensorFloat1D("Hz", row, 3, float64(recvPlusHz))
+	ls.Data.Column("Trial").SetFloatRow(float64(ti), row)
+	ls.Data.Column("Hz").SetFloatRowCell(float64(sendMinusHz), row, 0)
+	ls.Data.Column("Hz").SetFloat(float64(sendPlusHz), row, 1)
+	ls.Data.Column("Hz").SetFloat(float64(recvMinusHz), row, 2)
+	ls.Data.Column("Hz").SetFloat(float64(recvPlusHz), row, 3)
 
 	minusCycles := ls.NCycles - ls.PlusCycles
 
@@ -297,7 +298,7 @@ func (ls *Linear) Trial(sendMinusHz, sendPlusHz, recvMinusHz, recvPlusHz float32
 // Regress runs the linear regression on the data
 func (ls *Linear) Regress() {
 	r := glm.NewGLM()
-	err := r.SetTable(table.NewIndexView(&ls.Data), "State", "StdCa", "PredCa", "ErrCa")
+	err := r.SetTable(&ls.Data, "State", "StdCa", "PredCa", "ErrCa")
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -354,5 +355,5 @@ func (ls *Linear) Regress() {
 			fmt.Println(str + "}")
 		}
 	*/
-	ls.Data.SaveCSV("linear_data.tsv", table.Tab, table.Headers)
+	ls.Data.SaveCSV("linear_data.tsv", tensor.Tab, table.Headers)
 }

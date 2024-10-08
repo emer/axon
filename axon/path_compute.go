@@ -27,9 +27,9 @@ func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
 		}
-		scale *= Neurons.Value(Burst, ni, di) // Burst is regular CaSpkP for all non-SuperLayer neurons
+		scale *= Neurons.Value(int(Burst), int(ni), int(di)) // Burst is regular CaSpkP for all non-SuperLayer neurons
 	} else {
-		if Neurons.Value(Spike, ni, di) == 0 {
+		if Neurons.Value(int(Spike), int(ni), int(di)) == 0 {
 			return
 		}
 	}
@@ -39,7 +39,7 @@ func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIndex + syi
 		recvIndex := pj.Params.SynRecvLayerIndex(ctx, syni) // note: layer-specific is ok here
-		sv := int32(scale * Synapses.Value(Wt, syni))
+		sv := int32(scale * Synapses.Value(int(Wt), int(syni)))
 		bi := pjcom.WriteIndexOff(recvIndex, di, wrOff, pj.Params.Indexes.RecvNeurN, maxData)
 		atomic.AddInt32(&pj.GBuf[bi], sv)
 	}
@@ -69,7 +69,7 @@ func (pj *Path) DWt(ctx *Context, si uint32) {
 			dwt += SynCaV(ctx, syni, di, DiDWt)
 		}
 		// note: on GPU, this must be a separate kernel, but can be combined here
-		Synapses.SetAdd(dwt, DWt, syni)
+		Synapses.SetAdd(dwt, int(DWt), int(syni))
 	}
 }
 
@@ -91,7 +91,7 @@ func (pj *Path) DWtSubMean(ctx *Context, ri uint32) {
 	nnz := 0 // non-zero
 	for _, syi := range syIndexes {
 		syni := pj.SynStIndex + syi
-		dw := Synapses.Value(DWt, syni)
+		dw := Synapses.Value(int(DWt), int(syni))
 		if dw != 0 {
 			sumDWt += dw
 			nnz++
@@ -103,8 +103,8 @@ func (pj *Path) DWtSubMean(ctx *Context, ri uint32) {
 	sumDWt /= float32(nnz)
 	for _, syi := range syIndexes {
 		syni := pj.SynStIndex + syi
-		if Synapses.Value(DWt, syni) != 0 {
-			Synapses.SetAdd(-sm*sumDWt, DWt, syni)
+		if Synapses.Value(int(DWt), int(syni)) != 0 {
+			Synapses.SetAdd(-sm*sumDWt, int(DWt), int(syni))
 		}
 	}
 }
@@ -152,29 +152,29 @@ func (pj *Path) SWtFromWt(ctx *Context) {
 		avgDWt := float32(0)
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi
-			swt := Synapses.Value(SWt, syni)
+			swt := Synapses.Value(int(SWt), int(syni))
 			// softbound for SWt
-			if Synapses.Value(DSWt, syni) >= 0 {
-				Synapses.SetMul((mx - swt), DSWt, syni)
+			if Synapses.Value(int(DSWt), int(syni)) >= 0 {
+				Synapses.SetMul((mx - swt), int(DSWt), int(syni))
 			} else {
-				Synapses.SetMul((swt - mn), DSWt, syni)
+				Synapses.SetMul((swt - mn), int(DSWt), int(syni))
 			}
-			avgDWt += Synapses.Value(DSWt, syni)
+			avgDWt += Synapses.Value(int(DSWt), int(syni))
 		}
 		avgDWt /= float32(nCons)
 		avgDWt *= pj.Params.SWts.Adapt.SubMean
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi
-			Synapses.SetAdd(lr*(Synapses[DSWt, syni]-avgDWt), SWt, syni)
-			swt := Synapses.Value(SWt, syni)
-			Synapses.Set(0, DSWt, syni)
-			if Synapses.Value(Wt, syni) == 0 { // restore failed wts
-				wt := pj.Params.SWts.WtValue(swt, Synapses.Value(LWt, syni))
-				Synapses.Set(wt, Wt, syni)
+			Synapses.SetAdd(lr*(Synapses[DSWt, syni]-avgDWt), int(SWt), int(syni))
+			swt := Synapses.Value(int(SWt), int(syni))
+			Synapses.Set(0, int(DSWt), int(syni))
+			if Synapses.Value(int(Wt), int(syni)) == 0 { // restore failed wts
+				wt := pj.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni)))
+				Synapses.Set(wt, int(Wt), int(syni))
 			}
 			// + pj.Params.SWts.Adapt.RandVar(
-			Synapses.Set(pj.Params.SWts.LWtFromWts(Synapses[Wt, syni], swt), LWt, syni)
-			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), Wt, syni)
+			Synapses.Set(pj.Params.SWts.LWtFromWts(Synapses[Wt, syni], swt), int(LWt), int(syni))
+			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
 		}
 	}
 }
@@ -200,14 +200,14 @@ func (pj *Path) SynScale(ctx *Context) {
 		syIndexes := pj.RecvSynIndexes(lni)
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi
-			lwt := Synapses.Value(LWt, syni)
-			swt := Synapses.Value(SWt, syni)
+			lwt := Synapses.Value(int(LWt), int(syni))
+			swt := Synapses.Value(int(SWt), int(syni))
 			if adif >= 0 { // key to have soft bounding on lwt here!
-				Synapses.SetAdd((1-lwt)*adif*swt, LWt, syni)
+				Synapses.SetAdd((1-lwt)*adif*swt, int(LWt), int(syni))
 			} else {
-				Synapses.SetAdd(lwt*adif*swt, LWt, syni)
+				Synapses.SetAdd(lwt*adif*swt, int(LWt), int(syni))
 			}
-			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), Wt, syni)
+			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
 		}
 	}
 }
@@ -220,9 +220,9 @@ func (pj *Path) SynFail(ctx *Context) {
 		scon := pj.SendCon[lni]
 		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 			syni := pj.SynStIndex + syi
-			swt := Synapses.Value(SWt, syni)
-			if Synapses.Value(Wt, syni) == 0 { // restore failed wts
-				Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), Wt, syni)
+			swt := Synapses.Value(int(SWt), int(syni))
+			if Synapses.Value(int(Wt), int(syni)) == 0 { // restore failed wts
+				Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
 			}
 			pj.Params.Com.Fail(ctx, syni, swt)
 		}

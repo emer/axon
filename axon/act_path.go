@@ -199,7 +199,7 @@ func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
 func (sc *SynComParams) Fail(ctx *Context, syni uint32, swt float32) {
 	if sc.PFail > 0 {
 		if sc.WtFail(ctx, swt) {
-			Synapses.Set(0, Wt, syni)
+			Synapses.Set(0, int(Wt), int(syni))
 		}
 	}
 }

@@ -7,7 +7,7 @@ package axon
 import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32/vecint"
-	"cogentcore.org/core/tensor/stats/norm"
+	"cogentcore.org/core/tensor/stats/stats"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
@@ -258,7 +258,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 				for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 					clampSrc.UnitValues(&tmpValues, "Act", int(di))
 					if hip.EC5ClampThr > 0 {
-						norm.Binarize32(tmpValues, hip.EC5ClampThr, 1, 0)
+						stats.Binarize32(tmpValues, tensor.NewFloat64Scalar(hip.EC5ClampThr))
 					}
 					ec5.ApplyExt1D32(ctx, di, tmpValues)
 				}
