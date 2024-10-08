@@ -5,8 +5,8 @@
 package axon
 
 import (
+	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
 )
 
@@ -160,12 +160,12 @@ func (am *PoolAvgMax) Calc(refIndex int32) {
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
 #define AtomicUpdatePoolAvgMax(am, ctx, ni, di) \
-	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, NrnV(ctx, ni, di, CaSpkP)); \
-	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, NrnV(ctx, ni, di, CaSpkD)); \
-	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, NrnV(ctx, ni, di, SpkMax)); \
-	AtomicUpdateAvgMaxI32(am.Act.Cycle, NrnV(ctx, ni, di, Act)); \
-	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NrnV(ctx, ni, di, GeInt)); \
-	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NrnV(ctx, ni, di, GiInt))
+	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, Neurons[CaSpkP, ni, di]); \
+	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, Neurons[CaSpkD, ni, di]); \
+	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, Neurons[SpkMax, ni, di]); \
+	AtomicUpdateAvgMaxI32(am.Act.Cycle, Neurons[Act, ni, di]); \
+	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, Neurons[GeInt, ni, di]); \
+	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, Neurons[GiInt, ni, di])
 */
 //gosl:end pool
 
@@ -225,12 +225,12 @@ func (pl *Pool) NNeurons() int {
 
 // AvgMaxUpdate updates the AvgMax values based on current neuron values
 func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
-	pl.AvgMax.CaSpkP.Cycle.UpdateValue(NrnV(ctx, ni, di, CaSpkP))
-	pl.AvgMax.CaSpkD.Cycle.UpdateValue(NrnV(ctx, ni, di, CaSpkD))
-	pl.AvgMax.SpkMax.Cycle.UpdateValue(NrnV(ctx, ni, di, SpkMax))
-	pl.AvgMax.Act.Cycle.UpdateValue(math32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
-	pl.AvgMax.GeInt.Cycle.UpdateValue(NrnV(ctx, ni, di, GeInt))
-	pl.AvgMax.GiInt.Cycle.UpdateValue(NrnV(ctx, ni, di, GiInt))
+	pl.AvgMax.CaSpkP.Cycle.UpdateValue(Neurons[CaSpkP, ni, di])
+	pl.AvgMax.CaSpkD.Cycle.UpdateValue(Neurons[CaSpkD, ni, di])
+	pl.AvgMax.SpkMax.Cycle.UpdateValue(Neurons[SpkMax, ni, di])
+	pl.AvgMax.Act.Cycle.UpdateValue(math32.Abs(Neurons[Act, ni, di])) // can be neg
+	pl.AvgMax.GeInt.Cycle.UpdateValue(Neurons[GeInt, ni, di])
+	pl.AvgMax.GiInt.Cycle.UpdateValue(Neurons[GiInt, ni, di])
 }
 
 // TestValues returns a map of CaSpkD.Avg, which provides an

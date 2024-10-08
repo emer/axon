@@ -11,7 +11,7 @@ import (
 	"github.com/emer/emergent/v2/emer"
 )
 
-//gosl:start neuron
+//gosl:start
 
 // NeuronFlags are bit-flags encoding relevant binary state for neurons
 type NeuronFlags int32 //enums:enum
@@ -35,14 +35,12 @@ const (
 // NeuronVars are the neuron variables representing current active state,
 // specific to each input data state.
 // See NeuronAvgVars for vars shared across data.
-type NeuronVars int32 //enums:enum
-
 const (
 	/////////////////////////////////////////
 	// Spiking, Activation
 
 	// Spike is whether neuron has spiked or not on this cycle (0 or 1)
-	Spike NeuronVars = iota
+	Spike int = iota
 
 	// Spiked is 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.
 	Spiked
@@ -336,48 +334,50 @@ const (
 	// and are writable (indexes are read only).
 	NrnFlags
 
-	// IMPORTANT: if NrnFlags is not the last, need to update gosl defn below
+	NeuronVarsN
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
 // which is aggregated over time and not specific to each input data state,
 // along with any other state that is not input data specific.
-type NeuronAvgVars int32 //enums:enum
-
 const (
-	// ActAvg is average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
-	ActAvg NeuronAvgVars = iota
+	// ActAvg is average activation (of minus phase activation state)
+	// over long time intervals (time constant = Dt.LongAvgTau).
+	// Useful for finding hog units and seeing overall distribution of activation.
+	ActAvg int = iota
 
-	// AvgPct is ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
+	// AvgPct is ActAvg as a proportion of overall layer activation.
+	// This is used for synaptic scaling to match TrgAvg activation,
+	// updated at SlowInterval intervals.
 	AvgPct
 
-	// TrgAvg is neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
+	// TrgAvg is neuron's target average activation as a proportion
+	// of overall layer activation, assigned during weight initialization,
+	// driving synaptic scaling relative to AvgPct.
 	TrgAvg
 
-	// DTrgAvg is change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
+	// DTrgAvg is change in neuron's target average activation as a result
+	// of unit-wise error gradient. Acts like a bias weight.
+	// MPI needs to share these across processors.
 	DTrgAvg
 
-	// AvgDif is AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
+	// AvgDif is AvgPct - TrgAvg, i.e., the error in overall activity level
+	// relative to set point for this neuron, which drives synaptic scaling.
+	// Updated at SlowInterval intervals.
 	AvgDif
 
-	// GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability
+	// GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability.
 	GeBase
 
-	// GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability
+	// GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability.
 	GiBase
 
-	// IMPORTANT: if GiBase is not the last, need to update gosl defn below
+	NeuronAvgVarsN
 )
 
-// NeuronIndexes are the neuron indexes and other uint32 values.
-// There is only one of these per neuron -- not data parallel.
-// note: Flags are encoded in Vars because they are data parallel and
-// writable, whereas indexes are read-only.
-type NeuronIndexes int32 //enums:enum
-
 const (
-	// NrnNeurIndex is the index of this neuron within its owning layer
-	NrnNeurIndex NeuronIndexes = iota
+	// NrnNeurIndex is the index of this neuron within its owning layer.
+	NrnNeurIndex int = iota
 
 	// NrnLayIndex is the index of the layer that this neuron belongs to,
 	// needed for neuron-level parallel code.
@@ -388,129 +388,10 @@ const (
 	// Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
 	NrnSubPool
 
-	// IMPORTANT: if NrnSubPool is not the last, need to update gosl defn below
+	NrnIndexesN
 )
 
-//gosl:end neuron
-
-//gosl:wgsl neuron
-/*
-const NeuronVarsN: NeuronVars = NrnFlags + 1;
-const NeuronAvgVarsN: NeuronAvgVars = GiBase + 1;
-const NeuronIndexesN: NeuronIndexes = NrnSubPool + 1;
-*/
-//gosl:end neuron
-
-//gosl:start neuron
-
-////////////////////////////////////////////////
-// 	Strides
-
-// NeuronVarStrides encodes the stride offsets for neuron variable access
-// into network float32 array.  Data is always the inner-most variable.
-type NeuronVarStrides struct {
-
-	// neuron level
-	Neuron uint32
-
-	// variable level
-	Var uint32
-
-	pad, pad1 uint32
-}
-
-// Index returns the index into network float32 array for given neuron, data, and variable
-func (ns *NeuronVarStrides) Index(neurIndex, di uint32, nvar NeuronVars) uint32 {
-	return neurIndex*ns.Neuron + uint32(nvar)*ns.Var + di
-}
-
-// SetNeuronOuter sets strides with neurons as outer loop:
-// [Neurons][Vars][Data], which is optimal for CPU-based computation.
-func (ns *NeuronVarStrides) SetNeuronOuter(ndata int) {
-	ns.Neuron = uint32(ndata) * uint32(NeuronVarsN)
-	ns.Var = uint32(ndata)
-}
-
-// SetVarOuter sets strides with vars as outer loop:
-// [Vars][Neurons][Data], which is optimal for GPU-based computation.
-func (ns *NeuronVarStrides) SetVarOuter(nneur, ndata int) {
-	ns.Var = uint32(ndata) * uint32(nneur)
-	ns.Neuron = uint32(ndata)
-}
-
-////////////////////////////////////////////////
-// 	NeuronAvgVars
-
-// NeuronAvgVarStrides encodes the stride offsets for neuron variable access
-// into network float32 array.  Data is always the inner-most variable.
-type NeuronAvgVarStrides struct {
-
-	// neuron level
-	Neuron uint32
-
-	// variable level
-	Var uint32
-
-	pad, pad1 uint32
-}
-
-// Index returns the index into network float32 array for given neuron and variable
-func (ns *NeuronAvgVarStrides) Index(neurIndex uint32, nvar NeuronAvgVars) uint32 {
-	return neurIndex*ns.Neuron + uint32(nvar)*ns.Var
-}
-
-// SetNeuronOuter sets strides with neurons as outer loop:
-// [Neurons][Vars], which is optimal for CPU-based computation.
-func (ns *NeuronAvgVarStrides) SetNeuronOuter() {
-	ns.Neuron = uint32(NeuronAvgVarsN)
-	ns.Var = 1
-}
-
-// SetVarOuter sets strides with vars as outer loop:
-// [Vars][Neurons], which is optimal for GPU-based computation.
-func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
-	ns.Var = uint32(nneur)
-	ns.Neuron = 1
-}
-
-////////////////////////////////////////////////
-// 	Indexes
-
-// NeuronIndexStrides encodes the stride offsets for neuron index access
-// into network uint32 array.
-type NeuronIndexStrides struct {
-
-	// neuron level
-	Neuron uint32
-
-	// index value level
-	Idx uint32
-
-	pad, pad1 uint32
-}
-
-// Index returns the index into network uint32 array for given neuron, index value
-func (ns *NeuronIndexStrides) Index(neurIdx uint32, idx NeuronIndexes) uint32 {
-	return neurIdx*ns.Neuron + uint32(idx)*ns.Idx
-}
-
-// SetNeuronOuter sets strides with neurons as outer dimension:
-// [Neurons[[Indexes] (outer to inner), which is optimal for CPU-based
-// computation.
-func (ns *NeuronIndexStrides) SetNeuronOuter() {
-	ns.Neuron = uint32(NeuronIndexesN)
-	ns.Idx = 1
-}
-
-// SetIndexOuter sets strides with indexes as outer dimension:
-// [Indexes][Neurons] (outer to inner), which is optimal for GPU-based
-// computation.
-func (ns *NeuronIndexStrides) SetIndexOuter(nneur int) {
-	ns.Idx = uint32(nneur)
-	ns.Neuron = 1
-}
-
-//gosl:end neuron
+//gosl:end
 
 ////////////////////////////////////////////////
 // 	Props

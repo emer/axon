@@ -5,8 +5,8 @@
 package axon
 
 import (
+	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/vgpu/gosl/slbool"
 	"github.com/emer/axon/v2/fsfffb"
 )
 

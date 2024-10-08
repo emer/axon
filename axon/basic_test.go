@@ -234,11 +234,11 @@ func TestSpikeProp(t *testing.T) {
 			net.Cycle(ctx)
 			ctx.CycleInc()
 
-			if NrnV(ctx, inLay.NeurStIndex, 0, Spike) > 0 {
+			if Neurons[Spike, inLay.NeurStIndex, 0] > 0 {
 				inCyc = cyc
 			}
 
-			ge := NrnV(ctx, hidLay.NeurStIndex, 0, Ge)
+			ge := Neurons[Ge, hidLay.NeurStIndex, 0]
 			if ge > 0 {
 				hidCyc = cyc
 				break

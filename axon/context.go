@@ -8,8 +8,8 @@ import (
 	"math"
 
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/vgpu/gosl/slbool"
-	"cogentcore.org/core/vgpu/gosl/slrand"
+	"cogentcore.org/core/goal/gosl/slbool"
+	"cogentcore.org/core/goal/gosl/slrand"
 	"github.com/emer/emergent/v2/etime"
 )
 
@@ -26,48 +26,16 @@ var (
 	Networks []*Network
 )
 
-// note: the following nowgsl is included for the Go type inference processing
-// but is then excluded from the final .wgsl file.
-// this is key for cases where there are alternative versions of functions
-// in GPU vs. CPU.
-
-//gosl:nowgsl context
-
-// NeuronVars
-
-// note: see network_single.go and network_multi.go for GlobalNetwork function
-// depending on multinet build tag.
-
-// NrnV is the CPU version of the neuron variable accessor
-func NrnV(ctx *Context, ni, di uint32, nvar NeuronVars) float32 {
-	return GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Index(ni, di, nvar)]
-}
-
-// SetNrnV is the CPU version of the neuron variable settor
-func SetNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Index(ni, di, nvar)] = val
-}
-
-// AddNrnV is the CPU version of the neuron variable addor
-func AddNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Index(ni, di, nvar)] += val
-}
-
-// MulNrnV is the CPU version of the neuron variable multiplier
-func MulNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	GlobalNetwork(ctx).Neurons[ctx.NeuronVars.Index(ni, di, nvar)] *= val
-}
-
 func NrnHasFlag(ctx *Context, ni, di uint32, flag NeuronFlags) bool {
-	return (NeuronFlags(math.Float32bits(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0 // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(math.Float32bits(Neurons[NrnFlags, ni, di])) & flag) > 0 // weird: != 0 does NOT work on GPU
 }
 
 func NrnSetFlag(ctx *Context, ni, di uint32, flag NeuronFlags) {
-	SetNrnV(ctx, ni, di, NrnFlags, math.Float32frombits(math.Float32bits(NrnV(ctx, ni, di, NrnFlags))|uint32(flag)))
+	Neurons[NrnFlags, ni, di] =  math.Float32frombits(math.Float32bits(Neurons[NrnFlags, ni, di])|uint32(flag)))
 }
 
 func NrnClearFlag(ctx *Context, ni, di uint32, flag NeuronFlags) {
-	SetNrnV(ctx, ni, di, NrnFlags, math.Float32frombits(math.Float32bits(NrnV(ctx, ni, di, NrnFlags))&^uint32(flag)))
+	Neurons[NrnFlags, ni, di] =  math.Float32frombits(math.Float32bits(Neurons[NrnFlags, ni, di])&^uint32(flag)))
 }
 
 // NrnIsOff returns true if the neuron has been turned off (lesioned)
@@ -243,7 +211,7 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 	ctx.SynapseIndexes = srcCtx.SynapseIndexes
 }
 
-//gosl:end context
+//gosl:end
 
 //gosl:wgsl context
 // #include "etime.wgsl"
@@ -262,7 +230,7 @@ type NetIndexes struct {
 	// number of data parallel items to process currently
 	NData uint32 `min:"1"`
 
-	// network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode
+	// network index in global Networks list of networks
 	NetIndex uint32 `edit:"-"`
 
 	// maximum amount of data parallel
@@ -514,42 +482,21 @@ func (ctx *Context) GlobalVNFloats() uint32 {
 	return ctx.GlobalUSposIndex(0, GlobalVarsN, 0)
 }
 
-//gosl:end context
+//gosl:end
 
 // note: following is real code, uncommented by gosl
 
-//gosl:wgsl context
-
 /*
-
-// // NeuronVars
-
-fn NrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars) -> f32 {
-   return Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)];
-}
-
-fn SetNrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars, val: f32) {
-   Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)] = val;
-}
-
-fn AddNrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars, val: f32) {
-   Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)] += val;
-}
-
-fn MulNrnV(ctx: ptr<function,Context>, ni: u32, di: u32, nvar:NeuronVars, val: f32) {
-   Neurons[NeuronVars_Index(ctx.NeuronVars, ni, di, nvar)] *= val;
-}
-
 bool NrnHasFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
-	return (NeuronFlags(asuint(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0; // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(asuint(Neurons[NrnFlags, ni, di])) & flag) > 0; // weird: != 0 does NOT work on GPU
 }
 
 void NrnSetFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
-	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))|uint(flag)));
+	Neurons[NrnFlags, ni, di] =  asfloat(asuint(Neurons[NrnFlags, ni, di])|uint(flag)));
 }
 
 void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
-	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))& ~uint(flag)));
+	Neurons[NrnFlags, ni, di] =  asfloat(asuint(Neurons[NrnFlags, ni, di])& ~uint(flag)));
 }
 
 bool NrnIsOff(in Context ctx, uint ni) {

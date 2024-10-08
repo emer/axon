@@ -451,7 +451,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("CorSim", float64(inp.Values[di].CorSim.Cor))
 	_, minusIndexes, _ := inp.LocalistErr4D(ctx)
 	minusIndex := minusIndexes[di]
-	trgExt := axon.NrnV(ctx, trg.NeurStIndex+uint32(minusIndex), uint32(di), axon.Ext)
+	trgExt := axon.Neurons[axon.Ext, trg.NeurStIndex+uint32(minusIndex), di]
 	err := true
 	if trgExt > 0.5 {
 		err = false

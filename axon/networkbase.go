@@ -944,7 +944,7 @@ func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 				scon := pt.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pt.SynStIndex + syi
-					(*vals)[i] = SynV(ctx, syni, synvar)
+					(*vals)[i] = Synapses[synvar, syni]
 					i++
 				}
 			}

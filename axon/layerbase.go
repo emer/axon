@@ -373,7 +373,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	} else if varIndex >= int(NeuronVarsN) {
 		return NrnAvgV(ctx, ni, NeuronAvgVars(varIndex-int(NeuronVarsN)))
 	} else {
-		return NrnV(ctx, ni, uint32(di), NeuronVars(varIndex))
+		return Neurons[NeuronVars(varIndex), ni, di]
 	}
 	return math32.NaN()
 }
@@ -487,12 +487,12 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 	}
 	nvar := NeuronVars(vidx)
 
-	v0 := NrnV(ctx, ly.NeurStIndex, 0, nvar)
+	v0 := Neurons[nvar, ly.NeurStIndex, 0]
 	min = v0
 	max = v0
 	for lni := uint32(1); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		vl := NrnV(ctx, ni, 0, nvar)
+		vl := Neurons[nvar, ni, 0]
 		if vl < min {
 			min = vl
 		}
@@ -552,7 +552,7 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 					break
 				}
 				ni := ly.NeurStIndex + uint32(lni)
-				SetNrnAvgV(ctx, ni, ActAvg, ta[lni])
+				NeuronAvgs[ActAvg, ni] = ta[lni]
 			}
 		}
 		if ta, ok := lw.Units["TrgAvg"]; ok {
@@ -561,7 +561,7 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 					break
 				}
 				ni := ly.NeurStIndex + uint32(lni)
-				SetNrnAvgV(ctx, ni, TrgAvg, ta[lni])
+				NeuronAvgs[TrgAvg, ni] = ta[lni]
 			}
 		}
 	}

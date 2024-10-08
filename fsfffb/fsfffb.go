@@ -15,7 +15,7 @@ package fsfffb
 
 //go:generate core generate -add-types
 
-import "cogentcore.org/core/vgpu/gosl/slbool"
+import "cogentcore.org/core/goal/gosl/slbool"
 
 //gosl:start fsfffb
 

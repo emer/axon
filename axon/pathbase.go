@@ -444,7 +444,7 @@ func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
 		w.Write([]byte("\"Wt\": [ "))
 		for ci, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			w.Write([]byte(strconv.FormatFloat(float64(SynV(ctx, syni, Wt)), 'g', weights.Prec, 32)))
+			w.Write([]byte(strconv.FormatFloat(float64(Synapses[Wt, syni]), 'g', weights.Prec, 32)))
 			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {
@@ -456,7 +456,7 @@ func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
 		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
 		for ci, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			w.Write([]byte(strconv.FormatFloat(float64(SynV(ctx, syni, SWt)), 'g', weights.Prec, 32)))
+			w.Write([]byte(strconv.FormatFloat(float64(Synapses[SWt, syni]), 'g', weights.Prec, 32)))
 			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {

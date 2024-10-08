@@ -1,7 +1,7 @@
 package axon
 
 import (
-	"cogentcore.org/core/vgpu/gosl/slrand"
+	"cogentcore.org/core/goal/gosl/slrand"
 )
 
 //gosl wgsl axonrand

@@ -4,7 +4,7 @@
 
 package chans
 
-import "cogentcore.org/core/vgpu/gosl/slbool"
+import "cogentcore.org/core/goal/gosl/slbool"
 
 //gosl:start chans
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/vgpu/gosl/slbool"
+	"cogentcore.org/core/goal/gosl/slbool"
 )
 
 //gosl:start pcore_layers

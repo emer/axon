@@ -261,23 +261,23 @@ func (ss *Sim) NeuronUpdate(nt *axon.Network, inputOn bool) {
 	// nrn.Gi = 0
 	if inputOn {
 		if ss.Config.GeClamp {
-			axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Config.Ge)
+			axon.Neurons[axon.GeRaw, ni, di] = ss.Config.Ge
 			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFromRawSteady(axon.NrnV(ctx, ni, di, axon.GeRaw)))
 		} else {
 			nex.InISI += 1
 			if nex.InISI > 1000/ss.Config.SpikeHz {
-				axon.SetNrnV(ctx, ni, di, axon.GeRaw, ss.Config.Ge)
+				axon.Neurons[axon.GeRaw, ni, di] = ss.Config.Ge
 				nex.InISI = 0
 			} else {
-				axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
+				axon.Neurons[axon.GeRaw, ni, di] = 0
 			}
 			axon.SetNrnV(ctx, ni, di, axon.GeSyn, ac.Dt.GeSynFromRaw(axon.NrnV(ctx, ni, di, axon.GeSyn), axon.NrnV(ctx, ni, di, axon.GeRaw)))
 		}
 	} else {
-		axon.SetNrnV(ctx, ni, di, axon.GeRaw, 0)
-		axon.SetNrnV(ctx, ni, di, axon.GeSyn, 0)
+		axon.Neurons[axon.GeRaw, ni, di] = 0
+		axon.Neurons[axon.GeSyn, ni, di] = 0
 	}
-	axon.SetNrnV(ctx, ni, di, axon.GiRaw, ss.Config.Gi)
+	axon.Neurons[axon.GiRaw, ni, di] = ss.Config.Gi
 	axon.SetNrnV(ctx, ni, di, axon.GiSyn, ac.Dt.GiSynFromRawSteady(axon.NrnV(ctx, ni, di, axon.GiRaw)))
 
 	if ss.Net.GPU.On {

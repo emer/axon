@@ -18,6 +18,7 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor/stats/clust"
 	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/table"
 	_ "cogentcore.org/core/tensor/tensorcore" // _ = include to get gui views
@@ -513,7 +514,7 @@ func (ss *Sim) SimMat() {
 		pcaplt := ss.Stats.Plot("PCAPath")
 		estats.ConfigPCAPlot(pcaplt, pcapath, "HiddenCT")
 		clplt := ss.Stats.Plot("ClustPlot")
-		estats.ClusterPlot(clplt, ix, col, lbls)
+		estats.ClusterPlot(clplt, ix, col, lbls, clust.ContrastDist)
 	}
 }
 

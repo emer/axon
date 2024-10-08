@@ -504,13 +504,13 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, ActAvg)
+			(*dwts)[idx+int(lni)] = NeuronAvgs[ActAvg, ni]
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				(*dwts)[idx+int(lni)] = NrnAvgV(ctx, ni, DTrgAvg)
+				(*dwts)[idx+int(lni)] = NeuronAvgs[DTrgAvg, ni]
 			}
 			idx += int(nn)
 		}
@@ -519,7 +519,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					(*dwts)[idx+int(syi)] = SynV(ctx, syni, DWt)
+					(*dwts)[idx+int(syi)] = Synapses[DWt, syni]
 					// if syni < 100 {
 					// 	fmt.Printf("%d: %d = %g\n", syni, syi, (*dwts)[idx+int(syi)])
 					// }
@@ -548,13 +548,13 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			SetNrnAvgV(ctx, ni, ActAvg, davg*dwts[idx+int(lni)])
+			NeuronAvgs[ActAvg, ni] = davg * dwts[idx+int(lni)]
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				SetNrnAvgV(ctx, ni, DTrgAvg, dwts[idx+int(lni)])
+				NeuronAvgs[DTrgAvg, ni] = dwts[idx+int(lni)]
 			}
 			idx += int(nn)
 		}
@@ -563,9 +563,9 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					SetSynV(ctx, syni, DWt, dwts[idx+int(syi)])
+					Synapses[DWt, syni] = dwts[idx+int(syi)]
 					// if syni < 100 {
-					// 	fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], SynV(ctx, syni, DWt))
+					// 	fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], Synapses[DWt, syni])
 					// }
 				}
 			}

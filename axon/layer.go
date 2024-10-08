@@ -273,16 +273,16 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		}
 		vi := porder[lni] // same for all datas
 		trg := strg + inc*float32(vi)
-		SetNrnAvgV(ctx, ni, TrgAvg, trg)
-		SetNrnAvgV(ctx, ni, AvgPct, trg)
-		SetNrnAvgV(ctx, ni, ActAvg, ly.Params.Inhib.ActAvg.Nominal*trg)
-		SetNrnAvgV(ctx, ni, AvgDif, 0)
-		SetNrnAvgV(ctx, ni, DTrgAvg, 0)
-		SetNrnAvgV(ctx, ni, GeBase, ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand))
-		SetNrnAvgV(ctx, ni, GiBase, ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand))
+		NeuronAvgs[TrgAvg, ni] = trg
+		NeuronAvgs[AvgPct, ni] = trg
+		NeuronAvgs[ActAvg, ni] = ly.Params.Inhib.ActAvg.Nominal * trg
+		NeuronAvgs[AvgDif, ni] = 0
+		NeuronAvgs[DTrgAvg, ni] = 0
+		NeuronAvgs[GeBase, ni] = ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand)
+		NeuronAvgs[GiBase, ni] = ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand)
 		if gibinit > 0 {
 			gib := gibinit * (tmax - trg)
-			SetNrnAvgV(ctx, ni, GiBase, gib)
+			NeuronAvgs[GiBase, ni] = gib
 		}
 	}
 }
@@ -319,16 +319,16 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			}
 			vi := porder[lni-pl.StIndex]
 			trg := strg + inc*float32(vi)
-			SetNrnAvgV(ctx, ni, TrgAvg, trg)
-			SetNrnAvgV(ctx, ni, AvgPct, trg)
-			SetNrnAvgV(ctx, ni, ActAvg, ly.Params.Inhib.ActAvg.Nominal*trg)
-			SetNrnAvgV(ctx, ni, AvgDif, 0)
-			SetNrnAvgV(ctx, ni, DTrgAvg, 0)
-			SetNrnAvgV(ctx, ni, GeBase, ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand))
-			SetNrnAvgV(ctx, ni, GiBase, ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand))
+			NeuronAvgs[TrgAvg, ni] = trg
+			NeuronAvgs[AvgPct, ni] = trg
+			NeuronAvgs[ActAvg, ni] = ly.Params.Inhib.ActAvg.Nominal * trg
+			NeuronAvgs[AvgDif, ni] = 0
+			NeuronAvgs[DTrgAvg, ni] = 0
+			NeuronAvgs[GeBase, ni] = ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand)
+			NeuronAvgs[GiBase, ni] = ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand)
 			if gibinit > 0 {
 				gib := gibinit * (tmax - trg)
-				SetNrnAvgV(ctx, ni, GiBase, gib)
+				NeuronAvgs[GiBase, ni] = gib
 			}
 		}
 	}
@@ -463,9 +463,9 @@ func (ly *Layer) ApplyExtValue(ctx *Context, lni, di uint32, val float32, clearM
 		return
 	}
 	if toTarg {
-		SetNrnV(ctx, ni, di, Target, val)
+		Neurons[Target, ni, di] = val
 	} else {
-		SetNrnV(ctx, ni, di, Ext, val)
+		Neurons[Ext, ni, di] = val
 	}
 	NrnClearFlag(ctx, ni, di, clearMask)
 	NrnSetFlag(ctx, ni, di, setMask)
@@ -709,15 +709,15 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 			}
 			trg := false
 			if ly.Type == CompareLayer || ly.Type == TargetLayer {
-				if NrnV(ctx, ni, di, Target) > thr {
+				if Neurons[Target, ni, di] > thr {
 					trg = true
 				}
 			} else {
-				if NrnV(ctx, ni, di, ActP) > thr {
+				if Neurons[ActP, ni, di] > thr {
 					trg = true
 				}
 			}
-			if NrnV(ctx, ni, di, ActM) > thr {
+			if Neurons[ActM, ni, di] > thr {
 				if !trg {
 					wrong++
 				}
@@ -753,8 +753,8 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < ydim; yi++ {
 				lni := uint32(yi*xdim + xi)
 				ni := ly.NeurStIndex + lni
-				sumM += NrnV(ctx, ni, di, ActM)
-				sumP += NrnV(ctx, ni, di, ActP)
+				sumM += Neurons[ActM, ni, di]
+				sumP += Neurons[ActP, ni, di]
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -790,8 +790,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < nun; yi++ {
 				lni := uint32(xi*nun + yi)
 				ni := ly.NeurStIndex + lni
-				sumM += NrnV(ctx, ni, di, ActM)
-				sumP += NrnV(ctx, ni, di, ActP)
+				sumM += Neurons[ActM, ni, di]
+				sumP += Neurons[ActP, ni, di]
 			}
 			if sumM > maxM {
 				mIndex = xi

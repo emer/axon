@@ -5,8 +5,8 @@
 package axon
 
 import (
+	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/vgpu/gosl/slbool"
 )
 
 //gosl:start neuromod
