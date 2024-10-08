@@ -1071,8 +1071,8 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 		da = GlbV(ctx, di, GvVSPatchPosRPE) // our own personal
 		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
 		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons.Value(int(SpkPrv), int(ni), int(di)), 1) // note: don't have proper max here
-	ly.Acts.Sahp.Ninf
-	nrnSaphCa = ly.Acts.Sahp.Ca
+	case MatrixLayer:
+		if hasRew { // reward time
 			mlr = 1 // don't use dig deriv
 		} else {
 			modlr = 1 // don't use mod

@@ -5,11 +5,8 @@
 package axon
 
 import (
-	"math"
-
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/goal/gosl/slbool"
-	"cogentcore.org/core/goal/gosl/slrand"
 	"github.com/emer/emergent/v2/etime"
 )
 
@@ -25,24 +22,6 @@ var (
 	// This is updated in Network.InitName, which sets NetIndex.
 	Networks []*Network
 )
-
-func NrnHasFlag(ctx *Context, ni, di uint32, flag NeuronFlags) bool {
-	return (NeuronFlags(math.Float32bits(Neurons[NrnFlags, ni, di])) & flag) > 0 // weird: != 0 does NOT work on GPU
-}
-
-func NrnSetFlag(ctx *Context, ni, di uint32, flag NeuronFlags) {
-	Neurons[NrnFlags, ni, di] =  math.Float32frombits(math.Float32bits(Neurons[NrnFlags, ni, di])|uint32(flag)))
-}
-
-func NrnClearFlag(ctx *Context, ni, di uint32, flag NeuronFlags) {
-	Neurons[NrnFlags, ni, di] =  math.Float32frombits(math.Float32bits(Neurons[NrnFlags, ni, di])&^uint32(flag)))
-}
-
-// NrnIsOff returns true if the neuron has been turned off (lesioned)
-// Only checks the first data item -- all should be consistent.
-func NrnIsOff(ctx *Context, ni uint32) bool {
-	return NrnHasFlag(ctx, ni, 0, NeuronOff)
-}
 
 // NeuronAvgVars
 
