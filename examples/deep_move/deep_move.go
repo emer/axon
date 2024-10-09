@@ -190,7 +190,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	dpIn, dpInp := net.AddInputPulv4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, 2*space)
 	hd, hdp := net.AddInputPulv2D("HeadDir", 1, ev.DepthSize, space)
-	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), axon.InputLayer)
+	act := net.AddLayer2D("Action", axon.InputLayer, ev.UnitsPer, len(ev.Acts))
 
 	dpHidSz := vecint.Vector2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
 	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full

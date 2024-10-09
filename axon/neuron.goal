@@ -54,12 +54,14 @@ func NrnIsOff(ni uint32) bool {
 // NeuronVars are the neuron variables representing current active state,
 // specific to each input data state.
 // See NeuronAvgVars for vars shared across data.
+type NeuronVars int32 //enums:enum
+
 const (
 	/////////////////////////////////////////
 	// Spiking, Activation
 
 	// Spike is whether neuron has spiked or not on this cycle (0 or 1)
-	Spike int = iota
+	Spike NeuronVars = iota
 
 	// Spiked is 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.
 	Spiked
@@ -352,18 +354,18 @@ const (
 	// These need to be in Vars because they can be differential per data (for ext inputs)
 	// and are writable (indexes are read only).
 	NrnFlags
-
-	NeuronVarsN
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
 // which is aggregated over time and not specific to each input data state,
 // along with any other state that is not input data specific.
+type NeuronAvgVars int32 //enums:enum
+
 const (
 	// ActAvg is average activation (of minus phase activation state)
 	// over long time intervals (time constant = Dt.LongAvgTau).
 	// Useful for finding hog units and seeing overall distribution of activation.
-	ActAvg int = iota
+	ActAvg NeuronAvgVars = iota
 
 	// AvgPct is ActAvg as a proportion of overall layer activation.
 	// This is used for synaptic scaling to match TrgAvg activation,
@@ -390,13 +392,15 @@ const (
 
 	// GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability.
 	GiBase
-
-	NeuronAvgVarsN
 )
+
+// NeuronIndexVars are neuron-level indexes used to access layers and pools
+// from the individual neuron level.
+type NeuronIndexVars int32 //enums:enum
 
 const (
 	// NrnNeurIndex is the index of this neuron within its owning layer.
-	NrnNeurIndex int = iota
+	NrnNeurIndex NeuronIndexVars = iota
 
 	// NrnLayIndex is the index of the layer that this neuron belongs to,
 	// needed for neuron-level parallel code.
@@ -406,8 +410,6 @@ const (
 	// (only for 4D shapes, the pool (unit-group / hypercolumn) structure level).
 	// Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
 	NrnSubPool
-
-	NrnIndexesN
 )
 
 //gosl:end

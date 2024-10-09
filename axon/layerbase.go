@@ -122,7 +122,7 @@ func (ly *Layer) Pool(pi, di uint32) *Pool {
 
 // SubPool returns subpool for given neuron, at data index
 func (ly *Layer) SubPool(ctx *Context, ni, di uint32) *Pool {
-	pi := NrnI(ctx, ni, NrnSubPool)
+	pi := NeuronIxs.Value(int(NrnSubPool), int(ni))
 	return ly.Pool(pi, di)
 }
 
@@ -256,7 +256,7 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 			pl := ly.Pool(pi, 0)
 			for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 				ni := ly.NeurStIndex + lni
-				SetNrnI(ctx, ni, NrnSubPool, uint32(pi))
+				NeuronIxs.Set(uint32(pi), int(NrnSubPool), int(ni))
 			}
 			pi++
 		}
@@ -298,15 +298,15 @@ func (ly *Layer) BuildPaths(ctx *Context) error {
 
 // Build constructs the layer state, including calling Build on the pathways
 func (ly *Layer) Build() error {
-	ctx := &ly.Network.Ctx
+	ctx := &ly.Network.Ctx[0]
 	nn := uint32(ly.Shape.Len())
 	if nn == 0 {
 		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Name)
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		SetNrnI(ctx, ni, NrnNeurIndex, lni)
-		SetNrnI(ctx, ni, NrnLayIndex, uint32(ly.Index))
+		NeuronIxs.Set(lni, int(NrnNeurIndex), int(ni))
+		NeuronIxs.Set(uint32(ly.Index), int(NrnLayIndex), int(ni))
 	}
 	err := ly.BuildPools(ctx, nn)
 	if err != nil {
@@ -361,13 +361,13 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		lvi := varIndex - (ly.UnitVarNum() - NNeuronLayerVars)
 		switch lvi {
 		case 0:
-			return GlbV(ctx, uint32(di), GvDA)
+			return GlobalScalars.Value(int(GvDA), int(uint32(di)))
 		case 1:
-			return GlbV(ctx, uint32(di), GvACh)
+			return GlobalScalars.Value(int(GvACh), int(uint32(di)))
 		case 2:
-			return GlbV(ctx, uint32(di), GvNE)
+			return GlobalScalars.Value(int(GvNE), int(uint32(di)))
 		case 3:
-			return GlbV(ctx, uint32(di), GvSer)
+			return GlobalScalars.Value(int(GvSer), int(uint32(di)))
 		case 4:
 			pl := ly.SubPool(ctx, ni, uint32(di))
 			return float32(pl.Gated)
@@ -528,7 +528,7 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 	if ly.Off {
 		return nil
 	}
-	ctx := &ly.Network.Ctx
+	ctx := &ly.Network.Ctx[0]
 	if lw.MetaData != nil {
 		for di := uint32(0); di < ly.MaxData; di++ {
 			vals := &ly.Values[di]

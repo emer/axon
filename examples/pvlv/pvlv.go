@@ -208,7 +208,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	cs, csP := net.AddInputPulv4D("CS", stim.DimSize(0), stim.DimSize(1), stim.DimSize(2), stim.DimSize(3), space)
 
-	ctxIn := net.AddLayer4D("ContextIn", ctxt.DimSize(0), ctxt.DimSize(1), ctxt.DimSize(2), ctxt.DimSize(3), axon.InputLayer)
+	ctxIn := net.AddLayer4D("ContextIn", axon.InputLayer, ctxt.DimSize(0), ctxt.DimSize(1), ctxt.DimSize(2), ctxt.DimSize(3))
 
 	///////////////////////////////////////////
 	// CS -> BLA, OFC
@@ -511,10 +511,10 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
 	diu := uint32(0)
-	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, diu, axon.GvHasRew))
-	ss.Stats.SetFloat32("Gated", axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated))
-	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
+	ss.Stats.SetFloat32("HasRew", axon.GlobalScalars[axon.GvHasRew), diu]
+	ss.Stats.SetFloat32("Gated", axon.GlobalScalars[axon.GvVSMatrixJustGated), diu]
+	ss.Stats.SetFloat32("Time", axon.GlobalScalars[axon.GvTime), diu]
+	ss.Stats.SetFloat32("GiveUp", axon.GlobalScalars[axon.GvGiveUp), diu]
 	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
 }
 

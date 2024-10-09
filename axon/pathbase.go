@@ -124,9 +124,9 @@ func (pt *Path) Validate(logmsg bool) error {
 	return nil
 }
 
-// RecvSynIndexes returns the receiving synapse indexes for given recv unit index
+// RecvSynIxs returns the receiving synapse indexes for given recv unit index
 // within the receiving layer, to be iterated over for recv-based processing.
-func (pt *Path) RecvSynIndexes(ri uint32) []uint32 {
+func (pt *Path) RecvSynIxs(ri uint32) []uint32 {
 	rcon := pt.RecvCon[ri]
 	return pt.RecvSynIndex[rcon.Start : rcon.Start+rcon.N]
 }
@@ -419,7 +419,7 @@ func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
 	depth++
 	for ri := 0; ri < nr; ri++ {
 		rc := pt.RecvCon[ri]
-		syIndexes := pt.RecvSynIndexes(uint32(ri))
+		syIndexes := pt.RecvSynIxs(uint32(ri))
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("{\n"))
 		depth++

@@ -154,8 +154,8 @@ func (ss *Sim) ConfigAll() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctx := &ss.Context
 
-	in := net.AddLayer2D("Input", 1, 1, axon.InputLayer)
-	hid := net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
+	in := net.AddLayer2D("Input", axon.InputLayer, 1, 1)
+	hid := net.AddLayer2D("Neuron", axon.SuperLayer, 1, 1)
 
 	net.ConnectLayers(in, hid, paths.NewFull(), axon.ForwardPath)
 

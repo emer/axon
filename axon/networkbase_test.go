@@ -13,7 +13,7 @@ import (
 func TestAddLayer(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
-	layer := net.AddLayer("Input", shape, InputLayer)
+	layer := net.AddLayer("Input", InputLayer, shape...)
 	assert.Equal(t, 1, net.NumLayers())
 	assert.Same(t, layer, net.LayerByName("Input"))
 }
@@ -21,9 +21,9 @@ func TestAddLayer(t *testing.T) {
 func TestDefaults(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{2, 2}
-	input := net.AddLayer("Input", shape, InputLayer)
-	hidden := net.AddLayer("Hidden", shape, SuperLayer)
-	output := net.AddLayer("Output", shape, TargetLayer)
+	input := net.AddLayer("Input", InputLayer, shape...)
+	hidden := net.AddLayer("Hidden", SuperLayer, shape...)
+	output := net.AddLayer("Output", TargetLayer, shape...)
 
 	full := paths.NewFull()
 	net.ConnectLayers(input, hidden, full, ForwardPath)
@@ -55,7 +55,7 @@ func TestDefaults(t *testing.T) {
 		assert.Equal(t, uint32(4), lyr.NNeurons)
 		for lni := uint32(0); lni < lyr.NNeurons; lni++ {
 			ni := lyr.NeurStIndex + lni
-			li := NrnI(ctx, ni, NrnLayIndex)
+			li := NeuronIxs[NrnLayIndex, ni]
 			assert.Equal(t, uint32(lyr.Index), li)
 		}
 	}
@@ -66,8 +66,8 @@ func TestDefaults(t *testing.T) {
 func TestConnectLayers(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
-	input := net.AddLayer("Input", shape, InputLayer)
-	output := net.AddLayer("Output", shape, TargetLayer)
+	input := net.AddLayer("Input", InputLayer, shape...)
+	output := net.AddLayer("Output", TargetLayer, shape...)
 	assert.Equal(t, 2, net.NumLayers())
 	net.ConnectLayers(input, output, paths.NewFull(), ForwardPath)
 
@@ -78,7 +78,7 @@ func TestConnectLayers(t *testing.T) {
 func TestDelete(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
-	net.AddLayer("Input", shape, InputLayer)
+	net.AddLayer("Input", InputLayer, shape...)
 	assert.Equal(t, 1, net.NumLayers())
 	net.DeleteAll()
 	assert.Equal(t, 0, net.NumLayers())

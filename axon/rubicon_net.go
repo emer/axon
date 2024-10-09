@@ -12,7 +12,7 @@ import (
 
 // AddLDTLayer adds a LDTLayer
 func (net *Network) AddLDTLayer(prefix string) *Layer {
-	ldt := net.AddLayer2D(prefix+"LDT", 1, 1, LDTLayer)
+	ldt := net.AddLayer2D(prefix+"LDT", LDTLayer, 1, 1)
 	return ldt
 }
 
@@ -20,19 +20,19 @@ func (net *Network) AddLDTLayer(prefix string) *Layer {
 // for positive or negative valence
 func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX int, rel relpos.Relations, space float32) (acq, ext *Layer) {
 	if pos {
-		d1 := net.AddLayer4D(prefix+"BLAposAcqD1", 1, nUs, nNeurY, nNeurX, BLALayer)
+		d1 := net.AddLayer4D(prefix+"BLAposAcqD1", BLALayer, 1, nUs, nNeurY, nNeurX)
 		d1.SetBuildConfig("DAMod", "D1Mod")
 		d1.SetBuildConfig("Valence", "Positive")
-		d2 := net.AddLayer4D(prefix+"BLAposExtD2", 1, nUs, nNeurY, nNeurX, BLALayer)
+		d2 := net.AddLayer4D(prefix+"BLAposExtD2", BLALayer, 1, nUs, nNeurY, nNeurX)
 		d2.SetBuildConfig("DAMod", "D2Mod")
 		d2.SetBuildConfig("Valence", "Positive")
 		acq = d1
 		ext = d2
 	} else {
-		d1 := net.AddLayer4D(prefix+"BLAnegExtD1", 1, nUs, nNeurY, nNeurX, BLALayer)
+		d1 := net.AddLayer4D(prefix+"BLAnegExtD1", BLALayer, 1, nUs, nNeurY, nNeurX)
 		d1.SetBuildConfig("DAMod", "D1Mod")
 		d1.SetBuildConfig("Valence", "Negative")
-		d2 := net.AddLayer4D(prefix+"BLAnegAcqD2", 1, nUs, nNeurY, nNeurX, BLALayer)
+		d2 := net.AddLayer4D(prefix+"BLAnegAcqD2", BLALayer, 1, nUs, nNeurY, nNeurX)
 		d2.SetBuildConfig("DAMod", "D2Mod")
 		d2.SetBuildConfig("Valence", "Negative")
 		d2.DefaultParams = params.Params{
@@ -106,17 +106,17 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nNeurY, nNeurX int, spa
 		blaPosAcq.SetBuildConfig("LayInhib1Name", blaNegAcq.Name)
 		blaNegAcq.SetBuildConfig("LayInhib1Name", blaPosAcq.Name)
 	}
-	cemPos = net.AddLayer4D(prefix+"CeMPos", 1, nUSpos, 1, nNeurX, CeMLayer)
+	cemPos = net.AddLayer4D(prefix+"CeMPos", CeMLayer, 1, nUSpos, 1, nNeurX)
 	cemPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	cemPos.SetBuildConfig("Valence", "Positive")
 
 	if neg {
-		cemNeg = net.AddLayer4D(prefix+"CeMNeg", 1, nUSneg, 1, nNeurX, CeMLayer)
+		cemNeg = net.AddLayer4D(prefix+"CeMNeg", CeMLayer, 1, nUSneg, 1, nNeurX)
 		cemNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
 		cemNeg.SetBuildConfig("Valence", "Negative")
 	}
 
-	blaNov = net.AddLayer4D(prefix+"BLANovelCS", 1, 1, 4, 4, BLALayer)
+	blaNov = net.AddLayer4D(prefix+"BLANovelCS", BLALayer, 1, 1, 4, 4)
 	blaNov.SetBuildConfig("DAMod", "D1Mod")
 	blaNov.SetBuildConfig("Valence", "Positive")
 	blaNov.DefaultParams = params.Params{
@@ -271,16 +271,16 @@ func (net *Network) AddUSLayers(popY, popX int, rel relpos.Relations, space floa
 	nUSpos := int(net.Rubicon.NPosUSs)
 	nUSneg := int(net.Rubicon.NNegUSs)
 	nCost := int(net.Rubicon.NCosts)
-	usPos = net.AddLayer4D("USpos", 1, nUSpos, popY, popX, USLayer)
+	usPos = net.AddLayer4D("USpos", USLayer, 1, nUSpos, popY, popX)
 	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	usPos.SetBuildConfig("Valence", "Positive")
-	usNeg = net.AddLayer4D("USneg", 1, nUSneg, popY, popX, USLayer)
+	usNeg = net.AddLayer4D("USneg", USLayer, 1, nUSneg, popY, popX)
 	usNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
 	usNeg.SetBuildConfig("Valence", "Negative")
-	cost = net.AddLayer4D("Cost", 1, nCost, popY, popX, USLayer)
+	cost = net.AddLayer4D("Cost", USLayer, 1, nCost, popY, popX)
 	cost.SetBuildConfig("DAMod", "D1Mod") // d1mod = incremental current
 	cost.SetBuildConfig("Valence", "Cost")
-	costFinal = net.AddLayer4D("CostFin", 1, nCost, popY, popX, USLayer)
+	costFinal = net.AddLayer4D("CostFin", USLayer, 1, nCost, popY, popX)
 	costFinal.SetBuildConfig("DAMod", "D2Mod") // d2mod = final
 	costFinal.SetBuildConfig("Valence", "Cost")
 
@@ -336,10 +336,10 @@ func (net *Network) AddUSPulvLayers(popY, popX int, rel relpos.Relations, space 
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions.
 func (net *Network) AddPVLayers(nNeurY, nNeurX int, rel relpos.Relations, space float32) (pvPos, pvNeg *Layer) {
-	pvPos = net.AddLayer2D("PVpos", nNeurY, nNeurX, PVLayer)
+	pvPos = net.AddLayer2D("PVpos", PVLayer, nNeurY, nNeurX)
 	pvPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	pvPos.SetBuildConfig("Valence", "Positive")
-	pvNeg = net.AddLayer2D("PVneg", nNeurY, nNeurX, PVLayer)
+	pvNeg = net.AddLayer2D("PVneg", PVLayer, nNeurY, nNeurX)
 	pvNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
 	pvNeg.SetBuildConfig("Valence", "Negative")
 	if rel == relpos.Behind {
@@ -376,10 +376,10 @@ func (net *Network) AddPVPulvLayers(nNeurY, nNeurX int, rel relpos.Relations, sp
 
 // AddVSPatchLayers adds VSPatch (Pos, D1, D2)
 func (net *Network) AddVSPatchLayers(prefix string, nUs, nNeurY, nNeurX int, space float32) (d1, d2 *Layer) {
-	d1 = net.AddLayer4D(prefix+"VsPatchD1", 1, nUs, nNeurY, nNeurX, VSPatchLayer)
+	d1 = net.AddLayer4D(prefix+"VsPatchD1", VSPatchLayer, 1, nUs, nNeurY, nNeurX)
 	d1.SetBuildConfig("DAMod", "D1Mod")
 	d1.SetBuildConfig("Valence", "Positive")
-	d2 = net.AddLayer4D(prefix+"VsPatchD2", 1, nUs, nNeurY, nNeurX, VSPatchLayer)
+	d2 = net.AddLayer4D(prefix+"VsPatchD2", VSPatchLayer, 1, nUs, nNeurY, nNeurX)
 	d2.SetBuildConfig("DAMod", "D2Mod")
 	d2.SetBuildConfig("Valence", "Positive")
 	d2.PlaceBehind(d1, space)
@@ -396,8 +396,8 @@ func (net *Network) ConnectToVSPatch(send, vspD1, vspD2 *Layer, pat paths.Patter
 // AddVTALHbLDTLayers adds VTA dopamine, LHb DA dipping, and LDT ACh layers
 // which are driven by corresponding values in Global
 func (net *Network) AddVTALHbLDTLayers(rel relpos.Relations, space float32) (vta, lhb, ldt *Layer) {
-	vta = net.AddLayer2D("VTA", 1, 1, VTALayer)
-	lhb = net.AddLayer2D("LHb", 1, 2, LHbLayer)
+	vta = net.AddLayer2D("VTA", VTALayer, 1, 1)
+	lhb = net.AddLayer2D("LHb", LHbLayer, 1, 2)
 	ldt = net.AddLDTLayer("")
 	if rel == relpos.Behind {
 		lhb.PlaceBehind(vta, space)
@@ -415,7 +415,7 @@ func (net *Network) AddVTALHbLDTLayers(rel relpos.Relations, space float32) (vta
 // input layers.  Sets base name and class name to SC.
 // Must set Inhib.FFPrv > 0 and Act.Decay.* = 0
 func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
-	sc := net.AddLayer2D(prefix+"SC", nNeurY, nNeurX, SuperLayer)
+	sc := net.AddLayer2D(prefix+"SC", SuperLayer, nNeurY, nNeurX)
 	sc.DefaultParams = params.Params{
 		"Layer.Inhib.ActAvg.Nominal": "0.1",
 		"Layer.Inhib.Layer.On":       "true",
@@ -438,7 +438,7 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 // input layers.  Sets base name and class name to SC.
 // Must set Inhib.FFPrv > 0 and Act.Decay.* = 0
 func (net *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	sc := net.AddLayer4D(prefix+"SC", nPoolsY, nPoolsX, nNeurY, nNeurX, SuperLayer)
+	sc := net.AddLayer4D(prefix+"SC", SuperLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	sc.DefaultParams = params.Params{
 		"Layer.Inhib.ActAvg.Nominal": "0.1",
 		"Layer.Inhib.Layer.On":       "true",
@@ -487,7 +487,7 @@ func (net *Network) ConnectToSC1to1(send, recv *Layer) *Path {
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
 func (net *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
-	drv := net.AddLayer4D("Drives", 1, int(ctx.NetIndexes.RubiconNPosUSs), nNeurY, nNeurX, DrivesLayer)
+	drv := net.AddLayer4D("Drives", DrivesLayer, 1, int(ctx.NetIndexes.RubiconNPosUSs), nNeurY, nNeurX)
 	return drv
 }
 
@@ -514,7 +514,7 @@ func (net *Network) AddDrivesPulvLayer(ctx *Context, nNeurY, nNeurX int, space f
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions.
 func (net *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
-	urge := net.AddLayer2D("Urgency", nNeurY, nNeurX, UrgencyLayer)
+	urge := net.AddLayer2D("Urgency", UrgencyLayer, nNeurY, nNeurX)
 	return urge
 }
 

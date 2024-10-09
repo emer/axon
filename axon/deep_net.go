@@ -15,37 +15,37 @@ import (
 
 // AddSuperLayer2D adds a Super Layer of given size, with given name.
 func (net *Network) AddSuperLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer2D(name, nNeurY, nNeurX, SuperLayer)
+	ly := net.AddLayer2D(name, SuperLayer, nNeurY, nNeurX)
 	return ly
 }
 
 // AddSuperLayer4D adds a Super Layer of given size, with given name.
 func (net *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, SuperLayer)
+	ly := net.AddLayer4D(name, SuperLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return ly
 }
 
 // AddCTLayer2D adds a CT Layer of given size, with given name.
 func (net *Network) AddCTLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer2D(name, nNeurY, nNeurX, CTLayer)
+	ly := net.AddLayer2D(name, CTLayer, nNeurY, nNeurX)
 	return ly
 }
 
 // AddCTLayer4D adds a CT Layer of given size, with given name.
 func (net *Network) AddCTLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, CTLayer)
+	ly := net.AddLayer4D(name, CTLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return ly
 }
 
 // AddPulvLayer2D adds a Pulvinar Layer of given size, with given name.
 func (net *Network) AddPulvLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer2D(name, nNeurY, nNeurX, PulvinarLayer)
+	ly := net.AddLayer2D(name, PulvinarLayer, nNeurY, nNeurX)
 	return ly
 }
 
 // AddPulvLayer4D adds a Pulvinar Layer of given size, with given name.
 func (net *Network) AddPulvLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PulvinarLayer)
+	ly := net.AddLayer4D(name, PulvinarLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return ly
 }
 
@@ -170,7 +170,7 @@ func (net *Network) ConnectSuperToCT(send, recv *Layer, pat paths.Pattern, pathC
 // The Input layer is set as the Driver of the Layer.
 // Both layers have SetClass(name) called to allow shared params.
 func (net *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32) (*Layer, *Layer) {
-	in := net.AddLayer2D(name, nNeurY, nNeurX, InputLayer)
+	in := net.AddLayer2D(name, InputLayer, nNeurY, nNeurX)
 	pulv := net.AddPulvLayer2D(name+"P", nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.AddClass(name)
@@ -183,7 +183,7 @@ func (net *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float3
 // The Input layer is set as the Driver of the Layer.
 // Both layers have SetClass(name) called to allow shared params.
 func (net *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (*Layer, *Layer) {
-	in := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, InputLayer)
+	in := net.AddLayer4D(name, InputLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	pulv := net.AddPulvLayer4D(name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.AddClass(name)
@@ -197,13 +197,13 @@ func (net *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 
 // AddPTMaintLayer2D adds a PTMaintLayer of given size, with given name.
 func (net *Network) AddPTMaintLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer2D(name, nNeurY, nNeurX, PTMaintLayer)
+	ly := net.AddLayer2D(name, PTMaintLayer, nNeurY, nNeurX)
 	return ly
 }
 
 // AddPTMaintLayer4D adds a PTMaintLayer of given size, with given name.
 func (net *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTMaintLayer)
+	ly := net.AddLayer4D(name, PTMaintLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return ly
 }
 
@@ -336,13 +336,13 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, pathCla
 
 // AddPTPredLayer2D adds a PTPredLayer of given size, with given name.
 func (net *Network) AddPTPredLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer2D(name, nNeurY, nNeurX, PTPredLayer)
+	ly := net.AddLayer2D(name, PTPredLayer, nNeurY, nNeurX)
 	return ly
 }
 
 // AddPTPredLayer4D adds a PTPredLayer of given size, with given name.
 func (net *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTPredLayer)
+	ly := net.AddLayer4D(name, PTPredLayer, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return ly
 }
 

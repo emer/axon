@@ -76,9 +76,9 @@ Set: 1	Indexes
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Values: 1
         Var: 2:	Paths	Struct[5]	(size: 352)	Values: 1
         Var: 3:	SendCon	Struct[242]	(size: 16)	Values: 1
-        Var: 4:	RecvPathIndexes	Uint32[5]	(size: 4)	Values: 1
+        Var: 4:	RecvPathIxs	Uint32[5]	(size: 4)	Values: 1
         Var: 5:	RecvCon	Struct[281]	(size: 16)	Values: 1
-        Var: 6:	RecvSynIndexes	Uint32[12992]	(size: 4)	Values: 1
+        Var: 6:	RecvSynIxs	Uint32[12992]	(size: 4)	Values: 1
 Set: 2	Structs
     Role: Storage
         Var: 0:	Ctx	Struct	(size: 864)	Values: 1

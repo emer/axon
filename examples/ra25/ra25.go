@@ -280,10 +280,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
-	hid1 := net.AddLayer2D("Hidden1", ss.Config.Params.Hidden1Size.Y, ss.Config.Params.Hidden1Size.X, axon.SuperLayer)
-	hid2 := net.AddLayer2D("Hidden2", ss.Config.Params.Hidden2Size.Y, ss.Config.Params.Hidden2Size.X, axon.SuperLayer)
-	out := net.AddLayer2D("Output", 5, 5, axon.TargetLayer)
+	inp := net.AddLayer2D("Input", axon.InputLayer, 5, 5)
+	hid1 := net.AddLayer2D("Hidden1", axon.SuperLayer, ss.Config.Params.Hidden1Size.Y, ss.Config.Params.Hidden1Size.X)
+	hid2 := net.AddLayer2D("Hidden2", axon.SuperLayer, ss.Config.Params.Hidden2Size.Y, ss.Config.Params.Hidden2Size.X)
+	out := net.AddLayer2D("Output", axon.TargetLayer, 5, 5)
 
 	// use this to position layers relative to each other
 	// hid2.PlaceRightOf(hid1, 2)

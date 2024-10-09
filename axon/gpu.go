@@ -46,11 +46,11 @@ var<storage, read_write> SynapseIxs: array<u32>; // [Layer][SendPaths][SendNeuro
 @group(1) @binding(2)
 var<storage, read_write> SendCon: array<StartN>; // [Layer][SendPaths][SendNeurons]
 @group(1) @binding(3)
-var<storage, read_write> RecvPathIndexes: array<u32>; // [Layer][RecvPaths]
+var<storage, read_write> RecvPathIxs: array<u32>; // [Layer][RecvPaths]
 @group(1) @binding(4)
 var<storage, read_write> RecvCon: array<StartN>; // [Layer][RecvPaths][RecvNeurons]
 @group(1) @binding(5)
-var<storage, read_write> RecvSynIndexes: array<u32>; // [Layer][RecvPaths][RecvNeurons][Syns]
+var<storage, read_write> RecvSynIxs: array<u32>; // [Layer][RecvPaths][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 @group(2) @binding(0)
@@ -107,9 +107,9 @@ Set: 1
         Var: 0:	NeuronIxs		Uint32[534]	(size: 4)	Values: 1
         Var: 1:	SynapseIxs	Uint32[38976]	(size: 4)	Values: 1
         Var: 2:	SendCon		Struct[242]	(size: 16)	Values: 1
-        Var: 3:	RecvPathIndexes	Uint32[5]	(size: 4)	Values: 1
+        Var: 3:	RecvPathIxs	Uint32[5]	(size: 4)	Values: 1
         Var: 4:	RecvCon		Struct[281]	(size: 16)	Values: 1
-        Var: 5:	RecvSynIndexes	Uint32[12992]	(size: 4)	Values: 1
+        Var: 5:	RecvSynIxs	Uint32[12992]	(size: 4)	Values: 1
 Set: 2
     Role: Storage
         Var: 0:	Ctx		Struct	(size: 512)	Values: 1
@@ -299,9 +299,9 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Indexes.Add("NeuronIxs", vgpu.Uint32, len(gp.Net.NeuronIxs), vgpu.Storage, vgpu.ComputeShader)
 	gp.Indexes.Add("SynapseIxs", vgpu.Uint32, len(gp.Net.SynapseIxs), vgpu.Storage, vgpu.ComputeShader)
 	gp.Indexes.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PathSendCon), vgpu.Storage, vgpu.ComputeShader)
-	gp.Indexes.Add("RecvPathIndexes", vgpu.Uint32, len(gp.Net.RecvPathIndexes), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("RecvPathIxs", vgpu.Uint32, len(gp.Net.RecvPathIxs), vgpu.Storage, vgpu.ComputeShader)
 	gp.Indexes.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PathRecvCon), vgpu.Storage, vgpu.ComputeShader)
-	gp.Indexes.Add("RecvSynIndexes", vgpu.Uint32, len(gp.Net.RecvSynIndexes), vgpu.Storage, vgpu.ComputeShader)
+	gp.Indexes.Add("RecvSynIxs", vgpu.Uint32, len(gp.Net.RecvSynIxs), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("Neurons", vgpu.Float32, len(gp.Net.Neurons), vgpu.Storage, vgpu.ComputeShader)
@@ -511,14 +511,14 @@ func (gp *GPU) CopyIndexesToStaging() {
 	_, sconv, _ := gp.Indexes.ValueByIndexTry("SendCon", 0)
 	sconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathSendCon[0]))
 
-	_, spiv, _ := gp.Indexes.ValueByIndexTry("RecvPathIndexes", 0)
-	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPathIndexes[0]))
+	_, spiv, _ := gp.Indexes.ValueByIndexTry("RecvPathIxs", 0)
+	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPathIxs[0]))
 
 	_, rconv, _ := gp.Indexes.ValueByIndexTry("RecvCon", 0)
 	rconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PathRecvCon[0]))
 
-	_, ssiv, _ := gp.Indexes.ValueByIndexTry("RecvSynIndexes", 0)
-	ssiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvSynIndexes[0]))
+	_, ssiv, _ := gp.Indexes.ValueByIndexTry("RecvSynIxs", 0)
+	ssiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvSynIxs[0]))
 }
 
 // CopyExtsToStaging copies external inputs to staging from CPU.
@@ -1666,7 +1666,7 @@ func (gp *GPU) TestSynCa() bool {
 	// }
 
 	// for var-ordered memory:
-	// for vr := CaM; vr < SynapseCaVarsN; vr++ {
+	// for vr := CaM; vr < SynapseTraceVarsN; vr++ {
 	// 	ix := ctx.SynapseCaVars.Index(0, 0, vr)
 	// 	bank := uint32(ix / uint64(ctx.NetIndexes.GPUMaxBuffFloats))
 	// 	res := uint32(ix % uint64(ctx.NetIndexes.GPUMaxBuffFloats))
@@ -1676,7 +1676,7 @@ func (gp *GPU) TestSynCa() bool {
 	limit := 2
 	failed := false
 
-	for vr := Tr; vr < SynapseCaVarsN; vr++ {
+	for vr := Tr; vr < SynapseTraceVarsN; vr++ {
 		nfail := 0
 		for syni := uint32(0); syni < uint32(4); syni++ {
 			for di := uint32(0); di < gp.Net.MaxData; di++ {

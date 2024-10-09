@@ -188,10 +188,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	v1 := net.AddLayer4D("V1", 10, 10, 5, 4, axon.InputLayer)
-	v4 := net.AddLayer4D("V4", 5, 5, 10, 10, axon.SuperLayer) // 10x10 == 16x16 > 7x7 (orig)
-	it := net.AddLayer2D("IT", 16, 16, axon.SuperLayer)       // 16x16 == 20x20 > 10x10 (orig)
-	out := net.AddLayer4D("Output", 4, 5, ss.Config.Env.NOutPer, 1, axon.TargetLayer)
+	v1 := net.AddLayer4D("V1", axon.InputLayer, 10, 10, 5, 4)
+	v4 := net.AddLayer4D("V4", axon.SuperLayer, 7, 7, 10, 10) // 10x10 == 16x16 > 7x7 (orig, 5, 5, 10, 10)
+	it := net.AddLayer2D("IT", axon.SuperLayer, 16, 16)       // 16x16 == 20x20 > 10x10 (orig, 16, 16)
+	out := net.AddLayer4D("Output", axon.TargetLayer, 4, 5, ss.Config.Env.NOutPer, 1)
 
 	v1.SetSampleIndexesShape(emer.CenterPoolIndexes(v1, 2), emer.CenterPoolShape(v1, 2))
 	v4.SetSampleIndexesShape(emer.CenterPoolIndexes(v4, 2), emer.CenterPoolShape(v4, 2))

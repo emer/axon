@@ -164,7 +164,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ldt := net.AddLDTLayer("")
 	ldt.Name = "ACh"
 	ldt.PlaceBehind(rew, 1)
-	inp := net.AddLayer2D("Input", 3, 20, axon.InputLayer)
+	inp := net.AddLayer2D("Input", axon.InputLayer, 3, 20)
 	inp.PlaceAbove(rew)
 	net.ConnectLayers(inp, rplay, full, ptype)
 

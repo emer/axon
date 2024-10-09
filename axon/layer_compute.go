@@ -61,7 +61,7 @@ func (ly *Layer) GiFromSpikes(ctx *Context) {
 		if NrnIsOff(ni) {
 			continue
 		}
-		subPool := NrnI(ctx, ni, NrnSubPool)
+		subPool := NeuronIxs.Value(int(NrnSubPool), int(ni))
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 			pl := ly.Pool(subPool, di)
 			// note: using Int version here so we can have greater match with GPU
@@ -158,7 +158,7 @@ func (ly *Layer) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues
 	nonDrivePct := float32(0)
 	if ly.Type == PulvinarLayer {
 		drvGe, nonDrivePct = ly.PulvinarDriver(ctx, ni-ly.NeurStIndex, di)
-		Neurons.Set(nonDrivePct, int(Ext), int(ni), int(di))
+		Neurons.Set(nonDrivePct, int(Ext), int(ni), int(di)) // use for regulating inhibition
 	}
 
 	saveVal := ly.Params.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct)
@@ -521,15 +521,15 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 			for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 				pl := ly.Pool(pi, di)
 				val := pl.AvgMax.CaSpkD.Cycle.Avg
-				SetGlbUSposV(ctx, di, GvOFCposPTMaint, uint32(pi-1), val)
+				GlobalVectors.Set(val, int(GvOFCposPTMaint), int(uint32(pi-1)), int(di))
 			}
 		}
 	}
 
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-			hasRew := (GlbV(ctx, di, GvHasRew) > 0)
-			giveUp := (GlbV(ctx, di, GvGiveUp) > 0)
+			hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
+			giveUp := (GlobalScalars.Value(int(GvGiveUp), int(di)) > 0)
 			if hasRew || giveUp {
 				ly.DecayState(ctx, di, 1, 1, 1)      // note: GPU will get, and GBuf are auto-cleared in NewState
 				for pi := uint32(0); pi < np; pi++ { // also clear the pool stats: GoalMaint depends on these..
@@ -581,7 +581,7 @@ func (ly *Layer) TargToExt(ctx *Context) {
 			}
 			Neurons.Set(Neurons.Value(int(Target), int(ni), int(di)), int(Ext), int(ni), int(di))
 			NrnSetFlag(ni, di, NeuronHasExt)
-			Neurons.Set(-1, int(ISI), int(ni), int(di))
+			Neurons.Set(-1, int(ISI), int(ni), int(di)) // get fresh update on plus phase output acts
 			Neurons.Set(-1, int(ISIAvg), int(ni), int(di))
 		}
 	}
@@ -602,7 +602,7 @@ func (ly *Layer) ClearTargExt(ctx *Context) {
 			}
 			Neurons.Set(0, int(Ext), int(ni), int(di))
 			NrnClearFlag(ni, di, NeuronHasExt)
-			Neurons.Set(-1, int(ISI), int(ni), int(di))
+			Neurons.Set(-1, int(ISI), int(ni), int(di)) // get fresh update on plus phase output acts
 			Neurons.Set(-1, int(ISIAvg), int(ni), int(di))
 		}
 	}

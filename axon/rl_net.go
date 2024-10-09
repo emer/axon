@@ -11,13 +11,13 @@ import (
 
 // AddRewLayer adds a RewLayer of given name
 func (nt *Network) AddRewLayer(name string) *Layer {
-	ly := nt.AddLayer2D(name, 1, 2, RewLayer)
+	ly := nt.AddLayer2D(name, RewLayer, 1, 2)
 	return ly
 }
 
 // AddClampDaLayer adds a ClampDaLayer of given name
 func (nt *Network) AddClampDaLayer(name string) *Layer {
-	da := nt.AddLayer2D(name, 1, 1, InputLayer)
+	da := nt.AddLayer2D(name, InputLayer, 1, 1)
 	return da
 }
 
@@ -26,9 +26,9 @@ func (nt *Network) AddClampDaLayer(name string) *Layer {
 // have no learning and 1 weight.
 func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td *Layer) {
 	rew = nt.AddRewLayer(prefix + "Rew")
-	rp = nt.AddLayer2D(prefix+"RewPred", 1, 2, TDPredLayer)
-	ri = nt.AddLayer2D(prefix+"RewInteg", 1, 2, TDIntegLayer)
-	td = nt.AddLayer2D(prefix+"TD", 1, 1, TDDaLayer)
+	rp = nt.AddLayer2D(prefix+"RewPred", TDPredLayer, 1, 2)
+	ri = nt.AddLayer2D(prefix+"RewInteg", TDIntegLayer, 1, 2)
+	td = nt.AddLayer2D(prefix+"TD", TDDaLayer, 1, 1)
 	ri.SetBuildConfig("TDPredLayName", rp.Name)
 	td.SetBuildConfig("TDIntegLayName", ri.Name)
 	if rel == relpos.Behind {
@@ -48,8 +48,8 @@ func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float3
 // Only generates DA when Rew layer has external input -- otherwise zero.
 func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float32) (rew, rp, da *Layer) {
 	rew = nt.AddRewLayer(prefix + "Rew")
-	rp = nt.AddLayer2D(prefix+"RWPred", 1, 2, RWPredLayer)
-	da = nt.AddLayer2D(prefix+"DA", 1, 1, RWDaLayer)
+	rp = nt.AddLayer2D(prefix+"RWPred", RWPredLayer, 1, 2)
+	da = nt.AddLayer2D(prefix+"DA", RWDaLayer, 1, 1)
 	da.SetBuildConfig("RWPredLayName", rp.Name)
 	if rel == relpos.Behind {
 		rp.PlaceBehind(rew, space)

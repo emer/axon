@@ -92,15 +92,15 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 	v4 = make([]*axon.Layer, pathways)
 	te = make([]*axon.Layer, pathways)
 
-	outLay := net.AddLayer2D("Output", outputDim, outputDim, axon.TargetLayer)
+	outLay := net.AddLayer2D("Output", axon.TargetLayer, outputDim, outputDim)
 
 	for pi := 0; pi < pathways; pi++ {
 		pnm := fmt.Sprintf("%d", pi)
-		v1[pi] = net.AddLayer4D("V1_"+pnm, inputPools, inputPools, inputNeurs, inputNeurs, axon.InputLayer)
+		v1[pi] = net.AddLayer4D("V1_"+pnm, axon.InputLayer, inputPools, inputPools, inputNeurs, inputNeurs)
 
-		v2[pi] = net.AddLayer4D("V2_"+pnm, v2Pools, v2Pools, hiddenNeurs, hiddenNeurs, axon.SuperLayer)
-		v4[pi] = net.AddLayer4D("V4_"+pnm, v4Pools, v4Pools, hiddenNeurs, hiddenNeurs, axon.SuperLayer)
-		te[pi] = net.AddLayer2D("TE_"+pnm, teNeurs, teNeurs, axon.SuperLayer)
+		v2[pi] = net.AddLayer4D("V2_"+pnm, axon.SuperLayer, v2Pools, v2Pools, hiddenNeurs, hiddenNeurs)
+		v4[pi] = net.AddLayer4D("V4_"+pnm, axon.SuperLayer, v4Pools, v4Pools, hiddenNeurs, hiddenNeurs)
+		te[pi] = net.AddLayer2D("TE_"+pnm, axon.SuperLayer, teNeurs, teNeurs)
 
 		v1[pi].AddClass("V1m")
 		v2[pi].AddClass("V2m V2")

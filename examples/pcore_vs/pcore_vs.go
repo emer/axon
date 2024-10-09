@@ -194,14 +194,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi := net.AddVBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
-	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
+	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
 
 	urge := net.AddUrgencyLayer(5, 4)
 	_ = urge
 
-	accPos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
-	accNeg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
+	accPos := net.AddLayer4D("ACCPos", axon.InputLayer, 1, np, nuY, nuX)
+	accNeg := net.AddLayer4D("ACCNeg", axon.InputLayer, 1, np, nuY, nuX)
 	accPos.AddClass("ACC")
 	accNeg.AddClass("ACC")
 
@@ -401,12 +401,12 @@ func (ss *Sim) ApplyRubicon(ev *GoNoEnv, trial int, di uint32) {
 	switch trial {
 	case 0:
 		axon.GlobalSetRew(ctx, di, 0, false) // no rew
-		axon.SetGlbV(ctx, di, axon.GvACh, 0)
+		axon.GlobalScalars[axon.GvACh, di] = 0
 	case 1:
 		axon.GlobalSetRew(ctx, di, 0, false) // no rew
-		axon.SetGlbV(ctx, di, axon.GvACh, 1)
+		axon.GlobalScalars[axon.GvACh, di] = 1
 	case 2:
-		axon.SetGlbV(ctx, di, axon.GvACh, 1)
+		axon.GlobalScalars[axon.GvACh, di] = 1
 		ss.GatedRew(ev, di)
 	}
 }
@@ -422,7 +422,7 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 	ctx := &ss.Context
 	pv := &ss.Net.Rubicon
 	axon.GlobalSetRew(ctx, di, rew, true)
-	axon.SetGlbV(ctx, di, axon.GvDA, rew) // no reward prediction error
+	axon.GlobalScalars[axon.GvDA, di] = rew // no reward prediction error
 	if rew > 0 {
 		pv.SetUS(ctx, di, axon.Positive, 0, 1)
 	} else if rew < 0 {

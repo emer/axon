@@ -204,7 +204,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ctx, ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	in := net.AddLayer4D("Input", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, axon.InputLayer)
+	in := net.AddLayer4D("Input", axon.InputLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X)
 	inToEc2 := paths.NewUniformRand()
 	inToEc2.PCon = ss.Config.Mod.InToEc2PCon
 	onetoone := paths.NewOneToOne()

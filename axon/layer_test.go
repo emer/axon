@@ -14,9 +14,9 @@ import (
 func TestLayer(t *testing.T) {
 	net := NewNetwork("LayerTest")
 	shape := []int{2, 2}
-	inputLayer := net.AddLayer("Input", shape, InputLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
-	outputLayer := net.AddLayer("Output", shape, TargetLayer)
+	inputLayer := net.AddLayer("Input", InputLayer, shape...)
+	hiddenLayer := net.AddLayer("Hidden", SuperLayer, shape...)
+	outputLayer := net.AddLayer("Output", TargetLayer, shape...)
 
 	ctx := NewContext()
 	assert.NoError(t, net.Build(ctx))
@@ -43,9 +43,9 @@ func TestLayer_SendSpike(t *testing.T) {
 	t.Skip("skipping -- needs reorg to recv based")
 	net := NewNetwork("LayerTest")
 	shape := []int{3, 3}
-	inputLayer1 := net.AddLayer("Input1", shape, InputLayer)
-	inputLayer2 := net.AddLayer("Input2", shape, InputLayer)
-	outputLayer := net.AddLayer("Output", shape, TargetLayer)
+	inputLayer1 := net.AddLayer("Input1", InputLayer, shape...)
+	inputLayer2 := net.AddLayer("Input2", InputLayer, shape...)
+	outputLayer := net.AddLayer("Output", TargetLayer, shape...)
 	net.ConnectLayers(inputLayer1, outputLayer, paths.NewFull(), ForwardPath)
 	net.ConnectLayers(inputLayer2, outputLayer, paths.NewFull(), ForwardPath)
 
@@ -168,9 +168,9 @@ func TestLayerToJson(t *testing.T) {
 
 func createNetwork(ctx *Context, shape []int, t *testing.T) *Network {
 	net := NewNetwork("LayerTest")
-	inputLayer := net.AddLayer("Input", shape, InputLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
-	outputLayer := net.AddLayer("Output", shape, TargetLayer)
+	inputLayer := net.AddLayer("Input", InputLayer, shape...)
+	hiddenLayer := net.AddLayer("Hidden", SuperLayer, shape...)
+	outputLayer := net.AddLayer("Output", TargetLayer, shape...)
 	full := paths.NewFull()
 	net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPath)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
@@ -183,10 +183,10 @@ func createNetwork(ctx *Context, shape []int, t *testing.T) *Network {
 func TestLayerBase_IsOff(t *testing.T) {
 	net := NewNetwork("LayerTest")
 	shape := []int{2, 2}
-	inputLayer := net.AddLayer("Input", shape, InputLayer)
-	inputLayer2 := net.AddLayer("Input2", shape, InputLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
-	outputLayer := net.AddLayer("Output", shape, TargetLayer)
+	inputLayer := net.AddLayer("Input", InputLayer, shape...)
+	inputLayer2 := net.AddLayer("Input2", InputLayer, shape...)
+	hiddenLayer := net.AddLayer("Hidden", SuperLayer, shape...)
+	outputLayer := net.AddLayer("Output", TargetLayer, shape...)
 
 	full := paths.NewFull()
 	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPath)

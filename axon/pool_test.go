@@ -106,9 +106,9 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
-	inLay := testNet.AddLayer4D("Input", 4, 1, 1, 4, InputLayer)
-	hidLay := testNet.AddLayer4D("Hidden", 4, 1, 1, 4, SuperLayer) // note: tried with up to 400 -- no diff
-	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
+	inLay := testNet.AddLayer4D("Input", InputLayer, 4, 1, 1, 4)
+	hidLay := testNet.AddLayer4D("Hidden", SuperLayer, 4, 1, 1, 4) // note: tried with up to 400 -- no diff
+	outLay := testNet.AddLayer("Output", TargetLayer, 4, 1)
 
 	_ = inLay
 	testNet.ConnectLayers(inLay, hidLay, paths.NewPoolOneToOne(), ForwardPath)

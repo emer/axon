@@ -447,8 +447,8 @@ func (pj *PathParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 // (temporal difference), which limits learning.
 func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	dwt := float32(0)
-	ach := GlbV(ctx, di, GvACh)
-	if GlbV(ctx, di, GvHasRew) > 0 { // learn and reset
+	ach := GlobalScalars.Value(int(GvACh), int(di))
+	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // learn and reset
 		ract := Neurons.Value(int(CaSpkD), int(ri), int(di))
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
@@ -484,7 +484,7 @@ func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 // for the RWPredPath type
 func (pj *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
-	lda := GlbV(ctx, di, GvDA)
+	lda := GlobalScalars.Value(int(GvDA), int(di))
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
@@ -519,7 +519,7 @@ func (pj *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 // for the TDRewPredPath type
 func (pj *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
-	lda := GlbV(ctx, di, GvDA)
+	lda := GlobalScalars.Value(int(GvDA), int(di))
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
@@ -544,8 +544,8 @@ func (pj *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 func (pj *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has BurstGain * ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	hasRew := GlbV(ctx, di, GvHasRew) > 0
-	ach := GlbV(ctx, di, GvACh)
+	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
+	ach := GlobalScalars.Value(int(GvACh), int(di))
 	if !hasRew && ach < 0.1 {
 		SynapseTraces.Set(0.0, int(DTr), int(syni), int(di))
 		return
@@ -562,7 +562,7 @@ func (pj *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 	if hasRew {
 		tr := SynCaV(ctx, syni, di, Tr)
 		if pj.Matrix.VSRewLearn.IsTrue() {
-			tr += (1 - GlbV(ctx, di, GvGoalMaint)) * dtr
+			tr += (1 - GlobalScalars.Value(int(GvGoalMaint), int(di))) * dtr
 		}
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SynapseTraces.Set(dwt, int(DiDWt), int(syni), int(di))
@@ -581,7 +581,7 @@ func (pj *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	rlr := Neurons.Value(int(RLRate), int(ri), int(di))
-	if GlbV(ctx, di, GvHasRew) > 0 { // US time -- use DA and current recv activity
+	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA and current recv activity
 		tr := SynCaV(ctx, syni, di, Tr)
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SynapseTraces.Set(dwt, int(DiDWt), int(syni), int(di))

@@ -196,7 +196,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// mtxRandPath.PCon = 0.5
 	// _ = mtxRandPath
 
-	in := net.AddLayer2D("State", ev.NUnitsY, ev.NUnitsX, axon.InputLayer)
+	in := net.AddLayer2D("State", axon.InputLayer, ev.NUnitsY, ev.NUnitsX)
 	vSpatchD1, vSpatchD2 := net.AddVSPatchLayers("", 1, 6, 6, space)
 
 	net.ConnectToVSPatch(in, vSpatchD1, vSpatchD2, full)
@@ -353,11 +353,11 @@ func (ss *Sim) ApplyRubicon(ev *VSPatchEnv, trial int, di uint32) {
 	pv.Urgency.Reset(ctx, di)
 
 	if trial == ev.NTrials-1 {
-		axon.SetGlbV(ctx, di, axon.GvACh, 1)
+		axon.GlobalScalars[axon.GvACh, di] = 1
 		ss.ApplyRew(di, ev.Rew)
 	} else {
 		ss.ApplyRew(di, 0)
-		axon.SetGlbV(ctx, di, axon.GvACh, 0)
+		axon.GlobalScalars[axon.GvACh, di] = 0
 	}
 }
 
@@ -373,7 +373,7 @@ func (ss *Sim) ApplyRew(di uint32, rew float32) {
 	drvs := []float32{1}
 	pv.SetDrives(ctx, di, 1, drvs...)
 	pv.Step(ctx, di, &ss.Net.Rand)
-	axon.SetGlbV(ctx, di, axon.GvDA, axon.GlbV(ctx, di, axon.GvLHbPVDA)) // normally set by VTA layer, including CS
+	axon.GlobalScalars[di, di, axon.GvDA, axon.GlbV(ctx] = axon.GvLHbPVDA) // normally set by VTA layer, including CS
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -441,8 +441,8 @@ func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*VSPatchEnv)
-	ev.RewPred = axon.GlbV(ctx, diu, axon.GvRewPred)
-	ev.DA = axon.GlbV(ctx, diu, axon.GvDA)
+	ev.RewPred = axon.GlobalScalars[axon.GvRewPred, diu]
+	ev.DA = axon.GlobalScalars[axon.GvDA, diu]
 	trl := ev.Trial.Cur
 	if trl == 2 { // is +1 -- actually 1
 		ss.Stats.SetFloat32Di("RewPred_NR", di, ev.RewPred)
@@ -459,9 +459,9 @@ func (ss *Sim) SeqStats(di int) {
 	ss.Stats.SetInt("Cond", ev.Cond)
 	ss.Stats.SetFloat32("CondRew", ev.CondRew)
 	ss.Stats.SetString("TrialName", fmt.Sprintf("Cond_%d_%d", ev.Cond, trl))
-	ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
-	ev.RewPred = axon.GlbV(ctx, diu, axon.GvRewPred)
-	ev.DA = axon.GlbV(ctx, diu, axon.GvDA)
+	ss.Stats.SetFloat32("Rew", axon.GlobalScalars[axon.GvRew), diu]
+	ev.RewPred = axon.GlobalScalars[axon.GvRewPred, diu]
+	ev.DA = axon.GlobalScalars[axon.GvDA, diu]
 	ss.Stats.SetFloat32("RewPred", ev.RewPred)
 	ss.Stats.SetFloat32("DA", ev.DA)
 	ss.Stats.SetFloat("RewPred_NR", ss.Stats.FloatDi("RewPred_NR", di))

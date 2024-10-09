@@ -250,7 +250,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// M1, VL, ALM
 
-	act := net.AddLayer2D("Act", ny, nAct, axon.InputLayer) // Action: what is actually done
+	act := net.AddLayer2D("Act", axon.InputLayer, ny, nAct) // Action: what is actually done
 	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", act.Name)
 
@@ -589,7 +589,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 				trSt = armaze.TrConsuming
 			}
 		}
-		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 {
+		if axon.GlobalScalars[axon.GvGiveUp, diu] > 0 {
 			trSt = armaze.TrGiveUp
 		}
 		ss.Stats.SetIntDi("TraceStateInt", di, int(trSt))
@@ -628,7 +628,7 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*armaze.Env)
-		giveUp := axon.GlbV(ctx, di, axon.GvGiveUp) > 0
+		giveUp := axon.GlobalScalars[axon.GvGiveUp, di] > 0
 		if giveUp {
 			ev.JustConsumed = true // triggers a new start -- we just consumed the giving up feeling :)
 		}
@@ -779,14 +779,14 @@ func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	rp := &ss.Net.Rubicon
 	rp.DecodePVEsts(ctx, diu, ss.Net) // get this for current trial!
-	hasRew := axon.GlbV(ctx, diu, axon.GvHasRew) > 0
+	hasRew := axon.GlobalScalars[axon.GvHasRew, diu] > 0
 	if hasRew { // exclude data for logging -- will be re-computed at start of next trial
 		// this allows the BadStats to only record estimates, not actuals
 		nan := math32.NaN()
-		axon.SetGlbV(ctx, diu, axon.GvPVposEst, nan)
-		axon.SetGlbV(ctx, diu, axon.GvPVposVar, nan)
-		axon.SetGlbV(ctx, diu, axon.GvPVnegEst, nan)
-		axon.SetGlbV(ctx, diu, axon.GvPVnegVar, nan)
+		axon.GlobalScalars[axon.GvPVposEst, diu] = nan
+		axon.GlobalScalars[axon.GvPVposVar, diu] = nan
+		axon.GlobalScalars[axon.GvPVnegEst, diu] = nan
+		axon.GlobalScalars[axon.GvPVnegVar, diu] = nan
 	}
 
 	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
@@ -857,9 +857,9 @@ func (ss *Sim) GatedStats(di int) {
 	rp := &net.Rubicon
 	diu := uint32(di)
 	ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
-	justGated := axon.GlbV(ctx, diu, axon.GvVSMatrixJustGated) > 0
+	justGated := axon.GlobalScalars[axon.GvVSMatrixJustGated, diu] > 0
 	justGatedF := num.FromBool[float32](justGated)
-	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
+	hasGated := axon.GlobalScalars[axon.GvVSMatrixHasGated, diu] > 0
 	nan := math32.NaN()
 	ss.Stats.SetString("Debug", ss.Stats.StringDi("Debug", di))
 	ss.ActionStatsDi(di)
@@ -924,7 +924,7 @@ func (ss *Sim) GatedStats(di int) {
 		}
 	}
 	// We get get ACh when new CS or Rew
-	ach := axon.GlbV(ctx, diu, axon.GvACh)
+	ach := axon.GlobalScalars[axon.GvACh, diu]
 	if hasPos || ev.LastCS != ev.CurCS() {
 		ss.Stats.SetFloat32("AChShould", ach)
 	} else {
@@ -943,8 +943,8 @@ func (ss *Sim) MaintStats(di int) {
 	isCons := ev.LastAct == armaze.Consume
 	actThr := float32(0.05) // 0.1 too high
 	net := ss.Net
-	hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
-	goalMaint := axon.GlbV(ctx, diu, axon.GvGoalMaint)
+	hasGated := axon.GlobalScalars[axon.GvVSMatrixHasGated, diu] > 0
+	goalMaint := axon.GlobalScalars[axon.GvGoalMaint, diu]
 	ss.Stats.SetFloat32("GoalMaint", goalMaint)
 	hasGoalMaint := goalMaint > actThr
 	lays := net.LayersByType(axon.PTMaintLayer)
@@ -1251,14 +1251,14 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 				ss.TrialStats(di)
 				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
-				if !rp.HasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
+				if !rp.HasPosUS(ctx, diu) && axon.GlobalScalars[axon.GvVSMatrixHasGated, diu] > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
 				if ss.ViewUpdate.View != nil && di == ss.ViewUpdate.View.Di {
 					drow := ss.Logs.Table(etime.Debug, time).Rows
 					ss.Logs.LogRow(etime.Debug, time, drow)
 					if ss.StopOnSeq {
-						hasRew := axon.GlbV(ctx, diu, axon.GvHasRew) > 0
+						hasRew := axon.GlobalScalars[axon.GvHasRew, diu] > 0
 						if hasRew {
 							ss.Loops.Stop(etime.Trial)
 						}

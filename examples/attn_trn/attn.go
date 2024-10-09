@@ -375,10 +375,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "AttnNet")
 	psz := ss.TestEnv.V1Pools
 	fsz := ss.TestEnv.V1Feats
-	v1 := net.AddLayer4D("V1", psz.Y, psz.X, fsz.Y, fsz.X, axon.InputLayer)
+	v1 := net.AddLayer4D("V1", axon.InputLayer, psz.Y, psz.X, fsz.Y, fsz.X)
 	v2 := net.AddSuperLayer4D("V2", psz.Y, psz.X, fsz.Y, fsz.X)
-	lip := net.AddLayer4D("LIP", psz.Y, psz.X, 1, 1, axon.InputLayer)
-	v2cta := net.AddLayer4D("V2CTA", psz.Y, psz.X, 1, 1, axon.SuperLayer)
+	lip := net.AddLayer4D("LIP", axon.InputLayer, psz.Y, psz.X, 1, 1)
+	v2cta := net.AddLayer4D("V2CTA", axon.SuperLayer, psz.Y, psz.X, 1, 1)
 	v2ta := net.AddTRCALayer4D("V2TA", psz.Y, psz.X, 1, 1)
 
 	v2ta.SendAttn.ToLays.Add("V2")

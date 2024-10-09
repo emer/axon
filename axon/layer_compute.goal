@@ -59,7 +59,7 @@ func (ly *Layer) GiFromSpikes(ctx *Context) {
 		if NrnIsOff(ni) {
 			continue
 		}
-		subPool := NeuronIxs[NrnSubPoo, ni]
+		subPool := NeuronIxs[NrnSubPool, ni]
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 			pl := ly.Pool(subPool, di)
 			// note: using Int version here so we can have greater match with GPU
@@ -519,15 +519,15 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 			for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 				pl := ly.Pool(pi, di)
 				val := pl.AvgMax.CaSpkD.Cycle.Avg
-				SetGlbUSposV(ctx, di, GvOFCposPTMaint, uint32(pi-1), val)
+				GlobalVectors[GvOFCposPTMaint, uint32(pi-1), di] = val
 			}
 		}
 	}
 
 	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-			hasRew := (GlbV(ctx, di, GvHasRew) > 0)
-			giveUp := (GlbV(ctx, di, GvGiveUp) > 0)
+			hasRew := (GlobalScalars[GvHasRew, di] > 0)
+			giveUp := (GlobalScalars[GvGiveUp, di] > 0)
 			if hasRew || giveUp {
 				ly.DecayState(ctx, di, 1, 1, 1)      // note: GPU will get, and GBuf are auto-cleared in NewState
 				for pi := uint32(0); pi < np; pi++ { // also clear the pool stats: GoalMaint depends on these..

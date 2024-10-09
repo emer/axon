@@ -166,12 +166,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	sz := ss.Config.Params.HidSize
 
-	inlay := net.AddLayer2D(LayNm(0), sz.Y, sz.X, axon.InputLayer)
+	inlay := net.AddLayer2D(LayNm(0), axon.InputLayer, sz.Y, sz.X)
 	_ = inlay
 
 	for hi := 1; hi <= ss.Config.Params.NLayers; hi++ {
-		net.AddLayer2D(LayNm(hi), sz.Y, sz.X, axon.SuperLayer)
-		net.AddLayer2D(InhNm(hi), sz.Y, 2, axon.SuperLayer).AddClass("InhibLay")
+		net.AddLayer2D(LayNm(hi), axon.SuperLayer, sz.Y, sz.X)
+		net.AddLayer2D(InhNm(hi), axon.SuperLayer, sz.Y, 2).AddClass("InhibLay")
 	}
 
 	full := paths.NewFull()

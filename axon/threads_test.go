@@ -55,10 +55,10 @@ func TestCollectAndSetDWts(t *testing.T) {
 	shape := []int{shape1D, shape1D}
 
 	rand.Seed(1337)
-	netA := buildNet(ctxA, t, shape, 1)
+	netA := buildNet(ctxA, t, 1, shape...)
 	ctxA.SlowInterval = 10000
 	rand.Seed(1337)
-	netB := buildNet(ctxB, t, shape, 1)
+	netB := buildNet(ctxB, t, 1, shape...)
 	ctxB.SlowInterval = 10000
 
 	runCycle := func(net *Network, ctx *Context, pats *table.Table) {
@@ -339,28 +339,27 @@ func buildIdenticalNetworks(t *testing.T, pats *table.Table, nthrs int) (*Networ
 
 	// single-threaded network
 	rand.Seed(1337)
-	netS := buildNet(ctxA, t, shape, 1)
+	netS := buildNet(ctxA, t, 1, shape...)
 	// multi-threaded network
 	rand.Seed(1337)
-	netM := buildNet(ctxB, t, shape, nthrs)
+	netM := buildNet(ctxB, t, nthrs, shape...)
 
 	assertNeuronsSynsEqual(t, netS, netM)
 
 	return netS, netM, ctxA, ctxB
 }
 
-func buildNet(ctx *Context, t *testing.T, shape []int, nthrs int) *Network {
+func buildNet(ctx *Context, t *testing.T, nthrs int, shape ...int) *Network {
 	net := NewNetwork("MTTest")
-
 	/*
 	 * Input -> Hidden -> Hidden3 -> Output
 	 *       -> Hidden2 -^
 	 */
-	inputLayer := net.AddLayer("Input", shape, InputLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
-	hiddenLayer2 := net.AddLayer("Hidden2", shape, SuperLayer)
-	hiddenLayer3 := net.AddLayer("Hidden3", shape, SuperLayer)
-	outputLayer := net.AddLayer("Output", shape, TargetLayer)
+	inputLayer := net.AddLayer("Input", InputLayer, shape...)
+	hiddenLayer := net.AddLayer("Hidden", SuperLayer, shape...)
+	hiddenLayer2 := net.AddLayer("Hidden2", SuperLayer, shape...)
+	hiddenLayer3 := net.AddLayer("Hidden3", SuperLayer, shape...)
+	outputLayer := net.AddLayer("Output", TargetLayer, shape...)
 	net.ConnectLayers(inputLayer, hiddenLayer, paths.NewFull(), ForwardPath)
 	net.ConnectLayers(inputLayer, hiddenLayer2, paths.NewFull(), ForwardPath)
 	net.BidirConnectLayers(hiddenLayer, hiddenLayer3, paths.NewFull())

@@ -168,7 +168,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// _ = one2one
 
 	in, inp := net.AddInputPulv4D("Input", 1, 7, ss.Config.Env.UnitsPer, 1, 2)
-	trg := net.AddLayer2D("Targets", 1, 7, axon.InputLayer) // just for visualization
+	trg := net.AddLayer2D("Targets", axon.InputLayer, 1, 7) // just for visualization
 	in.AddClass("InLay")
 	inp.AddClass("InLay")
 	trg.AddClass("InLay")

@@ -206,15 +206,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo, mtxNo, gpePr, gpeAk, stn, gpi, pf := net.AddDBG("", 1, nAct, nuY, nuX, nuY, nuX, space)
 	_, _ = gpePr, gpeAk
 
-	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
+	snc := net.AddLayer2D("SNc", axon.InputLayer, 1, 1)
 	_ = snc
 
-	state := net.AddLayer4D("State", 1, np, nuPer, nAct, axon.InputLayer)
-	s1 := net.AddLayer4D("S1", 1, np, nuPer, nAct+1, axon.InputLayer)
+	state := net.AddLayer4D("State", axon.InputLayer, 1, np, nuPer, nAct)
+	s1 := net.AddLayer4D("S1", axon.InputLayer, 1, np, nuPer, nAct+1)
 
-	targ := net.AddLayer2D("Target", nuPer, nAct, axon.InputLayer) // Target: just for vis
+	targ := net.AddLayer2D("Target", axon.InputLayer, nuPer, nAct) // Target: just for vis
 
-	motor := net.AddLayer4D("MotorBS", 1, nAct, nuPer, 1, axon.TargetLayer)
+	motor := net.AddLayer4D("MotorBS", axon.TargetLayer, 1, nAct, nuPer, 1)
 	pf.Shape.CopyShape(&motor.Shape)
 
 	vl := net.AddPulvLayer4D("VL", 1, nAct, nuPer, 1) // VL predicts brainstem Action
@@ -464,11 +464,11 @@ func (ss *Sim) ApplyRubicon(ev *MotorSeqEnv, di uint32, inRew bool) {
 	pv.Urgency.Reset(ctx, di)
 
 	if inRew {
-		axon.SetGlbV(ctx, di, axon.GvACh, 1)
+		axon.GlobalScalars[axon.GvACh, di] = 1
 		ss.SetRew(ev.RPE, di)
 	} else {
 		axon.GlobalSetRew(ctx, di, 0, false) // no rew
-		axon.SetGlbV(ctx, di, axon.GvACh, 0)
+		axon.GlobalScalars[axon.GvACh, di] = 0
 	}
 }
 
@@ -476,7 +476,7 @@ func (ss *Sim) SetRew(rew float32, di uint32) {
 	ctx := &ss.Context
 	pv := &ss.Net.Rubicon
 	axon.GlobalSetRew(ctx, di, rew, true)
-	axon.SetGlbV(ctx, di, axon.GvDA, rew) // reward prediction error
+	axon.GlobalScalars[axon.GvDA, di] = rew // reward prediction error
 	if rew > 0 {
 		pv.SetUS(ctx, di, axon.Positive, 0, 1)
 	} else if rew < 0 {

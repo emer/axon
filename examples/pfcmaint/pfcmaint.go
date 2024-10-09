@@ -176,7 +176,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	in, inP := net.AddInputPulv2D("Item", ev.NUnitsY, ev.NUnitsX, space)
 	time, timeP := net.AddInputPulv2D("Time", ev.NUnitsY, ev.NTrials, space)
-	gpi := net.AddLayer2D("GPi", ev.NUnitsY, ev.NUnitsX, axon.InputLayer)
+	gpi := net.AddLayer2D("GPi", axon.InputLayer, ev.NUnitsY, ev.NUnitsX)
 	pfc, pfcCT, pfcPT, pfcPTp, pfcThal := net.AddPFC2D("PFC", "Thal", nun, nun, true, !ss.Config.Params.MaintCons, space)
 	_ = pfcPT
 	_ = pfcThal

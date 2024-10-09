@@ -65,11 +65,11 @@ func ConfigNet(net *axon.Network, ctx *axon.Context, threads, units int, verbose
 	squn := int(math.Sqrt(float64(units)))
 	shp := []int{squn, squn}
 
-	inLay := net.AddLayer("Input", shp, axon.InputLayer)
-	hid1Lay := net.AddLayer("Hidden1", shp, axon.SuperLayer)
-	hid2Lay := net.AddLayer("Hidden2", shp, axon.SuperLayer)
-	hid3Lay := net.AddLayer("Hidden3", shp, axon.SuperLayer)
-	outLay := net.AddLayer("Output", shp, axon.TargetLayer)
+	inLay := net.AddLayer("Input", axon.InputLayer, shp...)
+	hid1Lay := net.AddLayer("Hidden1", axon.SuperLayer, shp...)
+	hid2Lay := net.AddLayer("Hidden2", axon.SuperLayer, shp...)
+	hid3Lay := net.AddLayer("Hidden3", axon.SuperLayer, shp...)
+	outLay := net.AddLayer("Output", axon.TargetLayer, shp...)
 
 	full := paths.NewFull()
 

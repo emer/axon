@@ -183,7 +183,7 @@ func (ss *DrEffPlot) TimeRun() { //types:add
 		dt.SetFloat("Drive", ti, float64(dr))
 
 		axon.SetGlbUSposV(ctx, 0, axon.GvUSpos, 1, usv)
-		axon.SetGlbV(ctx, 0, axon.GvHadRew, num.FromBool[float32](usv > 0))
+		axon.GlobalScalars[axon.GvHadRew, 0] = num.FromBool[float32](usv > 0)
 		pp.EffortUrgencyUpdate(ctx, 0, 0)
 		pp.DriveUpdate(ctx, 0)
 	}

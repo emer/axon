@@ -229,8 +229,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pos, posP := net.AddInputPulv2D("Pos", ny, ev.MaxLength+1, space)
 	arm, armP := net.AddInputPulv2D("Arm", ny, narm, space)
 
-	vSgpi := net.AddLayer2D("VSgpi", ny, nuBgX, axon.InputLayer) // fake ventral BG
-	ofc := net.AddLayer2D("OFC", ny, nuBgX, axon.InputLayer)     // fake OFC
+	vSgpi := net.AddLayer2D("VSgpi", axon.InputLayer, ny, nuBgX) // fake ventral BG
+	ofc := net.AddLayer2D("OFC", axon.InputLayer, ny, nuBgX)     // fake OFC
 
 	///////////////////////////////////////////
 	// 	Dorsal lateral Striatum / BG
@@ -248,7 +248,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// M1, VL, ALM
 
-	act := net.AddLayer2D("Act", ny, nAct, axon.InputLayer) // Action: what is actually done
+	act := net.AddLayer2D("Act", axon.InputLayer, ny, nAct) // Action: what is actually done
 	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", act.Name)
 
@@ -512,7 +512,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		case actAct == armaze.Consume:
 			trSt = armaze.TrConsuming
 		}
-		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 {
+		if axon.GlobalScalars[axon.GvGiveUp, diu] > 0 {
 			trSt = armaze.TrGiveUp
 		}
 		ss.Stats.SetIntDi("TraceStateInt", di, int(trSt))
@@ -571,7 +571,7 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.InitExt(ctx)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*armaze.Env)
-		giveUp := axon.GlbV(ctx, di, axon.GvGiveUp) > 0
+		giveUp := axon.GlobalScalars[axon.GvGiveUp, di] > 0
 		if giveUp {
 			ev.JustConsumed = true // triggers a new start -- we just consumed the giving up feeling :)
 		}
@@ -684,7 +684,7 @@ func (ss *Sim) StatCounters(di int) {
 	// ss.Stats.SetFloat32("Drive", float32(ev.Drive))
 	ss.Stats.SetFloat32("CS", float32(ev.CurCS()))
 	ss.Stats.SetFloat32("US", float32(ev.USConsumed))
-	ss.Stats.SetFloat32("HasRew", axon.GlbV(ctx, uint32(di), axon.GvHasRew))
+	ss.Stats.SetFloat32("HasRew", axon.GlobalScalars[axon.GvHasRew), uint32(di)]
 	ss.Stats.SetString("TrialName", "trl") // todo: could have dist, US etc
 }
 
@@ -715,36 +715,36 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("RewPred_NR", nan)
 	ss.Stats.SetFloat("DA_GiveUp", nan)
 	if pv.HasPosUS(ctx, diu) {
-		ss.Stats.SetFloat32("DA", axon.GlbV(ctx, diu, axon.GvDA))
-		ss.Stats.SetFloat32("RewPred", axon.GlbV(ctx, diu, axon.GvRewPred)) // gets from VSPatch or RWPred etc
-		ss.Stats.SetFloat32("Rew", axon.GlbV(ctx, diu, axon.GvRew))
+		ss.Stats.SetFloat32("DA", axon.GlobalScalars[axon.GvDA), diu]
+		ss.Stats.SetFloat32("RewPred", axon.GlobalScalars[axon.GvRewPred), diu] // gets from VSPatch or RWPred etc
+		ss.Stats.SetFloat32("Rew", axon.GlobalScalars[axon.GvRew), diu]
 		ss.Stats.SetFloat("HasRew", 1)
 	} else {
 		if axon.GlbV(ctx, diu, axon.GvGiveUp) > 0 || axon.GlbV(ctx, diu, axon.GvNegUSOutcome) > 0 {
-			ss.Stats.SetFloat32("DA_GiveUp", axon.GlbV(ctx, diu, axon.GvDA))
+			ss.Stats.SetFloat32("DA_GiveUp", axon.GlobalScalars[axon.GvDA), diu]
 		} else {
-			ss.Stats.SetFloat32("DA_NR", axon.GlbV(ctx, diu, axon.GvDA))
-			ss.Stats.SetFloat32("RewPred_NR", axon.GlbV(ctx, diu, axon.GvRewPred))
+			ss.Stats.SetFloat32("DA_NR", axon.GlobalScalars[axon.GvDA), diu]
+			ss.Stats.SetFloat32("RewPred_NR", axon.GlobalScalars[axon.GvRewPred), diu]
 			ss.Stats.SetFloat("HasRew", 0)
 		}
 	}
 
-	ss.Stats.SetFloat32("Time", axon.GlbV(ctx, diu, axon.GvTime))
-	ss.Stats.SetFloat32("Effort", axon.GlbV(ctx, diu, axon.GvEffort))
-	ss.Stats.SetFloat32("Urgency", axon.GlbV(ctx, diu, axon.GvUrgency))
+	ss.Stats.SetFloat32("Time", axon.GlobalScalars[axon.GvTime), diu]
+	ss.Stats.SetFloat32("Effort", axon.GlobalScalars[axon.GvEffort), diu]
+	ss.Stats.SetFloat32("Urgency", axon.GlobalScalars[axon.GvUrgency), diu]
 
-	ss.Stats.SetFloat32("NegUSOutcome", axon.GlbV(ctx, diu, axon.GvNegUSOutcome))
-	ss.Stats.SetFloat32("PVpos", axon.GlbV(ctx, diu, axon.GvPVpos))
-	ss.Stats.SetFloat32("PVneg", axon.GlbV(ctx, diu, axon.GvPVneg))
+	ss.Stats.SetFloat32("NegUSOutcome", axon.GlobalScalars[axon.GvNegUSOutcome), diu]
+	ss.Stats.SetFloat32("PVpos", axon.GlobalScalars[axon.GvPVpos), diu]
+	ss.Stats.SetFloat32("PVneg", axon.GlobalScalars[axon.GvPVneg), diu]
 
-	ss.Stats.SetFloat32("PVposEst", axon.GlbV(ctx, diu, axon.GvPVposEst))
-	ss.Stats.SetFloat32("PVposEstDisc", axon.GlbV(ctx, diu, axon.GvPVposEstDisc))
-	ss.Stats.SetFloat32("GiveUpDiff", axon.GlbV(ctx, diu, axon.GvGiveUpDiff))
-	ss.Stats.SetFloat32("GiveUpProb", axon.GlbV(ctx, diu, axon.GvGiveUpProb))
-	ss.Stats.SetFloat32("GiveUp", axon.GlbV(ctx, diu, axon.GvGiveUp))
+	ss.Stats.SetFloat32("PVposEst", axon.GlobalScalars[axon.GvPVposEst), diu]
+	ss.Stats.SetFloat32("PVposEstDisc", axon.GlobalScalars[axon.GvPVposEstDisc), diu]
+	ss.Stats.SetFloat32("GiveUpDiff", axon.GlobalScalars[axon.GvGiveUpDiff), diu]
+	ss.Stats.SetFloat32("GiveUpProb", axon.GlobalScalars[axon.GvGiveUpProb), diu]
+	ss.Stats.SetFloat32("GiveUp", axon.GlobalScalars[axon.GvGiveUp), diu]
 
-	ss.Stats.SetFloat32("ACh", axon.GlbV(ctx, diu, axon.GvACh))
-	ss.Stats.SetFloat32("AChRaw", axon.GlbV(ctx, diu, axon.GvAChRaw))
+	ss.Stats.SetFloat32("ACh", axon.GlobalScalars[axon.GvACh), diu]
+	ss.Stats.SetFloat32("AChRaw", axon.GlobalScalars[axon.GvAChRaw), diu]
 }
 
 // ActionStatsDi copies the action info from given data parallel index
@@ -902,14 +902,14 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 				ss.TrialStats(di)
 				ss.StatCounters(di)
 				ss.Logs.LogRowDi(mode, time, row, di)
-				if !pv.HasPosUS(ctx, diu) && axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0 { // maint
+				if !pv.HasPosUS(ctx, diu) && axon.GlobalScalars[axon.GvVSMatrixHasGated, diu] > 0 { // maint
 					axon.LayerActsLog(ss.Net, &ss.Logs, di, &ss.GUI)
 				}
 				if ss.ViewUpdate.View != nil && di == ss.ViewUpdate.View.Di {
 					drow := ss.Logs.Table(etime.Debug, time).Rows
 					ss.Logs.LogRow(etime.Debug, time, drow)
 					if ss.StopOnSeq {
-						hasRew := axon.GlbV(ctx, uint32(di), axon.GvHasRew) > 0
+						hasRew := axon.GlobalScalars[axon.GvHasRew, uint32(di)] > 0
 						if hasRew {
 							ss.Loops.Stop(etime.Trial)
 						}

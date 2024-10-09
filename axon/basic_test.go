@@ -95,9 +95,9 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
-	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
-	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
-	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
+	inLay := testNet.AddLayer("Input", InputLayer, 4, 1)
+	hidLay := testNet.AddLayer("Hidden", SuperLayer, 4, 1)
+	outLay := testNet.AddLayer("Output", TargetLayer, 4, 1)
 
 	_ = inLay
 	testNet.ConnectLayers(inLay, hidLay, paths.NewOneToOne(), ForwardPath)
@@ -122,9 +122,9 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.MaxData = uint32(nData)
 
-	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
-	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
-	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
+	inLay := testNet.AddLayer("Input", InputLayer, 4, 1)
+	hidLay := testNet.AddLayer("Hidden", SuperLayer, 4, 1)
+	outLay := testNet.AddLayer("Output", TargetLayer, 4, 1)
 
 	_ = inLay
 	full := paths.NewFull()
@@ -201,8 +201,8 @@ func CompareFloats(tolerance float32, out, cor []float32, msg string, t *testing
 
 func TestSpikeProp(t *testing.T) {
 	net := NewNetwork("SpikeNet")
-	inLay := net.AddLayer("Input", []int{1, 1}, InputLayer)
-	hidLay := net.AddLayer("Hidden", []int{1, 1}, SuperLayer)
+	inLay := net.AddLayer("Input", InputLayer, 1, 1)
+	hidLay := net.AddLayer("Hidden", SuperLayer, 1, 1)
 
 	prj := net.ConnectLayers(inLay, hidLay, paths.NewOneToOne(), ForwardPath)
 
@@ -1262,9 +1262,9 @@ func TestInhibAct(t *testing.T) {
 	inhibNet := NewNetwork("InhibNet")
 	inhibNet.SetRandSeed(42) // critical for ActAvg values
 
-	inLay := inhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
-	hidLay := inhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
-	outLay := inhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
+	inLay := inhibNet.AddLayer("Input", InputLayer, 4, 1)
+	hidLay := inhibNet.AddLayer("Hidden", SuperLayer, 4, 1)
+	outLay := inhibNet.AddLayer("Output", TargetLayer, 4, 1)
 
 	one2one := paths.NewOneToOne()
 
@@ -1411,7 +1411,7 @@ func TestGlobalIndexes(t *testing.T) {
 
 	for vv := GvRew; vv < GvCost; vv++ {
 		for di := uint32(0); di < nData; di++ {
-			SetGlbV(ctx, di, vv, val)
+			GlobalScalars[vv, di] = val
 			val += 1
 		}
 	}
@@ -1471,7 +1471,7 @@ func TestSendGatherIndexes(t *testing.T) {
 	for cyc := int32(0); cyc < maxCyc; cyc++ {
 		for ni := uint32(0); ni < nni; ni++ {
 			for di := uint32(0); di < nData; di++ {
-				li := NrnI(ctx, ni, NrnLayIndex)
+				li := NeuronIxs[NrnLayIndex, ni]
 				ly := net.Layers[li]
 				if len(ly.SendPaths) > 0 {
 					pj := ly.SendPaths[0]

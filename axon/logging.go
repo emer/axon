@@ -65,7 +65,7 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(lctx *elog.Context) {
 					di := uint32(lctx.Di)
-					lctx.SetFloat32(GlbV(ctx, di, gv))
+					lctx.SetFloat32(GlobalScalars[gv), di]
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -78,9 +78,9 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 				Write: elog.WriteMap{
 					etime.Scope(mode, times[ntimes-1]): func(lctx *elog.Context) {
 						di := uint32(lctx.Di)
-						v := GlbV(ctx, di, gv)
-						da := GlbV(ctx, di, GvDA)
-						hasRew := GlbV(ctx, di, GvHasRew) > 0
+						v := GlobalScalars[gv, di]
+						da := GlobalScalars[GvDA, di]
+						hasRew := GlobalScalars[GvHasRew, di] > 0
 						if hasRew || da > 0 { // also exclude CS DA events
 							v = nan
 						}
@@ -96,8 +96,8 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 				Write: elog.WriteMap{
 					etime.Scope(mode, times[ntimes-1]): func(lctx *elog.Context) {
 						di := uint32(lctx.Di)
-						v := GlbV(ctx, di, gv)
-						hasRew := GlbV(ctx, di, GvHasRew) > 0
+						v := GlobalScalars[gv, di]
+						hasRew := GlobalScalars[GvHasRew, di] > 0
 						if !hasRew {
 							v = nan
 						}
@@ -113,9 +113,9 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 					Write: elog.WriteMap{
 						etime.Scope(mode, times[ntimes-1]): func(lctx *elog.Context) {
 							di := uint32(lctx.Di)
-							v := GlbV(ctx, di, gv)
-							giveUp := GlbV(ctx, di, GvGiveUp) > 0
-							negUS := GlbV(ctx, di, GvNegUSOutcome) > 0
+							v := GlobalScalars[gv, di]
+							giveUp := GlobalScalars[GvGiveUp, di] > 0
+							negUS := GlobalScalars[GvNegUSOutcome, di] > 0
 							if !(giveUp || negUS) {
 								v = nan
 							}

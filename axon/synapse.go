@@ -86,7 +86,7 @@ var (
 )
 
 func init() {
-	SynapseVarsMap = make(map[string]int, int(SynapseVarsN)+int(SynapseCaVarsN))
+	SynapseVarsMap = make(map[string]int, int(SynapseVarsN)+int(SynapseTraceVarsN))
 	for i := Wt; i < SynapseVarsN; i++ {
 		vnm := i.String()
 		SynapseVarNames = append(SynapseVarNames, vnm)
@@ -94,7 +94,7 @@ func init() {
 		tag := SynapseVarProps[vnm]
 		SynapseVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
 	}
-	for i := Tr; i < SynapseCaVarsN; i++ {
+	for i := Tr; i < SynapseTraceVarsN; i++ {
 		vnm := i.String()
 		SynapseVarNames = append(SynapseVarNames, vnm)
 		SynapseVarsMap[vnm] = int(SynapseVarsN) + int(i)

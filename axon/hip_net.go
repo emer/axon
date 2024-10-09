@@ -115,23 +115,23 @@ func (hip *HipConfig) Defaults() {
 // Returns layers most likely to be used for remaining connections and positions.
 func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec3, dg, ca3, ca1, ec5 *Layer) {
 	// Trisynaptic Pathway (TSP)
-	ec2 = net.AddLayer2D("EC2", hip.EC2Size.Y, hip.EC2Size.X, SuperLayer)
+	ec2 = net.AddLayer2D("EC2", SuperLayer, hip.EC2Size.Y, hip.EC2Size.X)
 	ec2.SetSampleIndexesShape(emer.Layer2DSampleIndexes(ec2, 10))
-	dg = net.AddLayer2D("DG", int(float32(hip.CA3Size.Y)*hip.DGRatio), int(float32(hip.CA3Size.X)*hip.DGRatio), SuperLayer)
+	dg = net.AddLayer2D("DG", SuperLayer, int(float32(hip.CA3Size.Y)*hip.DGRatio), int(float32(hip.CA3Size.X)*hip.DGRatio))
 	dg.SetSampleIndexesShape(emer.Layer2DSampleIndexes(dg, 10))
-	ca3 = net.AddLayer2D("CA3", hip.CA3Size.Y, hip.CA3Size.X, SuperLayer)
+	ca3 = net.AddLayer2D("CA3", SuperLayer, hip.CA3Size.Y, hip.CA3Size.X)
 	ca3.SetSampleIndexesShape(emer.Layer2DSampleIndexes(ca3, 10))
 
 	// Monosynaptic Pathway (MSP)
-	ec3 = net.AddLayer4D("EC3", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
+	ec3 = net.AddLayer4D("EC3", SuperLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X)
 	ec3.AddClass("EC")
 	ec3.SetSampleIndexesShape(emer.CenterPoolIndexes(ec3, 2), emer.CenterPoolShape(ec3, 2))
-	ca1 = net.AddLayer4D("CA1", hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X, SuperLayer)
+	ca1 = net.AddLayer4D("CA1", SuperLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.CA1NNrn.Y, hip.CA1NNrn.X)
 	ca1.SetSampleIndexesShape(emer.CenterPoolIndexes(ca1, 2), emer.CenterPoolShape(ca1, 2))
 	if hip.EC5Clamp {
-		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, TargetLayer) // clamped in plus phase
+		ec5 = net.AddLayer4D("EC5", TargetLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X) // clamped in plus phase
 	} else {
-		ec5 = net.AddLayer4D("EC5", hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X, SuperLayer)
+		ec5 = net.AddLayer4D("EC5", SuperLayer, hip.EC3NPool.Y, hip.EC3NPool.X, hip.EC3NNrn.Y, hip.EC3NNrn.X)
 	}
 	ec5.AddClass("EC")
 	ec5.SetSampleIndexesShape(emer.CenterPoolIndexes(ec5, 2), emer.CenterPoolShape(ec5, 2))

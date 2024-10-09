@@ -83,7 +83,7 @@ func (pj *Path) DWtSubMean(ctx *Context, ri uint32) {
 	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
 		return
 	}
-	syIndexes := pj.RecvSynIndexes(ri - pj.Recv.NeurStIndex)
+	syIndexes := pj.RecvSynIxs(ri - pj.Recv.NeurStIndex)
 	if len(syIndexes) < 1 {
 		return
 	}
@@ -144,7 +144,7 @@ func (pj *Path) SWtFromWt(ctx *Context) {
 	mn := pj.Params.SWts.Limit.Min
 	lr := pj.Params.SWts.Adapt.LRate
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
-		syIndexes := pj.RecvSynIndexes(lni)
+		syIndexes := pj.RecvSynIxs(lni)
 		nCons := len(syIndexes)
 		if nCons < 1 {
 			continue
@@ -197,7 +197,7 @@ func (pj *Path) SynScale(ctx *Context) {
 			continue
 		}
 		adif := -lr * NrnAvgV(ctx, ri, AvgDif)
-		syIndexes := pj.RecvSynIndexes(lni)
+		syIndexes := pj.RecvSynIxs(lni)
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi
 			lwt := Synapses.Value(int(LWt), int(syni))

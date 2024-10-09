@@ -135,7 +135,7 @@ func (pt *Path) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
 						ri = rsh.Offset([]int{rpy, rpx, ruy, rux})
 					}
 					scst := (ruy*rNuX + rux) * rfsz
-					syIndexes := pt.RecvSynIndexes(uint32(ri))
+					syIndexes := pt.RecvSynIxs(uint32(ri))
 					for ci, syi := range syIndexes {
 						syni := pt.SynStIndex + syi
 						swt := float32(swts.Float1D((scst + ci) % wsz))
@@ -159,7 +159,7 @@ func (pt *Path) SetWeightsFunc(ctx *Context, wtFun func(si, ri int, send, recv *
 	ssh := &pt.Send.Shape
 
 	for ri := 0; ri < rn; ri++ {
-		syIndexes := pt.RecvSynIndexes(uint32(ri))
+		syIndexes := pt.RecvSynIxs(uint32(ri))
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
 			si := pt.Params.SynSendLayerIndex(ctx, syni)
@@ -179,7 +179,7 @@ func (pt *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *te
 	ssh := &pt.Send.Shape
 
 	for ri := 0; ri < rn; ri++ {
-		syIndexes := pt.RecvSynIndexes(uint32(ri))
+		syIndexes := pt.RecvSynIxs(uint32(ri))
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
 			si := int(pt.Params.SynSendLayerIndex(ctx, syni))
@@ -217,7 +217,7 @@ func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 		if NrnIsOff(ni) {
 			continue
 		}
-		syIndexes := pt.RecvSynIndexes(lni)
+		syIndexes := pt.RecvSynIxs(lni)
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
 			pt.InitWeightsSyn(ctx, syni, &nt.Rand, smn, spct)
@@ -240,7 +240,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 		}
 		var nmin, nmax int
 		var sum float32
-		syIndexes := pt.RecvSynIndexes(lni)
+		syIndexes := pt.RecvSynIxs(lni)
 		nCons := len(syIndexes)
 		if nCons <= 1 {
 			continue

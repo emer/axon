@@ -97,11 +97,11 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	squn := int(math.Sqrt(float64(numUnits)))
 	shp := []int{squn, squn}
 
-	net.AddLayer("Input", shp, axon.InputLayer)
-	net.AddLayer("Hidden1", shp, axon.SuperLayer)
-	net.AddLayer("Hidden2", shp, axon.SuperLayer)
-	net.AddLayer("Hidden3", shp, axon.SuperLayer)
-	net.AddLayer("Output", shp, axon.TargetLayer)
+	net.AddLayer("Input", axon.InputLayer, shp...)
+	net.AddLayer("Hidden1", axon.SuperLayer, shp...)
+	net.AddLayer("Hidden2", axon.SuperLayer, shp...)
+	net.AddLayer("Hidden3", axon.SuperLayer, shp...)
+	net.AddLayer("Output", axon.TargetLayer, shp...)
 
 	net.RecFunTimes = true
 
