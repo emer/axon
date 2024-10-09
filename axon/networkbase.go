@@ -52,11 +52,6 @@ type Network struct {
 	// based on state updated here.
 	Rubicon Rubicon
 
-	// network index in global Networks list of networks.
-	// Needed for GPU shader kernel compatible network variable
-	// access functions (e.g., NrnV, SynV etc) in CPU mode.
-	NetIndex uint32 `display:"-"`
-
 	// maximum synaptic delay across any pathway in the network.
 	// used for sizing the GBuf accumulation buffer.
 	MaxDelay uint32 `edit:"-" display:"-"`
@@ -88,7 +83,8 @@ type Network struct {
 	// timers for each major function (step of processing).
 	FunTimes map[string]*timer.Time `display:"-"`
 
-	//////////////////// Params
+	//// Global state below
+	//////// Params
 
 	// LayParams are all the layer parameters.
 	LayParams []LayerParams `display:"-"`
@@ -96,7 +92,7 @@ type Network struct {
 	// PathParams are all the path parameters.
 	PathParams []PathParams `display:"-"`
 
-	//////////////////// Indexes
+	//////// Indexes
 
 	// NeuronIxs have index values for each neuron: index into layer, pools.
 	// [Indexes][Neurons]
@@ -126,7 +122,7 @@ type Network struct {
 	// [NSyns] = [Layer][RecvPaths][RecvNeurons][Syns]
 	RecvSynIxs tensor.Uint32 `display:"-"`
 
-	//////////////////// Neuron State
+	//////// Neuron State
 
 	// Ctx is the current context state (one).
 	Ctx []Context `display:"-"`
@@ -162,7 +158,7 @@ type Network struct {
 	// [NExts][Data]; NExts = [In / Out Layers][Neurons]
 	Exts tensor.Float32 `display:"-"`
 
-	//////////////////// Synapse State
+	//////// Synapse State
 
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// subslices are allocated to each pathway.
@@ -178,13 +174,14 @@ type Network struct {
 
 	//	Synapses are the synapse level variables (weights etc).
 	//
+	// These do not depend on the data parallel index, unlike [SynapseTraces].
 	// [Vars][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	Synapses tensor.Float32 `display:"-"`
 
-	//////////////////// SynapseTraces
+	//////// SynapseTraces
 
-	// SynapseTraces are data parallel synaptic variables,
-	// for accumulating learning traces and weight changes per data.
+	// SynapseTraces are synaptic variables that depend on the data
+	// parallel index, for accumulating learning traces and weight changes per data.
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
 	// [Vars][NSyns][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
@@ -197,17 +194,17 @@ type Network struct {
 	SynapseTraces2 tensor.Float32 `display:"-"`
 }
 
+// Get the network context state
+func (nt *Network) Context() *Context { return &nt.Ctx[0] }
+
 // emer.Network interface methods:
 func (nt *Network) NumLayers() int               { return len(nt.Layers) }
 func (nt *Network) EmerLayer(idx int) emer.Layer { return nt.Layers[idx] }
 func (nt *Network) MaxParallelData() int         { return int(nt.MaxData) }
-func (nt *Network) NParallelData() int           { return int(nt.Ctx.NetIndexes.NData) }
+func (nt *Network) NParallelData() int           { return int(nt.Context().NetIndexes.NData) }
 
 func (nt *Network) Init() {
 	nt.MaxData = 1
-	nt.NetIndex = uint32(len(Networks))
-	Networks = append(Networks, nt)
-	TheNetwork = nt
 }
 
 // NewNetwork returns a new axon Network
@@ -430,31 +427,31 @@ func (nt *Network) SaveAllPathScales(filename core.Filename) error {
 
 // AllGlobals returns a listing of all Global variables and values.
 func (nt *Network) AllGlobals() string {
-	ctx := &nt.Ctx
+	ctx := nt.Context()
 	str := ""
 	for di := uint32(0); di < nt.MaxData; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
-		for vv := GvRew; vv < GvCost; vv++ {
-			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars.Value(int(vv)), int(di))
+		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
+			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars.Value(int(vv), int(di)))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNCosts; ui++ {
-				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbCostV(ctx, di, vv, ui))
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNNegUSs; ui++ {
-				str += fmt.Sprintf("%d: %7.4f\t", ui, GlbUSnegV(ctx, di, vv, ui))
+				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
-		for vv := GvDrives; vv < GlobalVarsN; vv++ {
+		for vv := GvDrives; vv < GlobalVectorVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
 			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNPosUSs; ui++ {
-				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlbUSposV(ctx, di, vv, ui))
+				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
@@ -471,28 +468,28 @@ func (nt *Network) ShowAllGlobals() { //types:add
 // AllGlobalValues adds to map of all Global variables and values.
 // ctrKey is a key of counters to contextualize values.
 func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
-	ctx := &nt.Ctx
+	ctx := nt.Context()
 	for di := uint32(0); di < nt.MaxData; di++ {
-		for vv := GvRew; vv < GvCost; vv++ {
+		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlobalScalars.Value(int(vv), int(di))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNCosts; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlbCostV(ctx, di, vv, ui)
+				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
 			}
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNNegUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlbUSnegV(ctx, di, vv, ui)
+				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
 			}
 		}
-		for vv := GvDrives; vv < GlobalVarsN; vv++ {
+		for vv := GvDrives; vv < GlobalVectorVarsN; vv++ {
 			for ui := uint32(0); ui < ctx.NetIndexes.RubiconNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
-				vals[key] = GlbUSposV(ctx, di, vv, ui)
+				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
 			}
 		}
 	}
@@ -615,7 +612,7 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 // variables on this network -- these must be set properly before calling
 // any compute methods with the context.
 func (nt *Network) SetCtxStrides(simCtx *Context) {
-	simCtx.CopyNetStridesFrom(&nt.Ctx)
+	simCtx.CopyNetStridesFrom(nt.Context())
 }
 
 // SetMaxData sets the MaxData and current NData for both the Network and the Context
@@ -636,9 +633,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		nt.Rubicon.SetNUSs(simCtx, 1, 1)
 	}
 	nt.Rubicon.Update()
-	ctx := &nt.Ctx
+	ctx := nt.Context()
 	*ctx = *simCtx
-	ctx.NetIndexes.NetIndex = nt.NetIndex
 	nt.FunTimes = make(map[string]*timer.Time)
 	maxData := int(nt.MaxData)
 	var errs []error
@@ -663,15 +659,15 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nt.LayValues = make([]LayerValues, nLayers*maxData)
 	nt.Pools = make([]Pool, totPools*maxData)
 	nt.NNeurons = uint32(totNeurons)
-	sltensor.SetShapeSizes(&nt.Neurons, NeuronVarsN, totNeurons, nt.MaxData)
-	sltensor.SetShapeSizes(&nt.NeuronAvgs, NeuronAvgVarsN, totNeurons)
-	sltensor.SetShapeSizes(&nt.NeuronIxs, NrnIndexesN, totNeurons)
+	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
+	sltensor.SetShapeSizes(&nt.NeuronIxs, int(NeuronIndexVarsN), totNeurons)
 	nt.Paths = make([]*Path, totPaths)
 	nt.PathParams = make([]PathParams, totPaths)
 	sltensor.SetShapeSizes(&nt.Exts, totExts, maxData)
 
-	sltensor.SetShapeSizes(&nt.GlobalScalars, GlobalScalarVarsN, nt.MaxData)
-	sltensor.SetShapeSizes(&nt.GlobalVectors, GlobalVectorVarsN, MaxGlobalVecN, nt.MaxData)
+	sltensor.SetShapeSizes(&nt.GlobalScalars, int(GlobalScalarVarsN), int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.GlobalVectors, int(GlobalVectorVarsN), int(MaxGlobalVecN), int(nt.MaxData))
 
 	totSynapses := 0
 	totRecvCon := 0
@@ -766,9 +762,9 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	}
 
 	nt.NSyns = uint32(totSynapses)
-	sltensor.SetShapeSizes(&nt.Synapses, SynapseVarsN, totSynapses)
-	sltensor.SetShapeSizes(&nt.SynapseTraces, SynapseTraceVarsN, totSynapses, nt.MaxData)
-	sltensor.SetShapeSizes(&nt.SynapseIxs, SynIndexesN, totSynapses)
+	sltensor.SetShapeSizes(&nt.Synapses, int(SynapseVarsN), totSynapses)
+	sltensor.SetShapeSizes(&nt.SynapseTraces, int(SynapseTraceVarsN), totSynapses, int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.SynapseIxs, int(SynapseIndexVarsN), totSynapses)
 	sltensor.SetShapeSizes(&nt.PathSendCon, totSendCon, 2)
 	sltensor.SetShapeSizes(&nt.PathRecvCon, totRecvCon, 2)
 	sltensor.SetShapeSizes(&nt.RecvPathIxs, rpathIndex)
@@ -797,7 +793,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
 				si := ly.NeurStIndex + sni
 				scon := pt.SendCon[sni]
-				nt.PathSendCon[sendConIndex] = scon
+				nt.PathSendCon.Set(scon.Start, int(sendConIndex), int(StartOff))
+				nt.PathSendCon.Set(scon.N, int(sendConIndex), int(Nitems))
 				sendConIndex++
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pt.SynStIndex + syi
@@ -817,7 +814,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	syIndex = 0
 	for _, ly := range nt.Layers {
 		for _, pt := range ly.RecvPaths {
-			nt.RecvPathIxs[rpathIndex] = pt.Params.Indexes.PathIndex
+			nt.RecvPathIxs.Set(pt.Params.Indexes.PathIndex, rpathIndex)
 			pt.Params.Indexes.RecvConSt = uint32(recvConIndex)
 			pt.Params.Indexes.RecvSynSt = uint32(syIndex)
 			synSt := pt.Params.Indexes.SynapseSt
@@ -826,11 +823,12 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 					continue
 				}
 				rcon := pt.RecvCon[rni]
-				nt.PathRecvCon[recvConIndex] = rcon
+				nt.PathRecvCon.Set(rcon.Start, int(recvConIndex), int(StartOff))
+				nt.PathRecvCon.Set(rcon.N, int(recvConIndex), int(Nitems))
 				recvConIndex++
 				syIndexes := pt.RecvSynIxs(rni)
 				for _, ssi := range syIndexes {
-					nt.RecvSynIxs[syIndex] = ssi + synSt
+					nt.RecvSynIxs.Set(ssi+synSt, syIndex)
 					syIndex++
 				}
 			}
@@ -845,10 +843,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	ctx.NetIndexes.NSyns = nt.NSyns
 	ctx.NetIndexes.RubiconNPosUSs = nt.Rubicon.NPosUSs
 	ctx.NetIndexes.RubiconNNegUSs = nt.Rubicon.NNegUSs
-	ctx.SetGlobalStrides()
 
 	nt.SetCtxStrides(simCtx)
-	nt.BuildGlobals(simCtx)
 
 	nt.LayoutLayers()
 	return errors.Join(errs...)
@@ -871,8 +867,8 @@ func (nt *Network) BuildPathGBuf() {
 		}
 	}
 	mxlen := nt.MaxDelay + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, npjneur, mxlen, nt.MaxData)
-	sltensor.SetShapeSizes(&nt.PathGSyns, npjneur, nt.MaxData)
+	sltensor.SetShapeSizes(&nt.PathGBuf, int(npjneur), int(mxlen), int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.PathGSyns, int(npjneur), int(nt.MaxData))
 
 	// gbi := uint32(0)
 	// gsi := uint32(0)
@@ -893,7 +889,7 @@ func (nt *Network) BuildPathGBuf() {
 
 // SetAsCurrent sets this network's values as the current global variables,
 // that are then processed in the code.
-func (nt *Network) SetToGlobals() {
+func (nt *Network) SetAsCurrent() {
 	LayParams = nt.LayParams
 	Paths = nt.PathParams
 	NeuronIxs = &nt.NeuronIxs
@@ -959,7 +955,7 @@ func (nt *Network) ReadWeightsJSON(r io.Reader) error {
 
 // SynsSlice returns a slice of synaptic values, in natural sending order,
 // using given synaptic variable, resizing as needed.
-func (nt *Network) SynsSlice(vals *[]float32, synvar int) {
+func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 	*vals = slicesx.SetLength(*vals, int(nt.NSyns))
 	i := 0
 	for _, ly := range nt.Layers {
@@ -1039,12 +1035,12 @@ func (nt *Network) CopyStateFrom(on *Network) error {
 		slog.Error(err.Error())
 		return err
 	}
-	nt.Neurons.CopyFrom(on.Neurons)
-	nt.NeuronAvgs.CopyFrom(on.NeuronAvgs)
+	nt.Neurons.CopyFrom(&on.Neurons)
+	nt.NeuronAvgs.CopyFrom(&on.NeuronAvgs)
 	copy(nt.Pools, on.Pools)
 	copy(nt.LayValues, on.LayValues)
-	nt.Synapses.CopyFrom(on.Synapses)
-	nt.SynapseTraces.CopyFrom(on.SynapseCas)
+	nt.Synapses.CopyFrom(&on.Synapses)
+	nt.SynapseTraces.CopyFrom(&on.SynapseTraces)
 	return nil
 }
 

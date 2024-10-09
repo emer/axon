@@ -11,9 +11,14 @@ import (
 
 //gosl:start
 
+// SynapseVars are the synapse variables representing synaptic weights, etc.
+// These do not depend on the data parallel index (di).
+// See [SynapseTraceVars] for variables that do depend on di.
+type SynapseVars int32 //enums:enum
+
 const (
 	// Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
-	Wt int = iota
+	Wt SynapseVars = iota
 
 	// LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
 	LWt
@@ -26,15 +31,17 @@ const (
 
 	// DSWt is change in SWt slow synaptic weight -- accumulates DWt
 	DSWt
-
-	SynapseVarsN
 )
+
+// SynapseTraceVars are synaptic variables that depend on the data
+// parallel index, for accumulating learning traces and weight changes per data.
+type SynapseTraceVars int32 //enums:enum
 
 const (
 	// Tr is trace of synaptic activity over time, which is used for
 	// credit assignment in learning.
 	// In MatrixPath this is a tag that is then updated later when US occurs.
-	Tr int = iota
+	Tr SynapseTraceVars = iota
 
 	// DTr is delta (change in) Tr trace of synaptic activity over time.
 	DTr
@@ -44,21 +51,21 @@ const (
 	// and then aggregated into the overall DWt (which may be further
 	// integrated across MPI nodes), which then drives changes in Wt values.
 	DiDWt
-
-	SynapseTraceVarsN
 )
+
+// SynapseIndexVars are synapse-level indexes used to access neurons and paths
+// from the individual synapse level of processing.
+type SynapseIndexVars int32 //enums:enum
 
 const (
 	// SynRecvIndex is receiving neuron index in network's global list of neurons
-	SynRecvIndex int = iota
+	SynRecvIndex SynapseIndexVars = iota
 
 	// SynSendIndex is sending neuron index in network's global list of neurons
 	SynSendIndex
 
 	// SynPathIndex is pathway index in global list of pathways organized as [Layers][RecvPaths]
 	SynPathIndex
-
-	SynIndexesN
 )
 
 //gosl:end

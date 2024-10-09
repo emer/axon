@@ -21,7 +21,7 @@ func (pt *Path) Defaults() {
 	if pt.Params == nil {
 		return
 	}
-	ctx := &pt.Recv.Network.Ctx
+	ctx := pt.Recv.Network.Context()
 	pt.Params.PathType = pt.Type
 	pt.Params.Defaults()
 	pt.Params.Learn.KinaseCa.WtsForNCycles(int(ctx.ThetaCycles))
@@ -82,13 +82,12 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 	if syi < 0 || syi >= pt.NSyns {
 		return err
 	}
-	ctx := &pt.Recv.Network.Ctx
 	syni := pt.SynStIndex + syi
 	if vidx < int(SynapseVarsN) {
-		SetSynV(ctx, syni, SynapseVars(vidx), val)
+		Synapses.Set(val, int(SynapseVars(vidx)), int(syni))
 	} else {
 		for di := uint32(0); di < pt.Recv.MaxData; di++ {
-			SetSynCaV(ctx, syni, di, SynapseCaVars(vidx-int(SynapseVarsN)), val)
+			SynapseTraces.Set(val, int(SynapseTraceVars(vidx-int(SynapseVarsN))), int(syni), int(di))
 		}
 	}
 	if varNm == "Wt" {
@@ -130,9 +129,9 @@ func (pt *Path) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
 				for rux := 0; rux < rNuX; rux++ {
 					ri := 0
 					if r2d {
-						ri = rsh.Offset([]int{ruy, rux})
+						ri = rsh.IndexTo1D(ruy, rux)
 					} else {
-						ri = rsh.Offset([]int{rpy, rpx, ruy, rux})
+						ri = rsh.IndexTo1D(rpy, rpx, ruy, rux)
 					}
 					scst := (ruy*rNuX + rux) * rfsz
 					syIndexes := pt.RecvSynIxs(uint32(ri))
@@ -162,7 +161,7 @@ func (pt *Path) SetWeightsFunc(ctx *Context, wtFun func(si, ri int, send, recv *
 		syIndexes := pt.RecvSynIxs(uint32(ri))
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			si := pt.Params.SynSendLayerIndex(ctx, syni)
+			si := pt.Params.SynSendLayerIndex(syni)
 			wt := wtFun(int(si), ri, ssh, rsh)
 			Synapses.Set(wt, int(SWt), int(syni))
 			Synapses.Set(wt, int(Wt), int(syni))
@@ -182,7 +181,7 @@ func (pt *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *te
 		syIndexes := pt.RecvSynIxs(uint32(ri))
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			si := int(pt.Params.SynSendLayerIndex(ctx, syni))
+			si := int(pt.Params.SynSendLayerIndex(syni))
 			swt := swtFun(si, ri, ssh, rsh)
 			Synapses.Set(swt, int(SWt), int(syni))
 			wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(int(Wt), int(syni)) - pt.Params.SWts.Init.Mean))
@@ -311,16 +310,16 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 		scon := pt.SendCon[lni]
 		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 			syni := pt.SynStIndex + syi
-			ri := pt.Params.SynRecvLayerIndex(ctx, syni) // <- this sends to me, ri
-			recipSi := ri                                // reciprocal case is si is now receiver
+			ri := pt.Params.SynRecvLayerIndex(syni) // <- this sends to me, ri
+			recipSi := ri                           // reciprocal case is si is now receiver
 			recipc := rpj.SendCon[recipSi]
 			if recipc.N == 0 {
 				continue
 			}
 			firstSyni := rpj.SynStIndex + recipc.Start
 			lastSyni := rpj.SynStIndex + recipc.Start + recipc.N - 1
-			firstRi := rpj.Params.SynRecvLayerIndex(ctx, firstSyni)
-			lastRi := rpj.Params.SynRecvLayerIndex(ctx, lastSyni)
+			firstRi := rpj.Params.SynRecvLayerIndex(firstSyni)
+			lastRi := rpj.Params.SynRecvLayerIndex(lastSyni)
 			if lni < firstRi || lni > lastRi { // fast reject -- paths are always in order!
 				continue
 			}
@@ -337,11 +336,11 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 					doing = true
 					recipCi := uint32(recipc.Start) + uint32(up)
 					recipSyni := rpj.SynStIndex + recipCi
-					recipRi := rpj.Params.SynRecvLayerIndex(ctx, recipSyni)
+					recipRi := rpj.Params.SynRecvLayerIndex(recipSyni)
 					if recipRi == lni {
-						SetSynV(ctx, recipSyni, Wt, Synapses.Value(int(Wt), int(syni)))
-						SetSynV(ctx, recipSyni, LWt, Synapses.Value(int(LWt), int(syni)))
-						SetSynV(ctx, recipSyni, SWt, Synapses.Value(int(SWt), int(syni)))
+						Synapses.Set(Synapses.Value(int(Wt), int(syni)), int(Wt), int(recipSyni))
+						Synapses.Set(Synapses.Value(int(LWt), int(syni)), int(LWt), int(recipSyni))
+						Synapses.Set(Synapses.Value(int(SWt), int(syni)), int(SWt), int(recipSyni))
 						// note: if we support SymFromTop then can have option to go other way
 						break
 					}
@@ -351,15 +350,15 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 					doing = true
 					recipCi := uint32(recipc.Start) + uint32(dn)
 					recipSyni := rpj.SynStIndex + recipCi
-					recipRi := rpj.Params.SynRecvLayerIndex(ctx, recipSyni)
+					recipRi := rpj.Params.SynRecvLayerIndex(recipSyni)
 					if recipRi == lni {
-						SetSynV(ctx, recipSyni, Wt, Synapses.Value(int(Wt), int(syni)))
-						SetSynV(ctx, recipSyni, LWt, Synapses.Value(int(LWt), int(syni)))
-						SetSynV(ctx, recipSyni, SWt, Synapses.Value(int(SWt), int(syni)))
+						Synapses.Set(Synapses.Value(int(Wt), int(syni)), int(Wt), int(recipSyni))
+						Synapses.Set(Synapses.Value(int(LWt), int(syni)), int(LWt), int(recipSyni))
+						Synapses.Set(Synapses.Value(int(SWt), int(syni)), int(SWt), int(recipSyni))
 						// note: if we support SymFromTop then can have option to go other way
 						break
 					}
-					goal.Run("dn--")
+					dn--
 				}
 				if !doing {
 					break

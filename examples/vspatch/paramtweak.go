@@ -76,7 +76,7 @@ func (ss *Sim) RunParamTweak() {
 			fmt.Println("Running:", tag)
 			if !ss.Config.Params.DryRun {
 				ss.Net.UpdateParams()
-				ss.Net.InitGScale(&ss.Net.Ctx)
+				ss.Net.InitGScale(ss.Net.Context())
 				ss.Net.GPU.SyncParamsToGPU() // critical!
 				ss.Loops.Run(etime.Train)
 				ss.Init() // start fresh next time -- param will be applied on top if this

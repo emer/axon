@@ -36,7 +36,7 @@ func (pj *Path) SendSpike(ctx *Context, ni, di, maxData uint32) {
 	scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIndex + syi
-		recvIndex := pj.Params.SynRecvLayerIndex(ctx, syni) // note: layer-specific is ok here
+		recvIndex := pj.Params.SynRecvLayerIndex(syni) // note: layer-specific is ok here
 		sv := int32(scale * Synapses[Wt, syni])
 		bi := pjcom.WriteIndexOff(recvIndex, di, wrOff, pj.Params.Indexes.RecvNeurN, maxData)
 		atomic.AddInt32(&pj.GBuf[bi], sv)
@@ -58,13 +58,13 @@ func (pj *Path) DWt(ctx *Context, si uint32) {
 	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIndex + syi
-		ri := SynI(ctx, syni, SynRecvIndex)
+		ri := SynapseIxs[SynRecvIndex, syni]
 		dwt := float32(0)
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 			layPool := rlay.Pool(0, di)
 			subPool := rlay.SubPool(ctx, ri, di)
 			pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)
-			dwt += SynCaV(ctx, syni, di, DiDWt)
+			dwt += SynapseTraces[DiDWt, syni, di]
 		}
 		// note: on GPU, this must be a separate kernel, but can be combined here
 		Synapses[DWt, syni] += dwt
@@ -194,7 +194,7 @@ func (pj *Path) SynScale(ctx *Context) {
 		if NrnIsOff(ri) {
 			continue
 		}
-		adif := -lr * NrnAvgV(ctx, ri, AvgDif)
+		adif := -lr * NeuronAvgs[AvgDif, ri]
 		syIndexes := pj.RecvSynIxs(lni)
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi

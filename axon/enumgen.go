@@ -6,16 +6,145 @@ import (
 	"cogentcore.org/core/enums"
 )
 
-var _LayerTypesValues = []LayerTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
+var _PathGTypesValues = []PathGTypes{0, 1, 2, 3, 4, 7}
+
+// PathGTypesN is the highest valid value for type PathGTypes, plus one.
+const PathGTypesN PathGTypes = 8
+
+var _PathGTypesValueMap = map[string]PathGTypes{`ExcitatoryG`: 0, `InhibitoryG`: 1, `ModulatoryG`: 2, `MaintG`: 3, `ContextG`: 4, `PathGTypesN`: 7}
+
+var _PathGTypesDescMap = map[PathGTypes]string{0: `Excitatory pathways drive Ge conductance on receiving neurons, which send to GiRaw and GiSyn neuron variables.`, 1: `Inhibitory pathways drive Gi inhibitory conductance, which send to GiRaw and GiSyn neuron variables.`, 2: `Modulatory pathways have a multiplicative effect on other inputs, which send to GModRaw and GModSyn neuron variables.`, 3: `Maintenance pathways drive unique set of NMDA channels that support strong active maintenance abilities. Send to GMaintRaw and GMaintSyn neuron variables.`, 4: `Context pathways are for inputs to CT layers, which update only at the end of the plus phase, and send to CtxtGe.`, 7: ``}
+
+var _PathGTypesMap = map[PathGTypes]string{0: `ExcitatoryG`, 1: `InhibitoryG`, 2: `ModulatoryG`, 3: `MaintG`, 4: `ContextG`, 7: `PathGTypesN`}
+
+// String returns the string representation of this PathGTypes value.
+func (i PathGTypes) String() string { return enums.String(i, _PathGTypesMap) }
+
+// SetString sets the PathGTypes value from its string representation,
+// and returns an error if the string is invalid.
+func (i *PathGTypes) SetString(s string) error {
+	return enums.SetString(i, s, _PathGTypesValueMap, "PathGTypes")
+}
+
+// Int64 returns the PathGTypes value as an int64.
+func (i PathGTypes) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the PathGTypes value from an int64.
+func (i *PathGTypes) SetInt64(in int64) { *i = PathGTypes(in) }
+
+// Desc returns the description of the PathGTypes value.
+func (i PathGTypes) Desc() string { return enums.Desc(i, _PathGTypesDescMap) }
+
+// PathGTypesValues returns all possible values for the type PathGTypes.
+func PathGTypesValues() []PathGTypes { return _PathGTypesValues }
+
+// Values returns all possible values for the type PathGTypes.
+func (i PathGTypes) Values() []enums.Enum { return enums.Values(_PathGTypesValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i PathGTypes) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *PathGTypes) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "PathGTypes")
+}
+
+var _GlobalScalarVarsValues = []GlobalScalarVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 59}
+
+// GlobalScalarVarsN is the highest valid value for type GlobalScalarVars, plus one.
+const GlobalScalarVarsN GlobalScalarVars = 60
+
+var _GlobalScalarVarsValueMap = map[string]GlobalScalarVars{`GvRew`: 0, `GvHasRew`: 1, `GvRewPred`: 2, `GvPrevPred`: 3, `GvHadRew`: 4, `GvDA`: 5, `GvDAtonic`: 6, `GvACh`: 7, `GvNE`: 8, `GvSer`: 9, `GvAChRaw`: 10, `GvGoalMaint`: 11, `GvVSMatrixJustGated`: 12, `GvVSMatrixHasGated`: 13, `GvCuriosityPoolGated`: 14, `GvTime`: 15, `GvEffort`: 16, `GvUrgencyRaw`: 17, `GvUrgency`: 18, `GvHasPosUS`: 19, `GvHadPosUS`: 20, `GvNegUSOutcome`: 21, `GvHadNegUSOutcome`: 22, `GvPVposSum`: 23, `GvPVpos`: 24, `GvPVnegSum`: 25, `GvPVneg`: 26, `GvPVposEst`: 27, `GvPVposVar`: 28, `GvPVnegEst`: 29, `GvPVnegVar`: 30, `GvGoalDistEst`: 31, `GvGoalDistPrev`: 32, `GvProgressRate`: 33, `GvGiveUpUtility`: 34, `GvContUtility`: 35, `GvGiveUpTiming`: 36, `GvContTiming`: 37, `GvGiveUpProgress`: 38, `GvContProgress`: 39, `GvGiveUpSum`: 40, `GvContSum`: 41, `GvGiveUpProb`: 42, `GvGiveUp`: 43, `GvGaveUp`: 44, `GvVSPatchPos`: 45, `GvVSPatchPosThr`: 46, `GvVSPatchPosRPE`: 47, `GvVSPatchPosSum`: 48, `GvVSPatchPosPrev`: 49, `GvVSPatchPosVar`: 50, `GvLHbDip`: 51, `GvLHbBurst`: 52, `GvLHbPVDA`: 53, `GvCeMpos`: 54, `GvCeMneg`: 55, `GvVtaDA`: 56, `GlobalScalarVarsN`: 59}
+
+var _GlobalScalarVarsDescMap = map[GlobalScalarVars]string{0: `Rew is the external reward value. Must also set HasRew flag when Rew is set, otherwise it is ignored. This is computed by the Rubicon algorithm from US inputs set by Net.Rubicon methods, and can be directly set in simpler RL cases.`, 1: `HasRew must be set to true (1) when an external reward / US input is present, otherwise Rew is ignored. This is also set when Rubicon BOA model gives up. This drives ACh release in the Rubicon model.`, 2: `RewPred is the reward prediction, computed by a special reward prediction layer, e.g., the VSPatch layer in the Rubicon algorithm.`, 3: `PrevPred is previous time step reward prediction, e.g., for TDPredLayer`, 4: `HadRew is HasRew state from the previous trial, copied from HasRew in NewState. Used for updating Effort, Urgency at start of new trial.`, 5: `DA is phasic dopamine that drives learning moreso than performance, representing reward prediction error, signaled as phasic increases or decreases in activity relative to a tonic baseline, which is represented by a value of 0. Released by the VTA (ventral tegmental area), or SNc (substantia nigra pars compacta).`, 6: `DAtonic is tonic dopamine, which has modulatory instead of learning effects. Increases can drive greater propensity to engage in activities by biasing Go vs No pathways in the basal ganglia, for example as a function of Urgency.`, 7: `ACh is acetylcholine, activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS). Driven by BLA -&gt; PPtg that detects changes in BLA activity, via LDTLayer type.`, 8: `NE is norepinepherine -- not yet in use`, 9: `Ser is serotonin -- not yet in use`, 10: `AChRaw is raw ACh value used in updating global ACh value by LDTLayer.`, 11: `GoalMaint is the normalized (0-1) goal maintenance activity, set in ApplyRubicon function at start of trial. Drives top-down inhibition of LDT layer / ACh activity.`, 12: `VSMatrixJustGated is VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase. This excludes any gating happening at time of US.`, 13: `VSMatrixHasGated is VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received).`, 14: `CuriosityPoolGated is true if VSMatrixJustGated and the first pool representing the curiosity / novelty drive gated. This can change the giving up Effort.Max parameter.`, 15: `Time is the raw time counter, incrementing upward during goal engaged window. This is also copied directly into NegUS[0] which tracks time, but we maintain a separate effort value to make it clearer.`, 16: `Effort is the raw effort counter, incrementing upward for each effort step during goal engaged window. This is also copied directly into NegUS[1] which tracks effort, but we maintain a separate effort value to make it clearer.`, 17: `UrgencyRaw is the raw effort for urgency, incrementing upward from effort increments per step when _not_ goal engaged.`, 18: `Urgency is the overall urgency activity level (normalized 0-1), computed from logistic function of GvUrgencyRaw. This drives DAtonic activity to increasingly bias Go firing.`, 19: `HasPosUS indicates has positive US on this trial, drives goal accomplishment logic and gating.`, 20: `HadPosUS is state from the previous trial (copied from HasPosUS in NewState).`, 21: `NegUSOutcome indicates that a phasic negative US stimulus was experienced, driving phasic ACh, VSMatrix gating to reset current goal engaged plan (if any), and phasic dopamine based on the outcome.`, 22: `HadNegUSOutcome is state from the previous trial (copied from NegUSOutcome in NewState)`, 23: `PVposSum is the total weighted positive valence primary value = sum of Weight * USpos * Drive`, 24: `PVpos is the normalized positive valence primary value = (1 - 1/(1+PVposGain * PVposSum))`, 25: `PVnegSum is the total weighted negative valence primary values including costs = sum of Weight * Cost + Weight * USneg`, 26: `PVpos is the normalized negative valence primary values, including costs = (1 - 1/(1+PVnegGain * PVnegSum))`, 27: `PVposEst is the estimated PVpos final outcome value decoded from the network PVposFinal layer`, 28: `PVposVar is the estimated variance or uncertainty in the PVpos final outcome value decoded from the network PVposFinal layer.`, 29: `PVnegEst is the estimated PVneg final outcome value decoded from the network PVnegFinal layer.`, 30: `PVnegVar is the estimated variance or uncertainty in the PVneg final outcome value decoded from the network PVnegFinal layer.`, 31: `GoalDistEst is the estimate of distance to the goal, in trial step units, decreasing down to 0 as the goal approaches.`, 32: `GoalDistPrev is the previous estimate of distance to the goal, in trial step units, decreasing down to 0 as the goal approaches.`, 33: `ProgressRate is the negative time average change in GoalDistEst, i.e., positive values indicate continued approach to the goal, while negative values represent moving away from the goal.`, 34: `GiveUpUtility is total GiveUp weight as a function of Cost.`, 35: `ContUtility is total Continue weight as a function of expected positive outcome PVposEst.`, 36: `GiveUpTiming is total GiveUp weight as a function of VSPatchPosSum * (1 - VSPatchPosVar).`, 37: `ContTiming is total Continue weight as a function of (1 - VSPatchPosSum) * VSPatchPosVar.`, 38: `GiveUpProgress is total GiveUp weight as a function of ProgressRate.`, 39: `ContProgress is total Continue weight as a function of ProgressRate.`, 40: `GiveUpSum is total GiveUp weight: Utility + Timing + Progress.`, 41: `ContSum is total Continue weight: Utility + Timing + Progress.`, 42: `GiveUpProb is the probability of giving up: 1 / (1 + (GvContSum / GvGiveUpSum))`, 43: `GiveUp is true if a reset was triggered probabilistically based on GiveUpProb.`, 44: `GaveUp is copy of GiveUp from previous trial.`, 45: `VSPatchPos is the net shunting input from VSPatch (PosD1, named PVi in original Rubicon) computed as the Max of US-specific VSPatch saved values, subtracting D1 - D2. This is also stored as GvRewPred.`, 46: `VSPatchPosThr is a thresholded version of GvVSPatchPos, applying Rubicon.LHb.VSPatchNonRewThr threshold for non-reward trials. This is the version used for computing DA.`, 47: `VSPatchPosRPE is the reward prediction error for the VSPatchPos reward prediction without any thresholding applied, and only for PV events. This is used to train the VSPatch, assuming a local feedback circuit that does not have the effective thresholding used for the broadcast critic signal that trains the rest of the network.`, 48: `VSPatchPosSum is the sum of VSPatchPos over goal engaged trials, representing the integrated prediction that the US is going to occur`, 49: `VSPatchPosPrev is the previous trial VSPatchPosSum`, 50: `VSPatchPosVar is the integrated temporal variance of VSPatchPos over goal engaged trials, which determines when the VSPatchPosSum has stabilized`, 51: `computed LHb activity level that drives dipping / pausing of DA firing, when VSPatch pos prediction &gt; actual PV reward drive or PVneg &gt; PVpos`, 52: `LHbBurst is computed LHb activity level that drives bursts of DA firing, when actual PV reward drive &gt; VSPatch pos prediction`, 53: `LHbPVDA is GvLHbBurst - GvLHbDip -- the LHb contribution to DA, reflecting PV and VSPatch (PVi), but not the CS (LV) contributions`, 54: `CeMpos is positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAposAcqD1 - BLAposExtD2|_+ positively rectified. CeM sets Raw directly. Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes.`, 55: `CeMneg is negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAnegAcqD2 - BLAnegExtD1|_+ positively rectified. CeM sets Raw directly`, 56: `VtaDA is overall dopamine value reflecting all of the different inputs`, 59: ``}
+
+var _GlobalScalarVarsMap = map[GlobalScalarVars]string{0: `GvRew`, 1: `GvHasRew`, 2: `GvRewPred`, 3: `GvPrevPred`, 4: `GvHadRew`, 5: `GvDA`, 6: `GvDAtonic`, 7: `GvACh`, 8: `GvNE`, 9: `GvSer`, 10: `GvAChRaw`, 11: `GvGoalMaint`, 12: `GvVSMatrixJustGated`, 13: `GvVSMatrixHasGated`, 14: `GvCuriosityPoolGated`, 15: `GvTime`, 16: `GvEffort`, 17: `GvUrgencyRaw`, 18: `GvUrgency`, 19: `GvHasPosUS`, 20: `GvHadPosUS`, 21: `GvNegUSOutcome`, 22: `GvHadNegUSOutcome`, 23: `GvPVposSum`, 24: `GvPVpos`, 25: `GvPVnegSum`, 26: `GvPVneg`, 27: `GvPVposEst`, 28: `GvPVposVar`, 29: `GvPVnegEst`, 30: `GvPVnegVar`, 31: `GvGoalDistEst`, 32: `GvGoalDistPrev`, 33: `GvProgressRate`, 34: `GvGiveUpUtility`, 35: `GvContUtility`, 36: `GvGiveUpTiming`, 37: `GvContTiming`, 38: `GvGiveUpProgress`, 39: `GvContProgress`, 40: `GvGiveUpSum`, 41: `GvContSum`, 42: `GvGiveUpProb`, 43: `GvGiveUp`, 44: `GvGaveUp`, 45: `GvVSPatchPos`, 46: `GvVSPatchPosThr`, 47: `GvVSPatchPosRPE`, 48: `GvVSPatchPosSum`, 49: `GvVSPatchPosPrev`, 50: `GvVSPatchPosVar`, 51: `GvLHbDip`, 52: `GvLHbBurst`, 53: `GvLHbPVDA`, 54: `GvCeMpos`, 55: `GvCeMneg`, 56: `GvVtaDA`, 59: `GlobalScalarVarsN`}
+
+// String returns the string representation of this GlobalScalarVars value.
+func (i GlobalScalarVars) String() string { return enums.String(i, _GlobalScalarVarsMap) }
+
+// SetString sets the GlobalScalarVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *GlobalScalarVars) SetString(s string) error {
+	return enums.SetString(i, s, _GlobalScalarVarsValueMap, "GlobalScalarVars")
+}
+
+// Int64 returns the GlobalScalarVars value as an int64.
+func (i GlobalScalarVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the GlobalScalarVars value from an int64.
+func (i *GlobalScalarVars) SetInt64(in int64) { *i = GlobalScalarVars(in) }
+
+// Desc returns the description of the GlobalScalarVars value.
+func (i GlobalScalarVars) Desc() string { return enums.Desc(i, _GlobalScalarVarsDescMap) }
+
+// GlobalScalarVarsValues returns all possible values for the type GlobalScalarVars.
+func GlobalScalarVarsValues() []GlobalScalarVars { return _GlobalScalarVarsValues }
+
+// Values returns all possible values for the type GlobalScalarVars.
+func (i GlobalScalarVars) Values() []enums.Enum { return enums.Values(_GlobalScalarVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i GlobalScalarVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *GlobalScalarVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "GlobalScalarVars")
+}
+
+var _GlobalVectorVarsValues = []GlobalVectorVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12}
+
+// GlobalVectorVarsN is the highest valid value for type GlobalVectorVars, plus one.
+const GlobalVectorVarsN GlobalVectorVars = 13
+
+var _GlobalVectorVarsValueMap = map[string]GlobalVectorVars{`GvCost`: 0, `GvCostRaw`: 1, `GvUSneg`: 2, `GvUSnegRaw`: 3, `GvDrives`: 4, `GvUSpos`: 5, `GvVSPatchD1`: 6, `GvVSPatchD2`: 7, `GvOFCposPTMaint`: 8, `GvVSMatrixPoolGated`: 9, `GlobalVectorVarsN`: 12}
+
+var _GlobalVectorVarsDescMap = map[GlobalVectorVars]string{0: `Cost are Time, Effort, etc costs, as normalized version of corresponding raw. NCosts of them`, 1: `CostRaw are raw, linearly incremented negative valence US outcomes, this value is also integrated together with all US vals for PVneg`, 2: `USneg are negative valence US outcomes, normalized version of raw. NNegUSs of them`, 3: `USnegRaw are raw, linearly incremented negative valence US outcomes, this value is also integrated together with all US vals for PVneg`, 4: `Drives are current drive state, updated with optional homeostatic exponential return to baseline values.`, 5: `USpos are current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)`, 6: `VSPatch is current reward predicting VSPatch (PosD1) values.`, 7: `VSPatch is current reward predicting VSPatch (PosD2) values.`, 8: `OFCposPTMaint is activity level of given OFCposPT maintenance pool used in anticipating potential USpos outcome value.`, 9: `VSMatrixPoolGated indicates whether given VSMatrix pool gated this is reset after last goal accomplished -- records gating since then.`, 12: ``}
+
+var _GlobalVectorVarsMap = map[GlobalVectorVars]string{0: `GvCost`, 1: `GvCostRaw`, 2: `GvUSneg`, 3: `GvUSnegRaw`, 4: `GvDrives`, 5: `GvUSpos`, 6: `GvVSPatchD1`, 7: `GvVSPatchD2`, 8: `GvOFCposPTMaint`, 9: `GvVSMatrixPoolGated`, 12: `GlobalVectorVarsN`}
+
+// String returns the string representation of this GlobalVectorVars value.
+func (i GlobalVectorVars) String() string { return enums.String(i, _GlobalVectorVarsMap) }
+
+// SetString sets the GlobalVectorVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *GlobalVectorVars) SetString(s string) error {
+	return enums.SetString(i, s, _GlobalVectorVarsValueMap, "GlobalVectorVars")
+}
+
+// Int64 returns the GlobalVectorVars value as an int64.
+func (i GlobalVectorVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the GlobalVectorVars value from an int64.
+func (i *GlobalVectorVars) SetInt64(in int64) { *i = GlobalVectorVars(in) }
+
+// Desc returns the description of the GlobalVectorVars value.
+func (i GlobalVectorVars) Desc() string { return enums.Desc(i, _GlobalVectorVarsDescMap) }
+
+// GlobalVectorVarsValues returns all possible values for the type GlobalVectorVars.
+func GlobalVectorVarsValues() []GlobalVectorVars { return _GlobalVectorVarsValues }
+
+// Values returns all possible values for the type GlobalVectorVars.
+func (i GlobalVectorVars) Values() []enums.Enum { return enums.Values(_GlobalVectorVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i GlobalVectorVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *GlobalVectorVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "GlobalVectorVars")
+}
+
+var _LayerTypesValues = []LayerTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 39}
 
 // LayerTypesN is the highest valid value for type LayerTypes, plus one.
-const LayerTypesN LayerTypes = 30
+const LayerTypesN LayerTypes = 40
 
-var _LayerTypesValueMap = map[string]LayerTypes{`SuperLayer`: 0, `InputLayer`: 1, `TargetLayer`: 2, `CompareLayer`: 3, `CTLayer`: 4, `PulvinarLayer`: 5, `TRNLayer`: 6, `PTMaintLayer`: 7, `PTPredLayer`: 8, `MatrixLayer`: 9, `STNLayer`: 10, `GPLayer`: 11, `BGThalLayer`: 12, `VSGatedLayer`: 13, `BLALayer`: 14, `CeMLayer`: 15, `VSPatchLayer`: 16, `LHbLayer`: 17, `DrivesLayer`: 18, `UrgencyLayer`: 19, `USLayer`: 20, `PVLayer`: 21, `LDTLayer`: 22, `VTALayer`: 23, `RewLayer`: 24, `RWPredLayer`: 25, `RWDaLayer`: 26, `TDPredLayer`: 27, `TDIntegLayer`: 28, `TDDaLayer`: 29}
+var _LayerTypesValueMap = map[string]LayerTypes{`SuperLayer`: 0, `InputLayer`: 1, `TargetLayer`: 2, `CompareLayer`: 3, `CTLayer`: 4, `PulvinarLayer`: 5, `TRNLayer`: 6, `PTMaintLayer`: 7, `PTPredLayer`: 8, `MatrixLayer`: 9, `STNLayer`: 10, `GPLayer`: 11, `BGThalLayer`: 12, `VSGatedLayer`: 13, `BLALayer`: 14, `CeMLayer`: 15, `VSPatchLayer`: 16, `LHbLayer`: 17, `DrivesLayer`: 18, `UrgencyLayer`: 19, `USLayer`: 20, `PVLayer`: 21, `LDTLayer`: 22, `VTALayer`: 23, `RewLayer`: 24, `RWPredLayer`: 25, `RWDaLayer`: 26, `TDPredLayer`: 27, `TDIntegLayer`: 28, `TDDaLayer`: 29, `LayerTypesN`: 39}
 
-var _LayerTypesDescMap = map[LayerTypes]string{0: `Super is a superficial cortical layer (lamina 2-3-4) which does not receive direct input or targets. In more generic models, it should be used as a Hidden layer, and maps onto the Hidden type in LayerTypes.`, 1: `Input is a layer that receives direct external input in its Ext inputs. Biologically, it can be a primary sensory layer, or a thalamic layer.`, 2: `Target is a layer that receives direct external target inputs used for driving plus-phase learning. Simple target layers are generally not used in more biological models, which instead use predictive learning via Pulvinar or related mechanisms.`, 3: `Compare is a layer that receives external comparison inputs, which drive statistics but do NOT drive activation or learning directly. It is rarely used in axon.`, 4: `CT are layer 6 corticothalamic projecting neurons, which drive &#34;top down&#34; predictions in Pulvinar layers. They maintain information over time via stronger NMDA channels and use maintained prior state information to generate predictions about current states forming on Super layers that then drive PT (5IB) bursting activity, which are the plus-phase drivers of Pulvinar activity.`, 5: `Pulvinar are thalamic relay cell neurons in the higher-order Pulvinar nucleus of the thalamus, and functionally isomorphic neurons in the MD thalamus, and potentially other areas. These cells alternately reflect predictions driven by CT pathways, and actual outcomes driven by 5IB Burst activity from corresponding PT or Super layer neurons that provide strong driving inputs.`, 6: `TRNLayer is thalamic reticular nucleus layer for inhibitory competition within the thalamus.`, 7: `PTMaintLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that exhibit robust, stable maintenance of activity over the duration of a goal engaged window, modulated by basal ganglia (BG) disinhibitory gating, supported by strong MaintNMDA channels and recurrent excitation. The lateral PTSelfMaint pathway uses MaintG to drive GMaintRaw input that feeds into the stronger, longer MaintNMDA channels, and the ThalToPT ModulatoryG pathway from BGThalamus multiplicatively modulates the strength of other inputs, such that only at the time of BG gating are these strong enough to drive sustained active maintenance. Use Act.Dend.ModGain to parameterize.`, 8: `PTPredLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that combine modulatory input from PTMaintLayer sustained maintenance and CTLayer dynamic predictive learning that helps to predict state changes during the period of active goal maintenance. This layer provides the primary input to VSPatch US-timing prediction layers, and other layers that require predictive dynamic`, 9: `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`, 10: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`, 11: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`, 12: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory pathway from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`, 13: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`, 14: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`, 15: `CeMLayer represents a central nucleus of the amygdala layer.`, 16: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`, 17: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`, 18: `DrivesLayer represents the Drives in .Rubicon framework. It tracks the Global Drives values for visualization and predictive learning purposes.`, 19: `UrgencyLayer represents the Urgency factor in Rubicon framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`, 20: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in Rubicon.`, 21: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`, 22: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`, 23: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from Rubicon-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`, 24: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`, 25: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPath which does simple delta-rule learning on minus-plus.`, 26: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`, 27: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPath pathway type for DA modulated learning.`, 28: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerValues from TDPredLayer.`, 29: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerValues.`}
+var _LayerTypesDescMap = map[LayerTypes]string{0: `Super is a superficial cortical layer (lamina 2-3-4) which does not receive direct input or targets. In more generic models, it should be used as a Hidden layer, and maps onto the Hidden type in LayerTypes.`, 1: `Input is a layer that receives direct external input in its Ext inputs. Biologically, it can be a primary sensory layer, or a thalamic layer.`, 2: `Target is a layer that receives direct external target inputs used for driving plus-phase learning. Simple target layers are generally not used in more biological models, which instead use predictive learning via Pulvinar or related mechanisms.`, 3: `Compare is a layer that receives external comparison inputs, which drive statistics but do NOT drive activation or learning directly. It is rarely used in axon.`, 4: `CT are layer 6 corticothalamic projecting neurons, which drive &#34;top down&#34; predictions in Pulvinar layers. They maintain information over time via stronger NMDA channels and use maintained prior state information to generate predictions about current states forming on Super layers that then drive PT (5IB) bursting activity, which are the plus-phase drivers of Pulvinar activity.`, 5: `Pulvinar are thalamic relay cell neurons in the higher-order Pulvinar nucleus of the thalamus, and functionally isomorphic neurons in the MD thalamus, and potentially other areas. These cells alternately reflect predictions driven by CT pathways, and actual outcomes driven by 5IB Burst activity from corresponding PT or Super layer neurons that provide strong driving inputs.`, 6: `TRNLayer is thalamic reticular nucleus layer for inhibitory competition within the thalamus.`, 7: `PTMaintLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that exhibit robust, stable maintenance of activity over the duration of a goal engaged window, modulated by basal ganglia (BG) disinhibitory gating, supported by strong MaintNMDA channels and recurrent excitation. The lateral PTSelfMaint pathway uses MaintG to drive GMaintRaw input that feeds into the stronger, longer MaintNMDA channels, and the ThalToPT ModulatoryG pathway from BGThalamus multiplicatively modulates the strength of other inputs, such that only at the time of BG gating are these strong enough to drive sustained active maintenance. Use Act.Dend.ModGain to parameterize.`, 8: `PTPredLayer implements the subset of pyramidal tract (PT) layer 5 intrinsic bursting (5IB) deep neurons that combine modulatory input from PTMaintLayer sustained maintenance and CTLayer dynamic predictive learning that helps to predict state changes during the period of active goal maintenance. This layer provides the primary input to VSPatch US-timing prediction layers, and other layers that require predictive dynamic`, 9: `MatrixLayer represents the matrisome medium spiny neurons (MSNs) that are the main Go / NoGo gating units in BG. These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.`, 10: `STNLayer represents subthalamic nucleus neurons, with two subtypes: STNp are more strongly driven and get over bursting threshold, driving strong, rapid activation of the KCa channels, causing a long pause in firing, which creates a window during which GPe dynamics resolve Go vs. No balance. STNs are more weakly driven and thus more slowly activate KCa, resulting in a longer period of activation, during which the GPi is inhibited to prevent premature gating based only MtxGo inhibition -- gating only occurs when GPePr signal has had a chance to integrate its MtxNo inputs.`, 11: `GPLayer represents a globus pallidus layer in the BG, including: GPeOut, GPePr, GPeAk (arkypallidal), and GPi. Typically just a single unit per Pool representing a given stripe.`, 12: `BGThalLayer represents a BG gated thalamic layer, which receives BG gating in the form of an inhibitory pathway from GPi. Located mainly in the Ventral thalamus: VA / VM / VL, and also parts of MD mediodorsal thalamus.`, 13: `VSGated represents explicit coding of VS gating status: JustGated and HasGated (since last US or failed predicted US), For visualization and / or motor action signaling.`, 14: `BLALayer represents a basolateral amygdala layer which learns to associate arbitrary stimuli (CSs) with behaviorally salient outcomes (USs)`, 15: `CeMLayer represents a central nucleus of the amygdala layer.`, 16: `VSPatchLayer represents a ventral striatum patch layer, which learns to represent the expected amount of dopamine reward and projects both directly with shunting inhibition to the VTA and indirectly via the LHb / RMTg to cancel phasic dopamine firing to expected rewards (i.e., reward prediction error).`, 17: `LHbLayer represents the lateral habenula, which drives dipping in the VTA. It tracks the Global LHb values for visualization purposes -- updated by VTALayer.`, 18: `DrivesLayer represents the Drives in .Rubicon framework. It tracks the Global Drives values for visualization and predictive learning purposes.`, 19: `UrgencyLayer represents the Urgency factor in Rubicon framework. It tracks the Global Urgency.Urge value for visualization and predictive learning purposes.`, 20: `USLayer represents a US unconditioned stimulus layer (USpos or USneg). It tracks the Global USpos or USneg, for visualization and predictive learning purposes. Actual US inputs are set in Rubicon.`, 21: `PVLayer represents a PV primary value layer (PVpos or PVneg) representing the total primary value as a function of US inputs, drives, and effort. It tracks the Global VTA.PVpos, PVneg values for visualization and predictive learning purposes.`, 22: `LDTLayer represents the laterodorsal tegmentum layer, which is the primary limbic ACh (acetylcholine) driver to other ACh: BG cholinergic interneurons (CIN) and nucleus basalis ACh areas. The phasic ACh release signals reward salient inputs from CS, US and US omssion, and it drives widespread disinhibition of BG gating and VTA DA firing. It receives excitation from superior colliculus which computes a temporal derivative (stimulus specific adaptation, SSA) of sensory inputs, and inhibitory input from OFC, ACC driving suppression of distracting inputs during goal-engaged states.`, 23: `VTALayer represents the ventral tegmental area, which releases dopamine. It computes final DA value from Rubicon-computed LHb PVDA (primary value DA), updated at start of each trial from updated US, Effort, etc state, and cycle-by-cycle LV learned value state reflecting CS inputs, in the Amygdala (CeM). Its activity reflects this DA level, which is effectively broadcast vial Global state values to all layers.`, 24: `RewLayer represents positive or negative reward values across 2 units, showing spiking rates for each, and Act always represents signed value.`, 25: `RWPredLayer computes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework). Activity is computed as linear function of excitatory conductance (which can be negative -- there are no constraints). Use with RWPath which does simple delta-rule learning on minus-plus.`, 26: `RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework). It computes difference between r(t) and RWPred values. r(t) is accessed directly from a Rew layer -- if no external input then no DA is computed -- critical for effective use of RW only for PV cases. RWPred prediction is also accessed directly from Rew layer to avoid any issues.`, 27: `TDPredLayer is the temporal differences reward prediction layer. It represents estimated value V(t) in the minus phase, and computes estimated V(t+1) based on its learned weights in plus phase, using the TDPredPath pathway type for DA modulated learning.`, 28: `TDIntegLayer is the temporal differences reward integration layer. It represents estimated value V(t) from prior time step in the minus phase, and estimated discount * V(t+1) + r(t) in the plus phase. It gets Rew, PrevPred from Context.NeuroMod, and Special LayerValues from TDPredLayer.`, 29: `TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase. These are retrieved from Special LayerValues.`, 39: ``}
 
-var _LayerTypesMap = map[LayerTypes]string{0: `SuperLayer`, 1: `InputLayer`, 2: `TargetLayer`, 3: `CompareLayer`, 4: `CTLayer`, 5: `PulvinarLayer`, 6: `TRNLayer`, 7: `PTMaintLayer`, 8: `PTPredLayer`, 9: `MatrixLayer`, 10: `STNLayer`, 11: `GPLayer`, 12: `BGThalLayer`, 13: `VSGatedLayer`, 14: `BLALayer`, 15: `CeMLayer`, 16: `VSPatchLayer`, 17: `LHbLayer`, 18: `DrivesLayer`, 19: `UrgencyLayer`, 20: `USLayer`, 21: `PVLayer`, 22: `LDTLayer`, 23: `VTALayer`, 24: `RewLayer`, 25: `RWPredLayer`, 26: `RWDaLayer`, 27: `TDPredLayer`, 28: `TDIntegLayer`, 29: `TDDaLayer`}
+var _LayerTypesMap = map[LayerTypes]string{0: `SuperLayer`, 1: `InputLayer`, 2: `TargetLayer`, 3: `CompareLayer`, 4: `CTLayer`, 5: `PulvinarLayer`, 6: `TRNLayer`, 7: `PTMaintLayer`, 8: `PTPredLayer`, 9: `MatrixLayer`, 10: `STNLayer`, 11: `GPLayer`, 12: `BGThalLayer`, 13: `VSGatedLayer`, 14: `BLALayer`, 15: `CeMLayer`, 16: `VSPatchLayer`, 17: `LHbLayer`, 18: `DrivesLayer`, 19: `UrgencyLayer`, 20: `USLayer`, 21: `PVLayer`, 22: `LDTLayer`, 23: `VTALayer`, 24: `RewLayer`, 25: `RWPredLayer`, 26: `RWDaLayer`, 27: `TDPredLayer`, 28: `TDIntegLayer`, 29: `TDDaLayer`, 39: `LayerTypesN`}
 
 // String returns the string representation of this LayerTypes value.
 func (i LayerTypes) String() string { return enums.String(i, _LayerTypesMap) }
@@ -49,16 +178,16 @@ func (i *LayerTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "LayerTypes")
 }
 
-var _DAModTypesValues = []DAModTypes{0, 1, 2, 3}
+var _DAModTypesValues = []DAModTypes{0, 1, 2, 3, 13}
 
 // DAModTypesN is the highest valid value for type DAModTypes, plus one.
-const DAModTypesN DAModTypes = 4
+const DAModTypesN DAModTypes = 14
 
-var _DAModTypesValueMap = map[string]DAModTypes{`NoDAMod`: 0, `D1Mod`: 1, `D2Mod`: 2, `D1AbsMod`: 3}
+var _DAModTypesValueMap = map[string]DAModTypes{`NoDAMod`: 0, `D1Mod`: 1, `D2Mod`: 2, `D1AbsMod`: 3, `DAModTypesN`: 13}
 
-var _DAModTypesDescMap = map[DAModTypes]string{0: `NoDAMod means there is no effect of dopamine on neural activity`, 1: `D1Mod is for neurons that primarily express dopamine D1 receptors, which are excitatory from DA bursts, inhibitory from dips. Cortical neurons can generally use this type, while subcortical populations are more diverse in having both D1 and D2 subtypes.`, 2: `D2Mod is for neurons that primarily express dopamine D2 receptors, which are excitatory from DA dips, inhibitory from bursts.`, 3: `D1AbsMod is like D1Mod, except the absolute value of DA is used instead of the signed value. There are a subset of DA neurons that send increased DA for both negative and positive outcomes, targeting frontal neurons.`}
+var _DAModTypesDescMap = map[DAModTypes]string{0: `NoDAMod means there is no effect of dopamine on neural activity`, 1: `D1Mod is for neurons that primarily express dopamine D1 receptors, which are excitatory from DA bursts, inhibitory from dips. Cortical neurons can generally use this type, while subcortical populations are more diverse in having both D1 and D2 subtypes.`, 2: `D2Mod is for neurons that primarily express dopamine D2 receptors, which are excitatory from DA dips, inhibitory from bursts.`, 3: `D1AbsMod is like D1Mod, except the absolute value of DA is used instead of the signed value. There are a subset of DA neurons that send increased DA for both negative and positive outcomes, targeting frontal neurons.`, 13: ``}
 
-var _DAModTypesMap = map[DAModTypes]string{0: `NoDAMod`, 1: `D1Mod`, 2: `D2Mod`, 3: `D1AbsMod`}
+var _DAModTypesMap = map[DAModTypes]string{0: `NoDAMod`, 1: `D1Mod`, 2: `D2Mod`, 3: `D1AbsMod`, 13: `DAModTypesN`}
 
 // String returns the string representation of this DAModTypes value.
 func (i DAModTypes) String() string { return enums.String(i, _DAModTypesMap) }
@@ -92,16 +221,16 @@ func (i *DAModTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "DAModTypes")
 }
 
-var _ValenceTypesValues = []ValenceTypes{0, 1, 2}
+var _ValenceTypesValues = []ValenceTypes{0, 1, 2, 12}
 
 // ValenceTypesN is the highest valid value for type ValenceTypes, plus one.
-const ValenceTypesN ValenceTypes = 3
+const ValenceTypesN ValenceTypes = 13
 
-var _ValenceTypesValueMap = map[string]ValenceTypes{`Positive`: 0, `Negative`: 1, `Cost`: 2}
+var _ValenceTypesValueMap = map[string]ValenceTypes{`Positive`: 0, `Negative`: 1, `Cost`: 2, `ValenceTypesN`: 12}
 
-var _ValenceTypesDescMap = map[ValenceTypes]string{0: `Positive valence codes for outcomes aligned with drives / goals.`, 1: `Negative valence codes for harmful or aversive outcomes.`, 2: `Cost codes for continous ongoing cost factors such as Time and Effort`}
+var _ValenceTypesDescMap = map[ValenceTypes]string{0: `Positive valence codes for outcomes aligned with drives / goals.`, 1: `Negative valence codes for harmful or aversive outcomes.`, 2: `Cost codes for continous ongoing cost factors such as Time and Effort`, 12: ``}
 
-var _ValenceTypesMap = map[ValenceTypes]string{0: `Positive`, 1: `Negative`, 2: `Cost`}
+var _ValenceTypesMap = map[ValenceTypes]string{0: `Positive`, 1: `Negative`, 2: `Cost`, 12: `ValenceTypesN`}
 
 // String returns the string representation of this ValenceTypes value.
 func (i ValenceTypes) String() string { return enums.String(i, _ValenceTypesMap) }
@@ -135,16 +264,188 @@ func (i *ValenceTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "ValenceTypes")
 }
 
-var _PathTypesValues = []PathTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+var _NeuronFlagsValues = []NeuronFlags{1, 2, 4, 8, 11}
+
+// NeuronFlagsN is the highest valid value for type NeuronFlags, plus one.
+const NeuronFlagsN NeuronFlags = 12
+
+var _NeuronFlagsValueMap = map[string]NeuronFlags{`NeuronOff`: 1, `NeuronHasExt`: 2, `NeuronHasTarg`: 4, `NeuronHasCmpr`: 8, `NeuronFlagsN`: 11}
+
+var _NeuronFlagsDescMap = map[NeuronFlags]string{1: `NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)`, 2: `NeuronHasExt means the neuron has external input in its Ext field`, 4: `NeuronHasTarg means the neuron has external target input in its Target field`, 8: `NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing comparison statistics but does not drive neural activity ever`, 11: ``}
+
+var _NeuronFlagsMap = map[NeuronFlags]string{1: `NeuronOff`, 2: `NeuronHasExt`, 4: `NeuronHasTarg`, 8: `NeuronHasCmpr`, 11: `NeuronFlagsN`}
+
+// String returns the string representation of this NeuronFlags value.
+func (i NeuronFlags) String() string { return enums.String(i, _NeuronFlagsMap) }
+
+// SetString sets the NeuronFlags value from its string representation,
+// and returns an error if the string is invalid.
+func (i *NeuronFlags) SetString(s string) error {
+	return enums.SetString(i, s, _NeuronFlagsValueMap, "NeuronFlags")
+}
+
+// Int64 returns the NeuronFlags value as an int64.
+func (i NeuronFlags) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the NeuronFlags value from an int64.
+func (i *NeuronFlags) SetInt64(in int64) { *i = NeuronFlags(in) }
+
+// Desc returns the description of the NeuronFlags value.
+func (i NeuronFlags) Desc() string { return enums.Desc(i, _NeuronFlagsDescMap) }
+
+// NeuronFlagsValues returns all possible values for the type NeuronFlags.
+func NeuronFlagsValues() []NeuronFlags { return _NeuronFlagsValues }
+
+// Values returns all possible values for the type NeuronFlags.
+func (i NeuronFlags) Values() []enums.Enum { return enums.Values(_NeuronFlagsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i NeuronFlags) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *NeuronFlags) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "NeuronFlags")
+}
+
+var _NeuronVarsValues = []NeuronVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 93}
+
+// NeuronVarsN is the highest valid value for type NeuronVars, plus one.
+const NeuronVarsN NeuronVars = 94
+
+var _NeuronVarsValueMap = map[string]NeuronVars{`Spike`: 0, `Spiked`: 1, `Act`: 2, `ActInt`: 3, `Ge`: 4, `Gi`: 5, `Gk`: 6, `Inet`: 7, `Vm`: 8, `VmDend`: 9, `ISI`: 10, `ISIAvg`: 11, `Ext`: 12, `Target`: 13, `CaSpkM`: 14, `CaSpkP`: 15, `CaSpkD`: 16, `CaSpkPM`: 17, `CaLrn`: 18, `NrnCaM`: 19, `NrnCaP`: 20, `NrnCaD`: 21, `CaDiff`: 22, `RLRate`: 23, `GnmdaSyn`: 24, `Gnmda`: 25, `GnmdaLrn`: 26, `GnmdaMaint`: 27, `NmdaCa`: 28, `Gvgcc`: 29, `VgccM`: 30, `VgccH`: 31, `VgccCa`: 32, `VgccCaInt`: 33, `Burst`: 34, `BurstPrv`: 35, `CtxtGe`: 36, `CtxtGeRaw`: 37, `CtxtGeOrig`: 38, `GgabaB`: 39, `GABAB`: 40, `GABABx`: 41, `Gak`: 42, `SSGi`: 43, `SSGiDend`: 44, `GknaMed`: 45, `GknaSlow`: 46, `Gkir`: 47, `KirM`: 48, `Gsk`: 49, `SKCaIn`: 50, `SKCaR`: 51, `SKCaM`: 52, `Gmahp`: 53, `MahpN`: 54, `Gsahp`: 55, `SahpCa`: 56, `SahpN`: 57, `ActM`: 58, `ActP`: 59, `SpkSt1`: 60, `SpkSt2`: 61, `SpkMax`: 62, `SpkMaxCa`: 63, `SpkBin0`: 64, `SpkBin1`: 65, `SpkBin2`: 66, `SpkBin3`: 67, `SpkBin4`: 68, `SpkBin5`: 69, `SpkBin6`: 70, `SpkBin7`: 71, `SpkPrv`: 72, `GeNoise`: 73, `GeNoiseP`: 74, `GiNoise`: 75, `GiNoiseP`: 76, `GeExt`: 77, `GeRaw`: 78, `GeSyn`: 79, `GiRaw`: 80, `GiSyn`: 81, `GeInt`: 82, `GeIntNorm`: 83, `GiInt`: 84, `GModRaw`: 85, `GModSyn`: 86, `SMaintP`: 87, `GMaintRaw`: 88, `GMaintSyn`: 89, `NrnFlags`: 90, `NeuronVarsN`: 93}
+
+var _NeuronVarsDescMap = map[NeuronVars]string{0: `Spike is whether neuron has spiked or not on this cycle (0 or 1)`, 1: `Spiked is 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.`, 2: `Act is rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg. This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc. Should not be used for learning or other computations.`, 3: `ActInt is integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM). Should not be used for learning or other computations.`, 4: `Ge is total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E`, 5: `Gi is total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I`, 6: `Gk is total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K`, 7: `Inet is net current produced by all channels -- drives update of Vm`, 8: `Vm is membrane potential -- integrates Inet current over time`, 9: `VmDend is dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking`, 10: `ISI is current inter-spike-interval -- counts up since last spike. Starts at -1 when initialized.`, 11: `ISIAvg is average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate. Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.`, 12: `Ext is external input: drives activation of unit from outside influences (e.g., sensory input)`, 13: `Target is the target value: drives learning to produce this activation value`, 14: `CaSpkM is spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5). Simulates a calmodulin (CaM) like signal at the most abstract level.`, 15: `CaSpkP is continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.`, 16: `CaSpkD is continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.`, 17: `CaSpkPM is minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.`, 18: `CaLrn is recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component). This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1). This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best. The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales.`, 19: `NrnCaM is integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.`, 20: `NrnCaP is cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.`, 21: `NrnCaD is cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.`, 22: `CaDiff is difference between CaP - CaD -- this is the error signal that drives error-driven learning.`, 23: `RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).`, 24: `GnmdaSyn is integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant`, 25: `Gnmda is net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`, 26: `GnmdaLrn is learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning`, 27: `GnmdaMaint is net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`, 28: `NmdaCa is NMDA calcium computed from GnmdaLrn, drives learning via CaM`, 29: `Gvgcc is conductance (via Ca) for VGCC voltage gated calcium channels`, 30: `VgccM is activation gate of VGCC channels`, 31: `VgccH inactivation gate of VGCC channels`, 32: `VgccCa is instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc`, 33: `VgccCaInt time-integrated VGCC calcium flux -- this is actually what drives learning`, 34: `Burst is 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers`, 35: `BurstPrv is previous Burst bursting activation from prior time step -- used for context-based learning`, 36: `CtxtGe is context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`, 37: `CtxtGeRaw is raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`, 38: `CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.`, 39: `GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.`, 40: `GABAB is GABA-B / GIRK activation -- time-integrated value with rise and decay time constants`, 41: `GABABx is GABA-B / GIRK internal drive variable -- gets the raw activation and decays`, 42: `Gak is conductance of A-type K potassium channels`, 43: `SSGi is SST+ somatostatin positive slow spiking inhibition`, 44: `SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)`, 45: `GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick), which produces accommodation / adaptation of firing`, 46: `GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack), which produces accommodation / adaptation of firing`, 47: `Gkir is the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials. Can be modulated by DA.`, 48: `KirM is the Kir potassium (K) inwardly rectifying gating value`, 49: `Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.`, 50: `SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold`, 51: `SKCaR released amount of intracellular calcium, from SKCaIn, as a function of spiking events. this can bind to SKCa channels and drive K currents.`, 52: `SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.`, 53: `Gmahp is medium time scale AHP conductance`, 54: `MahpN is accumulating voltage-gated gating value for the medium time scale AHP`, 55: `Gsahp is slow time scale AHP conductance`, 56: `SahpCa is slowly accumulating calcium value that drives the slow AHP`, 57: `SahpN is the sAHP gating value`, 58: `ActM is ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.`, 59: `ActP is ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.`, 60: `SpkSt1 is the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function. Used for example in hippocampus for CA3, CA1 learning`, 61: `SpkSt2 is the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function. Used for example in hippocampus for CA3, CA1 learning`, 62: `SpkMax is maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating. Also useful for visualization of peak activity of neurons.`, 63: `SpkMaxCa is Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover. This is the input to SpkMax`, 64: `SpkBin has aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently`, 65: ``, 66: ``, 67: ``, 68: ``, 69: ``, 70: ``, 71: ``, 72: `SpkPrv is final CaSpkD activation state at end of previous theta cycle. used for specialized learning mechanisms that operate on delayed sending activations.`, 73: `GeNoise is integrated noise excitatory conductance, added into Ge`, 74: `GeNoiseP is accumulating poisson probability factor for driving excitatory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda as function of noise firing rate.`, 75: `GiNoise is integrated noise inhibotyr conductance, added into Gi`, 76: `GiNoiseP is accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda as a function of noise firing rate.`, 77: `GeExt is extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc`, 78: `GeRaw is raw excitatory conductance (net input) received from senders = current raw spiking drive`, 79: `GeSyn is time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E`, 80: `GiRaw is raw inhibitory conductance (net input) received from senders = current raw spiking drive`, 81: `GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I. This is added with computed FFFB inhibition to get the full inhibition in Gi`, 82: `GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive`, 83: `GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity`, 84: `GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive`, 85: `GModRaw is raw modulatory conductance, received from GType = ModulatoryG pathways`, 86: `GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG pathways`, 87: `SMaintP is accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons. multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor`, 88: `GMaintRaw is raw maintenance conductance, received from GType = MaintG pathways`, 89: `GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.`, 90: `NrnFlags are bit flags for binary state variables, which are converted to / from uint32. These need to be in Vars because they can be differential per data (for ext inputs) and are writable (indexes are read only).`, 93: ``}
+
+var _NeuronVarsMap = map[NeuronVars]string{0: `Spike`, 1: `Spiked`, 2: `Act`, 3: `ActInt`, 4: `Ge`, 5: `Gi`, 6: `Gk`, 7: `Inet`, 8: `Vm`, 9: `VmDend`, 10: `ISI`, 11: `ISIAvg`, 12: `Ext`, 13: `Target`, 14: `CaSpkM`, 15: `CaSpkP`, 16: `CaSpkD`, 17: `CaSpkPM`, 18: `CaLrn`, 19: `NrnCaM`, 20: `NrnCaP`, 21: `NrnCaD`, 22: `CaDiff`, 23: `RLRate`, 24: `GnmdaSyn`, 25: `Gnmda`, 26: `GnmdaLrn`, 27: `GnmdaMaint`, 28: `NmdaCa`, 29: `Gvgcc`, 30: `VgccM`, 31: `VgccH`, 32: `VgccCa`, 33: `VgccCaInt`, 34: `Burst`, 35: `BurstPrv`, 36: `CtxtGe`, 37: `CtxtGeRaw`, 38: `CtxtGeOrig`, 39: `GgabaB`, 40: `GABAB`, 41: `GABABx`, 42: `Gak`, 43: `SSGi`, 44: `SSGiDend`, 45: `GknaMed`, 46: `GknaSlow`, 47: `Gkir`, 48: `KirM`, 49: `Gsk`, 50: `SKCaIn`, 51: `SKCaR`, 52: `SKCaM`, 53: `Gmahp`, 54: `MahpN`, 55: `Gsahp`, 56: `SahpCa`, 57: `SahpN`, 58: `ActM`, 59: `ActP`, 60: `SpkSt1`, 61: `SpkSt2`, 62: `SpkMax`, 63: `SpkMaxCa`, 64: `SpkBin0`, 65: `SpkBin1`, 66: `SpkBin2`, 67: `SpkBin3`, 68: `SpkBin4`, 69: `SpkBin5`, 70: `SpkBin6`, 71: `SpkBin7`, 72: `SpkPrv`, 73: `GeNoise`, 74: `GeNoiseP`, 75: `GiNoise`, 76: `GiNoiseP`, 77: `GeExt`, 78: `GeRaw`, 79: `GeSyn`, 80: `GiRaw`, 81: `GiSyn`, 82: `GeInt`, 83: `GeIntNorm`, 84: `GiInt`, 85: `GModRaw`, 86: `GModSyn`, 87: `SMaintP`, 88: `GMaintRaw`, 89: `GMaintSyn`, 90: `NrnFlags`, 93: `NeuronVarsN`}
+
+// String returns the string representation of this NeuronVars value.
+func (i NeuronVars) String() string { return enums.String(i, _NeuronVarsMap) }
+
+// SetString sets the NeuronVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *NeuronVars) SetString(s string) error {
+	return enums.SetString(i, s, _NeuronVarsValueMap, "NeuronVars")
+}
+
+// Int64 returns the NeuronVars value as an int64.
+func (i NeuronVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the NeuronVars value from an int64.
+func (i *NeuronVars) SetInt64(in int64) { *i = NeuronVars(in) }
+
+// Desc returns the description of the NeuronVars value.
+func (i NeuronVars) Desc() string { return enums.Desc(i, _NeuronVarsDescMap) }
+
+// NeuronVarsValues returns all possible values for the type NeuronVars.
+func NeuronVarsValues() []NeuronVars { return _NeuronVarsValues }
+
+// Values returns all possible values for the type NeuronVars.
+func (i NeuronVars) Values() []enums.Enum { return enums.Values(_NeuronVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i NeuronVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *NeuronVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "NeuronVars")
+}
+
+var _NeuronAvgVarsValues = []NeuronAvgVars{0, 1, 2, 3, 4, 5, 6, 9}
+
+// NeuronAvgVarsN is the highest valid value for type NeuronAvgVars, plus one.
+const NeuronAvgVarsN NeuronAvgVars = 10
+
+var _NeuronAvgVarsValueMap = map[string]NeuronAvgVars{`ActAvg`: 0, `AvgPct`: 1, `TrgAvg`: 2, `DTrgAvg`: 3, `AvgDif`: 4, `GeBase`: 5, `GiBase`: 6, `NeuronAvgVarsN`: 9}
+
+var _NeuronAvgVarsDescMap = map[NeuronAvgVars]string{0: `ActAvg is average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau). Useful for finding hog units and seeing overall distribution of activation.`, 1: `AvgPct is ActAvg as a proportion of overall layer activation. This is used for synaptic scaling to match TrgAvg activation, updated at SlowInterval intervals.`, 2: `TrgAvg is neuron&#39;s target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct.`, 3: `DTrgAvg is change in neuron&#39;s target average activation as a result of unit-wise error gradient. Acts like a bias weight. MPI needs to share these across processors.`, 4: `AvgDif is AvgPct - TrgAvg, i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling. Updated at SlowInterval intervals.`, 5: `GeBase is baseline level of Ge, added to GeRaw, for intrinsic excitability.`, 6: `GiBase is baseline level of Gi, added to GiRaw, for intrinsic excitability.`, 9: ``}
+
+var _NeuronAvgVarsMap = map[NeuronAvgVars]string{0: `ActAvg`, 1: `AvgPct`, 2: `TrgAvg`, 3: `DTrgAvg`, 4: `AvgDif`, 5: `GeBase`, 6: `GiBase`, 9: `NeuronAvgVarsN`}
+
+// String returns the string representation of this NeuronAvgVars value.
+func (i NeuronAvgVars) String() string { return enums.String(i, _NeuronAvgVarsMap) }
+
+// SetString sets the NeuronAvgVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *NeuronAvgVars) SetString(s string) error {
+	return enums.SetString(i, s, _NeuronAvgVarsValueMap, "NeuronAvgVars")
+}
+
+// Int64 returns the NeuronAvgVars value as an int64.
+func (i NeuronAvgVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the NeuronAvgVars value from an int64.
+func (i *NeuronAvgVars) SetInt64(in int64) { *i = NeuronAvgVars(in) }
+
+// Desc returns the description of the NeuronAvgVars value.
+func (i NeuronAvgVars) Desc() string { return enums.Desc(i, _NeuronAvgVarsDescMap) }
+
+// NeuronAvgVarsValues returns all possible values for the type NeuronAvgVars.
+func NeuronAvgVarsValues() []NeuronAvgVars { return _NeuronAvgVarsValues }
+
+// Values returns all possible values for the type NeuronAvgVars.
+func (i NeuronAvgVars) Values() []enums.Enum { return enums.Values(_NeuronAvgVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i NeuronAvgVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *NeuronAvgVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "NeuronAvgVars")
+}
+
+var _NeuronIndexVarsValues = []NeuronIndexVars{0, 1, 2, 5}
+
+// NeuronIndexVarsN is the highest valid value for type NeuronIndexVars, plus one.
+const NeuronIndexVarsN NeuronIndexVars = 6
+
+var _NeuronIndexVarsValueMap = map[string]NeuronIndexVars{`NrnNeurIndex`: 0, `NrnLayIndex`: 1, `NrnSubPool`: 2, `NeuronIndexVarsN`: 5}
+
+var _NeuronIndexVarsDescMap = map[NeuronIndexVars]string{0: `NrnNeurIndex is the index of this neuron within its owning layer.`, 1: `NrnLayIndex is the index of the layer that this neuron belongs to, needed for neuron-level parallel code.`, 2: `NrnSubPool is the index of the sub-level inhibitory pool for this neuron (only for 4D shapes, the pool (unit-group / hypercolumn) structure level). Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).`, 5: ``}
+
+var _NeuronIndexVarsMap = map[NeuronIndexVars]string{0: `NrnNeurIndex`, 1: `NrnLayIndex`, 2: `NrnSubPool`, 5: `NeuronIndexVarsN`}
+
+// String returns the string representation of this NeuronIndexVars value.
+func (i NeuronIndexVars) String() string { return enums.String(i, _NeuronIndexVarsMap) }
+
+// SetString sets the NeuronIndexVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *NeuronIndexVars) SetString(s string) error {
+	return enums.SetString(i, s, _NeuronIndexVarsValueMap, "NeuronIndexVars")
+}
+
+// Int64 returns the NeuronIndexVars value as an int64.
+func (i NeuronIndexVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the NeuronIndexVars value from an int64.
+func (i *NeuronIndexVars) SetInt64(in int64) { *i = NeuronIndexVars(in) }
+
+// Desc returns the description of the NeuronIndexVars value.
+func (i NeuronIndexVars) Desc() string { return enums.Desc(i, _NeuronIndexVarsDescMap) }
+
+// NeuronIndexVarsValues returns all possible values for the type NeuronIndexVars.
+func NeuronIndexVarsValues() []NeuronIndexVars { return _NeuronIndexVarsValues }
+
+// Values returns all possible values for the type NeuronIndexVars.
+func (i NeuronIndexVars) Values() []enums.Enum { return enums.Values(_NeuronIndexVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i NeuronIndexVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *NeuronIndexVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "NeuronIndexVars")
+}
+
+var _PathTypesValues = []PathTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 21}
 
 // PathTypesN is the highest valid value for type PathTypes, plus one.
-const PathTypesN PathTypes = 12
+const PathTypesN PathTypes = 22
 
-var _PathTypesValueMap = map[string]PathTypes{`ForwardPath`: 0, `BackPath`: 1, `LateralPath`: 2, `InhibPath`: 3, `CTCtxtPath`: 4, `RWPath`: 5, `TDPredPath`: 6, `BLAPath`: 7, `HipPath`: 8, `VSPatchPath`: 9, `VSMatrixPath`: 10, `DSMatrixPath`: 11}
+var _PathTypesValueMap = map[string]PathTypes{`ForwardPath`: 0, `BackPath`: 1, `LateralPath`: 2, `InhibPath`: 3, `CTCtxtPath`: 4, `RWPath`: 5, `TDPredPath`: 6, `BLAPath`: 7, `HipPath`: 8, `VSPatchPath`: 9, `VSMatrixPath`: 10, `DSMatrixPath`: 11, `PathTypesN`: 21}
 
-var _PathTypesDescMap = map[PathTypes]string{0: `Forward is a feedforward, bottom-up pathway from sensory inputs to higher layers`, 1: `Back is a feedback, top-down pathway from higher layers back to lower layers`, 2: `Lateral is a lateral pathway within the same layer / area`, 3: `Inhib is an inhibitory pathway that drives inhibitory synaptic conductances instead of the default excitatory ones.`, 4: `CTCtxt are pathways from Superficial layers to CT layers that send Burst activations drive updating of CtxtGe excitatory conductance, at end of plus (51B Bursting) phase. Biologically, this pathway comes from the PT layer 5IB neurons, but it is simpler to use the Super neurons directly, and PT are optional for most network types. These pathways also use a special learning rule that takes into account the temporal delays in the activation states. Can also add self context from CT for deeper temporal context.`, 5: `RWPath does dopamine-modulated learning for reward prediction: Da * Send.CaSpkP (integrated current spiking activity). Uses RLPredPath parameters. Use in RWPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully. Lower lrate applies for opposite cases. Weights are positive-only.`, 6: `TDPredPath does dopamine-modulated learning for reward prediction: DWt = Da * Send.SpkPrv (activity on *previous* timestep) Uses RLPredPath parameters. Use in TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully. Lower lrate applies for opposite cases. Weights are positive-only.`, 7: `BLAPath implements the Rubicon BLA learning rule: dW = ACh * X_t-1 * (Y_t - Y_t-1) The recv delta is across trials, where the US should activate on trial boundary, to enable sufficient time for gating through to OFC, so BLA initially learns based on US present - US absent. It can also learn based on CS onset if there is a prior CS that predicts that.`, 8: ``, 9: `VSPatchPath implements the VSPatch learning rule: dW = ACh * DA * X * Y where DA is D1 vs. D2 modulated DA level, X = sending activity factor, Y = receiving activity factor, and ACh provides overall modulation.`, 10: `VSMatrixPath is for ventral striatum matrix (SPN / MSN) neurons supporting trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`, 11: `DSMatrixPath is for dorsal striatum matrix (SPN / MSN) neurons supporting trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`}
+var _PathTypesDescMap = map[PathTypes]string{0: `Forward is a feedforward, bottom-up pathway from sensory inputs to higher layers`, 1: `Back is a feedback, top-down pathway from higher layers back to lower layers`, 2: `Lateral is a lateral pathway within the same layer / area`, 3: `Inhib is an inhibitory pathway that drives inhibitory synaptic conductances instead of the default excitatory ones.`, 4: `CTCtxt are pathways from Superficial layers to CT layers that send Burst activations drive updating of CtxtGe excitatory conductance, at end of plus (51B Bursting) phase. Biologically, this pathway comes from the PT layer 5IB neurons, but it is simpler to use the Super neurons directly, and PT are optional for most network types. These pathways also use a special learning rule that takes into account the temporal delays in the activation states. Can also add self context from CT for deeper temporal context.`, 5: `RWPath does dopamine-modulated learning for reward prediction: Da * Send.CaSpkP (integrated current spiking activity). Uses RLPredPath parameters. Use in RWPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully. Lower lrate applies for opposite cases. Weights are positive-only.`, 6: `TDPredPath does dopamine-modulated learning for reward prediction: DWt = Da * Send.SpkPrv (activity on *previous* timestep) Uses RLPredPath parameters. Use in TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully. Lower lrate applies for opposite cases. Weights are positive-only.`, 7: `BLAPath implements the Rubicon BLA learning rule: dW = ACh * X_t-1 * (Y_t - Y_t-1) The recv delta is across trials, where the US should activate on trial boundary, to enable sufficient time for gating through to OFC, so BLA initially learns based on US present - US absent. It can also learn based on CS onset if there is a prior CS that predicts that.`, 8: ``, 9: `VSPatchPath implements the VSPatch learning rule: dW = ACh * DA * X * Y where DA is D1 vs. D2 modulated DA level, X = sending activity factor, Y = receiving activity factor, and ACh provides overall modulation.`, 10: `VSMatrixPath is for ventral striatum matrix (SPN / MSN) neurons supporting trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`, 11: `DSMatrixPath is for dorsal striatum matrix (SPN / MSN) neurons supporting trace-based learning, where an initial trace of synaptic co-activity is formed, and then modulated by subsequent phasic dopamine &amp; ACh when an outcome occurs. This bridges the temporal gap between gating activity and subsequent outcomes, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level (from CINs in biology).`, 21: ``}
 
-var _PathTypesMap = map[PathTypes]string{0: `ForwardPath`, 1: `BackPath`, 2: `LateralPath`, 3: `InhibPath`, 4: `CTCtxtPath`, 5: `RWPath`, 6: `TDPredPath`, 7: `BLAPath`, 8: `HipPath`, 9: `VSPatchPath`, 10: `VSMatrixPath`, 11: `DSMatrixPath`}
+var _PathTypesMap = map[PathTypes]string{0: `ForwardPath`, 1: `BackPath`, 2: `LateralPath`, 3: `InhibPath`, 4: `CTCtxtPath`, 5: `RWPath`, 6: `TDPredPath`, 7: `BLAPath`, 8: `HipPath`, 9: `VSPatchPath`, 10: `VSMatrixPath`, 11: `DSMatrixPath`, 21: `PathTypesN`}
 
 // String returns the string representation of this PathTypes value.
 func (i PathTypes) String() string { return enums.String(i, _PathTypesMap) }
@@ -178,16 +479,16 @@ func (i *PathTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "PathTypes")
 }
 
-var _GPLayerTypesValues = []GPLayerTypes{0, 1, 2}
+var _GPLayerTypesValues = []GPLayerTypes{0, 1, 2, 12}
 
 // GPLayerTypesN is the highest valid value for type GPLayerTypes, plus one.
-const GPLayerTypesN GPLayerTypes = 3
+const GPLayerTypesN GPLayerTypes = 13
 
-var _GPLayerTypesValueMap = map[string]GPLayerTypes{`GPePr`: 0, `GPeAk`: 1, `GPi`: 2}
+var _GPLayerTypesValueMap = map[string]GPLayerTypes{`GPePr`: 0, `GPeAk`: 1, `GPi`: 2, `GPLayerTypesN`: 12}
 
-var _GPLayerTypesDescMap = map[GPLayerTypes]string{0: `GPePr is the set of prototypical GPe neurons, mediating classical NoGo`, 1: `GPeAk is arkypallidal layer of GPe neurons, receiving inhibition from GPePr and projecting inhibition to Mtx`, 2: `GPi is the inner globus pallidus, functionally equivalent to SNr, receiving from MtxGo and GPePr, and sending inhibition to VThal`}
+var _GPLayerTypesDescMap = map[GPLayerTypes]string{0: `GPePr is the set of prototypical GPe neurons, mediating classical NoGo`, 1: `GPeAk is arkypallidal layer of GPe neurons, receiving inhibition from GPePr and projecting inhibition to Mtx`, 2: `GPi is the inner globus pallidus, functionally equivalent to SNr, receiving from MtxGo and GPePr, and sending inhibition to VThal`, 12: ``}
 
-var _GPLayerTypesMap = map[GPLayerTypes]string{0: `GPePr`, 1: `GPeAk`, 2: `GPi`}
+var _GPLayerTypesMap = map[GPLayerTypes]string{0: `GPePr`, 1: `GPeAk`, 2: `GPi`, 12: `GPLayerTypesN`}
 
 // String returns the string representation of this GPLayerTypes value.
 func (i GPLayerTypes) String() string { return enums.String(i, _GPLayerTypesMap) }
@@ -219,4 +520,133 @@ func (i GPLayerTypes) MarshalText() ([]byte, error) { return []byte(i.String()),
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *GPLayerTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "GPLayerTypes")
+}
+
+var _SynapseVarsValues = []SynapseVars{0, 1, 2, 3, 4}
+
+// SynapseVarsN is the highest valid value for type SynapseVars, plus one.
+const SynapseVarsN SynapseVars = 5
+
+var _SynapseVarsValueMap = map[string]SynapseVars{`Wt`: 0, `LWt`: 1, `SWt`: 2, `DWt`: 3, `DSWt`: 4}
+
+var _SynapseVarsDescMap = map[SynapseVars]string{0: `Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse. Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.`, 1: `LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec. Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density. Initially all LWt are .5, which gives 1 from WtSig function.`, 2: `SWt is slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine. SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn. Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.`, 3: `DWt is delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.`, 4: `DSWt is change in SWt slow synaptic weight -- accumulates DWt`}
+
+var _SynapseVarsMap = map[SynapseVars]string{0: `Wt`, 1: `LWt`, 2: `SWt`, 3: `DWt`, 4: `DSWt`}
+
+// String returns the string representation of this SynapseVars value.
+func (i SynapseVars) String() string { return enums.String(i, _SynapseVarsMap) }
+
+// SetString sets the SynapseVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *SynapseVars) SetString(s string) error {
+	return enums.SetString(i, s, _SynapseVarsValueMap, "SynapseVars")
+}
+
+// Int64 returns the SynapseVars value as an int64.
+func (i SynapseVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the SynapseVars value from an int64.
+func (i *SynapseVars) SetInt64(in int64) { *i = SynapseVars(in) }
+
+// Desc returns the description of the SynapseVars value.
+func (i SynapseVars) Desc() string { return enums.Desc(i, _SynapseVarsDescMap) }
+
+// SynapseVarsValues returns all possible values for the type SynapseVars.
+func SynapseVarsValues() []SynapseVars { return _SynapseVarsValues }
+
+// Values returns all possible values for the type SynapseVars.
+func (i SynapseVars) Values() []enums.Enum { return enums.Values(_SynapseVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i SynapseVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *SynapseVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "SynapseVars")
+}
+
+var _SynapseTraceVarsValues = []SynapseTraceVars{0, 1, 2}
+
+// SynapseTraceVarsN is the highest valid value for type SynapseTraceVars, plus one.
+const SynapseTraceVarsN SynapseTraceVars = 3
+
+var _SynapseTraceVarsValueMap = map[string]SynapseTraceVars{`Tr`: 0, `DTr`: 1, `DiDWt`: 2}
+
+var _SynapseTraceVarsDescMap = map[SynapseTraceVars]string{0: `Tr is trace of synaptic activity over time, which is used for credit assignment in learning. In MatrixPath this is a tag that is then updated later when US occurs.`, 1: `DTr is delta (change in) Tr trace of synaptic activity over time.`, 2: `DiDWt is delta weight for each data parallel index (Di). This is directly computed from the Ca values (in cortical version) and then aggregated into the overall DWt (which may be further integrated across MPI nodes), which then drives changes in Wt values.`}
+
+var _SynapseTraceVarsMap = map[SynapseTraceVars]string{0: `Tr`, 1: `DTr`, 2: `DiDWt`}
+
+// String returns the string representation of this SynapseTraceVars value.
+func (i SynapseTraceVars) String() string { return enums.String(i, _SynapseTraceVarsMap) }
+
+// SetString sets the SynapseTraceVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *SynapseTraceVars) SetString(s string) error {
+	return enums.SetString(i, s, _SynapseTraceVarsValueMap, "SynapseTraceVars")
+}
+
+// Int64 returns the SynapseTraceVars value as an int64.
+func (i SynapseTraceVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the SynapseTraceVars value from an int64.
+func (i *SynapseTraceVars) SetInt64(in int64) { *i = SynapseTraceVars(in) }
+
+// Desc returns the description of the SynapseTraceVars value.
+func (i SynapseTraceVars) Desc() string { return enums.Desc(i, _SynapseTraceVarsDescMap) }
+
+// SynapseTraceVarsValues returns all possible values for the type SynapseTraceVars.
+func SynapseTraceVarsValues() []SynapseTraceVars { return _SynapseTraceVarsValues }
+
+// Values returns all possible values for the type SynapseTraceVars.
+func (i SynapseTraceVars) Values() []enums.Enum { return enums.Values(_SynapseTraceVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i SynapseTraceVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *SynapseTraceVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "SynapseTraceVars")
+}
+
+var _SynapseIndexVarsValues = []SynapseIndexVars{0, 1, 2}
+
+// SynapseIndexVarsN is the highest valid value for type SynapseIndexVars, plus one.
+const SynapseIndexVarsN SynapseIndexVars = 3
+
+var _SynapseIndexVarsValueMap = map[string]SynapseIndexVars{`SynRecvIndex`: 0, `SynSendIndex`: 1, `SynPathIndex`: 2}
+
+var _SynapseIndexVarsDescMap = map[SynapseIndexVars]string{0: `SynRecvIndex is receiving neuron index in network&#39;s global list of neurons`, 1: `SynSendIndex is sending neuron index in network&#39;s global list of neurons`, 2: `SynPathIndex is pathway index in global list of pathways organized as [Layers][RecvPaths]`}
+
+var _SynapseIndexVarsMap = map[SynapseIndexVars]string{0: `SynRecvIndex`, 1: `SynSendIndex`, 2: `SynPathIndex`}
+
+// String returns the string representation of this SynapseIndexVars value.
+func (i SynapseIndexVars) String() string { return enums.String(i, _SynapseIndexVarsMap) }
+
+// SetString sets the SynapseIndexVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *SynapseIndexVars) SetString(s string) error {
+	return enums.SetString(i, s, _SynapseIndexVarsValueMap, "SynapseIndexVars")
+}
+
+// Int64 returns the SynapseIndexVars value as an int64.
+func (i SynapseIndexVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the SynapseIndexVars value from an int64.
+func (i *SynapseIndexVars) SetInt64(in int64) { *i = SynapseIndexVars(in) }
+
+// Desc returns the description of the SynapseIndexVars value.
+func (i SynapseIndexVars) Desc() string { return enums.Desc(i, _SynapseIndexVarsDescMap) }
+
+// SynapseIndexVarsValues returns all possible values for the type SynapseIndexVars.
+func SynapseIndexVarsValues() []SynapseIndexVars { return _SynapseIndexVarsValues }
+
+// Values returns all possible values for the type SynapseIndexVars.
+func (i SynapseIndexVars) Values() []enums.Enum { return enums.Values(_SynapseIndexVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i SynapseIndexVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *SynapseIndexVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "SynapseIndexVars")
 }

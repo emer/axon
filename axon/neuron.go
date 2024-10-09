@@ -11,6 +11,7 @@ import (
 	"math"
 	"strings"
 
+	_ "cogentcore.org/core/tree"
 	"github.com/emer/emergent/v2/emer"
 )
 

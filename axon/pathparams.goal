@@ -15,7 +15,7 @@ import (
 
 const (
 	// StartOff is the starting offset.
-	StartOff int = iota
+	StartOff int32 = iota
 
 	// Number of items.
 	Nitems
@@ -230,15 +230,15 @@ func (pj *PathParams) SetFixedWts() {
 // SynRecvLayerIndex converts the Synapse RecvIndex of recv neuron's index
 // in network level global list of all neurons to receiving
 // layer-specific index.
-func (pj *PathParams) SynRecvLayerIndex(ctx *Context, syni uint32) uint32 {
-	return pj.Indexes.RecvNIndexToLayIndex(SynI(ctx, syni, SynRecvIndex))
+func (pj *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
+	return pj.Indexes.RecvNIndexToLayIndex(SynapseIxs[SynRecvIndex, syni])
 }
 
 // SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
-func (pj *PathParams) SynSendLayerIndex(ctx *Context, syni uint32) uint32 {
-	return pj.Indexes.SendNIndexToLayIndex(SynI(ctx, syni, SynSendIndex))
+func (pj *PathParams) SynSendLayerIndex(syni uint32) uint32 {
+	return pj.Indexes.SendNIndexToLayIndex(SynapseIxs[SynSendIndex, syni])
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -451,7 +451,7 @@ func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
 		}
-		tr := SynCaV(ctx, syni, di, Tr)
+		tr := SynapseTraces[Tr, syni, di]
 		ustr := pj.BLA.USTrace
 		tr = ustr*Neurons[Burst, si, di] + (1.0-ustr)*tr
 		delta := Neurons[CaSpkP, ri, di] - Neurons[SpkPrv, ri, di]
@@ -464,7 +464,7 @@ func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		dtr := ach * Neurons[Burst, si, di]
 		SynapseTraces[DTr, syni, di] = dtr
-		tr := pj.Learn.Trace.TrFromCa(SynCaV(ctx, syni, di, Tr), dtr)
+		tr := pj.Learn.Trace.TrFromCa(SynapseTraces[Tr, syni, di], dtr)
 		SynapseTraces[Tr, syni, di] = tr
 	} else {
 		SynapseTraces[DTr, syni, di] = 0.0
@@ -486,7 +486,7 @@ func (pj *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, ri, NrnNeurIndex) == 0 {
+	if NeuronIxs[NrnNeurIndex, ri] == 0 {
 		if Neurons[Ge, ri, di] > Neurons[Act, ri, di] && da > 0 { // clipped at top, saturate up
 			da = 0
 		}
@@ -521,7 +521,7 @@ func (pj *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	ni := NrnI(ctx, ri, NrnNeurIndex)
+	ni := NeuronIxs[NrnNeurIndex, ri]
 	if ni == 0 {
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
@@ -558,7 +558,7 @@ func (pj *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		dtr += ach * (pj.Matrix.Credit * sact * rminus)
 	}
 	if hasRew {
-		tr := SynCaV(ctx, syni, di, Tr)
+		tr := SynapseTraces[Tr, syni, di]
 		if pj.Matrix.VSRewLearn.IsTrue() {
 			tr += (1 - GlobalScalars[GvGoalMaint, di]) * dtr
 		}
@@ -580,7 +580,7 @@ func (pj *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 
 	rlr := Neurons[RLRate, ri, di]
 	if GlobalScalars[GvHasRew, di] > 0 { // US time -- use DA and current recv activity
-		tr := SynCaV(ctx, syni, di, Tr)
+		tr := SynapseTraces[Tr, syni, di]
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SynapseTraces[DiDWt, syni, di] = dwt
 		SynapseTraces[Tr, syni, di] = 0.0
@@ -620,7 +620,7 @@ func (pj *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPo
 func (pj *PathParams) DWtFromDiDWtSyn(ctx *Context, syni uint32) {
 	dwt := float32(0)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-		dwt += SynCaV(ctx, syni, di, DiDWt)
+		dwt += SynapseTraces[DiDWt, syni, di]
 	}
 	Synapses[DWt, syni] += dwt
 }

@@ -30,7 +30,7 @@ import (
 // all data parallel values.  The current Context.NData should be set
 // properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
-	nt.Ctx.NetIndexes.NData = ctx.NetIndexes.NData
+	nt.Context().NetIndexes.NData = ctx.NetIndexes.NData
 	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
 	//
 	//		nt.GPU.RunNewState()
@@ -267,7 +267,7 @@ func (nt *Network) InitWeights(ctx *Context) { //types:add
 // includes: paths.PoolTile paths.Circle.
 // call before InitWeights if using Topo wts
 func (nt *Network) InitTopoSWts() {
-	ctx := &nt.Ctx
+	ctx := nt.Context()
 	swts := &tensor.Float32{}
 	for _, ly := range nt.Layers {
 		if ly.Off {
@@ -597,8 +597,8 @@ func (nt *Network) SizeReport(detail bool) string {
 	varBytes := 4
 	synVarBytes := 4
 	maxData := int(nt.MaxData)
-	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NrnIndexesN)*varBytes
-	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseTraceVarsN)*maxData*varBytes + int(SynIndexesN)*varBytes
+	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
+	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseTraceVarsN)*maxData*varBytes + int(SynapseIndexVarsN)*varBytes
 
 	globalProjIndexes := 0
 
@@ -629,10 +629,10 @@ func (nt *Network) SizeReport(detail bool) string {
 		}
 	}
 
-	nrnMem := (len(nt.Neurons) + len(nt.NeuronAvgs) + len(nt.NeuronIxs)) * varBytes
-	synIndexMem := len(nt.SynapseIxs) * varBytes
-	synWtMem := (len(nt.Synapses)) * synVarBytes
-	synCaMem := (len(nt.SynapseCas)) * synVarBytes
+	nrnMem := (nt.Neurons.Len() + nt.NeuronAvgs.Len() + nt.NeuronIxs.Len()) * varBytes
+	synIndexMem := nt.SynapseIxs.Len() * varBytes
+	synWtMem := nt.Synapses.Len() * synVarBytes
+	synCaMem := nt.SynapseTraces.Len() * synVarBytes
 
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynCa: %v\n",
 		nt.Name, nt.NNeurons, (datasize.Size)(nrnMem).String(), nt.NSyns,

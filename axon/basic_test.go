@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build multinet
-
 package axon
 
 import (
@@ -1480,7 +1478,7 @@ func TestSendGatherIndexes(t *testing.T) {
 					scon := pj.SendCon[ni-pj.Send.NeurStIndex]
 					for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 						syni := pj.SynStIndex + syi
-						recvIndex := pj.Params.SynRecvLayerIndex(ctx, syni) // note: layer-specific is ok here
+						recvIndex := pj.Params.SynRecvLayerIndex(syni) // note: layer-specific is ok here
 						ri := SynI(ctx, syni, SynRecvIndex)
 						bio := pj.Params.Indexes.GBufSt + pjcom.WriteIndexOff(recvIndex, di, wrOff, pj.Params.Indexes.RecvNeurN, nData)
 						bi := pj.Params.Indexes.GBufSt + pjcom.WriteIndex(recvIndex, di, int32(cyc), pj.Params.Indexes.RecvNeurN, nData)

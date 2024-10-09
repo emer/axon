@@ -953,9 +953,9 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, pi int32, pl *Pool, vals *LayerValues) {
 	val := pl.AvgMax.CaSpkD.Cycle.Avg
 	if ly.Learn.NeuroMod.DAMod == D1Mod {
-		SetGlbUSposV(ctx, di, GvVSPatchD1, uint32(pi-1), val)
+		GlobalVectors.Set(val, int(GvVSPatchD1), int(uint32(pi-1)), int(di))
 	} else {
-		SetGlbUSposV(ctx, di, GvVSPatchD2, uint32(pi-1), val)
+		GlobalVectors.Set(val, int(GvVSPatchD2), int(uint32(pi-1)), int(di))
 	}
 }
 

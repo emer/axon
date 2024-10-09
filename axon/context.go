@@ -57,26 +57,6 @@ type NetIndexes struct {
 
 	// total number of .Rubicon Negative USs
 	RubiconNNegUSs uint32 `edit:"-"`
-
-	// offset into GlobalVars for Cost values
-	GvCostOff uint32 `edit:"-"`
-
-	// stride into GlobalVars for Cost values
-	GvCostStride uint32 `edit:"-"`
-
-	// offset into GlobalVars for USneg values
-	GvUSnegOff uint32 `edit:"-"`
-
-	// stride into GlobalVars for USneg values
-	GvUSnegStride uint32 `edit:"-"`
-
-	// offset into GlobalVars for USpos, Drive, VSPatch values values
-	GvUSposOff uint32 `edit:"-"`
-
-	// stride into GlobalVars for USpos, Drive, VSPatch values
-	GvUSposStride uint32 `edit:"-"`
-
-	pad, pad2 uint32
 }
 
 // ValuesIndex returns the global network index for LayerValues
@@ -177,16 +157,14 @@ type Context struct {
 	// synaptic calcium counter, which drives the CaUpT synaptic value to optimize updating of this computationally expensive factor. It is incremented by 1 for each cycle, and reset at the SlowInterval, at which point the synaptic calcium values are all reset.
 	SynCaCtr float32 `edit:"-"`
 
-	pad, pad1 float32
-
-	// indexes and sizes of current network
-	NetIndexes NetIndexes `display:"inline"`
-
 	// RandCtr is the random counter, incremented by maximum number of
 	// possible random numbers generated per cycle, regardless of how
 	// many are actually used. This is shared across all layers so must
 	// encompass all possible param settings.
 	RandCtr uint64
+
+	// indexes and sizes of current network
+	NetIndexes NetIndexes `display:"inline"`
 }
 
 // Defaults sets default values

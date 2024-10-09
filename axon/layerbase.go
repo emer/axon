@@ -298,7 +298,7 @@ func (ly *Layer) BuildPaths(ctx *Context) error {
 
 // Build constructs the layer state, including calling Build on the pathways
 func (ly *Layer) Build() error {
-	ctx := &ly.Network.Ctx[0]
+	ctx := ly.Network.Context()
 	nn := uint32(ly.Shape.Len())
 	if nn == 0 {
 		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Name)
@@ -355,7 +355,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		return math32.NaN()
 	}
 	ni := ly.NeurStIndex + uint32(idx)
-	ctx := &ly.Network.Ctx
+	ctx := ly.Network.Context()
 	nvars := ly.UnitVarNum()
 	if varIndex >= nvars-NNeuronLayerVars {
 		lvi := varIndex - (ly.UnitVarNum() - NNeuronLayerVars)
@@ -372,8 +372,8 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 			pl := ly.SubPool(ctx, ni, uint32(di))
 			return float32(pl.Gated)
 		}
-	} else if varIndex >= NeuronVarsN {
-		return NeuronAvgs.Value(int(varIndex-int(NeuronVarsN)), int(ni))
+	} else if NeuronVars(varIndex) >= NeuronVarsN {
+		return NeuronAvgs.Value(int(NeuronVars(varIndex)-NeuronVarsN), int(ni))
 	} else {
 		return Neurons.Value(int(varIndex), int(ni), int(di))
 	}
@@ -528,7 +528,7 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 	if ly.Off {
 		return nil
 	}
-	ctx := &ly.Network.Ctx[0]
+	ctx := ly.Network.Context()
 	if lw.MetaData != nil {
 		for di := uint32(0); di < ly.MaxData; di++ {
 			vals := &ly.Values[di]

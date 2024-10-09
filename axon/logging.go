@@ -287,7 +287,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.AvgMaxVarByPool(&net.Ctx, "Ge", 0, ctx.Di).Avg)
+					ctx.SetFloat32(ly.AvgMaxVarByPool(net.Context(), "Ge", 0, ctx.Di).Avg)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Act.Avg",
@@ -296,7 +296,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.AvgMaxVarByPool(&net.Ctx, "Act", 0, ctx.Di).Avg)
+					ctx.SetFloat32(ly.AvgMaxVarByPool(net.Context(), "Act", 0, ctx.Di).Avg)
 				}}})
 	}
 }

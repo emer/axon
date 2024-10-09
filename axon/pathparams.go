@@ -17,7 +17,7 @@ import (
 
 const (
 	// StartOff is the starting offset.
-	StartOff int = iota
+	StartOff int32 = iota
 
 	// Number of items.
 	Nitems
@@ -232,15 +232,15 @@ func (pj *PathParams) SetFixedWts() {
 // SynRecvLayerIndex converts the Synapse RecvIndex of recv neuron's index
 // in network level global list of all neurons to receiving
 // layer-specific index.
-func (pj *PathParams) SynRecvLayerIndex(ctx *Context, syni uint32) uint32 {
-	return pj.Indexes.RecvNIndexToLayIndex(SynI(ctx, syni, SynRecvIndex))
+func (pj *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
+	return pj.Indexes.RecvNIndexToLayIndex(SynapseIxs.Value(int(SynRecvIndex), int(syni)))
 }
 
 // SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
-func (pj *PathParams) SynSendLayerIndex(ctx *Context, syni uint32) uint32 {
-	return pj.Indexes.SendNIndexToLayIndex(SynI(ctx, syni, SynSendIndex))
+func (pj *PathParams) SynSendLayerIndex(syni uint32) uint32 {
+	return pj.Indexes.SendNIndexToLayIndex(SynapseIxs.Value(int(SynSendIndex), int(syni)))
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -453,7 +453,7 @@ func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
 		}
-		tr := SynCaV(ctx, syni, di, Tr)
+		tr := SynapseTraces.Value(int(Tr), int(syni), int(di))
 		ustr := pj.BLA.USTrace
 		tr = ustr*Neurons.Value(int(Burst), int(si), int(di)) + (1.0-ustr)*tr
 		delta := Neurons.Value(int(CaSpkP), int(ri), int(di)) - Neurons.Value(int(SpkPrv), int(ri), int(di))
@@ -466,7 +466,7 @@ func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		dtr := ach * Neurons.Value(int(Burst), int(si), int(di))
 		SynapseTraces.Set(dtr, int(DTr), int(syni), int(di))
-		tr := pj.Learn.Trace.TrFromCa(SynCaV(ctx, syni, di, Tr), dtr)
+		tr := pj.Learn.Trace.TrFromCa(SynapseTraces.Value(int(Tr), int(syni), int(di)), dtr)
 		SynapseTraces.Set(tr, int(Tr), int(syni), int(di))
 	} else {
 		SynapseTraces.Set(0.0, int(DTr), int(syni), int(di))
@@ -488,7 +488,7 @@ func (pj *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, ri, NrnNeurIndex) == 0 {
+	if NeuronIxs.Value(int(NrnNeurIndex), int(ri)) == 0 {
 		if Neurons.Value(int(Ge), int(ri), int(di)) > Neurons.Value(int(Act), int(ri), int(di)) && da > 0 { // clipped at top, saturate up
 			da = 0
 		}
@@ -523,7 +523,7 @@ func (pj *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	ni := NrnI(ctx, ri, NrnNeurIndex)
+	ni := NeuronIxs.Value(int(NrnNeurIndex), int(ri))
 	if ni == 0 {
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
@@ -560,7 +560,7 @@ func (pj *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 		dtr += ach * (pj.Matrix.Credit * sact * rminus)
 	}
 	if hasRew {
-		tr := SynCaV(ctx, syni, di, Tr)
+		tr := SynapseTraces.Value(int(Tr), int(syni), int(di))
 		if pj.Matrix.VSRewLearn.IsTrue() {
 			tr += (1 - GlobalScalars.Value(int(GvGoalMaint), int(di))) * dtr
 		}
@@ -582,7 +582,7 @@ func (pj *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 
 	rlr := Neurons.Value(int(RLRate), int(ri), int(di))
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // US time -- use DA and current recv activity
-		tr := SynCaV(ctx, syni, di, Tr)
+		tr := SynapseTraces.Value(int(Tr), int(syni), int(di))
 		dwt := rlr * pj.Learn.LRate.Eff * tr
 		SynapseTraces.Set(dwt, int(DiDWt), int(syni), int(di))
 		SynapseTraces.Set(0.0, int(Tr), int(syni), int(di))
@@ -622,7 +622,7 @@ func (pj *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPo
 func (pj *PathParams) DWtFromDiDWtSyn(ctx *Context, syni uint32) {
 	dwt := float32(0)
 	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-		dwt += SynCaV(ctx, syni, di, DiDWt)
+		dwt += SynapseTraces.Value(int(DiDWt), int(syni), int(di))
 	}
 	Synapses.SetAdd(dwt, int(DWt), int(syni))
 }

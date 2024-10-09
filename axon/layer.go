@@ -24,7 +24,7 @@ import (
 // ni  = absolute whole network neuron index
 
 func (ly *Layer) Defaults() { //types:add
-	ctx := &ly.Network.Ctx
+	ctx := ly.Network.Context()
 	if ly.Params != nil {
 		ly.Params.LayType = ly.Type
 		ly.Params.Defaults()

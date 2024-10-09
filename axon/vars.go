@@ -113,13 +113,14 @@ var (
 	PathGSyns *tensor.Float32
 
 	//	Synapses are the synapse level variables (weights etc).
+	// These do not depend on the data parallel index, unlike [SynapseTraces].
 	// [Vars][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	Synapses *tensor.Float32
 
 	//////////////////// SynapseTraces
 
-	// SynapseTraces are data parallel synaptic variables,
-	// for accumulating learning traces and weight changes per data.
+	// SynapseTraces are synaptic variables that depend on the data
+	// parallel index, for accumulating learning traces and weight changes per data.
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
 	// [Vars][NSyns][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]

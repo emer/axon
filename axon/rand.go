@@ -24,7 +24,7 @@ const (
 // We increment the counter after each cycle, so that we get new random numbers.
 // This whole scheme exists to ensure equal results under different multithreading settings.
 func GetRandomNumber(index uint32, counter uint64, funIndex RandFunIndex) float32 {
-	return slrand.Float32(counter, funIndex, index)
+	return slrand.Float32(counter, uint32(funIndex), index)
 }
 
 //gosl:end
