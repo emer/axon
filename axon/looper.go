@@ -62,15 +62,16 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 	for m, _ := range man.Stacks {
 		cycLoop := man.Stacks[m].Loops[etime.Cycle]
 		cycLoop.Main.Add("Cycle", func() {
-			if man.ModeStack().StepLevel == etime.Cycle {
-				net.GPU.CycleByCycle = true
-			} else {
-				if viewupdt.IsCycleUpdating() {
-					net.GPU.CycleByCycle = true
-				} else {
-					net.GPU.CycleByCycle = false
-				}
-			}
+			// TODO:
+			// if man.ModeStack().StepLevel == etime.Cycle {
+			// 	net.GPU.CycleByCycle = true
+			// } else {
+			// 	if viewupdt.IsCycleUpdating() {
+			// 		net.GPU.CycleByCycle = true
+			// 	} else {
+			// 		net.GPU.CycleByCycle = false
+			// 	}
+			// }
 			net.Cycle(ctx)
 			ctx.CycleInc()
 		})
@@ -80,9 +81,10 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 		ttrl.OnEnd.Add("UpdateWeights", func() {
 			net.DWt(ctx)
 			if viewupdt.IsViewingSynapse() {
-				net.GPU.SyncSynapsesFromGPU()
-				net.GPU.SyncSynCaFromGPU() // note: only time we call this
-				viewupdt.RecordSyns()      // note: critical to update weights here so DWt is visible
+				//TODO:
+				// net.GPU.SyncSynapsesFromGPU()
+				// net.GPU.SyncSynCaFromGPU() // note: only time we call this
+				viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 			}
 			net.WtFromDWt(ctx)
 		})

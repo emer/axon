@@ -7,107 +7,107 @@
 package axon
 
 import (
-"fmt"
-"strings"
+	"fmt"
+	"strings"
 )
 
 //gosl:start
 
 const (
-// Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
-Wt int = iota
+	// Wt is effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
+	Wt int = iota
 
-// LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
-LWt
+	// LWt is rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
+	LWt
 
-// SWt is slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
-SWt
+	// SWt is slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
+	SWt
 
-// DWt is delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
-DWt
+	// DWt is delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
+	DWt
 
-// DSWt is change in SWt slow synaptic weight -- accumulates DWt
-DSWt
+	// DSWt is change in SWt slow synaptic weight -- accumulates DWt
+	DSWt
 
-SynapseVarsN
+	SynapseVarsN
 )
 
 const (
-// Tr is trace of synaptic activity over time, which is used for
-// credit assignment in learning.
-// In MatrixPath this is a tag that is then updated later when US occurs.
-Tr int = iota
+	// Tr is trace of synaptic activity over time, which is used for
+	// credit assignment in learning.
+	// In MatrixPath this is a tag that is then updated later when US occurs.
+	Tr int = iota
 
-// DTr is delta (change in) Tr trace of synaptic activity over time.
-DTr
+	// DTr is delta (change in) Tr trace of synaptic activity over time.
+	DTr
 
-// DiDWt is delta weight for each data parallel index (Di).
-// This is directly computed from the Ca values (in cortical version)
-// and then aggregated into the overall DWt (which may be further
-// integrated across MPI nodes), which then drives changes in Wt values.
-DiDWt
+	// DiDWt is delta weight for each data parallel index (Di).
+	// This is directly computed from the Ca values (in cortical version)
+	// and then aggregated into the overall DWt (which may be further
+	// integrated across MPI nodes), which then drives changes in Wt values.
+	DiDWt
 
-SynapseTraceVarsN
+	SynapseTraceVarsN
 )
 
 const (
-// SynRecvIndex is receiving neuron index in network's global list of neurons
-SynRecvIndex int = iota
+	// SynRecvIndex is receiving neuron index in network's global list of neurons
+	SynRecvIndex int = iota
 
-// SynSendIndex is sending neuron index in network's global list of neurons
-SynSendIndex
+	// SynSendIndex is sending neuron index in network's global list of neurons
+	SynSendIndex
 
-// SynPathIndex is pathway index in global list of pathways organized as [Layers][RecvPaths]
-SynPathIndex
+	// SynPathIndex is pathway index in global list of pathways organized as [Layers][RecvPaths]
+	SynPathIndex
 
-SynIndexesN
+	SynIndexesN
 )
 
 //gosl:end
 
 // SynapseVarProps has all of the display properties for synapse variables, including desc tooltips
-var SynapseVarProps = map[string]string {
-goal.Run("Wt":, `cat:"Wts"`,)
-goal.Run("LWt":, `cat:"Wts"`,)
-goal.Run("SWt":, `cat:"Wts"`,)
-goal.Run("DWt":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("DSWt":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("CaM":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("CaP":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("CaD":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("Tr":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("DTr":, `cat:"Wts" auto-scale:"+"`,)
-goal.Run("DiDWt":, `cat:"Wts" auto-scale:"+"`,)
+var SynapseVarProps = map[string]string{
+	"Wt":    `cat:"Wts"`,
+	"LWt":   `cat:"Wts"`,
+	"SWt":   `cat:"Wts"`,
+	"DWt":   `cat:"Wts" auto-scale:"+"`,
+	"DSWt":  `cat:"Wts" auto-scale:"+"`,
+	"CaM":   `cat:"Wts" auto-scale:"+"`,
+	"CaP":   `cat:"Wts" auto-scale:"+"`,
+	"CaD":   `cat:"Wts" auto-scale:"+"`,
+	"Tr":    `cat:"Wts" auto-scale:"+"`,
+	"DTr":   `cat:"Wts" auto-scale:"+"`,
+	"DiDWt": `cat:"Wts" auto-scale:"+"`,
 }
 
 var (
-SynapseVarNames[]string
-SynapseVarsMap map[string]int
+	SynapseVarNames []string
+	SynapseVarsMap  map[string]int
 )
 
 func init() {
-SynapseVarsMap = make(map[string]int, int(SynapseVarsN) + int(SynapseCaVarsN))
-for i := Wt; i < SynapseVarsN; i++ {
-vnm := i.String()
-SynapseVarNames = append(SynapseVarNames, vnm)
-SynapseVarsMap[vnm] = int(i)
-tag := SynapseVarProps[vnm]
-SynapseVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
-}
-for i := Tr; i < SynapseCaVarsN; i++ {
-vnm := i.String()
-SynapseVarNames = append(SynapseVarNames, vnm)
-SynapseVarsMap[vnm] = int(SynapseVarsN) + int(i)
-tag := SynapseVarProps[vnm]
-SynapseVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
-}
+	SynapseVarsMap = make(map[string]int, int(SynapseVarsN)+int(SynapseCaVarsN))
+	for i := Wt; i < SynapseVarsN; i++ {
+		vnm := i.String()
+		SynapseVarNames = append(SynapseVarNames, vnm)
+		SynapseVarsMap[vnm] = int(i)
+		tag := SynapseVarProps[vnm]
+		SynapseVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
+	}
+	for i := Tr; i < SynapseCaVarsN; i++ {
+		vnm := i.String()
+		SynapseVarNames = append(SynapseVarNames, vnm)
+		SynapseVarsMap[vnm] = int(SynapseVarsN) + int(i)
+		tag := SynapseVarProps[vnm]
+		SynapseVarProps[vnm] = tag + ` doc:"` + strings.ReplaceAll(i.Desc(), "\n", " ") + `"`
+	}
 }
 
 // SynapseVarByName returns the index of the variable in the Synapse, or error
-func SynapseVarByName(varNm string)(int, error) {
-i, ok := SynapseVarsMap[varNm]
-if  ! ok {
-return  - 1, fmt.Errorf("Synapse VarByName: variable name: %s not valid", varNm)
-}
-return i, nil
+func SynapseVarByName(varNm string) (int, error) {
+	i, ok := SynapseVarsMap[varNm]
+	if !ok {
+		return -1, fmt.Errorf("Synapse VarByName: variable name: %s not valid", varNm)
+	}
+	return i, nil
 }

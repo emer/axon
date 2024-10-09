@@ -96,7 +96,7 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 		if Synapses.Value(int(SWt), int(syni)) == 0 {
 			Synapses.Set(wt, int(SWt), int(syni))
 		}
-		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses[SWt, syni]), int(LWt), int(syni))
+		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses.Value(int(SWt), int(syni))), int(LWt), int(syni))
 	}
 	return nil
 }
@@ -214,7 +214,7 @@ func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 	// todo: why is this recv based?  prob important to keep for consistency
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		syIndexes := pt.RecvSynIndexes(lni)
@@ -235,7 +235,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 	smn := pt.Params.SWts.Init.Mean
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		var nmin, nmax int
@@ -270,7 +270,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 				if Synapses.Value(int(SWt), int(syni)) <= pt.Params.SWts.Limit.Max {
 					swt := pt.Params.SWts.ClipSWt(Synapses.Value(int(SWt), int(syni)) + mdf)
 					Synapses.Set(swt, int(SWt), int(syni))
-					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
+					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
 				}
 			}
 		} else {
@@ -283,7 +283,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 				if Synapses.Value(int(SWt), int(syni)) >= pt.Params.SWts.Limit.Min {
 					swt := pt.Params.SWts.ClipSWt(Synapses.Value(int(SWt), int(syni)) + mdf)
 					Synapses.Set(swt, int(SWt), int(syni))
-					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
+					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
 				}
 			}
 		}

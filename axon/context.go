@@ -10,6 +10,8 @@ import (
 	"github.com/emer/emergent/v2/etime"
 )
 
+// todo: remove this:
+
 var (
 	// TheNetwork is the one current network in use, needed for GPU shader kernel
 	// compatible variable access in CPU mode, for !multinet build tags case.
@@ -22,96 +24,6 @@ var (
 	// This is updated in Network.InitName, which sets NetIndex.
 	Networks []*Network
 )
-
-// NeuronAvgVars
-
-// NrnAvgV is the CPU version of the neuron variable accessor
-func NrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars) float32 {
-	return GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)]
-}
-
-// SetNrnAvgV is the CPU version of the neuron variable settor
-func SetNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)] = val
-}
-
-// AddNrnAvgV is the CPU version of the neuron variable addor
-func AddNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)] += val
-}
-
-// MulNrnAvgV is the CPU version of the neuron variable multiplier
-func MulNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	GlobalNetwork(ctx).NeuronAvgs[ctx.NeuronAvgVars.Index(ni, nvar)] *= val
-}
-
-// NeuronIndexes
-
-// NrnI is the CPU version of the neuron idx accessor
-func NrnI(ctx *Context, ni uint32, idx NeuronIndexes) uint32 {
-	return GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIndexes.Index(ni, idx)]
-}
-
-// SetNrnI is the CPU version of the neuron idx settor
-func SetNrnI(ctx *Context, ni uint32, idx NeuronIndexes, val uint32) {
-	GlobalNetwork(ctx).NeuronIxs[ctx.NeuronIndexes.Index(ni, idx)] = val
-}
-
-// SynapseVars
-
-// SynV is the CPU version of the synapse variable accessor
-func SynV(ctx *Context, syni uint32, svar SynapseVars) float32 {
-	return GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Index(syni, svar)]
-}
-
-// SetSynV is the CPU version of the synapse variable settor
-func SetSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
-	GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Index(syni, svar)] = val
-}
-
-// AddSynV is the CPU version of the synapse variable addor
-func AddSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
-	GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Index(syni, svar)] += val
-}
-
-// MulSynV is the CPU version of the synapse variable multiplier
-func MulSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
-	GlobalNetwork(ctx).Synapses[ctx.SynapseVars.Index(syni, svar)] *= val
-}
-
-// SynapseCaVars
-
-// SynCaV is the CPU version of the synapse variable accessor
-func SynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars) float32 {
-	return GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Index(syni, di, svar)]
-}
-
-// SetSynCaV is the CPU version of the synapse variable settor
-func SetSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
-	GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Index(syni, di, svar)] = val
-}
-
-// AddSynCaV is the CPU version of the synapse variable addor
-func AddSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
-	GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Index(syni, di, svar)] += val
-}
-
-// MulSynCaV is the CPU version of the synapse variable multiplier
-func MulSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
-	GlobalNetwork(ctx).SynapseCas[ctx.SynapseCaVars.Index(syni, di, svar)] *= val
-}
-
-// SynapseIndexes
-
-// SynI is the CPU version of the synapse idx accessor
-func SynI(ctx *Context, syni uint32, idx SynapseIndexes) uint32 {
-	return GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIndexes.Index(syni, idx)]
-}
-
-// SetSynI is the CPU version of the synapse idx settor
-func SetSynI(ctx *Context, syni uint32, idx SynapseIndexes, val uint32) {
-	GlobalNetwork(ctx).SynapseIxs[ctx.SynapseIndexes.Index(syni, idx)] = val
-}
 
 /////////////////////////////////
 //  Global Vars
@@ -182,26 +94,7 @@ func AddGlbUSposV(ctx *Context, di uint32, gvar GlobalVars, posIndex uint32, val
 // any compute methods with the context.  See SetCtxStrides on Network.
 func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 	ctx.NetIndexes = srcCtx.NetIndexes
-	ctx.NeuronVars = srcCtx.NeuronVars
-	ctx.NeuronAvgVars = srcCtx.NeuronAvgVars
-	ctx.NeuronIndexes = srcCtx.NeuronIndexes
-	ctx.SynapseVars = srcCtx.SynapseVars
-	ctx.SynapseCaVars = srcCtx.SynapseCaVars
-	ctx.SynapseIndexes = srcCtx.SynapseIndexes
 }
-
-//gosl:end
-
-//gosl:wgsl context
-// #include "etime.wgsl"
-// #include "axonrand.wgsl"
-// #include "neuron.wgsl"
-// #include "synapse.wgsl"
-// #include "globals.wgsl"
-// #include "neuromod.wgsl"
-//gosl:endwgsl context
-
-//gosl:start context
 
 // NetIndexes are indexes and sizes for processing network
 type NetIndexes struct {
@@ -366,27 +259,11 @@ type Context struct {
 	// indexes and sizes of current network
 	NetIndexes NetIndexes `display:"inline"`
 
-	// stride offsets for accessing neuron variables
-	NeuronVars NeuronVarStrides `display:"-"`
-
-	// stride offsets for accessing neuron average variables
-	NeuronAvgVars NeuronAvgVarStrides `display:"-"`
-
-	// stride offsets for accessing neuron indexes
-	NeuronIndexes NeuronIndexStrides `display:"-"`
-
-	// stride offsets for accessing synapse variables
-	SynapseVars SynapseVarStrides `display:"-"`
-
-	// stride offsets for accessing synapse Ca variables
-	SynapseCaVars SynapseCaStrides `display:"-"`
-
-	// stride offsets for accessing synapse indexes
-	SynapseIndexes SynapseIndexStrides `display:"-"`
-
-	// random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings.
-	// RandCtr slrand.Counter
-	// TODO:gosl
+	// RandCtr is the random counter, incremented by maximum number of
+	// possible random numbers generated per cycle, regardless of how
+	// many are actually used. This is shared across all layers so must
+	// encompass all possible param settings.
+	RandCtr uint64
 }
 
 // Defaults sets default values
@@ -480,7 +357,7 @@ void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
 }
 
 fn NrnIsOff(ctx: ptr<function,Context>, ni: u32) -> bool {
-	return NrnHasFlag(ctx, ni, u32(0), NeuronOff);
+	return NrnHasFlag(ni, u32(0), NeuronOff);
 }
 
 // // NeuronAvgVars

@@ -75,9 +75,9 @@ func (np *CaLrnParams) Update() {
 // and performs time-integration of VgccCa
 func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 	if np.SpkVGCC.IsTrue() {
-		Neurons.Set(np.SpkVgccCa*Neurons[Spike, ni, di], int(VgccCa), int(ni), int(di))
+		Neurons.Set(np.SpkVgccCa*Neurons.Value(int(Spike), int(ni), int(di)), int(VgccCa), int(ni), int(di))
 	}
-	Neurons.SetAdd(Neurons[VgccCa, ni, di]-np.VgccDt*Neurons[VgccCaInt, ni, di], int(VgccCaInt), int(ni), int(di))
+	Neurons.SetAdd(Neurons.Value(int(VgccCa), int(ni), int(di))-np.VgccDt*Neurons.Value(int(VgccCaInt), int(ni), int(di)), int(VgccCaInt), int(ni), int(di))
 	// Dt only affects decay, not rise time
 }
 
@@ -86,11 +86,11 @@ func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 // perform its time-integration.
 func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
 	np.VgccCaFromSpike(ctx, ni, di)
-	Neurons.Set(np.NormInv*(Neurons[NmdaCa, ni, di]+Neurons[VgccCaInt, ni, di]), int(CaLrn), int(ni), int(di))
-	Neurons.SetAdd(np.Dt.MDt*(Neurons[CaLrn, ni, di]-Neurons[NrnCaM, ni, di]), int(NrnCaM), int(ni), int(di))
-	Neurons.SetAdd(np.Dt.PDt*(Neurons[NrnCaM, ni, di]-Neurons[NrnCaP, ni, di]), int(NrnCaP), int(ni), int(di))
-	Neurons.SetAdd(np.Dt.DDt*(Neurons[NrnCaP, ni, di]-Neurons[NrnCaD, ni, di]), int(NrnCaD), int(ni), int(di))
-	Neurons.Set(Neurons[NrnCaP, ni, di]-Neurons[NrnCaD, ni, di], int(CaDiff), int(ni), int(di))
+	Neurons.Set(np.NormInv*(Neurons.Value(int(NmdaCa), int(ni), int(di))+Neurons.Value(int(VgccCaInt), int(ni), int(di))), int(CaLrn), int(ni), int(di))
+	Neurons.SetAdd(np.Dt.MDt*(Neurons.Value(int(CaLrn), int(ni), int(di))-Neurons.Value(int(NrnCaM), int(ni), int(di))), int(NrnCaM), int(ni), int(di))
+	Neurons.SetAdd(np.Dt.PDt*(Neurons.Value(int(NrnCaM), int(ni), int(di))-Neurons.Value(int(NrnCaP), int(ni), int(di))), int(NrnCaP), int(ni), int(di))
+	Neurons.SetAdd(np.Dt.DDt*(Neurons.Value(int(NrnCaP), int(ni), int(di))-Neurons.Value(int(NrnCaD), int(ni), int(di))), int(NrnCaD), int(ni), int(di))
+	Neurons.Set(Neurons.Value(int(NrnCaP), int(ni), int(di))-Neurons.Value(int(NrnCaD), int(ni), int(di)), int(CaDiff), int(ni), int(di))
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -332,7 +332,7 @@ func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot flo
 		geTot = 0
 	}
 	vmd := Neurons.Value(int(VmDend), int(ni), int(di))
-	Neurons.Set(ln.LrnNMDA.NMDASyn(Neurons[GnmdaLrn, ni, di], geTot), int(GnmdaLrn), int(ni), int(di))
+	Neurons.Set(ln.LrnNMDA.NMDASyn(Neurons.Value(int(GnmdaLrn), int(ni), int(di)), geTot), int(GnmdaLrn), int(ni), int(di))
 	gnmda := ln.LrnNMDA.Gnmda(Neurons.Value(int(GnmdaLrn), int(ni), int(di)), vmd)
 	Neurons.Set(gnmda*ln.LrnNMDA.CaFromV(vmd), int(NmdaCa), int(ni), int(di))
 }
@@ -601,7 +601,7 @@ func (sp *SWtParams) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, m
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 paths
 		Synapses.Set(0.5, int(SWt), int(syni))
 	}
-	Synapses.Set(sp.LWtFromWts(wt, Synapses[SWt, syni]), int(LWt), int(syni))
+	Synapses.Set(sp.LWtFromWts(wt, Synapses.Value(int(SWt), int(syni))), int(LWt), int(syni))
 	Synapses.Set(0, int(DWt), int(syni))
 	Synapses.Set(0, int(DSWt), int(syni))
 }

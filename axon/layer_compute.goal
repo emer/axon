@@ -56,10 +56,10 @@ func (ly *Layer) GiFromSpikes(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
-		subPool := NrnI(ctx, ni, NrnSubPool)
+		subPool := NeuronIxs[NrnSubPoo, ni]
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 			pl := ly.Pool(subPool, di)
 			// note: using Int version here so we can have greater match with GPU
@@ -298,7 +298,7 @@ func (ly *Layer) NewState(ctx *Context) {
 
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			pl := ly.SubPool(ctx, ni, di)
@@ -342,7 +342,7 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
@@ -375,7 +375,7 @@ func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float3
 		pl := ly.Pool(pi, di)
 		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
@@ -393,7 +393,7 @@ func (ly *Layer) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp float32) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -416,7 +416,7 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 	am.Init()
 	for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		vl := ly.UnitValue1D(vidx, int(ni), di)
@@ -445,7 +445,7 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 		giIntMinusMax = math32.Max(giIntMinusMax, lpl.AvgMax.GiInt.Minus.Max)
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			pl := ly.SubPool(ctx, ni, di)
@@ -474,7 +474,7 @@ func (ly *Layer) PlusPhaseStart(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -498,7 +498,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -549,7 +549,7 @@ func (ly *Layer) PlusPhaseActAvg(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		dTrgSum := float32(0)
@@ -570,15 +570,15 @@ func (ly *Layer) TargToExt(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-			if !NrnHasFlag(ctx, ni, di, NeuronHasTarg) { // will be clamped in plus phase
+			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
 				continue
 			}
 			Neurons[Ext, ni, di] =  Neurons[Target, ni, di]
-			NrnSetFlag(ctx, ni, di, NeuronHasExt)
+			NrnSetFlag(ni, di, NeuronHasExt)
 			Neurons[ISI, ni, di] = -1 // get fresh update on plus phase output acts
 			Neurons[ISIAvg, ni, di] = -1
 		}
@@ -591,15 +591,15 @@ func (ly *Layer) ClearTargExt(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
-			if !NrnHasFlag(ctx, ni, di, NeuronHasTarg) { // will be clamped in plus phase
+			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
 				continue
 			}
 			Neurons[Ext, ni, di] = 0
-			NrnClearFlag(ctx, ni, di, NeuronHasExt)
+			NrnClearFlag(ni, di, NeuronHasExt)
 			Neurons[ISI, ni, di] = -1 // get fresh update on plus phase output acts
 			Neurons[ISIAvg, ni, di] = -1
 		}
@@ -611,7 +611,7 @@ func (ly *Layer) SpkSt1(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -625,7 +625,7 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
@@ -649,7 +649,7 @@ func (ly *Layer) CorSimFromActs(ctx *Context) {
 		nn := ly.NNeurons
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			ap := Neurons[ActP, ni, di] - avgP // zero mean = correl
@@ -718,7 +718,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 			avg := float32(0)
 			for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 				ni := ly.NeurStIndex + lni
-				if NrnIsOff(ctx, ni) {
+				if NrnIsOff(ni) {
 					continue
 				}
 				avg += NeuronAvgs[DTrgAvg, ni]
@@ -731,7 +731,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 			avg *= submean
 			for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 				ni := ly.NeurStIndex + lni
-				if NrnIsOff(ctx, ni) {
+				if NrnIsOff(ni) {
 					continue
 				}
 				NeuronAvgs[DTrgAvg, ni] -= avg
@@ -742,7 +742,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 		avg := float32(0)
 		for lni := uint32(0); lni < ly.NNeurons; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			avg += NeuronAvgs[DTrgAvg, ni]
@@ -755,7 +755,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 		avg *= submean
 		for lni := uint32(0); lni < ly.NNeurons; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			NeuronAvgs[DTrgAvg, ni] -= avg
@@ -773,7 +773,7 @@ func (ly *Layer) TrgAvgFromD(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ctx, ni) {
+		if NrnIsOff(ni) {
 			continue
 		}
 		ntrg := NeuronAvgs[TrgAvg, ni] + NeuronAvgs[DTrgAvg, ni]
@@ -824,7 +824,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		nn := 0
 		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			plavg += NeuronAvgs[ActAvg, ni]
@@ -840,7 +840,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		pl.AvgDif.Init()
 		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			apct := NeuronAvgs[ActAvg, ni] / plavg
@@ -864,7 +864,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		lpl.AvgDif.Init()
 		for lni := lpl.StIndex; lni < lpl.EdIndex; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ctx, ni) {
+			if NrnIsOff(ni) {
 				continue
 			}
 			lpl.AvgDif.UpdateValue(math32.Abs(NeuronAvgs[AvgDif, ni]))

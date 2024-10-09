@@ -4,11 +4,7 @@ import (
 	"cogentcore.org/core/goal/gosl/slrand"
 )
 
-//gosl wgsl axonrand
-// #include "slrand.wgsl"
-//gosl end axonrand
-
-//gosl:start axonrand
+//gosl:start
 
 type RandFunIndex uint32
 
@@ -23,19 +19,12 @@ const (
 	RandFunIndexN
 )
 
-//gosl:end axonrand
-
-// TODO:gosl fixme
-
-// GetRandomNumber returns a random number that depends on the index, counter and function index.
+// GetRandomNumber returns a random number that depends on the index,
+// counter and function index.
 // We increment the counter after each cycle, so that we get new random numbers.
 // This whole scheme exists to ensure equal results under different multithreading settings.
-func GetRandomNumber(index uint32, counter slrand.Counter, funIndex RandFunIndex) float32 {
-	// todo: gpu needs to have the shortcut to work directly on uint2
-	// var randCtr slrand.Counter
-	// randCtr = counter
-	// randCtr.Add(uint32(funIndex))
-	// ctr := randCtr.Uint2()
-	// return slrand.Float(&ctr, index)
-	return 0.0
+func GetRandomNumber(index uint32, counter uint64, funIndex RandFunIndex) float32 {
+	return slrand.Float32(counter, funIndex, index)
 }
+
+//gosl:end

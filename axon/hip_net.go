@@ -7,7 +7,6 @@ package axon
 import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32/vecint"
-	"cogentcore.org/core/tensor/stats/stats"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
@@ -233,7 +232,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
 
 		net.InitGScale(ctx) // update computed scaling factors
-		net.GPU.SyncParamsToGPU()
+		// net.GPU.SyncParamsToGPU() // todo:
 	})
 	beta1 := cyc.EventByName("Beta1")
 	beta1.OnEvent.Add("Hip:Beta1", func() {
@@ -243,7 +242,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 			ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
 		}
 		net.InitGScale(ctx) // update computed scaling factors
-		net.GPU.SyncParamsToGPU()
+		// net.GPU.SyncParamsToGPU() // TODO:
 	})
 	plus := cyc.EventByName("PlusPhase")
 
@@ -257,15 +256,16 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 			if mode != etime.Test || hip.EC5ClampTest {
 				for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
 					clampSrc.UnitValues(&tmpValues, "Act", int(di))
-					if hip.EC5ClampThr > 0 {
-						stats.Binarize32(tmpValues, tensor.NewFloat64Scalar(hip.EC5ClampThr))
-					}
+					// TODO:
+					// if hip.EC5ClampThr > 0 {
+					// 	stats.Binarize(tmpValues, tensor.NewFloat64Scalar(hip.EC5ClampThr))
+					// }
 					ec5.ApplyExt1D32(ctx, di, tmpValues)
 				}
 			}
 		}
 		net.InitGScale(ctx) // update computed scaling factors
-		net.GPU.SyncParamsToGPU()
+		// net.GPU.SyncParamsToGPU()
 		net.ApplyExts(ctx) // essential for GPU
 	})
 
@@ -273,6 +273,6 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 	trl.OnEnd.Prepend("HipPlusPhase:End", func() {
 		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
 		net.InitGScale(ctx) // update computed scaling factors
-		net.GPU.SyncParamsToGPU()
+		// net.GPU.SyncParamsToGPU()
 	})
 }

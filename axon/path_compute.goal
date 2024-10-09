@@ -191,7 +191,7 @@ func (pj *Path) SynScale(ctx *Context) {
 	lr := tp.SynScaleRate
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ri := rlay.NeurStIndex + lni
-		if NrnIsOff(ctx, ri) {
+		if NrnIsOff(ri) {
 			continue
 		}
 		adif := -lr * NrnAvgV(ctx, ri, AvgDif)

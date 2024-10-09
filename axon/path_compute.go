@@ -165,7 +165,7 @@ func (pj *Path) SWtFromWt(ctx *Context) {
 		avgDWt *= pj.Params.SWts.Adapt.SubMean
 		for _, syi := range syIndexes {
 			syni := pj.SynStIndex + syi
-			Synapses.SetAdd(lr*(Synapses[DSWt, syni]-avgDWt), int(SWt), int(syni))
+			Synapses.SetAdd(lr*(Synapses.Value(int(DSWt), int(syni))-avgDWt), int(SWt), int(syni))
 			swt := Synapses.Value(int(SWt), int(syni))
 			Synapses.Set(0, int(DSWt), int(syni))
 			if Synapses.Value(int(Wt), int(syni)) == 0 { // restore failed wts
@@ -173,8 +173,8 @@ func (pj *Path) SWtFromWt(ctx *Context) {
 				Synapses.Set(wt, int(Wt), int(syni))
 			}
 			// + pj.Params.SWts.Adapt.RandVar(
-			Synapses.Set(pj.Params.SWts.LWtFromWts(Synapses[Wt, syni], swt), int(LWt), int(syni))
-			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
+			Synapses.Set(pj.Params.SWts.LWtFromWts(Synapses.Value(int(Wt), int(syni)), swt), int(LWt), int(syni))
+			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
 		}
 	}
 }
@@ -193,7 +193,7 @@ func (pj *Path) SynScale(ctx *Context) {
 	lr := tp.SynScaleRate
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ri := rlay.NeurStIndex + lni
-		if NrnIsOff(ctx, ri) {
+		if NrnIsOff(ri) {
 			continue
 		}
 		adif := -lr * NrnAvgV(ctx, ri, AvgDif)
@@ -207,7 +207,7 @@ func (pj *Path) SynScale(ctx *Context) {
 			} else {
 				Synapses.SetAdd(lwt*adif*swt, int(LWt), int(syni))
 			}
-			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
+			Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
 		}
 	}
 }
@@ -222,7 +222,7 @@ func (pj *Path) SynFail(ctx *Context) {
 			syni := pj.SynStIndex + syi
 			swt := Synapses.Value(int(SWt), int(syni))
 			if Synapses.Value(int(Wt), int(syni)) == 0 { // restore failed wts
-				Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses[LWt, syni]), int(Wt), int(syni))
+				Synapses.Set(pj.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
 			}
 			pj.Params.Com.Fail(ctx, syni, swt)
 		}

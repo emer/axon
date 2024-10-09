@@ -376,7 +376,7 @@ func (pj *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 	if pj.PathType == CTCtxtPath { // rn.RLRate IS needed for other pathways, just not the context one
 		SynapseTraces.Set(pj.Learn.LRate.Eff*err, int(DiDWt), int(syni), int(di))
 	} else {
-		SynapseTraces.Set(Neurons[RLRate, ri, di]*pj.Learn.LRate.Eff*err, int(DiDWt), int(syni), int(di))
+		SynapseTraces.Set(Neurons.Value(int(RLRate), int(ri), int(di))*pj.Learn.LRate.Eff*err, int(DiDWt), int(syni), int(di))
 	}
 }
 
@@ -477,7 +477,7 @@ func (pj *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 	} else {
 		dwt *= lwt
 	}
-	SynapseTraces.Set(Neurons[RLRate, ri, di]*pj.Learn.LRate.Eff*dwt, int(DiDWt), int(syni), int(di))
+	SynapseTraces.Set(Neurons.Value(int(RLRate), int(ri), int(di))*pj.Learn.LRate.Eff*dwt, int(DiDWt), int(syni), int(di))
 }
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
@@ -667,7 +667,7 @@ func (pj *PathParams) WtFromDWtSynNoLimits(ctx *Context, syni uint32) {
 	if Synapses.Value(int(Wt), int(syni)) < 0 {
 		Synapses.Set(0, int(Wt), int(syni))
 	}
-	Synapses.Set(Synapses[Wt, syni], int(LWt), int(syni))
+	Synapses.Set(Synapses.Value(int(Wt), int(syni)), int(LWt), int(syni))
 	Synapses.Set(0, int(DWt), int(syni))
 }
 

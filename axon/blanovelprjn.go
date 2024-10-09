@@ -22,7 +22,7 @@ func (ot *BLANovelPath) Name() string {
 	return "BLANovelPath"
 }
 
-func (ot *BLANovelPath) Connect(send, recv *tensor.Shape, same bool) (sendn, recvn *tensor.Int32, cons *tensor.Bits) {
+func (ot *BLANovelPath) Connect(send, recv *tensor.Shape, same bool) (sendn, recvn *tensor.Int32, cons *tensor.Bool) {
 	sendn, recvn, cons = paths.NewTensors(send, recv)
 	sNtot := send.Len()
 	// rNtot := recv.Len()
@@ -39,7 +39,7 @@ func (ot *BLANovelPath) Connect(send, recv *tensor.Shape, same bool) (sendn, rec
 			for sui := 0; sui < sNu; sui++ {
 				si := spi*sNu + sui
 				off := ri*sNtot + si
-				cons.Values.Set(off, true)
+				cons.Values.Set(true, off)
 				rnv[ri] = int32(sNu * (npl - 1))
 				snv[si] = int32(rNu)
 			}

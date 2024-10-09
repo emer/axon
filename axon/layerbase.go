@@ -246,8 +246,8 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 	pi := uint32(1)
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
-			soff := uint32(ly.Shape.Offset([]int{py, px, 0, 0}))
-			eoff := uint32(ly.Shape.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
+			soff := uint32(ly.Shape.IndexTo1D(py, px, 0, 0))
+			eoff := uint32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
 			for di := uint32(0); di < ly.MaxData; di++ {
 				pl := ly.Pool(pi, di)
 				pl.StIndex = soff
@@ -372,10 +372,10 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 			pl := ly.SubPool(ctx, ni, uint32(di))
 			return float32(pl.Gated)
 		}
-	} else if varIndex >= int(NeuronVarsN) {
-		return NrnAvgV(ctx, ni, NeuronAvgVars(varIndex-int(NeuronVarsN)))
+	} else if varIndex >= NeuronVarsN {
+		return NeuronAvgs.Value(int(varIndex-int(NeuronVarsN)), int(ni))
 	} else {
-		return Neurons.Value(int(NeuronVars(varIndex)), int(ni), int(di))
+		return Neurons.Value(int(varIndex), int(ni), int(di))
 	}
 	return math32.NaN()
 }
@@ -478,7 +478,6 @@ func (ly *Layer) SendPathValues(vals *[]float32, varNm string, recvLay emer.Laye
 // todo: support r. s. pathway values
 // error occurs when variable name is not found.
 func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
-	ctx := &ly.Network.Ctx
 	nn := ly.NNeurons
 	if nn == 0 {
 		return
@@ -487,7 +486,7 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 	if err != nil {
 		return
 	}
-	nvar := NeuronVars(vidx)
+	nvar := vidx
 
 	v0 := Neurons.Value(int(nvar), int(ly.NeurStIndex), int(0))
 	min = v0

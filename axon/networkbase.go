@@ -154,9 +154,6 @@ type Network struct {
 	// number of threads to use for parallel processing.
 	NThreads int
 
-	// GPU implementation.
-	GPU GPU `display:"inline"`
-
 	// record function timer information.
 	RecFunTimes bool `display:"-"`
 
@@ -930,7 +927,7 @@ func (nt *Network) ReadWeightsJSON(r io.Reader) error {
 
 // SynsSlice returns a slice of synaptic values, in natural sending order,
 // using given synaptic variable, resizing as needed.
-func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
+func (nt *Network) SynsSlice(vals *[]float32, synvar int) {
 	ctx := &nt.Ctx
 	if cap(*vals) >= int(nt.NSyns) {
 		*vals = (*vals)[:nt.NSyns]
