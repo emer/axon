@@ -572,7 +572,7 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 		if NrnIsOff(ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+		for di := uint32(0); di < ctx.NData; di++ {
 			NrnClearFlag(ni, di, clearMask)
 			NrnSetFlag(ni, di, setMask)
 		}
@@ -686,15 +686,15 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 // Target (Target or Compare types) or ActP does not match that of ActM.
 // If Act > ly.Params.Acts.Clamp.ErrThr, effective activity = 1 else 0
 // robust to noisy activations.
-// returns one result per data parallel index ([ctx.NetIndexes.NData])
+// returns one result per data parallel index ([ctx.NData])
 func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 	nn := ly.NNeurons
 	if nn == 0 {
 		return nil
 	}
-	errs := make([]float64, ctx.NetIndexes.NData)
+	errs := make([]float64, ctx.NData)
 	thr := ly.Params.Acts.Clamp.ErrThr
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		wrong := 0
 		n := 0
 		for lni := uint32(0); lni < nn; lni++ {
@@ -733,14 +733,14 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 // LocalistErr2D decodes a 2D layer with Y axis = redundant units, X = localist units
 // returning the indexes of the max activated localist value in the minus and plus phase
 // activities, and whether these are the same or different (err = different)
-// returns one result per data parallel index ([ctx.NetIndexes.NData])
+// returns one result per data parallel index ([ctx.NData])
 func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex []int) {
-	err = make([]bool, ctx.NetIndexes.NData)
-	minusIndex = make([]int, ctx.NetIndexes.NData)
-	plusIndex = make([]int, ctx.NetIndexes.NData)
+	err = make([]bool, ctx.NData)
+	minusIndex = make([]int, ctx.NData)
+	plusIndex = make([]int, ctx.NData)
 	ydim := ly.Shape.DimSize(0)
 	xdim := ly.Shape.DimSize(1)
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		var maxM, maxP float32
 		var mIndex, pIndex int
 		for xi := 0; xi < xdim; xi++ {
@@ -772,12 +772,12 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 // Returns the flat 1D indexes of the max activated localist value in the minus and plus phase
 // activities, and whether these are the same or different (err = different)
 func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex []int) {
-	err = make([]bool, ctx.NetIndexes.NData)
-	minusIndex = make([]int, ctx.NetIndexes.NData)
-	plusIndex = make([]int, ctx.NetIndexes.NData)
+	err = make([]bool, ctx.NData)
+	minusIndex = make([]int, ctx.NData)
+	plusIndex = make([]int, ctx.NData)
 	npool := ly.Shape.DimSize(0) * ly.Shape.DimSize(1)
 	nun := ly.Shape.DimSize(2) * ly.Shape.DimSize(3)
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		var maxM, maxP float32
 		var mIndex, pIndex int
 		for xi := 0; xi < npool; xi++ {

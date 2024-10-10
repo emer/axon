@@ -72,7 +72,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 			// 		net.GPU.CycleByCycle = false
 			// 	}
 			// }
-			net.Cycle(ctx)
+			net.Cycle()
 			ctx.CycleInc()
 		})
 	}

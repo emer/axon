@@ -9,111 +9,17 @@ import (
 	"github.com/emer/emergent/v2/etime"
 )
 
-// CopyNetStridesFrom copies strides and NetIndexes for accessing
-// variables on a Network -- these must be set properly for
-// the Network in question (from its Ctx field) before calling
-// any compute methods with the context.  See SetCtxStrides on Network.
-func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
-	ctx.NetIndexes = srcCtx.NetIndexes
-}
-
 //gosl:start
-
-// NetIndexes are indexes and sizes for processing network
-type NetIndexes struct {
-
-	// number of data parallel items to process currently
-	NData uint32 `min:"1"`
-
-	// network index in global Networks list of networks
-	NetIndex uint32 `edit:"-"`
-
-	// maximum amount of data parallel
-	MaxData uint32 `edit:"-"`
-
-	// number of layers in the network
-	NLayers uint32 `edit:"-"`
-
-	// total number of neurons
-	NNeurons uint32 `edit:"-"`
-
-	// total number of pools excluding * MaxData factor
-	NPools uint32 `edit:"-"`
-
-	// total number of synapses
-	NSyns uint32 `edit:"-"`
-
-	// maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access
-	GPUMaxBuffFloats uint32 `edit:"-"`
-
-	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
-	GPUSynCaBanks uint32 `edit:"-"`
-
-	// total number of .Rubicon Drives / positive USs
-	RubiconNPosUSs uint32 `edit:"-"`
-
-	// total number of .Rubicon Costs
-	RubiconNCosts uint32 `edit:"-"`
-
-	// total number of .Rubicon Negative USs
-	RubiconNNegUSs uint32 `edit:"-"`
-}
-
-// ValuesIndex returns the global network index for LayerValues
-// with given layer index and data parallel index.
-func (ctx *NetIndexes) ValuesIndex(li, di uint32) uint32 {
-	return li*ctx.MaxData + di
-}
-
-// ItemIndex returns the main item index from an overall index over NItems * MaxData
-// (items = layers, neurons, synapeses)
-func (ctx *NetIndexes) ItemIndex(idx uint32) uint32 {
-	return idx / ctx.MaxData
-}
-
-// DataIndex returns the data index from an overall index over N * MaxData
-func (ctx *NetIndexes) DataIndex(idx uint32) uint32 {
-	return idx % ctx.MaxData
-}
-
-// DataIndexIsValid returns true if the data index is valid (< NData)
-func (ctx *NetIndexes) DataIndexIsValid(li uint32) bool {
-	return (li < ctx.NData)
-}
-
-// LayerIndexIsValid returns true if the layer index is valid (< NLayers)
-func (ctx *NetIndexes) LayerIndexIsValid(li uint32) bool {
-	return (li < ctx.NLayers)
-}
-
-// NeurIndexIsValid returns true if the neuron index is valid (< NNeurons)
-func (ctx *NetIndexes) NeurIndexIsValid(ni uint32) bool {
-	return (ni < ctx.NNeurons)
-}
-
-// PoolIndexIsValid returns true if the pool index is valid (< NPools)
-func (ctx *NetIndexes) PoolIndexIsValid(pi uint32) bool {
-	return (pi < ctx.NPools)
-}
-
-// PoolDataIndexIsValid returns true if the pool*data index is valid (< NPools*MaxData)
-func (ctx *NetIndexes) PoolDataIndexIsValid(pi uint32) bool {
-	return (pi < ctx.NPools*ctx.MaxData)
-}
-
-// SynIndexIsValid returns true if the synapse index is valid (< NSyns)
-func (ctx *NetIndexes) SynIndexIsValid(si uint32) bool {
-	return (si < ctx.NSyns)
-}
 
 // Context contains all of the global context state info
 // that is shared across every step of the computation.
 // It is passed around to all relevant computational functions,
 // and is updated on the CPU and synced to the GPU after every cycle.
-// It is the *only* mechanism for communication from CPU to GPU.
-// It contains timing, Testing vs. Training mode, random number context,
-// global neuromodulation, etc.
+// It contains timing, Testing vs. Training mode, random number context, etc.
 type Context struct {
+
+	// number of data parallel items to process currently.
+	NData uint32 `min:"1"`
 
 	// current evaluation mode, e.g., Train, Test, etc
 	Mode etime.Modes
@@ -162,14 +68,10 @@ type Context struct {
 	// many are actually used. This is shared across all layers so must
 	// encompass all possible param settings.
 	RandCtr uint64
-
-	// indexes and sizes of current network
-	NetIndexes NetIndexes `display:"inline"`
 }
 
 // Defaults sets default values
 func (ctx *Context) Defaults() {
-	ctx.NetIndexes.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
 	ctx.SlowInterval = 100
@@ -195,7 +97,7 @@ func (ctx *Context) CycleInc() {
 // SlowInc increments the Slow counter and returns true if time
 // to perform SlowAdapt functions (associated with sleep).
 func (ctx *Context) SlowInc() bool {
-	ctx.SlowCtr += int32(ctx.NetIndexes.NData)
+	ctx.SlowCtr += int32(ctx.NData)
 	if ctx.SlowCtr < ctx.SlowInterval {
 		return false
 	}

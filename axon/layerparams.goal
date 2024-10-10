@@ -404,8 +404,89 @@ func (ly *LayerParams) LearnTrgAvgErrLRate() float32 {
 	return ly.Learn.TrgAvgAct.ErrLRate
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Cycle methods
+//////// Cycle
+
+// GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
+// while integrating the Recv Path-level GSyn integrated values.
+func (ly *LayerParams) GatherSpikes(ctx *Context, ni, di uint32) {
+	lni := ni - ly.Indexes.NeurSt
+	ly.GatherSpikesInit(ctx, ni, di)
+	for lpi := uint32(0); lpi < ly.Indexes.RecvN; lpi++ {
+		pi := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt+lpi))
+		Paths[pi].GatherSpikes(ctx, ly, ni, di, lni)
+	}
+	ly.GiFromSpikes(ctx, ni, di)
+}
+
+// GatherSpikesInit initializes G*Raw and G*Syn values for given neuron
+// prior to integration
+func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
+	Neurons[GeRaw, ni, di] = 0
+	Neurons[GiRaw, ni, di] = 0
+	Neurons[GModRaw, ni, di] = 0
+	Neurons[GModSyn, ni, di] = 0
+	Neurons[GMaintRaw, ni, di] = 0
+	Neurons[CtxtGeRaw, ni, di] = 0
+	Neurons[GeSyn, ni, di] = NeuronAvgs[GeBase, ni]
+	Neurons[GiSyn, ni, di] = NeuronAvgs[GiBase, ni]
+}
+
+// GiFromSpikes gets the Spike, GeRaw and GeExt from neurons in the pools
+// where Spike drives FBsRaw = raw feedback signal,
+// GeRaw drives FFsRaw = aggregate feedforward excitatory spiking input.
+// GeExt represents extra excitatory input from other sources.
+// Then integrates new inhibitory conductances therefrom,
+// at the layer and pool level.
+// Called separately by Network.CycleImpl on all Layers
+// Also updates all AvgMax values at the Cycle level.
+func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
+	pi := ly.Indexes.PoolIndex(NeuronIxs[NrnSubPool, ni], di)
+	lpi := ly.Indexes.PoolIndex(0, di)
+	nn := Pools[pi].NNeurons()
+	spk := Neurons[Spike, ni, di]
+	geRaw := Neurons[GeRaw, ni, di]
+	geExt := Neurons[GeExt, ni, di]
+	Pools[pi].Inhib.RawIncrInt(spk, geRaw, geExt, nn)
+	Pools[pi].AvgMaxUpdate(ctx, ni, di)
+	if Pools[pi].IsLayPool == 0 { // also update layer pool if I am a subpool
+		Pools[lpi].Inhib.RawIncrInt(spk, geRaw, geExt, Pools[lpi].NNeurons())
+		Pools[lpi].AvgMaxUpdate(ctx, ni, di)
+	}
+}
+
+// LayerGi updates the layer-level Gi inhibition from spikes.
+func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
+	lpi := ly.Indexes.PoolIndex(0, di)
+	lvi := ly.Indexes.ValuesIndex(di)
+	Pools[lpi].AvgMax.Calc(int32(li))
+	Pools[lpi].Inhib.IntToRaw()
+	ly.LayPoolGiFromSpikes(ctx, &Pools[lpi], &LayValues[lvi])
+}
+
+// BetweenGi computes inhibition Gi between layers.
+func (ly *LayerParams) BetweenGi(ctx *Context, di uint32) {
+	lpi := ly.Indexes.PoolIndex(0, di)
+	maxGi := Pools[lpi].Inhib.Gi
+	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index1)
+	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index2)
+	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index3)
+	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index4)
+	Pools[lpi].Inhib.Gi = maxGi // our inhib is max of us and everyone in the layer pool
+}
+
+// BetweenLayerGiMax returns max gi value for input maxGi vs
+// the given layIndex layer
+func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int32) float32 {
+	if layIndex < 0 {
+		return maxGi
+	}
+	lpi := Layers[layIndex].Indexes.PoolIndex(0, di)
+	ogi := Pools[lpi].Inhib.Gi
+	if ogi > maxGi {
+		maxGi = ogi
+	}
+	return maxGi
+}
 
 // LayPoolGiFromSpikes computes inhibition Gi from Spikes for layer-level pool.
 // Also grabs updated Context NeuroMod values into LayerValues
@@ -427,24 +508,47 @@ func (ly *LayerParams) SubPoolGiFromSpikes(ctx *Context, di uint32, pl *Pool, lp
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  CycleNeuron methods
+////////  CycleNeuron methods
 
-// GatherSpikesInit initializes G*Raw and G*Syn values for given neuron
-// prior to integration
-func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
-	Neurons[GeRaw, ni, di] = 0
-	Neurons[GiRaw, ni, di] = 0
-	Neurons[GModRaw, ni, di] = 0
-	Neurons[GModSyn, ni, di] = 0
-	Neurons[GMaintRaw, ni, di] = 0
-	Neurons[CtxtGeRaw, ni, di] = 0
-	Neurons[GeSyn, ni, di] = NeuronAvgs[GeBase, ni]
-	Neurons[GiSyn, ni, di] = NeuronAvgs[GiBase, ni]
+// CycleNeuron does one cycle (msec) of updating at the neuron level
+// Called directly by Network, iterates over data.
+func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
+	pi := ly.Indexes.PoolIndex(NeuronIxs[NrnSubPool, ni], di)
+	lpi := ly.Indexes.PoolIndex(0, di)
+	lvi := ly.Indexes.ValuesIndex(di)
+	ly.GInteg(ctx, ni, di, &Pools[pi], &LayValues[lvi])
+	ly.SpikeFromG(ctx, ni, di, &Pools[lpi])
 }
 
-////////////////////////
-//  GInteg
+func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
+	dli := ly.Pulv.DriveLayIndex
+	dlpi := Layers[dli].Indexes.PoolIndex(0, di)
+	drvMax := Pools[dlpi].AvgMax.CaSpkP.Cycle.Max
+	*nonDrivePct = ly.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+	burst := Neurons[Burst, Layers[dli].Indexes.NeurSt+lni, di]
+	*drvGe = ly.Pulv.DriveGe(burst)
+}
+
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// calls SpecialGFromRawSyn, GiInteg
+func (ly *LayerParams) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues) {
+	drvGe := float32(0)
+	nonDrivePct := float32(0)
+	if ly.LayType == PulvinarLayer {
+		ly.PulvinarDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
+		Neurons[Ext, ni, di] = nonDrivePct // use for regulating inhibition
+	}
+
+	saveVal := ly.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct)
+
+	ly.GFromRawSyn(ctx, ni, di)
+	ly.GiInteg(ctx, ni, di, pl, vals)
+	ly.GNeuroMod(ctx, ni, di, vals)
+
+	ly.SpecialPostGs(ctx, ni, di, saveVal)
+}
+
+/////////  GInteg
 
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFromRawSyn
@@ -683,8 +787,7 @@ func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32, vals *LayerValues)
 	Neurons[Gi, ni, di] *= ggain
 }
 
-////////////////////////
-//  SpikeFromG
+////////  SendSpike
 
 // SpikeFromG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
@@ -725,6 +828,22 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 	default:
 		Neurons[SpkBin7, ni, di] += spk
 	}
+}
+
+// SendSpike sends spike to receivers for all neurons that spiked
+// last step in Cycle, integrated the next time around.
+// Called directly by Network, iterates over data.
+func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
+	spi := ly.Indexes.PoolIndex(NeuronIxs[NrnSubPool, ni], di)
+	lpi := ly.Indexes.PoolIndex(0, di)
+	lni := ni - ly.Indexes.NeurSt
+	lvi := ly.Indexes.ValuesIndex(di)
+	ly.PostSpike(ctx, ni, di, &Pools[spi], &Pools[lpi], &LayValues[lvi])
+
+	for pi := uint32(0); pi < ly.Indexes.SendN; pi++ {
+		Paths[ly.Indexes.SendSt + pi].SendSpike(ctx, ni, lni, di)
+	}
+	// sp.SendSpike(ctx, ni, di, ctx.NetIndexes.MaxData)
 }
 
 // PostSpikeSpecial does updates at neuron level after spiking has been computed.
@@ -854,9 +973,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 }
 
 // PostSpike does updates at neuron level after spiking has been computed.
-// it is called *after* PostSpikeSpecial.
-// It also updates the CaSpkPCyc stats.
-func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues) {
+// It calls PostSpikeSpecial.  It also updates the CaSpkPCyc stats.
+func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
+	ly.PostSpikeSpecial(ctx, ni, di, pl, lpl, vals)
 	intdt := ly.Acts.Dt.IntDt
 	Neurons[GeInt, ni, di] += intdt * (Neurons[Ge, ni, di] - Neurons[GeInt, ni, di])
 	Neurons[GiInt, ni, di] += intdt * (Neurons[GiSyn, ni, di] - Neurons[GiInt, ni, di])

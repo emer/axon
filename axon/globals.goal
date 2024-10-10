@@ -326,7 +326,8 @@ const (
 
 // GlobalsReset resets all global values to 0, for all NData
 func GlobalsReset(ctx *Context) {
-	for di := uint32(0); di < ctx.NetIndexes.MaxData; di++ {
+	nix := NetIxs()
+	for di := uint32(0); di < nix.MaxData; di++ {
 		for vg := GvRew; vg < GlobalScalarVarsN; vg++ {
 			GlobalScalars[vg, di] = 0
 		}

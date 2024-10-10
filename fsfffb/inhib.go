@@ -6,12 +6,13 @@ package fsfffb
 
 import (
 	"log"
+	"sync/atomic"
 
 	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
 )
 
-//gosl:start fsfffb
+//gosl:start
 
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
@@ -195,22 +196,22 @@ func (fi *Inhib) FloatToInt(val float32, nneurons int) int32 {
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)
 func (fi *Inhib) FloatFromInt(ival int32) float32 {
-	//gosl:end fsfffb
+	//gosl:end
 	// note: this is not GPU-portable..
 	if ival < 0 {
 		log.Printf("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error\n")
 		return 1
 	}
-	//gosl:start fsfffb
+	//gosl:start
 	return float32(ival) * fi.FloatFromIntFactor()
 }
 
 // RawIncrInt increments raw values from given neuron-based input values
 // for the int-based values (typically use Atomic InterlockedAdd instead)
 func (fi *Inhib) RawIncrInt(spike, geRaw, geExt float32, nneurons int) {
-	fi.FBsRawInt += int32(spike) // already an int!
-	fi.FFsRawInt += fi.FloatToInt(geRaw, nneurons)
-	fi.GeExtRawInt += fi.FloatToInt(geExt, nneurons)
+	atomic.AddInt32(&(fi.FBsRawInt), int32(spike))
+	atomic.AddInt32(&(fi.FFsRawInt), fi.FloatToInt(geRaw, nneurons))
+	atomic.AddInt32(&(fi.GeExtRawInt), fi.FloatToInt(geExt, nneurons))
 }
 
 // IntToRaw computes int values into float32 raw values
@@ -220,21 +221,7 @@ func (fi *Inhib) IntToRaw() {
 	fi.GeExtRaw = fi.FloatFromInt(fi.GeExtRawInt)
 }
 
-//gosl:end fsfffb
-
-// todo gosl:wgsl fsfffb
-/*
-// // AtomicInhibRawIncr provides an atomic update using atomic ints
-// // implemented by InterlockedAdd HLSL intrinsic.
-// // This is a #define because it doesn't work on arg values --
-// // must be directly operating on a RWStorageBuffer entity.
-// // TODO:gosl do atomics!
-#define AtomicInhibRawIncr(fi, spike, geRaw, geExt, nneurons) \
-	InterlockedAdd(fi.FBsRawInt, int(spike)); \
-	InterlockedAdd(fi.FFsRawInt, fi.FloatToInt(geRaw, nneurons)); \
-	InterlockedAdd(fi.GeExtRawInt, fi.FloatToInt(geExt, nneurons))
-*/
-// todo gosl:end fsfffb
+//gosl:end
 
 // Inhibs is a slice of Inhib records
 type Inhibs []Inhib

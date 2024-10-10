@@ -1416,7 +1416,7 @@ func TestGlobalIndexes(t *testing.T) {
 	for vv := GvCost; vv <= GvCostRaw; vv++ {
 		for ui := uint32(0); ui < pv.NCosts; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbCostV(ctx, di, vv, ui, val)
+				GlobalVectors[vv, ui, di] = val
 				val += 1
 			}
 		}
@@ -1424,7 +1424,7 @@ func TestGlobalIndexes(t *testing.T) {
 	for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 		for ui := uint32(0); ui < pv.NNegUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbUSnegV(ctx, di, vv, ui, val)
+				GlobalVectors[vv, ui, di] = val
 				val += 1
 			}
 		}
@@ -1432,7 +1432,7 @@ func TestGlobalIndexes(t *testing.T) {
 	for vv := GvDrives; vv < GlobalVarsN; vv++ {
 		for ui := uint32(0); ui < pv.NPosUSs; ui++ {
 			for di := uint32(0); di < nData; di++ {
-				SetGlbUSposV(ctx, di, vv, ui, val)
+				GlobalVectors[vv, ui, di] = val
 				val += 1
 			}
 		}

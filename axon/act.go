@@ -18,7 +18,7 @@ import (
 //  act.go contains the activation params and functions for axon
 
 //gosl:start
-//gosl:import chans
+//gosl:import "github.com/emer/axon/v2/chans"
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  SpikeParams
@@ -213,8 +213,6 @@ func (ai *ActInitParams) Defaults() {
 	ai.GeVar = 0
 	ai.GiVar = 0
 }
-
-//gosl:end
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
 func (ai *ActInitParams) GetGeBase(rnd randx.Rand) float32 {
@@ -460,7 +458,7 @@ func (an *SpikeNoiseParams) ShouldDisplay(field string) bool {
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*ctx.NetIndexes.NNeurons + ni
+	ndi := di*NetIxs().NNeurons + ni
 	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
@@ -472,7 +470,7 @@ func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*ctx.NetIndexes.NNeurons + ni
+	ndi := di*NetIxs().NNeurons + ni
 	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
@@ -939,8 +937,6 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	Neurons.SetSub(glong*Neurons.Value(int(CtxtGeOrig), int(ni), int(di)), int(CtxtGeOrig), int(ni), int(di))
 }
 
-//gosl:end
-
 // InitActs initializes activation state in neuron -- called during InitWeights but otherwise not
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
@@ -1076,7 +1072,7 @@ func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
-	ndi := di*ctx.NetIndexes.NNeurons + ni
+	ndi := di*NetIxs().NNeurons + ni
 	smp := Neurons.Value(int(SMaintP), int(ni), int(di))
 	smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)

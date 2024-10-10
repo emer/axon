@@ -469,7 +469,7 @@ func (net *Network) ConnectToSC(send, recv *Layer, pat paths.Pattern) *Path {
 // a SC layer, copying the geometry of the sending layer,
 // setting class as ToSC.  The conection weights are set to uniform.
 func (net *Network) ConnectToSC1to1(send, recv *Layer) *Path {
-	recv.Shape.CopyShape(&send.Shape)
+	recv.Shape.CopyFrom(&send.Shape)
 	pj := net.ConnectLayers(send, recv, paths.NewOneToOne(), ForwardPath)
 	pj.DefaultParams = params.Params{
 		"Path.Learn.Learn":    "false",

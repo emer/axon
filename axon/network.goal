@@ -28,7 +28,7 @@ import (
 // all data parallel values.  The current Context.NData should be set
 // properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
-	nt.Context().NetIndexes.NData = ctx.NetIndexes.NData
+	// nt.Context().NetIndexes.NData = ctx.NetIndexes.NData
 	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
 	// 	nt.GPU.RunNewState()
 	// 	return
@@ -44,36 +44,118 @@ func (nt *Network) NewState(ctx *Context) {
 	// }
 }
 
-// Cycle runs one cycle of activation updating using threading methods.
-func (nt *Network) Cycle(ctx *Context) {
-	// if nt.GPU.On {
-	// 	nt.GPU.RunCycle()
-	// 	return
-	// }
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.GatherSpikes(ctx, ni) }, "GatherSpikes")
-	nt.LayerMapPar(func(ly *Layer) { ly.GiFromSpikes(ctx) }, "GiFromSpikes")         // note: important to be Par for linux / amd64
-	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFromSpikes(ctx) }, "PoolGiFromSpikes") // note: Par not useful
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
-	var ldt, vta *Layer
-	for _, ly := range nt.Layers {
-		if ly.Type == VTALayer {
-			vta = ly
-		} else if ly.Type == LDTLayer {
-			ldt = ly
-		} else {
-			ly.CyclePost(ctx)
-		}
+//gosl:start
+
+// GatherSpikes is the kernel over Neurons * Data for gathering
+// spike inputs sent on the previous cycle.
+func GatherSpikes(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	ni := nix.ItemIndex(i)
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
 	}
-	// ordering of these is important
-	if ldt != nil {
-		ldt.CyclePost(ctx)
-	}
-	if vta != nil {
-		vta.CyclePost(ctx)
-	}
+	Layers[NeuronIxs[NrnLayIndex, ni]].GatherSpikes(ctx, ni, di)
 }
+
+// LayerGi is the kernel over Layers * Data for updating Gi inhibition.
+func LayerGi(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	li := nix.ItemIndex(i)
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
+	}
+	Layers[li].LayerGi(ctx, li, di)
+}
+
+// BetweenGi is the kernel over Layers * Data for updating Gi
+// inhibition between layers.
+func BetweenGi(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	li := nix.ItemIndex(i)
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
+	}
+	Layers[li].BetweenGi(ctx, di)
+}
+
+// PoolGi is the kernel over Pools * Data for updating Gi inhibition.
+func PoolGi(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
+	}
+	Pools[i].PoolGi(ctx, di)
+}
+
+// CycleNeuron is the kernel over Neurons * Data to do
+// one cycle (msec) of updating at the neuron level.
+func CycleNeuron(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	ni := nix.ItemIndex(i)
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
+	}
+	Layers[NeuronIxs[NrnLayIndex, ni]].CycleNeuron(ctx, ni, di)
+}
+
+// SendSpike is the kernel over Neurons * Data to
+// send spike signal for neurons over threshold.
+func SendSpike(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	ni := nix.ItemIndex(i)
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
+	}
+	Layers[NeuronIxs[NrnLayIndex, ni]].SendSpike(ctx, ni, di)
+}
+
+// Cycle runs one cycle of activation updating using threading methods.
+func (nt *Network) Cycle() {
+	nix := NetIxs()
+	nd := int(nix.NNeurons * nix.MaxData)
+	ld := int(nix.NLayers * nix.MaxData)
+	pd := int(nix.NPools * nix.MaxData)
+	RunGatherSpikes(nd)
+	RunLayerGi(ld)
+	RunBetweenGi(ld)
+	RunPoolGi(pd)
+	RunCycleNeuron(nd)
+	RunSendSpike(nd)
+
+	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
+	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
+	// var ldt, vta *Layer
+	// for _, ly := range nt.Layers {
+	// 	if ly.Type == VTALayer {
+	// 		vta = ly
+	// 	} else if ly.Type == LDTLayer {
+	// 		ldt = ly
+	// 	} else {
+	// 		ly.CyclePost(ctx)
+	// 	}
+	// }
+	// // ordering of these is important
+	// if ldt != nil {
+	// 	ldt.CyclePost(ctx)
+	// }
+	// if vta != nil {
+	// 	vta.CyclePost(ctx)
+	// }
+}
+
+//gosl:end
 
 // MinusPhase does updating after end of minus phase
 func (nt *Network) MinusPhase(ctx *Context) {
@@ -191,18 +273,18 @@ func (nt *Network) DWt(ctx *Context) {
 	// 	nt.GPU.RunDWt()
 	// 	return
 	// }
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
+	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
 }
 
 // WtFromDWt updates the weights from delta-weight changes.
 // Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 func (nt *Network) WtFromDWt(ctx *Context) {
-	nt.LayerMapSeq(func(ly *Layer) { ly.WtFromDWtLayer(ctx) }, "WtFromDWtLayer") // lightweight
-	// if nt.GPU.On {
-	// 	nt.GPU.RunWtFromDWt()
-	// } else {
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
-	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFromDWt(ctx, ni) }, "WtFromDWt")
+	// nt.LayerMapSeq(func(ly *Layer) { ly.WtFromDWtLayer(ctx) }, "WtFromDWtLayer") // lightweight
+	// // if nt.GPU.On {
+	// // 	nt.GPU.RunWtFromDWt()
+	// // } else {
+	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
+	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFromDWt(ctx, ni) }, "WtFromDWt")
 	// }
 	if ctx.SlowInc() {
 		nt.SlowAdapt(ctx)
@@ -216,8 +298,8 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 	// These Sync calls always check if GPU is On
 	// nt.GPU.SyncAllFromGPU()
 
-	nt.LayerMapSeq(func(ly *Layer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
-	nt.PathMapSeq(func(pj *Path) { pj.SlowAdapt(ctx) }, "SlowAdapt")
+	// nt.LayerMapSeq(func(ly *Layer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
+	// nt.PathMapSeq(func(pj *Path) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 
 	// nt.GPU.SyncAllToGPU()
 	// nt.GPU.SyncSynCaToGPU() // was cleared
@@ -229,7 +311,7 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 // InitWeights initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWeights(ctx *Context) { //types:add
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		nt.Rubicon.Reset(ctx, di)
 	}
 	nt.BuildPathGBuf()
@@ -313,7 +395,7 @@ func (nt *Network) DecayState(ctx *Context, decay, glong, ahp float32) {
 		if ly.Off {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+		for di := uint32(0); di < ctx.NData; di++ {
 			ly.DecayState(ctx, di, decay, glong, ahp)
 		}
 	}
@@ -347,7 +429,7 @@ func (nt *Network) DecayStateLayers(ctx *Context, decay, glong, ahp float32, lay
 		if ly.Off {
 			continue
 		}
-		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+		for di := uint32(0); di < ctx.NData; di++ {
 			ly.DecayState(ctx, di, decay, glong, ahp)
 		}
 	}

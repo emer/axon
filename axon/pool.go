@@ -195,8 +195,6 @@ func (pl *Pool) NNeurons() int {
 	return int(pl.EdIndex - pl.StIndex)
 }
 
-//gosl:end
-
 // AvgMaxUpdate updates the AvgMax values based on current neuron values
 func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
 	pl.AvgMax.CaSpkP.Cycle.UpdateValue(Neurons.Value(int(CaSpkP), int(ni), int(di)))
@@ -206,6 +204,21 @@ func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
 	pl.AvgMax.GeInt.Cycle.UpdateValue(Neurons.Value(int(GeInt), int(ni), int(di)))
 	pl.AvgMax.GiInt.Cycle.UpdateValue(Neurons.Value(int(GiInt), int(ni), int(di)))
 }
+
+func (pl *Pool) PoolGi(ctx *Context, di uint32) {
+	nix := NetIxs()
+	li := pl.LayIndex
+	giMult := LayerValues[nix.ValuesIndex(li, di)].ActAvg.GiMult
+	if pl.IsLayPool > 0 {
+		return
+	}
+	pl.AvgMax.Calc(li)
+	pl.Inhib.IntToRaw()
+	lyIsOn := (Layers[li].Inhib.Layer.On == 1)
+	Layers[li].SubPoolGiFromSpikes(ctx, di, pl, &Pools[ly.Indexes.PoolIndex(0, di)], lyIsOn, giMult)
+}
+
+//gosl:end
 
 // TestValues returns a map of CaSpkD.Avg, which provides an
 // integrated summary of pool activity for testing

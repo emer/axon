@@ -76,7 +76,7 @@ func (dp *DriveParams) Update() {
 // VarToZero sets all values of given drive-sized variable to 0
 func (dp *DriveParams) VarToZero(ctx *Context, di uint32, gvar GlobalVectorVars) {
 	for i := range dp.Base {
-		SetGlbUSposV(ctx, di, gvar, uint32(i), 0)
+		GlobalVectors.Set(0, int(gvar), int(i), int(di))
 	}
 }
 
@@ -88,27 +88,27 @@ func (dp *DriveParams) ToZero(ctx *Context, di uint32) {
 // ToBaseline sets all drives to their baseline levels
 func (dp *DriveParams) ToBaseline(ctx *Context, di uint32) {
 	for i := range dp.Base {
-		SetGlbUSposV(ctx, di, GvDrives, uint32(i), dp.Base[i])
+		GlobalVectors.Set(dp.Base[i], int(GvDrives), int(i), int(di))
 	}
 }
 
 // AddTo increments drive by given amount, subject to 0-1 range clamping.
 // Returns new val.
 func (dp *DriveParams) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbUSposV(ctx, di, GvDrives, drv) + delta
+	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di)) + delta
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
+	GlobalVectors.Set(dv, int(GvDrives), int(drv), int(di))
 	return dv
 }
 
 // SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
 // if delta is positive, multiply by 1-val, else val.  Returns new val.
 func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbUSposV(ctx, di, GvDrives, drv)
+	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di))
 	if delta > 0 {
 		dv += (1 - dv) * delta
 	} else {
@@ -119,21 +119,21 @@ func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float3
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
+	GlobalVectors.Set(dv, int(GvDrives), int(drv), int(di))
 	return dv
 }
 
 // ExpStep updates drive with an exponential step with given dt value
 // toward given baseline value.
 func (dp *DriveParams) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
-	dv := GlbUSposV(ctx, di, GvDrives, drv)
+	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di))
 	dv += dt * (base - dv)
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
+	GlobalVectors.Set(dv, int(GvDrives), int(drv), int(di))
 	return dv
 }
 
@@ -149,9 +149,9 @@ func (dp *DriveParams) ExpStepAll(ctx *Context, di uint32) {
 // note that index 0 is the novelty / curiosity drive, which doesn't use DriveMin.
 func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 	if i == 0 {
-		return GlbUSposV(ctx, di, GvDrives, uint32(0))
+		return GlobalVectors.Value(int(GvDrives), int(0), int(di))
 	}
-	return math32.Max(GlbUSposV(ctx, di, GvDrives, i), dp.DriveMin)
+	return math32.Max(GlobalVectors.Value(int(GvDrives), int(i), int(di)), dp.DriveMin)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -329,37 +329,37 @@ func (us *USParams) Update() {
 // USnegCostFromRaw sets normalized NegUS, Cost values from Raw values
 func (us *USParams) USnegCostFromRaw(ctx *Context, di uint32) {
 	for i, ng := range us.USnegGains {
-		raw := GlbUSnegV(ctx, di, GvUSnegRaw, uint32(i))
+		raw := GlobalVectors.Value(int(GvUSnegRaw), int(i), int(di))
 		norm := RubiconNormFun(ng * raw)
-		SetGlbUSnegV(ctx, di, GvUSneg, uint32(i), norm)
+		GlobalVectors.Set(norm, int(GvUSneg), int(i), int(di))
 	}
 	for i, ng := range us.CostGains {
-		raw := GlbCostV(ctx, di, GvCostRaw, uint32(i))
+		raw := GlobalVectors.Value(int(GvCostRaw), int(i), int(di))
 		norm := RubiconNormFun(ng * raw)
-		SetGlbCostV(ctx, di, GvCost, uint32(i), norm)
+		GlobalVectors.Set(norm, int(GvCost), int(i), int(di))
 	}
 }
 
 // USnegToZero sets all values of USneg, USnegRaw to zero
 func (us *USParams) USnegToZero(ctx *Context, di uint32) {
 	for i := range us.USnegGains {
-		SetGlbUSnegV(ctx, di, GvUSneg, uint32(i), 0)
-		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(i), 0)
+		GlobalVectors.Set(0, int(GvUSneg), int(i), int(di))
+		GlobalVectors.Set(0, int(GvUSnegRaw), int(i), int(di))
 	}
 }
 
 // CostToZero sets all values of Cost, CostRaw to zero
 func (us *USParams) CostToZero(ctx *Context, di uint32) {
 	for i := range us.CostGains {
-		SetGlbCostV(ctx, di, GvCost, uint32(i), 0)
-		SetGlbCostV(ctx, di, GvCostRaw, uint32(i), 0)
+		GlobalVectors.Set(0, int(GvCost), int(i), int(di))
+		GlobalVectors.Set(0, int(GvCostRaw), int(i), int(di))
 	}
 }
 
 // USposToZero sets all values of USpos to zero
 func (us *USParams) USposToZero(ctx *Context, di uint32) {
 	for i := range us.PVposWts {
-		SetGlbUSposV(ctx, di, GvUSpos, uint32(i), 0)
+		GlobalVectors.Set(0, int(GvUSpos), int(i), int(di))
 	}
 }
 
@@ -744,11 +744,11 @@ func (rp *Rubicon) InitDrives(ctx *Context, di uint32) {
 func (rp *Rubicon) AddTimeEffort(ctx *Context, di uint32, effort float32) {
 	GlobalScalars.SetAdd(1, int(GvTime), int(di))
 	tm := GlobalScalars.Value(int(GvTime), int(di))
-	SetGlbCostV(ctx, di, GvCostRaw, 0, tm) // time is neg 0
+	GlobalVectors.Set(tm, int(GvCostRaw), int(0), int(di)) // time is neg 0
 
 	GlobalScalars.SetAdd(effort, int(GvEffort), int(di))
 	eff := GlobalScalars.Value(int(GvEffort), int(di))
-	SetGlbCostV(ctx, di, GvCostRaw, 1, eff) // effort is neg 1
+	GlobalVectors.Set(eff, int(GvCostRaw), int(1), int(di)) // effort is neg 1
 }
 
 // EffortUrgencyUpdate updates the Effort or Urgency based on
@@ -770,8 +770,8 @@ func (rp *Rubicon) EffortUrgencyUpdate(ctx *Context, di uint32, effort float32) 
 func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 	GlobalScalars.Set(0, int(GvTime), int(di))
 	GlobalScalars.Set(0, int(GvEffort), int(di))
-	SetGlbCostV(ctx, di, GvCostRaw, 0, 0) // effort is neg 0
-	SetGlbCostV(ctx, di, GvCost, 0, 0)
+	GlobalVectors.Set(0, int(GvCostRaw), int(0), int(di)) // effort is neg 0
+	GlobalVectors.Set(0, int(GvCost), int(0), int(di))
 }
 
 // PVposFromDriveEffort returns the net primary value ("reward") based on
@@ -787,7 +787,7 @@ func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 
 // RubiconSetDrive sets given Drive to given value
 func (rp *Rubicon) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
-	SetGlbUSposV(ctx, di, GvDrives, dr, val)
+	GlobalVectors.Set(val, int(GvDrives), int(dr), int(di))
 }
 
 // SetDrives is used when directly controlling drive levels externally.
@@ -809,12 +809,12 @@ func (rp *Rubicon) DriveUpdate(ctx *Context, di uint32) {
 	rp.Drive.ExpStepAll(ctx, di)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		us := GlbUSposV(ctx, di, GvUSpos, i)
-		nwdrv := GlbUSposV(ctx, di, GvDrives, i) - us*rp.Drive.Satisfaction[i]
+		us := GlobalVectors.Value(int(GvUSpos), int(i), int(di))
+		nwdrv := GlobalVectors.Value(int(GvDrives), int(i), int(di)) - us*rp.Drive.Satisfaction[i]
 		if nwdrv < 0 {
 			nwdrv = 0
 		}
-		SetGlbUSposV(ctx, di, GvDrives, i, nwdrv)
+		GlobalVectors.Set(nwdrv, int(GvDrives), int(i), int(di))
 	}
 }
 
@@ -828,10 +828,10 @@ func (rp *Rubicon) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex 
 	GlobalScalars.Set(1, int(GvHasRew), int(di))
 	if valence == Positive {
 		usIndex = rp.USposIndex(usIndex)
-		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIndex), magnitude)
+		GlobalVectors.Set(magnitude, int(GvUSpos), int(usIndex), int(di))
 	} else {
 		usIndex = rp.USnegIndex(usIndex)
-		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(usIndex), magnitude)
+		GlobalVectors.Set(magnitude, int(GvUSnegRaw), int(usIndex), int(di))
 		GlobalScalars.Set(1, int(GvNegUSOutcome), int(di))
 	}
 }
@@ -856,8 +856,8 @@ func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 	GlobalScalars.Set(0, int(GvProgressRate), int(di))
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		SetGlbUSposV(ctx, di, GvOFCposPTMaint, i, 0)
-		SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, i, 0)
+		GlobalVectors.Set(0, int(GvOFCposPTMaint), int(i), int(di))
+		GlobalVectors.Set(0, int(GvVSMatrixPoolGated), int(i), int(di))
 	}
 }
 
@@ -983,7 +983,7 @@ func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
 func (rp *Rubicon) HasPosUS(ctx *Context, di uint32) bool {
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		if GlbUSposV(ctx, di, GvUSpos, i) > 0 {
+		if GlobalVectors.Value(int(GvUSpos), int(i), int(di)) > 0 {
 			return true
 		}
 	}
@@ -999,7 +999,7 @@ func (rp *Rubicon) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * rp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * GlobalVectors.Value(int(GvUSpos), int(i), int(di)) * rp.Drive.EffectiveDrive(ctx, di, i)
 	}
 	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
@@ -1014,12 +1014,12 @@ func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
 	nn := rp.NNegUSs
 	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
-		pvNegSum += wts[i] * GlbUSnegV(ctx, di, GvUSnegRaw, i)
+		pvNegSum += wts[i] * GlobalVectors.Value(int(GvUSnegRaw), int(i), int(di))
 	}
 	nn = rp.NCosts
 	wts = rp.USs.PVcostWts
 	for i := uint32(0); i < nn; i++ {
-		pvNegSum += wts[i] * GlbCostV(ctx, di, GvCostRaw, i)
+		pvNegSum += wts[i] * GlobalVectors.Value(int(GvCostRaw), int(i), int(di))
 	}
 	pvNeg = RubiconNormFun(rp.USs.PVnegGain * pvNegSum)
 	return
@@ -1047,8 +1047,8 @@ func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 	mx := float32(0)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		vsD1 := GlbUSposV(ctx, di, GvVSPatchD1, i)
-		vsD2 := GlbUSposV(ctx, di, GvVSPatchD2, i)
+		vsD1 := GlobalVectors.Value(int(GvVSPatchD1), int(i), int(di))
+		vsD2 := GlobalVectors.Value(int(GvVSPatchD2), int(i), int(di))
 		vs := rp.LHb.VSPatchGain * (vsD1 - vsD2)
 		if vs > mx {
 			mx = vs
@@ -1205,15 +1205,15 @@ func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence Valence
 	switch valence {
 	case Positive:
 		if usIndex < ctx.NetIndexes.RubiconNPosUSs {
-			us = GlbUSposV(ctx, di, GvUSpos, usIndex)
+			us = GlobalVectors.Value(int(GvUSpos), int(usIndex), int(di))
 		}
 	case Negative:
 		if usIndex < ctx.NetIndexes.RubiconNNegUSs {
-			us = GlbUSnegV(ctx, di, GvUSneg, usIndex)
+			us = GlobalVectors.Value(int(GvUSneg), int(usIndex), int(di))
 		}
 	case Cost:
 		if usIndex < ctx.NetIndexes.RubiconNCosts {
-			us = GlbCostV(ctx, di, GvCost, usIndex)
+			us = GlobalVectors.Value(int(GvCost), int(usIndex), int(di))
 		}
 	default:
 	}

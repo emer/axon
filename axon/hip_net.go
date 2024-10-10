@@ -254,7 +254,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		// clamp EC5 from clamp source (EC3 typically)
 		if hip.EC5Clamp {
 			if mode != etime.Test || hip.EC5ClampTest {
-				for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+				for di := uint32(0); di < ctx.NData; di++ {
 					clampSrc.UnitValues(&tmpValues, "Act", int(di))
 					// TODO:
 					// if hip.EC5ClampThr > 0 {

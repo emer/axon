@@ -74,7 +74,7 @@ func (dp *DriveParams) Update() {
 // VarToZero sets all values of given drive-sized variable to 0
 func (dp *DriveParams) VarToZero(ctx *Context, di uint32, gvar GlobalVectorVars) {
 	for i := range dp.Base {
-		SetGlbUSposV(ctx, di, gvar, uint32(i), 0)
+		GlobalVectors[gvar, i, di] = 0
 	}
 }
 
@@ -86,27 +86,27 @@ func (dp *DriveParams) ToZero(ctx *Context, di uint32) {
 // ToBaseline sets all drives to their baseline levels
 func (dp *DriveParams) ToBaseline(ctx *Context, di uint32) {
 	for i := range dp.Base {
-		SetGlbUSposV(ctx, di, GvDrives, uint32(i), dp.Base[i])
+		GlobalVectors[GvDrives, i, di] = dp.Base[i]
 	}
 }
 
 // AddTo increments drive by given amount, subject to 0-1 range clamping.
 // Returns new val.
 func (dp *DriveParams) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbUSposV(ctx, di, GvDrives, drv) + delta
+	dv := GlobalVectors[GvDrives, drv, di] + delta
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
+	GlobalVectors[GvDrives, drv, di] = dv
 	return dv
 }
 
 // SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
 // if delta is positive, multiply by 1-val, else val.  Returns new val.
 func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
-	dv := GlbUSposV(ctx, di, GvDrives, drv)
+	dv := GlobalVectors[GvDrives, drv, di]
 	if delta > 0 {
 		dv += (1 - dv) * delta
 	} else {
@@ -117,21 +117,21 @@ func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float3
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
+	GlobalVectors[GvDrives, drv, di] = dv
 	return dv
 }
 
 // ExpStep updates drive with an exponential step with given dt value
 // toward given baseline value.
 func (dp *DriveParams) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
-	dv := GlbUSposV(ctx, di, GvDrives, drv)
+	dv := GlobalVectors[GvDrives, drv, di]
 	dv += dt * (base - dv)
 	if dv > 1 {
 		dv = 1
 	} else if dv < 0 {
 		dv = 0
 	}
-	SetGlbUSposV(ctx, di, GvDrives, drv, dv)
+	GlobalVectors[GvDrives, drv, di] = dv
 	return dv
 }
 
@@ -147,9 +147,9 @@ func (dp *DriveParams) ExpStepAll(ctx *Context, di uint32) {
 // note that index 0 is the novelty / curiosity drive, which doesn't use DriveMin.
 func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
 	if i == 0 {
-		return GlbUSposV(ctx, di, GvDrives, uint32(0))
+		return GlobalVectors[GvDrives, 0, di]
 	}
-	return math32.Max(GlbUSposV(ctx, di, GvDrives, i), dp.DriveMin)
+	return math32.Max(GlobalVectors[GvDrives, i, di], dp.DriveMin)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -327,37 +327,37 @@ func (us *USParams) Update() {
 // USnegCostFromRaw sets normalized NegUS, Cost values from Raw values
 func (us *USParams) USnegCostFromRaw(ctx *Context, di uint32) {
 	for i, ng := range us.USnegGains {
-		raw := GlbUSnegV(ctx, di, GvUSnegRaw, uint32(i))
+		raw := GlobalVectors[GvUSnegRaw, i, di]
 		norm := RubiconNormFun(ng * raw)
-		SetGlbUSnegV(ctx, di, GvUSneg, uint32(i), norm)
+		GlobalVectors[GvUSneg, i, di] = norm
 	}
 	for i, ng := range us.CostGains {
-		raw := GlbCostV(ctx, di, GvCostRaw, uint32(i))
+		raw := GlobalVectors[GvCostRaw, i, di]
 		norm := RubiconNormFun(ng * raw)
-		SetGlbCostV(ctx, di, GvCost, uint32(i), norm)
+		GlobalVectors[GvCost, i, di] = norm
 	}
 }
 
 // USnegToZero sets all values of USneg, USnegRaw to zero
 func (us *USParams) USnegToZero(ctx *Context, di uint32) {
 	for i := range us.USnegGains {
-		SetGlbUSnegV(ctx, di, GvUSneg, uint32(i), 0)
-		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(i), 0)
+		GlobalVectors[GvUSneg, i, di] = 0
+		GlobalVectors[GvUSnegRaw, i, di] = 0
 	}
 }
 
 // CostToZero sets all values of Cost, CostRaw to zero
 func (us *USParams) CostToZero(ctx *Context, di uint32) {
 	for i := range us.CostGains {
-		SetGlbCostV(ctx, di, GvCost, uint32(i), 0)
-		SetGlbCostV(ctx, di, GvCostRaw, uint32(i), 0)
+		GlobalVectors[GvCost, i, di] = 0
+		GlobalVectors[GvCostRaw, i, di] = 0
 	}
 }
 
 // USposToZero sets all values of USpos to zero
 func (us *USParams) USposToZero(ctx *Context, di uint32) {
 	for i := range us.PVposWts {
-		SetGlbUSposV(ctx, di, GvUSpos, uint32(i), 0)
+		GlobalVectors[GvUSpos, i, di] = 0
 	}
 }
 
@@ -740,11 +740,11 @@ func (rp *Rubicon) InitDrives(ctx *Context, di uint32) {
 func (rp *Rubicon) AddTimeEffort(ctx *Context, di uint32, effort float32) {
 	GlobalScalars[GvTime, di] += 1
 	tm := GlobalScalars[GvTime, di]
-	SetGlbCostV(ctx, di, GvCostRaw, 0, tm) // time is neg 0
+	GlobalVectors[GvCostRaw, 0, di] = tm // time is neg 0
 
 	GlobalScalars[GvEffort, di] += effort
 	eff := GlobalScalars[GvEffort, di]
-	SetGlbCostV(ctx, di, GvCostRaw, 1, eff) // effort is neg 1
+	GlobalVectors[GvCostRaw, 1, di] = eff // effort is neg 1
 }
 
 // EffortUrgencyUpdate updates the Effort or Urgency based on
@@ -766,8 +766,8 @@ func (rp *Rubicon) EffortUrgencyUpdate(ctx *Context, di uint32, effort float32) 
 func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 	GlobalScalars[GvTime, di] = 0
 	GlobalScalars[GvEffort, di] = 0
-	SetGlbCostV(ctx, di, GvCostRaw, 0, 0) // effort is neg 0
-	SetGlbCostV(ctx, di, GvCost, 0, 0)
+	GlobalVectors[GvCostRaw, 0, di] = 0 // effort is neg 0
+	GlobalVectors[GvCost, 0, di] = 0
 }
 
 // PVposFromDriveEffort returns the net primary value ("reward") based on
@@ -783,7 +783,7 @@ func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 
 // RubiconSetDrive sets given Drive to given value
 func (rp *Rubicon) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
-	SetGlbUSposV(ctx, di, GvDrives, dr, val)
+	GlobalVectors[GvDrives, dr, di] = val
 }
 
 // SetDrives is used when directly controlling drive levels externally.
@@ -805,12 +805,12 @@ func (rp *Rubicon) DriveUpdate(ctx *Context, di uint32) {
 	rp.Drive.ExpStepAll(ctx, di)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		us := GlbUSposV(ctx, di, GvUSpos, i)
-		nwdrv := GlbUSposV(ctx, di, GvDrives, i) - us*rp.Drive.Satisfaction[i]
+		us := GlobalVectors[GvUSpos, i, di]
+		nwdrv := GlobalVectors[GvDrives, i, di] - us*rp.Drive.Satisfaction[i]
 		if nwdrv < 0 {
 			nwdrv = 0
 		}
-		SetGlbUSposV(ctx, di, GvDrives, i, nwdrv)
+		GlobalVectors[GvDrives, i, di] = nwdrv
 	}
 }
 
@@ -824,10 +824,10 @@ func (rp *Rubicon) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex 
 	GlobalScalars[GvHasRew, di] = 1
 	if valence == Positive {
 		usIndex = rp.USposIndex(usIndex)
-		SetGlbUSposV(ctx, di, GvUSpos, uint32(usIndex), magnitude)
+		GlobalVectors[GvUSpos, usIndex, di] = magnitude
 	} else {
 		usIndex = rp.USnegIndex(usIndex)
-		SetGlbUSnegV(ctx, di, GvUSnegRaw, uint32(usIndex), magnitude)
+		GlobalVectors[GvUSnegRaw, usIndex, di] = magnitude
 		GlobalScalars[GvNegUSOutcome, di] = 1
 	}
 }
@@ -852,8 +852,8 @@ func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 	GlobalScalars[GvProgressRate, di] = 0
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		SetGlbUSposV(ctx, di, GvOFCposPTMaint, i, 0)
-		SetGlbUSposV(ctx, di, GvVSMatrixPoolGated, i, 0)
+		GlobalVectors[GvOFCposPTMaint, i, di] = 0
+		GlobalVectors[GvVSMatrixPoolGated, i, di] = 0
 	}
 }
 
@@ -979,7 +979,7 @@ func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
 func (rp *Rubicon) HasPosUS(ctx *Context, di uint32) bool {
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		if GlbUSposV(ctx, di, GvUSpos, i) > 0 {
+		if GlobalVectors[GvUSpos, i, di] > 0 {
 			return true
 		}
 	}
@@ -995,7 +995,7 @@ func (rp *Rubicon) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * GlbUSposV(ctx, di, GvUSpos, i) * rp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * GlobalVectors[GvUSpos, i, di] * rp.Drive.EffectiveDrive(ctx, di, i)
 	}
 	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
@@ -1010,12 +1010,12 @@ func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
 	nn := rp.NNegUSs
 	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
-		pvNegSum += wts[i] * GlbUSnegV(ctx, di, GvUSnegRaw, i)
+		pvNegSum += wts[i] * GlobalVectors[GvUSnegRaw, i, di]
 	}
 	nn = rp.NCosts
 	wts = rp.USs.PVcostWts
 	for i := uint32(0); i < nn; i++ {
-		pvNegSum += wts[i] * GlbCostV(ctx, di, GvCostRaw, i)
+		pvNegSum += wts[i] * GlobalVectors[GvCostRaw, i, di]
 	}
 	pvNeg = RubiconNormFun(rp.USs.PVnegGain * pvNegSum)
 	return
@@ -1043,8 +1043,8 @@ func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 	mx := float32(0)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
-		vsD1 := GlbUSposV(ctx, di, GvVSPatchD1, i)
-		vsD2 := GlbUSposV(ctx, di, GvVSPatchD2, i)
+		vsD1 := GlobalVectors[GvVSPatchD1, i, di]
+		vsD2 := GlobalVectors[GvVSPatchD2, i, di]
 		vs := rp.LHb.VSPatchGain * (vsD1 - vsD2)
 		if vs > mx {
 			mx = vs
@@ -1201,17 +1201,18 @@ func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence Valence
 	switch valence {
 	case Positive:
 		if usIndex < ctx.NetIndexes.RubiconNPosUSs {
-			us = GlbUSposV(ctx, di, GvUSpos, usIndex)
+			us = GlobalVectors[GvUSpos, usIndex, di]
 		}
 	case Negative:
 		if usIndex < ctx.NetIndexes.RubiconNNegUSs {
-			us = GlbUSnegV(ctx, di, GvUSneg, usIndex)
+			us = GlobalVectors[GvUSneg, usIndex, di]
 		}
 	case Cost:
 		if usIndex < ctx.NetIndexes.RubiconNCosts {
-			us = GlbCostV(ctx, di, GvCost, usIndex)
+			us = GlobalVectors[GvCost, usIndex, di]
 		}
 	default:
 	}
 	return us
 }
+
