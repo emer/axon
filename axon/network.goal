@@ -28,7 +28,6 @@ import (
 // all data parallel values.  The current Context.NData should be set
 // properly prior to calling this and subsequent Cycle methods.
 func (nt *Network) NewState(ctx *Context) {
-	// nt.Context().NetIndexes.NData = ctx.NetIndexes.NData
 	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
 	// 	nt.GPU.RunNewState()
 	// 	return
@@ -486,7 +485,8 @@ func (nt *Network) UpdateExtFlags(ctx *Context) {
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctx *Context) {
-	nt.PathMapSeq(func(pj *Path) { pj.SynFail(ctx) }, "SynFail")
+	// todo:
+	// nt.PathMapSeq(func(pj *Path) { pj.SynFail(ctx) }, "SynFail")
 }
 
 // LRateMod sets the LRate modulation parameter for Paths, which is
@@ -668,7 +668,8 @@ func (nt *Network) SizeReport(detail bool) string {
 
 	varBytes := 4
 	synVarBytes := 4
-	maxData := int(nt.MaxData)
+	nix := nt.NetIxs()
+	maxData := int(nix.MaxData)
 	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
 	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseTraceVarsN)*maxData*varBytes + int(SynapseIndexVarsN)*varBytes
 
@@ -706,7 +707,7 @@ func (nt *Network) SizeReport(detail bool) string {
 	synCaMem := nt.SynapseTraces.Len() * synVarBytes
 
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynCa: %v\n",
-		nt.Name, nt.NNeurons, (datasize.Size)(nrnMem).String(), nt.NSyns,
+		nt.Name, nix.NNeurons, (datasize.Size)(nrnMem).String(), nix.NSyns,
 		(datasize.Size)(synIndexMem).String(), (datasize.Size)(synWtMem).String(), (datasize.Size)(synCaMem).String())
 	return b.String()
 }

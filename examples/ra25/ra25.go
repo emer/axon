@@ -458,7 +458,7 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*env.FixedTable)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		ev.Step()
 		// note: must save env state for logging / stats due to data parallel re-use of same env
 		ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur)
@@ -632,7 +632,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+		for di := 0; di < int(ctx.NData); di++ {
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, row, di)

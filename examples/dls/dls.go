@@ -481,7 +481,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	ctx := &ss.Context
 	pv := &ss.Net.Rubicon
 	// vlly := ss.Net.LayerByName("VL")
-	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+	for di := 0; di < int(ctx.NData); di++ {
 		diu := uint32(di)
 		ev := ss.Envs.ByModeDi(ctx.Mode, di).(*armaze.Env)
 		netAct := ss.DecodeAct(ev, di)
@@ -569,7 +569,7 @@ func (ss *Sim) ApplyInputs() {
 	lays := []string{"Pos", "Arm", "CS", "VSgpi", "OFC"}
 
 	ss.Net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*armaze.Env)
 		giveUp := axon.GlobalScalars[axon.GvGiveUp, di] > 0
 		if giveUp {
@@ -607,7 +607,7 @@ func (ss *Sim) ApplyRubicon(ctx *axon.Context, ev *armaze.Env, di uint32) {
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
-	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+	for di := 0; di < int(ctx.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 	}
 	ctx.Reset()
@@ -897,7 +897,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		// row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
 		if mode == etime.Train {
-			for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+			for di := 0; di < int(ctx.NData); di++ {
 				diu := uint32(di)
 				ss.TrialStats(di)
 				ss.StatCounters(di)

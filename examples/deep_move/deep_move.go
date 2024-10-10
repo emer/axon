@@ -396,7 +396,7 @@ func (ss *Sim) ApplyInputs() {
 	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	net.InitExt(ctx)
 
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		ev := ss.Envs.ByModeDi(ctx.Mode, int(di)).(*MoveEnv)
 		ev.Step()
 		for _, lnm := range lays {
@@ -415,7 +415,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
-	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+	for di := 0; di < int(ctx.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}
@@ -431,7 +431,7 @@ func (ss *Sim) NewRun() {
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
 	ctx := &ss.Context
-	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+	for di := 0; di < int(ctx.NData); di++ {
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}
 	ss.Loops.ResetAndRun(etime.Test)

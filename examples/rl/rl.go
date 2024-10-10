@@ -266,7 +266,7 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs.ByMode(ctx.Mode).(*CondEnv)
 	lays := []string{"Input"}
 	ss.Net.InitExt(ctx)
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		ev.Step()
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
@@ -387,7 +387,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		return
 	case time == etime.Trial:
-		for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+		for di := 0; di < int(ctx.NData); di++ {
 			ss.TrialStats(di)
 			ss.StatCounters(di)
 			ss.Logs.LogRowDi(mode, time, dt.Rows, di)

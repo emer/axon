@@ -206,14 +206,14 @@ func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
 func (pl *Pool) PoolGi(ctx *Context, di uint32) {
 	nix := NetIxs()
 	li := pl.LayIndex
-	giMult := LayerValues[nix.ValuesIndex(li, di)].ActAvg.GiMult
+	giMult := LayValues[nix.ValuesIndex(li, di)].ActAvg.GiMult
 	if pl.IsLayPool > 0 {
 		return
 	}
-	pl.AvgMax.Calc(li)
+	pl.AvgMax.Calc(int32(li))
 	pl.Inhib.IntToRaw()
 	lyIsOn := (Layers[li].Inhib.Layer.On == 1)
-	Layers[li].SubPoolGiFromSpikes(ctx, di, pl, &Pools[ly.Indexes.PoolIndex(0, di)], lyIsOn, giMult)
+	Layers[li].SubPoolGiFromSpikes(ctx, di, pl, &Pools[Layers[li].Indexes.PoolIndex(0, di)], lyIsOn, giMult)
 }
 
 //gosl:end

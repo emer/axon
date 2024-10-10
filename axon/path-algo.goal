@@ -6,9 +6,6 @@ package axon
 
 // path-algo.go has the core computational methods.
 
-//////////////////////////////////////////////////////////////////////
-//  Act methods
-
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
@@ -19,6 +16,7 @@ func (pj *Path) DWt(ctx *Context, si uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
+
 	scon := pj.SendCon[si-pj.Send.NeurStIndex]
 	rlay := pj.Recv
 	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
@@ -26,7 +24,7 @@ func (pj *Path) DWt(ctx *Context, si uint32) {
 		syni := pj.SynStIndex + syi
 		ri := SynapseIxs[SynRecvIndex, syni]
 		dwt := float32(0)
-		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+		for di := uint32(0); di < ctx.NData; di++ {
 			layPool := rlay.Pool(0, di)
 			subPool := rlay.SubPool(ctx, ri, di)
 			pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)

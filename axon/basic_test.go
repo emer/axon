@@ -106,7 +106,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.Rubicon.Defaults()
 
 	testNet.Build(ctx)
-	ctx.NetIndexes.NData = uint32(nData)
+	ctx.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
 	testNet.InitWeights(ctx)                      // get GScale here
@@ -131,7 +131,7 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(outLay, hidLay, full, BackPath)
 
 	testNet.Build(ctx)
-	ctx.NetIndexes.NData = uint32(nData)
+	ctx.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
 	testNet.InitWeights(ctx)                      // get GScale here
@@ -563,7 +563,7 @@ func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bo
 // fine-grained diff test, e.g., see the GPU version.
 func RunDebugAct(t *testing.T, ctx *Context, testNet *Network, printValues bool, gpu bool, initWts bool) map[string]float32 {
 
-	nData := int(ctx.NetIndexes.NData)
+	nData := int(ctx.NData)
 	valMap := make(map[string]float32)
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input")
@@ -1025,7 +1025,7 @@ func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int,
 		testNet.ApplyParams(ParamSets["SubMean"], false)
 	}
 
-	ctx.NetIndexes.NData = uint32(nData)
+	ctx.NData = uint32(nData)
 	return RunDebugLearn(t, ctx, testNet, printValues, gpu, initWts, slowAdapt)
 }
 
@@ -1034,7 +1034,7 @@ func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int,
 // fine-grained diff test, e.g., see the GPU version.
 func RunDebugLearn(t *testing.T, ctx *Context, testNet *Network, printValues bool, gpu bool, initWts, slowAdapt bool) map[string]float32 {
 
-	nData := int(ctx.NetIndexes.NData)
+	nData := int(ctx.NData)
 	valMap := make(map[string]float32)
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input")

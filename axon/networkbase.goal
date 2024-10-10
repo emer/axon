@@ -39,11 +39,15 @@ import (
 // NetworkIndexes are indexes and sizes for processing network.
 type NetworkIndexes struct {
 
-	// maximum number of data inputs that can be processed
+	// MaxData is the maximum number of data inputs that can be processed
 	// in parallel in one pass of the network.
 	// Neuron storage is allocated to hold this amount during
 	// Build process, and this value reflects that.
 	MaxData uint32 `edit:"-"`
+
+	// MaxDelay is the maximum synaptic delay across all pathways at the time of
+	// [Network.Build]. This determines the size of the spike sending delay buffers.
+	MaxDelay uint32 `edit:-"-"`
 
 	// number of layers in the network
 	NLayers uint32 `edit:"-"`
@@ -88,11 +92,6 @@ func (ix *NetworkIndexes) ItemIndex(idx uint32) uint32 {
 // DataIndex returns the data index from an overall index over N * MaxData
 func (ix *NetworkIndexes) DataIndex(idx uint32) uint32 {
 	return idx % ix.MaxData
-}
-
-// DataIndexIsValid returns true if the data index is valid (< NData)
-func (ix *NetworkIndexes) DataIndexIsValid(li uint32) bool {
-	return (li < ix.NData)
 }
 
 // LayerIndexIsValid returns true if the layer index is valid (< NLayers)
@@ -270,10 +269,10 @@ func (nt *Network) NetIxs() *NetworkIndexes { return &nt.NetworkIxs[0] }
 func (nt *Network) NumLayers() int               { return len(nt.Layers) }
 func (nt *Network) EmerLayer(idx int) emer.Layer { return nt.Layers[idx] }
 func (nt *Network) MaxParallelData() int         { return int(nt.NetIxs().MaxData) }
-func (nt *Network) NParallelData() int           { return int(nt.NetIxs().NData) }
+func (nt *Network) NParallelData() int           { return int(nt.Context().NData) }
 
 func (nt *Network) Init() {
-	nt.MaxData = 1
+	nt.NetIxs().MaxData = 1
 }
 
 // NewNetwork returns a new axon Network
@@ -320,7 +319,8 @@ func (nt *Network) LayersByType(layType ...LayerTypes) []string {
 
 // LayerValues returns LayerValues for given layer and data parallel indexes
 func (nt *Network) LayerValues(li, di uint32) *LayerValues {
-	return &nt.LayValues[li*nt.MaxData+di]
+	md := nt.NetIxs().MaxData
+	return &nt.LayValues[li*md+di]
 }
 
 // UnitVarNames returns a list of variable names available on the units in this network.
@@ -496,9 +496,9 @@ func (nt *Network) SaveAllPathScales(filename core.Filename) error {
 
 // AllGlobals returns a listing of all Global variables and values.
 func (nt *Network) AllGlobals() string {
-	ctx := nt.Context()
+	md := nt.NetIxs().MaxData
 	str := ""
-	for di := uint32(0); di < nt.MaxData; di++ {
+	for di := uint32(0); di < md; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
 		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t%7.4f\n", vv.String(), GlobalScalars[vv, di])
@@ -537,8 +537,8 @@ func (nt *Network) ShowAllGlobals() { //types:add
 // AllGlobalValues adds to map of all Global variables and values.
 // ctrKey is a key of counters to contextualize values.
 func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
-	ctx := nt.Context()
-	for di := uint32(0); di < nt.MaxData; di++ {
+	md := nt.NetIxs().MaxData
+	for di := uint32(0); di < md; di++ {
 		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlobalScalars[vv, di]
@@ -677,25 +677,14 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 	return pt
 }
 
-// SetCtxStrides sets the given simulation context strides for accessing
-// variables on this network -- these must be set properly before calling
-// any compute methods with the context.
-func (nt *Network) SetCtxStrides(simCtx *Context) {
-	simCtx.CopyNetStridesFrom(nt.Context())
-}
-
 // SetMaxData sets the MaxData and current NData for both the Network and the Context
 func (nt *Network) SetMaxData(simCtx *Context, maxData int) {
-	nt.MaxData = uint32(maxData)
-	simCtx.NetIndexes.NData = uint32(maxData)
-	simCtx.NetIndexes.MaxData = uint32(maxData)
+	nt.NetIxs().MaxData = uint32(maxData)
+	simCtx.NData = uint32(maxData)
 }
 
 // Build constructs the layer and pathway state based on the layer shapes
-// and patterns of interconnectivity. Configures threading using heuristics based
-// on final network size.  Must set UseGPUOrder properly prior to calling.
-// Configures the given Context object used in the simulation with the memory
-// access strides for this network -- must be set properly -- see SetCtxStrides.
+// and patterns of interconnectivity.
 func (nt *Network) Build(simCtx *Context) error { //types:add
 	nt.MakeLayerMaps()
 	if nt.Rubicon.NPosUSs == 0 {
@@ -705,7 +694,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	ctx := nt.Context()
 	*ctx = *simCtx
 	nt.FunTimes = make(map[string]*timer.Time)
-	maxData := int(nt.MaxData)
+	maxData := int(nt.NetIxs().MaxData)
 	var errs []error
 	totNeurons := 0
 	totPaths := 0
@@ -734,15 +723,15 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nt.LayParams = make([]LayerParams, nLayers)
 	nt.LayValues = make([]LayerValues, nLayers*maxData)
 	nt.Pools = make([]Pool, totPools*maxData)
-	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, maxData)
 	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
 	sltensor.SetShapeSizes(&nt.NeuronIxs, int(NeuronIndexVarsN), totNeurons)
 	nt.Paths = make([]*Path, totPaths)
 	nt.PathParams = make([]PathParams, totPaths)
 	sltensor.SetShapeSizes(&nt.Exts, totExts, maxData)
 
-	sltensor.SetShapeSizes(&nt.GlobalScalars, int(GlobalScalarVarsN), int(nt.MaxData))
-	sltensor.SetShapeSizes(&nt.GlobalVectors, int(GlobalVectorVarsN), int(MaxGlobalVecN), int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.GlobalScalars, int(GlobalScalarVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.GlobalVectors, int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
 
 	totSynapses := 0
 	totRecvCon := 0
@@ -763,13 +752,13 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		nn := shp.Len()
 		ly.NNeurons = uint32(nn)
 		ly.NeurStIndex = uint32(neurIndex)
-		ly.MaxData = nt.MaxData
+		ly.MaxData = uint32(maxData)
 		np := ly.NumPools() + 1
 		npd := np * maxData
 		ly.NPools = uint32(np)
 		ly.Pools = nt.Pools[poolIndex : poolIndex+npd]
 		ly.Params.Indexes.LayIndex = uint32(li)
-		ly.Params.Indexes.MaxData = nt.MaxData
+		ly.Params.Indexes.MaxData = uint32(maxData)
 		ly.Params.Indexes.PoolSt = uint32(poolIndex)
 		ly.Params.Indexes.NeurSt = uint32(neurIndex)
 		ly.Params.Indexes.NeurN = uint32(nn)
@@ -838,7 +827,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 
 	nt.NetworkIxs[0].NSyns = uint32(totSynapses)
 	sltensor.SetShapeSizes(&nt.Synapses, int(SynapseVarsN), totSynapses)
-	sltensor.SetShapeSizes(&nt.SynapseTraces, int(SynapseTraceVarsN), totSynapses, int(nt.MaxData))
+	sltensor.SetShapeSizes(&nt.SynapseTraces, int(SynapseTraceVarsN), totSynapses, maxData)
 	sltensor.SetShapeSizes(&nt.SynapseIxs, int(SynapseIndexVarsN), totSynapses)
 	sltensor.SetShapeSizes(&nt.PathSendCon, totSendCon, 2)
 	sltensor.SetShapeSizes(&nt.PathRecvCon, totRecvCon, 2)
@@ -910,9 +899,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			rpathIndex++
 		}
 	}
-	nix.NSyns = nt.NSyns
-
-	nt.SetCtxStrides(simCtx)
+	nix.NSyns = uint32(syIndex)
 
 	nt.LayoutLayers()
 	return errors.Join(errs...)
@@ -923,41 +910,44 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 // which should have been configured by this point.
 // Called by default in InitWeights()
 func (nt *Network) BuildPathGBuf() {
-	nt.MaxDelay = 0
+	nix := nt.NetIxs()
+	maxDel := uint32(0)
 	npjneur := uint32(0)
 	for _, ly := range nt.Layers {
 		nneur := uint32(ly.NNeurons)
 		for _, pt := range ly.RecvPaths {
-			if pt.Params.Com.MaxDelay > nt.MaxDelay {
-				nt.MaxDelay = pt.Params.Com.MaxDelay
+			if pt.Params.Com.MaxDelay > maxDel {
+				maxDel = pt.Params.Com.MaxDelay
 			}
 			npjneur += nneur
 		}
 	}
-	mxlen := nt.MaxDelay + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, int(npjneur), int(mxlen), int(nt.MaxData))
-	sltensor.SetShapeSizes(&nt.PathGSyns, int(npjneur), int(nt.MaxData))
+	nix.MaxDelay = maxDel
+	maxData := nt.NetIxs().MaxData
+	mxlen := maxDel + 1
+	sltensor.SetShapeSizes(&nt.PathGBuf, int(npjneur), int(mxlen), int(maxData))
+	sltensor.SetShapeSizes(&nt.PathGSyns, int(npjneur), int(maxData))
 
-	// gbi := uint32(0)
-	// gsi := uint32(0)
-	// for _, ly := range nt.Layers {
-	// 	nneur := uint32(ly.NNeurons)
-	// 	for _, pt := range ly.RecvPaths {
-	// 		gbs := nneur * mxlen * nt.MaxData
-	// 		pt.Params.Indexes.GBufSt = gbi
-	// 		pt.GBuf = nt.PathGBuf[gbi : gbi+gbs]
-	// 		gbi += gbs
-	// 		pt.Params.Indexes.GSynSt = gsi
-	// 		pt.GSyns = nt.PathGSyns[gsi : gsi+nneur*nt.MaxData]
-	// 		gsi += nneur * nt.MaxData
-	// 	}
-	// }
+	gbi := uint32(0)
+	gsi := uint32(0)
+	for _, ly := range nt.Layers {
+		nneur := uint32(ly.NNeurons)
+		for _, pt := range ly.RecvPaths {
+			gbs := nneur * mxlen * maxData
+			pt.Params.Indexes.GBufSt = gbi
+			// pt.GBuf = nt.PathGBuf[gbi : gbi+gbs]
+			gbi += gbs
+			pt.Params.Indexes.GSynSt = gsi
+			// pt.GSyns = nt.PathGSyns[gsi : gsi+nneur*nt.MaxData]
+			gsi += nneur * maxData
+		}
+	}
 }
 
 // SetAsCurrent sets this network's values as the current global variables,
 // that are then processed in the code.
 func (nt *Network) SetAsCurrent() {
-	LayParams = nt.LayParams
+	Layers = nt.LayParams
 	Paths = nt.PathParams
 	NeuronIxs = &nt.NeuronIxs
 	SynapseIxs = &nt.SynapseIxs
@@ -1023,7 +1013,8 @@ func (nt *Network) ReadWeightsJSON(r io.Reader) error {
 // SynsSlice returns a slice of synaptic values, in natural sending order,
 // using given synaptic variable, resizing as needed.
 func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
-	*vals = slicesx.SetLength(*vals, int(nt.NSyns))
+	nix := nt.NetIxs()
+	*vals = slicesx.SetLength(*vals, int(nix.NSyns))
 	i := 0
 	for _, ly := range nt.Layers {
 		for _, pt := range ly.SendPaths {
@@ -1042,7 +1033,8 @@ func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 // NeuronsSlice returns a slice of neuron values
 // using given neuron variable, resizing as needed.
 func (nt *Network) NeuronsSlice(vals *[]float32, nrnVar string, di int) {
-	*vals = slicesx.SetLength(*vals, int(nt.NNeurons))
+	nix := nt.NetIxs()
+	*vals = slicesx.SetLength(*vals, int(nix.NNeurons))
 	i := 0
 	for _, ly := range nt.Layers {
 		varIndex, _ := ly.UnitVarIndex(nrnVar)
@@ -1077,16 +1069,18 @@ func HashEncodeSlice(slice []float32) string {
 // CheckSameSize checks if this network is the same size as given other,
 // in terms of NNeurons, MaxData, and NSyns.  Returns error message if not.
 func (nt *Network) CheckSameSize(on *Network) error {
-	if nt.NNeurons != on.NNeurons {
-		err := fmt.Errorf("CheckSameSize: dest NNeurons: %d != src NNeurons: %d", nt.NNeurons, on.NNeurons)
+	nix := nt.NetIxs()
+	nox := on.NetIxs()
+	if nix.NNeurons != nox.NNeurons {
+		err := fmt.Errorf("CheckSameSize: dest NNeurons: %d != src NNeurons: %d", nix.NNeurons, nox.NNeurons)
 		return err
 	}
-	if nt.MaxData != on.MaxData {
-		err := fmt.Errorf("CheckSameSize: dest MaxData: %d != src MaxData: %d", nt.MaxData, on.MaxData)
+	if nix.MaxData != nox.MaxData {
+		err := fmt.Errorf("CheckSameSize: dest MaxData: %d != src MaxData: %d", nix.MaxData, nox.MaxData)
 		return err
 	}
-	if nt.NSyns != on.NSyns {
-		err := fmt.Errorf("CheckSameSize: dest NSyns: %d != src NSyns: %d", nt.NSyns, on.NSyns)
+	if nix.NSyns != nox.NSyns {
+		err := fmt.Errorf("CheckSameSize: dest NSyns: %d != src NSyns: %d", nix.NSyns, nox.NSyns)
 		return err
 	}
 	return nil
@@ -1115,10 +1109,10 @@ func (nt *Network) CopyStateFrom(on *Network) error {
 // and given other, up to given max number of differences (0 = all),
 // for each state value.
 func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
+	nix := nt.NetIxs()
 	diffs := ""
 	ndif := 0
-	nix := nt.NetIxs()
-	for di := uint32(0); di < nix.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		for ni := uint32(0); ni < nix.NNeurons; ni++ {
 			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
 				nv := nt.Neurons[nvar, ni, di]
@@ -1159,8 +1153,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 			}
 		}
 	}
-	for di := uint32(0); di < nix.NData; di++ {
-		for si := uint32(0); si < nt.NSyns; si++ {
+	for di := uint32(0); di < ctx.NData; di++ {
+		for si := uint32(0); si < nix.NSyns; si++ {
 			for svar := Tr; svar < SynapseTraceVarsN; svar++ {
 				sv := nt.SynapseTraces[svar, si, di]
 				ov := on.SynapseTraces[svar, si, di]

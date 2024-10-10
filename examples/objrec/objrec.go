@@ -376,7 +376,7 @@ func (ss *Sim) ApplyInputs() {
 	}
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		ev.Step()
 		ss.Stats.SetIntDi("Cat", int(di), ev.CurLED) // note: must save relevant state for stats later
 		ss.Stats.SetStringDi("TrialName", int(di), ev.String())

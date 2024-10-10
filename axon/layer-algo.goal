@@ -18,8 +18,6 @@ import (
 
 // layer-algo.go has the core algorithm methods.
 
-//gosl:start
-
 // LDTSrcLayAct returns the overall activity level for given source layer
 // for purposes of computing ACh salience value.
 // Typically the input is a superior colliculus (SC) layer that rapidly
@@ -738,7 +736,5 @@ func (ly *Layer) SetSubMean(trgAvg, path float32) {
 		pj.Params.Learn.Trace.SubMean = path
 	}
 }
-
-//gosl:end
 
 

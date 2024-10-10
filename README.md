@@ -69,7 +69,7 @@ As of v1.8.0, _data parallel_ processing of multiple input patterns in parallel 
 
 ```Go
 net.InitExt(ctx) // clear any existing inputs
-for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+for di := uint32(0); di < ctx.NData; di++ {
 	ev.Step()
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
@@ -128,7 +128,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 	case time == etime.Trial:
 		trl := ss.Stats.Int("Trial")
 		row = trl
-		for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+		for di := 0; di < int(ctx.NData); di++ {
 			ss.Stats.SetInt("Trial", trl+di)
 			ss.TrialStats(di)
 			ss.StatCounters(di)

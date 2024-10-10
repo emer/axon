@@ -12,7 +12,7 @@ import (
 	"cogentcore.org/core/goal/gosl/slbool"
 )
 
-//gosl:start pcore_layers
+//gosl:start
 
 // MatrixParams has parameters for BG Striatum Matrix MSN layers
 // These are the main Go / NoGo gating units in BG.
@@ -93,7 +93,7 @@ func (gp *GPParams) Defaults() {
 func (gp *GPParams) Update() {
 }
 
-//gosl:end pcore_layers
+//gosl:end
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
 // downloaded from GPU, to set Gated flag based on SpkMax activity
@@ -101,14 +101,14 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
 		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIndex)]
 		// note: NoGo layers don't track gating at the sub-pool level!
-		for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+		for di := uint32(0); di < ctx.NData; di++ {
 			ly.Pool(0, di).Gated = oly.Pool(0, di).Gated
 		}
 		return
 	}
 	// todo: Context requires data parallel state!
 
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		mtxGated, poolIndex := ly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
 
 		thalGated := false

@@ -18,10 +18,11 @@ import (
 // pass 0 to use a default heuristic number based on current GOMAXPROCS
 // processors and the number of neurons in the network (call after building)
 func (nt *Network) SetNThreads(nthr int) {
+	md := nt.NetIxs().MaxData
 	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 	if nthr <= 0 {
 		nneur := nt.Neurons.Len()
-		nthr = int(math.Ceil(float64(nneur) / (float64(10000) / float64(nt.MaxData))))
+		nthr = int(math.Ceil(float64(nneur) / (float64(10000) / float64(md))))
 		if nthr < 1 { // shouldn't happen but justin..
 			nthr = 1
 		}

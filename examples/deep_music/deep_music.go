@@ -379,7 +379,7 @@ func (ss *Sim) ApplyInputs() {
 	net.InitExt(ctx)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 
-	for di := uint32(0); di < ctx.NetIndexes.NData; di++ {
+	for di := uint32(0); di < ctx.NData; di++ {
 		ev.StepDi(int(di))
 		if ctx.Mode == etime.Test && !ss.Config.Env.TestClamp {
 			lastnote := ss.Stats.IntDi("OutNote", int(di)) + ev.NoteRange.Min

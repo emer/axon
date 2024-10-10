@@ -352,7 +352,7 @@ func (ss *Sim) ApplyRubicon(ctx *axon.Context, mode etime.Modes) {
 func (ss *Sim) NewRun() {
 	ctx := &ss.Context
 	ss.InitRandSeed(ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur)
-	for di := 0; di < int(ctx.NetIndexes.NData); di++ {
+	for di := 0; di < int(ctx.NData); di++ {
 		ss.Envs.ByModeDi(etime.Train, di).Init(0)
 		ss.Envs.ByModeDi(etime.Test, di).Init(0)
 	}

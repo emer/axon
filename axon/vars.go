@@ -6,7 +6,7 @@ package axon
 
 import "cogentcore.org/core/tensor"
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay
+//go:generate gosl -keep -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay
 
 //gosl:start
 
