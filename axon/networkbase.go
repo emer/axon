@@ -38,6 +38,8 @@ import (
 // network.go has the algorithm-specific code.
 // Everything is defined on Network type.
 
+//gosl:start
+
 // NetworkIndexes are indexes and sizes for processing network.
 type NetworkIndexes struct {
 
@@ -77,6 +79,8 @@ type NetworkIndexes struct {
 
 	// total number of .Rubicon Negative USs
 	RubiconNNegUSs uint32 `edit:"-"`
+
+	pad uint32
 }
 
 // ItemIndex returns the main item index from an overall index over NItems * MaxData
@@ -114,6 +118,8 @@ func (ix *NetworkIndexes) PoolDataIndexIsValid(pi uint32) bool {
 func (ix *NetworkIndexes) SynIndexIsValid(si uint32) bool {
 	return (si < ix.NSyns)
 }
+
+//gosl:end
 
 // axon.Network implements the Axon spiking model.
 type Network struct {

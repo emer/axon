@@ -13,6 +13,7 @@ import (
 )
 
 //gosl:start
+//gosl:import "github.com/emer/axon/v2/fsfffb"
 
 // AvgMaxPhases contains the average and maximum values over a Pool of neurons,
 // at different time scales within a standard ThetaCycle of updating.

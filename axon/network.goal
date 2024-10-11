@@ -57,6 +57,41 @@ func (nt *Network) NewState(ctx *Context) {
 	// }
 }
 
+// Cycle runs one cycle of activation updating using threading methods.
+func (nt *Network) Cycle() {
+	// todo: chunks of 10 cycles
+	nix := NetIxs()
+	nd := int(nix.NNeurons * nix.MaxData)
+	ld := int(nix.NLayers * nix.MaxData)
+	pd := int(nix.NPools * nix.MaxData)
+	RunGatherSpikes(nd)
+	RunLayerGi(ld)
+	RunBetweenGi(ld)
+	RunPoolGi(pd)
+	RunCycleNeuron(nd)
+	RunSendSpike(nd)
+	RunCyclePost(ld)
+
+	// todo: fix this:
+	// var ldt, vta *Layer
+	// for _, ly := range nt.Layers {
+	// 	if ly.Type == VTALayer {
+	// 		vta = ly
+	// 	} else if ly.Type == LDTLayer {
+	// 		ldt = ly
+	// 	} else {
+	// 		ly.CyclePost(ctx)
+	// 	}
+	// }
+	// // ordering of these is important
+	// if ldt != nil {
+	// 	ldt.CyclePost(ctx)
+	// }
+	// if vta != nil {
+	// 	vta.CyclePost(ctx)
+	// }
+}
+
 //gosl:start
 
 //////// Kernels for all parallel CPU / GPU compute are here:
@@ -150,41 +185,6 @@ func CyclePost(i uint32) { //gosl:kernel
 	}
 	li := nix.ItemIndex(i)
 	Layers[li].CyclePost(ctx, di)
-}
-
-// Cycle runs one cycle of activation updating using threading methods.
-func (nt *Network) Cycle() {
-	// todo: chunks of 10 cycles
-	nix := NetIxs()
-	nd := int(nix.NNeurons * nix.MaxData)
-	ld := int(nix.NLayers * nix.MaxData)
-	pd := int(nix.NPools * nix.MaxData)
-	RunGatherSpikes(nd)
-	RunLayerGi(ld)
-	RunBetweenGi(ld)
-	RunPoolGi(pd)
-	RunCycleNeuron(nd)
-	RunSendSpike(nd)
-	RunCyclePost(ld)
-
-	// todo: fix this:
-	// var ldt, vta *Layer
-	// for _, ly := range nt.Layers {
-	// 	if ly.Type == VTALayer {
-	// 		vta = ly
-	// 	} else if ly.Type == LDTLayer {
-	// 		ldt = ly
-	// 	} else {
-	// 		ly.CyclePost(ctx)
-	// 	}
-	// }
-	// // ordering of these is important
-	// if ldt != nil {
-	// 	ldt.CyclePost(ctx)
-	// }
-	// if vta != nil {
-	// 	vta.CyclePost(ctx)
-	// }
 }
 
 //gosl:end
