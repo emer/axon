@@ -7,6 +7,8 @@
 package axon
 
 import (
+	"math"
+
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
@@ -20,6 +22,24 @@ import (
 //gosl:import "cogentcore.org/core/math32"
 //gosl:import "cogentcore.org/core/math32/minmax"
 //gosl:import "github.com/emer/axon/v2/chans"
+
+func NrnHasFlag(ni, di uint32, flag NeuronFlags) bool {
+	return (NeuronFlags(math.Float32bits(Neurons.Value(int(NrnFlags), int(ni), int(di)))) & flag) > 0 // weird: != 0 does NOT work on GPU
+}
+
+func NrnSetFlag(ni, di uint32, flag NeuronFlags) {
+	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(NrnFlags), int(ni), int(di)))|uint32(flag)), int(NrnFlags), int(ni), int(di))
+}
+
+func NrnClearFlag(ni, di uint32, flag NeuronFlags) {
+	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(NrnFlags), int(ni), int(di)))&^uint32(flag)), int(NrnFlags), int(ni), int(di))
+}
+
+// NrnIsOff returns true if the neuron has been turned off (lesioned)
+// Only checks the first data item -- all should be consistent.
+func NrnIsOff(ni uint32) bool {
+	return NrnHasFlag(ni, 0, NeuronOff)
+}
 
 ////////  SpikeParams
 
@@ -242,8 +262,7 @@ func (ai *ActInitParams) GetGiBase(rnd randx.Rand) float32 {
 
 //gosl:start
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  DecayParams
+////////  DecayParams
 
 // DecayParams control the decay of activation state in the DecayState function
 // called in NewState when a new state is to be processed.
@@ -277,8 +296,7 @@ func (dp *DecayParams) Defaults() {
 	dp.LearnCa = 0
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  DtParams
+////////  DtParams
 
 // DtParams are time and rate constants for temporal derivatives in Axon (Vm, G)
 type DtParams struct {
@@ -403,8 +421,7 @@ func (dp *DtParams) AvgVarUpdate(avg, vr *float32, val float32) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Noise
+////////  Noise
 
 // SpikeNoiseParams parameterizes background spiking activity impinging on the neuron,
 // simulated using a poisson spiking process.
@@ -481,8 +498,7 @@ func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32
 	return 0
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  ClampParams
+////////  ClampParams
 
 // ClampParams specify how external inputs drive excitatory conductances
 // (like a current clamp) -- either adds or overwrites existing conductances.
@@ -568,8 +584,7 @@ func (sm *SMaintParams) ExpInt(isi float32) float32 {
 	return math32.FastExp(-isi / sm.NNeurons)
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  PopCodeParams
+////////  PopCodeParams
 
 // PopCodeParams provides an encoding of scalar value using population code,
 // where a single continuous (scalar) value is encoded as a gaussian bump
@@ -681,8 +696,7 @@ func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
 	return pc.Ge * pc.EncodeValue(i, n, val)
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  ActParams
+////////  ActParams
 
 // axon.ActParams contains all the activation computation params and functions
 // for basic Axon, at the neuron level .
@@ -821,8 +835,7 @@ func (ac *ActParams) Update() {
 	ac.PopCode.Update()
 }
 
-///////////////////////////////////////////////////////////////////////
-//  Init
+////////  Init
 
 // DecayLearnCa decays neuron-level calcium learning and spiking variables
 // by given factor.  Note: this is generally NOT useful,
@@ -1037,10 +1050,7 @@ func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ActP), int(ni), int(di))
 }
 
-//gosl:start
-
-///////////////////////////////////////////////////////////////////////
-//  Cycle
+////////  Cycle
 
 // NMDAFromRaw updates all the NMDA variables from
 // total Ge (GeRaw + Ext) and current Vm, Spiking

@@ -407,7 +407,7 @@ func (ss *Sim) TestAll() {
 func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
 	ss.Stats.SetFloat("UnitErr", 0.0)
-	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetFloat("PhaseDiff", 0.0)
 	ss.Stats.SetInt("Output", 0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
@@ -438,7 +438,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "Output", "TrlErr", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "Output", "TrlErr", "PhaseDiff"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -448,7 +448,7 @@ func (ss *Sim) TrialStats(di int) {
 	inp := ss.Net.LayerByName("InputP")
 	trg := ss.Net.LayerByName("Targets")
 
-	ss.Stats.SetFloat("CorSim", float64(inp.Values[di].CorSim.Cor))
+	ss.Stats.SetFloat("PhaseDiff", float64(inp.Values[di].PhaseDiff.Cor))
 	_, minusIndexes, _ := inp.LocalistErr4D(ctx)
 	minusIndex := minusIndexes[di]
 	trgExt := axon.Neurons[axon.Ext, trg.NeurStIndex+uint32(minusIndex), di]
@@ -476,13 +476,13 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PhaseDiff", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
+	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr")
 
-	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvPhaseDiffItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -496,7 +496,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
-	ss.Logs.PlotItems("CorSim", "PctErr")
+	ss.Logs.PlotItems("PhaseDiff", "PctErr")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

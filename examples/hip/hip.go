@@ -487,7 +487,7 @@ func (ss *Sim) OpenPats() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("UnitErr", 0.0)
-	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetFloat("PhaseDiff", 0.0)
 	ss.Stats.SetFloat("TrgOnWasOffAll", 0.0)
 	ss.Stats.SetFloat("TrgOnWasOffCmp", 0.0)
 	ss.Stats.SetFloat("TrgOffWasOn", 0.0)
@@ -527,7 +527,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "PhaseDiff"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -535,7 +535,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 func (ss *Sim) TrialStats(di int) {
 	out := ss.Net.LayerByName("EC5")
 
-	ss.Stats.SetFloat("CorSim", float64(out.Values[di].CorSim.Cor))
+	ss.Stats.SetFloat("PhaseDiff", float64(out.Values[di].PhaseDiff.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
 	ss.MemStats(ss.Loops.Mode, di)
 
@@ -664,7 +664,7 @@ func (ss *Sim) MemStats(mode etime.Modes, di int) {
 // 		Logging
 
 func (ss *Sim) AddLogItems() {
-	itemNames := []string{"CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem", "ABMem", "ACMem", "ABRecMem", "ACRecMem"}
+	itemNames := []string{"PhaseDiff", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem", "ABMem", "ACMem", "ABRecMem", "ACRecMem"}
 	for _, st := range itemNames {
 		stnm := st
 		tonm := "Tst" + st
@@ -690,7 +690,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PhaseDiff", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("TrgOnWasOffAll", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("TrgOnWasOffCmp", etime.Run, etime.Epoch, etime.Trial)
@@ -705,7 +705,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatIntNoAggItem(etime.Test, etime.Trial, "RecallItem")
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
-	// ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem")
+	// ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr", "TrgOnWasOffAll", "TrgOnWasOffCmp", "TrgOffWasOn", "Mem")
 	ss.AddLogItems()
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)

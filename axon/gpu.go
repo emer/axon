@@ -1476,7 +1476,7 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	gp.RunPipelineMemWait(cmd, "PlusPool", poolDataN)
 	gp.RunPipelineNoWait(cmd, "PlusNeuron", neurDataN)
 
-	// note: could use atomic add to accumulate CorSim stat values in LayValues tmp vars for Cosv, ssm and ssp
+	// note: could use atomic add to accumulate PhaseDiff stat values in LayValues tmp vars for Cosv, ssm and ssp
 	// from which the overall val is computed
 	// use float atomic add for this case b/c not so time critical
 	// also, matrix gated could be computed all on GPU without too much difficulty.

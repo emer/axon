@@ -79,12 +79,6 @@ type NetworkIndexes struct {
 	RubiconNNegUSs uint32 `edit:"-"`
 }
 
-// ValuesIndex returns the global network index for LayerValues
-// with given layer index and data parallel index.
-func (ix *NetworkIndexes) ValuesIndex(li, di uint32) uint32 {
-	return li*ix.MaxData + di
-}
-
 // ItemIndex returns the main item index from an overall index over NItems * MaxData
 // (items = layers, neurons, synapeses)
 func (ix *NetworkIndexes) ItemIndex(idx uint32) uint32 {
@@ -210,9 +204,10 @@ type Network struct {
 	// [Layer][Pools][Data]
 	Pools []Pool `display:"-"`
 
-	// LayValues are the [LayerValues] for each layer and Data.
+	// LayerStates holds layer-level state values, with variables defined in
+	// [LayerVars], for each layer and Data parallel index.
 	// [Layer][Data]
-	LayValues []LayerValues `display:"-"`
+	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
 	// [GlobalScalarsN][Data]
@@ -318,12 +313,6 @@ func (nt *Network) LayersByType(layType ...LayerTypes) []string {
 		nms = append(nms, nm)
 	}
 	return nt.LayersByClass(nms...)
-}
-
-// LayerValues returns LayerValues for given layer and data parallel indexes
-func (nt *Network) LayerValues(li, di uint32) *LayerValues {
-	md := nt.NetIxs().MaxData
-	return &nt.LayValues[li*md+di]
 }
 
 // UnitVarNames returns a list of variable names available on the units in this network.
@@ -724,7 +713,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
 	nt.LayParams = make([]LayerParams, nLayers)
-	nt.LayValues = make([]LayerValues, nLayers*maxData)
+	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, maxData)
 	nt.Pools = make([]Pool, totPools*maxData)
 	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, maxData)
 	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
@@ -746,8 +735,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	extIndex := 0
 	for li, ly := range nt.Layers {
 		ly.Params = &nt.LayParams[li]
-		ly.Params.LayType = ly.Type
-		ly.Values = nt.LayValues[li*maxData : (li+1)*maxData]
+		ly.Params.Type = ly.Type
 		if ly.Off {
 			continue
 		}
@@ -760,9 +748,9 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		npd := np * maxData
 		ly.NPools = uint32(np)
 		ly.Pools = nt.Pools[poolIndex : poolIndex+npd]
-		ly.Params.Indexes.LayIndex = uint32(li)
-		ly.Params.Indexes.MaxData = uint32(maxData)
-		ly.Params.Indexes.PoolSt = uint32(poolIndex)
+		ly.Params.Index = uint32(li)
+		ly.Params.MaxData = uint32(maxData)
+		ly.Params.PoolSt = uint32(poolIndex)
 		ly.Params.Indexes.NPools = uint32(np)
 		ly.Params.Indexes.NeurSt = uint32(neurIndex)
 		ly.Params.Indexes.NeurN = uint32(nn)
@@ -776,10 +764,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			ly.Params.Indexes.ShpPlX = int32(shp.DimSize(1))
 			ly.Params.Indexes.ShpUnY = int32(shp.DimSize(2))
 			ly.Params.Indexes.ShpUnX = int32(shp.DimSize(3))
-		}
-		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Values[di].LayIndex = uint32(li)
-			ly.Values[di].DataIndex = uint32(di)
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
@@ -963,7 +947,7 @@ func (nt *Network) SetAsCurrent() {
 	Neurons = &nt.Neurons
 	NeuronAvgs = &nt.NeuronAvgs
 	Pools = nt.Pools
-	LayValues = nt.LayValues
+	LayerStates = &nt.LayerStates
 	GlobalScalars = &nt.GlobalScalars
 	GlobalVectors = &nt.GlobalVectors
 	Exts = &nt.Exts
@@ -981,26 +965,7 @@ func (nt *Network) DeleteAll() {
 
 	nt.LayParams = nil
 	nt.PathParams = nil
-
-	// nt.NeuronIxs = nil
-	// nt.SynapseIxs = nil
-	// nt.PathSendCon = nil
-	// nt.RecvPathIxs = nil
-	// nt.PathRecvCon = nil
-	// nt.PatySynIxs = nil
-
-	// nt.Neurons = nil
-	// nt.NeuronAvgs = nil
 	nt.Pools = nil
-	nt.LayValues = nil
-	// nt.GlobalScalars = nil
-	// nt.GlobalVectors = nil
-	// nt.Exts = nil
-
-	// nt.PathGBuf = nil
-	// nt.PathGSyns = nil
-	// nt.Synapses = nil
-	// nt.SynapseTraces = nil
 }
 
 func (nt *Network) WriteWeightsJSON(w io.Writer) error {
@@ -1100,10 +1065,10 @@ func (nt *Network) CopyStateFrom(on *Network) error {
 		slog.Error(err.Error())
 		return err
 	}
+	copy(nt.Pools, on.Pools)
 	nt.Neurons.CopyFrom(&on.Neurons)
 	nt.NeuronAvgs.CopyFrom(&on.NeuronAvgs)
-	copy(nt.Pools, on.Pools)
-	copy(nt.LayValues, on.LayValues)
+	nt.LayerStates.CopyFrom(&on.LayerStates)
 	nt.Synapses.CopyFrom(&on.Synapses)
 	nt.SynapseTraces.CopyFrom(&on.SynapseTraces)
 	return nil

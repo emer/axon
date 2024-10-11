@@ -58,11 +58,6 @@ type Layer struct {
 	// list of sending pathways from this layer to other layers
 	SendPaths []*Path
 
-	// layer-level state values that are updated during computation.
-	// There is one for each data parallel.
-	// This is a sub-slice of network full set.
-	Values []LayerValues
-
 	// computes FS-FFFB inhibition and other pooled, aggregate state variables.
 	// has at least 1 for entire layer (lpl = layer pool), and one for each
 	// sub-pool if shape supports that (4D) * 1 per data parallel (inner loop).
@@ -124,11 +119,6 @@ func (ly *Layer) Pool(pi, di uint32) *Pool {
 func (ly *Layer) SubPool(ctx *Context, ni, di uint32) *Pool {
 	pi := NeuronIxs.Value(int(NrnSubPool), int(ni))
 	return ly.Pool(pi, di)
-}
-
-// LayerValues returns LayerValues at given data index
-func (ly *Layer) LayerValues(di uint32) *LayerValues {
-	return &(ly.Values[di])
 }
 
 // RecipToSendPath finds the reciprocal pathway to
@@ -511,10 +501,11 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (ly *Layer) WriteWeightsJSON(w io.Writer, depth int) {
+	li := ly.Index
 	ly.MetaData = make(map[string]string)
-	ly.MetaData["ActMAvg"] = fmt.Sprintf("%g", ly.Values[0].ActAvg.ActMAvg)
-	ly.MetaData["ActPAvg"] = fmt.Sprintf("%g", ly.Values[0].ActAvg.ActPAvg)
-	ly.MetaData["GiMult"] = fmt.Sprintf("%g", ly.Values[0].ActAvg.GiMult)
+	ly.MetaData["ActMAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerActMAvg), int(li), int(0)))
+	ly.MetaData["ActPAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerActPAvg), int(li), int(0)))
+	ly.MetaData["GiMult"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerGiMult), int(li), int(0)))
 
 	if ly.Params.IsLearnTrgAvg() {
 		ly.LayerBase.WriteWeightsJSONBase(w, depth, "ActAvg", "TrgAvg")
@@ -528,21 +519,21 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 	if ly.Off {
 		return nil
 	}
+	li := ly.Index
 	ctx := ly.Network.Context()
 	if lw.MetaData != nil {
 		for di := uint32(0); di < ly.MaxData; di++ {
-			vals := &ly.Values[di]
 			if am, ok := lw.MetaData["ActMAvg"]; ok {
 				pv, _ := strconv.ParseFloat(am, 32)
-				vals.ActAvg.ActMAvg = float32(pv)
+				LayerStates.Set(float32(pv), int(LayerActMAvg), int(li), int(di))
 			}
 			if ap, ok := lw.MetaData["ActPAvg"]; ok {
 				pv, _ := strconv.ParseFloat(ap, 32)
-				vals.ActAvg.ActPAvg = float32(pv)
+				LayerStates.Set(float32(pv), int(LayerActPAvg), int(li), int(di))
 			}
 			if gi, ok := lw.MetaData["GiMult"]; ok {
 				pv, _ := strconv.ParseFloat(gi, 32)
-				vals.ActAvg.GiMult = float32(pv)
+				LayerStates.Set(float32(pv), int(LayerGiMult), int(li), int(di))
 			}
 		}
 	}

@@ -93,9 +93,11 @@ var (
 	// [Layer][Pools][Data]
 	Pools []Pool
 
-	// LayValues are the [LayerValues] for each layer and Data.
+	// LayerStates holds layer-level state values, with variables defined in
+	// [LayerVars], for each layer and Data parallel index.
 	// [Layer][Data]
-	LayValues []LayerValues
+	//gosl:dims 2
+	LayerStates *tensor.Float32
 
 	// GlobalScalars are the global scalar state variables.
 	// [GlobalScalarsN][Data]

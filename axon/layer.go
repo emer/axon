@@ -25,11 +25,12 @@ import (
 
 func (ly *Layer) Defaults() { //types:add
 	ctx := ly.Network.Context()
+	li := ly.Index
 	if ly.Params != nil {
-		ly.Params.LayType = ly.Type
+		ly.Params.Type = ly.Type
 		ly.Params.Defaults()
 		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Values[di].ActAvg.GiMult = 1
+			LayerStates.Set(1, int(LayerGiMult), int(li), int(di))
 		}
 		ly.Params.Learn.CaLearn.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
 		ly.Params.Learn.CaSpk.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
@@ -196,11 +197,13 @@ func JsonToParams(b []byte) string {
 func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
 	ly.UpdateParams()
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
+	li := ly.Index
 	for di := uint32(0); di < ly.MaxData; di++ {
-		vals := &ly.Values[di]
-		vals.Init()
-		vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
-		vals.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
+		LayerStates.Set(1, int(LayerAvgMaxGeM), int(li), int(di))
+		LayerStates.Set(1, int(LayerAvgMaxGiM), int(li), int(di))
+		LayerStates.Set(1, int(LayerGiMult), int(li), int(di))
+		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(LayerActMAvg), int(li), int(di))
+		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(LayerActPAvg), int(li), int(di))
 	}
 	ly.InitActAvg(ctx)
 	ly.InitActs(ctx)
@@ -408,7 +411,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Params.InitExt(ctx, ni, di)
-			ei := ly.Params.Indexes.ExtIndex(lni, di)
+			ei := ly.Params.ExtIndex(lni, di)
 			ly.Exts[ei] = -1 // missing by default
 		}
 	}
@@ -447,7 +450,7 @@ func (ly *Layer) ApplyExtValue(ctx *Context, lni, di uint32, val float32, clearM
 	if NrnIsOff(ni) {
 		return
 	}
-	ei := ly.Params.Indexes.ExtIndex(lni, di)
+	ei := ly.Params.ExtIndex(lni, di)
 	if uint32(len(ly.Exts)) <= ei {
 		log.Printf("Layer named: %s Type: %s does not have allocated Exts vals -- is likely not registered to receive external input in LayerTypes.IsExt() -- will not be presented to GPU", ly.Name, ly.Type.String())
 	} else {

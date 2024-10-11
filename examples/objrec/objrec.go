@@ -433,7 +433,7 @@ func (ss *Sim) RunTestAll() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("UnitErr", 0.0)
-	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetFloat("PhaseDiff", 0.0)
 	ss.Stats.SetString("Cat", "0")
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
@@ -464,7 +464,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cat", "TrialName", "Cycle", "UnitErr", "TrlErr", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cat", "TrialName", "Cycle", "UnitErr", "TrlErr", "PhaseDiff"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -473,7 +473,7 @@ func (ss *Sim) TrialStats(di int) {
 	ctx := &ss.Context
 	out := ss.Net.LayerByName("Output")
 
-	ss.Stats.SetFloat("CorSim", float64(out.Values[di].CorSim.Cor))
+	ss.Stats.SetFloat("PhaseDiff", float64(out.Values[di].PhaseDiff.Cor))
 	ss.Stats.SetFloat("UnitErr", out.PctUnitErr(ctx)[di])
 
 	ev := ss.Envs.ByMode(ctx.Mode).(*LEDEnv)
@@ -498,13 +498,13 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "Cat", "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PhaseDiff", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
-	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
+	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr")
 
 	ss.ConfigActRFs()
 
@@ -519,7 +519,7 @@ func (ss *Sim) ConfigLogs() {
 	// this was useful during development of trace learning:
 	// axon.LogAddCaLrnDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
-	ss.Logs.PlotItems("CorSim", "PctErr", "PctErr2")
+	ss.Logs.PlotItems("PhaseDiff", "PctErr", "PctErr2")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

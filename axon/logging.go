@@ -179,7 +179,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(1.0 - ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
+					ctx.SetFloat32(1.0 - ly.LayerValues(uint32(ctx.Di)).PhaseDiff.Cor)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -529,15 +529,15 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 	}
 }
 
-// LogAddPulvCorSimItems adds CorSim stats for Pulv / Pulvinar layers
+// LogAddPulvPhaseDiffItems adds PhaseDiff stats for Pulv / Pulvinar layers
 // aggregated across three time scales, ordered from higher to lower,
 // e.g., Run, Epoch, Trial.
-func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etime.Times) {
+func LogAddPulvPhaseDiffItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etime.Times) {
 	layers := net.LayersByType(PulvinarLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
-			Name:   lnm + "_CorSim",
+			Name:   lnm + "_PhaseDiff",
 			Type:   reflect.Float64,
 			Plot:   false,
 			FixMax: true,
@@ -545,7 +545,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times 
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).CorSim.Cor)
+					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).PhaseDiff.Cor)
 				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[2], stats.Mean)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {

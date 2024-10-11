@@ -372,7 +372,7 @@ func (ss *Sim) NewRun() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("UnitErr", 0.0)
-	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetFloat("PhaseDiff", 0.0)
 	ss.Stats.SetString("TrialName", "")
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
@@ -414,7 +414,7 @@ func (ss *Sim) TrialStats(di int) {
 	plays := []string{"ItemP", "TimeP"}
 	for _, lnm := range plays {
 		ly := ss.Net.LayerByName(lnm)
-		ss.Stats.SetFloat(lnm+"_CorSim", float64(ly.Values[di].CorSim.Cor))
+		ss.Stats.SetFloat(lnm+"_PhaseDiff", float64(ly.Values[di].PhaseDiff.Cor))
 	}
 }
 
@@ -431,9 +431,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatStringItem(etime.Test, etime.Sequence, "TrialName")
 
-	li := ss.Logs.AddStatAggItem("ItemP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	li := ss.Logs.AddStatAggItem("ItemP_PhaseDiff", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
 	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("TimeP_CorSim", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("TimeP_PhaseDiff", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
 	li.FixMax = true
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Sequence)
@@ -441,7 +441,7 @@ func (ss *Sim) ConfigLogs() {
 	lys := ss.Net.LayersByClass("PFC")
 	axon.LogAddDiagnosticItems(&ss.Logs, lys, etime.Train, etime.Epoch, etime.Sequence, etime.Trial)
 
-	ss.Logs.PlotItems("ItemP_CorSim", "TimeP_CorSim", "PFCPT_ActMAvg", "PFCPTp_ActMAvg", "PFC_ActMAvg")
+	ss.Logs.PlotItems("ItemP_PhaseDiff", "TimeP_PhaseDiff", "PFCPT_ActMAvg", "PFCPTp_ActMAvg", "PFC_ActMAvg")
 
 	ss.Logs.CreateTables()
 

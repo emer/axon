@@ -76,14 +76,14 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	}
 	corSimSum := 0.0
 	for epoch := *numEpochs - convergenceTestEpochs; epoch < *numEpochs; epoch++ {
-		corSimSum += epcLog.Float("CorSim", epoch)
+		corSimSum += epcLog.Float("PhaseDiff", epoch)
 		if math.IsNaN(corSimSum) {
-			b.Errorf("CorSim for epoch %d is NaN", epoch)
+			b.Errorf("PhaseDiff for epoch %d is NaN", epoch)
 		}
 	}
 	corSimAvg := corSimSum / float64(convergenceTestEpochs)
 	if corSimAvg < 0.90 {
-		b.Errorf("average of CorSim for last %d epochs too low. Want %v, got %v", convergenceTestEpochs, 0.95, corSimAvg)
+		b.Errorf("average of PhaseDiff for last %d epochs too low. Want %v, got %v", convergenceTestEpochs, 0.95, corSimAvg)
 	}
 }
 

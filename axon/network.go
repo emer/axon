@@ -607,13 +607,13 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 		*dwts = make([]float32, nwts)
 		made = true
 	}
-	for _, ly := range nt.Layers {
+	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		(*dwts)[idx+0] = ly.LayerValues(0).ActAvg.ActMAvg
-		(*dwts)[idx+1] = ly.LayerValues(0).ActAvg.ActPAvg
-		(*dwts)[idx+2] = ly.LayerValues(0).ActAvg.AvgMaxGeM
-		(*dwts)[idx+3] = ly.LayerValues(0).ActAvg.AvgMaxGiM
-		(*dwts)[idx+4] = ly.LayerValues(0).ActAvg.GiMult
+		(*dwts)[idx+0] = LayerStates.Value(int(LayerActMAvg), int(li), int(0))
+		(*dwts)[idx+1] = LayerStates.Value(int(LayerActPAvg), int(li), int(0))
+		(*dwts)[idx+2] = LayerStates.Value(int(LayerAvgMaxGeM), int(li), int(0))
+		(*dwts)[idx+3] = LayerStates.Value(int(LayerAvgMaxGiM), int(li), int(0))
+		(*dwts)[idx+4] = LayerStates.Value(int(LayerGiMult), int(li), int(0))
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
@@ -651,13 +651,13 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 	idx := 0
 	davg := 1 / float32(navg)
-	for _, ly := range nt.Layers {
+	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		ly.LayerValues(0).ActAvg.ActMAvg = davg * dwts[idx+0]
-		ly.LayerValues(0).ActAvg.ActPAvg = davg * dwts[idx+1]
-		ly.LayerValues(0).ActAvg.AvgMaxGeM = davg * dwts[idx+2]
-		ly.LayerValues(0).ActAvg.AvgMaxGiM = davg * dwts[idx+3]
-		ly.LayerValues(0).ActAvg.GiMult = davg * dwts[idx+4]
+		LayerStates.Set(davg*dwts[idx+0], int(LayerActMAvg), int(li), int(0))
+		LayerStates.Set(davg*dwts[idx+1], int(LayerActPAvg), int(li), int(0))
+		LayerStates.Set(davg*dwts[idx+2], int(LayerAvgMaxGeM), int(li), int(0))
+		LayerStates.Set(davg*dwts[idx+3], int(LayerAvgMaxGiM), int(li), int(0))
+		LayerStates.Set(davg*dwts[idx+4], int(LayerGiMult), int(li), int(0))
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni

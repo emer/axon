@@ -4,7 +4,7 @@
 
 package axon
 
-//gosl:start layertypes
+//gosl:start
 
 // LayerTypes enumerates all the different types of layers,
 // for the different algorithm types supported.
@@ -188,14 +188,15 @@ const (
 	/////////////
 	// RL
 
-	// RewLayer represents positive or negative reward values across 2 units,
-	// showing spiking rates for each, and Act always represents signed value.
+	// RewLayer represents positive (first unit) or negative (second unit)
+	// reward values, showing spiking rates for each, and Act always represents
+	// the signed value.
 	RewLayer
 
 	// RWPredLayer computes reward prediction for a simple Rescorla-Wagner
 	// learning dynamic (i.e., PV learning in the Rubicon framework).
-	// Activity is computed as linear function of excitatory conductance
-	// (which can be negative -- there are no constraints).
+	// Activity is computed as linear function of excitatory conductance.
+	// The first unit in the layer represents positive reward, second negative.
 	// Use with RWPath which does simple delta-rule learning on minus-plus.
 	RWPredLayer
 
@@ -211,6 +212,7 @@ const (
 	// It represents estimated value V(t) in the minus phase, and computes
 	// estimated V(t+1) based on its learned weights in plus phase,
 	// using the TDPredPath pathway type for DA modulated learning.
+	// The first unit in the layer represents positive reward, second negative.
 	TDPredLayer
 
 	// TDIntegLayer is the temporal differences reward integration layer.
@@ -218,6 +220,7 @@ const (
 	// and estimated discount * V(t+1) + r(t) in the plus phase.
 	// It gets Rew, PrevPred from Context.NeuroMod, and Special
 	// LayerValues from TDPredLayer.
+	// The first unit in the layer represents positive reward, second negative.
 	TDIntegLayer
 
 	// TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD)
@@ -235,7 +238,7 @@ func IsExtLayerType(lt LayerTypes) bool {
 	return false
 }
 
-//gosl:end layertypes
+//gosl:end
 
 // IsExt returns true if the layer type deals with external input:
 // Input, Target, Compare

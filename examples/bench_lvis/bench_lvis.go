@@ -152,8 +152,8 @@ func ConfigPats(pats *table.Table, numPats int, inputShape [2]int, outputShape [
 
 func ConfigEpcLog(dt *table.Table) {
 	dt.AddIntColumn("Epoch")
-	dt.AddFloat32Column("CorSim")
-	dt.AddFloat32Column("AvgCorSim")
+	dt.AddFloat32Column("PhaseDiff")
+	dt.AddFloat32Column("AvgPhaseDiff")
 	dt.AddFloat32Column("SSE")
 	dt.AddFloat32Column("CountErr")
 	dt.AddFloat32Column("PctErr")
@@ -195,7 +195,7 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	tmr.Start()
 	for epc := 0; epc < epcs; epc++ {
 		randx.PermuteInts(porder)
-		outCorSim := float32(0)
+		outPhaseDiff := float32(0)
 		cntErr := 0
 		sse := 0.0
 		for pi := 0; pi < np; pi++ {
@@ -229,14 +229,14 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 			net.PlusPhase(ctx)
 			net.DWt(ctx)
 			net.WtFromDWt(ctx)
-			outCorSim += outLay.Values[0].CorSim.Cor
+			outPhaseDiff += outLay.Values[0].PhaseDiff.Cor
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
 			if pSSE != 0 {
 				cntErr++
 			}
 		}
-		outCorSim /= float32(np)
+		outPhaseDiff /= float32(np)
 		sse /= float64(np)
 		pctErr := float64(cntErr) / float64(np)
 		pctCor := 1 - pctErr
@@ -244,12 +244,12 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Values[0].CorSim.Avg, t)
+			fmt.Printf("epc: %v  \tPhaseDiff: %v \tAvgPhaseDiff: %v \tTime:%v\n", epc, outPhaseDiff, outLay.Values[0].PhaseDiff.Avg, t)
 		}
 
 		epcLog.SetFloat("Epoch", epc, float64(epc))
-		epcLog.SetFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetFloat("AvgCorSim", epc, float64(outLay.Values[0].CorSim.Avg))
+		epcLog.SetFloat("PhaseDiff", epc, float64(outPhaseDiff))
+		epcLog.SetFloat("AvgPhaseDiff", epc, float64(outLay.Values[0].PhaseDiff.Avg))
 		epcLog.SetFloat("SSE", epc, sse)
 		epcLog.SetFloat("CountErr", epc, float64(cntErr))
 		epcLog.SetFloat("PctErr", epc, pctErr)

@@ -16,16 +16,6 @@ import (
 
 // LayerIndexes contains index access into network global arrays for GPU.
 type LayerIndexes struct {
-
-	// layer index
-	LayIndex uint32 `edit:"-"`
-
-	// maximum number of data parallel elements
-	MaxData uint32 `edit:"-"`
-
-	// start of pools for this layer -- first one is always the layer-wide pool
-	PoolSt uint32 `edit:"-"`
-
 	// NPools is the total number of pools for this layer, including layer-wide.
 	NPools uint32 `edit:"-"`
 
@@ -47,7 +37,8 @@ type LayerIndexes struct {
 	// number of recv pathways
 	SendN uint32 `edit:"-"`
 
-	// starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types
+	// starting index in network global Exts list of external input for this layer.
+	// Only for Input / Target / Compare layer types
 	ExtsSt uint32 `edit:"-"`
 
 	// layer shape Pools Y dimension -- 1 for 2D
@@ -61,26 +52,6 @@ type LayerIndexes struct {
 
 	// layer shape Units X dimension
 	ShpUnX int32 `edit:"-"`
-
-	pad uint32
-}
-
-// PoolIndex returns the global network index for pool with given
-// pool (0 = layer pool, 1+ = subpools) and data parallel indexes
-func (lx *LayerIndexes) PoolIndex(pi, di uint32) uint32 {
-	return lx.PoolSt + pi*lx.MaxData + di
-}
-
-// ValuesIndex returns the global network index for LayerValues with given
-// data parallel index.
-func (lx *LayerIndexes) ValuesIndex(di uint32) uint32 {
-	return lx.LayIndex*lx.MaxData + di
-}
-
-// ExtIndex returns the index for accessing Exts values: [Neuron][Data]
-// Neuron is *layer-relative* lni index -- add the ExtsSt for network level access.
-func (lx *LayerIndexes) ExtIndex(ni, di uint32) uint32 {
-	return ni*lx.MaxData + di
 }
 
 // LayerInhibIndexes contains indexes of layers for between-layer inhibition
@@ -126,9 +97,16 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 type LayerParams struct {
 
 	// functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Type value
-	LayType LayerTypes
+	Type LayerTypes
 
-	pad, pad1, pad2 int32
+	// Index of this layer in [Layers] list.
+	Index uint32 `display:"-"`
+
+	// MaxData is the maximum number of data parallel elements.
+	MaxData uint32 `display:"-"`
+
+	// PoolSt is the start of pools for this layer; first one is always the layer-wide pool.
+	PoolSt uint32 `display:"-"`
 
 	// Activation parameters and methods for computing activations
 	Acts ActParams `display:"add-fields"`
@@ -176,7 +154,7 @@ type LayerParams struct {
 	TDDa TDDaParams `display:"inline"`
 
 	// recv and send pathway array access info
-	Indexes LayerIndexes
+	Indexes LayerIndexes `display:"-"`
 }
 
 func (ly *LayerParams) Update() {
@@ -227,27 +205,27 @@ func (ly *LayerParams) Defaults() {
 func (ly *LayerParams) ShouldDisplay(field string) bool {
 	switch field {
 	case "Bursts":
-		return ly.LayType == SuperLayer
+		return ly.Type == SuperLayer
 	case "CT":
-		return ly.LayType == CTLayer || ly.LayType == PTPredLayer || ly.LayType == BLALayer
+		return ly.Type == CTLayer || ly.Type == PTPredLayer || ly.Type == BLALayer
 	case "Pulv":
-		return ly.LayType == PulvinarLayer
+		return ly.Type == PulvinarLayer
 	case "Matrix":
-		return ly.LayType == MatrixLayer
+		return ly.Type == MatrixLayer
 	case "GP":
-		return ly.LayType == GPLayer
+		return ly.Type == GPLayer
 	case "LDT":
-		return ly.LayType == LDTLayer
+		return ly.Type == LDTLayer
 	case "VTA":
-		return ly.LayType == VTALayer
+		return ly.Type == VTALayer
 	case "RWPred":
-		return ly.LayType == RWPredLayer
+		return ly.Type == RWPredLayer
 	case "RWDa":
-		return ly.LayType == RWDaLayer
+		return ly.Type == RWDaLayer
 	case "TDInteg":
-		return ly.LayType == TDIntegLayer
+		return ly.Type == TDIntegLayer
 	case "TDDa":
-		return ly.LayType == TDDaLayer
+		return ly.Type == TDDaLayer
 	default:
 		return true
 	}
@@ -257,7 +235,7 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 func (ly *LayerParams) AllParams() string {
 	str := ""
 	// todo: replace with a custom reflection crawler that generates
-	// the right output directly and filters based on LayType etc.
+	// the right output directly and filters based on Type etc.
 
 	b, _ := json.MarshalIndent(&ly.Acts, "", " ")
 	str += "Act: {\n " + JsonToParams(b)
@@ -266,7 +244,7 @@ func (ly *LayerParams) AllParams() string {
 	b, _ = json.MarshalIndent(&ly.Learn, "", " ")
 	str += "Learn: {\n " + JsonToParams(b)
 
-	switch ly.LayType {
+	switch ly.Type {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Bursts, "", " ")
 		str += "Burst:   {\n " + JsonToParams(b)
@@ -307,6 +285,18 @@ func (ly *LayerParams) AllParams() string {
 	return str
 }
 
+// PoolIndex returns the global network index for pool with given
+// pool (0 = layer pool, 1+ = subpools) and data parallel indexes
+func (ly *LayerParams) PoolIndex(pi, di uint32) uint32 {
+	return ly.PoolSt + pi*ly.MaxData + di
+}
+
+// ExtIndex returns the index for accessing Exts values: [Neuron][Data]
+// Neuron is *layer-relative* lni index -- add the ExtsSt for network level access.
+func (ly *LayerParams) ExtIndex(ni, di uint32) uint32 {
+	return ni*ly.MaxData + di
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  ApplyExt
 
@@ -315,7 +305,7 @@ func (ly *LayerParams) AllParams() string {
 func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bool) {
 	*clearMask = NeuronHasExt | NeuronHasTarg | NeuronHasCmpr
 	*toTarg = false
-	switch ly.LayType {
+	switch ly.Type {
 	case TargetLayer:
 		*setMask = NeuronHasTarg
 		*toTarg = true
@@ -361,7 +351,7 @@ func (ly *LayerParams) ApplyExtValue(ctx *Context, ni, di uint32, val float32) {
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *LayerParams) IsTarget() bool {
-	switch ly.LayType {
+	switch ly.Type {
 	case TargetLayer:
 		return true
 	case PulvinarLayer:
@@ -375,7 +365,7 @@ func (ly *LayerParams) IsTarget() bool {
 // By default, returns true for layers of Type == axon.InputLayer
 // Used to prevent adapting of inhibition or TrgAvg values.
 func (ly *LayerParams) IsInput() bool {
-	switch ly.LayType {
+	switch ly.Type {
 	case InputLayer:
 		return true
 	default:
@@ -446,7 +436,7 @@ func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 // Called separately by Network.CycleImpl on all Layers
 // Also updates all AvgMax values at the Cycle level.
 func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
-	pi := ly.Indexes.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
+	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
 	pl := GetPools(pi)
 	nn := Pools[pi].NNeurons()
 	spk := Neurons.Value(int(Spike), int(ni), int(di))
@@ -455,7 +445,7 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 	pl.Inhib.RawIncrInt(spk, geRaw, geExt, nn)
 	pl.AvgMaxUpdate(ctx, ni, di)
 	if pl.IsLayPool == 0 { // also update layer pool if I am a subpool
-		lpi := ly.Indexes.PoolIndex(0, di)
+		lpi := ly.PoolIndex(0, di)
 		lpl := GetPools(lpi)
 		lpl.Inhib.RawIncrInt(spk, geRaw, geExt, lpl.NNeurons())
 		lpl.AvgMaxUpdate(ctx, ni, di)
@@ -464,18 +454,16 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 
 // LayerGi updates the layer-level Gi inhibition from spikes.
 func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
-	lpi := ly.Indexes.PoolIndex(0, di)
+	lpi := ly.PoolIndex(0, di)
 	lpl := GetPools(lpi)
-	lvi := ly.Indexes.ValuesIndex(di)
-	vals := GetLayValues(lvi)
 	lpl.AvgMax.Calc(int32(li))
 	lpl.Inhib.IntToRaw()
-	ly.LayPoolGiFromSpikes(ctx, lpl, vals)
+	ly.LayPoolGiFromSpikes(ctx, di, lpl)
 }
 
 // BetweenGi computes inhibition Gi between layers.
 func (ly *LayerParams) BetweenGi(ctx *Context, di uint32) {
-	lpi := ly.Indexes.PoolIndex(0, di)
+	lpi := ly.PoolIndex(0, di)
 	lpl := GetPools(lpi)
 	maxGi := lpl.Inhib.Gi
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index1)
@@ -491,7 +479,7 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 	if layIndex < 0 {
 		return maxGi
 	}
-	lpi := Layers[layIndex].Indexes.PoolIndex(0, di)
+	lpi := Layers[layIndex].PoolIndex(0, di)
 	ogi := Pools[lpi].Inhib.Gi
 	if ogi > maxGi {
 		maxGi = ogi
@@ -500,10 +488,9 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 }
 
 // LayPoolGiFromSpikes computes inhibition Gi from Spikes for layer-level pool.
-// Also grabs updated Context NeuroMod values into LayerValues
-func (ly *LayerParams) LayPoolGiFromSpikes(ctx *Context, lpl *Pool, vals *LayerValues) {
+func (ly *LayerParams) LayPoolGiFromSpikes(ctx *Context, di uint32, lpl *Pool) {
 	lpl.Inhib.SpikesFromRaw(lpl.NNeurons())
-	ly.Inhib.Layer.Inhib(&lpl.Inhib, vals.ActAvg.GiMult)
+	ly.Inhib.Layer.Inhib(&lpl.Inhib, LayerStates.Value(int(LayerGiMult), int(ly.Index), int(di)))
 }
 
 // SubPoolGiFromSpikes computes inhibition Gi from Spikes within a sub-pool
@@ -524,37 +511,38 @@ func (ly *LayerParams) SubPoolGiFromSpikes(ctx *Context, di uint32, pl *Pool, lp
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 // Called directly by Network, iterates over data.
 func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
-	pi := ly.Indexes.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
-	lpi := ly.Indexes.PoolIndex(0, di)
-	lvi := ly.Indexes.ValuesIndex(di)
-	ly.GInteg(ctx, ni, di, &Pools[pi], &LayValues[lvi])
-	ly.SpikeFromG(ctx, ni, di, &Pools[lpi])
+	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
+	pl := GetPools(pi)
+	lpl := GetPools(ly.PoolIndex(0, di))
+	ly.GInteg(ctx, ni, di, pl)
+	ly.SpikeFromG(ctx, ni, di, lpl)
 }
 
 func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
-	dli := ly.Pulv.DriveLayIndex
-	dlpi := Layers[dli].Indexes.PoolIndex(0, di)
-	drvMax := Pools[dlpi].AvgMax.CaSpkP.Cycle.Max
+	dli := uint32(ly.Pulv.DriveLayIndex)
+	dly := GetLayers(dli)
+	dpl := GetPools(dly.PoolIndex(0, di))
+	drvMax := dpl.AvgMax.CaSpkP.Cycle.Max
 	*nonDrivePct = ly.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-	burst := Neurons.Value(int(Burst), int(Layers[dli].Indexes.NeurSt+lni), int(di))
+	burst := Neurons.Value(int(Burst), int(dly.Indexes.NeurSt+lni), int(di))
 	*drvGe = ly.Pulv.DriveGe(burst)
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls SpecialGFromRawSyn, GiInteg
-func (ly *LayerParams) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues) {
+func (ly *LayerParams) GInteg(ctx *Context, ni, di uint32, pl *Pool) {
 	drvGe := float32(0)
 	nonDrivePct := float32(0)
-	if ly.LayType == PulvinarLayer {
+	if ly.Type == PulvinarLayer {
 		ly.PulvinarDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
 		Neurons.Set(nonDrivePct, int(Ext), int(ni), int(di)) // use for regulating inhibition
 	}
 
-	saveVal := ly.SpecialPreGs(ctx, ni, di, pl, vals, drvGe, nonDrivePct)
+	saveVal := ly.SpecialPreGs(ctx, ni, di, pl, drvGe, nonDrivePct)
 
 	ly.GFromRawSyn(ctx, ni, di)
-	ly.GiInteg(ctx, ni, di, pl, vals)
-	ly.GNeuroMod(ctx, ni, di, vals)
+	ly.GiInteg(ctx, ni, di, pl)
+	ly.GNeuroMod(ctx, ni, di)
 
 	ly.SpecialPostGs(ctx, ni, di, saveVal)
 }
@@ -564,14 +552,14 @@ func (ly *LayerParams) GInteg(ctx *Context, ni, di uint32, pl *Pool, vals *Layer
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFromRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues, drvGe float32, nonDrivePct float32) float32 {
+func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, drvGe float32, nonDrivePct float32) float32 {
 	saveVal := float32(0)                               // sometimes we need to use a value computed here, for the post Gs step
 	pi := NeuronIxs.Value(int(NrnSubPool), int(ni)) - 1 // 0-n pool index
 	pni := NeuronIxs.Value(int(NrnNeurIndex), int(ni)) - pl.StIndex
 	nrnCtxtGe := Neurons.Value(int(CtxtGe), int(ni), int(di))
 	nrnGeRaw := Neurons.Value(int(GeRaw), int(ni), int(di))
 	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
-	switch ly.LayType {
+	switch ly.Type {
 	case PTPredLayer, CTLayer:
 		geCtxt := ly.CT.GeGain * nrnCtxtGe
 		Neurons.SetAdd(geCtxt, int(GeRaw), int(ni), int(di))
@@ -692,7 +680,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals 
 // after the standard updates in GFromRawSyn.
 // It is passed the saveVal from SpecialPreGs
 func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float32) {
-	switch ly.LayType {
+	switch ly.Type {
 	case PulvinarLayer, PTMaintLayer, CTLayer, BLALayer:
 		Neurons.Set(saveVal, int(GeExt), int(ni), int(di))
 	case PTPredLayer:
@@ -713,7 +701,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 	nrnGModRaw := Neurons.Value(int(GModRaw), int(ni), int(di))
 	nrnGModSyn := Neurons.Value(int(GModSyn), int(ni), int(di))
 	ach := GlobalScalars.Value(int(GvACh), int(di))
-	switch ly.LayType {
+	switch ly.Type {
 	case PTMaintLayer:
 		mod := ly.Acts.Dend.ModGain * nrnGModSyn
 		if ly.Acts.Dend.ModACh.IsTrue() {
@@ -758,12 +746,13 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 
 // GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
-func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerValues) {
-	gi := vals.ActAvg.GiMult*pl.Inhib.Gi + Neurons.Value(int(GiSyn), int(ni), int(di)) + Neurons.Value(int(GiNoise), int(ni), int(di)) + ly.Learn.NeuroMod.GiFromACh(GlobalScalars.Value(int(GvACh), int(di)))
+func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool) {
+	giMult := LayerStates.Value(int(LayerGiMult), int(ly.Index), int(di))
+	gi := giMult*pl.Inhib.Gi + Neurons.Value(int(GiSyn), int(ni), int(di)) + Neurons.Value(int(GiNoise), int(ni), int(di)) + ly.Learn.NeuroMod.GiFromACh(GlobalScalars.Value(int(GvACh), int(di)))
 	Neurons.Set(gi, int(Gi), int(ni), int(di))
 	Neurons.Set(pl.Inhib.SSGi, int(SSGi), int(ni), int(di))
 	Neurons.Set(0, int(SSGiDend), int(ni), int(di))
-	if ctx.PlusPhase.IsTrue() && ly.LayType == PulvinarLayer {
+	if ctx.PlusPhase.IsTrue() && ly.Type == PulvinarLayer {
 		ext := Neurons.Value(int(Ext), int(ni), int(di)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*pl.Inhib.SSGi, int(SSGiDend), int(ni), int(di))
 	} else {
@@ -784,7 +773,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *Laye
 }
 
 // GNeuroMod does neuromodulation of conductances
-func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32, vals *LayerValues) {
+func (ly *LayerParams) GNeuroMod(ctx *Context, ni, di uint32) {
 	ggain := ly.Learn.NeuroMod.GGain(GlobalScalars.Value(int(GvDA), int(di)) + GlobalScalars.Value(int(GvDAtonic), int(di)))
 	Neurons.SetMul(ggain, int(Ge), int(ni), int(di))
 	Neurons.SetMul(ggain, int(Gi), int(ni), int(di))
@@ -837,27 +826,26 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 // last step in Cycle, integrated the next time around.
 // Called directly by Network, iterates over data.
 func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
-	spi := ly.Indexes.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
-	lpi := ly.Indexes.PoolIndex(0, di)
+	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
+	pl := GetPools(pi)
+	lpl := GetPools(ly.PoolIndex(0, di))
 	lni := ni - ly.Indexes.NeurSt
-	lvi := ly.Indexes.ValuesIndex(di)
-	ly.PostSpike(ctx, ni, di, &Pools[spi], &Pools[lpi], &LayValues[lvi])
+	ly.PostSpike(ctx, ni, di, pl, lpl)
 
 	for pi := uint32(0); pi < ly.Indexes.SendN; pi++ {
 		Paths[ly.Indexes.SendSt+pi].SendSpike(ctx, ni, lni, di)
 	}
-	// sp.SendSpike(ctx, ni, di, ctx.NetIndexes.MaxData)
 }
 
 // PostSpikeSpecial does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
-// warning: if more than 1 layer writes to vals, gpu will fail!
-func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
+func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool) {
 	Neurons.Set(Neurons.Value(int(CaSpkP), int(ni), int(di)), int(Burst), int(ni), int(di))
+	li := ly.Index
 	pi := NeuronIxs.Value(int(NrnSubPool), int(ni)) - 1 // 0-n pool index
 	pni := NeuronIxs.Value(int(NrnNeurIndex), int(ni)) - pl.StIndex
 	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
-	switch ly.LayType {
+	switch ly.Type {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
 			actMax := lpl.AvgMax.CaSpkP.Cycle.Max
@@ -950,9 +938,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		// clipped linear
 		Neurons.Set(ly.RWPred.PredRange.ClipValue(Neurons.Value(int(Ge), int(ni), int(di))), int(Act), int(ni), int(di))
 		if pni == 0 {
-			vals.Special.V1 = Neurons.Value(int(ActInt), int(ni), int(di)) // warning: if more than 1 layer writes to vals, gpu will fail!
+			LayerStates.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(LayerRewPredPos), int(li), int(di))
 		} else {
-			vals.Special.V2 = Neurons.Value(int(ActInt), int(ni), int(di))
+			LayerStates.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(LayerRewPredNeg), int(li), int(di))
 		}
 	case RWDaLayer:
 		// I set this in CyclePost
@@ -961,9 +949,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 		// linear
 		Neurons.Set(Neurons.Value(int(Ge), int(ni), int(di)), int(Act), int(ni), int(di))
 		if pni == 0 {
-			vals.Special.V1 = Neurons.Value(int(ActInt), int(ni), int(di)) // warning: if more than 1 layer writes to vals, gpu will fail!
+			LayerStates.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(LayerRewPredPos), int(li), int(di))
 		} else {
-			vals.Special.V2 = Neurons.Value(int(ActInt), int(ni), int(di))
+			LayerStates.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(LayerRewPredNeg), int(li), int(di))
 		}
 	case TDIntegLayer:
 		Neurons.Set(GlobalScalars.Value(int(GvRewPred), int(di)), int(Act), int(ni), int(di))
@@ -975,8 +963,8 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 
 // PostSpike does updates at neuron level after spiking has been computed.
 // It calls PostSpikeSpecial.  It also updates the CaSpkPCyc stats.
-func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
-	ly.PostSpikeSpecial(ctx, ni, di, pl, lpl, vals)
+func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool) {
+	ly.PostSpikeSpecial(ctx, ni, di, pl, lpl)
 	intdt := ly.Acts.Dt.IntDt
 	Neurons.SetAdd(intdt*(Neurons.Value(int(Ge), int(ni), int(di))-Neurons.Value(int(GeInt), int(ni), int(di))), int(GeInt), int(ni), int(di))
 	Neurons.SetAdd(intdt*(Neurons.Value(int(GiSyn), int(ni), int(di))-Neurons.Value(int(GiInt), int(ni), int(di))), int(GiInt), int(ni), int(di))
@@ -996,43 +984,32 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, lpl *Poo
 // such as updating a neuromodulatory signal such as dopamine.
 // Any updates here must also be done in gpu_wgsl/gpu_cyclepost.wgsl
 func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
-	nix := NetIxs()
-	lpi := ly.Indexes.PoolIndex(0, di)
-	lvi := ly.Indexes.ValuesIndex(di)
-	lpl := GetPools(lpi)
-	vals := GetLayValues(lvi)
-	ly.CyclePostLayer(ctx, di, lpl, vals)
-	switch ly.LayType {
+	lpl := GetPools(ly.PoolIndex(0, di))
+	ly.CyclePostLayer(ctx, di, lpl)
+	switch ly.Type {
 	case CeMLayer:
 		ly.CyclePostCeMLayer(ctx, di, lpl)
 	case VSPatchLayer:
 		for lpi := uint32(1); lpi < ly.Indexes.NPools; lpi++ {
-			pi := ly.Indexes.PoolIndex(lpi, di)
-			pl := GetPools(pi)
-			ly.CyclePostVSPatchLayer(ctx, di, int32(lpi), pl, vals)
+			pl := GetPools(ly.PoolIndex(lpi, di))
+			ly.CyclePostVSPatchLayer(ctx, di, int32(lpi), pl)
 		}
 	case LDTLayer:
 		srcLay1Act := ly.LDTSrcLayAct(ly.LDT.SrcLay1Index, di)
 		srcLay2Act := ly.LDTSrcLayAct(ly.LDT.SrcLay2Index, di)
 		srcLay3Act := ly.LDTSrcLayAct(ly.LDT.SrcLay3Index, di)
 		srcLay4Act := ly.LDTSrcLayAct(ly.LDT.SrcLay4Index, di)
-		ly.CyclePostLDTLayer(ctx, di, vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
+		ly.CyclePostLDTLayer(ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 	case VTALayer:
 		ly.CyclePostVTALayer(ctx, di)
 	case RWDaLayer:
-		pli := nix.ValuesIndex(uint32(ly.RWDa.RWPredLayIndex), di)
-		pvals := GetLayValues(pli)
-		ly.CyclePostRWDaLayer(ctx, di, vals, pvals)
+		ly.CyclePostRWDaLayer(ctx, di)
 	case TDPredLayer:
-		ly.CyclePostTDPredLayer(ctx, di, vals)
+		ly.CyclePostTDPredLayer(ctx, di)
 	case TDIntegLayer:
-		pli := nix.ValuesIndex(uint32(ly.TDInteg.TDPredLayIndex), di)
-		pvals := GetLayValues(pli)
-		ly.CyclePostTDIntegLayer(ctx, di, vals, pvals)
+		ly.CyclePostTDIntegLayer(ctx, di)
 	case TDDaLayer:
-		ili := nix.ValuesIndex(uint32(ly.TDDa.TDIntegLayIndex), di)
-		ivals := GetLayValues(ili)
-		ly.CyclePostTDDaLayer(ctx, di, vals, ivals)
+		ly.CyclePostTDDaLayer(ctx, di)
 	}
 }
 
@@ -1042,10 +1019,10 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 //  gpu_wgsl/gpu_cyclepost.wgsl
 
 // CyclePostLayer is called for all layer types
-func (ly *LayerParams) CyclePostLayer(ctx *Context, di uint32, lpl *Pool, vals *LayerValues) {
-	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && lpl.AvgMax.CaSpkP.Cycle.Max > 0.5 { // todo: ly.Acts.AttnMod.RTThr {
-		if vals.RT <= 0 {
-			vals.RT = float32(ctx.Cycle)
+func (ly *LayerParams) CyclePostLayer(ctx *Context, di uint32, lpl *Pool) {
+	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && lpl.AvgMax.CaSpkP.Cycle.Max > 0.5 { // todo: param
+		if LayerStates.Value(int(LayerRT), int(ly.Index), int(di)) <= 0 {
+			LayerStates.Set(float32(ctx.Cycle), int(LayerRT), int(ly.Index), int(di))
 		}
 	}
 }
@@ -1059,10 +1036,10 @@ func (ly *LayerParams) LDTSrcLayAct(layIndex int32, di uint32) float32 {
 	if layIndex < 0 {
 		return 0
 	}
-	return Pools[Layers[layIndex].Indexes.PoolIndex(0, di)].AvgMax.CaSpkP.Cycle.Avg
+	return Pools[Layers[layIndex].PoolIndex(0, di)].AvgMax.CaSpkP.Cycle.Avg
 }
 
-func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, vals *LayerValues, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
+func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
 	ach := ly.LDT.ACh(ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 
 	GlobalScalars.Set(ach, int(GvAChRaw), int(di))
@@ -1073,8 +1050,9 @@ func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, vals *LayerVal
 	}
 }
 
-func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, di uint32, vals *LayerValues, pvals *LayerValues) {
-	pred := pvals.Special.V1 - pvals.Special.V2
+func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, di uint32) {
+	pli := uint32(ly.RWDa.RWPredLayIndex)
+	pred := LayerStates.Value(int(LayerRewPredPos), int(pli), int(di)) - LayerStates.Value(int(LayerRewPredNeg), int(pli), int(di))
 	GlobalScalars.Set(pred, int(GvRewPred), int(di)) // record
 	da := float32(0)
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 {
@@ -1083,32 +1061,35 @@ func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, di uint32, vals *LayerVa
 	GlobalScalars.Set(da, int(GvDA), int(di)) // updates global value that will be copied to layers next cycle.
 }
 
-func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, di uint32, vals *LayerValues) {
-	if ctx.PlusPhase.IsTrue() {
-		pred := vals.Special.V1 - vals.Special.V2
-		GlobalScalars.Set(pred, int(GvPrevPred), int(di))
+func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, di uint32) {
+	if ctx.PlusPhase.IsFalse() {
+		return
 	}
+	pred := LayerStates.Value(int(LayerRewPredPos), int(ly.Index), int(di)) - LayerStates.Value(int(LayerRewPredNeg), int(ly.Index), int(di))
+	GlobalScalars.Set(pred, int(GvPrevPred), int(di))
 }
 
-func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, di uint32, vals *LayerValues, pvals *LayerValues) {
+func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, di uint32) {
 	rew := float32(0)
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 {
 		rew = GlobalScalars.Value(int(GvRew), int(di))
 	}
 	rpval := float32(0)
 	if ctx.PlusPhase.IsTrue() {
-		pred := pvals.Special.V1 - pvals.Special.V2 // neuron0 (pos) - neuron1 (neg)
+		pli := uint32(ly.TDInteg.TDPredLayIndex)
+		pred := LayerStates.Value(int(LayerRewPredPos), int(pli), int(di)) - LayerStates.Value(int(LayerRewPredNeg), int(pli), int(di))
 		rpval = rew + ly.TDInteg.Discount*ly.TDInteg.PredGain*pred
-		vals.Special.V2 = rpval // plus phase
+		LayerStates.Set(rpval, int(LayerRewPredPos), int(ly.Index), int(di)) // our plus phase = new integrated value
 	} else {
 		rpval = ly.TDInteg.PredGain * GlobalScalars.Value(int(GvPrevPred), int(di))
-		vals.Special.V1 = rpval // minus phase is *previous trial*
+		LayerStates.Set(rpval, int(LayerRewPredNeg), int(ly.Index), int(di)) // our minus phase = prior integrated value
 	}
 	GlobalScalars.Set(rpval, int(GvRewPred), int(di)) // global value will be copied to layers next cycle
 }
 
-func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32, vals *LayerValues, ivals *LayerValues) {
-	da := ivals.Special.V2 - ivals.Special.V1
+func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32) {
+	ili := uint32(ly.TDDa.TDIntegLayIndex)
+	da := LayerStates.Value(int(LayerRewPredPos), int(ili), int(di)) - LayerStates.Value(int(LayerRewPredNeg), int(ili), int(di))
 	if ctx.PlusPhase.IsFalse() {
 		da = 0
 	}
@@ -1128,7 +1109,7 @@ func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 }
 
 // note: needs to iterate over sub-pools in layer!
-func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, lpi int32, pl *Pool, vals *LayerValues) {
+func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, lpi int32, pl *Pool) {
 	val := pl.AvgMax.CaSpkD.Cycle.Avg
 	if ly.Learn.NeuroMod.DAMod == D1Mod {
 		GlobalVectors.Set(val, int(GvVSPatchD1), int(uint32(lpi-1)), int(di))
@@ -1142,15 +1123,19 @@ func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, di uint32, lpi int32,
 
 // NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
 // that have been averaged across NData already.
-func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, vals *LayerValues, actMinusAvg, actPlusAvg float32) {
-	ly.Inhib.ActAvg.AvgFromAct(&vals.ActAvg.ActMAvg, actMinusAvg, ly.Acts.Dt.LongAvgDt)
-	ly.Inhib.ActAvg.AvgFromAct(&vals.ActAvg.ActPAvg, actPlusAvg, ly.Acts.Dt.LongAvgDt)
+func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
+	mavg := LayerStates.Value(int(LayerActMAvg), int(ly.Index), int(di))
+	pavg := LayerStates.Value(int(LayerActPAvg), int(ly.Index), int(di))
+	ly.Inhib.ActAvg.AvgFromAct(&mavg, actMinusAvg, ly.Acts.Dt.LongAvgDt)
+	ly.Inhib.ActAvg.AvgFromAct(&pavg, actPlusAvg, ly.Acts.Dt.LongAvgDt)
+	LayerStates.Set(mavg, int(LayerActMAvg), int(ly.Index), int(di))
+	LayerStates.Set(pavg, int(LayerActPAvg), int(ly.Index), int(di))
 }
 
-func (ly *LayerParams) NewStateLayer(ctx *Context, lpl *Pool, vals *LayerValues) {
+func (ly *LayerParams) NewStateLayer(ctx *Context, di uint32) {
 	ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
 	ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
-	vals.RT = -1
+	LayerStates.Set(-1, int(LayerRT), int(ly.Index), int(di))
 }
 
 func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
@@ -1164,7 +1149,7 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
 
 // NewStateNeuron handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
-func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32, vals *LayerValues, pl *Pool) {
+func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(Burst), int(ni), int(di)), int(BurstPrv), int(ni), int(di))
 	Neurons.Set(Neurons.Value(int(CaSpkD), int(ni), int(di)), int(SpkPrv), int(ni), int(di))
 	Neurons.Set(0, int(SpkMax), int(ni), int(di))
@@ -1194,20 +1179,24 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pl *Pool) {
 // AvgGeM computes the average and max GeInt, GiInt in minus phase
 // (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase,
 // using values that already max across NData.
-func (ly *LayerParams) AvgGeM(ctx *Context, vals *LayerValues, geIntMinusMax, giIntMinusMax float32) {
-	vals.ActAvg.AvgMaxGeM += ly.Acts.Dt.LongAvgDt * (geIntMinusMax - vals.ActAvg.AvgMaxGeM)
-	vals.ActAvg.AvgMaxGiM += ly.Acts.Dt.LongAvgDt * (giIntMinusMax - vals.ActAvg.AvgMaxGiM)
+func (ly *LayerParams) AvgGeM(ctx *Context, di uint32, geIntMinusMax, giIntMinusMax float32) {
+	gem := LayerStates.Value(int(LayerAvgMaxGeM), int(ly.Index), int(di))
+	gim := LayerStates.Value(int(LayerAvgMaxGiM), int(ly.Index), int(di))
+	gem += ly.Acts.Dt.LongAvgDt * (geIntMinusMax - gem)
+	gim += ly.Acts.Dt.LongAvgDt * (giIntMinusMax - gim)
+	LayerStates.Set(gem, int(LayerAvgMaxGeM), int(ly.Index), int(di))
+	LayerStates.Set(gim, int(LayerAvgMaxGiM), int(ly.Index), int(di))
 }
 
 // MinusPhaseNeuron does neuron level minus-phase updating
-func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
+func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(ActM), int(ni), int(di))
 	Neurons.Set(Neurons.Value(int(CaSpkP), int(ni), int(di)), int(CaSpkPM), int(ni), int(di))
 }
 
 // PlusPhaseStartNeuron does neuron level plus-phase start:
 // applies Target inputs as External inputs.
-func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
+func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32) {
 	if NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
 		Neurons.Set(Neurons.Value(int(Target), int(ni), int(di)), int(Ext), int(ni), int(di))
 		NrnSetFlag(ni, di, NeuronHasExt)
@@ -1223,12 +1212,8 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
 	pl.AvgMax.CycleToPlus()
 }
 
-// PlusPhaseNeuronSpecial does special layer type neuron level plus-phase updating
-func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
-}
-
 // PlusPhaseNeuron does neuron level plus-phase updating
-func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerValues) {
+func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool) {
 	Neurons.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(ActP), int(ni), int(di))
 	nrnCaSpkP := Neurons.Value(int(CaSpkP), int(ni), int(di))
 	nrnCaSpkD := Neurons.Value(int(CaSpkD), int(ni), int(di))
@@ -1239,7 +1224,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	dlr := float32(1)
 	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di))) > 0
 
-	switch ly.LayType {
+	switch ly.Type {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, Neurons.Value(int(SpkPrv), int(ni), int(di))) // delta on previous trial
 		if !ly.Learn.NeuroMod.IsBLAExt() && pl.StIndex == 0 {                                     // first pool

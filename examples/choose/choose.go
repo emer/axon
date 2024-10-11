@@ -1009,7 +1009,7 @@ func (ss *Sim) ConfigLogs() {
 
 	axon.LogAddGlobals(&ss.Logs, &ss.Context, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	// axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	// axon.LogAddPulvPhaseDiffItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	// ss.ConfigActRFs()
 

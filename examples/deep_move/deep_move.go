@@ -443,7 +443,7 @@ func (ss *Sim) TestAll() {
 func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
 	ss.Stats.SetFloat("UnitErr", 0.0)
-	ss.Stats.SetFloat("CorSim", 0.0)
+	ss.Stats.SetFloat("PhaseDiff", 0.0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -472,7 +472,7 @@ func (ss *Sim) NetViewCounters(tm etime.Times) {
 		ss.TrialStats(di) // get trial stats for current di
 	}
 	ss.StatCounters(di)
-	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "CorSim"})
+	ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "Cycle", "TrialName", "PhaseDiff"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -486,7 +486,7 @@ func (ss *Sim) TrialStats(di int) {
 
 	inp := ss.Net.LayerByName("DepthP")
 	ss.Stats.SetFloat("TrlErr", 1)
-	ss.Stats.SetFloat32("CorSim", inp.Values[di].CorSim.Cor)
+	ss.Stats.SetFloat32("PhaseDiff", inp.Values[di].PhaseDiff.Cor)
 	ss.Stats.SetFloat("UnitErr", inp.PctUnitErr(ctx)[di])
 }
 
@@ -535,7 +535,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PhaseDiff", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("DepthP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("DepthP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("HeadDirP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
@@ -543,9 +543,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("UnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr")
+	ss.Logs.AddCopyFromFloatItems(etime.Train, []etime.Times{etime.Epoch, etime.Run}, etime.Test, etime.Epoch, "Tst", "PhaseDiff", "UnitErr")
 
-	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvPhaseDiffItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 

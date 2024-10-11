@@ -8,7 +8,7 @@ import (
 	"cogentcore.org/core/math32/minmax"
 )
 
-//gosl:start rl_layers
+//gosl:start
 
 // RWPredParams parameterizes reward prediction for a simple Rescorla-Wagner
 // learning dynamic (i.e., PV learning in the Rubicon framework).
@@ -102,7 +102,7 @@ func (tp *TDDaParams) GeFromDA(da float32) float32 {
 	return tp.TonicGe * (1.0 + da)
 }
 
-//gosl:end rl_layers
+//gosl:end
 
 // note: Defaults not called on GPU
 
