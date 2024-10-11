@@ -45,6 +45,8 @@ func (nt *Network) NewState(ctx *Context) {
 
 //gosl:start
 
+//////// Kernels for all parallel CPU / GPU compute are here:
+
 // GatherSpikes is the kernel over Neurons * Data for gathering
 // spike inputs sent on the previous cycle.
 func GatherSpikes(i uint32) { //gosl:kernel
@@ -120,8 +122,22 @@ func SendSpike(i uint32) { //gosl:kernel
 	Layers[NeuronIxs[NrnLayIndex, ni]].SendSpike(ctx, ni, di)
 }
 
+// CyclePost is the kernel over Layers * Data to
+// update state after each Cycle of updating.
+func CyclePost(i uint32) { //gosl:kernel
+	ctx := GlobalCtx()
+	nix := NetIxs()
+	li := nix.ItemIndex(i)
+	di := nix.DataIndex(i)
+	if di >= ctx.NData {
+		return
+	}
+	Layers[li].CyclePost(ctx, di)
+}
+
 // Cycle runs one cycle of activation updating using threading methods.
 func (nt *Network) Cycle() {
+	// todo: chunks of 10 cycles
 	nix := NetIxs()
 	nd := int(nix.NNeurons * nix.MaxData)
 	ld := int(nix.NLayers * nix.MaxData)
@@ -132,9 +148,9 @@ func (nt *Network) Cycle() {
 	RunPoolGi(pd)
 	RunCycleNeuron(nd)
 	RunSendSpike(nd)
+	RunCyclePost(ld)
 
-	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
-	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
+	// todo: fix this:
 	// var ldt, vta *Layer
 	// for _, ly := range nt.Layers {
 	// 	if ly.Type == VTALayer {

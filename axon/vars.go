@@ -62,12 +62,14 @@ var (
 	// PathRecvCon are the receiving path starting index and number of connections.
 	// [NRecvCon][StartNN]; NRecvCon = [Layer][RecvPaths][RecvNeurons]
 	//gosl:read-only
+	//gosl:dims 2
 	PathRecvCon *tensor.Uint32
 
 	// RecvSynIxs are the indexes into Synapses for each recv neuron, organized
 	// into blocks according to PathRecvCon, for receiver-based access.
 	// [NSyns] = [Layer][RecvPaths][RecvNeurons][Syns]
 	//gosl:read-only
+	//gosl:dims 1
 	RecvSynIxs *tensor.Uint32
 
 	//////////////////// Neuron+ State

@@ -760,6 +760,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		ly.Params.Indexes.LayIndex = uint32(li)
 		ly.Params.Indexes.MaxData = uint32(maxData)
 		ly.Params.Indexes.PoolSt = uint32(poolIndex)
+		ly.Params.Indexes.NPools = uint32(np)
 		ly.Params.Indexes.NeurSt = uint32(neurIndex)
 		ly.Params.Indexes.NeurN = uint32(nn)
 		if shp.NumDims() == 2 {

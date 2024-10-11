@@ -18,65 +18,8 @@ import (
 // lni = layer-based neuron index (0 = first neuron in layer)
 // ni  = absolute network-level neuron index
 
-// layer-algo.go has the core algorithm methods.
-
-// LDTSrcLayAct returns the overall activity level for given source layer
-// for purposes of computing ACh salience value.
-// Typically the input is a superior colliculus (SC) layer that rapidly
-// accommodates after the onset of a stimulus.
-// using lpl.AvgMax.CaSpkP.Cycle.Max for layer activity measure.
-func (ly *Layer) LDTSrcLayAct(net *Network, layIndex int32, di uint32) float32 {
-	if layIndex < 0 {
-		return 0
-	}
-	lay := net.Layers[layIndex]
-	lpl := lay.Pool(0, di)
-	return lpl.AvgMax.CaSpkP.Cycle.Avg
-}
-
-// CyclePost is called after the standard Cycle update, as a separate
-// network layer loop.
-// This is reserved for any kind of special ad-hoc types that
-// need to do something special after Spiking is finally computed and Sent.
-// Typically used for updating global values in the Context state,
-// such as updating a neuromodulatory signal such as dopamine.
-// Any updates here must also be done in gpu_wgsl/gpu_cyclepost.wgsl
-func (ly *Layer) CyclePost(ctx *Context) {
-	net := ly.Network
-	for di := uint32(0); di < ctx.NData; di++ {
-		vals := ly.LayerValues(di)
-		lpl := ly.Pool(0, di)
-		ly.Params.CyclePostLayer(ctx, di, lpl, vals)
-		switch ly.Type {
-		case CeMLayer:
-			ly.Params.CyclePostCeMLayer(ctx, di, lpl)
-		case VSPatchLayer:
-			for pi := uint32(1); pi < ly.NPools; pi++ {
-				pl := ly.Pool(pi, di)
-				ly.Params.CyclePostVSPatchLayer(ctx, di, int32(pi), pl, vals)
-			}
-		case LDTLayer:
-			srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Index, di)
-			srcLay2Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay2Index, di)
-			srcLay3Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay3Index, di)
-			srcLay4Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay4Index, di)
-			ly.Params.CyclePostLDTLayer(ctx, di, vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
-		case VTALayer:
-			ly.Params.CyclePostVTALayer(ctx, di)
-		case RWDaLayer:
-			pvals := net.LayerValues(uint32(ly.Params.RWDa.RWPredLayIndex), di)
-			ly.Params.CyclePostRWDaLayer(ctx, di, vals, pvals)
-		case TDPredLayer:
-			ly.Params.CyclePostTDPredLayer(ctx, di, vals)
-		case TDIntegLayer:
-			pvals := net.LayerValues(uint32(ly.Params.TDInteg.TDPredLayIndex), di)
-			ly.Params.CyclePostTDIntegLayer(ctx, di, vals, pvals)
-		case TDDaLayer:
-			ivals := net.LayerValues(uint32(ly.Params.TDDa.TDIntegLayIndex), di)
-			ly.Params.CyclePostTDDaLayer(ctx, di, vals, ivals)
-		}
-	}
-}
+// layer-algo.goal has supporting CPU-only algorithm methods
+// layerparams.goal has core GPU / CPU code.
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Phase-level

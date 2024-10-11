@@ -10,14 +10,10 @@ import (
 	"github.com/emer/axon/v2/fsfffb"
 )
 
-//gosl:wgsl inhib
-// #include "fsfffb.wgsl"
-//gosl:end inhib
+//gosl:start
+//gosl:import "github.com/emer/axon/v2/fsfffb"
 
-//gosl:start inhib
-
-///////////////////////////////////////////////////////////////////////
-//  ActAvgParams
+////////  ActAvgParams
 
 // ActAvgParams represents the nominal average activity levels in the layer
 // and parameters for adapting the computed Gi inhibition levels to maintain
@@ -186,4 +182,4 @@ func (ip *InhibParams) Defaults() {
 	ip.Pool.Gi = 1.1
 }
 
-//gosl:end inhib
+//gosl:end

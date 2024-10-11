@@ -10,6 +10,7 @@ import (
 )
 
 //gosl:start
+//gosl:import "github.com/emer/emergent/v2/etime"
 
 // Context contains all of the global context state info
 // that is shared across every step of the computation.
@@ -68,6 +69,8 @@ type Context struct {
 	// many are actually used. This is shared across all layers so must
 	// encompass all possible param settings.
 	RandCtr uint64
+
+	pad, pad1 float32
 }
 
 // Defaults sets default values

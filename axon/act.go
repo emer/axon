@@ -14,14 +14,14 @@ import (
 	"github.com/emer/axon/v2/chans"
 )
 
-///////////////////////////////////////////////////////////////////////
-//  act.go contains the activation params and functions for axon
+////////  act.go contains the activation params and functions for axon
 
 //gosl:start
+//gosl:import "cogentcore.org/core/math32"
+//gosl:import "cogentcore.org/core/math32/minmax"
 //gosl:import "github.com/emer/axon/v2/chans"
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  SpikeParams
+////////  SpikeParams
 
 // SpikeParams contains spiking activation function params.
 // Implements a basic thresholded Vm model, and optionally
@@ -124,8 +124,7 @@ func (sk *SpikeParams) AvgFromISI(avg float32, isi float32) float32 {
 	return avg
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  DendParams
+////////  DendParams
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
@@ -174,8 +173,7 @@ func (dp *DendParams) ShouldDisplay(field string) bool {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  ActInitParams
+////////  ActInitParams
 
 // ActInitParams are initial values for key network state variables.
 // Initialized in InitActs called by InitWeights, and provides target values for DecayState.
@@ -213,6 +211,10 @@ func (ai *ActInitParams) Defaults() {
 	ai.GeVar = 0
 	ai.GiVar = 0
 }
+
+//gosl:end
+
+// note: these are only called in CPU during init.
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
 func (ai *ActInitParams) GetGeBase(rnd randx.Rand) float32 {
@@ -513,8 +515,7 @@ func (cp *ClampParams) Defaults() {
 	cp.ErrThr = 0.5
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  SMaintParams
+////////  SMaintParams
 
 // SMaintParams for self-maintenance simulating a population of
 // NMDA-interconnected spiking neurons

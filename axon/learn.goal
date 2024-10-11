@@ -13,10 +13,10 @@ import (
 	"github.com/emer/axon/v2/kinase"
 )
 
-///////////////////////////////////////////////////////////////////////
-//  learn.go contains the learning params and functions for axon
+////////  learn.go contains the learning params and functions for axon
 
 //gosl:start
+//gosl:import "github.com/emer/axon/v2/kinase"
 
 // CaLrnParams parameterizes the neuron-level calcium signals driving learning:
 // CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or
