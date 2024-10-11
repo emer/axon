@@ -18,12 +18,25 @@ import (
 	"github.com/emer/emergent/v2/paths"
 )
 
-// ////////////////////////////////////////////////////////////////////////////////////
-//
 //	Primary Algorithmic interface.
 //
 // The following methods constitute the primary user-called API during Alpha Cycle
 // to compute one complete algorithmic alpha cycle update.
+
+// GlobalsReset resets all global values to 0, for all NData
+func GlobalsReset(ctx *Context) {
+	nix := NetIxs()
+	for di := uint32(0); di < nix.MaxData; di++ {
+		for vg := GvRew; vg < GlobalScalarVarsN; vg++ {
+			GlobalScalars.Set(0, int(vg), int(di))
+		}
+		for vn := GvCost; vn < GlobalVectorVarsN; vn++ {
+			for ui := uint32(0); ui < MaxGlobalVecN; ui++ {
+				GlobalVectors.Set(0, int(vn), int(ui), int(di))
+			}
+		}
+	}
+}
 
 // NewState handles all initialization at start of new input pattern.
 // This is called *before* applying external input data and operates across
@@ -53,25 +66,26 @@ func (nt *Network) NewState(ctx *Context) {
 // GatherSpikes is the kernel over Neurons * Data for gathering
 // spike inputs sent on the previous cycle.
 func GatherSpikes(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
 	nix := NetIxs()
-	ni := nix.ItemIndex(i)
+	ctx := GlobalCtx()
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
 	}
-	Layers[NeuronIxs.Value(int(NrnLayIndex), int(ni))].GatherSpikes(ctx, ni, di)
+	ni := nix.ItemIndex(i)
+	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	Layers[li].GatherSpikes(ctx, ni, di)
 }
 
 // LayerGi is the kernel over Layers * Data for updating Gi inhibition.
 func LayerGi(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
 	nix := NetIxs()
-	li := nix.ItemIndex(i)
+	ctx := GlobalCtx()
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
 	}
+	li := nix.ItemIndex(i)
 	Layers[li].LayerGi(ctx, li, di)
 }
 
@@ -80,11 +94,11 @@ func LayerGi(i uint32) { //gosl:kernel
 func BetweenGi(i uint32) { //gosl:kernel
 	ctx := GlobalCtx()
 	nix := NetIxs()
-	li := nix.ItemIndex(i)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
 	}
+	li := nix.ItemIndex(i)
 	Layers[li].BetweenGi(ctx, di)
 }
 
@@ -104,12 +118,13 @@ func PoolGi(i uint32) { //gosl:kernel
 func CycleNeuron(i uint32) { //gosl:kernel
 	ctx := GlobalCtx()
 	nix := NetIxs()
-	ni := nix.ItemIndex(i)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
 	}
-	Layers[NeuronIxs.Value(int(NrnLayIndex), int(ni))].CycleNeuron(ctx, ni, di)
+	ni := nix.ItemIndex(i)
+	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	Layers[li].CycleNeuron(ctx, ni, di)
 }
 
 // SendSpike is the kernel over Neurons * Data to
@@ -117,12 +132,13 @@ func CycleNeuron(i uint32) { //gosl:kernel
 func SendSpike(i uint32) { //gosl:kernel
 	ctx := GlobalCtx()
 	nix := NetIxs()
-	ni := nix.ItemIndex(i)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
 	}
-	Layers[NeuronIxs.Value(int(NrnLayIndex), int(ni))].SendSpike(ctx, ni, di)
+	ni := nix.ItemIndex(i)
+	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	Layers[li].SendSpike(ctx, ni, di)
 }
 
 // CyclePost is the kernel over Layers * Data to
@@ -130,11 +146,11 @@ func SendSpike(i uint32) { //gosl:kernel
 func CyclePost(i uint32) { //gosl:kernel
 	ctx := GlobalCtx()
 	nix := NetIxs()
-	li := nix.ItemIndex(i)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
 	}
+	li := nix.ItemIndex(i)
 	Layers[li].CyclePost(ctx, di)
 }
 

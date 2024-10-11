@@ -407,15 +407,15 @@ func (ly *LayerParams) GatherSpikes(ctx *Context, ni, di uint32) {
 	lni := ni - ly.Indexes.NeurSt
 	ly.GatherSpikesInit(ctx, ni, di)
 	for lpi := uint32(0); lpi < ly.Indexes.RecvN; lpi++ {
-		pi := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt + lpi))
-		pl := GetPaths(pi)
-		pl.GatherSpikes(ctx, ly, ni, di, lni)
+		pti := RecvPathIxs.Value1D(int(ly.Indexes.RecvSt + lpi))
+		pt := GetPaths(pti)
+		pt.GatherSpikes(ctx, ly, ni, di, lni)
 	}
 	ly.GiFromSpikes(ctx, ni, di)
 }
 
 // GatherSpikesInit initializes G*Raw and G*Syn values for given neuron
-// prior to integration
+// prior to integration.
 func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(GeRaw), int(ni), int(di))
 	Neurons.Set(0, int(GiRaw), int(ni), int(di))
@@ -438,15 +438,13 @@ func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
 	pl := GetPools(pi)
-	nn := Pools[pi].NNeurons()
 	spk := Neurons.Value(int(Spike), int(ni), int(di))
 	geRaw := Neurons.Value(int(GeRaw), int(ni), int(di))
 	geExt := Neurons.Value(int(GeExt), int(ni), int(di))
-	pl.Inhib.RawIncrInt(spk, geRaw, geExt, nn)
+	pl.Inhib.RawIncrInt(spk, geRaw, geExt, pl.NNeurons())
 	pl.AvgMaxUpdate(ctx, ni, di)
 	if pl.IsLayPool == 0 { // also update layer pool if I am a subpool
-		lpi := ly.PoolIndex(0, di)
-		lpl := GetPools(lpi)
+		lpl := GetPools(ly.PoolIndex(0, di))
 		lpl.Inhib.RawIncrInt(spk, geRaw, geExt, lpl.NNeurons())
 		lpl.AvgMaxUpdate(ctx, ni, di)
 	}
@@ -454,8 +452,7 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 
 // LayerGi updates the layer-level Gi inhibition from spikes.
 func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
-	lpi := ly.PoolIndex(0, di)
-	lpl := GetPools(lpi)
+	lpl := GetPools(ly.PoolIndex(0, di))
 	lpl.AvgMax.Calc(int32(li))
 	lpl.Inhib.IntToRaw()
 	ly.LayPoolGiFromSpikes(ctx, di, lpl)
@@ -463,8 +460,7 @@ func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
 
 // BetweenGi computes inhibition Gi between layers.
 func (ly *LayerParams) BetweenGi(ctx *Context, di uint32) {
-	lpi := ly.PoolIndex(0, di)
-	lpl := GetPools(lpi)
+	lpl := GetPools(ly.PoolIndex(0, di))
 	maxGi := lpl.Inhib.Gi
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index1)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index2)
@@ -479,8 +475,8 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 	if layIndex < 0 {
 		return maxGi
 	}
-	lpi := Layers[layIndex].PoolIndex(0, di)
-	ogi := Pools[lpi].Inhib.Gi
+	lpl := GetPools(Layers[layIndex].PoolIndex(0, di))
+	ogi := lpl.Inhib.Gi
 	if ogi > maxGi {
 		maxGi = ogi
 	}
@@ -521,8 +517,8 @@ func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
 	dli := uint32(ly.Pulv.DriveLayIndex)
 	dly := GetLayers(dli)
-	dpl := GetPools(dly.PoolIndex(0, di))
-	drvMax := dpl.AvgMax.CaSpkP.Cycle.Max
+	dlpl := GetPools(dly.PoolIndex(0, di))
+	drvMax := dlpl.AvgMax.CaSpkP.Cycle.Max
 	*nonDrivePct = ly.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	burst := Neurons.Value(int(Burst), int(dly.Indexes.NeurSt+lni), int(di))
 	*drvGe = ly.Pulv.DriveGe(burst)
@@ -537,7 +533,6 @@ func (ly *LayerParams) GInteg(ctx *Context, ni, di uint32, pl *Pool) {
 		ly.PulvinarDriver(ctx, ni-ly.Indexes.NeurSt, di, &drvGe, &nonDrivePct)
 		Neurons.Set(nonDrivePct, int(Ext), int(ni), int(di)) // use for regulating inhibition
 	}
-
 	saveVal := ly.SpecialPreGs(ctx, ni, di, pl, drvGe, nonDrivePct)
 
 	ly.GFromRawSyn(ctx, ni, di)
@@ -833,7 +828,8 @@ func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
 	ly.PostSpike(ctx, ni, di, pl, lpl)
 
 	for pi := uint32(0); pi < ly.Indexes.SendN; pi++ {
-		Paths[ly.Indexes.SendSt+pi].SendSpike(ctx, ni, lni, di)
+		pt := GetPaths(ly.Indexes.SendSt + pi)
+		pt.SendSpike(ctx, ni, lni, di)
 	}
 }
 
