@@ -108,10 +108,11 @@ func (sc *SynComParams) Update() {
 // C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
 // C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around
 func (sc *SynComParams) RingIndex(i uint32) uint32 {
-	if i >= sc.DelLen {
-		i -= sc.DelLen
+	ri := i
+	if ri >= sc.DelLen {
+		ri -= sc.DelLen
 	}
-	return i
+	return ri
 }
 
 // WriteOff returns offset for writing new spikes into the GBuf buffer,

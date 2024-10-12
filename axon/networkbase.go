@@ -276,6 +276,8 @@ func (nt *Network) MaxParallelData() int         { return int(nt.NetIxs().MaxDat
 func (nt *Network) NParallelData() int           { return int(nt.Context().NData) }
 
 func (nt *Network) Init() {
+	nt.NetworkIxs = make([]NetworkIndexes, 1)
+	nt.Ctx = make([]Context, 1)
 	nt.NetIxs().MaxData = 1
 }
 
@@ -494,7 +496,8 @@ func (nt *Network) SaveAllPathScales(filename core.Filename) error {
 
 // AllGlobals returns a listing of all Global variables and values.
 func (nt *Network) AllGlobals() string {
-	md := nt.NetIxs().MaxData
+	nix := nt.NetIxs()
+	md := nix.MaxData
 	str := ""
 	for di := uint32(0); di < md; di++ {
 		str += fmt.Sprintf("\n###############################\nData Index: %02d\n\n", di)
@@ -503,21 +506,21 @@ func (nt *Network) AllGlobals() string {
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < nt.NetIxs().RubiconNCosts; ui++ {
+			for ui := uint32(0); ui < nix.RubiconNCosts; ui++ {
 				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < nt.NetIxs().RubiconNNegUSs; ui++ {
+			for ui := uint32(0); ui < nix.RubiconNNegUSs; ui++ {
 				str += fmt.Sprintf("%d: %7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
 		}
 		for vv := GvDrives; vv < GlobalVectorVarsN; vv++ {
 			str += fmt.Sprintf("%20s:\t", vv.String())
-			for ui := uint32(0); ui < nt.NetIxs().RubiconNPosUSs; ui++ {
+			for ui := uint32(0); ui < nix.RubiconNPosUSs; ui++ {
 				str += fmt.Sprintf("%d:\t%7.4f\t", ui, GlobalVectors.Value(int(vv), int(ui), int(di)))
 			}
 			str += "\n"
@@ -535,26 +538,27 @@ func (nt *Network) ShowAllGlobals() { //types:add
 // AllGlobalValues adds to map of all Global variables and values.
 // ctrKey is a key of counters to contextualize values.
 func (nt *Network) AllGlobalValues(ctrKey string, vals map[string]float32) {
-	md := nt.NetIxs().MaxData
+	nix := nt.NetIxs()
+	md := nix.MaxData
 	for di := uint32(0); di < md; di++ {
 		for vv := GvRew; vv < GlobalScalarVarsN; vv++ {
 			key := fmt.Sprintf("%s  Di: %d\t%s", ctrKey, di, vv.String())
 			vals[key] = GlobalScalars.Value(int(vv), int(di))
 		}
 		for vv := GvCost; vv <= GvCostRaw; vv++ {
-			for ui := uint32(0); ui < nt.NetIxs().RubiconNCosts; ui++ {
+			for ui := uint32(0); ui < nix.RubiconNCosts; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
 			}
 		}
 		for vv := GvUSneg; vv <= GvUSnegRaw; vv++ {
-			for ui := uint32(0); ui < nt.NetIxs().RubiconNNegUSs; ui++ {
+			for ui := uint32(0); ui < nix.RubiconNNegUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
 			}
 		}
 		for vv := GvDrives; vv < GlobalVectorVarsN; vv++ {
-			for ui := uint32(0); ui < nt.NetIxs().RubiconNPosUSs; ui++ {
+			for ui := uint32(0); ui < nix.RubiconNPosUSs; ui++ {
 				key := fmt.Sprintf("%s  Di: %d\t%s\t%d", ctrKey, di, vv.String(), ui)
 				vals[key] = GlobalVectors.Value(int(vv), int(ui), int(di))
 			}
@@ -684,6 +688,7 @@ func (nt *Network) SetMaxData(simCtx *Context, maxData int) {
 // Build constructs the layer and pathway state based on the layer shapes
 // and patterns of interconnectivity.
 func (nt *Network) Build(simCtx *Context) error { //types:add
+	nix := nt.NetIxs()
 	nt.MakeLayerMaps()
 	if nt.Rubicon.NPosUSs == 0 {
 		nt.Rubicon.SetNUSs(simCtx, 1, 1)
@@ -692,7 +697,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	ctx := nt.Context()
 	*ctx = *simCtx
 	nt.FunTimes = make(map[string]*timer.Time)
-	maxData := int(nt.NetIxs().MaxData)
+	maxData := int(nix.MaxData)
 	var errs []error
 	totNeurons := 0
 	totPaths := 0
@@ -711,7 +716,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		totPaths += ly.NumSendPaths() // either way
 	}
-	nix := nt.NetIxs()
 	nix.NNeurons = uint32(totNeurons)
 	nix.NLayers = uint32(nLayers)
 	nix.NPools = uint32(totPools)
@@ -905,6 +909,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 // Called by default in InitWeights()
 func (nt *Network) BuildPathGBuf() {
 	nix := nt.NetIxs()
+	maxData := nix.MaxData
 	maxDel := uint32(0)
 	npjneur := uint32(0)
 	for _, ly := range nt.Layers {
@@ -917,7 +922,6 @@ func (nt *Network) BuildPathGBuf() {
 		}
 	}
 	nix.MaxDelay = maxDel
-	maxData := nt.NetIxs().MaxData
 	mxlen := maxDel + 1
 	sltensor.SetShapeSizes(&nt.PathGBuf, int(npjneur), int(mxlen), int(maxData))
 	sltensor.SetShapeSizes(&nt.PathGSyns, int(npjneur), int(maxData))

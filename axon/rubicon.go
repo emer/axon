@@ -697,7 +697,7 @@ func (rp *Rubicon) USnegIndex(simUsIndex int) int {
 // The USs specified here need to be managed by the simulation via the SetUS method.
 // Positive USs each have corresponding Drives.
 func (rp *Rubicon) SetNUSs(ctx *Context, nPos, nNeg int) {
-	nix := NetIxs()
+	nix := GetNetworkIxs(0)
 	nPos = rp.USposIndex(max(nPos, 1))
 	nNeg = rp.USnegIndex(max(nNeg, 1)) // ensure at least 1
 	rp.NPosUSs = uint32(nPos)
@@ -1202,7 +1202,7 @@ func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 // RubiconUSStimVal returns stimulus value for US at given index
 // and valence (includes Cost).  If US > 0.01, a full 1 US activation is returned.
 func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence ValenceTypes) float32 {
-	nix := NetIxs()
+	nix := GetNetworkIxs(0)
 	us := float32(0)
 	switch valence {
 	case Positive:

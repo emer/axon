@@ -24,7 +24,7 @@ import (
 
 // GlobalsReset resets all global values to 0, for all NData
 func GlobalsReset(ctx *Context) {
-	nix := NetIxs()
+	nix := GetNetworkIxs(0)
 	for di := uint32(0); di < nix.MaxData; di++ {
 		for vg := GvRew; vg < GlobalScalarVarsN; vg++ {
 			GlobalScalars[vg, di] = 0
@@ -60,7 +60,7 @@ func (nt *Network) NewState(ctx *Context) {
 // Cycle runs one cycle of activation updating using threading methods.
 func (nt *Network) Cycle() {
 	// todo: chunks of 10 cycles
-	nix := NetIxs()
+	nix := GetNetworkIxs(0)
 	nd := int(nix.NNeurons * nix.MaxData)
 	ld := int(nix.NLayers * nix.MaxData)
 	pd := int(nix.NPools * nix.MaxData)
@@ -99,8 +99,8 @@ func (nt *Network) Cycle() {
 // GatherSpikes is the kernel over Neurons * Data for gathering
 // spike inputs sent on the previous cycle.
 func GatherSpikes(i uint32) { //gosl:kernel
-	nix := NetIxs()
-	ctx := GlobalCtx()
+	nix := GetNetworkIxs(0)
+	ctx := GetCtx(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
@@ -112,8 +112,8 @@ func GatherSpikes(i uint32) { //gosl:kernel
 
 // LayerGi is the kernel over Layers * Data for updating Gi inhibition.
 func LayerGi(i uint32) { //gosl:kernel
-	nix := NetIxs()
-	ctx := GlobalCtx()
+	nix := GetNetworkIxs(0)
+	ctx := GetCtx(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
@@ -125,8 +125,8 @@ func LayerGi(i uint32) { //gosl:kernel
 // BetweenGi is the kernel over Layers * Data for updating Gi
 // inhibition between layers.
 func BetweenGi(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
-	nix := NetIxs()
+	ctx := GetCtx(0)
+	nix := GetNetworkIxs(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
@@ -137,8 +137,8 @@ func BetweenGi(i uint32) { //gosl:kernel
 
 // PoolGi is the kernel over Pools * Data for updating Gi inhibition.
 func PoolGi(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
-	nix := NetIxs()
+	ctx := GetCtx(0)
+	nix := GetNetworkIxs(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
@@ -149,8 +149,8 @@ func PoolGi(i uint32) { //gosl:kernel
 // CycleNeuron is the kernel over Neurons * Data to do
 // one cycle (msec) of updating at the neuron level.
 func CycleNeuron(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
-	nix := NetIxs()
+	ctx := GetCtx(0)
+	nix := GetNetworkIxs(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
@@ -163,8 +163,8 @@ func CycleNeuron(i uint32) { //gosl:kernel
 // SendSpike is the kernel over Neurons * Data to
 // send spike signal for neurons over threshold.
 func SendSpike(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
-	nix := NetIxs()
+	ctx := GetCtx(0)
+	nix := GetNetworkIxs(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return
@@ -177,8 +177,8 @@ func SendSpike(i uint32) { //gosl:kernel
 // CyclePost is the kernel over Layers * Data to
 // update state after each Cycle of updating.
 func CyclePost(i uint32) { //gosl:kernel
-	ctx := GlobalCtx()
-	nix := NetIxs()
+	ctx := GetCtx(0)
+	nix := GetNetworkIxs(0)
 	di := nix.DataIndex(i)
 	if di >= ctx.NData {
 		return

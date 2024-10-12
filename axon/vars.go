@@ -151,14 +151,4 @@ var (
 	SynapseTraces *tensor.Float32
 )
 
-// GlobalCtx returns the global vars Context.
-func GlobalCtx() *Context {
-	return &Ctx[0]
-}
-
-// NetIxs returns the global vars NetworkIndexes.
-func NetIxs() *NetworkIndexes {
-	return &NetworkIxs[0]
-}
-
 //gosl:end

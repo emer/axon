@@ -726,9 +726,9 @@ func (lr *LRateMod) ShouldDisplay(field string) bool {
 // If fact >= Range.Max, returns 1
 // otherwise, returns proportional value between Base..1
 func (lr *LRateMod) Mod(fact float32) float32 {
-	lrm := lr.Range.NormValue(fact)  // clips to 0-1 range
-	mod := lr.Base + lrm*(1-lr.Base) // resulting mod is in Base-1 range
-	return mod
+	lrm := lr.Range.NormValue(fact) // clips to 0-1 range
+	md := lr.Base + lrm*(1-lr.Base) // resulting mod is in Base-1 range
+	return md
 }
 
 //gosl:end
@@ -744,9 +744,9 @@ func (lr *LRateMod) LRateMod(net *Network, fact float32) float32 {
 	if lr.On.IsFalse() {
 		return 1
 	}
-	mod := lr.Mod(fact)
-	net.LRateMod(mod)
-	return mod
+	md := lr.Mod(fact)
+	net.LRateMod(md)
+	return md
 }
 
 //gosl:start

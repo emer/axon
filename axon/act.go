@@ -477,7 +477,8 @@ func (an *SpikeNoiseParams) ShouldDisplay(field string) bool {
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*NetIxs().NNeurons + ni
+	nix := GetNetworkIxs(0)
+	ndi := di*nix.NNeurons + ni
 	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
@@ -489,7 +490,8 @@ func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32 {
-	ndi := di*NetIxs().NNeurons + ni
+	nix := GetNetworkIxs(0)
+	ndi := di*nix.NNeurons + ni
 	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
@@ -670,9 +672,10 @@ func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float
 // EncodeValue returns value for given value, for neuron index i
 // out of n total neurons. n must be 2 or more.
 func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
-	clipVal := pc.ClipValue(val)
+	eval := val
+	clipVal := pc.ClipValue(eval)
 	if pc.Clip.IsTrue() {
-		val = clipVal
+		eval = clipVal
 	}
 	rng := pc.Max - pc.Min
 	act := float32(1)
@@ -686,7 +689,7 @@ func (pc *PopCodeParams) EncodeValue(i, n uint32, val float32) float32 {
 	gnrm := 1.0 / (rng * sig)
 	incr := rng / float32(n-1)
 	trg := pc.Min + incr*float32(i)
-	dist := gnrm * (trg - val)
+	dist := gnrm * (trg - eval)
 	return act * math32.FastExp(-(dist * dist))
 }
 
@@ -1079,11 +1082,12 @@ func (ac *ActParams) MaintNMDAFromRaw(ctx *Context, ni, di uint32) {
 
 // SMaintFromISI updates the SMaint self-maintenance current into GMaintRaw
 func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
+	nix := GetNetworkIxs(0)
 	isi := Neurons.Value(int(ISIAvg), int(ni), int(di))
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
-	ndi := di*NetIxs().NNeurons + ni
+	ndi := di*nix.NNeurons + ni
 	smp := Neurons.Value(int(SMaintP), int(ni), int(di))
 	smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)

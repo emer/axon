@@ -452,7 +452,8 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 
 // LayerGi updates the layer-level Gi inhibition from spikes.
 func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
-	lpl := GetPools(ly.PoolIndex(0, di))
+	lpi := ly.PoolIndex(0, di)
+	lpl := GetPools(lpi)
 	lpl.AvgMax.Calc(int32(li))
 	lpl.Inhib.IntToRaw()
 	ly.LayPoolGiFromSpikes(ctx, di, lpl)
@@ -460,7 +461,8 @@ func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
 
 // BetweenGi computes inhibition Gi between layers.
 func (ly *LayerParams) BetweenGi(ctx *Context, di uint32) {
-	lpl := GetPools(ly.PoolIndex(0, di))
+	lpi := ly.PoolIndex(0, di)
+	lpl := GetPools(lpi)
 	maxGi := lpl.Inhib.Gi
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index1)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index2)
@@ -475,8 +477,10 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 	if layIndex < 0 {
 		return maxGi
 	}
-	lpl := GetPools(Layers[layIndex].PoolIndex(0, di))
-	ogi := lpl.Inhib.Gi
+	oly := GetLayers(uint32(layIndex))
+	opi := oly.PoolIndex(0, di)
+	olpl := GetPools(opi)
+	ogi := olpl.Inhib.Gi
 	if ogi > maxGi {
 		maxGi = ogi
 	}
@@ -509,7 +513,8 @@ func (ly *LayerParams) SubPoolGiFromSpikes(ctx *Context, di uint32, pl *Pool, lp
 func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
 	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
 	pl := GetPools(pi)
-	lpl := GetPools(ly.PoolIndex(0, di))
+	lpi := ly.PoolIndex(0, di)
+	lpl := GetPools(lpi)
 	ly.GInteg(ctx, ni, di, pl)
 	ly.SpikeFromG(ctx, ni, di, lpl)
 }
@@ -517,7 +522,8 @@ func (ly *LayerParams) CycleNeuron(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) PulvinarDriver(ctx *Context, lni, di uint32, drvGe, nonDrivePct *float32) {
 	dli := uint32(ly.Pulv.DriveLayIndex)
 	dly := GetLayers(dli)
-	dlpl := GetPools(dly.PoolIndex(0, di))
+	dpi := dly.PoolIndex(0, di)
+	dlpl := GetPools(dpi)
 	drvMax := dlpl.AvgMax.CaSpkP.Cycle.Max
 	*nonDrivePct = ly.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	burst := Neurons.Value(int(Burst), int(dly.Indexes.NeurSt+lni), int(di))
@@ -589,8 +595,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, drvGe
 
 	case BLALayer:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			mod := max(-GlobalScalars.Value(int(GvDA), int(di)), 0) // ext is modulated by negative da
-			geCtxt := mod * ly.CT.GeGain * Neurons.Value(int(CtxtGeOrig), int(ni), int(di))
+			md := max(-GlobalScalars.Value(int(GvDA), int(di)), 0) // ext is modulated by negative da
+			geCtxt := md * ly.CT.GeGain * Neurons.Value(int(CtxtGeOrig), int(ni), int(di))
 			Neurons.SetAdd(geCtxt, int(GeRaw), int(ni), int(di))
 			ctxExt := ly.Acts.Dt.GeSynFromRawSteady(geCtxt)
 			Neurons.SetAdd(ctxExt, int(GeSyn), int(ni), int(di))
@@ -698,32 +704,32 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 	ach := GlobalScalars.Value(int(GvACh), int(di))
 	switch ly.Type {
 	case PTMaintLayer:
-		mod := ly.Acts.Dend.ModGain * nrnGModSyn
+		md := ly.Acts.Dend.ModGain * nrnGModSyn
 		if ly.Acts.Dend.ModACh.IsTrue() {
-			mod *= ach
+			md *= ach
 		}
-		mod += ly.Acts.Dend.ModBase
+		md += ly.Acts.Dend.ModBase
 		// key: excluding GModMaint here, so active maintenance can persist
-		Neurons.SetMul(mod, int(GeRaw), int(ni), int(di))
-		Neurons.SetMul(mod, int(GeSyn), int(ni), int(di))
+		Neurons.SetMul(md, int(GeRaw), int(ni), int(di))
+		Neurons.SetMul(md, int(GeSyn), int(ni), int(di))
 		extraRaw = ly.Acts.Dend.ModGain * nrnGModRaw
 		if ly.Acts.Dend.ModACh.IsTrue() {
 			extraRaw *= ach
 		}
-		extraSyn = mod
+		extraSyn = md
 	case BLALayer:
 		// modulatory pathway from PTp is only used so we can modulate by da
-		mod := max(-GlobalScalars.Value(int(GvDA), int(di)), 0) // ext is modulated by negative da
-		extraRaw = mod * nrnGModRaw * ly.Acts.Dend.ModGain
-		extraSyn = mod * nrnGModSyn * ly.Acts.Dend.ModGain
+		md := max(-GlobalScalars.Value(int(GvDA), int(di)), 0) // ext is modulated by negative da
+		extraRaw = md * nrnGModRaw * ly.Acts.Dend.ModGain
+		extraSyn = md * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
 		if ly.Acts.Dend.HasMod.IsTrue() {
-			mod := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn
-			if mod > 1 {
-				mod = 1
+			md := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn
+			if md > 1 {
+				md = 1
 			}
-			Neurons.SetMul(mod, int(GeRaw), int(ni), int(di))
-			Neurons.SetMul(mod, int(GeSyn), int(ni), int(di))
+			Neurons.SetMul(md, int(GeRaw), int(ni), int(di))
+			Neurons.SetMul(md, int(GeSyn), int(ni), int(di))
 		}
 	}
 	geRaw := Neurons.Value(int(GeRaw), int(ni), int(di))
@@ -823,7 +829,8 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, ni, di uint32, lpl *Pool) {
 func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
 	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)), di)
 	pl := GetPools(pi)
-	lpl := GetPools(ly.PoolIndex(0, di))
+	lpi := ly.PoolIndex(0, di)
+	lpl := GetPools(lpi)
 	lni := ni - ly.Indexes.NeurSt
 	ly.PostSpike(ctx, ni, di, pl, lpl)
 
@@ -980,14 +987,16 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, lpl *Poo
 // such as updating a neuromodulatory signal such as dopamine.
 // Any updates here must also be done in gpu_wgsl/gpu_cyclepost.wgsl
 func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
-	lpl := GetPools(ly.PoolIndex(0, di))
+	lpi := ly.PoolIndex(0, di)
+	lpl := GetPools(lpi)
 	ly.CyclePostLayer(ctx, di, lpl)
 	switch ly.Type {
 	case CeMLayer:
 		ly.CyclePostCeMLayer(ctx, di, lpl)
 	case VSPatchLayer:
 		for lpi := uint32(1); lpi < ly.Indexes.NPools; lpi++ {
-			pl := GetPools(ly.PoolIndex(lpi, di))
+			pi := ly.PoolIndex(lpi, di)
+			pl := GetPools(pi)
 			ly.CyclePostVSPatchLayer(ctx, di, int32(lpi), pl)
 		}
 	case LDTLayer:
@@ -1032,7 +1041,9 @@ func (ly *LayerParams) LDTSrcLayAct(layIndex int32, di uint32) float32 {
 	if layIndex < 0 {
 		return 0
 	}
-	return Pools[Layers[layIndex].PoolIndex(0, di)].AvgMax.CaSpkP.Cycle.Avg
+	oly := Layers[layIndex]
+	opi := oly.PoolIndex(0, di)
+	return Pools[opi].AvgMax.CaSpkP.Cycle.Avg
 }
 
 func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {

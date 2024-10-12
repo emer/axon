@@ -214,7 +214,8 @@ func (pl *Pool) PoolGi(ctx *Context, di uint32) {
 	ly := GetLayers(pl.LayIndex)
 	giMult := LayerStates[LayerGiMult, li, di]
 	lyIsOn := (ly.Inhib.Layer.On == 1)
-	lpl := GetPools(ly.PoolIndex(0, di))
+	pi := ly.PoolIndex(0, di)
+	lpl := GetPools(pi)
 	ly.SubPoolGiFromSpikes(ctx, di, pl, lpl, lyIsOn, giMult)
 }
 

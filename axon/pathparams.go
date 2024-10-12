@@ -249,7 +249,8 @@ func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
 // GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
 // while integrating the Recv Path-level GSyn integrated values.
 func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
-	maxd := NetIxs().MaxData
+	nix := GetNetworkIxs(0)
+	maxd := nix.MaxData
 	bi := pt.Indexes.GBufSt + pt.Com.ReadIndex(lni, di, ctx.CyclesTotal, pt.Indexes.RecvNeurN, maxd)
 	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value1D(int(bi)))
 	PathGBuf.Set1D(0, int(bi))
@@ -301,7 +302,8 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 			return
 		}
 	}
-	maxd := NetIxs().MaxData
+	nix := GetNetworkIxs(0)
+	maxd := nix.MaxData
 	recvNeurSt := pt.Indexes.RecvNeurSt
 	cni := pt.Indexes.SendConSt + lni
 	synst := pt.Indexes.SynapseSt + PathSendCon.Value(int(cni), int(StartOff))
