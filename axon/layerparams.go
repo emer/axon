@@ -1041,7 +1041,7 @@ func (ly *LayerParams) LDTSrcLayAct(layIndex int32, di uint32) float32 {
 	if layIndex < 0 {
 		return 0
 	}
-	oly := Layers[layIndex]
+	oly := GetLayers(uint32(layIndex))
 	opi := oly.PoolIndex(0, di)
 	return Pools[opi].AvgMax.CaSpkP.Cycle.Avg
 }

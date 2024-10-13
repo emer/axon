@@ -96,7 +96,7 @@ var (
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
 	// [Layer][Data]
-	//gosl:dims 2
+	//gosl:dims 3
 	LayerStates *tensor.Float32
 
 	// GlobalScalars are the global scalar state variables.
