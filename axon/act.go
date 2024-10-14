@@ -134,14 +134,15 @@ func (sk *SpikeParams) ActFromISI(isi, timeInc, integ float32) float32 {
 
 // AvgFromISI returns updated spiking ISI from current isi interval value
 func (sk *SpikeParams) AvgFromISI(avg float32, isi float32) float32 {
-	if avg <= 0 {
-		avg = isi
-	} else if isi < 0.8*avg {
-		avg = isi // if significantly less than we take that
+	av := avg
+	if av <= 0 {
+		av = isi
+	} else if isi < 0.8*av {
+		av = isi // if significantly less than we take that
 	} else { // integrate on slower
-		avg += sk.ISIDt * (isi - avg) // running avg updt
+		av += sk.ISIDt * (isi - av) // running avg updt
 	}
-	return avg
+	return av
 }
 
 ////////  DendParams
@@ -582,8 +583,7 @@ func (sm *SMaintParams) ExpInt(isi float32) float32 {
 	if isi <= 0 {
 		return 0
 	}
-	isi = max(isi, sm.ISI.Min)
-	return math32.FastExp(-isi / sm.NNeurons)
+	return math32.FastExp(-max(isi, sm.ISI.Min) / sm.NNeurons)
 }
 
 ////////  PopCodeParams
@@ -1220,7 +1220,7 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 func (ac *ActParams) GiFromSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
 	ac.AddGiNoise(ctx, ni, di)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
-		giSyn = 0
+		return 0
 	}
 	return giSyn
 }
@@ -1244,11 +1244,11 @@ func (ac *ActParams) VmFromInet(vm, dt, inet float32) float32 {
 // VmInteg integrates Vm over VmSteps to obtain a more stable value
 // Returns the new Vm and inet values.
 func (ac *ActParams) VmInteg(vm, dt, ge, gl, gi, gk float32, nvm, inet *float32) {
-	dt *= ac.Dt.DtStep
+	dtEff := dt * ac.Dt.DtStep
 	*nvm = vm
 	for i := int32(0); i < ac.Dt.VmSteps; i++ {
 		*inet = ac.InetFromG(*nvm, ge, gl, gi, gk)
-		*nvm = ac.VmFromInet(*nvm, dt, *inet)
+		*nvm = ac.VmFromInet(*nvm, dtEff, *inet)
 	}
 }
 

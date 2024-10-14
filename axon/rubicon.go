@@ -1199,7 +1199,9 @@ func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 	}
 }
 
-// RubiconUSStimVal returns stimulus value for US at given index
+//gosl:start
+
+// RubiconUSStimValue returns stimulus value for US at given index
 // and valence (includes Cost).  If US > 0.01, a full 1 US activation is returned.
 func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence ValenceTypes) float32 {
 	nix := GetNetworkIxs(0)
@@ -1221,3 +1223,5 @@ func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence Valence
 	}
 	return us
 }
+
+//gosl:end

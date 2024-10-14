@@ -80,11 +80,11 @@ func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
 		if val >= 0 {
 			Neurons.Set(val, int(Ext), int(ni), int(di))
 		} else {
-			Neurons.Set(0, int(Ext), int(ni), int(di))
+			Neurons.Set(float32(0), int(Ext), int(ni), int(di))
 		}
 	} else {
 		if val >= 0 {
-			Neurons.Set(0, int(Ext), int(ni), int(di))
+			Neurons.Set(float32(0), int(Ext), int(ni), int(di))
 		} else {
 			Neurons.Set(-val, int(Ext), int(ni), int(di))
 		}
@@ -595,7 +595,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, drvGe
 
 	case BLALayer:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			md := max(-GlobalScalars.Value(int(GvDA), int(di)), 0) // ext is modulated by negative da
+			md := max(-GlobalScalars.Value(int(GvDA), int(di)), float32(0)) // ext is modulated by negative da
 			geCtxt := md * ly.CT.GeGain * Neurons.Value(int(CtxtGeOrig), int(ni), int(di))
 			Neurons.SetAdd(geCtxt, int(GeRaw), int(ni), int(di))
 			ctxExt := ly.Acts.Dt.GeSynFromRawSteady(geCtxt)
@@ -673,6 +673,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, drvGe
 	case TDIntegLayer:
 		NrnSetFlag(ni, di, NeuronHasExt)
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars.Value(int(GvRewPred), int(di)))
+	default:
 	}
 	return saveVal
 }
@@ -690,6 +691,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		if orig < 0.05 {
 			Neurons.Set(0, int(Ge), int(ni), int(di))
 		}
+	default:
 	}
 }
 
@@ -961,6 +963,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, l
 	case TDDaLayer:
 		// I set this in CyclePost
 		Neurons.Set(GlobalScalars.Value(int(GvDA), int(di)), int(Act), int(ni), int(di))
+	default:
 	}
 }
 
@@ -1015,6 +1018,7 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 		ly.CyclePostTDIntegLayer(ctx, di)
 	case TDDaLayer:
 		ly.CyclePostTDDaLayer(ctx, di)
+	default:
 	}
 }
 
