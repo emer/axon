@@ -482,7 +482,7 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 	olpl := GetPools(opi)
 	ogi := olpl.Inhib.Gi
 	if ogi > maxGi {
-		maxGi = ogi
+		return ogi
 	}
 	return maxGi
 }
