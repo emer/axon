@@ -134,6 +134,7 @@ func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net 
 			if curTime != etime.Cycle {
 				loop.OnEnd.Add("GUI:UpdateNetView", func() {
 					ctrUpdateFunc(curTime)
+					viewupdt.Testing = m == etime.Test
 					viewupdt.UpdateTime(curTime)
 				})
 			}
@@ -142,6 +143,7 @@ func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net 
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
 			cyc := cycLoop.Counter.Cur
 			ctrUpdateFunc(etime.Cycle)
+			viewupdt.Testing = m == etime.Test
 			viewupdt.UpdateCycle(cyc)
 		})
 	}

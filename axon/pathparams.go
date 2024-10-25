@@ -561,7 +561,7 @@ func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 }
 
 // DWtSynTDPred computes the weight change (learning) at given synapse,
-// for the TDRewPredPath type
+// for the TDPredPath type
 func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
 	lda := GlobalScalars.Value(int(GvDA), int(di))

@@ -22,7 +22,7 @@ func (nt *Network) AddClampDaLayer(name string) *Layer {
 }
 
 // AddTDLayers adds the standard TD temporal differences layers, generating a DA signal.
-// Pathway from Rew to RewInteg is given class TDRewToInteg -- should
+// Pathway from Rew to RewInteg is given class TDToInteg -- should
 // have no learning and 1 weight.
 func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td *Layer) {
 	rew = nt.AddRewLayer(prefix + "Rew")
