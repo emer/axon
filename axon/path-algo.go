@@ -27,9 +27,9 @@ func (pj *Path) DWt(ctx *Context, si uint32) {
 		ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
 		dwt := float32(0)
 		for di := uint32(0); di < ctx.NData; di++ {
-			layPool := rlay.Pool(0, di)
-			subPool := rlay.SubPool(ctx, ri, di)
-			pj.Params.DWtSyn(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+			lpi := rlay.Params.PoolIndex(0)
+			pi := rlay.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ri)))
+			pj.Params.DWtSyn(ctx, syni, si, ri, lpi, pi, di, isTarget)
 			dwt += SynapseTraces.Value(int(DiDWt), int(syni), int(di))
 		}
 		// note: on GPU, this must be a separate kernel, but can be combined here

@@ -7,7 +7,6 @@
 package axon
 
 import (
-	"fmt"
 	"log"
 
 	"cogentcore.org/core/math32"
@@ -35,16 +34,16 @@ func (ly *Layer) NewState(ctx *Context) {
 	actPlusAvg := float32(0)
 
 	for di := uint32(0); di < ctx.NData; di++ {
-		lpl := ly.Pool(0, di)
+		lpi := ly.Params.PoolIndex(0)
 
-		actMinusAvg += lpl.AvgMax.Act.Minus.Avg
-		actPlusAvg += lpl.AvgMax.Act.Plus.Avg
+		actMinusAvg += PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
+		actPlusAvg += PoolAvgMax(AMAct, AMPlus, Avg, lpi, di)
 
 		ly.Params.NewStateLayer(ctx, di)
 
-		for pi := uint32(0); pi < np; pi++ {
-			pl := ly.Pool(pi, di)
-			ly.Params.NewStatePool(ctx, pl) // also calls DecayState on pool
+		for spi := uint32(0); spi < np; spi++ {
+			pi := ly.Params.PoolIndex(spi)
+			ly.Params.NewStatePool(ctx, pi, di) // also calls DecayState on pool
 		}
 
 		for lni := uint32(0); lni < nn; lni++ {
@@ -109,25 +108,27 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 // DecayStateLayer does layer-level decay, but not neuron level
 func (ly *Layer) DecayStateLayer(ctx *Context, di uint32, decay, glong, ahp float32) {
 	np := ly.NPools
-	for pi := uint32(0); pi < np; pi++ {
-		pl := ly.Pool(pi, di)
-		pl.Inhib.Decay(decay)
+	for spi := uint32(0); spi < np; spi++ {
+		pi := ly.Params.PoolIndex(spi)
+		PoolInhibDecay(pi, di, decay)
 	}
 }
 
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
 func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float32) {
-	pi := uint32(pool + 1) // 1 based
+	spi := uint32(pool + 1) // 1 based
 	for di := uint32(0); di < ctx.NData; di++ {
-		pl := ly.Pool(pi, di)
-		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-			ni := ly.NeurStIndex + lni
+		pi := ly.Params.PoolIndex(spi)
+		nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(di))
+		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(di))
+		for lni := nsi; lni < nei; lni++ {
+			ni := ly.NeurStIndex + uint32(lni)
 			if NrnIsOff(ni) {
 				continue
 			}
 			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		}
-		pl.Inhib.Decay(decay)
+		PoolInhibDecay(pi, di, decay)
 	}
 }
 
@@ -159,10 +160,12 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		log.Printf("axon.Layer.AvgMaxVar: %s\n", err)
 		return am
 	}
-	pl := ly.Pool(uint32(poolIndex), uint32(di))
+	pi := ly.Params.PoolIndex(uint32(poolIndex))
+	nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(di))
+	nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(di))
 	am.Init()
-	for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-		ni := ly.NeurStIndex + lni
+	for lni := nsi; lni < nei; lni++ {
+		ni := ly.NeurStIndex + uint32(lni)
 		if NrnIsOff(ni) {
 			continue
 		}
@@ -176,19 +179,19 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ctx *Context) {
 	np := ly.NPools
-	for pi := uint32(0); pi < np; pi++ {
+	for spi := uint32(0); spi < np; spi++ {
 		for di := uint32(0); di < ctx.NData; di++ {
-			pl := ly.Pool(pi, di)
-			ly.Params.MinusPhasePool(ctx, pl) // grabs AvgMax.Minus from Cycle
+			pi := ly.Params.PoolIndex(spi)
+			ly.Params.MinusPhasePool(ctx, pi, di) // grabs AvgMax.Minus from Cycle
 		}
 	}
 	nn := ly.NNeurons
 	geIntMinusMax := float32(0)
 	giIntMinusMax := float32(0)
 	for di := uint32(0); di < ctx.NData; di++ {
-		lpl := ly.Pool(0, di)
-		geIntMinusMax = math32.Max(geIntMinusMax, lpl.AvgMax.GeInt.Minus.Max)
-		giIntMinusMax = math32.Max(giIntMinusMax, lpl.AvgMax.GiInt.Minus.Max)
+		lpi := ly.Params.PoolIndex(0)
+		geIntMinusMax = math32.Max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, lpi, di))
+		giIntMinusMax = math32.Max(giIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, lpi, di))
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
 			if NrnIsOff(ni) {
@@ -231,10 +234,10 @@ func (ly *Layer) PlusPhaseStart(ctx *Context) {
 func (ly *Layer) PlusPhase(ctx *Context) {
 	// todo: see if it is faster to just grab pool info now, then do everything below on CPU
 	np := ly.NPools
-	for pi := uint32(0); pi < np; pi++ { // gpu_cycletoplus
+	for spi := uint32(0); spi < np; spi++ { // gpu_cycletoplus
 		for di := uint32(0); di < ctx.NData; di++ {
-			pl := ly.Pool(pi, di)
-			ly.Params.PlusPhasePool(ctx, pl)
+			pi := ly.Params.PoolIndex(spi)
+			ly.Params.PlusPhasePool(ctx, pi, di)
 		}
 	}
 	nn := ly.NNeurons
@@ -244,9 +247,9 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			lpl := ly.Pool(0, di)
-			pl := ly.SubPool(ctx, ni, di)
-			ly.Params.PlusPhaseNeuron(ctx, ni, di, pl, lpl)
+			lpi := ly.Params.PoolIndex(0)
+			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)))
+			ly.Params.PlusPhaseNeuron(ctx, lpi, pi, ni, di)
 		}
 	}
 }
@@ -257,10 +260,10 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PhaseDiffFromActs(ctx) // GPU syncs down the state before this
 	np := ly.NPools
 	if ly.Type == PTMaintLayer && ly.Name == "OFCposPT" {
-		for pi := uint32(1); pi < np; pi++ {
+		for spi := uint32(1); spi < np; spi++ {
 			for di := uint32(0); di < ctx.NData; di++ {
-				pl := ly.Pool(pi, di)
-				val := pl.AvgMax.CaSpkD.Cycle.Avg
+				pi := ly.Params.PoolIndex(spi)
+				val := PoolAvgMax(AMCaSpkD, AMCycle, Avg, pi, di)
 				GlobalVectors.Set(val, int(GvOFCposPTMaint), int(uint32(pi-1)), int(di))
 			}
 		}
@@ -271,10 +274,10 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 			hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
 			giveUp := (GlobalScalars.Value(int(GvGiveUp), int(di)) > 0)
 			if hasRew || giveUp {
-				ly.DecayState(ctx, di, 1, 1, 1)      // note: GPU will get, and GBuf are auto-cleared in NewState
-				for pi := uint32(0); pi < np; pi++ { // also clear the pool stats: GoalMaint depends on these..
-					pl := ly.Pool(pi, di)
-					pl.AvgMax.Zero()
+				ly.DecayState(ctx, di, 1, 1, 1)         // note: GPU will get, and GBuf are auto-cleared in NewState
+				for spi := uint32(0); spi < np; spi++ { // also clear the pool stats: GoalMaint depends on these..
+					pi := ly.Params.PoolIndex(spi)
+					PoolAvgMaxZero(pi, di)
 				}
 			}
 		}
@@ -383,9 +386,9 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 	li := ly.Index
 	for di := uint32(0); di < ctx.NData; di++ {
-		lpl := ly.Pool(0, di)
-		avgM := lpl.AvgMax.Act.Minus.Avg
-		avgP := lpl.AvgMax.Act.Plus.Avg
+		lpi := ly.Params.PoolIndex(0)
+		avgM := PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
+		avgP := PoolAvgMax(AMAct, AMPlus, Avg, lpi, di)
 		cosv := float32(0)
 		ssm := float32(0)
 		ssp := float32(0)
@@ -458,12 +461,14 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 	}
 	if ly.HasPoolInhib() && ly.Params.Learn.TrgAvgAct.Pool.IsTrue() {
 		np := ly.NPools
-		for pi := uint32(1); pi < np; pi++ {
-			pl := ly.Pool(pi, 0) // only for idxs
+		for spi := uint32(1); spi < np; spi++ {
+			pi := ly.Params.PoolIndex(spi) // only for idxs
+			nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(0))
+			nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(0))
 			nn := 0
 			avg := float32(0)
-			for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-				ni := ly.NeurStIndex + lni
+			for lni := nsi; lni < nei; lni++ {
+				ni := ly.NeurStIndex + uint32(lni)
 				if NrnIsOff(ni) {
 					continue
 				}
@@ -475,8 +480,8 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 			}
 			avg /= float32(nn)
 			avg *= submean
-			for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-				ni := ly.NeurStIndex + lni
+			for lni := nsi; lni < nei; lni++ {
+				ni := ly.NeurStIndex + uint32(lni)
 				if NrnIsOff(ni) {
 					continue
 				}
@@ -566,12 +571,14 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		sp = 1
 	}
 	np := ly.NPools
-	for pi := sp; pi < np; pi++ {
-		pl := ly.Pool(pi, 0)
+	for spi := sp; spi < np; spi++ {
+		pi := ly.Params.PoolIndex(spi)
+		nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(0))
+		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(0))
 		plavg := float32(0)
 		nn := 0
-		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-			ni := ly.NeurStIndex + lni
+		for lni := nsi; lni < nei; lni++ {
+			ni := ly.NeurStIndex + uint32(lni)
 			if NrnIsOff(ni) {
 				continue
 			}
@@ -585,9 +592,9 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		if plavg < 0.0001 { // gets unstable below here
 			continue
 		}
-		pl.AvgDif.Init()
-		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-			ni := ly.NeurStIndex + lni
+		PoolAvgDifInit(pi, 0)
+		for lni := nsi; lni < nei; lni++ {
+			ni := ly.NeurStIndex + uint32(lni)
 			if NrnIsOff(ni) {
 				continue
 			}
@@ -595,36 +602,31 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 			adif := apct - NeuronAvgs.Value(int(TrgAvg), int(ni))
 			NeuronAvgs.Set(apct, int(AvgPct), int(ni))
 			NeuronAvgs.Set(adif, int(AvgDif), int(ni))
-			pl.AvgDif.UpdateValue(math32.Abs(adif))
+			PoolAvgDifUpdate(pi, 0, math32.Abs(adif))
 		}
-		ppi := pi
-		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFromTrgAvg Pool Layer: %s  pool: %d\n", ly.Name, ppi)
-		})
-		pl.AvgDif.Calc(int32(ly.Index))             // ref in case of crash
+		PoolAvgDifCalc(pi, 0)
 		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
-			pld := ly.Pool(pi, di)
-			pld.AvgDif = pl.AvgDif
+			Pools.Set(Pools.Value(int(AvgMaxVarIdx(AMAvgDif, AMCycle, Avg)), int(pi), int(0)), int(AvgMaxVarIdx(AMAvgDif, AMCycle, Avg)), int(pi), int(di))
+			Pools.Set(Pools.Value(int(AvgMaxVarIdx(AMAvgDif, AMCycle, Max)), int(pi), int(0)), int(AvgMaxVarIdx(AMAvgDif, AMCycle, Max)), int(pi), int(di))
 		}
 	}
 	if sp == 1 { // update layer pool
-		lpl := ly.Pool(0, 0)
-		lpl.AvgDif.Init()
-		for lni := lpl.StIndex; lni < lpl.EdIndex; lni++ {
-			ni := ly.NeurStIndex + lni
+		lpi := ly.Params.PoolIndex(0)
+		PoolAvgDifInit(lpi, 0)
+		nsi := PoolsInt.Value(int(PoolNeurSt), int(lpi), int(0))
+		nei := PoolsInt.Value(int(PoolNeurEd), int(lpi), int(0))
+		for lni := nsi; lni < nei; lni++ {
+			ni := ly.NeurStIndex + uint32(lni)
 			if NrnIsOff(ni) {
 				continue
 			}
-			lpl.AvgDif.UpdateValue(math32.Abs(NeuronAvgs.Value(int(AvgDif), int(ni))))
+			PoolAvgDifUpdate(lpi, 0, math32.Abs(NeuronAvgs.Value(int(AvgDif), int(ni))))
 		}
-		SetAvgMaxFloatFromIntErr(func() {
-			fmt.Printf("AvgDifFromTrgAvg LayPool Layer: %s\n", ly.Name)
-		})
-		lpl.AvgDif.Calc(int32(ly.Index))
+		PoolAvgDifCalc(lpi, 0)
 
 		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
-			lpld := ly.Pool(0, di)
-			lpld.AvgDif = lpl.AvgDif
+			Pools.Set(Pools.Value(int(AvgMaxVarIdx(AMAvgDif, AMCycle, Avg)), int(lpi), int(0)), int(AvgMaxVarIdx(AMAvgDif, AMCycle, Avg)), int(lpi), int(di))
+			Pools.Set(Pools.Value(int(AvgMaxVarIdx(AMAvgDif, AMCycle, Max)), int(lpi), int(0)), int(AvgMaxVarIdx(AMAvgDif, AMCycle, Max)), int(lpi), int(di))
 		}
 	}
 }

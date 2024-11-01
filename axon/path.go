@@ -373,10 +373,13 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 // but can be called when needed.  Must be called to completely initialize
 // prior activity, e.g., full Glong clearing.
 func (pt *Path) InitGBuffs() {
-	for ri := range pt.GBuf {
-		pt.GBuf[ri] = 0
-	}
-	for ri := range pt.GSyns {
-		pt.GSyns[ri] = 0
-	}
+	// TODO: fixme
+	//
+	//	for ri := range pt.GBuf {
+	//		pt.GBuf[ri] = 0
+	//	}
+	//
+	//	for ri := range pt.GSyns {
+	//		pt.GSyns[ri] = 0
+	//	}
 }

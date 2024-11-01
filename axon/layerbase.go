@@ -58,13 +58,6 @@ type Layer struct {
 	// list of sending pathways from this layer to other layers
 	SendPaths []*Path
 
-	// computes FS-FFFB inhibition and other pooled, aggregate state variables.
-	// has at least 1 for entire layer (lpl = layer pool), and one for each
-	// sub-pool if shape supports that (4D) * 1 per data parallel (inner loop).
-	// This is a sub-slice from overall Network Pools slice.
-	// You must iterate over index and use pointer to modify values.
-	Pools []Pool
-
 	// external input values for this layer, allocated from network
 	// global Exts slice.
 	Exts []float32 `display:"-"`
@@ -110,16 +103,10 @@ func (ly *Layer) SetOff(off bool) {
 	}
 }
 
-// Pool returns pool at given pool x data index
-func (ly *Layer) Pool(pi, di uint32) *Pool {
-	return &(ly.Pools[pi*ly.MaxData+di])
-}
-
-// SubPool returns subpool for given neuron, at data index
-func (ly *Layer) SubPool(ctx *Context, ni, di uint32) *Pool {
-	pi := NeuronIxs.Value(int(NrnSubPool), int(ni))
-	return ly.Pool(pi, di)
-}
+// SubPool returns subpool index for given neuron, at data index
+// func (ly *Layer) SubPool(ni, di uint32) uint32 {
+// 	return pi := NeuronIxs[NrnSubPool, ni]
+// }
 
 // RecipToSendPath finds the reciprocal pathway to
 // the given sending pathway within the ly layer.
@@ -233,22 +220,21 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 	sh := ly.Shape.Sizes
 	spy := sh[0]
 	spx := sh[1]
-	pi := uint32(1)
+	spi := uint32(1)
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
-			soff := uint32(ly.Shape.IndexTo1D(py, px, 0, 0))
-			eoff := uint32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
+			soff := int32(ly.Shape.IndexTo1D(py, px, 0, 0))
+			eoff := int32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
 			for di := uint32(0); di < ly.MaxData; di++ {
-				pl := ly.Pool(pi, di)
-				pl.StIndex = soff
-				pl.EdIndex = eoff
+				pi := ly.Params.PoolIndex(spi)
+				PoolsInt.Set(soff, int(PoolNeurSt), int(pi), int(di))
+				PoolsInt.Set(eoff, int(PoolNeurEd), int(pi), int(di))
 			}
-			pl := ly.Pool(pi, 0)
-			for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-				ni := ly.NeurStIndex + lni
-				NeuronIxs.Set(uint32(pi), int(NrnSubPool), int(ni))
+			for lni := soff; lni < eoff; lni++ {
+				ni := ly.NeurStIndex + uint32(lni)
+				NeuronIxs.Set(uint32(spi), int(NrnSubPool), int(ni))
 			}
-			pi++
+			spi++
 		}
 	}
 }
@@ -257,10 +243,10 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 func (ly *Layer) BuildPools(ctx *Context, nn uint32) error {
 	np := 1 + ly.NumPools()
 	for di := uint32(0); di < ly.MaxData; di++ {
-		lpl := ly.Pool(0, di)
-		lpl.StIndex = 0
-		lpl.EdIndex = nn
-		lpl.IsLayPool.SetBool(true)
+		lpi := ly.Params.PoolIndex(0)
+		PoolsInt.Set(0, int(PoolNeurSt), int(lpi), int(di))
+		PoolsInt.Set(int32(nn), int(PoolNeurEd), int(lpi), int(di))
+		PoolsInt.Set(1, int(PoolIsLayer), int(lpi), int(di))
 	}
 	if np > 1 {
 		ly.BuildSubPools(ctx)
@@ -345,7 +331,6 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		return math32.NaN()
 	}
 	ni := ly.NeurStIndex + uint32(idx)
-	ctx := ly.Network.Context()
 	nvars := ly.UnitVarNum()
 	if varIndex >= nvars-NNeuronLayerVars {
 		lvi := varIndex - (ly.UnitVarNum() - NNeuronLayerVars)
@@ -359,8 +344,8 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		case 3:
 			return GlobalScalars.Value(int(GvSer), int(uint32(di)))
 		case 4:
-			pl := ly.SubPool(ctx, ni, uint32(di))
-			return float32(pl.Gated)
+			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)))
+			return float32(PoolsInt.Value(int(PoolGated), int(pi), int(di)))
 		}
 	} else if NeuronVars(varIndex) >= NeuronVarsN {
 		return NeuronAvgs.Value(int(NeuronVars(varIndex)-NeuronVarsN), int(ni))

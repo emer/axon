@@ -204,9 +204,15 @@ type Network struct {
 	// [Vars][Neurons]
 	NeuronAvgs tensor.Float32 `display:"-"`
 
-	// Pools are the inhibitory pool variables for each layer and pool, and Data.
-	// [Layer][Pools][Data]
-	Pools []Pool `display:"-"`
+	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
+	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIdx].
+	// [PoolVars+AvgMax][Layer * Pools][Data]
+	Pools tensor.Float32
+
+	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
+	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIdx]
+	// [PoolIntVars+AvgMax][Layer * Pools][Data]
+	PoolsInt tensor.Int32
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
@@ -721,7 +727,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 
 	nt.LayParams = make([]LayerParams, nLayers)
 	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, maxData)
-	nt.Pools = make([]Pool, totPools*maxData)
+	sltensor.SetShapeSizes(&nt.Pools, int(PoolVarsN), totPools, maxData)
+	sltensor.SetShapeSizes(&nt.PoolsInt, int(PoolIntVarsN), totPools, maxData)
 	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, maxData)
 	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
 	sltensor.SetShapeSizes(&nt.NeuronIxs, int(NeuronIndexVarsN), totNeurons)
@@ -754,7 +761,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		np := ly.NumPools() + 1
 		npd := np * maxData
 		ly.NPools = uint32(np)
-		ly.Pools = nt.Pools[poolIndex : poolIndex+npd]
 		ly.Params.Index = uint32(li)
 		ly.Params.MaxData = uint32(maxData)
 		ly.Params.PoolSt = uint32(poolIndex)
@@ -774,11 +780,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				ix := pi*int(ly.MaxData) + di
-				pl := &ly.Pools[ix]
-				pl.LayIndex = uint32(li)
-				pl.DataIndex = uint32(di)
-				pl.PoolIndex = uint32(poolIndex + ix)
+				PoolsInt[PoolLayerIdx, pi, di] = int32(li)
 			}
 		}
 		if ly.Type.IsExt() {
@@ -953,7 +955,8 @@ func (nt *Network) SetAsCurrent() {
 	Ctx = nt.Ctx
 	Neurons = &nt.Neurons
 	NeuronAvgs = &nt.NeuronAvgs
-	Pools = nt.Pools
+	Pools = &nt.Pools
+	PoolsInt = &nt.PoolsInt
 	LayerStates = &nt.LayerStates
 	GlobalScalars = &nt.GlobalScalars
 	GlobalVectors = &nt.GlobalVectors
@@ -972,7 +975,6 @@ func (nt *Network) DeleteAll() {
 
 	nt.LayParams = nil
 	nt.PathParams = nil
-	nt.Pools = nil
 }
 
 func (nt *Network) WriteWeightsJSON(w io.Writer) error {
@@ -1072,7 +1074,8 @@ func (nt *Network) CopyStateFrom(on *Network) error {
 		slog.Error(err.Error())
 		return err
 	}
-	copy(nt.Pools, on.Pools)
+	nt.Pools.CopyFrom(&on.Pools)
+	nt.PoolsInt.CopyFrom(&on.PoolsInt)
 	nt.Neurons.CopyFrom(&on.Neurons)
 	nt.NeuronAvgs.CopyFrom(&on.NeuronAvgs)
 	nt.LayerStates.CopyFrom(&on.LayerStates)

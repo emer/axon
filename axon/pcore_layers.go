@@ -101,10 +101,12 @@ func (gp *GPParams) Update() {
 // downloaded from GPU, to set Gated flag based on SpkMax activity
 func (ly *Layer) MatrixGated(ctx *Context) {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
+		lpi := ly.Params.PoolIndex(0)
 		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIndex)]
+		opi := oly.Params.PoolIndex(0)
 		// note: NoGo layers don't track gating at the sub-pool level!
 		for di := uint32(0); di < ctx.NData; di++ {
-			ly.Pool(0, di).Gated = oly.Pool(0, di).Gated
+			PoolsInt.Set(PoolsInt.Value(int(PoolGated), int(opi), int(di)), int(PoolGated), int(lpi), int(di))
 		}
 		return
 	}
@@ -154,9 +156,9 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		// that this will make sense and not doing yet..
 
 		if !mtxGated { // nobody did if thal didn't
-			for pi := uint32(0); pi < ly.NPools; pi++ {
-				pl := ly.Pool(uint32(pi), di)
-				pl.Gated.SetBool(false)
+			for spi := uint32(0); spi < ly.NPools; spi++ {
+				pi := ly.Params.PoolIndex(spi)
+				PoolsInt.Set(0, int(PoolGated), int(pi), int(di))
 			}
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
@@ -174,33 +176,41 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
 	anyGated := false
 	poolIndex := -1
+	lpi := ly.Params.PoolIndex(0)
 	if ly.Is4D() {
-		for pi := uint32(1); pi < ly.NPools; pi++ {
-			pl := ly.Pool(pi, di)
-			spkavg := pl.AvgMax.SpkMax.Cycle.Avg
+		for spi := uint32(1); spi < ly.NPools; spi++ {
+			pi := ly.Params.PoolIndex(spi)
+			spkavg := PoolAvgMax(AMSpkMax, AMCycle, Avg, pi, di)
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
 				if poolIndex < 0 {
-					poolIndex = int(pi) - 1
+					poolIndex = int(spi) - 1
 				}
+				PoolsInt.Set(1, int(PoolGated), int(pi), int(di))
+			} else {
+				PoolsInt.Set(0, int(PoolGated), int(pi), int(di))
 			}
-			pl.Gated.SetBool(gthr)
 		}
 	} else {
-		spkavg := ly.Pool(0, di).AvgMax.SpkMax.Cycle.Avg
+		spkavg := PoolAvgMax(AMSpkMax, AMCycle, Avg, lpi, di)
 		if spkavg > thr {
 			anyGated = true
 		}
 	}
-	ly.Pool(0, di).Gated.SetBool(anyGated)
+	if anyGated {
+		PoolsInt.Set(1, int(PoolGated), int(lpi), int(di))
+	} else {
+		PoolsInt.Set(0, int(PoolGated), int(lpi), int(di))
+	}
 	return anyGated, poolIndex
 }
 
 // AnyGated returns true if the layer-level pool Gated flag is true,
 // which indicates if any of the layers gated.
 func (ly *Layer) AnyGated(di uint32) bool {
-	return ly.Pool(0, di).Gated.IsTrue()
+	lpi := ly.Params.PoolIndex(0)
+	return PoolsInt.Value(int(PoolGated), int(lpi), int(di)) > 0
 }
 
 func (ly *Layer) MatrixDefaults() {

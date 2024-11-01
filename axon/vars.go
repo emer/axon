@@ -121,8 +121,7 @@ var (
 	Pools *tensor.Float32
 
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
-	// inhibition, AvgMax atomic integration, and other vars.
-	// See
+	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIdx]
 	// [PoolIntVars+AvgMax][Layer * Pools][Data]
 	//gosl:dims 3
 	PoolsInt *tensor.Int32

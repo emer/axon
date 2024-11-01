@@ -135,16 +135,16 @@ func (i *GlobalVectorVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "GlobalVectorVars")
 }
 
-var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
 
 // GPUVarsN is the highest valid value for type GPUVars, plus one.
-const GPUVarsN GPUVars = 21
+const GPUVarsN GPUVars = 22
 
-var _GPUVarsValueMap = map[string]GPUVars{`LayersVar`: 0, `PathsVar`: 1, `NetworkIxsVar`: 2, `NeuronIxsVar`: 3, `SynapseIxsVar`: 4, `PathSendConVar`: 5, `RecvPathIxsVar`: 6, `PathRecvConVar`: 7, `RecvSynIxsVar`: 8, `CtxVar`: 9, `NeuronsVar`: 10, `NeuronAvgsVar`: 11, `PoolsVar`: 12, `LayerStatesVar`: 13, `GlobalScalarsVar`: 14, `GlobalVectorsVar`: 15, `ExtsVar`: 16, `PathGBufVar`: 17, `PathGSynsVar`: 18, `SynapsesVar`: 19, `SynapseTracesVar`: 20}
+var _GPUVarsValueMap = map[string]GPUVars{`LayersVar`: 0, `PathsVar`: 1, `NetworkIxsVar`: 2, `NeuronIxsVar`: 3, `SynapseIxsVar`: 4, `PathSendConVar`: 5, `RecvPathIxsVar`: 6, `PathRecvConVar`: 7, `RecvSynIxsVar`: 8, `CtxVar`: 9, `NeuronsVar`: 10, `NeuronAvgsVar`: 11, `LayerStatesVar`: 12, `GlobalScalarsVar`: 13, `GlobalVectorsVar`: 14, `ExtsVar`: 15, `PoolsVar`: 16, `PoolsIntVar`: 17, `PathGBufVar`: 18, `PathGSynsVar`: 19, `SynapsesVar`: 20, `SynapseTracesVar`: 21}
 
-var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``, 8: ``, 9: ``, 10: ``, 11: ``, 12: ``, 13: ``, 14: ``, 15: ``, 16: ``, 17: ``, 18: ``, 19: ``, 20: ``}
+var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``, 8: ``, 9: ``, 10: ``, 11: ``, 12: ``, 13: ``, 14: ``, 15: ``, 16: ``, 17: ``, 18: ``, 19: ``, 20: ``, 21: ``}
 
-var _GPUVarsMap = map[GPUVars]string{0: `LayersVar`, 1: `PathsVar`, 2: `NetworkIxsVar`, 3: `NeuronIxsVar`, 4: `SynapseIxsVar`, 5: `PathSendConVar`, 6: `RecvPathIxsVar`, 7: `PathRecvConVar`, 8: `RecvSynIxsVar`, 9: `CtxVar`, 10: `NeuronsVar`, 11: `NeuronAvgsVar`, 12: `PoolsVar`, 13: `LayerStatesVar`, 14: `GlobalScalarsVar`, 15: `GlobalVectorsVar`, 16: `ExtsVar`, 17: `PathGBufVar`, 18: `PathGSynsVar`, 19: `SynapsesVar`, 20: `SynapseTracesVar`}
+var _GPUVarsMap = map[GPUVars]string{0: `LayersVar`, 1: `PathsVar`, 2: `NetworkIxsVar`, 3: `NeuronIxsVar`, 4: `SynapseIxsVar`, 5: `PathSendConVar`, 6: `RecvPathIxsVar`, 7: `PathRecvConVar`, 8: `RecvSynIxsVar`, 9: `CtxVar`, 10: `NeuronsVar`, 11: `NeuronAvgsVar`, 12: `LayerStatesVar`, 13: `GlobalScalarsVar`, 14: `GlobalVectorsVar`, 15: `ExtsVar`, 16: `PoolsVar`, 17: `PoolsIntVar`, 18: `PathGBufVar`, 19: `PathGSynsVar`, 20: `SynapsesVar`, 21: `SynapseTracesVar`}
 
 // String returns the string representation of this GPUVars value.
 func (i GPUVars) String() string { return enums.String(i, _GPUVarsMap) }
@@ -606,16 +606,16 @@ func (i *GPLayerTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "GPLayerTypes")
 }
 
-var _PoolIntVarsValues = []PoolIntVars{0, 1, 2, 3, 4, 5, 6, 7, 8}
+var _PoolIntVarsValues = []PoolIntVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // PoolIntVarsN is the highest valid value for type PoolIntVars, plus one.
-const PoolIntVarsN PoolIntVars = 9
+const PoolIntVarsN PoolIntVars = 10
 
-var _PoolIntVarsValueMap = map[string]PoolIntVars{`PoolNeurSt`: 0, `PoolNeurEd`: 1, `PoolIsLayer`: 2, `Clamped`: 3, `PoolGated`: 4, `FFsRawInt`: 5, `FBsRawInt`: 6, `GeExtRawInt`: 7, `PoolIntAvgMaxStart`: 8}
+var _PoolIntVarsValueMap = map[string]PoolIntVars{`PoolNeurSt`: 0, `PoolNeurEd`: 1, `PoolLayerIdx`: 2, `PoolIsLayer`: 3, `Clamped`: 4, `PoolGated`: 5, `FFsRawInt`: 6, `FBsRawInt`: 7, `GeExtRawInt`: 8, `PoolIntAvgMaxStart`: 9}
 
-var _PoolIntVarsDescMap = map[PoolIntVars]string{0: `starting layer-wise index within the list of neurons in this pool. Add layer starting neuron index (NeurSt) to get index into global network neurons list.`, 1: `ending (exclusive) layer-wise index within the list of neurons in this pool. Add layer starting neuron index (NeurSt) to get index into global network neurons list.`, 2: `PoolIsLayer is true (&gt; 0) if this pool represents the entire layer, which is always the first pool in the list of pools for a layer.`, 3: `Clamped if true (!=0), this layer is hard-clamped and should use GeExts exclusively for PV.`, 4: `PoolGated is true (&gt; 0) if this pool gated (for [MatrixLayer], [BGThalLayer])`, 5: `FFsRawInt is the int32 atomic add compatible integration of [fsfffb.FFsRaw].`, 6: `FBsRawInt is the int32 atomic add compatible integration of [fsfffb.FBsRaw].`, 7: `GeExtRawInt is the int32 atomic add compatible integration of [fsfffb.GeExtRaw].`, 8: `PoolIntAvgMaxStart is the starting point for int32 AvgMax variables. Use AvgMaxIntVarIdx to get the relevant variable index. There are only values for Cycle phase, for the different variables.`}
+var _PoolIntVarsDescMap = map[PoolIntVars]string{0: `PoolNeurSt is the starting layer-wise index within the list of neurons in this pool. Add layer starting neuron index (NeurSt) to get index into global network neurons list.`, 1: `PoolNeurEd is the ending (exclusive) layer-wise index within the list of neurons in this pool. Add layer starting neuron index (NeurSt) to get index into global network neurons list.`, 2: `PoolLayerIdx is the layer index for this pool.`, 3: `PoolIsLayer is true (&gt; 0) if this pool represents the entire layer, which is always the first pool in the list of pools for a layer.`, 4: `Clamped if true (!=0), this layer is hard-clamped and should use GeExts exclusively for PV.`, 5: `PoolGated is true (&gt; 0) if this pool gated (for [MatrixLayer], [BGThalLayer])`, 6: `FFsRawInt is the int32 atomic add compatible integration of [fsfffb.FFsRaw].`, 7: `FBsRawInt is the int32 atomic add compatible integration of [fsfffb.FBsRaw].`, 8: `GeExtRawInt is the int32 atomic add compatible integration of [fsfffb.GeExtRaw].`, 9: `PoolIntAvgMaxStart is the starting point for int32 AvgMax variables. Use AvgMaxIntVarIdx to get the relevant variable index. There are only values for Cycle phase, for the different variables.`}
 
-var _PoolIntVarsMap = map[PoolIntVars]string{0: `PoolNeurSt`, 1: `PoolNeurEd`, 2: `PoolIsLayer`, 3: `Clamped`, 4: `PoolGated`, 5: `FFsRawInt`, 6: `FBsRawInt`, 7: `GeExtRawInt`, 8: `PoolIntAvgMaxStart`}
+var _PoolIntVarsMap = map[PoolIntVars]string{0: `PoolNeurSt`, 1: `PoolNeurEd`, 2: `PoolLayerIdx`, 3: `PoolIsLayer`, 4: `Clamped`, 5: `PoolGated`, 6: `FFsRawInt`, 7: `FBsRawInt`, 8: `GeExtRawInt`, 9: `PoolIntAvgMaxStart`}
 
 // String returns the string representation of this PoolIntVars value.
 func (i PoolIntVars) String() string { return enums.String(i, _PoolIntVarsMap) }

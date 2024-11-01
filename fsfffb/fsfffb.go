@@ -117,9 +117,9 @@ func (fb *GiParams) ShouldDisplay(field string) bool {
 	}
 }
 
-// FSiFromFFs updates fast-spiking inhibition from FFs spikes
-func (fb *GiParams) FSiFromFFs(fsi *float32, ffs, fbs float32) {
-	*fsi += (ffs + fb.FB*fbs) - fb.FSDt**fsi // immediate up, slow down
+// FSiFromFFs updates fast-spiking inhibition FSi from FFs spikes
+func (fb *GiParams) FSiFromFFs(fsi, ffs, fbs float32) float32 {
+	return fsi + (ffs + fb.FB*fbs) - fb.FSDt*fsi // immediate up, slow down
 }
 
 // FS0Thr applies FS0 threshold to given value

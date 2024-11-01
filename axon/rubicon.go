@@ -915,7 +915,8 @@ func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, 
 		slog.Error(err.Error())
 		return err
 	}
-	act := ly.Pool(0, di).AvgMax.CaSpkD.Cycle.Avg
+	lpi := ly.Params.PoolIndex(0)
+	act := PoolAvgMax(AMCaSpkD, AMCycle, Avg, lpi, di)
 	gm := float32(0)
 	if act > maxAct {
 		gm = 1

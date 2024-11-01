@@ -304,17 +304,19 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 	for i := range porder {
 		porder[i] = i
 	}
-	for pi := uint32(1); pi < np; pi++ {
+	for spi := uint32(1); spi < np; spi++ {
 		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
 			randx.PermuteInts(porder, &ly.Network.Rand)
 		}
-		pl := ly.Pool(pi, 0) // only using for idxs
-		for lni := pl.StIndex; lni < pl.EdIndex; lni++ {
-			ni := ly.NeurStIndex + lni
+		pi := ly.Params.PoolIndex(spi) // only using for idxs
+		nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(0))
+		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(0))
+		for lni := nsi; lni < nei; lni++ {
+			ni := ly.NeurStIndex + uint32(lni)
 			if NrnIsOff(ni) {
 				continue
 			}
-			vi := porder[lni-pl.StIndex]
+			vi := porder[lni-nsi]
 			trg := strg + inc*float32(vi)
 			NeuronAvgs.Set(trg, int(TrgAvg), int(ni))
 			NeuronAvgs.Set(trg, int(AvgPct), int(ni))
@@ -346,12 +348,12 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 		}
 	}
 	np := ly.NPools
-	for pi := uint32(0); pi < np; pi++ {
+	for spi := uint32(0); spi < np; spi++ {
 		for di := uint32(0); di < ly.MaxData; di++ {
-			pl := ly.Pool(pi, di)
-			pl.Init()
+			pi := ly.Params.PoolIndex(spi)
+			PoolInit(pi, di)
 			if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
-				pl.Inhib.Clamped.SetBool(true)
+				PoolsInt.Set(1, int(Clamped), int(pi), int(di))
 			}
 			// Target layers are dynamically updated
 		}
@@ -811,11 +813,11 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 // TestValues returns a map of key vals for testing
 // ctrKey is a key of counters to contextualize values.
 func (ly *Layer) TestValues(ctrKey string, vals map[string]float32) {
-	for pi := uint32(0); pi < ly.NPools; pi++ {
+	for spi := uint32(0); spi < ly.NPools; spi++ {
 		for di := uint32(0); di < ly.MaxData; di++ {
-			pl := ly.Pool(pi, di)
+			pi := ly.Params.PoolIndex(spi)
 			key := fmt.Sprintf("%s  Lay: %s\tPool: %d\tDi: %d", ctrKey, ly.Name, pi, di)
-			pl.TestValues(key, vals)
+			PoolTestValues(pi, di, key, vals)
 		}
 	}
 }

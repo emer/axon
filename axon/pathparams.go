@@ -323,27 +323,27 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on pathway type.
 // rpl is the receiving layer SubPool
-func (pt *PathParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
+func (pt *PathParams) DWtSyn(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
 	switch pt.PathType {
 	case RWPath:
-		pt.DWtSynRWPred(ctx, syni, si, ri, di, layPool, subPool)
+		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
 	case TDPredPath:
-		pt.DWtSynTDPred(ctx, syni, si, ri, di, layPool, subPool)
+		pt.DWtSynTDPred(ctx, syni, si, ri, lpi, pi, di)
 	case VSMatrixPath:
-		pt.DWtSynVSMatrix(ctx, syni, si, ri, di, layPool, subPool)
+		pt.DWtSynVSMatrix(ctx, syni, si, ri, lpi, pi, di)
 	case DSMatrixPath:
-		pt.DWtSynDSMatrix(ctx, syni, si, ri, di, layPool, subPool)
+		pt.DWtSynDSMatrix(ctx, syni, si, ri, lpi, pi, di)
 	case VSPatchPath:
-		pt.DWtSynVSPatch(ctx, syni, si, ri, di, layPool, subPool)
+		pt.DWtSynVSPatch(ctx, syni, si, ri, lpi, pi, di)
 	case BLAPath:
-		pt.DWtSynBLA(ctx, syni, si, ri, di, layPool, subPool)
+		pt.DWtSynBLA(ctx, syni, si, ri, lpi, pi, di)
 	case HipPath:
-		pt.DWtSynHip(ctx, syni, si, ri, di, layPool, subPool, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFromDWtSynNoLimits
+		pt.DWtSynHip(ctx, syni, si, ri, lpi, pi, di, isTarget) // by default this is the same as DWtSynCortex (w/ unused Hebb component in the algorithm) except that it uses WtFromDWtSynNoLimits
 	default:
 		if pt.Learn.Hebb.On.IsTrue() {
-			pt.DWtSynHebb(ctx, syni, si, ri, di, layPool, subPool)
+			pt.DWtSynHebb(ctx, syni, si, ri, lpi, pi, di)
 		} else {
-			pt.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
+			pt.DWtSynCortex(ctx, syni, si, ri, lpi, pi, di, isTarget)
 		}
 	}
 }
@@ -383,7 +383,7 @@ func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float
 // DWtSynCortex computes the weight change (learning) at given synapse for cortex.
 // Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
+func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
 	var syCaP, syCaD float32
 	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
 
@@ -428,7 +428,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 // DWtSynHebb computes the weight change (learning) at given synapse for cortex.
 // Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	rNrnCaP := Neurons.Value(int(NrnCaP), int(ri), int(di))
 	sNrnCap := Neurons.Value(int(NrnCaP), int(si), int(di))
 	lwt := Synapses.Value(int(LWt), int(syni)) // linear weight
@@ -441,7 +441,7 @@ func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, di uint32, layPool,
 // Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 // Adds proportional CPCA learning rule for hip-specific paths
-func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
+func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
 	var syCaP, syCaD float32
 	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
 	dtr := syCaD // delta trace, caD reflects entire window
@@ -490,7 +490,7 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, di uint32, layPool, 
 // Like the BG Matrix learning rule, a synaptic tag "trace" is established at CS onset (ACh)
 // and learning at US / extinction is a function of trace * delta from US activity
 // (temporal difference), which limits learning.
-func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	dwt := float32(0)
 	ach := GlobalScalars.Value(int(GvACh), int(di))
 	if GlobalScalars.Value(int(GvHasRew), int(di)) > 0 { // learn and reset
@@ -527,7 +527,7 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPath type
-func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	// todo: move all of this into rn.RLRate
 	lda := GlobalScalars.Value(int(GvDA), int(di))
 	da := lda
@@ -562,7 +562,7 @@ func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPoo
 
 // DWtSynTDPred computes the weight change (learning) at given synapse,
 // for the TDPredPath type
-func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	// todo: move all of this into rn.RLRate
 	lda := GlobalScalars.Value(int(GvDA), int(di))
 	da := lda
@@ -586,7 +586,7 @@ func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPoo
 
 // DWtSynVSMatrix computes the weight change (learning) at given synapse,
 // for the VSMatrixPath type.
-func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	// note: rn.RLRate already has BurstGain * ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
@@ -622,7 +622,7 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 
 // DWtSynDSMatrix computes the weight change (learning) at given synapse,
 // for the DSMatrixPath type.
-func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	rlr := Neurons.Value(int(RLRate), int(ri), int(di))
@@ -648,7 +648,7 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, di uint32, layP
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPath type.
-func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
 	ract := Neurons.Value(int(SpkPrv), int(ri), int(di)) // t-1
 	if ract < pt.Learn.Trace.LearnThr {
 		ract = 0
