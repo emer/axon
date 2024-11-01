@@ -89,10 +89,6 @@ var (
 	//gosl:dims 2
 	NeuronAvgs *tensor.Float32
 
-	// Pools are the inhibitory pool variables for each layer and pool, and Data.
-	// [Layer][Pools][Data]
-	Pools []Pool
-
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
 	// [Layer][Data]
@@ -116,11 +112,24 @@ var (
 	//gosl:dims 2
 	Exts *tensor.Float32
 
-	//////////////////// Synapse State
+	//////////////////// Pool and Synapse State
+
+	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
+	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIdx].
+	// [PoolVars+AvgMax][Layer * Pools][Data]
+	//gosl:dims 3
+	Pools *tensor.Float32
+
+	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
+	// inhibition, AvgMax atomic integration, and other vars.
+	// See
+	// [PoolIntVars+AvgMax][Layer * Pools][Data]
+	//gosl:dims 3
+	PoolsInt *tensor.Int32
 
 	// PathGBuf is the conductance buffer for accumulating spikes.
-	// subslices are allocated to each pathway.
-	// uses int-encoded float values for faster GPU atomic integration.
+	// Subslices are allocated to each pathway.
+	// Uses int-encoded values for faster GPU atomic integration.
 	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	//gosl:group Synapse
 	//gosl:dims 3

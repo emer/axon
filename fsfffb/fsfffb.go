@@ -2,22 +2,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-/*
-Package fsfffb provides Fast and Slow
-feedforward (FF) and feedback (FB) inhibition (FFFB)
-based on incoming spikes (FF) and outgoing spikes (FB).
-
-This produces a robust, graded k-Winners-Take-All dynamic of sparse
-distributed representations having approximately k out of N neurons
-active at any time, where k is typically 10-20 percent of N.
-*/
+// Package fsfffb provides Fast and Slow
+// feedforward (FF) and feedback (FB) inhibition (FFFB)
+// based on incoming spikes (FF) and outgoing spikes (FB).
+//
+// This produces a robust, graded k-Winners-Take-All dynamic of sparse
+// distributed representations having approximately k out of N neurons
+// active at any time, where k is typically 10-20 percent of N.
 package fsfffb
 
 //go:generate core generate -add-types
 
 import "cogentcore.org/core/goal/gosl/slbool"
 
-//gosl:start fsfffb
+//gosl:start
 
 // GiParams parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)
 // based on incoming spikes (FF) and outgoing spikes (FB)
@@ -25,37 +23,53 @@ import "cogentcore.org/core/goal/gosl/slbool"
 // FF -> PV -> FS fast spikes, FB -> SST -> SS slow spikes (slow to get going)
 type GiParams struct {
 
-	// enable this level of inhibition
+	// On enables this level of inhibition.
 	On slbool.Bool
 
-	// overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly
+	// Gi is overall inhibition gain, which is the main parameter to adjust
+	// to change overall activation levels, scaling both the FS and SS factors.
 	Gi float32 `min:"0" default:"1,1.1,0.75,0.9"`
 
-	// amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels.
+	// FB is the amount of FB spikes included in FF for driving FS.
+	// For small networks, 0.5 or 1 works best; larger networks and
+	// more demanding inhibition requires higher levels.
 	FB float32 `min:"0" default:"0.5,1,4"`
 
-	// fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	// FSTau is fast spiking (PV+) intgration time constant in cycles (msec).
+	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
 	FSTau float32 `min:"0" default:"6"`
 
-	// multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1
+	// SS is the multiplier on SS slow-spiking (SST+) in contributing to the
+	// overall Gi inhibition. FS contributes at a factor of 1.
 	SS float32 `min:"0" default:"30"`
 
-	// slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	// SSfTau is the slow-spiking (SST+) facilitation decay time constant
+	// in cycles (msec). Facilication factor SSf determines impact of FB spikes
+	// as a function of spike input.
+	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
 	SSfTau float32 `min:"0" default:"20"`
 
-	// slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.
+	// SSiTau is the slow-spiking (SST+) intgration time constant in cycles (msec)
+	// cascaded on top of FSTau.
+	// Tau is roughly how long it takes for value to change significantly = 1.4x the half-life.
 	SSiTau float32 `min:"0" default:"50"`
 
-	// fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi
+	// FS0 is the fast spiking zero point: below this level, no FS inhibition
+	// is computed, and this value is subtracted from the FSi.
 	FS0 float32 `default:"0.1"`
 
-	// time constant for updating a running average of the feedforward inhibition over a longer time scale, for computing FFPrv
+	// FFAvgTau is the time constant for updating a running average of the
+	// feedforward inhibition over a longer time scale, for computing FFPrv.
 	FFAvgTau float32 `default:"50"`
 
-	// proportion of previous average feed-forward inhibition (FFAvgPrv) to add, resulting in an accentuated temporal-derivative dynamic where neurons respond most strongly to increases in excitation that exceeds inhibition from last time.
+	// FFPrv is the proportion of previous average feed-forward inhibition (FFAvgPrv)
+	// to add, resulting in an accentuated temporal-derivative dynamic where neurons
+	// respond most strongly to increases in excitation that exceeds inhibition from last time.
 	FFPrv float32 `default:"0"`
 
-	// minimum GeExt value required to drive external clamping dynamics (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value, then the usual FS-FFFB drivers are used.
+	// ClampExtMin is the minimum GeExt value required to drive external clamping dynamics
+	// (if clamp is set), where only GeExt drives inhibition.  If GeExt is below this value,
+	// then the usual FS-FFFB drivers are used.
 	ClampExtMin float32 `default:"0.05"`
 
 	// rate = 1 / tau
@@ -128,24 +142,4 @@ func (fb *GiParams) SSFromFBs(ssf, ssi *float32, fbs float32) {
 	*ssf += fbs*(1-*ssf) - fb.SSfDt**ssf
 }
 
-// Inhib is full inhibition computation for given inhib state
-// which has aggregated FFs and FBs spiking values
-func (fb *GiParams) Inhib(inh *Inhib, gimult float32) {
-	if fb.On.IsFalse() {
-		inh.Zero()
-		return
-	}
-
-	inh.FFAvg += fb.FFAvgDt * (inh.FFs - inh.FFAvg)
-
-	fb.FSiFromFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts, inh.Clamped.IsTrue())
-
-	fb.SSFromFBs(&inh.SSf, &inh.SSi, inh.FBs)
-	inh.SSGi = fb.Gi * fb.SS * inh.SSi
-
-	inh.Gi = inh.GiFromFSSS() + fb.FFPrv*inh.FFAvgPrv
-	inh.SaveOrig()
-}
-
-//gosl:end fsfffb
+//gosl:end

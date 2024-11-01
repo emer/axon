@@ -76,12 +76,6 @@ type Path struct {
 
 	// index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
 	SendConIndex []uint32 `display:"-"`
-
-	// Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIndex, WriteIndex -- scale * weight is added with Com delay offset -- a subslice from network PathGBuf. Uses int-encoded float values for faster GPU atomic integration
-	GBuf []int32 `display:"-"`
-
-	// pathway-level synaptic conductance values, integrated by path before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PathGSyn.
-	GSyns []float32 `display:"-"`
 }
 
 // emer.Path interface

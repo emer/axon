@@ -606,6 +606,174 @@ func (i *GPLayerTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "GPLayerTypes")
 }
 
+var _PoolIntVarsValues = []PoolIntVars{0, 1, 2, 3, 4, 5, 6, 7, 8}
+
+// PoolIntVarsN is the highest valid value for type PoolIntVars, plus one.
+const PoolIntVarsN PoolIntVars = 9
+
+var _PoolIntVarsValueMap = map[string]PoolIntVars{`PoolNeurSt`: 0, `PoolNeurEd`: 1, `PoolIsLayer`: 2, `Clamped`: 3, `PoolGated`: 4, `FFsRawInt`: 5, `FBsRawInt`: 6, `GeExtRawInt`: 7, `PoolIntAvgMaxStart`: 8}
+
+var _PoolIntVarsDescMap = map[PoolIntVars]string{0: `starting layer-wise index within the list of neurons in this pool. Add layer starting neuron index (NeurSt) to get index into global network neurons list.`, 1: `ending (exclusive) layer-wise index within the list of neurons in this pool. Add layer starting neuron index (NeurSt) to get index into global network neurons list.`, 2: `PoolIsLayer is true (&gt; 0) if this pool represents the entire layer, which is always the first pool in the list of pools for a layer.`, 3: `Clamped if true (!=0), this layer is hard-clamped and should use GeExts exclusively for PV.`, 4: `PoolGated is true (&gt; 0) if this pool gated (for [MatrixLayer], [BGThalLayer])`, 5: `FFsRawInt is the int32 atomic add compatible integration of [fsfffb.FFsRaw].`, 6: `FBsRawInt is the int32 atomic add compatible integration of [fsfffb.FBsRaw].`, 7: `GeExtRawInt is the int32 atomic add compatible integration of [fsfffb.GeExtRaw].`, 8: `PoolIntAvgMaxStart is the starting point for int32 AvgMax variables. Use AvgMaxIntVarIdx to get the relevant variable index. There are only values for Cycle phase, for the different variables.`}
+
+var _PoolIntVarsMap = map[PoolIntVars]string{0: `PoolNeurSt`, 1: `PoolNeurEd`, 2: `PoolIsLayer`, 3: `Clamped`, 4: `PoolGated`, 5: `FFsRawInt`, 6: `FBsRawInt`, 7: `GeExtRawInt`, 8: `PoolIntAvgMaxStart`}
+
+// String returns the string representation of this PoolIntVars value.
+func (i PoolIntVars) String() string { return enums.String(i, _PoolIntVarsMap) }
+
+// SetString sets the PoolIntVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *PoolIntVars) SetString(s string) error {
+	return enums.SetString(i, s, _PoolIntVarsValueMap, "PoolIntVars")
+}
+
+// Int64 returns the PoolIntVars value as an int64.
+func (i PoolIntVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the PoolIntVars value from an int64.
+func (i *PoolIntVars) SetInt64(in int64) { *i = PoolIntVars(in) }
+
+// Desc returns the description of the PoolIntVars value.
+func (i PoolIntVars) Desc() string { return enums.Desc(i, _PoolIntVarsDescMap) }
+
+// PoolIntVarsValues returns all possible values for the type PoolIntVars.
+func PoolIntVarsValues() []PoolIntVars { return _PoolIntVarsValues }
+
+// Values returns all possible values for the type PoolIntVars.
+func (i PoolIntVars) Values() []enums.Enum { return enums.Values(_PoolIntVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i PoolIntVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *PoolIntVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "PoolIntVars")
+}
+
+var _AvgMaxValues = []AvgMax{0, 1}
+
+// AvgMaxN is the highest valid value for type AvgMax, plus one.
+const AvgMaxN AvgMax = 2
+
+var _AvgMaxValueMap = map[string]AvgMax{`Avg`: 0, `Max`: 1}
+
+var _AvgMaxDescMap = map[AvgMax]string{0: ``, 1: ``}
+
+var _AvgMaxMap = map[AvgMax]string{0: `Avg`, 1: `Max`}
+
+// String returns the string representation of this AvgMax value.
+func (i AvgMax) String() string { return enums.String(i, _AvgMaxMap) }
+
+// SetString sets the AvgMax value from its string representation,
+// and returns an error if the string is invalid.
+func (i *AvgMax) SetString(s string) error { return enums.SetString(i, s, _AvgMaxValueMap, "AvgMax") }
+
+// Int64 returns the AvgMax value as an int64.
+func (i AvgMax) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the AvgMax value from an int64.
+func (i *AvgMax) SetInt64(in int64) { *i = AvgMax(in) }
+
+// Desc returns the description of the AvgMax value.
+func (i AvgMax) Desc() string { return enums.Desc(i, _AvgMaxDescMap) }
+
+// AvgMaxValues returns all possible values for the type AvgMax.
+func AvgMaxValues() []AvgMax { return _AvgMaxValues }
+
+// Values returns all possible values for the type AvgMax.
+func (i AvgMax) Values() []enums.Enum { return enums.Values(_AvgMaxValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i AvgMax) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *AvgMax) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "AvgMax") }
+
+var _AvgMaxPhasesValues = []AvgMaxPhases{0, 1, 2, 3}
+
+// AvgMaxPhasesN is the highest valid value for type AvgMaxPhases, plus one.
+const AvgMaxPhasesN AvgMaxPhases = 4
+
+var _AvgMaxPhasesValueMap = map[string]AvgMaxPhases{`Cycle`: 0, `Minus`: 1, `Plus`: 2, `Prev`: 3}
+
+var _AvgMaxPhasesDescMap = map[AvgMaxPhases]string{0: `Cycle is the current cycle, which is the source for the rest.`, 1: `Minus is at the end of the minus phase.`, 2: `Plus is at the end of the plus phase.`, 3: `Prev is at the end of the previous plus phase.`}
+
+var _AvgMaxPhasesMap = map[AvgMaxPhases]string{0: `Cycle`, 1: `Minus`, 2: `Plus`, 3: `Prev`}
+
+// String returns the string representation of this AvgMaxPhases value.
+func (i AvgMaxPhases) String() string { return enums.String(i, _AvgMaxPhasesMap) }
+
+// SetString sets the AvgMaxPhases value from its string representation,
+// and returns an error if the string is invalid.
+func (i *AvgMaxPhases) SetString(s string) error {
+	return enums.SetString(i, s, _AvgMaxPhasesValueMap, "AvgMaxPhases")
+}
+
+// Int64 returns the AvgMaxPhases value as an int64.
+func (i AvgMaxPhases) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the AvgMaxPhases value from an int64.
+func (i *AvgMaxPhases) SetInt64(in int64) { *i = AvgMaxPhases(in) }
+
+// Desc returns the description of the AvgMaxPhases value.
+func (i AvgMaxPhases) Desc() string { return enums.Desc(i, _AvgMaxPhasesDescMap) }
+
+// AvgMaxPhasesValues returns all possible values for the type AvgMaxPhases.
+func AvgMaxPhasesValues() []AvgMaxPhases { return _AvgMaxPhasesValues }
+
+// Values returns all possible values for the type AvgMaxPhases.
+func (i AvgMaxPhases) Values() []enums.Enum { return enums.Values(_AvgMaxPhasesValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i AvgMaxPhases) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *AvgMaxPhases) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "AvgMaxPhases")
+}
+
+var _AvgMaxVarsValues = []AvgMaxVars{0, 1, 2, 3, 4, 5, 6}
+
+// AvgMaxVarsN is the highest valid value for type AvgMaxVars, plus one.
+const AvgMaxVarsN AvgMaxVars = 7
+
+var _AvgMaxVarsValueMap = map[string]AvgMaxVars{`CaSpkP`: 0, `CaSpkD`: 1, `SpkMax`: 2, `Act`: 3, `GeInt`: 4, `GiInt`: 5, `AvgDif`: 6}
+
+var _AvgMaxVarsDescMap = map[AvgMaxVars]string{0: `CaSpkP is the primary variable for tracking overall pool activity over a recent timescale, integrated at roughly 40 msec time constant.`, 1: `CaSpkD is a slower moving activation signal, capable of reflecting activity over the entire trial.`, 2: `SpkMax is the maximum CaSpkP over the trial of processing.`, 3: `Act is the computed rate-code equivalent of current spike rate.`, 4: `GeInt is the integrated running-average value of excitatory conductance.`, 5: `GiInt is the integrated running-average value of inhibitory conductance.`, 6: `AvgDif is the integrated AvgDif between ActPct - TrgAvg. Only the Plus phase is used.`}
+
+var _AvgMaxVarsMap = map[AvgMaxVars]string{0: `CaSpkP`, 1: `CaSpkD`, 2: `SpkMax`, 3: `Act`, 4: `GeInt`, 5: `GiInt`, 6: `AvgDif`}
+
+// String returns the string representation of this AvgMaxVars value.
+func (i AvgMaxVars) String() string { return enums.String(i, _AvgMaxVarsMap) }
+
+// SetString sets the AvgMaxVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *AvgMaxVars) SetString(s string) error {
+	return enums.SetString(i, s, _AvgMaxVarsValueMap, "AvgMaxVars")
+}
+
+// Int64 returns the AvgMaxVars value as an int64.
+func (i AvgMaxVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the AvgMaxVars value from an int64.
+func (i *AvgMaxVars) SetInt64(in int64) { *i = AvgMaxVars(in) }
+
+// Desc returns the description of the AvgMaxVars value.
+func (i AvgMaxVars) Desc() string { return enums.Desc(i, _AvgMaxVarsDescMap) }
+
+// AvgMaxVarsValues returns all possible values for the type AvgMaxVars.
+func AvgMaxVarsValues() []AvgMaxVars { return _AvgMaxVarsValues }
+
+// Values returns all possible values for the type AvgMaxVars.
+func (i AvgMaxVars) Values() []enums.Enum { return enums.Values(_AvgMaxVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i AvgMaxVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *AvgMaxVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "AvgMaxVars")
+}
+
 var _SynapseVarsValues = []SynapseVars{0, 1, 2, 3, 4}
 
 // SynapseVarsN is the highest valid value for type SynapseVars, plus one.

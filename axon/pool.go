@@ -7,203 +7,224 @@
 package axon
 
 import (
-	"cogentcore.org/core/goal/gosl/slbool"
-	"cogentcore.org/core/math32"
-	"github.com/emer/axon/v2/fsfffb"
+	"sync/atomic"
 )
 
 //gosl:start
 //gosl:import "github.com/emer/axon/v2/fsfffb"
 
-// AvgMaxPhases contains the average and maximum values over a Pool of neurons,
-// at different time scales within a standard ThetaCycle of updating.
-// It is much more efficient on the GPU to just grab everything in one pass at
-// the cycle level, and then take snapshots from there.
-// All of the cycle level values are updated at the *start* of the cycle
-// based on values from the prior cycle -- thus are 1 cycle behind in general.
-type AvgMaxPhases struct {
+// PoolIntVars are int32 pool variables, for computing fsfffb inhibition etc.
+// Note that we use int32 instead of uint32 so that overflow errors can be detected.
+// See [PoolVars] for float32 variables.
+type PoolIntVars int32 //enums:enum
 
-	// updated every cycle -- this is the source of all subsequent time scales
-	Cycle AvgMaxI32 `display:"inline"`
+const (
+	// starting layer-wise index within the list of neurons in this pool.
+	// Add layer starting neuron index (NeurSt) to get index into global
+	// network neurons list.
+	PoolNeurSt PoolIntVars = iota
 
-	// at the end of the minus phase
-	Minus AvgMaxI32 `display:"inline"`
+	// ending (exclusive) layer-wise index within the list of neurons in this pool.
+	// Add layer starting neuron index (NeurSt) to get index into global
+	// network neurons list.
+	PoolNeurEd
 
-	// at the end of the plus phase
-	Plus AvgMaxI32 `display:"inline"`
+	// PoolIsLayer is true (> 0) if this pool represents the entire layer,
+	// which is always the first pool in the list of pools for a layer.
+	PoolIsLayer
 
-	// at the end of the previous plus phase
-	Prev AvgMaxI32 `display:"inline"`
+	// Clamped if true (!=0), this layer is hard-clamped and should
+	// use GeExts exclusively for PV.
+	Clamped
+
+	// PoolGated is true (> 0) if this pool gated (for [MatrixLayer], [BGThalLayer])
+	PoolGated
+
+	// FFsRawInt is the int32 atomic add compatible integration of [fsfffb.FFsRaw].
+	FFsRawInt
+
+	// FBsRawInt is the int32 atomic add compatible integration of [fsfffb.FBsRaw].
+	FBsRawInt
+
+	// GeExtRawInt is the int32 atomic add compatible integration of [fsfffb.GeExtRaw].
+	GeExtRawInt
+
+	// PoolIntAvgMaxStart is the starting point for int32 AvgMax variables.
+	// Use AvgMaxIntVarIdx to get the relevant variable index.
+	// There are only values for Cycle phase, for the different variables.
+	PoolIntAvgMaxStart
+)
+
+// AvgMax are Avg and Max
+type AvgMax int32 //enums:enum
+
+const (
+	Avg AvgMax = iota
+	Max
+)
+
+// AvgMaxPhases are the different Phases over which AvgMax values are tracked.
+type AvgMaxPhases int32 //enums:enum -trim-prefix AM
+
+const (
+	// Cycle is the current cycle, which is the source for the rest.
+	AMCycle AvgMaxPhases = iota
+
+	// Minus is at the end of the minus phase.
+	AMMinus
+
+	// Plus is at the end of the plus phase.
+	AMPlus
+
+	// Prev is at the end of the previous plus phase.
+	AMPrev
+)
+
+// AvgMaxVars are the different Neuron variables for which [AvgMaxPhases]
+// is computed.
+type AvgMaxVars int32 //enums:enum -trim-prefix AM
+
+const (
+	// CaSpkP is the primary variable for tracking overall pool activity
+	// over a recent timescale, integrated at roughly 40 msec time constant.
+	AMCaSpkP AvgMaxVars = iota
+
+	// CaSpkD is a slower moving activation signal, capable of reflecting
+	// activity over the entire trial.
+	AMCaSpkD
+
+	// SpkMax is the maximum CaSpkP over the trial of processing.
+	AMSpkMax
+
+	// Act is the computed rate-code equivalent of current spike rate.
+	AMAct
+
+	// GeInt is the integrated running-average value of excitatory conductance.
+	AMGeInt
+
+	// GiInt is the integrated running-average value of inhibitory conductance.
+	AMGiInt
+
+	// AvgDif is the integrated AvgDif between ActPct - TrgAvg.
+	// Only the Plus phase is used.
+	AMAvgDif
+)
+
+const (
+	// poolFloatAvgMaxStart is the starting index for AvgMax float32 variables.
+	poolFloatAvgMaxStart = fsfffb.InhibVarsN
+
+	PoolVarsN = poolFloatAvgMaxStart + AvgMaxVarsN*AvgMaxN*AvgMaxPhasesN + AvgMaxPhasesN*AvgMaxN
+)
+
+// mapping to neuron vars
+const avgMaxToNeuron = [AMAvgDif]NeuronVars{CaSpkP, CaSpkD, SpkMax, Act, GeInt, GiInt}
+
+// AvgMaxVarIdx returns the variable index for accessing
+// [Pools] AvgMax float32 variables.
+func AvgMaxVarIdx(vr AvgMaxVars, phase AvgMaxPhases, am AvgMax) uint32 {
+	return uint32(PoolFloatAvgMaxStart + vr*AvgMaxN*AvgMaxPhasesN + phase*AvgMaxN + am)
 }
 
-// CycleToMinus grabs current Cycle values into the Minus phase values
-func (am *AvgMaxPhases) CycleToMinus() {
-	am.Minus = am.Cycle
-	am.Prev = am.Plus
+// AvgMaxIntVarIdx returns the variable index for accessing
+// [Pools] AvgMax int32 variables.  Avg = Sum actually.
+// There are only values for the Cycle phase level.
+func AvgMaxIntVarIdx(vr AvgMaxVars, am AvgMax) uint32 {
+	return uint32(PoolIntAvgMaxStart + vr*AvgMaxN + am)
 }
 
-// CycleToPlus grabs current Cycle values into the Plus phase values
-func (am *AvgMaxPhases) CycleToPlus() {
-	am.Plus = am.Cycle
+// PoolNNeurons returns the number of neurons in the given pool.
+// pi = global pool index.
+func PoolNNeurons(pi uint32) int32 {
+	return PoolsInt.Value(int(PoolNeurEd), int(pi), int(0)) - PoolsInt.Value(int(PoolNeurSt), int(pi), int(0))
 }
 
-// Calc does Calc on Cycle, which is then ready for aggregation again
-func (am *AvgMaxPhases) Calc(refIndex int32) {
-	am.Cycle.Calc(refIndex)
+// PoolAvgMaxInit initializes the AvgMax Int accumulators for Cycle vals
+// for update start. always left init'd so generally unnecessary.
+// pi = global pool index.
+func PoolAvgMaxInit(pi, di uint32) {
+	for vr := range AvgMaxVarsN {
+		PoolsInt.Set(0, int(AvgMaxIntVarIdx(vr, Avg)), int(pi), int(di))
+		PoolsInt.Set(0, int(AvgMaxIntVarIdx(vr, Max)), int(pi), int(di))
+	}
 }
 
-// Zero does a full reset on everything -- for InitActs
-func (am *AvgMaxPhases) Zero() {
-	am.Cycle.Zero()
-	am.Minus.Zero()
-	am.Plus.Zero()
-	am.Prev.Zero()
+// PoolAvgMaxZero initializes all the AvgMax values to zero.
+// pi = global pool index.
+func PoolAvgMaxZero(pi, di uint32) {
+	PoolAvgMaxInit(pi, di)
+	for vr := range AvgMaxVarsN {
+		for ph := range AvgMaxPhasesN {
+			Pools.Set(0, int(AvgMaxVarIdx(vr, ph, Avg)), int(pi), int(di))
+			Pools.Set(0, int(AvgMaxVarIdx(vr, ph, Max)), int(pi), int(di))
+		}
+	}
 }
 
-// PoolAvgMax contains the average and maximum values over a Pool of neurons
-// for different variables of interest, at Cycle, Minus and Plus phase timescales.
-// All of the cycle level values are updated at the *start* of the cycle
-// based on values from the prior cycle -- thus are 1 cycle behind in general.
-type PoolAvgMax struct {
-
-	// avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity
-	CaSpkP AvgMaxPhases `edit:"-" display:"inline"`
-
-	// avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer
-	CaSpkD AvgMaxPhases `edit:"-" display:"inline"`
-
-	// avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle
-	SpkMax AvgMaxPhases `edit:"-" display:"inline"`
-
-	// avg and maximum Act firing rate value
-	Act AvgMaxPhases `edit:"-" display:"inline"`
-
-	// avg and maximum GeInt integrated running-average excitatory conductance value
-	GeInt AvgMaxPhases `edit:"-" display:"inline"`
-
-	// avg and maximum GiInt integrated running-average inhibitory conductance value
-	GiInt AvgMaxPhases `edit:"-" display:"inline"`
+// PoolAvgMaxUpdate updates the AvgMax values based on current neuron values.
+// pi = global pool index.
+func PoolAvgMaxUpdate(pi, di, ni uint32) {
+	n := float32(PoolNNeurons(pi))
+	floatToInt := float32(uint32(1) << 20)
+	floatToSum := floatToInt / n
+	for vr := range AMAvgDif { // don't do AvgDif
+		nv := math32.Abs(Neurons.Value(int(avgMaxToNeuron[vr]), int(ni), int(di))) // can't be negative
+		vis := AvgMaxIntVarIdx(vr, Avg)
+		vim := AvgMaxIntVarIdx(vr, Max)
+		atomic.AddInt32(PoolsInt.ValuePtr(int(vis), int(pi), int(di)), int32(nv*floatToSum))
+		AtomicMaxInt32(PoolsInt.ValuePtr(int(vim), int(pi), int(di)), int32(nv*floatToInt))
+	}
 }
 
-// SetN sets the N for aggregation
-func (am *PoolAvgMax) SetN(n int32) {
-	am.CaSpkP.Cycle.N = n
-	am.CaSpkD.Cycle.N = n
-	am.SpkMax.Cycle.N = n
-	am.Act.Cycle.N = n
-	am.GeInt.Cycle.N = n
-	am.GiInt.Cycle.N = n
+// PoolAvgMaxCalc does Calc on Cycle level, and re-inits
+func PoolAvgMaxCalc(pi, di uint32) {
+	floatFromInt := float32(1.0) / float32(uint32(1)<<20)
+	for vr := range AMAvgDif { // don't do AvgDif
+		vim := AvgMaxIntVarIdx(vr, Max)
+		sum := PoolsInt.Value(int(AvgMaxIntVarIdx(vr, Avg)), int(pi), int(di))
+		if sum < 0 {
+			//gosl:end
+			log.Println("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
+			//gosl:start
+			sum = int32(uint32(1) << 20)
+		}
+		Pools.Set(sum*floatFromInt, int(AvgMaxVarIdx(vr, AMCycle, Avg)), int(pi), int(di))
+		mx := PoolsInt.Value(int(AvgMaxIntVarIdx(vr, Max)), int(pi), int(di))
+		if mx < 0 {
+			//gosl:end
+			log.Println("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
+			//gosl:start
+			mx = int32(uint32(1) << 20)
+		}
+		Pools.Set(mx*floatFromInt, int(AvgMaxVarIdx(vr, AMCycle, Max)), int(pi), int(di))
+	}
 }
 
-// CycleToMinus grabs current Cycle values into the Minus phase values
-func (am *PoolAvgMax) CycleToMinus() {
-	am.CaSpkP.CycleToMinus()
-	am.CaSpkD.CycleToMinus()
-	am.SpkMax.CycleToMinus()
-	am.Act.CycleToMinus()
-	am.GeInt.CycleToMinus()
-	am.GiInt.CycleToMinus()
+// PoolCycleToMinus grabs current Cycle values into the Minus phase values,
+// and Plus values into Prev.
+func PoolCycleToMinus(pi, di uint32) {
+	for vr := range AMAvgDif { // don't do AvgDif
+		Pools.Set(Pools.Value(int(AvgMaxVarIdx(vr, AMCycle, Avg)), int(pi), int(di)), int(AvgMaxVarIdx(vr, AMMinus, Avg)), int(pi), int(di))
+		Pools.Set(Pools.Value(int(AvgMaxVarIdx(vr, AMCycle, Max)), int(pi), int(di)), int(AvgMaxVarIdx(vr, AMMinus, Max)), int(pi), int(di))
+
+		Pools.Set(Pools.Value(int(AvgMaxVarIdx(vr, AMPlus, Avg)), int(pi), int(di)), int(AvgMaxVarIdx(vr, AMPrev, Avg)), int(pi), int(di))
+		Pools.Set(Pools.Value(int(AvgMaxVarIdx(vr, AMPlus, Max)), int(pi), int(di)), int(AvgMaxVarIdx(vr, AMPrev, Max)), int(pi), int(di))
+	}
 }
 
-// CycleToPlus grabs current Cycle values into the Plus phase values
-func (am *PoolAvgMax) CycleToPlus() {
-	am.CaSpkP.CycleToPlus()
-	am.CaSpkD.CycleToPlus()
-	am.SpkMax.CycleToPlus()
-	am.Act.CycleToPlus()
-	am.GeInt.CycleToPlus()
-	am.GiInt.CycleToPlus()
+// PoolCycleToPlus grabs current Cycle values into the Plus phase values.
+func PoolCycleToPlus(pi, di uint32) {
+	for vr := range AMAvgDif { // don't do AvgDif
+		Pools.Set(Pools.Value(int(AvgMaxVarIdx(vr, AMCycle, Avg)), int(pi), int(di)), int(AvgMaxVarIdx(vr, AMPlus, Avg)), int(pi), int(di))
+		Pools.Set(Pools.Value(int(AvgMaxVarIdx(vr, AMCycle, Max)), int(pi), int(di)), int(AvgMaxVarIdx(vr, AMPlus, Max)), int(pi), int(di))
+	}
 }
 
-// Init does Init on Cycle vals-- for update start.
-// always left init'd so generally unnecessary
-func (am *PoolAvgMax) Init() {
-	am.CaSpkP.Cycle.Init()
-	am.CaSpkD.Cycle.Init()
-	am.SpkMax.Cycle.Init()
-	am.Act.Cycle.Init()
-	am.GeInt.Cycle.Init()
-	am.GiInt.Cycle.Init()
-}
-
-// Zero does full reset on everything -- for InitActs
-func (am *PoolAvgMax) Zero() {
-	am.CaSpkP.Zero()
-	am.CaSpkD.Zero()
-	am.SpkMax.Zero()
-	am.Act.Zero()
-	am.GeInt.Zero()
-	am.GiInt.Zero()
-}
-
-// Calc does Calc on Cycle level, and re-inits
-func (am *PoolAvgMax) Calc(refIndex int32) {
-	am.CaSpkP.Calc(refIndex)
-	am.CaSpkD.Calc(refIndex)
-	am.SpkMax.Calc(refIndex)
-	am.Act.Calc(refIndex)
-	am.GeInt.Calc(refIndex)
-	am.GiInt.Calc(refIndex)
-}
-
-// Pool contains computed values for FS-FFFB inhibition,
-// and various other state values for layers
-// and pools (unit groups) that can be subject to inhibition
-type Pool struct {
-
-	// starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool
-	StIndex, EdIndex uint32 `edit:"-"`
-
-	// layer index in global layer list
-	LayIndex uint32 `display:"-"`
-
-	// data parallel index (innermost index per layer)
-	DataIndex uint32 `display:"-"`
-
-	// pool index in global pool list:
-	PoolIndex uint32 `display:"-"`
-
-	// is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer
-	IsLayPool slbool.Bool `edit:"-"`
-
-	// for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated
-	Gated slbool.Bool `edit:"-"`
-
-	pad uint32
-
-	// fast-slow FFFB inhibition values
-	Inhib fsfffb.Inhib `edit:"-"`
-
-	// average and max values for relevant variables in this pool, at different time scales
-	AvgMax PoolAvgMax
-
-	// absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg
-	AvgDif AvgMaxI32 `edit:"-" display:"inline"`
-}
-
-// Init is callled during InitActs
-func (pl *Pool) Init() {
+// PoolInit is callled during InitActs
+func PoolInit(pi, di uint32) {
 	pl.Inhib.Init()
-	pl.AvgMax.Zero()
-	pl.AvgMax.SetN(int32(pl.NNeurons()))
-	pl.AvgDif.N = int32(pl.NNeurons())
-	pl.AvgDif.Init()
 	pl.Gated.SetBool(false)
-}
-
-// NNeurons returns the number of neurons in the pool: EdIndex - StIndex
-func (pl *Pool) NNeurons() int {
-	return int(pl.EdIndex - pl.StIndex)
-}
-
-// AvgMaxUpdate updates the AvgMax values based on current neuron values
-func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
-	pl.AvgMax.CaSpkP.Cycle.UpdateValue(Neurons.Value(int(CaSpkP), int(ni), int(di)))
-	pl.AvgMax.CaSpkD.Cycle.UpdateValue(Neurons.Value(int(CaSpkD), int(ni), int(di)))
-	pl.AvgMax.SpkMax.Cycle.UpdateValue(Neurons.Value(int(SpkMax), int(ni), int(di)))
-	pl.AvgMax.Act.Cycle.UpdateValue(math32.Abs(Neurons.Value(int(Act), int(ni), int(di)))) // can be neg
-	pl.AvgMax.GeInt.Cycle.UpdateValue(Neurons.Value(int(GeInt), int(ni), int(di)))
-	pl.AvgMax.GiInt.Cycle.UpdateValue(Neurons.Value(int(GiInt), int(ni), int(di)))
+	PoolAvgMaxZero(pi, di)
 }
 
 func (pl *Pool) PoolGi(ctx *Context, di uint32) {
@@ -222,6 +243,14 @@ func (pl *Pool) PoolGi(ctx *Context, di uint32) {
 }
 
 //gosl:end
+
+// AtomicMaxInt32 performs an atomic Max operation: a = max(a, b)
+func AtomicMaxInt32(a *int32, b int32) {
+	old := atomic.LoadInt32(a)
+	for old < b && !atomic.CompareAndSwapInt32(a, old, b) {
+		old = atomic.LoadInt32(a)
+	}
+}
 
 // TestValues returns a map of CaSpkD.Avg, which provides an
 // integrated summary of pool activity for testing

@@ -232,8 +232,8 @@ type Network struct {
 	//////// Synapse State
 
 	// PathGBuf is the conductance buffer for accumulating spikes.
-	// subslices are allocated to each pathway.
-	// uses int-encoded float values for faster GPU atomic integration.
+	// Subslices are allocated to each pathway.
+	// Uses int-encoded values for faster GPU atomic integration.
 	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	PathGBuf tensor.Int32 `display:"-"`
 
@@ -904,27 +904,27 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 }
 
 // BuildPathGBuf builds the PathGBuf, PathGSyns,
-// based on the MaxDelay values in thePathParams,
+// based on the MaxDelay values in the PathParams,
 // which should have been configured by this point.
 // Called by default in InitWeights()
 func (nt *Network) BuildPathGBuf() {
 	nix := nt.NetIxs()
 	maxData := nix.MaxData
 	maxDel := uint32(0)
-	npjneur := uint32(0)
+	nptneur := uint32(0)
 	for _, ly := range nt.Layers {
 		nneur := uint32(ly.NNeurons)
 		for _, pt := range ly.RecvPaths {
 			if pt.Params.Com.MaxDelay > maxDel {
 				maxDel = pt.Params.Com.MaxDelay
 			}
-			npjneur += nneur
+			nptneur += nneur
 		}
 	}
 	nix.MaxDelay = maxDel
 	mxlen := maxDel + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, int(npjneur), int(mxlen), int(maxData))
-	sltensor.SetShapeSizes(&nt.PathGSyns, int(npjneur), int(maxData))
+	sltensor.SetShapeSizes(&nt.PathGBuf, int(nptneur), int(mxlen), int(maxData))
+	sltensor.SetShapeSizes(&nt.PathGSyns, int(nptneur), int(maxData))
 
 	gbi := uint32(0)
 	gsi := uint32(0)
