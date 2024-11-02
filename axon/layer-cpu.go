@@ -176,35 +176,6 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 	return am
 }
 
-// MinusPhase does updating at end of the minus phase
-func (ly *Layer) MinusPhase(ctx *Context) {
-	np := ly.NPools
-	for spi := uint32(0); spi < np; spi++ {
-		for di := uint32(0); di < ctx.NData; di++ {
-			pi := ly.Params.PoolIndex(spi)
-			ly.Params.MinusPhasePool(ctx, pi, di) // grabs AvgMax.Minus from Cycle
-		}
-	}
-	nn := ly.NNeurons
-	geIntMinusMax := float32(0)
-	giIntMinusMax := float32(0)
-	for di := uint32(0); di < ctx.NData; di++ {
-		lpi := ly.Params.PoolIndex(0)
-		geIntMinusMax = math32.Max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, lpi, di))
-		giIntMinusMax = math32.Max(giIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, lpi, di))
-		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
-				continue
-			}
-			ly.Params.MinusPhaseNeuron(ctx, ni, di)
-		}
-	}
-	for di := uint32(0); di < ctx.NData; di++ {
-		ly.Params.AvgGeM(ctx, di, geIntMinusMax, giIntMinusMax)
-	}
-}
-
 // MinusPhasePost does special algorithm processing at end of minus
 func (ly *Layer) MinusPhasePost(ctx *Context) {
 	switch ly.Type {

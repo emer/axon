@@ -274,6 +274,7 @@ func PoolInit(pi, di uint32) {
 	PoolAvgMaxZero(pi, di)
 }
 
+// PoolPoolGi computes the total inhibitory conductance for the pool.
 func PoolPoolGi(ctx *Context, pi, di uint32) {
 	if PoolsInt.Value(int(PoolIsLayer), int(pi), int(di)) > 0 {
 		return

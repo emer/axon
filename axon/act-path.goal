@@ -120,20 +120,6 @@ func (sc *SynComParams) WriteOff(cycTot int32) uint32 {
 	return sc.RingIndex(uint32(cycTot)%sc.DelLen + sc.DelLen)
 }
 
-// WriteIndex returns actual index for writing new spikes into the GBuf buffer,
-// based on the layer-based recv neuron index, data parallel idx, and the
-// WriteOff offset computed from the CyclesTotal.
-func (sc *SynComParams) WriteIndex(rnIndex, di uint32, cycTot int32, nRecvNeurs, maxData uint32) uint32 {
-	return sc.WriteIndexOff(rnIndex, di, sc.WriteOff(cycTot), nRecvNeurs, maxData)
-}
-
-// WriteIndexOff returns actual index for writing new spikes into the GBuf buffer,
-// based on the layer-based recv neuron index and the given WriteOff offset.
-func (sc *SynComParams) WriteIndexOff(rnIndex, di, wrOff uint32, nRecvNeurs, maxData uint32) uint32 {
-	// return rnIndex*sc.DelLen + wrOff
-	return (wrOff*nRecvNeurs+rnIndex)*maxData + di
-}
-
 // ReadOff returns offset for reading existing spikes from the GBuf buffer,
 // based on Context CyclesTotal counter which increments each cycle.
 // This is logically the zero position in the ring buffer.

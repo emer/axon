@@ -81,6 +81,17 @@ func (ctx *Context) Defaults() {
 	ctx.Mode = etime.Train
 }
 
+// ItemIndex returns the main item index from an overall index over NItems * NData.
+// (items = layers, neurons, synapses)
+func (ctx *Context) ItemIndex(idx uint32) uint32 {
+	return idx / ctx.NData
+}
+
+// DataIndex returns the data index from an overall index over NItems * NData.
+func (ctx *Context) DataIndex(idx uint32) uint32 {
+	return idx % ctx.NData
+}
+
 // NewPhase resets PhaseCycle = 0 and sets the plus phase as specified
 func (ctx *Context) NewPhase(plusPhase bool) {
 	ctx.PhaseCycle = 0

@@ -43,21 +43,21 @@ type StartN struct {
 
 // PathIndexes contains path-level index information into global memory arrays
 type PathIndexes struct {
-	PathIndex  uint32 // index of the pathway in global path list: [Layer][SendPaths]
-	RecvLayer  uint32 // index of the receiving layer in global list of layers
-	RecvNeurSt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
-	RecvNeurN  uint32 // number of neurons in recv layer
-	SendLayer  uint32 // index of the sending layer in global list of layers
-	SendNeurSt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
-	SendNeurN  uint32 // number of neurons in send layer
-	SynapseSt  uint32 // start index into global Synapse array: [Layer][SendPaths][Synapses]
-	SendConSt  uint32 // start index into global PathSendCon array: [Layer][SendPaths][SendNeurons]
-	RecvConSt  uint32 // start index into global PathRecvCon array: [Layer][RecvPaths][RecvNeurons]
-	RecvSynSt  uint32 // start index into global sender-based Synapse index array: [Layer][SendPaths][Synapses]
-	GBufSt     uint32 // start index into global PathGBuf global array: [Layer][RecvPaths][RecvNeurons][MaxDelay+1]
-	GSynSt     uint32 // start index into global PathGSyn global array: [Layer][RecvPaths][RecvNeurons]
+	// PathIndex is the index of the pathway in global path list: [Layer][SendPaths]
+	PathIndex uint32
 
-	pad, pad1, pad2 uint32
+	// index of the receiving layer in global list of layers
+	RecvLayer   uint32
+	RecvNeurSt  uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
+	RecvNeurN   uint32 // number of neurons in recv layer
+	SendLayer   uint32 // index of the sending layer in global list of layers
+	SendNeurSt  uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
+	SendNeurN   uint32 // number of neurons in send layer
+	SynapseSt   uint32 // start index into global Synapse array: [Layer][SendPaths][Synapses]
+	SendConSt   uint32 // start index into global PathSendCon array: [Layer][SendPaths][SendNeurons]
+	RecvConSt   uint32 // start index into global PathRecvCon array: [Layer][RecvPaths][RecvNeurons]
+	RecvSynSt   uint32 // start index into global sender-based Synapse index array: [Layer][SendPaths][Synapses]
+	NPathNeurSt uint32 // start NPathNeur index into PathGBuf, PathGSyns global arrays: [Layer][RecvPaths][RecvNeurons]
 }
 
 // RecvNIndexToLayIndex converts a neuron's index in network level global list of all neurons
@@ -249,15 +249,13 @@ func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
 // GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
 // while integrating the Recv Path-level GSyn integrated values.
 func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
-	nix := GetNetworkIxs(0)
-	maxd := nix.MaxData
-	bi := pt.Indexes.GBufSt + pt.Com.ReadIndex(lni, di, ctx.CyclesTotal, pt.Indexes.RecvNeurN, maxd)
-	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value1D(int(bi)))
-	PathGBuf.Set1D(0, int(bi))
-	gsi := lni*maxd + di
-	gsyn := PathGSyns.Value1D(int(pt.Indexes.GSynSt + gsi))
+	deli := pt.Com.ReadOff(ctx.CyclesTotal)
+	npti := pt.Indexes.NPathNeurSt + lni
+	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value(int(deli), int(npti), int(di)))
+	PathGBuf.Set(0, int(deli), int(npti), int(di))
+	gsyn := PathGSyns.Value(int(npti), int(di))
 	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
-	PathGSyns.Set1D(gsyn, int(pt.Indexes.GSynSt+gsi))
+	PathGSyns.Set(gsyn, int(npti), int(di))
 }
 
 // GatherSpikes integrates G*Raw and G*Syn values for given neuron
@@ -303,8 +301,6 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 			return
 		}
 	}
-	nix := GetNetworkIxs(0)
-	maxd := nix.MaxData
 	recvNeurSt := pt.Indexes.RecvNeurSt
 	cni := pt.Indexes.SendConSt + lni
 	synst := pt.Indexes.SynapseSt + PathSendCon.Value(int(cni), int(StartOff))
@@ -312,10 +308,10 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := synst + ci
 		ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
-		bi := pt.Indexes.GBufSt + pt.Com.WriteIndex(ri-recvNeurSt, di, ctx.CyclesTotal, pt.Indexes.RecvNeurN, maxd)
+		npti := pt.Indexes.NPathNeurSt + (ri - recvNeurSt)
+		deli := pt.Com.WriteOff(ctx.CyclesTotal)
 		sv := int32(sendVal * Synapses.Value(int(Wt), int(syni)))
-		// atomic.AddInt32(&PathGBuf.Values[bi], sv)
-		atomic.AddInt32(PathGBuf.ValuePtr(int(bi), int(ri)), sv) // todo: fix indexes
+		atomic.AddInt32(PathGBuf.ValuePtr(int(deli), int(npti), int(di)), sv)
 	}
 }
 

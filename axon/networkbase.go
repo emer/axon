@@ -83,17 +83,6 @@ type NetworkIndexes struct {
 	pad uint32
 }
 
-// ItemIndex returns the main item index from an overall index over NItems * MaxData
-// (items = layers, neurons, synapeses)
-func (ix *NetworkIndexes) ItemIndex(idx uint32) uint32 {
-	return idx / ix.MaxData
-}
-
-// DataIndex returns the data index from an overall index over N * MaxData
-func (ix *NetworkIndexes) DataIndex(idx uint32) uint32 {
-	return idx % ix.MaxData
-}
-
 // LayerIndexIsValid returns true if the layer index is valid (< NLayers)
 func (ix *NetworkIndexes) LayerIndexIsValid(li uint32) bool {
 	return (li < ix.NLayers)
@@ -240,7 +229,7 @@ type Network struct {
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
-	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
+	// [MaxDel+1][NPathNeur][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	PathGBuf tensor.Int32 `display:"-"`
 
 	// PathGSyns are synaptic conductance integrated over time per pathway
@@ -769,7 +758,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		ly.Params.PoolSt = uint32(poolIndex)
 		ly.Params.Indexes.NPools = uint32(np)
 		ly.Params.Indexes.NeurSt = uint32(neurIndex)
-		ly.Params.Indexes.NeurN = uint32(nn)
+		ly.Params.Indexes.NNeurons = uint32(nn)
 		if shp.NumDims() == 2 {
 			ly.Params.Indexes.ShpUnY = int32(shp.DimSize(0))
 			ly.Params.Indexes.ShpUnX = int32(shp.DimSize(1))
@@ -925,21 +914,15 @@ func (nt *Network) BuildPathGBuf() {
 	}
 	nix.MaxDelay = maxDel
 	mxlen := maxDel + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, int(nptneur), int(mxlen), int(maxData))
+	sltensor.SetShapeSizes(&nt.PathGBuf, int(mxlen), int(nptneur), int(maxData))
 	sltensor.SetShapeSizes(&nt.PathGSyns, int(nptneur), int(maxData))
 
-	gbi := uint32(0)
-	gsi := uint32(0)
+	npti := uint32(0)
 	for _, ly := range nt.Layers {
 		nneur := uint32(ly.NNeurons)
 		for _, pt := range ly.RecvPaths {
-			gbs := nneur * mxlen * maxData
-			pt.Params.Indexes.GBufSt = gbi
-			// pt.GBuf = nt.PathGBuf[gbi : gbi+gbs]
-			gbi += gbs
-			pt.Params.Indexes.GSynSt = gsi
-			// pt.GSyns = nt.PathGSyns[gsi : gsi+nneur*nt.MaxData]
-			gsi += nneur * maxData
+			pt.Params.Indexes.NPathNeurSt = npti
+			npti += nneur
 		}
 	}
 }

@@ -24,7 +24,7 @@ type LayerIndexes struct {
 	NeurSt uint32 `edit:"-"`
 
 	// number of neurons in layer
-	NeurN uint32 `edit:"-"`
+	NNeurons uint32 `edit:"-"`
 
 	// start index into RecvPaths global array
 	RecvSt uint32 `edit:"-"`
@@ -641,7 +641,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 			} else {
 				pv = GlobalScalars.Value(int(GvPVneg), int(di))
 			}
-			pc := ly.Acts.PopCode.EncodeGe(pni, ly.Indexes.NeurN, pv)
+			pc := ly.Acts.PopCode.EncodeGe(pni, ly.Indexes.NNeurons, pv)
 			Neurons.Set(pc, int(GeRaw), int(ni), int(di))
 			Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(pc), int(GeSyn), int(ni), int(di))
 		}
@@ -921,7 +921,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 			} else {
 				pv = GlobalScalars.Value(int(GvPVneg), int(di))
 			}
-			act := ly.Acts.PopCode.EncodeValue(pni, ly.Indexes.NeurN, pv)
+			act := ly.Acts.PopCode.EncodeValue(pni, ly.Indexes.NNeurons, pv)
 			Neurons.Set(act, int(Act), int(ni), int(di))
 		}
 	case LDTLayer:
@@ -1179,7 +1179,29 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pi, di uint32) {
 	if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsTarget.IsTrue() {
 		PoolsInt.Set(1, int(Clamped), int(pi), int(di))
 	}
+	if PoolsInt.Value(int(PoolIsLayer), int(pi), int(di)) == 0 {
+		return
+	}
+	geIntMinusMax := float32(0)
+	giIntMinusMax := float32(0)
+	for di := uint32(0); di < ctx.NData; di++ {
+		geIntMinusMax = math32.Max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di))
+		giIntMinusMax = math32.Max(giIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di))
+	}
+	for di := uint32(0); di < ctx.NData; di++ {
+		ly.AvgGeM(ctx, di, geIntMinusMax, giIntMinusMax)
+	}
 }
+
+// if (pl.IsLayPool != 0) {
+// 	float geIntMinusMax = 0;
+// 	float giIntMinusMax = 0;
+// 	for (uint di = 0; di < ctx.NetIndexes.NData; di++) {
+// 		geIntMinusMax = max(geIntMinusMax, Pools[ly.Indexes.PoolIndex(0, di)].AvgMax.GeInt.Cycle.Max);
+// 		giIntMinusMax = max(giIntMinusMax, Pools[ly.Indexes.PoolIndex(0, di)].AvgMax.GiInt.Cycle.Max);
+// 	}
+// 	ly.AvgGeM(ctx, vals, geIntMinusMax, giIntMinusMax);
+// }
 
 // AvgGeM computes the average and max GeInt, GiInt in minus phase
 // (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase,

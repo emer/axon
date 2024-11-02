@@ -63,9 +63,10 @@ func (nt *Network) NewState(ctx *Context) {
 func (nt *Network) Cycle() {
 	// todo: chunks of 10 cycles
 	nix := GetNetworkIxs(0)
-	nd := int(nix.NNeurons * nix.MaxData)
-	ld := int(nix.NLayers * nix.MaxData)
-	pd := int(nix.NPools * nix.MaxData)
+	ctx := GetCtx(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	ld := int(nix.NLayers * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
 	RunGatherSpikes(nd)
 	RunLayerGi(ld)
 	RunBetweenGi(ld)
@@ -73,6 +74,7 @@ func (nt *Network) Cycle() {
 	RunCycleNeuron(nd)
 	RunSendSpike(nd)
 	RunCyclePost(ld)
+	RunCycleInc(1)
 
 	// todo: fix this:
 	// var ldt, vta *Layer
@@ -105,26 +107,18 @@ func (nt *Network) Cycle() {
 // GatherSpikes is the kernel over Neurons * Data for gathering
 // spike inputs sent on the previous cycle.
 func GatherSpikes(i uint32) { //gosl:kernel
-	nix := GetNetworkIxs(0)
 	ctx := GetCtx(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	ni := nix.ItemIndex(i)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
 	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
 	Layers[li].GatherSpikes(ctx, ni, di)
 }
 
 // LayerGi is the kernel over Layers * Data for updating Gi inhibition.
 func LayerGi(i uint32) { //gosl:kernel
-	nix := GetNetworkIxs(0)
 	ctx := GetCtx(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	li := nix.ItemIndex(i)
+	di := ctx.DataIndex(i)
+	li := ctx.ItemIndex(i)
 	Layers[li].LayerGi(ctx, li, di)
 }
 
@@ -132,36 +126,25 @@ func LayerGi(i uint32) { //gosl:kernel
 // inhibition between layers.
 func BetweenGi(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	nix := GetNetworkIxs(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	li := nix.ItemIndex(i)
+	di := ctx.DataIndex(i)
+	li := ctx.ItemIndex(i)
 	Layers[li].BetweenGi(ctx, di)
 }
 
 // PoolGi is the kernel over Pools * Data for updating Gi inhibition.
 func PoolGi(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	nix := GetNetworkIxs(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	PoolPoolGi(ctx, i, di)
+	di := ctx.DataIndex(i)
+	pi := ctx.ItemIndex(i)
+	PoolPoolGi(ctx, pi, di)
 }
 
 // CycleNeuron is the kernel over Neurons * Data to do
 // one cycle (msec) of updating at the neuron level.
 func CycleNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	nix := GetNetworkIxs(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	ni := nix.ItemIndex(i)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
 	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
 	Layers[li].CycleNeuron(ctx, ni, di)
 }
@@ -170,12 +153,8 @@ func CycleNeuron(i uint32) { //gosl:kernel
 // send spike signal for neurons over threshold.
 func SendSpike(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	nix := GetNetworkIxs(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	ni := nix.ItemIndex(i)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
 	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
 	Layers[li].SendSpike(ctx, ni, di)
 }
@@ -184,41 +163,60 @@ func SendSpike(i uint32) { //gosl:kernel
 // update state after each Cycle of updating.
 func CyclePost(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	nix := GetNetworkIxs(0)
-	di := nix.DataIndex(i)
-	if di >= ctx.NData {
-		return
-	}
-	li := nix.ItemIndex(i)
+	di := ctx.DataIndex(i)
+	li := ctx.ItemIndex(i)
 	Layers[li].CyclePost(ctx, di)
 }
 
-//gosl:end
-
-// MinusPhase does updating after end of minus phase
-func (nt *Network) MinusPhase(ctx *Context) {
-	//	if nt.GPU.On {
-	//		nt.GPU.RunMinusPhase()
-	//	} else {
-	//
-	// not worth threading this probably
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.MinusPhase(ctx)
+// CycleInc increments the cycle counter.
+func CycleInc(i uint32) { //gosl:kernel
+	if i != 0 {
+		return
 	}
-	// }
-	// Post happens on the CPU always
+	ctx := GetCtx(0)
+	ctx.CycleInc()
+}
+
+// MinusPhasePool does pool-level updating after end of minus phase.
+func MinusPhasePool(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	pi := ctx.ItemIndex(i)
+	li := PoolsInt.Value(int(PoolLayerIdx), int(pi), int(di))
+	Layers[li].MinusPhasePool(ctx, pi, di)
+}
+
+// MinusPhaseNeuron does neuron-level updating after end of minus phase.
+func MinusPhaseNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	Layers[li].MinusPhaseNeuron(ctx, ni, di)
+}
+
+func (nt *Network) MinusPhasePost() {
+	ctx := GetCtx(0)
 	for _, ly := range nt.Layers {
 		if ly.Off {
 			continue
 		}
 		ly.MinusPhasePost(ctx)
 	}
-	//	if nt.GPU.On {
-	//		nt.GPU.SyncStateToGPU()
-	//	}
+}
+
+//gosl:end
+
+// MinusPhase does updating after end of minus phase.
+func (nt *Network) MinusPhase(ctx *Context) {
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunMinusPhasePool(pd)
+	RunMinusPhaseNeuron(nd)
+	nt.MinusPhasePost()
+	// todo:
+	// nt.GPU.SyncStateToGPU()
 }
 
 // PlusPhaseStart does updating at the start of the plus phase:
