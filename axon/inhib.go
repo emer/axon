@@ -144,7 +144,7 @@ func PoolInhib(fb *fsfffb.GiParams, pi, di uint32, gimult float32) {
 	Pools.Set(ssf, int(fsfffb.SSf), int(pi), int(di))
 	Pools.Set(ssi, int(fsfffb.SSi), int(pi), int(di))
 
-	Pools.Set(PoolInhibGiFromFSSS(pi, di)+fb.FFPrv*Pools.Value(int(fsfffb.FFAvgPrv), int(pi), int(di)), int(fsfffb.Gi), int(pi), int(di))
+	Pools.Set(PoolInhibGiFromFSSS(pi, di)+fb.FFPrv*Pools.Value(int(fsfffb.FFAvgPrv), int(pi), int(di)), int(fsfffb.TotalGi), int(pi), int(di))
 	PoolInhibSaveOrig(pi, di)
 }
 
@@ -155,9 +155,9 @@ func PoolInhibInit(pi, di uint32) {
 
 // PoolInhibInitRaw clears raw spike counters -- done every cycle prior to accumulating
 func PoolInhibInitRaw(pi, di uint32) {
-	Pools.Set(0, int(fsfffb.FFsRaw), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.FBsRaw), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.GeExtRaw), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FFsRaw), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FBsRaw), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.GeExtRaw), int(pi), int(di))
 
 	PoolsInt.Set(0, int(FFsRawInt), int(pi), int(di))
 	PoolsInt.Set(0, int(FBsRawInt), int(pi), int(di))
@@ -166,19 +166,19 @@ func PoolInhibInitRaw(pi, di uint32) {
 
 // PoolInhibZero resets all accumulating inhibition factors to 0
 func PoolInhibZero(pi, di uint32) {
-	Pools.Set(0, int(fsfffb.FFs), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.FBs), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.GeExts), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.FSi), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.SSi), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.SSf), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.FSGi), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.SSGi), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.Gi), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.FFAvg), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.FFAvgPrv), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.GiOrig), int(pi), int(di))
-	Pools.Set(0, int(fsfffb.LayGi), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FFs), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FBs), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.GeExts), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FSi), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.SSi), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.SSf), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FSGi), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.SSGi), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.TotalGi), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FFAvg), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.FFAvgPrv), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.GiOrig), int(pi), int(di))
+	Pools.Set(0.0, int(fsfffb.LayGi), int(pi), int(di))
 	PoolsInt.Set(0, int(Clamped), int(pi), int(di))
 }
 
@@ -194,7 +194,7 @@ func PoolInhibDecay(pi, di uint32, decay float32) {
 	Pools.SetSub(decay*Pools.Value(int(fsfffb.SSf), int(pi), int(di)), int(fsfffb.SSf), int(pi), int(di))
 	Pools.SetSub(decay*Pools.Value(int(fsfffb.FSGi), int(pi), int(di)), int(fsfffb.FSGi), int(pi), int(di))
 	Pools.SetSub(decay*Pools.Value(int(fsfffb.SSGi), int(pi), int(di)), int(fsfffb.SSGi), int(pi), int(di))
-	Pools.SetSub(decay*Pools.Value(int(fsfffb.Gi), int(pi), int(di)), int(fsfffb.Gi), int(pi), int(di))
+	Pools.SetSub(decay*Pools.Value(int(fsfffb.TotalGi), int(pi), int(di)), int(fsfffb.TotalGi), int(pi), int(di))
 	Pools.SetSub(decay*Pools.Value(int(fsfffb.FFAvg), int(pi), int(di)), int(fsfffb.FFAvg), int(pi), int(di))
 }
 
@@ -209,7 +209,7 @@ func PoolInhibSpikesFromRaw(pi, di uint32) {
 
 // SaveOrig saves the current Gi values as original values
 func PoolInhibSaveOrig(pi, di uint32) {
-	Pools.Set(Pools.Value(int(fsfffb.Gi), int(pi), int(di)), int(fsfffb.GiOrig), int(pi), int(di))
+	Pools.Set(Pools.Value(int(fsfffb.TotalGi), int(pi), int(di)), int(fsfffb.GiOrig), int(pi), int(di))
 }
 
 // GiFromFSSS returns the sum of FSGi and SSGi as overall inhibition
@@ -221,13 +221,13 @@ func PoolInhibGiFromFSSS(pi, di uint32) float32 {
 // with resulting value being the Max of either
 func PoolInhibLayerMax(pi, di uint32, liGi float32) {
 	Pools.Set(liGi, int(fsfffb.LayGi), int(pi), int(di))
-	Pools.Set(math32.Max(Pools.Value(int(fsfffb.Gi), int(pi), int(di)), liGi), int(fsfffb.Gi), int(pi), int(di))
+	Pools.Set(math32.Max(Pools.Value(int(fsfffb.TotalGi), int(pi), int(di)), liGi), int(fsfffb.TotalGi), int(pi), int(di))
 }
 
 // PoolMax updates given layer-level inhib values from given pool-level
 // with resulting value being the Max of either
 func PoolInhibPoolMax(pi, di uint32, piGi float32) {
-	Pools.Set(math32.Max(Pools.Value(int(fsfffb.Gi), int(pi), int(di)), piGi), int(fsfffb.Gi), int(pi), int(di))
+	Pools.Set(math32.Max(Pools.Value(int(fsfffb.TotalGi), int(pi), int(di)), piGi), int(fsfffb.TotalGi), int(pi), int(di))
 }
 
 //////// atomic int safe accumulation

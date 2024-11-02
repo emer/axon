@@ -945,7 +945,6 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	Neurons[GModRaw, ni, di] = 0
 	Neurons[GModSyn, ni, di] = 0
 	Neurons[GMaintRaw, ni, di] = 0
-	Neurons[SSGi, ni, di] = 0
 	Neurons[SSGiDend, ni, di] = 0
 	Neurons[GeExt, ni, di] = 0
 
@@ -1025,7 +1024,6 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons[GMaintRaw, ni, di] = 0
 	Neurons[GMaintSyn, ni, di] = 0
 
-	Neurons[SSGi, ni, di] = 0
 	Neurons[SSGiDend, ni, di] = 0
 
 	Neurons[Burst, ni, di] = 0
@@ -1169,7 +1167,7 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 // GeFromSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
-	Neurons[GeExt, ni, di] = 0
+	Neurons[GeExt, ni, di] = 0.0
 	geS := geSyn
 	geE := geExt
 	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ni, di, NeuronHasExt) {
@@ -1185,7 +1183,7 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 
 	Neurons[Ge, ni, di] = geS + geE
 	if Neurons[Ge, ni, di] < 0.0 {
-		Neurons[Ge, ni, di] = 0
+		Neurons[Ge, ni, di] = 0.0
 	}
 	ac.AddGeNoise(ctx, ni, di)
 }

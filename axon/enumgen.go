@@ -9,7 +9,11 @@ import (
 var _PathGTypesValues = []PathGTypes{0, 1, 2, 3, 4}
 
 // PathGTypesN is the highest valid value for type PathGTypes, plus one.
+//
+//gosl:start
 const PathGTypesN PathGTypes = 5
+
+//gosl:end
 
 var _PathGTypesValueMap = map[string]PathGTypes{`ExcitatoryG`: 0, `InhibitoryG`: 1, `ModulatoryG`: 2, `MaintG`: 3, `ContextG`: 4}
 
@@ -52,7 +56,11 @@ func (i *PathGTypes) UnmarshalText(text []byte) error {
 var _GlobalScalarVarsValues = []GlobalScalarVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56}
 
 // GlobalScalarVarsN is the highest valid value for type GlobalScalarVars, plus one.
+//
+//gosl:start
 const GlobalScalarVarsN GlobalScalarVars = 57
+
+//gosl:end
 
 var _GlobalScalarVarsValueMap = map[string]GlobalScalarVars{`GvRew`: 0, `GvHasRew`: 1, `GvRewPred`: 2, `GvPrevPred`: 3, `GvHadRew`: 4, `GvDA`: 5, `GvDAtonic`: 6, `GvACh`: 7, `GvNE`: 8, `GvSer`: 9, `GvAChRaw`: 10, `GvGoalMaint`: 11, `GvVSMatrixJustGated`: 12, `GvVSMatrixHasGated`: 13, `GvCuriosityPoolGated`: 14, `GvTime`: 15, `GvEffort`: 16, `GvUrgencyRaw`: 17, `GvUrgency`: 18, `GvHasPosUS`: 19, `GvHadPosUS`: 20, `GvNegUSOutcome`: 21, `GvHadNegUSOutcome`: 22, `GvPVposSum`: 23, `GvPVpos`: 24, `GvPVnegSum`: 25, `GvPVneg`: 26, `GvPVposEst`: 27, `GvPVposVar`: 28, `GvPVnegEst`: 29, `GvPVnegVar`: 30, `GvGoalDistEst`: 31, `GvGoalDistPrev`: 32, `GvProgressRate`: 33, `GvGiveUpUtility`: 34, `GvContUtility`: 35, `GvGiveUpTiming`: 36, `GvContTiming`: 37, `GvGiveUpProgress`: 38, `GvContProgress`: 39, `GvGiveUpSum`: 40, `GvContSum`: 41, `GvGiveUpProb`: 42, `GvGiveUp`: 43, `GvGaveUp`: 44, `GvVSPatchPos`: 45, `GvVSPatchPosThr`: 46, `GvVSPatchPosRPE`: 47, `GvVSPatchPosSum`: 48, `GvVSPatchPosPrev`: 49, `GvVSPatchPosVar`: 50, `GvLHbDip`: 51, `GvLHbBurst`: 52, `GvLHbPVDA`: 53, `GvCeMpos`: 54, `GvCeMneg`: 55, `GvVtaDA`: 56}
 
@@ -95,7 +103,11 @@ func (i *GlobalScalarVars) UnmarshalText(text []byte) error {
 var _GlobalVectorVarsValues = []GlobalVectorVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // GlobalVectorVarsN is the highest valid value for type GlobalVectorVars, plus one.
+//
+//gosl:start
 const GlobalVectorVarsN GlobalVectorVars = 10
+
+//gosl:end
 
 var _GlobalVectorVarsValueMap = map[string]GlobalVectorVars{`GvCost`: 0, `GvCostRaw`: 1, `GvUSneg`: 2, `GvUSnegRaw`: 3, `GvDrives`: 4, `GvUSpos`: 5, `GvVSPatchD1`: 6, `GvVSPatchD2`: 7, `GvOFCposPTMaint`: 8, `GvVSMatrixPoolGated`: 9}
 
@@ -138,7 +150,11 @@ func (i *GlobalVectorVars) UnmarshalText(text []byte) error {
 var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
 
 // GPUVarsN is the highest valid value for type GPUVars, plus one.
+//
+//gosl:start
 const GPUVarsN GPUVars = 22
+
+//gosl:end
 
 var _GPUVarsValueMap = map[string]GPUVars{`LayersVar`: 0, `PathsVar`: 1, `NetworkIxsVar`: 2, `NeuronIxsVar`: 3, `SynapseIxsVar`: 4, `PathSendConVar`: 5, `RecvPathIxsVar`: 6, `PathRecvConVar`: 7, `RecvSynIxsVar`: 8, `CtxVar`: 9, `NeuronsVar`: 10, `NeuronAvgsVar`: 11, `LayerStatesVar`: 12, `GlobalScalarsVar`: 13, `GlobalVectorsVar`: 14, `ExtsVar`: 15, `PoolsVar`: 16, `PoolsIntVar`: 17, `PathGBufVar`: 18, `PathGSynsVar`: 19, `SynapsesVar`: 20, `SynapseTracesVar`: 21}
 
@@ -179,7 +195,11 @@ func (i *GPUVars) UnmarshalText(text []byte) error { return enums.UnmarshalText(
 var _LayerTypesValues = []LayerTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29}
 
 // LayerTypesN is the highest valid value for type LayerTypes, plus one.
+//
+//gosl:start
 const LayerTypesN LayerTypes = 30
+
+//gosl:end
 
 var _LayerTypesValueMap = map[string]LayerTypes{`SuperLayer`: 0, `InputLayer`: 1, `TargetLayer`: 2, `CompareLayer`: 3, `CTLayer`: 4, `PulvinarLayer`: 5, `TRNLayer`: 6, `PTMaintLayer`: 7, `PTPredLayer`: 8, `MatrixLayer`: 9, `STNLayer`: 10, `GPLayer`: 11, `BGThalLayer`: 12, `VSGatedLayer`: 13, `BLALayer`: 14, `CeMLayer`: 15, `VSPatchLayer`: 16, `LHbLayer`: 17, `DrivesLayer`: 18, `UrgencyLayer`: 19, `USLayer`: 20, `PVLayer`: 21, `LDTLayer`: 22, `VTALayer`: 23, `RewLayer`: 24, `RWPredLayer`: 25, `RWDaLayer`: 26, `TDPredLayer`: 27, `TDIntegLayer`: 28, `TDDaLayer`: 29}
 
@@ -222,7 +242,11 @@ func (i *LayerTypes) UnmarshalText(text []byte) error {
 var _LayerVarsValues = []LayerVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 // LayerVarsN is the highest valid value for type LayerVars, plus one.
+//
+//gosl:start
 const LayerVarsN LayerVars = 11
+
+//gosl:end
 
 var _LayerVarsValueMap = map[string]LayerVars{`LayerActMAvg`: 0, `LayerActPAvg`: 1, `LayerAvgMaxGeM`: 2, `LayerAvgMaxGiM`: 3, `LayerGiMult`: 4, `LayerPhaseDiff`: 5, `LayerPhaseDiffAvg`: 6, `LayerPhaseDiffVar`: 7, `LayerRT`: 8, `LayerRewPredPos`: 9, `LayerRewPredNeg`: 10}
 
@@ -265,7 +289,11 @@ func (i *LayerVars) UnmarshalText(text []byte) error {
 var _DAModTypesValues = []DAModTypes{0, 1, 2, 3}
 
 // DAModTypesN is the highest valid value for type DAModTypes, plus one.
+//
+//gosl:start
 const DAModTypesN DAModTypes = 4
+
+//gosl:end
 
 var _DAModTypesValueMap = map[string]DAModTypes{`NoDAMod`: 0, `D1Mod`: 1, `D2Mod`: 2, `D1AbsMod`: 3}
 
@@ -308,7 +336,11 @@ func (i *DAModTypes) UnmarshalText(text []byte) error {
 var _ValenceTypesValues = []ValenceTypes{0, 1, 2}
 
 // ValenceTypesN is the highest valid value for type ValenceTypes, plus one.
+//
+//gosl:start
 const ValenceTypesN ValenceTypes = 3
+
+//gosl:end
 
 var _ValenceTypesValueMap = map[string]ValenceTypes{`Positive`: 0, `Negative`: 1, `Cost`: 2}
 
@@ -351,7 +383,11 @@ func (i *ValenceTypes) UnmarshalText(text []byte) error {
 var _NeuronFlagsValues = []NeuronFlags{1, 2, 4, 8}
 
 // NeuronFlagsN is the highest valid value for type NeuronFlags, plus one.
+//
+//gosl:start
 const NeuronFlagsN NeuronFlags = 9
+
+//gosl:end
 
 var _NeuronFlagsValueMap = map[string]NeuronFlags{`NeuronOff`: 1, `NeuronHasExt`: 2, `NeuronHasTarg`: 4, `NeuronHasCmpr`: 8}
 
@@ -391,16 +427,20 @@ func (i *NeuronFlags) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "NeuronFlags")
 }
 
-var _NeuronVarsValues = []NeuronVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90}
+var _NeuronVarsValues = []NeuronVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89}
 
 // NeuronVarsN is the highest valid value for type NeuronVars, plus one.
-const NeuronVarsN NeuronVars = 91
+//
+//gosl:start
+const NeuronVarsN NeuronVars = 90
 
-var _NeuronVarsValueMap = map[string]NeuronVars{`Spike`: 0, `Spiked`: 1, `Act`: 2, `ActInt`: 3, `Ge`: 4, `Gi`: 5, `Gk`: 6, `Inet`: 7, `Vm`: 8, `VmDend`: 9, `ISI`: 10, `ISIAvg`: 11, `Ext`: 12, `Target`: 13, `CaSpkM`: 14, `CaSpkP`: 15, `CaSpkD`: 16, `CaSpkPM`: 17, `CaLrn`: 18, `NrnCaM`: 19, `NrnCaP`: 20, `NrnCaD`: 21, `CaDiff`: 22, `RLRate`: 23, `GnmdaSyn`: 24, `Gnmda`: 25, `GnmdaLrn`: 26, `GnmdaMaint`: 27, `NmdaCa`: 28, `Gvgcc`: 29, `VgccM`: 30, `VgccH`: 31, `VgccCa`: 32, `VgccCaInt`: 33, `Burst`: 34, `BurstPrv`: 35, `CtxtGe`: 36, `CtxtGeRaw`: 37, `CtxtGeOrig`: 38, `GgabaB`: 39, `GABAB`: 40, `GABABx`: 41, `Gak`: 42, `SSGi`: 43, `SSGiDend`: 44, `GknaMed`: 45, `GknaSlow`: 46, `Gkir`: 47, `KirM`: 48, `Gsk`: 49, `SKCaIn`: 50, `SKCaR`: 51, `SKCaM`: 52, `Gmahp`: 53, `MahpN`: 54, `Gsahp`: 55, `SahpCa`: 56, `SahpN`: 57, `ActM`: 58, `ActP`: 59, `SpkSt1`: 60, `SpkSt2`: 61, `SpkMax`: 62, `SpkMaxCa`: 63, `SpkBin0`: 64, `SpkBin1`: 65, `SpkBin2`: 66, `SpkBin3`: 67, `SpkBin4`: 68, `SpkBin5`: 69, `SpkBin6`: 70, `SpkBin7`: 71, `SpkPrv`: 72, `GeNoise`: 73, `GeNoiseP`: 74, `GiNoise`: 75, `GiNoiseP`: 76, `GeExt`: 77, `GeRaw`: 78, `GeSyn`: 79, `GiRaw`: 80, `GiSyn`: 81, `GeInt`: 82, `GeIntNorm`: 83, `GiInt`: 84, `GModRaw`: 85, `GModSyn`: 86, `SMaintP`: 87, `GMaintRaw`: 88, `GMaintSyn`: 89, `NrnFlags`: 90}
+//gosl:end
 
-var _NeuronVarsDescMap = map[NeuronVars]string{0: `Spike is whether neuron has spiked or not on this cycle (0 or 1)`, 1: `Spiked is 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.`, 2: `Act is rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg. This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc. Should not be used for learning or other computations.`, 3: `ActInt is integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM). Should not be used for learning or other computations.`, 4: `Ge is total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E`, 5: `Gi is total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I`, 6: `Gk is total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K`, 7: `Inet is net current produced by all channels -- drives update of Vm`, 8: `Vm is membrane potential -- integrates Inet current over time`, 9: `VmDend is dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking`, 10: `ISI is current inter-spike-interval -- counts up since last spike. Starts at -1 when initialized.`, 11: `ISIAvg is average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate. Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.`, 12: `Ext is external input: drives activation of unit from outside influences (e.g., sensory input)`, 13: `Target is the target value: drives learning to produce this activation value`, 14: `CaSpkM is spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5). Simulates a calmodulin (CaM) like signal at the most abstract level.`, 15: `CaSpkP is continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.`, 16: `CaSpkD is continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.`, 17: `CaSpkPM is minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.`, 18: `CaLrn is recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component). This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1). This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best. The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales.`, 19: `NrnCaM is integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.`, 20: `NrnCaP is cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.`, 21: `NrnCaD is cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.`, 22: `CaDiff is difference between CaP - CaD -- this is the error signal that drives error-driven learning.`, 23: `RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).`, 24: `GnmdaSyn is integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant`, 25: `Gnmda is net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`, 26: `GnmdaLrn is learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning`, 27: `GnmdaMaint is net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`, 28: `NmdaCa is NMDA calcium computed from GnmdaLrn, drives learning via CaM`, 29: `Gvgcc is conductance (via Ca) for VGCC voltage gated calcium channels`, 30: `VgccM is activation gate of VGCC channels`, 31: `VgccH inactivation gate of VGCC channels`, 32: `VgccCa is instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc`, 33: `VgccCaInt time-integrated VGCC calcium flux -- this is actually what drives learning`, 34: `Burst is 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers`, 35: `BurstPrv is previous Burst bursting activation from prior time step -- used for context-based learning`, 36: `CtxtGe is context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`, 37: `CtxtGeRaw is raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`, 38: `CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.`, 39: `GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.`, 40: `GABAB is GABA-B / GIRK activation -- time-integrated value with rise and decay time constants`, 41: `GABABx is GABA-B / GIRK internal drive variable -- gets the raw activation and decays`, 42: `Gak is conductance of A-type K potassium channels`, 43: `SSGi is SST+ somatostatin positive slow spiking inhibition`, 44: `SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)`, 45: `GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick), which produces accommodation / adaptation of firing`, 46: `GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack), which produces accommodation / adaptation of firing`, 47: `Gkir is the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials. Can be modulated by DA.`, 48: `KirM is the Kir potassium (K) inwardly rectifying gating value`, 49: `Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.`, 50: `SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold`, 51: `SKCaR released amount of intracellular calcium, from SKCaIn, as a function of spiking events. this can bind to SKCa channels and drive K currents.`, 52: `SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.`, 53: `Gmahp is medium time scale AHP conductance`, 54: `MahpN is accumulating voltage-gated gating value for the medium time scale AHP`, 55: `Gsahp is slow time scale AHP conductance`, 56: `SahpCa is slowly accumulating calcium value that drives the slow AHP`, 57: `SahpN is the sAHP gating value`, 58: `ActM is ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.`, 59: `ActP is ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.`, 60: `SpkSt1 is the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function. Used for example in hippocampus for CA3, CA1 learning`, 61: `SpkSt2 is the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function. Used for example in hippocampus for CA3, CA1 learning`, 62: `SpkMax is maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating. Also useful for visualization of peak activity of neurons.`, 63: `SpkMaxCa is Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover. This is the input to SpkMax`, 64: `SpkBin has aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently`, 65: ``, 66: ``, 67: ``, 68: ``, 69: ``, 70: ``, 71: ``, 72: `SpkPrv is final CaSpkD activation state at end of previous theta cycle. used for specialized learning mechanisms that operate on delayed sending activations.`, 73: `GeNoise is integrated noise excitatory conductance, added into Ge`, 74: `GeNoiseP is accumulating poisson probability factor for driving excitatory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda as function of noise firing rate.`, 75: `GiNoise is integrated noise inhibotyr conductance, added into Gi`, 76: `GiNoiseP is accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda as a function of noise firing rate.`, 77: `GeExt is extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc`, 78: `GeRaw is raw excitatory conductance (net input) received from senders = current raw spiking drive`, 79: `GeSyn is time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E`, 80: `GiRaw is raw inhibitory conductance (net input) received from senders = current raw spiking drive`, 81: `GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I. This is added with computed FFFB inhibition to get the full inhibition in Gi`, 82: `GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive`, 83: `GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity`, 84: `GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive`, 85: `GModRaw is raw modulatory conductance, received from GType = ModulatoryG pathways`, 86: `GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG pathways`, 87: `SMaintP is accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons. multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor`, 88: `GMaintRaw is raw maintenance conductance, received from GType = MaintG pathways`, 89: `GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.`, 90: `NrnFlags are bit flags for binary state variables, which are converted to / from uint32. These need to be in Vars because they can be differential per data (for ext inputs) and are writable (indexes are read only).`}
+var _NeuronVarsValueMap = map[string]NeuronVars{`Spike`: 0, `Spiked`: 1, `Act`: 2, `ActInt`: 3, `Ge`: 4, `Gi`: 5, `Gk`: 6, `Inet`: 7, `Vm`: 8, `VmDend`: 9, `ISI`: 10, `ISIAvg`: 11, `Ext`: 12, `Target`: 13, `CaSpkM`: 14, `CaSpkP`: 15, `CaSpkD`: 16, `CaSpkPM`: 17, `CaLrn`: 18, `NrnCaM`: 19, `NrnCaP`: 20, `NrnCaD`: 21, `CaDiff`: 22, `RLRate`: 23, `GnmdaSyn`: 24, `Gnmda`: 25, `GnmdaLrn`: 26, `GnmdaMaint`: 27, `NmdaCa`: 28, `Gvgcc`: 29, `VgccM`: 30, `VgccH`: 31, `VgccCa`: 32, `VgccCaInt`: 33, `Burst`: 34, `BurstPrv`: 35, `CtxtGe`: 36, `CtxtGeRaw`: 37, `CtxtGeOrig`: 38, `GgabaB`: 39, `GABAB`: 40, `GABABx`: 41, `Gak`: 42, `SSGiDend`: 43, `GknaMed`: 44, `GknaSlow`: 45, `Gkir`: 46, `KirM`: 47, `Gsk`: 48, `SKCaIn`: 49, `SKCaR`: 50, `SKCaM`: 51, `Gmahp`: 52, `MahpN`: 53, `Gsahp`: 54, `SahpCa`: 55, `SahpN`: 56, `ActM`: 57, `ActP`: 58, `SpkSt1`: 59, `SpkSt2`: 60, `SpkMax`: 61, `SpkMaxCa`: 62, `SpkBin0`: 63, `SpkBin1`: 64, `SpkBin2`: 65, `SpkBin3`: 66, `SpkBin4`: 67, `SpkBin5`: 68, `SpkBin6`: 69, `SpkBin7`: 70, `SpkPrv`: 71, `GeNoise`: 72, `GeNoiseP`: 73, `GiNoise`: 74, `GiNoiseP`: 75, `GeExt`: 76, `GeRaw`: 77, `GeSyn`: 78, `GiRaw`: 79, `GiSyn`: 80, `GeInt`: 81, `GeIntNorm`: 82, `GiInt`: 83, `GModRaw`: 84, `GModSyn`: 85, `SMaintP`: 86, `GMaintRaw`: 87, `GMaintSyn`: 88, `NrnFlags`: 89}
 
-var _NeuronVarsMap = map[NeuronVars]string{0: `Spike`, 1: `Spiked`, 2: `Act`, 3: `ActInt`, 4: `Ge`, 5: `Gi`, 6: `Gk`, 7: `Inet`, 8: `Vm`, 9: `VmDend`, 10: `ISI`, 11: `ISIAvg`, 12: `Ext`, 13: `Target`, 14: `CaSpkM`, 15: `CaSpkP`, 16: `CaSpkD`, 17: `CaSpkPM`, 18: `CaLrn`, 19: `NrnCaM`, 20: `NrnCaP`, 21: `NrnCaD`, 22: `CaDiff`, 23: `RLRate`, 24: `GnmdaSyn`, 25: `Gnmda`, 26: `GnmdaLrn`, 27: `GnmdaMaint`, 28: `NmdaCa`, 29: `Gvgcc`, 30: `VgccM`, 31: `VgccH`, 32: `VgccCa`, 33: `VgccCaInt`, 34: `Burst`, 35: `BurstPrv`, 36: `CtxtGe`, 37: `CtxtGeRaw`, 38: `CtxtGeOrig`, 39: `GgabaB`, 40: `GABAB`, 41: `GABABx`, 42: `Gak`, 43: `SSGi`, 44: `SSGiDend`, 45: `GknaMed`, 46: `GknaSlow`, 47: `Gkir`, 48: `KirM`, 49: `Gsk`, 50: `SKCaIn`, 51: `SKCaR`, 52: `SKCaM`, 53: `Gmahp`, 54: `MahpN`, 55: `Gsahp`, 56: `SahpCa`, 57: `SahpN`, 58: `ActM`, 59: `ActP`, 60: `SpkSt1`, 61: `SpkSt2`, 62: `SpkMax`, 63: `SpkMaxCa`, 64: `SpkBin0`, 65: `SpkBin1`, 66: `SpkBin2`, 67: `SpkBin3`, 68: `SpkBin4`, 69: `SpkBin5`, 70: `SpkBin6`, 71: `SpkBin7`, 72: `SpkPrv`, 73: `GeNoise`, 74: `GeNoiseP`, 75: `GiNoise`, 76: `GiNoiseP`, 77: `GeExt`, 78: `GeRaw`, 79: `GeSyn`, 80: `GiRaw`, 81: `GiSyn`, 82: `GeInt`, 83: `GeIntNorm`, 84: `GiInt`, 85: `GModRaw`, 86: `GModSyn`, 87: `SMaintP`, 88: `GMaintRaw`, 89: `GMaintSyn`, 90: `NrnFlags`}
+var _NeuronVarsDescMap = map[NeuronVars]string{0: `Spike is whether neuron has spiked or not on this cycle (0 or 1)`, 1: `Spiked is 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels.`, 2: `Act is rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg. This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc. Should not be used for learning or other computations.`, 3: `ActInt is integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM). Should not be used for learning or other computations.`, 4: `Ge is total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E`, 5: `Gi is total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I`, 6: `Gk is total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K`, 7: `Inet is net current produced by all channels -- drives update of Vm`, 8: `Vm is membrane potential -- integrates Inet current over time`, 9: `VmDend is dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking`, 10: `ISI is current inter-spike-interval -- counts up since last spike. Starts at -1 when initialized.`, 11: `ISIAvg is average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate. Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.`, 12: `Ext is external input: drives activation of unit from outside influences (e.g., sensory input)`, 13: `Target is the target value: drives learning to produce this activation value`, 14: `CaSpkM is spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5). Simulates a calmodulin (CaM) like signal at the most abstract level.`, 15: `CaSpkP is continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.`, 16: `CaSpkD is continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.`, 17: `CaSpkPM is minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.`, 18: `CaLrn is recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component). This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1). This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best. The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales.`, 19: `NrnCaM is integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.`, 20: `NrnCaP is cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.`, 21: `NrnCaD is cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.`, 22: `CaDiff is difference between CaP - CaD -- this is the error signal that drives error-driven learning.`, 23: `RLRate is recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).`, 24: `GnmdaSyn is integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant`, 25: `Gnmda is net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`, 26: `GnmdaLrn is learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning`, 27: `GnmdaMaint is net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential`, 28: `NmdaCa is NMDA calcium computed from GnmdaLrn, drives learning via CaM`, 29: `Gvgcc is conductance (via Ca) for VGCC voltage gated calcium channels`, 30: `VgccM is activation gate of VGCC channels`, 31: `VgccH inactivation gate of VGCC channels`, 32: `VgccCa is instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc`, 33: `VgccCaInt time-integrated VGCC calcium flux -- this is actually what drives learning`, 34: `Burst is 5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers`, 35: `BurstPrv is previous Burst bursting activation from prior time step -- used for context-based learning`, 36: `CtxtGe is context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`, 37: `CtxtGeRaw is raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.`, 38: `CtxtGeOrig is original CtxtGe value prior to any decay factor -- updates at end of plus phase.`, 39: `GgabaB is net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential.`, 40: `GABAB is GABA-B / GIRK activation -- time-integrated value with rise and decay time constants`, 41: `GABABx is GABA-B / GIRK internal drive variable -- gets the raw activation and decays`, 42: `Gak is conductance of A-type K potassium channels`, 43: `SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)`, 44: `GknaMed is conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick), which produces accommodation / adaptation of firing`, 45: `GknaSlow is conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack), which produces accommodation / adaptation of firing`, 46: `Gkir is the conductance of the potassium (K) inwardly rectifying channel, which is strongest at low membrane potentials. Can be modulated by DA.`, 47: `KirM is the Kir potassium (K) inwardly rectifying gating value`, 48: `Gsk is Calcium-gated potassium channel conductance as a function of Gbar * SKCaM.`, 49: `SKCaIn is intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. replenishment is a function of spiking activity being below a threshold`, 50: `SKCaR released amount of intracellular calcium, from SKCaIn, as a function of spiking events. this can bind to SKCa channels and drive K currents.`, 51: `SKCaM is Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams.`, 52: `Gmahp is medium time scale AHP conductance`, 53: `MahpN is accumulating voltage-gated gating value for the medium time scale AHP`, 54: `Gsahp is slow time scale AHP conductance`, 55: `SahpCa is slowly accumulating calcium value that drives the slow AHP`, 56: `SahpN is the sAHP gating value`, 57: `ActM is ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.`, 58: `ActP is ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations.`, 59: `SpkSt1 is the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function. Used for example in hippocampus for CA3, CA1 learning`, 60: `SpkSt2 is the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function. Used for example in hippocampus for CA3, CA1 learning`, 61: `SpkMax is maximum CaSpkP across one theta cycle time window (max of SpkMaxCa) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating. Also useful for visualization of peak activity of neurons.`, 62: `SpkMaxCa is Ca integrated like CaSpkP but only starting at MaxCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover. This is the input to SpkMax`, 63: `SpkBin has aggregated spikes within 50 msec bins across the theta cycle, for computing synaptic calcium efficiently`, 64: ``, 65: ``, 66: ``, 67: ``, 68: ``, 69: ``, 70: ``, 71: `SpkPrv is final CaSpkD activation state at end of previous theta cycle. used for specialized learning mechanisms that operate on delayed sending activations.`, 72: `GeNoise is integrated noise excitatory conductance, added into Ge`, 73: `GeNoiseP is accumulating poisson probability factor for driving excitatory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda as function of noise firing rate.`, 74: `GiNoise is integrated noise inhibotyr conductance, added into Gi`, 75: `GiNoiseP is accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda as a function of noise firing rate.`, 76: `GeExt is extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc`, 77: `GeRaw is raw excitatory conductance (net input) received from senders = current raw spiking drive`, 78: `GeSyn is time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over pathways -- does *not* include Gbar.E`, 79: `GiRaw is raw inhibitory conductance (net input) received from senders = current raw spiking drive`, 80: `GiSyn is time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over pathways -- does *not* include Gbar.I. This is added with computed FFFB inhibition to get the full inhibition in Gi`, 81: `GeInt is integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive`, 82: `GeIntNorm is normalized GeInt value (divided by the layer maximum) -- this is used for learning in layers that require learning on subthreshold activity`, 83: `GiInt is integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive`, 84: `GModRaw is raw modulatory conductance, received from GType = ModulatoryG pathways`, 85: `GModSyn is syn integrated modulatory conductance, received from GType = ModulatoryG pathways`, 86: `SMaintP is accumulating poisson probability factor for driving self-maintenance by simulating a population of mutually interconnected neurons. multiply times uniform random deviate at each time step, until it gets below the target threshold based on poisson lambda based on accumulating self maint factor`, 87: `GMaintRaw is raw maintenance conductance, received from GType = MaintG pathways`, 88: `GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.`, 89: `NrnFlags are bit flags for binary state variables, which are converted to / from uint32. These need to be in Vars because they can be differential per data (for ext inputs) and are writable (indexes are read only).`}
+
+var _NeuronVarsMap = map[NeuronVars]string{0: `Spike`, 1: `Spiked`, 2: `Act`, 3: `ActInt`, 4: `Ge`, 5: `Gi`, 6: `Gk`, 7: `Inet`, 8: `Vm`, 9: `VmDend`, 10: `ISI`, 11: `ISIAvg`, 12: `Ext`, 13: `Target`, 14: `CaSpkM`, 15: `CaSpkP`, 16: `CaSpkD`, 17: `CaSpkPM`, 18: `CaLrn`, 19: `NrnCaM`, 20: `NrnCaP`, 21: `NrnCaD`, 22: `CaDiff`, 23: `RLRate`, 24: `GnmdaSyn`, 25: `Gnmda`, 26: `GnmdaLrn`, 27: `GnmdaMaint`, 28: `NmdaCa`, 29: `Gvgcc`, 30: `VgccM`, 31: `VgccH`, 32: `VgccCa`, 33: `VgccCaInt`, 34: `Burst`, 35: `BurstPrv`, 36: `CtxtGe`, 37: `CtxtGeRaw`, 38: `CtxtGeOrig`, 39: `GgabaB`, 40: `GABAB`, 41: `GABABx`, 42: `Gak`, 43: `SSGiDend`, 44: `GknaMed`, 45: `GknaSlow`, 46: `Gkir`, 47: `KirM`, 48: `Gsk`, 49: `SKCaIn`, 50: `SKCaR`, 51: `SKCaM`, 52: `Gmahp`, 53: `MahpN`, 54: `Gsahp`, 55: `SahpCa`, 56: `SahpN`, 57: `ActM`, 58: `ActP`, 59: `SpkSt1`, 60: `SpkSt2`, 61: `SpkMax`, 62: `SpkMaxCa`, 63: `SpkBin0`, 64: `SpkBin1`, 65: `SpkBin2`, 66: `SpkBin3`, 67: `SpkBin4`, 68: `SpkBin5`, 69: `SpkBin6`, 70: `SpkBin7`, 71: `SpkPrv`, 72: `GeNoise`, 73: `GeNoiseP`, 74: `GiNoise`, 75: `GiNoiseP`, 76: `GeExt`, 77: `GeRaw`, 78: `GeSyn`, 79: `GiRaw`, 80: `GiSyn`, 81: `GeInt`, 82: `GeIntNorm`, 83: `GiInt`, 84: `GModRaw`, 85: `GModSyn`, 86: `SMaintP`, 87: `GMaintRaw`, 88: `GMaintSyn`, 89: `NrnFlags`}
 
 // String returns the string representation of this NeuronVars value.
 func (i NeuronVars) String() string { return enums.String(i, _NeuronVarsMap) }
@@ -437,7 +477,11 @@ func (i *NeuronVars) UnmarshalText(text []byte) error {
 var _NeuronAvgVarsValues = []NeuronAvgVars{0, 1, 2, 3, 4, 5, 6}
 
 // NeuronAvgVarsN is the highest valid value for type NeuronAvgVars, plus one.
+//
+//gosl:start
 const NeuronAvgVarsN NeuronAvgVars = 7
+
+//gosl:end
 
 var _NeuronAvgVarsValueMap = map[string]NeuronAvgVars{`ActAvg`: 0, `AvgPct`: 1, `TrgAvg`: 2, `DTrgAvg`: 3, `AvgDif`: 4, `GeBase`: 5, `GiBase`: 6}
 
@@ -480,7 +524,11 @@ func (i *NeuronAvgVars) UnmarshalText(text []byte) error {
 var _NeuronIndexVarsValues = []NeuronIndexVars{0, 1, 2}
 
 // NeuronIndexVarsN is the highest valid value for type NeuronIndexVars, plus one.
+//
+//gosl:start
 const NeuronIndexVarsN NeuronIndexVars = 3
+
+//gosl:end
 
 var _NeuronIndexVarsValueMap = map[string]NeuronIndexVars{`NrnNeurIndex`: 0, `NrnLayIndex`: 1, `NrnSubPool`: 2}
 
@@ -523,7 +571,11 @@ func (i *NeuronIndexVars) UnmarshalText(text []byte) error {
 var _PathTypesValues = []PathTypes{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
 
 // PathTypesN is the highest valid value for type PathTypes, plus one.
+//
+//gosl:start
 const PathTypesN PathTypes = 12
+
+//gosl:end
 
 var _PathTypesValueMap = map[string]PathTypes{`ForwardPath`: 0, `BackPath`: 1, `LateralPath`: 2, `InhibPath`: 3, `CTCtxtPath`: 4, `RWPath`: 5, `TDPredPath`: 6, `BLAPath`: 7, `HipPath`: 8, `VSPatchPath`: 9, `VSMatrixPath`: 10, `DSMatrixPath`: 11}
 
@@ -566,7 +618,11 @@ func (i *PathTypes) UnmarshalText(text []byte) error {
 var _GPLayerTypesValues = []GPLayerTypes{0, 1, 2}
 
 // GPLayerTypesN is the highest valid value for type GPLayerTypes, plus one.
+//
+//gosl:start
 const GPLayerTypesN GPLayerTypes = 3
+
+//gosl:end
 
 var _GPLayerTypesValueMap = map[string]GPLayerTypes{`GPePr`: 0, `GPeAk`: 1, `GPi`: 2}
 
@@ -609,7 +665,11 @@ func (i *GPLayerTypes) UnmarshalText(text []byte) error {
 var _PoolIntVarsValues = []PoolIntVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // PoolIntVarsN is the highest valid value for type PoolIntVars, plus one.
+//
+//gosl:start
 const PoolIntVarsN PoolIntVars = 10
+
+//gosl:end
 
 var _PoolIntVarsValueMap = map[string]PoolIntVars{`PoolNeurSt`: 0, `PoolNeurEd`: 1, `PoolLayerIdx`: 2, `PoolIsLayer`: 3, `Clamped`: 4, `PoolGated`: 5, `FFsRawInt`: 6, `FBsRawInt`: 7, `GeExtRawInt`: 8, `PoolIntAvgMaxStart`: 9}
 
@@ -652,7 +712,11 @@ func (i *PoolIntVars) UnmarshalText(text []byte) error {
 var _AvgMaxValues = []AvgMax{0, 1}
 
 // AvgMaxN is the highest valid value for type AvgMax, plus one.
+//
+//gosl:start
 const AvgMaxN AvgMax = 2
+
+//gosl:end
 
 var _AvgMaxValueMap = map[string]AvgMax{`Avg`: 0, `Max`: 1}
 
@@ -691,7 +755,11 @@ func (i *AvgMax) UnmarshalText(text []byte) error { return enums.UnmarshalText(i
 var _AvgMaxPhasesValues = []AvgMaxPhases{0, 1, 2, 3}
 
 // AvgMaxPhasesN is the highest valid value for type AvgMaxPhases, plus one.
+//
+//gosl:start
 const AvgMaxPhasesN AvgMaxPhases = 4
+
+//gosl:end
 
 var _AvgMaxPhasesValueMap = map[string]AvgMaxPhases{`Cycle`: 0, `Minus`: 1, `Plus`: 2, `Prev`: 3}
 
@@ -734,7 +802,11 @@ func (i *AvgMaxPhases) UnmarshalText(text []byte) error {
 var _AvgMaxVarsValues = []AvgMaxVars{0, 1, 2, 3, 4, 5, 6}
 
 // AvgMaxVarsN is the highest valid value for type AvgMaxVars, plus one.
+//
+//gosl:start
 const AvgMaxVarsN AvgMaxVars = 7
+
+//gosl:end
 
 var _AvgMaxVarsValueMap = map[string]AvgMaxVars{`CaSpkP`: 0, `CaSpkD`: 1, `SpkMax`: 2, `Act`: 3, `GeInt`: 4, `GiInt`: 5, `AvgDif`: 6}
 
@@ -777,7 +849,11 @@ func (i *AvgMaxVars) UnmarshalText(text []byte) error {
 var _SynapseVarsValues = []SynapseVars{0, 1, 2, 3, 4}
 
 // SynapseVarsN is the highest valid value for type SynapseVars, plus one.
+//
+//gosl:start
 const SynapseVarsN SynapseVars = 5
+
+//gosl:end
 
 var _SynapseVarsValueMap = map[string]SynapseVars{`Wt`: 0, `LWt`: 1, `SWt`: 2, `DWt`: 3, `DSWt`: 4}
 
@@ -820,7 +896,11 @@ func (i *SynapseVars) UnmarshalText(text []byte) error {
 var _SynapseTraceVarsValues = []SynapseTraceVars{0, 1, 2}
 
 // SynapseTraceVarsN is the highest valid value for type SynapseTraceVars, plus one.
+//
+//gosl:start
 const SynapseTraceVarsN SynapseTraceVars = 3
+
+//gosl:end
 
 var _SynapseTraceVarsValueMap = map[string]SynapseTraceVars{`Tr`: 0, `DTr`: 1, `DiDWt`: 2}
 
@@ -863,7 +943,11 @@ func (i *SynapseTraceVars) UnmarshalText(text []byte) error {
 var _SynapseIndexVarsValues = []SynapseIndexVars{0, 1, 2}
 
 // SynapseIndexVarsN is the highest valid value for type SynapseIndexVars, plus one.
+//
+//gosl:start
 const SynapseIndexVarsN SynapseIndexVars = 3
+
+//gosl:end
 
 var _SynapseIndexVarsValueMap = map[string]SynapseIndexVars{`SynRecvIndex`: 0, `SynSendIndex`: 1, `SynPathIndex`: 2}
 

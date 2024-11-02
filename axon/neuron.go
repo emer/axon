@@ -191,9 +191,6 @@ const (
 	// Gak is conductance of A-type K potassium channels
 	Gak
 
-	// SSGi is SST+ somatostatin positive slow spiking inhibition
-	SSGi
-
 	// SSGiDend is amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)
 	SSGiDend
 
@@ -484,7 +481,6 @@ var NeuronVarProps = map[string]string{
 	// SST somatostatin inhibition factors
 
 	"Gak":      `cat:"Inhib" auto-scale:"+"`,
-	"SSGi":     `cat:"Inhib" auto-scale:"+"`,
 	"SSGiDend": `cat:"Inhib" auto-scale:"+"`,
 
 	"GknaMed":  `cat:"Inhib" auto-scale:"+"`,

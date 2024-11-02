@@ -328,7 +328,7 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
-	geEff := max(geTot, 0)
+	geEff := max(geTot, 0.0)
 	vmd := Neurons.Value(int(VmDend), int(ni), int(di))
 	Neurons.Set(ln.LrnNMDA.NMDASyn(Neurons.Value(int(GnmdaLrn), int(ni), int(di)), geEff), int(GnmdaLrn), int(ni), int(di))
 	gnmda := ln.LrnNMDA.Gnmda(Neurons.Value(int(GnmdaLrn), int(ni), int(di)), vmd)

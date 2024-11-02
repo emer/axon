@@ -418,12 +418,12 @@ func (ly *LayerParams) GatherSpikes(ctx *Context, ni, di uint32) {
 // GatherSpikesInit initializes G*Raw and G*Syn values for given neuron
 // prior to integration.
 func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(GeRaw), int(ni), int(di))
-	Neurons.Set(0, int(GiRaw), int(ni), int(di))
-	Neurons.Set(0, int(GModRaw), int(ni), int(di))
-	Neurons.Set(0, int(GModSyn), int(ni), int(di))
-	Neurons.Set(0, int(GMaintRaw), int(ni), int(di))
-	Neurons.Set(0, int(CtxtGeRaw), int(ni), int(di))
+	Neurons.Set(0.0, int(GeRaw), int(ni), int(di))
+	Neurons.Set(0.0, int(GiRaw), int(ni), int(di))
+	Neurons.Set(0.0, int(GModRaw), int(ni), int(di))
+	Neurons.Set(0.0, int(GModSyn), int(ni), int(di))
+	Neurons.Set(0.0, int(GMaintRaw), int(ni), int(di))
+	Neurons.Set(0.0, int(CtxtGeRaw), int(ni), int(di))
 	Neurons.Set(NeuronAvgs.Value(int(GeBase), int(ni)), int(GeSyn), int(ni), int(di))
 	Neurons.Set(NeuronAvgs.Value(int(GiBase), int(ni)), int(GiSyn), int(ni), int(di))
 }
@@ -461,12 +461,12 @@ func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
 // BetweenGi computes inhibition Gi between layers.
 func (ly *LayerParams) BetweenGi(ctx *Context, di uint32) {
 	lpi := ly.PoolIndex(0)
-	maxGi := Pools.Value(int(fsfffb.Gi), int(lpi), int(di))
+	maxGi := Pools.Value(int(fsfffb.TotalGi), int(lpi), int(di))
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index1)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index2)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index3)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index4)
-	Pools.Set(maxGi, int(fsfffb.Gi), int(lpi), int(di)) // our inhib is max of us and everyone in the layer pool
+	Pools.Set(maxGi, int(fsfffb.TotalGi), int(lpi), int(di)) // our inhib is max of us and everyone in the layer pool
 }
 
 // BetweenLayerGiMax returns max gi value for input maxGi vs
@@ -477,7 +477,7 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 	}
 	oly := GetLayers(uint32(layIndex))
 	opi := oly.PoolIndex(0)
-	ogi := Pools.Value(int(fsfffb.Gi), int(opi), int(di))
+	ogi := Pools.Value(int(fsfffb.TotalGi), int(opi), int(di))
 	if ogi > maxGi {
 		return ogi
 	}
@@ -496,10 +496,10 @@ func (ly *LayerParams) SubPoolGiFromSpikes(ctx *Context, lpi, pi, di uint32, lyI
 	PoolInhibSpikesFromRaw(pi, di)
 	PoolInhib(&ly.Inhib.Pool, pi, di, giMult)
 	if lyInhib {
-		PoolInhibLayerMax(pi, di, Pools.Value(int(fsfffb.Gi), int(lpi), int(di))) // note: this requires lpl inhib to have been computed before!
+		PoolInhibLayerMax(pi, di, Pools.Value(int(fsfffb.TotalGi), int(lpi), int(di))) // note: this requires lpl inhib to have been computed before!
 	} else {
-		PoolInhibPoolMax(pi, di, Pools.Value(int(fsfffb.Gi), int(pi), int(di))) // display only
-		PoolInhibSaveOrig(lpi, di)                                              // effective GiOrig
+		PoolInhibPoolMax(pi, di, Pools.Value(int(fsfffb.TotalGi), int(pi), int(di))) // display only
+		PoolInhibSaveOrig(lpi, di)                                                   // effective GiOrig
 	}
 }
 
@@ -684,7 +684,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni, di uint32, saveVal float3
 		Neurons.Set(saveVal, int(GeExt), int(ni), int(di))
 		orig := Neurons.Value(int(CtxtGeOrig), int(ni), int(di))
 		if orig < 0.05 {
-			Neurons.Set(0, int(Ge), int(ni), int(di))
+			Neurons.Set(0.0, int(Ge), int(ni), int(di))
 		}
 	default:
 	}
@@ -716,7 +716,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 		extraSyn = md
 	case BLALayer:
 		// modulatory pathway from PTp is only used so we can modulate by da
-		md := max(-GlobalScalars.Value(int(GvDA), int(di)), 0) // ext is modulated by negative da
+		md := max(-GlobalScalars.Value(int(GvDA), int(di)), 0.0) // ext is modulated by negative da
 		extraRaw = md * nrnGModRaw * ly.Acts.Dend.ModGain
 		extraSyn = md * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
@@ -746,11 +746,10 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
 	giMult := LayerStates.Value(int(LayerGiMult), int(ly.Index), int(di))
-	gi := giMult*Pools.Value(int(fsfffb.Gi), int(pi), int(di)) + Neurons.Value(int(GiSyn), int(ni), int(di)) + Neurons.Value(int(GiNoise), int(ni), int(di)) + ly.Learn.NeuroMod.GiFromACh(GlobalScalars.Value(int(GvACh), int(di)))
+	gi := giMult*Pools.Value(int(fsfffb.TotalGi), int(pi), int(di)) + Neurons.Value(int(GiSyn), int(ni), int(di)) + Neurons.Value(int(GiNoise), int(ni), int(di)) + ly.Learn.NeuroMod.GiFromACh(GlobalScalars.Value(int(GvACh), int(di)))
 	ssgi := Pools.Value(int(fsfffb.SSGi), int(pi), int(di))
 	Neurons.Set(gi, int(Gi), int(ni), int(di))
-	Neurons.Set(ssgi, int(SSGi), int(ni), int(di))
-	Neurons.Set(0, int(SSGiDend), int(ni), int(di))
+	Neurons.Set(0.0, int(SSGiDend), int(ni), int(di))
 	if ctx.PlusPhase.IsTrue() && ly.Type == PulvinarLayer {
 		ext := Neurons.Value(int(Ext), int(ni), int(di)) // nonDrivePct
 		Neurons.Set(ext*ly.Acts.Dend.SSGi*ssgi, int(SSGiDend), int(ni), int(di))
@@ -852,7 +851,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 			actAvg := PoolAvgMax(AMCaSpkP, AMCycle, Avg, lpi, di)
 			thr := ly.Bursts.ThrFromAvgMax(actAvg, actMax)
 			if Neurons.Value(int(CaSpkP), int(ni), int(di)) < thr {
-				Neurons.Set(0, int(Burst), int(ni), int(di))
+				Neurons.Set(0.0, int(Burst), int(ni), int(di))
 			}
 		}
 	case PTPredLayer, CTLayer:
@@ -876,8 +875,8 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	case BLALayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			if hasRew {
-				Neurons.Set(0, int(CtxtGe), int(ni), int(di))
-				Neurons.Set(0, int(CtxtGeOrig), int(ni), int(di))
+				Neurons.Set(0.0, int(CtxtGe), int(ni), int(di))
+				Neurons.Set(0.0, int(CtxtGeOrig), int(ni), int(di))
 			} else if GlobalScalars.Value(int(GvACh), int(di)) > 0.1 {
 				Neurons.Set(Neurons.Value(int(CtxtGeRaw), int(ni), int(di)), int(CtxtGe), int(ni), int(di))
 				Neurons.Set(Neurons.Value(int(CtxtGe), int(ni), int(di)), int(CtxtGeOrig), int(ni), int(di))
@@ -1158,17 +1157,17 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
 func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(Burst), int(ni), int(di)), int(BurstPrv), int(ni), int(di))
 	Neurons.Set(Neurons.Value(int(CaSpkD), int(ni), int(di)), int(SpkPrv), int(ni), int(di))
-	Neurons.Set(0, int(SpkMax), int(ni), int(di))
-	Neurons.Set(0, int(SpkMaxCa), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkMax), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkMaxCa), int(ni), int(di))
 
-	Neurons.Set(0, int(SpkBin0), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin1), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin2), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin3), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin4), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin5), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin6), int(ni), int(di))
-	Neurons.Set(0, int(SpkBin7), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin0), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin1), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin2), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin3), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin4), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin5), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin6), int(ni), int(di))
+	Neurons.Set(0.0, int(SpkBin7), int(ni), int(di))
 
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt

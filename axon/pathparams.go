@@ -283,6 +283,7 @@ func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uin
 	// note: Syn happens via NMDA in Act
 	case ContextG:
 		Neurons.SetAdd(gRaw, int(CtxtGeRaw), int(ni), int(di))
+	default:
 	}
 }
 
@@ -313,7 +314,8 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 		ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
 		bi := pt.Indexes.GBufSt + pt.Com.WriteIndex(ri-recvNeurSt, di, ctx.CyclesTotal, pt.Indexes.RecvNeurN, maxd)
 		sv := int32(sendVal * Synapses.Value(int(Wt), int(syni)))
-		atomic.AddInt32(&PathGBuf.Values[bi], sv)
+		// atomic.AddInt32(&PathGBuf.Values[bi], sv)
+		atomic.AddInt32(PathGBuf.ValuePtr(int(bi), int(ri)), sv) // todo: fix indexes
 	}
 }
 

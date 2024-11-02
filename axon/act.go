@@ -947,7 +947,6 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	Neurons.Set(0, int(GModRaw), int(ni), int(di))
 	Neurons.Set(0, int(GModSyn), int(ni), int(di))
 	Neurons.Set(0, int(GMaintRaw), int(ni), int(di))
-	Neurons.Set(0, int(SSGi), int(ni), int(di))
 	Neurons.Set(0, int(SSGiDend), int(ni), int(di))
 	Neurons.Set(0, int(GeExt), int(ni), int(di))
 
@@ -1027,7 +1026,6 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(GMaintRaw), int(ni), int(di))
 	Neurons.Set(0, int(GMaintSyn), int(ni), int(di))
 
-	Neurons.Set(0, int(SSGi), int(ni), int(di))
 	Neurons.Set(0, int(SSGiDend), int(ni), int(di))
 
 	Neurons.Set(0, int(Burst), int(ni), int(di))
@@ -1171,7 +1169,7 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 // GeFromSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
-	Neurons.Set(0, int(GeExt), int(ni), int(di))
+	Neurons.Set(0.0, int(GeExt), int(ni), int(di))
 	geS := geSyn
 	geE := geExt
 	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ni, di, NeuronHasExt) {
@@ -1187,7 +1185,7 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 
 	Neurons.Set(geS+geE, int(Ge), int(ni), int(di))
 	if Neurons.Value(int(Ge), int(ni), int(di)) < 0.0 {
-		Neurons.Set(0, int(Ge), int(ni), int(di))
+		Neurons.Set(0.0, int(Ge), int(ni), int(di))
 	}
 	ac.AddGeNoise(ctx, ni, di)
 }

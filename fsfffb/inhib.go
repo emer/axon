@@ -50,8 +50,8 @@ const (
 	// SSGi is the overall slow-spiking inhibitory conductance.
 	SSGi
 
-	// Gi is the overall inhibitory conductance = FSGi + SSGi.
-	Gi
+	// TotalGi is the overall inhibitory conductance = FSGi + SSGi.
+	TotalGi
 
 	// GiOrig is the original value of the inhibition (before pool or other effects).
 	GiOrig
@@ -66,25 +66,6 @@ const (
 	// FFAvgPrv is the previous theta cycle FFAvg value, for the FFPrv factor.
 	// Updated in the Decay function that is called at start of new State / Trial.
 	FFAvgPrv
-)
-
-// InhibIntVars are int32 inhibitory variables for computing fsfffb inhibition.
-// Note: we combine these with PoolIntVars in axon.
-type InhibIntVars int32 //enums:enum
-
-const (
-	// FFsRawInt is the int32 atomic add compatible integration of FFsRaw.
-	FFsRawInt InhibIntVars = iota
-
-	// FBsRawInt is the int32 atomic add compatible integration of FBsRaw.
-	FBsRawInt
-
-	// GeExtRawInt is the int32 atomic add compatible integration of GeExtRaw.
-	GeExtRawInt
-
-	// Clamped if true (!=0), this layer is hard-clamped and should
-	// use GeExts exclusively for PV.
-	Clamped
 )
 
 //gosl:end

@@ -160,7 +160,7 @@ func (sc *SynComParams) ReadIndex(rnIndex, di uint32, cycTot int32, nRecvNeurs, 
 // For encoding, bake this into scale factor in SendSpike, and
 // cast the result to int32.
 func (sc *SynComParams) FloatToIntFactor() float32 {
-	return float32(1 << 24) // leaves 7 bits = 128 to cover any extreme cases
+	return float32(uint32(1) << 24) // leaves 7 bits = 128 to cover any extreme cases
 	// this is sufficient to pass existing tests at std tolerances.
 }
 

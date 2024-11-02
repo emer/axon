@@ -126,7 +126,7 @@ const (
 	PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(int32(AvgMaxVarsN) * int32(AvgMaxN))
 )
 
-// mapping to neuron vars
+// avgMaxToNeuron is the mapping from AvgMaxVars to neuron vars.
 var avgMaxToNeuron = [AMAvgDif]NeuronVars{CaSpkP, CaSpkD, SpkMax, Act, GeInt, GiInt}
 
 // AvgMaxVarIdx returns the variable index for accessing
