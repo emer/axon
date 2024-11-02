@@ -227,22 +227,19 @@ func (nt *Network) SpkSt2(ctx *Context) {
 func (nt *Network) DWt(ctx *Context) {
 	nix := GetNetworkIxs(0)
 	sd := int(nix.NSyns * ctx.NData)
-	RunDWtSyn(sd) // todo: iterate over groups as needed
-	RunDWtFromDi(int(nix.NSyns))
+	RunDWtSyn(sd)
+	RunDWtFromDiSyn(int(nix.NSyns))
 }
 
 // WtFromDWt updates the weights from delta-weight changes.
 // Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 func (nt *Network) WtFromDWt(ctx *Context) {
-	// todo: fixme
-	// nix := GetNetworkIxs(0)
-	// nn := nix.NNeurons
-	// RunDWtSubMean(nn)
-	// RunWtFromDWt(int(nix.NSyns))
-	//
-	//	if ctx.SlowInc() {
-	//		nt.SlowAdapt(ctx)
-	//	}
+	nix := GetNetworkIxs(0)
+	RunDWtSubMeanPath(int(nix.NPaths))
+	RunWtFromDWtSyn(int(nix.NSyns))
+	if ctx.SlowInc() {
+		nt.SlowAdapt(ctx)
+	}
 }
 
 //gosl:start
@@ -313,7 +310,7 @@ func CyclePost(i uint32) { //gosl:kernel
 	Layers[li].CyclePost(ctx, di)
 }
 
-// CycleInc increments the cycle counter.
+// CycleInc is the kernel over 1 call to increment the cycle counter.
 func CycleInc(i uint32) { //gosl:kernel
 	if i != 0 {
 		return
@@ -322,7 +319,8 @@ func CycleInc(i uint32) { //gosl:kernel
 	ctx.CycleInc()
 }
 
-// ApplyExtsNeuron does neuron-level applying of the Exts.
+// ApplyExtsNeuron is the kernel over Neurons * Data to
+// apply Ext external input to the neurons receiving inputs.
 func ApplyExtsNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -331,7 +329,8 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 	Layers[li].ApplyExtsNeuron(ctx, ni, di)
 }
 
-// MinusPhasePool does pool-level updating after end of minus phase.
+// MinusPhasePool is the kernel over Pools * Data to
+// do pool-level updating after end of minus phase.
 func MinusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -340,7 +339,8 @@ func MinusPhasePool(i uint32) { //gosl:kernel
 	Layers[li].MinusPhasePool(ctx, pi, di)
 }
 
-// MinusPhaseNeuron does neuron-level updating after end of minus phase.
+// MinusPhaseNeuron is the kernel over Neurons * Data to
+// do neuron-level updating after end of minus phase.
 func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -349,7 +349,8 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	Layers[li].MinusPhaseNeuron(ctx, ni, di)
 }
 
-// PlusPhaseStartNeuron does neuron-level updating at start of plus phase.
+// PlusPhaseStartNeuron is the kernel over Neurons * Data to
+// do neuron-level updating at start of plus phase.
 func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -358,7 +359,8 @@ func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
 }
 
-// PlusPhasePool does pool-level updating after end of plus phase.
+// PlusPhasePool is the kernel over Pools * Data to
+// do pool-level updating after end of plus phase.
 func PlusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -367,7 +369,8 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 	Layers[li].PlusPhasePool(ctx, pi, di)
 }
 
-// PlusPhaseNeuron does neuron-level updating after end of plus phase.
+// PlusPhaseNeuron is the kernel over Neurons * Data to
+// do neuron-level updating after end of plus phase.
 func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -376,8 +379,8 @@ func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	Layers[li].PlusPhaseNeuron(ctx, ni, di)
 }
 
-// DWtSyn is the kernel over Synapses * Data for computing weight change
-// (learning).
+// DWtSyn is the kernel over Synapses * Data to
+// compute weight changes (learning).
 func DWtSyn(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
@@ -388,11 +391,27 @@ func DWtSyn(i uint32) { //gosl:kernel
 	Paths[pti].DWtSyn(ctx, syni, si, ri, di)
 }
 
-// DWtFromDi is the kernel over Synapses for integrating DWt over Di.
-func DWtFromDi(syni uint32) { //gosl:kernel
+// DWtFromDiSyn is the kernel over Synapses (not * Data) to
+// integrate DWt over Di data parallel values.
+func DWtFromDiSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	pti := SynapseIxs.Value(int(SynPathIndex), int(syni))
 	Paths[pti].DWtFromDi(ctx, syni)
+}
+
+// DWtSubMeanPath is the kernel over Paths to
+// compute DWt - mean(DWt).
+func DWtSubMeanPath(pti uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	Paths[pti].DWtSubMean(ctx, pti)
+}
+
+// WtFromDWtSyn is the kernel over Synapses (not * Data) to
+// compute Wt from DWt weight changes.
+func WtFromDWtSyn(syni uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	pti := SynapseIxs.Value(int(SynPathIndex), int(syni))
+	Paths[pti].WtFromDWtSyn(ctx, syni)
 }
 
 //gosl:end

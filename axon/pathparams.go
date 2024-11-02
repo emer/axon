@@ -46,18 +46,45 @@ type PathIndexes struct {
 	// PathIndex is the index of the pathway in global path list: [Layer][SendPaths]
 	PathIndex uint32
 
-	// index of the receiving layer in global list of layers
-	RecvLayer   uint32
-	RecvNeurSt  uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
-	RecvNeurN   uint32 // number of neurons in recv layer
-	SendLayer   uint32 // index of the sending layer in global list of layers
-	SendNeurSt  uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
-	SendNeurN   uint32 // number of neurons in send layer
-	SynapseSt   uint32 // start index into global Synapse array: [Layer][SendPaths][Synapses]
-	SendConSt   uint32 // start index into global PathSendCon array: [Layer][SendPaths][SendNeurons]
-	RecvConSt   uint32 // start index into global PathRecvCon array: [Layer][RecvPaths][RecvNeurons]
-	RecvSynSt   uint32 // start index into global sender-based Synapse index array: [Layer][SendPaths][Synapses]
-	NPathNeurSt uint32 // start NPathNeur index into PathGBuf, PathGSyns global arrays: [Layer][RecvPaths][RecvNeurons]
+	// RecvLayer is the index of the receiving layer in global list of layers.
+	RecvLayer uint32
+
+	// RecvNeurSt is the starting index of neurons in recv layer,
+	// so we don't need layer to get to neurons.
+	RecvNeurSt uint32
+
+	// RecvNeurN is the number of neurons in recv layer.
+	RecvNeurN uint32
+
+	// SendLayer is the index of the sending layer in global list of layers.
+	SendLayer uint32
+
+	// SendNeurSt is the starting index of neurons in sending layer,
+	// so we don't need layer to get to neurons.
+	SendNeurSt uint32
+
+	// SendNeurN is the number of neurons in send layer
+	SendNeurN uint32
+
+	// SynapseSt is the start index into global Synapse array.
+	// [Layer][SendPaths][Synapses].
+	SynapseSt uint32
+
+	// SendConSt is the start index into global PathSendCon array.
+	// [Layer][SendPaths][SendNeurons]
+	SendConSt uint32
+
+	// RecvConSt is the start index into global PathRecvCon array.
+	// [Layer][RecvPaths][RecvNeurons]
+	RecvConSt uint32
+
+	// RecvSynSt is the start index into global sender-based Synapse index array.
+	// [Layer][SendPaths][Synapses]
+	RecvSynSt uint32
+
+	// NPathNeurSt is the start NPathNeur index into PathGBuf, PathGSyns global arrays.
+	// [Layer][RecvPaths][RecvNeurons]
+	NPathNeurSt uint32
 }
 
 // RecvNIndexToLayIndex converts a neuron's index in network level global list of all neurons
@@ -677,6 +704,46 @@ func (pt *PathParams) DWtFromDi(ctx *Context, syni uint32) {
 	Synapses.SetAdd(dwt, int(DWt), int(syni))
 }
 
+// DWtSubMean subtracts the mean from any pathways that have SubMean > 0.
+// This is called on *receiving* pathways, prior to WtFromDwt.
+func (pt *PathParams) DWtSubMean(ctx *Context, pti uint32) {
+	if pt.Learn.Learn.IsFalse() {
+		return
+	}
+	sm := pt.Learn.Trace.SubMean
+	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
+		return
+	}
+	ri := pt.Indexes.RecvLayer
+	lni := ri - pt.Indexes.RecvNeurSt
+	cni := pt.Indexes.RecvConSt + lni
+	synn := int(pt.Indexes.RecvSynSt + PathRecvCon.Value(int(StartNN), int(cni)))
+	if synn < 1 {
+		return
+	}
+	synst := pt.Indexes.RecvSynSt + PathRecvCon.Value(int(StartOff), int(cni))
+	sumDWt := float32(0)
+	nnz := 0 // non-zero
+	for ci := range synn {
+		syni := RecvSynIxs.Value(int(synst) + ci)
+		dw := Synapses.Value(int(DWt), int(syni))
+		if dw != 0 {
+			sumDWt += dw
+			nnz++
+		}
+	}
+	if nnz <= 1 {
+		return
+	}
+	sumDWt /= float32(nnz)
+	for ci := range synn {
+		syni := RecvSynIxs.Value(int(synst) + ci)
+		if Synapses.Value(int(DWt), int(syni)) != 0 {
+			Synapses.SetAdd(-sm*sumDWt, int(DWt), int(syni))
+		}
+	}
+}
+
 // WtFromDWtSyn is the overall entry point for updating weights from weight changes.
 func (pt *PathParams) WtFromDWtSyn(ctx *Context, syni uint32) {
 	switch pt.PathType {
@@ -701,7 +768,7 @@ func (pt *PathParams) WtFromDWtSynCortex(ctx *Context, syni uint32) {
 	lwt := Synapses.Value(int(LWt), int(syni))
 
 	pt.SWts.WtFromDWt(&wt, &lwt, dwt, Synapses.Value(int(SWt), int(syni)))
-	Synapses.Set(0, int(DWt), int(syni))
+	Synapses.Set(0.0, int(DWt), int(syni))
 	Synapses.Set(wt, int(Wt), int(syni))
 	Synapses.Set(lwt, int(LWt), int(syni))
 	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
@@ -715,10 +782,10 @@ func (pt *PathParams) WtFromDWtSynNoLimits(ctx *Context, syni uint32) {
 	}
 	Synapses.SetAdd(dwt, int(Wt), int(syni))
 	if Synapses.Value(int(Wt), int(syni)) < 0 {
-		Synapses.Set(0, int(Wt), int(syni))
+		Synapses.Set(0.0, int(Wt), int(syni))
 	}
 	Synapses.Set(Synapses.Value(int(Wt), int(syni)), int(LWt), int(syni))
-	Synapses.Set(0, int(DWt), int(syni))
+	Synapses.Set(0.0, int(DWt), int(syni))
 }
 
-//gosl:end pathparams
+//gosl:end

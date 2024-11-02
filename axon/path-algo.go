@@ -11,42 +11,6 @@ package axon
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
-// DWtSubMean subtracts the mean from any pathways that have SubMean > 0.
-// This is called on *receiving* pathways, prior to WtFromDwt.
-func (pj *Path) DWtSubMean(ctx *Context, ri uint32) {
-	if pj.Params.Learn.Learn.IsFalse() {
-		return
-	}
-	sm := pj.Params.Learn.Trace.SubMean
-	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
-		return
-	}
-	syIndexes := pj.RecvSynIxs(ri - pj.Recv.NeurStIndex)
-	if len(syIndexes) < 1 {
-		return
-	}
-	sumDWt := float32(0)
-	nnz := 0 // non-zero
-	for _, syi := range syIndexes {
-		syni := pj.SynStIndex + syi
-		dw := Synapses.Value(int(DWt), int(syni))
-		if dw != 0 {
-			sumDWt += dw
-			nnz++
-		}
-	}
-	if nnz <= 1 {
-		return
-	}
-	sumDWt /= float32(nnz)
-	for _, syi := range syIndexes {
-		syni := pj.SynStIndex + syi
-		if Synapses.Value(int(DWt), int(syni)) != 0 {
-			Synapses.SetAdd(-sm*sumDWt, int(DWt), int(syni))
-		}
-	}
-}
-
 // WtFromDWt computes the weight change (learning), based on
 // synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.

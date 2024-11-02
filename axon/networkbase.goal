@@ -51,59 +51,38 @@ type NetworkIndexes struct {
 	// [Network.Build]. This determines the size of the spike sending delay buffers.
 	MaxDelay uint32 `edit:-"-"`
 
-	// number of layers in the network
+	// NLayers is the number of layers in the network.
 	NLayers uint32 `edit:"-"`
 
-	// total number of neurons
+	// NNeurons is the total number of neurons.
 	NNeurons uint32 `edit:"-"`
 
-	// total number of pools excluding * MaxData factor
+	// NPools is the total number of pools.
 	NPools uint32 `edit:"-"`
 
-	// total number of synapses
+	// NPaths is the total number of paths.
+	NPaths uint32 `edit:"-"`
+
+	// NSyns is the total number of synapses.
 	NSyns uint32 `edit:"-"`
 
-	// maximum size in float32 (4 bytes) of a GPU buffer -- needed for GPU access
-	GPUMaxBuffFloats uint32 `edit:"-"`
-
-	// total number of SynCa banks of GPUMaxBufferBytes arrays in GPU
-	GPUSynCaBanks uint32 `edit:"-"`
-
-	// total number of .Rubicon Drives / positive USs
+	// RubiconNPosUSs is the total number of Rubicon Drives / positive USs.
 	RubiconNPosUSs uint32 `edit:"-"`
 
-	// total number of .Rubicon Costs
+	// RubiconNCosts is the total number of Rubicon Costs.
 	RubiconNCosts uint32 `edit:"-"`
 
-	// total number of .Rubicon Negative USs
+	// RubiconNNegUSs is the total number of .Rubicon Negative USs.
 	RubiconNNegUSs uint32 `edit:"-"`
 
-	pad uint32
-}
+	// todo: remove these: need a generic solution to larger buffers:
 
-// LayerIndexIsValid returns true if the layer index is valid (< NLayers)
-func (ix *NetworkIndexes) LayerIndexIsValid(li uint32) bool {
-	return (li < ix.NLayers)
-}
+	// GPUMaxBuffFloats is the maximum size in float32 (4 bytes) of a GPU buffer
+	// needed for GPU access.
+	GPUMaxBuffFloats uint32 `edit:"-"`
 
-// NeurIndexIsValid returns true if the neuron index is valid (< NNeurons)
-func (ix *NetworkIndexes) NeurIndexIsValid(ni uint32) bool {
-	return (ni < ix.NNeurons)
-}
-
-// PoolIndexIsValid returns true if the pool index is valid (< NPools)
-func (ix *NetworkIndexes) PoolIndexIsValid(pi uint32) bool {
-	return (pi < ix.NPools)
-}
-
-// PoolDataIndexIsValid returns true if the pool*data index is valid (< NPools*MaxData)
-func (ix *NetworkIndexes) PoolDataIndexIsValid(pi uint32) bool {
-	return (pi < ix.NPools*ix.MaxData)
-}
-
-// SynIndexIsValid returns true if the synapse index is valid (< NSyns)
-func (ix *NetworkIndexes) SynIndexIsValid(si uint32) bool {
-	return (si < ix.NSyns)
+	// GPUSyncCaBanks is the total number of SynCa banks of GPUMaxBufferBytes arrays in GPU.
+	GPUSynCaBanks uint32 `edit:"-"`
 }
 
 //gosl:end
@@ -140,10 +119,10 @@ type Network struct {
 	//// Global state below
 	//////// Params
 
-	// LayParams are all the layer parameters.
+	// LayParams are all the layer parameters. [NLayers]
 	LayParams []LayerParams `display:"-"`
 
-	// PathParams are all the path parameters.
+	// PathParams are all the path parameters, in sending order. [NPaths]
 	PathParams []PathParams `display:"-"`
 
 	//////// Indexes
@@ -711,6 +690,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nix.NNeurons = uint32(totNeurons)
 	nix.NLayers = uint32(nLayers)
 	nix.NPools = uint32(totPools)
+	nix.NPaths = uint32(totPaths)
 	nix.RubiconNPosUSs = nt.Rubicon.NPosUSs
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
