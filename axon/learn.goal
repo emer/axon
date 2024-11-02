@@ -673,8 +673,7 @@ func (tp *TraceParams) Update() {
 // TrFromCa returns updated trace factor as function of a
 // synaptic calcium update factor and current trace
 func (tp *TraceParams) TrFromCa(tr float32, ca float32) float32 {
-	tr += tp.Dt * (ca - tr)
-	return tr
+	return tr + tp.Dt*(ca-tr)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

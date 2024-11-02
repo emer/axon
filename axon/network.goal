@@ -94,6 +94,150 @@ func (nt *Network) Cycle() {
 	// }
 }
 
+// InitExt initializes external input state.
+// Call prior to applying external inputs to layers.
+func (nt *Network) InitExt(ctx *Context) {
+	// note: important to do this for GPU
+	// to ensure partial inputs work the same way on CPU and GPU.
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.InitExt(ctx)
+	}
+}
+
+// ApplyExts applies external inputs to layers, based on values
+// that were set in prior layer-specific ApplyExt calls.
+// This does nothing on the CPU, but is critical for the GPU,
+// and should be added to all sims where GPU will be used.
+func (nt *Network) ApplyExts(ctx *Context) {
+	if !UseGPU {
+		return
+	}
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	RunApplyExtsNeuron(nd)
+}
+
+// MinusPhase does updating after end of minus phase.
+func (nt *Network) MinusPhase(ctx *Context) {
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunMinusPhasePool(pd)
+	RunMinusPhaseNeuron(nd)
+	nt.MinusPhasePost(ctx)
+	// todo:
+	// nt.GPU.SyncStateToGPU()
+}
+
+// MinusPhasePost does special CPU post processing.
+func (nt *Network) MinusPhasePost(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.MinusPhasePost(ctx)
+	}
+}
+
+// PlusPhaseStart does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (nt *Network) PlusPhaseStart(ctx *Context) {
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	RunPlusPhaseStartNeuron(nd)
+}
+
+// PlusPhase does updating after end of plus phase
+func (nt *Network) PlusPhase(ctx *Context) {
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunPlusPhasePool(pd)
+	RunPlusPhaseNeuron(nd)
+	nt.PlusPhasePost(ctx)
+	// todo:
+	// nt.GPU.SyncStateToGPU()
+}
+
+// PlusPhasePost happens on the CPU always.
+func (nt *Network) PlusPhasePost(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.PlusPhasePost(ctx)
+	}
+}
+
+// TargToExt sets external input Ext from target values Target
+// This is done at end of MinusPhase to allow targets to drive activity in plus phase.
+// This can be called separately to simulate alpha cycles within theta cycles, for example.
+func (nt *Network) TargToExt(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.TargToExt(ctx)
+	}
+}
+
+// ClearTargExt clears external inputs Ext that were set from target values Target.
+// This can be called to simulate alpha cycles within theta cycles, for example.
+func (nt *Network) ClearTargExt(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.ClearTargExt(ctx)
+	}
+}
+
+// SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
+func (nt *Network) SpkSt1(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.SpkSt1(ctx)
+	}
+}
+
+// SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
+func (nt *Network) SpkSt2(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.SpkSt2(ctx)
+	}
+}
+
+////////  Learn methods
+
+// DWt computes the weight change (learning) based on current running-average activation values
+func (nt *Network) DWt(ctx *Context) {
+	nix := GetNetworkIxs(0)
+	sd := int(nix.NSyns * ctx.NData)
+	RunDWtSyn(sd) // todo: iterate over groups as needed
+	RunDWtFromDi(int(nix.NSyns))
+}
+
+// WtFromDWt updates the weights from delta-weight changes.
+// Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
+func (nt *Network) WtFromDWt(ctx *Context) {
+	// todo: fixme
+	// nix := GetNetworkIxs(0)
+	// nn := nix.NNeurons
+	// RunDWtSubMean(nn)
+	// RunWtFromDWt(int(nix.NSyns))
+	// if ctx.SlowInc() {
+	// 	nt.SlowAdapt(ctx)
+	// }
+}
+
 //gosl:start
 
 //////// Kernels for all parallel CPU / GPU compute are here:
@@ -225,155 +369,27 @@ func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	Layers[li].PlusPhaseNeuron(ctx, ni, di)
 }
 
+// DWtSyn is the kernel over Synapses * Data for computing weight change
+// (learning).
+func DWtSyn(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	syni := ctx.ItemIndex(i)
+	pti := SynapseIxs[SynPathIndex, syni]
+	si := SynapseIxs[SynSendIndex, syni]
+	ri := SynapseIxs[SynRecvIndex, syni]
+	Paths[pti].DWtSyn(ctx, syni, si, ri, di)
+}
+
+// DWtFromDi is the kernel over Synapses for integrating DWt over Di.
+func DWtFromDi(syni uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	pti := SynapseIxs[SynPathIndex, syni]
+	Paths[pti].DWtFromDi(ctx, syni)
+}
+
 //gosl:end
 
-// InitExt initializes external input state.
-// Call prior to applying external inputs to layers.
-func (nt *Network) InitExt(ctx *Context) {
-	// note: important to do this for GPU
-	// to ensure partial inputs work the same way on CPU and GPU.
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.InitExt(ctx)
-	}
-}
-
-// ApplyExts applies external inputs to layers, based on values
-// that were set in prior layer-specific ApplyExt calls.
-// This does nothing on the CPU, but is critical for the GPU,
-// and should be added to all sims where GPU will be used.
-func (nt *Network) ApplyExts(ctx *Context) {
-	if !UseGPU {
-		return
-	}
-	nix := GetNetworkIxs(0)
-	nd := int(nix.NNeurons * ctx.NData)
-	RunApplyExtsNeuron(nd)
-}
-
-// MinusPhase does updating after end of minus phase.
-func (nt *Network) MinusPhase(ctx *Context) {
-	nix := GetNetworkIxs(0)
-	nd := int(nix.NNeurons * ctx.NData)
-	pd := int(nix.NPools * ctx.NData)
-	RunMinusPhasePool(pd)
-	RunMinusPhaseNeuron(nd)
-	nt.MinusPhasePost(ctx)
-	// todo:
-	// nt.GPU.SyncStateToGPU()
-}
-
-// MinusPhasePost does special CPU post processing.
-func (nt *Network) MinusPhasePost(ctx *Context) {
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.MinusPhasePost(ctx)
-	}
-}
-
-// PlusPhaseStart does updating at the start of the plus phase:
-// applies Target inputs as External inputs.
-func (nt *Network) PlusPhaseStart(ctx *Context) {
-	nix := GetNetworkIxs(0)
-	nd := int(nix.NNeurons * ctx.NData)
-	RunPlusPhaseStartNeuron(nd)
-}
-
-// PlusPhase does updating after end of plus phase
-func (nt *Network) PlusPhase(ctx *Context) {
-	nix := GetNetworkIxs(0)
-	nd := int(nix.NNeurons * ctx.NData)
-	pd := int(nix.NPools * ctx.NData)
-	RunPlusPhasePool(pd)
-	RunPlusPhaseNeuron(nd)
-	nt.PlusPhasePost(ctx)
-	// todo:
-	// nt.GPU.SyncStateToGPU()
-}
-
-// PlusPhasePost happens on the CPU always.
-func (nt *Network) PlusPhasePost(ctx *Context) {
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.PlusPhasePost(ctx)
-	}
-}
-
-// TargToExt sets external input Ext from target values Target
-// This is done at end of MinusPhase to allow targets to drive activity in plus phase.
-// This can be called separately to simulate alpha cycles within theta cycles, for example.
-func (nt *Network) TargToExt(ctx *Context) {
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.TargToExt(ctx)
-	}
-}
-
-// ClearTargExt clears external inputs Ext that were set from target values Target.
-// This can be called to simulate alpha cycles within theta cycles, for example.
-func (nt *Network) ClearTargExt(ctx *Context) {
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.ClearTargExt(ctx)
-	}
-}
-
-// SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
-func (nt *Network) SpkSt1(ctx *Context) {
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.SpkSt1(ctx)
-	}
-}
-
-// SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
-func (nt *Network) SpkSt2(ctx *Context) {
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.SpkSt2(ctx)
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Learn methods
-
-// DWt computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWt(ctx *Context) {
-	// if nt.GPU.On {
-	// 	nt.GPU.RunDWt()
-	// 	return
-	// }
-	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
-}
-
-// WtFromDWt updates the weights from delta-weight changes.
-// Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
-func (nt *Network) WtFromDWt(ctx *Context) {
-	// nt.LayerMapSeq(func(ly *Layer) { ly.WtFromDWtLayer(ctx) }, "WtFromDWtLayer") // lightweight
-	// // if nt.GPU.On {
-	// // 	nt.GPU.RunWtFromDWt()
-	// // } else {
-	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
-	// nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFromDWt(ctx, ni) }, "WtFromDWt")
-	// }
-	if ctx.SlowInc() {
-		nt.SlowAdapt(ctx)
-	}
-}
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // and adapting inhibition

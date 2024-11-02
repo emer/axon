@@ -11,32 +11,6 @@ package axon
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
-// DWt computes the weight change (learning), based on
-// synaptically integrated spiking, computed at the Theta cycle interval.
-// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Path) DWt(ctx *Context, si uint32) {
-	if pj.Params.Learn.Learn.IsFalse() {
-		return
-	}
-
-	scon := pj.SendCon[si-pj.Send.NeurStIndex]
-	rlay := pj.Recv
-	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
-	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-		syni := pj.SynStIndex + syi
-		ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
-		dwt := float32(0)
-		for di := uint32(0); di < ctx.NData; di++ {
-			lpi := rlay.Params.PoolIndex(0)
-			pi := rlay.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ri)))
-			pj.Params.DWtSyn(ctx, syni, si, ri, lpi, pi, di, isTarget)
-			dwt += SynapseTraces.Value(int(DiDWt), int(syni), int(di))
-		}
-		// note: on GPU, this must be a separate kernel, but can be combined here
-		Synapses.SetAdd(dwt, int(DWt), int(syni))
-	}
-}
-
 // DWtSubMean subtracts the mean from any pathways that have SubMean > 0.
 // This is called on *receiving* pathways, prior to WtFromDwt.
 func (pj *Path) DWtSubMean(ctx *Context, ri uint32) {

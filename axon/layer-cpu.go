@@ -352,38 +352,6 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
-// DWt computes the weight change (learning), based on
-// synaptically integrated spiking, computed at the Theta cycle interval.
-// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (ly *Layer) DWt(ctx *Context, si uint32) {
-	for _, pj := range ly.SendPaths {
-		if pj.Off {
-			continue
-		}
-		pj.DWt(ctx, si)
-	}
-}
-
-// DWtSubMean computes subtractive normalization of the DWts
-func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
-	for _, pj := range ly.RecvPaths {
-		if pj.Off {
-			continue
-		}
-		pj.DWtSubMean(ctx, ri)
-	}
-}
-
-// WtFromDWt updates weight values from delta weight changes
-func (ly *Layer) WtFromDWt(ctx *Context, si uint32) {
-	for _, pj := range ly.SendPaths {
-		if pj.Off {
-			continue
-		}
-		pj.WtFromDWt(ctx, si)
-	}
-}
-
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFromD
 func (ly *Layer) DTrgSubMean(ctx *Context) {

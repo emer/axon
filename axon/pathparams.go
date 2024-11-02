@@ -321,7 +321,15 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on pathway type.
 // rpl is the receiving layer SubPool
-func (pt *PathParams) DWtSyn(ctx *Context, syni, si, ri, lpi, pi, di uint32, isTarget bool) {
+func (pt *PathParams) DWtSyn(ctx *Context, syni, si, ri, di uint32) {
+	if pt.Learn.Learn == 0 {
+		return
+	}
+	rlay := &Layers[pt.Indexes.RecvLayer]
+	isTarget := rlay.Acts.Clamp.IsTarget > 0
+	spi := NeuronIxs.Value(int(NrnSubPool), int(ri))
+	pi := rlay.PoolIndex(spi)
+	lpi := rlay.PoolIndex(0)
 	switch pt.PathType {
 	case RWPath:
 		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
@@ -658,11 +666,10 @@ func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint
 	SynapseTraces.Set(dwt, int(DiDWt), int(syni), int(di))
 }
 
-///////////////////////////////////////////////////
-// WtFromDWt
+//////// WtFromDWt
 
-// DWtFromDiDWtSyn updates DWt from data parallel DiDWt values
-func (pt *PathParams) DWtFromDiDWtSyn(ctx *Context, syni uint32) {
+// DWtFromDi updates DWt from data parallel DiDWt values
+func (pt *PathParams) DWtFromDi(ctx *Context, syni uint32) {
 	dwt := float32(0)
 	for di := uint32(0); di < ctx.NData; di++ {
 		dwt += SynapseTraces.Value(int(DiDWt), int(syni), int(di))
