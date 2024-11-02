@@ -413,8 +413,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Params.InitExt(ctx, ni, di)
-			ei := ly.Params.ExtIndex(lni, di)
-			ly.Exts[ei] = -1 // missing by default
+			Exts.Set(-1, int(ly.Params.Indexes.ExtsSt+lni), int(di)) // missing by default
 		}
 	}
 }
@@ -452,12 +451,7 @@ func (ly *Layer) ApplyExtValue(ctx *Context, lni, di uint32, val float32, clearM
 	if NrnIsOff(ni) {
 		return
 	}
-	ei := ly.Params.ExtIndex(lni, di)
-	if uint32(len(ly.Exts)) <= ei {
-		log.Printf("Layer named: %s Type: %s does not have allocated Exts vals -- is likely not registered to receive external input in LayerTypes.IsExt() -- will not be presented to GPU", ly.Name, ly.Type.String())
-	} else {
-		ly.Exts[ei] = val
-	}
+	Exts.Set(val, int(ly.Params.Indexes.ExtsSt+lni), int(di))
 	if val < 0 {
 		return
 	}

@@ -776,12 +776,9 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 			}
 		}
 		if ly.Type.IsExt() {
-			ix := nt.Exts.Shape().Header + extIndex
-			ly.Exts = nt.Exts.Values[ix : ix+nn*maxData]
 			ly.Params.Indexes.ExtsSt = uint32(extIndex)
-			extIndex += nn * maxData
+			extIndex += nn
 		} else {
-			ly.Exts = nil
 			ly.Params.Indexes.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
 		}
 		spaths := ly.SendPaths

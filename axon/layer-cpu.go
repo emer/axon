@@ -186,45 +186,6 @@ func (ly *Layer) MinusPhasePost(ctx *Context) {
 	}
 }
 
-// PlusPhaseStart does updating at the start of the plus phase:
-// applies Target inputs as External inputs.
-func (ly *Layer) PlusPhaseStart(ctx *Context) {
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		for di := uint32(0); di < ctx.NData; di++ {
-			ly.Params.PlusPhaseStartNeuron(ctx, ni, di)
-		}
-	}
-}
-
-// PlusPhase does updating at end of the plus phase
-func (ly *Layer) PlusPhase(ctx *Context) {
-	// todo: see if it is faster to just grab pool info now, then do everything below on CPU
-	np := ly.NPools
-	for spi := uint32(0); spi < np; spi++ { // gpu_cycletoplus
-		for di := uint32(0); di < ctx.NData; di++ {
-			pi := ly.Params.PoolIndex(spi)
-			ly.Params.PlusPhasePool(ctx, pi, di)
-		}
-	}
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		for di := uint32(0); di < ctx.NData; di++ {
-			lpi := ly.Params.PoolIndex(0)
-			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)))
-			ly.Params.PlusPhaseNeuron(ctx, lpi, pi, ni, di)
-		}
-	}
-}
-
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)

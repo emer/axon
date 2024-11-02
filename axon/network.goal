@@ -171,6 +171,15 @@ func CycleInc(i uint32) { //gosl:kernel
 	ctx.CycleInc()
 }
 
+// ApplyExtsNeuron does neuron-level applying of the Exts.
+func ApplyExtsNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].ApplyExtsNeuron(ctx, ni, di)
+}
+
 // MinusPhasePool does pool-level updating after end of minus phase.
 func MinusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
@@ -189,17 +198,60 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	Layers[li].MinusPhaseNeuron(ctx, ni, di)
 }
 
-func (nt *Network) MinusPhasePost() {
+// PlusPhaseStartNeuron does neuron-level updating at start of plus phase.
+func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
+}
+
+// PlusPhasePool does pool-level updating after end of plus phase.
+func PlusPhasePool(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	pi := ctx.ItemIndex(i)
+	li := PoolsInt[PoolLayerIdx, pi, di]
+	Layers[li].PlusPhasePool(ctx, pi, di)
+}
+
+// PlusPhaseNeuron does neuron-level updating after end of plus phase.
+func PlusPhaseNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].PlusPhaseNeuron(ctx, ni, di)
+}
+
+//gosl:end
+
+// InitExt initializes external input state.
+// Call prior to applying external inputs to layers.
+func (nt *Network) InitExt(ctx *Context) {
+	// note: important to do this for GPU
+	// to ensure partial inputs work the same way on CPU and GPU.
 	for _, ly := range nt.Layers {
 		if ly.Off {
 			continue
 		}
-		ly.MinusPhasePost(ctx)
+		ly.InitExt(ctx)
 	}
 }
 
-//gosl:end
+// ApplyExts applies external inputs to layers, based on values
+// that were set in prior layer-specific ApplyExt calls.
+// This does nothing on the CPU, but is critical for the GPU,
+// and should be added to all sims where GPU will be used.
+func (nt *Network) ApplyExts(ctx *Context) {
+	if !UseGPU {
+		return
+	}
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	RunApplyExtsNeuron(nd)
+}
 
 // MinusPhase does updating after end of minus phase.
 func (nt *Network) MinusPhase(ctx *Context) {
@@ -208,48 +260,49 @@ func (nt *Network) MinusPhase(ctx *Context) {
 	pd := int(nix.NPools * ctx.NData)
 	RunMinusPhasePool(pd)
 	RunMinusPhaseNeuron(nd)
-	nt.MinusPhasePost()
+	nt.MinusPhasePost(ctx)
 	// todo:
 	// nt.GPU.SyncStateToGPU()
+}
+
+// MinusPhasePost does special CPU post processing.
+func (nt *Network) MinusPhasePost(ctx *Context) {
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.MinusPhasePost(ctx)
+	}
 }
 
 // PlusPhaseStart does updating at the start of the plus phase:
 // applies Target inputs as External inputs.
 func (nt *Network) PlusPhaseStart(ctx *Context) {
-	// if nt.GPU.On {
-	// 	nt.GPU.RunPlusPhaseStart()
-	// } else {
-	// not worth threading this probably
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.PlusPhaseStart(ctx)
-	}
-	// }
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	RunPlusPhaseStartNeuron(nd)
 }
 
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhase(ctx *Context) {
-	// if nt.GPU.On {
-	// 	nt.GPU.RunPlusPhase() // copies all state back down: Neurons, LayerValues, Pools
-	// } else {
-	// not worth threading this probably
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.PlusPhase(ctx)
-	}
-	// }
-	// Post happens on the CPU always
+	nix := GetNetworkIxs(0)
+	nd := int(nix.NNeurons * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunPlusPhasePool(pd)
+	RunPlusPhaseNeuron(nd)
+	nt.PlusPhasePost(ctx)
+	// todo:
+	// nt.GPU.SyncStateToGPU()
+}
+
+// PlusPhasePost happens on the CPU always.
+func (nt *Network) PlusPhasePost(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.Off {
 			continue
 		}
 		ly.PlusPhasePost(ctx)
 	}
-	// nt.GPU.SyncStateToGPU() // plus phase post can do anything
 }
 
 // TargToExt sets external input Ext from target values Target
@@ -477,30 +530,6 @@ func (nt *Network) InitActs(ctx *Context) { //types:add
 	}
 	// nt.GPU.SyncStateToGPU()
 	// nt.GPU.SyncGBufToGPU() // zeros everyone
-}
-
-// InitExt initializes external input state.
-// Call prior to applying external inputs to layers.
-func (nt *Network) InitExt(ctx *Context) {
-	// note: important to do this for GPU
-	// to ensure partial inputs work the same way on CPU and GPU.
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.InitExt(ctx)
-	}
-}
-
-// ApplyExts applies external inputs to layers, based on values
-// that were set in prior layer-specific ApplyExt calls.
-// This does nothing on the CPU, but is critical for the GPU,
-// and should be added to all sims where GPU will be used.
-func (nt *Network) ApplyExts(ctx *Context) {
-	// if nt.GPU.On {
-	// 	nt.GPU.RunApplyExts()
-	// 	return
-	// }
 }
 
 // UpdateExtFlags updates the neuron flags for external input based on current

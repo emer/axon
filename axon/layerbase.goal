@@ -56,10 +56,6 @@ type Layer struct {
 	// list of sending pathways from this layer to other layers
 	SendPaths []*Path
 
-	// external input values for this layer, allocated from network
-	// global Exts slice.
-	Exts []float32 `display:"-"`
-
 	// configuration data set when the network is configured,
 	// that is used during the network Build() process via PostBuild method,
 	// after all the structure of the network has been fully constructed.

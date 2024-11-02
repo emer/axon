@@ -38,7 +38,7 @@ type LayerIndexes struct {
 	// number of recv pathways
 	SendN uint32 `edit:"-"`
 
-	// starting index in network global Exts list of external input for this layer.
+	// starting neuron index in global Exts list of external input for this layer.
 	// Only for Input / Target / Compare layer types
 	ExtsSt uint32 `edit:"-"`
 
@@ -292,12 +292,6 @@ func (ly *LayerParams) PoolIndex(pi uint32) uint32 {
 	return ly.PoolSt + pi
 }
 
-// ExtIndex returns the index for accessing Exts values: [Neuron][Data]
-// Neuron is *layer-relative* lni index -- add the ExtsSt for network level access.
-func (ly *LayerParams) ExtIndex(ni, di uint32) uint32 {
-	return ni*ly.MaxData + di
-}
-
 //////////////////////////////////////////////////////////////////////////////////////
 //  ApplyExt
 
@@ -321,12 +315,12 @@ func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bo
 
 // InitExt initializes external input state for given neuron
 func (ly *LayerParams) InitExt(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(Ext), int(ni), int(di))
-	Neurons.Set(0, int(Target), int(ni), int(di))
+	Neurons.Set(0.0, int(Ext), int(ni), int(di))
+	Neurons.Set(0.0, int(Target), int(ni), int(di))
 	NrnClearFlag(ni, di, NeuronHasExt|NeuronHasTarg|NeuronHasCmpr)
 }
 
-// ApplyExtVal applies given external value to given neuron,
+// ApplyExtValue applies given external value to given neuron,
 // setting flags based on type of layer.
 // Should only be called on Input, Target, Compare layers.
 // Negative values are not valid, and will be interpreted as missing inputs.
@@ -344,6 +338,15 @@ func (ly *LayerParams) ApplyExtValue(ctx *Context, ni, di uint32, val float32) {
 	}
 	NrnClearFlag(ni, di, clearMask)
 	NrnSetFlag(ni, di, setMask)
+}
+
+func (ly *LayerParams) ApplyExtsNeuron(ctx *Context, ni, di uint32) {
+	lni := ni - ly.Indexes.NeurSt // layer-based
+	ly.InitExt(ctx, ni, di)
+	if IsExtLayerType(ly.Type) {
+		ei := ly.Indexes.ExtsSt + lni
+		ly.ApplyExtValue(ctx, ni, di, Exts.Value(int(ei), int(di)))
+	}
 }
 
 // IsTarget returns true if this layer is a Target layer.
@@ -1193,16 +1196,6 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pi, di uint32) {
 	}
 }
 
-// if (pl.IsLayPool != 0) {
-// 	float geIntMinusMax = 0;
-// 	float giIntMinusMax = 0;
-// 	for (uint di = 0; di < ctx.NetIndexes.NData; di++) {
-// 		geIntMinusMax = max(geIntMinusMax, Pools[ly.Indexes.PoolIndex(0, di)].AvgMax.GeInt.Cycle.Max);
-// 		giIntMinusMax = max(giIntMinusMax, Pools[ly.Indexes.PoolIndex(0, di)].AvgMax.GiInt.Cycle.Max);
-// 	}
-// 	ly.AvgGeM(ctx, vals, geIntMinusMax, giIntMinusMax);
-// }
-
 // AvgGeM computes the average and max GeInt, GiInt in minus phase
 // (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase,
 // using values that already max across NData.
@@ -1228,8 +1221,8 @@ func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32) {
 		Neurons.Set(Neurons.Value(int(Target), int(ni), int(di)), int(Ext), int(ni), int(di))
 		NrnSetFlag(ni, di, NeuronHasExt)
 		// get fresh update on plus phase output acts
-		Neurons.Set(-1, int(ISI), int(ni), int(di))
-		Neurons.Set(-1, int(ISIAvg), int(ni), int(di))
+		Neurons.Set(-1.0, int(ISI), int(ni), int(di))
+		Neurons.Set(-1.0, int(ISIAvg), int(ni), int(di))
 		// reset for plus phase
 		Neurons.Set(ly.Acts.Init.Act, int(ActInt), int(ni), int(di))
 	}
@@ -1240,7 +1233,9 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pi, di uint32) {
 }
 
 // PlusPhaseNeuron does neuron level plus-phase updating
-func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, lpi, pi, ni, di uint32) {
+func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
+	pi := ly.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)))
+	lpi := ly.PoolIndex(0)
 	Neurons.Set(Neurons.Value(int(ActInt), int(ni), int(di)), int(ActP), int(ni), int(di))
 	nrnCaSpkP := Neurons.Value(int(CaSpkP), int(ni), int(di))
 	nrnCaSpkD := Neurons.Value(int(CaSpkD), int(ni), int(di))

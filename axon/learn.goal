@@ -222,7 +222,7 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 	if rl.On.IsFalse() || laymax == 0 {
 		return 1.0
 	}
-	ca := min(act/laymax, 1)
+	ca := min(act/laymax, 1.0)
 	var lr float32
 	if rl.SigmoidLinear.IsTrue() {
 		if ca < 0.5 {
