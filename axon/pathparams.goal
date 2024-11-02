@@ -346,11 +346,10 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on pathway type.
 // rpl is the receiving layer SubPool
-func (pt *PathParams) DWtSyn(ctx *Context, syni, si, ri, di uint32) {
+func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di uint32) {
 	if pt.Learn.Learn == 0 {
 		return
 	}
-	rlay := &Layers[pt.Indexes.RecvLayer]
 	isTarget := rlay.Acts.Clamp.IsTarget > 0
 	spi := NeuronIxs[NrnSubPool, ri]
 	pi := rlay.PoolIndex(spi)

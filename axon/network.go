@@ -388,7 +388,7 @@ func DWtSyn(i uint32) { //gosl:kernel
 	pti := SynapseIxs.Value(int(SynPathIndex), int(syni))
 	si := SynapseIxs.Value(int(SynSendIndex), int(syni))
 	ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
-	Paths[pti].DWtSyn(ctx, syni, si, ri, di)
+	Paths[pti].DWtSyn(ctx, &Layers[Paths[pti].Indexes.RecvLayer], syni, si, ri, di)
 }
 
 // DWtFromDiSyn is the kernel over Synapses (not * Data) to
