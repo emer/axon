@@ -503,8 +503,8 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		}
 		PoolAvgDifCalc(pi, 0)
 		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
-			Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Avg), pi, di] = Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Avg), pi, 0]
-			Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Max), pi, di] = Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Max), pi, 0]
+			Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Avg), pi, di] = Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Avg), pi, 0]
+			Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Max), pi, di] = Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Max), pi, 0]
 		}
 	}
 	if sp == 1 { // update layer pool
@@ -522,8 +522,8 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		PoolAvgDifCalc(lpi, 0)
 
 		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
-			Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Avg), lpi, di] = Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Avg), lpi, 0]
-			Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Max), lpi, di] = Pools[AvgMaxVarIdx(AMAvgDif, AMCycle, Max), lpi, 0]
+			Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Avg), lpi, di] = Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Avg), lpi, 0]
+			Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Max), lpi, di] = Pools[AvgMaxVarIndex(AMAvgDif, AMCycle, Max), lpi, 0]
 		}
 	}
 }

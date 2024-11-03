@@ -9,14 +9,12 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"reflect"
 	"runtime"
 	"sort"
 	"strings"
 	"testing"
 
 	"cogentcore.org/core/base/randx"
-	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/etime"
@@ -41,10 +39,10 @@ var (
 )
 
 // number of distinct sets of learning parameters to test
-const NLrnPars = 1
+const nLearnParams = 1
 
 // Note: subsequent params applied after Base
-var ParamSets = params.Sets{
+var paramSets = params.Sets{
 	"Base": {
 		{Sel: "Layer", Desc: "layer defaults",
 			Params: params.Params{
@@ -107,7 +105,7 @@ func newTestNet(nData int) *Network {
 
 	testNet.Build()
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
+	testNet.ApplyParams(paramSets["Base"], false) // false) // true) // no msg
 	testNet.InitWeights()                      // get GScale here
 	testNet.NewState(etime.Train)
 	return testNet
@@ -131,7 +129,7 @@ func newTestNetFull(nData int) *Network {
 
 	testNet.Build()
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
+	testNet.ApplyParams(paramSets["Base"], false) // false) // true) // no msg
 	testNet.InitWeights()                      // get GScale here
 	testNet.NewState(etime.Train)
 	return testNet
@@ -203,7 +201,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.Build()
 	net.Defaults()
-	net.ApplyParams(ParamSets["Base"], false)
+	net.ApplyParams(paramSets["Base"], false)
 
 	net.InitExt()
 
@@ -241,24 +239,29 @@ func TestSpikeProp(t *testing.T) {
 	}
 }
 
-// StructValues adds field vals to given vals map
-func StructValues(obj any, vals map[string]float32, key string) {
-	v := reflectx.NonPointerValue(reflect.ValueOf(obj))
-	typ := v.Type()
-	for i := 0; i < v.NumField(); i++ {
-		ft := typ.Field(i)
-		if !ft.IsExported() {
-			continue
-		}
-		fv := v.Field(i)
-		kk := key + fmt.Sprintf("\t%s", ft.Name)
-		vals[kk], _ = reflectx.ToFloat32(fv.Interface())
+// poolValues adds pool vals to given vals map
+func poolValues(pi uint32, di int, vals map[string]float32, key string) {
+	for i := range uint32(PoolVarsN) {
+		kk := key + fmt.Sprintf("\t%s", PoolVarName(i))
+		vals[kk] = Pools[i, pi, di]
+	}
+	for i := range uint32(PoolIntVarsTot) {
+		kk := key + fmt.Sprintf("\t%s", PoolIntVarName(i))
+		vals[kk] = float32(PoolsInt[i, pi, di])
+	}
+}
+
+// layerStates adds LayerStates vals to given vals map
+func layerStates(li, di int, vals map[string]float32, key string) {
+	for i := range uint32(LayerVarsN) {
+		kk := key + fmt.Sprintf("\t%s", LayerVars(i).String())
+		vals[kk] = LayerStates[i, li, di]
 	}
 }
 
 // TestInitWeights tests that initializing the weights results in same state
 func TestInitWeights(t *testing.T) {
-	nData := 1
+	nData := 3
 	testNet := newTestNet(nData)
 	inPats := newInPats()
 	ctx := testNet.Context()
@@ -294,11 +297,11 @@ func TestInitWeights(t *testing.T) {
 		}
 		for li := 0; li < 3; li++ {
 			ly := testNet.Layers[li]
-			_ = ly
 			for di := 0; di < nData; di++ {
-				// lpl := ly.Pool(0, uint32(di))
-				// lnm := fmt.Sprintf("%s: di: %d", ly.Name, di)
-				// StructValues(&lpl.Inhib, valMap, lnm)
+				lpi := ly.Params.PoolIndex(0)
+				lnm := fmt.Sprintf("%s: di: %d", ly.Name, di)
+				poolValues(lpi, di, valMap, lnm)
+				layerStates(li, di, valMap, lnm)
 			}
 		}
 
@@ -543,7 +546,7 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 // fine-grained diff test, e.g., see the GPU version.
 func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	testNet := newTestNet(nData)
-	testNet.ApplyParams(ParamSets["FullDecay"], false)
+	testNet.ApplyParams(paramSets["FullDecay"], false)
 	return RunDebugAct(t, testNet, printValues, gpu, initWts)
 }
 
@@ -689,20 +692,20 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	qtr3OutCaP := []float32{0.5834704, 0.5698636, 0.5796981, 0.5744664}
 	qtr3OutCaD := []float32{0.5047723, 0.46398377, 0.47836566, 0.47417372}
 
-	q3hidCaP := make([]float32, 4*NLrnPars)
-	q3hidCaD := make([]float32, 4*NLrnPars)
-	q3outCaP := make([]float32, 4*NLrnPars)
-	q3outCaD := make([]float32, 4*NLrnPars)
+	q3hidCaP := make([]float32, 4*nLearnParams)
+	q3hidCaD := make([]float32, 4*nLearnParams)
+	q3outCaP := make([]float32, 4*nLearnParams)
+	q3outCaD := make([]float32, 4*nLearnParams)
 
 	hidDwts := []float32{0.0015591943, 0.0024129525, 0.0018848473, 0.0019944084}
 	outDwts := []float32{0.003556001, 0.008800001, 0.007058134, 0.0069709825}
 	hidWts := []float32{0.5093542, 0.5144739, 0.51130706, 0.5119643}
 	outWts := []float32{0.5213235, 0.5526102, 0.54225075, 0.54173136}
 
-	hiddwt := make([]float32, 4*NLrnPars)
-	outdwt := make([]float32, 4*NLrnPars)
-	hidwt := make([]float32, 4*NLrnPars)
-	outwt := make([]float32, 4*NLrnPars)
+	hiddwt := make([]float32, 4*nLearnParams)
+	outdwt := make([]float32, 4*nLearnParams)
+	hidwt := make([]float32, 4*nLearnParams)
+	outwt := make([]float32, 4*nLearnParams)
 
 	hidAct := []float32{}
 	hidGes := []float32{}
@@ -716,7 +719,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"], false) // always apply base
+	testNet.ApplyParams(paramSets["Base"], false) // always apply base
 	testNet.InitWeights()
 	testNet.InitExt()
 
@@ -857,21 +860,21 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	qtr3OutCaP := []float32{0.5834704, 0.5698636, 0.5796981, 0.5744664}
 	qtr3OutCaD := []float32{0.5047723, 0.46398377, 0.47836566, 0.47417372}
 
-	q3hidCaP := make([]float32, 4*NLrnPars)
-	q3hidCaD := make([]float32, 4*NLrnPars)
-	q3outCaP := make([]float32, 4*NLrnPars)
-	q3outCaD := make([]float32, 4*NLrnPars)
+	q3hidCaP := make([]float32, 4*nLearnParams)
+	q3hidCaD := make([]float32, 4*nLearnParams)
+	q3outCaP := make([]float32, 4*nLearnParams)
+	q3outCaD := make([]float32, 4*nLearnParams)
 
 	hidDwts := []float32{7.795972e-08, 7.3564784e-06, 9.499167e-08, 5.11946e-06}
 	outDwts := []float32{0.003556001, 0.008800001, 0.007058134, 0.0069709825}
 	hidWts := []float32{0.50000036, 0.500044, 0.5000007, 0.50003076}
 	outWts := []float32{0.5213235, 0.5526102, 0.54225075, 0.54173136}
 
-	hiddwt := make([]float32, 4*NLrnPars)
-	outdwt := make([]float32, 4*NLrnPars)
-	hidwt := make([]float32, 4*NLrnPars)
-	outwt := make([]float32, 4*NLrnPars)
-	hidrlrs := make([]float32, 4*4*NLrnPars) // 4 units, 4 pats
+	hiddwt := make([]float32, 4*nLearnParams)
+	outdwt := make([]float32, 4*nLearnParams)
+	hidwt := make([]float32, 4*nLearnParams)
+	outwt := make([]float32, 4*nLearnParams)
+	hidrlrs := make([]float32, 4*4*nLearnParams) // 4 units, 4 pats
 
 	hidAct := []float32{}
 	hidGes := []float32{}
@@ -886,7 +889,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	testNet.Defaults()
-	testNet.ApplyParams(ParamSets["Base"], false) // always apply base
+	testNet.ApplyParams(paramSets["Base"], false) // always apply base
 	hidLay.Params.Learn.RLRate.On.SetBool(true)
 	testNet.InitWeights()
 	testNet.InitExt()
@@ -1001,11 +1004,11 @@ func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int,
 	} else {
 		testNet = newTestNet(maxData)
 	}
-	testNet.ApplyParams(ParamSets["FullDecay"], false)
+	testNet.ApplyParams(paramSets["FullDecay"], false)
 	ctx := testNet.Context()
 
 	if submean {
-		testNet.ApplyParams(ParamSets["SubMean"], false)
+		testNet.ApplyParams(paramSets["SubMean"], false)
 	}
 
 	ctx.NData = uint32(nData)
@@ -1107,11 +1110,9 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 						}
 					}
 					lnm := fmt.Sprintf("%s: di: %d", ly.Name, di)
-					// lpl := ly.Pool(0, uint32(di))
-					_ = lnm
-					// StructValues(&lpl.Inhib, valMap, lnm)
-					// lval := ly.LayerValues(uint32(di))
-					// StructValues(&lval, valMap, lnm)
+					lpi := ly.Params.PoolIndex(0)
+					poolValues(lpi, di, valMap, lnm)
+					layerStates(li, di, valMap, lnm)
 					if doPrint {
 						fmt.Printf("\n")
 					}
@@ -1254,8 +1255,8 @@ func TestInhibAct(t *testing.T) {
 
 	inhibNet.Build()
 	inhibNet.Defaults()
-	inhibNet.ApplyParams(ParamSets["Base"], false)
-	inhibNet.ApplyParams(ParamSets["Base"], false)
+	inhibNet.ApplyParams(paramSets["Base"], false)
+	inhibNet.ApplyParams(paramSets["Base"], false)
 	inhibNet.InitWeights() // get GScale
 	inhibNet.NewState(etime.Train)
 

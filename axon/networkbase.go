@@ -187,12 +187,12 @@ type Network struct {
 	NeuronAvgs tensor.Float32 `display:"-"`
 
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
-	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIdx].
+	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
 	// [PoolVars+AvgMax][Layer * Pools][Data]
 	Pools tensor.Float32
 
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
-	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIdx]
+	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
 	// [PoolIntVars+AvgMax][Layer * Pools][Data]
 	PoolsInt tensor.Int32
 

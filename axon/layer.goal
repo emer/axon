@@ -196,11 +196,17 @@ func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
 	li := ly.Index
 	for di := uint32(0); di < ly.MaxData; di++ {
+		LayerStates[LayerActMAvg, li, di] = ly.Params.Inhib.ActAvg.Nominal
+		LayerStates[LayerActPAvg, li, di] = ly.Params.Inhib.ActAvg.Nominal
 		LayerStates[LayerAvgMaxGeM, li, di] = 1
 		LayerStates[LayerAvgMaxGiM, li, di] = 1
 		LayerStates[LayerGiMult, li, di] = 1
-		LayerStates[LayerActMAvg, li, di] = ly.Params.Inhib.ActAvg.Nominal
-		LayerStates[LayerActPAvg, li, di] = ly.Params.Inhib.ActAvg.Nominal
+		LayerStates[LayerPhaseDiff, li, di] = 0
+		LayerStates[LayerPhaseDiffAvg, li, di] = 0
+		LayerStates[LayerPhaseDiffVar, li, di] = 0
+		LayerStates[LayerRT, li, di] = -1
+		LayerStates[LayerRewPredPos, li, di] = 0
+		LayerStates[LayerRewPredNeg, li, di] = 0
 	}
 	ly.InitActAvg(ctx)
 	ly.InitActs(ctx)
