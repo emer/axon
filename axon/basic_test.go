@@ -90,7 +90,7 @@ var ParamSets = params.Sets{
 	},
 }
 
-func newTestNet(ctx *Context, nData int) *Network {
+func newTestNet(nData int) *Network {
 	testNet := NewNetwork("testNet")
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.SetMaxData(ctx, nData)
@@ -107,8 +107,8 @@ func newTestNet(ctx *Context, nData int) *Network {
 	testNet.Rubicon.SetNUSs(ctx, 4, 3)
 	testNet.Rubicon.Defaults()
 
-	testNet.Build(ctx)
-	ctx.NData = uint32(nData)
+	testNet.Build()
+	testNet.Ctx.NData = uint32(nData)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets["Base"], false) // false) // true) // no msg
 	testNet.InitWeights(ctx)                      // get GScale here
@@ -117,7 +117,7 @@ func newTestNet(ctx *Context, nData int) *Network {
 }
 
 // full connectivity
-func newTestNetFull(ctx *Context, nData int) *Network {
+func newTestNetFull(nData int) *Network {
 	testNet := NewNetwork("testNetFull")
 	testNet.SetRandSeed(42) // critical for ActAvg values
 	testNet.SetMaxData(ctx, nData)
@@ -143,7 +143,6 @@ func newTestNetFull(ctx *Context, nData int) *Network {
 
 func TestSynValues(t *testing.T) {
 	tol := Tol8
-	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 	hidLay := testNet.LayerByName("Hidden")
 	p, err := hidLay.RecvPathBySendName("Input")
@@ -206,8 +205,6 @@ func TestSpikeProp(t *testing.T) {
 
 	pt := net.ConnectLayers(inLay, hidLay, paths.NewOneToOne(), ForwardPath)
 
-	ctx := NewContext()
-
 	net.Build(ctx)
 	net.Defaults()
 	net.ApplyParams(ParamSets["Base"], false)
@@ -269,8 +266,7 @@ func StructValues(obj any, vals map[string]float32, key string) {
 
 // TestInitWeights tests that initializing the weights results in same state
 func TestInitWeights(t *testing.T) {
-	nData := 4
-	ctx := NewContext()
+	nData := 1
 	testNet := newTestNet(ctx, nData)
 	inPats := newInPats()
 
@@ -361,7 +357,6 @@ func TestGPUAct(t *testing.T) {
 // Note: use NetDebugAct for printf debugging of all values --
 // "this is only a test"
 func NetActTest(t *testing.T, tol float32, gpu bool) {
-	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 	testNet.InitExt(ctx)
 	inPats := newInPats()
@@ -557,7 +552,6 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
 func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
-	ctx := NewContext()
 	testNet := newTestNet(ctx, nData)
 	testNet.ApplyParams(ParamSets["FullDecay"], false)
 	return RunDebugAct(t, ctx, testNet, printValues, gpu, initWts)
@@ -684,7 +678,6 @@ func TestGPULearn(t *testing.T) {
 }
 
 func NetTestLearn(t *testing.T, tol float32, gpu bool) {
-	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 
 	// fmt.Printf("synbanks: %d\n", ctx.NetIndexes.NSynCaBanks)
@@ -854,7 +847,6 @@ func TestGPURLRate(t *testing.T) {
 }
 
 func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
-	ctx := NewContext()
 	testNet := newTestNet(ctx, 1)
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input")
@@ -1016,7 +1008,6 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
 func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int, initWts, submean, slowAdapt bool) map[string]float32 {
-	ctx := NewContext()
 	var testNet *Network
 	rand.Seed(1337)
 
@@ -1251,7 +1242,6 @@ func TestGPUSynCa(t *testing.T) {
 	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	ctx := NewContext()
 	testNet := newTestNetFull(ctx, 16)
 	_ = testNet
 	// testNet.ConfigGPUnoGUI(ctx)
@@ -1279,8 +1269,6 @@ func TestInhibAct(t *testing.T) {
 	inhibNet.ConnectLayers(inLay, hidLay, one2one, InhibPath)
 	inhibNet.ConnectLayers(hidLay, outLay, one2one, ForwardPath)
 	inhibNet.ConnectLayers(outLay, hidLay, one2one, BackPath)
-
-	ctx := NewContext()
 
 	inhibNet.Build(ctx)
 	inhibNet.Defaults()
@@ -1408,7 +1396,6 @@ func saveToFile(net *Network, t *testing.T) {
 }
 
 func TestSendGatherIndexes(t *testing.T) {
-	ctx := NewContext()
 	nData := uint32(3)
 	net := newTestNet(ctx, int(nData))
 

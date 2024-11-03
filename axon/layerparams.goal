@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"fmt"
 	"encoding/json"
 
 	"cogentcore.org/core/math32"
@@ -801,6 +802,7 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 	spksper := ctx.ThetaCycles / 8
 	bin := ctx.Cycle / spksper
 	spk := Neurons[Spike, ni, di]
+	fmt.Println(ctx.Cycle, bin)
 	switch bin {
 	case 0:
 		Neurons[SpkBin0, ni, di] += spk

@@ -698,6 +698,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nix.RubiconNPosUSs = nt.Rubicon.NPosUSs
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
+	fmt.Println("totPools", totPools)
 	nt.LayParams = make([]LayerParams, nLayers)
 	sltensor.SetShapeSizes(&nt.LayerStates, int(LayerVarsN), nLayers, maxData)
 	sltensor.SetShapeSizes(&nt.Pools, int(PoolVarsN), totPools, maxData)
@@ -734,7 +735,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		ly.NeurStIndex = uint32(neurIndex)
 		ly.MaxData = uint32(maxData)
 		np := ly.NumPools() + 1
-		npd := np * maxData
 		ly.NPools = uint32(np)
 		ly.Params.Index = uint32(li)
 		ly.Params.MaxData = uint32(maxData)
@@ -755,7 +755,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				nt.PoolsInt.Set(int32(li), int(PoolLayerIdx), int(pi), int(di))
+				nt.PoolsInt.Set(int32(li), int(PoolLayerIdx), int(poolIndex+pi), int(di))
 			}
 		}
 		if ly.Type.IsExt() {
@@ -788,7 +788,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		rpathIndex += len(rpaths)
 		neurIndex += nn
 		pathIndex += len(spaths)
-		poolIndex += npd
+		poolIndex += np
 	}
 	if totSynapses > math.MaxUint32 {
 		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")
