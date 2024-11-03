@@ -28,37 +28,40 @@ import (
 type Layer struct {
 	emer.LayerBase
 
-	// layer parameters.
+	// Params are layer parameters (pointer to item in Network.LayerParams).
 	Params *LayerParams
 
 	// our parent network, in case we need to use it to find
 	// other layers etc; set when added by network.
 	Network *Network `copier:"-" json:"-" xml:"-" display:"-"`
 
-	// type of layer.
+	// Type is the type of layer, which drives specialized computation as needed.
 	Type LayerTypes
 
-	// number of neurons in the layer.
+	// NNeurons is the number of neurons in the layer.
 	NNeurons uint32 `display:"-"`
 
-	// starting index of neurons for this layer within the global Network list.
+	// NeurStIndex is the starting index of neurons for this layer within
+	// the global Network list.
 	NeurStIndex uint32 `display:"-" inactive:"-"`
 
-	// number of pools based on layer shape; at least 1 for layer pool + 4D subpools.
+	// NPools is the number of inhibitory pools based on layer shape,
+	// with the first one representing the entire set of neurons in the layer,
+	// and 4D shaped layers have sub-pools after that.
 	NPools uint32 `display:"-"`
 
-	// maximum amount of input data that can be processed in parallel
-	// in one pass of the network.
+	// MaxData is the maximum amount of input data that can be processed in
+	// parallel in one pass of the network (copied from [NetworkIndexes]).
 	// Neuron, Pool, Values storage is allocated to hold this amount.
 	MaxData uint32 `display:"-"`
 
-	// list of receiving pathways into this layer from other layers
+	// RecvPaths is the list of receiving pathways into this layer from other layers.
 	RecvPaths []*Path
 
-	// list of sending pathways from this layer to other layers
+	// SendPaths is the list of sending pathways from this layer to other layers.
 	SendPaths []*Path
 
-	// configuration data set when the network is configured,
+	// BuildConfig has configuration data set when the network is configured,
 	// that is used during the network Build() process via PostBuild method,
 	// after all the structure of the network has been fully constructed.
 	// In particular, the Params is nil until Build, so setting anything
@@ -68,8 +71,8 @@ type Layer struct {
 	// algorithm structural parameters set during ConfigNet() methods.
 	BuildConfig map[string]string `table:"-"`
 
-	// default parameters that are applied prior to user-set parameters.
-	// These are useful for specific layer functionality in specialized
+	// DefaultParams are default parameters that are applied prior to user-set
+	// parameters. These are useful for specific layer functionality in specialized
 	// brain areas (e.g., Rubicon, BG etc) not associated with a layer type,
 	// which otherwise is used to hard-code initial default parameters.
 	// Typically just set to a literal map.
@@ -98,11 +101,6 @@ func (ly *Layer) SetOff(off bool) {
 		pt.Off = pt.Recv.Off || off
 	}
 }
-
-// SubPool returns subpool index for given neuron, at data index
-// func (ly *Layer) SubPool(ni, di uint32) uint32 {
-// 	return pi := NeuronIxs[NrnSubPool, ni]
-// }
 
 // RecipToSendPath finds the reciprocal pathway to
 // the given sending pathway within the ly layer.
@@ -475,8 +473,7 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 	return
 }
 
-////////////////////////////////////////////
-//		Weights
+////////	Weights
 
 // WriteWeightsJSON writes the weights from this layer from the receiver-side perspective
 // in a JSON text format.  We build in the indentation logic to make it much faster and

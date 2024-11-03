@@ -22,7 +22,7 @@ import (
 
 ////////  Phase-level
 
-// todo: all of this could be moved to layer params:
+// todo: all of this should be moved to layer params:
 
 // NewState handles all initialization at start of new input pattern.
 // Does NOT call InitGScale()
@@ -349,8 +349,7 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Learning
+////////  Learning
 
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFromD

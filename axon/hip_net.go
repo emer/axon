@@ -231,7 +231,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 		ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDelta) // turn off DG input to CA3 in first quarter
 
-		net.InitGScale(ctx) // update computed scaling factors
+		net.InitGScale() // update computed scaling factors
 		// net.GPU.SyncParamsToGPU() // todo:
 	})
 	beta1 := cyc.EventByName("Beta1")
@@ -241,7 +241,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		if ctx.Mode == etime.Test {
 			ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
 		}
-		net.InitGScale(ctx) // update computed scaling factors
+		net.InitGScale() // update computed scaling factors
 		// net.GPU.SyncParamsToGPU() // TODO:
 	})
 	plus := cyc.EventByName("PlusPhase")
@@ -260,19 +260,19 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 					// if hip.EC5ClampThr > 0 {
 					// 	stats.Binarize(tmpValues, tensor.NewFloat64Scalar(hip.EC5ClampThr))
 					// }
-					ec5.ApplyExt1D32(ctx, di, tmpValues)
+					ec5.ApplyExt1D32(di, tmpValues)
 				}
 			}
 		}
-		net.InitGScale(ctx) // update computed scaling factors
+		net.InitGScale() // update computed scaling factors
 		// net.GPU.SyncParamsToGPU()
-		net.ApplyExts(ctx) // essential for GPU
+		net.ApplyExts() // essential for GPU
 	})
 
 	trl := stack.Loops[etime.Trial]
 	trl.OnEnd.Prepend("HipPlusPhase:End", func() {
 		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
-		net.InitGScale(ctx) // update computed scaling factors
+		net.InitGScale() // update computed scaling factors
 		// net.GPU.SyncParamsToGPU()
 	})
 }

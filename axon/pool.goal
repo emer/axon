@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"fmt"
 	"log"
 	"sync/atomic"
 	"cogentcore.org/core/base/atomicx"
@@ -279,7 +278,6 @@ func PoolPoolGi(ctx *Context, pi, di uint32) {
 		return
 	}
 	li := PoolsInt[PoolLayerIdx, pi, di]
-	fmt.Println(li, pi, di)
 	PoolAvgMaxCalc(pi, di)
 	PoolInhibIntToRaw(pi, di)
 	ly := GetLayers(uint32(li))

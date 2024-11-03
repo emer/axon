@@ -8,7 +8,6 @@ package axon
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"cogentcore.org/core/math32"
 	"github.com/emer/axon/v2/fsfffb"
@@ -315,7 +314,7 @@ func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bo
 }
 
 // InitExt initializes external input state for given neuron
-func (ly *LayerParams) InitExt(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) InitExt(ni, di uint32) {
 	Neurons.Set(0.0, int(Ext), int(ni), int(di))
 	Neurons.Set(0.0, int(Target), int(ni), int(di))
 	NrnClearFlag(ni, di, NeuronHasExt|NeuronHasTarg|NeuronHasCmpr)
@@ -325,7 +324,7 @@ func (ly *LayerParams) InitExt(ctx *Context, ni, di uint32) {
 // setting flags based on type of layer.
 // Should only be called on Input, Target, Compare layers.
 // Negative values are not valid, and will be interpreted as missing inputs.
-func (ly *LayerParams) ApplyExtValue(ctx *Context, ni, di uint32, val float32) {
+func (ly *LayerParams) ApplyExtValue(ni, di uint32, val float32) {
 	if val < 0 {
 		return
 	}
@@ -341,12 +340,12 @@ func (ly *LayerParams) ApplyExtValue(ctx *Context, ni, di uint32, val float32) {
 	NrnSetFlag(ni, di, setMask)
 }
 
-func (ly *LayerParams) ApplyExtsNeuron(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) ApplyExtsNeuron(ni, di uint32) {
 	lni := ni - ly.Indexes.NeurSt // layer-based
-	ly.InitExt(ctx, ni, di)
+	ly.InitExt(ni, di)
 	if IsExtLayerType(ly.Type) {
 		ei := ly.Indexes.ExtsSt + lni
-		ly.ApplyExtValue(ctx, ni, di, Exts.Value(int(ei), int(di)))
+		ly.ApplyExtValue(ni, di, Exts.Value(int(ei), int(di)))
 	}
 }
 
@@ -627,7 +626,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(geRaw, int(GeRaw), int(ni), int(di))
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(geRaw), int(GeSyn), int(ni), int(di))
 	case USLayer:
-		us := RubiconUSStimValue(ctx, di, pi0, ly.Learn.NeuroMod.Valence)
+		us := RubiconUSStimValue(di, pi0, ly.Learn.NeuroMod.Valence)
 		geRaw := us
 		if us > 0 {
 			geRaw = ly.Acts.PopCode.EncodeGe(pni, pnn, us)
@@ -801,27 +800,11 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 			Neurons.Set(spkmax, int(SpkMax), int(ni), int(di))
 		}
 	}
-	spksper := ctx.ThetaCycles / 8
-	bin := ctx.Cycle / spksper
 	spk := Neurons.Value(int(Spike), int(ni), int(di))
-	fmt.Println(ctx.Cycle, bin)
-	switch bin {
-	case 0:
-		Neurons.SetAdd(spk, int(SpkBin0), int(ni), int(di))
-	case 1:
-		Neurons.SetAdd(spk, int(SpkBin1), int(ni), int(di))
-	case 2:
-		Neurons.SetAdd(spk, int(SpkBin2), int(ni), int(di))
-	case 3:
-		Neurons.SetAdd(spk, int(SpkBin3), int(ni), int(di))
-	case 4:
-		Neurons.SetAdd(spk, int(SpkBin4), int(ni), int(di))
-	case 5:
-		Neurons.SetAdd(spk, int(SpkBin5), int(ni), int(di))
-	case 6:
-		Neurons.SetAdd(spk, int(SpkBin6), int(ni), int(di))
-	default:
-		Neurons.SetAdd(spk, int(SpkBin7), int(ni), int(di))
+	if spk > 0 {
+		spksper := ctx.ThetaCycles / 8
+		bin := min(ctx.Cycle/spksper, 7)
+		Neurons.SetAdd(spk, int(SpkBin0+NeuronVars(bin)), int(ni), int(di))
 	}
 }
 
@@ -909,7 +892,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 		}
 		Neurons.Set(act, int(Act), int(ni), int(di))
 	case USLayer:
-		us := RubiconUSStimValue(ctx, di, pi0, ly.Learn.NeuroMod.Valence)
+		us := RubiconUSStimValue(di, pi0, ly.Learn.NeuroMod.Valence)
 		act := us
 		if us > 0 {
 			act = ly.Acts.PopCode.EncodeValue(pni, pnn, us)
@@ -1164,16 +1147,6 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(CaSpkD), int(ni), int(di)), int(SpkPrv), int(ni), int(di))
 	Neurons.Set(0.0, int(SpkMax), int(ni), int(di))
 	Neurons.Set(0.0, int(SpkMaxCa), int(ni), int(di))
-
-	Neurons.Set(0.0, int(SpkBin0), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin1), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin2), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin3), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin4), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin5), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin6), int(ni), int(di))
-	Neurons.Set(0.0, int(SpkBin7), int(ni), int(di))
-
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)

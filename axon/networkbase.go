@@ -20,14 +20,18 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"cogentcore.org/core/base/datasize"
 	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/goal/gosl/sltensor"
+	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/texteditor"
+	"cogentcore.org/core/tree"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/params"
@@ -89,7 +93,12 @@ type NetworkIndexes struct {
 
 //gosl:end
 
-// axon.Network implements the Axon spiking model.
+// Network implements the Axon spiking model.
+// Most of the fields are copied to the global vars, needed for GPU,
+// via the SetAsCurrent method, and must be slices or tensors so that
+// there is one canonical underlying instance of all such data.
+// There are also Layer and Path lists that are used to scaffold the
+// building and display of the network, but contain no data.
 type Network struct {
 	emer.NetworkBase
 
@@ -118,7 +127,6 @@ type Network struct {
 	// timers for each major function (step of processing).
 	FunTimes map[string]*timer.Time `display:"-"`
 
-	//// Global state below
 	//////// Params
 
 	// LayParams are all the layer parameters. [NLayers]
@@ -162,7 +170,11 @@ type Network struct {
 
 	//////// Neuron State
 
-	// Ctx is the current context state (one).
+	// note: A slice is needed even for single elements so that global vars and network
+	// point to the same underlying instance.
+
+	// Ctx is the context state (one). Other copies of Context can be maintained
+	// and [SetContext] to update this one, but this instance is the canonical one.
 	Ctx []Context `display:"-"`
 
 	// Neurons are all the neuron state variables.
@@ -239,9 +251,21 @@ type Network struct {
 	SynapseTraces2 tensor.Float32 `display:"-"`
 }
 
-// Get the network context state
+// Context gets the network context state.
 func (nt *Network) Context() *Context       { return &nt.Ctx[0] }
 func (nt *Network) NetIxs() *NetworkIndexes { return &nt.NetworkIxs[0] }
+
+// SetContext sets the values of the network context, which is the canonical instance.
+func (nt *Network) SetContext(ctx *Context) { nt.Ctx[0] = *ctx }
+
+// SetNData sets the NData in [Context] to given value.
+func (nt *Network) SetNData(nData int) { nt.Context().NData = uint32(nData) }
+
+// SetMaxData sets the MaxData and current NData to the same value.
+func (nt *Network) SetMaxData(maxData int) {
+	nt.NetIxs().MaxData = uint32(maxData)
+	nt.SetNData(maxData)
+}
 
 // emer.Network interface methods:
 func (nt *Network) NumLayers() int               { return len(nt.Layers) }
@@ -252,6 +276,7 @@ func (nt *Network) NParallelData() int           { return int(nt.Context().NData
 func (nt *Network) Init() {
 	nt.NetworkIxs = make([]NetworkIndexes, 1)
 	nt.Ctx = make([]Context, 1)
+	nt.Context().Defaults()
 	nt.NetIxs().MaxData = 1
 	NetworkIxs = nt.NetworkIxs // may reference things before build
 }
@@ -654,23 +679,15 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 	return pt
 }
 
-// SetMaxData sets the MaxData and current NData for both the Network and the Context
-func (nt *Network) SetMaxData(simCtx *Context, maxData int) {
-	nt.NetIxs().MaxData = uint32(maxData)
-	simCtx.NData = uint32(maxData)
-}
-
 // Build constructs the layer and pathway state based on the layer shapes
 // and patterns of interconnectivity.
-func (nt *Network) Build(simCtx *Context) error { //types:add
+func (nt *Network) Build() error { //types:add
 	nix := nt.NetIxs()
 	nt.MakeLayerMaps()
 	if nt.Rubicon.NPosUSs == 0 {
-		nt.Rubicon.SetNUSs(simCtx, 1, 1)
+		nt.Rubicon.SetNUSs(1, 1)
 	}
 	nt.Rubicon.Update()
-	ctx := nt.Context()
-	*ctx = *simCtx
 	nt.FunTimes = make(map[string]*timer.Time)
 	maxData := int(nix.MaxData)
 	var errs []error
@@ -698,7 +715,6 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nix.RubiconNPosUSs = nt.Rubicon.NPosUSs
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
-	fmt.Println("totPools", totPools)
 	nt.LayParams = make([]LayerParams, nLayers)
 	sltensor.SetShapeSizes(&nt.LayerStates, int(LayerVarsN), nLayers, maxData)
 	sltensor.SetShapeSizes(&nt.Pools, int(PoolVarsN), totPools, maxData)
@@ -1031,6 +1047,59 @@ func (nt *Network) CheckSameSize(on *Network) error {
 	return nil
 }
 
+// SizeReport returns a string reporting the size of each layer and pathway
+// in the network, and total memory footprint.
+// If detail flag is true, details per layer, pathway is included.
+func (nt *Network) SizeReport(detail bool) string {
+	var b strings.Builder
+
+	varBytes := 4
+	synVarBytes := 4
+	nix := nt.NetIxs()
+	maxData := int(nix.MaxData)
+	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIndexVarsN)*varBytes
+	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseTraceVarsN)*maxData*varBytes + int(SynapseIndexVarsN)*varBytes
+
+	globalProjIndexes := 0
+
+	for _, ly := range nt.Layers {
+		if detail {
+			nn := int(ly.NNeurons)
+			// Sizeof returns size of struct in bytes
+			nrnMem := nn * memNeuron
+			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Name, nn,
+				(datasize.Size)(nrnMem).String())
+		}
+		for _, pj := range ly.SendPaths {
+			// We only calculate the size of the important parts of the proj struct:
+			//  1. Synapse slice (consists of Synapse struct)
+			//  2. RecvConIndex + RecvSynIndex + SendConIndex (consists of int32 indices = 4B)
+			//
+			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
+			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
+			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
+			projMemIndexes := len(pj.RecvConIndex)*varBytes + len(pj.RecvSynIndex)*varBytes + len(pj.SendConIndex)*varBytes
+			globalProjIndexes += projMemIndexes
+			if detail {
+				nSyn := int(pj.NSyns)
+				synMem := nSyn*memSynapse + projMemIndexes
+				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name,
+					nSyn, (datasize.Size)(synMem).String())
+			}
+		}
+	}
+
+	nrnMem := (nt.Neurons.Len() + nt.NeuronAvgs.Len() + nt.NeuronIxs.Len()) * varBytes
+	synIndexMem := nt.SynapseIxs.Len() * varBytes
+	synWtMem := nt.Synapses.Len() * synVarBytes
+	synCaMem := nt.SynapseTraces.Len() * synVarBytes
+
+	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynIndexes: %v \t SynWts: %v \t SynCa: %v\n",
+		nt.Name, nix.NNeurons, (datasize.Size)(nrnMem).String(), nix.NSyns,
+		(datasize.Size)(synIndexMem).String(), (datasize.Size)(synWtMem).String(), (datasize.Size)(synCaMem).String())
+	return b.String()
+}
+
 // CopyStateFrom copies entire network state from other network.
 // Other network must have identical configuration, as this just
 // does a literal copy of the state values.  This is checked
@@ -1115,4 +1184,31 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 		}
 	}
 	return diffs
+}
+
+func (nt *Network) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.SaveWeightsJSON).
+			SetText("Save Weights").SetIcon(icons.Save)
+		w.Args[0].SetTag(`extension:".wts,.wts.gz"`)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.OpenWeightsJSON).SetText("Open Weights").SetIcon(icons.Open)
+		w.Args[0].SetTag(`extension:".wts,.wts.gz"`)
+	})
+
+	tree.Add(p, func(w *core.Separator) {})
+
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.Build).SetIcon(icons.Reset)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.InitWeights).SetIcon(icons.Reset)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(nt.InitActs).SetIcon(icons.Reset)
+	})
 }

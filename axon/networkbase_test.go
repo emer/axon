@@ -31,10 +31,10 @@ func TestDefaults(t *testing.T) {
 	net.ConnectLayers(input, hidden, full, ForwardPath)
 	net.BidirConnectLayers(hidden, output, full)
 
-	ctx := NewContext()
-	assert.Nil(t, net.Build(ctx))
+	assert.Nil(t, net.Build())
 	net.Defaults()
-	net.InitWeights(ctx)
+	net.InitWeights()
+	ctx := net.Context()
 
 	assert.Equal(t, 100, int(ctx.SlowInterval))
 	assert.Equal(t, 0, int(ctx.SlowCtr))
@@ -227,8 +227,7 @@ var stdWeights = `{
 
 func TestSaveWeights(t *testing.T) {
 	var b bytes.Buffer
-	ctx := NewContext()
-	testNet := newTestNet(ctx, 1)
+	testNet := newTestNet(1)
 	err := testNet.WriteWeightsJSON(&b)
 	if err != nil {
 		t.Error(err.Error())
@@ -236,7 +235,7 @@ func TestSaveWeights(t *testing.T) {
 	assert.Equal(t, stdWeights, string(b.Bytes()))
 	// fmt.Println(string(b.Bytes()))
 
-	loadNet := newTestNet(ctx, 1)
+	loadNet := newTestNet(1)
 	err = loadNet.ReadWeightsJSON(&b)
 	if err != nil {
 		t.Error(err.Error())

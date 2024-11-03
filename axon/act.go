@@ -893,6 +893,9 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	Neurons.Set(-1, int(ISIAvg), int(ni), int(di))
 	Neurons.Set(ac.Init.Act, int(ActInt), int(ni), int(di))
 	Neurons.Set(0, int(Spiked), int(ni), int(di))
+	for i := range 8 {
+		Neurons.Set(0.0, int(SpkBin0+NeuronVars(i)), int(ni), int(di))
+	}
 
 	if decay > 0 { // no-op for most, but not all..
 		Neurons.Set(0, int(Spike), int(ni), int(di))
@@ -1034,6 +1037,10 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(CtxtGe), int(ni), int(di))
 	Neurons.Set(0, int(CtxtGeRaw), int(ni), int(di))
 	Neurons.Set(0, int(CtxtGeOrig), int(ni), int(di))
+
+	for i := range 8 {
+		Neurons.Set(0.0, int(SpkBin0+NeuronVars(i)), int(ni), int(di))
+	}
 
 	ac.InitLongActs(ctx, ni, di)
 }

@@ -17,6 +17,7 @@ import (
 // It is passed around to all relevant computational functions,
 // and is updated on the CPU and synced to the GPU after every cycle.
 // It contains timing, Testing vs. Training mode, random number context, etc.
+// There is one canonical instance on the network as Ctx
 type Context struct {
 
 	// number of data parallel items to process currently.
@@ -154,7 +155,7 @@ func (ctx *Context) Reset() {
 		ctx.Defaults()
 	}
 	// ctx.RandCtr.Reset()
-	GlobalsReset(ctx)
+	GlobalsReset()
 }
 
 // NewContext returns a new Time struct with default parameters

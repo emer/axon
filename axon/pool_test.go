@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 )
@@ -99,10 +100,10 @@ var PoolParamSets = params.Sets{
 	},
 }
 
-func newPoolTestNet(ctx *Context, nData int) *Network {
+func newPoolTestNet(nData int) *Network {
 	testNet := NewNetwork("testNet")
 	testNet.SetRandSeed(42) // critical for ActAvg values
-	testNet.SetMaxData(ctx, nData)
+	testNet.SetMaxData(nData)
 
 	inLay := testNet.AddLayer4D("Input", InputLayer, 4, 1, 1, 4)
 	hidLay := testNet.AddLayer4D("Hidden", SuperLayer, 4, 1, 1, 4) // note: tried with up to 400 -- no diff
@@ -113,12 +114,11 @@ func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet.ConnectLayers(hidLay, outLay, paths.NewOneToOne(), ForwardPath)
 	testNet.ConnectLayers(outLay, hidLay, paths.NewOneToOne(), BackPath)
 
-	testNet.Build(ctx)
-	ctx.NData = uint32(nData)
+	testNet.Build()
 	testNet.Defaults()
 	testNet.ApplyParams(PoolParamSets["Base"], false) // false) // true) // no msg
-	testNet.InitWeights(ctx)                          // get GScale here
-	testNet.NewState(ctx)
+	testNet.InitWeights()                             // get GScale here
+	testNet.NewState(etime.Train)
 	return testNet
 }
 
@@ -129,7 +129,7 @@ func TestPoolGPUDiffsLayerOnly(t *testing.T) {
 	}
 	cpuValues := netDebugAct(t, "LayerOnly", false, false, 1, true)
 	gpuValues := netDebugAct(t, "LayerOnly", false, true, 1, true)
-	ReportValDiffs(t, Tol4, cpuValues, gpuValues, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol4, cpuValues, gpuValues, "CPU", "GPU")
 }
 
 func TestPoolGPUDiffsPoolOnly(t *testing.T) {
@@ -140,7 +140,7 @@ func TestPoolGPUDiffsPoolOnly(t *testing.T) {
 	cpuValues := netDebugAct(t, "PoolOnly", false, false, 1, true)
 	gpuValues := netDebugAct(t, "PoolOnly", false, true, 1, true)
 	// GPU doesn't update layer Gi, GiOrig..
-	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", []string{"Gi", "GiOrig"})
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", "Gi", "GiOrig")
 }
 
 func TestPoolGPUDiffsLayerPoolSame(t *testing.T) {
@@ -150,7 +150,7 @@ func TestPoolGPUDiffsLayerPoolSame(t *testing.T) {
 	}
 	cpuValues := netDebugAct(t, "LayerPoolSame", false, false, 1, true)
 	gpuValues := netDebugAct(t, "LayerPoolSame", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU")
 }
 
 func TestPoolGPUDiffsLayerWeakPoolStrong(t *testing.T) {
@@ -160,7 +160,7 @@ func TestPoolGPUDiffsLayerWeakPoolStrong(t *testing.T) {
 	}
 	cpuValues := netDebugAct(t, "LayerWeakPoolStrong", false, false, 1, true)
 	gpuValues := netDebugAct(t, "LayerWeakPoolStrong", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU")
 }
 
 func TestPoolGPUDiffsLayerStrongPoolWeak(t *testing.T) {
@@ -170,17 +170,16 @@ func TestPoolGPUDiffsLayerStrongPoolWeak(t *testing.T) {
 	}
 	cpuValues := netDebugAct(t, "LayerStrongPoolWeak", false, false, 1, true)
 	gpuValues := netDebugAct(t, "LayerStrongPoolWeak", false, true, 1, true)
-	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU", nil)
+	ReportValDiffs(t, Tol3, cpuValues, gpuValues, "CPU", "GPU")
 }
 
 // netDebugAct prints selected values (if printValues),
 // and also returns a map of all values and variables that can be used for a more
 // fine-grained diff test, e.g., see the GPU version.
 func netDebugAct(t *testing.T, params string, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
-	ctx := NewContext()
-	testNet := newPoolTestNet(ctx, nData)
+	testNet := newPoolTestNet(nData)
 	testNet.ApplyParams(PoolParamSets["FullDecay"], false)
 	testNet.ApplyParams(PoolParamSets[params], false)
 
-	return RunDebugAct(t, ctx, testNet, printValues, gpu, initWts)
+	return RunDebugAct(t, testNet, printValues, gpu, initWts)
 }

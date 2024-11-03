@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"fmt"
 	"encoding/json"
 
 	"cogentcore.org/core/math32"
@@ -313,7 +312,7 @@ func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bo
 }
 
 // InitExt initializes external input state for given neuron
-func (ly *LayerParams) InitExt(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) InitExt(ni, di uint32) {
 	Neurons[Ext, ni, di] = 0.0
 	Neurons[Target, ni, di] = 0.0
 	NrnClearFlag(ni, di, NeuronHasExt|NeuronHasTarg|NeuronHasCmpr)
@@ -323,7 +322,7 @@ func (ly *LayerParams) InitExt(ctx *Context, ni, di uint32) {
 // setting flags based on type of layer.
 // Should only be called on Input, Target, Compare layers.
 // Negative values are not valid, and will be interpreted as missing inputs.
-func (ly *LayerParams) ApplyExtValue(ctx *Context, ni, di uint32, val float32) {
+func (ly *LayerParams) ApplyExtValue(ni, di uint32, val float32) {
 	if val < 0 {
 		return
 	}
@@ -339,12 +338,12 @@ func (ly *LayerParams) ApplyExtValue(ctx *Context, ni, di uint32, val float32) {
 	NrnSetFlag(ni, di, setMask)
 }
 
-func (ly *LayerParams) ApplyExtsNeuron(ctx *Context, ni, di uint32) {
+func (ly *LayerParams) ApplyExtsNeuron(ni, di uint32) {
 	lni := ni - ly.Indexes.NeurSt // layer-based 
-	ly.InitExt(ctx, ni, di)
+	ly.InitExt(ni, di)
 	if IsExtLayerType(ly.Type) {
 		ei := ly.Indexes.ExtsSt + lni
-		ly.ApplyExtValue(ctx, ni, di, Exts[ei, di])
+		ly.ApplyExtValue(ni, di, Exts[ei, di])
 	}
 }
 
@@ -625,7 +624,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons[GeRaw, ni, di] = geRaw
 		Neurons[GeSyn, ni, di] = ly.Acts.Dt.GeSynFromRawSteady(geRaw)
 	case USLayer:
-		us := RubiconUSStimValue(ctx, di, pi0, ly.Learn.NeuroMod.Valence)
+		us := RubiconUSStimValue(di, pi0, ly.Learn.NeuroMod.Valence)
 		geRaw := us
 		if us > 0 {
 			geRaw = ly.Acts.PopCode.EncodeGe(pni, pnn, us)
@@ -799,27 +798,11 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 			Neurons[SpkMax, ni, di] = spkmax
 		}
 	}
-	spksper := ctx.ThetaCycles / 8
-	bin := ctx.Cycle / spksper
 	spk := Neurons[Spike, ni, di]
-	fmt.Println(ctx.Cycle, bin)
-	switch bin {
-	case 0:
-		Neurons[SpkBin0, ni, di] += spk
-	case 1:
-		Neurons[SpkBin1, ni, di] += spk
-	case 2:
-		Neurons[SpkBin2, ni, di] += spk
-	case 3:
-		Neurons[SpkBin3, ni, di] += spk
-	case 4:
-		Neurons[SpkBin4, ni, di] += spk
-	case 5:
-		Neurons[SpkBin5, ni, di] += spk
-	case 6:
-		Neurons[SpkBin6, ni, di] += spk
-	default:
-		Neurons[SpkBin7, ni, di] += spk
+	if spk > 0 {
+		spksper := ctx.ThetaCycles / 8
+		bin := min(ctx.Cycle / spksper, 7)
+		Neurons[SpkBin0 + NeuronVars(bin), ni, di] += spk
 	}
 }
 
@@ -907,7 +890,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 		}
 		Neurons[Act, ni, di] = act
 	case USLayer:
-		us := RubiconUSStimValue(ctx, di, pi0, ly.Learn.NeuroMod.Valence)
+		us := RubiconUSStimValue(di, pi0, ly.Learn.NeuroMod.Valence)
 		act := us
 		if us > 0 {
 			act = ly.Acts.PopCode.EncodeValue(pni, pnn, us)
@@ -1163,16 +1146,6 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons[SpkPrv, ni, di] = Neurons[CaSpkD, ni, di]
 	Neurons[SpkMax, ni, di] = 0.0
 	Neurons[SpkMaxCa, ni, di] = 0.0
-
-	Neurons[SpkBin0, ni, di] = 0.0
-	Neurons[SpkBin1, ni, di] = 0.0
-	Neurons[SpkBin2, ni, di] = 0.0
-	Neurons[SpkBin3, ni, di] = 0.0
-	Neurons[SpkBin4, ni, di] = 0.0
-	Neurons[SpkBin5, ni, di] = 0.0
-	Neurons[SpkBin6, ni, di] = 0.0
-	Neurons[SpkBin7, ni, di] = 0.0
-
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)

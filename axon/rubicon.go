@@ -74,19 +74,19 @@ func (dp *DriveParams) Update() {
 }
 
 // VarToZero sets all values of given drive-sized variable to 0
-func (dp *DriveParams) VarToZero(ctx *Context, di uint32, gvar GlobalVectorVars) {
+func (dp *DriveParams) VarToZero(di uint32, gvar GlobalVectorVars) {
 	for i := range dp.Base {
 		GlobalVectors.Set(0, int(gvar), int(i), int(di))
 	}
 }
 
 // ToZero sets all drives to 0
-func (dp *DriveParams) ToZero(ctx *Context, di uint32) {
-	dp.VarToZero(ctx, di, GvDrives)
+func (dp *DriveParams) ToZero(di uint32) {
+	dp.VarToZero(di, GvDrives)
 }
 
 // ToBaseline sets all drives to their baseline levels
-func (dp *DriveParams) ToBaseline(ctx *Context, di uint32) {
+func (dp *DriveParams) ToBaseline(di uint32) {
 	for i := range dp.Base {
 		GlobalVectors.Set(dp.Base[i], int(GvDrives), int(i), int(di))
 	}
@@ -94,7 +94,7 @@ func (dp *DriveParams) ToBaseline(ctx *Context, di uint32) {
 
 // AddTo increments drive by given amount, subject to 0-1 range clamping.
 // Returns new val.
-func (dp *DriveParams) AddTo(ctx *Context, di uint32, drv uint32, delta float32) float32 {
+func (dp *DriveParams) AddTo(di uint32, drv uint32, delta float32) float32 {
 	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di)) + delta
 	if dv > 1 {
 		dv = 1
@@ -107,7 +107,7 @@ func (dp *DriveParams) AddTo(ctx *Context, di uint32, drv uint32, delta float32)
 
 // SoftAdd increments drive by given amount, using soft-bounding to 0-1 extremes.
 // if delta is positive, multiply by 1-val, else val.  Returns new val.
-func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float32) float32 {
+func (dp *DriveParams) SoftAdd(di uint32, drv uint32, delta float32) float32 {
 	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di))
 	if delta > 0 {
 		dv += (1 - dv) * delta
@@ -125,7 +125,7 @@ func (dp *DriveParams) SoftAdd(ctx *Context, di uint32, drv uint32, delta float3
 
 // ExpStep updates drive with an exponential step with given dt value
 // toward given baseline value.
-func (dp *DriveParams) ExpStep(ctx *Context, di uint32, drv uint32, dt, base float32) float32 {
+func (dp *DriveParams) ExpStep(di uint32, drv uint32, dt, base float32) float32 {
 	dv := GlobalVectors.Value(int(GvDrives), int(drv), int(di))
 	dv += dt * (base - dv)
 	if dv > 1 {
@@ -139,15 +139,15 @@ func (dp *DriveParams) ExpStep(ctx *Context, di uint32, drv uint32, dt, base flo
 
 // ExpStepAll updates given drives with an exponential step using dt values
 // toward baseline values.
-func (dp *DriveParams) ExpStepAll(ctx *Context, di uint32) {
+func (dp *DriveParams) ExpStepAll(di uint32) {
 	for i := range dp.Base {
-		dp.ExpStep(ctx, di, uint32(i), dp.Dt[i], dp.Base[i])
+		dp.ExpStep(di, uint32(i), dp.Dt[i], dp.Base[i])
 	}
 }
 
 // EffectiveDrive returns the Max of Drives at given index and DriveMin.
 // note that index 0 is the novelty / curiosity drive, which doesn't use DriveMin.
-func (dp *DriveParams) EffectiveDrive(ctx *Context, di uint32, i uint32) float32 {
+func (dp *DriveParams) EffectiveDrive(di uint32, i uint32) float32 {
 	if i == 0 {
 		return GlobalVectors.Value(int(GvDrives), int(0), int(di))
 	}
@@ -203,13 +203,13 @@ func (ur *UrgencyParams) UrgeFun(urgency float32) float32 {
 }
 
 // Reset resets the raw urgency back to zero -- at start of new gating event
-func (ur *UrgencyParams) Reset(ctx *Context, di uint32) {
+func (ur *UrgencyParams) Reset(di uint32) {
 	GlobalScalars.Set(0, int(GvUrgencyRaw), int(di))
 	GlobalScalars.Set(0, int(GvUrgency), int(di))
 }
 
 // Urge computes normalized Urge value from Raw, and sets DAtonic from that
-func (ur *UrgencyParams) Urge(ctx *Context, di uint32) float32 {
+func (ur *UrgencyParams) Urge(di uint32) float32 {
 	urge := ur.UrgeFun(GlobalScalars.Value(int(GvUrgencyRaw), int(di)))
 	if urge < ur.Thr {
 		urge = 0
@@ -220,9 +220,9 @@ func (ur *UrgencyParams) Urge(ctx *Context, di uint32) float32 {
 }
 
 // AddEffort adds an effort increment of urgency and updates the Urge factor
-func (ur *UrgencyParams) AddEffort(ctx *Context, di uint32, inc float32) {
+func (ur *UrgencyParams) AddEffort(di uint32, inc float32) {
 	GlobalScalars.SetAdd(inc, int(GvUrgencyRaw), int(di))
-	ur.Urge(ctx, di)
+	ur.Urge(di)
 }
 
 /////////////////////////////////////////////////////////
@@ -327,7 +327,7 @@ func (us *USParams) Update() {
 }
 
 // USnegCostFromRaw sets normalized NegUS, Cost values from Raw values
-func (us *USParams) USnegCostFromRaw(ctx *Context, di uint32) {
+func (us *USParams) USnegCostFromRaw(di uint32) {
 	for i, ng := range us.USnegGains {
 		raw := GlobalVectors.Value(int(GvUSnegRaw), int(i), int(di))
 		norm := RubiconNormFun(ng * raw)
@@ -341,7 +341,7 @@ func (us *USParams) USnegCostFromRaw(ctx *Context, di uint32) {
 }
 
 // USnegToZero sets all values of USneg, USnegRaw to zero
-func (us *USParams) USnegToZero(ctx *Context, di uint32) {
+func (us *USParams) USnegToZero(di uint32) {
 	for i := range us.USnegGains {
 		GlobalVectors.Set(0, int(GvUSneg), int(i), int(di))
 		GlobalVectors.Set(0, int(GvUSnegRaw), int(i), int(di))
@@ -349,7 +349,7 @@ func (us *USParams) USnegToZero(ctx *Context, di uint32) {
 }
 
 // CostToZero sets all values of Cost, CostRaw to zero
-func (us *USParams) CostToZero(ctx *Context, di uint32) {
+func (us *USParams) CostToZero(di uint32) {
 	for i := range us.CostGains {
 		GlobalVectors.Set(0, int(GvCost), int(i), int(di))
 		GlobalVectors.Set(0, int(GvCostRaw), int(i), int(di))
@@ -357,7 +357,7 @@ func (us *USParams) CostToZero(ctx *Context, di uint32) {
 }
 
 // USposToZero sets all values of USpos to zero
-func (us *USParams) USposToZero(ctx *Context, di uint32) {
+func (us *USParams) USposToZero(di uint32) {
 	for i := range us.PVposWts {
 		GlobalVectors.Set(0, int(GvUSpos), int(i), int(di))
 	}
@@ -419,7 +419,7 @@ func (lh *LHbParams) Update() {
 }
 
 // Reset resets all LHb vars back to 0
-func (lh *LHbParams) Reset(ctx *Context, di uint32) {
+func (lh *LHbParams) Reset(di uint32) {
 	GlobalScalars.Set(0, int(GvLHbDip), int(di))
 	GlobalScalars.Set(0, int(GvLHbBurst), int(di))
 	GlobalScalars.Set(0, int(GvLHbPVDA), int(di))
@@ -455,7 +455,7 @@ func (lh *LHbParams) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) 
 // and PVDA ~= Burst - Dip, for case when there is a primary
 // positive reward value or a give-up state has triggered.
 // Returns the overall net reward magnitude, prior to VSPatch discounting.
-func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) float32 {
+func (lh *LHbParams) DAforUS(di uint32, pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) float32 {
 	burst, dip, da, rew := lh.DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum)
 	GlobalScalars.Set(dip, int(GvLHbDip), int(di))
 	GlobalScalars.Set(burst, int(GvLHbBurst), int(di))
@@ -472,7 +472,7 @@ func (lh *LHbParams) DAforUS(ctx *Context, di uint32, pvPos, pvNeg, vsPatchPos, 
 // Because the LHb only responds when it decides to GiveUp,
 // there is no response in this case.
 // DA is instead driven by CS-based computation, in rubicon_layers.go, VTAParams.VTADA
-func (lh *LHbParams) DAforNoUS(ctx *Context, di uint32) float32 {
+func (lh *LHbParams) DAforNoUS(di uint32) float32 {
 	GlobalScalars.Set(0, int(GvLHbDip), int(di))
 	GlobalScalars.Set(0, int(GvLHbBurst), int(di))
 	GlobalScalars.Set(0, int(GvLHbPVDA), int(di))
@@ -556,7 +556,7 @@ func (gp *GiveUpParams) Prob(cnSum, guSum float32, rnd randx.Rand) (float32, boo
 
 // Sums computes the summed weighting factors that drive continue and give up
 // contributions to the probability function.
-func (gp *GiveUpParams) Sums(ctx *Context, di uint32) (cnSum, guSum float32) {
+func (gp *GiveUpParams) Sums(di uint32) (cnSum, guSum float32) {
 	negSum := GlobalScalars.Value(int(GvPVnegSum), int(di))
 	guU := gp.Utility * max(gp.MinUtility, negSum)
 	cnU := gp.Utility * max(gp.MinUtility, GlobalScalars.Value(int(GvPVposEst), int(di))) // todo: var?
@@ -696,7 +696,7 @@ func (rp *Rubicon) USnegIndex(simUsIndex int) int {
 // Two costs (Time, Effort) are also automatically allocated and managed.
 // The USs specified here need to be managed by the simulation via the SetUS method.
 // Positive USs each have corresponding Drives.
-func (rp *Rubicon) SetNUSs(ctx *Context, nPos, nNeg int) {
+func (rp *Rubicon) SetNUSs(nPos, nNeg int) {
 	nix := GetNetworkIxs(0)
 	nPos = rp.USposIndex(max(nPos, 1))
 	nNeg = rp.USnegIndex(max(nNeg, 1)) // ensure at least 1
@@ -711,15 +711,15 @@ func (rp *Rubicon) SetNUSs(ctx *Context, nPos, nNeg int) {
 }
 
 // Reset resets all Rubicon state
-func (rp *Rubicon) Reset(ctx *Context, di uint32) {
-	rp.Drive.ToBaseline(ctx, di)
-	rp.TimeEffortReset(ctx, di)
-	rp.Urgency.Reset(ctx, di)
-	rp.InitUS(ctx, di)
-	rp.LHb.Reset(ctx, di)
-	rp.Drive.VarToZero(ctx, di, GvVSPatchD1)
-	rp.Drive.VarToZero(ctx, di, GvVSPatchD2)
-	rp.ResetGoalState(ctx, di)
+func (rp *Rubicon) Reset(di uint32) {
+	rp.Drive.ToBaseline(di)
+	rp.TimeEffortReset(di)
+	rp.Urgency.Reset(di)
+	rp.InitUS(di)
+	rp.LHb.Reset(di)
+	rp.Drive.VarToZero(di, GvVSPatchD1)
+	rp.Drive.VarToZero(di, GvVSPatchD2)
+	rp.ResetGoalState(di)
 	GlobalScalars.Set(0, int(GvVtaDA), int(di))
 	GlobalScalars.Set(0, int(GvVSMatrixJustGated), int(di))
 	GlobalScalars.Set(0, int(GvVSMatrixHasGated), int(di))
@@ -728,21 +728,21 @@ func (rp *Rubicon) Reset(ctx *Context, di uint32) {
 }
 
 // InitUS initializes all the USs to zero
-func (rp *Rubicon) InitUS(ctx *Context, di uint32) {
-	rp.USs.USposToZero(ctx, di)
-	rp.USs.USnegToZero(ctx, di)
-	rp.USs.CostToZero(ctx, di)
+func (rp *Rubicon) InitUS(di uint32) {
+	rp.USs.USposToZero(di)
+	rp.USs.USnegToZero(di)
+	rp.USs.CostToZero(di)
 	GlobalScalars.Set(0, int(GvHasRew), int(di))
 	GlobalScalars.Set(0, int(GvRew), int(di))
 }
 
 // InitDrives initializes all the Drives to baseline values (default = 0)
-func (rp *Rubicon) InitDrives(ctx *Context, di uint32) {
-	rp.Drive.ToBaseline(ctx, di)
+func (rp *Rubicon) InitDrives(di uint32) {
+	rp.Drive.ToBaseline(di)
 }
 
 // AddTimeEffort adds a unit of time and an increment of effort
-func (rp *Rubicon) AddTimeEffort(ctx *Context, di uint32, effort float32) {
+func (rp *Rubicon) AddTimeEffort(di uint32, effort float32) {
 	GlobalScalars.SetAdd(1, int(GvTime), int(di))
 	tm := GlobalScalars.Value(int(GvTime), int(di))
 	GlobalVectors.Set(tm, int(GvCostRaw), int(0), int(di)) // time is neg 0
@@ -758,17 +758,17 @@ func (rp *Rubicon) AddTimeEffort(ctx *Context, di uint32, effort float32) {
 // and Urgency updates otherwise (when not goal engaged)
 // Call this at the start of the trial, in ApplyRubicon method,
 // after NewState.
-func (rp *Rubicon) EffortUrgencyUpdate(ctx *Context, di uint32, effort float32) {
+func (rp *Rubicon) EffortUrgencyUpdate(di uint32, effort float32) {
 	if GlobalScalars.Value(int(GvVSMatrixHasGated), int(di)) > 0 {
-		rp.AddTimeEffort(ctx, di, effort)
+		rp.AddTimeEffort(di, effort)
 	} else {
-		rp.Urgency.AddEffort(ctx, di, effort)
+		rp.Urgency.AddEffort(di, effort)
 	}
 }
 
 // TimeEffortReset resets the raw time and effort back to zero,
 // at start of new gating event
-func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
+func (rp *Rubicon) TimeEffortReset(di uint32) {
 	GlobalScalars.Set(0, int(GvTime), int(di))
 	GlobalScalars.Set(0, int(GvEffort), int(di))
 	GlobalVectors.Set(0, int(GvCostRaw), int(0), int(di)) // effort is neg 0
@@ -782,12 +782,12 @@ func (rp *Rubicon) TimeEffortReset(ctx *Context, di uint32) {
 // This is not called directly in the Rubicon code -- can be used to compute
 // what the Rubicon code itself will compute -- see LHbPVDA
 // todo: this is not very meaningful anymore
-// func (pp *Rubicon) PVposFromDriveEffort(ctx *Context, usValue, drive, effort float32) float32 {
+// func (pp *Rubicon) PVposFromDriveEffort(usValue, drive, effort float32) float32 {
 // 	return usValue * drive * (1 - RubiconNormFun(pp.USs.PVnegWts[0]*effort))
 // }
 
 // RubiconSetDrive sets given Drive to given value
-func (rp *Rubicon) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
+func (rp *Rubicon) SetDrive(di uint32, dr uint32, val float32) {
 	GlobalVectors.Set(val, int(GvDrives), int(dr), int(di))
 }
 
@@ -795,19 +795,19 @@ func (rp *Rubicon) SetDrive(ctx *Context, di uint32, dr uint32, val float32) {
 // curiosity sets the strength for the curiosity drive
 // and drives are strengths of the remaining sim-specified drives, in order.
 // any drives not so specified are at the InitDrives baseline level.
-func (rp *Rubicon) SetDrives(ctx *Context, di uint32, curiosity float32, drives ...float32) {
-	rp.InitDrives(ctx, di)
-	rp.SetDrive(ctx, di, 0, curiosity)
+func (rp *Rubicon) SetDrives(di uint32, curiosity float32, drives ...float32) {
+	rp.InitDrives(di)
+	rp.SetDrive(di, 0, curiosity)
 	for i, v := range drives {
-		rp.SetDrive(ctx, di, uint32(1+i), v)
+		rp.SetDrive(di, uint32(1+i), v)
 	}
 }
 
 // DriveUpdate is used when auto-updating drive levels based on US consumption,
 // which partially satisfies (decrements) corresponding drive,
 // and on time passing, where drives adapt to their overall baseline levels.
-func (rp *Rubicon) DriveUpdate(ctx *Context, di uint32) {
-	rp.Drive.ExpStepAll(ctx, di)
+func (rp *Rubicon) DriveUpdate(di uint32) {
+	rp.Drive.ExpStepAll(di)
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		us := GlobalVectors.Value(int(GvUSpos), int(i), int(di))
@@ -825,7 +825,7 @@ func (rp *Rubicon) DriveUpdate(ctx *Context, di uint32) {
 // and sets the global HasRew flag, thus triggering a US learning event.
 // Note that costs can be used to track negative USs that are not strong
 // enough to trigger a US learning event.
-func (rp *Rubicon) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex int, magnitude float32) {
+func (rp *Rubicon) SetUS(di uint32, valence ValenceTypes, usIndex int, magnitude float32) {
 	GlobalScalars.Set(1, int(GvHasRew), int(di))
 	if valence == Positive {
 		usIndex = rp.USposIndex(usIndex)
@@ -840,13 +840,13 @@ func (rp *Rubicon) SetUS(ctx *Context, di uint32, valence ValenceTypes, usIndex 
 // ResetGoalState resets all the goal-engaged global values.
 // Critically, this is only called after goal accomplishment,
 // not after goal gating -- prevents "shortcutting" by re-gating.
-func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
+func (rp *Rubicon) ResetGoalState(di uint32) {
 	GlobalScalars.Set(0, int(GvVSMatrixHasGated), int(di))
-	rp.Urgency.Reset(ctx, di)
-	rp.TimeEffortReset(ctx, di)
-	rp.USs.USnegToZero(ctx, di) // all negs restart
-	rp.USs.CostToZero(ctx, di)
-	rp.ResetGiveUp(ctx, di)
+	rp.Urgency.Reset(di)
+	rp.TimeEffortReset(di)
+	rp.USs.USnegToZero(di) // all negs restart
+	rp.USs.CostToZero(di)
+	rp.ResetGiveUp(di)
 	GlobalScalars.Set(0, int(GvVSPatchPos), int(di))
 	GlobalScalars.Set(0, int(GvVSPatchPosSum), int(di))
 	GlobalScalars.Set(0, int(GvVSPatchPosPrev), int(di))
@@ -863,7 +863,7 @@ func (rp *Rubicon) ResetGoalState(ctx *Context, di uint32) {
 }
 
 // ResetGiveUp resets all the give-up related global values.
-func (rp *Rubicon) ResetGiveUp(ctx *Context, di uint32) {
+func (rp *Rubicon) ResetGiveUp(di uint32) {
 	GlobalScalars.Set(0, int(GvPVposEst), int(di))
 	GlobalScalars.Set(0, int(GvPVposVar), int(di))
 	GlobalScalars.Set(0, int(GvGiveUpProb), int(di))
@@ -873,7 +873,7 @@ func (rp *Rubicon) ResetGiveUp(ctx *Context, di uint32) {
 // NewState is called at very start of new state (trial) of processing.
 // sets HadRew = HasRew from last trial -- used to then reset various things
 // after reward.
-func (rp *Rubicon) NewState(ctx *Context, di uint32, rnd randx.Rand) {
+func (rp *Rubicon) NewState(di uint32, rnd randx.Rand) {
 	hadRewF := GlobalScalars.Value(int(GvHasRew), int(di))
 	hadRew := num.ToBool(hadRewF)
 	GlobalScalars.Set(hadRewF, int(GvHadRew), int(di))
@@ -884,23 +884,23 @@ func (rp *Rubicon) NewState(ctx *Context, di uint32, rnd randx.Rand) {
 	GlobalScalars.Set(0, int(GvHasRew), int(di))
 	GlobalScalars.Set(0, int(GvNegUSOutcome), int(di))
 
-	rp.VSPatchNewState(ctx, di)
+	rp.VSPatchNewState(di)
 
 	if hadRew {
-		rp.ResetGoalState(ctx, di)
+		rp.ResetGoalState(di)
 	} else if GlobalScalars.Value(int(GvVSMatrixJustGated), int(di)) > 0 {
 		GlobalScalars.Set(1, int(GvVSMatrixHasGated), int(di))
-		rp.Urgency.Reset(ctx, di)
+		rp.Urgency.Reset(di)
 	}
 	GlobalScalars.Set(0, int(GvVSMatrixJustGated), int(di))
-	rp.USs.USposToZero(ctx, di) // pos USs must be set fresh every time
+	rp.USs.USposToZero(di) // pos USs must be set fresh every time
 }
 
 // Step does one step (trial) after applying USs, Drives,
 // and updating Effort.  It should be the final call in ApplyRubicon.
 // Calls PVDA which does all US, PV, LHb, GiveUp updating.
-func (rp *Rubicon) Step(ctx *Context, di uint32, rnd randx.Rand) {
-	rp.PVDA(ctx, di, rnd)
+func (rp *Rubicon) Step(di uint32, rnd randx.Rand) {
+	rp.PVDA(di, rnd)
 }
 
 // SetGoalMaintFromLayer sets the GoalMaint global state variable
@@ -908,7 +908,7 @@ func (rp *Rubicon) Step(ctx *Context, di uint32, rnd randx.Rand) {
 // GoalMaint is normalized 0-1 based on the given max activity level,
 // with anything out of range clamped to 0-1 range.
 // Returns (and logs) an error if layer name not found.
-func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, layName string, maxAct float32) error {
+func (rp *Rubicon) SetGoalMaintFromLayer(di uint32, net *Network, layName string, maxAct float32) error {
 	ly := net.LayerByName(layName)
 	if ly == nil {
 		err := fmt.Errorf("SetGoalMaintFromLayer: layer named: %q not found", layName)
@@ -929,7 +929,7 @@ func (rp *Rubicon) SetGoalMaintFromLayer(ctx *Context, di uint32, net *Network, 
 
 // DecodeFromLayer decodes value and variance from the average activity (CaSpkD)
 // of the given layer name.  Use for decoding PVposEst and Var, and PVnegEst and Var
-func (rp *Rubicon) DecodeFromLayer(ctx *Context, di uint32, net *Network, layName string) (val, vr float32, err error) {
+func (rp *Rubicon) DecodeFromLayer(di uint32, net *Network, layName string) (val, vr float32, err error) {
 	ly := net.LayerByName(layName)
 	if ly == nil {
 		err = fmt.Errorf("DecodeFromLayer: layer named: %q not found", layName)
@@ -944,14 +944,14 @@ func (rp *Rubicon) DecodeFromLayer(ctx *Context, di uint32, net *Network, layNam
 
 // DecodePVEsts decodes estimated PV outcome values from PVposP and PVnegP
 // prediction layers, saves in global PVposEst, Var and PVnegEst, Var
-func (rp *Rubicon) DecodePVEsts(ctx *Context, di uint32, net *Network) {
-	posEst, posVar, err := rp.DecodeFromLayer(ctx, di, net, "PVposP")
+func (rp *Rubicon) DecodePVEsts(di uint32, net *Network) {
+	posEst, posVar, err := rp.DecodeFromLayer(di, net, "PVposP")
 	if err == nil {
 		GlobalScalars.Set(posEst, int(GvPVposEst), int(di))
 		GlobalScalars.Set(posVar, int(GvPVposVar), int(di))
 	}
 
-	negEst, negVar, err := rp.DecodeFromLayer(ctx, di, net, "PVnegP")
+	negEst, negVar, err := rp.DecodeFromLayer(di, net, "PVnegP")
 	if err == nil {
 		GlobalScalars.Set(negEst, int(GvPVnegEst), int(di))
 		GlobalScalars.Set(negVar, int(GvPVnegVar), int(di))
@@ -962,7 +962,7 @@ func (rp *Rubicon) DecodePVEsts(ctx *Context, di uint32, net *Network) {
 // in trial step units, which should decrease to 0 at the goal.
 // This should be set at the start of every trial.
 // Also computes the ProgressRate.
-func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
+func (rp *Rubicon) SetGoalDistEst(di uint32, dist float32) {
 	if GlobalScalars.Value(int(GvVSMatrixHasGated), int(di)) == 0 {
 		GlobalScalars.Set(dist, int(GvGoalDistPrev), int(di))
 		GlobalScalars.Set(dist, int(GvGoalDistEst), int(di))
@@ -982,7 +982,7 @@ func (rp *Rubicon) SetGoalDistEst(ctx *Context, di uint32, dist float32) {
 //    methods below used in computing Rubicon state, not generally called from sims
 
 // HasPosUS returns true if there is at least one non-zero positive US
-func (rp *Rubicon) HasPosUS(ctx *Context, di uint32) bool {
+func (rp *Rubicon) HasPosUS(di uint32) bool {
 	nd := rp.NPosUSs
 	for i := uint32(0); i < nd; i++ {
 		if GlobalVectors.Value(int(GvUSpos), int(i), int(di)) > 0 {
@@ -997,11 +997,11 @@ func (rp *Rubicon) HasPosUS(ctx *Context, di uint32) bool {
 // its current drive and weighting factor (pvPosSum),
 // and the normalized version of this sum (PVpos = overall positive PV)
 // as 1 / (1 + (PVposGain * pvPosSum))
-func (rp *Rubicon) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
+func (rp *Rubicon) PVpos(di uint32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * GlobalVectors.Value(int(GvUSpos), int(i), int(di)) * rp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * GlobalVectors.Value(int(GvUSpos), int(i), int(di)) * rp.Drive.EffectiveDrive(di, i)
 	}
 	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
@@ -1012,7 +1012,7 @@ func (rp *Rubicon) PVpos(ctx *Context, di uint32) (pvPosSum, pvPos float32) {
 // by a weighting factor and summed (usNegSum)
 // and the normalized version of this sum (PVneg = overall negative PV)
 // as 1 / (1 + (PVnegGain * PVnegSum))
-func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
+func (rp *Rubicon) PVneg(di uint32) (pvNegSum, pvNeg float32) {
 	nn := rp.NNegUSs
 	wts := rp.USs.PVnegWts
 	for i := uint32(0); i < nn; i++ {
@@ -1029,13 +1029,13 @@ func (rp *Rubicon) PVneg(ctx *Context, di uint32) (pvNegSum, pvNeg float32) {
 
 // PVsFromUSs updates the current PV summed, weighted, normalized values
 // from the underlying US values.
-func (rp *Rubicon) PVsFromUSs(ctx *Context, di uint32) {
-	pvPosSum, pvPos := rp.PVpos(ctx, di)
+func (rp *Rubicon) PVsFromUSs(di uint32) {
+	pvPosSum, pvPos := rp.PVpos(di)
 	GlobalScalars.Set(pvPosSum, int(GvPVposSum), int(di))
 	GlobalScalars.Set(pvPos, int(GvPVpos), int(di))
-	GlobalScalars.Set(num.FromBool[float32](rp.HasPosUS(ctx, di)), int(GvHasPosUS), int(di))
+	GlobalScalars.Set(num.FromBool[float32](rp.HasPosUS(di)), int(GvHasPosUS), int(di))
 
-	pvNegSum, pvNeg := rp.PVneg(ctx, di)
+	pvNegSum, pvNeg := rp.PVneg(di)
 	GlobalScalars.Set(pvNegSum, int(GvPVnegSum), int(di))
 	GlobalScalars.Set(pvNeg, int(GvPVneg), int(di))
 }
@@ -1043,7 +1043,7 @@ func (rp *Rubicon) PVsFromUSs(ctx *Context, di uint32) {
 // VSPatchNewState does VSPatch processing in NewState:
 // updates global VSPatchPos and VSPatchPosSum, sets to RewPred.
 // uses max across recorded VSPatch activity levels.
-func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
+func (rp *Rubicon) VSPatchNewState(di uint32) {
 	prev := GlobalScalars.Value(int(GvVSPatchPos), int(di))
 	GlobalScalars.Set(prev, int(GvVSPatchPosPrev), int(di))
 	mx := float32(0)
@@ -1078,14 +1078,14 @@ func (rp *Rubicon) VSPatchNewState(ctx *Context, di uint32) {
 // PVposEstFromUSs returns the estimated positive PV value
 // based on drives and given US values.  This can be used
 // to compute estimates to compare network performance.
-func (rp *Rubicon) PVposEstFromUSs(ctx *Context, di uint32, uss []float32) (pvPosSum, pvPos float32) {
+func (rp *Rubicon) PVposEstFromUSs(di uint32, uss []float32) (pvPosSum, pvPos float32) {
 	nd := rp.NPosUSs
 	if len(uss) < int(nd) {
 		nd = uint32(len(uss))
 	}
 	wts := rp.USs.PVposWts
 	for i := uint32(0); i < nd; i++ {
-		pvPosSum += wts[i] * uss[i] * rp.Drive.EffectiveDrive(ctx, di, i)
+		pvPosSum += wts[i] * uss[i] * rp.Drive.EffectiveDrive(di, i)
 	}
 	pvPos = RubiconNormFun(rp.USs.PVposGain * pvPosSum)
 	return
@@ -1143,8 +1143,8 @@ func (rp *Rubicon) DAFromPVs(pvPos, pvNeg, vsPatchPos, vsPatchPosSum float32) (b
 
 // GiveUpOnGoal determines whether to give up on current goal
 // based on Utility, Timing, and Progress weight factors.
-func (rp *Rubicon) GiveUpOnGoal(ctx *Context, di uint32, rnd randx.Rand) bool {
-	cnSum, guSum := rp.GiveUp.Sums(ctx, di)
+func (rp *Rubicon) GiveUpOnGoal(di uint32, rnd randx.Rand) bool {
+	cnSum, guSum := rp.GiveUp.Sums(di)
 	prob, giveUp := rp.GiveUp.Prob(cnSum, guSum, rnd)
 	GlobalScalars.Set(prob, int(GvGiveUpProb), int(di))
 	GlobalScalars.Set(num.FromBool[float32](giveUp), int(GvGiveUp), int(di))
@@ -1157,9 +1157,9 @@ func (rp *Rubicon) GiveUpOnGoal(ctx *Context, di uint32, rnd randx.Rand) bool {
 // and the resulting values are stored in global variables.
 // Called after updating USs, Effort, Drives at start of trial step,
 // in Step.
-func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd randx.Rand) {
-	rp.USs.USnegCostFromRaw(ctx, di)
-	rp.PVsFromUSs(ctx, di)
+func (rp *Rubicon) PVDA(di uint32, rnd randx.Rand) {
+	rp.USs.USnegCostFromRaw(di)
+	rp.PVsFromUSs(di)
 
 	hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
 	pvPos := GlobalScalars.Value(int(GvPVpos), int(di))
@@ -1168,30 +1168,30 @@ func (rp *Rubicon) PVDA(ctx *Context, di uint32, rnd randx.Rand) {
 	vsPatchPosSum := GlobalScalars.Value(int(GvVSPatchPosSum), int(di))
 
 	if hasRew {
-		rp.ResetGiveUp(ctx, di)
-		rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual pos rew
+		rp.ResetGiveUp(di)
+		rew := rp.LHb.DAforUS(di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual pos rew
 		GlobalScalars.Set(rew, int(GvRew), int(di))
 		return
 	}
 
 	if GlobalScalars.Value(int(GvVSMatrixHasGated), int(di)) > 0 {
-		giveUp := rp.GiveUpOnGoal(ctx, di, rnd)
+		giveUp := rp.GiveUpOnGoal(di, rnd)
 		if giveUp {
-			GlobalScalars.Set(1, int(GvHasRew), int(di))                            // key for triggering reset
-			rew := rp.LHb.DAforUS(ctx, di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual rew
+			GlobalScalars.Set(1, int(GvHasRew), int(di))                       // key for triggering reset
+			rew := rp.LHb.DAforUS(di, pvPos, pvNeg, vsPatchPos, vsPatchPosSum) // only when actual rew
 			GlobalScalars.Set(rew, int(GvRew), int(di))
 			return
 		}
 	}
 
 	// no US regular case
-	rp.LHb.DAforNoUS(ctx, di)
+	rp.LHb.DAforNoUS(di)
 	GlobalScalars.Set(0, int(GvRew), int(di))
 }
 
 // GlobalSetRew is a convenience function for setting the external reward
 // state in Globals variables
-func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
+func GlobalSetRew(di uint32, rew float32, hasRew bool) {
 	GlobalScalars.Set(num.FromBool[float32](hasRew), int(GvHasRew), int(di))
 	if hasRew {
 		GlobalScalars.Set(rew, int(GvRew), int(di))
@@ -1204,7 +1204,7 @@ func GlobalSetRew(ctx *Context, di uint32, rew float32, hasRew bool) {
 
 // RubiconUSStimValue returns stimulus value for US at given index
 // and valence (includes Cost).  If US > 0.01, a full 1 US activation is returned.
-func RubiconUSStimValue(ctx *Context, di uint32, usIndex uint32, valence ValenceTypes) float32 {
+func RubiconUSStimValue(di uint32, usIndex uint32, valence ValenceTypes) float32 {
 	nix := GetNetworkIxs(0)
 	us := float32(0)
 	switch valence {

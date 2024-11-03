@@ -17,24 +17,26 @@ import (
 // and plusEnd is end of plus phase, typically 199
 // resets the state at start of trial.
 // Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart, plusEnd int, trial ...etime.Times) {
+func LooperStdPhases(man *looper.Manager, net *Network, plusStart, plusEnd int, trial ...etime.Times) {
 	trl := etime.Trial
 	if len(trial) > 0 {
 		trl = trial[0]
 	}
 	minusPhase := &looper.Event{Name: "MinusPhase", AtCounter: 0}
 	minusPhase.OnEvent.Add("MinusPhase:Start", func() {
+		ctx := net.Context()
 		ctx.PlusPhase.SetBool(false)
 		ctx.NewPhase(false)
 	})
-	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1(ctx) })
-	beta2 := looper.NewEvent("Beta2", 100, func() { net.SpkSt2(ctx) })
+	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1() })
+	beta2 := looper.NewEvent("Beta2", 100, func() { net.SpkSt2() })
 	plusPhase := &looper.Event{Name: "PlusPhase", AtCounter: plusStart}
-	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase(ctx) })
+	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase() })
 	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
+		ctx := net.Context()
 		ctx.PlusPhase.SetBool(true)
 		ctx.NewPhase(true)
-		net.PlusPhaseStart(ctx)
+		net.PlusPhaseStart()
 	})
 
 	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase)
@@ -42,11 +44,10 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	for m, _ := range man.Stacks {
 		stack := man.Stacks[m]
 		stack.Loops[trl].OnStart.Add("NewState", func() {
-			net.NewState(ctx)
-			ctx.NewState(m)
+			net.NewState(m)
 		})
 		stack.Loops[trl].OnEnd.Add("PlusPhase:End", func() {
-			net.PlusPhase(ctx)
+			net.PlusPhase()
 		})
 	}
 }
@@ -54,7 +55,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFromDWt functions to looper
 // for given network, ctx, and netview update manager
 // Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
+func LooperSimCycleAndLearn(man *looper.Manager, net *Network, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
 	trl := etime.Trial
 	if len(trial) > 0 {
 		trl = trial[0]
@@ -73,20 +74,19 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 			// 	}
 			// }
 			net.Cycle()
-			ctx.CycleInc()
 		})
 	}
 	ttrl := man.GetLoop(etime.Train, trl)
 	if ttrl != nil {
 		ttrl.OnEnd.Add("UpdateWeights", func() {
-			net.DWt(ctx)
+			net.DWt()
 			if viewupdt.IsViewingSynapse() {
 				//TODO:
 				// net.GPU.SyncSynapsesFromGPU()
 				// net.GPU.SyncSynCaFromGPU() // note: only time we call this
 				viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 			}
-			net.WtFromDWt(ctx)
+			net.WtFromDWt()
 		})
 	}
 
@@ -94,6 +94,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 	for m, loops := range man.Stacks {
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetCtxMode", func() {
+				ctx := net.Context()
 				ctx.Mode = m
 			})
 		}

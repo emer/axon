@@ -187,8 +187,7 @@ func JsonToParams(b []byte) string {
 
 // note: all basic computation can be performed on layer-level and path level
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Init methods
+////////  Init methods
 
 // InitWeights initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
@@ -394,12 +393,11 @@ func (ly *Layer) InitWtSym(ctx *Context) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  ApplyExt
+////////  ApplyExt
 
 // InitExt initializes external input state.
 // Should be called prior to ApplyExt on all layers receiving Ext input.
-func (ly *Layer) InitExt(ctx *Context) {
+func (ly *Layer) InitExt() {
 	if !ly.Type.IsExt() {
 		return
 	}
@@ -410,7 +408,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 			continue
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Params.InitExt(ctx, ni, di)
+			ly.Params.InitExt(ni, di)
 			Exts[ly.Params.Indexes.ExtsSt + lni, di] = -1 // missing by default
 		}
 	}
@@ -428,23 +426,23 @@ func (ly *Layer) InitExt(ctx *Context) {
 // otherwise it goes in Ext.
 // Also sets the Exts values on layer, which are used for the GPU version,
 // which requires calling the network ApplyExts() method -- is a no-op for CPU.
-func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext tensor.Tensor) {
+func (ly *Layer) ApplyExt(di uint32, ext tensor.Tensor) {
 	switch {
 	case ext.NumDims() == 2 && ly.Shape.NumDims() == 4: // special case
-		ly.ApplyExt2Dto4D(ctx, di, ext)
+		ly.ApplyExt2Dto4D(di, ext)
 	case ext.NumDims() != ly.Shape.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
-		ly.ApplyExt1DTsr(ctx, di, ext)
+		ly.ApplyExt1DTsr(di, ext)
 	case ext.NumDims() == 2:
-		ly.ApplyExt2D(ctx, di, ext)
+		ly.ApplyExt2D(di, ext)
 	case ext.NumDims() == 4:
-		ly.ApplyExt4D(ctx, di, ext)
+		ly.ApplyExt4D(di, ext)
 	}
 }
 
 // ApplyExtVal applies given external value to given neuron
 // using clearMask, setMask, and toTarg from ApplyExtFlags.
 // Also saves Val in Exts for potential use by GPU.
-func (ly *Layer) ApplyExtValue(ctx *Context, lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
+func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
 	ni := ly.NeurStIndex + lni
 	if NrnIsOff(ni) {
 		return
@@ -470,7 +468,7 @@ func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
 }
 
 // ApplyExt2D applies 2D tensor external input
-func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
+func (ly *Layer) ApplyExt2D(di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	ymx := min(ext.DimSize(0), ly.Shape.DimSize(0))
 	xmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
@@ -479,13 +477,13 @@ func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext tensor.Tensor) {
 			idx := []int{y, x}
 			val := float32(ext.Float(idx...))
 			lni := uint32(ly.Shape.IndexTo1D(idx...))
-			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
+			ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
 }
 
 // ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
-func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
+func (ly *Layer) ApplyExt2Dto4D(di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	lNy, lNx, _, _ := tensor.Projection2DShape(&ly.Shape, false)
 
@@ -496,13 +494,13 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext tensor.Tensor) {
 			idx := []int{y, x}
 			val := float32(ext.Float(idx...))
 			lni := uint32(tensor.Projection2DIndex(&ly.Shape, false, y, x))
-			ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
+			ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
 }
 
 // ApplyExt4D applies 4D tensor external input
-func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext tensor.Tensor) {
+func (ly *Layer) ApplyExt4D(di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	ypmx := min(ext.DimSize(0), ly.Shape.DimSize(0))
 	xpmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
@@ -515,7 +513,7 @@ func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext tensor.Tensor) {
 					idx := []int{yp, xp, yn, xn}
 					val := float32(ext.Float(idx...))
 					lni := uint32(ly.Shape.IndexTo1D(idx...))
-					ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
+					ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
 				}
 			}
 		}
@@ -525,36 +523,36 @@ func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext tensor.Tensor) {
 // ApplyExt1DTsr applies external input using 1D flat interface into tensor.
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
-func (ly *Layer) ApplyExt1DTsr(ctx *Context, di uint32, ext tensor.Tensor) {
+func (ly *Layer) ApplyExt1DTsr(di uint32, ext tensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(min(ext.Len(), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
 		val := float32(ext.Float1D(int(lni)))
-		ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
+		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
 	}
 }
 
 // ApplyExt1D applies external input in the form of a flat 1-dimensional slice of floats
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
-func (ly *Layer) ApplyExt1D(ctx *Context, di uint32, ext []float64) {
+func (ly *Layer) ApplyExt1D(di uint32, ext []float64) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(min(len(ext), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
 		val := float32(ext[lni])
-		ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
+		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
 	}
 }
 
 // ApplyExt1D32 applies external input in the form of a flat 1-dimensional slice of float32s.
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
-func (ly *Layer) ApplyExt1D32(ctx *Context, di uint32, ext []float32) {
+func (ly *Layer) ApplyExt1D32(di uint32, ext []float32) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(min(len(ext), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
 		val := ext[lni]
-		ly.ApplyExtValue(ctx, lni, di, val, clearMask, setMask, toTarg)
+		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
 	}
 }
 
@@ -576,8 +574,7 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  InitGScale
+////////  InitGScale
 
 // InitGScale computes the initial scaling factor for synaptic input conductances G,
 // stored in GScale.Scale, based on sending layer initial activation.
@@ -653,28 +650,7 @@ func (ly *Layer) InitGScale(ctx *Context) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Threading / Reports
-
-// CostEst returns the estimated computational cost associated with this layer,
-// separated by neuron-level and synapse-level, in arbitrary units where
-// cost per synapse is 1.  Neuron-level computation is more expensive but
-// there are typically many fewer neurons, so in larger networks, synaptic
-// costs tend to dominate.  Neuron cost is estimated from TimerReport output
-// for large networks.
-func (ly *Layer) CostEst() (neur, syn, tot int) {
-	perNeur := 300 // cost per neuron, relative to synapse which is 1
-	neur = int(ly.NNeurons) * perNeur
-	syn = 0
-	for _, pt := range ly.SendPaths {
-		syn += int(pt.NSyns)
-	}
-	tot = neur + syn
-	return
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Stats
+////////  Stats
 
 // note: use float64 for stats as that is best for logging
 
@@ -813,8 +789,7 @@ func (ly *Layer) TestValues(ctrKey string, vals map[string]float32) {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Lesion
+////////  Lesion
 
 // UnLesionNeurons unlesions (clears the Off flag) for all neurons in the layer
 func (ly *Layer) UnLesionNeurons() { //types:add
@@ -855,6 +830,7 @@ func (ly *Layer) LesionNeurons(prop float32) int { //types:add
 	return nl
 }
 
+// MakeToolbar is the standard core GUI toolbar for the layer when edited.
 func (ly *Layer) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(ly.Defaults).SetIcon(icons.Reset)
@@ -873,3 +849,4 @@ func (ly *Layer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(ly.UnLesionNeurons).SetIcon(icons.Cut)
 	})
 }
+

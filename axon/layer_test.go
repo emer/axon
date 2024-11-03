@@ -17,9 +17,7 @@ func TestLayer(t *testing.T) {
 	inputLayer := net.AddLayer("Input", InputLayer, shape...)
 	hiddenLayer := net.AddLayer("Hidden", SuperLayer, shape...)
 	outputLayer := net.AddLayer("Output", TargetLayer, shape...)
-
-	ctx := NewContext()
-	assert.NoError(t, net.Build(ctx))
+	assert.NoError(t, net.Build())
 
 	assert.True(t, inputLayer.Params.IsInput())
 	assert.False(t, outputLayer.Params.IsInput())
@@ -174,9 +172,9 @@ func createNetwork(ctx *Context, shape []int, t *testing.T) *Network {
 	full := paths.NewFull()
 	net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPath)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	assert.NoError(t, net.Build(ctx))
+	assert.NoError(t, net.Build())
 	net.Defaults()
-	net.InitWeights(ctx)
+	net.InitWeights()
 	return net
 }
 
@@ -193,9 +191,7 @@ func TestLayerBase_IsOff(t *testing.T) {
 	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, ForwardPath)
 	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 
-	ctx := NewContext()
-
-	assert.NoError(t, net.Build(ctx))
+	assert.NoError(t, net.Build())
 	net.Defaults()
 
 	assert.False(t, inputLayer.Off)
