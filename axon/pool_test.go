@@ -102,7 +102,7 @@ var PoolParamSets = params.Sets{
 func newPoolTestNet(ctx *Context, nData int) *Network {
 	testNet := NewNetwork("testNet")
 	testNet.SetRandSeed(42) // critical for ActAvg values
-	testNet.MaxData = uint32(nData)
+	testNet.SetMaxData(ctx, nData)
 
 	inLay := testNet.AddLayer4D("Input", InputLayer, 4, 1, 1, 4)
 	hidLay := testNet.AddLayer4D("Hidden", SuperLayer, 4, 1, 1, 4) // note: tried with up to 400 -- no diff
