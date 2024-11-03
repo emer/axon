@@ -95,10 +95,10 @@ func newTestNet(nData int) *Network {
 	hidLay := testNet.AddLayer("Hidden", SuperLayer, 4, 1)
 	outLay := testNet.AddLayer("Output", TargetLayer, 4, 1)
 
-	_ = inLay
-	testNet.ConnectLayers(inLay, hidLay, paths.NewOneToOne(), ForwardPath)
-	testNet.ConnectLayers(hidLay, outLay, paths.NewOneToOne(), ForwardPath)
-	testNet.ConnectLayers(outLay, hidLay, paths.NewOneToOne(), BackPath)
+	one2one := paths.NewOneToOne()
+	testNet.ConnectLayers(inLay, hidLay, one2one, ForwardPath)
+	testNet.ConnectLayers(hidLay, outLay, one2one, ForwardPath)
+	testNet.ConnectLayers(outLay, hidLay, one2one, BackPath)
 
 	testNet.Rubicon.SetNUSs(4, 3)
 	testNet.Rubicon.Defaults()
@@ -121,7 +121,6 @@ func newTestNetFull(nData int) *Network {
 	hidLay := testNet.AddLayer("Hidden", SuperLayer, 4, 1)
 	outLay := testNet.AddLayer("Output", TargetLayer, 4, 1)
 
-	_ = inLay
 	full := paths.NewFull()
 	testNet.ConnectLayers(inLay, hidLay, full, ForwardPath)
 	testNet.ConnectLayers(hidLay, outLay, full, ForwardPath)
@@ -161,7 +160,7 @@ func TestSynValues(t *testing.T) {
 
 func newInPats() *tensor.Float32 {
 	inPats := tensor.NewFloat32(4, 4, 1)
-	for pi := 0; pi < 4; pi++ {
+	for pi := range 4 {
 		inPats.Set(1, pi, pi, 0)
 	}
 	return inPats
@@ -208,7 +207,7 @@ func TestSpikeProp(t *testing.T) {
 	pat := tensor.NewFloat32(1, 1)
 	pat.Set(1, 0, 0)
 
-	for del := 0; del <= 4; del++ {
+	for del := range 5 {
 		pt.Params.Com.Delay = uint32(del)
 		pt.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
 		net.InitWeights()                  // resets Gbuf
@@ -218,7 +217,7 @@ func TestSpikeProp(t *testing.T) {
 
 		inCyc := 0
 		hidCyc := 0
-		for cyc := 0; cyc < 100; cyc++ {
+		for cyc := range 100 {
 			net.Cycle()
 			// fmt.Println(cyc, Neurons[Ge, hidLay.NeurStIndex, 0], Neurons[GeRaw, hidLay.NeurStIndex, 0])
 			if Neurons[Spike, inLay.NeurStIndex, 0] > 0 {
@@ -283,7 +282,7 @@ func TestInitWeights(t *testing.T) {
 		testNet.SetRandSeed(42) // critical for ActAvg values
 		testNet.InitWeights()
 		testNet.InitExt()
-		for li := 0; li < 3; li++ {
+		for li := range 3 {
 			ly := testNet.Layers[li]
 			for di := range nData {
 				for _, vnm := range NeuronVarNames {
@@ -295,9 +294,9 @@ func TestInitWeights(t *testing.T) {
 				}
 			}
 		}
-		for li := 0; li < 3; li++ {
+		for li := range 3 {
 			ly := testNet.Layers[li]
-			for di := 0; di < nData; di++ {
+			for di := range nData {
 				lpi := ly.Params.PoolIndex(0)
 				lnm := fmt.Sprintf("%s: di: %d", ly.Name, di)
 				poolValues(lpi, di, valMap, lnm)
@@ -310,14 +309,14 @@ func TestInitWeights(t *testing.T) {
 
 			inpat := inPats.SubSpace(pi)
 			testNet.InitExt()
-			for di := 0; di < nData; di++ {
+			for di := range nData {
 				inLay.ApplyExt(uint32(di), inpat)
 				outLay.ApplyExt(uint32(di), inpat)
 			}
 			testNet.ApplyExts() // key now for GPU
 
-			for qtr := 0; qtr < 4; qtr++ {
-				for cyc := 0; cyc < 50; cyc++ {
+			for qtr := range 4 {
+				for range 50 {
 					testNet.Cycle()
 				}
 				if qtr == 2 {
@@ -404,7 +403,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 
 	cycPerQtr := 50
 
-	for pi := 0; pi < 4; pi++ {
+	for pi := range 4 {
 		testNet.NewState(etime.Train)
 
 		inpat := inPats.SubSpace(pi)
@@ -413,12 +412,26 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 		outLay.ApplyExt(0, inpat)
 		testNet.ApplyExts() // key now for GPU
 
-		for qtr := 0; qtr < 4; qtr++ {
-			for cyc := 0; cyc < cycPerQtr; cyc++ {
+		for qtr := range 4 {
+			for cyc := range cycPerQtr {
+				_ = cyc
 				testNet.Cycle()
 				// if gpu {
 				// 	testNet.GPU.SyncNeuronsFromGPU()
 				// }
+				// inLay.UnitValues(&inActs, "Spike", 0)
+				// hidLay.UnitValues(&hidActs, "Spike", 0)
+				// hidLay.UnitValues(&hidGes, "GeRaw", 0)
+				// hidLay.UnitValues(&hidGis, "Gi", 0)
+				// outLay.UnitValues(&outActs, "Spike", 0)
+				// outLay.UnitValues(&outGes, "Ge", 0)
+				// outLay.UnitValues(&outGis, "Gi", 0)
+				// fmt.Println("\n############ Cycle:", cyc)
+				// fmt.Println("In Act:", inActs)
+				// fmt.Println("Hid Act:", hidActs)
+				// fmt.Println("Hid Ge:", hidGes)
+				// fmt.Println("Hid Gi:", hidGis)
+				// fmt.Println("Out Act:", outActs)
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()

@@ -285,7 +285,7 @@ func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni ui
 	PathGSyns.Set(gsyn, int(npti), int(di))
 }
 
-// GatherSpikes integrates G*Raw and G*Syn values for given neuron
+// GatherSpikesGSyn integrates G*Raw and G*Syn values for given neuron
 // from the given Path-level GRaw value, first integrating
 // pathway-level GSyn value.
 func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uint32, gRaw float32, gSyn *float32) {

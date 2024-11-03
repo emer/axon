@@ -819,7 +819,7 @@ func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
 
 	for pti := uint32(0); pti < ly.Indexes.SendN; pti++ {
 		pt := GetPaths(ly.Indexes.SendSt + pti)
-		pt.SendSpike(ctx, ni, lni, di)
+		pt.SendSpike(ctx, ni, di, lni)
 	}
 }
 
