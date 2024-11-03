@@ -186,7 +186,7 @@ type Network struct {
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
-	// [Layer][Data]
+	// [LayerVarsN][Layer][Data]
 	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
@@ -253,6 +253,7 @@ func (nt *Network) Init() {
 	nt.NetworkIxs = make([]NetworkIndexes, 1)
 	nt.Ctx = make([]Context, 1)
 	nt.NetIxs().MaxData = 1
+	NetworkIxs = nt.NetworkIxs // may reference things before build
 }
 
 // NewNetwork returns a new axon Network
@@ -698,9 +699,9 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
 	nt.LayParams = make([]LayerParams, nLayers)
-	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, maxData)
+	sltensor.SetShapeSizes(&nt.LayerStates, int(LayerVarsN), nLayers, maxData)
 	sltensor.SetShapeSizes(&nt.Pools, int(PoolVarsN), totPools, maxData)
-	sltensor.SetShapeSizes(&nt.PoolsInt, int(PoolIntVarsN), totPools, maxData)
+	sltensor.SetShapeSizes(&nt.PoolsInt, int(PoolIntVarsTot), totPools, maxData)
 	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, maxData)
 	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
 	sltensor.SetShapeSizes(&nt.NeuronIxs, int(NeuronIndexVarsN), totNeurons)
@@ -710,6 +711,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 
 	sltensor.SetShapeSizes(&nt.GlobalScalars, int(GlobalScalarVarsN), maxData)
 	sltensor.SetShapeSizes(&nt.GlobalVectors, int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
+
+	nt.SetAsCurrent()
 
 	totSynapses := 0
 	totRecvCon := 0
@@ -752,7 +755,7 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				PoolsInt.Set(int32(li), int(PoolLayerIdx), int(pi), int(di))
+				nt.PoolsInt.Set(int32(li), int(PoolLayerIdx), int(pi), int(di))
 			}
 		}
 		if ly.Type.IsExt() {
@@ -866,8 +869,8 @@ func (nt *Network) Build(simCtx *Context) error { //types:add
 		}
 	}
 	nix.NSyns = uint32(syIndex)
-
 	nt.LayoutLayers()
+	nt.SetAsCurrent()
 	return errors.Join(errs...)
 }
 
@@ -909,6 +912,7 @@ func (nt *Network) BuildPathGBuf() {
 func (nt *Network) SetAsCurrent() {
 	Layers = nt.LayParams
 	Paths = nt.PathParams
+	NetworkIxs = nt.NetworkIxs
 	NeuronIxs = &nt.NeuronIxs
 	SynapseIxs = &nt.SynapseIxs
 	PathSendCon = &nt.PathSendCon
@@ -918,12 +922,12 @@ func (nt *Network) SetAsCurrent() {
 	Ctx = nt.Ctx
 	Neurons = &nt.Neurons
 	NeuronAvgs = &nt.NeuronAvgs
-	Pools = &nt.Pools
-	PoolsInt = &nt.PoolsInt
 	LayerStates = &nt.LayerStates
 	GlobalScalars = &nt.GlobalScalars
 	GlobalVectors = &nt.GlobalVectors
 	Exts = &nt.Exts
+	Pools = &nt.Pools
+	PoolsInt = &nt.PoolsInt
 	PathGBuf = &nt.PathGBuf
 	PathGSyns = &nt.PathGSyns
 	Synapses = &nt.Synapses

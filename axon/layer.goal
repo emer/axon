@@ -366,7 +366,7 @@ func (ly *Layer) InitPathGBuffs(ctx *Context) {
 		if pt.Off {
 			continue
 		}
-		pt.InitGBuffs()
+		pt.Params.InitGBuffs()
 	}
 }
 

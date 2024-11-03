@@ -329,16 +329,41 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 		}
 	}
 	recvNeurSt := pt.Indexes.RecvNeurSt
+	npst := pt.Indexes.NPathNeurSt
 	cni := pt.Indexes.SendConSt + lni
 	synst := pt.Indexes.SynapseSt + PathSendCon.Value(int(cni), int(StartOff))
 	synn := PathSendCon.Value(int(cni), int(Nitems))
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := synst + ci
 		ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
-		npti := pt.Indexes.NPathNeurSt + (ri - recvNeurSt)
+		npti := npst + (ri - recvNeurSt)
 		deli := pt.Com.WriteOff(ctx.CyclesTotal)
 		sv := int32(sendVal * Synapses.Value(int(Wt), int(syni)))
 		atomic.AddInt32(PathGBuf.ValuePtr(int(deli), int(npti), int(di)), sv)
+	}
+}
+
+// InitGBuffs initializes the per-pathway synaptic conductance buffers.
+// This is not typically needed (called during InitWeights, InitActs)
+// but can be called when needed.  Must be called to completely initialize
+// prior activity, e.g., full Glong clearing.
+func (pt *PathParams) InitGBuffs() {
+	nix := GetNetworkIxs(0)
+	maxd := nix.MaxData
+	mdel := nix.MaxDelay + 1
+	rnn := pt.Indexes.RecvNeurN
+	npst := pt.Indexes.NPathNeurSt
+	for dl := range mdel {
+		for ri := range rnn {
+			for di := range maxd {
+				PathGBuf.Set(0.0, int(dl), int(npst+ri), int(di))
+			}
+		}
+	}
+	for ri := range rnn {
+		for di := range maxd {
+			PathGSyns.Set(0.0, int(npst+ri), int(di))
+		}
 	}
 }
 

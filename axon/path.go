@@ -202,7 +202,7 @@ func (pt *Path) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, 
 // enforcing current constraints.
 func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 	pt.Params.Learn.LRate.Init()
-	pt.InitGBuffs()
+	pt.Params.InitGBuffs()
 	rlay := pt.Recv
 	spct := pt.Params.SWts.Init.SPct
 	if rlay.Params.IsTarget() {
@@ -366,20 +366,4 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 			}
 		}
 	}
-}
-
-// InitGBuffs initializes the per-pathway synaptic conductance buffers.
-// This is not typically needed (called during InitWeights, InitActs)
-// but can be called when needed.  Must be called to completely initialize
-// prior activity, e.g., full Glong clearing.
-func (pt *Path) InitGBuffs() {
-	// TODO: fixme
-	//
-	//	for ri := range pt.GBuf {
-	//		pt.GBuf[ri] = 0
-	//	}
-	//
-	//	for ri := range pt.GSyns {
-	//		pt.GSyns[ri] = 0
-	//	}
 }

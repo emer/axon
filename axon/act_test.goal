@@ -1,0 +1,75 @@
+// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package axon
+
+import (
+	"testing"
+
+	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
+)
+
+// TOLERANCE is the numerical difference tolerance for comparing vs. target values
+const TOLERANCE = float32(1.0e-8)
+
+func TestActUpdate(t *testing.T) {
+	geinc := []float32{.01, .02, .03, .04, .05, .1, .2, .3, .2}
+	correctGe := []float32{0.01, 0.038, 0.090399995, 0.17232, 0.28785598, 0.48028478, 0.8342278, 1.4173822, 2.083906}
+	ge := make([]float32, len(geinc))
+	correctInet := []float32{0.5057899, 0.20232204, 0.13488814, 0.11263328, 0.16552368, 0.23408258, 0.3751847, 3.1268563, -1.1801764}
+	inet := make([]float32, len(geinc))
+	correctVm := []float32{0.1799964, 0.2519971, 0.3, 0.34150493, 0.40320978, 0.4922422, 0.6383711, 1, 0.5800084}
+	vm := make([]float32, len(geinc))
+	correctSpike := []float32{0, 0, 0, 0, 0, 0, 0, 1, 0}
+	spike := make([]float32, len(geinc))
+	correctAct := []float32{0.3558719, 0.585099, 0.7327506, 0.82785714, 0.88911796, 0.9285778, 0.9539949, 0.97036684, 0.98091245}
+	act := make([]float32, len(geinc))
+
+	Neurons = tensor.NewFloat32(int(NeuronVarsN), 1, 1)
+
+	ctx := NewContext()
+	ac := ActParams{}
+	ac.Defaults()
+	ni := uint32(0)
+	di := uint32(0)
+
+	for i := range geinc {
+		Neurons[GeRaw, ni, di] += geinc[i]
+		Neurons[GeSyn, ni, di] = ac.Dt.GeSynFromRaw(Neurons[GeSyn, ni, di], Neurons[GeRaw, ni, di])
+		ac.GeFromSyn(ctx, ni, di, Neurons[GeSyn, ni, di], Neurons[GeExt, ni, di])
+		ac.GiFromSyn(ctx, ni, di, Neurons[GiSyn, ni, di])
+		ac.VmFromG(ctx, ni, di)
+		ac.SpikeFromVm(ctx, ni, di)
+		ge[i] = Neurons[Ge, ni, di]
+		inet[i] = Neurons[Inet, ni, di]
+		vm[i] = Neurons[Vm, ni, di]
+		spike[i] = Neurons[Spike, ni, di]
+		act[i] = Neurons[Act, ni, di]
+		difge := math32.Abs(ge[i] - correctGe[i])
+		if difge > TOLERANCE { // allow for small numerical diffs
+			t.Errorf("ge err: idx: %v, geinc: %v, ge: %v, corge: %v, dif: %v\n", i, geinc[i], ge[i], correctGe[i], difge)
+		}
+		difinet := math32.Abs(inet[i] - correctInet[i])
+		if difinet > TOLERANCE { // allow for small numerical diffs
+			t.Errorf("Inet err: idx: %v, geinc: %v, inet: %v, corinet: %v, dif: %v\n", i, geinc[i], inet[i], correctInet[i], difinet)
+		}
+		difvm := math32.Abs(vm[i] - correctVm[i])
+		if difvm > TOLERANCE { // allow for small numerical diffs
+			t.Errorf("Vm err: idx: %v, geinc: %v, vm: %v, corvm: %v, dif: %v\n", i, geinc[i], vm[i], correctVm[i], difvm)
+		}
+		difspk := math32.Abs(spike[i] - correctSpike[i])
+		if difspk > TOLERANCE { // allow for small numerical diffs
+			t.Errorf("Spk err: idx: %v, geinc: %v, spk: %v, corspk: %v, dif: %v\n", i, geinc[i], spike[i], correctSpike[i], difspk)
+		}
+		difact := math32.Abs(act[i] - correctAct[i])
+		if difact > TOLERANCE { // allow for small numerical diffs
+			t.Errorf("Act err: idx: %v, geinc: %v, act: %v, coract: %v, dif: %v\n", i, geinc[i], act[i], correctAct[i], difact)
+		}
+	}
+	// fmt.Printf("ge vals: %v\n", ge)
+	// fmt.Printf("Inet vals: %v\n", inet)
+	// fmt.Printf("vm vals: %v\n", vm)
+	// fmt.Printf("act vals: %v\n", act)
+}

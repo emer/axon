@@ -1177,7 +1177,7 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 		geS += Neurons.Value(int(GeExt), int(ni), int(di))
 	}
 
-	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ni, di, NeuronHasExt) { // todo: this flag check is not working
+	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ni, di, NeuronHasExt) {
 		geS = Neurons.Value(int(Ext), int(ni), int(di)) * ac.Clamp.Ge
 		Neurons.Set(geS, int(GeExt), int(ni), int(di))
 		geE = 0 // no extra in this case

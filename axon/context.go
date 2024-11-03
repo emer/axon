@@ -75,6 +75,7 @@ type Context struct {
 
 // Defaults sets default values
 func (ctx *Context) Defaults() {
+	ctx.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
 	ctx.SlowInterval = 100
