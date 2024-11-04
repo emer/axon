@@ -421,20 +421,6 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 				//	if gpu {
 				//		testNet.GPU.SyncNeuronsFromGPU()
 				//	}
-				//
-				// inLay.UnitValues(&inActs, "Spike", 0)
-				// hidLay.UnitValues(&hidActs, "Spike", 0)
-				// hidLay.UnitValues(&hidGes, "GeRaw", 0)
-				// hidLay.UnitValues(&hidGis, "Gi", 0)
-				// outLay.UnitValues(&outActs, "Spike", 0)
-				// outLay.UnitValues(&outGes, "Ge", 0)
-				// outLay.UnitValues(&outGis, "Gi", 0)
-				// fmt.Println("\n############ Cycle:", cyc)
-				// fmt.Println("In Act:", inActs)
-				// fmt.Println("Hid Act:", hidActs)
-				// fmt.Println("Hid Ge:", hidGes)
-				// fmt.Println("Hid Gi:", hidGis)
-				// fmt.Println("Out Act:", outActs)
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
@@ -703,20 +689,20 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
-	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.53701246, 0.5424112}
-	qtr3HidCaD := []float32{0.5214639, 0.49507806, 0.4991882, 0.50301147}
-	qtr3OutCaP := []float32{0.5834704, 0.5698636, 0.5796981, 0.5744664}
-	qtr3OutCaD := []float32{0.5047723, 0.46398377, 0.47836566, 0.47417372}
+	qtr3HidCaP := []float32{0.5485551, 0.5397998, 0.5360895, 0.54144794}
+	qtr3HidCaD := []float32{0.5214811, 0.4950928, 0.49920246, 0.5030252}
+	qtr3OutCaP := []float32{0.58150774, 0.56721854, 0.5771712, 0.57196385}
+	qtr3OutCaD := []float32{0.5047788, 0.46398282, 0.4783627, 0.47417185}
 
 	q3hidCaP := make([]float32, 4*nLearnParams)
 	q3hidCaD := make([]float32, 4*nLearnParams)
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{0.0015591943, 0.0024129525, 0.0018848473, 0.0019944084}
-	outDwts := []float32{0.003556001, 0.008800001, 0.007058134, 0.0069709825}
-	hidWts := []float32{0.5093542, 0.5144739, 0.51130706, 0.5119643}
-	outWts := []float32{0.5213235, 0.5526102, 0.54225075, 0.54173136}
+	hidDwts := []float32{0.0034167361, 0.0049937717, 0.00403544, 0.004449356}
+	outDwts := []float32{0.0009000063, 0.005000009, 0.0022999954, 0.0025999974}
+	hidWts := []float32{0.52048916, 0.52992797, 0.5241941, 0.5266715}
+	outWts := []float32{0.5053999, 0.52996504, 0.51379675, 0.51559514}
 
 	hiddwt := make([]float32, 4*nLearnParams)
 	outdwt := make([]float32, 4*nLearnParams)
@@ -865,26 +851,26 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	printCycs := false
 	printQtrs := false
 
-	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.000101010846, 0.0030487436, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 8.505856e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 7.812922e-05, 0.002566926}
+	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 9.572107e-05, 0.005967056, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 8.116122e-05, 8.9521294e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 7.533143e-05, 0.003373957}
 
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
 
-	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.53701246, 0.5424112}
-	qtr3HidCaD := []float32{0.5214639, 0.49507806, 0.4991882, 0.50301147}
-	qtr3OutCaP := []float32{0.5834704, 0.5698636, 0.5796981, 0.5744664}
-	qtr3OutCaD := []float32{0.5047723, 0.46398377, 0.47836566, 0.47417372}
+	qtr3HidCaP := []float32{0.5485551, 0.5397998, 0.5360895, 0.54144794}
+	qtr3HidCaD := []float32{0.5214811, 0.4950928, 0.49920246, 0.5030252}
+	qtr3OutCaP := []float32{0.58150774, 0.56721854, 0.5771712, 0.57196385}
+	qtr3OutCaD := []float32{0.5047788, 0.46398282, 0.4783627, 0.47417185}
 
 	q3hidCaP := make([]float32, 4*nLearnParams)
 	q3hidCaD := make([]float32, 4*nLearnParams)
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{7.795972e-08, 7.3564784e-06, 9.499167e-08, 5.11946e-06}
-	outDwts := []float32{0.003556001, 0.008800001, 0.007058134, 0.0069709825}
-	hidWts := []float32{0.50000036, 0.500044, 0.5000007, 0.50003076}
-	outWts := []float32{0.5213235, 0.5526102, 0.54225075, 0.54173136}
+	hidDwts := []float32{1.708368e-07, 2.9798115e-05, 3.612578e-07, 1.5011935e-05}
+	outDwts := []float32{0.0009000063, 0.005000009, 0.0022999954, 0.0025999974}
+	hidWts := []float32{0.5000011, 0.5001788, 0.50000215, 0.5000901}
+	outWts := []float32{0.5053999, 0.52996504, 0.51379675, 0.51559514}
 
 	hiddwt := make([]float32, 4*nLearnParams)
 	outdwt := make([]float32, 4*nLearnParams)
