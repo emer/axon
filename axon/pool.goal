@@ -191,10 +191,12 @@ func PoolAvgMaxUpdateVar(vr AvgMaxVars, pi, di uint32, val float32) {
 // PoolAvgMaxUpdate updates the AvgMax values based on current neuron values.
 // pi = global pool index.
 func PoolAvgMaxUpdate(pi, di, ni uint32) {
-	for vr := range AMAvgDif { // don't do AvgDif
-		nv := math32.Abs(Neurons[avgMaxToNeuron[vr], ni, di]) // can't be negative
-		PoolAvgMaxUpdateVar(vr, pi, di, nv)
-	}
+	PoolAvgMaxUpdateVar(AMCaSpkP, pi, di, math32.Abs(Neurons[avgMaxToNeuron[AMCaSpkP], ni, di]))
+	PoolAvgMaxUpdateVar(AMCaSpkD, pi, di, math32.Abs(Neurons[avgMaxToNeuron[AMCaSpkD], ni, di]))
+	PoolAvgMaxUpdateVar(AMSpkMax, pi, di, math32.Abs(Neurons[avgMaxToNeuron[AMSpkMax], ni, di]))
+	PoolAvgMaxUpdateVar(AMAct, pi, di, math32.Abs(Neurons[avgMaxToNeuron[AMAct], ni, di]))
+	PoolAvgMaxUpdateVar(AMGeInt, pi, di, math32.Abs(Neurons[avgMaxToNeuron[AMGeInt], ni, di]))
+	PoolAvgMaxUpdateVar(AMGiInt, pi, di, math32.Abs(Neurons[avgMaxToNeuron[AMGiInt], ni, di]))
 }
 
 // PoolAvgMaxCalcVar does Calc on Cycle level, and re-inits, for given Var

@@ -338,10 +338,9 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	if os.Getenv("TEST_GPU") != "true" {
-		t.Skip("Set TEST_GPU env var to run GPU tests")
-	}
-	// vgpu.Debug = true
+	// if os.Getenv("TEST_GPU") != "true" {
+	// 	t.Skip("Set TEST_GPU env var to run GPU tests")
+	// }
 	NetActTest(t, Tol6, true)
 }
 
@@ -360,8 +359,9 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	outLay := testNet.LayerByName("Output")
 
 	if gpu {
+		GPUInit()
+		ToGPUAll()
 		// testNet.ConfigGPUnoGUI()
-		// testNet.GPU.RecFunTimes = true // alt modes
 		// testNet.GPU.CycleByCycle = true // alt modes
 	}
 

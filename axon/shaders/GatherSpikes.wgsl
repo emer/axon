@@ -36,19 +36,18 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-@group(2) @binding(7)
-var<storage, read_write> Pools: array<f32>;
-@group(2) @binding(8)
-var<storage, read_write> PoolsInt: array<atomic<i32>>;
-// // PathGBuf is the conductance buffer for accumulating spikes. // Subslices are allocated to each pathway. // Uses int-encoded values for faster GPU atomic integration. // [MaxDel+1][NPathNeur][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [PoolVars+AvgMax][Layer * Pools][Data] 
 @group(3) @binding(0)
-var<storage, read_write> PathGBuf: array<i32>;
+var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
-var<storage, read_write> PathGSyns: array<f32>;
+var<storage, read_write> PoolsInt: array<atomic<i32>>;
 @group(3) @binding(2)
+var<storage, read_write> PathGBuf: array<i32>;
+@group(3) @binding(3)
+var<storage, read_write> PathGSyns: array<f32>;
+@group(3) @binding(4)
 var<storage, read_write> Synapses: array<f32>;
-// // SynapseTraces are synaptic variables that depend on the data // parallel index, for accumulating learning traces and weight changes per data. // This is the largest data size, so multiple instances are used // to handle larger networks. // [Vars][NSyns][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns] 
-@group(4) @binding(0)
+@group(3) @binding(5)
 var<storage, read_write> SynapseTraces: array<f32>;
 
 alias GPUVars = i32;
@@ -1243,10 +1242,12 @@ fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	atomicMax(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))], i32(val*floatToInt));
 }
 fn PoolAvgMaxUpdate(pi: u32,di: u32,ni: u32) {
-	for (var vr=0; vr<AMAvgDif; vr++) { // don't do AvgDif
-		var nv = abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[vr]),u32(ni),u32(di))]); // can't be negative
-		PoolAvgMaxUpdateVar(vr, pi, di, nv);
-	}
+	PoolAvgMaxUpdateVar(AMCaSpkP, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMCaSpkP]),u32(ni),u32(di))]));
+	PoolAvgMaxUpdateVar(AMCaSpkD, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMCaSpkD]),u32(ni),u32(di))]));
+	PoolAvgMaxUpdateVar(AMSpkMax, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMSpkMax]),u32(ni),u32(di))]));
+	PoolAvgMaxUpdateVar(AMAct, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMAct]),u32(ni),u32(di))]));
+	PoolAvgMaxUpdateVar(AMGeInt, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMGeInt]),u32(ni),u32(di))]));
+	PoolAvgMaxUpdateVar(AMGiInt, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMGiInt]),u32(ni),u32(di))]));
 }
 
 ///////////// import: "rand.go"

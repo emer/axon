@@ -23,6 +23,8 @@ func (nt *Network) Cycle() {
 	RunCyclePost(ld)
 	RunCycleInc(1)
 
+	RunDoneLayers()
+
 	// todo: fix this:
 	// var ldt, vta *Layer
 	//

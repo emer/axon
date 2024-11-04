@@ -117,6 +117,7 @@ var (
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
 	// [PoolVars+AvgMax][Layer * Pools][Data]
+	//gosl:group Synapse
 	//gosl:dims 3
 	Pools *tensor.Float32
 
@@ -130,7 +131,6 @@ var (
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
 	// [MaxDel+1][NPathNeur][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
-	//gosl:group Synapse
 	//gosl:dims 3
 	PathGBuf *tensor.Int32
 
@@ -154,7 +154,6 @@ var (
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
 	// [Vars][NSyns][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
-	//gosl:group SynapseTraces
 	//gosl:dims 3
 	SynapseTraces *tensor.Float32
 )
