@@ -310,6 +310,9 @@ func (nt *Network) UpdateParams() {
 // (nil if not found).
 func (nt *Network) LayerByName(name string) *Layer {
 	ely, _ := nt.EmerLayerByName(name)
+	if ely == nil {
+		return nil
+	}
 	return ely.(*Layer)
 }
 
