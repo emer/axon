@@ -813,7 +813,7 @@ fn ActParams_VmFromG(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni
 		} else {
 			dvm = (*ac).Spikes.RDt * ((*ac).Spikes.VmR - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Vm),u32(ni),u32(di))]);
 		}
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Vm),u32(ni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Vm),u32(ni),u32(di))] + dvm;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Vm),u32(ni),u32(di))] += dvm;
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Inet),u32(ni),u32(di))] = dvm * (*ac).Dt.VmTau;
 	}
 	var glEff = f32(1);

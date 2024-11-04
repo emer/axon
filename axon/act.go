@@ -1294,7 +1294,7 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 		} else {
 			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons.Value(int(Vm), int(ni), int(di)))
 		}
-		Neurons.Set(Neurons.Value(int(Vm), int(ni), int(di))+dvm, int(Vm), int(ni), int(di))
+		Neurons.SetAdd(dvm, int(Vm), int(ni), int(di))
 		Neurons.Set(dvm*ac.Dt.VmTau, int(Inet), int(ni), int(di))
 	}
 

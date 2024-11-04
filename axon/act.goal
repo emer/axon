@@ -1292,7 +1292,7 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 		} else {
 			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons[Vm, ni, di])
 		}
-		Neurons[Vm, ni, di] = Neurons[Vm, ni, di] + dvm
+		Neurons[Vm, ni, di] += dvm
 		Neurons[Inet, ni, di] = dvm * ac.Dt.VmTau
 	}
 
