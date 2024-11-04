@@ -123,7 +123,7 @@ func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 	// todo: why is this recv based?  prob important to keep for consistency
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		syIndexes := pt.RecvSynIxs(lni)
@@ -144,7 +144,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 	smn := pt.Params.SWts.Init.Mean
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		var nmin, nmax int

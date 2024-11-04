@@ -21,22 +21,23 @@ import (
 //gosl:import "cogentcore.org/core/math32/minmax"
 //gosl:import "github.com/emer/axon/v2/chans"
 
-func NrnHasFlag(ni, di uint32, flag NeuronFlags) bool {
-	return (NeuronFlags(math.Float32bits(Neurons[NrnFlags, ni, di])) & flag) > 0 // weird: != 0 does NOT work on GPU
+// NeuronHasFlag
+func NeuronHasFlag(flag NeuronFlags, ni, di uint32) bool {
+	return (NeuronFlags(math.Float32bits(Neurons[NeurFlags, ni, di])) & flag) > 0 // weird: != 0 does NOT work on GPU
 }
 
-func NrnSetFlag(ni, di uint32, flag NeuronFlags) {
-	Neurons[NrnFlags, ni, di] = math.Float32frombits(math.Float32bits(Neurons[NrnFlags, ni, di]) | uint32(flag))
+func NeuronSetFlag(flag NeuronFlags, ni, di uint32) {
+	Neurons[NeurFlags, ni, di] = math.Float32frombits(math.Float32bits(Neurons[NeurFlags, ni, di]) | uint32(flag))
 }
 
-func NrnClearFlag(ni, di uint32, flag NeuronFlags) {
-	Neurons[NrnFlags, ni, di] = math.Float32frombits(math.Float32bits(Neurons[NrnFlags, ni, di]) &^ uint32(flag))
+func NeuronClearFlag(flag NeuronFlags, ni, di uint32) {
+	Neurons[NeurFlags, ni, di] = math.Float32frombits(math.Float32bits(Neurons[NeurFlags, ni, di]) &^ uint32(flag))
 }
 
-// NrnIsOff returns true if the neuron has been turned off (lesioned)
+// NeuronIsOff returns true if the neuron has been turned off (lesioned)
 // Only checks the first data item -- all should be consistent.
-func NrnIsOff(ni uint32) bool {
-	return NrnHasFlag(ni, 0, NeuronOff)
+func NeuronIsOff(ni uint32) bool {
+	return NeuronHasFlag(NeuronOff, ni, 0)
 }
 
 ////////  SpikeParams
@@ -1177,12 +1178,12 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 	Neurons[GeExt, ni, di] = 0.0
 	geS := geSyn
 	geE := geExt
-	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ni, di, NeuronHasExt) {
+	if ac.Clamp.Add.IsTrue() && NeuronHasFlag(NeuronHasExt, ni, di) {
 		Neurons[GeExt, ni, di] = Neurons[Ext, ni, di] * ac.Clamp.Ge
 		geS += Neurons[GeExt, ni, di]
 	}
 
-	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ni, di, NeuronHasExt) {
+	if ac.Clamp.Add.IsFalse() && NeuronHasFlag(NeuronHasExt, ni, di) {
 		geS = Neurons[Ext, ni, di] * ac.Clamp.Ge
 		Neurons[GeExt, ni, di] = geS
 		geE = 0 // no extra in this case

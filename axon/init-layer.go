@@ -91,7 +91,7 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		vi := porder[lni] // same for all datas
@@ -139,7 +139,7 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(0))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			vi := porder[lni-nsi]
@@ -166,7 +166,7 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
@@ -321,7 +321,7 @@ func (ly *Layer) NewState(ctx *Context) {
 
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			// note: this calls the basic neuron-level DecayState
@@ -361,7 +361,7 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
@@ -396,7 +396,7 @@ func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float3
 		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(di))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
@@ -414,7 +414,7 @@ func (ly *Layer) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp float32) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {

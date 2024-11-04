@@ -737,7 +737,7 @@ func (ly *Layer) UnLesionNeurons() { //types:add
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
 		for di := uint32(0); di < ly.MaxData; di++ {
-			NrnClearFlag(ni, di, NeuronOff)
+			NeuronClearFlag(NeuronOff, ni, di)
 		}
 	}
 }
@@ -760,11 +760,11 @@ func (ly *Layer) LesionNeurons(prop float32) int { //types:add
 	for lni := uint32(0); lni < nn; lni++ {
 		nip := uint32(p[lni])
 		ni := ly.NeurStIndex + nip
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
-			NrnSetFlag(ni, di, NeuronOff)
+			NeuronSetFlag(NeuronOff, ni, di)
 		}
 	}
 	return nl

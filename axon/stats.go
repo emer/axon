@@ -30,7 +30,7 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 		n := 0
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			trg := false
@@ -152,7 +152,7 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 	am.Init()
 	for lni := nsi; lni < nei; lni++ {
 		ni := ly.NeurStIndex + uint32(lni)
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		vl := ly.UnitValue1D(vidx, int(ni), di)
@@ -178,7 +178,7 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 		nn := ly.NNeurons
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			ap := Neurons.Value(int(ActP), int(ni), int(di)) - avgP // zero mean = correl

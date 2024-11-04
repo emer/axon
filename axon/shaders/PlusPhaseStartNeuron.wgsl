@@ -83,9 +83,9 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 ///////////// import: "act-layer.go"
 fn LayerParams_PlusPhaseStartNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	if (NrnHasFlag(ni, di, NeuronHasTarg)) { // will be clamped in plus phase
+	if (NeuronHasFlag(NeuronHasTarg, ni, di)) { // will be clamped in plus phase
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ext),u32(ni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Target),u32(ni),u32(di))];
-		NrnSetFlag(ni, di, NeuronHasExt);
+		NeuronSetFlag(NeuronHasExt, ni, di);
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ISI),u32(ni),u32(di))] = -1.0;
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2],
 		u32(ISIAvg),u32(ni),u32(di))] = -1.0;
@@ -124,11 +124,11 @@ struct PathScaleParams {
 }
 
 ///////////// import: "act.go"
-fn NrnHasFlag(ni: u32,di: u32, flag: NeuronFlags) -> bool {
-	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnFlags),u32(ni),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
+fn NeuronHasFlag(flag: NeuronFlags, ni: u32,di: u32) -> bool {
+	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
 }
-fn NrnSetFlag(ni: u32,di: u32, flag: NeuronFlags) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnFlags),u32(ni),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnFlags),u32(ni),u32(di))]) | u32(flag));
+fn NeuronSetFlag(flag: NeuronFlags, ni: u32,di: u32) {
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))]) | u32(flag));
 }
 struct SpikeParams {
 	Thr: f32,
@@ -1002,7 +1002,7 @@ const  GModSyn: NeuronVars = 85;
 const  SMaintP: NeuronVars = 86;
 const  GMaintRaw: NeuronVars = 87;
 const  GMaintSyn: NeuronVars = 88;
-const  NrnFlags: NeuronVars = 89;
+const  NeurFlags: NeuronVars = 89;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

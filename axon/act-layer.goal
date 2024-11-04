@@ -36,7 +36,7 @@ func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bo
 func (ly *LayerParams) InitExt(ni, di uint32) {
 	Neurons[Ext, ni, di] = 0.0
 	Neurons[Target, ni, di] = 0.0
-	NrnClearFlag(ni, di, NeuronHasExt|NeuronHasTarg|NeuronHasCmpr)
+	NeuronClearFlag(NeuronHasExt|NeuronHasTarg|NeuronHasCmpr, ni, di)
 }
 
 // ApplyExtValue applies given external value to given neuron,
@@ -55,8 +55,8 @@ func (ly *LayerParams) ApplyExtValue(ni, di uint32, val float32) {
 	} else {
 		Neurons[Ext, ni, di] = val
 	}
-	NrnClearFlag(ni, di, clearMask)
-	NrnSetFlag(ni, di, setMask)
+	NeuronClearFlag(clearMask, ni, di)
+	NeuronSetFlag(setMask, ni, di)
 }
 
 func (ly *LayerParams) ApplyExtsNeuron(ni, di uint32) {
@@ -396,7 +396,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons[GeSyn, ni, di] = ly.Acts.Dt.GeSynFromRawSteady(geRaw)
 
 	case RewLayer:
-		NrnSetFlag(ni, di, NeuronHasExt)
+		NeuronSetFlag(NeuronHasExt, ni, di)
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars[GvRew, di]) // Rew must be set in Context!
 	case RWDaLayer:
 		geRaw := ly.RWDa.GeFromDA(GlobalScalars[GvDA, di])
@@ -407,7 +407,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons[GeRaw, ni, di] = geRaw
 		Neurons[GeSyn, ni, di] = ly.Acts.Dt.GeSynFromRawSteady(geRaw)
 	case TDIntegLayer:
-		NrnSetFlag(ni, di, NeuronHasExt)
+		NeuronSetFlag(NeuronHasExt, ni, di)
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars[GvRewPred, di])
 	default:
 	}
@@ -927,9 +927,9 @@ func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
 // PlusPhaseStartNeuron does neuron level plus-phase start:
 // applies Target inputs as External inputs.
 func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32) {
-	if NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+	if NeuronHasFlag(NeuronHasTarg, ni, di) { // will be clamped in plus phase
 		Neurons[Ext, ni, di] = Neurons[Target, ni, di]
-		NrnSetFlag(ni, di, NeuronHasExt)
+		NeuronSetFlag(NeuronHasExt, ni, di)
 		// get fresh update on plus phase output acts
 		Neurons[ISI, ni, di] = -1.0
 		Neurons[ISIAvg, ni, di] = -1.0
@@ -999,7 +999,7 @@ func (ly *Layer) InitExt() {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
@@ -1039,7 +1039,7 @@ func (ly *Layer) ApplyExt(di uint32, ext tensor.Tensor) {
 // Also saves Val in Exts for potential use by GPU.
 func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
 	ni := ly.NeurStIndex + lni
-	if NrnIsOff(ni) {
+	if NeuronIsOff(ni) {
 		return
 	}
 	Exts[ly.Params.Indexes.ExtsSt + lni, di] = val
@@ -1051,8 +1051,8 @@ func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask N
 	} else {
 		Neurons[Ext, ni, di] = val
 	}
-	NrnClearFlag(ni, di, clearMask)
-	NrnSetFlag(ni, di, setMask)
+	NeuronClearFlag(clearMask, ni, di)
+	NeuronSetFlag(setMask, ni, di)
 }
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
@@ -1159,12 +1159,12 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			NrnClearFlag(ni, di, clearMask)
-			NrnSetFlag(ni, di, setMask)
+			NeuronClearFlag(clearMask, ni, di)
+			NeuronSetFlag(setMask, ni, di)
 		}
 	}
 }
@@ -1219,7 +1219,7 @@ func (ly *Layer) PlusPhaseActAvg(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		dTrgSum := float32(0)
@@ -1240,15 +1240,15 @@ func (ly *Layer) TargToExt(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+			if !NeuronHasFlag(NeuronHasTarg, ni, di) { // will be clamped in plus phase
 				continue
 			}
 			Neurons[Ext, ni, di] =  Neurons[Target, ni, di]
-			NrnSetFlag(ni, di, NeuronHasExt)
+			NeuronSetFlag(NeuronHasExt, ni, di)
 			Neurons[ISI, ni, di] = -1 // get fresh update on plus phase output acts
 			Neurons[ISIAvg, ni, di] = -1
 		}
@@ -1261,15 +1261,15 @@ func (ly *Layer) ClearTargExt(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+			if !NeuronHasFlag(NeuronHasTarg, ni, di) { // will be clamped in plus phase
 				continue
 			}
 			Neurons[Ext, ni, di] = 0
-			NrnClearFlag(ni, di, NeuronHasExt)
+			NeuronClearFlag(NeuronHasExt, ni, di)
 			Neurons[ISI, ni, di] = -1 // get fresh update on plus phase output acts
 			Neurons[ISIAvg, ni, di] = -1
 		}
@@ -1281,7 +1281,7 @@ func (ly *Layer) SpkSt1(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
@@ -1295,7 +1295,7 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {

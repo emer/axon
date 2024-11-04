@@ -243,7 +243,7 @@ fn LayerParams_SpecialPreGs(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeSyn),u32(ni),u32(di))] = DtParams_GeSynFromRawSteady(&(*ly).Acts.Dt, geRaw);
 	}
 	case RewLayer: {
-		NrnSetFlag(ni, di, NeuronHasExt);
+		NeuronSetFlag(NeuronHasExt, ni, di);
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[ // Rew must be set in Context!
 		1], u32(GvRew),u32(di))]);
 	}
@@ -258,7 +258,7 @@ fn LayerParams_SpecialPreGs(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeSyn),u32(ni),u32(di))] = DtParams_GeSynFromRawSteady(&(*ly).Acts.Dt, geRaw);
 	}
 	case TDIntegLayer: {
-		NrnSetFlag(ni, di, NeuronHasExt);
+		NeuronSetFlag(NeuronHasExt, ni, di);
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvRewPred),u32(di))]);
 	}
 	default: {
@@ -417,11 +417,11 @@ struct PathScaleParams {
 }
 
 ///////////// import: "act.go"
-fn NrnHasFlag(ni: u32,di: u32, flag: NeuronFlags) -> bool {
-	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnFlags),u32(ni),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
+fn NeuronHasFlag(flag: NeuronFlags, ni: u32,di: u32) -> bool {
+	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
 }
-fn NrnSetFlag(ni: u32,di: u32, flag: NeuronFlags) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnFlags),u32(ni),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnFlags),u32(ni),u32(di))]) | u32(flag));
+fn NeuronSetFlag(flag: NeuronFlags, ni: u32,di: u32) {
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))]) | u32(flag));
 }
 struct SpikeParams {
 	Thr: f32,
@@ -720,11 +720,11 @@ fn ActParams_GeFromSyn(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, 
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeExt),u32(ni),u32(di))] = 0.0;
 	var geS = geSyn;
 	var geE = geExt;
-	if ((*ac).Clamp.Add == 1 && NrnHasFlag(ni, di, NeuronHasExt)) {
+	if ((*ac).Clamp.Add == 1 && NeuronHasFlag(NeuronHasExt, ni, di)) {
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeExt),u32(ni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ext),u32(ni),u32(di))] * (*ac).Clamp.Ge;
 		geS += Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeExt),u32(ni),u32(di))];
 	}
-	if ((*ac).Clamp.Add == 0 && NrnHasFlag(ni, di, NeuronHasExt)) {
+	if ((*ac).Clamp.Add == 0 && NeuronHasFlag(NeuronHasExt, ni, di)) {
 		geS = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ext),u32(ni),u32(di))] * (*ac).Clamp.Ge;
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeExt),u32(ni),u32(di))] = geS;
 		geE = f32(0); // no extra in this case
@@ -1928,7 +1928,7 @@ const  GModSyn: NeuronVars = 85;
 const  SMaintP: NeuronVars = 86;
 const  GMaintRaw: NeuronVars = 87;
 const  GMaintSyn: NeuronVars = 88;
-const  NrnFlags: NeuronVars = 89;
+const  NeurFlags: NeuronVars = 89;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;

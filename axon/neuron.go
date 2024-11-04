@@ -33,8 +33,6 @@ const (
 	NeuronHasCmpr NeuronFlags = 8
 )
 
-// Neuron flag functions in act.goal
-
 // NeuronVars are the neuron variables representing current active state,
 // specific to each input data state.
 // See NeuronAvgVars for vars shared across data.
@@ -331,10 +329,10 @@ const (
 	// GMaintSyn is syn integrated maintenance conductance, integrated using MaintNMDA params.
 	GMaintSyn
 
-	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
+	// NeurFlags are bit flags for binary state variables, which are converted to / from uint32.
 	// These need to be in Vars because they can be differential per data (for ext inputs)
 	// and are writable (indexes are read only).
-	NrnFlags
+	NeurFlags
 )
 
 // NeuronAvgVars are mostly neuron variables involved in longer-term average activity
@@ -551,7 +549,7 @@ var NeuronVarProps = map[string]string{
 	"GMaintRaw": `cat:"Gmisc"`,
 	"GMaintSyn": `cat:"Gmisc"`,
 
-	"NrnFlags": `display:"-"`,
+	"NeuronFlags": `display:"-"`,
 
 	/////////////////////////////////////////
 	// Long-term average activation, set point for synaptic scaling

@@ -23,22 +23,23 @@ import (
 //gosl:import "cogentcore.org/core/math32/minmax"
 //gosl:import "github.com/emer/axon/v2/chans"
 
-func NrnHasFlag(ni, di uint32, flag NeuronFlags) bool {
-	return (NeuronFlags(math.Float32bits(Neurons.Value(int(NrnFlags), int(ni), int(di)))) & flag) > 0 // weird: != 0 does NOT work on GPU
+// NeuronHasFlag
+func NeuronHasFlag(flag NeuronFlags, ni, di uint32) bool {
+	return (NeuronFlags(math.Float32bits(Neurons.Value(int(NeurFlags), int(ni), int(di)))) & flag) > 0 // weird: != 0 does NOT work on GPU
 }
 
-func NrnSetFlag(ni, di uint32, flag NeuronFlags) {
-	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(NrnFlags), int(ni), int(di)))|uint32(flag)), int(NrnFlags), int(ni), int(di))
+func NeuronSetFlag(flag NeuronFlags, ni, di uint32) {
+	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(NeurFlags), int(ni), int(di)))|uint32(flag)), int(NeurFlags), int(ni), int(di))
 }
 
-func NrnClearFlag(ni, di uint32, flag NeuronFlags) {
-	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(NrnFlags), int(ni), int(di)))&^uint32(flag)), int(NrnFlags), int(ni), int(di))
+func NeuronClearFlag(flag NeuronFlags, ni, di uint32) {
+	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(NeurFlags), int(ni), int(di)))&^uint32(flag)), int(NeurFlags), int(ni), int(di))
 }
 
-// NrnIsOff returns true if the neuron has been turned off (lesioned)
+// NeuronIsOff returns true if the neuron has been turned off (lesioned)
 // Only checks the first data item -- all should be consistent.
-func NrnIsOff(ni uint32) bool {
-	return NrnHasFlag(ni, 0, NeuronOff)
+func NeuronIsOff(ni uint32) bool {
+	return NeuronHasFlag(NeuronOff, ni, 0)
 }
 
 ////////  SpikeParams
@@ -1179,12 +1180,12 @@ func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32
 	Neurons.Set(0.0, int(GeExt), int(ni), int(di))
 	geS := geSyn
 	geE := geExt
-	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ni, di, NeuronHasExt) {
+	if ac.Clamp.Add.IsTrue() && NeuronHasFlag(NeuronHasExt, ni, di) {
 		Neurons.Set(Neurons.Value(int(Ext), int(ni), int(di))*ac.Clamp.Ge, int(GeExt), int(ni), int(di))
 		geS += Neurons.Value(int(GeExt), int(ni), int(di))
 	}
 
-	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ni, di, NeuronHasExt) {
+	if ac.Clamp.Add.IsFalse() && NeuronHasFlag(NeuronHasExt, ni, di) {
 		geS = Neurons.Value(int(Ext), int(ni), int(di)) * ac.Clamp.Ge
 		Neurons.Set(geS, int(GeExt), int(ni), int(di))
 		geE = 0 // no extra in this case

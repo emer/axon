@@ -38,7 +38,7 @@ func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bo
 func (ly *LayerParams) InitExt(ni, di uint32) {
 	Neurons.Set(0.0, int(Ext), int(ni), int(di))
 	Neurons.Set(0.0, int(Target), int(ni), int(di))
-	NrnClearFlag(ni, di, NeuronHasExt|NeuronHasTarg|NeuronHasCmpr)
+	NeuronClearFlag(NeuronHasExt|NeuronHasTarg|NeuronHasCmpr, ni, di)
 }
 
 // ApplyExtValue applies given external value to given neuron,
@@ -57,8 +57,8 @@ func (ly *LayerParams) ApplyExtValue(ni, di uint32, val float32) {
 	} else {
 		Neurons.Set(val, int(Ext), int(ni), int(di))
 	}
-	NrnClearFlag(ni, di, clearMask)
-	NrnSetFlag(ni, di, setMask)
+	NeuronClearFlag(clearMask, ni, di)
+	NeuronSetFlag(setMask, ni, di)
 }
 
 func (ly *LayerParams) ApplyExtsNeuron(ni, di uint32) {
@@ -398,7 +398,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(geRaw), int(GeSyn), int(ni), int(di))
 
 	case RewLayer:
-		NrnSetFlag(ni, di, NeuronHasExt)
+		NeuronSetFlag(NeuronHasExt, ni, di)
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars.Value(int(GvRew), int(di))) // Rew must be set in Context!
 	case RWDaLayer:
 		geRaw := ly.RWDa.GeFromDA(GlobalScalars.Value(int(GvDA), int(di)))
@@ -409,7 +409,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 		Neurons.Set(geRaw, int(GeRaw), int(ni), int(di))
 		Neurons.Set(ly.Acts.Dt.GeSynFromRawSteady(geRaw), int(GeSyn), int(ni), int(di))
 	case TDIntegLayer:
-		NrnSetFlag(ni, di, NeuronHasExt)
+		NeuronSetFlag(NeuronHasExt, ni, di)
 		SetNeuronExtPosNeg(ctx, ni, di, GlobalScalars.Value(int(GvRewPred), int(di)))
 	default:
 	}
@@ -928,9 +928,9 @@ func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
 // PlusPhaseStartNeuron does neuron level plus-phase start:
 // applies Target inputs as External inputs.
 func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni, di uint32) {
-	if NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+	if NeuronHasFlag(NeuronHasTarg, ni, di) { // will be clamped in plus phase
 		Neurons.Set(Neurons.Value(int(Target), int(ni), int(di)), int(Ext), int(ni), int(di))
-		NrnSetFlag(ni, di, NeuronHasExt)
+		NeuronSetFlag(NeuronHasExt, ni, di)
 		// get fresh update on plus phase output acts
 		Neurons.Set(-1.0, int(ISI), int(ni), int(di))
 		Neurons.Set(-1.0, int(ISIAvg), int(ni), int(di))
@@ -1000,7 +1000,7 @@ func (ly *Layer) InitExt() {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ly.MaxData; di++ {
@@ -1040,7 +1040,7 @@ func (ly *Layer) ApplyExt(di uint32, ext tensor.Tensor) {
 // Also saves Val in Exts for potential use by GPU.
 func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
 	ni := ly.NeurStIndex + lni
-	if NrnIsOff(ni) {
+	if NeuronIsOff(ni) {
 		return
 	}
 	Exts.Set(val, int(ly.Params.Indexes.ExtsSt+lni), int(di))
@@ -1052,8 +1052,8 @@ func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask N
 	} else {
 		Neurons.Set(val, int(Ext), int(ni), int(di))
 	}
-	NrnClearFlag(ni, di, clearMask)
-	NrnSetFlag(ni, di, setMask)
+	NeuronClearFlag(clearMask, ni, di)
+	NeuronSetFlag(setMask, ni, di)
 }
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
@@ -1160,12 +1160,12 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			NrnClearFlag(ni, di, clearMask)
-			NrnSetFlag(ni, di, setMask)
+			NeuronClearFlag(clearMask, ni, di)
+			NeuronSetFlag(setMask, ni, di)
 		}
 	}
 }
@@ -1220,7 +1220,7 @@ func (ly *Layer) PlusPhaseActAvg(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		dTrgSum := float32(0)
@@ -1241,15 +1241,15 @@ func (ly *Layer) TargToExt(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+			if !NeuronHasFlag(NeuronHasTarg, ni, di) { // will be clamped in plus phase
 				continue
 			}
 			Neurons.Set(Neurons.Value(int(Target), int(ni), int(di)), int(Ext), int(ni), int(di))
-			NrnSetFlag(ni, di, NeuronHasExt)
+			NeuronSetFlag(NeuronHasExt, ni, di)
 			Neurons.Set(-1, int(ISI), int(ni), int(di)) // get fresh update on plus phase output acts
 			Neurons.Set(-1, int(ISIAvg), int(ni), int(di))
 		}
@@ -1262,15 +1262,15 @@ func (ly *Layer) ClearTargExt(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+			if !NeuronHasFlag(NeuronHasTarg, ni, di) { // will be clamped in plus phase
 				continue
 			}
 			Neurons.Set(0, int(Ext), int(ni), int(di))
-			NrnClearFlag(ni, di, NeuronHasExt)
+			NeuronClearFlag(NeuronHasExt, ni, di)
 			Neurons.Set(-1, int(ISI), int(ni), int(di)) // get fresh update on plus phase output acts
 			Neurons.Set(-1, int(ISIAvg), int(ni), int(di))
 		}
@@ -1282,7 +1282,7 @@ func (ly *Layer) SpkSt1(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
@@ -1296,7 +1296,7 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {

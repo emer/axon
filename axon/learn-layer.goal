@@ -23,7 +23,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 			avg := float32(0)
 			for lni := nsi; lni < nei; lni++ {
 				ni := ly.NeurStIndex + uint32(lni)
-				if NrnIsOff(ni) {
+				if NeuronIsOff(ni) {
 					continue
 				}
 				avg += NeuronAvgs[DTrgAvg, ni]
@@ -36,7 +36,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 			avg *= submean
 			for lni := nsi; lni < nei; lni++ {
 				ni := ly.NeurStIndex + uint32(lni)
-				if NrnIsOff(ni) {
+				if NeuronIsOff(ni) {
 					continue
 				}
 				NeuronAvgs[DTrgAvg, ni] -= avg
@@ -47,7 +47,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 		avg := float32(0)
 		for lni := uint32(0); lni < ly.NNeurons; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			avg += NeuronAvgs[DTrgAvg, ni]
@@ -60,7 +60,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 		avg *= submean
 		for lni := uint32(0); lni < ly.NNeurons; lni++ {
 			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			NeuronAvgs[DTrgAvg, ni] -= avg
@@ -78,7 +78,7 @@ func (ly *Layer) TrgAvgFromD(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
+		if NeuronIsOff(ni) {
 			continue
 		}
 		ntrg := NeuronAvgs[TrgAvg, ni] + NeuronAvgs[DTrgAvg, ni]
@@ -133,7 +133,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		nn := 0
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			plavg += NeuronAvgs[ActAvg, ni]
@@ -149,7 +149,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		PoolAvgDifInit(pi, 0)
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			apct := NeuronAvgs[ActAvg, ni] / plavg
@@ -171,7 +171,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		nei := PoolsInt[PoolNeurEd, lpi, 0]
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
-			if NrnIsOff(ni) {
+			if NeuronIsOff(ni) {
 				continue
 			}
 			PoolAvgDifUpdate(lpi, 0, math32.Abs(NeuronAvgs[AvgDif, ni]))
