@@ -1,0 +1,209 @@
+// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package axon
+
+import (
+	"cogentcore.org/core/tensor"
+	"github.com/emer/emergent/v2/etime"
+	"github.com/emer/emergent/v2/paths"
+)
+
+// GlobalsReset resets all global values to 0, for all NData
+func GlobalsReset() {
+	nix := GetNetworkIxs(0)
+	for di := uint32(0); di < nix.MaxData; di++ {
+		for vg := GvRew; vg < GlobalScalarVarsN; vg++ {
+			GlobalScalars[vg, di] = 0
+		}
+		for vn := GvCost; vn < GlobalVectorVarsN; vn++ {
+			for ui := uint32(0); ui < MaxGlobalVecN; ui++ {
+				GlobalVectors[vn, ui, di] = 0
+			}
+		}
+	}
+}
+
+// NewState handles all initialization at start of new input pattern.
+// This is called *before* applying external input data and operates across
+// all data parallel values.  The current Context.NData should be set
+// properly prior to calling this and subsequent Cycle methods.
+func (nt *Network) NewState(mode etime.Modes) {
+	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
+	// 	nt.GPU.RunNewState()
+	// 	return
+	// }
+	ctx := nt.Context()
+	ctx.NewState(mode)
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.NewState(ctx)
+	}
+	// if nt.GPU.On {
+	// 	nt.GPU.SyncStateGBufToGPU()
+	// }
+}
+
+// InitWeights initializes synaptic weights and all other associated long-term state variables
+// including running-average state values (e.g., layer running average activations etc)
+func (nt *Network) InitWeights() { //types:add
+	ctx := nt.Context()
+	for di := uint32(0); di < ctx.NData; di++ {
+		nt.Rubicon.Reset(di)
+	}
+	nt.BuildPathGBuf()
+	ctx.SlowCtr = 0
+	ctx.SynCaCtr = 0
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.InitWeights(ctx, nt) // calls InitActs too
+	}
+	// separate pass to enforce symmetry
+	// st := time.Now()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.InitWtSym(ctx)
+	}
+	// dur := time.Now().Sub(st)
+	// fmt.Printf("sym: %v\n", dur)
+	// nt.GPU.SyncAllToGPU()
+	// nt.GPU.SyncSynCaToGPU() // only time we call this
+	// nt.GPU.SyncGBufToGPU()
+}
+
+// InitTopoSWts initializes SWt structural weight parameters from
+// path types that support topographic weight patterns, having flags set to support it,
+// includes: paths.PoolTile paths.Circle.
+// call before InitWeights if using Topo wts
+func (nt *Network) InitTopoSWts() {
+	ctx := nt.Context()
+	swts := &tensor.Float32{}
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		for i := 0; i < ly.NumRecvPaths(); i++ {
+			pj := ly.RecvPaths[i]
+			if pj.Off {
+				continue
+			}
+			pat := pj.Pattern
+			switch pt := pat.(type) {
+			case *paths.PoolTile:
+				if !pt.HasTopoWeights() {
+					continue
+				}
+				slay := pj.Send
+				pt.TopoWeights(&slay.Shape, &ly.Shape, swts)
+				pj.SetSWtsRPool(ctx, swts)
+			case *paths.Circle:
+				if !pt.TopoWeights {
+					continue
+				}
+				pj.SetSWtsFunc(ctx, pt.GaussWts)
+			}
+		}
+	}
+}
+
+// InitGScale computes the initial scaling factor for synaptic input conductances G,
+// stored in GScale.Scale, based on sending layer initial activation.
+func (nt *Network) InitGScale() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.InitGScale(ctx)
+	}
+}
+
+// DecayState decays activation state by given proportion
+// e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g)
+// This is called automatically in NewState, but is avail
+// here for ad-hoc decay cases.
+func (nt *Network) DecayState(decay, glong, ahp float32) {
+	ctx := nt.Context()
+	// todo: move to gpu
+	// nt.GPU.SyncStateFromGPU() // note: because we have to sync back, we need to sync from first to be current
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			ly.DecayState(ctx, di, decay, glong, ahp)
+		}
+	}
+	// nt.GPU.SyncStateToGPU()
+}
+
+// DecayStateByType decays activation state for given layer types
+// by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g)
+func (nt *Network) DecayStateByType(decay, glong, ahp float32, types ...LayerTypes) {
+	nt.DecayStateLayers(decay, glong, ahp, nt.LayersByType(types...)...)
+}
+
+// DecayStateByClass decays activation state for given class name(s)
+// by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g)
+func (nt *Network) DecayStateByClass(decay, glong, ahp float32, classes ...string) {
+	nt.DecayStateLayers(decay, glong, ahp, nt.LayersByClass(classes...)...)
+}
+
+// DecayStateLayers decays activation state for given layers
+// by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g).
+// If this is not being called at the start, around NewState call,
+// then you should also call: nt.GPU.SyncGBufToGPU()
+// to zero the GBuf values which otherwise will persist spikes in flight.
+func (nt *Network) DecayStateLayers(decay, glong, ahp float32, layers ...string) {
+	ctx := nt.Context()
+	// todo: move to gpu
+	// nt.GPU.SyncStateFromGPU() // note: because we have to sync back, we need to sync from first to be current
+	for _, lynm := range layers {
+		ly := nt.LayerByName(lynm)
+		if ly.Off {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			ly.DecayState(ctx, di, decay, glong, ahp)
+		}
+	}
+	// nt.GPU.SyncStateToGPU()
+}
+
+// InitActs fully initializes activation state -- not automatically called
+func (nt *Network) InitActs() { //types:add
+	// todo: move to gpu
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.InitActs(ctx)
+	}
+	// nt.GPU.SyncStateToGPU() // todo:
+	// nt.GPU.SyncGBufToGPU() // zeros everyone
+}
+
+// UpdateExtFlags updates the neuron flags for external input based on current
+// layer Type field -- call this if the Type has changed since the last
+// ApplyExt* method call.
+func (nt *Network) UpdateExtFlags() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.UpdateExtFlags(ctx)
+	}
+}

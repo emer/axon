@@ -7,8 +7,20 @@
 package axon
 
 import (
-	"cogentcore.org/core/base/randx"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"strconv"
+
+	"cogentcore.org/core/base/indent"
+	"cogentcore.org/core/math32"
+	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/paths"
+	"github.com/emer/emergent/v2/weights"
 )
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
@@ -16,6 +28,65 @@ import (
 // index naming:
 // syi =  path-relative synapse index (per existing usage)
 // syni = network-relative synapse index -- add SynStIndex to syi
+
+// Path implements axon spiking communication and learning.
+type Path struct {
+	emer.PathBase
+
+	// path parameters.
+	Params *PathParams
+
+	// sending layer for this pathway.
+	Send *Layer
+
+	// receiving layer for this pathway.
+	Recv *Layer
+
+	// type of pathway.
+	Type PathTypes
+
+	// default parameters that are applied prior to user-set parameters.
+	// these are useful for specific functionality in specialized brain areas
+	// (e.g., Rubicon, BG etc) not associated with a path type, which otherwise
+	// is used to hard-code initial default parameters.
+	// Typically just set to a literal map.
+	DefaultParams params.Params `table:"-"`
+
+	// average and maximum number of recv connections in the receiving layer
+	RecvConNAvgMax minmax.AvgMax32 `table:"-" edit:"-" display:"inline"`
+
+	// average and maximum number of sending connections in the sending layer
+	SendConNAvgMax minmax.AvgMax32 `table:"-" edit:"-" display:"inline"`
+
+	// start index into global Synapse array:
+	SynStIndex uint32 `display:"-"`
+
+	// number of synapses in this pathway
+	NSyns uint32 `display:"-"`
+
+	// starting offset and N cons for each recv neuron, for indexing into the RecvSynIndex array of indexes into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PathRecvCons slice for GPU usage.
+	RecvCon []StartN `display:"-"`
+
+	// index into Syns synaptic state for each sending unit and connection within that, for the sending pathway which does not own the synapses, and instead indexes into recv-ordered list
+	RecvSynIndex []uint32 `display:"-"`
+
+	// for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
+	RecvConIndex []uint32 `display:"-"`
+
+	// starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally managed during build process, but also copied to network global PathSendCons slice for GPU usage.
+	SendCon []StartN `display:"-"`
+
+	// index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIndex where needed, instead of this slice, because then the memory access will be close by other values on the synapse.
+	SendConIndex []uint32 `display:"-"`
+}
+
+// emer.Path interface
+
+func (pt *Path) StyleObject() any      { return pt.Params }
+func (pt *Path) RecvLayer() emer.Layer { return pt.Recv }
+func (pt *Path) SendLayer() emer.Layer { return pt.Send }
+func (pt *Path) TypeName() string      { return pt.Type.String() }
+func (pt *Path) TypeNumber() int       { return int(pt.Type) }
 
 func (pt *Path) Defaults() {
 	if pt.Params == nil {
@@ -64,6 +135,415 @@ func (pt *Path) UpdateParams() {
 	pt.Update()
 }
 
+// Connect sets the connectivity between two layers and the pattern to use in interconnecting them
+func (pt *Path) Connect(slay, rlay *Layer, pat paths.Pattern, typ PathTypes) {
+	pt.Send = slay
+	pt.Recv = rlay
+	pt.Pattern = pat
+	pt.Type = typ
+	pt.Name = pt.Send.Name + "To" + pt.Recv.Name
+}
+
+// todo: move to emer?
+
+// Validate tests for non-nil settings for the pathway -- returns error
+// message or nil if no problems (and logs them if logmsg = true)
+func (pt *Path) Validate(logmsg bool) error {
+	emsg := ""
+	if pt.Pattern == nil {
+		emsg += "Pattern is nil; "
+	}
+	if pt.Recv == nil {
+		emsg += "Recv is nil; "
+	}
+	if pt.Send == nil {
+		emsg += "Send is nil; "
+	}
+	if emsg != "" {
+		err := errors.New(emsg)
+		if logmsg {
+			log.Println(emsg)
+		}
+		return err
+	}
+	return nil
+}
+
+// RecvSynIxs returns the receiving synapse indexes for given recv unit index
+// within the receiving layer, to be iterated over for recv-based processing.
+func (pt *Path) RecvSynIxs(ri uint32) []uint32 {
+	rcon := pt.RecvCon[ri]
+	return pt.RecvSynIndex[rcon.Start : rcon.Start+rcon.N]
+}
+
+// Build constructs the full connectivity among the layers.
+// Calls Validate and returns error if invalid.
+// Pat.Connect is called to get the pattern of the connection.
+// Then the connection indexes are configured according to that pattern.
+// Does NOT allocate synapses -- these are set by Network from global slice.
+func (pt *Path) Build() error {
+	if pt.Off {
+		return nil
+	}
+	err := pt.Validate(true)
+	if err != nil {
+		return err
+	}
+	ssh := &pt.Send.Shape
+	rsh := &pt.Recv.Shape
+	sendn, recvn, cons := pt.Pattern.Connect(ssh, rsh, pt.Recv == pt.Send)
+	slen := ssh.Len()
+	rlen := rsh.Len()
+	tcons := pt.SetConStartN(&pt.SendCon, &pt.SendConNAvgMax, sendn)
+	tconr := pt.SetConStartN(&pt.RecvCon, &pt.RecvConNAvgMax, recvn)
+	if tconr != tcons {
+		log.Printf("%v programmer error: total recv cons %v != total send cons %v\n", pt.String(), tconr, tcons)
+	}
+	// these are large allocs, as number of connections tends to be ~quadratic
+	// These indexes are not used in GPU computation -- only for CPU side.
+	pt.RecvConIndex = make([]uint32, tconr)
+	pt.RecvSynIndex = make([]uint32, tcons)
+	pt.SendConIndex = make([]uint32, tcons)
+
+	sconN := make([]uint32, slen) // temporary mem needed to tracks cur n of sending cons
+
+	cbits := cons.Values
+	for ri := 0; ri < rlen; ri++ {
+		rbi := ri * slen // recv bit index
+		rcon := pt.RecvCon[ri]
+		rci := uint32(0)
+		for si := 0; si < slen; si++ {
+			if !cbits.Index(rbi + si) { // no connection
+				continue
+			}
+			if rci >= rcon.N {
+				log.Printf("%v programmer error: recv target total con number: %v exceeded at recv idx: %v, send idx: %v\n", pt.String(), rcon.N, ri, si)
+				break
+			}
+			pt.RecvConIndex[rcon.Start+rci] = uint32(si)
+
+			sci := sconN[si]
+			scon := pt.SendCon[si]
+			if sci >= scon.N {
+				log.Printf("%v programmer error: send target total con number: %v exceeded at recv idx: %v, send idx: %v\n", pt.String(), scon.N, ri, si)
+				break
+			}
+			pt.SendConIndex[scon.Start+sci] = uint32(ri)
+			pt.RecvSynIndex[rcon.Start+rci] = scon.Start + sci
+			(sconN[si])++
+			rci++
+		}
+	}
+	return nil
+}
+
+// SetConStartN sets the *Con StartN values given n tensor from Pat.
+// Returns total number of connections for this direction.
+func (pt *Path) SetConStartN(con *[]StartN, avgmax *minmax.AvgMax32, tn *tensor.Int32) uint32 {
+	ln := tn.Len()
+	tnv := tn.Values
+	*con = make([]StartN, ln)
+	idx := uint32(0)
+	avgmax.Init()
+	for i := 0; i < ln; i++ {
+		nv := uint32(tnv[i])
+		(*con)[i] = StartN{N: nv, Start: idx}
+		idx += nv
+		avgmax.UpdateValue(float32(nv), int32(i))
+	}
+	avgmax.CalcAvg()
+	return idx
+}
+
+// String satisfies fmt.Stringer for path
+func (pt *Path) String() string {
+	str := ""
+	if pt.Recv == nil {
+		str += "recv=nil; "
+	} else {
+		str += pt.Recv.Name + " <- "
+	}
+	if pt.Send == nil {
+		str += "send=nil"
+	} else {
+		str += pt.Send.Name
+	}
+	if pt.Pattern == nil {
+		str += " Pat=nil"
+	} else {
+		str += " Pat=" + pt.Pattern.Name()
+	}
+	return str
+}
+
+// ApplyDefaultParams applies DefaultParams default parameters if set
+// Called by Path.Defaults()
+func (pt *Path) ApplyDefaultParams() {
+	if pt.DefaultParams == nil {
+		return
+	}
+	err := pt.DefaultParams.Apply(pt.EmerPath, false)
+	if err != nil {
+		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
+	}
+}
+
+func (pt *Path) SynVarNames() []string {
+	return SynapseVarNames
+}
+
+// SynVarProps returns properties for variables
+func (pt *Path) SynVarProps() map[string]string {
+	return SynapseVarProps
+}
+
+// SynIndex returns the index of the synapse between given send, recv unit indexes
+// (1D, flat indexes, layer relative).
+// Returns -1 if synapse not found between these two neurons.
+// Requires searching within connections for sending unit.
+func (pt *Path) SynIndex(sidx, ridx int) int {
+	if sidx >= len(pt.SendCon) {
+		return -1
+	}
+	scon := pt.SendCon[sidx]
+	if scon.N == 0 {
+		return -1
+	}
+	firstRi := int(pt.SendConIndex[scon.Start])
+	lastRi := int(pt.SendConIndex[scon.Start+scon.N-1])
+	if ridx < firstRi || ridx > lastRi { // fast reject -- paths are always in order!
+		return -1
+	}
+	// start at index proportional to ri relative to rist
+	up := int32(0)
+	if lastRi > firstRi {
+		up = int32(float32(scon.N) * float32(ridx-firstRi) / float32(lastRi-firstRi))
+	}
+	dn := up - 1
+
+	for {
+		doing := false
+		if up < int32(scon.N) {
+			doing = true
+			sconi := int32(scon.Start) + up
+			if int(pt.SendConIndex[sconi]) == ridx {
+				return int(sconi)
+			}
+			up++
+		}
+		if dn >= 0 {
+			doing = true
+			sconi := int32(scon.Start) + dn
+			if int(pt.SendConIndex[sconi]) == ridx {
+				return int(sconi)
+			}
+			dn--
+		}
+		if !doing {
+			break
+		}
+	}
+	return -1
+}
+
+// SynVarIndex returns the index of given variable within the synapse,
+// according to *this path's* SynVarNames() list (using a map to lookup index),
+// or -1 and error message if not found.
+func (pt *Path) SynVarIndex(varNm string) (int, error) {
+	return SynapseVarByName(varNm)
+}
+
+// SynVarNum returns the number of synapse-level variables
+// for this paths.  This is needed for extending indexes in derived types.
+func (pt *Path) SynVarNum() int {
+	return len(SynapseVarNames)
+}
+
+// NumSyns returns the number of synapses for this path as a 1D array.
+// This is the max idx for SynVal1D and the number of vals set by SynValues.
+func (pt *Path) NumSyns() int {
+	return int(pt.NSyns)
+}
+
+// SynValue1D returns value of given variable index (from SynVarIndex) on given SynIndex.
+// Returns NaN on invalid index.
+// This is the core synapse var access method used by other methods.
+func (pt *Path) SynValue1D(varIndex int, synIndex int) float32 {
+	if synIndex < 0 || synIndex >= int(pt.NSyns) {
+		return math32.NaN()
+	}
+	if varIndex < 0 || varIndex >= pt.SynVarNum() {
+		return math32.NaN()
+	}
+	syni := pt.SynStIndex + uint32(synIndex)
+	if varIndex < int(SynapseVarsN) {
+		return Synapses.Value(int(SynapseVars(varIndex)), int(syni))
+	} else {
+		return SynapseTraces.Value(int(SynapseTraceVars(varIndex-int(SynapseVarsN))), int(syni), int(0))
+	}
+}
+
+// SynValues sets values of given variable name for each synapse,
+// using the natural ordering of the synapses (sender based for Axon),
+// into given float32 slice (only resized if not big enough).
+// Returns error on invalid var name.
+func (pt *Path) SynValues(vals *[]float32, varNm string) error {
+	vidx, err := pt.EmerPath.SynVarIndex(varNm)
+	if err != nil {
+		return err
+	}
+	ns := int(pt.NSyns)
+	if *vals == nil || cap(*vals) < ns {
+		*vals = make([]float32, ns)
+	} else if len(*vals) < ns {
+		*vals = (*vals)[0:ns]
+	}
+	slay := pt.Send
+	i := 0
+	for lni := uint32(0); lni < slay.NNeurons; lni++ {
+		scon := pt.SendCon[lni]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			(*vals)[i] = pt.SynValue1D(vidx, i)
+			i++
+		}
+	}
+	return nil
+}
+
+// SynVal1DDi returns value of given variable index (from SynVarIndex) on given SynIndex.
+// Returns NaN on invalid index.
+// This is the core synapse var access method used by other methods.
+// Includes Di data parallel index for data-parallel synaptic values.
+func (pt *Path) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
+	if synIndex < 0 || synIndex >= int(pt.NSyns) {
+		return math32.NaN()
+	}
+	if varIndex < 0 || varIndex >= pt.SynVarNum() {
+		return math32.NaN()
+	}
+	syni := pt.SynStIndex + uint32(synIndex)
+	if varIndex < int(SynapseVarsN) {
+		return Synapses.Value(int(SynapseVars(varIndex)), int(syni))
+	} else {
+		return SynapseTraces.Value(int(SynapseTraceVars(varIndex-int(SynapseVarsN))), int(syni), int(di))
+	}
+}
+
+// SynValDi returns value of given variable name on the synapse
+// between given send, recv unit indexes (1D, flat indexes).
+// Returns math32.NaN() for access errors (see SynValTry for error message)
+// Includes Di data parallel index for data-parallel synaptic values.
+func (pt *Path) SynValDi(varNm string, sidx, ridx int, di int) float32 {
+	vidx, err := pt.EmerPath.SynVarIndex(varNm)
+	if err != nil {
+		return math32.NaN()
+	}
+	syi := pt.SynIndex(sidx, ridx)
+	return pt.SynVal1DDi(vidx, syi, di)
+}
+
+///////////////////////////////////////////////////////////////////////
+//  	Weights
+
+// WriteWeightsJSON writes the weights from this pathway
+// from the receiver-side perspective in a JSON text format.
+func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
+	slay := pt.Send
+	rlay := pt.Recv
+	nr := int(rlay.NNeurons)
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("{\n"))
+	depth++
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"From\": %q,\n", slay.Name)))
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"Rs\": [\n")))
+	depth++
+	for ri := 0; ri < nr; ri++ {
+		rc := pt.RecvCon[ri]
+		syIndexes := pt.RecvSynIxs(uint32(ri))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("{\n"))
+		depth++
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte(fmt.Sprintf("\"Ri\": %v,\n", ri)))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte(fmt.Sprintf("\"N\": %v,\n", rc.N)))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Si\": [ "))
+		for ci, syi := range syIndexes {
+			syni := pt.SynStIndex + syi
+			si := pt.Params.SynSendLayerIndex(syni)
+			w.Write([]byte(fmt.Sprintf("%v", si)))
+			if ci == int(rc.N-1) {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("],\n"))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Wt\": [ "))
+		for ci, syi := range syIndexes {
+			syni := pt.SynStIndex + syi
+			w.Write([]byte(strconv.FormatFloat(float64(Synapses.Value(int(Wt), int(syni))), 'g', weights.Prec, 32)))
+			if ci == int(rc.N-1) {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("],\n"))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
+		for ci, syi := range syIndexes {
+			syni := pt.SynStIndex + syi
+			w.Write([]byte(strconv.FormatFloat(float64(Synapses.Value(int(SWt), int(syni))), 'g', weights.Prec, 32)))
+			if ci == int(rc.N-1) {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("]\n"))
+		depth--
+		w.Write(indent.TabBytes(depth))
+		if ri == nr-1 {
+			w.Write([]byte("}\n"))
+		} else {
+			w.Write([]byte("},\n"))
+		}
+	}
+	depth--
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("]\n"))
+	depth--
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("}")) // note: leave unterminated as outer loop needs to add , or just \n depending
+}
+
+// SetWeights sets the weights for this pathway from weights.Path decoded values
+func (pt *Path) SetWeights(pw *weights.Path) error {
+	var err error
+	for i := range pw.Rs {
+		pr := &pw.Rs[i]
+		hasWt1 := len(pr.Wt1) >= len(pr.Si)
+		for si := range pr.Si {
+			if hasWt1 {
+				er := pt.SetSynValue("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
+				if er != nil {
+					err = er
+				}
+			}
+			er := pt.SetSynValue("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
+			if er != nil {
+				err = er
+			}
+		}
+	}
+	return err
+}
+
 // AllParams returns a listing of all parameters in the Layer
 func (pt *Path) AllParams() string {
 	str := "///////////////////////////////////////////////////\nPath: " + pt.Name + "\n" + pt.Params.AllParams()
@@ -98,272 +578,4 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses.Value(int(SWt), int(syni))), int(LWt), int(syni))
 	}
 	return nil
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Init methods
-
-// SetSWtsRPool initializes SWt structural weight values using given tensor
-// of values which has unique values for each recv neuron within a given pool.
-func (pt *Path) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
-	rNuY := swts.DimSize(0)
-	rNuX := swts.DimSize(1)
-	rNu := rNuY * rNuX
-	rfsz := swts.Len() / rNu
-
-	rsh := pt.Recv.Shape
-	rNpY := rsh.DimSize(0)
-	rNpX := rsh.DimSize(1)
-	r2d := false
-	if rsh.NumDims() != 4 {
-		r2d = true
-		rNpY = 1
-		rNpX = 1
-	}
-
-	wsz := swts.Len()
-
-	for rpy := 0; rpy < rNpY; rpy++ {
-		for rpx := 0; rpx < rNpX; rpx++ {
-			for ruy := 0; ruy < rNuY; ruy++ {
-				for rux := 0; rux < rNuX; rux++ {
-					ri := 0
-					if r2d {
-						ri = rsh.IndexTo1D(ruy, rux)
-					} else {
-						ri = rsh.IndexTo1D(rpy, rpx, ruy, rux)
-					}
-					scst := (ruy*rNuX + rux) * rfsz
-					syIndexes := pt.RecvSynIxs(uint32(ri))
-					for ci, syi := range syIndexes {
-						syni := pt.SynStIndex + syi
-						swt := float32(swts.Float1D((scst + ci) % wsz))
-						Synapses.Set(float32(swt), int(SWt), int(syni))
-						wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(int(Wt), int(syni)) - pt.Params.SWts.Init.Mean))
-						Synapses.Set(wt, int(Wt), int(syni))
-						Synapses.Set(pt.Params.SWts.LWtFromWts(wt, swt), int(LWt), int(syni))
-					}
-				}
-			}
-		}
-	}
-}
-
-// SetWeightsFunc initializes synaptic Wt value using given function
-// based on receiving and sending unit indexes.
-// Strongly suggest calling SWtRescale after.
-func (pt *Path) SetWeightsFunc(ctx *Context, wtFun func(si, ri int, send, recv *tensor.Shape) float32) {
-	rsh := &pt.Recv.Shape
-	rn := rsh.Len()
-	ssh := &pt.Send.Shape
-
-	for ri := 0; ri < rn; ri++ {
-		syIndexes := pt.RecvSynIxs(uint32(ri))
-		for _, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			si := pt.Params.SynSendLayerIndex(syni)
-			wt := wtFun(int(si), ri, ssh, rsh)
-			Synapses.Set(wt, int(SWt), int(syni))
-			Synapses.Set(wt, int(Wt), int(syni))
-			Synapses.Set(0.5, int(LWt), int(syni))
-		}
-	}
-}
-
-// SetSWtsFunc initializes structural SWt values using given function
-// based on receiving and sending unit indexes.
-func (pt *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *tensor.Shape) float32) {
-	rsh := &pt.Recv.Shape
-	rn := rsh.Len()
-	ssh := &pt.Send.Shape
-
-	for ri := 0; ri < rn; ri++ {
-		syIndexes := pt.RecvSynIxs(uint32(ri))
-		for _, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			si := int(pt.Params.SynSendLayerIndex(syni))
-			swt := swtFun(si, ri, ssh, rsh)
-			Synapses.Set(swt, int(SWt), int(syni))
-			wt := pt.Params.SWts.ClipWt(swt + (Synapses.Value(int(Wt), int(syni)) - pt.Params.SWts.Init.Mean))
-			Synapses.Set(wt, int(Wt), int(syni))
-			Synapses.Set(pt.Params.SWts.LWtFromWts(wt, swt), int(LWt), int(syni))
-		}
-	}
-}
-
-// InitWeightsSyn initializes weight values based on WtInit randomness parameters
-// for an individual synapse.
-// It also updates the linear weight value based on the sigmoidal weight value.
-func (pt *Path) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
-	pt.Params.SWts.InitWeightsSyn(ctx, syni, rnd, mean, spct)
-}
-
-// InitWeights initializes weight values according to SWt params,
-// enforcing current constraints.
-func (pt *Path) InitWeights(ctx *Context, nt *Network) {
-	pt.Params.Learn.LRate.Init()
-	pt.Params.InitGBuffs()
-	rlay := pt.Recv
-	spct := pt.Params.SWts.Init.SPct
-	if rlay.Params.IsTarget() {
-		pt.Params.SWts.Init.SPct = 0
-		spct = 0
-	}
-	smn := pt.Params.SWts.Init.Mean
-	// todo: why is this recv based?  prob important to keep for consistency
-	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
-		ni := rlay.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		syIndexes := pt.RecvSynIxs(lni)
-		for _, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			pt.InitWeightsSyn(ctx, syni, &nt.Rand, smn, spct)
-		}
-	}
-	if pt.Params.SWts.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
-		pt.SWtRescale(ctx)
-	}
-}
-
-// SWtRescale rescales the SWt values to preserve the target overall mean value,
-// using subtractive normalization.
-func (pt *Path) SWtRescale(ctx *Context) {
-	rlay := pt.Recv
-	smn := pt.Params.SWts.Init.Mean
-	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
-		ni := rlay.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		var nmin, nmax int
-		var sum float32
-		syIndexes := pt.RecvSynIxs(lni)
-		nCons := len(syIndexes)
-		if nCons <= 1 {
-			continue
-		}
-		for _, syi := range syIndexes {
-			syni := pt.SynStIndex + syi
-			swt := Synapses.Value(int(SWt), int(syni))
-			sum += swt
-			if swt <= pt.Params.SWts.Limit.Min {
-				nmin++
-			} else if swt >= pt.Params.SWts.Limit.Max {
-				nmax++
-			}
-		}
-		amn := sum / float32(nCons)
-		mdf := smn - amn // subtractive
-		if mdf == 0 {
-			continue
-		}
-		if mdf > 0 { // need to increase
-			if nmax > 0 && nmax < nCons {
-				amn = sum / float32(nCons-nmax)
-				mdf = smn - amn
-			}
-			for _, syi := range syIndexes {
-				syni := pt.SynStIndex + syi
-				if Synapses.Value(int(SWt), int(syni)) <= pt.Params.SWts.Limit.Max {
-					swt := pt.Params.SWts.ClipSWt(Synapses.Value(int(SWt), int(syni)) + mdf)
-					Synapses.Set(swt, int(SWt), int(syni))
-					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
-				}
-			}
-		} else {
-			if nmin > 0 && nmin < nCons {
-				amn = sum / float32(nCons-nmin)
-				mdf = smn - amn
-			}
-			for _, syi := range syIndexes {
-				syni := pt.SynStIndex + syi
-				if Synapses.Value(int(SWt), int(syni)) >= pt.Params.SWts.Limit.Min {
-					swt := pt.Params.SWts.ClipSWt(Synapses.Value(int(SWt), int(syni)) + mdf)
-					Synapses.Set(swt, int(SWt), int(syni))
-					Synapses.Set(pt.Params.SWts.WtValue(swt, Synapses.Value(int(LWt), int(syni))), int(Wt), int(syni))
-				}
-			}
-		}
-	}
-}
-
-// sender based version:
-//                     only looked at recv layers > send layers -- ri is "above" si
-//  for:      ri    <- this is now sender on recip path: recipSi
-//           ^ \    <- look for send back to original si, now as a receiver
-//          /   v
-// start: si == recipRi <- look in sy.RecvIndex of recipSi's sending cons for recipRi == si
-//
-
-// InitWtSym initializes weight symmetry.
-// Is given the reciprocal pathway where
-// the Send and Recv layers are reversed
-// (see LayerBase RecipToRecvPath)
-func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
-	if len(rpj.SendCon) == 0 {
-		return
-	}
-	slay := pt.Send
-	for lni := uint32(0); lni < slay.NNeurons; lni++ {
-		scon := pt.SendCon[lni]
-		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
-			syni := pt.SynStIndex + syi
-			ri := pt.Params.SynRecvLayerIndex(syni) // <- this sends to me, ri
-			recipSi := ri                           // reciprocal case is si is now receiver
-			recipc := rpj.SendCon[recipSi]
-			if recipc.N == 0 {
-				continue
-			}
-			firstSyni := rpj.SynStIndex + recipc.Start
-			lastSyni := rpj.SynStIndex + recipc.Start + recipc.N - 1
-			firstRi := rpj.Params.SynRecvLayerIndex(firstSyni)
-			lastRi := rpj.Params.SynRecvLayerIndex(lastSyni)
-			if lni < firstRi || lni > lastRi { // fast reject -- paths are always in order!
-				continue
-			}
-			// start at index proportional to ri relative to rist
-			up := int32(0)
-			if lastRi > firstRi {
-				up = int32(float32(recipc.N) * float32(lni-firstRi) / float32(lastRi-firstRi))
-			}
-			dn := up - 1
-
-			for {
-				doing := false
-				if up < int32(recipc.N) {
-					doing = true
-					recipCi := uint32(recipc.Start) + uint32(up)
-					recipSyni := rpj.SynStIndex + recipCi
-					recipRi := rpj.Params.SynRecvLayerIndex(recipSyni)
-					if recipRi == lni {
-						Synapses.Set(Synapses.Value(int(Wt), int(syni)), int(Wt), int(recipSyni))
-						Synapses.Set(Synapses.Value(int(LWt), int(syni)), int(LWt), int(recipSyni))
-						Synapses.Set(Synapses.Value(int(SWt), int(syni)), int(SWt), int(recipSyni))
-						// note: if we support SymFromTop then can have option to go other way
-						break
-					}
-					up++
-				}
-				if dn >= 0 {
-					doing = true
-					recipCi := uint32(recipc.Start) + uint32(dn)
-					recipSyni := rpj.SynStIndex + recipCi
-					recipRi := rpj.Params.SynRecvLayerIndex(recipSyni)
-					if recipRi == lni {
-						Synapses.Set(Synapses.Value(int(Wt), int(syni)), int(Wt), int(recipSyni))
-						Synapses.Set(Synapses.Value(int(LWt), int(syni)), int(LWt), int(recipSyni))
-						Synapses.Set(Synapses.Value(int(SWt), int(syni)), int(SWt), int(recipSyni))
-						// note: if we support SymFromTop then can have option to go other way
-						break
-					}
-					dn--
-				}
-				if !doing {
-					break
-				}
-			}
-		}
-	}
 }

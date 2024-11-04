@@ -4,369 +4,9 @@
 
 package axon
 
-import (
-	"encoding/json"
-	"strings"
-	"sync/atomic"
-
-	"cogentcore.org/core/math32"
-)
+import "cogentcore.org/core/math32"
 
 //gosl:start
-
-const (
-	// StartOff is the starting offset.
-	StartOff int32 = iota
-
-	// Number of items.
-	Nitems
-
-	// Number of StartN elements.
-	StartNN
-)
-
-// StartN holds a starting offset index and a number of items
-// arranged from Start to Start+N (exclusive).
-// This is not 16 byte padded and only for use on CPU side.
-type StartN struct {
-
-	// starting offset
-	Start uint32
-
-	// number of items --
-	N uint32
-
-	pad, pad1 uint32 // todo: see if we can do without these?
-}
-
-// PathIndexes contains path-level index information into global memory arrays
-type PathIndexes struct {
-	// PathIndex is the index of the pathway in global path list: [Layer][SendPaths]
-	PathIndex uint32
-
-	// RecvLayer is the index of the receiving layer in global list of layers.
-	RecvLayer uint32
-
-	// RecvNeurSt is the starting index of neurons in recv layer,
-	// so we don't need layer to get to neurons.
-	RecvNeurSt uint32
-
-	// RecvNeurN is the number of neurons in recv layer.
-	RecvNeurN uint32
-
-	// SendLayer is the index of the sending layer in global list of layers.
-	SendLayer uint32
-
-	// SendNeurSt is the starting index of neurons in sending layer,
-	// so we don't need layer to get to neurons.
-	SendNeurSt uint32
-
-	// SendNeurN is the number of neurons in send layer
-	SendNeurN uint32
-
-	// SynapseSt is the start index into global Synapse array.
-	// [Layer][SendPaths][Synapses].
-	SynapseSt uint32
-
-	// SendConSt is the start index into global PathSendCon array.
-	// [Layer][SendPaths][SendNeurons]
-	SendConSt uint32
-
-	// RecvConSt is the start index into global PathRecvCon array.
-	// [Layer][RecvPaths][RecvNeurons]
-	RecvConSt uint32
-
-	// RecvSynSt is the start index into global sender-based Synapse index array.
-	// [Layer][SendPaths][Synapses]
-	RecvSynSt uint32
-
-	// NPathNeurSt is the start NPathNeur index into PathGBuf, PathGSyns global arrays.
-	// [Layer][RecvPaths][RecvNeurons]
-	NPathNeurSt uint32
-}
-
-// RecvNIndexToLayIndex converts a neuron's index in network level global list of all neurons
-// to receiving layer-specific index-- e.g., for accessing GBuf and GSyn values.
-// Just subtracts RecvNeurSt -- docu-function basically..
-func (pi *PathIndexes) RecvNIndexToLayIndex(ni uint32) uint32 {
-	return ni - pi.RecvNeurSt
-}
-
-// SendNIndexToLayIndex converts a neuron's index in network level global list of all neurons
-// to sending layer-specific index.  Just subtracts SendNeurSt -- docu-function basically..
-func (pi *PathIndexes) SendNIndexToLayIndex(ni uint32) uint32 {
-	return ni - pi.SendNeurSt
-}
-
-// GScaleValues holds the conductance scaling values.
-// These are computed once at start and remain constant thereafter,
-// and therefore belong on Params and not on PathValues.
-type GScaleValues struct {
-
-	// scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Path.PathScale adapt params
-	Scale float32 `edit:"-"`
-
-	// normalized relative proportion of total receiving conductance for this pathway: PathScale.Rel / sum(PathScale.Rel across relevant paths)
-	Rel float32 `edit:"-"`
-
-	pad, pad1 float32
-}
-
-// PathParams contains all of the path parameters.
-// These values must remain constant over the course of computation.
-// On the GPU, they are loaded into a uniform.
-type PathParams struct {
-
-	// functional type of path, which determines functional code path
-	// for specialized layer types, and is synchronized with the Path.Type value
-	PathType PathTypes
-
-	pad, pad1, pad2 int32
-
-	// recv and send neuron-level pathway index array access info
-	Indexes PathIndexes `display:"-"`
-
-	// synaptic communication parameters: delay, probability of failure
-	Com SynComParams `display:"inline"`
-
-	// pathway scaling parameters for computing GScale:
-	// modulates overall strength of pathway, using both
-	// absolute and relative factors, with adaptation option to maintain target max conductances
-	PathScale PathScaleParams `display:"inline"`
-
-	// slowly adapting, structural weight value parameters,
-	// which control initial weight values and slower outer-loop adjustments
-	SWts SWtParams `display:"add-fields"`
-
-	// synaptic-level learning parameters for learning in the fast LWt values.
-	Learn LearnSynParams `display:"add-fields"`
-
-	// conductance scaling values
-	GScale GScaleValues `display:"inline"`
-
-	// Params for RWPath and TDPredPath for doing dopamine-modulated learning
-	// for reward prediction: Da * Send activity.
-	// Use in RWPredLayer or TDPredLayer typically to generate reward predictions.
-	// If the Da sign is positive, the first recv unit learns fully; for negative,
-	// second one learns fully.
-	// Lower lrate applies for opposite cases.  Weights are positive-only.
-	RLPred RLPredPathParams `display:"inline"`
-
-	// for trace-based learning in the MatrixPath. A trace of synaptic co-activity
-	// is formed, and then modulated by dopamine whenever it occurs.
-	// This bridges the temporal gap between gating activity and subsequent activity,
-	// and is based biologically on synaptic tags.
-	// Trace is reset at time of reward based on ACh level from CINs.
-	Matrix MatrixPathParams `display:"inline"`
-
-	// Basolateral Amygdala pathway parameters.
-	BLA BLAPathParams `display:"inline"`
-
-	// Hip bench parameters.
-	Hip HipPathParams `display:"inline"`
-}
-
-func (pt *PathParams) Defaults() {
-	pt.Com.Defaults()
-	pt.SWts.Defaults()
-	pt.PathScale.Defaults()
-	pt.Learn.Defaults()
-	pt.RLPred.Defaults()
-	pt.Matrix.Defaults()
-	pt.BLA.Defaults()
-	pt.Hip.Defaults()
-}
-
-func (pt *PathParams) Update() {
-	pt.Com.Update()
-	pt.PathScale.Update()
-	pt.SWts.Update()
-	pt.Learn.Update()
-	pt.RLPred.Update()
-	pt.Matrix.Update()
-	pt.BLA.Update()
-	pt.Hip.Update()
-
-	if pt.PathType == CTCtxtPath {
-		pt.Com.GType = ContextG
-	}
-}
-
-func (pt *PathParams) ShouldDisplay(field string) bool {
-	switch field {
-	case "RLPred":
-		return pt.PathType == RWPath || pt.PathType == TDPredPath
-	case "Matrix":
-		return pt.PathType == VSMatrixPath || pt.PathType == DSMatrixPath
-	case "BLA":
-		return pt.PathType == BLAPath
-	case "Hip":
-		return pt.PathType == HipPath
-	default:
-		return true
-	}
-}
-
-func (pt *PathParams) AllParams() string {
-	str := ""
-	b, _ := json.MarshalIndent(&pt.Com, "", " ")
-	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.PathScale, "", " ")
-	str += "PathScale: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.SWts, "", " ")
-	str += "SWt: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
-
-	switch pt.PathType {
-	case RWPath, TDPredPath:
-		b, _ = json.MarshalIndent(&pt.RLPred, "", " ")
-		str += "RLPred: {\n " + JsonToParams(b)
-	case VSMatrixPath, DSMatrixPath:
-		b, _ = json.MarshalIndent(&pt.Matrix, "", " ")
-		str += "Matrix: {\n " + JsonToParams(b)
-	case BLAPath:
-		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
-		str += "BLA: {\n " + JsonToParams(b)
-	case HipPath:
-		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
-		str += "Hip: {\n " + JsonToParams(b)
-	}
-	return str
-}
-
-func (pt *PathParams) IsInhib() bool {
-	return pt.Com.GType == InhibitoryG
-}
-
-func (pt *PathParams) IsExcitatory() bool {
-	return pt.Com.GType == ExcitatoryG
-}
-
-// SetFixedWts sets parameters for fixed, non-learning weights
-// with a default of Mean = 0.8, Var = 0 strength
-func (pt *PathParams) SetFixedWts() {
-	pt.SWts.Init.SPct = 0
-	pt.Learn.Learn.SetBool(false)
-	pt.SWts.Adapt.On.SetBool(false)
-	pt.SWts.Adapt.SigGain = 1
-	pt.SWts.Init.Mean = 0.8
-	pt.SWts.Init.Var = 0.0
-	pt.SWts.Init.Sym.SetBool(false)
-}
-
-// SynRecvLayerIndex converts the Synapse RecvIndex of recv neuron's index
-// in network level global list of all neurons to receiving
-// layer-specific index.
-func (pt *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs[SynRecvIndex, syni])
-}
-
-// SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
-// in network level global list of all neurons to sending
-// layer-specific index.
-func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs[SynSendIndex, syni])
-}
-
-//////// Cycle
-
-// GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
-// while integrating the Recv Path-level GSyn integrated values.
-func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
-	deli := pt.Com.ReadOff(ctx.CyclesTotal)
-	npti := pt.Indexes.NPathNeurSt + lni
-	gRaw := pt.Com.FloatFromGBuf(PathGBuf[deli, npti, di])
-	PathGBuf[deli, npti, di] = 0
-	gsyn := PathGSyns[npti, di]
-	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
-	PathGSyns[npti, di] = gsyn
-}
-
-// GatherSpikesGSyn integrates G*Raw and G*Syn values for given neuron
-// from the given Path-level GRaw value, first integrating
-// pathway-level GSyn value.
-func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uint32, gRaw float32, gSyn *float32) {
-	switch pt.Com.GType {
-	case ExcitatoryG:
-		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons[GeRaw, ni, di] += gRaw
-		Neurons[GeSyn, ni, di] += *gSyn
-	case InhibitoryG:
-		*gSyn = ly.Acts.Dt.GiSynFromRaw(*gSyn, gRaw)
-		Neurons[GiRaw, ni, di] += gRaw
-		Neurons[GiSyn, ni, di] += *gSyn
-	case ModulatoryG:
-		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons[GModRaw, ni, di] += gRaw
-		Neurons[GModSyn, ni, di] += *gSyn
-	case MaintG:
-		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons[GMaintRaw, ni, di] += gRaw
-		// note: Syn happens via NMDA in Act
-	case ContextG:
-		Neurons[CtxtGeRaw, ni, di] += gRaw
-	default:
-	}
-}
-
-// SendSpike sends a spike from the sending neuron at index sendIndex
-// into the GBuf buffer on the receiver side. The buffer on the receiver side
-// is a ring buffer, which is used for modelling the time delay between
-// sending and receiving spikes.
-func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
-	sendVal := pt.GScale.Scale * pt.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
-	if pt.PathType == CTCtxtPath {
-		if uint32(ctx.Cycle) != uint32(ctx.ThetaCycles)-1-pt.Com.DelLen {
-			return
-		}
-		sendVal *= Neurons[Burst, ni, di] // Burst is regular CaSpkP for all non-SuperLayer neurons
-	} else {
-		if Neurons[Spike, ni, di] == 0 {
-			return
-		}
-	}
-	recvNeurSt := pt.Indexes.RecvNeurSt
-	npst := pt.Indexes.NPathNeurSt
-	cni := pt.Indexes.SendConSt + lni
-	synst := pt.Indexes.SynapseSt + PathSendCon[cni, StartOff]
-	synn := PathSendCon[cni, Nitems]
-	for ci := uint32(0); ci < synn; ci++ {
-		syni := synst + ci
-		ri := SynapseIxs[SynRecvIndex, syni]
-		npti := npst + (ri - recvNeurSt)
-		deli := pt.Com.WriteOff(ctx.CyclesTotal)
-		sv := int32(sendVal * Synapses[Wt, syni])
-		atomic.AddInt32(&PathGBuf[deli, npti, di], sv)
-	}
-}
-
-// InitGBuffs initializes the per-pathway synaptic conductance buffers.
-// This is not typically needed (called during InitWeights, InitActs)
-// but can be called when needed.  Must be called to completely initialize
-// prior activity, e.g., full Glong clearing.
-func (pt *PathParams) InitGBuffs() {
-	nix := GetNetworkIxs(0)
-	maxd := nix.MaxData
-	mdel := nix.MaxDelay + 1
-	rnn := pt.Indexes.RecvNeurN
-	npst := pt.Indexes.NPathNeurSt
-	for dl := range mdel {
-		for ri := range rnn {
-			for di := range maxd {
-				PathGBuf[dl, npst + ri, di] = 0.0
-			}
-		}
-	}
-	for ri := range rnn {
-		for di := range maxd {
-			PathGSyns[npst + ri, di] = 0.0
-		}
-	}
-}
-
-///////////////////////////////////////////////////
-// DWt
 
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on pathway type.
@@ -811,3 +451,105 @@ func (pt *PathParams) WtFromDWtSynNoLimits(ctx *Context, syni uint32) {
 }
 
 //gosl:end
+
+// todo: rewrite below for PathParams target
+
+// SlowAdapt does the slow adaptation: SWt learning and SynScale
+func (pj *Path) SlowAdapt(ctx *Context) {
+	pj.SWtFromWt(ctx)
+	pj.SynScale(ctx)
+}
+
+// SWtFromWt updates structural, slowly adapting SWt value based on
+// accumulated DSWt values, which are zero-summed with additional soft bounding
+// relative to SWt limits.
+func (pj *Path) SWtFromWt(ctx *Context) {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWts.Adapt.On.IsFalse() {
+		return
+	}
+	rlay := pj.Recv
+	if rlay.Params.IsTarget() {
+		return
+	}
+	mx := pj.Params.SWts.Limit.Max
+	mn := pj.Params.SWts.Limit.Min
+	lr := pj.Params.SWts.Adapt.LRate
+	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
+		syIndexes := pj.RecvSynIxs(lni)
+		nCons := len(syIndexes)
+		if nCons < 1 {
+			continue
+		}
+		avgDWt := float32(0)
+		for _, syi := range syIndexes {
+			syni := pj.SynStIndex + syi
+			swt := Synapses[SWt, syni]
+			// softbound for SWt
+			if Synapses[DSWt, syni] >= 0 {
+				Synapses[DSWt, syni] *= (mx - swt)
+			} else {
+				Synapses[DSWt, syni] *= (swt - mn)
+			}
+			avgDWt += Synapses[DSWt, syni]
+		}
+		avgDWt /= float32(nCons)
+		avgDWt *= pj.Params.SWts.Adapt.SubMean
+		for _, syi := range syIndexes {
+			syni := pj.SynStIndex + syi
+			Synapses[SWt, syni] += lr * (Synapses[DSWt, syni] - avgDWt)
+			swt := Synapses[SWt, syni]
+			Synapses[DSWt, syni] = 0
+			Synapses[LWt, syni] = pj.Params.SWts.LWtFromWts(Synapses[Wt, syni], swt)
+			Synapses[Wt, syni] = pj.Params.SWts.WtValue(swt, Synapses[LWt, syni])
+		}
+	}
+}
+
+// SynScale performs synaptic scaling based on running average activation vs. targets.
+// Layer-level AvgDifFromTrgAvg function must be called first.
+func (pj *Path) SynScale(ctx *Context) {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
+		return
+	}
+	rlay := pj.Recv
+	if !rlay.Params.IsLearnTrgAvg() {
+		return
+	}
+	tp := &rlay.Params.Learn.TrgAvgAct
+	lr := tp.SynScaleRate
+	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
+		ri := rlay.NeurStIndex + lni
+		if NrnIsOff(ri) {
+			continue
+		}
+		adif := -lr * NeuronAvgs[AvgDif, ri]
+		syIndexes := pj.RecvSynIxs(lni)
+		for _, syi := range syIndexes {
+			syni := pj.SynStIndex + syi
+			lwt := Synapses[LWt, syni]
+			swt := Synapses[SWt, syni]
+			if adif >= 0 { // key to have soft bounding on lwt here!
+				Synapses[LWt, syni] += (1 - lwt) * adif * swt
+			} else {
+				Synapses[LWt, syni] += lwt * adif * swt
+			}
+			Synapses[Wt, syni] = pj.Params.SWts.WtValue(swt, Synapses[LWt, syni])
+		}
+	}
+}
+
+// LRateMod sets the LRate modulation parameter for Paths, which is
+// for dynamic modulation of learning rate (see also LRateSched).
+// Updates the effective learning rate factor accordingly.
+func (pj *Path) LRateMod(mod float32) {
+	pj.Params.Learn.LRate.Mod = mod
+	pj.Params.Learn.LRate.Update()
+}
+
+// LRateSched sets the schedule-based learning rate multiplier.
+// See also LRateMod.
+// Updates the effective learning rate factor accordingly.
+func (pj *Path) LRateSched(sched float32) {
+	pj.Params.Learn.LRate.Sched = sched
+	pj.Params.Learn.LRate.Update()
+}

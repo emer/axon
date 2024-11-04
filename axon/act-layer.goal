@@ -5,293 +5,14 @@
 package axon
 
 import (
-	"encoding/json"
-
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tensor"
 	"github.com/emer/axon/v2/fsfffb"
 )
 
 //gosl:start
 
-// LayerIndexes contains index access into network global arrays for GPU.
-type LayerIndexes struct {
-	// NPools is the total number of pools for this layer, including layer-wide.
-	NPools uint32 `edit:"-"`
-
-	// start of neurons for this layer in global array (same as Layer.NeurStIndex)
-	NeurSt uint32 `edit:"-"`
-
-	// number of neurons in layer
-	NNeurons uint32 `edit:"-"`
-
-	// start index into RecvPaths global array
-	RecvSt uint32 `edit:"-"`
-
-	// number of recv pathways
-	RecvN uint32 `edit:"-"`
-
-	// start index into RecvPaths global array
-	SendSt uint32 `edit:"-"`
-
-	// number of recv pathways
-	SendN uint32 `edit:"-"`
-
-	// starting neuron index in global Exts list of external input for this layer.
-	// Only for Input / Target / Compare layer types
-	ExtsSt uint32 `edit:"-"`
-
-	// layer shape Pools Y dimension -- 1 for 2D
-	ShpPlY int32 `edit:"-"`
-
-	// layer shape Pools X dimension -- 1 for 2D
-	ShpPlX int32 `edit:"-"`
-
-	// layer shape Units Y dimension
-	ShpUnY int32 `edit:"-"`
-
-	// layer shape Units X dimension
-	ShpUnX int32 `edit:"-"`
-}
-
-// LayerInhibIndexes contains indexes of layers for between-layer inhibition
-type LayerInhibIndexes struct {
-
-	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used
-	Index1 int32 `edit:"-"`
-
-	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used
-	Index2 int32 `edit:"-"`
-
-	// idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used
-	Index3 int32 `edit:"-"`
-
-	// idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used
-	Index4 int32 `edit:"-"`
-}
-
-// note: the following must appear above LayerParams for GPU usage which is order sensitive
-
-// SetNeuronExtPosNeg sets neuron Ext value based on neuron index
-// with positive values going in first unit, negative values rectified
-// to positive in 2nd unit
-func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
-	if ni == 0 {
-		if val >= 0 {
-			Neurons[Ext, ni, di] = val
-		} else {
-			Neurons[Ext, ni, di] = float32(0)
-		}
-	} else {
-		if val >= 0 {
-			Neurons[Ext, ni, di] = float32(0)
-		} else {
-			Neurons[Ext, ni, di] = -val
-		}
-	}
-}
-
-// LayerParams contains all of the layer parameters.
-// These values must remain constant over the course of computation.
-// On the GPU, they are loaded into a uniform.
-type LayerParams struct {
-
-	// functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Type value
-	Type LayerTypes
-
-	// Index of this layer in [Layers] list.
-	Index uint32 `display:"-"`
-	
-	// MaxData is the maximum number of data parallel elements.
-	MaxData uint32 `display:"-"`
-
-	// PoolSt is the start of pools for this layer; first one is always the layer-wide pool.
-	PoolSt uint32 `display:"-"`
-
-	// Activation parameters and methods for computing activations
-	Acts ActParams `display:"add-fields"`
-
-	// Inhibition parameters and methods for computing layer-level inhibition
-	Inhib InhibParams `display:"add-fields"`
-
-	// indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)
-	LayInhib LayerInhibIndexes `display:"inline"`
-
-	// Learning parameters and methods that operate at the neuron level
-	Learn LearnNeurParams `display:"add-fields"`
-
-	// BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.
-	Bursts BurstParams `display:"inline"`
-
-	// ] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace
-	CT CTParams `display:"inline"`
-
-	// provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)
-	Pulv PulvParams `display:"inline"`
-
-	// parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
-	Matrix MatrixParams `display:"inline"`
-
-	// type of GP Layer.
-	GP GPParams `display:"inline"`
-
-	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
-	LDT LDTParams `display:"inline"`
-
-	// parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.
-	VTA VTAParams `display:"inline"`
-
-	// parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
-	RWPred RWPredParams `display:"inline"`
-
-	// parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
-	RWDa RWDaParams `display:"inline"`
-
-	// parameterizes TD reward integration layer
-	TDInteg TDIntegParams `display:"inline"`
-
-	// parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
-	TDDa TDDaParams `display:"inline"`
-
-	// recv and send pathway array access info
-	Indexes LayerIndexes `display:"-"`
-}
-
-func (ly *LayerParams) Update() {
-	ly.Acts.Update()
-	ly.Inhib.Update()
-	ly.Learn.Update()
-
-	ly.Bursts.Update()
-	ly.CT.Update()
-	ly.Pulv.Update()
-
-	ly.Matrix.Update()
-	ly.GP.Update()
-
-	ly.LDT.Update()
-	ly.VTA.Update()
-
-	ly.RWPred.Update()
-	ly.RWDa.Update()
-	ly.TDInteg.Update()
-	ly.TDDa.Update()
-}
-
-func (ly *LayerParams) Defaults() {
-	ly.Acts.Defaults()
-	ly.Inhib.Defaults()
-	ly.Learn.Defaults()
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 1.0
-	ly.Inhib.Pool.Gi = 1.0
-
-	ly.Bursts.Defaults()
-	ly.CT.Defaults()
-	ly.Pulv.Defaults()
-
-	ly.Matrix.Defaults()
-	ly.GP.Defaults()
-
-	ly.LDT.Defaults()
-	ly.VTA.Defaults()
-
-	ly.RWPred.Defaults()
-	ly.RWDa.Defaults()
-	ly.TDInteg.Defaults()
-	ly.TDDa.Defaults()
-}
-
-func (ly *LayerParams) ShouldDisplay(field string) bool {
-	switch field {
-	case "Bursts":
-		return ly.Type == SuperLayer
-	case "CT":
-		return ly.Type == CTLayer || ly.Type == PTPredLayer || ly.Type == BLALayer
-	case "Pulv":
-		return ly.Type == PulvinarLayer
-	case "Matrix":
-		return ly.Type == MatrixLayer
-	case "GP":
-		return ly.Type == GPLayer
-	case "LDT":
-		return ly.Type == LDTLayer
-	case "VTA":
-		return ly.Type == VTALayer
-	case "RWPred":
-		return ly.Type == RWPredLayer
-	case "RWDa":
-		return ly.Type == RWDaLayer
-	case "TDInteg":
-		return ly.Type == TDIntegLayer
-	case "TDDa":
-		return ly.Type == TDDaLayer
-	default:
-		return true
-	}
-}
-
-// AllParams returns a listing of all parameters in the Layer
-func (ly *LayerParams) AllParams() string {
-	str := ""
-	// todo: replace with a custom reflection crawler that generates
-	// the right output directly and filters based on Type etc.
-
-	b, _ := json.MarshalIndent(&ly.Acts, "", " ")
-	str += "Act: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&ly.Inhib, "", " ")
-	str += "Inhib: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&ly.Learn, "", " ")
-	str += "Learn: {\n " + JsonToParams(b)
-
-	switch ly.Type {
-	case SuperLayer:
-		b, _ = json.MarshalIndent(&ly.Bursts, "", " ")
-		str += "Burst:   {\n " + JsonToParams(b)
-	case CTLayer, PTPredLayer, BLALayer:
-		b, _ = json.MarshalIndent(&ly.CT, "", " ")
-		str += "CT:      {\n " + JsonToParams(b)
-	case PulvinarLayer:
-		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
-		str += "Pulv:    {\n " + JsonToParams(b)
-
-	case MatrixLayer:
-		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
-		str += "Matrix:  {\n " + JsonToParams(b)
-	case GPLayer:
-		b, _ = json.MarshalIndent(&ly.GP, "", " ")
-		str += "GP:      {\n " + JsonToParams(b)
-
-	case LDTLayer:
-		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
-		str += "LDT: {\n " + JsonToParams(b)
-	case VTALayer:
-		b, _ = json.MarshalIndent(&ly.VTA, "", " ")
-		str += "VTA: {\n " + JsonToParams(b)
-
-	case RWPredLayer:
-		b, _ = json.MarshalIndent(&ly.RWPred, "", " ")
-		str += "RWPred:  {\n " + JsonToParams(b)
-	case RWDaLayer:
-		b, _ = json.MarshalIndent(&ly.RWDa, "", " ")
-		str += "RWDa:    {\n " + JsonToParams(b)
-	case TDIntegLayer:
-		b, _ = json.MarshalIndent(&ly.TDInteg, "", " ")
-		str += "TDInteg: {\n " + JsonToParams(b)
-	case TDDaLayer:
-		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
-		str += "TDDa:    {\n " + JsonToParams(b)
-	}
-	return str
-}
-
-// PoolIndex returns the global network index for pool with given
-// pool (0 = layer pool, 1+ = subpools): just PoolSt + pi
-func (ly *LayerParams) PoolIndex(pi uint32) uint32 {
-	return ly.PoolSt + pi
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  ApplyExt
+////////  ApplyExt
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
 // based on layer type, and whether input should be applied to Target (else Ext)
@@ -344,6 +65,25 @@ func (ly *LayerParams) ApplyExtsNeuron(ni, di uint32) {
 	if IsExtLayerType(ly.Type) {
 		ei := ly.Indexes.ExtsSt + lni
 		ly.ApplyExtValue(ni, di, Exts[ei, di])
+	}
+}
+
+// SetNeuronExtPosNeg sets neuron Ext value based on neuron index
+// with positive values going in first unit, negative values rectified
+// to positive in 2nd unit
+func SetNeuronExtPosNeg(ctx *Context, ni, di uint32, val float32) {
+	if ni == 0 {
+		if val >= 0 {
+			Neurons[Ext, ni, di] = val
+		} else {
+			Neurons[Ext, ni, di] = float32(0)
+		}
+	} else {
+		if val >= 0 {
+			Neurons[Ext, ni, di] = float32(0)
+		} else {
+			Neurons[Ext, ni, di] = -val
+		}
 	}
 }
 
@@ -1000,10 +740,7 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////
-//  Special CyclePost methods for different layer types
-//  call these in layer_compute.go/CyclePost and
-//  gpu_wgsl/gpu_cyclepost.wgsl
+////////  Special CyclePost methods for different layer types
 
 // CyclePostLayer is called for all layer types
 func (ly *LayerParams) CyclePostLayer(ctx *Context, lpi, di uint32) {
@@ -1110,8 +847,7 @@ func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi, di uint32, spi in
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////
-//  Phase timescale
+////////  Phase timescale
 
 // NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
 // that have been averaged across NData already.
@@ -1251,3 +987,320 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 }
 
 //gosl:end
+
+// todo: determine how much of this can go directly into layerparams / gosl
+
+// InitExt initializes external input state.
+// Should be called prior to ApplyExt on all layers receiving Ext input.
+func (ly *Layer) InitExt() {
+	if !ly.Type.IsExt() {
+		return
+	}
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ly.MaxData; di++ {
+			ly.Params.InitExt(ni, di)
+			Exts[ly.Params.Indexes.ExtsSt + lni, di] = -1 // missing by default
+		}
+	}
+}
+
+// ApplyExt applies external input in the form of an tensor.Float32 or 64.
+// Negative values and NaNs are not valid, and will be interpreted as missing inputs.
+// The given data index di is the data parallel index (0 < di < MaxData):
+// must present inputs separately for each separate data parallel set.
+// If dimensionality of tensor matches that of layer, and is 2D or 4D,
+// then each dimension is iterated separately, so any mismatch preserves
+// dimensional structure.
+// Otherwise, the flat 1D view of the tensor is used.
+// If the layer is a Target or Compare layer type, then it goes in Target
+// otherwise it goes in Ext.
+// Also sets the Exts values on layer, which are used for the GPU version,
+// which requires calling the network ApplyExts() method -- is a no-op for CPU.
+func (ly *Layer) ApplyExt(di uint32, ext tensor.Tensor) {
+	switch {
+	case ext.NumDims() == 2 && ly.Shape.NumDims() == 4: // special case
+		ly.ApplyExt2Dto4D(di, ext)
+	case ext.NumDims() != ly.Shape.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
+		ly.ApplyExt1DTsr(di, ext)
+	case ext.NumDims() == 2:
+		ly.ApplyExt2D(di, ext)
+	case ext.NumDims() == 4:
+		ly.ApplyExt4D(di, ext)
+	}
+}
+
+// ApplyExtVal applies given external value to given neuron
+// using clearMask, setMask, and toTarg from ApplyExtFlags.
+// Also saves Val in Exts for potential use by GPU.
+func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
+	ni := ly.NeurStIndex + lni
+	if NrnIsOff(ni) {
+		return
+	}
+	Exts[ly.Params.Indexes.ExtsSt + lni, di] = val
+	if val < 0 {
+		return
+	}
+	if toTarg {
+		Neurons[Target, ni, di] = val
+	} else {
+		Neurons[Ext, ni, di] = val
+	}
+	NrnClearFlag(ni, di, clearMask)
+	NrnSetFlag(ni, di, setMask)
+}
+
+// ApplyExtFlags gets the clear mask and set mask for updating neuron flags
+// based on layer type, and whether input should be applied to Target (else Ext)
+func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
+	ly.Params.ApplyExtFlags(&clearMask, &setMask, &toTarg)
+	return
+}
+
+// ApplyExt2D applies 2D tensor external input
+func (ly *Layer) ApplyExt2D(di uint32, ext tensor.Tensor) {
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
+	ymx := min(ext.DimSize(0), ly.Shape.DimSize(0))
+	xmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
+	for y := 0; y < ymx; y++ {
+		for x := 0; x < xmx; x++ {
+			idx := []int{y, x}
+			val := float32(ext.Float(idx...))
+			lni := uint32(ly.Shape.IndexTo1D(idx...))
+			ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
+		}
+	}
+}
+
+// ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
+func (ly *Layer) ApplyExt2Dto4D(di uint32, ext tensor.Tensor) {
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
+	lNy, lNx, _, _ := tensor.Projection2DShape(&ly.Shape, false)
+
+	ymx := min(ext.DimSize(0), lNy)
+	xmx := min(ext.DimSize(1), lNx)
+	for y := 0; y < ymx; y++ {
+		for x := 0; x < xmx; x++ {
+			idx := []int{y, x}
+			val := float32(ext.Float(idx...))
+			lni := uint32(tensor.Projection2DIndex(&ly.Shape, false, y, x))
+			ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
+		}
+	}
+}
+
+// ApplyExt4D applies 4D tensor external input
+func (ly *Layer) ApplyExt4D(di uint32, ext tensor.Tensor) {
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
+	ypmx := min(ext.DimSize(0), ly.Shape.DimSize(0))
+	xpmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
+	ynmx := min(ext.DimSize(2), ly.Shape.DimSize(2))
+	xnmx := min(ext.DimSize(3), ly.Shape.DimSize(3))
+	for yp := 0; yp < ypmx; yp++ {
+		for xp := 0; xp < xpmx; xp++ {
+			for yn := 0; yn < ynmx; yn++ {
+				for xn := 0; xn < xnmx; xn++ {
+					idx := []int{yp, xp, yn, xn}
+					val := float32(ext.Float(idx...))
+					lni := uint32(ly.Shape.IndexTo1D(idx...))
+					ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
+				}
+			}
+		}
+	}
+}
+
+// ApplyExt1DTsr applies external input using 1D flat interface into tensor.
+// If the layer is a Target or Compare layer type, then it goes in Target
+// otherwise it goes in Ext
+func (ly *Layer) ApplyExt1DTsr(di uint32, ext tensor.Tensor) {
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
+	mx := uint32(min(ext.Len(), int(ly.NNeurons)))
+	for lni := uint32(0); lni < mx; lni++ {
+		val := float32(ext.Float1D(int(lni)))
+		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
+	}
+}
+
+// ApplyExt1D applies external input in the form of a flat 1-dimensional slice of floats
+// If the layer is a Target or Compare layer type, then it goes in Target
+// otherwise it goes in Ext
+func (ly *Layer) ApplyExt1D(di uint32, ext []float64) {
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
+	mx := uint32(min(len(ext), int(ly.NNeurons)))
+	for lni := uint32(0); lni < mx; lni++ {
+		val := float32(ext[lni])
+		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
+	}
+}
+
+// ApplyExt1D32 applies external input in the form of a flat 1-dimensional slice of float32s.
+// If the layer is a Target or Compare layer type, then it goes in Target
+// otherwise it goes in Ext
+func (ly *Layer) ApplyExt1D32(di uint32, ext []float32) {
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
+	mx := uint32(min(len(ext), int(ly.NNeurons)))
+	for lni := uint32(0); lni < mx; lni++ {
+		val := ext[lni]
+		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
+	}
+}
+
+// UpdateExtFlags updates the neuron flags for external input based on current
+// layer Type field -- call this if the Type has changed since the last
+// ApplyExt* method call.
+func (ly *Layer) UpdateExtFlags(ctx *Context) {
+	clearMask, setMask, _ := ly.ApplyExtFlags()
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			NrnClearFlag(ni, di, clearMask)
+			NrnSetFlag(ni, di, setMask)
+		}
+	}
+}
+
+// MinusPhasePost does special algorithm processing at end of minus
+func (ly *Layer) MinusPhasePost(ctx *Context) {
+	switch ly.Type {
+	case MatrixLayer:
+		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
+	case PulvinarLayer:
+		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
+	}
+}
+
+// PlusPhasePost does special algorithm processing at end of plus
+func (ly *Layer) PlusPhasePost(ctx *Context) {
+	ly.PlusPhaseActAvg(ctx)
+	ly.PhaseDiffFromActs(ctx) // GPU syncs down the state before this
+	np := ly.NPools
+	if ly.Type == PTMaintLayer && ly.Name == "OFCposPT" {
+		for spi := uint32(1); spi < np; spi++ {
+			for di := uint32(0); di < ctx.NData; di++ {
+				pi := ly.Params.PoolIndex(spi)
+				val := PoolAvgMax(AMCaSpkD, AMCycle, Avg, pi, di)
+				GlobalVectors[GvOFCposPTMaint, uint32(pi-1), di] = val
+			}
+		}
+	}
+
+	if ly.Params.Acts.Decay.OnRew.IsTrue() {
+		for di := uint32(0); di < ctx.NData; di++ {
+			hasRew := (GlobalScalars[GvHasRew, di] > 0)
+			giveUp := (GlobalScalars[GvGiveUp, di] > 0)
+			if hasRew || giveUp {
+				ly.DecayState(ctx, di, 1, 1, 1)      // note: GPU will get, and GBuf are auto-cleared in NewState
+				for spi := uint32(0); spi < np; spi++ { // also clear the pool stats: GoalMaint depends on these..
+					pi := ly.Params.PoolIndex(spi)
+					PoolAvgMaxZero(pi, di)
+				}
+			}
+		}
+	}
+	switch ly.Type {
+	case MatrixLayer:
+		ly.MatrixGated(ctx)
+	}
+}
+
+// PlusPhaseActAvg updates ActAvg and DTrgAvg at the plus phase
+// Note: could be done on GPU but not worth it at this point..
+func (ly *Layer) PlusPhaseActAvg(ctx *Context) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		dTrgSum := float32(0)
+		avgSum := float32(0)
+		for di := uint32(0); di < ctx.NData; di++ {
+			dTrgSum += ly.Params.LearnTrgAvgErrLRate() * (Neurons[CaSpkP, ni, di] - Neurons[CaSpkD, ni, di])
+			avgSum += ly.Params.Acts.Dt.LongAvgDt * (Neurons[ActM, ni, di] - NeuronAvgs[ActAvg, ni])
+		}
+		NeuronAvgs[DTrgAvg, ni] += dTrgSum
+		NeuronAvgs[ActAvg, ni] += avgSum
+	}
+}
+
+// TargToExt sets external input Ext from target values Target
+// This is done at end of MinusPhase to allow targets to drive activity in plus phase.
+// This can be called separately to simulate alpha cycles within theta cycles, for example.
+func (ly *Layer) TargToExt(ctx *Context) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+				continue
+			}
+			Neurons[Ext, ni, di] =  Neurons[Target, ni, di]
+			NrnSetFlag(ni, di, NeuronHasExt)
+			Neurons[ISI, ni, di] = -1 // get fresh update on plus phase output acts
+			Neurons[ISIAvg, ni, di] = -1
+		}
+	}
+}
+
+// ClearTargExt clears external inputs Ext that were set from target values Target.
+// This can be called to simulate alpha cycles within theta cycles, for example.
+func (ly *Layer) ClearTargExt(ctx *Context) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			if !NrnHasFlag(ni, di, NeuronHasTarg) { // will be clamped in plus phase
+				continue
+			}
+			Neurons[Ext, ni, di] = 0
+			NrnClearFlag(ni, di, NeuronHasExt)
+			Neurons[ISI, ni, di] = -1 // get fresh update on plus phase output acts
+			Neurons[ISIAvg, ni, di] = -1
+		}
+	}
+}
+
+// SpkSt1 saves current activation state in SpkSt1 variables (using CaP)
+func (ly *Layer) SpkSt1(ctx *Context) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			Neurons[SpkSt1, ni, di] = Neurons[CaSpkP, ni, di]
+		}
+	}
+}
+
+// SpkSt2 saves current activation state in SpkSt2 variables (using CaP)
+func (ly *Layer) SpkSt2(ctx *Context) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		if NrnIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			Neurons[SpkSt2, ni, di] = Neurons[CaSpkP, ni, di]
+		}
+	}
+}
+

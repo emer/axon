@@ -7,21 +7,92 @@
 package axon
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
+	"strconv"
 	"strings"
 
-	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
+	"github.com/emer/emergent/v2/emer"
+	"github.com/emer/emergent/v2/params"
+	"github.com/emer/emergent/v2/weights"
 )
 
 // index naming:
 // lni = layer-based neuron index (0 = first neuron in layer)
 // ni  = absolute whole network neuron index
+
+// Layer implements the basic Axon spiking activation function,
+// and manages learning in the pathways.
+type Layer struct {
+	emer.LayerBase
+
+	// Params are layer parameters (pointer to item in Network.LayerParams).
+	Params *LayerParams
+
+	// our parent network, in case we need to use it to find
+	// other layers etc; set when added by network.
+	Network *Network `copier:"-" json:"-" xml:"-" display:"-"`
+
+	// Type is the type of layer, which drives specialized computation as needed.
+	Type LayerTypes
+
+	// NNeurons is the number of neurons in the layer.
+	NNeurons uint32 `display:"-"`
+
+	// NeurStIndex is the starting index of neurons for this layer within
+	// the global Network list.
+	NeurStIndex uint32 `display:"-" inactive:"-"`
+
+	// NPools is the number of inhibitory pools based on layer shape,
+	// with the first one representing the entire set of neurons in the layer,
+	// and 4D shaped layers have sub-pools after that.
+	NPools uint32 `display:"-"`
+
+	// MaxData is the maximum amount of input data that can be processed in
+	// parallel in one pass of the network (copied from [NetworkIndexes]).
+	// Neuron, Pool, Values storage is allocated to hold this amount.
+	MaxData uint32 `display:"-"`
+
+	// RecvPaths is the list of receiving pathways into this layer from other layers.
+	RecvPaths []*Path
+
+	// SendPaths is the list of sending pathways from this layer to other layers.
+	SendPaths []*Path
+
+	// BuildConfig has configuration data set when the network is configured,
+	// that is used during the network Build() process via PostBuild method,
+	// after all the structure of the network has been fully constructed.
+	// In particular, the Params is nil until Build, so setting anything
+	// specific in there (e.g., an index to another layer) must be done
+	// as a second pass.  Note that Params are all applied after Build
+	// and can set user-modifiable params, so this is for more special
+	// algorithm structural parameters set during ConfigNet() methods.
+	BuildConfig map[string]string `table:"-"`
+
+	// DefaultParams are default parameters that are applied prior to user-set
+	// parameters. These are useful for specific layer functionality in specialized
+	// brain areas (e.g., Rubicon, BG etc) not associated with a layer type,
+	// which otherwise is used to hard-code initial default parameters.
+	// Typically just set to a literal map.
+	DefaultParams params.Params `table:"-"`
+}
+
+// emer.Layer interface methods
+
+func (ly *Layer) StyleObject() any           { return ly.Params }
+func (ly *Layer) TypeName() string           { return ly.Type.String() }
+func (ly *Layer) TypeNumber() int            { return int(ly.Type) }
+func (ly *Layer) NumRecvPaths() int          { return len(ly.RecvPaths) }
+func (ly *Layer) RecvPath(idx int) emer.Path { return ly.RecvPaths[idx] }
+func (ly *Layer) NumSendPaths() int          { return len(ly.SendPaths) }
+func (ly *Layer) SendPath(idx int) emer.Path { return ly.SendPaths[idx] }
 
 func (ly *Layer) Defaults() { //types:add
 	ctx := ly.Network.Context()
@@ -132,6 +203,204 @@ func (ly *Layer) UpdateParams() {
 	}
 }
 
+// todo: not standard:
+func (ly *Layer) SetOff(off bool) {
+	ly.Off = off
+	// a Path is off if either the sending or the receiving layer is off
+	// or if the path has been set to Off directly
+	for _, pt := range ly.RecvPaths {
+		pt.Off = pt.Send.Off || off
+	}
+	for _, pt := range ly.SendPaths {
+		pt.Off = pt.Recv.Off || off
+	}
+}
+
+// RecipToSendPath finds the reciprocal pathway to
+// the given sending pathway within the ly layer.
+// i.e., where ly is instead the *receiving* layer from same other layer B
+// that is the receiver of the spj pathway we're sending to.
+//
+//	ly = A,  other layer = B:
+//
+// spj: S=A -> R=B
+// rpj: R=A <- S=B
+//
+// returns false if not found.
+func (ly *Layer) RecipToSendPath(spj *Path) (*Path, bool) {
+	for _, rpj := range ly.RecvPaths {
+		if rpj.Send == spj.Recv { // B = sender of rpj, recv of spj
+			return rpj, true
+		}
+	}
+	return nil, false
+}
+
+// RecipToRecvPath finds the reciprocal pathway to
+// the given recv pathway within the ly layer.
+// i.e., where ly is instead the *sending* layer to same other layer B
+// that is the sender of the rpj pathway we're receiving from.
+//
+//	ly = A, other layer = B:
+//
+// rpj: R=A <- S=B
+// spj: S=A -> R=B
+//
+// returns false if not found.
+func (ly *Layer) RecipToRecvPath(rpj *Path) (*Path, bool) {
+	for _, spj := range ly.SendPaths {
+		if spj.Recv == rpj.Send { // B = sender of rpj, recv of spj
+			return spj, true
+		}
+	}
+	return nil, false
+}
+
+// ApplyDefaultParams applies DefaultParams default parameters if set
+// Called by Layer.Defaults()
+func (ly *Layer) ApplyDefaultParams() {
+	if ly.DefaultParams == nil {
+		return
+	}
+	err := ly.DefaultParams.Apply(ly.EmerLayer, false)
+	if err != nil {
+		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
+	}
+}
+
+// AllParams returns a listing of all parameters in the Layer
+func (ly *Layer) AllParams() string {
+	str := "/////////////////////////////////////////////////\nLayer: " + ly.Name + "\n" + ly.Params.AllParams()
+	for _, pt := range ly.RecvPaths {
+		str += pt.AllParams()
+	}
+	return str
+}
+
+////////////////////////////////////////////////////////////////////////
+//  Build
+
+// SetBuildConfig sets named configuration parameter to given string value
+// to be used in the PostBuild stage -- mainly for layer names that need to be
+// looked up and turned into indexes, after entire network is built.
+func (ly *Layer) SetBuildConfig(param, val string) {
+	ly.BuildConfig[param] = val
+}
+
+// BuildConfigByName looks for given BuildConfig option by name,
+// and reports & returns an error if not found.
+func (ly *Layer) BuildConfigByName(nm string) (string, error) {
+	cfg, ok := ly.BuildConfig[nm]
+	if !ok {
+		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name, nm)
+		log.Println(err)
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+// BuildConfigFindLayer looks for BuildConfig of given name
+// and if found, looks for layer with corresponding name.
+// if mustName is true, then an error is logged if the BuildConfig
+// name does not exist.  An error is always logged if the layer name
+// is not found.  -1 is returned in any case of not found.
+func (ly *Layer) BuildConfigFindLayer(nm string, mustName bool) int32 {
+	idx := int32(-1)
+	if rnm, ok := ly.BuildConfig[nm]; ok {
+		dly := ly.Network.LayerByName(rnm)
+		if dly != nil {
+			idx = int32(dly.Index)
+		}
+	} else {
+		if mustName {
+			err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name, nm)
+			log.Println(err)
+		}
+	}
+	return idx
+}
+
+// BuildSubPools initializes neuron start / end indexes for sub-pools
+func (ly *Layer) BuildSubPools(ctx *Context) {
+	if !ly.Is4D() {
+		return
+	}
+	sh := ly.Shape.Sizes
+	spy := sh[0]
+	spx := sh[1]
+	spi := uint32(1)
+	for py := 0; py < spy; py++ {
+		for px := 0; px < spx; px++ {
+			soff := int32(ly.Shape.IndexTo1D(py, px, 0, 0))
+			eoff := int32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
+			for di := uint32(0); di < ly.MaxData; di++ {
+				pi := ly.Params.PoolIndex(spi)
+				PoolsInt.Set(soff, int(PoolNeurSt), int(pi), int(di))
+				PoolsInt.Set(eoff, int(PoolNeurEd), int(pi), int(di))
+			}
+			for lni := soff; lni < eoff; lni++ {
+				ni := ly.NeurStIndex + uint32(lni)
+				NeuronIxs.Set(uint32(spi), int(NrnSubPool), int(ni))
+			}
+			spi++
+		}
+	}
+}
+
+// BuildPools builds the inhibitory pools structures -- nu = number of units in layer
+func (ly *Layer) BuildPools(ctx *Context, nn uint32) error {
+	np := 1 + ly.NumPools()
+	for di := uint32(0); di < ly.MaxData; di++ {
+		lpi := ly.Params.PoolIndex(0)
+		PoolsInt.Set(0, int(PoolNeurSt), int(lpi), int(di))
+		PoolsInt.Set(int32(nn), int(PoolNeurEd), int(lpi), int(di))
+		PoolsInt.Set(1, int(PoolIsLayer), int(lpi), int(di))
+	}
+	if np > 1 {
+		ly.BuildSubPools(ctx)
+	}
+	return nil
+}
+
+// BuildPaths builds the pathways, send-side
+func (ly *Layer) BuildPaths(ctx *Context) error {
+	emsg := ""
+	for _, pt := range ly.SendPaths {
+		if pt.Off {
+			continue
+		}
+		err := pt.Build()
+		if err != nil {
+			emsg += err.Error() + "\n"
+		}
+	}
+	if emsg != "" {
+		return errors.New(emsg)
+	}
+	return nil
+}
+
+// Build constructs the layer state, including calling Build on the pathways
+func (ly *Layer) Build() error {
+	ctx := ly.Network.Context()
+	nn := uint32(ly.Shape.Len())
+	if nn == 0 {
+		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Name)
+	}
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		NeuronIxs.Set(lni, int(NrnNeurIndex), int(ni))
+		NeuronIxs.Set(uint32(ly.Index), int(NrnLayIndex), int(ni))
+	}
+	err := ly.BuildPools(ctx, nn)
+	if err != nil {
+		return err
+	}
+	err = ly.BuildPaths(ctx)
+	ly.PostBuild()
+	return err
+}
+
 // PostBuild performs special post-Build() configuration steps for specific algorithms,
 // using configuration data set in BuildConfig during the ConfigNet process.
 func (ly *Layer) PostBuild() {
@@ -163,17 +432,278 @@ func (ly *Layer) PostBuild() {
 	}
 }
 
-// HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
-// This is the proper check for using pool-level target average activations, for example.
-func (ly *Layer) HasPoolInhib() bool {
-	return ly.Params.Inhib.Pool.On.IsTrue()
+// UnitVarNames returns a list of variable names available on the units in this layer
+func (ly *Layer) UnitVarNames() []string {
+	return NeuronVarNames
 }
 
-// AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
-// this to return the base Layer type, so that the AxonLayer interface does not
-// need to include accessors to all the basic stuff
-func (ly *Layer) AsAxon() *Layer {
-	return ly
+// UnitVarProps returns properties for variables
+func (ly *Layer) UnitVarProps() map[string]string {
+	return NeuronVarProps
+}
+
+// UnitVarIndex returns the index of given variable within the Neuron,
+// according to *this layer's* UnitVarNames() list (using a map to lookup index),
+// or -1 and error message if not found.
+func (ly *Layer) UnitVarIndex(varNm string) (int, error) {
+	return NeuronVarIndexByName(varNm)
+}
+
+// UnitVarNum returns the number of Neuron-level variables
+// for this layer.  This is needed for extending indexes in derived types.
+func (ly *Layer) UnitVarNum() int {
+	return len(NeuronVarNames)
+}
+
+// UnitValue1D returns value of given variable index on given unit, using 1-dimensional index.
+// returns NaN on invalid index.
+// This is the core unit var access method used by other methods,
+// so it is the only one that needs to be updated for derived layer types.
+func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
+	if idx < 0 || idx >= int(ly.NNeurons) {
+		return math32.NaN()
+	}
+	if varIndex < 0 || varIndex >= ly.UnitVarNum() {
+		return math32.NaN()
+	}
+	if di < 0 || di >= int(ly.MaxData) {
+		return math32.NaN()
+	}
+	ni := ly.NeurStIndex + uint32(idx)
+	nvars := ly.UnitVarNum()
+	if varIndex >= nvars-NNeuronLayerVars {
+		lvi := varIndex - (ly.UnitVarNum() - NNeuronLayerVars)
+		switch lvi {
+		case 0:
+			return GlobalScalars.Value(int(GvDA), int(uint32(di)))
+		case 1:
+			return GlobalScalars.Value(int(GvACh), int(uint32(di)))
+		case 2:
+			return GlobalScalars.Value(int(GvNE), int(uint32(di)))
+		case 3:
+			return GlobalScalars.Value(int(GvSer), int(uint32(di)))
+		case 4:
+			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)))
+			return float32(PoolsInt.Value(int(PoolGated), int(pi), int(di)))
+		}
+	} else if NeuronVars(varIndex) >= NeuronVarsN {
+		return NeuronAvgs.Value(int(NeuronVars(varIndex)-NeuronVarsN), int(ni))
+	} else {
+		return Neurons.Value(int(varIndex), int(ni), int(di))
+	}
+	return math32.NaN()
+}
+
+// RecvPathValues fills in values of given synapse variable name,
+// for pathway into given sending layer and neuron 1D index,
+// for all receiving neurons in this layer,
+// into given float32 slice (only resized if not big enough).
+// pathType is the string representation of the path type -- used if non-empty,
+// useful when there are multiple pathways between two layers.
+// Returns error on invalid var name.
+// If the receiving neuron is not connected to the given sending layer or neuron
+// then the value is set to math32.NaN().
+// Returns error on invalid var name or lack of recv path (vals always set to nan on path err).
+func (ly *Layer) RecvPathValues(vals *[]float32, varNm string, sendLay emer.Layer, sendIndex1D int, pathType string) error {
+	var err error
+	nn := int(ly.NNeurons)
+	if *vals == nil || cap(*vals) < nn {
+		*vals = make([]float32, nn)
+	} else if len(*vals) < nn {
+		*vals = (*vals)[0:nn]
+	}
+	nan := math32.NaN()
+	for i := 0; i < nn; i++ {
+		(*vals)[i] = nan
+	}
+	if sendLay == nil {
+		return fmt.Errorf("sending layer is nil")
+	}
+	slay := sendLay.AsEmer()
+	var pt emer.Path
+	if pathType != "" {
+		pt, err = slay.SendPathByRecvNameType(ly.Name, pathType)
+		if pt == nil {
+			pt, err = slay.SendPathByRecvName(ly.Name)
+		}
+	} else {
+		pt, err = slay.SendPathByRecvName(ly.Name)
+	}
+	if pt == nil {
+		return err
+	}
+	if pt.AsEmer().Off {
+		return fmt.Errorf("pathway is off")
+	}
+	for ri := 0; ri < nn; ri++ {
+		(*vals)[ri] = pt.AsEmer().SynValue(varNm, sendIndex1D, ri) // this will work with any variable -- slower, but necessary
+	}
+	return nil
+}
+
+// SendPathValues fills in values of given synapse variable name,
+// for pathway into given receiving layer and neuron 1D index,
+// for all sending neurons in this layer,
+// into given float32 slice (only resized if not big enough).
+// pathType is the string representation of the path type -- used if non-empty,
+// useful when there are multiple pathways between two layers.
+// Returns error on invalid var name.
+// If the sending neuron is not connected to the given receiving layer or neuron
+// then the value is set to math32.NaN().
+// Returns error on invalid var name or lack of recv path (vals always set to nan on path err).
+func (ly *Layer) SendPathValues(vals *[]float32, varNm string, recvLay emer.Layer, recvIndex1D int, pathType string) error {
+	var err error
+	nn := int(ly.NNeurons)
+	if *vals == nil || cap(*vals) < nn {
+		*vals = make([]float32, nn)
+	} else if len(*vals) < nn {
+		*vals = (*vals)[0:nn]
+	}
+	nan := math32.NaN()
+	for i := 0; i < nn; i++ {
+		(*vals)[i] = nan
+	}
+	if recvLay == nil {
+		return fmt.Errorf("receiving layer is nil")
+	}
+	rlay := recvLay.AsEmer()
+	var pt emer.Path
+	if pathType != "" {
+		pt, err = rlay.RecvPathBySendNameType(ly.Name, pathType)
+		if pt == nil {
+			pt, err = rlay.RecvPathBySendName(ly.Name)
+		}
+	} else {
+		pt, err = rlay.RecvPathBySendName(ly.Name)
+	}
+	if pt == nil {
+		return err
+	}
+	if pt.AsEmer().Off {
+		return fmt.Errorf("pathway is off")
+	}
+	for si := 0; si < nn; si++ {
+		(*vals)[si] = pt.AsEmer().SynValue(varNm, si, recvIndex1D)
+	}
+	return nil
+}
+
+// VarRange returns the min / max values for given variable
+// todo: support r. s. pathway values
+// error occurs when variable name is not found.
+func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
+	nn := ly.NNeurons
+	if nn == 0 {
+		return
+	}
+	vidx, err := ly.UnitVarIndex(varNm)
+	if err != nil {
+		return
+	}
+	nvar := vidx
+
+	v0 := Neurons.Value(int(nvar), int(ly.NeurStIndex), int(0))
+	min = v0
+	max = v0
+	for lni := uint32(1); lni < nn; lni++ {
+		ni := ly.NeurStIndex + lni
+		vl := Neurons.Value(int(nvar), int(ni), int(0))
+		if vl < min {
+			min = vl
+		}
+		if vl > max {
+			max = vl
+		}
+	}
+	return
+}
+
+////////	Weights
+
+// WriteWeightsJSON writes the weights from this layer from the receiver-side perspective
+// in a JSON text format.  We build in the indentation logic to make it much faster and
+// more efficient.
+func (ly *Layer) WriteWeightsJSON(w io.Writer, depth int) {
+	li := ly.Index
+	ly.MetaData = make(map[string]string)
+	ly.MetaData["ActMAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerActMAvg), int(li), int(0)))
+	ly.MetaData["ActPAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerActPAvg), int(li), int(0)))
+	ly.MetaData["GiMult"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerGiMult), int(li), int(0)))
+
+	if ly.Params.IsLearnTrgAvg() {
+		ly.LayerBase.WriteWeightsJSONBase(w, depth, "ActAvg", "TrgAvg")
+	} else {
+		ly.LayerBase.WriteWeightsJSONBase(w, depth)
+	}
+}
+
+// SetWeights sets the weights for this layer from weights.Layer decoded values
+func (ly *Layer) SetWeights(lw *weights.Layer) error {
+	if ly.Off {
+		return nil
+	}
+	li := ly.Index
+	ctx := ly.Network.Context()
+	if lw.MetaData != nil {
+		for di := uint32(0); di < ly.MaxData; di++ {
+			if am, ok := lw.MetaData["ActMAvg"]; ok {
+				pv, _ := strconv.ParseFloat(am, 32)
+				LayerStates.Set(float32(pv), int(LayerActMAvg), int(li), int(di))
+			}
+			if ap, ok := lw.MetaData["ActPAvg"]; ok {
+				pv, _ := strconv.ParseFloat(ap, 32)
+				LayerStates.Set(float32(pv), int(LayerActPAvg), int(li), int(di))
+			}
+			if gi, ok := lw.MetaData["GiMult"]; ok {
+				pv, _ := strconv.ParseFloat(gi, 32)
+				LayerStates.Set(float32(pv), int(LayerGiMult), int(li), int(di))
+			}
+		}
+	}
+	if lw.Units != nil {
+		if ta, ok := lw.Units["ActAvg"]; ok {
+			for lni := range ta {
+				if lni > int(ly.NNeurons) {
+					break
+				}
+				ni := ly.NeurStIndex + uint32(lni)
+				NeuronAvgs.Set(ta[lni], int(ActAvg), int(ni))
+			}
+		}
+		if ta, ok := lw.Units["TrgAvg"]; ok {
+			for lni := range ta {
+				if lni > int(ly.NNeurons) {
+					break
+				}
+				ni := ly.NeurStIndex + uint32(lni)
+				NeuronAvgs.Set(ta[lni], int(TrgAvg), int(ni))
+			}
+		}
+	}
+	var err error
+	if len(lw.Paths) == ly.NumRecvPaths() { // this is essential if multiple paths from same layer
+		for pi := range lw.Paths {
+			pw := &lw.Paths[pi]
+			pt := ly.RecvPaths[pi]
+			er := pt.SetWeights(pw)
+			if er != nil {
+				err = er
+			}
+		}
+	} else {
+		for pi := range lw.Paths {
+			pw := &lw.Paths[pi]
+			pt, _ := ly.RecvPathBySendName(pw.From)
+			if pt != nil {
+				er := pt.SetWeights(pw)
+				if er != nil {
+					err = er
+				}
+			}
+		}
+	}
+	ly.AvgDifFromTrgAvg(ctx) // update AvgPct based on loaded ActAvg values
+	return err
 }
 
 // JsonToParams reformates json output to suitable params display output
@@ -185,605 +715,6 @@ func JsonToParams(b []byte) string {
 	br = strings.Replace(br, "\n }", " }", -1)
 	br = strings.Replace(br, "\n  }\n", " }", -1)
 	return br[1:] + "\n"
-}
-
-// note: all basic computation can be performed on layer-level and path level
-
-////////  Init methods
-
-// InitWeights initializes the weight values in the network, i.e., resetting learning
-// Also calls InitActs
-func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
-	ly.UpdateParams()
-	ly.Params.Acts.Dend.HasMod.SetBool(false)
-	li := ly.Index
-	for di := uint32(0); di < ly.MaxData; di++ {
-		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(LayerActMAvg), int(li), int(di))
-		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(LayerActPAvg), int(li), int(di))
-		LayerStates.Set(1, int(LayerAvgMaxGeM), int(li), int(di))
-		LayerStates.Set(1, int(LayerAvgMaxGiM), int(li), int(di))
-		LayerStates.Set(1, int(LayerGiMult), int(li), int(di))
-		LayerStates.Set(0, int(LayerPhaseDiff), int(li), int(di))
-		LayerStates.Set(0, int(LayerPhaseDiffAvg), int(li), int(di))
-		LayerStates.Set(0, int(LayerPhaseDiffVar), int(li), int(di))
-		LayerStates.Set(-1, int(LayerRT), int(li), int(di))
-		LayerStates.Set(0, int(LayerRewPredPos), int(li), int(di))
-		LayerStates.Set(0, int(LayerRewPredNeg), int(li), int(di))
-	}
-	ly.InitActAvg(ctx)
-	ly.InitActs(ctx)
-	ly.InitGScale(ctx)
-	for _, pt := range ly.SendPaths {
-		if pt.Off {
-			continue
-		}
-		pt.InitWeights(ctx, nt)
-	}
-	for _, pt := range ly.RecvPaths {
-		if pt.Off {
-			continue
-		}
-		if pt.Params.Com.GType == ModulatoryG {
-			ly.Params.Acts.Dend.HasMod.SetBool(true)
-			break
-		}
-	}
-
-}
-
-// InitActAvg initializes the running-average activation values
-// that drive learning and the longer time averaging values.
-func (ly *Layer) InitActAvg(ctx *Context) {
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Params.Learn.InitNeurCa(ctx, ni, di)
-		}
-	}
-	if ly.HasPoolInhib() && ly.Params.Learn.TrgAvgAct.Pool.IsTrue() {
-		ly.InitActAvgPools(ctx)
-	} else {
-		ly.InitActAvgLayer(ctx)
-	}
-}
-
-// InitActAvgLayer initializes the running-average activation values
-// that drive learning and the longer time averaging values.
-// version with just overall layer-level inhibition.
-func (ly *Layer) InitActAvgLayer(ctx *Context) {
-	strg := ly.Params.Learn.TrgAvgAct.TrgRange.Min
-	rng := ly.Params.Learn.TrgAvgAct.TrgRange.Range()
-	tmax := ly.Params.Learn.TrgAvgAct.TrgRange.Max
-	gibinit := ly.Params.Learn.TrgAvgAct.GiBaseInit
-	inc := float32(0)
-	nn := ly.NNeurons
-	if nn > 1 {
-		inc = rng / float32(nn-1)
-	}
-	porder := make([]int, nn)
-	for i := range porder {
-		porder[i] = i
-	}
-	if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-		randx.PermuteInts(porder, &ly.Network.Rand)
-	}
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		vi := porder[lni] // same for all datas
-		trg := strg + inc*float32(vi)
-		NeuronAvgs.Set(trg, int(TrgAvg), int(ni))
-		NeuronAvgs.Set(trg, int(AvgPct), int(ni))
-		NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ActAvg), int(ni))
-		NeuronAvgs.Set(0, int(AvgDif), int(ni))
-		NeuronAvgs.Set(0, int(DTrgAvg), int(ni))
-		NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(GeBase), int(ni))
-		NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(GiBase), int(ni))
-		if gibinit > 0 {
-			gib := gibinit * (tmax - trg)
-			NeuronAvgs.Set(gib, int(GiBase), int(ni))
-		}
-	}
-}
-
-// InitActAvgPools initializes the running-average activation values
-// that drive learning and the longer time averaging values.
-// version with pooled inhibition.
-func (ly *Layer) InitActAvgPools(ctx *Context) {
-	strg := ly.Params.Learn.TrgAvgAct.TrgRange.Min
-	rng := ly.Params.Learn.TrgAvgAct.TrgRange.Range()
-	tmax := ly.Params.Learn.TrgAvgAct.TrgRange.Max
-	gibinit := ly.Params.Learn.TrgAvgAct.GiBaseInit
-	inc := float32(0)
-	nNy := ly.Shape.DimSize(2)
-	nNx := ly.Shape.DimSize(3)
-	nn := nNy * nNx
-	if nn > 1 {
-		inc = rng / float32(nn-1)
-	}
-	np := ly.NPools
-	porder := make([]int, nn)
-	for i := range porder {
-		porder[i] = i
-	}
-	for spi := uint32(1); spi < np; spi++ {
-		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-			randx.PermuteInts(porder, &ly.Network.Rand)
-		}
-		pi := ly.Params.PoolIndex(spi) // only using for idxs
-		nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(0))
-		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(0))
-		for lni := nsi; lni < nei; lni++ {
-			ni := ly.NeurStIndex + uint32(lni)
-			if NrnIsOff(ni) {
-				continue
-			}
-			vi := porder[lni-nsi]
-			trg := strg + inc*float32(vi)
-			NeuronAvgs.Set(trg, int(TrgAvg), int(ni))
-			NeuronAvgs.Set(trg, int(AvgPct), int(ni))
-			NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ActAvg), int(ni))
-			NeuronAvgs.Set(0, int(AvgDif), int(ni))
-			NeuronAvgs.Set(0, int(DTrgAvg), int(ni))
-			NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(GeBase), int(ni))
-			NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(GiBase), int(ni))
-			if gibinit > 0 {
-				gib := gibinit * (tmax - trg)
-				NeuronAvgs.Set(gib, int(GiBase), int(ni))
-			}
-		}
-	}
-}
-
-// InitActs fully initializes activation state -- only called automatically during InitWeights
-func (ly *Layer) InitActs(ctx *Context) { //types:add
-	ly.Params.Acts.Clamp.IsInput.SetBool(ly.Params.IsInput())
-	ly.Params.Acts.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Params.Acts.InitActs(ctx, ni, di)
-		}
-	}
-	np := ly.NPools
-	for spi := uint32(0); spi < np; spi++ {
-		for di := uint32(0); di < ly.MaxData; di++ {
-			pi := ly.Params.PoolIndex(spi)
-			PoolInit(pi, di)
-			if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
-				PoolsInt.Set(1, int(Clamped), int(pi), int(di))
-			}
-			// Target layers are dynamically updated
-		}
-	}
-	ly.InitPathGBuffs(ctx)
-}
-
-// InitPathGBuffs initializes the pathway-level conductance buffers and
-// conductance integration values for receiving pathways in this layer.
-func (ly *Layer) InitPathGBuffs(ctx *Context) {
-	for _, pt := range ly.RecvPaths {
-		if pt.Off {
-			continue
-		}
-		pt.Params.InitGBuffs()
-	}
-}
-
-// InitWeightsSym initializes the weight symmetry -- higher layers copy weights from lower layers
-func (ly *Layer) InitWtSym(ctx *Context) {
-	for _, pt := range ly.SendPaths {
-		if pt.Off {
-			continue
-		}
-		if pt.Params.SWts.Init.Sym.IsFalse() {
-			continue
-		}
-		// key ordering constraint on which way weights are copied
-		if pt.Recv.Index < pt.Send.Index {
-			continue
-		}
-		rpj, has := ly.RecipToSendPath(pt)
-		if !has {
-			continue
-		}
-		if rpj.Params.SWts.Init.Sym.IsFalse() {
-			continue
-		}
-		pt.InitWtSym(ctx, rpj)
-	}
-}
-
-////////  ApplyExt
-
-// InitExt initializes external input state.
-// Should be called prior to ApplyExt on all layers receiving Ext input.
-func (ly *Layer) InitExt() {
-	if !ly.Type.IsExt() {
-		return
-	}
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		for di := uint32(0); di < ly.MaxData; di++ {
-			ly.Params.InitExt(ni, di)
-			Exts.Set(-1, int(ly.Params.Indexes.ExtsSt+lni), int(di)) // missing by default
-		}
-	}
-}
-
-// ApplyExt applies external input in the form of an tensor.Float32 or 64.
-// Negative values and NaNs are not valid, and will be interpreted as missing inputs.
-// The given data index di is the data parallel index (0 < di < MaxData):
-// must present inputs separately for each separate data parallel set.
-// If dimensionality of tensor matches that of layer, and is 2D or 4D,
-// then each dimension is iterated separately, so any mismatch preserves
-// dimensional structure.
-// Otherwise, the flat 1D view of the tensor is used.
-// If the layer is a Target or Compare layer type, then it goes in Target
-// otherwise it goes in Ext.
-// Also sets the Exts values on layer, which are used for the GPU version,
-// which requires calling the network ApplyExts() method -- is a no-op for CPU.
-func (ly *Layer) ApplyExt(di uint32, ext tensor.Tensor) {
-	switch {
-	case ext.NumDims() == 2 && ly.Shape.NumDims() == 4: // special case
-		ly.ApplyExt2Dto4D(di, ext)
-	case ext.NumDims() != ly.Shape.NumDims() || !(ext.NumDims() == 2 || ext.NumDims() == 4):
-		ly.ApplyExt1DTsr(di, ext)
-	case ext.NumDims() == 2:
-		ly.ApplyExt2D(di, ext)
-	case ext.NumDims() == 4:
-		ly.ApplyExt4D(di, ext)
-	}
-}
-
-// ApplyExtVal applies given external value to given neuron
-// using clearMask, setMask, and toTarg from ApplyExtFlags.
-// Also saves Val in Exts for potential use by GPU.
-func (ly *Layer) ApplyExtValue(lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
-	ni := ly.NeurStIndex + lni
-	if NrnIsOff(ni) {
-		return
-	}
-	Exts.Set(val, int(ly.Params.Indexes.ExtsSt+lni), int(di))
-	if val < 0 {
-		return
-	}
-	if toTarg {
-		Neurons.Set(val, int(Target), int(ni), int(di))
-	} else {
-		Neurons.Set(val, int(Ext), int(ni), int(di))
-	}
-	NrnClearFlag(ni, di, clearMask)
-	NrnSetFlag(ni, di, setMask)
-}
-
-// ApplyExtFlags gets the clear mask and set mask for updating neuron flags
-// based on layer type, and whether input should be applied to Target (else Ext)
-func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
-	ly.Params.ApplyExtFlags(&clearMask, &setMask, &toTarg)
-	return
-}
-
-// ApplyExt2D applies 2D tensor external input
-func (ly *Layer) ApplyExt2D(di uint32, ext tensor.Tensor) {
-	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ymx := min(ext.DimSize(0), ly.Shape.DimSize(0))
-	xmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
-	for y := 0; y < ymx; y++ {
-		for x := 0; x < xmx; x++ {
-			idx := []int{y, x}
-			val := float32(ext.Float(idx...))
-			lni := uint32(ly.Shape.IndexTo1D(idx...))
-			ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
-		}
-	}
-}
-
-// ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
-func (ly *Layer) ApplyExt2Dto4D(di uint32, ext tensor.Tensor) {
-	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	lNy, lNx, _, _ := tensor.Projection2DShape(&ly.Shape, false)
-
-	ymx := min(ext.DimSize(0), lNy)
-	xmx := min(ext.DimSize(1), lNx)
-	for y := 0; y < ymx; y++ {
-		for x := 0; x < xmx; x++ {
-			idx := []int{y, x}
-			val := float32(ext.Float(idx...))
-			lni := uint32(tensor.Projection2DIndex(&ly.Shape, false, y, x))
-			ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
-		}
-	}
-}
-
-// ApplyExt4D applies 4D tensor external input
-func (ly *Layer) ApplyExt4D(di uint32, ext tensor.Tensor) {
-	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	ypmx := min(ext.DimSize(0), ly.Shape.DimSize(0))
-	xpmx := min(ext.DimSize(1), ly.Shape.DimSize(1))
-	ynmx := min(ext.DimSize(2), ly.Shape.DimSize(2))
-	xnmx := min(ext.DimSize(3), ly.Shape.DimSize(3))
-	for yp := 0; yp < ypmx; yp++ {
-		for xp := 0; xp < xpmx; xp++ {
-			for yn := 0; yn < ynmx; yn++ {
-				for xn := 0; xn < xnmx; xn++ {
-					idx := []int{yp, xp, yn, xn}
-					val := float32(ext.Float(idx...))
-					lni := uint32(ly.Shape.IndexTo1D(idx...))
-					ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
-				}
-			}
-		}
-	}
-}
-
-// ApplyExt1DTsr applies external input using 1D flat interface into tensor.
-// If the layer is a Target or Compare layer type, then it goes in Target
-// otherwise it goes in Ext
-func (ly *Layer) ApplyExt1DTsr(di uint32, ext tensor.Tensor) {
-	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	mx := uint32(min(ext.Len(), int(ly.NNeurons)))
-	for lni := uint32(0); lni < mx; lni++ {
-		val := float32(ext.Float1D(int(lni)))
-		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
-	}
-}
-
-// ApplyExt1D applies external input in the form of a flat 1-dimensional slice of floats
-// If the layer is a Target or Compare layer type, then it goes in Target
-// otherwise it goes in Ext
-func (ly *Layer) ApplyExt1D(di uint32, ext []float64) {
-	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	mx := uint32(min(len(ext), int(ly.NNeurons)))
-	for lni := uint32(0); lni < mx; lni++ {
-		val := float32(ext[lni])
-		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
-	}
-}
-
-// ApplyExt1D32 applies external input in the form of a flat 1-dimensional slice of float32s.
-// If the layer is a Target or Compare layer type, then it goes in Target
-// otherwise it goes in Ext
-func (ly *Layer) ApplyExt1D32(di uint32, ext []float32) {
-	clearMask, setMask, toTarg := ly.ApplyExtFlags()
-	mx := uint32(min(len(ext), int(ly.NNeurons)))
-	for lni := uint32(0); lni < mx; lni++ {
-		val := ext[lni]
-		ly.ApplyExtValue(lni, di, val, clearMask, setMask, toTarg)
-	}
-}
-
-// UpdateExtFlags updates the neuron flags for external input based on current
-// layer Type field -- call this if the Type has changed since the last
-// ApplyExt* method call.
-func (ly *Layer) UpdateExtFlags(ctx *Context) {
-	clearMask, setMask, _ := ly.ApplyExtFlags()
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NrnIsOff(ni) {
-			continue
-		}
-		for di := uint32(0); di < ctx.NData; di++ {
-			NrnClearFlag(ni, di, clearMask)
-			NrnSetFlag(ni, di, setMask)
-		}
-	}
-}
-
-////////  InitGScale
-
-// InitGScale computes the initial scaling factor for synaptic input conductances G,
-// stored in GScale.Scale, based on sending layer initial activation.
-func (ly *Layer) InitGScale(ctx *Context) {
-	totGeRel := float32(0)
-	totGiRel := float32(0)
-	totGmRel := float32(0)
-	totGmnRel := float32(0)
-	for _, pt := range ly.RecvPaths {
-		if pt.Off {
-			continue
-		}
-		slay := pt.Send
-		savg := slay.Params.Inhib.ActAvg.Nominal
-		snu := slay.NNeurons
-		ncon := pt.RecvConNAvgMax.Avg
-		pt.Params.GScale.Scale = pt.Params.PathScale.FullScale(savg, float32(snu), ncon)
-		// reverting this change: if you want to eliminate a path, set the Off flag
-		// if you want to negate it but keep the relative factor in the denominator
-		// then set the scale to 0.
-		//
-		//	if pj.Params.GScale == 0 {
-		//		continue
-		//	}
-		switch pt.Params.Com.GType {
-		case InhibitoryG:
-			totGiRel += pt.Params.PathScale.Rel
-		case ModulatoryG:
-			totGmRel += pt.Params.PathScale.Rel
-		case MaintG:
-			totGmnRel += pt.Params.PathScale.Rel
-		default:
-			totGeRel += pt.Params.PathScale.Rel
-		}
-	}
-
-	for _, pt := range ly.RecvPaths {
-		switch pt.Params.Com.GType {
-		case InhibitoryG:
-			if totGiRel > 0 {
-				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGiRel
-				pt.Params.GScale.Scale /= totGiRel
-			} else {
-				pt.Params.GScale.Rel = 0
-				pt.Params.GScale.Scale = 0
-			}
-		case ModulatoryG:
-			if totGmRel > 0 {
-				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGmRel
-				pt.Params.GScale.Scale /= totGmRel
-			} else {
-				pt.Params.GScale.Rel = 0
-				pt.Params.GScale.Scale = 0
-
-			}
-		case MaintG:
-			if totGmnRel > 0 {
-				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGmnRel
-				pt.Params.GScale.Scale /= totGmnRel
-			} else {
-				pt.Params.GScale.Rel = 0
-				pt.Params.GScale.Scale = 0
-
-			}
-		default:
-			if totGeRel > 0 {
-				pt.Params.GScale.Rel = pt.Params.PathScale.Rel / totGeRel
-				pt.Params.GScale.Scale /= totGeRel
-			} else {
-				pt.Params.GScale.Rel = 0
-				pt.Params.GScale.Scale = 0
-			}
-		}
-	}
-}
-
-////////  Stats
-
-// note: use float64 for stats as that is best for logging
-
-// PctUnitErr returns the proportion of units where the thresholded value of
-// Target (Target or Compare types) or ActP does not match that of ActM.
-// If Act > ly.Params.Acts.Clamp.ErrThr, effective activity = 1 else 0
-// robust to noisy activations.
-// returns one result per data parallel index ([ctx.NData])
-func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
-	nn := ly.NNeurons
-	if nn == 0 {
-		return nil
-	}
-	errs := make([]float64, ctx.NData)
-	thr := ly.Params.Acts.Clamp.ErrThr
-	for di := uint32(0); di < ctx.NData; di++ {
-		wrong := 0
-		n := 0
-		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
-			if NrnIsOff(ni) {
-				continue
-			}
-			trg := false
-			if ly.Type == CompareLayer || ly.Type == TargetLayer {
-				if Neurons.Value(int(Target), int(ni), int(di)) > thr {
-					trg = true
-				}
-			} else {
-				if Neurons.Value(int(ActP), int(ni), int(di)) > thr {
-					trg = true
-				}
-			}
-			if Neurons.Value(int(ActM), int(ni), int(di)) > thr {
-				if !trg {
-					wrong++
-				}
-			} else {
-				if trg {
-					wrong++
-				}
-			}
-			n++
-		}
-		if n > 0 {
-			errs[di] = float64(wrong) / float64(n)
-		}
-	}
-	return errs
-}
-
-// LocalistErr2D decodes a 2D layer with Y axis = redundant units, X = localist units
-// returning the indexes of the max activated localist value in the minus and plus phase
-// activities, and whether these are the same or different (err = different)
-// returns one result per data parallel index ([ctx.NData])
-func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex []int) {
-	err = make([]bool, ctx.NData)
-	minusIndex = make([]int, ctx.NData)
-	plusIndex = make([]int, ctx.NData)
-	ydim := ly.Shape.DimSize(0)
-	xdim := ly.Shape.DimSize(1)
-	for di := uint32(0); di < ctx.NData; di++ {
-		var maxM, maxP float32
-		var mIndex, pIndex int
-		for xi := 0; xi < xdim; xi++ {
-			var sumP, sumM float32
-			for yi := 0; yi < ydim; yi++ {
-				lni := uint32(yi*xdim + xi)
-				ni := ly.NeurStIndex + lni
-				sumM += Neurons.Value(int(ActM), int(ni), int(di))
-				sumP += Neurons.Value(int(ActP), int(ni), int(di))
-			}
-			if sumM > maxM {
-				mIndex = xi
-				maxM = sumM
-			}
-			if sumP > maxP {
-				pIndex = xi
-				maxP = sumP
-			}
-		}
-		er := mIndex != pIndex
-		err[di] = er
-		minusIndex[di] = mIndex
-		plusIndex[di] = pIndex
-	}
-	return
-}
-
-// LocalistErr4D decodes a 4D layer with each pool representing a localist value.
-// Returns the flat 1D indexes of the max activated localist value in the minus and plus phase
-// activities, and whether these are the same or different (err = different)
-func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex []int) {
-	err = make([]bool, ctx.NData)
-	minusIndex = make([]int, ctx.NData)
-	plusIndex = make([]int, ctx.NData)
-	npool := ly.Shape.DimSize(0) * ly.Shape.DimSize(1)
-	nun := ly.Shape.DimSize(2) * ly.Shape.DimSize(3)
-	for di := uint32(0); di < ctx.NData; di++ {
-		var maxM, maxP float32
-		var mIndex, pIndex int
-		for xi := 0; xi < npool; xi++ {
-			var sumP, sumM float32
-			for yi := 0; yi < nun; yi++ {
-				lni := uint32(xi*nun + yi)
-				ni := ly.NeurStIndex + lni
-				sumM += Neurons.Value(int(ActM), int(ni), int(di))
-				sumP += Neurons.Value(int(ActP), int(ni), int(di))
-			}
-			if sumM > maxM {
-				mIndex = xi
-				maxM = sumM
-			}
-			if sumP > maxP {
-				pIndex = xi
-				maxP = sumP
-			}
-		}
-		er := mIndex != pIndex
-		err[di] = er
-		minusIndex[di] = mIndex
-		plusIndex[di] = pIndex
-	}
-	return
 }
 
 // TestValues returns a map of key vals for testing

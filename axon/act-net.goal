@@ -1,0 +1,312 @@
+// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package axon
+
+// Cycle runs one cycle of activation updating using threading methods.
+func (nt *Network) Cycle() {
+	// todo: chunks of 10 cycles
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	ld := int(nix.NLayers * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunGatherSpikes(nd)
+	RunLayerGi(ld)
+	RunBetweenGi(ld)
+	RunPoolGi(pd)
+	RunCycleNeuron(nd)
+	RunSendSpike(nd)
+	RunCyclePost(ld)
+	RunCycleInc(1)
+
+	// todo: fix this:
+	// var ldt, vta *Layer
+	// for _, ly := range nt.Layers {
+	// 	if ly.Type == VTALayer {
+	// 		vta = ly
+	// 	} else if ly.Type == LDTLayer {
+	// 		ldt = ly
+	// 	} else {
+	// 		ly.CyclePost(ctx)
+	// 	}
+	// }
+	// // ordering of these is important
+	// if ldt != nil {
+	// 	ldt.CyclePost(ctx)
+	// }
+	// if vta != nil {
+	// 	vta.CyclePost(ctx)
+	// }
+}
+
+// InitExt initializes external input state.
+// Call prior to applying external inputs to layers.
+func (nt *Network) InitExt() {
+	// note: important to do this for GPU
+	// to ensure partial inputs work the same way on CPU and GPU.
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.InitExt()
+	}
+}
+
+// ApplyExts applies external inputs to layers, based on values
+// that were set in prior layer-specific ApplyExt calls.
+// This does nothing on the CPU, but is critical for the GPU,
+// and should be added to all sims where GPU will be used.
+func (nt *Network) ApplyExts() {
+	if !UseGPU {
+		return
+	}
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	RunApplyExtsNeuron(nd)
+}
+
+// MinusPhase does updating after end of minus phase.
+func (nt *Network) MinusPhase() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunMinusPhasePool(pd)
+	RunMinusPhaseNeuron(nd)
+	nt.MinusPhasePost()
+	// todo:
+	// nt.GPU.SyncStateToGPU()
+}
+
+// MinusPhasePost does special CPU post processing.
+func (nt *Network) MinusPhasePost() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.MinusPhasePost(ctx)
+	}
+}
+
+// PlusPhaseStart does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (nt *Network) PlusPhaseStart() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	RunPlusPhaseStartNeuron(nd)
+}
+
+// PlusPhase does updating after end of plus phase
+func (nt *Network) PlusPhase() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	pd := int(nix.NPools * ctx.NData)
+	RunPlusPhasePool(pd)
+	RunPlusPhaseNeuron(nd)
+	nt.PlusPhasePost()
+	// todo:
+	// nt.GPU.SyncStateToGPU()
+}
+
+// PlusPhasePost happens on the CPU always.
+func (nt *Network) PlusPhasePost() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.PlusPhasePost(ctx)
+	}
+}
+
+// TargToExt sets external input Ext from target values Target
+// This is done at end of MinusPhase to allow targets to drive activity in plus phase.
+// This can be called separately to simulate alpha cycles within theta cycles, for example.
+func (nt *Network) TargToExt() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.TargToExt(ctx)
+	}
+}
+
+// ClearTargExt clears external inputs Ext that were set from target values Target.
+// This can be called to simulate alpha cycles within theta cycles, for example.
+func (nt *Network) ClearTargExt() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.ClearTargExt(ctx)
+	}
+}
+
+// SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
+func (nt *Network) SpkSt1() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.SpkSt1(ctx)
+	}
+}
+
+// SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
+func (nt *Network) SpkSt2() {
+	ctx := nt.Context()
+	for _, ly := range nt.Layers {
+		if ly.Off {
+			continue
+		}
+		ly.SpkSt2(ctx)
+	}
+}
+
+//gosl:start
+
+//////// Kernels for all parallel CPU / GPU compute are here:
+
+// GatherSpikes is the kernel over Neurons * Data for gathering
+// spike inputs sent on the previous cycle.
+func GatherSpikes(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].GatherSpikes(ctx, ni, di)
+}
+
+// LayerGi is the kernel over Layers * Data for updating Gi inhibition.
+func LayerGi(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	li := ctx.ItemIndex(i)
+	Layers[li].LayerGi(ctx, li, di)
+}
+
+// BetweenGi is the kernel over Layers * Data for updating Gi
+// inhibition between layers.
+func BetweenGi(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	li := ctx.ItemIndex(i)
+	Layers[li].BetweenGi(ctx, di)
+}
+
+// PoolGi is the kernel over Pools * Data for updating Gi inhibition.
+func PoolGi(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	pi := ctx.ItemIndex(i)
+	PoolPoolGi(ctx, pi, di)
+}
+
+// CycleNeuron is the kernel over Neurons * Data to do
+// one cycle (msec) of updating at the neuron level.
+func CycleNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].CycleNeuron(ctx, ni, di)
+}
+
+// SendSpike is the kernel over Neurons * Data to
+// send spike signal for neurons over threshold.
+func SendSpike(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].SendSpike(ctx, ni, di)
+}
+
+// CyclePost is the kernel over Layers * Data to
+// update state after each Cycle of updating.
+func CyclePost(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	li := ctx.ItemIndex(i)
+	Layers[li].CyclePost(ctx, di)
+}
+
+// CycleInc is the kernel over 1 call to increment the cycle counter.
+func CycleInc(i uint32) { //gosl:kernel
+	if i != 0 {
+		return
+	}
+	ctx := GetCtx(0)
+	ctx.CycleInc()
+}
+
+// ApplyExtsNeuron is the kernel over Neurons * Data to
+// apply Ext external input to the neurons receiving inputs.
+func ApplyExtsNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].ApplyExtsNeuron(ni, di)
+}
+
+// MinusPhasePool is the kernel over Pools * Data to
+// do pool-level updating after end of minus phase.
+func MinusPhasePool(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	pi := ctx.ItemIndex(i)
+	li := PoolsInt[PoolLayerIdx, pi, di]
+	Layers[li].MinusPhasePool(ctx, pi, di)
+}
+
+// MinusPhaseNeuron is the kernel over Neurons * Data to
+// do neuron-level updating after end of minus phase.
+func MinusPhaseNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].MinusPhaseNeuron(ctx, ni, di)
+}
+
+// PlusPhaseStartNeuron is the kernel over Neurons * Data to
+// do neuron-level updating at start of plus phase.
+func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
+}
+
+// PlusPhasePool is the kernel over Pools * Data to
+// do pool-level updating after end of plus phase.
+func PlusPhasePool(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	pi := ctx.ItemIndex(i)
+	li := PoolsInt[PoolLayerIdx, pi, di]
+	Layers[li].PlusPhasePool(ctx, pi, di)
+}
+
+// PlusPhaseNeuron is the kernel over Neurons * Data to
+// do neuron-level updating after end of plus phase.
+func PlusPhaseNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[NrnLayIndex, ni]
+	Layers[li].PlusPhaseNeuron(ctx, ni, di)
+}
+
+//gosl:end

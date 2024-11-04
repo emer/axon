@@ -6,9 +6,8 @@ package axon
 
 import (
 	"log"
+	"sync/atomic"
 
-	"cogentcore.org/core/base/randx"
-	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
 )
 
@@ -68,25 +67,13 @@ type SynComParams struct {
 	// value in any pathway in the network.
 	MaxDelay uint32 `edit:"-"`
 
-	// probability of synaptic transmission failure: if > 0, then weights are
-	//turned off at random as a function of PFail (times 1-SWt if PFailSwt).
-	PFail float32
-
-	// if true, then probability of failure is inversely proportional to SWt
-	// structural / slow weight value (i.e., multiply PFail * (1-SWt))).
-	PFailSWt slbool.Bool
-
 	// delay length = actual length of the GBuf buffer per neuron = Delay+1; just for speed
 	DelLen uint32 `display:"-"`
-
-	pad, pad1 float32
 }
 
 func (sc *SynComParams) Defaults() {
 	sc.Delay = 2
 	sc.MaxDelay = 2
-	sc.PFail = 0 // 0.5 works?
-	sc.PFailSWt.SetBool(false)
 	sc.Update()
 }
 
@@ -170,39 +157,7 @@ func (sc *SynComParams) FloatFromGBuf(ival int32) float32 {
 	return float32(ival) / sc.FloatToIntFactor()
 }
 
-// WtFailP returns probability of weight (synapse) failure given current SWt value
-func (sc *SynComParams) WtFailP(swt float32) float32 {
-	if sc.PFailSWt.IsFalse() {
-		return sc.PFail
-	}
-	return sc.PFail * (1 - swt)
-}
-
-//gosl:end
-
-// WtFail returns true if synapse should fail, as function of SWt value (optionally)
-func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
-	fp := sc.WtFailP(swt)
-	if fp == 0 {
-		return false
-	}
-	return randx.BoolP32(fp)
-	// return slrand.BoolP(ctx.RandCtr, si) // todo: needs a synapse index
-}
-
-// Fail updates failure status of given weight, given SWt value
-func (sc *SynComParams) Fail(ctx *Context, syni uint32, swt float32) {
-	if sc.PFail > 0 {
-		if sc.WtFail(ctx, swt) {
-			Synapses[Wt, syni] = 0
-		}
-	}
-}
-
-//gosl:start
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  PathScaleParams
+////////  PathScaleParams
 
 // PathScaleParams are pathway scaling parameters: modulates overall strength of pathway,
 // using both absolute and relative factors.
@@ -256,5 +211,118 @@ func (ws *PathScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 func (ws *PathScaleParams) FullScale(savg, snu, ncon float32) float32 {
 	return ws.Abs * ws.Rel * ws.SLayActScale(savg, snu, ncon)
 }
+
+//////// Indexes
+
+// SynRecvLayerIndex converts the Synapse RecvIndex of recv neuron's index
+// in network level global list of all neurons to receiving
+// layer-specific index.
+func (pt *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
+	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs[SynRecvIndex, syni])
+}
+
+// SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
+// in network level global list of all neurons to sending
+// layer-specific index.
+func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
+	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs[SynSendIndex, syni])
+}
+
+//////// Cycle
+
+// GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
+// while integrating the Recv Path-level GSyn integrated values.
+func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
+	deli := pt.Com.ReadOff(ctx.CyclesTotal)
+	npti := pt.Indexes.NPathNeurSt + lni
+	gRaw := pt.Com.FloatFromGBuf(PathGBuf[deli, npti, di])
+	PathGBuf[deli, npti, di] = 0
+	gsyn := PathGSyns[npti, di]
+	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
+	PathGSyns[npti, di] = gsyn
+}
+
+// GatherSpikesGSyn integrates G*Raw and G*Syn values for given neuron
+// from the given Path-level GRaw value, first integrating
+// pathway-level GSyn value.
+func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uint32, gRaw float32, gSyn *float32) {
+	switch pt.Com.GType {
+	case ExcitatoryG:
+		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
+		Neurons[GeRaw, ni, di] += gRaw
+		Neurons[GeSyn, ni, di] += *gSyn
+	case InhibitoryG:
+		*gSyn = ly.Acts.Dt.GiSynFromRaw(*gSyn, gRaw)
+		Neurons[GiRaw, ni, di] += gRaw
+		Neurons[GiSyn, ni, di] += *gSyn
+	case ModulatoryG:
+		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
+		Neurons[GModRaw, ni, di] += gRaw
+		Neurons[GModSyn, ni, di] += *gSyn
+	case MaintG:
+		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
+		Neurons[GMaintRaw, ni, di] += gRaw
+		// note: Syn happens via NMDA in Act
+	case ContextG:
+		Neurons[CtxtGeRaw, ni, di] += gRaw
+	default:
+	}
+}
+
+// SendSpike sends a spike from the sending neuron at index sendIndex
+// into the GBuf buffer on the receiver side. The buffer on the receiver side
+// is a ring buffer, which is used for modelling the time delay between
+// sending and receiving spikes.
+func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
+	sendVal := pt.GScale.Scale * pt.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
+	if pt.PathType == CTCtxtPath {
+		if uint32(ctx.Cycle) != uint32(ctx.ThetaCycles)-1-pt.Com.DelLen {
+			return
+		}
+		sendVal *= Neurons[Burst, ni, di] // Burst is regular CaSpkP for all non-SuperLayer neurons
+	} else {
+		if Neurons[Spike, ni, di] == 0 {
+			return
+		}
+	}
+	recvNeurSt := pt.Indexes.RecvNeurSt
+	npst := pt.Indexes.NPathNeurSt
+	cni := pt.Indexes.SendConSt + lni
+	synst := pt.Indexes.SynapseSt + PathSendCon[cni, StartOff]
+	synn := PathSendCon[cni, Nitems]
+	for ci := uint32(0); ci < synn; ci++ {
+		syni := synst + ci
+		ri := SynapseIxs[SynRecvIndex, syni]
+		npti := npst + (ri - recvNeurSt)
+		deli := pt.Com.WriteOff(ctx.CyclesTotal)
+		sv := int32(sendVal * Synapses[Wt, syni])
+		atomic.AddInt32(&PathGBuf[deli, npti, di], sv)
+	}
+}
+
+// InitGBuffs initializes the per-pathway synaptic conductance buffers.
+// This is not typically needed (called during InitWeights, InitActs)
+// but can be called when needed.  Must be called to completely initialize
+// prior activity, e.g., full Glong clearing.
+func (pt *PathParams) InitGBuffs() {
+	nix := GetNetworkIxs(0)
+	maxd := nix.MaxData
+	mdel := nix.MaxDelay + 1
+	rnn := pt.Indexes.RecvNeurN
+	npst := pt.Indexes.NPathNeurSt
+	for dl := range mdel {
+		for ri := range rnn {
+			for di := range maxd {
+				PathGBuf[dl, npst + ri, di] = 0.0
+			}
+		}
+	}
+	for ri := range rnn {
+		for di := range maxd {
+			PathGSyns[npst + ri, di] = 0.0
+		}
+	}
+}
+
 
 //gosl:end
