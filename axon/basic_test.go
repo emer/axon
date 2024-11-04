@@ -362,6 +362,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 
 	if gpu {
 		GPUInit()
+		UseGPU = true
 		ToGPUAll()
 		// testNet.ConfigGPUnoGUI()
 		// testNet.GPU.CycleByCycle = true // alt modes
