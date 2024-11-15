@@ -13,16 +13,17 @@ import (
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/stats/glm"
 	"cogentcore.org/core/tensor/table"
+	"github.com/emer/axon/v2/kinase"
 )
 
 // Linear performs a linear regression to approximate the synaptic Ca
 // integration between send and recv neurons.
 type Linear struct {
 	// Kinase Neuron params
-	Neuron NeurCaParams
+	Neuron kinase.NeurCaParams
 
 	// Kinase Synapse params
-	Synapse SynCaParams
+	Synapse kinase.SynCaParams
 
 	// total number of cycles (1 MSec) to run per learning trial
 	NCycles int `min:"10" default:"200"`

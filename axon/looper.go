@@ -17,36 +17,32 @@ import (
 // and plusEnd is end of plus phase, typically 199
 // resets the state at start of trial.
 // Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperStdPhases(man *looper.Manager, net *Network, plusStart, plusEnd int, trial ...etime.Times) {
+func LooperStdPhases(ls *looper.Stacks, net *Network, plusStart, plusEnd int, trial ...etime.Times) {
 	trl := etime.Trial
 	if len(trial) > 0 {
 		trl = trial[0]
 	}
-	minusPhase := &looper.Event{Name: "MinusPhase", AtCounter: 0}
-	minusPhase.OnEvent.Add("MinusPhase:Start", func() {
+	ls.AddEventAllModes(etime.Cycle, "MinusPhase:Start", 0, func() {
 		ctx := net.Context()
 		ctx.PlusPhase.SetBool(false)
 		ctx.NewPhase(false)
 	})
-	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1() })
-	beta2 := looper.NewEvent("Beta2", 100, func() { net.SpkSt2() })
-	plusPhase := &looper.Event{Name: "PlusPhase", AtCounter: plusStart}
-	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase() })
-	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
+	ls.AddEventAllModes(etime.Cycle, "Beta1", 50, func() { net.SpkSt1() })
+	ls.AddEventAllModes(etime.Cycle, "Beta2", 100, func() { net.SpkSt2() })
+
+	ls.AddEventAllModes(etime.Cycle, "MinusPhase:End", plusStart, func() { net.MinusPhase() })
+	ls.AddEventAllModes(etime.Cycle, "PlusPhase:Start", plusStart, func() {
 		ctx := net.Context()
 		ctx.PlusPhase.SetBool(true)
 		ctx.NewPhase(true)
 		net.PlusPhaseStart()
 	})
 
-	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase)
-
-	for m, _ := range man.Stacks {
-		stack := man.Stacks[m]
-		stack.Loops[trl].OnStart.Add("NewState", func() {
-			net.NewState(m)
+	for m, st := range ls.Stacks {
+		st.Loops[trl].OnStart.Add("NewState", func() {
+			net.NewState(m.(etime.Modes))
 		})
-		stack.Loops[trl].OnEnd.Add("PlusPhase:End", func() {
+		st.Loops[trl].OnEnd.Add("PlusPhase:End", func() {
 			net.PlusPhase()
 		})
 	}
@@ -55,14 +51,13 @@ func LooperStdPhases(man *looper.Manager, net *Network, plusStart, plusEnd int, 
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFromDWt functions to looper
 // for given network, ctx, and netview update manager
 // Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperSimCycleAndLearn(man *looper.Manager, net *Network, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
+func LooperSimCycleAndLearn(ls *looper.Stacks, net *Network, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
 	trl := etime.Trial
 	if len(trial) > 0 {
 		trl = trial[0]
 	}
-	for m, _ := range man.Stacks {
-		cycLoop := man.Stacks[m].Loops[etime.Cycle]
-		cycLoop.Main.Add("Cycle", func() {
+	for _, st := range ls.Stacks {
+		st.Loops[etime.Cycle].OnStart.Add("Cycle", func() {
 			// TODO:
 			// if man.ModeStack().StepLevel == etime.Cycle {
 			// 	net.GPU.CycleByCycle = true
@@ -76,7 +71,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, viewupdt *netview
 			net.Cycle()
 		})
 	}
-	ttrl := man.GetLoop(etime.Train, trl)
+	ttrl := ls.Loop(etime.Train, trl)
 	if ttrl != nil {
 		ttrl.OnEnd.Add("UpdateWeights", func() {
 			net.DWt()
@@ -91,11 +86,11 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, viewupdt *netview
 	}
 
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
-	for m, loops := range man.Stacks {
+	for m, loops := range ls.Stacks {
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetCtxMode", func() {
 				ctx := net.Context()
-				ctx.Mode = m
+				ctx.Mode = m.(etime.Modes)
 			})
 		}
 	}
@@ -106,7 +101,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, viewupdt *netview
 // to reset the log at the level below each loop -- this is good default behavior.
 // Exceptions can be passed to exclude specific levels -- e.g., if except is Epoch
 // then Epoch does not reset the log below it
-func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.Times) {
+func LooperResetLogBelow(man *looper.Stacks, logs *elog.Logs, except ...etime.Times) {
 	for m, stack := range man.Stacks {
 		for t, loop := range stack.Loops {
 			curTime := t
@@ -128,19 +123,19 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.T
 */
 
 // LooperUpdateNetView adds netview update calls at each time level
-func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net *Network, ctrUpdateFunc func(tm etime.Times)) {
-	for m, stack := range man.Stacks {
-		for t, loop := range stack.Loops {
+func LooperUpdateNetView(ls *looper.Stacks, viewupdt *netview.ViewUpdate, net *Network, ctrUpdateFunc func(tm etime.Times)) {
+	for m, st := range ls.Stacks {
+		for t, loop := range st.Loops {
 			curTime := t
-			if curTime != etime.Cycle {
+			if curTime.Int64() != int64(etime.Cycle) {
 				loop.OnEnd.Add("GUI:UpdateNetView", func() {
-					ctrUpdateFunc(curTime)
+					ctrUpdateFunc(curTime.(etime.Times))
 					viewupdt.Testing = m == etime.Test
-					viewupdt.UpdateTime(curTime)
+					viewupdt.UpdateTime(curTime.(etime.Times))
 				})
 			}
 		}
-		cycLoop := man.GetLoop(m, etime.Cycle)
+		cycLoop := ls.Loop(m, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
 			cyc := cycLoop.Counter.Cur
 			ctrUpdateFunc(etime.Cycle)
@@ -151,19 +146,19 @@ func LooperUpdateNetView(man *looper.Manager, viewupdt *netview.ViewUpdate, net 
 }
 
 // LooperUpdatePlots adds plot update calls at each time level
-func LooperUpdatePlots(man *looper.Manager, gui *egui.GUI) {
-	for m, stack := range man.Stacks {
-		for t, loop := range stack.Loops {
+func LooperUpdatePlots(ls *looper.Stacks, gui *egui.GUI) {
+	for _, st := range ls.Stacks {
+		for t, loop := range st.Loops {
 			curTime := t
-			curLoop := loop
 			if curTime == etime.Cycle {
-				curLoop.OnEnd.Add("GUI:UpdatePlot", func() {
-					cyc := curLoop.Counter.Cur
-					gui.GoUpdateCyclePlot(m, cyc)
+				loop.OnEnd.Add("GUI:UpdatePlot", func() {
+					cyc := loop.Counter.Cur
+					_ = cyc
+					// gui.GoUpdateCyclePlot(m, cyc) // todo:
 				})
 			} else {
-				curLoop.OnEnd.Add("GUI:UpdatePlot", func() {
-					gui.GoUpdatePlot(m, curTime)
+				loop.OnEnd.Add("GUI:UpdatePlot", func() {
+					// gui.GoUpdatePlot(m, curTime) // todo:
 				})
 			}
 		}

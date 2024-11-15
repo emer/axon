@@ -549,7 +549,7 @@ var NeuronVarProps = map[string]string{
 	"GMaintRaw": `cat:"Gmisc"`,
 	"GMaintSyn": `cat:"Gmisc"`,
 
-	"NeuronFlags": `display:"-"`,
+	"NeurFlags": `display:"-"`,
 
 	/////////////////////////////////////////
 	// Long-term average activation, set point for synaptic scaling

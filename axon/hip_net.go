@@ -188,7 +188,7 @@ func (net *Network) AddHip(ctx *Context, hip *HipConfig, space float32) (ec2, ec
 // see hip.go for an instance of implementation of this function.
 // ec5ClampFrom specifies the layer to clamp EC5 plus phase values from:
 // EC3 is the biological source, but can use Input layer for simple testing net.
-func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipConfig, pretrain *bool) {
+func (net *Network) ConfigLoopsHip(ctx *Context, ls *looper.Stacks, hip *HipConfig, pretrain *bool) {
 	var tmpValues []float32
 
 	clampSrc := net.LayerByName(hip.EC5ClampSrc)
@@ -208,11 +208,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 
 	// configure events -- note that events are shared between Train, Test
 	// so only need to do it once on Train
-	mode := etime.Train
-	stack := man.Stacks[mode]
-	cyc, _ := stack.Loops[etime.Cycle]
-	minusStart := cyc.EventByName("MinusPhase")
-	minusStart.OnEvent.Add("HipMinusPhase:Start", func() {
+	ls.AddEventAllModes(etime.Cycle, "HipMinusPhase:Start", 0, func() {
 		if *pretrain {
 			dgFromEc2.Params.Learn.Learn = 0
 			ca3FromEc2.Params.Learn.Learn = 0
@@ -234,8 +230,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		net.InitGScale() // update computed scaling factors
 		// net.GPU.SyncParamsToGPU() // todo:
 	})
-	beta1 := cyc.EventByName("Beta1")
-	beta1.OnEvent.Add("Hip:Beta1", func() {
+	ls.AddEventAllModes(etime.Cycle, "Hip:Beta1", 50, func() {
 		ca1FromEc3.Params.PathScale.Rel = hip.ThetaLow
 		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
 		if ctx.Mode == etime.Test {
@@ -244,35 +239,36 @@ func (net *Network) ConfigLoopsHip(ctx *Context, man *looper.Manager, hip *HipCo
 		net.InitGScale() // update computed scaling factors
 		// net.GPU.SyncParamsToGPU() // TODO:
 	})
-	plus := cyc.EventByName("PlusPhase")
-
 	// note: critical for this to come before std start
-	plus.OnEvent.InsertBefore("PlusPhase:Start", "HipPlusPhase:Start", func() {
-		ca3FromDg.Params.PathScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
-		ca1FromEc3.Params.PathScale.Rel = hip.ThetaHigh
-		ca1FromCa3.Params.PathScale.Rel = hip.ThetaLow
-		// clamp EC5 from clamp source (EC3 typically)
-		if hip.EC5Clamp {
-			if ctx.Mode != etime.Test || hip.EC5ClampTest {
-				for di := uint32(0); di < ctx.NData; di++ {
-					clampSrc.UnitValues(&tmpValues, "Act", int(di))
-					// TODO:
-					// if hip.EC5ClampThr > 0 {
-					// 	stats.Binarize(tmpValues, tensor.NewFloat64Scalar(hip.EC5ClampThr))
-					// }
-					ec5.ApplyExt1D32(di, tmpValues)
+	for _, st := range ls.Stacks {
+		ev := st.Loops[etime.Cycle].EventByCounter(150)
+		ev.OnEvent.Prepend("HipPlusPhase:Start", func() bool {
+			ca3FromDg.Params.PathScale.Rel = dgPjScale // restore at the beginning of plus phase for CA3 EDL
+			ca1FromEc3.Params.PathScale.Rel = hip.ThetaHigh
+			ca1FromCa3.Params.PathScale.Rel = hip.ThetaLow
+			// clamp EC5 from clamp source (EC3 typically)
+			if hip.EC5Clamp {
+				if ctx.Mode != etime.Test || hip.EC5ClampTest {
+					for di := uint32(0); di < ctx.NData; di++ {
+						clampSrc.UnitValues(&tmpValues, "Act", int(di))
+						// TODO:
+						// if hip.EC5ClampThr > 0 {
+						// 	stats.Binarize(tmpValues, tensor.NewFloat64Scalar(hip.EC5ClampThr))
+						// }
+						ec5.ApplyExt1D32(di, tmpValues)
+					}
 				}
 			}
-		}
-		net.InitGScale() // update computed scaling factors
-		// net.GPU.SyncParamsToGPU()
-		net.ApplyExts() // essential for GPU
-	})
-
-	trl := stack.Loops[etime.Trial]
-	trl.OnEnd.Prepend("HipPlusPhase:End", func() {
-		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
-		net.InitGScale() // update computed scaling factors
-		// net.GPU.SyncParamsToGPU()
-	})
+			net.InitGScale() // update computed scaling factors
+			// net.GPU.SyncParamsToGPU()
+			net.ApplyExts() // essential for GPU
+			return true
+		})
+		st.Loops[etime.Trial].OnEnd.Prepend("HipPlusPhase:End", func() bool {
+			ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
+			net.InitGScale() // update computed scaling factors
+			// net.GPU.SyncParamsToGPU()
+			return true
+		})
+	}
 }
