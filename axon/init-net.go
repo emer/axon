@@ -7,8 +7,8 @@
 package axon
 
 import (
+	"cogentcore.org/core/enums"
 	"cogentcore.org/core/tensor"
-	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -31,14 +31,14 @@ func GlobalsReset() {
 // This is called *before* applying external input data and operates across
 // all data parallel values.  The current Context.NData should be set
 // properly prior to calling this and subsequent Cycle methods.
-func (nt *Network) NewState(mode etime.Modes) {
+func (nt *Network) NewState(mode enums.Enum, testing bool) {
 	// if nt.GPU.On { // todo: this has a bug in neuron-level access in updating SpkPrv
 	//
 	//		nt.GPU.RunNewState()
 	//		return
 	//	}
 	ctx := nt.Context()
-	ctx.NewState(mode)
+	ctx.NewState(mode, testing)
 	for _, ly := range nt.Layers {
 		if ly.Off {
 			continue
@@ -58,8 +58,7 @@ func (nt *Network) InitWeights() { //types:add
 		nt.Rubicon.Reset(di)
 	}
 	nt.BuildPathGBuf()
-	ctx.SlowCtr = 0
-	ctx.SynCaCtr = 0
+	ctx.SlowCounter = 0
 	for _, ly := range nt.Layers {
 		if ly.Off {
 			continue

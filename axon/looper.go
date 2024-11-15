@@ -5,61 +5,45 @@
 package axon
 
 import (
-	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/etime"
+	"cogentcore.org/core/enums"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 )
 
-// LooperStdPhases adds the minus and plus phases of the theta cycle,
-// along with embedded beta phases which just record St1 and St2 activity in this case.
-// plusStart is start of plus phase, typically 150,
-// and plusEnd is end of plus phase, typically 199
-// resets the state at start of trial.
-// Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperStdPhases(ls *looper.Stacks, net *Network, plusStart, plusEnd int, trial ...etime.Times) {
-	trl := etime.Trial
-	if len(trial) > 0 {
-		trl = trial[0]
-	}
-	ls.AddEventAllModes(etime.Cycle, "MinusPhase:Start", 0, func() {
+// LooperStandard adds all the standard Axon Trial and Cycle level processing calls
+// to the given Looper Stacks. cycle and trial are the enums for the looper levels,
+// trainMode is the training mode enum value.
+//   - minus and plus phases of the theta cycle (trial), at plusStart (150) and plusEnd (199) cycles.
+//   - embedded beta phases within theta, that record St1 and St2 states.
+//   - net.Cycle() at every cycle step.
+//   - net.DWt() and net.WtFromDWt() learning calls in training mode, with netview update
+//     between these two calls if it is visible and viewing synapse variables.
+//   - netview update calls at appropriate levels (no-op if no GUI)
+func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func() *netview.NetView, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
+	ls.AddOnStartToAll("SetContextMode", func(md, tm enums.Enum) {
+		ctx := net.Context()
+		ctx.Mode = int32(md.Int64())
+	})
+	ls.AddEventAllModes(cycle, "MinusPhase:Start", 0, func() {
 		ctx := net.Context()
 		ctx.PlusPhase.SetBool(false)
 		ctx.NewPhase(false)
 	})
-	ls.AddEventAllModes(etime.Cycle, "Beta1", 50, func() { net.SpkSt1() })
-	ls.AddEventAllModes(etime.Cycle, "Beta2", 100, func() { net.SpkSt2() })
+	ls.AddEventAllModes(cycle, "Beta1", 50, func() { net.SpkSt1() })
+	ls.AddEventAllModes(cycle, "Beta2", 100, func() { net.SpkSt2() })
 
-	ls.AddEventAllModes(etime.Cycle, "MinusPhase:End", plusStart, func() { net.MinusPhase() })
-	ls.AddEventAllModes(etime.Cycle, "PlusPhase:Start", plusStart, func() {
+	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhase() })
+	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() {
 		ctx := net.Context()
 		ctx.PlusPhase.SetBool(true)
 		ctx.NewPhase(true)
 		net.PlusPhaseStart()
 	})
-
 	for m, st := range ls.Stacks {
-		st.Loops[trl].OnStart.Add("NewState", func() {
-			net.NewState(m.(etime.Modes))
-		})
-		st.Loops[trl].OnEnd.Add("PlusPhase:End", func() {
-			net.PlusPhase()
-		})
-	}
-}
-
-// LooperSimCycleAndLearn adds Cycle and DWt, WtFromDWt functions to looper
-// for given network, ctx, and netview update manager
-// Can pass a trial-level time scale to use instead of the default etime.Trial
-func LooperSimCycleAndLearn(ls *looper.Stacks, net *Network, viewupdt *netview.ViewUpdate, trial ...etime.Times) {
-	trl := etime.Trial
-	if len(trial) > 0 {
-		trl = trial[0]
-	}
-	for _, st := range ls.Stacks {
-		st.Loops[etime.Cycle].OnStart.Add("Cycle", func() {
+		cycLoop := st.Loops[cycle]
+		cycLoop.OnStart.Add("Cycle", func() {
 			// TODO:
-			// if man.ModeStack().StepLevel == etime.Cycle {
+			// if ls.ModeStack().StepLevel == cycle {
 			// 	net.GPU.CycleByCycle = true
 			// } else {
 			// 	if viewupdt.IsCycleUpdating() {
@@ -70,97 +54,248 @@ func LooperSimCycleAndLearn(ls *looper.Stacks, net *Network, viewupdt *netview.V
 			// }
 			net.Cycle()
 		})
-	}
-	ttrl := ls.Loop(etime.Train, trl)
-	if ttrl != nil {
-		ttrl.OnEnd.Add("UpdateWeights", func() {
-			net.DWt()
-			if viewupdt.IsViewingSynapse() {
-				//TODO:
-				// net.GPU.SyncSynapsesFromGPU()
-				// net.GPU.SyncSynCaFromGPU() // note: only time we call this
-				viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
-			}
-			net.WtFromDWt()
-		})
-	}
 
-	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
-	for m, loops := range ls.Stacks {
-		for _, loop := range loops.Loops {
-			loop.OnStart.Add("SetCtxMode", func() {
-				ctx := net.Context()
-				ctx.Mode = m.(etime.Modes)
+		trlLoop := st.Loops[trial]
+		trlLoop.OnStart.Add("NewState", func() {
+			testing := m.Int64() != trainMode.Int64()
+			net.NewState(m, testing)
+		})
+		trlLoop.OnEnd.Add("PlusPhase:End", func() {
+			net.PlusPhase()
+		})
+		if m.Int64() == trainMode.Int64() {
+			trlLoop.OnEnd.Add("UpdateWeights", func() {
+				net.DWt()
+				if view := viewFunc(); view != nil && view.IsViewingSynapse() {
+					//TODO:
+					// net.GPU.SyncSynapsesFromGPU()
+					// net.GPU.SyncSynCaFromGPU() // note: only time we call this
+					view.RecordSyns() // note: critical to update weights here so DWt is visible
+				}
+				net.WtFromDWt()
 			})
 		}
 	}
 }
 
-/*
-// LooperResetLogBelow adds a function in OnStart to all stacks and loops
-// to reset the log at the level below each loop -- this is good default behavior.
-// Exceptions can be passed to exclude specific levels -- e.g., if except is Epoch
-// then Epoch does not reset the log below it
-func LooperResetLogBelow(man *looper.Stacks, logs *elog.Logs, except ...etime.Times) {
-	for m, stack := range man.Stacks {
-		for t, loop := range stack.Loops {
-			curTime := t
-			isExcept := false
-			for _, ex := range except {
-				if curTime == ex {
-					isExcept = true
-					break
-				}
-			}
-			if below := stack.TimeBelow(curTime); !isExcept && below != etime.NoTime {
-				loop.OnStart.Add("ResetLog"+below.String(), func() {
-					logs.ResetLog(m, below)
-				})
-			}
-		}
-	}
-}
-*/
+// LooperUpdateNetView adds netview update calls to the given
+// trial and cycle levels for given NetViewUpdate associated with given mode.
+// The netviewCountersFunc returns the counters and other stats
+// to display at the bottom of the NetView, and is passed the CountersString()
+// for the given mode's [looper.Stack].
+func LooperUpdateNetView(ls *looper.Stacks, mode, cycle, trial enums.Enum, viewupdt *NetViewUpdate, countersFunc func(md, tm enums.Enum) string) {
+	st := ls.Stacks[mode]
+	cycLoop := st.Loops[cycle]
+	cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
+		counters := countersFunc(mode, cycle)
+		viewupdt.UpdateCycle(cycLoop.Counter.Cur, counters)
+	})
+	trlLoop := st.Loops[trial]
+	trlLoop.OnEnd.Add("GUI:UpdateNetView", func() {
+		counters := countersFunc(mode, trial)
+		viewupdt.GoUpdate(counters)
+	})
 
-// LooperUpdateNetView adds netview update calls at each time level
-func LooperUpdateNetView(ls *looper.Stacks, viewupdt *netview.ViewUpdate, net *Network, ctrUpdateFunc func(tm etime.Times)) {
-	for m, st := range ls.Stacks {
-		for t, loop := range st.Loops {
-			curTime := t
-			if curTime.Int64() != int64(etime.Cycle) {
-				loop.OnEnd.Add("GUI:UpdateNetView", func() {
-					ctrUpdateFunc(curTime.(etime.Times))
-					viewupdt.Testing = m == etime.Test
-					viewupdt.UpdateTime(curTime.(etime.Times))
-				})
-			}
-		}
-		cycLoop := ls.Loop(m, etime.Cycle)
-		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
-			cyc := cycLoop.Counter.Cur
-			ctrUpdateFunc(etime.Cycle)
-			viewupdt.Testing = m == etime.Test
-			viewupdt.UpdateCycle(cyc)
-		})
-	}
 }
 
-// LooperUpdatePlots adds plot update calls at each time level
-func LooperUpdatePlots(ls *looper.Stacks, gui *egui.GUI) {
-	for _, st := range ls.Stacks {
-		for t, loop := range st.Loops {
-			curTime := t
-			if curTime == etime.Cycle {
-				loop.OnEnd.Add("GUI:UpdatePlot", func() {
-					cyc := loop.Counter.Cur
-					_ = cyc
-					// gui.GoUpdateCyclePlot(m, cyc) // todo:
-				})
-			} else {
-				loop.OnEnd.Add("GUI:UpdatePlot", func() {
-					// gui.GoUpdatePlot(m, curTime) // todo:
-				})
-			}
-		}
+//////// NetViewUpdate
+
+//gosl:start
+
+// ViewTimes are the options for when the NetView can be updated.
+type ViewTimes int32 //enums:enum
+const (
+	// Cycle is an update of neuron state, equivalent to 1 msec of real time.
+	Cycle ViewTimes = iota
+
+	// FastSpike is 10 cycles (msec) or 100hz. This is the fastest spiking time
+	// generally observed in the neocortex.
+	FastSpike
+
+	// Gamma is 25 cycles (msec) or 40hz. Neocortical activity often exhibits
+	// synchrony peaks in this range.
+	Gamma
+
+	// Beta is 50 cycles (msec) or 20 hz (two Gammas).
+	// Gating in the basal ganglia and associated updating in prefrontal
+	// cortex occurs at this frequency.
+	Beta
+
+	// Alpha is 100 cycle (msec) or 10 hz (two Betas).
+	// Posterior neocortex exhibits synchrony peaks in this range,
+	// corresponding to the intrinsic bursting frequency of layer 5
+	// IB neurons, and corticothalamic loop resonance.
+	Alpha
+
+	// Phase is the Minus or Plus phase, where plus phase is bursting / outcome
+	// that drives positive learning relative to prediction in minus phase.
+	// Minus phase is at 150 cycles (msec).
+	Phase
+
+	// Theta is 200 cycles (msec) or 5 hz (two Alphas), i.e., a Trial.
+	// This is the modal duration of a saccade, the update frequency of
+	// medial temporal lobe episodic memory, and the minimal predictive learning cycle
+	// (perceive on Alpha 1, predict on 2).
+	Theta
+)
+
+//gosl:end
+
+// ViewTimeCycles are the cycle intervals associated with each ViewTimes level.
+var ViewTimeCycles = []int{1, 10, 25, 50, 100, 150, 200}
+
+// NetViewUpdate manages time scales for updating the NetView.
+// Use one of these for each mode you want to control separately.
+type NetViewUpdate struct {
+
+	// toggles update of display on
+	On bool
+
+	// Time scale to update the network view.
+	Time ViewTimes
+
+	// View is the network view.
+	View *netview.NetView `display:"-"`
+}
+
+// Config configures for given NetView and time.
+func (vu *NetViewUpdate) Config(nv *netview.NetView, tm ViewTimes) {
+	vu.View = nv
+	vu.On = true
+	vu.Time = tm
+}
+
+// ShouldUpdate returns true if the view is On,
+// View is != nil, and it is visible.
+func (vu *NetViewUpdate) ShouldUpdate() bool {
+	if !vu.On || vu.View == nil || !vu.View.IsVisible() {
+		return false
+	}
+	return true
+}
+
+// GoUpdate does an update if view is On, visible and active,
+// including recording new data and driving update of display.
+// This version is only for calling from a separate goroutine,
+// not the main event loop (see also Update).
+func (vu *NetViewUpdate) GoUpdate(counters string) {
+	if !vu.ShouldUpdate() {
+		return
+	}
+	vu.View.Record(counters, -1) // -1 = default incrementing raster
+	vu.View.GoUpdateView()
+}
+
+// Update does an update if view is On, visible and active,
+// including recording new data and driving update of display.
+// This version is only for calling from the main event loop
+// (see also GoUpdate).
+func (vu *NetViewUpdate) Update(counters string) {
+	if !vu.ShouldUpdate() {
+		return
+	}
+	vu.View.Record(counters, -1) // -1 = default incrementing raster
+	vu.View.UpdateView()
+}
+
+// UpdateWhenStopped does an update when the network updating was stopped
+// either via stepping or hitting the stop button.
+// This has different logic for the raster view vs. regular.
+// This is only for calling from a separate goroutine,
+// not the main event loop.
+func (vu *NetViewUpdate) UpdateWhenStopped() {
+	if !vu.ShouldUpdate() {
+		return
+	}
+	if !vu.View.Options.Raster.On { // always record when not in raster mode
+		vu.View.Record("", -1) // -1 = use a dummy counter
+	}
+	vu.View.GoUpdateView()
+}
+
+// IsCycleUpdating returns true if the view is updating at a cycle level,
+// either from raster or literal cycle level.
+func (vu *NetViewUpdate) IsCycleUpdating() bool {
+	if !vu.ShouldUpdate() {
+		return false
+	}
+	if vu.Time == Theta {
+		return false
+	}
+	if vu.Time == Cycle {
+		return true
+	}
+	if vu.View.Options.Raster.On {
+		return true
+	}
+	return false
+}
+
+// IsViewingSynapse returns true if netview is actively viewing synapses.
+func (vu *NetViewUpdate) IsViewingSynapse() bool {
+	if !vu.ShouldUpdate() {
+		return false
+	}
+	return vu.View.IsViewingSynapse()
+}
+
+// UpdateCycle triggers an update at the Cycle (Millisecond) timescale,
+// using given text to display at bottom of view
+func (vu *NetViewUpdate) UpdateCycle(cyc int, counters string) {
+	if !vu.ShouldUpdate() {
+		return
+	}
+	if vu.Time == Theta { // only trial
+		return
+	}
+	if vu.View.Options.Raster.On {
+		vu.updateCycleRaster(cyc, counters)
+		return
+	}
+	vtc := ViewTimeCycles[vu.Time]
+	if cyc%vtc == 0 {
+		vu.GoUpdate(counters)
 	}
 }
+
+// updateCycleRaster raster version of Cycle update.
+// it always records data at the cycle level.
+func (vu *NetViewUpdate) updateCycleRaster(cyc int, counters string) {
+	vu.View.Record(counters, cyc)
+	vtc := ViewTimeCycles[vu.Time]
+	if cyc%vtc == 0 {
+		vu.View.GoUpdateView()
+	}
+}
+
+// RecordSyns records synaptic data -- stored separate from unit data
+// and only needs to be called when synaptic values are updated.
+// Should be done when the DWt values have been computed, before
+// updating Wts and zeroing.
+// NetView displays this recorded data when Update is next called.
+func (vu *NetViewUpdate) RecordSyns() {
+	if !vu.ShouldUpdate() {
+		return
+	}
+	vu.View.RecordSyns()
+}
+
+// // LooperUpdatePlots adds plot update calls at each time level
+// func LooperUpdatePlots(ls *looper.Stacks, gui *egui.GUI) {
+// 	for _, st := range ls.Stacks {
+// 		for t, loop := range st.Loops {
+// 			curTime := t
+// 			if curTime == etime.Cycle {
+// 				loop.OnEnd.Add("GUI:UpdatePlot", func() {
+// 					cyc := loop.Counter.Cur
+// 					_ = cyc
+// 					// gui.GoUpdateCyclePlot(m, cyc) // todo:
+// 				})
+// 			} else {
+// 				loop.OnEnd.Add("GUI:UpdatePlot", func() {
+// 					// gui.GoUpdatePlot(m, curTime) // todo:
+// 				})
+// 			}
+// 		}
+// 	}
+// }

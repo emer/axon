@@ -523,7 +523,7 @@ struct SpikeNoiseParams {
 fn SpikeNoiseParams_PGe(an: ptr<function,SpikeNoiseParams>, ctx: ptr<function,Context>, p: ptr<function,f32>, ni: u32,di: u32) -> f32 {
 	var nix = NetworkIxs[0];
 	var ndi = di*nix.NNeurons + ni;
-	*p *= GetRandomNumber(ndi, (*ctx).RandCtr, RandFunActPGe);
+	*p *= GetRandomNumber(ndi, (*ctx).RandCounter.Counter, RandFunActPGe);
 	if (*p <= (*an).GeExpInt) {
 		*p = f32(1);return (*an).Ge;
 	}return f32(
@@ -532,7 +532,7 @@ fn SpikeNoiseParams_PGe(an: ptr<function,SpikeNoiseParams>, ctx: ptr<function,Co
 fn SpikeNoiseParams_PGi(an: ptr<function,SpikeNoiseParams>, ctx: ptr<function,Context>, p: ptr<function,f32>, ni: u32,di: u32) -> f32 {
 	var nix = NetworkIxs[0];
 	var ndi = di*nix.NNeurons + ni;
-	*p *= GetRandomNumber(ndi, (*ctx).RandCtr, RandFunActPGi);
+	*p *= GetRandomNumber(ndi, (*ctx).RandCounter.Counter, RandFunActPGi);
 	if (*p <= (*an).GiExpInt) {
 		*p = f32(1);return (*an).Gi;
 	}return f32(
@@ -655,7 +655,7 @@ fn ActParams_SMaintFromISI(ac: ptr<function,ActParams>, ctx: ptr<function,Contex
 	}
 	var ndi = di*nix.NNeurons + ni;
 	var smp = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SMaintP),u32(ni),u32(di))];
-	smp *= GetRandomNumber(ndi, (*ctx).RandCtr, RandFunActSMaintP);
+	smp *= GetRandomNumber(ndi, (*ctx).RandCounter.Counter, RandFunActSMaintP);
 	var trg = SMaintParams_ExpInt(&(*ac).SMaint, isi);
 	if (smp <= trg) {
 		smp = f32(1);
@@ -1206,7 +1206,7 @@ fn VGCCParams_CaFromG(np: ptr<function,VGCCParams>, v: f32,g: f32,ca: f32) -> f3
 ///////////// import: "context.go"
 struct Context {
 	NData: u32,
-	Mode: Modes,
+	Mode: i32,
 	Testing: i32,
 	Phase: i32,
 	PlusPhase: i32,
@@ -1218,11 +1218,10 @@ struct Context {
 	TrialsTotal: i32,
 	TimePerCycle: f32,
 	SlowInterval: i32,
-	SlowCtr: i32,
-	SynCaCtr: f32,
-	RandCtr: su64,
-	pad: f32,
-	pad1: f32,
+	SlowCounter: i32,
+	pad: i32,
+	pad1: i32,
+	RandCounter: RandCounter,
 }
 fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
 	return idx / (*ctx).NData;
@@ -1266,6 +1265,7 @@ const GlobalVectorVarsN: GlobalVectorVars = 10;
 const GPUVarsN: GPUVars = 22;
 const LayerTypesN: LayerTypes = 30;
 const LayerVarsN: LayerVars = 11;
+const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
@@ -1281,16 +1281,6 @@ const AvgMaxVarsN: AvgMaxVars = 7;
 const SynapseVarsN: SynapseVars = 5;
 const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
-
-///////////// import: "etime-modes.go"
-alias Modes = i32; //enums:enum
-const  NoEvalMode: Modes = 0;
-const  AllModes: Modes = 1;
-const  Train: Modes = 2;
-const  Test: Modes = 3;
-const  Validate: Modes = 4;
-const  Analyze: Modes = 5;
-const  Debug: Modes = 6;
 
 ///////////// import: "fsfffb-enumgen.go"
 const InhibVarsN: InhibVars = 16;
@@ -1712,6 +1702,16 @@ struct LearnSynParams {
 	KinaseCa: SynCaLinear,
 	Hebb: HebbParams,
 }
+
+///////////// import: "looper.go"
+alias ViewTimes = i32; //enums:enum
+const  Cycle: ViewTimes = 0;
+const  FastSpike: ViewTimes = 1;
+const  Gamma: ViewTimes = 2;
+const  Beta: ViewTimes = 3;
+const  Alpha: ViewTimes = 4;
+const  Phase: ViewTimes = 5;
+const  Theta: ViewTimes = 6;
 
 ///////////// import: "math32-fastexp.go"
 fn FastExp(x: f32) -> f32 {

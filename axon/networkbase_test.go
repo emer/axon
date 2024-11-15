@@ -37,7 +37,7 @@ func TestDefaults(t *testing.T) {
 	ctx := net.Context()
 
 	assert.Equal(t, 100, int(ctx.SlowInterval))
-	assert.Equal(t, 0, int(ctx.SlowCtr))
+	assert.Equal(t, 0, int(ctx.SlowCounter))
 	assert.Equal(t, uint32(12), net.NetIxs().NNeurons)
 
 	// test layer access

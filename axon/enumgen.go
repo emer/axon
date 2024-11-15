@@ -286,6 +286,53 @@ func (i *LayerVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "LayerVars")
 }
 
+var _ViewTimesValues = []ViewTimes{0, 1, 2, 3, 4, 5, 6}
+
+// ViewTimesN is the highest valid value for type ViewTimes, plus one.
+//
+//gosl:start
+const ViewTimesN ViewTimes = 7
+
+//gosl:end
+
+var _ViewTimesValueMap = map[string]ViewTimes{`Cycle`: 0, `FastSpike`: 1, `Gamma`: 2, `Beta`: 3, `Alpha`: 4, `Phase`: 5, `Theta`: 6}
+
+var _ViewTimesDescMap = map[ViewTimes]string{0: `Cycle is an update of neuron state, equivalent to 1 msec of real time.`, 1: `FastSpike is 10 cycles (msec) or 100hz. This is the fastest spiking time generally observed in the neocortex.`, 2: `Gamma is 25 cycles (msec) or 40hz. Neocortical activity often exhibits synchrony peaks in this range.`, 3: `Beta is 50 cycles (msec) or 20 hz (two Gammas). Gating in the basal ganglia and associated updating in prefrontal cortex occurs at this frequency.`, 4: `Alpha is 100 cycle (msec) or 10 hz (two Betas). Posterior neocortex exhibits synchrony peaks in this range, corresponding to the intrinsic bursting frequency of layer 5 IB neurons, and corticothalamic loop resonance.`, 5: `Phase is the Minus or Plus phase, where plus phase is bursting / outcome that drives positive learning relative to prediction in minus phase. Minus phase is at 150 cycles (msec).`, 6: `Theta is 200 cycles (msec) or 5 hz (two Alphas), i.e., a Trial. This is the modal duration of a saccade, the update frequency of medial temporal lobe episodic memory, and the minimal predictive learning cycle (perceive on Alpha 1, predict on 2).`}
+
+var _ViewTimesMap = map[ViewTimes]string{0: `Cycle`, 1: `FastSpike`, 2: `Gamma`, 3: `Beta`, 4: `Alpha`, 5: `Phase`, 6: `Theta`}
+
+// String returns the string representation of this ViewTimes value.
+func (i ViewTimes) String() string { return enums.String(i, _ViewTimesMap) }
+
+// SetString sets the ViewTimes value from its string representation,
+// and returns an error if the string is invalid.
+func (i *ViewTimes) SetString(s string) error {
+	return enums.SetString(i, s, _ViewTimesValueMap, "ViewTimes")
+}
+
+// Int64 returns the ViewTimes value as an int64.
+func (i ViewTimes) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the ViewTimes value from an int64.
+func (i *ViewTimes) SetInt64(in int64) { *i = ViewTimes(in) }
+
+// Desc returns the description of the ViewTimes value.
+func (i ViewTimes) Desc() string { return enums.Desc(i, _ViewTimesDescMap) }
+
+// ViewTimesValues returns all possible values for the type ViewTimes.
+func ViewTimesValues() []ViewTimes { return _ViewTimesValues }
+
+// Values returns all possible values for the type ViewTimes.
+func (i ViewTimes) Values() []enums.Enum { return enums.Values(_ViewTimesValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i ViewTimes) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *ViewTimes) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "ViewTimes")
+}
+
 var _DAModTypesValues = []DAModTypes{0, 1, 2, 3}
 
 // DAModTypesN is the highest valid value for type DAModTypes, plus one.

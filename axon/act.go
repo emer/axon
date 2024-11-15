@@ -481,7 +481,7 @@ func (an *SpikeNoiseParams) ShouldDisplay(field string) bool {
 func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32 {
 	nix := GetNetworkIxs(0)
 	ndi := di*nix.NNeurons + ni
-	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGe)
+	*p *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
 		return an.Ge
@@ -494,7 +494,7 @@ func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni, di uint32) float32
 func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni, di uint32) float32 {
 	nix := GetNetworkIxs(0)
 	ndi := di*nix.NNeurons + ni
-	*p *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActPGi)
+	*p *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
 		return an.Gi
@@ -1095,7 +1095,7 @@ func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
 	}
 	ndi := di*nix.NNeurons + ni
 	smp := Neurons.Value(int(SMaintP), int(ni), int(di))
-	smp *= GetRandomNumber(ndi, ctx.RandCtr, RandFunActSMaintP)
+	smp *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)
 	if smp <= trg {
 		smp = 1

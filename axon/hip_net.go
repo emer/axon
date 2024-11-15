@@ -233,7 +233,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, ls *looper.Stacks, hip *HipConf
 	ls.AddEventAllModes(etime.Cycle, "Hip:Beta1", 50, func() {
 		ca1FromEc3.Params.PathScale.Rel = hip.ThetaLow
 		ca1FromCa3.Params.PathScale.Rel = hip.ThetaHigh
-		if ctx.Mode == etime.Test {
+		if ctx.Testing.IsTrue() {
 			ca3FromDg.Params.PathScale.Rel = dgPjScale * (1 - hip.MossyDeltaTest)
 		}
 		net.InitGScale() // update computed scaling factors
@@ -248,7 +248,7 @@ func (net *Network) ConfigLoopsHip(ctx *Context, ls *looper.Stacks, hip *HipConf
 			ca1FromCa3.Params.PathScale.Rel = hip.ThetaLow
 			// clamp EC5 from clamp source (EC3 typically)
 			if hip.EC5Clamp {
-				if ctx.Mode != etime.Test || hip.EC5ClampTest {
+				if ctx.Testing.IsFalse() || hip.EC5ClampTest {
 					for di := uint32(0); di < ctx.NData; di++ {
 						clampSrc.UnitValues(&tmpValues, "Act", int(di))
 						// TODO:
