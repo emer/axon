@@ -11,7 +11,6 @@ package main
 //go:generate core generate -add-types
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -113,7 +112,7 @@ type RunConfig struct {
 	GPU bool `default:"false"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `default:"1" min:"1"`
+	NData int `default:"2" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `default:"0"`
@@ -592,19 +591,19 @@ func (ss *Sim) RunStats(lmode Modes, ltime Times, lphase StatsPhase) {
 }
 
 func (ss *Sim) InitStats() {
-	fmt.Println("init")
 	for mode, st := range ss.Loops.Stacks {
 		for _, tm := range st.Order {
 			ctm := tm.(Times)
 			if ctm == Cycle {
 				continue
 			}
-			fmt.Println("calling stats at:", mode, tm)
 			ss.RunStats(mode.(Modes), ctm, Start)
 		}
 	}
 }
 
+// ConfigStats handles configures functions to do all stats computation
+// in the datafs system.
 func (ss *Sim) ConfigStats() {
 	ss.Stats, _ = ss.Root.Mkdir("Stats")
 	ss.Current, _ = ss.Stats.Mkdir("Current")
@@ -615,17 +614,16 @@ func (ss *Sim) ConfigStats() {
 			if ctm == Cycle {
 				continue
 			}
-			fmt.Println("adding stat for:", cmd, ctm)
 			ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
 				if lmode != cmd || ltime > ctm { // don't record counter for time above it
 					return
 				}
 				name := tm.String() // name of stat = time
+				ndata := ss.Config.Run.NData
 				modeDir := ss.Stats.RecycleDir(lmode.String())
 				timeDir := modeDir.RecycleDir(ltime.String())
 				tsr := datafs.Value[int](timeDir, name)
 				if lphase == Start {
-					fmt.Println(lmode, ltime)
 					tsr.SetNumRows(0)
 					if ps := plot.GetStylersFrom(tsr); ps == nil {
 						ps.Add(func(s *plot.Style) {
@@ -636,18 +634,27 @@ func (ss *Sim) ConfigStats() {
 					return
 				}
 				ctv := ss.Loops.Stacks[cmd].Loops[ctm].Counter.Cur
-				datafs.Scalar[int](ss.Current, name).SetInt1D(ctv, 0)
-				tsr.AppendRowInt(ctv)
+				if ltime == Trial {
+					for di := range ndata {
+						datafs.Value[int](ss.Current, name, ndata).SetInt1D(ctv, di)
+						tsr.AppendRowInt(ctv)
+						if ctm == Trial {
+							ctv++
+						}
+					}
+				} else {
+					datafs.Scalar[int](ss.Current, name).SetInt1D(ctv, 0)
+					tsr.AppendRowInt(ctv)
+				}
 			})
 		}
 	}
-	// note: it is essential to only have 1 per func
-	// so generic names can be used for everything.
 	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
 		name := "UnitErr"
 		modeDir := ss.Stats.RecycleDir(lmode.String())
 		timeDir := modeDir.RecycleDir(ltime.String())
 		tsr := datafs.Value[float64](timeDir, name)
+		ndata := ss.Config.Run.NData
 		if lphase == Start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
@@ -663,10 +670,82 @@ func (ss *Sim) ConfigStats() {
 		case Trial:
 			out := ss.Net.LayerByName("Output")
 			stat := out.PctUnitErr(ss.Net.Context())
-			for di := 0; di < ss.Config.Run.NData; di++ {
-				// todo: current needs di tensor
-				datafs.Scalar[float64](ss.Current, name).SetFloat(stat[di], 0)
+			for di := range ndata {
+				datafs.Value[float64](ss.Current, name, ndata).SetFloat1D(stat[di], di)
 				tsr.AppendRowFloat(stat[di])
+			}
+		case Epoch:
+			subd := modeDir.RecycleDir(Trial.String())
+			stat := stats.StatMean.Call(subd.Value(name))
+			tsr.AppendRow(stat)
+		case Run:
+			subd := modeDir.RecycleDir(Epoch.String())
+			stat := stats.StatMean.Call(subd.Value(name))
+			tsr.AppendRow(stat)
+		}
+	})
+	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+		name := "Err"
+		modeDir := ss.Stats.RecycleDir(lmode.String())
+		timeDir := modeDir.RecycleDir(ltime.String())
+		tsr := datafs.Value[float64](timeDir, name)
+		ndata := ss.Config.Run.NData
+		if lphase == Start {
+			tsr.SetNumRows(0)
+			if ps := plot.GetStylersFrom(tsr); ps == nil {
+				ps.Add(func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+				})
+				plot.SetStylersTo(tsr, ps)
+			}
+			return
+		}
+		switch ltime {
+		case Trial:
+			for di := range ndata {
+				uniterr := datafs.Value[float64](ss.Current, "UnitErr", ndata).Float1D(di)
+				er := 1.0
+				if uniterr == 0 {
+					er = 0
+				}
+				datafs.Value[float64](ss.Current, name, ndata).SetFloat(er, di)
+				tsr.AppendRowFloat(er)
+			}
+		case Epoch:
+			subd := modeDir.RecycleDir(Trial.String())
+			stat := stats.StatMean.Call(subd.Value(name))
+			tsr.AppendRow(stat)
+		case Run:
+			subd := modeDir.RecycleDir(Epoch.String())
+			stat := stats.StatMean.Call(subd.Value(name))
+			tsr.AppendRow(stat)
+		}
+	})
+	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+		name := "CorSim"
+		modeDir := ss.Stats.RecycleDir(lmode.String())
+		timeDir := modeDir.RecycleDir(ltime.String())
+		tsr := datafs.Value[float64](timeDir, name)
+		ndata := ss.Config.Run.NData
+		if lphase == Start {
+			tsr.SetNumRows(0)
+			if ps := plot.GetStylersFrom(tsr); ps == nil {
+				ps.Add(func(s *plot.Style) {
+					s.Range.SetMin(0).SetMax(1)
+					s.On = true
+				})
+				plot.SetStylersTo(tsr, ps)
+			}
+			return
+		}
+		switch ltime {
+		case Trial:
+			out := ss.Net.LayerByName("Output")
+			for di := range ndata {
+				stat := float64(axon.LayerStates[axon.LayerPhaseDiff, out.Index, di])
+				datafs.Value[float64](ss.Current, name, ndata).SetFloat1D(stat, di)
+				tsr.AppendRowFloat(stat)
 			}
 		case Epoch:
 			subd := modeDir.RecycleDir(Trial.String())

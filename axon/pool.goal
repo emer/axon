@@ -202,8 +202,8 @@ func PoolAvgMaxUpdate(pi, di, ni uint32) {
 // PoolAvgMaxCalcVar does Calc on Cycle level, and re-inits, for given Var
 func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	floatFromInt := float32(1.0) / float32(uint32(1) << 20)
-	vim := AvgMaxIntVarIndex(vr, Max)
-	sum := PoolsInt[vim, pi, di] 
+	vis := AvgMaxIntVarIndex(vr, Avg)
+	sum := PoolsInt[vis, pi, di] 
 	if sum < 0 {
 		//gosl:end
 		log.Println("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
@@ -211,13 +211,16 @@ func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 		sum = int32(uint32(1) << 20)
 	}
 	Pools[AvgMaxVarIndex(vr, AMCycle, Avg), pi, di] = float32(sum) * floatFromInt
-	mx := PoolsInt[AvgMaxIntVarIndex(vr, Max), pi, di] 
+	PoolsInt[vis, pi, di] = 0 
+	vim := AvgMaxIntVarIndex(vr, Max)	
+	mx := PoolsInt[vim, pi, di] 
 	if mx < 0 {
 		//gosl:end
 		log.Println("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
 		//gosl:start
 		mx = int32(uint32(1) << 20)
 	}
+	PoolsInt[vim, pi, di] = 0 
 	Pools[AvgMaxVarIndex(vr, AMCycle, Max), pi, di] = float32(mx) * floatFromInt
 }
 
