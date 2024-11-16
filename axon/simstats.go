@@ -14,35 +14,125 @@ import (
 	"cogentcore.org/core/plot"
 	"cogentcore.org/core/tensor/datafs"
 	"cogentcore.org/core/tensor/stats/stats"
+	"github.com/emer/emergent/v2/looper"
 )
 
+// StatLoopCounters adds the counters from each stack, loop level for given
+// looper Stacks to the given datafs stats. This is typically the first
+// Stat to add, so these counters will be used for X axis values.
+// The stat is run with start = true before returning, so that the stats
+// are already initialized first before anything else.
+// The first mode's counters (typically Train) are automatically added to all
+// subsequent modes so they automatically track training levels.
+//   - currentDir is a datafs directory to store the current values of each counter.
+//   - trialLevel is the Trial level enum, which automatically handles the
+//     iteration over ndata parallel trials.
+//   - exclude is a list of loop levels to exclude (e.g., Cycle).
+func StatLoopCounters(statDir, currentDir *datafs.Data, ls *looper.Stacks, net *Network, trialLevel enums.Enum, exclude ...enums.Enum) func(mode, level enums.Enum, start bool) {
+
+	excl := func(lev enums.Enum) bool {
+		bail := false
+		for _, ex := range exclude {
+			if lev == ex {
+				bail = true
+				break
+			}
+		}
+		return bail
+	}
+
+	modes := ls.Modes() // mode enum order
+
+	fun := func(mode, level enums.Enum, start bool) {
+		for mi := range 2 {
+			st := ls.Stacks[mode]
+			prefix := ""
+			if mi == 0 {
+				if modes[mi].Int64() == mode.Int64() { // skip train in train..
+					continue
+				}
+				ctrMode := modes[mi]
+				st = ls.Stacks[ctrMode]
+				prefix = ctrMode.String()
+			}
+			for _, lev := range st.Order {
+				// don't record counter for levels above it
+				if level.Int64() > lev.Int64() {
+					continue
+				}
+				if excl(lev) {
+					continue
+				}
+				name := prefix + lev.String() // name of stat = level
+				ndata := int(net.Context().NData)
+				modeDir := statDir.RecycleDir(mode.String())
+				levelDir := modeDir.RecycleDir(level.String())
+				tsr := datafs.Value[int](levelDir, name)
+				if start {
+					tsr.SetNumRows(0)
+					if ps := plot.GetStylersFrom(tsr); ps == nil {
+						ps.Add(func(s *plot.Style) {
+							s.Range.SetMin(0)
+						})
+						plot.SetStylersTo(tsr, ps)
+					}
+					continue
+				}
+				ctr := st.Loops[lev].Counter.Cur
+				if level.Int64() == trialLevel.Int64() {
+					for di := range ndata {
+						datafs.Value[int](currentDir, name, ndata).SetInt1D(ctr, di)
+						tsr.AppendRowInt(ctr)
+						if lev.Int64() == trialLevel.Int64() {
+							ctr++
+						}
+					}
+				} else {
+					datafs.Scalar[int](currentDir, name).SetInt1D(ctr, 0)
+					tsr.AppendRowInt(ctr)
+				}
+			}
+		}
+	}
+	for _, md := range modes {
+		st := ls.Stacks[md]
+		for _, lev := range st.Order {
+			if excl(lev) {
+				continue
+			}
+			fun(md, lev, true)
+		}
+	}
+	return fun
+}
+
 // StatPerTrialMSec returns a Stats function that reports the number of milliseconds
-// per trial, for the given times and training mode enum values.
-// The times should start at the Trial and go up from there: data will
-// be recorded from the second time level. The statName is the name of another
+// per trial, for the given levels and training mode enum values.
+// The levels should start at the Trial and go up from there: data will
+// be recorded from the second level. The statName is the name of another
 // stat that is used to get the number of trials.
-func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enum, times ...enums.Enum) func(lmode enums.Enum, ltime enums.Enum, start bool) {
+func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enum, levels ...enums.Enum) func(mode, level enums.Enum, start bool) {
 	var epcTimer timer.Time
-	return func(lmode enums.Enum, ltime enums.Enum, start bool) {
-		if lmode.Int64() != trainMode.Int64() || ltime.Int64() <= times[0].Int64() {
+	return func(mode, level enums.Enum, start bool) {
+		if mode.Int64() != trainMode.Int64() || level.Int64() <= levels[0].Int64() {
 			return
 		}
 		name := "PerTrialMSec"
-		modeDir := statDir.RecycleDir(lmode.String())
-		timeDir := modeDir.RecycleDir(ltime.String())
-		tsr := datafs.Value[float64](timeDir, name)
+		modeDir := statDir.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := datafs.Value[float64](levelDir, name)
 		if start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
 				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
+					s.Range.SetMin(0)
 				})
 				plot.SetStylersTo(tsr, ps)
 			}
 			return
 		}
-		for i, tm := range times {
-			if ltime.Int64() != tm.Int64() {
+		for i, lev := range levels {
+			if level.Int64() != lev.Int64() {
 				continue
 			}
 			switch i {
@@ -50,14 +140,14 @@ func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enu
 				continue
 			case 1:
 				epcTimer.Stop()
-				subd := modeDir.RecycleDir(times[0].String())
+				subd := modeDir.RecycleDir(levels[0].String())
 				trls := subd.Value(statName) // must be a stat
 				epcTimer.N = trls.Len()
 				pertrl := float64(epcTimer.Avg()) / float64(time.Millisecond)
 				tsr.AppendRowFloat(pertrl)
 				epcTimer.ResetStart()
 			default:
-				subd := modeDir.RecycleDir(times[i-1].String())
+				subd := modeDir.RecycleDir(levels[i-1].String())
 				stat := stats.StatMean.Call(subd.Value(name))
 				tsr.AppendRow(stat)
 			}
@@ -65,35 +155,38 @@ func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enu
 	}
 }
 
-// StatDiagnostics returns a Stats function that computes key
-// statistics.
-func StatDiagnostics(statDir *datafs.Data, net *Network, layerNames []string, trainMode enums.Enum, times ...enums.Enum) func(lmode enums.Enum, ltime enums.Enum, start bool) {
+// StatLayerActGe returns a Stats function that computes layer activity
+// and Ge (excitatory conductdance; net input) levels, which are important targets
+// of parameter tuning to ensure everything is in an appropriate dynamic range.
+// It only runs for given trainMode and the levels should be from the Trial
+// level upward, with higher levels computing the Mean of lower levels
+func StatLayerActGe(statDir *datafs.Data, net *Network, layerNames []string, trainMode enums.Enum, levels ...enums.Enum) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"ActMAvg", "ActMMax", "MaxGeM"}
-	return func(lmode enums.Enum, ltime enums.Enum, start bool) {
-		if lmode.Int64() != trainMode.Int64() || ltime.Int64() < times[0].Int64() {
+	return func(mode, level enums.Enum, start bool) {
+		if mode.Int64() != trainMode.Int64() || level.Int64() < levels[0].Int64() {
 			return
 		}
-		modeDir := statDir.RecycleDir(lmode.String())
-		timeDir := modeDir.RecycleDir(ltime.String())
+		modeDir := statDir.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
 		ndata := net.Context().NData
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
 				ly := net.LayerByName(lnm)
 				lpi := ly.Params.PoolIndex(0)
 				name := lnm + "_" + statName
-				tsr := datafs.Value[float64](timeDir, name)
+				tsr := datafs.Value[float64](levelDir, name)
 				if start {
 					tsr.SetNumRows(0)
 					if ps := plot.GetStylersFrom(tsr); ps == nil {
 						ps.Add(func(s *plot.Style) {
-							s.Range.SetMin(0).SetMax(1)
+							s.Range.SetMin(0)
 						})
 						plot.SetStylersTo(tsr, ps)
 					}
-					return
+					continue
 				}
-				for i, tm := range times {
-					if ltime.Int64() != tm.Int64() {
+				for i, lev := range levels {
+					if level.Int64() != lev.Int64() {
 						continue
 					}
 					switch i {
@@ -110,9 +203,8 @@ func StatDiagnostics(statDir *datafs.Data, net *Network, layerNames []string, tr
 							}
 							tsr.AppendRowFloat(float64(stat))
 						}
-					// todo: last 5 here
 					default:
-						subd := modeDir.RecycleDir(times[i-1].String())
+						subd := modeDir.RecycleDir(levels[i-1].String())
 						stat := stats.StatMean.Call(subd.Value(name))
 						tsr.AppendRow(stat)
 					}

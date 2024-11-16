@@ -48,23 +48,23 @@ func main() {
 	}
 }
 
-// Modes are the looping mode states for running and statistics.
+// Modes are the looping modes (Stacks) for running and statistics.
 type Modes int32 //enums:enum
 const (
 	Train Modes = iota
 	Test
 )
 
-// Times are the looping time levels for running and statistics.
-type Times int32 //enums:enum
+// Levels are the looping levels for running and statistics.
+type Levels int32 //enums:enum
 const (
-	Cycle Times = iota
+	Cycle Levels = iota
 	Trial
 	Epoch
 	Run
 )
 
-// StatsPhase is the phase of stats processing for given mode, time.
+// StatsPhase is the phase of stats processing for given mode, level.
 // Accumulated values are reset at Start, added each Step.
 type StatsPhase int32 //enums:enum
 const (
@@ -101,7 +101,7 @@ type ParamConfig struct {
 	// Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params
 	SaveAll bool `nest:"+"`
 
-	// for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over time.
+	// for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
 }
 
@@ -226,7 +226,7 @@ type Sim struct {
 	Root *datafs.Data `display:"-"`
 
 	// StatFuncs are statistics functions, per stat, handles everything.
-	StatFuncs []func(lmode Modes, ltime Times, lphase StatsPhase) `display:"-"`
+	StatFuncs []func(mode Modes, level Levels, phase StatsPhase) `display:"-"`
 
 	// Stats has the stats dir.
 	Stats *datafs.Data `display:"-"`
@@ -388,26 +388,23 @@ func (ss *Sim) ConfigLoops() {
 	trls := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
 
 	ls.AddStack(Train, Trial).
-		AddTime(Run, ss.Config.Run.NRuns).
-		AddTime(Epoch, ss.Config.Run.NEpochs).
-		AddTimeIncr(Trial, trls, ss.Config.Run.NData).
-		AddTime(Cycle, 200)
+		AddLevel(Run, ss.Config.Run.NRuns).
+		AddLevel(Epoch, ss.Config.Run.NEpochs).
+		AddLevelIncr(Trial, trls, ss.Config.Run.NData).
+		AddLevel(Cycle, 200)
 
 	ls.AddStack(Test, Trial).
-		AddTime(Epoch, 1).
-		AddTimeIncr(Trial, trls, ss.Config.Run.NData).
-		AddTime(Cycle, 200)
+		AddLevel(Epoch, 1).
+		AddLevelIncr(Trial, trls, ss.Config.Run.NData).
+		AddLevel(Cycle, 200)
 
 	axon.LooperStandard(ls, ss.Net, ss.GUI.NetView, 150, 199, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
-	for m, _ := range ls.Stacks {
-		stack := ls.Stacks[m]
-		stack.Loops[Trial].OnStart.Add("ApplyInputs", func() {
-			ss.ApplyInputs()
-		})
-	}
+	ls.AddOnStartToLoop(Trial, "ApplyInputs", func(mode enums.Enum) {
+		ss.ApplyInputs(mode.(Modes))
+	})
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
@@ -486,10 +483,10 @@ func (ss *Sim) ConfigLoops() {
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func (ss *Sim) ApplyInputs() {
+func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ctx := net.Context()
-	ev := ss.Envs.ByMode(ss.CurrentMode()).(*env.FixedTable)
+	ev := ss.Envs.ByMode(mode).(*env.FixedTable)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
 	for di := uint32(0); di < ctx.NData; di++ {
@@ -556,7 +553,7 @@ func (ss *Sim) OpenPats() {
 
 //////// Stats
 
-func (ss *Sim) AddStat(f func(lmode Modes, ltime Times, lphase StatsPhase)) {
+func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
 	ss.StatFuncs = append(ss.StatFuncs, f)
 }
 
@@ -564,56 +561,55 @@ func (ss *Sim) AddStat(f func(lmode Modes, ltime Times, lphase StatsPhase)) {
 // It needs to call RunStats Start at the next level down.
 // e.g., each Epoch is the start of the full set of Trial Steps.
 func (ss *Sim) StatsStart(lmd, ltm enums.Enum) {
-	lmode := lmd.(Modes)
-	ltime := ltm.(Times)
-	if ltime <= Trial {
+	mode := lmd.(Modes)
+	level := ltm.(Levels)
+	if level <= Trial {
 		return
 	}
-	ss.RunStats(lmode, ltime-1, Start)
+	ss.RunStats(mode, level-1, Start)
 }
 
 // StatsStep is called by Looper at each step of iteration,
 // where it accumulates the stat results.
 func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
-	lmode := lmd.(Modes)
-	ltime := ltm.(Times)
-	if ltime == Cycle {
+	mode := lmd.(Modes)
+	level := ltm.(Levels)
+	if level == Cycle {
 		return
 	}
-	ss.RunStats(lmode, ltime, Step)
+	ss.RunStats(mode, level, Step)
 }
 
-// RunStats runs the StatFuncs for given mode, time and phase.
-func (ss *Sim) RunStats(lmode Modes, ltime Times, lphase StatsPhase) {
+// RunStats runs the StatFuncs for given mode, level and phase.
+func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	for _, sf := range ss.StatFuncs {
-		sf(lmode, ltime, lphase)
+		sf(mode, level, phase)
 	}
-	if lphase == Step && ss.GUI.Tabs != nil {
-		nm := lmode.String() + "/" + ltime.String() + " Plot"
+	if phase == Step && ss.GUI.Tabs != nil {
+		nm := mode.String() + "/" + level.String() + " Plot"
 		ss.GUI.Tabs.GoUpdatePlot(nm)
 	}
 }
 
-func (ss *Sim) StatsData(lmode Modes, ltime Times) *datafs.Data {
-	modeDir := ss.Stats.RecycleDir(lmode.String())
-	return modeDir.RecycleDir(ltime.String())
+func (ss *Sim) StatsData(mode Modes, level Levels) *datafs.Data {
+	modeDir := ss.Stats.RecycleDir(mode.String())
+	return modeDir.RecycleDir(level.String())
 }
 
 func (ss *Sim) InitStats() {
-	for mode, st := range ss.Loops.Stacks {
-		cmd := mode.(Modes)
-		for _, tm := range st.Order {
-			ctm := tm.(Times)
-			if ctm == Cycle {
+	for md, st := range ss.Loops.Stacks {
+		mode := md.(Modes)
+		for _, lev := range st.Order {
+			level := lev.(Levels)
+			if level == Cycle {
 				continue
 			}
-			ss.RunStats(mode.(Modes), ctm, Start)
-			if ss.GUI.Tabs != nil {
-				if cmd == Train && ctm == Epoch {
-					ss.GUI.Tabs.PlotDataFS(ss.StatsData(cmd, ctm))
-				}
-			}
+			ss.RunStats(mode, level, Start)
 		}
+	}
+	if ss.GUI.Tabs != nil {
+		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Train, Epoch))
+		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Test, Trial))
 	}
 }
 
@@ -623,58 +619,22 @@ func (ss *Sim) ConfigStats() {
 	net := ss.Net
 	ss.Stats, _ = ss.Root.Mkdir("Stats")
 	ss.Current, _ = ss.Stats.Mkdir("Current")
-	// todo: move this to simstats:
-	for md, st := range ss.Loops.Stacks {
-		cmd := md.(Modes)
-		for _, tm := range st.Order {
-			ctm := tm.(Times)
-			if ctm == Cycle {
-				continue
-			}
-			ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
-				if lmode != cmd || ltime > ctm { // don't record counter for time above it
-					return
-				}
-				name := tm.String() // name of stat = time
-				ndata := int(ss.Net.Context().NData)
-				modeDir := ss.Stats.RecycleDir(lmode.String())
-				timeDir := modeDir.RecycleDir(ltime.String())
-				tsr := datafs.Value[int](timeDir, name)
-				if lphase == Start {
-					tsr.SetNumRows(0)
-					if ps := plot.GetStylersFrom(tsr); ps == nil {
-						ps.Add(func(s *plot.Style) {
-							s.Range.SetMin(0)
-						})
-						plot.SetStylersTo(tsr, ps)
-					}
-					return
-				}
-				ctv := ss.Loops.Stacks[cmd].Loops[ctm].Counter.Cur
-				if ltime == Trial {
-					for di := range ndata {
-						datafs.Value[int](ss.Current, name, ndata).SetInt1D(ctv, di)
-						tsr.AppendRowInt(ctv)
-						if ctm == Trial {
-							ctv++
-						}
-					}
-				} else {
-					datafs.Scalar[int](ss.Current, name).SetInt1D(ctv, 0)
-					tsr.AppendRowInt(ctv)
-				}
-			})
-		}
-	}
+
+	// last two are Trial level and then exclude levels
+	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		counterFunc(mode, level, phase == Start)
+	})
+
 	// todo: loop over stat names as in diagnostics
 	// and include NZero, and stopping just grabs that from current.
-	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		name := "UnitErr"
-		modeDir := ss.Stats.RecycleDir(lmode.String())
-		timeDir := modeDir.RecycleDir(ltime.String())
-		tsr := datafs.Value[float64](timeDir, name)
+		modeDir := ss.Stats.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := datafs.Value[float64](levelDir, name)
 		ndata := int(ss.Net.Context().NData)
-		if lphase == Start {
+		if phase == Start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
 				ps.Add(func(s *plot.Style) {
@@ -685,7 +645,7 @@ func (ss *Sim) ConfigStats() {
 			}
 			return
 		}
-		switch ltime {
+		switch level {
 		case Trial:
 			out := ss.Net.LayerByName("Output")
 			stat := out.PctUnitErr(ss.Net.Context())
@@ -703,13 +663,13 @@ func (ss *Sim) ConfigStats() {
 			tsr.AppendRow(stat)
 		}
 	})
-	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		name := "Err"
-		modeDir := ss.Stats.RecycleDir(lmode.String())
-		timeDir := modeDir.RecycleDir(ltime.String())
-		tsr := datafs.Value[float64](timeDir, name)
+		modeDir := ss.Stats.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := datafs.Value[float64](levelDir, name)
 		ndata := ss.Config.Run.NData
-		if lphase == Start {
+		if phase == Start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
 				ps.Add(func(s *plot.Style) {
@@ -720,7 +680,7 @@ func (ss *Sim) ConfigStats() {
 			}
 			return
 		}
-		switch ltime {
+		switch level {
 		case Trial:
 			for di := range ndata {
 				uniterr := datafs.Value[float64](ss.Current, "UnitErr", ndata).Float1D(di)
@@ -741,13 +701,13 @@ func (ss *Sim) ConfigStats() {
 			tsr.AppendRow(stat)
 		}
 	})
-	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		name := "CorSim"
-		modeDir := ss.Stats.RecycleDir(lmode.String())
-		timeDir := modeDir.RecycleDir(ltime.String())
-		tsr := datafs.Value[float64](timeDir, name)
+		modeDir := ss.Stats.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := datafs.Value[float64](levelDir, name)
 		ndata := ss.Config.Run.NData
-		if lphase == Start {
+		if phase == Start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
 				ps.Add(func(s *plot.Style) {
@@ -758,7 +718,7 @@ func (ss *Sim) ConfigStats() {
 			}
 			return
 		}
-		switch ltime {
+		switch level {
 		case Trial:
 			out := ss.Net.LayerByName("Output")
 			for di := range ndata {
@@ -776,14 +736,16 @@ func (ss *Sim) ConfigStats() {
 			tsr.AppendRow(stat)
 		}
 	})
+
 	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Err", Train, Trial, Epoch, Run)
-	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
-		perTrlFunc(lmode, ltime, lphase == Start)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		perTrlFunc(mode, level, phase == Start)
 	})
+
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	diagsFunc := axon.StatDiagnostics(ss.Stats, net, lays, Train, Trial, Epoch, Run)
-	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
-		diagsFunc(lmode, ltime, lphase == Start)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, lays, Train, Trial, Epoch, Run)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		actGeFunc(mode, level, phase == Start)
 	})
 }
 
@@ -814,9 +776,9 @@ func (ss *Sim) ConfigLogs() {
 	// ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 	//
 	// ss.Logs.AddCounterItems(Run, Epoch, Trial, Cycle)
-	// ss.Logs.AddStatIntNoAggItem(AllModes, Trial, "Di")
-	// ss.Logs.AddStatStringItem(AllModes, AllTimes, "RunName")
-	// ss.Logs.AddStatStringItem(AllModes, Trial, "TrialName")
+	// ss.Logs.AddStatIntNoAggItem(AlmOdes, Trial, "Di")
+	// ss.Logs.AddStatStringItem(AlmOdes, AllTimes, "RunName")
+	// ss.Logs.AddStatStringItem(AlmOdes, Trial, "TrialName")
 	//
 	// ss.Logs.AddStatAggItem("PhaseDiff", Run, Epoch, Trial)
 	// ss.Logs.AddStatAggItem("UnitErr", Run, Epoch, Trial)
@@ -870,7 +832,7 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.UpdateFiles()
 	ss.InitStats()
-	// ss.GUI.AddPlots(title, &ss.Logs)
+	ss.GUI.Tabs.SelectTabByName("Network")
 	ss.GUI.FinalizeGUI(false)
 	// if ss.Config.Run.GPU {
 	// 	// vgpu.Debug = ss.Config.Debug // when debugging GPU..
