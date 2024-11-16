@@ -596,14 +596,25 @@ func (ss *Sim) RunStats(lmode Modes, ltime Times, lphase StatsPhase) {
 	}
 }
 
+func (ss *Sim) StatsData(lmode Modes, ltime Times) *datafs.Data {
+	modeDir := ss.Stats.RecycleDir(lmode.String())
+	return modeDir.RecycleDir(ltime.String())
+}
+
 func (ss *Sim) InitStats() {
 	for mode, st := range ss.Loops.Stacks {
+		cmd := mode.(Modes)
 		for _, tm := range st.Order {
 			ctm := tm.(Times)
 			if ctm == Cycle {
 				continue
 			}
 			ss.RunStats(mode.(Modes), ctm, Start)
+			if ss.GUI.Tabs != nil {
+				if cmd == Train && ctm == Epoch {
+					ss.GUI.Tabs.PlotDataFS(ss.StatsData(cmd, ctm))
+				}
+			}
 		}
 	}
 }
@@ -611,8 +622,10 @@ func (ss *Sim) InitStats() {
 // ConfigStats handles configures functions to do all stats computation
 // in the datafs system.
 func (ss *Sim) ConfigStats() {
+	net := ss.Net
 	ss.Stats, _ = ss.Root.Mkdir("Stats")
 	ss.Current, _ = ss.Stats.Mkdir("Current")
+	// todo: move this to simstats:
 	for md, st := range ss.Loops.Stacks {
 		cmd := md.(Modes)
 		for _, tm := range st.Order {
@@ -625,7 +638,7 @@ func (ss *Sim) ConfigStats() {
 					return
 				}
 				name := tm.String() // name of stat = time
-				ndata := ss.Config.Run.NData
+				ndata := int(ss.Net.Context().NData)
 				modeDir := ss.Stats.RecycleDir(lmode.String())
 				timeDir := modeDir.RecycleDir(ltime.String())
 				tsr := datafs.Value[int](timeDir, name)
@@ -655,12 +668,14 @@ func (ss *Sim) ConfigStats() {
 			})
 		}
 	}
+	// todo: loop over stat names as in diagnostics
+	// and include NZero, and stopping just grabs that from current.
 	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
 		name := "UnitErr"
 		modeDir := ss.Stats.RecycleDir(lmode.String())
 		timeDir := modeDir.RecycleDir(ltime.String())
 		tsr := datafs.Value[float64](timeDir, name)
-		ndata := ss.Config.Run.NData
+		ndata := int(ss.Net.Context().NData)
 		if lphase == Start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
@@ -763,6 +778,15 @@ func (ss *Sim) ConfigStats() {
 			tsr.AppendRow(stat)
 		}
 	})
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Err", Train, Trial, Epoch, Run)
+	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+		perTrlFunc(lmode, ltime, lphase == Start)
+	})
+	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	diagsFunc := axon.StatDiagnostics(ss.Stats, net, lays, Train, Trial, Epoch, Run)
+	ss.AddStat(func(lmode Modes, ltime Times, lphase StatsPhase) {
+		diagsFunc(lmode, ltime, lphase == Start)
+	})
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -789,25 +813,6 @@ func (ss *Sim) StatCounters(md, tm enums.Enum) string {
 	// ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
 	// ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "PhaseDiff"})
 }
-
-// TrialStats computes the trial-level statistics.
-// Aggregation is done directly from log data.
-func (ss *Sim) TrialStats(di int) {
-	// out := ss.Net.LayerByName("Output")
-	//
-	// ss.Stats.SetFloat("PhaseDiff", float64(out.Values[di].PhaseDiff.Cor))
-	// ss.Stats.SetFloat("UnitErr", out.PctUnitErr(&ss.Context)[di])
-	//
-	//	if ss.Stats.Float("UnitErr") > 0 {
-	//		ss.Stats.SetFloat("TrlErr", 1)
-	//	} else {
-	//
-	//		ss.Stats.SetFloat("TrlErr", 0)
-	//	}
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 		Logging
 
 func (ss *Sim) ConfigLogs() {
 	// ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
@@ -844,40 +849,6 @@ func (ss *Sim) ConfigLogs() {
 	// ss.Logs.SetMeta(Train, Run, "LegendCol", "RunName")
 }
 
-// Log is the main logging function, handles special things for different scopes
-func (ss *Sim) Log(mode Modes, time Times) {
-	// ctx := ss.Net.Context()
-	//
-	//	if mode != Analyze {
-	//		ctx.Mode = mode // Also set specifically in a Loop callback.
-	//	}
-	//
-	// dt := ss.Logs.Table(mode, time)
-	//
-	//	if dt == nil {
-	//		return
-	//	}
-	//
-	// row := dt.Rows
-	//
-	// switch {
-	// case time == Cycle:
-	//
-	//	return
-	//
-	// case time == Trial:
-	//
-	//		for di := 0; di < int(ctx.NData); di++ {
-	//			ss.TrialStats(di)
-	//			ss.StatCounters(di)
-	//			ss.Logs.LogRowDi(mode, time, row, di)
-	//		}
-	//		return // don't do reg below
-	//	}
-	//
-	// ss.Logs.LogRow(mode, time, row) // also logs to file, etc
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
@@ -902,6 +873,7 @@ func (ss *Sim) ConfigGUI() {
 	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 
 	ss.GUI.UpdateFiles()
+	ss.InitStats()
 	// ss.GUI.AddPlots(title, &ss.Logs)
 	ss.GUI.FinalizeGUI(false)
 	//	if ss.Config.Run.GPU {

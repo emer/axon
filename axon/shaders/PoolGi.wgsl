@@ -1240,16 +1240,19 @@ fn PoolNNeurons(pi: u32) -> i32 {
 }
 fn PoolAvgMaxCalcVar(vr: AvgMaxVars, pi: u32,di: u32) {
 	var floatFromInt = f32(1.0) / f32(u32(1)<<20);
-	var vim = AvgMaxIntVarIndex(vr, Max);
-	var sum = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))];
+	var vis = AvgMaxIntVarIndex(vr, Avg);
+	var sum = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vis),u32(pi),u32(di))];
 	if (sum < 0) {
 		sum = i32(u32(1) << 20);
 	}
 	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(AvgMaxVarIndex(vr, AMCycle, Avg)),u32(pi),u32(di))] = f32(sum) * floatFromInt;
-	var mx = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(AvgMaxIntVarIndex(vr, Max)),u32(pi),u32(di))];
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vis),u32(pi),u32(di))] = 0;
+	var vim = AvgMaxIntVarIndex(vr, Max);
+	var mx = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))];
 	if (mx < 0) {
 		mx = i32(u32(1) << 20);
 	}
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))] = 0;
 	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(AvgMaxVarIndex(vr, AMCycle, Max)),u32(pi),u32(di))] = f32(mx) * floatFromInt;
 }
 fn PoolAvgMaxCalc(pi: u32,di: u32) {
