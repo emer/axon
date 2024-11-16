@@ -66,6 +66,7 @@ func StatLoopCounters(statDir, currentDir *datafs.Data, ls *looper.Stacks, net *
 				name := prefix + lev.String() // name of stat = level
 				ndata := int(net.Context().NData)
 				modeDir := statDir.RecycleDir(mode.String())
+				curModeDir := currentDir.RecycleDir(mode.String())
 				levelDir := modeDir.RecycleDir(level.String())
 				tsr := datafs.Value[int](levelDir, name)
 				if start {
@@ -76,19 +77,24 @@ func StatLoopCounters(statDir, currentDir *datafs.Data, ls *looper.Stacks, net *
 						})
 						plot.SetStylersTo(tsr, ps)
 					}
+					if level.Int64() == trialLevel.Int64() {
+						for di := range ndata {
+							datafs.Value[int](curModeDir, name, ndata).SetInt1D(0, di)
+						}
+					}
 					continue
 				}
 				ctr := st.Loops[lev].Counter.Cur
 				if level.Int64() == trialLevel.Int64() {
 					for di := range ndata {
-						datafs.Value[int](currentDir, name, ndata).SetInt1D(ctr, di)
+						datafs.Value[int](curModeDir, name, ndata).SetInt1D(ctr, di)
 						tsr.AppendRowInt(ctr)
 						if lev.Int64() == trialLevel.Int64() {
 							ctr++
 						}
 					}
 				} else {
-					datafs.Scalar[int](currentDir, name).SetInt1D(ctr, 0)
+					datafs.Scalar[int](curModeDir, name).SetInt1D(ctr, 0)
 					tsr.AppendRowInt(ctr)
 				}
 			}

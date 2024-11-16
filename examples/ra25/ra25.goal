@@ -620,120 +620,106 @@ func (ss *Sim) ConfigStats() {
 	ss.Stats, _ = ss.Root.Mkdir("Stats")
 	ss.Current, _ = ss.Stats.Mkdir("Current")
 
-	// last two are Trial level and then exclude levels
+	// last arg(s) are levels to exclude
 	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
 	})
 
-	// todo: loop over stat names as in diagnostics
-	// and include NZero, and stopping just grabs that from current.
+	// up to a point, it is good to use loops over stats in one function,
+	// to reduce repetition of boilerplate.
+	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		name := "UnitErr"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		tsr := datafs.Value[float64](levelDir, name)
-		ndata := int(ss.Net.Context().NData)
-		if phase == Start {
-			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-				plot.SetStylersTo(tsr, ps)
+		for _, name := range statNames {
+			if name == "NZero" && (mode != Train || level == Trial) {
+				return
 			}
-			return
-		}
-		switch level {
-		case Trial:
-			out := ss.Net.LayerByName("Output")
-			stat := out.PctUnitErr(ss.Net.Context())
-			for di := range ndata {
-				datafs.Value[float64](ss.Current, name, ndata).SetFloat1D(stat[di], di)
-				tsr.AppendRowFloat(stat[di])
-			}
-		case Epoch:
-			subd := modeDir.RecycleDir(Trial.String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
-		case Run:
-			subd := modeDir.RecycleDir(Epoch.String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
-		}
-	})
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		name := "Err"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		tsr := datafs.Value[float64](levelDir, name)
-		ndata := ss.Config.Run.NData
-		if phase == Start {
-			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
-			return
-		}
-		switch level {
-		case Trial:
-			for di := range ndata {
-				uniterr := datafs.Value[float64](ss.Current, "UnitErr", ndata).Float1D(di)
-				er := 1.0
-				if uniterr == 0 {
-					er = 0
+			modeDir := ss.Stats.RecycleDir(mode.String())
+			curModeDir := ss.Current.RecycleDir(mode.String())
+			levelDir := modeDir.RecycleDir(level.String())
+			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
+			tsr := datafs.Value[float64](levelDir, name)
+			ndata := int(ss.Net.Context().NData)
+			var stat float64
+			if phase == Start {
+				tsr.SetNumRows(0)
+				if ps := plot.GetStylersFrom(tsr); ps == nil {
+					ps.Add(func(s *plot.Style) {
+						s.Range.SetMin(0).SetMax(1)
+						s.On = true
+					})
+					plot.SetStylersTo(tsr, ps)
 				}
-				datafs.Value[float64](ss.Current, name, ndata).SetFloat(er, di)
-				tsr.AppendRowFloat(er)
+				switch name {
+				case "NZero":
+					if level == Epoch {
+						datafs.Scalar[float64](curModeDir, name).SetFloat1D(0, 0)
+					}
+				case "FirstZero", "LastZero":
+					if level == Epoch {
+						datafs.Scalar[float64](curModeDir, name).SetFloat1D(-1, 0)
+					}
+				}
+				continue
 			}
-		case Epoch:
-			subd := modeDir.RecycleDir(Trial.String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
-		case Run:
-			subd := modeDir.RecycleDir(Epoch.String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
-		}
-	})
-	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		name := "CorSim"
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		tsr := datafs.Value[float64](levelDir, name)
-		ndata := ss.Config.Run.NData
-		if phase == Start {
-			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
-			return
-		}
-		switch level {
-		case Trial:
-			out := ss.Net.LayerByName("Output")
-			for di := range ndata {
-				stat := 1.0 - float64(axon.LayerStates[axon.LayerPhaseDiff, out.Index, di])
-				datafs.Value[float64](ss.Current, name, ndata).SetFloat1D(stat, di)
+			switch level {
+			case Trial:
+				out := ss.Net.LayerByName("Output")
+				for di := range ndata {
+					var stat float64
+					switch name {
+					case "CorSim":
+						stat = 1.0 - float64(axon.LayerStates[axon.LayerPhaseDiff, out.Index, di])
+					case "UnitErr":
+						stat = out.PctUnitErr(ss.Net.Context())[di]
+					case "Err":
+						uniterr := datafs.Value[float64](curModeDir, "UnitErr", ndata).Float1D(di)
+						stat = 1.0
+						if uniterr == 0 {
+							stat = 0
+						}
+					}
+					datafs.Value[float64](curModeDir, name, ndata).SetFloat1D(stat, di)
+					tsr.AppendRowFloat(stat)
+				}
+			case Epoch:
+				switch name {
+				case "NZero":
+					err := stats.StatSum.Call(subDir.Value("Err")).Float1D(0)
+					stat = curModeDir.Item(name).AsFloat64()
+					if err == 0 {
+						stat++
+					} else {
+						stat = 0
+					}
+					curModeDir.Item(name).SetFloat64(stat)
+				case "FirstZero":
+					nz := curModeDir.Item("NZero").AsFloat64()
+					stat = curModeDir.Item(name).AsFloat64()
+					if stat < 0 && nz == 1 {
+						stat = curModeDir.Item("Epoch").AsFloat64()
+					}
+					curModeDir.Item(name).SetFloat64(stat)
+				case "LastZero":
+					nz := curModeDir.Item("NZero").AsFloat64()
+					stat = curModeDir.Item(name).AsFloat64()
+					if stat < 0 && nz >= float64(ss.Config.Run.NZero) {
+						stat = curModeDir.Item("Epoch").AsFloat64()
+					}
+					curModeDir.Item(name).SetFloat64(stat)
+				default:
+					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				}
+				tsr.AppendRowFloat(stat)
+			case Run:
+				switch name {
+				case "NZero", "FirstZero", "LastZero":
+					stat = subDir.Value(name).Float1D(-1)
+				default:
+					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
+				}
 				tsr.AppendRowFloat(stat)
 			}
-		case Epoch:
-			subd := modeDir.RecycleDir(Trial.String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
-		case Run:
-			subd := modeDir.RecycleDir(Epoch.String())
-			stat := stats.StatMean.Call(subd.Value(name))
-			tsr.AppendRow(stat)
 		}
 	})
 
