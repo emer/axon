@@ -590,6 +590,10 @@ func (ss *Sim) RunStats(lmode Modes, ltime Times, lphase StatsPhase) {
 	for _, sf := range ss.StatFuncs {
 		sf(lmode, ltime, lphase)
 	}
+	if lphase == Step && ss.GUI.Tabs != nil {
+		nm := lmode.String() + "/" + ltime.String() + " Plot"
+		ss.GUI.Tabs.GoUpdatePlot(nm)
+	}
 }
 
 func (ss *Sim) InitStats() {
@@ -745,7 +749,7 @@ func (ss *Sim) ConfigStats() {
 		case Trial:
 			out := ss.Net.LayerByName("Output")
 			for di := range ndata {
-				stat := float64(axon.LayerStates.Value(int(axon.LayerPhaseDiff), int(out.Index), int(di)))
+				stat := 1.0 - float64(axon.LayerStates.Value(int(axon.LayerPhaseDiff), int(out.Index), int(di)))
 				datafs.Value[float64](ss.Current, name, ndata).SetFloat1D(stat, di)
 				tsr.AppendRowFloat(stat)
 			}
