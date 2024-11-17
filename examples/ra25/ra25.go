@@ -410,17 +410,17 @@ func (ss *Sim) ConfigLoops() {
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
-	// Train stop early condition
-	// ls.Loop(Train, Epoch).IsDone["NZeroStop"] = func() bool {
-	// 	// This is calculated in TrialStats
-	// 	stopNz := ss.Config.Run.NZero
-	// 	if stopNz <= 0 {
-	// 		stopNz = 2
-	// 	}
-	// 	curNZero := ss.Stats.Int("NZero")
-	// 	stop := curNZero >= stopNz
-	// 	return stop
-	// }
+	ls.Loop(Train, Epoch).IsDone.AddBool("NZeroStop", func() bool {
+		stopNz := ss.Config.Run.NZero
+		if stopNz <= 0 {
+			return false
+		}
+		curModeDir := ss.Current.RecycleDir(Train.String())
+		curNZero := int(curModeDir.Value("NZero").Float1D(-1))
+		stop := curNZero >= stopNz
+		return stop
+		return false
+	})
 
 	// Add Testing
 	trainEpoch := ls.Loop(Train, Epoch)
@@ -611,6 +611,7 @@ func (ss *Sim) InitStats() {
 	}
 	if ss.GUI.Tabs != nil {
 		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Train, Epoch))
+		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Train, Run))
 		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Test, Trial))
 	}
 }
@@ -649,6 +650,14 @@ func (ss *Sim) ConfigStats() {
 					ps.Add(func(s *plot.Style) {
 						s.Range.SetMin(0).SetMax(1)
 						s.On = true
+						switch name {
+						case "NZero":
+							s.On = false
+						case "FirstZero", "LastZero":
+							if level < Run {
+								s.On = false
+							}
+						}
 					})
 					plot.SetStylersTo(tsr, ps)
 				}
