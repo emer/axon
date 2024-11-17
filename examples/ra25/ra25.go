@@ -609,9 +609,11 @@ func (ss *Sim) InitStats() {
 		}
 	}
 	if ss.GUI.Tabs != nil {
+		_, idx := ss.GUI.Tabs.CurrentTab()
 		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Train, Epoch))
 		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Train, Run))
 		ss.GUI.Tabs.PlotDataFS(ss.StatsData(Test, Trial))
+		ss.GUI.Tabs.SelectTabIndex(idx)
 	}
 }
 
@@ -831,8 +833,8 @@ func (ss *Sim) ConfigGUI() {
 
 	ss.GUI.UpdateFiles()
 	ss.InitStats()
-	ss.GUI.Tabs.SelectTabByName("Network")
 	ss.GUI.FinalizeGUI(false)
+
 	//	if ss.Config.Run.GPU {
 	//		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
 	//		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
