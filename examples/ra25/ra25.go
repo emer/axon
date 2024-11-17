@@ -488,18 +488,19 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ctx := net.Context()
+	ndata := int(ctx.NData)
+	curModeDir := ss.Current.RecycleDir(mode.String())
 	ev := ss.Envs.ByMode(mode).(*env.FixedTable)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := range ndata {
 		ev.Step()
-		// note: must save env state for logging / stats due to data parallel re-use of same env
-		// ss.Stats.SetStringDi("TrialName", int(di), ev.TrialName.Cur) // todo:
+		datafs.Value[string](curModeDir, "TrialName", ndata).SetString1D(ev.TrialName.Cur, di)
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
 			pats := ev.State(ly.Name)
 			if pats != nil {
-				ly.ApplyExt(di, pats)
+				ly.ApplyExt(uint32(di), pats)
 			}
 		}
 	}
@@ -516,8 +517,6 @@ func (ss *Sim) NewRun() {
 	ctx.Reset()
 	ctx.Mode = int32(Train)
 	ss.Net.InitWeights()
-	// ss.Logs.ResetLog(Train, Epoch)
-	// ss.Logs.ResetLog(Test, Epoch)
 }
 
 // TestAll runs through the full set of testing items
@@ -627,6 +626,33 @@ func (ss *Sim) ConfigStats() {
 	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
+	})
+
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		if level != Trial {
+			return
+		}
+		name := "TrialName"
+		modeDir := ss.Stats.RecycleDir(mode.String())
+		curModeDir := ss.Current.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := datafs.Value[string](levelDir, name)
+		ndata := int(ss.Net.Context().NData)
+		if phase == Start {
+			tsr.SetNumRows(0)
+			if ps := plot.GetStylersFrom(tsr); ps == nil {
+				ps.Add(func(s *plot.Style) {
+					s.On = false
+				})
+				plot.SetStylersTo(tsr, ps)
+			}
+			return
+		}
+		for di := range ndata {
+			// saved in apply inputs
+			trlNm := datafs.Value[string](curModeDir, name, ndata).String1D(di)
+			tsr.AppendRowString(trlNm)
+		}
 	})
 
 	// up to a point, it is good to use loops over stats in one function,
@@ -759,14 +785,9 @@ func (ss *Sim) StatCounters(md, tm enums.Enum) string {
 	// ss.StatCounters(di)
 	// ctx := &ss.Context
 	// mode := ctx.Mode
-	// ss.Loops.Stacks[mode].CountersToStats(&ss.Stats)
-	// // always use training epoch..
-	// trnEpc := ss.Loops.Stacks[Train].Loops[Epoch].Counter.Cur
 	// ss.Stats.SetInt("Epoch", trnEpc)
 	// trl := ss.Stats.Int("Trial")
-	// ss.Stats.SetInt("Trial", trl+di)
 	// ss.Stats.SetInt("Di", di)
-	// ss.Stats.SetInt("Cycle", int(ctx.Cycle))
 	// ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
 	// ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "PhaseDiff"})
 }
@@ -776,38 +797,17 @@ func (ss *Sim) ConfigLogs() {
 	//
 	// ss.Logs.AddCounterItems(Run, Epoch, Trial, Cycle)
 	// ss.Logs.AddStatIntNoAggItem(AlmOdes, Trial, "Di")
-	// ss.Logs.AddStatStringItem(AlmOdes, AllTimes, "RunName")
-	// ss.Logs.AddStatStringItem(AlmOdes, Trial, "TrialName")
-	//
-	// ss.Logs.AddStatAggItem("PhaseDiff", Run, Epoch, Trial)
-	// ss.Logs.AddStatAggItem("UnitErr", Run, Epoch, Trial)
-	// ss.Logs.AddErrStatAggItems("TrlErr", Run, Epoch, Trial)
 	//
 	// ss.Logs.AddCopyFromFloatItems(Train, []Times{Epoch, Run}, Test, Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr")
 	//
-	// ss.Logs.AddPerTrlMSec("PerTrlMSec", Run, Epoch, Trial)
-	//
-	// layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	// axon.LogAddDiagnosticItems(&ss.Logs, layers, Train, Epoch, Trial)
 	// axon.LogInputLayer(&ss.Logs, ss.Net, Train)
 	//
 	// axon.LogAddPCAItems(&ss.Logs, ss.Net, Train, Run, Epoch, Trial)
 	//
 	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", Test, Trial, "InputLayer", "TargetLayer")
-	//
-	// ss.Logs.PlotItems("PhaseDiff", "PctCor", "FirstZero", "LastZero")
-	//
-	// ss.Logs.CreateTables()
-	// ss.Logs.SetContext(&ss.Stats, ss.Net)
-	// // don't plot certain combinations we don't use
-	// ss.Logs.NoPlot(Train, Cycle)
-	// ss.Logs.NoPlot(Test, Run)
-	// // note: Analyze not plotted by default
-	// ss.Logs.SetMeta(Train, Run, "LegendCol", "RunName")
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Gui
+//////// GUI
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
