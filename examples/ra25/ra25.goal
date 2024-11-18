@@ -577,6 +577,7 @@ func (ss *Sim) StatsStep(lmd, ltm enums.Enum) {
 		return
 	}
 	ss.RunStats(mode, level, Step)
+	ss.StatsData(mode, level).GetDirTable(nil).WriteToLog()
 }
 
 // RunStats runs the StatFuncs for given mode, level and phase.
@@ -883,51 +884,42 @@ func (ss *Sim) RunGUI() {
 }
 
 func (ss *Sim) RunNoGUI() {
-	// if ss.Config.Params.Note != "" {
-	// 	mpi.Printf("Note: %s\n", ss.Config.Params.Note)
-	// }
-	// if ss.Config.Log.SaveWeights {
-	// 	mpi.Printf("Saving final weights per run\n")
-	// }
-	// runName := ss.Params.RunName(ss.Config.Run.Run)
-	// ss.Stats.SetString("RunName", runName) // used for naming logs, stats, etc
-	// netName := ss.Net.Name
+	if ss.Config.Params.Note != "" {
+		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
+	}
+	if ss.Config.Log.SaveWeights {
+		mpi.Printf("Saving final weights per run\n")
+	}
+	runName := ss.Params.RunName(ss.Config.Run.Run)
+	datafs.Scalar[string](ss.Current, "RunName").SetString1D(runName, 0)
+	netName := ss.Net.Name
 
-	// elog.SetLogFile(&ss.Logs, ss.Config.Log.Trial, Train, Trial, "trl", netName, runName)
-	// elog.SetLogFile(&ss.Logs, ss.Config.Log.Epoch, Train, Epoch, "epc", netName, runName)
-	// elog.SetLogFile(&ss.Logs, ss.Config.Log.Run, Train, Run, "run", netName, runName)
-	// elog.SetLogFile(&ss.Logs, ss.Config.Log.TestEpoch, Test, Epoch, "tst_epc", netName, runName)
-	// elog.SetLogFile(&ss.Logs, ss.Config.Log.TestTrial, Test, Trial, "tst_trl", netName, runName)
-	//
-	// netdata := ss.Config.Log.NetData
-	// if netdata {
-	// 	mpi.Printf("Saving NetView data from testing\n")
-	// 	ss.GUI.InitNetData(ss.Net, 200)
-	// }
-	//
-	// ss.Init()
-	//
-	// mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
-	// ss.Loops.GetLoop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
-	//
-	// if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
-	// 	ss.Loops.Step(Train, 1, Trial) // get past NewRun
-	// 	ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
-	// 	mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
-	// }
+	ss.Init()
+
+	axon.OpenLogFile(ss.Config.Log.Trial, ss.StatsData(Train, Trial).GetDirTable(nil), netName, runName, "trl")
+	axon.OpenLogFile(ss.Config.Log.Epoch, ss.StatsData(Train, Epoch).GetDirTable(nil), netName, runName, "epc")
+	axon.OpenLogFile(ss.Config.Log.Run, ss.StatsData(Train, Run).GetDirTable(nil), netName, runName, "run")
+
+	axon.OpenLogFile(ss.Config.Log.TestTrial, ss.StatsData(Test, Trial).GetDirTable(nil), netName, runName, "trl")
+	axon.OpenLogFile(ss.Config.Log.TestEpoch, ss.StatsData(Test, Epoch).GetDirTable(nil), netName, runName, "epc")
+
+	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
+	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
+
+	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
+		ss.Loops.Step(Train, 1, Trial) // get past NewRun
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
+		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
+	}
 
 	// if ss.Config.Run.GPU {
 	// 	ss.Net.ConfigGPUnoGUI(&ss.Context)
 	// }
 	// mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-	//
-	// ss.Loops.Run(Train)
-	//
-	// ss.Logs.CloseLogFiles()
-	//
-	// if netdata {
-	// 	ss.GUI.SaveNetData(ss.Stats.String("RunName"))
-	// }
+
+	ss.Loops.Run(Train)
+
+	ss.StatsData(Train, Epoch).GetDirTable(nil).CloseLog()
 
 	// ss.Net.GPU.Destroy() // safe even if no GPU
 }

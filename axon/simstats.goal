@@ -10,10 +10,28 @@ import (
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/plot"
+	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/datafs"
 	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/looper"
 )
+
+// LogFilename returns a standard log file name as netName_runName_logName.tsv
+func LogFilename(netName, runName, logName string) string {
+	return netName + "_" + runName + "_" + logName + ".tsv"
+}
+
+// OpenLogFile, if on == true, sets the log file for given using given
+// netName, runName, and logName in order.
+func OpenLogFile(on bool, dt *table.Table, netName, runName, logName string) {
+	if !on {
+		return
+	}
+	fnm := LogFilename(netName, runName, logName)
+	tensor.SetPrecision(dt, 4)
+	dt.OpenLog(fnm, tensor.Tab)
+}
 
 // StatLoopCounters adds the counters from each stack, loop level for given
 // looper Stacks to the given datafs stats. This is typically the first
