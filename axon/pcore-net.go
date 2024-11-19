@@ -5,9 +5,6 @@
 package axon
 
 import (
-	"fmt"
-
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -34,23 +31,23 @@ func (net *Network) AddVBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
 
-	mp := params.Params{
-		"Layer.Matrix.IsVS":          "true",
-		"Layer.Inhib.ActAvg.Nominal": fmt.Sprintf("%g", .1/float32(nPoolsX*nPoolsY)),
-		"Layer.Acts.Dend.ModACh":     "true",
+	mp := func(ly *LayerParams) {
+		ly.Matrix.IsVS.SetBool(true)
+		ly.Inhib.ActAvg.Nominal = 0.1 / float32(nPoolsX*nPoolsY)
+		ly.Acts.Dend.ModACh.SetBool(true)
 	}
-	mtxGo.DefaultParams = mp
-	mtxNo.DefaultParams = mp
+	mtxGo.AddDefaultParams(mp)
+	mtxNo.AddDefaultParams(mp)
 
 	full := paths.NewFull()
 	p1to1 := paths.NewPoolOneToOne()
 
 	net.ConnectLayers(mtxNo, gpePr, full, InhibPath)
 	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
-	pt.DefaultParams = params.Params{
-		"Path.Learn.Learn":   "false",
-		"Path.PathScale.Rel": "0.05",
-	}
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.Learn.Learn.SetBool(false)
+		pt.PathScale.Rel = 0.05
+	})
 
 	bgclass := "VBGInhib"
 	net.ConnectLayers(gpePr, gpePr, full, InhibPath).AddClass(bgclass)
@@ -97,12 +94,12 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxGo = net.AddDMatrixLayer(prefix+"DMtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = net.AddDMatrixLayer(prefix+"DMtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
-	pfp := params.Params{
-		"Layer.Inhib.Layer.On": "false",
-		"Layer.Inhib.Pool.On":  "false",
+	pfp := func(ly *LayerParams) {
+		ly.Inhib.Layer.On.SetBool(false)
+		ly.Inhib.Pool.On.SetBool(false)
 	}
 	pf = net.AddLayer4D(prefix+"PF", SuperLayer, nPoolsY, nPoolsX, nNeurY, 1)
-	pf.DefaultParams = pfp
+	pf.AddDefaultParams(pfp)
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name)
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name)
@@ -112,10 +109,10 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 
 	net.ConnectLayers(mtxNo, gpePr, p1to1, InhibPath)
 	pt := net.ConnectLayers(mtxNo, mtxGo, p1to1, InhibPath)
-	pt.DefaultParams = params.Params{
-		"Path.Learn.Learn":   "false",
-		"Path.PathScale.Rel": "0.1",
-	}
+	pt.AddDefaultParams(func(pt *PathParams) {
+		pt.Learn.Learn.SetBool(false)
+		pt.PathScale.Rel = 0.1
+	})
 
 	bgclass := "DBGInhib"
 	net.ConnectLayers(gpePr, gpePr, full, InhibPath).AddClass(bgclass)
@@ -135,15 +132,15 @@ func (net *Network) AddDBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	net.ConnectLayers(stn, gpeAk, full, ForwardPath).AddClass(stnclass)
 	net.ConnectLayers(stn, gpi, full, ForwardPath).AddClass(stnclass)
 
-	pfm := params.Params{
-		"Path.Learn.Learn":   "false",
-		"Path.Com.GType":     "ModulatoryG",
-		"Path.PathScale.Abs": "1",
+	pfm := func(pt *PathParams) {
+		pt.Learn.Learn.SetBool(false)
+		pt.Com.GType = ModulatoryG
+		pt.PathScale.Abs = 1
 	}
 	pt = net.ConnectLayers(pf, mtxGo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
-	pt.DefaultParams = pfm
+	pt.AddDefaultParams(pfm)
 	pt = net.ConnectLayers(pf, mtxNo, p1to1, ForwardPath).AddClass("PFToDMtx").EmerPath.(*Path)
-	pt.DefaultParams = pfm
+	pt.AddDefaultParams(pfm)
 
 	gpePr.PlaceBehind(gpi, space)
 	gpeAk.PlaceRightOf(gpePr, space)

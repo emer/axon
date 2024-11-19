@@ -198,7 +198,7 @@ Inhibition is provided in the neocortex primarily by the fast-spiking parvalbumi
 
 Thus, we are now using the [FS-FFFB](fsfffb) *fast & slow* FFFB function that more explicitly captures the contributions of the PV+ and SST+ interneurons, and is based directly on FF and FB spikes, without requiring access to the internal Ge and Act rate-code variables in each neuron.  See above link for more info.  This function works even better overall than the original FFFB, in addition to providing a much more direct mapping onto the underlying biology.
 
-While most layers and models use the FS-FFFB approximation, Axon does support explicit modelling of inhibitory neurons by using the `emer.Inhib` value of `emer.PathType`.
+While most layers and models use the FS-FFFB approximation, Axon does support explicit modelling of inhibitory neurons by using `Path.Type = InhibPath`.
 
 See the `examples/inhib` model (from the CCN textbook originally) for an exploration of the basic excitatory and inhibitory dynamics in these models, comparing interneurons with FS-FFFB.
 

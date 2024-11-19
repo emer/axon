@@ -33,7 +33,6 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
-	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/paths"
@@ -207,7 +206,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// network parameter management
-	Params emer.NetParams `display:"add-fields"`
+	Params axon.Params `display:"add-fields"`
 
 	// contains looper control loops for running sim
 	Loops *looper.Stacks `new-window:"+" display:"no-inline"`
@@ -248,7 +247,7 @@ func (ss *Sim) New() {
 	econfig.Config(&ss.Config, "config.toml")
 	ss.Root, _ = datafs.NewDir("Root")
 	ss.Net = axon.NewNetwork("RA25")
-	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
+	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
 	ss.Pats = table.New()
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
@@ -267,7 +266,7 @@ func (ss *Sim) ConfigAll() {
 	ss.ConfigStats()
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
-		ss.Net.SaveParamsSnapshot(&ss.Params.Params, &ss.Config, ss.Config.Params.Good)
+		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
 		os.Exit(0)
 	}
 }
@@ -341,10 +340,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 }
 
 func (ss *Sim) ApplyParams() {
-	ss.Params.SetAll()
-	if ss.Config.Params.Network != nil {
-		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
-	}
+	ss.Params.ApplyAll(ss.Net)
+	//	if ss.Config.Params.Network != nil {
+	//		ss.Params.SetNetworkMap(ss.Net, ss.Config.Params.Network)
+	//	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////

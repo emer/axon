@@ -21,7 +21,7 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 	spi := NeuronIxs.Value(int(NrnSubPool), int(ri))
 	pi := rlay.PoolIndex(spi)
 	lpi := rlay.PoolIndex(0)
-	switch pt.PathType {
+	switch pt.Type {
 	case RWPath:
 		pt.DWtSynRWPred(ctx, syni, si, ri, lpi, pi, di)
 	case TDPredPath:
@@ -84,8 +84,8 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	var syCaP, syCaD float32
 	pt.SynCa(ctx, si, ri, di, &syCaP, &syCaD)
 
-	dtr := syCaD                   // delta trace, caD reflects entire window
-	if pt.PathType == CTCtxtPath { // layer 6 CT pathway
+	dtr := syCaD               // delta trace, caD reflects entire window
+	if pt.Type == CTCtxtPath { // layer 6 CT pathway
 		dtr = Neurons.Value(int(BurstPrv), int(si), int(di))
 	}
 	// save delta trace for GUI
@@ -115,7 +115,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	} else {
 		err *= lwt
 	}
-	if pt.PathType == CTCtxtPath { // rn.RLRate IS needed for other pathways, just not the context one
+	if pt.Type == CTCtxtPath { // rn.RLRate IS needed for other pathways, just not the context one
 		SynapseTraces.Set(pt.Learn.LRate.Eff*err, int(DiDWt), int(syni), int(di))
 	} else {
 		SynapseTraces.Set(Neurons.Value(int(RLRate), int(ri), int(di))*pt.Learn.LRate.Eff*err, int(DiDWt), int(syni), int(di))
@@ -410,7 +410,7 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti uint32) {
 
 // WtFromDWtSyn is the overall entry point for updating weights from weight changes.
 func (pt *PathParams) WtFromDWtSyn(ctx *Context, syni uint32) {
-	switch pt.PathType {
+	switch pt.Type {
 	case RWPath:
 		pt.WtFromDWtSynNoLimits(ctx, syni)
 	case TDPredPath:

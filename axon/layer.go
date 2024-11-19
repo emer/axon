@@ -20,7 +20,6 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/weights"
 )
 
@@ -76,17 +75,16 @@ type Layer struct {
 	// algorithm structural parameters set during ConfigNet() methods.
 	BuildConfig map[string]string `table:"-"`
 
-	// DefaultParams are default parameters that are applied prior to user-set
-	// parameters. These are useful for specific layer functionality in specialized
-	// brain areas (e.g., Rubicon, BG etc) not associated with a layer type,
-	// which otherwise is used to hard-code initial default parameters.
-	// Typically just set to a literal map.
-	DefaultParams params.Params `table:"-"`
+	// DefaultParams are closures that apply default parameters
+	// prior to user-set parameters. These are useful for specific layer
+	// functionality in specialized brain areas (e.g., Rubicon, BG etc)
+	// not associated with a layer type, which otherwise is used to hard-code
+	// initial default parameters.
+	DefaultParams []func(ly *LayerParams) `display:"-"`
 }
 
 // emer.Layer interface methods
 
-func (ly *Layer) StyleObject() any           { return ly.Params }
 func (ly *Layer) TypeName() string           { return ly.Type.String() }
 func (ly *Layer) TypeNumber() int            { return int(ly.Type) }
 func (ly *Layer) NumRecvPaths() int          { return len(ly.RecvPaths) }
@@ -174,7 +172,7 @@ func (ly *Layer) Defaults() { //types:add
 		ly.Params.VSGatedDefaults()
 	}
 	ly.Params.CT.DecayForNCycles(int(ctx.ThetaCycles))
-	ly.ApplyDefaultParams()
+	ly.applyDefaultParams()
 	ly.UpdateParams()
 }
 
@@ -256,15 +254,16 @@ func (ly *Layer) RecipToRecvPath(rpj *Path) (*Path, bool) {
 	return nil, false
 }
 
-// ApplyDefaultParams applies DefaultParams default parameters if set
+// AddDefaultParams adds given default param setting function.
+func (ly *Layer) AddDefaultParams(fun func(ly *LayerParams)) {
+	ly.DefaultParams = append(ly.DefaultParams, fun)
+}
+
+// applyDefaultParams applies DefaultParams default parameters.
 // Called by Layer.Defaults()
-func (ly *Layer) ApplyDefaultParams() {
-	if ly.DefaultParams == nil {
-		return
-	}
-	err := ly.DefaultParams.Apply(ly.EmerLayer, false)
-	if err != nil {
-		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
+func (ly *Layer) applyDefaultParams() {
+	for _, f := range ly.DefaultParams {
+		f(ly.Params)
 	}
 }
 
@@ -277,8 +276,7 @@ func (ly *Layer) AllParams() string {
 	return str
 }
 
-////////////////////////////////////////////////////////////////////////
-//  Build
+////////  Build
 
 // SetBuildConfig sets named configuration parameter to given string value
 // to be used in the PostBuild stage -- mainly for layer names that need to be

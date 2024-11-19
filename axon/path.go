@@ -18,7 +18,6 @@ import (
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/emer/emergent/v2/weights"
 )
@@ -45,12 +44,11 @@ type Path struct {
 	// type of pathway.
 	Type PathTypes
 
-	// default parameters that are applied prior to user-set parameters.
-	// these are useful for specific functionality in specialized brain areas
-	// (e.g., Rubicon, BG etc) not associated with a path type, which otherwise
-	// is used to hard-code initial default parameters.
-	// Typically just set to a literal map.
-	DefaultParams params.Params `table:"-"`
+	// DefaultParams are functions to apply parameters prior to user-set
+	// parameters. These are useful for specific functionality in specialized
+	// brain areas (e.g., Rubicon, BG etc) not associated with a path type,
+	// which otherwise is used to hard-code initial default parameters.
+	DefaultParams []func(pt *PathParams) `display:"-"`
 
 	// average and maximum number of recv connections in the receiving layer
 	RecvConNAvgMax minmax.AvgMax32 `table:"-" edit:"-" display:"inline"`
@@ -82,7 +80,6 @@ type Path struct {
 
 // emer.Path interface
 
-func (pt *Path) StyleObject() any      { return pt.Params }
 func (pt *Path) RecvLayer() emer.Layer { return pt.Recv }
 func (pt *Path) SendLayer() emer.Layer { return pt.Send }
 func (pt *Path) TypeName() string      { return pt.Type.String() }
@@ -93,7 +90,7 @@ func (pt *Path) Defaults() {
 		return
 	}
 	ctx := pt.Recv.Network.Context()
-	pt.Params.PathType = pt.Type
+	pt.Params.Type = pt.Type
 	pt.Params.Defaults()
 	pt.Params.Learn.KinaseCa.WtsForNCycles(int(ctx.ThetaCycles))
 	switch pt.Type {
@@ -114,7 +111,7 @@ func (pt *Path) Defaults() {
 	case DSMatrixPath:
 		pt.Params.MatrixDefaults()
 	}
-	pt.ApplyDefaultParams()
+	pt.applyDefaultParams()
 	pt.UpdateParams()
 }
 
@@ -123,7 +120,7 @@ func (pt *Path) Update() {
 	if pt.Params == nil {
 		return
 	}
-	if pt.Params.PathType == InhibPath {
+	if pt.Params.Type == InhibPath {
 		pt.Params.Com.GType = InhibitoryG
 	}
 	pt.Params.Update()
@@ -276,15 +273,16 @@ func (pt *Path) String() string {
 	return str
 }
 
-// ApplyDefaultParams applies DefaultParams default parameters if set
+// AddDefaultParams adds given default param setting function.
+func (pt *Path) AddDefaultParams(fun func(pt *PathParams)) {
+	pt.DefaultParams = append(pt.DefaultParams, fun)
+}
+
+// applyDefaultParams applies DefaultParams default parameters.
 // Called by Path.Defaults()
-func (pt *Path) ApplyDefaultParams() {
-	if pt.DefaultParams == nil {
-		return
-	}
-	err := pt.DefaultParams.Apply(pt.EmerPath, false)
-	if err != nil {
-		log.Printf("programmer error -- fix DefaultParams: %s\n", err)
+func (pt *Path) applyDefaultParams() {
+	for _, f := range pt.DefaultParams {
+		f(pt.Params)
 	}
 }
 

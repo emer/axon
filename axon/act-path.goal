@@ -275,7 +275,7 @@ func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uin
 // sending and receiving spikes.
 func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 	sendVal := pt.GScale.Scale * pt.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
-	if pt.PathType == CTCtxtPath {
+	if pt.Type == CTCtxtPath {
 		if uint32(ctx.Cycle) != uint32(ctx.ThetaCycles)-1-pt.Com.DelLen {
 			return
 		}

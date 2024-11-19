@@ -8,6 +8,11 @@ import "cogentcore.org/core/tensor"
 
 //go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams,ShouldDisplay
 
+// CurrentNetwork is set in [Network.SetAsCurrent] method, which sets all
+// global variables to point to the current network to be processed.
+// These global vars are necessary for GPU kernel computation.
+var CurrentNetwork *Network
+
 //gosl:start
 
 // vars are all the global vars for axon GPU / CPU computation.

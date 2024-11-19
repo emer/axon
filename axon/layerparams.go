@@ -71,7 +71,8 @@ type LayerInhibIndexes struct {
 // On the GPU, they are loaded into a uniform.
 type LayerParams struct {
 
-	// functional type of layer -- determines functional code path for specialized layer types, and is synchronized with the Layer.Type value
+	// Type is the functional type of layer, which determines the code path
+	// for specialized layer types, and is synchronized with [Layer.Type].
 	Type LayerTypes
 
 	// Index of this layer in [Layers] list.
@@ -89,47 +90,92 @@ type LayerParams struct {
 	// Inhibition parameters and methods for computing layer-level inhibition
 	Inhib InhibParams `display:"add-fields"`
 
-	// indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)
+	// LayInhib has indexes of layers that contribute between-layer inhibition
+	//  to this layer. Set these indexes via BuildConfig LayInhibXName (X = 1, 2...).
 	LayInhib LayerInhibIndexes `display:"inline"`
 
-	// Learning parameters and methods that operate at the neuron level
+	// Learn has learning parameters and methods that operate at the neuron level.
 	Learn LearnNeurParams `display:"add-fields"`
 
-	// BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded.
+	// Bursts has [BurstParams] that determine how the 5IB Burst activation
+	// is computed from CaSpkP integrated spiking values in Super layers.
 	Bursts BurstParams `display:"inline"`
 
-	// ] params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace
+	// CT has params for the CT corticothalamic layer and PTPred layer that
+	// generates predictions over the Pulvinar using context. Uses the CtxtGe
+	// excitatory input plus stronger NMDA channels to maintain context trace.
 	CT CTParams `display:"inline"`
 
-	// provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)
+	// Pulv has parameters for how the plus-phase (outcome) state of Pulvinar
+	// thalamic relay cell neurons is computed from the corresponding driver
+	// neuron Burst activation (or CaSpkP if not Super).
 	Pulv PulvParams `display:"inline"`
 
-	// parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG.
+	// Matrix has parameters for BG Striatum Matrix MSN layers, which are
+	// the main Go / NoGo gating units in BG.
 	Matrix MatrixParams `display:"inline"`
 
-	// type of GP Layer.
+	// GP has params for GP (globus pallidus) of the BG layers.
 	GP GPParams `display:"inline"`
 
-	// parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition
+	// LDT has parameters for laterodorsal tegmentum ACh salience neuromodulatory
+	// signal, driven by superior colliculus stimulus novelty, US input / absence,
+	// and OFC / ACC inhibition.
 	LDT LDTParams `display:"inline"`
 
-	// parameterizes computing overall VTA DA based on LHb PVDA (primary value -- at US time, computed at start of each trial and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned value (LV) activations, which update every cycle.
+	// VTA has parameters for ventral tegmental area dopamine (DA) based on
+	// LHb PVDA (primary value -- at US time, computed at start of each trial
+	// and stored in LHbPVDA global value) and Amygdala (CeM) CS / learned
+	// value (LV) activations, which update every cycle.
 	VTA VTAParams `display:"inline"`
 
-	// parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
+	// RWPred has parameters for reward prediction using a simple Rescorla-Wagner
+	// learning rule (i.e., PV learning in the Rubicon framework).
 	RWPred RWPredParams `display:"inline"`
 
-	// parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the Rubicon framework).
+	// RWDa has parameters for reward prediction dopamine using a simple
+	// Rescorla-Wagner learning rule (i.e., PV learning in the Rubicon framework).
 	RWDa RWDaParams `display:"inline"`
 
-	// parameterizes TD reward integration layer
+	// TDInteg has parameters for temporal differences (TD) reward integration layer.
 	TDInteg TDIntegParams `display:"inline"`
 
-	// parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase.
+	// TDDa has parameters for dopamine (DA) signal as the temporal difference
+	// (TD) between the TDIntegLayer activations in the minus and plus phase.
 	TDDa TDDaParams `display:"inline"`
 
-	// recv and send pathway array access info
+	// Indexes has recv and send pathway array access info.
 	Indexes LayerIndexes `display:"-"`
+}
+
+// PoolIndex returns the global network index for pool with given
+// pool (0 = layer pool, 1+ = subpools): just PoolSt + pi
+func (ly *LayerParams) PoolIndex(pi uint32) uint32 {
+	return ly.PoolSt + pi
+}
+
+// HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
+// This is the proper check for using pool-level target average activations, for example.
+func (ly *LayerParams) HasPoolInhib() bool {
+	return ly.Inhib.Pool.On.IsTrue()
+}
+
+//gosl: end
+
+// StyleClass implements the [params.Styler] interface for parameter setting,
+// and must only be called after the network has been built, and is current,
+// because it uses the global CurrentNetwork variable.
+func (ly *LayerParams) StyleClass() string {
+	lay := CurrentNetwork.Layers[ly.Index]
+	return ly.Type.String() + " " + lay.Class
+}
+
+// StyleName implements the [params.Styler] interface for parameter setting,
+// and must only be called after the network has been built, and is current,
+// because it uses the global CurrentNetwork variable.
+func (ly *LayerParams) StyleName() string {
+	lay := CurrentNetwork.Layers[ly.Index]
+	return lay.Name
 }
 
 func (ly *LayerParams) Update() {
@@ -259,17 +305,3 @@ func (ly *LayerParams) AllParams() string {
 	}
 	return str
 }
-
-// PoolIndex returns the global network index for pool with given
-// pool (0 = layer pool, 1+ = subpools): just PoolSt + pi
-func (ly *LayerParams) PoolIndex(pi uint32) uint32 {
-	return ly.PoolSt + pi
-}
-
-// HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
-// This is the proper check for using pool-level target average activations, for example.
-func (ly *LayerParams) HasPoolInhib() bool {
-	return ly.Inhib.Pool.On.IsTrue()
-}
-
-//gosl: end

@@ -34,7 +34,6 @@ import (
 	"cogentcore.org/core/tree"
 	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/emer"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 )
 
@@ -117,6 +116,9 @@ type Network struct {
 
 	// pointers to all pathways in the network, sender-based.
 	Paths []*Path `display:"-"`
+
+	// LayerClassMap is a map from class name to layer names.
+	LayerClassMap map[string][]string `display:"-"`
 
 	// number of threads to use for parallel processing.
 	NThreads int
@@ -326,6 +328,62 @@ func (nt *Network) LayersByType(layType ...LayerTypes) []string {
 	return nt.LayersByClass(nms...)
 }
 
+func (nt *Network) UpdateLayerMaps() {
+	nt.UpdateLayerNameMap()
+	nt.LayerClassMap = make(map[string][]string)
+	for _, ly := range nt.Layers {
+		cs := ly.Type.String() + ly.Class
+		cls := strings.Split(cs, " ")
+		for _, cl := range cls {
+			if cl == "" {
+				continue
+			}
+			ll := nt.LayerClassMap[cl]
+			ll = append(ll, ly.Name)
+			nt.LayerClassMap[cl] = ll
+		}
+	}
+}
+
+// LayersByClass returns a list of layer names by given class(es).
+// Lists are compiled when network Build() function called,
+// or now if not yet present.
+// The layer Type is always included as a Class, along with any other
+// space-separated strings specified in Class for parameter styling, etc.
+// If no classes are passed, all layer names in order are returned.
+func (nt *Network) LayersByClass(classes ...string) []string {
+	if nt.LayerClassMap == nil {
+		nt.UpdateLayerMaps()
+	}
+	var nms []string
+	if len(classes) == 0 {
+		for _, ly := range nt.Layers {
+			if ly.Off {
+				continue
+			}
+			nms = append(nms, ly.Name)
+		}
+		return nms
+	}
+	for _, lc := range classes {
+		nms = append(nms, nt.LayerClassMap[lc]...)
+	}
+	// only get unique layers
+	layers := []string{}
+	has := map[string]bool{}
+	for _, nm := range nms {
+		if has[nm] {
+			continue
+		}
+		layers = append(layers, nm)
+		has[nm] = true
+	}
+	if len(layers) == 0 {
+		panic(fmt.Sprintf("No Layers found for query: %#v.", classes))
+	}
+	return layers
+}
+
 // UnitVarNames returns a list of variable names available on the units in this network.
 // Not all layers need to support all variables, but must safely return 0's for
 // unsupported ones.  The order of this list determines NetView variable display order.
@@ -356,23 +414,6 @@ func (nt *Network) SynVarProps() map[string]string {
 	return SynapseVarProps
 }
 
-// ParamsHistoryReset resets parameter application history
-func (nt *Network) ParamsHistoryReset() {
-	for _, ly := range nt.Layers {
-		ly.ParamsHistoryReset()
-	}
-}
-
-// ParamsApplied is just to satisfy History interface so reset can be applied
-func (nt *Network) ParamsApplied(sel *params.Sel) {
-}
-
-func (nt *Network) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	applied, err := nt.NetworkBase.ApplyParams(pars, setMsg)
-	nt.Rubicon.Update()
-	return applied, err
-}
-
 // KeyLayerParams returns a listing for all layers in the network,
 // of the most important layer-level params (specific to each algorithm).
 func (nt *Network) KeyLayerParams() string {
@@ -393,25 +434,12 @@ func (nt *Network) AllLayerInhibs() string {
 			continue
 		}
 		lp := ly.Params
-		ph := ly.ParamsHistory.ParamsHistory()
-		lh := ph["Layer.Inhib.ActAvg.Nominal"]
-		if lh != "" {
-			lh = "Params: " + lh
-		}
-		str += fmt.Sprintf("%15s\t\tNominal:\t%6.2f\t%s\n", ly.Name, lp.Inhib.ActAvg.Nominal, lh)
+		str += fmt.Sprintf("%15s\t\tNominal:\t%6.2f\n", ly.Name, lp.Inhib.ActAvg.Nominal)
 		if lp.Inhib.Layer.On.IsTrue() {
-			lh := ph["Layer.Inhib.Layer.Gi"]
-			if lh != "" {
-				lh = "Params: " + lh
-			}
-			str += fmt.Sprintf("\t\t\t\t\t\tLayer.Gi:\t%6.2f\t%s\n", lp.Inhib.Layer.Gi, lh)
+			str += fmt.Sprintf("\t\t\t\t\t\tLayer.Gi:\t%6.2f\n", lp.Inhib.Layer.Gi)
 		}
 		if lp.Inhib.Pool.On.IsTrue() {
-			lh := ph["Layer.Inhib.Pool.Gi"]
-			if lh != "" {
-				lh = "Params: " + lh
-			}
-			str += fmt.Sprintf("\t\t\t\t\t\tPool.Gi: \t%6.2f\t%s\n", lp.Inhib.Pool.Gi, lh)
+			str += fmt.Sprintf("\t\t\t\t\t\tPool.Gi: \t%6.2f\n", lp.Inhib.Pool.Gi)
 		}
 		str += fmt.Sprintf("\n")
 	}
@@ -436,15 +464,6 @@ func (nt *Network) AllPathScales() string {
 			}
 			sn := pt.Send.Name
 			str += fmt.Sprintf("\t%15s\t%15s\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pt.Type.String(), pt.Params.PathScale.Abs, pt.Params.PathScale.Rel, pt.Params.GScale.Scale, pt.Params.GScale.Rel)
-			ph := pt.ParamsHistory.ParamsHistory()
-			rh := ph["Path.PathScale.Rel"]
-			ah := ph["Path.PathScale.Abs"]
-			if ah != "" {
-				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
-			}
-			if rh != "" {
-				str += fmt.Sprintf("\t\t\t\t\t\t\t\t    Rel Params: %s\n", rh)
-			}
 		}
 	}
 	return str
@@ -454,8 +473,8 @@ func (nt *Network) AllPathScales() string {
 // to either `params_good` if good = true (for current good reference params)
 // or `params_2006_01_02` (year, month, day) datestamp,
 // providing a snapshot of the simulation params for easy diffs and later reference.
-// Also saves current Config and Params state.
-func (nt *Network) SaveParamsSnapshot(pars *params.Sets, cfg any, good bool) error {
+// Also saves current Config state.
+func (nt *Network) SaveParamsSnapshot(cfg any, good bool) error {
 	date := time.Now().Format("2006_01_02")
 	if good {
 		date = "good"
@@ -466,7 +485,6 @@ func (nt *Network) SaveParamsSnapshot(pars *params.Sets, cfg any, good bool) err
 		log.Println(err) // notify but OK if it exists
 	}
 	econfig.Save(cfg, filepath.Join(dir, "config.toml"))
-	pars.SaveTOML(core.Filename(filepath.Join(dir, "params.toml")))
 	nt.SaveAllParams(core.Filename(filepath.Join(dir, "params_all.txt")))
 	nt.SaveNonDefaultParams(core.Filename(filepath.Join(dir, "params_nondef.txt")))
 	nt.SaveAllLayerInhibs(core.Filename(filepath.Join(dir, "params_layers.txt")))
@@ -644,7 +662,7 @@ func (nt *Network) ConnectLayers(send, recv *Layer, pat paths.Pattern, typ PathT
 // referenced by name, with low = the lower layer that sends a Forward pathway
 // to the high layer, and receives a Back pathway in the opposite direction.
 // Returns error if not successful.
-func (nt *Network) BidirConnectLayerNames(low, high string, pat paths.Pattern) (lowlay, highlay *Layer, fwdpj, backpj *Path, err error) {
+func (nt *Network) BidirConnectLayerNames(low, high string, pat paths.Pattern) (lowlay, highlay *Layer, fwdpt, backpt *Path, err error) {
 	lowlay = nt.LayerByName(low)
 	if lowlay == nil {
 		return
@@ -653,17 +671,17 @@ func (nt *Network) BidirConnectLayerNames(low, high string, pat paths.Pattern) (
 	if highlay == nil {
 		return
 	}
-	fwdpj = nt.ConnectLayers(lowlay, highlay, pat, ForwardPath)
-	backpj = nt.ConnectLayers(highlay, lowlay, pat, BackPath)
+	fwdpt = nt.ConnectLayers(lowlay, highlay, pat, ForwardPath)
+	backpt = nt.ConnectLayers(highlay, lowlay, pat, BackPath)
 	return
 }
 
 // BidirConnectLayers establishes bidirectional pathways between two layers,
 // with low = lower layer that sends a Forward pathway to the high layer,
 // and receives a Back pathway in the opposite direction.
-func (nt *Network) BidirConnectLayers(low, high *Layer, pat paths.Pattern) (fwdpj, backpj *Path) {
-	fwdpj = nt.ConnectLayers(low, high, pat, ForwardPath)
-	backpj = nt.ConnectLayers(high, low, pat, BackPath)
+func (nt *Network) BidirConnectLayers(low, high *Layer, pat paths.Pattern) (fwdpt, backpt *Path) {
+	fwdpt = nt.ConnectLayers(low, high, pat, ForwardPath)
+	backpt = nt.ConnectLayers(high, low, pat, BackPath)
 	return
 }
 
@@ -686,7 +704,7 @@ func (nt *Network) LateralConnectLayerPath(lay *Layer, pat paths.Pattern, pt *Pa
 // and patterns of interconnectivity.
 func (nt *Network) Build() error { //types:add
 	nix := nt.NetIxs()
-	nt.MakeLayerMaps()
+	nt.UpdateLayerMaps()
 	if nt.Rubicon.NPosUSs == 0 {
 		nt.Rubicon.SetNUSs(1, 1)
 	}
@@ -824,7 +842,7 @@ func (nt *Network) Build() error { //types:add
 
 	// distribute synapses, send
 	syIndex := 0
-	pjidx := 0
+	ptidx := 0
 	sendConIndex := 0
 	for _, ly := range nt.Layers {
 		for _, pt := range ly.SendPaths {
@@ -840,7 +858,7 @@ func (nt *Network) Build() error { //types:add
 			pt.Params.Indexes.SendConSt = uint32(sendConIndex)
 			pt.Params.Indexes.SynapseSt = uint32(syIndex)
 			pt.SynStIndex = uint32(syIndex)
-			pt.Params.Indexes.PathIndex = uint32(pjidx)
+			pt.Params.Index = uint32(ptidx)
 			pt.NSyns = uint32(nsyn)
 			for sni := uint32(0); sni < ly.NNeurons; sni++ {
 				si := ly.NeurStIndex + sni
@@ -852,11 +870,11 @@ func (nt *Network) Build() error { //types:add
 					syni := pt.SynStIndex + syi
 					nt.SynapseIxs.Set(uint32(si), int(SynSendIndex), int(syni)) // network-global idx
 					nt.SynapseIxs.Set(pt.SendConIndex[syi]+uint32(rlay.NeurStIndex), int(SynRecvIndex), int(syni))
-					nt.SynapseIxs.Set(uint32(pjidx), int(SynPathIndex), int(syni))
+					nt.SynapseIxs.Set(uint32(ptidx), int(SynPathIndex), int(syni))
 					syIndex++
 				}
 			}
-			pjidx++
+			ptidx++
 		}
 	}
 
@@ -866,7 +884,7 @@ func (nt *Network) Build() error { //types:add
 	syIndex = 0
 	for _, ly := range nt.Layers {
 		for _, pt := range ly.RecvPaths {
-			nt.RecvPathIxs.Set(pt.Params.Indexes.PathIndex, rpathIndex)
+			nt.RecvPathIxs.Set(pt.Params.Index, rpathIndex)
 			pt.Params.Indexes.RecvConSt = uint32(recvConIndex)
 			pt.Params.Indexes.RecvSynSt = uint32(syIndex)
 			synSt := pt.Params.Indexes.SynapseSt
@@ -963,6 +981,7 @@ func (nt *Network) BuildPathGBuf() {
 // SetAsCurrent sets this network's values as the current global variables,
 // that are then processed in the code.
 func (nt *Network) SetAsCurrent() {
+	CurrentNetwork = nt
 	Layers = nt.LayParams
 	Paths = nt.PathParams
 	NetworkIxs = nt.NetworkIxs
@@ -1107,7 +1126,7 @@ func (nt *Network) SizeReport(detail bool) string {
 			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Name, nn,
 				(datasize.Size)(nrnMem).String())
 		}
-		for _, pj := range ly.SendPaths {
+		for _, pt := range ly.SendPaths {
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
 			//  2. RecvConIndex + RecvSynIndex + SendConIndex (consists of int32 indices = 4B)
@@ -1115,12 +1134,12 @@ func (nt *Network) SizeReport(detail bool) string {
 			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
-			projMemIndexes := len(pj.RecvConIndex)*varBytes + len(pj.RecvSynIndex)*varBytes + len(pj.SendConIndex)*varBytes
+			projMemIndexes := len(pt.RecvConIndex)*varBytes + len(pt.RecvSynIndex)*varBytes + len(pt.SendConIndex)*varBytes
 			globalProjIndexes += projMemIndexes
 			if detail {
-				nSyn := int(pj.NSyns)
+				nSyn := int(pt.NSyns)
 				synMem := nSyn*memSynapse + projMemIndexes
-				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name,
+				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pt.Recv.Name,
 					nSyn, (datasize.Size)(synMem).String())
 			}
 		}

@@ -38,9 +38,6 @@ type StartN struct {
 
 // PathIndexes contains path-level index information into global memory arrays
 type PathIndexes struct {
-	// PathIndex is the index of the pathway in global path list: [Layer][SendPaths]
-	PathIndex uint32
-
 	// RecvLayer is the index of the receiving layer in global list of layers.
 	RecvLayer uint32
 
@@ -80,6 +77,8 @@ type PathIndexes struct {
 	// NPathNeurSt is the start NPathNeur index into PathGBuf, PathGSyns global arrays.
 	// [Layer][RecvPaths][RecvNeurons]
 	NPathNeurSt uint32
+
+	pad uint32
 }
 
 // RecvNIndexToLayIndex converts a neuron's index in network level global list of all neurons
@@ -114,11 +113,14 @@ type GScaleValues struct {
 // On the GPU, they are loaded into a uniform.
 type PathParams struct {
 
-	// functional type of path, which determines functional code path
-	// for specialized layer types, and is synchronized with the Path.Type value
-	PathType PathTypes
+	// Type is the functional type of path, which determines the code path
+	// for specialized types, and is synchronized with [Path.Type].
+	Type PathTypes
 
-	pad, pad1, pad2 int32
+	// Index is the index of the pathway in global path list: [Layer][SendPaths]
+	Index uint32
+
+	pad, pad1 int32
 
 	// recv and send neuron-level pathway index array access info
 	Indexes PathIndexes `display:"-"`
@@ -163,75 +165,6 @@ type PathParams struct {
 	Hip HipPathParams `display:"inline"`
 }
 
-func (pt *PathParams) Defaults() {
-	pt.Com.Defaults()
-	pt.SWts.Defaults()
-	pt.PathScale.Defaults()
-	pt.Learn.Defaults()
-	pt.RLPred.Defaults()
-	pt.Matrix.Defaults()
-	pt.BLA.Defaults()
-	pt.Hip.Defaults()
-}
-
-func (pt *PathParams) Update() {
-	pt.Com.Update()
-	pt.PathScale.Update()
-	pt.SWts.Update()
-	pt.Learn.Update()
-	pt.RLPred.Update()
-	pt.Matrix.Update()
-	pt.BLA.Update()
-	pt.Hip.Update()
-
-	if pt.PathType == CTCtxtPath {
-		pt.Com.GType = ContextG
-	}
-}
-
-func (pt *PathParams) ShouldDisplay(field string) bool {
-	switch field {
-	case "RLPred":
-		return pt.PathType == RWPath || pt.PathType == TDPredPath
-	case "Matrix":
-		return pt.PathType == VSMatrixPath || pt.PathType == DSMatrixPath
-	case "BLA":
-		return pt.PathType == BLAPath
-	case "Hip":
-		return pt.PathType == HipPath
-	default:
-		return true
-	}
-}
-
-func (pt *PathParams) AllParams() string {
-	str := ""
-	b, _ := json.MarshalIndent(&pt.Com, "", " ")
-	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.PathScale, "", " ")
-	str += "PathScale: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.SWts, "", " ")
-	str += "SWt: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pt.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
-
-	switch pt.PathType {
-	case RWPath, TDPredPath:
-		b, _ = json.MarshalIndent(&pt.RLPred, "", " ")
-		str += "RLPred: {\n " + JsonToParams(b)
-	case VSMatrixPath, DSMatrixPath:
-		b, _ = json.MarshalIndent(&pt.Matrix, "", " ")
-		str += "Matrix: {\n " + JsonToParams(b)
-	case BLAPath:
-		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
-		str += "BLA: {\n " + JsonToParams(b)
-	case HipPath:
-		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
-		str += "Hip: {\n " + JsonToParams(b)
-	}
-	return str
-}
-
 func (pt *PathParams) IsInhib() bool {
 	return pt.Com.GType == InhibitoryG
 }
@@ -253,3 +186,88 @@ func (pt *PathParams) SetFixedWts() {
 }
 
 //gosl:end
+
+// StyleClass implements the [params.Styler] interface for parameter setting,
+// and must only be called after the network has been built, and is current,
+// because it uses the global CurrentNetwork variable.
+func (pt *PathParams) StyleClass() string {
+	pth := CurrentNetwork.Paths[pt.Index]
+	return pt.Type.String() + " " + pth.Class
+}
+
+// StyleName implements the [params.Styler] interface for parameter setting,
+// and must only be called after the network has been built, and is current,
+// because it uses the global CurrentNetwork variable.
+func (pt *PathParams) StyleName() string {
+	pth := CurrentNetwork.Paths[pt.Index]
+	return pth.Name
+}
+
+func (pt *PathParams) Defaults() {
+	pt.Com.Defaults()
+	pt.SWts.Defaults()
+	pt.PathScale.Defaults()
+	pt.Learn.Defaults()
+	pt.RLPred.Defaults()
+	pt.Matrix.Defaults()
+	pt.BLA.Defaults()
+	pt.Hip.Defaults()
+}
+
+func (pt *PathParams) Update() {
+	pt.Com.Update()
+	pt.PathScale.Update()
+	pt.SWts.Update()
+	pt.Learn.Update()
+	pt.RLPred.Update()
+	pt.Matrix.Update()
+	pt.BLA.Update()
+	pt.Hip.Update()
+
+	if pt.Type == CTCtxtPath {
+		pt.Com.GType = ContextG
+	}
+}
+
+func (pt *PathParams) ShouldDisplay(field string) bool {
+	switch field {
+	case "RLPred":
+		return pt.Type == RWPath || pt.Type == TDPredPath
+	case "Matrix":
+		return pt.Type == VSMatrixPath || pt.Type == DSMatrixPath
+	case "BLA":
+		return pt.Type == BLAPath
+	case "Hip":
+		return pt.Type == HipPath
+	default:
+		return true
+	}
+}
+
+func (pt *PathParams) AllParams() string {
+	str := ""
+	b, _ := json.MarshalIndent(&pt.Com, "", " ")
+	str += "Com: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pt.PathScale, "", " ")
+	str += "PathScale: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pt.SWts, "", " ")
+	str += "SWt: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pt.Learn, "", " ")
+	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
+
+	switch pt.Type {
+	case RWPath, TDPredPath:
+		b, _ = json.MarshalIndent(&pt.RLPred, "", " ")
+		str += "RLPred: {\n " + JsonToParams(b)
+	case VSMatrixPath, DSMatrixPath:
+		b, _ = json.MarshalIndent(&pt.Matrix, "", " ")
+		str += "Matrix: {\n " + JsonToParams(b)
+	case BLAPath:
+		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
+		str += "BLA: {\n " + JsonToParams(b)
+	case HipPath:
+		b, _ = json.MarshalIndent(&pt.BLA, "", " ")
+		str += "Hip: {\n " + JsonToParams(b)
+	}
+	return str
+}

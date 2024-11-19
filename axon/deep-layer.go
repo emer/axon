@@ -6,7 +6,6 @@ package axon
 
 import (
 	"cogentcore.org/core/math32"
-	"github.com/emer/emergent/v2/params"
 )
 
 //gosl:start deep_layers
@@ -131,53 +130,53 @@ func (cp *CTParams) DecayForNCycles(ncycles int) {
 // This is what works best in the deep_move 1 trial history case,
 // vs Medium and Long
 func (ly *Layer) CTDefaultParamsFast() {
-	ly.DefaultParams = params.Params{
-		"Layer.CT.GeGain":        "1",
-		"Layer.CT.DecayTau":      "0",
-		"Layer.Inhib.Layer.Gi":   "2.0",
-		"Layer.Inhib.Pool.Gi":    "2.0",
-		"Layer.Acts.GabaB.Gbar":  "0.006",
-		"Layer.Acts.NMDA.Gbar":   "0.004",
-		"Layer.Acts.NMDA.Tau":    "100",
-		"Layer.Acts.Decay.Act":   "0.0",
-		"Layer.Acts.Decay.Glong": "0.0",
-		"Layer.Acts.Sahp.Gbar":   "1.0",
-	}
+	ly.AddDefaultParams(func(ly *LayerParams) {
+		ly.CT.GeGain = 1
+		ly.CT.DecayTau = 0
+		ly.Inhib.Layer.Gi = 2.0
+		ly.Inhib.Pool.Gi = 2.0
+		ly.Acts.GabaB.Gbar = 0.006
+		ly.Acts.NMDA.Gbar = 0.004
+		ly.Acts.NMDA.Tau = 100
+		ly.Acts.Decay.Act = 0.0
+		ly.Acts.Decay.Glong = 0.0
+		ly.Acts.Sahp.Gbar = 1.0
+	})
 }
 
 // CTDefaultParamsMedium sets medium time-integration parameters for CTLayer.
 // This is what works best in the FSA test case, compared to Fast (deep_move)
 // and Long (deep_music) time integration.
 func (ly *Layer) CTDefaultParamsMedium() {
-	ly.DefaultParams = params.Params{
-		"Layer.CT.GeGain":        "2",
-		"Layer.Inhib.Layer.Gi":   "2.2",
-		"Layer.Inhib.Pool.Gi":    "2.2",
-		"Layer.Acts.GabaB.Gbar":  "0.009",
-		"Layer.Acts.NMDA.Gbar":   "0.008",
-		"Layer.Acts.NMDA.Tau":    "200",
-		"Layer.Acts.Decay.Act":   "0.0",
-		"Layer.Acts.Decay.Glong": "0.0",
-		"Layer.Acts.Sahp.Gbar":   "1.0",
-	}
+	ly.AddDefaultParams(func(ly *LayerParams) {
+		ly.CT.GeGain = 2
+		ly.Inhib.Layer.Gi = 2.2
+		ly.Inhib.Pool.Gi = 2.2
+		ly.Acts.GabaB.Gbar = 0.009
+		ly.Acts.NMDA.Gbar = 0.008
+		ly.Acts.NMDA.Tau = 200
+		ly.Acts.Decay.Act = 0.0
+		ly.Acts.Decay.Glong = 0.0
+		ly.Acts.Sahp.Gbar = 1.0
+	})
 }
 
 // CTDefaultParamsLong sets long time-integration parameters for CTLayer.
 // This is what works best in the deep_music test case integrating over
 // long time windows, compared to Medium and Fast.
 func (ly *Layer) CTDefaultParamsLong() {
-	ly.DefaultParams = params.Params{
-		"Layer.CT.GeGain":        "1.0",
-		"Layer.Inhib.Layer.Gi":   "2.8",
-		"Layer.Inhib.Pool.Gi":    "2.8",
-		"Layer.Acts.GabaB.Gbar":  "0.01",
-		"Layer.Acts.NMDA.Gbar":   "0.01",
-		"Layer.Acts.NMDA.Tau":    "300",
-		"Layer.Acts.Decay.Act":   "0.0",
-		"Layer.Acts.Decay.Glong": "0.0",
-		"Layer.Acts.Dend.SSGi":   "0", // else kills nmda
-		"Layer.Acts.Sahp.Gbar":   "1.0",
-	}
+	ly.AddDefaultParams(func(ly *LayerParams) {
+		ly.CT.GeGain = 1.0
+		ly.Inhib.Layer.Gi = 2.8
+		ly.Inhib.Pool.Gi = 2.8
+		ly.Acts.GabaB.Gbar = 0.01
+		ly.Acts.NMDA.Gbar = 0.01
+		ly.Acts.NMDA.Tau = 300
+		ly.Acts.Decay.Act = 0.0
+		ly.Acts.Decay.Glong = 0.0
+		ly.Acts.Dend.SSGi = 0 // else kills nmda
+		ly.Acts.Sahp.Gbar = 1.0
+	})
 }
 
 func (ly *Layer) PTMaintDefaults() {
