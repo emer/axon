@@ -130,6 +130,39 @@ func StatLoopCounters(statDir, currentDir *datafs.Data, ls *looper.Stacks, net *
 	return fun
 }
 
+// StatRunName adds a "RunName" stat to every mode and level of looper,
+// subject to exclusion list, which records the current value of the
+// "RunName" string in ss.Current, which identifies the parameters and tag
+// for this run.
+func StatRunName(statDir, currentDir *datafs.Data, ls *looper.Stacks, net *Network, trialLevel enums.Enum, exclude ...enums.Enum) func(mode, level enums.Enum, start bool) {
+	return func(mode, level enums.Enum, start bool) {
+		name := "RunName"
+		modeDir := statDir.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		tsr := datafs.Value[string](levelDir, name)
+		ndata := int(net.Context().NData)
+		runNm := datafs.Scalar[string](currentDir, name).String1D(0)
+
+		if start {
+			tsr.SetNumRows(0)
+			if ps := plot.GetStylersFrom(tsr); ps == nil {
+				ps.Add(func(s *plot.Style) {
+					s.On = false
+				})
+				plot.SetStylersTo(tsr, ps)
+			}
+			return
+		}
+		if level.Int64() == trialLevel.Int64() {
+			for range ndata {
+				tsr.AppendRowString(runNm)
+			}
+		} else {
+			tsr.AppendRowString(runNm)
+		}
+	}
+}
+
 // StatPerTrialMSec returns a Stats function that reports the number of milliseconds
 // per trial, for the given levels and training mode enum values.
 // The levels should start at the Trial and go up from there: data will

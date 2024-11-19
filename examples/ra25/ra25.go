@@ -13,6 +13,7 @@ package main
 //go:generate core generate -add-types
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -77,9 +78,6 @@ const (
 
 // ParamConfig has config parameters related to sim params
 type ParamConfig struct {
-
-	// network parameters
-	Network map[string]any
 
 	// size of hidden layer -- can use emer.LaySize for 4D layers
 	Hidden1Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
@@ -253,8 +251,7 @@ func (ss *Sim) New() {
 	ss.InitRandSeed(0)
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Configs
+//////// Configs
 
 // ConfigAll configures all the elements using the standard functions
 func (ss *Sim) ConfigAll() {
@@ -346,16 +343,13 @@ func (ss *Sim) ApplyParams() {
 	//	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// 	    Init, utils
+////////  Init, utils
 
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	//	if ss.Config.GUI {
-	//		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
-	//	}
 	ss.Loops.ResetCounters()
+	ss.SetRunName()
 	ss.InitRandSeed(0)
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
@@ -425,12 +419,11 @@ func (ss *Sim) ConfigLoops() {
 	trainEpoch := ls.Loop(Train, Epoch)
 	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
-			// Note the +1 so that it doesn't occur at the 0th timestep.
 			ss.TestAll()
 		}
 	})
 
-	//////// Logging
+	//////// Stats
 
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
@@ -453,16 +446,12 @@ func (ss *Sim) ConfigLoops() {
 	// 		ss.Log(Analyze, Trial)
 	// 	}
 	// })
-	//
-	// ls.Loop(Train, Run).OnEnd.Add("RunStats", func() {
-	// 	ss.Logs.RunStats("PctCor", "FirstZero", "LastZero")
-	// })
 
 	// Save weights to file, to look at later
-	// ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
-	// 	ctrString := ss.Stats.PrintValues([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-	// 	axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.Stats.String("RunName"))
-	// })
+	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
+		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
+		axon.SaveWeightsIfConfigSet(ss.Net, ss.Config.Log.SaveWeights, ctrString, ss.RunName())
+	})
 
 	//////// GUI
 
@@ -516,6 +505,10 @@ func (ss *Sim) NewRun() {
 	ctx.Reset()
 	ctx.Mode = int32(Train)
 	ss.Net.InitWeights()
+	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
+		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
+	}
 }
 
 // TestAll runs through the full set of testing items
@@ -525,7 +518,7 @@ func (ss *Sim) TestAll() {
 	ss.Loops.Mode = Train // Important to reset Mode back to Train because this is called from within the Train Run.
 }
 
-////////   Pats
+////////  Pats
 
 func (ss *Sim) ConfigPats() {
 	// dt := ss.Pats
@@ -553,6 +546,7 @@ func (ss *Sim) OpenPats() {
 
 //////// Stats
 
+// AddStat adds a stat compute function.
 func (ss *Sim) AddStat(f func(mode Modes, level Levels, phase StatsPhase)) {
 	ss.StatFuncs = append(ss.StatFuncs, f)
 }
@@ -592,11 +586,27 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 	}
 }
 
+// StatsData returns datafs Data item for given mode, level (Dir).
 func (ss *Sim) StatsData(mode Modes, level Levels) *datafs.Data {
 	modeDir := ss.Stats.RecycleDir(mode.String())
 	return modeDir.RecycleDir(level.String())
 }
 
+// SetRunName sets the overall run name, used for naming output logs and weight files
+// based on params extra sheets and tag, and starting run number (for distributed runs).
+func (ss *Sim) SetRunName() string {
+	runName := ss.Params.RunName(ss.Config.Run.Run)
+	datafs.Scalar[string](ss.Current, "RunName").SetString1D(runName, 0)
+	return runName
+}
+
+// RunName returns the overall run name, used for naming output logs and weight files
+// based on params extra sheets and tag, and starting run number (for distributed runs).
+func (ss *Sim) RunName() string {
+	return datafs.Scalar[string](ss.Current, "RunName").String1D(0)
+}
+
+// InitStats initializes all the stats by calling Start across all modes and levels.
 func (ss *Sim) InitStats() {
 	for md, st := range ss.Loops.Stacks {
 		mode := md.(Modes)
@@ -624,10 +634,16 @@ func (ss *Sim) ConfigStats() {
 	ss.Stats, _ = ss.Root.Mkdir("Stats")
 	ss.Current, _ = ss.Stats.Mkdir("Current")
 
+	ss.SetRunName()
+
 	// last arg(s) are levels to exclude
 	counterFunc := axon.StatLoopCounters(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		counterFunc(mode, level, phase == Start)
+	})
+	runNameFunc := axon.StatRunName(ss.Stats, ss.Current, ss.Loops, net, Trial, Cycle)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		runNameFunc(mode, level, phase == Start)
 	})
 
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
@@ -887,17 +903,17 @@ func (ss *Sim) RunGUI() {
 }
 
 func (ss *Sim) RunNoGUI() {
+	ss.Init()
+
 	if ss.Config.Params.Note != "" {
 		mpi.Printf("Note: %s\n", ss.Config.Params.Note)
 	}
 	if ss.Config.Log.SaveWeights {
 		mpi.Printf("Saving final weights per run\n")
 	}
-	runName := ss.Params.RunName(ss.Config.Run.Run)
-	datafs.Scalar[string](ss.Current, "RunName").SetString1D(runName, 0)
-	netName := ss.Net.Name
 
-	ss.Init()
+	runName := ss.SetRunName()
+	netName := ss.Net.Name
 
 	axon.OpenLogFile(ss.Config.Log.Trial, ss.StatsData(Train, Trial).GetDirTable(nil), netName, runName, "trl")
 	axon.OpenLogFile(ss.Config.Log.Epoch, ss.StatsData(Train, Epoch).GetDirTable(nil), netName, runName, "epc")
@@ -908,12 +924,6 @@ func (ss *Sim) RunNoGUI() {
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
 	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
-
-	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
-		ss.Loops.Step(Train, 1, Trial) // get past NewRun
-		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
-		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
-	}
 
 	// if ss.Config.Run.GPU {
 	// 	ss.Net.ConfigGPUnoGUI(&ss.Context)
