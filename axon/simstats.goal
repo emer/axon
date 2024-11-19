@@ -12,6 +12,8 @@ import (
 	"cogentcore.org/core/plot"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/datafs"
+	"cogentcore.org/core/tensor/matrix"
+	"cogentcore.org/core/tensor/stats/metric"
 	"cogentcore.org/core/tensor/stats/stats"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/looper"
@@ -163,15 +165,18 @@ func StatRunName(statDir, currentDir *datafs.Data, ls *looper.Stacks, net *Netwo
 
 // StatPerTrialMSec returns a Stats function that reports the number of milliseconds
 // per trial, for the given levels and training mode enum values.
-// The levels should start at the Trial and go up from there: data will
-// be recorded from the second level. The statName is the name of another
-// stat that is used to get the number of trials.
-func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enum, levels ...enums.Enum) func(mode, level enums.Enum, start bool) {
+// Stats will be recorded a levels above the given trial level.
+// The statName is the name of another stat that is used to get the number of trials.
+func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enum, trialLevel enums.Enum) func(mode, level enums.Enum, start bool) {
 	var epcTimer timer.Time
+	levels := make([]enums.Enum, 10) // should be enough
+	levels[0] = trialLevel
 	return func(mode, level enums.Enum, start bool) {
-		if mode.Int64() != trainMode.Int64() || level.Int64() <= levels[0].Int64() {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if mode.Int64() != trainMode.Int64() || levi <= 0 {
 			return
 		}
+		levels[levi] = level
 		name := "PerTrialMSec"
 		modeDir := statDir.RecycleDir(mode.String())
 		levelDir := modeDir.RecycleDir(level.String())
@@ -186,41 +191,37 @@ func StatPerTrialMSec(statDir *datafs.Data, statName string, trainMode enums.Enu
 			}
 			return
 		}
-		for i, lev := range levels {
-			if level.Int64() != lev.Int64() {
-				continue
-			}
-			switch i {
-			case 0:
-				continue
-			case 1:
-				epcTimer.Stop()
-				subd := modeDir.RecycleDir(levels[0].String())
-				trls := subd.Value(statName) // must be a stat
-				epcTimer.N = trls.Len()
-				pertrl := float64(epcTimer.Avg()) / float64(time.Millisecond)
-				tsr.AppendRowFloat(pertrl)
-				epcTimer.ResetStart()
-			default:
-				subd := modeDir.RecycleDir(levels[i-1].String())
-				stat := stats.StatMean.Call(subd.Value(name))
-				tsr.AppendRow(stat)
-			}
+		switch levi {
+		case 1:
+			epcTimer.Stop()
+			subd := modeDir.RecycleDir(levels[0].String())
+			trls := subd.Value(statName) // must be a stat
+			epcTimer.N = trls.Len()
+			pertrl := float64(epcTimer.Avg()) / float64(time.Millisecond)
+			tsr.AppendRowFloat(pertrl)
+			epcTimer.ResetStart()
+		default:
+			subd := modeDir.RecycleDir(levels[levi-1].String())
+			stat := stats.StatMean.Call(subd.Value(name))
+			tsr.AppendRow(stat)
 		}
 	}
 }
 
 // StatLayerActGe returns a Stats function that computes layer activity
-// and Ge (excitatory conductdance; net input) levels, which are important targets
+// and Ge (excitatory conductdance; net input) stats, which are important targets
 // of parameter tuning to ensure everything is in an appropriate dynamic range.
-// It only runs for given trainMode and the levels should be from the Trial
-// level upward, with higher levels computing the Mean of lower levels
-func StatLayerActGe(statDir *datafs.Data, net *Network, layerNames []string, trainMode enums.Enum, levels ...enums.Enum) func(mode, level enums.Enum, start bool) {
+// It only runs for given trainMode at given trialLevel and above,
+// with higher levels computing the Mean of lower levels.
+func StatLayerActGe(statDir *datafs.Data, net *Network, trainMode enums.Enum, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"ActMAvg", "ActMMax", "MaxGeM"}
+	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool) {
-		if mode.Int64() != trainMode.Int64() || level.Int64() < levels[0].Int64() {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if mode.Int64() != trainMode.Int64() || levi < 0 {
 			return
 		}
+		levels[levi] = level
 		modeDir := statDir.RecycleDir(mode.String())
 		levelDir := modeDir.RecycleDir(level.String())
 		ndata := net.Context().NData
@@ -240,29 +241,135 @@ func StatLayerActGe(statDir *datafs.Data, net *Network, layerNames []string, tra
 					}
 					continue
 				}
-				for i, lev := range levels {
-					if level.Int64() != lev.Int64() {
-						continue
-					}
-					switch i {
-					case 0:
-						for di := range ndata {
-							var stat float32
-							switch si {
-							case 0:
-								stat = PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
-							case 1:
-								stat = PoolAvgMax(AMAct, AMMinus, Max, lpi, di)
-							case 2:
-								stat = PoolAvgMax(AMGeInt, AMMinus, Max, lpi, di)
-							}
-							tsr.AppendRowFloat(float64(stat))
+				switch levi {
+				case 0:
+					for di := range ndata {
+						var stat float32
+						switch si {
+						case 0:
+							stat = PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
+						case 1:
+							stat = PoolAvgMax(AMAct, AMMinus, Max, lpi, di)
+						case 2:
+							stat = PoolAvgMax(AMGeInt, AMMinus, Max, lpi, di)
 						}
-					default:
-						subd := modeDir.RecycleDir(levels[i-1].String())
-						stat := stats.StatMean.Call(subd.Value(name))
-						tsr.AppendRow(stat)
+						tsr.AppendRowFloat(float64(stat))
 					}
+				default:
+					subd := modeDir.RecycleDir(levels[levi-1].String())
+					stat := stats.StatMean.Call(subd.Value(name))
+					tsr.AppendRow(stat)
+				}
+			}
+		}
+	}
+}
+
+// PCAStrongThr is the threshold for counting PCA eigenvalues as "strong"
+// Applies to SVD as well.
+var PCAStrongThr = 0.01
+
+// StatPCA returns a Stats function that computes PCA NStrong, Top5, Next5, and Rest
+// stats, which are important for tracking hogging dynamics where the representational
+// space is not efficiently distributed. Uses Sample units for layers, and SVD computation
+// is reasonably efficient.
+// It only runs for given trainMode, from given Trial level upward,
+// with higher levels computing the Mean of lower levels.
+// Trial level just records ActM values for layers in a separate PCA subdir,
+// which are input to next level computation where PCA is computed.
+func StatPCA(statDir, currentDir *datafs.Data, net *Network, interval int, trainMode, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool, epc int) {
+	statNames := []string{"PCA_NStrong", "PCA_Top5", "PCA_Next", "PCA_Rest"}
+	levels := make([]enums.Enum, 10) // should be enough
+	return func(mode, level enums.Enum, start bool, epc int) {
+		levi := int(level.Int64() - trialLevel.Int64())
+		if mode.Int64() != trainMode.Int64() || levi < 0 {
+			return
+		}
+		levels[levi] = level
+		modeDir := statDir.RecycleDir(mode.String())
+		curModeDir := currentDir.RecycleDir(mode.String())
+		pcaDir := statDir.RecycleDir("PCA")
+		levelDir := modeDir.RecycleDir(level.String())
+		ndata := int(net.Context().NData)
+		for _, lnm := range layerNames {
+			ly := net.LayerByName(lnm)
+			sizes := []int{ndata}
+			sizes = append(sizes, ly.GetSampleShape().Sizes...)
+			vtsr := datafs.Value[float64](pcaDir, lnm, sizes...)
+			vecs := datafs.Value[float64](curModeDir, "PCA_Vecs_"+lnm).(*tensor.Float64)
+			vals := datafs.Value[float64](curModeDir, "PCA_Vals_"+lnm).(*tensor.Float64)
+			if levi == 0 {
+				ltsr := datafs.Value[float64](curModeDir, "PCA_ActM_"+lnm, ly.GetSampleShape().Sizes...)
+				if start {
+					vtsr.SetNumRows(0)
+				} else {
+					for di := range ndata {
+						ly.UnitValuesSampleTensor(ltsr, "ActM", di)
+						vtsr.AppendRow(ltsr)
+					}
+				}
+				continue
+			}
+			var svals [4]float64 // in statNames order
+			hasNew := false
+			if !start && levi == 1 {
+				if interval > 0 && epc%interval == 0 {
+					hasNew = true
+					covar := datafs.Value[float64](curModeDir, "PCA_Covar_"+lnm)
+					metric.CovarianceMatrixOut(metric.Covariance, vtsr, covar)
+					matrix.SVDOut(covar, vecs, vals)
+					ln := vals.Len()
+					for i := range ln {
+						v := vals.Float1D(i)
+						if v < PCAStrongThr {
+							svals[0] = float64(i)
+							break
+						}
+					}
+					for i := range 5 {
+						if ln >= 5 {
+							svals[1] += vals.Float1D(i)
+						}
+						if ln >= 10 {
+							svals[2] += vals.Float1D(i + 5)
+						}
+					}
+					svals[1] /= 5
+					svals[2] /= 5
+					if ln > 10 {
+						sum := stats.Sum(vals).Float1D(0)
+						svals[3] = (sum - (svals[1] + svals[2])) / float64(ln-10)
+					}
+				}
+			}
+			for si, statName := range statNames {
+				name := lnm + "_" + statName
+				tsr := datafs.Value[float64](levelDir, name)
+				if start {
+					tsr.SetNumRows(0)
+					if ps := plot.GetStylersFrom(tsr); ps == nil {
+						ps.Add(func(s *plot.Style) {
+							s.Range.SetMin(0)
+						})
+						plot.SetStylersTo(tsr, ps)
+					}
+					continue
+				}
+				switch levi {
+				case 1:
+					var stat float64
+					nr := tsr.DimSize(0)
+					if nr > 0 {
+						stat = tsr.FloatRow(nr-1, 0)
+					}
+					if hasNew {
+						stat = svals[si]
+					}
+					tsr.AppendRowFloat(float64(stat))
+				default:
+					subd := modeDir.RecycleDir(levels[levi-1].String())
+					stat := stats.StatMean.Call(subd.Value(name))
+					tsr.AppendRow(stat)
 				}
 			}
 		}

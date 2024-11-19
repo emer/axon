@@ -429,21 +429,6 @@ func (ss *Sim) ConfigLoops() {
 	// ls.Loop(Test, Epoch).OnEnd.Add("LogTestErrors", func() {
 	// 	axon.LogTestErrors(&ss.Logs)
 	// })
-	// ls.Loop(Train, Epoch).OnEnd.Add("PCAStats", func() {
-	// 	trnEpc := ls.Stacks[Train].Loops[Epoch].Counter.Cur
-	// 	if ss.Config.Run.PCAInterval > 0 && trnEpc%ss.Config.Run.PCAInterval == 0 {
-	// 		axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
-	// 		ss.Logs.ResetLog(Analyze, Trial)
-	// 	}
-	// })
-	//
-
-	// ls.Loop(Train, Trial).OnEnd.Add("LogAnalyze", func() {
-	// 	trnEpc := ls.Stacks[Train].Loops[Epoch].Counter.Cur
-	// 	if (ss.Config.Run.PCAInterval > 0) && (trnEpc%ss.Config.Run.PCAInterval == 0) {
-	// 		ss.Log(Analyze, Trial)
-	// 	}
-	// })
 
 	// Save weights to file, to look at later
 	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
@@ -776,15 +761,21 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Err", Train, Trial, Epoch, Run)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Err", Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	actGeFunc := axon.StatLayerActGe(ss.Stats, net, lays, Train, Trial, Epoch, Run)
+	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		actGeFunc(mode, level, phase == Start)
+	})
+
+	pcaFunc := axon.StatPCA(ss.Stats, ss.Current, net, ss.Config.Run.PCAInterval, Train, Trial, lays...)
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
+		pcaFunc(mode, level, phase == Start, trnEpc)
 	})
 }
 
@@ -807,16 +798,11 @@ func (ss *Sim) StatCounters(md, tm enums.Enum) string {
 }
 
 func (ss *Sim) ConfigLogs() {
-	// ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
-	//
-	// ss.Logs.AddCounterItems(Run, Epoch, Trial, Cycle)
 	// ss.Logs.AddStatIntNoAggItem(AlmOdes, Trial, "Di")
 	//
 	// ss.Logs.AddCopyFromFloatItems(Train, []Times{Epoch, Run}, Test, Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr")
 	//
 	// axon.LogInputLayer(&ss.Logs, ss.Net, Train)
-	//
-	// axon.LogAddPCAItems(&ss.Logs, ss.Net, Train, Run, Epoch, Trial)
 	//
 	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", Test, Trial, "InputLayer", "TargetLayer")
 }
