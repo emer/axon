@@ -20,7 +20,6 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 	"golang.org/x/exp/maps"
 )
@@ -44,46 +43,55 @@ var (
 const nLearnParams = 1
 
 // Note: subsequent params applied after Base
-var paramSets = params.Sets{
+var layerParams = LayerSheets{
 	"Base": {
-		{Sel: "Layer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Acts.Gbar.L":     "0.2",
-				"Layer.Learn.RLRate.On": "false",
-				"Layer.Inhib.Layer.FB":  "0.5",
-			}},
-		{Sel: "Path", Desc: "for reproducibility, identical weights",
-			Params: params.Params{
-				"Path.SWts.Init.Var": "0",
-			}},
-		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-			Params: params.Params{
-				"Path.PathScale.Rel": "0.2",
+		{Sel: "Layer", Doc: "layer defaults",
+			Set: func(ly *LayerParams) {
+				ly.Acts.Gbar.L = 0.2
+				ly.Learn.RLRate.On.SetBool(false)
+				ly.Inhib.Layer.FB = 0.5
 			}},
 	},
-	"InhibOff": &params.Sheet{
-		{Sel: "Layer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Acts.Gbar.L":    "0.2",
-				"Layer.Inhib.Layer.On": "false",
-			}},
-		{Sel: ".InhibPath", Desc: "weaker inhib",
-			Params: params.Params{
-				"Path.PathScale.Abs": "0.1",
+	"InhibOff": {
+		{Sel: "Layer", Doc: "layer defaults",
+			Set: func(ly *LayerParams) {
+				ly.Acts.Gbar.L = 0.2
+				ly.Inhib.Layer.On.SetBool(false)
 			}},
 	},
 	"FullDecay": {
-		{Sel: "Layer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Acts.Decay.Act":   "1",
-				"Layer.Acts.Decay.Glong": "1",
-				"Layer.Acts.Decay.AHP":   "1",
+		{Sel: "Layer", Doc: "layer defaults",
+			Set: func(ly *LayerParams) {
+				ly.Acts.Decay.Act = 1
+				ly.Acts.Decay.Glong = 1
+				ly.Acts.Decay.AHP = 1
 			}},
 	},
+	"SubMean": {},
+}
+
+var pathParams = PathSheets{
+	"Base": {
+		{Sel: "Path", Doc: "for reproducibility, identical weights",
+			Set: func(pt *PathParams) {
+				pt.SWts.Init.Var = 0
+			}},
+		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+			Set: func(pt *PathParams) {
+				pt.PathScale.Rel = 0.2
+			}},
+	},
+	"InhibOff": {
+		{Sel: ".InhibPath", Doc: "weaker inhib",
+			Set: func(pt *PathParams) {
+				pt.PathScale.Abs = 0.1
+			}},
+	},
+	"FullDecay": {},
 	"SubMean": {
-		{Sel: "Path", Desc: "submean used in some models but not by default",
-			Params: params.Params{
-				"Path.Learn.Trace.SubMean": "1",
+		{Sel: "Path", Doc: "submean used in some models but not by default",
+			Set: func(pt *PathParams) {
+				pt.Learn.Trace.SubMean = 1
 			}},
 	},
 }
@@ -107,9 +115,9 @@ func newTestNet(nData int) *Network {
 
 	testNet.Build()
 	testNet.Defaults()
-	testNet.ApplyParams(paramSets["Base"], false) // false) // true) // no msg
-	testNet.InitWeights()                         // get GScale here
-	testNet.NewState(etime.Train)
+	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
+	testNet.InitWeights() // get GScale here
+	testNet.NewState(etime.Train, false)
 	return testNet
 }
 
@@ -130,9 +138,9 @@ func newTestNetFull(nData int) *Network {
 
 	testNet.Build()
 	testNet.Defaults()
-	testNet.ApplyParams(paramSets["Base"], false) // false) // true) // no msg
-	testNet.InitWeights()                         // get GScale here
-	testNet.NewState(etime.Train)
+	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
+	testNet.InitWeights() // get GScale here
+	testNet.NewState(etime.Train, false)
 	return testNet
 }
 
@@ -202,7 +210,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.Build()
 	net.Defaults()
-	net.ApplyParams(paramSets["Base"], false)
+	ApplyParamSheets(net, layerParams["Base"], pathParams["Base"])
 
 	net.InitExt()
 
@@ -213,7 +221,7 @@ func TestSpikeProp(t *testing.T) {
 		pt.Params.Com.Delay = uint32(del)
 		pt.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
 		net.InitWeights()                    // resets Gbuf
-		net.NewState(etime.Train)
+		net.NewState(etime.Train, false)
 
 		inLay.ApplyExt(0, pat)
 
@@ -307,7 +315,7 @@ func TestInitWeights(t *testing.T) {
 		}
 
 		for pi := range 4 {
-			testNet.NewState(etime.Train)
+			testNet.NewState(etime.Train, false)
 
 			inpat := inPats.SubSpace(pi)
 			testNet.InitExt()
@@ -340,9 +348,9 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	//	if os.Getenv("TEST_GPU") != "true" {
-	//		t.Skip("Set TEST_GPU env var to run GPU tests")
-	//	}
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
 	NetActTest(t, Tol6, true)
 }
 
@@ -407,7 +415,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	for pi := range 4 {
-		testNet.NewState(etime.Train)
+		testNet.NewState(etime.Train, false)
 
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
@@ -549,7 +557,8 @@ func ReportValDiffs(t *testing.T, tolerance float32, va, vb map[string]float32, 
 // fine-grained diff test, e.g., see the GPU version.
 func NetDebugAct(t *testing.T, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	testNet := newTestNet(nData)
-	testNet.ApplyParams(paramSets["FullDecay"], false)
+	ApplyParamSheets(testNet, layerParams["FullDecay"], pathParams["FullDecay"])
+
 	return RunDebugAct(t, testNet, printValues, gpu, initWts)
 }
 
@@ -589,7 +598,7 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWeights()
 		}
-		testNet.NewState(etime.Train)
+		testNet.NewState(etime.Train, false)
 
 		testNet.InitExt()
 		for di := 0; di < nData; di++ {
@@ -722,7 +731,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	testNet.Defaults()
-	testNet.ApplyParams(paramSets["Base"], false) // always apply base
+	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
 	testNet.InitWeights()
 	testNet.InitExt()
 
@@ -733,7 +742,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	}
 
 	for pi := 0; pi < 4; pi++ {
-		testNet.NewState(etime.Train)
+		testNet.NewState(etime.Train, false)
 
 		inpat := inPats.SubSpace(pi)
 		testNet.InitExt()
@@ -892,7 +901,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	cycPerQtr := 50
 
 	testNet.Defaults()
-	testNet.ApplyParams(paramSets["Base"], false) // always apply base
+	ApplyParamSheets(testNet, layerParams["Base"], pathParams["Base"])
 	hidLay.Params.Learn.RLRate.On.SetBool(true)
 	testNet.InitWeights()
 	testNet.InitExt()
@@ -904,7 +913,7 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 		outLay.ApplyExt(0, inpat)
 		testNet.ApplyExts() // key now for GPU
 
-		testNet.NewState(etime.Train)
+		testNet.NewState(etime.Train, false)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				testNet.Cycle()
@@ -1007,11 +1016,11 @@ func NetDebugLearn(t *testing.T, printValues bool, gpu bool, maxData, nData int,
 	} else {
 		testNet = newTestNet(maxData)
 	}
-	testNet.ApplyParams(paramSets["FullDecay"], false)
+	ApplyParamSheets(testNet, layerParams["FullDecay"], pathParams["FullDecay"])
 	ctx := testNet.Context()
 
 	if submean {
-		testNet.ApplyParams(paramSets["SubMean"], false)
+		ApplyParamSheets(testNet, layerParams["SubMean"], pathParams["SubMean"])
 	}
 
 	ctx.NData = uint32(nData)
@@ -1052,7 +1061,7 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWeights()
 		}
-		testNet.NewState(etime.Train)
+		testNet.NewState(etime.Train, false)
 
 		testNet.InitExt()
 		for di := 0; di < nData; di++ {
@@ -1259,10 +1268,9 @@ func TestInhibAct(t *testing.T) {
 
 	inhibNet.Build()
 	inhibNet.Defaults()
-	inhibNet.ApplyParams(paramSets["Base"], false)
-	inhibNet.ApplyParams(paramSets["Base"], false)
+	ApplyParamSheets(inhibNet, layerParams["Base"], pathParams["Base"])
 	inhibNet.InitWeights() // get GScale
-	inhibNet.NewState(etime.Train)
+	inhibNet.NewState(etime.Train, false)
 
 	inhibNet.InitWeights()
 	inhibNet.InitExt()
@@ -1300,7 +1308,7 @@ func TestInhibAct(t *testing.T) {
 		inLay.ApplyExt(0, inpat)
 		outLay.ApplyExt(0, inpat)
 
-		inhibNet.NewState(etime.Train)
+		inhibNet.NewState(etime.Train, false)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				inhibNet.Cycle()

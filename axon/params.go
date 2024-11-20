@@ -106,13 +106,20 @@ func (pr *Params) ApplySheet(net *Network, sheetName string) error {
 	lsheet.SelMatchReset()
 	psheet.SelMatchReset()
 
-	pr.ApplyLayerSheet(net, lsheet)
-	pr.ApplyPathSheet(net, psheet)
+	ApplyParamSheets(net, lsheet, psheet)
 	return nil
 }
 
+// ApplyParamSheets applies Layer and Path parameters from given sheets,
+// returning true if any applied.
+func ApplyParamSheets(net *Network, layer *params.Sheet[*LayerParams], path *params.Sheet[*PathParams]) bool {
+	appl := ApplyLayerSheet(net, layer)
+	appp := ApplyPathSheet(net, path)
+	return appl || appp
+}
+
 // ApplyLayerSheet applies Layer parameters from given sheet, returning true if any applied.
-func (pr *Params) ApplyLayerSheet(net *Network, sheet *params.Sheet[*LayerParams]) bool {
+func ApplyLayerSheet(net *Network, sheet *params.Sheet[*LayerParams]) bool {
 	applied := false
 	for _, ly := range net.Layers {
 		app := sheet.Apply(ly.Params)
@@ -125,7 +132,7 @@ func (pr *Params) ApplyLayerSheet(net *Network, sheet *params.Sheet[*LayerParams
 }
 
 // ApplyPathSheet applies Path parameters from given sheet, returning true if any applied.
-func (pr *Params) ApplyPathSheet(net *Network, sheet *params.Sheet[*PathParams]) bool {
+func ApplyPathSheet(net *Network, sheet *params.Sheet[*PathParams]) bool {
 	applied := false
 	for _, ly := range net.Layers {
 		for _, pt := range ly.RecvPaths {

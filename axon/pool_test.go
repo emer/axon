@@ -9,93 +9,117 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/v2/etime"
-	"github.com/emer/emergent/v2/params"
 	"github.com/emer/emergent/v2/paths"
 )
 
-// Note: subsequent params applied after Base
-var PoolParamSets = params.Sets{
+var poolLayerParams = LayerSheets{
 	"Base": {
-		{Sel: "Layer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Acts.Gbar.L":     "0.2",
-				"Layer.Learn.RLRate.On": "false",
-				"Layer.Inhib.Layer.FB":  "0.5",
+		{Sel: "Layer", Doc: "layer defaults",
+			Set: func(ly *LayerParams) {
+				ly.Acts.Gbar.L = 0.2
+				ly.Learn.RLRate.On.SetBool(false)
+				ly.Inhib.Layer.FB = 0.5
 			}},
-		{Sel: ".InputLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "true",
-				"Layer.Inhib.Pool.On":  "true",
+		{Sel: ".InputLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Pool.On.SetBool(true)
 			}},
-		{Sel: ".SuperLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "true",
-				"Layer.Inhib.Layer.Gi": "1",
-				"Layer.Inhib.Pool.On":  "true", // note: pool only doesn't update layer gi -- just for display
-				"Layer.Inhib.Pool.Gi":  ".7",
+		{Sel: ".SuperLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 1
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = .7
 			}},
-		{Sel: "Path", Desc: "for reproducibility, identical weights",
-			Params: params.Params{
-				"Path.SWts.Init.Var": "0",
-			}},
-		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
-			Params: params.Params{
-				"Path.PathScale.Rel": "0.2",
+	},
+	"InhibOff": {
+		{Sel: "Layer", Doc: "layer defaults",
+			Set: func(ly *LayerParams) {
+				ly.Acts.Gbar.L = 0.2
+				ly.Inhib.Layer.On.SetBool(false)
 			}},
 	},
 	"FullDecay": {
-		{Sel: "Layer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Acts.Decay.Act":   "1",
-				"Layer.Acts.Decay.Glong": "1",
-				"Layer.Acts.Decay.AHP":   "1",
+		{Sel: "Layer", Doc: "layer defaults",
+			Set: func(ly *LayerParams) {
+				ly.Acts.Decay.Act = 1
+				ly.Acts.Decay.Glong = 1
+				ly.Acts.Decay.AHP = 1
 			}},
 	},
 	"LayerOnly": {
-		{Sel: ".SuperLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On":  "true",
-				"Layer.Inhib.Layer.Gi":  "1",
-				"Layer.Inhib.Pool.On":   "false",
-				"Layer.Inhib.Pool.Gi":   ".7",
-				"Layer.Acts.NMDA.Gbar":  "0.0", // <- avoid larger numerical issues by turning these off
-				"Layer.Acts.GabaB.Gbar": "0.0",
+		{Sel: ".SuperLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 1
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = .7
+				ly.Acts.NMDA.Gbar = 0 // <- avoid larger numerical issues by turning these off
+				ly.Acts.GabaB.Gbar = 0
 			}},
 	},
 	"PoolOnly": {
-		{Sel: ".SuperLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "false",
-				"Layer.Inhib.Layer.Gi": "1",
-				"Layer.Inhib.Pool.On":  "true",
-				"Layer.Inhib.Pool.Gi":  "1",
+		{Sel: ".SuperLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(false)
+				ly.Inhib.Layer.Gi = 1
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = 1
 			}},
 	},
 	"LayerPoolSame": {
-		{Sel: ".SuperLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "true",
-				"Layer.Inhib.Layer.Gi": "1",
-				"Layer.Inhib.Pool.On":  "true",
-				"Layer.Inhib.Pool.Gi":  "1",
+		{Sel: ".SuperLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 1
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = 1
 			}},
 	},
 	"LayerWeakPoolStrong": {
-		{Sel: ".SuperLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "true",
-				"Layer.Inhib.Layer.Gi": ".7",
-				"Layer.Inhib.Pool.On":  "true",
-				"Layer.Inhib.Pool.Gi":  "1",
+		{Sel: ".SuperLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 0.7
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = 1
 			}},
 	},
 	"LayerStrongPoolWeak": {
-		{Sel: ".SuperLayer", Desc: "layer defaults",
-			Params: params.Params{
-				"Layer.Inhib.Layer.On": "true",
-				"Layer.Inhib.Layer.Gi": "1",
-				"Layer.Inhib.Pool.On":  "true",
-				"Layer.Inhib.Pool.Gi":  ".7",
+		{Sel: ".SuperLayer", Doc: "",
+			Set: func(ly *LayerParams) {
+				ly.Inhib.Layer.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 0.7
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Pool.Gi = 1
+			}},
+	},
+	"SubMean": {},
+}
+
+var poolPathParams = PathSheets{
+	"Base": {
+		{Sel: "Path", Doc: "for reproducibility, identical weights",
+			Set: func(pt *PathParams) {
+				pt.SWts.Init.Var = 0
+			}},
+		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+			Set: func(pt *PathParams) {
+				pt.PathScale.Rel = 0.2
+			}},
+	},
+	"InhibOff": {
+		{Sel: ".InhibPath", Doc: "weaker inhib",
+			Set: func(pt *PathParams) {
+				pt.PathScale.Abs = 0.1
+			}},
+	},
+	"FullDecay": {},
+	"SubMean": {
+		{Sel: "Path", Doc: "submean used in some models but not by default",
+			Set: func(pt *PathParams) {
+				pt.Learn.Trace.SubMean = 1
 			}},
 	},
 }
@@ -116,9 +140,9 @@ func newPoolTestNet(nData int) *Network {
 
 	testNet.Build()
 	testNet.Defaults()
-	testNet.ApplyParams(PoolParamSets["Base"], false) // false) // true) // no msg
-	testNet.InitWeights()                             // get GScale here
-	testNet.NewState(etime.Train)
+	ApplyParamSheets(testNet, poolLayerParams["Base"], poolPathParams["Base"])
+	testNet.InitWeights() // get GScale here
+	testNet.NewState(etime.Train, false)
 	return testNet
 }
 
@@ -178,8 +202,8 @@ func TestPoolGPUDiffsLayerStrongPoolWeak(t *testing.T) {
 // fine-grained diff test, e.g., see the GPU version.
 func netDebugAct(t *testing.T, params string, printValues bool, gpu bool, nData int, initWts bool) map[string]float32 {
 	testNet := newPoolTestNet(nData)
-	testNet.ApplyParams(PoolParamSets["FullDecay"], false)
-	testNet.ApplyParams(PoolParamSets[params], false)
+	ApplyParamSheets(testNet, poolLayerParams["FullDecay"], poolPathParams["FullDecay"])
+	ApplyLayerSheet(testNet, poolLayerParams[params])
 
 	return RunDebugAct(t, testNet, printValues, gpu, initWts)
 }
