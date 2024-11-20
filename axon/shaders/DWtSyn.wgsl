@@ -739,7 +739,7 @@ fn PathParams_DWtSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, r
 	var spi = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnSubPool),u32(ri))];
 	var pi = LayerParams_PoolIndex(rlay, spi);
 	var lpi = LayerParams_PoolIndex(rlay, u32(u32(0)));
-	switch ((*pt).PathType) {
+	switch ((*pt).Type) {
 	case RWPath: {
 		PathParams_DWtSynRWPred(pt, ctx, syni, si, ri, lpi, pi, di);
 	}
@@ -801,8 +801,8 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	var syCaP: f32;
 	var syCaD: f32;
 	PathParams_SynCa(pt, ctx, si, ri, di, &syCaP, &syCaD);
-	var dtr = syCaD;                    // delta trace, caD reflects entire window
-	if ((*pt).PathType == CTCtxtPath) { // layer 6 CT pathway
+	var dtr = syCaD;                // delta trace, caD reflects entire window
+	if ((*pt).Type == CTCtxtPath) { // layer 6 CT pathway
 		dtr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2],
 		u32(BurstPrv),u32(si),u32(di))];
 	}
@@ -829,7 +829,7 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	} else {
 		err *= lwt;
 	}
-	if ((*pt).PathType == CTCtxtPath) { // rn.RLRate IS needed for other pathways, just not the context one
+	if ((*pt).Type == CTCtxtPath) { // rn.RLRate IS needed for other pathways, just not the context one
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = (*pt).Learn.LRate.Eff * err;
 	} else {
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))] * (*pt).Learn.LRate.Eff * err;
@@ -1326,7 +1326,6 @@ struct StartN {
 	pad1: u32, // todo: see if we can do without these?
 }
 struct PathIndexes {
-	PathIndex: u32,
 	RecvLayer: u32,
 	RecvNeurSt: u32,
 	RecvNeurN: u32,
@@ -1338,6 +1337,7 @@ struct PathIndexes {
 	RecvConSt: u32,
 	RecvSynSt: u32,
 	NPathNeurSt: u32,
+	pad: u32,
 }
 struct GScaleValues {
 	Scale: f32,
@@ -1346,10 +1346,10 @@ struct GScaleValues {
 	pad1: f32,
 }
 struct PathParams {
-	PathType: PathTypes,
+	Type: PathTypes,
+	Index: u32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 	Indexes: PathIndexes,
 	Com: SynComParams,
 	PathScale: PathScaleParams,

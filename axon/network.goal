@@ -4,7 +4,7 @@
 
 package axon
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -gosl
 
 import (
 	"crypto/md5"

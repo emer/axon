@@ -277,7 +277,7 @@ struct PathScaleParams {
 }
 fn PathParams_SendSpike(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ni: u32,di: u32,lni: u32) {
 	var sendVal = (*pt).GScale.Scale * SynComParams_FloatToIntFactor(&(*pt).Com); // pre-bake in conversion to uint factor
-	if ((*pt).PathType == CTCtxtPath) {
+	if ((*pt).Type == CTCtxtPath) {
 		if (u32((*ctx).Cycle) != u32((*ctx).ThetaCycles)-1-(*pt).Com.DelLen) {
 			return;
 		}
@@ -1259,7 +1259,6 @@ struct StartN {
 	pad1: u32, // todo: see if we can do without these?
 }
 struct PathIndexes {
-	PathIndex: u32,
 	RecvLayer: u32,
 	RecvNeurSt: u32,
 	RecvNeurN: u32,
@@ -1271,6 +1270,7 @@ struct PathIndexes {
 	RecvConSt: u32,
 	RecvSynSt: u32,
 	NPathNeurSt: u32,
+	pad: u32,
 }
 struct GScaleValues {
 	Scale: f32,
@@ -1279,10 +1279,10 @@ struct GScaleValues {
 	pad1: f32,
 }
 struct PathParams {
-	PathType: PathTypes,
+	Type: PathTypes,
+	Index: u32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 	Indexes: PathIndexes,
 	Com: SynComParams,
 	PathScale: PathScaleParams,
