@@ -6,24 +6,36 @@
 
 package axon
 
-// Cycle runs one cycle of activation updating using threading methods.
-func (nt *Network) Cycle() {
-	// todo: chunks of 10 cycles
+// todo: don't even need layer-level ultimately.
+
+// Cycle runs n cycles of activation updating.
+// If getNeurons is true, then neuron state is synced back
+// from the GPU (for cycle-level display etc). Otherwise only
+// layer-level state is synced.
+func (nt *Network) Cycle(ncyc int, getNeurons bool) {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	ld := int(nix.NLayers * ctx.NData)
 	pd := int(nix.NPools * ctx.NData)
-	RunGatherSpikes(nd)
-	RunLayerGi(ld)
-	RunBetweenGi(ld)
-	RunPoolGi(pd)
-	RunCycleNeuron(nd)
-	RunSendSpike(nd)
-	RunCyclePost(ld)
-	RunCycleInc(1)
 
-	RunDoneLayers()
+	ToGPUCtxGlobal()
+	for range ncyc {
+		RunGatherSpikes(nd)
+		RunLayerGi(ld)
+		RunBetweenGi(ld)
+		RunPoolGi(pd)
+		RunCycleNeuron(nd)
+		RunSendSpike(nd)
+		RunCyclePost(ld)
+		RunCycleInc(1)
+	}
+
+	if getNeurons {
+		RunDoneLayersNeurons()
+	} else {
+		RunDoneLayers()
+	}
 
 	// todo: fix this:
 	// var ldt, vta *Layer
@@ -70,6 +82,7 @@ func (nt *Network) ApplyExts() {
 	if !UseGPU {
 		return
 	}
+	ToGPU(ExtsVar)
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
@@ -85,6 +98,7 @@ func (nt *Network) MinusPhase() {
 	RunMinusPhasePool(pd)
 	RunMinusPhaseNeuron(nd)
 	nt.MinusPhasePost()
+	ToGPULayersNeurons()
 	// todo:
 	// nt.GPU.SyncStateToGPU()
 }
@@ -118,6 +132,7 @@ func (nt *Network) PlusPhase() {
 	RunPlusPhasePool(pd)
 	RunPlusPhaseNeuron(nd)
 	nt.PlusPhasePost()
+	ToGPULayersNeurons()
 	// todo:
 	// nt.GPU.SyncStateToGPU()
 }

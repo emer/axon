@@ -13,13 +13,15 @@ import (
 // LooperStandard adds all the standard Axon Trial and Cycle level processing calls
 // to the given Looper Stacks. cycle and trial are the enums for the looper levels,
 // trainMode is the training mode enum value.
+//   - fastNCycles is the number of cycles to run in one chunk, when single-cycle iteration
+//     is not otherwise required (based on step level, netview update level).
 //   - minus and plus phases of the theta cycle (trial), at plusStart (150) and plusEnd (199) cycles.
 //   - embedded beta phases within theta, that record St1 and St2 states.
 //   - net.Cycle() at every cycle step.
 //   - net.DWt() and net.WtFromDWt() learning calls in training mode, with netview update
 //     between these two calls if it is visible and viewing synapse variables.
 //   - netview update calls at appropriate levels (no-op if no GUI)
-func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func() *netview.NetView, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
+func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, fastNCycles, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
 	ls.AddOnStartToAll("SetContextMode", func(md, tm enums.Enum) {
 		ctx := net.Context()
 		ctx.Mode = int32(md.Int64())
@@ -39,34 +41,38 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func() *netview.Ne
 		ctx.NewPhase(true)
 		net.PlusPhaseStart()
 	})
-	for m, st := range ls.Stacks {
+	for mode, st := range ls.Stacks {
 		cycLoop := st.Loops[cycle]
 		cycLoop.OnStart.Add("Cycle", func() {
-			// TODO:
-			// if ls.ModeStack().StepLevel == cycle {
-			// 	net.GPU.CycleByCycle = true
-			// } else {
-			// 	if viewupdt.IsCycleUpdating() {
-			// 		net.GPU.CycleByCycle = true
-			// 	} else {
-			// 		net.GPU.CycleByCycle = false
-			// 	}
-			// }
-			net.Cycle()
+			nCycles := 10
+			getNeurons := false
+			if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
+				nCycles = 1
+				getNeurons = true
+			} else if view := viewFunc(mode); view != nil {
+				if view.IsCycleUpdating() {
+					nCycles = 1
+					getNeurons = true
+				}
+			}
+			net.Cycle(nCycles, getNeurons)
+			if nCycles > 1 {
+				cycLoop.Counter.Cur += nCycles - 1
+			}
 		})
 
 		trlLoop := st.Loops[trial]
 		trlLoop.OnStart.Add("NewState", func() {
-			testing := m.Int64() != trainMode.Int64()
-			net.NewState(m, testing)
+			testing := mode.Int64() != trainMode.Int64()
+			net.NewState(mode, testing)
 		})
 		trlLoop.OnEnd.Add("PlusPhase:End", func() {
 			net.PlusPhase()
 		})
-		if m.Int64() == trainMode.Int64() {
+		if mode.Int64() == trainMode.Int64() {
 			trlLoop.OnEnd.Add("UpdateWeights", func() {
-				net.DWt()
-				if view := viewFunc(); view != nil && view.IsViewingSynapse() {
+				net.DWt() // todo: need to get synapses here, not after
+				if view := viewFunc(mode); view != nil && view.IsViewingSynapse() {
 					//TODO:
 					// net.GPU.SyncSynapsesFromGPU()
 					// net.GPU.SyncSynCaFromGPU() // note: only time we call this
@@ -79,23 +85,24 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func() *netview.Ne
 }
 
 // LooperUpdateNetView adds netview update calls to the given
-// trial and cycle levels for given NetViewUpdate associated with given mode.
-// The netviewCountersFunc returns the counters and other stats
-// to display at the bottom of the NetView, and is passed the CountersString()
-// for the given mode's [looper.Stack].
-func LooperUpdateNetView(ls *looper.Stacks, mode, cycle, trial enums.Enum, viewupdt *NetViewUpdate, countersFunc func(md, tm enums.Enum) string) {
-	st := ls.Stacks[mode]
-	cycLoop := st.Loops[cycle]
-	cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
-		counters := countersFunc(mode, cycle)
-		viewupdt.UpdateCycle(cycLoop.Counter.Cur, counters)
-	})
-	trlLoop := st.Loops[trial]
-	trlLoop.OnEnd.Add("GUI:UpdateNetView", func() {
-		counters := countersFunc(mode, trial)
-		viewupdt.GoUpdate(counters)
-	})
-
+// trial and cycle levels for given NetViewUpdate associated with the mode,
+// returned by the given viewFunc function.
+// The countersFunc returns the counters and other stats to display at the
+// bottom of the NetView, based on given mode and level.
+func LooperUpdateNetView(ls *looper.Stacks, cycle, trial enums.Enum, viewFunc func(mode enums.Enum) *NetViewUpdate, countersFunc func(mode, level enums.Enum) string) {
+	for mode, st := range ls.Stacks {
+		viewUpdt := viewFunc(mode)
+		cycLoop := st.Loops[cycle]
+		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
+			counters := countersFunc(mode, cycle)
+			viewUpdt.UpdateCycle(cycLoop.Counter.Cur, counters)
+		})
+		trlLoop := st.Loops[trial]
+		trlLoop.OnEnd.Add("GUI:UpdateNetView", func() {
+			counters := countersFunc(mode, trial)
+			viewUpdt.GoUpdate(counters)
+		})
+	}
 }
 
 //////// NetViewUpdate

@@ -291,8 +291,8 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 // conductance values prior to doing the standard updates in GFromRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float32, nonDrivePct float32) float32 {
-	saveVal := float32(0) // sometimes we need to use a value computed here, for the post Gs step
-	pi0 := pi - 1         // 0-n pool index
+	saveVal := float32(0)     // sometimes we need to use a value computed here, for the post Gs step
+	pi0 := pi - ly.PoolSt - 1 // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
 	pni := NeuronIxs.Value(int(NrnNeurIndex), int(ni)) - uint32(PoolsInt.Value(int(PoolNeurSt), int(pi), int(di)))
 	nrnCtxtGe := Neurons.Value(int(CtxtGe), int(ni), int(di))
@@ -568,7 +568,7 @@ func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(CaSpkP), int(ni), int(di)), int(Burst), int(ni), int(di))
 	li := ly.Index
-	pi0 := pi - 1 // 0-n pool index
+	pi0 := pi - ly.PoolSt - 1 // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
 	pni := NeuronIxs.Value(int(NrnNeurIndex), int(ni)) - uint32(PoolsInt.Value(int(PoolNeurSt), int(pi), int(di)))
 	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0

@@ -202,7 +202,7 @@ type Sim struct {
 	Net *axon.Network `new-window:"+" display:"no-inline"`
 
 	// network parameter management
-	Params axon.Params `display:"add-fields"`
+	Params axon.Params
 
 	// contains looper control loops for running sim
 	Loops *looper.Stacks `new-window:"+" display:"no-inline"`
@@ -374,6 +374,14 @@ func (ss *Sim) CurrentMode() Modes {
 	return md
 }
 
+// NetViewUpdater returns the NetViewUpdate for given mode.
+func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
+	if mode.Int64() == Train.Int64() {
+		return &ss.TrainUpdate
+	}
+	return &ss.TestUpdate
+}
+
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
@@ -391,7 +399,7 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trls, ss.Config.Run.NData).
 		AddLevel(Cycle, 200)
 
-	axon.LooperStandard(ls, ss.Net, ss.GUI.NetView, 150, 199, Cycle, Trial, Train)
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 10, 150, 199, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
@@ -401,7 +409,8 @@ func (ss *Sim) ConfigLoops() {
 
 	ls.Loop(Train, Run).OnStart.Add("NewRun", ss.NewRun)
 
-	ls.Loop(Train, Epoch).IsDone.AddBool("NZeroStop", func() bool {
+	trainEpoch := ls.Loop(Train, Epoch)
+	trainEpoch.IsDone.AddBool("NZeroStop", func() bool {
 		stopNz := ss.Config.Run.NZero
 		if stopNz <= 0 {
 			return false
@@ -413,8 +422,6 @@ func (ss *Sim) ConfigLoops() {
 		return false
 	})
 
-	// Add Testing
-	trainEpoch := ls.Loop(Train, Epoch)
 	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.Config.Run.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.Config.Run.TestInterval == 0) {
 			ss.TestAll()
@@ -426,10 +433,6 @@ func (ss *Sim) ConfigLoops() {
 	ls.AddOnStartToAll("StatsStart", ss.StatsStart)
 	ls.AddOnEndToAll("StatsStep", ss.StatsStep)
 
-	// ls.Loop(Test, Epoch).OnEnd.Add("LogTestErrors", func() {
-	// 	axon.LogTestErrors(&ss.Logs)
-	// })
-
 	// Save weights to file, to look at later
 	ls.Loop(Train, Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := fmt.Sprintf("%03d_%05d", ls.Loop(Train, Run).Counter.Cur, ls.Loop(Train, Epoch).Counter.Cur)
@@ -439,8 +442,7 @@ func (ss *Sim) ConfigLoops() {
 	//////// GUI
 
 	if ss.Config.GUI {
-		axon.LooperUpdateNetView(ls, Train, Cycle, Trial, &ss.TrainUpdate, ss.StatCounters)
-		axon.LooperUpdateNetView(ls, Test, Cycle, Trial, &ss.TestUpdate, ss.StatCounters)
+		axon.LooperUpdateNetView(ls, Cycle, Trial, ss.NetViewUpdater, ss.StatCounters)
 
 		ls.Stacks[Train].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })
 		ls.Stacks[Test].OnInit.Add("GUI-Init", func() { ss.GUI.UpdateWindow() })

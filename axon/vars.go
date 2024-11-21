@@ -126,6 +126,8 @@ var (
 	//gosl:dims 3
 	Pools *tensor.Float32
 
+	// todo: following should be read-only
+
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
 	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
 	// [PoolIntVars+AvgMax][Layer * Pools][Data]

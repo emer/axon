@@ -23,10 +23,10 @@ type PathSheets = params.Sheets[*PathParams]
 type Params struct {
 
 	// Layer has the parameters to apply to the [LayerParams] for layers.
-	Layer LayerSheets
+	Layer LayerSheets `display:"-"`
 
 	// Path has the parameters to apply to the [PathParams] for paths.
-	Path PathSheets
+	Path PathSheets `display:"-"`
 
 	// ExtraSheets has optional additional sheets of parameters
 	// to apply after the default Base sheet.

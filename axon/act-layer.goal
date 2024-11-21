@@ -290,7 +290,7 @@ func (ly *LayerParams) GInteg(ctx *Context, pi, ni, di uint32) {
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float32, nonDrivePct float32) float32 {
 	saveVal := float32(0)               // sometimes we need to use a value computed here, for the post Gs step
-	pi0 := pi - 1 // 0-n pool index
+	pi0 := pi - ly.PoolSt - 1 // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
 	pni := NeuronIxs[NrnNeurIndex, ni] - uint32(PoolsInt[PoolNeurSt, pi, di])
 	nrnCtxtGe := Neurons[CtxtGe, ni, di]
@@ -462,7 +462,7 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 		extraSyn = md * nrnGModSyn * ly.Acts.Dend.ModGain
 	default:
 		if ly.Acts.Dend.HasMod.IsTrue() {
-			md := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain*nrnGModSyn
+			md := ly.Acts.Dend.ModBase + ly.Acts.Dend.ModGain * nrnGModSyn
 			if md > 1 {
 				md = 1
 			}
@@ -566,7 +566,7 @@ func (ly *LayerParams) SendSpike(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	Neurons[Burst, ni, di] = Neurons[CaSpkP, ni, di]
 	li := ly.Index
-	pi0 := pi - 1 // 0-n pool index
+	pi0 := pi - ly.PoolSt - 1 // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
 	pni := NeuronIxs[NrnNeurIndex, ni] - uint32(PoolsInt[PoolNeurSt, pi, di])
 	hasRew := GlobalScalars[GvHasRew, di] > 0

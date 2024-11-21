@@ -94,7 +94,7 @@ fn LayerParams_SendSpike(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,pi: u32,ni: u32,di: u32) {
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Burst),u32(ni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkP),u32(ni),u32(di))];
 	var li = (*ly).Index;
-	var pi0 = pi - 1; // 0-n pool index
+	var pi0 = pi - (*ly).PoolSt - 1; // 0-n pool index
 	var pnn = u32(PoolNNeurons(pi));
 	var pni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnNeurIndex),u32(ni))] - u32(PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(PoolNeurSt),u32(pi),u32(di))]);
 	var hasRew = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvHasRew),u32(di))] > 0;

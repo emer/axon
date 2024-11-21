@@ -129,6 +129,8 @@ type Network struct {
 
 	//////// Params
 
+	// todo: rename LayParams -> LayerParams
+	
 	// LayParams are all the layer parameters. [NLayers]
 	LayParams []LayerParams `display:"-"`
 
@@ -918,28 +920,54 @@ func ToGPUIndexes() {
 	ToGPU(NetworkIxsVar, NeuronIxsVar, SynapseIxsVar, PathSendConVar, RecvPathIxsVar, PathRecvConVar, RecvSynIxsVar)
 }
 
-// ToGPULayers copies all the layer-level state to the GPU.
-func ToGPULayers() {
-	ToGPU(CtxVar, NeuronsVar, NeuronAvgsVar, LayerStatesVar, PoolsVar, PoolsIntVar)
+// ToGPUCtxGlobal copies Context and Global vars to the GPU.
+// This is done at start of each Cycle update.
+func ToGPUCtxGlobal() {
+	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar)
 }
 
-// RunDoneLayers finishes running and copies all the layer-level state to the GPU.
-func RunDoneLayers() {
-	RunDone(CtxVar, NeuronsVar, NeuronAvgsVar, LayerStatesVar, PoolsVar, PoolsIntVar)
+// todo: probably don't need PoolsIntVar beyond the first init
+
+// ToGPULayers copies all the layer-level state to the GPU, including context and globals.
+func ToGPULayers() {
+	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar)
+}
+
+// ToGPUNeurons copies Neurons, NeuronAvgs to the GPU.
+func ToGPUNeurons() {
+	ToGPU(NeuronsVar, NeuronAvgsVar)
+}
+
+// ToGPULayersNeurons copies all the layer-level and neuron state to the GPU.
+func ToGPULayersNeurons() {
+	ToGPU(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar, NeuronsVar, NeuronAvgsVar)
 }
 
 // ToGPUSynapses copies the Synapse state to the GPU.
 func ToGPUSynapses() {
-	ToGPU(SynapsesVar, SynapseTracesVar)
+	ToGPU(SynapsesVar)
 }
 
-// ToGPUAll copies all state up to the GPU.
+// ToGPUAll copies all state up to the GPU. Only for InitWeights.
 func ToGPUAll() {
 	ToGPUIndexes()
-	ToGPU(CtxVar)
 	ToGPUParams()
-	ToGPULayers()
+	ToGPULayersNeurons()
 	ToGPUSynapses()
+}
+
+// note: RunDone can only be run once, so all vars need to be present in the one call.
+
+// RunDoneLayers finishes running and copies all the layer-level state from the GPU,
+// (and Context, Globals) but NOT neurons. This is the minimal case for Cycle().
+func RunDoneLayers() {
+	RunDone(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar)
+}
+
+// RunDoneLayersNeurons finishes running and copies all the layer-level
+// and neuron state from the GPU, including context and globals.
+func RunDoneLayersNeurons() {
+	RunDone(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar, NeuronsVar, NeuronAvgsVar)
 }
 
 // BuildPathGBuf builds the PathGBuf, PathGSyns,
