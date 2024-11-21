@@ -45,7 +45,7 @@ func (nt *Network) NewState(mode enums.Enum, testing bool) {
 		}
 		ly.NewState(ctx)
 	}
-	ToGPULayers()
+	ToGPULayersNeurons()
 }
 
 // InitWeights initializes synaptic weights and all other associated long-term state variables

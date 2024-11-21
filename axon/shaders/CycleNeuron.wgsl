@@ -558,7 +558,7 @@ struct SMaintParams {
 fn SMaintParams_ExpInt(sm: ptr<function,SMaintParams>, isi: f32) -> f32 {
 	if (isi <= 0) {
 		return f32(0);
-	}return exp(-max(isi, (*sm).ISI.Min) / (*sm).NNeurons);
+	}return FastExp(-max(isi, (*sm).ISI.Min) / (*sm).NNeurons);
 }
 struct PopCodeParams {
 	On: i32,
@@ -600,7 +600,7 @@ fn PopCodeParams_EncodeValue(pc: ptr<function,PopCodeParams>, i: u32,n: u32, val
 	var gnrm = 1.0 / (rng * sig);
 	var incr = rng / f32(n-1);
 	var trg = (*pc).Min + incr*f32(i);
-	var dist = gnrm * (trg - eval);return act * exp(-(dist * dist));
+	var dist = gnrm * (trg - eval);return act * FastExp(-(dist * dist));
 }
 fn PopCodeParams_EncodeGe(pc: ptr<function,PopCodeParams>, i: u32,n: u32, val: f32) -> f32 {
 	return (*pc).Ge * PopCodeParams_EncodeValue(pc, i, n, val);
@@ -798,7 +798,7 @@ fn ActParams_VmFromG(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni
 			exVm = 0.5 * (nvm + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // midpoint for this
 			2], u32(ni),u32(Vm),u32(di))]);
 			expi = (*ac).Gbar.L * (*ac).Spikes.ExpSlope *
-				exp((exVm-(*ac).Spikes.Thr)/(*ac).Spikes.ExpSlope);
+				FastExp((exVm-(*ac).Spikes.Thr)/(*ac).Spikes.ExpSlope);
 			if (expi > (*ac).Dt.VmTau) {
 				expi = (*ac).Dt.VmTau;
 			}
@@ -901,7 +901,7 @@ fn AKsParams_MFromV(ap: ptr<function,AKsParams>, vbio: f32) -> f32 {
 	var av = vbio;
 	if (vbio > (*ap).Vmax) {
 		av = (*ap).Vmax;
-	}return (*ap).Hf / (1.0 + exp(-(*ap).Mf*(av+(*ap).Voff)));
+	}return (*ap).Hf / (1.0 + FastExp(-(*ap).Mf*(av+(*ap).Voff)));
 }
 fn AKsParams_MFromVnorm(ap: ptr<function,AKsParams>, v: f32) -> f32 {
 	return AKsParams_MFromV(ap, VToBio(v));
@@ -940,13 +940,13 @@ fn GABABParams_GFromV(gp: ptr<function,GABABParams>, v: f32) -> f32 {
 	var vbio = VToBio(v);
 	if (vbio < -90) {
 		vbio = f32(-90);
-	}return (vbio + 90.0) / (1.0 + exp(0.1*((vbio+90.0)+10.0)));
+	}return (vbio + 90.0) / (1.0 + FastExp(0.1*((vbio+90.0)+10.0)));
 }
 fn GABABParams_GFromS(gp: ptr<function,GABABParams>, s: f32) -> f32 {
 	var ss = s * (*gp).GiSpike;
 	if (ss > 20) {
 		return f32(1);
-	}return 1.0 / (1.0 + exp(-(ss-7.1)/1.4));
+	}return 1.0 / (1.0 + FastExp(-(ss-7.1)/1.4));
 }
 fn GABABParams_BiExp(gp: ptr<function,GABABParams>, g: f32,x: f32, dG: ptr<function,f32>,dX: ptr<function,f32>) {
 	*dG = ((*gp).TauFact*x - g) * (*gp).RiseDt;
@@ -975,7 +975,7 @@ struct KirParams {
 	Mrest: f32,
 }
 fn KirParams_Minf(kp: ptr<function,KirParams>, vbio: f32) -> f32 {
-	return 1.0 / (1.0 + exp((vbio-((*kp).MinfOff))/(*kp).MinfTau));
+	return 1.0 / (1.0 + FastExp((vbio-((*kp).MinfOff))/(*kp).MinfTau));
 }
 fn KirParams_DM(kp: ptr<function,KirParams>, vbio: f32,m: f32) -> f32 {
 	var minf = KirParams_Minf(kp, vbio);
@@ -1038,7 +1038,7 @@ struct MahpParams {
 fn MahpParams_EFun(mp: ptr<function,MahpParams>, z: f32) -> f32 {
 	if (abs(z) < 1.0e-4) {
 		return 1.0 - 0.5*z;
-	}return z / (exp(z) - 1.0);
+	}return z / (FastExp(z) - 1.0);
 }
 fn MahpParams_NinfTauFromV(mp: ptr<function,MahpParams>, vbio: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
 	var vo = vbio - (*mp).Voff;
@@ -1079,7 +1079,7 @@ fn NMDAParams_MgGFromVbio(np: ptr<function,NMDAParams>, vbio: f32) -> f32 {
 	var av = vbio + (*np).Voff;
 	if (av >= 0) {
 		return f32(0);
-	}return -av / (1.0 + (*np).MgFact*exp(-0.062*av));
+	}return -av / (1.0 + (*np).MgFact*FastExp(-0.062*av));
 }
 fn NMDAParams_MgGFromV(np: ptr<function,NMDAParams>, v: f32) -> f32 {
 	return NMDAParams_MgGFromVbio(np, VToBio(v));
@@ -1088,7 +1088,7 @@ fn NMDAParams_CaFromVbio(np: ptr<function,NMDAParams>, vbio: f32) -> f32 {
 	var av = vbio + (*np).Voff;
 	if (av > -0.5 && av < 0.5) { // this eliminates div 0 at 0, and numerical "fuzz" around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*av));
-	}return -av / (1.0 - exp(0.0756*av));
+	}return -av / (1.0 - FastExp(0.0756*av));
 }
 fn NMDAParams_CaFromV(np: ptr<function,NMDAParams>, v: f32) -> f32 {
 	return NMDAParams_CaFromVbio(np, VToBio(v));
@@ -1160,7 +1160,7 @@ fn VGCCParams_GFromV(np: ptr<function,VGCCParams>, v: f32) -> f32 {
 	var vbio = VToBio(v);
 	if (vbio > -0.5 && vbio < 0.5) { // this avoids divide by 0, and numerical instability around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio));
-	}return -vbio / (1.0 - exp(0.0756*vbio));
+	}return -vbio / (1.0 - FastExp(0.0756*vbio));
 }
 fn VGCCParams_MFromV(np: ptr<function,VGCCParams>, vbio: f32) -> f32 {
 	if (vbio < -60) {
@@ -1168,7 +1168,7 @@ fn VGCCParams_MFromV(np: ptr<function,VGCCParams>, vbio: f32) -> f32 {
 	}
 	if (vbio > -10) {
 		return f32(1);
-	}return 1.0 / (1.0 + exp(-(vbio + 37)));
+	}return 1.0 / (1.0 + FastExp(-(vbio + 37)));
 }
 fn VGCCParams_HFromV(np: ptr<function,VGCCParams>, vbio: f32) -> f32 {
 	if (vbio < -50) {
@@ -1176,7 +1176,7 @@ fn VGCCParams_HFromV(np: ptr<function,VGCCParams>, vbio: f32) -> f32 {
 	}
 	if (vbio > -10) {
 		return f32(0);
-	}return 1.0 / (1.0 + exp((vbio+41)*2));
+	}return 1.0 / (1.0 + FastExp((vbio+41)*2));
 }
 fn VGCCParams_DMHFromV(np: ptr<function,VGCCParams>, v: f32,m: f32,h: f32, dm: ptr<function,f32>,dh: ptr<function,f32>) {
 	var vbio = VToBio(v);

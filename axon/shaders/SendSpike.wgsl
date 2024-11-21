@@ -436,7 +436,7 @@ fn PopCodeParams_EncodeValue(pc: ptr<function,PopCodeParams>, i: u32,n: u32, val
 	var gnrm = 1.0 / (rng * sig);
 	var incr = rng / f32(n-1);
 	var trg = (*pc).Min + incr*f32(i);
-	var dist = gnrm * (trg - eval);return act * exp(-(dist * dist));
+	var dist = gnrm * (trg - eval);return act * FastExp(-(dist * dist));
 }
 struct ActParams {
 	Spikes: SpikeParams,

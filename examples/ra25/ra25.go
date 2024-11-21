@@ -703,7 +703,7 @@ func (ss *Sim) ConfigStats() {
 					var stat float64
 					switch name {
 					case "CorSim":
-						stat = 1.0 - float64(axon.LayerStates.Value(int(axon.LayerPhaseDiff), int(out.Index), int(di)))
+						stat = 1.0 - float64(axon.LayerStates.Value(int(out.Index), int(axon.LayerPhaseDiff), int(di)))
 					case "UnitErr":
 						stat = out.PctUnitErr(ss.Net.Context())[di]
 					case "Err":

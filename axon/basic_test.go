@@ -391,9 +391,9 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	if os.Getenv("TEST_GPU") != "true" {
-		t.Skip("Set TEST_GPU env var to run GPU tests")
-	}
+	//	if os.Getenv("TEST_GPU") != "true" {
+	//		t.Skip("Set TEST_GPU env var to run GPU tests")
+	//	}
 	NetActTest(t, Tol6, true)
 }
 
@@ -587,12 +587,12 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 	// these control what is printed.
 	// the whole thing is run and returned in the valMap
 	valsPerRow := 4
-	nQtrs := 1     // max 4
-	cycPerQtr := 4 // max 50
-	nPats := 2     // max 4
-	stLayer := 0   // max 2
-	edLayer := 1   // max 3
-	nNeurs := 1    // max 4 -- number of neuron values to print
+	nQtrs := 4      // max 4
+	cycPerQtr := 50 // max 50
+	nPats := 1      // max 4
+	stLayer := 2    // max 2
+	edLayer := 3    // max 3
+	nNeurs := 1     // max 4 -- number of neuron values to print
 
 	for pi := 0; pi < 4; pi++ {
 		if initWts {
@@ -681,12 +681,12 @@ func TestGPUDiffs(t *testing.T) {
 }
 
 func TestDebugAct(t *testing.T) {
-	t.Skip("skipped in regular testing")
+	// t.Skip("skipped in regular testing")
 	NetDebugAct(t, true, false, 1, false)
 }
 
 func TestDebugGPUAct(t *testing.T) {
-	t.Skip("skipped in regular testing")
+	// t.Skip("skipped in regular testing")
 	NetDebugAct(t, true, true, 1, false)
 }
 

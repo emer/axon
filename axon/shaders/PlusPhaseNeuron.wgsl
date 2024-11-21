@@ -391,7 +391,7 @@ struct SahpParams {
 fn SahpParams_EFun(mp: ptr<function,SahpParams>, z: f32) -> f32 {
 	if (abs(z) < 1.0e-4) {
 		return 1.0 - 0.5*z;
-	}return z / (exp(z) - 1.0);
+	}return z / (FastExp(z) - 1.0);
 }
 fn SahpParams_NinfTauFromCa(mp: ptr<function,SahpParams>, ca: f32, ninf: ptr<function,f32>,tau: ptr<function,f32>) {
 	var co = ca - (*mp).Off;
