@@ -19,17 +19,17 @@ func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
 	ly.Params.Acts.Dend.HasMod.SetBool(false)
 	li := ly.Index
 	for di := uint32(0); di < ly.MaxData; di++ {
-		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(LayerActMAvg), int(li), int(di))
-		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(LayerActPAvg), int(li), int(di))
-		LayerStates.Set(1, int(LayerAvgMaxGeM), int(li), int(di))
-		LayerStates.Set(1, int(LayerAvgMaxGiM), int(li), int(di))
-		LayerStates.Set(1, int(LayerGiMult), int(li), int(di))
-		LayerStates.Set(0, int(LayerPhaseDiff), int(li), int(di))
-		LayerStates.Set(0, int(LayerPhaseDiffAvg), int(li), int(di))
-		LayerStates.Set(0, int(LayerPhaseDiffVar), int(li), int(di))
-		LayerStates.Set(-1, int(LayerRT), int(li), int(di))
-		LayerStates.Set(0, int(LayerRewPredPos), int(li), int(di))
-		LayerStates.Set(0, int(LayerRewPredNeg), int(li), int(di))
+		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(li), int(LayerActMAvg), int(di))
+		LayerStates.Set(ly.Params.Inhib.ActAvg.Nominal, int(li), int(LayerActPAvg), int(di))
+		LayerStates.Set(1, int(li), int(LayerAvgMaxGeM), int(di))
+		LayerStates.Set(1, int(li), int(LayerAvgMaxGiM), int(di))
+		LayerStates.Set(1, int(li), int(LayerGiMult), int(di))
+		LayerStates.Set(0, int(li), int(LayerPhaseDiff), int(di))
+		LayerStates.Set(0, int(li), int(LayerPhaseDiffAvg), int(di))
+		LayerStates.Set(0, int(li), int(LayerPhaseDiffVar), int(di))
+		LayerStates.Set(-1, int(li), int(LayerRT), int(di))
+		LayerStates.Set(0, int(li), int(LayerRewPredPos), int(di))
+		LayerStates.Set(0, int(li), int(LayerRewPredNeg), int(di))
 	}
 	ly.InitActAvg(ctx)
 	ly.InitActs(ctx)
@@ -96,16 +96,16 @@ func (ly *Layer) InitActAvgLayer(ctx *Context) {
 		}
 		vi := porder[lni] // same for all datas
 		trg := strg + inc*float32(vi)
-		NeuronAvgs.Set(trg, int(TrgAvg), int(ni))
-		NeuronAvgs.Set(trg, int(AvgPct), int(ni))
-		NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ActAvg), int(ni))
-		NeuronAvgs.Set(0, int(AvgDif), int(ni))
-		NeuronAvgs.Set(0, int(DTrgAvg), int(ni))
-		NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(GeBase), int(ni))
-		NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(GiBase), int(ni))
+		NeuronAvgs.Set(trg, int(ni), int(TrgAvg))
+		NeuronAvgs.Set(trg, int(ni), int(AvgPct))
+		NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ni), int(ActAvg))
+		NeuronAvgs.Set(0, int(ni), int(AvgDif))
+		NeuronAvgs.Set(0, int(ni), int(DTrgAvg))
+		NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(ni), int(GeBase))
+		NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(ni), int(GiBase))
 		if gibinit > 0 {
 			gib := gibinit * (tmax - trg)
-			NeuronAvgs.Set(gib, int(GiBase), int(ni))
+			NeuronAvgs.Set(gib, int(ni), int(GiBase))
 		}
 	}
 }
@@ -135,8 +135,8 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			randx.PermuteInts(porder, &ly.Network.Rand)
 		}
 		pi := ly.Params.PoolIndex(spi) // only using for idxs
-		nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(0))
-		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(0))
+		nsi := PoolsInt.Value(int(pi), int(PoolNeurSt), int(0))
+		nei := PoolsInt.Value(int(pi), int(PoolNeurEd), int(0))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
 			if NeuronIsOff(ni) {
@@ -144,16 +144,16 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			}
 			vi := porder[lni-nsi]
 			trg := strg + inc*float32(vi)
-			NeuronAvgs.Set(trg, int(TrgAvg), int(ni))
-			NeuronAvgs.Set(trg, int(AvgPct), int(ni))
-			NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ActAvg), int(ni))
-			NeuronAvgs.Set(0, int(AvgDif), int(ni))
-			NeuronAvgs.Set(0, int(DTrgAvg), int(ni))
-			NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(GeBase), int(ni))
-			NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(GiBase), int(ni))
+			NeuronAvgs.Set(trg, int(ni), int(TrgAvg))
+			NeuronAvgs.Set(trg, int(ni), int(AvgPct))
+			NeuronAvgs.Set(ly.Params.Inhib.ActAvg.Nominal*trg, int(ni), int(ActAvg))
+			NeuronAvgs.Set(0, int(ni), int(AvgDif))
+			NeuronAvgs.Set(0, int(ni), int(DTrgAvg))
+			NeuronAvgs.Set(ly.Params.Acts.Init.GetGeBase(&ly.Network.Rand), int(ni), int(GeBase))
+			NeuronAvgs.Set(ly.Params.Acts.Init.GetGiBase(&ly.Network.Rand), int(ni), int(GiBase))
 			if gibinit > 0 {
 				gib := gibinit * (tmax - trg)
-				NeuronAvgs.Set(gib, int(GiBase), int(ni))
+				NeuronAvgs.Set(gib, int(ni), int(GiBase))
 			}
 		}
 	}
@@ -179,7 +179,7 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 			pi := ly.Params.PoolIndex(spi)
 			PoolInit(pi, di)
 			if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
-				PoolsInt.Set(1, int(Clamped), int(pi), int(di))
+				PoolsInt.Set(1, int(pi), int(Clamped), int(di))
 			}
 			// Target layers are dynamically updated
 		}
@@ -369,9 +369,9 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		if ahp == 1 {
 			lt := ly.Type
 			if lt == PTMaintLayer {
-				Neurons.Set(0, int(CtxtGe), int(ni), int(di))
-				Neurons.Set(0, int(CtxtGeRaw), int(ni), int(di))
-				Neurons.Set(0, int(CtxtGeOrig), int(ni), int(di))
+				Neurons.Set(0, int(ni), int(CtxtGe), int(di))
+				Neurons.Set(0, int(ni), int(CtxtGeRaw), int(di))
+				Neurons.Set(0, int(ni), int(CtxtGeOrig), int(di))
 			}
 		}
 	}
@@ -392,8 +392,8 @@ func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float3
 	spi := uint32(pool + 1) // 1 based
 	for di := uint32(0); di < ctx.NData; di++ {
 		pi := ly.Params.PoolIndex(spi)
-		nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(di))
-		nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(di))
+		nsi := PoolsInt.Value(int(pi), int(PoolNeurSt), int(di))
+		nei := PoolsInt.Value(int(pi), int(PoolNeurEd), int(di))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
 			if NeuronIsOff(ni) {

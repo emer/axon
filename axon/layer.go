@@ -99,7 +99,7 @@ func (ly *Layer) Defaults() { //types:add
 		ly.Params.Type = ly.Type
 		ly.Params.Defaults()
 		for di := uint32(0); di < ly.MaxData; di++ {
-			LayerStates.Set(1, int(LayerGiMult), int(li), int(di))
+			LayerStates.Set(1, int(li), int(LayerGiMult), int(di))
 		}
 		ly.Params.Learn.CaLearn.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
 		ly.Params.Learn.CaSpk.Dt.PDTauForNCycles(int(ctx.ThetaCycles))
@@ -333,12 +333,12 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 			eoff := int32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
 			for di := uint32(0); di < ly.MaxData; di++ {
 				pi := ly.Params.PoolIndex(spi)
-				PoolsInt.Set(soff, int(PoolNeurSt), int(pi), int(di))
-				PoolsInt.Set(eoff, int(PoolNeurEd), int(pi), int(di))
+				PoolsInt.Set(soff, int(pi), int(PoolNeurSt), int(di))
+				PoolsInt.Set(eoff, int(pi), int(PoolNeurEd), int(di))
 			}
 			for lni := soff; lni < eoff; lni++ {
 				ni := ly.NeurStIndex + uint32(lni)
-				NeuronIxs.Set(uint32(spi), int(NrnSubPool), int(ni))
+				NeuronIxs.Set(uint32(spi), int(ni), int(NrnSubPool))
 			}
 			spi++
 		}
@@ -350,9 +350,9 @@ func (ly *Layer) BuildPools(ctx *Context, nn uint32) error {
 	np := 1 + ly.NumPools()
 	for di := uint32(0); di < ly.MaxData; di++ {
 		lpi := ly.Params.PoolIndex(0)
-		PoolsInt.Set(0, int(PoolNeurSt), int(lpi), int(di))
-		PoolsInt.Set(int32(nn), int(PoolNeurEd), int(lpi), int(di))
-		PoolsInt.Set(1, int(PoolIsLayer), int(lpi), int(di))
+		PoolsInt.Set(0, int(lpi), int(PoolNeurSt), int(di))
+		PoolsInt.Set(int32(nn), int(lpi), int(PoolNeurEd), int(di))
+		PoolsInt.Set(1, int(lpi), int(PoolIsLayer), int(di))
 	}
 	if np > 1 {
 		ly.BuildSubPools(ctx)
@@ -387,8 +387,8 @@ func (ly *Layer) Build() error {
 	}
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		NeuronIxs.Set(lni, int(NrnNeurIndex), int(ni))
-		NeuronIxs.Set(uint32(ly.Index), int(NrnLayIndex), int(ni))
+		NeuronIxs.Set(lni, int(ni), int(NrnNeurIndex))
+		NeuronIxs.Set(uint32(ly.Index), int(ni), int(NrnLayIndex))
 	}
 	err := ly.BuildPools(ctx, nn)
 	if err != nil {
@@ -481,13 +481,13 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 		case 3:
 			return GlobalScalars.Value(int(GvSer), int(uint32(di)))
 		case 4:
-			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(NrnSubPool), int(ni)))
-			return float32(PoolsInt.Value(int(PoolGated), int(pi), int(di)))
+			pi := ly.Params.PoolIndex(NeuronIxs.Value(int(ni), int(NrnSubPool)))
+			return float32(PoolsInt.Value(int(pi), int(PoolGated), int(di)))
 		}
 	} else if NeuronVars(varIndex) >= NeuronVarsN {
-		return NeuronAvgs.Value(int(NeuronVars(varIndex)-NeuronVarsN), int(ni))
+		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex)-NeuronVarsN))
 	} else {
-		return Neurons.Value(int(varIndex), int(ni), int(di))
+		return Neurons.Value(int(ni), int(varIndex), int(di))
 	}
 	return math32.NaN()
 }
@@ -600,12 +600,12 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 	}
 	nvar := vidx
 
-	v0 := Neurons.Value(int(nvar), int(ly.NeurStIndex), int(0))
+	v0 := Neurons.Value(int(ly.NeurStIndex), int(nvar), int(0))
 	min = v0
 	max = v0
 	for lni := uint32(1); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		vl := Neurons.Value(int(nvar), int(ni), int(0))
+		vl := Neurons.Value(int(ni), int(nvar), int(0))
 		if vl < min {
 			min = vl
 		}
@@ -624,9 +624,9 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 func (ly *Layer) WriteWeightsJSON(w io.Writer, depth int) {
 	li := ly.Index
 	ly.MetaData = make(map[string]string)
-	ly.MetaData["ActMAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerActMAvg), int(li), int(0)))
-	ly.MetaData["ActPAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerActPAvg), int(li), int(0)))
-	ly.MetaData["GiMult"] = fmt.Sprintf("%g", LayerStates.Value(int(LayerGiMult), int(li), int(0)))
+	ly.MetaData["ActMAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(li), int(LayerActMAvg), int(0)))
+	ly.MetaData["ActPAvg"] = fmt.Sprintf("%g", LayerStates.Value(int(li), int(LayerActPAvg), int(0)))
+	ly.MetaData["GiMult"] = fmt.Sprintf("%g", LayerStates.Value(int(li), int(LayerGiMult), int(0)))
 
 	if ly.Params.IsLearnTrgAvg() {
 		ly.LayerBase.WriteWeightsJSONBase(w, depth, "ActAvg", "TrgAvg")
@@ -646,15 +646,15 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 		for di := uint32(0); di < ly.MaxData; di++ {
 			if am, ok := lw.MetaData["ActMAvg"]; ok {
 				pv, _ := strconv.ParseFloat(am, 32)
-				LayerStates.Set(float32(pv), int(LayerActMAvg), int(li), int(di))
+				LayerStates.Set(float32(pv), int(li), int(LayerActMAvg), int(di))
 			}
 			if ap, ok := lw.MetaData["ActPAvg"]; ok {
 				pv, _ := strconv.ParseFloat(ap, 32)
-				LayerStates.Set(float32(pv), int(LayerActPAvg), int(li), int(di))
+				LayerStates.Set(float32(pv), int(li), int(LayerActPAvg), int(di))
 			}
 			if gi, ok := lw.MetaData["GiMult"]; ok {
 				pv, _ := strconv.ParseFloat(gi, 32)
-				LayerStates.Set(float32(pv), int(LayerGiMult), int(li), int(di))
+				LayerStates.Set(float32(pv), int(li), int(LayerGiMult), int(di))
 			}
 		}
 	}
@@ -665,7 +665,7 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 					break
 				}
 				ni := ly.NeurStIndex + uint32(lni)
-				NeuronAvgs.Set(ta[lni], int(ActAvg), int(ni))
+				NeuronAvgs.Set(ta[lni], int(ni), int(ActAvg))
 			}
 		}
 		if ta, ok := lw.Units["TrgAvg"]; ok {
@@ -674,7 +674,7 @@ func (ly *Layer) SetWeights(lw *weights.Layer) error {
 					break
 				}
 				ni := ly.NeurStIndex + uint32(lni)
-				NeuronAvgs.Set(ta[lni], int(TrgAvg), int(ni))
+				NeuronAvgs.Set(ta[lni], int(ni), int(TrgAvg))
 			}
 		}
 	}

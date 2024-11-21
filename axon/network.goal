@@ -130,7 +130,7 @@ type Network struct {
 	//////// Params
 
 	// todo: rename LayParams -> LayerParams
-	
+
 	// LayParams are all the layer parameters. [NLayers]
 	LayParams []LayerParams `display:"-"`
 
@@ -174,7 +174,7 @@ type Network struct {
 
 	// note: A slice is needed even for single elements so that global vars and network
 	// point to the same underlying instance.
-	
+
 	// Ctx is the context state (one). Other copies of Context can be maintained
 	// and [SetContext] to update this one, but this instance is the canonical one.
 	Ctx []Context `display:"-"`
@@ -736,12 +736,12 @@ func (nt *Network) Build() error { //types:add
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
 	nt.LayParams = make([]LayerParams, nLayers)
-	sltensor.SetShapeSizes(&nt.LayerStates, int(LayerVarsN), nLayers, maxData)
-	sltensor.SetShapeSizes(&nt.Pools, int(PoolVarsN), totPools, maxData)
-	sltensor.SetShapeSizes(&nt.PoolsInt, int(PoolIntVarsTot), totPools, maxData)
-	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, maxData)
-	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
-	sltensor.SetShapeSizes(&nt.NeuronIxs, int(NeuronIndexVarsN), totNeurons)
+	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, int(LayerVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.Pools, totPools, int(PoolVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.PoolsInt, totPools, int(PoolIntVarsTot), maxData)
+	sltensor.SetShapeSizes(&nt.Neurons, totNeurons, int(NeuronVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.NeuronAvgs, totNeurons, int(NeuronAvgVarsN))
+	sltensor.SetShapeSizes(&nt.NeuronIxs, totNeurons, int(NeuronIndexVarsN))
 	nt.Paths = make([]*Path, totPaths)
 	nt.PathParams = make([]PathParams, totPaths)
 	sltensor.SetShapeSizes(&nt.Exts, totExts, maxData)
@@ -791,7 +791,7 @@ func (nt *Network) Build() error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				nt.PoolsInt[PoolLayerIdx, poolIndex + pi, di] = int32(li)
+				nt.PoolsInt[poolIndex+pi, PoolLayerIdx, di] = int32(li)
 			}
 		}
 		if ly.Type.IsExt() {
@@ -1210,8 +1210,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	for di := uint32(0); di < ctx.NData; di++ {
 		for ni := uint32(0); ni < nix.NNeurons; ni++ {
 			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
-				nv := nt.Neurons[nvar, ni, di]
-				ov := on.Neurons[nvar, ni, di]
+				nv := nt.Neurons[ni, nvar, di]
+				ov := on.Neurons[ni, nvar, di]
 				if nv != ov {
 					diffs += fmt.Sprintf("Neuron: di: %d\tni: %d\tvar: %s\tval: %g\toth: %g\n", di, ni, nvar.String(), nv, ov)
 					ndif++
@@ -1224,8 +1224,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	}
 	for ni := uint32(0); ni < nix.NNeurons; ni++ {
 		for nvar := ActAvg; nvar < NeuronAvgVarsN; nvar++ {
-			nv := nt.NeuronAvgs[nvar, ni]
-			ov := on.NeuronAvgs[nvar, ni]
+			nv := nt.NeuronAvgs[ni, nvar]
+			ov := on.NeuronAvgs[ni, nvar]
 			if nv != ov {
 				diffs += fmt.Sprintf("NeuronAvg: ni: %d\tvar: %s\tval: %g\toth: %g\n", ni, nvar.String(), nv, ov)
 				ndif++
@@ -1286,8 +1286,6 @@ func (nt *Network) UnLesionNeurons() {
 	}
 }
 
-
-
 func (nt *Network) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(nt.ShowAllGlobals).SetText("Global Vars").SetIcon(icons.Info)
@@ -1314,5 +1312,3 @@ func (nt *Network) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(nt.InitActs).SetIcon(icons.Reset)
 	})
 }
-
-

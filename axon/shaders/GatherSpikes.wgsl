@@ -92,23 +92,23 @@ fn LayerParams_GatherSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 	LayerParams_GiFromSpikes(ly, ctx, ni, di);
 }
 fn LayerParams_GatherSpikesInit(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeRaw),u32(ni),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GiRaw),u32(ni),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GModRaw),u32(ni),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GModSyn),u32(ni),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GMaintRaw),u32(ni),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CtxtGeRaw),u32(ni),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeSyn),u32(ni),u32(di))] = NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(GeBase),u32(ni))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GiSyn),u32(ni),u32(di))] = NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(GiBase),u32(ni))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeRaw),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiRaw),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GModRaw),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GModSyn),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GMaintRaw),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CtxtGeRaw),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeSyn),u32(di))] = NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiSyn),u32(di))] = NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GiBase))];
 }
 fn LayerParams_GiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	var pi = LayerParams_PoolIndex(ly, NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnSubPool),u32(ni))]);
-	var spk = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Spike),u32(ni),u32(di))];
-	var geRaw = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeRaw),u32(ni),u32(di))];
-	var geExt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeExt),u32(ni),u32(di))];
+	var pi = LayerParams_PoolIndex(ly, NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnSubPool))]);
+	var spk = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Spike),u32(di))];
+	var geRaw = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeRaw),u32(di))];
+	var geExt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeExt),u32(di))];
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt);
 	PoolAvgMaxUpdate(pi, di, ni);
-	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(PoolIsLayer),u32(pi),u32(di))] == 0) { // also update layer pool if I am a subpool
+	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolIsLayer),u32(di))] == 0) { // also update layer pool if I am a subpool
 		var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt);
 		PoolAvgMaxUpdate(lpi, di, ni);
@@ -120,7 +120,7 @@ fn GatherSpikes(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
-	var li = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnLayIndex),u32(ni))];
+	var li = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_GatherSpikes(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;
 }
@@ -173,25 +173,25 @@ fn PathParams_GatherSpikesGSyn(pt: ptr<function,PathParams>, ctx: ptr<function,C
 	switch ((*pt).Com.GType) {
 	case ExcitatoryG: {
 		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeRaw),u32(ni),u32(di))] += gRaw;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GeSyn),u32(ni),u32(di))] += *gSyn;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeRaw),u32(di))] += gRaw;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeSyn),u32(di))] += *gSyn;
 	}
 	case InhibitoryG: {
 		*gSyn = DtParams_GiSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GiRaw),u32(ni),u32(di))] += gRaw;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GiSyn),u32(ni),u32(di))] += *gSyn;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiRaw),u32(di))] += gRaw;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiSyn),u32(di))] += *gSyn;
 	}
 	case ModulatoryG: {
 		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GModRaw),u32(ni),u32(di))] += gRaw;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GModSyn),u32(ni),u32(di))] += *gSyn;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GModRaw),u32(di))] += gRaw;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GModSyn),u32(di))] += *gSyn;
 	}
 	case MaintG: {
 		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GMaintRaw),u32(ni),u32(di))] += gRaw;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GMaintRaw),u32(di))] += gRaw;
 	}
 	case ContextG: {
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CtxtGeRaw),u32(ni),u32(di))] += gRaw;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CtxtGeRaw),u32(di))] += gRaw;
 	}
 	default: {
 	}
@@ -675,9 +675,9 @@ struct InhibParams {
 fn PoolInhibRawIncrInt(pi: u32,di: u32, spike: f32,geRaw: f32,geExt: f32) {
 	var floatToInt = f32(u32(1) << 24);
 	var fnn = f32(PoolNNeurons(pi));
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(FBsRawInt),u32(pi),u32(di))], i32(spike));
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(FFsRawInt),u32(pi),u32(di))], i32((geRaw/fnn)*floatToInt));
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(GeExtRawInt),u32(pi),u32(di))], i32((geExt/fnn)*floatToInt));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FBsRawInt),u32(di))], i32(spike));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FFsRawInt),u32(di))], i32((geRaw/fnn)*floatToInt));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(GeExtRawInt),u32(di))], i32((geExt/fnn)*floatToInt));
 }
 
 ///////////// import: "kinase-params.go"
@@ -1230,24 +1230,24 @@ const  PoolVarsN = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
 const avgMaxToNeuron = array(CaSpkP, CaSpkD, SpkMax, Act, GeInt, GiInt);
 fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 { return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am); }
-fn PoolNNeurons(pi: u32) -> i32 { return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(PoolNeurEd),u32(pi),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-2], u32(PoolNeurSt),u32(pi),u32(0))]; }
+fn PoolNNeurons(pi: u32) -> i32 { return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurEd),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
+2], u32(pi),u32(PoolNeurSt),u32(0))]; }
 fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	var n = f32(PoolNNeurons(pi));
 	var floatToInt = f32(u32(1) << 20);
 	var floatToSum = floatToInt / n;
 	var vis = AvgMaxIntVarIndex(vr, Avg);
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vis),u32(pi),u32(di))], i32(val*floatToSum));
-	atomicMax(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))], i32(val*floatToInt));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vis),u32(di))], i32(val*floatToSum));
+	atomicMax(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vim),u32(di))], i32(val*floatToInt));
 }
 fn PoolAvgMaxUpdate(pi: u32,di: u32,ni: u32) {
-	PoolAvgMaxUpdateVar(AMCaSpkP, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMCaSpkP]),u32(ni),u32(di))]));
-	PoolAvgMaxUpdateVar(AMCaSpkD, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMCaSpkD]),u32(ni),u32(di))]));
-	PoolAvgMaxUpdateVar(AMSpkMax, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMSpkMax]),u32(ni),u32(di))]));
-	PoolAvgMaxUpdateVar(AMAct, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMAct]),u32(ni),u32(di))]));
-	PoolAvgMaxUpdateVar(AMGeInt, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMGeInt]),u32(ni),u32(di))]));
-	PoolAvgMaxUpdateVar(AMGiInt, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(avgMaxToNeuron[AMGiInt]),u32(ni),u32(di))]));
+	PoolAvgMaxUpdateVar(AMCaSpkP, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(avgMaxToNeuron[AMCaSpkP]),u32(di))]));
+	PoolAvgMaxUpdateVar(AMCaSpkD, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(avgMaxToNeuron[AMCaSpkD]),u32(di))]));
+	PoolAvgMaxUpdateVar(AMSpkMax, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(avgMaxToNeuron[AMSpkMax]),u32(di))]));
+	PoolAvgMaxUpdateVar(AMAct, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(avgMaxToNeuron[AMAct]),u32(di))]));
+	PoolAvgMaxUpdateVar(AMGeInt, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(avgMaxToNeuron[AMGeInt]),u32(di))]));
+	PoolAvgMaxUpdateVar(AMGiInt, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(avgMaxToNeuron[AMGiInt]),u32(di))]));
 }
 
 ///////////// import: "rand.go"

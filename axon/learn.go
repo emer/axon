@@ -75,9 +75,9 @@ func (np *CaLrnParams) Update() {
 // and performs time-integration of VgccCa
 func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 	if np.SpkVGCC.IsTrue() {
-		Neurons.Set(np.SpkVgccCa*Neurons.Value(int(Spike), int(ni), int(di)), int(VgccCa), int(ni), int(di))
+		Neurons.Set(np.SpkVgccCa*Neurons.Value(int(ni), int(Spike), int(di)), int(ni), int(VgccCa), int(di))
 	}
-	Neurons.SetAdd(Neurons.Value(int(VgccCa), int(ni), int(di))-np.VgccDt*Neurons.Value(int(VgccCaInt), int(ni), int(di)), int(VgccCaInt), int(ni), int(di))
+	Neurons.SetAdd(Neurons.Value(int(ni), int(VgccCa), int(di))-np.VgccDt*Neurons.Value(int(ni), int(VgccCaInt), int(di)), int(ni), int(VgccCaInt), int(di))
 	// Dt only affects decay, not rise time
 }
 
@@ -86,11 +86,11 @@ func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 // perform its time-integration.
 func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
 	np.VgccCaFromSpike(ctx, ni, di)
-	Neurons.Set(np.NormInv*(Neurons.Value(int(NmdaCa), int(ni), int(di))+Neurons.Value(int(VgccCaInt), int(ni), int(di))), int(CaLrn), int(ni), int(di))
-	Neurons.SetAdd(np.Dt.MDt*(Neurons.Value(int(CaLrn), int(ni), int(di))-Neurons.Value(int(NrnCaM), int(ni), int(di))), int(NrnCaM), int(ni), int(di))
-	Neurons.SetAdd(np.Dt.PDt*(Neurons.Value(int(NrnCaM), int(ni), int(di))-Neurons.Value(int(NrnCaP), int(ni), int(di))), int(NrnCaP), int(ni), int(di))
-	Neurons.SetAdd(np.Dt.DDt*(Neurons.Value(int(NrnCaP), int(ni), int(di))-Neurons.Value(int(NrnCaD), int(ni), int(di))), int(NrnCaD), int(ni), int(di))
-	Neurons.Set(Neurons.Value(int(NrnCaP), int(ni), int(di))-Neurons.Value(int(NrnCaD), int(ni), int(di)), int(CaDiff), int(ni), int(di))
+	Neurons.Set(np.NormInv*(Neurons.Value(int(ni), int(NmdaCa), int(di))+Neurons.Value(int(ni), int(VgccCaInt), int(di))), int(ni), int(CaLrn), int(di))
+	Neurons.SetAdd(np.Dt.MDt*(Neurons.Value(int(ni), int(CaLrn), int(di))-Neurons.Value(int(ni), int(NrnCaM), int(di))), int(ni), int(NrnCaM), int(di))
+	Neurons.SetAdd(np.Dt.PDt*(Neurons.Value(int(ni), int(NrnCaM), int(di))-Neurons.Value(int(ni), int(NrnCaP), int(di))), int(ni), int(NrnCaP), int(di))
+	Neurons.SetAdd(np.Dt.DDt*(Neurons.Value(int(ni), int(NrnCaP), int(di))-Neurons.Value(int(ni), int(NrnCaD), int(di))), int(ni), int(NrnCaD), int(di))
+	Neurons.Set(Neurons.Value(int(ni), int(NrnCaP), int(di))-Neurons.Value(int(ni), int(NrnCaD), int(di)), int(ni), int(CaDiff), int(di))
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -304,23 +304,23 @@ func (ln *LearnNeurParams) Defaults() {
 // InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.
 // Called by InitWeights (at start of learning).
 func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(GnmdaLrn), int(ni), int(di))
-	Neurons.Set(0, int(NmdaCa), int(ni), int(di))
+	Neurons.Set(0, int(ni), int(GnmdaLrn), int(di))
+	Neurons.Set(0, int(ni), int(NmdaCa), int(di))
 
-	Neurons.Set(0, int(VgccCa), int(ni), int(di))
-	Neurons.Set(0, int(VgccCaInt), int(ni), int(di))
+	Neurons.Set(0, int(ni), int(VgccCa), int(di))
+	Neurons.Set(0, int(ni), int(VgccCaInt), int(di))
 
-	Neurons.Set(0, int(CaLrn), int(ni), int(di))
+	Neurons.Set(0, int(ni), int(CaLrn), int(di))
 
-	Neurons.Set(0, int(CaSpkM), int(ni), int(di))
-	Neurons.Set(0, int(CaSpkP), int(ni), int(di))
-	Neurons.Set(0, int(CaSpkD), int(ni), int(di))
-	Neurons.Set(0, int(CaSpkPM), int(ni), int(di))
+	Neurons.Set(0, int(ni), int(CaSpkM), int(di))
+	Neurons.Set(0, int(ni), int(CaSpkP), int(di))
+	Neurons.Set(0, int(ni), int(CaSpkD), int(di))
+	Neurons.Set(0, int(ni), int(CaSpkPM), int(di))
 
-	Neurons.Set(0, int(NrnCaM), int(ni), int(di))
-	Neurons.Set(0, int(NrnCaP), int(ni), int(di))
-	Neurons.Set(0, int(NrnCaD), int(ni), int(di))
-	Neurons.Set(0, int(CaDiff), int(ni), int(di))
+	Neurons.Set(0, int(ni), int(NrnCaM), int(di))
+	Neurons.Set(0, int(ni), int(NrnCaP), int(di))
+	Neurons.Set(0, int(ni), int(NrnCaD), int(di))
+	Neurons.Set(0, int(ni), int(CaDiff), int(di))
 }
 
 // LrnNMDAFromRaw updates the separate NMDA conductance and calcium values
@@ -329,23 +329,23 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 // for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 	geEff := max(geTot, 0.0)
-	vmd := Neurons.Value(int(VmDend), int(ni), int(di))
-	Neurons.Set(ln.LrnNMDA.NMDASyn(Neurons.Value(int(GnmdaLrn), int(ni), int(di)), geEff), int(GnmdaLrn), int(ni), int(di))
-	gnmda := ln.LrnNMDA.Gnmda(Neurons.Value(int(GnmdaLrn), int(ni), int(di)), vmd)
-	Neurons.Set(float32(gnmda*ln.LrnNMDA.CaFromV(vmd)), int(NmdaCa), int(ni), int(di))
+	vmd := Neurons.Value(int(ni), int(VmDend), int(di))
+	Neurons.Set(ln.LrnNMDA.NMDASyn(Neurons.Value(int(ni), int(GnmdaLrn), int(di)), geEff), int(ni), int(GnmdaLrn), int(di))
+	gnmda := ln.LrnNMDA.Gnmda(Neurons.Value(int(ni), int(GnmdaLrn), int(di)), vmd)
+	Neurons.Set(float32(gnmda*ln.LrnNMDA.CaFromV(vmd)), int(ni), int(NmdaCa), int(di))
 }
 
 // CaFromSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	var caSyn float32
-	caSpkM := Neurons.Value(int(CaSpkM), int(ni), int(di))
-	caSpkP := Neurons.Value(int(CaSpkP), int(ni), int(di))
-	caSpkD := Neurons.Value(int(CaSpkD), int(ni), int(di))
-	ln.CaSpk.CaFromSpike(Neurons.Value(int(Spike), int(ni), int(di)), &caSyn, &caSpkM, &caSpkP, &caSpkD)
-	Neurons.Set(caSpkM, int(CaSpkM), int(ni), int(di))
-	Neurons.Set(caSpkP, int(CaSpkP), int(ni), int(di))
-	Neurons.Set(caSpkD, int(CaSpkD), int(ni), int(di))
+	caSpkM := Neurons.Value(int(ni), int(CaSpkM), int(di))
+	caSpkP := Neurons.Value(int(ni), int(CaSpkP), int(di))
+	caSpkD := Neurons.Value(int(ni), int(CaSpkD), int(di))
+	ln.CaSpk.CaFromSpike(Neurons.Value(int(ni), int(Spike), int(di)), &caSyn, &caSpkM, &caSpkP, &caSpkD)
+	Neurons.Set(caSpkM, int(ni), int(CaSpkM), int(di))
+	Neurons.Set(caSpkP, int(ni), int(CaSpkP), int(di))
+	Neurons.Set(caSpkD, int(ni), int(CaSpkD), int(di))
 
 	ln.CaLearn.CaLrns(ctx, ni, di)
 }

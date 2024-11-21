@@ -106,7 +106,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		opi := oly.Params.PoolIndex(0)
 		// note: NoGo layers don't track gating at the sub-pool level!
 		for di := uint32(0); di < ctx.NData; di++ {
-			PoolsInt.Set(PoolsInt.Value(int(PoolGated), int(opi), int(di)), int(PoolGated), int(lpi), int(di))
+			PoolsInt.Set(PoolsInt.Value(int(opi), int(PoolGated), int(di)), int(lpi), int(PoolGated), int(di))
 		}
 		return
 	}
@@ -158,7 +158,7 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		if !mtxGated { // nobody did if thal didn't
 			for spi := uint32(0); spi < ly.NPools; spi++ {
 				pi := ly.Params.PoolIndex(spi)
-				PoolsInt.Set(0, int(PoolGated), int(pi), int(di))
+				PoolsInt.Set(0, int(pi), int(PoolGated), int(di))
 			}
 		}
 		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
@@ -187,9 +187,9 @@ func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
 				if poolIndex < 0 {
 					poolIndex = int(spi) - 1
 				}
-				PoolsInt.Set(1, int(PoolGated), int(pi), int(di))
+				PoolsInt.Set(1, int(pi), int(PoolGated), int(di))
 			} else {
-				PoolsInt.Set(0, int(PoolGated), int(pi), int(di))
+				PoolsInt.Set(0, int(pi), int(PoolGated), int(di))
 			}
 		}
 	} else {
@@ -199,9 +199,9 @@ func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
 		}
 	}
 	if anyGated {
-		PoolsInt.Set(1, int(PoolGated), int(lpi), int(di))
+		PoolsInt.Set(1, int(lpi), int(PoolGated), int(di))
 	} else {
-		PoolsInt.Set(0, int(PoolGated), int(lpi), int(di))
+		PoolsInt.Set(0, int(lpi), int(PoolGated), int(di))
 	}
 	return anyGated, poolIndex
 }
@@ -210,7 +210,7 @@ func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
 // which indicates if any of the layers gated.
 func (ly *Layer) AnyGated(di uint32) bool {
 	lpi := ly.Params.PoolIndex(0)
-	return PoolsInt.Value(int(PoolGated), int(lpi), int(di)) > 0
+	return PoolsInt.Value(int(lpi), int(PoolGated), int(di)) > 0
 }
 
 func (ly *Layer) MatrixDefaults() {

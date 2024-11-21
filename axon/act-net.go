@@ -195,6 +195,15 @@ func (nt *Network) SpkSt2() {
 	}
 }
 
+// GPUTestWrite writes values to neuron, for testing
+func (nt *Network) GPUTestWrite() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	RunGPUTestWrite(nd)
+	RunDoneLayersNeurons()
+}
+
 //gosl:start
 
 //////// Kernels for all parallel CPU / GPU compute are here:
@@ -205,7 +214,7 @@ func GatherSpikes(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].GatherSpikes(ctx, ni, di)
 }
 
@@ -240,7 +249,7 @@ func CycleNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].CycleNeuron(ctx, ni, di)
 }
 
@@ -250,7 +259,7 @@ func SendSpike(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].SendSpike(ctx, ni, di)
 }
 
@@ -278,7 +287,7 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].ApplyExtsNeuron(ni, di)
 }
 
@@ -288,7 +297,7 @@ func MinusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
-	li := PoolsInt.Value(int(PoolLayerIdx), int(pi), int(di))
+	li := PoolsInt.Value(int(pi), int(PoolLayerIdx), int(di))
 	Layers[li].MinusPhasePool(ctx, pi, di)
 }
 
@@ -298,7 +307,7 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].MinusPhaseNeuron(ctx, ni, di)
 }
 
@@ -308,7 +317,7 @@ func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
 }
 
@@ -318,7 +327,7 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
-	li := PoolsInt.Value(int(PoolLayerIdx), int(pi), int(di))
+	li := PoolsInt.Value(int(pi), int(PoolLayerIdx), int(di))
 	Layers[li].PlusPhasePool(ctx, pi, di)
 }
 
@@ -328,8 +337,19 @@ func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
-	li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseNeuron(ctx, ni, di)
+}
+
+// GPUTestWrite is the kernel over Neurons * Data for testing
+// the unique writing of data on GPU.
+func GPUTestWrite(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	for vi := Spike; vi < NeuronVarsN; vi++ {
+		Neurons.Set(float32(ni*1000+uint32(vi)), int(ni), int(vi), int(di))
+	}
 }
 
 //gosl:end

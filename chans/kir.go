@@ -64,17 +64,9 @@ func (kp *KirParams) ShouldDisplay(field string) bool {
 	}
 }
 
-// DM computes the change in M gating parameter
-func (kp *KirParams) DM(vbio, m float32) float32 {
-	var minf, mtau float32
-	kp.MRates(vbio, &minf, &mtau)
-	dm := (minf - m) / (mtau * 3) // 3 = Q10
-	return dm
-}
-
 // MRates returns Minf as a function of bio voltage
 func (kp *KirParams) Minf(vbio float32) float32 {
-	return 1.0 / (1 + math32.FastExp((vbio-(kp.MinfOff))/kp.MinfTau))
+	return 1.0 / (1.0 + math32.FastExp((vbio-(kp.MinfOff))/kp.MinfTau))
 }
 
 // MinfRest returns Minf at nominal resting membrane potential of -70mV
@@ -83,24 +75,27 @@ func (kp *KirParams) MinfRest() float32 {
 	return kp.Minf(-70.0)
 }
 
-// MRates returns minf and mtau as a function of bio voltage
-func (kp *KirParams) MRates(vbio float32, minf, mtau *float32) {
-	*minf = kp.Minf(vbio)
+// MTau returns mtau as a function of bio voltage
+func (kp *KirParams) MTau(vbio float32) float32 {
 	alpha := 0.1 * math32.FastExp((vbio-(kp.RiseOff))/(-kp.RiseTau))
-	beta := 0.27 / (1 + math32.FastExp((vbio-(kp.DecayOff))/(-kp.DecayTau)))
+	beta := 0.27 / (1.0 + math32.FastExp((vbio-(kp.DecayOff))/(-kp.DecayTau)))
 	sum := alpha + beta
-	*mtau = 1.0 / sum
-	return
+	return 1.0 / sum
 }
 
-// Gkir returns the overall net Kir conductance, and updates the m gating parameter,
-// as a function of given normalized voltage
-func (kp *KirParams) Gkir(v float32, m *float32) float32 {
-	vbio := VToBio(v)
-	g := kp.Gbar * *m
-	dm := kp.DM(vbio, *m)
-	*m += dm
-	return g
+// DM computes the change in M gating parameter
+func (kp *KirParams) DM(vbio, m float32) float32 {
+	minf := kp.Minf(vbio)
+	// mtau := kp.MTau(vbio)
+	// minf := float32(0.15)
+	mtau := float32(4.0)
+	dm := (minf - m) / (mtau * 3) // 3 = Q10
+	return dm
+}
+
+// Gkir returns the overall net Kir conductance.
+func (kp *KirParams) Gkir(v float32, m float32) float32 {
+	return kp.Gbar * m
 }
 
 //gosl:end chans

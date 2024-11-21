@@ -85,9 +85,9 @@ fn LayerParams_SubPoolGiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<funct
 	PoolInhibSpikesFromRaw(pi, di);
 	PoolInhib(&(*ly).Inhib.Pool, pi, di, giMult);
 	if (lyInhib) {
-		PoolInhibLayerMax(pi, di, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(lpi),u32(di))]); // note: this requires lpl inhib to have been computed before!
+		PoolInhibLayerMax(pi, di, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(lpi),u32(TotalGi),u32(di))]); // note: this requires lpl inhib to have been computed before!
 	} else {
-		PoolInhibPoolMax(pi, di, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))]); // display only
+		PoolInhibPoolMax(pi, di, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))]); // display only
 		PoolInhibSaveOrig(lpi, di);                                                                              // effective GiOrig
 	}
 }
@@ -608,75 +608,75 @@ fn PoolInhib(fb: ptr<function,GiParams>, pi: u32,di: u32, gimult: f32) {
 	if ((*fb).On == 0) {
 		PoolInhibZero(pi, di);return;
 	}
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFAvg),u32(pi),u32(di))] += (*fb).FFAvgDt * (Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFs),u32(pi),u32(di))] - Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFAvg),u32(pi),u32(di))]);
-	var fsi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FSi),u32(pi),u32(di))];
-	fsi = GiParams_FSiFromFFs(fb, fsi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFs),u32(pi),u32(di))], Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBs),u32(pi),u32(di))]);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FSi),u32(pi),u32(di))] = fsi;
-	var clamped = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(Clamped),u32(pi),u32(di))] > 0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FSGi),u32(pi),u32(di))] = (*fb).Gi * GiParams_FS(fb, fsi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GeExts),u32(pi),u32(di))], clamped);
-	var ssf = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSf),u32(pi),u32(di))];
-	var ssi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSi),u32(pi),u32(di))];
-	GiParams_SSFromFBs(fb, &ssf, &ssi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBs),u32(pi),u32(di))]);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSGi),u32(pi),u32(di))] = (*fb).Gi * (*fb).SS * ssi;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSf),u32(pi),u32(di))] = ssf;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSi),u32(pi),u32(di))] = ssi;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))] = PoolInhibGiFromFSSS(pi, di) + (*fb).FFPrv*Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFAvgPrv),u32(pi),u32(di))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvg),u32(di))] += (*fb).FFAvgDt * (Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFs),u32(di))] - Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvg),u32(di))]);
+	var fsi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSi),u32(di))];
+	fsi = GiParams_FSiFromFFs(fb, fsi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFs),u32(di))], Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBs),u32(di))]);
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSi),u32(di))] = fsi;
+	var clamped = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(Clamped),u32(di))] > 0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSGi),u32(di))] = (*fb).Gi * GiParams_FS(fb, fsi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExts),u32(di))], clamped);
+	var ssf = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSf),u32(di))];
+	var ssi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSi),u32(di))];
+	GiParams_SSFromFBs(fb, &ssf, &ssi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBs),u32(di))]);
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSGi),u32(di))] = (*fb).Gi * (*fb).SS * ssi;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSf),u32(di))] = ssf;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSi),u32(di))] = ssi;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))] = PoolInhibGiFromFSSS(pi, di) + (*fb).FFPrv*Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvgPrv),u32(di))];
 	PoolInhibSaveOrig(pi, di);
 }
 fn PoolInhibInitRaw(pi: u32,di: u32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFsRaw),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBsRaw),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GeExtRaw),u32(pi),u32(di))] = 0.0;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(FFsRawInt),u32(pi),u32(di))] = 0;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(FBsRawInt),u32(pi),u32(di))] = 0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFsRaw),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBsRaw),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExtRaw),u32(di))] = 0.0;
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FFsRawInt),u32(di))] = 0;
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FBsRawInt),u32(di))] = 0;
 	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2],
-	u32(GeExtRawInt),u32(pi),u32(di))] = 0;
+	u32(pi),u32(GeExtRawInt),u32(di))] = 0;
 }
 fn PoolInhibZero(pi: u32,di: u32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFs),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBs),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GeExts),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FSi),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSi),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSf),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FSGi),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSGi),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFAvg),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFAvgPrv),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GiOrig),u32(pi),u32(di))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(LayGi),u32(pi),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFs),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBs),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExts),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSi),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSi),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSf),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSGi),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSGi),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvg),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvgPrv),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GiOrig),u32(di))] = 0.0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(LayGi),u32(di))] = 0.0;
 	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-	2], u32(Clamped),u32(pi),u32(di))] = 0;
+	2], u32(pi),u32(Clamped),u32(di))] = 0;
 }
 fn PoolInhibSpikesFromRaw(pi: u32,di: u32) {
 	var fnn = f32(PoolNNeurons(pi));
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBs),u32(pi),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBsRaw),u32(pi),u32(di))] / fnn;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFs),u32(pi),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFsRaw),u32(pi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GeExts),u32(pi),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GeExtRaw),u32(pi),u32(di))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBs),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBsRaw),u32(di))] / fnn;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFs),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFsRaw),u32(di))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExts),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExtRaw),u32(di))];
 	PoolInhibInitRaw(pi, di);
 }
 fn PoolInhibSaveOrig(pi: u32,di: u32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GiOrig),u32(pi),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GiOrig),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))];
 }
 fn PoolInhibGiFromFSSS(pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FSGi),u32(pi),u32(di))] + Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(SSGi),u32(pi),u32(di))];
+	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSGi),u32(di))] + Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSGi),u32(di))];
 }
 fn PoolInhibLayerMax(pi: u32,di: u32, liGi: f32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(LayGi),u32(pi),u32(di))] = liGi;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))] = max(Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))], liGi);
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(LayGi),u32(di))] = liGi;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))] = max(Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))], liGi);
 }
 fn PoolInhibPoolMax(pi: u32,di: u32, piGi: f32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))] = max(Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(TotalGi),u32(pi),u32(di))], piGi);
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))] = max(Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))], piGi);
 }
 fn PoolInhibIntToRaw(pi: u32,di: u32) {
 	var floatFromInt = 1.0 / f32(u32(1)<<24);
-	var fbs = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(FBsRawInt),u32(pi),u32(di))];
-	var ffs = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(FFsRawInt),u32(pi),u32(di))];
-	var geExt = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(GeExtRawInt),u32(pi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FBsRaw),u32(pi),u32(di))] = f32(fbs);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(FFsRaw),u32(pi),u32(di))] = f32(ffs) * floatFromInt;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(GeExtRaw),u32(pi),u32(di))] = f32(geExt) * floatFromInt;
+	var fbs = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FBsRawInt),u32(di))];
+	var ffs = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FFsRawInt),u32(di))];
+	var geExt = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(GeExtRawInt),u32(di))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBsRaw),u32(di))] = f32(fbs);
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFsRaw),u32(di))] = f32(ffs) * floatFromInt;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExtRaw),u32(di))] = f32(geExt) * floatFromInt;
 }
 
 ///////////// import: "kinase-params.go"
@@ -1235,25 +1235,25 @@ fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 {
 	return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am);
 }
 fn PoolNNeurons(pi: u32) -> i32 {
-	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(PoolNeurEd),u32(pi),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-	2], u32(PoolNeurSt),u32(pi),u32(0))];
+	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurEd),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
+	2], u32(pi),u32(PoolNeurSt),u32(0))];
 }
 fn PoolAvgMaxCalcVar(vr: AvgMaxVars, pi: u32,di: u32) {
 	var floatFromInt = f32(1.0) / f32(u32(1)<<20);
 	var vis = AvgMaxIntVarIndex(vr, Avg);
-	var sum = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vis),u32(pi),u32(di))];
+	var sum = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vis),u32(di))];
 	if (sum < 0) {
 		sum = i32(u32(1) << 20);
 	}
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(AvgMaxVarIndex(vr, AMCycle, Avg)),u32(pi),u32(di))] = f32(sum) * floatFromInt;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vis),u32(pi),u32(di))] = 0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMCycle, Avg)),u32(di))] = f32(sum) * floatFromInt;
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vis),u32(di))] = 0;
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	var mx = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))];
+	var mx = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vim),u32(di))];
 	if (mx < 0) {
 		mx = i32(u32(1) << 20);
 	}
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(vim),u32(pi),u32(di))] = 0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(AvgMaxVarIndex(vr, AMCycle, Max)),u32(pi),u32(di))] = f32(mx) * floatFromInt;
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vim),u32(di))] = 0;
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMCycle, Max)),u32(di))] = f32(mx) * floatFromInt;
 }
 fn PoolAvgMaxCalc(pi: u32,di: u32) {
 	for (var vr=0; vr<AMAvgDif; vr++) { // don't do AvgDif
@@ -1261,14 +1261,14 @@ fn PoolAvgMaxCalc(pi: u32,di: u32) {
 	}
 }
 fn PoolPoolGi(ctx: ptr<function,Context>, pi: u32,di: u32) {
-	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(PoolIsLayer),u32(pi),u32(di))] > 0) {
+	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolIsLayer),u32(di))] > 0) {
 		return;
 	}
-	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(PoolLayerIdx),u32(pi),u32(di))];
+	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolLayerIdx),u32(di))];
 	PoolAvgMaxCalc(pi, di);
 	PoolInhibIntToRaw(pi, di);
 	var ly = Layers[u32(li)];
-	var giMult = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerGiMult),u32(li),u32(di))];
+	var giMult = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(LayerGiMult),u32(di))];
 	var lyIsOn = (ly.Inhib.Layer.On == 1);
 	var lpi = LayerParams_PoolIndex(&ly, u32(0));
 	LayerParams_SubPoolGiFromSpikes(&ly, ctx, lpi, pi, di, lyIsOn, giMult);

@@ -249,22 +249,22 @@ func (pt *PathParams) GatherSpikesGSyn(ctx *Context, ly *LayerParams, ni, di uin
 	switch pt.Com.GType {
 	case ExcitatoryG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons[GeRaw, ni, di] += gRaw
-		Neurons[GeSyn, ni, di] += *gSyn
+		Neurons[ni, GeRaw, di] += gRaw
+		Neurons[ni, GeSyn, di] += *gSyn
 	case InhibitoryG:
 		*gSyn = ly.Acts.Dt.GiSynFromRaw(*gSyn, gRaw)
-		Neurons[GiRaw, ni, di] += gRaw
-		Neurons[GiSyn, ni, di] += *gSyn
+		Neurons[ni, GiRaw, di] += gRaw
+		Neurons[ni, GiSyn, di] += *gSyn
 	case ModulatoryG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons[GModRaw, ni, di] += gRaw
-		Neurons[GModSyn, ni, di] += *gSyn
+		Neurons[ni, GModRaw, di] += gRaw
+		Neurons[ni, GModSyn, di] += *gSyn
 	case MaintG:
 		*gSyn = ly.Acts.Dt.GeSynFromRaw(*gSyn, gRaw)
-		Neurons[GMaintRaw, ni, di] += gRaw
+		Neurons[ni, GMaintRaw, di] += gRaw
 		// note: Syn happens via NMDA in Act
 	case ContextG:
-		Neurons[CtxtGeRaw, ni, di] += gRaw
+		Neurons[ni, CtxtGeRaw, di] += gRaw
 	default:
 	}
 }
@@ -279,9 +279,9 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 		if uint32(ctx.Cycle) != uint32(ctx.ThetaCycles)-1-pt.Com.DelLen {
 			return
 		}
-		sendVal *= Neurons[Burst, ni, di] // Burst is regular CaSpkP for all non-SuperLayer neurons
+		sendVal *= Neurons[ni, Burst, di] // Burst is regular CaSpkP for all non-SuperLayer neurons
 	} else {
-		if Neurons[Spike, ni, di] == 0 {
+		if Neurons[ni, Spike, di] == 0 {
 			return
 		}
 	}

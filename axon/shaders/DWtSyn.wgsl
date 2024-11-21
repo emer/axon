@@ -736,7 +736,7 @@ fn PathParams_DWtSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, r
 		return;
 	}
 	var isTarget = (*rlay).Acts.Clamp.IsTarget > 0;
-	var spi = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnSubPool),u32(ri))];
+	var spi = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ri),u32(NrnSubPool))];
 	var pi = LayerParams_PoolIndex(rlay, spi);
 	var lpi = LayerParams_PoolIndex(rlay, u32(u32(0)));
 	switch ((*pt).Type) {
@@ -771,22 +771,22 @@ fn PathParams_DWtSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, r
 	}
 }
 fn PathParams_SynCa(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, si: u32,ri: u32,di: u32, syCaP: ptr<function,f32>,syCaD: ptr<function,f32>) {
-	var rb0 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin0),u32(ri),u32(di))];
-	var sb0 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin0),u32(si),u32(di))];
-	var rb1 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin1),u32(ri),u32(di))];
-	var sb1 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin1),u32(si),u32(di))];
-	var rb2 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin2),u32(ri),u32(di))];
-	var sb2 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin2),u32(si),u32(di))];
-	var rb3 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin3),u32(ri),u32(di))];
-	var sb3 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin3),u32(si),u32(di))];
-	var rb4 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin4),u32(ri),u32(di))];
-	var sb4 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin4),u32(si),u32(di))];
-	var rb5 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin5),u32(ri),u32(di))];
-	var sb5 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin5),u32(si),u32(di))];
-	var rb6 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin6),u32(ri),u32(di))];
-	var sb6 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin6),u32(si),u32(di))];
-	var rb7 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin7),u32(ri),u32(di))];
-	var sb7 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkBin7),u32(si),u32(di))];
+	var rb0 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin0),u32(di))];
+	var sb0 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin0),u32(di))];
+	var rb1 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin1),u32(di))];
+	var sb1 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin1),u32(di))];
+	var rb2 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin2),u32(di))];
+	var sb2 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin2),u32(di))];
+	var rb3 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin3),u32(di))];
+	var sb3 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin3),u32(di))];
+	var rb4 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin4),u32(di))];
+	var sb4 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin4),u32(di))];
+	var rb5 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin5),u32(di))];
+	var sb5 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin5),u32(di))];
+	var rb6 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin6),u32(di))];
+	var sb6 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin6),u32(di))];
+	var rb7 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkBin7),u32(di))];
+	var sb7 = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(SpkBin7),u32(di))];
 	var b0 = 0.1 * (rb0 * sb0);
 	var b1 = 0.1 * (rb1 * sb1);
 	var b2 = 0.1 * (rb2 * sb2);
@@ -804,7 +804,7 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	var dtr = syCaD;                // delta trace, caD reflects entire window
 	if ((*pt).Type == CTCtxtPath) { // layer 6 CT pathway
 		dtr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2],
-		u32(BurstPrv),u32(si),u32(di))];
+		u32(si),u32(BurstPrv),u32(di))];
 	}
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[
 	1], SynapseTraces[2], u32(DTr),u32(syni),u32(di))] = dtr;
@@ -819,8 +819,8 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnCaP),u32(ri),u32(di))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // hiddens: recv NMDA Ca drives error signal w/ trace credit
-		2], u32(NrnCaD),u32(ri),u32(di))]);
+		err = tr * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(NrnCaP),u32(di))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // hiddens: recv NMDA Ca drives error signal w/ trace credit
+		2], u32(ri),u32(NrnCaD),u32(di))]);
 	}
 	var lwt = Synapses[IndexF322D(Synapses[0], Synapses[ // linear weight
 	1], u32(LWt),u32(syni))];
@@ -832,12 +832,12 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	if ((*pt).Type == CTCtxtPath) { // rn.RLRate IS needed for other pathways, just not the context one
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = (*pt).Learn.LRate.Eff * err;
 	} else {
-		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))] * (*pt).Learn.LRate.Eff * err;
+		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(RLRate),u32(di))] * (*pt).Learn.LRate.Eff * err;
 	}
 }
 fn PathParams_DWtSynHebb(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var rNrnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnCaP),u32(ri),u32(di))];
-	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnCaP),u32(si),u32(di))];
+	var rNrnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(NrnCaP),u32(di))];
+	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(NrnCaP),u32(di))];
 	var lwt = Synapses[IndexF322D(Synapses[0], Synapses[ // linear weight
 	1], u32(LWt),u32(syni))];
 	var hebb = rNrnCaP * ((*pt).Learn.Hebb.Up*sNrnCap*(1-lwt) - (*pt).Learn.Hebb.Down*(1-sNrnCap)*lwt);
@@ -857,8 +857,8 @@ fn PathParams_DWtSynHip(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	if (Synapses[IndexF322D(Synapses[0], Synapses[1], u32(Wt),u32(syni))] == 0) {
 		return;
 	}
-	var rNrnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnCaP),u32(ri),u32(di))];
-	var rNrnCaD = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnCaD),u32(ri),u32(di))];
+	var rNrnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(NrnCaP),u32(di))];
+	var rNrnCaD = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(NrnCaD),u32(di))];
 	var err: f32;
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
@@ -872,11 +872,11 @@ fn PathParams_DWtSynHip(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	} else {
 		err *= lwt;
 	}
-	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NrnCaP),u32(si),u32(di))];
+	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(NrnCaP),u32(di))];
 	var savg = 0.5 + (*pt).Hip.SAvgCor*((*pt).Hip.SNominal-0.5);
 	savg = 0.5 / max((*pt).Hip.SAvgThr, savg); // keep this Sending Average Correction term within bounds (SAvgThr)
 	var hebb = rNrnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt);
-	var dwt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))] * (*pt).Learn.LRate.Eff * ((*pt).Hip.Hebb*hebb + (*pt).Hip.Err*err);
+	var dwt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(RLRate),u32(di))] * (*pt).Learn.LRate.Eff * ((*pt).Hip.Hebb*hebb + (*pt).Hip.Err*err);
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1],
 	SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = dwt;
 }
@@ -885,21 +885,21 @@ fn PathParams_DWtSynBLA(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	var ach = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvACh),u32(di))];
 	if (GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[ // learn and reset
 	1], u32(GvHasRew),u32(di))] > 0) {
-		var ract = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkD),u32(ri),u32(di))];
+		var ract = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(CaSpkD),u32(di))];
 		if (ract < (*pt).Learn.Trace.LearnThr) {
 			ract = f32(0);
 		}
 		var tr = SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(Tr),u32(syni),u32(di))];
 		var ustr = (*pt).BLA.USTrace;
-		tr = ustr*Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Burst),u32(si),u32(di))] + (1.0-ustr)*tr;
-		var delta = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkP),u32(ri),u32(di))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(SpkPrv),u32(ri),u32(di))];
+		tr = ustr*Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(Burst),u32(di))] + (1.0-ustr)*tr;
+		var delta = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(CaSpkP),u32(di))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(SpkPrv),u32(di))];
 		if (delta < 0) { // neg delta learns slower in Acq, not Ext
 			delta *= (*pt).BLA.NegDeltaLRate;
 		}
 		dwt = tr * delta * ract;
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(Tr),u32(syni),u32(di))] = 0.0;
 	} else if (ach > (*pt).BLA.AChThr) {
-		var dtr = ach * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Burst),u32(si),u32(di))];
+		var dtr = ach * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(Burst),u32(di))];
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DTr),u32(syni),u32(di))] = dtr;
 		var tr = TraceParams_TrFromCa(&(*pt).Learn.Trace, SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(Tr),u32(syni),u32(di))], dtr);
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(Tr),u32(syni),u32(di))] = tr;
@@ -912,18 +912,18 @@ fn PathParams_DWtSynBLA(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	} else {
 		dwt *= lwt;
 	}
-	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))] * (*pt).Learn.LRate.Eff * dwt;
+	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(RLRate),u32(di))] * (*pt).Learn.LRate.Eff * dwt;
 }
 fn PathParams_DWtSynRWPred(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var lda = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvDA),u32(di))];
 	var da = lda;
 	var lr = (*pt).Learn.LRate.Eff;
 	var eff_lr = lr;
-	if (NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnNeurIndex),u32(ri))] == 0) {
-		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ge),u32(ri),u32(di))] > Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Act),u32(ri),u32(di))] && da > 0) { // clipped at top, saturate up
+	if (NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ri),u32(NrnNeurIndex))] == 0) {
+		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Ge),u32(di))] > Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Act),u32(di))] && da > 0) { // clipped at top, saturate up
 			da = f32(0);
 		}
-		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ge),u32(ri),u32(di))] < Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Act),u32(ri),u32(di))] && da < 0) { // clipped at bottom, saturate down
+		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Ge),u32(di))] < Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Act),u32(di))] && da < 0) { // clipped at bottom, saturate down
 			da = f32(0);
 		}
 		if (da < 0) {
@@ -931,10 +931,10 @@ fn PathParams_DWtSynRWPred(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 		}
 	} else {
 		eff_lr = -eff_lr;                                                                                                                                                                     // negative case
-		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ge),u32(ri),u32(di))] > Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Act),u32(ri),u32(di))] && da < 0) { // clipped at top, saturate up
+		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Ge),u32(di))] > Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Act),u32(di))] && da < 0) { // clipped at top, saturate up
 			da = f32(0);
 		}
-		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ge),u32(ri),u32(di))] < Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Act),u32(ri),u32(di))] && da > 0) { // clipped at bottom, saturate down
+		if (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Ge),u32(di))] < Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(Act),u32(di))] && da > 0) { // clipped at bottom, saturate down
 			da = f32(0);
 		}
 		if (da >= 0) {
@@ -942,7 +942,7 @@ fn PathParams_DWtSynRWPred(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 		}
 	}
 	var dwt = da * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // no recv unit activation
-	2], u32(CaSpkP),u32(si),u32(di))];
+	2], u32(si),u32(CaSpkP),u32(di))];
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[
 	2], u32(DiDWt),u32(syni),u32(di))] = eff_lr * dwt;
 }
@@ -951,7 +951,7 @@ fn PathParams_DWtSynTDPred(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	var da = lda;
 	var lr = (*pt).Learn.LRate.Eff;
 	var eff_lr = lr;
-	var ni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnNeurIndex),u32(ri))];
+	var ni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ri),u32(NrnNeurIndex))];
 	if (ni == 0) {
 		if (da < 0) {
 			eff_lr *= (*pt).RLPred.OppSignLRate;
@@ -963,7 +963,7 @@ fn PathParams_DWtSynTDPred(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 		}
 	}
 	var dwt = da * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // no recv unit activation, prior trial act
-	2], u32(SpkPrv),u32(si),u32(di))];
+	2], u32(si),u32(SpkPrv),u32(di))];
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[
 	2], u32(DiDWt),u32(syni),u32(di))] = eff_lr * dwt;
 }
@@ -973,10 +973,10 @@ fn PathParams_DWtSynVSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Con
 	if (!hasRew && ach < 0.1) {
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DTr),u32(syni),u32(di))] = 0.0;return;
 	}
-	var rlr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))];
-	var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkP),u32(ri),u32(di))];
-	var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkD),u32(ri),u32(di))];
-	var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkD),u32(si),u32(di))];
+	var rlr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(RLRate),u32(di))];
+	var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(CaSpkP),u32(di))];
+	var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(CaSpkD),u32(di))];
+	var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(CaSpkD),u32(di))];
 	var dtr = ach * ((*pt).Matrix.Delta * sact * (rplus - rminus));
 	if (rminus > (*pt).Learn.Trace.LearnThr) { // key: prevents learning if < threshold
 		dtr += ach * ((*pt).Matrix.Credit * sact * rminus);
@@ -998,7 +998,7 @@ fn PathParams_DWtSynVSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Con
 	}
 }
 fn PathParams_DWtSynDSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var rlr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))];
+	var rlr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(RLRate),u32(di))];
 	if (GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[ // US time -- use DA and current recv activity
 	1], u32(GvHasRew),u32(di))] > 0) {
 		var tr = SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(Tr),u32(syni),u32(di))];
@@ -1007,10 +1007,10 @@ fn PathParams_DWtSynDSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Con
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(Tr),u32(syni),u32(di))] = 0.0;
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DTr),u32(syni),u32(di))] = 0.0;
 	} else {
-		var pfmod = (*pt).Matrix.BasePF + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(GModSyn),u32(ri),u32(di))];
-		var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkP),u32(ri),u32(di))];
-		var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkD),u32(ri),u32(di))];
-		var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(CaSpkD),u32(si),u32(di))];
+		var pfmod = (*pt).Matrix.BasePF + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(GModSyn),u32(di))];
+		var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(CaSpkP),u32(di))];
+		var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(CaSpkD),u32(di))];
+		var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(CaSpkD),u32(di))];
 		var dtr = rlr * ((*pt).Matrix.Delta * sact * (rplus - rminus));
 		if (rminus > (*pt).Learn.Trace.LearnThr) { // key: prevents learning if < threshold
 			dtr += rlr * ((*pt).Matrix.Credit * pfmod * sact * rminus);
@@ -1022,13 +1022,13 @@ fn PathParams_DWtSynDSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Con
 }
 fn PathParams_DWtSynVSPatch(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
 	var ract = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // t-1
-	2], u32(SpkPrv),u32(ri),u32(di))];
+	2], u32(ri),u32(SpkPrv),u32(di))];
 	if (ract < (*pt).Learn.Trace.LearnThr) {
 		ract = f32(0);
 	}
 	var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // t-1
-	2], u32(SpkPrv),u32(si),u32(di))];
-	var dwt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(RLRate),u32(ri),u32(di))] * (*pt).Learn.LRate.Eff * sact * ract;
+	2], u32(si),u32(SpkPrv),u32(di))];
+	var dwt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(RLRate),u32(di))] * (*pt).Learn.LRate.Eff * sact * ract;
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1],
 	SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))] = dwt;
 }

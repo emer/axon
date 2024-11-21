@@ -35,15 +35,15 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 			}
 			trg := false
 			if ly.Type == CompareLayer || ly.Type == TargetLayer {
-				if Neurons.Value(int(Target), int(ni), int(di)) > thr {
+				if Neurons.Value(int(ni), int(Target), int(di)) > thr {
 					trg = true
 				}
 			} else {
-				if Neurons.Value(int(ActP), int(ni), int(di)) > thr {
+				if Neurons.Value(int(ni), int(ActP), int(di)) > thr {
 					trg = true
 				}
 			}
-			if Neurons.Value(int(ActM), int(ni), int(di)) > thr {
+			if Neurons.Value(int(ni), int(ActM), int(di)) > thr {
 				if !trg {
 					wrong++
 				}
@@ -79,8 +79,8 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < ydim; yi++ {
 				lni := uint32(yi*xdim + xi)
 				ni := ly.NeurStIndex + lni
-				sumM += Neurons.Value(int(ActM), int(ni), int(di))
-				sumP += Neurons.Value(int(ActP), int(ni), int(di))
+				sumM += Neurons.Value(int(ni), int(ActM), int(di))
+				sumP += Neurons.Value(int(ni), int(ActP), int(di))
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -116,8 +116,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < nun; yi++ {
 				lni := uint32(xi*nun + yi)
 				ni := ly.NeurStIndex + lni
-				sumM += Neurons.Value(int(ActM), int(ni), int(di))
-				sumP += Neurons.Value(int(ActP), int(ni), int(di))
+				sumM += Neurons.Value(int(ni), int(ActM), int(di))
+				sumP += Neurons.Value(int(ni), int(ActP), int(di))
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -147,8 +147,8 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		return am
 	}
 	pi := ly.Params.PoolIndex(uint32(poolIndex))
-	nsi := PoolsInt.Value(int(PoolNeurSt), int(pi), int(di))
-	nei := PoolsInt.Value(int(PoolNeurEd), int(pi), int(di))
+	nsi := PoolsInt.Value(int(pi), int(PoolNeurSt), int(di))
+	nei := PoolsInt.Value(int(pi), int(PoolNeurEd), int(di))
 	am.Init()
 	for lni := nsi; lni < nei; lni++ {
 		ni := ly.NeurStIndex + uint32(lni)
@@ -181,8 +181,8 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 			if NeuronIsOff(ni) {
 				continue
 			}
-			ap := Neurons.Value(int(ActP), int(ni), int(di)) - avgP // zero mean = correl
-			am := Neurons.Value(int(ActM), int(ni), int(di)) - avgM
+			ap := Neurons.Value(int(ni), int(ActP), int(di)) - avgP // zero mean = correl
+			am := Neurons.Value(int(ni), int(ActM), int(di)) - avgM
 			cosv += ap * am
 			ssm += am * am
 			ssp += ap * ap
@@ -191,11 +191,11 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 		if dist != 0 {
 			cosv /= dist
 		}
-		LayerStates.Set(1-cosv, int(LayerPhaseDiff), int(li), int(di))
-		avg := LayerStates.Value(int(LayerPhaseDiffAvg), int(li), int(di))
-		vr := LayerStates.Value(int(LayerPhaseDiffVar), int(li), int(di))
+		LayerStates.Set(1-cosv, int(li), int(LayerPhaseDiff), int(di))
+		avg := LayerStates.Value(int(li), int(LayerPhaseDiffAvg), int(di))
+		vr := LayerStates.Value(int(li), int(LayerPhaseDiffVar), int(di))
 		ly.Params.Acts.Dt.AvgVarUpdate(&avg, &vr, 1-cosv)
-		LayerStates.Set(avg, int(LayerPhaseDiffAvg), int(li), int(di))
-		LayerStates.Set(vr, int(LayerPhaseDiffVar), int(li), int(di))
+		LayerStates.Set(avg, int(li), int(LayerPhaseDiffAvg), int(di))
+		LayerStates.Set(vr, int(li), int(LayerPhaseDiffVar), int(di))
 	}
 }

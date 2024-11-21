@@ -83,12 +83,12 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 ///////////// import: "act-layer.go"
 fn LayerParams_PlusPhaseStartNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
 	if (NeuronHasFlag(NeuronHasTarg, ni, di)) { // will be clamped in plus phase
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Ext),u32(ni),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(Target),u32(ni),u32(di))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Ext),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Target),u32(di))];
 		NeuronSetFlag(NeuronHasExt, ni, di);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ISI),u32(ni),u32(di))] = -1.0;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ISI),u32(di))] = -1.0;
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2],
-		u32(ISIAvg),u32(ni),u32(di))] = -1.0;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ActInt),u32(ni),u32(di))] = (*ly).Acts.Init.Act;
+		u32(ni),u32(ISIAvg),u32(di))] = -1.0;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActInt),u32(di))] = (*ly).Acts.Init.Act;
 	}
 }
 
@@ -97,7 +97,7 @@ fn PlusPhaseStartNeuron(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
-	var li = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(NrnLayIndex),u32(ni))];
+	var li = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_PlusPhaseStartNeuron(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;
 }
@@ -124,10 +124,10 @@ struct PathScaleParams {
 
 ///////////// import: "act.go"
 fn NeuronHasFlag(flag: NeuronFlags, ni: u32,di: u32) -> bool {
-	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NeurFlags),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
 }
 fn NeuronSetFlag(flag: NeuronFlags, ni: u32,di: u32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(NeurFlags),u32(ni),u32(di))]) | u32(flag));
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NeurFlags),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NeurFlags),u32(di))]) | u32(flag));
 }
 struct SpikeParams {
 	Thr: f32,

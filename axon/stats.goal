@@ -33,15 +33,15 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 			}
 			trg := false
 			if ly.Type == CompareLayer || ly.Type == TargetLayer {
-				if Neurons[Target, ni, di] > thr {
+				if Neurons[ni, Target, di] > thr {
 					trg = true
 				}
 			} else {
-				if Neurons[ActP, ni, di] > thr {
+				if Neurons[ni, ActP, di] > thr {
 					trg = true
 				}
 			}
-			if Neurons[ActM, ni, di] > thr {
+			if Neurons[ni, ActM, di] > thr {
 				if !trg {
 					wrong++
 				}
@@ -77,8 +77,8 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < ydim; yi++ {
 				lni := uint32(yi*xdim + xi)
 				ni := ly.NeurStIndex + lni
-				sumM += Neurons[ActM, ni, di]
-				sumP += Neurons[ActP, ni, di]
+				sumM += Neurons[ni, ActM, di]
+				sumP += Neurons[ni, ActP, di]
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -114,8 +114,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < nun; yi++ {
 				lni := uint32(xi*nun + yi)
 				ni := ly.NeurStIndex + lni
-				sumM += Neurons[ActM, ni, di]
-				sumP += Neurons[ActP, ni, di]
+				sumM += Neurons[ni, ActM, di]
+				sumP += Neurons[ni, ActP, di]
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -145,8 +145,8 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		return am
 	}
 	pi := ly.Params.PoolIndex(uint32(poolIndex))
-	nsi := PoolsInt[PoolNeurSt, pi, di]
-	nei := PoolsInt[PoolNeurEd, pi, di]
+	nsi := PoolsInt[pi, PoolNeurSt, di]
+	nei := PoolsInt[pi, PoolNeurEd, di]
 	am.Init()
 	for lni := nsi; lni < nei; lni++ {
 		ni := ly.NeurStIndex + uint32(lni)
@@ -179,8 +179,8 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 			if NeuronIsOff(ni) {
 				continue
 			}
-			ap := Neurons[ActP, ni, di] - avgP // zero mean = correl
-			am := Neurons[ActM, ni, di] - avgM
+			ap := Neurons[ni, ActP, di] - avgP // zero mean = correl
+			am := Neurons[ni, ActM, di] - avgM
 			cosv += ap * am
 			ssm += am * am
 			ssp += ap * ap
@@ -189,11 +189,11 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 		if dist != 0 {
 			cosv /= dist
 		}
-		LayerStates[LayerPhaseDiff, li, di] = 1 - cosv
-		avg := LayerStates[LayerPhaseDiffAvg, li, di]
-		vr := LayerStates[LayerPhaseDiffVar, li, di]
+		LayerStates[li, LayerPhaseDiff, di] = 1 - cosv
+		avg := LayerStates[li, LayerPhaseDiffAvg, di]
+		vr := LayerStates[li, LayerPhaseDiffVar, di]
 		ly.Params.Acts.Dt.AvgVarUpdate(&avg, &vr, 1-cosv)
-		LayerStates[LayerPhaseDiffAvg, li, di] = avg
-		LayerStates[LayerPhaseDiffVar, li, di] = vr
+		LayerStates[li, LayerPhaseDiffAvg, di] = avg
+		LayerStates[li, LayerPhaseDiffVar, di] = vr
 	}
 }

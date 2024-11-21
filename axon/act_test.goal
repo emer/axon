@@ -36,17 +36,17 @@ func TestActUpdate(t *testing.T) {
 	di := uint32(0)
 
 	for i := range geinc {
-		Neurons[GeRaw, ni, di] += geinc[i]
-		Neurons[GeSyn, ni, di] = ac.Dt.GeSynFromRaw(Neurons[GeSyn, ni, di], Neurons[GeRaw, ni, di])
-		ac.GeFromSyn(ctx, ni, di, Neurons[GeSyn, ni, di], Neurons[GeExt, ni, di])
-		ac.GiFromSyn(ctx, ni, di, Neurons[GiSyn, ni, di])
+		Neurons[ni, GeRaw, di] += geinc[i]
+		Neurons[ni, GeSyn, di] = ac.Dt.GeSynFromRaw(Neurons[ni, GeSyn, di], Neurons[ni, GeRaw, di])
+		ac.GeFromSyn(ctx, ni, di, Neurons[ni, GeSyn, di], Neurons[ni, GeExt, di])
+		ac.GiFromSyn(ctx, ni, di, Neurons[ni, GiSyn, di])
 		ac.VmFromG(ctx, ni, di)
 		ac.SpikeFromVm(ctx, ni, di)
-		ge[i] = Neurons[Ge, ni, di]
-		inet[i] = Neurons[Inet, ni, di]
-		vm[i] = Neurons[Vm, ni, di]
-		spike[i] = Neurons[Spike, ni, di]
-		act[i] = Neurons[Act, ni, di]
+		ge[i] = Neurons[ni, Ge, di]
+		inet[i] = Neurons[ni, Inet, di]
+		vm[i] = Neurons[ni, Vm, di]
+		spike[i] = Neurons[ni, Spike, di]
+		act[i] = Neurons[ni, Act, di]
 		difge := math32.Abs(ge[i] - correctGe[i])
 		if difge > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("ge err: idx: %v, geinc: %v, ge: %v, corge: %v, dif: %v\n", i, geinc[i], ge[i], correctGe[i], difge)

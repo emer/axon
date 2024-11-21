@@ -123,8 +123,8 @@ fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 fn LayerParams_CyclePostLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
 	var casp = PoolAvgMax(AMCaSpkP, AMCycle, Max, lpi, di);
 	if ((*ctx).Cycle >= (*ly).Acts.Dt.MaxCycStart && casp > 0.5) { // todo: param
-		if (LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRT),u32((*ly).Index),u32(di))] <= 0) {
-			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRT),u32((*ly).Index),u32(di))] = f32((*ctx).Cycle);
+		if (LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRT),u32(di))] <= 0) {
+			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRT),u32(di))] = f32((*ctx).Cycle);
 		}
 	}
 }
@@ -147,7 +147,7 @@ fn LayerParams_CyclePostLDTLayer(ly: ptr<function,LayerParams>, ctx: ptr<functio
 }
 fn LayerParams_CyclePostRWDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var pli = u32((*ly).RWDa.RWPredLayIndex);
-	var pred = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredPos),u32(pli),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredNeg),u32(pli),u32(di))];
+	var pred = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(pli),u32(LayerRewPredPos),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(pli),u32(LayerRewPredNeg),u32(di))];
 	GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[ // record
 	1], u32(GvRewPred),u32(di))] = pred;
 	var da = f32(0);
@@ -161,7 +161,7 @@ fn LayerParams_CyclePostTDPredLayer(ly: ptr<function,LayerParams>, ctx: ptr<func
 	if ((*ctx).PlusPhase == 0) {
 		return;
 	}
-	var pred = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredPos),u32((*ly).Index),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredNeg),u32((*ly).Index),u32(di))];
+	var pred = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRewPredPos),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRewPredNeg),u32(di))];
 	GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvPrevPred),u32(di))] = pred;
 }
 fn LayerParams_CyclePostTDIntegLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
@@ -172,19 +172,19 @@ fn LayerParams_CyclePostTDIntegLayer(ly: ptr<function,LayerParams>, ctx: ptr<fun
 	var rpval = f32(0);
 	if ((*ctx).PlusPhase == 1) {
 		var pli = u32((*ly).TDInteg.TDPredLayIndex);
-		var pred = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredPos),u32(pli),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredNeg),u32(pli),u32(di))];
+		var pred = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(pli),u32(LayerRewPredPos),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(pli),u32(LayerRewPredNeg),u32(di))];
 		rpval = rew + (*ly).TDInteg.Discount*(*ly).TDInteg.PredGain*pred;
-		LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredPos),u32((*ly).Index),u32(di))] = rpval; // our plus phase = new integrated value
+		LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRewPredPos),u32(di))] = rpval; // our plus phase = new integrated value
 	} else {
 		rpval = (*ly).TDInteg.PredGain * GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvPrevPred),u32(di))];
-		LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredNeg),u32((*ly).Index),u32(di))] = rpval; // our minus phase = prior integrated value
+		LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRewPredNeg),u32(di))] = rpval; // our minus phase = prior integrated value
 	}
 	GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[ // global value will be copied to layers next cycle
 	1], u32(GvRewPred),u32(di))] = rpval;
 }
 fn LayerParams_CyclePostTDDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var ili = u32((*ly).TDDa.TDIntegLayIndex);
-	var da = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredPos),u32(ili),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(LayerRewPredNeg),u32(ili),u32(di))];
+	var da = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(ili),u32(LayerRewPredPos),u32(di))] - LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(ili),u32(LayerRewPredNeg),u32(di))];
 	if ((*ctx).PlusPhase == 0) {
 		da = f32(0);
 	}
@@ -1263,7 +1263,7 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(AvgMaxVarIndex(vr, phase, am)),u32(pi),u32(di))];
+	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, phase, am)),u32(di))];
 }
 
 ///////////// import: "rand.go"

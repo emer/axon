@@ -739,12 +739,12 @@ func (nt *Network) Build() error { //types:add
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
 	nt.LayParams = make([]LayerParams, nLayers)
-	sltensor.SetShapeSizes(&nt.LayerStates, int(LayerVarsN), nLayers, maxData)
-	sltensor.SetShapeSizes(&nt.Pools, int(PoolVarsN), totPools, maxData)
-	sltensor.SetShapeSizes(&nt.PoolsInt, int(PoolIntVarsTot), totPools, maxData)
-	sltensor.SetShapeSizes(&nt.Neurons, int(NeuronVarsN), totNeurons, maxData)
-	sltensor.SetShapeSizes(&nt.NeuronAvgs, int(NeuronAvgVarsN), totNeurons)
-	sltensor.SetShapeSizes(&nt.NeuronIxs, int(NeuronIndexVarsN), totNeurons)
+	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, int(LayerVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.Pools, totPools, int(PoolVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.PoolsInt, totPools, int(PoolIntVarsTot), maxData)
+	sltensor.SetShapeSizes(&nt.Neurons, totNeurons, int(NeuronVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.NeuronAvgs, totNeurons, int(NeuronAvgVarsN))
+	sltensor.SetShapeSizes(&nt.NeuronIxs, totNeurons, int(NeuronIndexVarsN))
 	nt.Paths = make([]*Path, totPaths)
 	nt.PathParams = make([]PathParams, totPaths)
 	sltensor.SetShapeSizes(&nt.Exts, totExts, maxData)
@@ -794,7 +794,7 @@ func (nt *Network) Build() error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				nt.PoolsInt.Set(int32(li), int(PoolLayerIdx), int(poolIndex+pi), int(di))
+				nt.PoolsInt.Set(int32(li), int(poolIndex+pi), int(PoolLayerIdx), int(di))
 			}
 		}
 		if ly.Type.IsExt() {
@@ -1214,8 +1214,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	for di := uint32(0); di < ctx.NData; di++ {
 		for ni := uint32(0); ni < nix.NNeurons; ni++ {
 			for nvar := Spike; nvar < NeuronVarsN; nvar++ {
-				nv := nt.Neurons.Value(int(nvar), int(ni), int(di))
-				ov := on.Neurons.Value(int(nvar), int(ni), int(di))
+				nv := nt.Neurons.Value(int(ni), int(nvar), int(di))
+				ov := on.Neurons.Value(int(ni), int(nvar), int(di))
 				if nv != ov {
 					diffs += fmt.Sprintf("Neuron: di: %d\tni: %d\tvar: %s\tval: %g\toth: %g\n", di, ni, nvar.String(), nv, ov)
 					ndif++
@@ -1228,8 +1228,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	}
 	for ni := uint32(0); ni < nix.NNeurons; ni++ {
 		for nvar := ActAvg; nvar < NeuronAvgVarsN; nvar++ {
-			nv := nt.NeuronAvgs.Value(int(nvar), int(ni))
-			ov := on.NeuronAvgs.Value(int(nvar), int(ni))
+			nv := nt.NeuronAvgs.Value(int(ni), int(nvar))
+			ov := on.NeuronAvgs.Value(int(ni), int(nvar))
 			if nv != ov {
 				diffs += fmt.Sprintf("NeuronAvg: ni: %d\tvar: %s\tval: %g\toth: %g\n", ni, nvar.String(), nv, ov)
 				ndif++

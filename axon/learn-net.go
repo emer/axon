@@ -123,21 +123,21 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	}
 	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		(*dwts)[idx+0] = LayerStates.Value(int(LayerActMAvg), int(li), int(0))
-		(*dwts)[idx+1] = LayerStates.Value(int(LayerActPAvg), int(li), int(0))
-		(*dwts)[idx+2] = LayerStates.Value(int(LayerAvgMaxGeM), int(li), int(0))
-		(*dwts)[idx+3] = LayerStates.Value(int(LayerAvgMaxGiM), int(li), int(0))
-		(*dwts)[idx+4] = LayerStates.Value(int(LayerGiMult), int(li), int(0))
+		(*dwts)[idx+0] = LayerStates.Value(int(li), int(LayerActMAvg), int(0))
+		(*dwts)[idx+1] = LayerStates.Value(int(li), int(LayerActPAvg), int(0))
+		(*dwts)[idx+2] = LayerStates.Value(int(li), int(LayerAvgMaxGeM), int(0))
+		(*dwts)[idx+3] = LayerStates.Value(int(li), int(LayerAvgMaxGiM), int(0))
+		(*dwts)[idx+4] = LayerStates.Value(int(li), int(LayerGiMult), int(0))
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			(*dwts)[idx+int(lni)] = NeuronAvgs.Value(int(ActAvg), int(ni))
+			(*dwts)[idx+int(lni)] = NeuronAvgs.Value(int(ni), int(ActAvg))
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				(*dwts)[idx+int(lni)] = NeuronAvgs.Value(int(DTrgAvg), int(ni))
+				(*dwts)[idx+int(lni)] = NeuronAvgs.Value(int(ni), int(DTrgAvg))
 			}
 			idx += int(nn)
 		}
@@ -167,21 +167,21 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 	davg := 1 / float32(navg)
 	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		LayerStates.Set(davg*dwts[idx+0], int(LayerActMAvg), int(li), int(0))
-		LayerStates.Set(davg*dwts[idx+1], int(LayerActPAvg), int(li), int(0))
-		LayerStates.Set(davg*dwts[idx+2], int(LayerAvgMaxGeM), int(li), int(0))
-		LayerStates.Set(davg*dwts[idx+3], int(LayerAvgMaxGiM), int(li), int(0))
-		LayerStates.Set(davg*dwts[idx+4], int(LayerGiMult), int(li), int(0))
+		LayerStates.Set(davg*dwts[idx+0], int(li), int(LayerActMAvg), int(0))
+		LayerStates.Set(davg*dwts[idx+1], int(li), int(LayerActPAvg), int(0))
+		LayerStates.Set(davg*dwts[idx+2], int(li), int(LayerAvgMaxGeM), int(0))
+		LayerStates.Set(davg*dwts[idx+3], int(li), int(LayerAvgMaxGiM), int(0))
+		LayerStates.Set(davg*dwts[idx+4], int(li), int(LayerGiMult), int(0))
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			NeuronAvgs.Set(davg*dwts[idx+int(lni)], int(ActAvg), int(ni))
+			NeuronAvgs.Set(davg*dwts[idx+int(lni)], int(ni), int(ActAvg))
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				NeuronAvgs.Set(dwts[idx+int(lni)], int(DTrgAvg), int(ni))
+				NeuronAvgs.Set(dwts[idx+int(lni)], int(ni), int(DTrgAvg))
 			}
 			idx += int(nn)
 		}

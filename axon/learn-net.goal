@@ -118,21 +118,21 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	}
 	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		(*dwts)[idx+0] = LayerStates[LayerActMAvg, li, 0]
-		(*dwts)[idx+1] = LayerStates[LayerActPAvg, li, 0]
-		(*dwts)[idx+2] = LayerStates[LayerAvgMaxGeM, li, 0]
-		(*dwts)[idx+3] = LayerStates[LayerAvgMaxGiM, li, 0]
-		(*dwts)[idx+4] = LayerStates[LayerGiMult, li, 0]
+		(*dwts)[idx+0] = LayerStates[li, LayerActMAvg, 0]
+		(*dwts)[idx+1] = LayerStates[li, LayerActPAvg, 0]
+		(*dwts)[idx+2] = LayerStates[li, LayerAvgMaxGeM, 0]
+		(*dwts)[idx+3] = LayerStates[li, LayerAvgMaxGiM, 0]
+		(*dwts)[idx+4] = LayerStates[li, LayerGiMult, 0]
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			(*dwts)[idx+int(lni)] = NeuronAvgs[ActAvg, ni]
+			(*dwts)[idx+int(lni)] = NeuronAvgs[ni, ActAvg]
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				(*dwts)[idx+int(lni)] = NeuronAvgs[DTrgAvg, ni]
+				(*dwts)[idx+int(lni)] = NeuronAvgs[ni, DTrgAvg]
 			}
 			idx += int(nn)
 		}
@@ -162,21 +162,21 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 	davg := 1 / float32(navg)
 	for li, ly := range nt.Layers {
 		nn := ly.NNeurons
-		LayerStates[LayerActMAvg, li, 0] = davg * dwts[idx+0]
-		LayerStates[LayerActPAvg, li, 0] = davg * dwts[idx+1]
-		LayerStates[LayerAvgMaxGeM, li, 0] = davg * dwts[idx+2]
-		LayerStates[LayerAvgMaxGiM, li, 0] = davg * dwts[idx+3]
-		LayerStates[LayerGiMult, li, 0] = davg * dwts[idx+4]
+		LayerStates[li, LayerActMAvg, 0] = davg * dwts[idx+0]
+		LayerStates[li, LayerActPAvg, 0] = davg * dwts[idx+1]
+		LayerStates[li, LayerAvgMaxGeM, 0] = davg * dwts[idx+2]
+		LayerStates[li, LayerAvgMaxGiM, 0] = davg * dwts[idx+3]
+		LayerStates[li, LayerGiMult, 0] = davg * dwts[idx+4]
 		idx += 5
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIndex + lni
-			NeuronAvgs[ActAvg, ni] = davg * dwts[idx+int(lni)]
+			NeuronAvgs[ni, ActAvg] = davg * dwts[idx+int(lni)]
 		}
 		idx += int(nn)
 		if ly.Params.IsLearnTrgAvg() {
 			for lni := uint32(0); lni < nn; lni++ {
 				ni := ly.NeurStIndex + lni
-				NeuronAvgs[DTrgAvg, ni] = dwts[idx+int(lni)]
+				NeuronAvgs[ni, DTrgAvg] = dwts[idx+int(lni)]
 			}
 			idx += int(nn)
 		}

@@ -230,13 +230,13 @@ func TestSpikeProp(t *testing.T) {
 		hidCyc := 0
 		for cyc := range 100 {
 			net.Cycle(1, true)
-			// fmt.Println(cyc, Neurons[Ge, hidLay.NeurStIndex, 0], Neurons[GeRaw, hidLay.NeurStIndex, 0])
-			if Neurons.Value(int(Spike), int(inLay.NeurStIndex), int(0)) > 0 {
+			// fmt.Println(cyc, Neurons[hidLay.NeurStIndex, Ge, 0], Neurons[hidLay.NeurStIndex, GeRaw, 0])
+			if Neurons.Value(int(inLay.NeurStIndex), int(Spike), int(0)) > 0 {
 				// fmt.Println("in spike:", cyc)
 				inCyc = cyc
 			}
 
-			ge := Neurons.Value(int(Ge), int(hidLay.NeurStIndex), int(0))
+			ge := Neurons.Value(int(hidLay.NeurStIndex), int(Ge), int(0))
 			if ge > 0 {
 				// fmt.Println("hid recv:", cyc, ge)
 				hidCyc = cyc
@@ -253,11 +253,11 @@ func TestSpikeProp(t *testing.T) {
 func poolValues(pi uint32, di int, vals map[string]float32, key string) {
 	for i := range uint32(PoolVarsN) {
 		kk := key + fmt.Sprintf("\t%s", PoolVarName(i))
-		vals[kk] = Pools.Value(int(i), int(pi), int(di))
+		vals[kk] = Pools.Value(int(pi), int(i), int(di))
 	}
 	for i := range uint32(PoolIntVarsTot) {
 		kk := key + fmt.Sprintf("\t%s", PoolIntVarName(i))
-		vals[kk] = float32(PoolsInt.Value(int(i), int(pi), int(di)))
+		vals[kk] = float32(PoolsInt.Value(int(pi), int(i), int(di)))
 	}
 }
 
@@ -265,7 +265,7 @@ func poolValues(pi uint32, di int, vals map[string]float32, key string) {
 func layerStates(li, di int, vals map[string]float32, key string) {
 	for i := range uint32(LayerVarsN) {
 		kk := key + fmt.Sprintf("\t%s", LayerVars(i).String())
-		vals[kk] = LayerStates.Value(int(i), int(li), int(di))
+		vals[kk] = LayerStates.Value(int(li), int(i), int(di))
 	}
 }
 
@@ -588,8 +588,8 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 	// the whole thing is run and returned in the valMap
 	valsPerRow := 4
 	nQtrs := 1     // max 4
-	cycPerQtr := 1 // max 50
-	nPats := 1     // max 4
+	cycPerQtr := 4 // max 50
+	nPats := 2     // max 4
 	stLayer := 0   // max 2
 	edLayer := 1   // max 3
 	nNeurs := 1    // max 4 -- number of neuron values to print
@@ -614,6 +614,7 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 
 		for qtr := 0; qtr < nQtrs; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
+				// testNet.GPUTestWrite()
 				testNet.Cycle(1, true) // get neuron state
 
 				for ni := 0; ni < 4; ni++ {
@@ -680,12 +681,12 @@ func TestGPUDiffs(t *testing.T) {
 }
 
 func TestDebugAct(t *testing.T) {
-	// t.Skip("skipped in regular testing")
+	t.Skip("skipped in regular testing")
 	NetDebugAct(t, true, false, 1, false)
 }
 
 func TestDebugGPUAct(t *testing.T) {
-	// t.Skip("skipped in regular testing")
+	t.Skip("skipped in regular testing")
 	NetDebugAct(t, true, true, 1, false)
 }
 
@@ -1441,7 +1442,7 @@ func TestSendGatherIndexes(t *testing.T) {
 	for cyc := int32(0); cyc < maxCyc; cyc++ {
 		for ni := uint32(0); ni < nni; ni++ {
 			for di := uint32(0); di < nData; di++ {
-				li := NeuronIxs.Value(int(NrnLayIndex), int(ni))
+				li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 				ly := net.Layers[li]
 				if len(ly.SendPaths) > 0 {
 					ptt := ly.SendPaths[0]
