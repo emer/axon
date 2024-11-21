@@ -38,7 +38,7 @@ var (
 	NetworkIxs []NetworkIndexes
 
 	// NeuronIxs have index values for each neuron: index into layer, pools.
-	// [Indexes][Neurons]
+	// [Neurons][Indexes]
 	//gosl:read-only
 	//gosl:dims 2
 	NeuronIxs *tensor.Uint32
@@ -84,19 +84,19 @@ var (
 	Ctx []Context
 
 	// Neurons are all the neuron state variables.
-	// [Vars][Neurons][Data]
+	// [Neurons][Vars][Data]
 	//gosl:dims 3
 	Neurons *tensor.Float32
 
 	// NeuronAvgs are variables with averages over the
 	// Data parallel dimension for each neuron.
-	// [Vars][Neurons]
+	// [Neurons][Vars]
 	//gosl:dims 2
 	NeuronAvgs *tensor.Float32
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
-	// [LayerVarsN][Layer][Data]
+	// [Layer][LayerVarsN][Data]
 	//gosl:dims 3
 	LayerStates *tensor.Float32
 
@@ -121,7 +121,7 @@ var (
 
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
-	// [PoolVars+AvgMax][Layer * Pools][Data]
+	// [Layer * Pools][PoolVars+AvgMax][Data]
 	//gosl:group Synapse
 	//gosl:dims 3
 	Pools *tensor.Float32
@@ -130,14 +130,14 @@ var (
 
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
 	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
-	// [PoolIntVars+AvgMax][Layer * Pools][Data]
+	// [Layer * Pools][PoolIntVars+AvgMax][Data]
 	//gosl:dims 3
 	PoolsInt *tensor.Int32
 
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
-	// [MaxDel+1][NPathNeur][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
+	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	//gosl:dims 3
 	PathGBuf *tensor.Int32
 
@@ -150,7 +150,7 @@ var (
 
 	//	Synapses are the synapse level variables (weights etc).
 	// These do not depend on the data parallel index, unlike [SynapseTraces].
-	// [Vars][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	// [NSyns][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	//gosl:dims 2
 	Synapses *tensor.Float32
 
@@ -160,7 +160,7 @@ var (
 	// parallel index, for accumulating learning traces and weight changes per data.
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
-	// [Vars][NSyns][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	// [NSyns][Vars][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	//gosl:dims 3
 	SynapseTraces *tensor.Float32
 )

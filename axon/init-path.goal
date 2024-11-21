@@ -48,10 +48,10 @@ func (pt *Path) SetSWtsRPool(ctx *Context, swts tensor.Tensor) {
 					for ci, syi := range syIndexes {
 						syni := pt.SynStIndex + syi
 						swt := float32(swts.Float1D((scst + ci) % wsz))
-						Synapses[SWt, syni] = float32(swt)
-						wt := pt.Params.SWts.ClipWt(swt + (Synapses[Wt, syni] - pt.Params.SWts.Init.Mean))
-						Synapses[Wt, syni] = wt
-						Synapses[LWt, syni] = pt.Params.SWts.LWtFromWts(wt, swt)
+						Synapses[syni, SWt] = float32(swt)
+						wt := pt.Params.SWts.ClipWt(swt + (Synapses[syni, Wt] - pt.Params.SWts.Init.Mean))
+						Synapses[syni, Wt] = wt
+						Synapses[syni, LWt] = pt.Params.SWts.LWtFromWts(wt, swt)
 					}
 				}
 			}
@@ -73,9 +73,9 @@ func (pt *Path) SetWeightsFunc(ctx *Context, wtFun func(si, ri int, send, recv *
 			syni := pt.SynStIndex + syi
 			si := pt.Params.SynSendLayerIndex(syni)
 			wt := wtFun(int(si), ri, ssh, rsh)
-			Synapses[SWt, syni] = wt
-			Synapses[Wt, syni] = wt
-			Synapses[LWt, syni] = 0.5
+			Synapses[syni, SWt] = wt
+			Synapses[syni, Wt] = wt
+			Synapses[syni, LWt] = 0.5
 		}
 	}
 }
@@ -93,10 +93,10 @@ func (pt *Path) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *te
 			syni := pt.SynStIndex + syi
 			si := int(pt.Params.SynSendLayerIndex(syni))
 			swt := swtFun(si, ri, ssh, rsh)
-			Synapses[SWt, syni] = swt
-			wt := pt.Params.SWts.ClipWt(swt + (Synapses[Wt, syni] - pt.Params.SWts.Init.Mean))
-			Synapses[Wt, syni] = wt
-			Synapses[LWt, syni] = pt.Params.SWts.LWtFromWts(wt, swt)
+			Synapses[syni, SWt] = swt
+			wt := pt.Params.SWts.ClipWt(swt + (Synapses[syni, Wt] - pt.Params.SWts.Init.Mean))
+			Synapses[syni, Wt] = wt
+			Synapses[syni, LWt] = pt.Params.SWts.LWtFromWts(wt, swt)
 		}
 	}
 }
@@ -156,7 +156,7 @@ func (pt *Path) SWtRescale(ctx *Context) {
 		}
 		for _, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			swt := Synapses[SWt, syni]
+			swt := Synapses[syni, SWt]
 			sum += swt
 			if swt <= pt.Params.SWts.Limit.Min {
 				nmin++
@@ -176,10 +176,10 @@ func (pt *Path) SWtRescale(ctx *Context) {
 			}
 			for _, syi := range syIndexes {
 				syni := pt.SynStIndex + syi
-				if Synapses[SWt, syni] <= pt.Params.SWts.Limit.Max {
-					swt := pt.Params.SWts.ClipSWt(Synapses[SWt, syni] + mdf)
-					Synapses[SWt, syni] = swt
-					Synapses[Wt, syni] = pt.Params.SWts.WtValue(swt, Synapses[LWt, syni])
+				if Synapses[syni, SWt] <= pt.Params.SWts.Limit.Max {
+					swt := pt.Params.SWts.ClipSWt(Synapses[syni, SWt] + mdf)
+					Synapses[syni, SWt] = swt
+					Synapses[syni, Wt] = pt.Params.SWts.WtValue(swt, Synapses[syni, LWt])
 				}
 			}
 		} else {
@@ -189,10 +189,10 @@ func (pt *Path) SWtRescale(ctx *Context) {
 			}
 			for _, syi := range syIndexes {
 				syni := pt.SynStIndex + syi
-				if Synapses[SWt, syni] >= pt.Params.SWts.Limit.Min {
-					swt := pt.Params.SWts.ClipSWt(Synapses[SWt, syni] + mdf)
-					Synapses[SWt, syni] = swt
-					Synapses[Wt, syni] = pt.Params.SWts.WtValue(swt, Synapses[LWt, syni])
+				if Synapses[syni, SWt] >= pt.Params.SWts.Limit.Min {
+					swt := pt.Params.SWts.ClipSWt(Synapses[syni, SWt] + mdf)
+					Synapses[syni, SWt] = swt
+					Synapses[syni, Wt] = pt.Params.SWts.WtValue(swt, Synapses[syni, LWt])
 				}
 			}
 		}
@@ -248,9 +248,9 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 					recipSyni := rpj.SynStIndex + recipCi
 					recipRi := rpj.Params.SynRecvLayerIndex(recipSyni)
 					if recipRi == lni {
-						Synapses[Wt, recipSyni] = Synapses[Wt, syni]
-						Synapses[LWt, recipSyni] = Synapses[LWt, syni]
-						Synapses[SWt, recipSyni] = Synapses[SWt, syni]
+						Synapses[recipSyni, Wt] = Synapses[syni, Wt]
+						Synapses[recipSyni, LWt] = Synapses[syni, LWt]
+						Synapses[recipSyni, SWt] = Synapses[syni, SWt]
 						// note: if we support SymFromTop then can have option to go other way
 						break
 					}
@@ -262,9 +262,9 @@ func (pt *Path) InitWtSym(ctx *Context, rpj *Path) {
 					recipSyni := rpj.SynStIndex + recipCi
 					recipRi := rpj.Params.SynRecvLayerIndex(recipSyni)
 					if recipRi == lni {
-						Synapses[Wt, recipSyni] = Synapses[Wt, syni]
-						Synapses[LWt, recipSyni] = Synapses[LWt, syni]
-						Synapses[SWt, recipSyni] = Synapses[SWt, syni]
+						Synapses[recipSyni, Wt] = Synapses[syni, Wt]
+						Synapses[recipSyni, LWt] = Synapses[syni, LWt]
+						Synapses[recipSyni, SWt] = Synapses[syni, SWt]
 						// note: if we support SymFromTop then can have option to go other way
 						break
 					}

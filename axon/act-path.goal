@@ -218,14 +218,14 @@ func (ws *PathScaleParams) FullScale(savg, snu, ncon float32) float32 {
 // in network level global list of all neurons to receiving
 // layer-specific index.
 func (pt *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs[SynRecvIndex, syni])
+	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs[syni, SynRecvIndex])
 }
 
 // SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
 func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs[SynSendIndex, syni])
+	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs[syni, SynSendIndex])
 }
 
 //////// Cycle
@@ -235,8 +235,8 @@ func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
 func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
 	deli := pt.Com.ReadOff(ctx.CyclesTotal)
 	npti := pt.Indexes.NPathNeurSt + lni
-	gRaw := pt.Com.FloatFromGBuf(PathGBuf[deli, npti, di])
-	PathGBuf[deli, npti, di] = 0
+	gRaw := pt.Com.FloatFromGBuf(PathGBuf[npti, deli, di])
+	PathGBuf[npti, deli, di] = 0
 	gsyn := PathGSyns[npti, di]
 	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
 	PathGSyns[npti, di] = gsyn
@@ -292,11 +292,11 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 	synn := PathSendCon[cni, Nitems]
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := synst + ci
-		ri := SynapseIxs[SynRecvIndex, syni]
+		ri := SynapseIxs[syni, SynRecvIndex]
 		npti := npst + (ri - recvNeurSt)
 		deli := pt.Com.WriteOff(ctx.CyclesTotal)
-		sv := int32(sendVal * Synapses[Wt, syni])
-		atomic.AddInt32(&PathGBuf[deli, npti, di], sv)
+		sv := int32(sendVal * Synapses[syni, Wt])
+		atomic.AddInt32(&PathGBuf[npti, deli, di], sv)
 	}
 }
 
@@ -313,16 +313,15 @@ func (pt *PathParams) InitGBuffs() {
 	for dl := range mdel {
 		for ri := range rnn {
 			for di := range maxd {
-				PathGBuf[dl, npst + ri, di] = 0.0
+				PathGBuf[npst+ri, dl, di] = 0.0
 			}
 		}
 	}
 	for ri := range rnn {
 		for di := range maxd {
-			PathGSyns[npst + ri, di] = 0.0
+			PathGSyns[npst+ri, di] = 0.0
 		}
 	}
 }
-
 
 //gosl:end

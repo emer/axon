@@ -592,14 +592,14 @@ func (sp *SWtParams) WtFromDWt(wt, lwt *float32, dwt, swt float32) {
 func (sp *SWtParams) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
 	wtv := sp.Init.RandVar(rnd)
 	wt := mean + wtv
-	Synapses[Wt, syni] = wt
-	Synapses[SWt, syni] = sp.ClipSWt(mean + spct*wtv)
+	Synapses[syni, Wt] = wt
+	Synapses[syni, SWt] = sp.ClipSWt(mean + spct*wtv)
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 paths
-		Synapses[SWt, syni] = 0.5
+		Synapses[syni, SWt] = 0.5
 	}
-	Synapses[LWt, syni] = sp.LWtFromWts(wt, Synapses[SWt, syni])
-	Synapses[DWt, syni] = 0
-	Synapses[DSWt, syni] = 0
+	Synapses[syni, LWt] = sp.LWtFromWts(wt, Synapses[syni, SWt])
+	Synapses[syni, DWt] = 0
+	Synapses[syni, DSWt] = 0
 }
 
 //gosl:start

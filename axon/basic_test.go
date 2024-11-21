@@ -391,9 +391,9 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	//	if os.Getenv("TEST_GPU") != "true" {
-	//		t.Skip("Set TEST_GPU env var to run GPU tests")
-	//	}
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
 	NetActTest(t, Tol6, true)
 }
 
@@ -681,12 +681,12 @@ func TestGPUDiffs(t *testing.T) {
 }
 
 func TestDebugAct(t *testing.T) {
-	// t.Skip("skipped in regular testing")
+	t.Skip("skipped in regular testing")
 	NetDebugAct(t, true, false, 1, false)
 }
 
 func TestDebugGPUAct(t *testing.T) {
-	// t.Skip("skipped in regular testing")
+	t.Skip("skipped in regular testing")
 	NetDebugAct(t, true, true, 1, false)
 }
 
@@ -1453,7 +1453,7 @@ func TestSendGatherIndexes(t *testing.T) {
 					for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 						syni := ptt.SynStIndex + syi
 						recvIndex := pt.SynRecvLayerIndex(syni) // note: layer-specific is ok here
-						ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
+						ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
 						_ = ri
 						npti := pt.Indexes.NPathNeurSt + recvIndex
 						_ = npti

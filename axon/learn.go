@@ -594,14 +594,14 @@ func (sp *SWtParams) WtFromDWt(wt, lwt *float32, dwt, swt float32) {
 func (sp *SWtParams) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, spct float32) {
 	wtv := sp.Init.RandVar(rnd)
 	wt := mean + wtv
-	Synapses.Set(wt, int(Wt), int(syni))
-	Synapses.Set(sp.ClipSWt(mean+spct*wtv), int(SWt), int(syni))
+	Synapses.Set(wt, int(syni), int(Wt))
+	Synapses.Set(sp.ClipSWt(mean+spct*wtv), int(syni), int(SWt))
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 paths
-		Synapses.Set(0.5, int(SWt), int(syni))
+		Synapses.Set(0.5, int(syni), int(SWt))
 	}
-	Synapses.Set(sp.LWtFromWts(wt, Synapses.Value(int(SWt), int(syni))), int(LWt), int(syni))
-	Synapses.Set(0, int(DWt), int(syni))
-	Synapses.Set(0, int(DSWt), int(syni))
+	Synapses.Set(sp.LWtFromWts(wt, Synapses.Value(int(syni), int(SWt))), int(syni), int(LWt))
+	Synapses.Set(0, int(syni), int(DWt))
+	Synapses.Set(0, int(syni), int(DSWt))
 }
 
 //gosl:start

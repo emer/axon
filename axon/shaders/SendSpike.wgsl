@@ -36,7 +36,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [PoolVars+AvgMax][Layer * Pools][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -295,11 +295,11 @@ fn PathParams_SendSpike(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	var synn = PathSendCon[IndexU322D(PathSendCon[0], PathSendCon[1], u32(cni),u32(Nitems))];
 	for (var ci = u32(0); ci < synn; ci++) {
 		var syni = synst + ci;
-		var ri = SynapseIxs[IndexU322D(SynapseIxs[0], SynapseIxs[1], u32(SynRecvIndex),u32(syni))];
+		var ri = SynapseIxs[IndexU322D(SynapseIxs[0], SynapseIxs[1], u32(syni),u32(SynRecvIndex))];
 		var npti = npst + (ri - recvNeurSt);
 		var deli = SynComParams_WriteOff(&(*pt).Com, (*ctx).CyclesTotal);
-		var sv = i32(sendVal * Synapses[IndexF322D(Synapses[0], Synapses[1], u32(Wt),u32(syni))]);
-		atomicAdd(&PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(deli),u32(npti),u32(di))], sv);
+		var sv = i32(sendVal * Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(Wt))]);
+		atomicAdd(&PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(deli),u32(di))], sv);
 	}
 }
 

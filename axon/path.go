@@ -375,9 +375,9 @@ func (pt *Path) SynValue1D(varIndex int, synIndex int) float32 {
 	}
 	syni := pt.SynStIndex + uint32(synIndex)
 	if varIndex < int(SynapseVarsN) {
-		return Synapses.Value(int(SynapseVars(varIndex)), int(syni))
+		return Synapses.Value(int(syni), int(SynapseVars(varIndex)))
 	} else {
-		return SynapseTraces.Value(int(SynapseTraceVars(varIndex-int(SynapseVarsN))), int(syni), int(0))
+		return SynapseTraces.Value(int(syni), int(SynapseTraceVars(varIndex-int(SynapseVarsN))), int(0))
 	}
 }
 
@@ -421,9 +421,9 @@ func (pt *Path) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 	}
 	syni := pt.SynStIndex + uint32(synIndex)
 	if varIndex < int(SynapseVarsN) {
-		return Synapses.Value(int(SynapseVars(varIndex)), int(syni))
+		return Synapses.Value(int(syni), int(SynapseVars(varIndex)))
 	} else {
-		return SynapseTraces.Value(int(SynapseTraceVars(varIndex-int(SynapseVarsN))), int(syni), int(di))
+		return SynapseTraces.Value(int(syni), int(SynapseTraceVars(varIndex-int(SynapseVarsN))), int(di))
 	}
 }
 
@@ -484,7 +484,7 @@ func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
 		w.Write([]byte("\"Wt\": [ "))
 		for ci, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			w.Write([]byte(strconv.FormatFloat(float64(Synapses.Value(int(Wt), int(syni))), 'g', weights.Prec, 32)))
+			w.Write([]byte(strconv.FormatFloat(float64(Synapses.Value(int(syni), int(Wt))), 'g', weights.Prec, 32)))
 			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {
@@ -496,7 +496,7 @@ func (pt *Path) WriteWeightsJSON(w io.Writer, depth int) {
 		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
 		for ci, syi := range syIndexes {
 			syni := pt.SynStIndex + syi
-			w.Write([]byte(strconv.FormatFloat(float64(Synapses.Value(int(SWt), int(syni))), 'g', weights.Prec, 32)))
+			w.Write([]byte(strconv.FormatFloat(float64(Synapses.Value(int(syni), int(SWt))), 'g', weights.Prec, 32)))
 			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {
@@ -562,18 +562,18 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 	}
 	syni := pt.SynStIndex + syi
 	if vidx < int(SynapseVarsN) {
-		Synapses.Set(val, int(SynapseVars(vidx)), int(syni))
+		Synapses.Set(val, int(syni), int(SynapseVars(vidx)))
 	} else {
 		for di := uint32(0); di < pt.Recv.MaxData; di++ {
-			SynapseTraces.Set(val, int(SynapseTraceVars(vidx-int(SynapseVarsN))), int(syni), int(di))
+			SynapseTraces.Set(val, int(syni), int(SynapseTraceVars(vidx-int(SynapseVarsN))), int(di))
 		}
 	}
 	if varNm == "Wt" {
-		wt := Synapses.Value(int(Wt), int(syni))
-		if Synapses.Value(int(SWt), int(syni)) == 0 {
-			Synapses.Set(wt, int(SWt), int(syni))
+		wt := Synapses.Value(int(syni), int(Wt))
+		if Synapses.Value(int(syni), int(SWt)) == 0 {
+			Synapses.Set(wt, int(syni), int(SWt))
 		}
-		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses.Value(int(SWt), int(syni))), int(LWt), int(syni))
+		Synapses.Set(pt.Params.SWts.LWtFromWts(wt, Synapses.Value(int(syni), int(SWt))), int(syni), int(LWt))
 	}
 	return nil
 }

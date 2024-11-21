@@ -36,7 +36,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [PoolVars+AvgMax][Layer * Pools][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -162,8 +162,8 @@ struct PathScaleParams {
 fn PathParams_GatherSpikes(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,di: u32,lni: u32) {
 	var deli = SynComParams_ReadOff(&(*pt).Com, (*ctx).CyclesTotal);
 	var npti = (*pt).Indexes.NPathNeurSt + lni;
-	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(deli),u32(npti),u32(di))]);
-	PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(deli),u32(npti),u32(di))] = 0;
+	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(deli),u32(di))]);
+	PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(deli),u32(di))] = 0;
 	var gsyn = PathGSyns[IndexF322D(PathGSyns[0], PathGSyns[1], u32(npti),u32(di))];
 	PathParams_GatherSpikesGSyn(pt, ctx, ly, ni, di, gRaw, &gsyn);
 	PathGSyns[IndexF322D(PathGSyns[0], PathGSyns[

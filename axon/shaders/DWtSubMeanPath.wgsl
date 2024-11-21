@@ -36,7 +36,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [PoolVars+AvgMax][Layer * Pools][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -730,7 +730,7 @@ fn PathParams_DWtSubMean(pt: ptr<function,PathParams>, ctx: ptr<function,Context
 	var nnz = 0; // non-zero
 	for (var ci=0; ci<synn; ci++) {
 		var syni = RecvSynIxs[IndexU321D(RecvSynIxs[0], u32(i32(synst) + ci))];
-		var dw = Synapses[IndexF322D(Synapses[0], Synapses[1], u32(DWt),u32(syni))];
+		var dw = Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(DWt))];
 		if (dw != 0) {
 			sumDWt += dw;
 			nnz++;
@@ -742,8 +742,8 @@ fn PathParams_DWtSubMean(pt: ptr<function,PathParams>, ctx: ptr<function,Context
 	sumDWt /= f32(nnz);
 	for (var ci=0; ci<synn; ci++) {
 		var syni = RecvSynIxs[IndexU321D(RecvSynIxs[0], u32(i32(synst) + ci))];
-		if (Synapses[IndexF322D(Synapses[0], Synapses[1], u32(DWt),u32(syni))] != 0) {
-			Synapses[IndexF322D(Synapses[0], Synapses[1], u32(DWt),u32(syni))] += -sm * sumDWt;
+		if (Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(DWt))] != 0) {
+			Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(DWt))] += -sm * sumDWt;
 		}
 	}
 }

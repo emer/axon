@@ -145,7 +145,7 @@ type Network struct {
 	NetworkIxs []NetworkIndexes
 
 	// NeuronIxs have index values for each neuron: index into layer, pools.
-	// [Indexes][Neurons]
+	// [Neurons][Indexes]
 	NeuronIxs tensor.Uint32 `display:"-"`
 
 	// SynapseIxs have index values for each synapse:
@@ -182,27 +182,27 @@ type Network struct {
 	Ctx []Context `display:"-"`
 
 	// Neurons are all the neuron state variables.
-	// [Vars][Neurons][Data]
+	// [Neurons][Vars][Data]
 	Neurons tensor.Float32 `display:"-"`
 
 	// NeuronAvgs are variables with averages over the
 	// Data parallel dimension for each neuron.
-	// [Vars][Neurons]
+	// [Neurons][Vars]
 	NeuronAvgs tensor.Float32 `display:"-"`
 
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
-	// [PoolVars+AvgMax][Layer * Pools][Data]
+	// [Layer * Pools][PoolVars+AvgMax][Data]
 	Pools tensor.Float32
 
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
 	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
-	// [PoolIntVars+AvgMax][Layer * Pools][Data]
+	// [Layer * Pools][PoolIntVars+AvgMax][Data]
 	PoolsInt tensor.Int32
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
-	// [LayerVarsN][Layer][Data]
+	// [Layer][LayerVarsN][Data]
 	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
@@ -224,7 +224,7 @@ type Network struct {
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
-	// [MaxDel+1][NPathNeur][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
+	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	PathGBuf tensor.Int32 `display:"-"`
 
 	// PathGSyns are synaptic conductance integrated over time per pathway
@@ -236,7 +236,7 @@ type Network struct {
 	//	Synapses are the synapse level variables (weights etc).
 	//
 	// These do not depend on the data parallel index, unlike [SynapseTraces].
-	// [Vars][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	// [NSyns][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	Synapses tensor.Float32 `display:"-"`
 
 	//////// SynapseTraces
@@ -245,7 +245,7 @@ type Network struct {
 	// parallel index, for accumulating learning traces and weight changes per data.
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
-	// [Vars][NSyns][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	// [NSyns][Vars][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	SynapseTraces tensor.Float32 `display:"-"`
 
 	// SynapseTraces1 is an overflow buffer fro SynapseTraces.
@@ -834,9 +834,9 @@ func (nt *Network) Build() error { //types:add
 	}
 
 	nt.NetworkIxs[0].NSyns = uint32(totSynapses)
-	sltensor.SetShapeSizes(&nt.Synapses, int(SynapseVarsN), totSynapses)
-	sltensor.SetShapeSizes(&nt.SynapseTraces, int(SynapseTraceVarsN), totSynapses, maxData)
-	sltensor.SetShapeSizes(&nt.SynapseIxs, int(SynapseIndexVarsN), totSynapses)
+	sltensor.SetShapeSizes(&nt.Synapses, totSynapses, int(SynapseVarsN))
+	sltensor.SetShapeSizes(&nt.SynapseTraces, totSynapses, int(SynapseTraceVarsN), maxData)
+	sltensor.SetShapeSizes(&nt.SynapseIxs, totSynapses, int(SynapseIndexVarsN))
 	sltensor.SetShapeSizes(&nt.PathSendCon, totSendCon, 2)
 	sltensor.SetShapeSizes(&nt.PathRecvCon, totRecvCon, 2)
 	sltensor.SetShapeSizes(&nt.RecvPathIxs, rpathIndex)
@@ -870,9 +870,9 @@ func (nt *Network) Build() error { //types:add
 				sendConIndex++
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pt.SynStIndex + syi
-					nt.SynapseIxs.Set(uint32(si), int(SynSendIndex), int(syni)) // network-global idx
-					nt.SynapseIxs.Set(pt.SendConIndex[syi]+uint32(rlay.NeurStIndex), int(SynRecvIndex), int(syni))
-					nt.SynapseIxs.Set(uint32(ptidx), int(SynPathIndex), int(syni))
+					nt.SynapseIxs.Set(uint32(si), int(syni), int(SynSendIndex)) // network-global idx
+					nt.SynapseIxs.Set(pt.SendConIndex[syi]+uint32(rlay.NeurStIndex), int(syni), int(SynRecvIndex))
+					nt.SynapseIxs.Set(uint32(ptidx), int(syni), int(SynPathIndex))
 					syIndex++
 				}
 			}
@@ -993,7 +993,7 @@ func (nt *Network) BuildPathGBuf() {
 	}
 	nix.MaxDelay = maxDel
 	mxlen := maxDel + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, int(mxlen), int(nptneur), int(maxData))
+	sltensor.SetShapeSizes(&nt.PathGBuf, int(nptneur), int(mxlen), int(maxData))
 	sltensor.SetShapeSizes(&nt.PathGSyns, int(nptneur), int(maxData))
 
 	npti := uint32(0)
@@ -1067,7 +1067,7 @@ func (nt *Network) SynsSlice(vals *[]float32, synvar SynapseVars) {
 				scon := pt.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pt.SynStIndex + syi
-					(*vals)[i] = nt.Synapses.Value(int(synvar), int(syni))
+					(*vals)[i] = nt.Synapses.Value(int(syni), int(synvar))
 					i++
 				}
 			}
@@ -1241,8 +1241,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	}
 	for si := uint32(0); si < nix.NSyns; si++ {
 		for svar := Wt; svar < SynapseVarsN; svar++ {
-			sv := nt.Synapses.Value(int(svar), int(si))
-			ov := on.Synapses.Value(int(svar), int(si))
+			sv := nt.Synapses.Value(int(si), int(svar))
+			ov := on.Synapses.Value(int(si), int(svar))
 			if sv != ov {
 				diffs += fmt.Sprintf("Synapse: si: %d\tvar: %s\tval: %g\toth: %g\n", si, svar.String(), sv, ov)
 				ndif++
@@ -1255,8 +1255,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	for di := uint32(0); di < ctx.NData; di++ {
 		for si := uint32(0); si < nix.NSyns; si++ {
 			for svar := Tr; svar < SynapseTraceVarsN; svar++ {
-				sv := nt.SynapseTraces.Value(int(svar), int(si), int(di))
-				ov := on.SynapseTraces.Value(int(svar), int(si), int(di))
+				sv := nt.SynapseTraces.Value(int(si), int(svar), int(di))
+				ov := on.SynapseTraces.Value(int(si), int(svar), int(di))
 				if sv != ov {
 					diffs += fmt.Sprintf("SynapseTraces: di: %d, si: %d\tvar: %s\tval: %g\toth: %g\n", di, si, svar.String(), sv, ov)
 					ndif++

@@ -36,7 +36,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [PoolVars+AvgMax][Layer * Pools][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -705,7 +705,7 @@ const  LayerRewPredNeg: LayerVars = 10;
 ///////////// import: "learn-net.go"
 fn DWtFromDiSyn(syni: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var pti = SynapseIxs[IndexU322D(SynapseIxs[0], SynapseIxs[1], u32(SynPathIndex),u32(syni))];
+	var pti = SynapseIxs[IndexU322D(SynapseIxs[0], SynapseIxs[1], u32(syni),u32(SynPathIndex))];
 	var paths=Paths[pti]; PathParams_DWtFromDi(&paths, &ctx, syni);
 	Ctx[0] = ctx;
 }
@@ -714,9 +714,9 @@ fn DWtFromDiSyn(syni: u32) { //gosl:kernel
 fn PathParams_DWtFromDi(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32) {
 	var dwt = f32(0);
 	for (var di = u32(0); di < (*ctx).NData; di++) {
-		dwt += SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(DiDWt),u32(syni),u32(di))];
+		dwt += SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(syni),u32(DiDWt),u32(di))];
 	}
-	Synapses[IndexF322D(Synapses[0], Synapses[1], u32(DWt),u32(syni))] += dwt;
+	Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(DWt))] += dwt;
 }
 
 ///////////// import: "learn.go"

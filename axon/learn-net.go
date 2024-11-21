@@ -146,7 +146,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					(*dwts)[idx+int(syi)] = Synapses.Value(int(DWt), int(syni))
+					(*dwts)[idx+int(syi)] = Synapses.Value(int(syni), int(DWt))
 					//	if syni < 100 {
 					//		fmt.Printf("%d: %d = %g\n", syni, syi, (*dwts)[idx+int(syi)])
 					//	}
@@ -190,9 +190,9 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					Synapses.Set(dwts[idx+int(syi)], int(DWt), int(syni))
+					Synapses.Set(dwts[idx+int(syi)], int(syni), int(DWt))
 					//	if syni < 100 {
-					//		fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], Synapses[DWt, syni])
+					//		fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], Synapses[syni, DWt])
 					//	}
 				}
 			}
@@ -210,9 +210,9 @@ func DWtSyn(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	syni := ctx.ItemIndex(i)
-	pti := SynapseIxs.Value(int(SynPathIndex), int(syni))
-	si := SynapseIxs.Value(int(SynSendIndex), int(syni))
-	ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
+	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
+	si := SynapseIxs.Value(int(syni), int(SynSendIndex))
+	ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
 	Paths[pti].DWtSyn(ctx, &Layers[Paths[pti].Indexes.RecvLayer], syni, si, ri, di)
 }
 
@@ -220,7 +220,7 @@ func DWtSyn(i uint32) { //gosl:kernel
 // integrate DWt over Di data parallel values.
 func DWtFromDiSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	pti := SynapseIxs.Value(int(SynPathIndex), int(syni))
+	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
 	Paths[pti].DWtFromDi(ctx, syni)
 }
 
@@ -235,7 +235,7 @@ func DWtSubMeanPath(pti uint32) { //gosl:kernel
 // compute Wt from DWt weight changes.
 func WtFromDWtSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	pti := SynapseIxs.Value(int(SynPathIndex), int(syni))
+	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
 	Paths[pti].WtFromDWtSyn(ctx, syni)
 }
 

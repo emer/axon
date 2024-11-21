@@ -141,7 +141,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					(*dwts)[idx+int(syi)] = Synapses[DWt, syni]
+					(*dwts)[idx+int(syi)] = Synapses[syni, DWt]
 					// if syni < 100 {
 					// 	fmt.Printf("%d: %d = %g\n", syni, syi, (*dwts)[idx+int(syi)])
 					// }
@@ -185,9 +185,9 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 				scon := pj.SendCon[lni]
 				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 					syni := pj.SynStIndex + syi
-					Synapses[DWt, syni] = dwts[idx+int(syi)]
+					Synapses[syni, DWt] = dwts[idx+int(syi)]
 					// if syni < 100 {
-					// 	fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], Synapses[DWt, syni])
+					// 	fmt.Printf("%d: %d = %g = %g\n", syni, syi, dwts[idx+int(syi)], Synapses[syni, DWt])
 					// }
 				}
 			}
@@ -205,9 +205,9 @@ func DWtSyn(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	syni := ctx.ItemIndex(i)
-	pti := SynapseIxs[SynPathIndex, syni]
-	si := SynapseIxs[SynSendIndex, syni]
-	ri := SynapseIxs[SynRecvIndex, syni]
+	pti := SynapseIxs[syni, SynPathIndex]
+	si := SynapseIxs[syni, SynSendIndex]
+	ri := SynapseIxs[syni, SynRecvIndex]
 	Paths[pti].DWtSyn(ctx, &Layers[Paths[pti].Indexes.RecvLayer], syni, si, ri, di)
 }
 
@@ -215,7 +215,7 @@ func DWtSyn(i uint32) { //gosl:kernel
 // integrate DWt over Di data parallel values.
 func DWtFromDiSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	pti := SynapseIxs[SynPathIndex, syni]
+	pti := SynapseIxs[syni, SynPathIndex]
 	Paths[pti].DWtFromDi(ctx, syni)
 }
 
@@ -230,7 +230,7 @@ func DWtSubMeanPath(pti uint32) { //gosl:kernel
 // compute Wt from DWt weight changes.
 func WtFromDWtSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	pti := SynapseIxs[SynPathIndex, syni]
+	pti := SynapseIxs[syni, SynPathIndex]
 	Paths[pti].WtFromDWtSyn(ctx, syni)
 }
 

@@ -220,14 +220,14 @@ func (ws *PathScaleParams) FullScale(savg, snu, ncon float32) float32 {
 // in network level global list of all neurons to receiving
 // layer-specific index.
 func (pt *PathParams) SynRecvLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs.Value(int(SynRecvIndex), int(syni)))
+	return pt.Indexes.RecvNIndexToLayIndex(SynapseIxs.Value(int(syni), int(SynRecvIndex)))
 }
 
 // SynSendLayerIndex converts the Synapse SendIndex of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
 func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
-	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs.Value(int(SynSendIndex), int(syni)))
+	return pt.Indexes.SendNIndexToLayIndex(SynapseIxs.Value(int(syni), int(SynSendIndex)))
 }
 
 //////// Cycle
@@ -237,8 +237,8 @@ func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
 func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
 	deli := pt.Com.ReadOff(ctx.CyclesTotal)
 	npti := pt.Indexes.NPathNeurSt + lni
-	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value(int(deli), int(npti), int(di)))
-	PathGBuf.Set(0, int(deli), int(npti), int(di))
+	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value(int(npti), int(deli), int(di)))
+	PathGBuf.Set(0, int(npti), int(deli), int(di))
 	gsyn := PathGSyns.Value(int(npti), int(di))
 	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
 	PathGSyns.Set(gsyn, int(npti), int(di))
@@ -294,11 +294,11 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 	synn := PathSendCon.Value(int(cni), int(Nitems))
 	for ci := uint32(0); ci < synn; ci++ {
 		syni := synst + ci
-		ri := SynapseIxs.Value(int(SynRecvIndex), int(syni))
+		ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
 		npti := npst + (ri - recvNeurSt)
 		deli := pt.Com.WriteOff(ctx.CyclesTotal)
-		sv := int32(sendVal * Synapses.Value(int(Wt), int(syni)))
-		atomic.AddInt32(PathGBuf.ValuePtr(int(deli), int(npti), int(di)), sv)
+		sv := int32(sendVal * Synapses.Value(int(syni), int(Wt)))
+		atomic.AddInt32(PathGBuf.ValuePtr(int(npti), int(deli), int(di)), sv)
 	}
 }
 
@@ -315,7 +315,7 @@ func (pt *PathParams) InitGBuffs() {
 	for dl := range mdel {
 		for ri := range rnn {
 			for di := range maxd {
-				PathGBuf.Set(0.0, int(dl), int(npst+ri), int(di))
+				PathGBuf.Set(0.0, int(npst+ri), int(dl), int(di))
 			}
 		}
 	}
