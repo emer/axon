@@ -891,15 +891,15 @@ func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	Neurons.Set(-1, int(ni), int(ISIAvg), int(di))
+	Neurons.Set(-1.0, int(ni), int(ISIAvg), int(di))
 	Neurons.Set(ac.Init.Act, int(ni), int(ActInt), int(di))
-	Neurons.Set(0, int(ni), int(Spiked), int(di))
+	Neurons.Set(0.0, int(ni), int(Spiked), int(di))
 	for i := range 8 {
 		Neurons.Set(0.0, int(ni), int(SpkBin0+NeuronVars(i)), int(di))
 	}
 
 	if decay > 0 { // no-op for most, but not all..
-		Neurons.Set(0, int(ni), int(Spike), int(di))
+		Neurons.Set(0.0, int(ni), int(Spike), int(di))
 		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(Act), int(di))-ac.Init.Act), int(ni), int(Act), int(di))
 		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(ActInt), int(di))-ac.Init.Act), int(ni), int(ActInt), int(di))
 		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(GeSyn), int(di))-NeuronAvgs.Value(int(ni), int(GeBase))), int(ni), int(GeSyn), int(di))
@@ -945,14 +945,14 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 		ac.DecayLearnCa(ctx, ni, di, ac.Decay.LearnCa)
 	}
 
-	Neurons.Set(0, int(ni), int(Inet), int(di))
-	Neurons.Set(0, int(ni), int(GeRaw), int(di))
-	Neurons.Set(0, int(ni), int(GiRaw), int(di))
-	Neurons.Set(0, int(ni), int(GModRaw), int(di))
-	Neurons.Set(0, int(ni), int(GModSyn), int(di))
-	Neurons.Set(0, int(ni), int(GMaintRaw), int(di))
-	Neurons.Set(0, int(ni), int(SSGiDend), int(di))
-	Neurons.Set(0, int(ni), int(GeExt), int(di))
+	Neurons.Set(0.0, int(ni), int(Inet), int(di))
+	Neurons.Set(0.0, int(ni), int(GeRaw), int(di))
+	Neurons.Set(0.0, int(ni), int(GiRaw), int(di))
+	Neurons.Set(0.0, int(ni), int(GModRaw), int(di))
+	Neurons.Set(0.0, int(ni), int(GModSyn), int(di))
+	Neurons.Set(0.0, int(ni), int(GMaintRaw), int(di))
+	Neurons.Set(0.0, int(ni), int(SSGiDend), int(di))
+	Neurons.Set(0.0, int(ni), int(GeExt), int(di))
 
 	Neurons.SetSub(glong*Neurons.Value(int(ni), int(CtxtGeOrig), int(di)), int(ni), int(CtxtGeOrig), int(di))
 }

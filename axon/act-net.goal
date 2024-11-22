@@ -4,6 +4,8 @@
 
 package axon
 
+import "cogentcore.org/core/enums"
+
 // todo: don't even need layer-level ultimately.
 
 // Cycle runs n cycles of activation updating.
@@ -53,6 +55,21 @@ func (nt *Network) Cycle(ncyc int, getNeurons bool) {
 	// if vta != nil {
 	// 	vta.CyclePost(ctx)
 	// }
+}
+
+// NewState handles all initialization at start of new input pattern.
+// This is called *before* applying external input data and operates across
+// all data parallel values.  The current Context.NData should be set
+// properly prior to calling this and subsequent Cycle methods.
+func (nt *Network) NewState(mode enums.Enum, testing bool) {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	ctx.NewState(mode, testing)
+	ToGPUCtxGlobal()
+	RunNewStateLayer(int(nix.NLayers))
+	RunNewStateNeuron(nd)
+	RunInitGBuffsPath(int(nix.NPaths))
 }
 
 // InitExt initializes external input state.
@@ -287,6 +304,30 @@ func ApplyExtsNeuron(i uint32) { //gosl:kernel
 	ni := ctx.ItemIndex(i)
 	li := NeuronIxs[ni, NrnLayIndex]
 	Layers[li].ApplyExtsNeuron(ni, di)
+}
+
+// NewStateLayer is the kernel over Layers (not Data)
+// which does new state on pools as well.
+func NewStateLayer(li uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	Layers[li].NewStateLayer(ctx)
+}
+
+// NewStateNeuron is the kernel over Neurons * Data to
+// do new state on neurons (decay).
+func NewStateNeuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs[ni, NrnLayIndex]
+	Layers[li].NewStateNeuron(ctx, ni, di)
+}
+
+// InitGBuffsPath is the kernel over Paths to
+// initialize PathGBuf, PathGSyns.
+func InitGBuffsPath(pti uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	Paths[pti].InitGBuffs(ctx)
 }
 
 // MinusPhasePool is the kernel over Pools * Data to

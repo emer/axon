@@ -114,7 +114,7 @@ func (pt *Path) InitWeightsSyn(ctx *Context, syni uint32, rnd randx.Rand, mean, 
 // enforcing current constraints.
 func (pt *Path) InitWeights(ctx *Context, nt *Network) {
 	pt.Params.Learn.LRate.Init()
-	pt.Params.InitGBuffs()
+	pt.Params.InitGBuffs(ctx)
 	rlay := pt.Recv
 	spct := pt.Params.SWts.Init.SPct
 	if rlay.Params.IsTarget() {

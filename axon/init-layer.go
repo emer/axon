@@ -10,8 +10,6 @@ import (
 	"cogentcore.org/core/base/randx"
 )
 
-// todo: all of this could be done on LayerParams / gpu
-
 // InitWeights initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
 func (ly *Layer) InitWeights(ctx *Context, nt *Network) { //types:add
@@ -184,18 +182,7 @@ func (ly *Layer) InitActs(ctx *Context) { //types:add
 			// Target layers are dynamically updated
 		}
 	}
-	ly.InitPathGBuffs(ctx)
-}
-
-// InitPathGBuffs initializes the pathway-level conductance buffers and
-// conductance integration values for receiving pathways in this layer.
-func (ly *Layer) InitPathGBuffs(ctx *Context) {
-	for _, pt := range ly.RecvPaths {
-		if pt.Off {
-			continue
-		}
-		pt.Params.InitGBuffs()
-	}
+	// ly.InitPathGBuffs(ctx)
 }
 
 // InitWeightsSym initializes the weight symmetry -- higher layers copy weights from lower layers
@@ -295,52 +282,6 @@ func (ly *Layer) InitGScale(ctx *Context) {
 			}
 		}
 	}
-}
-
-// NewState handles all initialization at start of new input pattern.
-// Does NOT call InitGScale()
-func (ly *Layer) NewState(ctx *Context) {
-	nn := ly.NNeurons
-	np := ly.NPools
-
-	actMinusAvg := float32(0)
-	actPlusAvg := float32(0)
-
-	for di := uint32(0); di < ctx.NData; di++ {
-		lpi := ly.Params.PoolIndex(0)
-
-		actMinusAvg += PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
-		actPlusAvg += PoolAvgMax(AMAct, AMPlus, Avg, lpi, di)
-
-		ly.Params.NewStateLayer(ctx, di)
-
-		for spi := uint32(0); spi < np; spi++ {
-			pi := ly.Params.PoolIndex(spi)
-			ly.Params.NewStatePool(ctx, pi, di) // also calls DecayState on pool
-		}
-
-		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
-			if NeuronIsOff(ni) {
-				continue
-			}
-			// note: this calls the basic neuron-level DecayState
-			ly.Params.NewStateNeuron(ctx, ni, di)
-		}
-	}
-
-	// note: long-running averages must be based on aggregate data, drive adaptation
-	// of Gi layer inhibition.
-	davg := 1 / float32(ctx.NData)
-	actMinusAvg *= davg
-	actPlusAvg *= davg
-	for di := uint32(0); di < ctx.NData; di++ {
-		ly.Params.NewStateLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
-	}
-
-	// note: would be somewhat more expensive to only clear the di specific subset
-	// but all di are decayed every trial anyway so no big deal
-	ly.InitPathGBuffs(ctx)
 }
 
 // NewStateNeurons only calls the neurons part of new state -- for misbehaving GPU

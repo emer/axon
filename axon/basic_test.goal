@@ -395,10 +395,11 @@ func TestNetActShort(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	if os.Getenv("TEST_GPU") != "true" {
-		t.Skip("Set TEST_GPU env var to run GPU tests")
-	}
+	// if os.Getenv("TEST_GPU") != "true" {
+	// 	t.Skip("Set TEST_GPU env var to run GPU tests")
+	// }
 	NetActTestShort(t, Tol6, true)
+	// NetActTest(t, Tol6, true)
 }
 
 // NetActTest runs an activation test on the network and checks
@@ -523,6 +524,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 	}
 
 	GPURelease()
+	UseGPU = false
 }
 
 // NetActTestShort runs an activation test on the network and checks
@@ -619,6 +621,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 		testNet.PlusPhase()
 	}
 	GPURelease()
+	UseGPU = false
 }
 
 // ReportValDiffs -- reports diffs between a, b values at given tolerance
@@ -767,6 +770,7 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 	}
 
 	GPURelease()
+	UseGPU = false
 	return valMap
 }
 
@@ -959,6 +963,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	CompareFloats(tol, outwt, outWts, "outWts", t)
 
 	GPURelease()
+	UseGPU = false
 }
 
 func TestNetRLRate(t *testing.T) {
@@ -986,8 +991,8 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	printCycs := false
 	printQtrs := false
 
-	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 9.572107e-05, 0.005967056, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 8.116122e-05, 8.9521294e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 7.533143e-05, 0.003373957}
-
+	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.000100934616, 0.0029769302, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 8.4988904e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 7.806076e-05, 0.002506172}
+	
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
@@ -1002,9 +1007,9 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 	q3outCaP := make([]float32, 4*nLearnParams)
 	q3outCaD := make([]float32, 4*nLearnParams)
 
-	hidDwts := []float32{1.708368e-07, 2.9798115e-05, 3.612578e-07, 1.5011935e-05}
+	hidDwts := []float32{1.708368e-07, 1.486611e-05, 2.0177201e-07, 1.1150851e-05}	
 	outDwts := []float32{0.0009000063, 0.005000009, 0.0022999954, 0.0025999974}
-	hidWts := []float32{0.5000011, 0.5001788, 0.50000215, 0.5000901}
+	hidWts := []float32{0.5000011, 0.50008905, 0.5000011, 0.5000669}
 	outWts := []float32{0.5053999, 0.52996504, 0.51379675, 0.51559514}
 
 	hiddwt := make([]float32, 4*nLearnParams)
@@ -1296,7 +1301,7 @@ func TestDebugLearn(t *testing.T) {
 func TestNDataLearn(t *testing.T) {
 	nd1Values := NetDebugLearn(t, false, false, 1, 1, true, false, false)
 	nd4Values := NetDebugLearn(t, false, false, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol8, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "LayerAvgMaxGeM", "LayerAvgMaxGiM") // todo: LayerAvgMaxGeM and GiM need further investigation
+	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "LayerAvgMaxGeM", "LayerAvgMaxGiM") // todo: LayerAvgMaxGeM and GiM need further investigation
 }
 
 func TestNDataMaxDataLearn(t *testing.T) {

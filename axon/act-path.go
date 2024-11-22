@@ -306,21 +306,21 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 // This is not typically needed (called during InitWeights, InitActs)
 // but can be called when needed.  Must be called to completely initialize
 // prior activity, e.g., full Glong clearing.
-func (pt *PathParams) InitGBuffs() {
+func (pt *PathParams) InitGBuffs(ctx *Context) {
 	nix := GetNetworkIxs(0)
 	maxd := nix.MaxData
 	mdel := nix.MaxDelay + 1
 	rnn := pt.Indexes.RecvNeurN
 	npst := pt.Indexes.NPathNeurSt
-	for dl := range mdel {
-		for ri := range rnn {
-			for di := range maxd {
-				PathGBuf.Set(0.0, int(npst+ri), int(dl), int(di))
+	for dl := uint32(0); dl < mdel; dl++ {
+		for ri := uint32(0); ri < rnn; ri++ {
+			for di := uint32(0); di < maxd; di++ {
+				PathGBuf.Set(0, int(npst+ri), int(dl), int(di))
 			}
 		}
 	}
-	for ri := range rnn {
-		for di := range maxd {
+	for ri := uint32(0); ri < rnn; ri++ {
+		for di := uint32(0); di < maxd; di++ {
 			PathGSyns.Set(0.0, int(npst+ri), int(di))
 		}
 	}

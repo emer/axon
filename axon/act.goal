@@ -889,15 +889,15 @@ func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	Neurons[ni, ISIAvg, di] = -1
+	Neurons[ni, ISIAvg, di] = -1.0
 	Neurons[ni, ActInt, di] = ac.Init.Act
-	Neurons[ni, Spiked, di] = 0
+	Neurons[ni, Spiked, di] = 0.0
 	for i := range 8 {
 		Neurons[ni, SpkBin0+NeuronVars(i), di] = 0.0
 	}
 
 	if decay > 0 { // no-op for most, but not all..
-		Neurons[ni, Spike, di] = 0
+		Neurons[ni, Spike, di] = 0.0
 		Neurons[ni, Act, di] -= decay * (Neurons[ni, Act, di] - ac.Init.Act)
 		Neurons[ni, ActInt, di] -= decay * (Neurons[ni, ActInt, di] - ac.Init.Act)
 		Neurons[ni, GeSyn, di] -= decay * (Neurons[ni, GeSyn, di] - NeuronAvgs[ni, GeBase])
@@ -943,14 +943,14 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 		ac.DecayLearnCa(ctx, ni, di, ac.Decay.LearnCa)
 	}
 
-	Neurons[ni, Inet, di] = 0
-	Neurons[ni, GeRaw, di] = 0
-	Neurons[ni, GiRaw, di] = 0
-	Neurons[ni, GModRaw, di] = 0
-	Neurons[ni, GModSyn, di] = 0
-	Neurons[ni, GMaintRaw, di] = 0
-	Neurons[ni, SSGiDend, di] = 0
-	Neurons[ni, GeExt, di] = 0
+	Neurons[ni, Inet, di] = 0.0
+	Neurons[ni, GeRaw, di] = 0.0
+	Neurons[ni, GiRaw, di] = 0.0
+	Neurons[ni, GModRaw, di] = 0.0
+	Neurons[ni, GModSyn, di] = 0.0
+	Neurons[ni, GMaintRaw, di] = 0.0
+	Neurons[ni, SSGiDend, di] = 0.0
+	Neurons[ni, GeExt, di] = 0.0
 
 	Neurons[ni, CtxtGeOrig, di] -= glong * Neurons[ni, CtxtGeOrig, di]
 }

@@ -850,6 +850,38 @@ func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi, di uint32, spi in
 
 ////////  Phase timescale
 
+// NewStateLayer does NewState at the layer level, called
+func (ly *LayerParams) NewStateLayer(ctx *Context) {
+	actMinusAvg := float32(0)
+	actPlusAvg := float32(0)
+	np := uint32(ly.Indexes.NPools)
+
+	for di := uint32(0); di < ctx.NData; di++ {
+		lpi := ly.PoolIndex(0)
+
+		actMinusAvg += PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
+		actPlusAvg += PoolAvgMax(AMAct, AMPlus, Avg, lpi, di)
+
+		ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
+		ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
+		LayerStates.Set(-1.0, int(ly.Index), int(LayerRT), int(di))
+
+		for spi := uint32(0); spi < np; spi++ {
+			pi := ly.PoolIndex(spi)
+			ly.NewStatePool(ctx, pi, di) // also calls DecayState on pool
+		}
+	}
+
+	// note: long-running averages must be based on aggregate data, drive adaptation
+	// of Gi layer inhibition.
+	davg := 1 / float32(ctx.NData)
+	actMinusAvg *= davg
+	actPlusAvg *= davg
+	for di := uint32(0); di < ctx.NData; di++ {
+		ly.NewStateLayerActAvg(ctx, di, actMinusAvg, actPlusAvg)
+	}
+}
+
 // NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
 // that have been averaged across NData already.
 func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
@@ -859,12 +891,6 @@ func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg,
 	ly.Inhib.ActAvg.AvgFromAct(&pavg, actPlusAvg, ly.Acts.Dt.LongAvgDt)
 	LayerStates.Set(mavg, int(ly.Index), int(LayerActMAvg), int(di))
 	LayerStates.Set(pavg, int(ly.Index), int(LayerActPAvg), int(di))
-}
-
-func (ly *LayerParams) NewStateLayer(ctx *Context, di uint32) {
-	ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
-	ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
-	LayerStates.Set(-1, int(ly.Index), int(LayerRT), int(di))
 }
 
 func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {

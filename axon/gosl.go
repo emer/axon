@@ -71,9 +71,12 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/DWtSyn.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/GPUTestWrite.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/GatherSpikes.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/InitGBuffsPath.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/LayerGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhasePool.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateLayer.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhasePool.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseStartNeuron.wgsl", sy)
@@ -574,6 +577,48 @@ func RunOneGatherSpikes(n int, syncVars ...GPUVars) {
 		RunGatherSpikesCPU(n)
 	}
 }
+// RunInitGBuffsPath runs the InitGBuffsPath kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneInitGBuffsPath call does Run and Done for a
+// single run-and-sync case.
+func RunInitGBuffsPath(n int) {
+	if UseGPU {
+		RunInitGBuffsPathGPU(n)
+	} else {
+		RunInitGBuffsPathCPU(n)
+	}
+}
+
+// RunInitGBuffsPathGPU runs the InitGBuffsPath kernel on the GPU. See [RunInitGBuffsPath] for more info.
+func RunInitGBuffsPathGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["InitGBuffsPath"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunInitGBuffsPathCPU runs the InitGBuffsPath kernel on the CPU.
+func RunInitGBuffsPathCPU(n int) {
+	gpu.VectorizeFunc(0, n, InitGBuffsPath)
+}
+
+// RunOneInitGBuffsPath runs the InitGBuffsPath kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneInitGBuffsPath(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunInitGBuffsPathGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunInitGBuffsPathCPU(n)
+	}
+}
 // RunLayerGi runs the LayerGi kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -698,6 +743,90 @@ func RunOneMinusPhasePool(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunMinusPhasePoolCPU(n)
+	}
+}
+// RunNewStateLayer runs the NewStateLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneNewStateLayer call does Run and Done for a
+// single run-and-sync case.
+func RunNewStateLayer(n int) {
+	if UseGPU {
+		RunNewStateLayerGPU(n)
+	} else {
+		RunNewStateLayerCPU(n)
+	}
+}
+
+// RunNewStateLayerGPU runs the NewStateLayer kernel on the GPU. See [RunNewStateLayer] for more info.
+func RunNewStateLayerGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["NewStateLayer"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunNewStateLayerCPU runs the NewStateLayer kernel on the CPU.
+func RunNewStateLayerCPU(n int) {
+	gpu.VectorizeFunc(0, n, NewStateLayer)
+}
+
+// RunOneNewStateLayer runs the NewStateLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneNewStateLayer(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunNewStateLayerGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunNewStateLayerCPU(n)
+	}
+}
+// RunNewStateNeuron runs the NewStateNeuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneNewStateNeuron call does Run and Done for a
+// single run-and-sync case.
+func RunNewStateNeuron(n int) {
+	if UseGPU {
+		RunNewStateNeuronGPU(n)
+	} else {
+		RunNewStateNeuronCPU(n)
+	}
+}
+
+// RunNewStateNeuronGPU runs the NewStateNeuron kernel on the GPU. See [RunNewStateNeuron] for more info.
+func RunNewStateNeuronGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["NewStateNeuron"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunNewStateNeuronCPU runs the NewStateNeuron kernel on the CPU.
+func RunNewStateNeuronCPU(n int) {
+	gpu.VectorizeFunc(0, n, NewStateNeuron)
+}
+
+// RunOneNewStateNeuron runs the NewStateNeuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneNewStateNeuron(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunNewStateNeuronGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunNewStateNeuronCPU(n)
 	}
 }
 // RunPlusPhaseNeuron runs the PlusPhaseNeuron kernel with given number of elements,
