@@ -395,9 +395,9 @@ func TestNetActShort(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	// if os.Getenv("TEST_GPU") != "true" {
-	// 	t.Skip("Set TEST_GPU env var to run GPU tests")
-	// }
+	if os.Getenv("TEST_GPU") != "true" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
+	}
 	NetActTestShort(t, Tol6, true)
 }
 
@@ -522,7 +522,7 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 		testNet.PlusPhase()
 	}
 
-	// testNet.GPU.Destroy()
+	GPURelease()
 }
 
 // NetActTestShort runs an activation test on the network and checks
@@ -936,10 +936,6 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 		}
 
 		testNet.DWt()
-		if gpu {
-			// testNet.GPU.SyncSynapsesFromGPU()
-			// testNet.GPU.SyncSynCaFromGPU()
-		}
 
 		didx := pi
 
@@ -947,10 +943,6 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 		outdwt[didx] = outLay.RecvPaths[0].SynValue("DWt", pi, pi)
 
 		testNet.WtFromDWt()
-		if gpu {
-			// testNet.GPU.SyncSynapsesFromGPU()
-			// testNet.GPU.SyncSynCaFromGPU()
-		}
 
 		hidwt[didx] = hidLay.RecvPaths[0].SynValue("Wt", pi, pi)
 		outwt[didx] = outLay.RecvPaths[0].SynValue("Wt", pi, pi)
@@ -966,7 +958,7 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 	CompareFloats(tol, hidwt, hidWts, "hidWts", t)
 	CompareFloats(tol, outwt, outWts, "outWts", t)
 
-	// testNet.GPU.Destroy()
+	GPURelease()
 }
 
 func TestNetRLRate(t *testing.T) {

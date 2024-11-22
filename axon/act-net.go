@@ -87,6 +87,7 @@ func (nt *Network) ApplyExts() {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	RunApplyExtsNeuron(nd)
+	// note: not completed
 }
 
 // MinusPhase does updating after end of minus phase.
@@ -97,6 +98,7 @@ func (nt *Network) MinusPhase() {
 	pd := int(nix.NPools * ctx.NData)
 	RunMinusPhasePool(pd)
 	RunMinusPhaseNeuron(nd)
+	RunDoneLayersNeurons()
 	nt.MinusPhasePost()
 	ToGPULayersNeurons()
 	// todo:
@@ -121,6 +123,7 @@ func (nt *Network) PlusPhaseStart() {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	RunPlusPhaseStartNeuron(nd)
+	RunDone()
 }
 
 // PlusPhase does updating after end of plus phase
@@ -131,6 +134,7 @@ func (nt *Network) PlusPhase() {
 	pd := int(nix.NPools * ctx.NData)
 	RunPlusPhasePool(pd)
 	RunPlusPhaseNeuron(nd)
+	RunDoneLayersNeurons()
 	nt.PlusPhasePost()
 	ToGPULayersNeurons()
 	// todo:

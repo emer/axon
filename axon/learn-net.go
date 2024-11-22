@@ -6,24 +6,48 @@
 
 package axon
 
-// DWt computes the weight change (learning) based on current running-average activation values
+// DWt computes the weight change (learning) based on current
+// running-average activation values. Copies synapses back from GPU,
+// for case where viewing the synapses.
 func (nt *Network) DWt() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	sd := int(nix.NSyns * ctx.NData)
 	RunDWtSyn(sd)
 	RunDWtFromDiSyn(int(nix.NSyns))
+	RunDoneSynapsesTrace()
 }
 
-// WtFromDWt updates the weights from delta-weight changes.
+// WtFromDWt updates the weights from delta-weight changes,
+// after having done DWt previously.
 // Also does ctx.SlowInc() and calls SlowAdapt at SlowInterval
 func (nt *Network) WtFromDWt() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	RunDWtSubMeanPath(int(nix.NPaths))
 	RunWtFromDWtSyn(int(nix.NSyns))
+	RunDoneSynapses()
 	if ctx.SlowInc() {
 		nt.SlowAdapt()
+	}
+}
+
+// DWtToWt computes the weight change (learning) based on current
+// running-average activation values, and then WtFromDWt, syncing
+// back only the synapses (not SynapseTraces).
+// This should be used when not viewing the weights.
+func (nt *Network) DWtToWt() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	sd := int(nix.NSyns * ctx.NData)
+	RunDWtSyn(sd)
+	RunDWtFromDiSyn(int(nix.NSyns))
+	RunDWtSubMeanPath(int(nix.NPaths))
+	RunWtFromDWtSyn(int(nix.NSyns))
+	RunDoneSynapses()
+	if ctx.SlowInc() {
+		nt.SlowAdapt()
+		ToGPUSynapses()
 	}
 }
 

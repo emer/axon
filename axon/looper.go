@@ -44,8 +44,8 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 	for mode, st := range ls.Stacks {
 		cycLoop := st.Loops[cycle]
 		cycLoop.OnStart.Add("Cycle", func() {
-			nCycles := 10
-			getNeurons := false
+			nCycles := fastNCycles
+			getNeurons := true // todo: need back for phases..
 			if ls.ModeStack().StepLevel.Int64() == cycle.Int64() {
 				nCycles = 1
 				getNeurons = true
@@ -71,14 +71,13 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 		})
 		if mode.Int64() == trainMode.Int64() {
 			trlLoop.OnEnd.Add("UpdateWeights", func() {
-				net.DWt() // todo: need to get synapses here, not after
 				if view := viewFunc(mode); view != nil && view.IsViewingSynapse() {
-					//TODO:
-					// net.GPU.SyncSynapsesFromGPU()
-					// net.GPU.SyncSynCaFromGPU() // note: only time we call this
+					net.DWt()         // todo: need to get synapses here, not after
 					view.RecordSyns() // note: critical to update weights here so DWt is visible
+					net.WtFromDWt()
+				} else {
+					net.DWtToWt()
 				}
-				net.WtFromDWt()
 			})
 		}
 	}

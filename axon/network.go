@@ -973,6 +973,17 @@ func RunDoneLayersNeurons() {
 	RunDone(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar, NeuronsVar, NeuronAvgsVar)
 }
 
+// RunDoneSynapses finishes running and copies the Synapse state back.
+func RunDoneSynapses() {
+	RunDone(SynapsesVar)
+}
+
+// RunDoneSynapses finishes running and copies the Synapse state back,
+// including SynapseTraces, for visualization.
+func RunDoneSynapsesTrace() {
+	RunDone(SynapsesVar, SynapseTracesVar)
+}
+
 // BuildPathGBuf builds the PathGBuf, PathGSyns,
 // based on the MaxDelay values in the PathParams,
 // which should have been configured by this point.

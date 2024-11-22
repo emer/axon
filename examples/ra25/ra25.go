@@ -109,7 +109,7 @@ type RunConfig struct {
 	GPU bool `default:"false"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
-	NData int `default:"2" min:"1"`
+	NData int `default:"16" min:"1"`
 
 	// number of parallel threads for CPU computation -- 0 = use default
 	NThreads int `default:"0"`
@@ -253,6 +253,10 @@ func (ss *Sim) New() {
 
 // ConfigAll configures all the elements using the standard functions
 func (ss *Sim) ConfigAll() {
+	if ss.Config.Run.GPU {
+		axon.GPUInit()
+		axon.UseGPU = true
+	}
 	// ss.ConfigPats()
 	ss.OpenPats()
 	ss.ConfigEnv()
@@ -399,7 +403,7 @@ func (ss *Sim) ConfigLoops() {
 		AddLevelIncr(Trial, trls, ss.Config.Run.NData).
 		AddLevel(Cycle, 200)
 
-	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 10, 150, 199, Cycle, Trial, Train)
+	axon.LooperStandard(ls, ss.Net, ss.NetViewUpdater, 50, 150, 199, Cycle, Trial, Train)
 
 	ls.Stacks[Train].OnInit.Add("Init", func() { ss.Init() })
 
