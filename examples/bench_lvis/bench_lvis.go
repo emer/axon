@@ -13,10 +13,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
@@ -118,10 +116,9 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 	}
 
 	net.RecFunTimes = true // verbose -- always do
-	net.GPU.RecFunTimes = verbose
 
 	// builds with default threads
-	if err := net.Build(ctx); err != nil {
+	if err := net.Build(); err != nil {
 		panic(err)
 	}
 	net.Defaults()
@@ -137,21 +134,21 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		net.SetNThreads(threads)
 	}
 
-	net.InitWeights(ctx)
+	net.InitWeights()
 }
 
 func ConfigPats(pats *table.Table, numPats int, inputShape [2]int, outputShape [2]int) {
 
 	pats.AddStringColumn("Name")
-	pats.AddFloat32TensorColumn("Input", inputShape[:], "Y", "X")
-	pats.AddFloat32TensorColumn("Output", outputShape[:], "Y", "X")
+	pats.AddFloat32Column("Input", inputShape[:]...)
+	pats.AddFloat32Column("Output", outputShape[:]...)
 	pats.SetNumRows(numPats)
 
 	nOnIn := (inputShape[0] * inputShape[1]) / 16
 	nOnOut := 2
 
-	patgen.PermutedBinaryRows(pats.Columns[1], nOnIn, 1, 0)
-	patgen.PermutedBinaryRows(pats.Columns[2], nOnOut, 1, 0)
+	patgen.PermutedBinaryRows(pats.ColumnByIndex(1), nOnIn, 1, 0)
+	patgen.PermutedBinaryRows(pats.ColumnByIndex(2), nOnOut, 1, 0)
 }
 
 func ConfigEpcLog(dt *table.Table) {
@@ -168,12 +165,13 @@ func ConfigEpcLog(dt *table.Table) {
 }
 
 func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, gpu bool) {
-	net.InitWeights(ctx)
+	net.InitWeights()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 
 	if gpu {
-		net.ConfigGPUnoGUI(ctx)
+		axon.GPUInit()
+		axon.UseGPU = true
 	}
 
 	epcLog.SetNumRows(epcs)
@@ -190,8 +188,8 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	te := net.LayerByName("TE_0")
 	outLay := net.LayerByName("Output")
 
-	inPats := errors.Log1(pats.ColumnByName("Input")).(*tensor.Float32)
-	outPats := errors.Log1(pats.ColumnByName("Output")).(*tensor.Float32)
+	inPats := pats.Column("Input")
+	outPats := pats.Column("Output")
 
 	cycPerQtr := 50
 
@@ -203,36 +201,35 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 		cntErr := 0
 		sse := 0.0
 		for pi := 0; pi < np; pi++ {
-			net.NewState(ctx)
-			ctx.NewState(etime.Train)
+			net.NewState(etime.Train, false)
 
-			for di := uint32(0); di < net.MaxData; di++ {
+			for di := uint32(0); di < ctx.NData; di++ {
 				epi := (pi + int(di)) % np
 				ppi := porder[epi]
-				inp := inPats.SubSpace([]int{ppi})
-				outp := outPats.SubSpace([]int{ppi})
+				inp := inPats.SubSpace(ppi)
+				outp := outPats.SubSpace(ppi)
 
 				for pi := 0; pi < pathways; pi++ {
-					v1[pi].ApplyExt(ctx, di, inp)
+					v1[pi].ApplyExt(di, inp)
 				}
-				outLay.ApplyExt(ctx, di, outp)
-				net.ApplyExts(ctx)
+				outLay.ApplyExt(di, outp)
+				net.ApplyExts()
 			}
 
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					net.Cycle(ctx)
+					net.Cycle(1, false) // todo: 10, or 50
 					ctx.CycleInc()
 				}
 				if qtr == 2 {
-					net.MinusPhase(ctx)
+					net.MinusPhase()
 					ctx.NewPhase(true)
-					net.PlusPhaseStart(ctx)
+					net.PlusPhaseStart()
 				}
 			}
-			net.PlusPhase(ctx)
-			net.DWt(ctx)
-			net.WtFromDWt(ctx)
+			net.PlusPhase()
+			net.DWt()
+			net.WtFromDWt()
 			outPhaseDiff += outLay.Values[0].PhaseDiff.Cor
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
@@ -251,17 +248,17 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 			fmt.Printf("epc: %v  \tPhaseDiff: %v \tAvgPhaseDiff: %v \tTime:%v\n", epc, outPhaseDiff, outLay.Values[0].PhaseDiff.Avg, t)
 		}
 
-		epcLog.SetFloat("Epoch", epc, float64(epc))
-		epcLog.SetFloat("PhaseDiff", epc, float64(outPhaseDiff))
-		epcLog.SetFloat("AvgPhaseDiff", epc, float64(outLay.Values[0].PhaseDiff.Avg))
-		epcLog.SetFloat("SSE", epc, sse)
-		epcLog.SetFloat("CountErr", epc, float64(cntErr))
-		epcLog.SetFloat("PctErr", epc, pctErr)
-		epcLog.SetFloat("PctCor", epc, pctCor)
-		epcLog.SetFloat("V2ActAvg", epc, float64(v2.Values[0].ActAvg.ActMAvg))
-		epcLog.SetFloat("V4ActAvg", epc, float64(v4.Values[0].ActAvg.ActMAvg))
-		epcLog.SetFloat("TEActAvg", epc, float64(te.Values[0].ActAvg.ActMAvg))
-		epcLog.SetFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
+		// epcLog.SetFloat("Epoch", epc, float64(epc))
+		// epcLog.SetFloat("PhaseDiff", epc, float64(outPhaseDiff))
+		// epcLog.SetFloat("AvgPhaseDiff", epc, float64(outLay.Values[0].PhaseDiff.Avg))
+		// epcLog.SetFloat("SSE", epc, sse)
+		// epcLog.SetFloat("CountErr", epc, float64(cntErr))
+		// epcLog.SetFloat("PctErr", epc, pctErr)
+		// epcLog.SetFloat("PctCor", epc, pctCor)
+		// epcLog.SetFloat("V2ActAvg", epc, float64(v2.Values[0].ActAvg.ActMAvg))
+		// epcLog.SetFloat("V4ActAvg", epc, float64(v4.Values[0].ActAvg.ActMAvg))
+		// epcLog.SetFloat("TEActAvg", epc, float64(te.Values[0].ActAvg.ActMAvg))
+		// epcLog.SetFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {
