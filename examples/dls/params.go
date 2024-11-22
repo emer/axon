@@ -14,77 +14,77 @@ import (
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Layer", Desc: "generic params for all layers",
+		{Sel: "Layer", Doc: "generic params for all layers",
 			Params: params.Params{
-				"Layer.Acts.Clamp.Ge": "1.5",
+				ly.Acts.Clamp.Ge = "1.5",
 			}},
-		{Sel: ".PFCLayer", Desc: "pfc layers: slower trgavgact",
+		{Sel: ".PFCLayer", Doc: "pfc layers: slower trgavgact",
 			Params: params.Params{
-				"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // also now set by default
+				ly.Learn.TrgAvgAct.SynScaleRate = "0.0002", // also now set by default
 			}},
-		{Sel: ".PTMaintLayer", Desc: "time integration params",
+		{Sel: ".PTMaintLayer", Doc: "time integration params",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":             "2.4",
-				"Layer.Inhib.Pool.Gi":              "2.4",
-				"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
-				"Layer.Learn.NeuroMod.AChDisInhib": "0.0", // not much effect here..
+				ly.Inhib.Layer.Gi =             "2.4",
+				ly.Inhib.Pool.Gi =              "2.4",
+				ly.Acts.Dend.ModGain =          "1.5", // 2 min -- reduces maint early
+				ly.Learn.NeuroMod.AChDisInhib = "0.0", // not much effect here..
 			}},
-		{Sel: ".PTPredLayer", Desc: "",
+		{Sel: ".PTPredLayer", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal":       "0.1",
-				"Layer.CT.GeGain":                  "0.05", // 0.05 key for stronger activity
-				"Layer.CT.DecayTau":                "50",
-				"Layer.Learn.NeuroMod.AChDisInhib": "0", // 0.2, 0.5 not much diff
+				ly.Inhib.ActAvg.Nominal =       "0.1",
+				ly.CT.GeGain =                  "0.05", // 0.05 key for stronger activity
+				ly.CT.DecayTau =                "50",
+				ly.Learn.NeuroMod.AChDisInhib = "0", // 0.2, 0.5 not much diff
 			}},
-		{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
+		{Sel: ".CS", Doc: "need to adjust Nominal for number of CSs -- now down automatically",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
+				ly.Inhib.ActAvg.Nominal = "0.1", // 0.1 for 4, divide by N/4 from there
 			}},
-		{Sel: ".MatrixLayer", Desc: "all mtx",
+		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Layer.On":    "false", // todo: explore -- could be bad for gating
-				"Layer.Inhib.Pool.Gi":     "0.3",   // go lower, get more inhib from elsewhere?
-				"Layer.Inhib.Pool.FB":     "1",
-				"Layer.Acts.Dend.ModGain": "1", // todo: 2 is default
+				ly.Inhib.Layer.On =    "false", // todo: explore -- could be bad for gating
+				ly.Inhib.Pool.Gi =     "0.3",   // go lower, get more inhib from elsewhere?
+				ly.Inhib.Pool.FB =     "1",
+				ly.Acts.Dend.ModGain = "1", // todo: 2 is default
 			}},
 		////////////////////////////////////////////
 		// Cortical Paths
-		{Sel: ".PFCPath", Desc: "pfc path params -- more robust to long-term training",
+		{Sel: ".PFCPath", Doc: "pfc path params -- more robust to long-term training",
 			Params: params.Params{
-				"Path.Learn.Trace.SubMean": "1",    // 1 > 0 for long-term stability
-				"Path.Learn.LRate.Base":    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
+				pt.Learn.Trace.SubMean = "1",    // 1 > 0 for long-term stability
+				pt.Learn.LRate.Base =    "0.01", // 0.04 def; 0.02 more stable; 0.01 even more
 			}},
-		{Sel: ".PTtoPred", Desc: "stronger drive on pt pred",
+		{Sel: ".PTtoPred", Doc: "stronger drive on pt pred",
 			Params: params.Params{
-				"Path.PathScale.Abs": "6",
+				pt.PathScale.Abs = "6",
 			}},
-		{Sel: ".PTSelfMaint", Desc: "",
+		{Sel: ".PTSelfMaint", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs":    "4",
-				"Path.Learn.LRate.Base": "0.0001", // this is not a problem
+				pt.PathScale.Abs =    "4",
+				pt.Learn.LRate.Base = "0.0001", // this is not a problem
 			}},
-		{Sel: ".ToPTp", Desc: "",
+		{Sel: ".ToPTp", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "4",
+				pt.PathScale.Abs = "4",
 			}},
 		////////////////////////////////////////////
 		// Rubicon Paths
-		{Sel: ".MatrixPath", Desc: "",
+		{Sel: ".MatrixPath", Doc: "",
 			Params: params.Params{
-				"Path.Matrix.NoGateLRate":   "1", // this is KEY for robustness when failing initially!
-				"Path.Learn.Trace.LearnThr": "0.0",
+				pt.Matrix.NoGateLRate =   "1", // this is KEY for robustness when failing initially!
+				pt.Learn.Trace.LearnThr = "0.0",
 			}},
-		{Sel: ".SuperToThal", Desc: "",
+		{Sel: ".SuperToThal", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "4", // 4 def
+				pt.PathScale.Abs = "4", // 4 def
 			}},
-		{Sel: ".SuperToPT", Desc: "",
+		{Sel: ".SuperToPT", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0.5", // 0.5 def
+				pt.PathScale.Abs = "0.5", // 0.5 def
 			}},
-		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
+		{Sel: ".GPiToBGThal", Doc: "inhibition from GPi to MD",
 			Params: params.Params{
-				"Path.PathScale.Abs": "5", // with new mod, this can be stronger
+				pt.PathScale.Abs = "5", // with new mod, this can be stronger
 			}},
 	},
 }

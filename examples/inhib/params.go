@@ -12,110 +12,110 @@ import (
 // selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
+		{Sel: "Layer", Doc: "generic params for all layers: lower gain, slower, soft clamp",
 			Params: params.Params{
-				"Layer.Inhib.Layer.On":       "false",
-				"Layer.Inhib.Layer.Gi":       "1.0",
-				"Layer.Inhib.ActAvg.Nominal": "0.1",
-				"Layer.Acts.Dt.GeTau":        "5",
-				"Layer.Acts.Dt.GiTau":        "7",
-				"Layer.Acts.Gbar.I":          "1.0",
-				"Layer.Acts.Gbar.L":          "0.2",
-				"Layer.Acts.Decay.Act":       "0.0", // 0.2 def
-				"Layer.Acts.Decay.Glong":     "0.0", // 0.6 def
-				"Layer.Acts.Noise.On":        "false",
-				"Layer.Acts.Noise.GeHz":      "100",
-				"Layer.Acts.Noise.Ge":        "0.002", // 0.001 min
-				"Layer.Acts.Noise.GiHz":      "200",
-				"Layer.Acts.Noise.Gi":        "0.002", // 0.001 min
+				ly.Inhib.Layer.On =       "false",
+				ly.Inhib.Layer.Gi =       "1.0",
+				ly.Inhib.ActAvg.Nominal = "0.1",
+				ly.Acts.Dt.GeTau =        "5",
+				ly.Acts.Dt.GiTau =        "7",
+				ly.Acts.Gbar.I =          "1.0",
+				ly.Acts.Gbar.L =          "0.2",
+				ly.Acts.Decay.Act =       "0.0", // 0.2 def
+				ly.Acts.Decay.Glong =     "0.0", // 0.6 def
+				ly.Acts.Noise.On =        "false",
+				ly.Acts.Noise.GeHz =      "100",
+				ly.Acts.Noise.Ge =        "0.002", // 0.001 min
+				ly.Acts.Noise.GiHz =      "200",
+				ly.Acts.Noise.Gi =        "0.002", // 0.001 min
 			}},
-		{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
+		{Sel: ".InhibLay", Doc: "generic params for all layers: lower gain, slower, soft clamp",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.5",
-				"Layer.Acts.Spikes.Thr":      "0.5",
-				"Layer.Acts.Spikes.Tr":       "1",   // 3 def
-				"Layer.Acts.Spikes.VmR":      "0.4", // key for firing early, plus noise
-				"Layer.Acts.Init.Vm":         "0.4", // key for firing early, plus noise
-				"Layer.Acts.Erev.L":          "0.4", // more excitable
-				"Layer.Acts.Gbar.L":          "0.2", // smaller, less leaky..
-				"Layer.Acts.KNa.On":          "false",
-				"Layer.Acts.GabaB.Gbar":      "0", // no gabab
-				"Layer.Acts.NMDA.Gbar":       "0", // no nmda
-				"Layer.Acts.Noise.On":        "false",
-				"Layer.Acts.Noise.Ge":        "0.01", // 0.001 min
-				"Layer.Acts.Noise.Gi":        "0.0",  //
+				ly.Inhib.ActAvg.Nominal = "0.5",
+				ly.Acts.Spikes.Thr =      "0.5",
+				ly.Acts.Spikes.Tr =       "1",   // 3 def
+				ly.Acts.Spikes.VmR =      "0.4", // key for firing early, plus noise
+				ly.Acts.Init.Vm =         "0.4", // key for firing early, plus noise
+				ly.Acts.Erev.L =          "0.4", // more excitable
+				ly.Acts.Gbar.L =          "0.2", // smaller, less leaky..
+				ly.Acts.KNa.On =          "false",
+				ly.Acts.GabaB.Gbar =      "0", // no gabab
+				ly.Acts.NMDA.Gbar =       "0", // no nmda
+				ly.Acts.Noise.On =        "false",
+				ly.Acts.Noise.Ge =        "0.01", // 0.001 min
+				ly.Acts.Noise.Gi =        "0.0",  //
 			}},
-		{Sel: "#Layer0", Desc: "Input layer",
+		{Sel: "#Layer0", Doc: "Input layer",
 			Params: params.Params{
-				"Layer.Acts.Clamp.Ge": "0.6", // no inhib so needs to be lower
-				"Layer.Acts.Noise.On": "true",
-				"Layer.Acts.Noise.Gi": "0.002", // hard to disrupt strong inputs!
+				ly.Acts.Clamp.Ge = "0.6", // no inhib so needs to be lower
+				ly.Acts.Noise.On = "true",
+				ly.Acts.Noise.Gi = "0.002", // hard to disrupt strong inputs!
 			}},
-		{Sel: "Path", Desc: "no learning",
+		{Sel: "Path", Doc: "no learning",
 			Params: params.Params{
-				"Path.Learn.Learn": "false",
-				// "Path.SWts.Init.Dist": "Uniform",
-				"Path.SWts.Init.Mean": "0.5",
-				"Path.SWts.Init.Var":  "0.25",
-				"Path.Com.Delay":      "2",
+				pt.Learn.Learn = "false",
+				// pt.SWts.Init.Dist = "Uniform",
+				pt.SWts.Init.Mean = "0.5",
+				pt.SWts.Init.Var =  "0.25",
+				pt.Com.Delay =      "2",
 			}},
-		{Sel: ".BackPath", Desc: "feedback excitatory",
+		{Sel: ".BackPath", Doc: "feedback excitatory",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.2",
+				pt.PathScale.Rel = "0.2",
 			}},
-		{Sel: ".InhibPath", Desc: "inhibitory pathways",
+		{Sel: ".InhibPath", Doc: "inhibitory pathways",
 			Params: params.Params{
-				// "Path.SWts.Init.Dist": "Uniform",
-				"Path.SWts.Init.Mean": "0.5",
-				"Path.SWts.Init.Var":  "0",
-				"Path.SWts.Init.Sym":  "false",
-				"Path.Com.Delay":      "0",
-				"Path.PathScale.Abs":  "6", // key param
+				// pt.SWts.Init.Dist = "Uniform",
+				pt.SWts.Init.Mean = "0.5",
+				pt.SWts.Init.Var =  "0",
+				pt.SWts.Init.Sym =  "false",
+				pt.Com.Delay =      "0",
+				pt.PathScale.Abs =  "6", // key param
 			}},
-		{Sel: ".ToInhib", Desc: "to inhibitory pathways",
+		{Sel: ".ToInhib", Doc: "to inhibitory pathways",
 			Params: params.Params{
-				"Path.Com.Delay": "1",
+				pt.Com.Delay = "1",
 			}},
-		// {Sel: ".RandSc", Desc: "random shortcut",
+		// {Sel: ".RandSc", Doc: "random shortcut",
 		// 	Params: params.Params{
-		// 		"Path.Learn.LRate.Base": "0.001", //
-		// 		// "Path.Learn.Learn":      "false",
-		// 		"Path.PathScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
-		// 		"Path.SWts.Adapt.On": "false", // seems better
-		// 		// "Path.SWts.Init.Var":  "0.05",
+		// 		pt.Learn.LRate.Base = "0.001", //
+		// 		// pt.Learn.Learn =      "false",
+		// 		pt.PathScale.Rel = "0.5",   // .5 > .8 > 1 > .4 > .3 etc
+		// 		pt.SWts.Adapt.On = "false", // seems better
+		// 		// pt.SWts.Init.Var =  "0.05",
 		// 	}},
 	},
-	"FSFFFB": {
-		{Sel: "Layer", Desc: "use FSFFFB computed inhibition",
+	"FSFFFB": = {
+		{Sel: "Layer", Doc: "use FSFFFB computed inhibition",
 			Params: params.Params{
-				"Layer.Inhib.Layer.On":     "true",
-				"Layer.Inhib.Layer.Gi":     "1.0",
-				"Layer.Inhib.Layer.SS":     "30", // 30
-				"Layer.Inhib.Layer.FB":     "1",
-				"Layer.Inhib.Layer.FS0":    "0.1",
-				"Layer.Inhib.Layer.FSTau":  "6",
-				"Layer.Inhib.Layer.SSfTau": "20",
-				"Layer.Inhib.Layer.SSiTau": "50",
+				ly.Inhib.Layer.On =     "true",
+				ly.Inhib.Layer.Gi =     "1.0",
+				ly.Inhib.Layer.SS =     "30", // 30
+				ly.Inhib.Layer.FB =     "1",
+				ly.Inhib.Layer.FS0 =    "0.1",
+				ly.Inhib.Layer.FSTau =  "6",
+				ly.Inhib.Layer.SSfTau = "20",
+				ly.Inhib.Layer.SSiTau = "50",
 			}},
-		{Sel: ".InhibPath", Desc: "inhibitory pathways",
+		{Sel: ".InhibPath", Doc: "inhibitory pathways",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0",
+				pt.PathScale.Abs = "0",
 			}},
 	},
 	"Untrained": {
-		{Sel: ".Excite", Desc: "excitatory connections",
+		{Sel: ".Excite", Doc: "excitatory connections",
 			Params: params.Params{
-				// "Path.SWts.Init.Dist": "Uniform",
-				"Path.SWts.Init.Mean": "0.5",
-				"Path.SWts.Init.Var":  "0.25",
+				// pt.SWts.Init.Dist = "Uniform",
+				pt.SWts.Init.Mean = "0.5",
+				pt.SWts.Init.Var =  "0.25",
 			}},
 	},
 	"Trained": {
-		{Sel: ".Excite", Desc: "excitatory connections",
+		{Sel: ".Excite", Doc: "excitatory connections",
 			Params: params.Params{
-				// "Path.SWts.Init.Dist": "Gaussian",
-				"Path.SWts.Init.Mean": "0.4",
-				"Path.SWts.Init.Var":  "0.8",
+				// pt.SWts.Init.Dist = "Gaussian",
+				pt.SWts.Init.Mean = "0.4",
+				pt.SWts.Init.Var =  "0.8",
 			}},
 	},
 }

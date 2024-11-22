@@ -12,41 +12,41 @@ import (
 // Base is always applied, and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Layer", Desc: "all defaults",
+		{Sel: "Layer", Doc: "all defaults",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":       "1.05", // 1.05 > 1.1 for short-term; 1.1 better long-run stability
-				"Layer.Inhib.Layer.FB":       "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
-				"Layer.Inhib.ActAvg.Nominal": "0.06", // 0.6 > 0.5
-				"Layer.Acts.NMDA.MgC":        "1.2",  // 1.2 > 1.4 here, still..
+				ly.Inhib.Layer.Gi =       "1.05", // 1.05 > 1.1 for short-term; 1.1 better long-run stability
+				ly.Inhib.Layer.FB =       "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
+				ly.Inhib.ActAvg.Nominal = "0.06", // 0.6 > 0.5
+				ly.Acts.NMDA.MgC =        "1.2",  // 1.2 > 1.4 here, still..
 			},
 			Hypers: params.Hypers{
-				"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},
-				"Layer.Inhib.ActAvg.Nominal": {"StdDev": "0.01", "Min": "0.01"},
+				ly.Inhib.Layer.Gi =       {"StdDev = "0.1", "Min = "0.5"},
+				ly.Inhib.ActAvg.Nominal = {"StdDev = "0.01", "Min = "0.01"},
 			}},
-		{Sel: "#Input", Desc: "critical now to specify the activity level",
+		{Sel: "#Input", Doc: "critical now to specify the activity level",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
-				"Layer.Acts.Clamp.Ge":        "1.5",  // 1.5 > 1.0
-				"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
+				ly.Inhib.Layer.Gi =       "0.9",  // 0.9 > 1.0
+				ly.Acts.Clamp.Ge =        "1.5",  // 1.5 > 1.0
+				ly.Inhib.ActAvg.Nominal = "0.15", // .24 nominal, lower to give higher excitation
 			}},
-		{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+		{Sel: "#Output", Doc: "output definitely needs lower inhib -- true for smaller layers in general",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":          "0.65", // 0.65
-				"Layer.Inhib.ActAvg.Nominal":    "0.24",
-				"Layer.Acts.Spikes.Tr":          "1",    // 1 is new minimum.. > 3
-				"Layer.Acts.Clamp.Ge":           "0.8",  // 0.8 > 0.6
-				"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
+				ly.Inhib.Layer.Gi =          "0.65", // 0.65
+				ly.Inhib.ActAvg.Nominal =    "0.24",
+				ly.Acts.Spikes.Tr =          "1",    // 1 is new minimum.. > 3
+				ly.Acts.Clamp.Ge =           "0.8",  // 0.8 > 0.6
+				ly.Learn.RLRate.SigmoidMin = "0.05", // sigmoid derivative actually useful here!
 			}},
-		{Sel: "Path", Desc: "basic path params",
+		{Sel: "Path", Doc: "basic path params",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
-				"Path.SWts.Adapt.LRate":    "0.1", // .1 >= .2,
-				"Path.SWts.Init.SPct":      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-				"Path.Learn.Trace.SubMean": "0",   // 1 > 0 for long run stability
+				pt.Learn.LRate.Base =    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
+				pt.SWts.Adapt.LRate =    "0.1", // .1 >= .2,
+				pt.SWts.Init.SPct =      "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.Learn.Trace.SubMean = "0",   // 1 > 0 for long run stability
 			}},
-		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				pt.PathScale.Rel = "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 			}},
 	},
 }

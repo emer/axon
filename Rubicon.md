@@ -263,7 +263,7 @@ which sets the `GoalMaint` global variable, that then drives inhibition of ACh i
 
 The SC layer has a relatively strong trial scale adaptation current that causes activity to diminish over trials, using the sodium-driven potassium channel (KNa):
 ```
-"Layer.Acts.KNa.Slow.Max":     "0.5", // 0.5 to 1 generally works
+ly.Acts.KNa.Slow.Max":     "0.5", // 0.5 to 1 generally works
 ```
 
 # VSPatch

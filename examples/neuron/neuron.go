@@ -53,21 +53,21 @@ func main() {
 // selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Path", Desc: "no learning",
+		{Sel: "Path", Doc: "no learning",
 			Params: params.Params{
-				"Path.Learn.Learn": "false",
+				pt.Learn.Learn = "false",
 			}},
-		{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
+		{Sel: "Layer", Doc: "generic params for all layers: lower gain, slower, soft clamp",
 			Params: params.Params{
-				"Layer.Inhib.Layer.On": "false",
-				"Layer.Acts.Init.Vm":   "0.3",
+				ly.Inhib.Layer.On = "false",
+				ly.Acts.Init.Vm =   "0.3",
 			}},
 	},
 	"Testing": {
-		{Sel: "Layer", Desc: "",
+		{Sel: "Layer", Doc: "",
 			Params: params.Params{
-				"Layer.Acts.NMDA.Gbar":  "0.0",
-				"Layer.Acts.GabaB.Gbar": "0.0",
+				ly.Acts.NMDA.Gbar =  "0.0",
+				ly.Acts.GabaB.Gbar = "0.0",
 			}},
 	},
 }

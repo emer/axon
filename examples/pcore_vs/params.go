@@ -12,103 +12,103 @@ import (
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Layer", Desc: "clamp gain makes big diff on overall excitation, gating propensity",
+		{Sel: "Layer", Doc: "clamp gain makes big diff on overall excitation, gating propensity",
 			Params: params.Params{
-				"Layer.Acts.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
+				ly.Acts.Clamp.Ge = "1.0", // 1.5 is def, was 0.6 (too low)
 			}},
-		{Sel: ".VBG", Desc: "all ModACh",
+		{Sel: ".VBG", Doc: "all ModACh",
 			Params: params.Params{
-				"Layer.Acts.Dend.ModACh": "true",
+				ly.Acts.Dend.ModACh = "true",
 			}},
-		{Sel: ".MatrixLayer", Desc: "all mtx",
+		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":             "false",
-				"Layer.Inhib.Layer.Gi":            "0.5", // 0.5 needed for differentiated reps
-				"Layer.Inhib.ActAvg.Nominal":      "0.25",
-				"Layer.Matrix.GateThr":            "0.05", // todo: .01 should be new default
-				"Layer.Matrix.IsVS":               "true", // key for resetting urgency
-				"Layer.Learn.RLRate.On":           "true", // only used for non-rew trials -- key
-				"Layer.Learn.RLRate.Diff":         "false",
-				"Layer.Learn.RLRate.SigmoidMin":   "0.01", // 0.01 better than .05
-				"Layer.Learn.TrgAvgAct.RescaleOn": "true",
-				"Layer.Learn.NeuroMod.BurstGain":  "0.1", // 1 def -- must be smaller given rew dynamics
-				"Layer.Learn.NeuroMod.DAModGain":  "0",   // strongly biases the gating
+				ly.Inhib.Pool.On =             "false",
+				ly.Inhib.Layer.Gi =            "0.5", // 0.5 needed for differentiated reps
+				ly.Inhib.ActAvg.Nominal =      "0.25",
+				ly.Matrix.GateThr =            "0.05", // todo: .01 should be new default
+				ly.Matrix.IsVS =               "true", // key for resetting urgency
+				ly.Learn.RLRate.On =           "true", // only used for non-rew trials -- key
+				ly.Learn.RLRate.Diff =         "false",
+				ly.Learn.RLRate.SigmoidMin =   "0.01", // 0.01 better than .05
+				ly.Learn.TrgAvgAct.RescaleOn = "true",
+				ly.Learn.NeuroMod.BurstGain =  "0.1", // 1 def -- must be smaller given rew dynamics
+				ly.Learn.NeuroMod.DAModGain =  "0",   // strongly biases the gating
 			}},
-		{Sel: ".VSTNLayer", Desc: "all VSTN",
+		{Sel: ".VSTNLayer", Doc: "all VSTN",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase":      "0.1", // todo: re-param with more stn, increase..
-				"Layer.Acts.SKCa.CaRDecayTau": "80",
+				ly.Acts.Init.GeBase =      "0.1", // todo: re-param with more stn, increase..
+				ly.Acts.SKCa.CaRDecayTau = "80",
 			}},
-		{Sel: ".PTMaintLayer", Desc: "time integration params",
+		{Sel: ".PTMaintLayer", Doc: "time integration params",
 			Params: params.Params{
-				// "Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
-				"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
-				"Layer.Acts.Kir.Gbar":     "0",   // no real diff here over range 0-10
-				"Layer.Acts.Dend.ModACh":  "true",
+				// ly.Inhib.Layer.Gi =    "3.2", // 3.2 def
+				ly.Acts.Dend.ModGain = "1.5", // 1.5 def
+				ly.Acts.Kir.Gbar =     "0",   // no real diff here over range 0-10
+				ly.Acts.Dend.ModACh =  "true",
 			}},
-		{Sel: ".ACC", Desc: "manipulate noise to see about integration over time",
+		{Sel: ".ACC", Doc: "manipulate noise to see about integration over time",
 			Params: params.Params{
-				"Layer.Acts.Noise.On": "false",
-				"Layer.Acts.Noise.Ge": "0.1",  // 0.1 is visibly impactful
-				"Layer.Acts.Noise.Gi": "0.01", // 0.01 -- if to strong, rep becomes very weak
+				ly.Acts.Noise.On = "false",
+				ly.Acts.Noise.Ge = "0.1",  // 0.1 is visibly impactful
+				ly.Acts.Noise.Gi = "0.01", // 0.01 -- if to strong, rep becomes very weak
 			}},
 		////////////////////////////////////////////
 		// Paths
-		{Sel: ".VSMatrixPath", Desc: "",
+		{Sel: ".VSMatrixPath", Doc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":     "0.01",  // 0.01, vs .02 default
-				"Path.Learn.Trace.LearnThr": "0.1",   // prevents learning below this thr: preserves low act
-				"Path.Matrix.VSRewLearn":    "false", // significantly cleaner
-				"Path.SWts.Adapt.On":        "false", // not much diff: false >= true
+				pt.Learn.LRate.Base =     "0.01",  // 0.01, vs .02 default
+				pt.Learn.Trace.LearnThr = "0.1",   // prevents learning below this thr: preserves low act
+				pt.Matrix.VSRewLearn =    "false", // significantly cleaner
+				pt.SWts.Adapt.On =        "false", // not much diff: false >= true
 			},
 			Hypers: params.Hypers{
-				"Path.Learn.LRate.Base":     {"Tweak": "-"},
-				"Path.Learn.Trace.LearnThr": {"Tweak": "-"},
+				pt.Learn.LRate.Base =     {"Tweak = "-"},
+				pt.Learn.Trace.LearnThr = {"Tweak = "-"},
 			}},
-		{Sel: "#UrgencyToVMtxGo", Desc: "strong urgency factor",
+		{Sel: "#UrgencyToVMtxGo", Doc: "strong urgency factor",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.1", // don't dilute from others
-				"Path.PathScale.Abs": "0",   // todo: is misbehaving here
-				"Path.Learn.Learn":   "false",
+				pt.PathScale.Rel = "0.1", // don't dilute from others
+				pt.PathScale.Abs = "0",   // todo: is misbehaving here
+				pt.Learn.Learn =   "false",
 			}},
-		{Sel: ".SuperToPT", Desc: "one-to-one from super",
+		{Sel: ".SuperToPT", Doc: "one-to-one from super",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0.5",
+				pt.PathScale.Abs = "0.5",
 			}},
-		{Sel: ".SuperToThal", Desc: "",
+		{Sel: ".SuperToThal", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "3.0", // was 4
+				pt.PathScale.Abs = "3.0", // was 4
 			}},
-		{Sel: ".ACCToVMtx", Desc: "",
+		{Sel: ".ACCToVMtx", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1.5", // 1.5 good; 1.8 causes some breakthrough
+				pt.PathScale.Abs = "1.5", // 1.5 good; 1.8 causes some breakthrough
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxNoToVMtxGo", Desc: "",
+		{Sel: "#VMtxNoToVMtxGo", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.05",
-				"Path.PathScale.Abs": "1",
-				"Path.Learn.Learn":   "false",
+				pt.PathScale.Rel = "0.05",
+				pt.PathScale.Abs = "1",
+				pt.Learn.Learn =   "false",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Rel": {"Tweak": "log"},
+				pt.PathScale.Rel = {"Tweak = "log"},
 			}},
-		{Sel: "#VGPi", Desc: "",
+		{Sel: "#VGPi", Doc: "",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
-				"Layer.Acts.Init.GeVar":  "0.1",
+				ly.Acts.Init.GeBase = "0.3", // 0.3 > 0.2, 0.1
+				ly.Acts.Init.GeVar =  "0.1",
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				ly.Acts.Init.GeBase = {"Tweak = "-"},
 			}},
-		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
+		{Sel: "#VSTNToVGPi", Doc: "strong initial phasic activation",
 			Params: params.Params{
-				"Path.PathScale.Abs": ".2",
+				pt.PathScale.Abs = ".2",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
 	},
 }
@@ -117,145 +117,145 @@ var ParamSets = params.Sets{
 // and have informed the default values in the first place.
 var ParamSetsDefs = params.Sets{
 	"Defaults": {
-		{Sel: ".MatrixLayer", Desc: "all mtx",
+		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Params: params.Params{
-				"Layer.Inhib.Pool.On":              "false",
-				"Layer.Inhib.Layer.Gi":             "0.5",
-				"Layer.Inhib.Layer.FB":             "0",
-				"Layer.Matrix.GateThr":             "0.05", // .05 default
-				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5 > 20
-				"Layer.Acts.GabaB.Gbar":            "0",
-				"Layer.Acts.NMDA.Gbar":             "0.006", // 0.006 default, necessary (0 very bad)
-				"Layer.Learn.NeuroMod.AChLRateMod": "0",     // no diff here -- always ACh
-				"Layer.Learn.NeuroMod.BurstGain":   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5; only for weird rew case here; 1 def
+				ly.Inhib.Pool.On =              "false",
+				ly.Inhib.Layer.Gi =             "0.5",
+				ly.Inhib.Layer.FB =             "0",
+				ly.Matrix.GateThr =             "0.05", // .05 default
+				ly.Acts.Kir.Gbar =              "10",   // 10 > 5 > 20
+				ly.Acts.GabaB.Gbar =            "0",
+				ly.Acts.NMDA.Gbar =             "0.006", // 0.006 default, necessary (0 very bad)
+				ly.Learn.NeuroMod.AChLRateMod = "0",     // no diff here -- always ACh
+				ly.Learn.NeuroMod.BurstGain =   "0.1",   // 0.1 == 0.2 > 0.05 > 0.5; only for weird rew case here; 1 def
 			},
 			Hypers: params.Hypers{
-				"Layer.Learn.NeuroMod.BurstGain": {"Tweak": "-"},
-				"Layer.Acts.Kir.Gbar":            {"Tweak": "-"},
-				"Layer.Acts.NMDA.Gbar":           {"Tweak": "-"},
-				"Layer.Inhib.Layer.Gi":           {"Tweak": "-"},
+				ly.Learn.NeuroMod.BurstGain = {"Tweak = "-"},
+				ly.Acts.Kir.Gbar =            {"Tweak = "-"},
+				ly.Acts.NMDA.Gbar =           {"Tweak = "-"},
+				ly.Inhib.Layer.Gi =           {"Tweak = "-"},
 			}},
-		{Sel: ".VSTNLayer", Desc: "all VSTN",
+		{Sel: ".VSTNLayer", Doc: "all VSTN",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase":           "0.1",
-				"Layer.Acts.Kir.Gbar":              "10",   // 10 > 5  > 2 -- key for pause
-				"Layer.Acts.SKCa.Gbar":             "2",    // 2 > 5 >> 1 (for Kir = 10)
-				"Layer.Inhib.Layer.On":             "true", // really no inhib neurons here.  all VGPePr
-				"Layer.Learn.NeuroMod.AChDisInhib": "0",
+				ly.Acts.Init.GeBase =           "0.1",
+				ly.Acts.Kir.Gbar =              "10",   // 10 > 5  > 2 -- key for pause
+				ly.Acts.SKCa.Gbar =             "2",    // 2 > 5 >> 1 (for Kir = 10)
+				ly.Inhib.Layer.On =             "true", // really no inhib neurons here.  all VGPePr
+				ly.Learn.NeuroMod.AChDisInhib = "0",
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
-				"Layer.Acts.Kir.Gbar":    {"Tweak": "-"},
-				"Layer.Acts.SKCa.Gbar":   {"Tweak": "-"},
+				ly.Acts.Init.GeBase = {"Tweak = "-"},
+				ly.Acts.Kir.Gbar =    {"Tweak = "-"},
+				ly.Acts.SKCa.Gbar =   {"Tweak = "-"},
 			}},
-		{Sel: "#VGPePr", Desc: "prototypical",
+		{Sel: "#VGPePr", Doc: "prototypical",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.4", // 0.4 > 0.3, 0.5
-				"Layer.Acts.Init.GeVar":  "0.2",
+				ly.Acts.Init.GeBase = "0.4", // 0.4 > 0.3, 0.5
+				ly.Acts.Init.GeVar =  "0.2",
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				ly.Acts.Init.GeBase = {"Tweak = "-"},
 			}},
-		{Sel: "#VGPeAk", Desc: "arkypallidal",
+		{Sel: "#VGPeAk", Doc: "arkypallidal",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.2", // 0.2 > 0.3, 0.1
-				"Layer.Acts.Init.GeVar":  "0.1", // 0.1 == 0.2 > 0.05
+				ly.Acts.Init.GeBase = "0.2", // 0.2 > 0.3, 0.1
+				ly.Acts.Init.GeVar =  "0.1", // 0.1 == 0.2 > 0.05
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
-				"Layer.Acts.Init.GeVar":  {"Tweak": "-"},
+				ly.Acts.Init.GeBase = {"Tweak = "-"},
+				ly.Acts.Init.GeVar =  {"Tweak = "-"},
 			}},
-		{Sel: "#VGPi", Desc: "",
+		{Sel: "#VGPi", Doc: "",
 			Params: params.Params{
-				"Layer.Acts.Init.GeBase": "0.3", // 0.3 > 0.2, 0.1
-				"Layer.Acts.Init.GeVar":  "0.1",
+				ly.Acts.Init.GeBase = "0.3", // 0.3 > 0.2, 0.1
+				ly.Acts.Init.GeVar =  "0.1",
 			},
 			Hypers: params.Hypers{
-				"Layer.Acts.Init.GeBase": {"Tweak": "-"},
+				ly.Acts.Init.GeBase = {"Tweak = "-"},
 			}},
-		{Sel: ".VGPeAkToVMtx", Desc: "go disinhibition",
+		{Sel: ".VGPeAkToVMtx", Doc: "go disinhibition",
 			Params: params.Params{
-				"Path.PathScale.Abs": "3", // 3 >= 2, 4
+				pt.PathScale.Abs = "3", // 3 >= 2, 4
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxGoToVGPeAk", Desc: "go inhibition",
+		{Sel: "#VMtxGoToVGPeAk", Doc: "go inhibition",
 			Params: params.Params{
-				"Path.PathScale.Abs": ".5", // stronger = more binary
+				pt.PathScale.Abs = ".5", // stronger = more binary
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VGPePrToVSTN", Desc: "enough to kick off the ping-pong dynamics for VSTN.",
+		{Sel: "#VGPePrToVSTN", Doc: "enough to kick off the ping-pong dynamics for VSTN.",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0.5",
+				pt.PathScale.Abs = "0.5",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VSTNToVGPePr", Desc: "stronger VSTN -> VGPePr to kick it high at start",
+		{Sel: "#VSTNToVGPePr", Doc: "stronger VSTN -> VGPePr to kick it high at start",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0.5",
+				pt.PathScale.Abs = "0.5",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VSTNToVGPeAk", Desc: "this is weak biologically -- could try 0",
+		{Sel: "#VSTNToVGPeAk", Doc: "this is weak biologically -- could try 0",
 			Params: params.Params{
-				"Path.PathScale.Abs": "0.1",
+				pt.PathScale.Abs = "0.1",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxNoToVGPePr", Desc: "proto = primary classical NoGo pathway",
+		{Sel: "#VMtxNoToVGPePr", Doc: "proto = primary classical NoGo pathway",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1", // 1 fully inhibits Pr
+				pt.PathScale.Abs = "1", // 1 fully inhibits Pr
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VGPePrToVGPePr", Desc: "self-inhib -- only source of self reg",
+		{Sel: "#VGPePrToVGPePr", Doc: "self-inhib -- only source of self reg",
 			Params: params.Params{
-				"Path.PathScale.Abs": "4", // 4 best for DS
+				pt.PathScale.Abs = "4", // 4 best for DS
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VGPePrToVGPeAk", Desc: "just enough to knock down in baseline state",
+		{Sel: "#VGPePrToVGPeAk", Doc: "just enough to knock down in baseline state",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1",
+				pt.PathScale.Abs = "1",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VMtxGoToVGPi", Desc: "go influence on gating",
+		{Sel: "#VMtxGoToVGPi", Doc: "go influence on gating",
 			Params: params.Params{
-				"Path.PathScale.Abs": ".2", // .1 too weak
+				pt.PathScale.Abs = ".2", // .1 too weak
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VGPePrToVGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
+		{Sel: "#VGPePrToVGPi", Doc: "nogo influence on gating -- decreasing produces more graded function of Go",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1", // 2 is much worse.. keep at 1
+				pt.PathScale.Abs = "1", // 2 is much worse.. keep at 1
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VSTNToVGPi", Desc: "strong initial phasic activation",
+		{Sel: "#VSTNToVGPi", Doc: "strong initial phasic activation",
 			Params: params.Params{
-				"Path.PathScale.Abs": ".2",
+				pt.PathScale.Abs = ".2",
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
-		{Sel: "#VGPiToACCPosVM", Desc: "final inhibition",
+		{Sel: "#VGPiToACCPosVM", Doc: "final inhibition",
 			Params: params.Params{
-				"Path.PathScale.Abs": "5", // needs to be very strong -- 5
+				pt.PathScale.Abs = "5", // needs to be very strong -- 5
 			},
 			Hypers: params.Hypers{
-				"Path.PathScale.Abs": {"Tweak": "-"},
+				pt.PathScale.Abs = {"Tweak = "-"},
 			}},
 	},
 }

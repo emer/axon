@@ -12,134 +12,134 @@ import (
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: ".InputLayer", Desc: "",
+		{Sel: ".InputLayer", Doc: "",
 			Params: params.Params{
-				"Layer.Acts.Decay.Act":   "1.0",
-				"Layer.Acts.Decay.Glong": "1.0",
+				ly.Acts.Decay.Act =   "1.0",
+				ly.Acts.Decay.Glong = "1.0",
 			}},
-		{Sel: "#CS", Desc: "expect act",
+		{Sel: "#CS", Doc: "expect act",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / css
+				ly.Inhib.ActAvg.Nominal = "0.05", // 1 / css
 			}},
-		{Sel: "#ContextIn", Desc: "expect act",
+		{Sel: "#ContextIn", Doc: "expect act",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.025", // 1 / css
+				ly.Inhib.ActAvg.Nominal = "0.025", // 1 / css
 			}},
-		{Sel: ".VSPatchLayer", Desc: "",
+		{Sel: ".VSPatchLayer", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi":              "0.5", // 0.5 needed for differentiation
-				"Layer.Inhib.Layer.Gi":             "0.5",
-				"Layer.Learn.NeuroMod.DipGain":     "1",    // boa requires balanced..
-				"Layer.Learn.TrgAvgAct.GiBaseInit": "0",    // 0.5 def; 0 faster
-				"Layer.Learn.RLRate.SigmoidMin":    "0.05", // 0.05 def
-				"Layer.Learn.NeuroMod.AChLRateMod": "0",
+				ly.Inhib.Pool.Gi =              "0.5", // 0.5 needed for differentiation
+				ly.Inhib.Layer.Gi =             "0.5",
+				ly.Learn.NeuroMod.DipGain =     "1",    // boa requires balanced..
+				ly.Learn.TrgAvgAct.GiBaseInit = "0",    // 0.5 def; 0 faster
+				ly.Learn.RLRate.SigmoidMin =    "0.05", // 0.05 def
+				ly.Learn.NeuroMod.AChLRateMod = "0",
 			}},
-		{Sel: ".VTALayer", Desc: "",
+		{Sel: ".VTALayer", Doc: "",
 			Params: params.Params{
-				"Layer.VTA.CeMGain": "0.5",  // 0.75 def -- controls size of CS burst
-				"Layer.VTA.LHbGain": "1.25", // 1.25 def -- controls size of PV DA
-				"Layer.VTA.AChThr":  "0.5",  // prevents non-CS-onset CS DA
+				ly.VTA.CeMGain = "0.5",  // 0.75 def -- controls size of CS burst
+				ly.VTA.LHbGain = "1.25", // 1.25 def -- controls size of PV DA
+				ly.VTA.AChThr =  "0.5",  // prevents non-CS-onset CS DA
 			}},
-		{Sel: ".MatrixLayer", Desc: "all mtx",
+		{Sel: ".MatrixLayer", Doc: "all mtx",
 			Params: params.Params{
-				"Layer.Acts.Kir.Gbar":     "2",    // 10 > 5  > 2 -- key for pause
-				"Layer.Learn.RLRate.On":   "true", // only used for non-rew trials -- key
-				"Layer.Learn.RLRate.Diff": "false",
+				ly.Acts.Kir.Gbar =     "2",    // 10 > 5  > 2 -- key for pause
+				ly.Learn.RLRate.On =   "true", // only used for non-rew trials -- key
+				ly.Learn.RLRate.Diff = "false",
 			}},
-		{Sel: "#BLAposExtD2", Desc: "",
+		{Sel: "#BLAposExtD2", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":           "1.8", // 1.8 puts just under water
-				"Layer.Inhib.Pool.Gi":            "1.0",
-				"Layer.Learn.NeuroMod.DAModGain": "0", // critical to be 0 -- otherwise prevents CS onset activity!
+				ly.Inhib.Layer.Gi =           "1.8", // 1.8 puts just under water
+				ly.Inhib.Pool.Gi =            "1.0",
+				ly.Learn.NeuroMod.DAModGain = "0", // critical to be 0 -- otherwise prevents CS onset activity!
 			}},
-		{Sel: ".PTMaintLayer", Desc: "time integration params",
+		{Sel: ".PTMaintLayer", Doc: "time integration params",
 			Params: params.Params{
-				"Layer.Acts.Dend.ModGain": "1.5",
-				// "Layer.Inhib.Layer.Gi":    "3.0",
-				// "Layer.Inhib.Pool.Gi":     "3.6",
+				ly.Acts.Dend.ModGain = "1.5",
+				// ly.Inhib.Layer.Gi =    "3.0",
+				// ly.Inhib.Pool.Gi =     "3.6",
 			}},
-		{Sel: "#OFCposPT", Desc: "",
+		{Sel: "#OFCposPT", Doc: "",
 			Params: params.Params{
-				"Layer.Acts.SMaint.Gbar": "0.4",
+				ly.Acts.SMaint.Gbar = "0.4",
 			}},
-		{Sel: ".PTPredLayer", Desc: "",
+		{Sel: ".PTPredLayer", Doc: "",
 			Params: params.Params{
-				"Layer.CT.GeGain": "0.1", // 0.05 orig; stronger ptp
+				ly.CT.GeGain = "0.1", // 0.05 orig; stronger ptp
 			}},
-		{Sel: ".LDTLayer", Desc: "",
+		{Sel: ".LDTLayer", Doc: "",
 			Params: params.Params{
-				"Layer.LDT.MaintInhib": "0.8", // 0.8 def; AChThr = 0.5 typically
+				ly.LDT.MaintInhib = "0.8", // 0.8 def; AChThr = 0.5 typically
 			}},
-		{Sel: "#OFCposPTp", Desc: "",
+		{Sel: "#OFCposPTp", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Pool.Gi":        "1",
-				"Layer.Inhib.ActAvg.Nominal": "0.025", // 0.1 -- affects how strongly BLA is driven -- key param
+				ly.Inhib.Pool.Gi =        "1",
+				ly.Inhib.ActAvg.Nominal = "0.025", // 0.1 -- affects how strongly BLA is driven -- key param
 			}},
-		// {Sel: "#OFCposPT", Desc: "",
+		// {Sel: "#OFCposPT", Doc: "",
 		// 	Params: params.Params{
-		// 		"Layer.Acts.SMaint.Gbar": "0.4", // 0.2 def fine
+		// 		ly.Acts.SMaint.Gbar = "0.4", // 0.2 def fine
 		// 	}},
-		{Sel: "#SC", Desc: "",
+		{Sel: "#SC", Doc: "",
 			Params: params.Params{
-				"Layer.Acts.KNa.Slow.Max": "0.5", // .5 needed to shut off
+				ly.Acts.KNa.Slow.Max = "0.5", // .5 needed to shut off
 			}},
-		{Sel: "#CostP", Desc: "",
+		{Sel: "#CostP", Doc: "",
 			Params: params.Params{
-				"Layer.Pulv.DriveScale": "0.2", // 0.1 def
+				ly.Pulv.DriveScale = "0.2", // 0.1 def
 			}},
 		//////////////////////////////////////////////////
 		// current experimental settings
-		{Sel: ".VSMatrixPath", Desc: "",
+		{Sel: ".VSMatrixPath", Doc: "",
 			Params: params.Params{
-				"Path.Learn.Trace.LearnThr": "0.1", // prevents learning below this thr: preserves low act
+				pt.Learn.Trace.LearnThr = "0.1", // prevents learning below this thr: preserves low act
 			}},
-		{Sel: ".SuperToThal", Desc: "",
+		{Sel: ".SuperToThal", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "4.0", // 4 > 2 for gating sooner
+				pt.PathScale.Abs = "4.0", // 4 > 2 for gating sooner
 			}},
-		{Sel: ".BLAExtPath", Desc: "",
+		{Sel: ".BLAExtPath", Doc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":  "0.05", // 0.05 is fine -- maybe a bit fast
-				"Path.BLA.NegDeltaLRate": "1",
-				"Path.PathScale.Abs":     "4",
+				pt.Learn.LRate.Base =  "0.05", // 0.05 is fine -- maybe a bit fast
+				pt.BLA.NegDeltaLRate = "1",
+				pt.PathScale.Abs =     "4",
 			}},
-		// {Sel: ".BLANovelInhib", Desc: "",
+		// {Sel: ".BLANovelInhib", Doc: "",
 		// 	Params: params.Params{
-		// 		"Path.PathScale.Abs": "0.2",
+		// 		pt.PathScale.Abs = "0.2",
 		// 	}},
-		{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
+		{Sel: ".GPiToBGThal", Doc: "inhibition from GPi to MD",
 			Params: params.Params{
-				"Path.PathScale.Abs": "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
+				pt.PathScale.Abs = "3", // 3 best -- 4 prevents some gating, 2 can sometimes leak
 			}},
-		{Sel: ".PTpToBLAExt", Desc: "modulatory so only active with -da, drives extinction learning based on maintained goal rep",
+		{Sel: ".PTpToBLAExt", Doc: "modulatory so only active with -da, drives extinction learning based on maintained goal rep",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1", // todo: expt
+				pt.PathScale.Abs = "1", // todo: expt
 			}},
-		{Sel: "#BLAposAcqD1ToOFCpos", Desc: "strong, high variance",
+		{Sel: "#BLAposAcqD1ToOFCpos", Doc: "strong, high variance",
 			Params: params.Params{
-				"Path.PathScale.Abs": "2", // key param for OFC focusing on current cs -- expt
+				pt.PathScale.Abs = "2", // key param for OFC focusing on current cs -- expt
 			}},
-		{Sel: ".CSToBLApos", Desc: "",
+		{Sel: ".CSToBLApos", Doc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.05",
+				pt.Learn.LRate.Base = "0.05",
 			}},
-		{Sel: ".BLAAcqToGo", Desc: "",
+		{Sel: ".BLAAcqToGo", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs": "4", // 4 def
+				pt.PathScale.Abs = "4", // 4 def
 			}},
-		{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
+		{Sel: ".BLAExtToAcq", Doc: "fixed inhibitory",
 			Params: params.Params{
-				"Path.PathScale.Abs": "1.0", // key param for efficacy of inhibition
+				pt.PathScale.Abs = "1.0", // key param for efficacy of inhibition
 			}},
-		{Sel: ".VSPatchPath", Desc: "",
+		{Sel: ".VSPatchPath", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Abs":        "3",
-				"Path.Learn.Trace.LearnThr": "0",
-				"Path.Learn.LRate.Base":     "0.02", // 0.02 for vspatch -- essential to drive long enough extinction
+				pt.PathScale.Abs =        "3",
+				pt.Learn.Trace.LearnThr = "0",
+				pt.Learn.LRate.Base =     "0.02", // 0.02 for vspatch -- essential to drive long enough extinction
 			}},
-		// {Sel: ".ToPTp", Desc: "",
+		// {Sel: ".ToPTp", Doc: "",
 		// 	Params: params.Params{
-		// 		"Path.PathScale.Abs": "2",
+		// 		pt.PathScale.Abs = "2",
 		// 	}},
 	},
 }

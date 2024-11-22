@@ -10,207 +10,207 @@ import "github.com/emer/emergent/v2/params"
 
 // OrigParamSets is the original hip model params, prior to optimization in 2/2020
 var OrigParamSets = params.Sets{
-	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	{Name: "Base", Doc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Path", Desc: "keeping default params for generic paths",
+			{Sel: "Path", Doc: "keeping default params for generic paths",
 				Params: params.Params{
-					"Path.Learn.Momentum.On": "true",
-					"Path.Learn.Norm.On":     "true",
-					"Path.Learn.WtBal.On":    "false",
+					pt.Learn.Momentum.On": "true",
+					pt.Learn.Norm.On":     "true",
+					pt.Learn.WtBal.On":    "false",
 				}},
-			{Sel: ".EcCa1Path", Desc: "encoder pathways -- no norm, moment",
+			{Sel: ".EcCa1Path", Doc: "encoder pathways -- no norm, moment",
 				Params: params.Params{
-					"Path.Learn.LRate":       "0.04",
-					"Path.Learn.Momentum.On": "false",
-					"Path.Learn.Norm.On":     "false",
-					"Path.Learn.WtBal.On":    "true", // counteracting hogging
-					//"Path.Learn.XCal.SetLLrn": "true", // bcm now avail, comment out = default LLrn
-					//"Path.Learn.XCal.LLrn":    "0",    // 0 = turn off BCM, must with SetLLrn = true
+					pt.Learn.LRate":       "0.04",
+					pt.Learn.Momentum.On": "false",
+					pt.Learn.Norm.On":     "false",
+					pt.Learn.WtBal.On":    "true", // counteracting hogging
+					//pt.Learn.XCal.SetLLrn": "true", // bcm now avail, comment out = default LLrn
+					//pt.Learn.XCal.LLrn":    "0",    // 0 = turn off BCM, must with SetLLrn = true
 				}},
-			{Sel: ".HippoCHL", Desc: "hippo CHL pathways -- no norm, moment, but YES wtbal = sig better",
+			{Sel: ".HippoCHL", Doc: "hippo CHL pathways -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
-					"Path.CHL.Hebb":          "0.05",
-					"Path.Learn.LRate":       "0.2", // note: 0.2 can sometimes take a really long time to learn
-					"Path.Learn.Momentum.On": "false",
-					"Path.Learn.Norm.On":     "false",
-					"Path.Learn.WtBal.On":    "true",
+					pt.CHL.Hebb":          "0.05",
+					pt.Learn.LRate":       "0.2", // note: 0.2 can sometimes take a really long time to learn
+					pt.Learn.Momentum.On": "false",
+					pt.Learn.Norm.On":     "false",
+					pt.Learn.WtBal.On":    "true",
 				}},
-			{Sel: "#CA1ToECout", Desc: "extra strong from CA1 to ECout",
+			{Sel: "#CA1ToECout", Doc: "extra strong from CA1 to ECout",
 				Params: params.Params{
-					"Path.WtScale.Abs": "4.0",
+					pt.WtScale.Abs": "4.0",
 				}},
-			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
+			{Sel: "#InputToECin", Doc: "one-to-one input to EC",
 				Params: params.Params{
-					"Path.Learn.Learn": "false",
-					"Path.WtInit.Mean": "0.8",
-					"Path.WtInit.Var":  "0.0",
+					pt.Learn.Learn": "false",
+					pt.WtInit.Mean": "0.8",
+					pt.WtInit.Var":  "0.0",
 				}},
-			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
+			{Sel: "#ECoutToECin", Doc: "one-to-one out to in",
 				Params: params.Params{
-					"Path.Learn.Learn": "false",
-					"Path.WtInit.Mean": "0.9",
-					"Path.WtInit.Var":  "0.01",
-					"Path.WtScale.Rel": "0.5",
+					pt.Learn.Learn": "false",
+					pt.WtInit.Mean": "0.9",
+					pt.WtInit.Var":  "0.01",
+					pt.WtScale.Rel": "0.5",
 				}},
-			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
+			{Sel: "#DGToCA3", Doc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
-					"Path.CHL.Hebb":    "0.001",
-					"Path.CHL.SAvgCor": "1",
-					"Path.Learn.Learn": "false",
-					"Path.WtInit.Mean": "0.9",
-					"Path.WtInit.Var":  "0.01",
-					"Path.WtScale.Rel": "8",
+					pt.CHL.Hebb":    "0.001",
+					pt.CHL.SAvgCor": "1",
+					pt.Learn.Learn": "false",
+					pt.WtInit.Mean": "0.9",
+					pt.WtInit.Var":  "0.01",
+					pt.WtScale.Rel": "8",
 				}},
-			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons",
+			{Sel: "#CA3ToCA3", Doc: "CA3 recurrent cons",
 				Params: params.Params{
-					"Path.CHL.Hebb":    "0.01",
-					"Path.CHL.SAvgCor": "1",
-					"Path.WtScale.Rel": "2",
+					pt.CHL.Hebb":    "0.01",
+					pt.CHL.SAvgCor": "1",
+					pt.WtScale.Rel": "2",
 				}},
-			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
+			{Sel: "#CA3ToCA1", Doc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					"Path.CHL.Hebb":    "0.005",
-					"Path.CHL.SAvgCor": "0.4",
-					"Path.Learn.LRate": "0.1",
+					pt.CHL.Hebb":    "0.005",
+					pt.CHL.SAvgCor": "0.4",
+					pt.Learn.LRate": "0.1",
 				}},
-			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
+			{Sel: ".EC", Doc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
-					"Layer.Acts.Gbar.L":          "0.1",
-					"Layer.Inhib.ActAvg.Nominal": "0.2",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Pool.Gi":        "2.0",
-					"Layer.Inhib.Pool.On":        "true",
+					ly.Acts.Gbar.L":          "0.1",
+					ly.Inhib.ActAvg.Nominal": "0.2",
+					ly.Inhib.Layer.On":       "false",
+					ly.Inhib.Pool.Gi":        "2.0",
+					ly.Inhib.Pool.On":        "true",
 				}},
-			{Sel: "#DG", Desc: "very sparse = high inhibition",
+			{Sel: "#DG", Doc: "very sparse = high inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.01",
-					"Layer.Inhib.Layer.Gi":       "3.6", // 3.8 > 3.6 > 4.0 (too far -- tanks);
+					ly.Inhib.ActAvg.Nominal": "0.01",
+					ly.Inhib.Layer.Gi":       "3.6", // 3.8 > 3.6 > 4.0 (too far -- tanks);
 				}},
-			{Sel: "#CA3", Desc: "sparse = high inhibition",
+			{Sel: "#CA3", Doc: "sparse = high inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.02",
-					"Layer.Inhib.Layer.Gi":       "2.8", // 2.8 = 3.0 really -- some better, some worse
-					"Layer.Learn.AvgL.Gain":      "2.5", // stick with 2.5
+					ly.Inhib.ActAvg.Nominal": "0.02",
+					ly.Inhib.Layer.Gi":       "2.8", // 2.8 = 3.0 really -- some better, some worse
+					ly.Learn.AvgL.Gain":      "2.5", // stick with 2.5
 				}},
-			{Sel: "#CA1", Desc: "CA1 only Pools",
+			{Sel: "#CA1", Doc: "CA1 only Pools",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "2.2", // 2.4 > 2.2 > 2.6 > 2.8 -- 2.4 better *for small net* but not for larger!;
-					"Layer.Learn.AvgL.Gain":      "2.5", // 2.5 > 2 > 3
+					ly.Inhib.ActAvg.Nominal": "0.1",
+					ly.Inhib.Layer.On":       "false",
+					ly.Inhib.Pool.On":        "true",
+					ly.Inhib.Pool.Gi":        "2.2", // 2.4 > 2.2 > 2.6 > 2.8 -- 2.4 better *for small net* but not for larger!;
+					ly.Learn.AvgL.Gain":      "2.5", // 2.5 > 2 > 3
 				}},
 		},
 		// NOTE: it is essential not to put Pat / Hip params here, as we have to use Base
 		// to initialize the network every time, even if it is a different size..
 	}},
-	{Name: "List010", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List010", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "10",
 				}},
 		},
 	}},
-	{Name: "List020", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List020", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "20",
 				}},
 		},
 	}},
-	{Name: "List030", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List030", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "30",
 				}},
 		},
 	}},
-	{Name: "List040", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List040", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "40",
 				}},
 		},
 	}},
-	{Name: "List050", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List050", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "50",
 				}},
 		},
 	}},
-	{Name: "List060", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List060", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "60",
 				}},
 		},
 	}},
-	{Name: "List070", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List070", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "70",
 				}},
 		},
 	}},
-	{Name: "List080", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List080", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "80",
 				}},
 		},
 	}},
-	{Name: "List090", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List090", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "90",
 				}},
 		},
 	}},
-	{Name: "List100", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List100", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "100",
 				}},
 		},
 	}},
-	{Name: "List120", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List120", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "120",
 				}},
 		},
 	}},
-	{Name: "List160", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List160", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "160",
 				}},
 		},
 	}},
-	{Name: "List200", Desc: "list size", Sheets: params.Sheets{
+	{Name: "List200", Doc: "list size", Sheets: params.Sheets{
 		"Pat": &params.Sheet{
-			{Sel: "PatParams", Desc: "pattern params",
+			{Sel: "PatParams", Doc: "pattern params",
 				Params: params.Params{
 					"PatParams.ListSize": "200",
 				}},
 		},
 	}},
-	{Name: "SmallHip", Desc: "hippo size", Sheets: params.Sheets{
+	{Name: "SmallHip", Doc: "hippo size", Sheets: params.Sheets{
 		"Hip": &params.Sheet{
-			{Sel: "HipParams", Desc: "hip sizes",
+			{Sel: "HipParams", Doc: "hip sizes",
 				Params: params.Params{
 					"HipParams.ECPool.Y":  "7",
 					"HipParams.ECPool.X":  "7",
@@ -222,9 +222,9 @@ var OrigParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "MedHip", Desc: "hippo size", Sheets: params.Sheets{
+	{Name: "MedHip", Doc: "hippo size", Sheets: params.Sheets{
 		"Hip": &params.Sheet{
-			{Sel: "HipParams", Desc: "hip sizes",
+			{Sel: "HipParams", Doc: "hip sizes",
 				Params: params.Params{
 					"HipParams.ECPool.Y":  "7",
 					"HipParams.ECPool.X":  "7",
@@ -236,9 +236,9 @@ var OrigParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "BigHip", Desc: "hippo size", Sheets: params.Sheets{
+	{Name: "BigHip", Doc: "hippo size", Sheets: params.Sheets{
 		"Hip": &params.Sheet{
-			{Sel: "HipParams", Desc: "hip sizes",
+			{Sel: "HipParams", Doc: "hip sizes",
 				Params: params.Params{
 					"HipParams.ECPool.Y":  "7",
 					"HipParams.ECPool.X":  "7",

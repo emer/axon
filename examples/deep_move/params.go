@@ -12,163 +12,163 @@ import (
 // selected to apply on top of that
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Layer", Desc: "generic layer params",
+		{Sel: "Layer", Doc: "generic layer params",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal":    "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
-				"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1  trace
-				"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
-				"Layer.Acts.Dend.SSGi":          "2",   //
-				"Layer.Acts.Gbar.L":             "0.2", // std
-				"Layer.Acts.Decay.Act":          "0.0", // 0 == 0.2
-				"Layer.Acts.Decay.Glong":        "0.0",
-				"Layer.Acts.NMDA.MgC":           "1.4", // 1.4, 5 > 1.2, 0 ?
-				"Layer.Acts.NMDA.Voff":          "0",
-				"Layer.Acts.NMDA.Gbar":          "0.006",
-				"Layer.Acts.GabaB.Gbar":         "0.015", // 0.015 def
-				"Layer.Learn.LrnNMDA.Gbar":      "0.006",
-				"Layer.Acts.Mahp.Gbar":          "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-				"Layer.Acts.Sahp.Gbar":          "0.1",  // 0.1 == 0.02 no real diff
-				"Layer.Acts.Sahp.Off":           "0.8",  //
-				"Layer.Acts.Sahp.Slope":         "0.02", //
-				"Layer.Acts.Sahp.CaTau":         "5",    // 5 > 10
+				ly.Inhib.ActAvg.Nominal =    "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+				ly.Inhib.Layer.Gi =          "1.0", // 1.0 > 1.1  trace
+				ly.Learn.TrgAvgAct.SubMean = "1",   // 1 > 0
+				ly.Acts.Dend.SSGi =          "2",   //
+				ly.Acts.Gbar.L =             "0.2", // std
+				ly.Acts.Decay.Act =          "0.0", // 0 == 0.2
+				ly.Acts.Decay.Glong =        "0.0",
+				ly.Acts.NMDA.MgC =           "1.4", // 1.4, 5 > 1.2, 0 ?
+				ly.Acts.NMDA.Voff =          "0",
+				ly.Acts.NMDA.Gbar =          "0.006",
+				ly.Acts.GabaB.Gbar =         "0.015", // 0.015 def
+				ly.Learn.LrnNMDA.Gbar =      "0.006",
+				ly.Acts.Mahp.Gbar =          "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+				ly.Acts.Sahp.Gbar =          "0.1",  // 0.1 == 0.02 no real diff
+				ly.Acts.Sahp.Off =           "0.8",  //
+				ly.Acts.Sahp.Slope =         "0.02", //
+				ly.Acts.Sahp.CaTau =         "5",    // 5 > 10
 			}},
-		{Sel: ".SuperLayer", Desc: "super layer params",
+		{Sel: ".SuperLayer", Doc: "super layer params",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.1",
-				"Layer.Bursts.ThrRel":        "0.1", // no diffs here -- music makes a diff
-				"Layer.Bursts.ThrAbs":        "0.1",
+				ly.Inhib.ActAvg.Nominal = "0.1",
+				ly.Bursts.ThrRel =        "0.1", // no diffs here -- music makes a diff
+				ly.Bursts.ThrAbs =        "0.1",
 			}},
-		{Sel: ".DepthIn", Desc: "",
+		{Sel: ".DepthIn", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.15", // was .13 -- Ge very high b/c of topo path
-				"Layer.Inhib.Layer.Gi":       "0.9",  //
+				ly.Inhib.ActAvg.Nominal = "0.15", // was .13 -- Ge very high b/c of topo path
+				ly.Inhib.Layer.Gi =       "0.9",  //
 			}},
-		{Sel: ".HeadDirIn", Desc: "",
+		{Sel: ".HeadDirIn", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
-				"Layer.Inhib.Layer.Gi":       "0.9",  //
+				ly.Inhib.ActAvg.Nominal = "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
+				ly.Inhib.Layer.Gi =       "0.9",  //
 			}},
-		{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
+		{Sel: ".CTLayer", Doc: "CT NMDA gbar factor is key",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
-				"Layer.Inhib.Layer.Gi":       "2.0",  // 2.0 is fine -- was 1.4
-				"Layer.CT.GeGain":            "1.0",  // 1 == 1.5 > 0.5 except depth
-				"Layer.CT.DecayTau":          "0",    // decay is very bad
-				"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
-				"Layer.Acts.Decay.Act":       "0.0",
-				"Layer.Acts.Decay.Glong":     "0.0",
-				"Layer.Acts.GabaB.Gbar":      "0.015", // 0.015 standard gaba
-				"Layer.Acts.NMDA.Gbar":       "0.006",
-				"Layer.Acts.NMDA.Tau":        "100",
-				"Layer.Acts.MaintNMDA.Gbar":  "0.006", // not relevant -- no CTSelf
-				"Layer.Acts.MaintNMDA.Tau":   "100",
+				ly.Inhib.ActAvg.Nominal = "0.12", // CT in general more active
+				ly.Inhib.Layer.Gi =       "2.0",  // 2.0 is fine -- was 1.4
+				ly.CT.GeGain =            "1.0",  // 1 == 1.5 > 0.5 except depth
+				ly.CT.DecayTau =          "0",    // decay is very bad
+				ly.Acts.Dend.SSGi =       "0",    // 0 > higher -- kills nmda maint!
+				ly.Acts.Decay.Act =       "0.0",
+				ly.Acts.Decay.Glong =     "0.0",
+				ly.Acts.GabaB.Gbar =      "0.015", // 0.015 standard gaba
+				ly.Acts.NMDA.Gbar =       "0.006",
+				ly.Acts.NMDA.Tau =        "100",
+				ly.Acts.MaintNMDA.Gbar =  "0.006", // not relevant -- no CTSelf
+				ly.Acts.MaintNMDA.Tau =   "100",
 			}},
-		{Sel: "#DepthHid", Desc: "",
+		{Sel: "#DepthHid", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":       "1.2",  // 1.2 tiny bit > 1.4
-				"Layer.Inhib.ActAvg.Nominal": "0.07", // 0.07 actual
+				ly.Inhib.Layer.Gi =       "1.2",  // 1.2 tiny bit > 1.4
+				ly.Inhib.ActAvg.Nominal = "0.07", // 0.07 actual
 			}},
-		{Sel: "#DepthHidCT", Desc: "",
+		{Sel: "#DepthHidCT", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":       "2.6",  // 2.8 is reasonable; was 2.0
-				"Layer.Inhib.ActAvg.Nominal": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
-				"Layer.CT.GeGain":            "0.5",  // 1 == 1.5 > 0.5 except depth
+				ly.Inhib.Layer.Gi =       "2.6",  // 2.8 is reasonable; was 2.0
+				ly.Inhib.ActAvg.Nominal = "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
+				ly.CT.GeGain =            "0.5",  // 1 == 1.5 > 0.5 except depth
 			}},
-		{Sel: ".PulvinarLayer", Desc: "Pulvinar",
+		{Sel: ".PulvinarLayer", Doc: "Pulvinar",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":          "0.8", // 0.8 good -- was 0.9
-				"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 -- does not work with 0.05
-				"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
-				"Layer.Acts.Decay.Act":          "0.0",
-				"Layer.Acts.Decay.Glong":        "0.0", // clear long
-				"Layer.Acts.Decay.AHP":          "0.0", // clear long
-				"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > .05
+				ly.Inhib.Layer.Gi =          "0.8", // 0.8 good -- was 0.9
+				ly.Pulv.DriveScale =         "0.1", // 0.1 > 0.15 -- does not work with 0.05
+				ly.Pulv.FullDriveAct =       "0.6", // 0.6 def
+				ly.Acts.Decay.Act =          "0.0",
+				ly.Acts.Decay.Glong =        "0.0", // clear long
+				ly.Acts.Decay.AHP =          "0.0", // clear long
+				ly.Learn.RLRate.SigmoidMin = "1.0", // 1 > .05
 			}},
-		{Sel: "#Action", Desc: "",
+		{Sel: "#Action", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.25", // 0.25 is accurate -- good MaxGe levels
-				"Layer.Inhib.Layer.Gi":       "0.9",  //
+				ly.Inhib.ActAvg.Nominal = "0.25", // 0.25 is accurate -- good MaxGe levels
+				ly.Inhib.Layer.Gi =       "0.9",  //
 			}},
 
 		// Pathways below
-		{Sel: "Path", Desc: "std",
+		{Sel: "Path", Doc: "std",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":    "0.02", // 0.02 == 0.03 == 0.01 > 0.005 > 0.002
-				"Path.Learn.Trace.SubMean": "0",    // 0 > 1 even with CTCtxt = 0
-				"Path.SWts.Adapt.LRate":    "0.01", // 0.01 == 0.0001 but 0.001 not as good..
-				"Path.SWts.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
-				"Path.Com.PFail":           "0.0",
-				"Path.Learn.Trace.Tau":     "2", // 4 == 2 > 1
+				pt.Learn.LRate.Base =    "0.02", // 0.02 == 0.03 == 0.01 > 0.005 > 0.002
+				pt.Learn.Trace.SubMean = "0",    // 0 > 1 even with CTCtxt = 0
+				pt.SWts.Adapt.LRate =    "0.01", // 0.01 == 0.0001 but 0.001 not as good..
+				pt.SWts.Init.SPct =      "1.0",  // 1 works fine here -- .5 also ok
+				pt.Com.PFail =           "0.0",
+				pt.Learn.Trace.Tau =     "2", // 4 == 2 > 1
 			}},
-		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.2",
+				pt.PathScale.Rel = "0.2",
 			}},
-		// {Sel: "#HeadDirHidCTToDepthHidCT", Desc: "ct top-down",
+		// {Sel: "#HeadDirHidCTToDepthHidCT", Doc: "ct top-down",
 		// 	Params: params.Params{
-		// 		"Path.PathScale.Rel": "0.2", // not much diff here
+		// 		pt.PathScale.Rel = "0.2", // not much diff here
 		// 	}},
-		{Sel: ".CTCtxtPath", Desc: "all CT context paths",
+		{Sel: ".CTCtxtPath", Doc: "all CT context paths",
 			Params: params.Params{
-				"Path.Learn.LRate.Base":    "0.002", // has almost no effect in 1to1
-				"Path.Learn.Trace.Tau":     "2",     // late in learning 2 does best
-				"Path.Learn.Trace.SubMean": "0",     //
-				"Path.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
+				pt.Learn.LRate.Base =    "0.002", // has almost no effect in 1to1
+				pt.Learn.Trace.Tau =     "2",     // late in learning 2 does best
+				pt.Learn.Trace.SubMean = "0",     //
+				pt.Com.PFail =           "0.0",   // .2, .3 too high -- very slow learning
 			}},
-		{Sel: ".CTFromSuper", Desc: "1to1 > full",
+		{Sel: ".CTFromSuper", Doc: "1to1 > full",
 			Params: params.Params{
-				"Path.Learn.Learn":    "true", // learning > fixed 1to1
-				"Path.SWts.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
-				"Path.SWts.Init.Var":  "0.25",
+				pt.Learn.Learn =    "true", // learning > fixed 1to1
+				pt.SWts.Init.Mean = "0.5",  // if fixed, 0.8 > 0.5, var = 0
+				pt.SWts.Init.Var =  "0.25",
 			}},
-		{Sel: ".FromPulv", Desc: "defaults to .Back but generally weaker is better",
+		{Sel: ".FromPulv", Doc: "defaults to .Back but generally weaker is better",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
+				pt.PathScale.Rel = "0.1", // 0.1 == 0.15 > 0.05
 			}},
 		/* not used
-		{Sel: ".CTSelfCtxt", Desc: "",
+		{Sel: ".CTSelfCtxt", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
-				"Path.Com.PFail":     "0.0",  // never useful for random gen
-				"Path.SWts.Init.Sym":  "true", // true > false
+				pt.PathScale.Rel = "0.5",  // 0.5 > 0.2 > 0.8
+				pt.Com.PFail =     "0.0",  // never useful for random gen
+				pt.SWts.Init.Sym =  "true", // true > false
 			}},
-		{Sel: ".CTSelfMaint", Desc: "",
+		{Sel: ".CTSelfMaint", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
-				"Path.Com.PFail":     "0.0",
-				"Path.SWts.Init.Sym":  "true", // no effect?  not sure why
+				pt.PathScale.Rel = "0.1", // 0.1  >= 0.05 > 0.2
+				pt.Com.PFail =     "0.0",
+				pt.SWts.Init.Sym =  "true", // no effect?  not sure why
 			}},
 		*/
-		// {Sel: "#ActionToDepthHidCT", Desc: "",
+		// {Sel: "#ActionToDepthHidCT", Doc: "",
 		// 	Params: params.Params{
-		// 		"Path.PathScale.Rel": "0.2", // 0.5 is not better
+		// 		pt.PathScale.Rel = "0.2", // 0.5 is not better
 		// 	}},
-		{Sel: "#ActionToDepthHid", Desc: "",
+		{Sel: "#ActionToDepthHid", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Rel": "2.0", // 2.0 > 3.0 > 1.0
+				pt.PathScale.Rel = "2.0", // 2.0 > 3.0 > 1.0
 			}},
 	},
-	"Hid2": {
-		{Sel: "#DepthHid2CTToDepthP", Desc: "",
+	"Hid2": = {
+		{Sel: "#DepthHid2CTToDepthP", Doc: "",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
+				pt.PathScale.Rel = "0.1", // 0.1 == 0.15 > 0.05
 			}},
-		{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
+		{Sel: "#DepthHidP", Doc: "distributed hidden-layer pulvinar",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi":  "0.9", // 0.9 > 0.8 > 1
-				"Layer.Pulv.DriveScale": "0.1", // 0.05 > .1
-				"Layer.Acts.NMDA.Gbar":  "0.1",
+				ly.Inhib.Layer.Gi =  "0.9", // 0.9 > 0.8 > 1
+				ly.Pulv.DriveScale = "0.1", // 0.05 > .1
+				ly.Acts.NMDA.Gbar =  "0.1",
 			}},
-		{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
+		{Sel: "#DepthHid2CT", Doc: "CT NMDA gbar factor is key",
 			Params: params.Params{
-				"Layer.CT.GeGain":            "0.8",  // 0.8, 50 small benefit
-				"Layer.CT.DecayTau":          "50",   // 50 > 0
-				"Layer.Inhib.ActAvg.Nominal": "0.12", // 2 even more active -- maybe try higher inhib
-				"Layer.Inhib.Layer.Gi":       "1.4",  // todo
-				"Layer.Acts.GabaB.Gbar":      "0.3",
-				"Layer.Acts.NMDA.Gbar":       "0.3", // higher layer has more nmda..
-				"Layer.Acts.NMDA.Tau":        "300", // 300 > 200
-				"Layer.Acts.Sahp.CaTau":      "10",  // todo
+				ly.CT.GeGain =            "0.8",  // 0.8, 50 small benefit
+				ly.CT.DecayTau =          "50",   // 50 > 0
+				ly.Inhib.ActAvg.Nominal = "0.12", // 2 even more active -- maybe try higher inhib
+				ly.Inhib.Layer.Gi =       "1.4",  // todo
+				ly.Acts.GabaB.Gbar =      "0.3",
+				ly.Acts.NMDA.Gbar =       "0.3", // higher layer has more nmda..
+				ly.Acts.NMDA.Tau =        "300", // 300 > 200
+				ly.Acts.Sahp.CaTau =      "10",  // todo
 			}},
 	},
 }

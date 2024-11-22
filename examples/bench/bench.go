@@ -32,31 +32,31 @@ import (
 
 var ParamSets = params.Sets{
 	"Base": {
-		{Sel: "Path", Desc: "",
+		{Sel: "Path", Doc: "",
 			Params: params.Params{
-				"Path.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-				"Path.SWts.Adapt.LRate": "0.1", // .1 >= .2,
-				"Path.SWts.Init.SPct":   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				pt.Learn.LRate.Base = "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+				pt.SWts.Adapt.LRate = "0.1", // .1 >= .2,
+				pt.SWts.Init.SPct =   "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 			}},
-		{Sel: "Layer", Desc: "",
+		{Sel: "Layer", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.ActAvg.Nominal": "0.08",
-				"Layer.Inhib.Layer.Gi":       "1.05",
-				"Layer.Acts.Gbar.L":          "0.2",
+				ly.Inhib.ActAvg.Nominal = "0.08",
+				ly.Inhib.Layer.Gi =       "1.05",
+				ly.Acts.Gbar.L =          "0.2",
 			}},
-		{Sel: "#Input", Desc: "",
+		{Sel: "#Input", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
-				"Layer.Acts.Clamp.Ge":  "1.5",
+				ly.Inhib.Layer.Gi = "0.9", // 0.9 > 1.0
+				ly.Acts.Clamp.Ge =  "1.5",
 			}},
-		{Sel: "#Output", Desc: "",
+		{Sel: "#Output", Doc: "",
 			Params: params.Params{
-				"Layer.Inhib.Layer.Gi": "0.70",
-				"Layer.Acts.Clamp.Ge":  "0.8",
+				ly.Inhib.Layer.Gi = "0.70",
+				ly.Acts.Clamp.Ge =  "0.8",
 			}},
-		{Sel: ".BackPath", Desc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
+		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates",
 			Params: params.Params{
-				"Path.PathScale.Rel": "0.2",
+				pt.PathScale.Rel = "0.2",
 			}},
 	},
 }

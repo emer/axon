@@ -70,134 +70,134 @@ const (
 // ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
 // selected to apply on top of that
 var ParamSets = params.Sets{
-	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+	{Name: "Base", Doc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Path", Desc: "no learning",
+			{Sel: "Path", Doc: "no learning",
 				Params: params.Params{
-					"Path.Learn.Learn":    "false",
-					"Path.SWts.Init.Mean": "0.8",
-					"Path.SWts.Init.Var":  "0",
-					"Path.SWts.Init.Sym":  "false", // for lesions, just in case
+					pt.Learn.Learn =    "false",
+					pt.SWts.Init.Mean = "0.8",
+					pt.SWts.Init.Var =  "0",
+					pt.SWts.Init.Sym =  "false", // for lesions, just in case
 				}},
-			{Sel: "Layer", Desc: "pool etc",
+			{Sel: "Layer", Doc: "pool etc",
 				Params: params.Params{
-					"Layer.Inhib.Pool.Gi":        "1.0",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.FFEx0":     "0.18",
-					"Layer.Inhib.Pool.FFEx":      "0.1",
-					"Layer.Inhib.Layer.On":       "false", // TRC drives layer-level
-					"Layer.Inhib.ActAvg.Nominal": "0.01",
-					"Layer.Inhib.Layer.FFEx0":    "0.18",
-					"Layer.Inhib.Layer.FFEx":     "0.1",
-					"Layer.Acts.Decay.Act":       "1",
-					"Layer.Acts.Decay.Glong":     "1",
-					"Layer.Acts.Decay.KNa":       "1",
-					"Layer.Acts.KNa.On":          "false", // turn off by default
-					"Layer.Acts.Noise.Dist":      "Gaussian",
-					"Layer.Acts.Noise.Var":       "0.002",
-					"Layer.Acts.Noise.Type":      "NoNoise", // "GeNoise",
+					ly.Inhib.Pool.Gi =        "1.0",
+					ly.Inhib.Pool.On =        "true",
+					ly.Inhib.Pool.FFEx0 =     "0.18",
+					ly.Inhib.Pool.FFEx =      "0.1",
+					ly.Inhib.Layer.On =       "false", // TRC drives layer-level
+					ly.Inhib.ActAvg.Nominal = "0.01",
+					ly.Inhib.Layer.FFEx0 =    "0.18",
+					ly.Inhib.Layer.FFEx =     "0.1",
+					ly.Acts.Decay.Act =       "1",
+					ly.Acts.Decay.Glong =     "1",
+					ly.Acts.Decay.KNa =       "1",
+					ly.Acts.KNa.On =          "false", // turn off by default
+					ly.Acts.Noise.Dist =      "Gaussian",
+					ly.Acts.Noise.Var =       "0.002",
+					ly.Acts.Noise.Type =      "NoNoise", // "GeNoise",
 				}},
-			{Sel: "SuperLayer", Desc: "pool etc",
+			{Sel: "SuperLayer", Doc: "pool etc",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "1.2",
-					"Layer.Inhib.Layer.FFEx0":    "0.01", // must be < FF0
-					"Layer.Inhib.Layer.FFEx":     "0",    // some effect randomly
-					"Layer.Inhib.Layer.FF0":      "0.01", // doesn't have any effect until < .02
-					"Layer.Inhib.Pool.Gi":        "1.5",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.FFEx0":     "0.18",
-					"Layer.Inhib.Pool.FFEx":      "0", // 10? no big effects
-					"Layer.Inhib.ActAvg.Nominal": "0.05",
-					"Layer.Acts.Attn.On":         "true",
-					"Layer.Acts.Attn.Min":        "0.2", // 0.5
-					"Layer.Inhib.Topo.On":        "true",
-					"Layer.Inhib.Topo.Width":     "4",
-					"Layer.Inhib.Topo.Sigma":     "1.0",
-					"Layer.Inhib.Topo.Gi":        "0.05",
-					"Layer.Inhib.Topo.FF0":       "0.15",
-					"Layer.Acts.Noise.Dist":      "Gaussian",
-					"Layer.Acts.Noise.Var":       "0.02",    // .02
-					"Layer.Acts.Noise.Type":      "GeNoise", // "GeNoise",
+					ly.Inhib.Layer.On =       "true",
+					ly.Inhib.Layer.Gi =       "1.2",
+					ly.Inhib.Layer.FFEx0 =    "0.01", // must be < FF0
+					ly.Inhib.Layer.FFEx =     "0",    // some effect randomly
+					ly.Inhib.Layer.FF0 =      "0.01", // doesn't have any effect until < .02
+					ly.Inhib.Pool.Gi =        "1.5",
+					ly.Inhib.Pool.On =        "true",
+					ly.Inhib.Pool.FFEx0 =     "0.18",
+					ly.Inhib.Pool.FFEx =      "0", // 10? no big effects
+					ly.Inhib.ActAvg.Nominal = "0.05",
+					ly.Acts.Attn.On =         "true",
+					ly.Acts.Attn.Min =        "0.2", // 0.5
+					ly.Inhib.Topo.On =        "true",
+					ly.Inhib.Topo.Width =     "4",
+					ly.Inhib.Topo.Sigma =     "1.0",
+					ly.Inhib.Topo.Gi =        "0.05",
+					ly.Inhib.Topo.FF0 =       "0.15",
+					ly.Acts.Noise.Dist =      "Gaussian",
+					ly.Acts.Noise.Var =       "0.02",    // .02
+					ly.Acts.Noise.Type =      "GeNoise", // "GeNoise",
 				}},
-			{Sel: "TRCALayer", Desc: "topo etc pool etc",
+			{Sel: "TRCALayer", Doc: "topo etc pool etc",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":        "false",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "1.2",
-					"Layer.Inhib.Layer.FFEx0":    "0.18",
-					"Layer.Inhib.Layer.FFEx":     "0",
-					"Layer.Inhib.ActAvg.Nominal": "0.2",
-					"Layer.Inhib.Topo.On":        "true",
-					"Layer.Inhib.Topo.Width":     "4",
-					"Layer.Inhib.Topo.Sigma":     "1.0",
-					"Layer.Inhib.Topo.Gi":        "0.03",
-					"Layer.Inhib.Topo.FF0":       "0.18",
-					"Layer.SendAttn.Thr":         "0.1",
+					ly.Inhib.Pool.On =        "false",
+					ly.Inhib.Layer.On =       "true",
+					ly.Inhib.Layer.Gi =       "1.2",
+					ly.Inhib.Layer.FFEx0 =    "0.18",
+					ly.Inhib.Layer.FFEx =     "0",
+					ly.Inhib.ActAvg.Nominal = "0.2",
+					ly.Inhib.Topo.On =        "true",
+					ly.Inhib.Topo.Width =     "4",
+					ly.Inhib.Topo.Sigma =     "1.0",
+					ly.Inhib.Topo.Gi =        "0.03",
+					ly.Inhib.Topo.FF0 =       "0.18",
+					ly.SendAttn.Thr =         "0.1",
 				}},
-			{Sel: "#V2CTA", Desc: "topo etc pool etc",
+			{Sel: "#V2CTA", Doc: "topo etc pool etc",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":        "false",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "1.0",
-					"Layer.Inhib.Layer.FFEx0":    "0.15",
-					"Layer.Inhib.Layer.FFEx":     "20",
-					"Layer.Inhib.ActAvg.Nominal": "0.3",
+					ly.Inhib.Pool.On =        "false",
+					ly.Inhib.Layer.On =       "true",
+					ly.Inhib.Layer.Gi =       "1.0",
+					ly.Inhib.Layer.FFEx0 =    "0.15",
+					ly.Inhib.Layer.FFEx =     "20",
+					ly.Inhib.ActAvg.Nominal = "0.3",
 				}},
-			{Sel: "#LIP", Desc: "pool etc",
+			{Sel: "#LIP", Doc: "pool etc",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":        "false",
-					"Layer.Inhib.Layer.Gi":       "1.5",
-					"Layer.Inhib.Layer.On":       "true", // TRN drives all layer-level
-					"Layer.Inhib.ActAvg.Nominal": "0.3",
+					ly.Inhib.Pool.On =        "false",
+					ly.Inhib.Layer.Gi =       "1.5",
+					ly.Inhib.Layer.On =       "true", // TRN drives all layer-level
+					ly.Inhib.ActAvg.Nominal = "0.3",
 				}},
-			{Sel: "TRNLayer", Desc: "trn just does whole layer",
+			{Sel: "TRNLayer", Doc: "trn just does whole layer",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":        "false",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "2.0",
-					"Layer.Inhib.ActAvg.Nominal": ".03",
-					"Layer.Acts.Dt.GTau":         "3",
+					ly.Inhib.Pool.On =        "false",
+					ly.Inhib.Layer.On =       "true",
+					ly.Inhib.Layer.Gi =       "2.0",
+					ly.Inhib.ActAvg.Nominal = ".03",
+					ly.Acts.Dt.GTau =         "3",
 				}},
-			{Sel: ".BackPath", Desc: "weaker output",
+			{Sel: ".BackPath", Doc: "weaker output",
 				Params: params.Params{
-					"Path.PathScale.Rel": "0.1",
+					pt.PathScale.Rel = "0.1",
 				}},
-			{Sel: "#V2ToV2CTA", Desc: "",
+			{Sel: "#V2ToV2CTA", Doc: "",
 				Params: params.Params{
-					"Path.PathScale.Rel": "0.2", // 0.8
+					pt.PathScale.Rel = "0.2", // 0.8
 				}},
-			{Sel: "#LIPToV2CTA", Desc: "",
+			{Sel: "#LIPToV2CTA", Doc: "",
 				Params: params.Params{
-					"Path.PathScale.Rel": "0.5", // 0.5
+					pt.PathScale.Rel = "0.5", // 0.5
 				}},
-			{Sel: ".Inhib", Desc: "",
+			{Sel: ".Inhib", Doc: "",
 				Params: params.Params{
-					"Path.PathScale.Abs": "1",
+					pt.PathScale.Abs = "1",
 				}},
-			{Sel: "#LIPToV2TA", Desc: "",
+			{Sel: "#LIPToV2TA", Doc: "",
 				Params: params.Params{
-					"Path.PathScale.Rel": "0.3", // 0.3
+					pt.PathScale.Rel = "0.3", // 0.3
 				}},
-			{Sel: "#LIPToV2", Desc: "",
+			{Sel: "#LIPToV2", Doc: "",
 				Params: params.Params{
-					"Path.PathScale.Rel": "0.0",
+					pt.PathScale.Rel = "0.0",
 				}},
-			{Sel: "#V2CTAToV2CTA", Desc: "lateral within V2CTA",
+			{Sel: "#V2CTAToV2CTA", Doc: "lateral within V2CTA",
 				Params: params.Params{
-					"Path.PathScale.Rel": "0.0", // 0.4
+					pt.PathScale.Rel = "0.0", // 0.4
 				}},
-			{Sel: "#V1ToV2", Desc: "",
+			{Sel: "#V1ToV2", Doc: "",
 				Params: params.Params{
-					"Path.PathScale.Abs": "1.2",
+					pt.PathScale.Abs = "1.2",
 				}},
 		},
 	}},
-	{Name: "KNaAdapt", Desc: "Turn on KNa adaptation", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "KNa adapt on",
+	{Name: "KNaAdapt", Doc: "Turn on KNa adaptation", Sheets: params.Sheets{
+		"Network = &params.Sheet{
+			{Sel: "Layer", Doc: "KNa adapt on",
 				Params: params.Params{
-					"Layer.Acts.KNa.On": "true",
+					ly.Acts.KNa.On = "true",
 				}},
 		},
 	}},
@@ -745,9 +745,9 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	}
 
 	// spo := ss.Params.SetByName("Base").SheetByName("Network").SelByName(".SpatToObj")
-	// spo.Params.SetParamByName("Path.PathScale.Rel", fmt.Sprintf("%g", ss.SpatToObj))
+	// spo.Params.SetParamByName(pt.PathScale.Rel", fmt.Sprintf("%g", ss.SpatToObj))
 	// vsp := ss.Params.SetByName("Base").SheetByName("Network").SelByName("#V1ToSpat1")
-	// vsp.Params.SetParamByName("Path.PathScale.Rel", fmt.Sprintf("%g", ss.V1ToSpat1))
+	// vsp.Params.SetParamByName(pt.PathScale.Rel", fmt.Sprintf("%g", ss.V1ToSpat1))
 
 	err := ss.SetParamsSet("Base", sheet, setMsg)
 
