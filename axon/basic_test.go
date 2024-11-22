@@ -618,8 +618,7 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 		}
 		testNet.PlusPhase()
 	}
-	// GPURelease() // todo: needs to be robust
-	// testNet.GPU.Destroy()
+	GPURelease()
 }
 
 // ReportValDiffs -- reports diffs between a, b values at given tolerance
@@ -767,7 +766,7 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 		pi += nData - 1
 	}
 
-	// testNet.GPU.Destroy()
+	GPURelease()
 	return valMap
 }
 

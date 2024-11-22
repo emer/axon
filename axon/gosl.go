@@ -143,8 +143,15 @@ func GPUInit() {
 // GPURelease releases the GPU compute system resources.
 // Call this at program exit.
 func GPURelease() {
-	GPUSystem.Release()
-	ComputeGPU.Release()
+	if GPUSystem != nil {
+		GPUSystem.Release()
+		GPUSystem = nil
+	}
+
+	if ComputeGPU != nil {
+		ComputeGPU.Release()
+		ComputeGPU = nil
+	}
 }
 
 // RunApplyExtsNeuron runs the ApplyExtsNeuron kernel with given number of elements,
