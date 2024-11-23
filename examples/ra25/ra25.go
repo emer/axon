@@ -8,16 +8,16 @@
 // defined over 5x5 input / output layers (i.e., 25 units)
 package main
 
-//go:generate core generate -add-types
+//go:generate core generate -add-types -add-funcs
 
 import (
 	"fmt"
-	"log"
-	"os"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
+	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/icons"
@@ -30,22 +30,17 @@ import (
 	"cogentcore.org/core/tensor/tensorfs"
 	"cogentcore.org/core/tree"
 	"github.com/emer/axon/v2/axon"
-	"github.com/emer/emergent/v2/econfig"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
-	sim := &Sim{}
-	sim.New()
-	sim.ConfigAll()
-	if sim.Config.GUI {
-		sim.RunGUI()
-	} else {
-		sim.RunNoGUI()
-	}
+	opts := cli.DefaultOptions("ra25", "Random associator.")
+	cfg := &Config{}
+	cli.Run(opts, cfg, RunSim)
 }
 
 // Modes are the looping modes (Stacks) for running and statistics.
@@ -106,7 +101,7 @@ type ParamConfig struct {
 type RunConfig struct {
 
 	// use the GPU for computation -- generally faster even for small models if NData ~16
-	GPU bool `default:"false"`
+	GPU bool `default:"true"`
 
 	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
 	NData int `default:"16" min:"1"`
@@ -159,9 +154,6 @@ type LogConfig struct {
 
 	// if true, save testing trial log to file, as .tst_trl.tsv typically. May be large.
 	TestTrial bool `default:"false" nest:"+"`
-
-	// if true, save network activation etc data from testing trials, for later viewing in netview
-	NetData bool
 }
 
 // Config is a standard Sim config -- use as a starting point.
@@ -196,7 +188,7 @@ func (cfg *Config) IncludesPtr() *[]string { return &cfg.Includes }
 type Sim struct {
 
 	// simulation configuration parameters -- set by .toml config file and / or args
-	Config Config `new-window:"+"`
+	Config *Config `new-window:"+"`
 
 	// the network -- click to view / edit parameters for layers, paths, etc
 	Net *axon.Network `new-window:"+" display:"no-inline"`
@@ -208,7 +200,7 @@ type Sim struct {
 	Loops *looper.Stacks `new-window:"+" display:"no-inline"`
 
 	// the training patterns to use
-	Pats *table.Table `display:"no-inline"`
+	Pats *tensorfs.Node `display:"-"`
 
 	// Environments
 	Envs env.Envs `new-window:"+" display:"no-inline"`
@@ -238,21 +230,20 @@ type Sim struct {
 	RandSeeds randx.Seeds `display:"-"`
 }
 
-// New creates new blank elements and initializes defaults
-func (ss *Sim) New() {
-	econfig.Config(&ss.Config, "config.toml")
+// RunSim runs the simulation.
+func RunSim(cfg *Config) error { //cli:cmd -root
+	sim := &Sim{}
+	sim.Config = cfg
+	sim.Run()
+	return nil
+}
+
+func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
 	ss.Net = axon.NewNetwork("RA25")
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
-	ss.Pats = table.New()
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
-}
-
-//////// Configs
-
-// ConfigAll configures all the elements using the standard functions
-func (ss *Sim) ConfigAll() {
 	if ss.Config.Run.GPU {
 		axon.GPUInit()
 		axon.UseGPU = true
@@ -266,7 +257,12 @@ func (ss *Sim) ConfigAll() {
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
-		os.Exit(0)
+		return
+	}
+	if ss.Config.GUI {
+		ss.RunGUI()
+	} else {
+		ss.RunNoGUI()
 	}
 }
 
@@ -281,13 +277,15 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
 	}
 
+	pats := tensorfs.DirTable(ss.Pats, nil)
+
 	// note: names must be standard here!
 	trn.Name = Train.String()
-	trn.Config(table.NewView(ss.Pats))
+	trn.Config(table.NewView(pats))
 	trn.Validate()
 
 	tst.Name = Test.String()
-	tst.Config(table.NewView(ss.Pats))
+	tst.Config(table.NewView(pats))
 	tst.Sequential = true
 	tst.Validate()
 
@@ -510,27 +508,29 @@ func (ss *Sim) TestAll() {
 ////////  Pats
 
 func (ss *Sim) ConfigPats() {
-	// dt := ss.Pats
-	// dt.SetMetaData("name", "TrainPats")
-	// dt.SetMetaData("desc", "Training patterns")
-	// dt.AddStringColumn("Name")
-	// dt.AddFloat32TensorColumn("Input", []int{5, 5}, "Y", "X")
-	// dt.AddFloat32TensorColumn("Output", []int{5, 5}, "Y", "X")
-	// dt.SetNumRows(25)
-	//
-	// patgen.PermutedBinaryMinDiff(dt.Columns[1].(*tensor.Float32), 6, 1, 0, 3)
-	// patgen.PermutedBinaryMinDiff(dt.Columns[2].(*tensor.Float32), 6, 1, 0, 3)
-	// dt.SaveCSV("random_5x5_25_gen.tsv", table.Tab, table.Headers)
+	dt := table.New()
+	metadata.SetName(dt, "TrainPats")
+	metadata.SetDoc(dt, "Training patterns")
+	dt.AddStringColumn("Name")
+	dt.AddFloat32Column("Input", 5, 5)
+	dt.AddFloat32Column("Output", 5, 5)
+	dt.SetNumRows(25)
+
+	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(1).Tensor.(*tensor.Float32), 6, 1, 0, 3)
+	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(2).Tensor.(*tensor.Float32), 6, 1, 0, 3)
+	dt.SaveCSV("random_5x5_25_gen.tsv", tensor.Tab, table.Headers)
+
+	ss.Pats = ss.Root.RecycleDir("Pats")
+	tensorfs.DirFromTable(ss.Pats, dt)
 }
 
 func (ss *Sim) OpenPats() {
-	dt := ss.Pats
+	dt := table.New()
 	metadata.SetName(dt, "TrainPats")
 	metadata.SetDoc(dt, "Training patterns")
-	err := dt.OpenCSV("random_5x5_25.tsv", tensor.Tab)
-	if err != nil {
-		log.Println(err)
-	}
+	errors.Log(dt.OpenCSV("random_5x5_25.tsv", tensor.Tab))
+	ss.Pats = ss.Root.RecycleDir("Pats")
+	tensorfs.DirFromTable(ss.Pats, dt)
 }
 
 //////// Stats
