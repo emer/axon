@@ -776,36 +776,34 @@ func (ss *Sim) ConfigStats() {
 		trnEpc := ss.Loops.Loop(Train, Epoch).Counter.Cur
 		pcaFunc(mode, level, phase == Start, trnEpc)
 	})
-}
 
-// StatCounters returns counters string to show at bottom of netview.
-func (ss *Sim) StatCounters(md, tm enums.Enum) string {
-	counters := ss.Loops.Stacks[md].CountersString()
-	return counters
-	// di := ss.ViewUpdate.View.Di
-	//
-	//	if tm == Trial {
-	//		ss.TrialStats(di) // get trial stats for current di
-	//	}
-	//
-	// ss.StatCounters(di)
-	// ctx := &ss.Context
-	// mode := ctx.Mode
-	// ss.Stats.SetInt("Epoch", trnEpc)
-	// trl := ss.Stats.Int("Trial")
-	// ss.Stats.SetInt("Di", di)
-	// ss.Stats.SetString("TrialName", ss.Stats.StringDi("TrialName", di))
-	// ss.ViewUpdate.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Di", "TrialName", "Cycle", "UnitErr", "TrlErr", "PhaseDiff"})
-}
-
-func (ss *Sim) ConfigLogs() {
-	// ss.Logs.AddStatIntNoAggItem(AlmOdes, Trial, "Di")
-	//
 	// ss.Logs.AddCopyFromFloatItems(Train, []Times{Epoch, Run}, Test, Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr")
 	//
 	// axon.LogInputLayer(&ss.Logs, ss.Net, Train)
 	//
 	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", Test, Trial, "InputLayer", "TargetLayer")
+}
+
+// StatCounters returns counters string to show at bottom of netview.
+func (ss *Sim) StatCounters(mode, level enums.Enum) string {
+	counters := ss.Loops.Stacks[mode].CountersString()
+	vu := ss.NetViewUpdater(mode)
+	if vu == nil || vu.View == nil {
+		return counters
+	}
+	di := vu.View.Di
+	counters += fmt.Sprintf(" Di: %d", di)
+	curModeDir := ss.Current.RecycleDir(mode.String())
+	trialName := tensorfs.Value[string](curModeDir, "TrialName")
+	if trialName.Len() == 0 {
+		return counters
+	}
+	counters += fmt.Sprintf(" TrialName: %s", trialName.String1D(di))
+	if curModeDir.Node("UnitErr") == nil {
+		return counters
+	}
+	counters += fmt.Sprintf(" UnitErr: %g", tensorfs.Value[float64](curModeDir, "UnitErr").Float1D(di))
+	return counters
 }
 
 //////// GUI
@@ -843,6 +841,7 @@ func (ss *Sim) ConfigGUI() {
 	//	}
 }
 
+// todo: persistent run log
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
@@ -904,14 +903,8 @@ func (ss *Sim) RunNoGUI() {
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
 	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
 
-	// if ss.Config.Run.GPU {
-	// 	ss.Net.ConfigGPUnoGUI(&ss.Context)
-	// }
-	// mpi.Printf("Set NThreads to: %d\n", ss.Net.NThreads)
-
 	ss.Loops.Run(Train)
 
 	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
-
-	// ss.Net.GPU.Destroy() // safe even if no GPU
+	axon.GPURelease()
 }
