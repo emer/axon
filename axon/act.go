@@ -25,15 +25,15 @@ import (
 
 // NeuronHasFlag
 func NeuronHasFlag(flag NeuronFlags, ni, di uint32) bool {
-	return (NeuronFlags(math.Float32bits(Neurons.Value(int(ni), int(NeurFlags), int(di)))) & flag) > 0 // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(math.Float32bits(Neurons.Value(int(ni), int(di), int(NeurFlags)))) & flag) > 0 // weird: != 0 does NOT work on GPU
 }
 
 func NeuronSetFlag(flag NeuronFlags, ni, di uint32) {
-	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(ni), int(NeurFlags), int(di)))|uint32(flag)), int(ni), int(NeurFlags), int(di))
+	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(ni), int(di), int(NeurFlags)))|uint32(flag)), int(ni), int(di), int(NeurFlags))
 }
 
 func NeuronClearFlag(flag NeuronFlags, ni, di uint32) {
-	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(ni), int(NeurFlags), int(di)))&^uint32(flag)), int(ni), int(NeurFlags), int(di))
+	Neurons.Set(math.Float32frombits(math.Float32bits(Neurons.Value(int(ni), int(di), int(NeurFlags)))&^uint32(flag)), int(ni), int(di), int(NeurFlags))
 }
 
 // NeuronIsOff returns true if the neuron has been turned off (lesioned)
@@ -847,41 +847,41 @@ func (ac *ActParams) Update() {
 // of the decay parameter that then has impacts on learning rates etc.
 // see Act.Decay.LearnCa param controlling this
 func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(GnmdaLrn), int(di)), int(ni), int(GnmdaLrn), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(NmdaCa), int(di)), int(ni), int(NmdaCa), int(di))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GnmdaLrn)), int(ni), int(di), int(GnmdaLrn))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NmdaCa)), int(ni), int(di), int(NmdaCa))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(VgccCa), int(di)), int(ni), int(VgccCa), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(VgccCaInt), int(di)), int(ni), int(VgccCaInt), int(di))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(VgccCa)), int(ni), int(di), int(VgccCa))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(VgccCaInt)), int(ni), int(di), int(VgccCaInt))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(CaLrn), int(di)), int(ni), int(CaLrn), int(di))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaLrn)), int(ni), int(di), int(CaLrn))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(CaSpkM), int(di)), int(ni), int(CaSpkM), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(CaSpkP), int(di)), int(ni), int(CaSpkP), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(CaSpkD), int(di)), int(ni), int(CaSpkD), int(di))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaSpkM)), int(ni), int(di), int(CaSpkM))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaSpkP)), int(ni), int(di), int(CaSpkP))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaSpkD)), int(ni), int(di), int(CaSpkD))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(NrnCaM), int(di)), int(ni), int(NrnCaM), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(NrnCaP), int(di)), int(ni), int(NrnCaP), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(NrnCaD), int(di)), int(ni), int(NrnCaD), int(di))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NrnCaM)), int(ni), int(di), int(NrnCaM))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NrnCaP)), int(ni), int(di), int(NrnCaP))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NrnCaD)), int(ni), int(di), int(NrnCaD))
 
 	// recovers
-	Neurons.SetAdd(decay*(1.0-Neurons.Value(int(ni), int(SKCaIn), int(di))), int(ni), int(SKCaIn), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(SKCaR), int(di)), int(ni), int(SKCaR), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(SKCaM), int(di)), int(ni), int(SKCaM), int(di))
+	Neurons.SetAdd(decay*(1.0-Neurons.Value(int(ni), int(di), int(SKCaIn))), int(ni), int(di), int(SKCaIn))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(SKCaR)), int(ni), int(di), int(SKCaR))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(SKCaM)), int(ni), int(di), int(SKCaM))
 }
 
 // DecayAHP decays after-hyperpolarization variables
 // by given factor (typically Decay.AHP)
 func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(MahpN), int(di)), int(ni), int(MahpN), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(Gmahp), int(di)), int(ni), int(Gmahp), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(SahpCa), int(di)), int(ni), int(SahpCa), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(SahpN), int(di)), int(ni), int(SahpN), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(Gsahp), int(di)), int(ni), int(Gsahp), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(GknaMed), int(di)), int(ni), int(GknaMed), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(GknaSlow), int(di)), int(ni), int(GknaSlow), int(di))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(MahpN)), int(ni), int(di), int(MahpN))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(Gmahp)), int(ni), int(di), int(Gmahp))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(SahpCa)), int(ni), int(di), int(SahpCa))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(SahpN)), int(ni), int(di), int(SahpN))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(Gsahp)), int(ni), int(di), int(Gsahp))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GknaMed)), int(ni), int(di), int(GknaMed))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GknaSlow)), int(ni), int(di), int(GknaSlow))
 	kirMrest := ac.Kir.Mrest
-	Neurons.SetAdd(decay*(kirMrest-Neurons.Value(int(ni), int(KirM), int(di))), int(ni), int(KirM), int(di))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(Gkir), int(di)), int(ni), int(Gkir), int(di))
+	Neurons.SetAdd(decay*(kirMrest-Neurons.Value(int(ni), int(di), int(KirM))), int(ni), int(di), int(KirM))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(Gkir)), int(ni), int(di), int(Gkir))
 }
 
 // DecayState decays the activation state toward initial values
@@ -891,156 +891,156 @@ func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	Neurons.Set(-1.0, int(ni), int(ISIAvg), int(di))
-	Neurons.Set(ac.Init.Act, int(ni), int(ActInt), int(di))
-	Neurons.Set(0.0, int(ni), int(Spiked), int(di))
+	Neurons.Set(-1.0, int(ni), int(di), int(ISIAvg))
+	Neurons.Set(ac.Init.Act, int(ni), int(di), int(ActInt))
+	Neurons.Set(0.0, int(ni), int(di), int(Spiked))
 	for i := range 8 {
-		Neurons.Set(0.0, int(ni), int(SpkBin0+NeuronVars(i)), int(di))
+		Neurons.Set(0.0, int(ni), int(di), int(SpkBin0+NeuronVars(i)))
 	}
 
 	if decay > 0 { // no-op for most, but not all..
-		Neurons.Set(0.0, int(ni), int(Spike), int(di))
-		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(Act), int(di))-ac.Init.Act), int(ni), int(Act), int(di))
-		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(ActInt), int(di))-ac.Init.Act), int(ni), int(ActInt), int(di))
-		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(GeSyn), int(di))-NeuronAvgs.Value(int(ni), int(GeBase))), int(ni), int(GeSyn), int(di))
-		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(Ge), int(di))-NeuronAvgs.Value(int(ni), int(GeBase))), int(ni), int(Ge), int(di))
-		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(Gi), int(di))-NeuronAvgs.Value(int(ni), int(GiBase))), int(ni), int(Gi), int(di))
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(Gk), int(di)), int(ni), int(Gk), int(di))
+		Neurons.Set(0.0, int(ni), int(di), int(Spike))
+		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(di), int(Act))-ac.Init.Act), int(ni), int(di), int(Act))
+		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(di), int(ActInt))-ac.Init.Act), int(ni), int(di), int(ActInt))
+		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(di), int(GeSyn))-NeuronAvgs.Value(int(ni), int(GeBase))), int(ni), int(di), int(GeSyn))
+		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(di), int(Ge))-NeuronAvgs.Value(int(ni), int(GeBase))), int(ni), int(di), int(Ge))
+		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(di), int(Gi))-NeuronAvgs.Value(int(ni), int(GiBase))), int(ni), int(di), int(Gi))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(Gk)), int(ni), int(di), int(Gk))
 
-		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(Vm), int(di))-ac.Init.Vm), int(ni), int(Vm), int(di))
+		Neurons.SetSub(decay*(Neurons.Value(int(ni), int(di), int(Vm))-ac.Init.Vm), int(ni), int(di), int(Vm))
 
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(GeNoise), int(di)), int(ni), int(GeNoise), int(di))
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(GiNoise), int(di)), int(ni), int(GiNoise), int(di))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GeNoise)), int(ni), int(di), int(GeNoise))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GiNoise)), int(ni), int(di), int(GiNoise))
 
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(GiSyn), int(di)), int(ni), int(GiSyn), int(di))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GiSyn)), int(ni), int(di), int(GiSyn))
 
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(GeInt), int(di)), int(ni), int(GeInt), int(di))
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(GiInt), int(di)), int(ni), int(GiInt), int(di))
-		Neurons.SetSub(decay*Neurons.Value(int(ni), int(GeIntNorm), int(di)), int(ni), int(GeIntNorm), int(di))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GeInt)), int(ni), int(di), int(GeInt))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GiInt)), int(ni), int(di), int(GiInt))
+		Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(GeIntNorm)), int(ni), int(di), int(GeIntNorm))
 	}
 
-	Neurons.SetSub(glong*(Neurons.Value(int(ni), int(VmDend), int(di))-ac.Init.Vm), int(ni), int(VmDend), int(di))
+	Neurons.SetSub(glong*(Neurons.Value(int(ni), int(di), int(VmDend))-ac.Init.Vm), int(ni), int(di), int(VmDend))
 
 	if ahp > 0 {
 		ac.DecayAHP(ctx, ni, di, ahp)
 	}
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(GgabaB), int(di)), int(ni), int(GgabaB), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(GABAB), int(di)), int(ni), int(GABAB), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(GABABx), int(di)), int(ni), int(GABABx), int(di))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GgabaB)), int(ni), int(di), int(GgabaB))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GABAB)), int(ni), int(di), int(GABAB))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GABABx)), int(ni), int(di), int(GABABx))
 
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(GnmdaSyn), int(di)), int(ni), int(GnmdaSyn), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(Gnmda), int(di)), int(ni), int(Gnmda), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(GMaintSyn), int(di)), int(ni), int(GMaintSyn), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(GnmdaMaint), int(di)), int(ni), int(GnmdaMaint), int(di))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GnmdaSyn)), int(ni), int(di), int(GnmdaSyn))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(Gnmda)), int(ni), int(di), int(Gnmda))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GMaintSyn)), int(ni), int(di), int(GMaintSyn))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(GnmdaMaint)), int(ni), int(di), int(GnmdaMaint))
 
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(Gvgcc), int(di)), int(ni), int(Gvgcc), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(VgccM), int(di)), int(ni), int(VgccM), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(VgccH), int(di)), int(ni), int(VgccH), int(di))
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(Gak), int(di)), int(ni), int(Gak), int(di))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(Gvgcc)), int(ni), int(di), int(Gvgcc))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(VgccM)), int(ni), int(di), int(VgccM))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(VgccH)), int(ni), int(di), int(VgccH))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(Gak)), int(ni), int(di), int(Gak))
 
 	// don't mess with SKCa -- longer time scale
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(Gsk), int(di)), int(ni), int(Gsk), int(di))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(Gsk)), int(ni), int(di), int(Gsk))
 
 	if ac.Decay.LearnCa > 0 { // learning-based Ca values -- not usual
 		ac.DecayLearnCa(ctx, ni, di, ac.Decay.LearnCa)
 	}
 
-	Neurons.Set(0.0, int(ni), int(Inet), int(di))
-	Neurons.Set(0.0, int(ni), int(GeRaw), int(di))
-	Neurons.Set(0.0, int(ni), int(GiRaw), int(di))
-	Neurons.Set(0.0, int(ni), int(GModRaw), int(di))
-	Neurons.Set(0.0, int(ni), int(GModSyn), int(di))
-	Neurons.Set(0.0, int(ni), int(GMaintRaw), int(di))
-	Neurons.Set(0.0, int(ni), int(SSGiDend), int(di))
-	Neurons.Set(0.0, int(ni), int(GeExt), int(di))
+	Neurons.Set(0.0, int(ni), int(di), int(Inet))
+	Neurons.Set(0.0, int(ni), int(di), int(GeRaw))
+	Neurons.Set(0.0, int(ni), int(di), int(GiRaw))
+	Neurons.Set(0.0, int(ni), int(di), int(GModRaw))
+	Neurons.Set(0.0, int(ni), int(di), int(GModSyn))
+	Neurons.Set(0.0, int(ni), int(di), int(GMaintRaw))
+	Neurons.Set(0.0, int(ni), int(di), int(SSGiDend))
+	Neurons.Set(0.0, int(ni), int(di), int(GeExt))
 
-	Neurons.SetSub(glong*Neurons.Value(int(ni), int(CtxtGeOrig), int(di)), int(ni), int(CtxtGeOrig), int(di))
+	Neurons.SetSub(glong*Neurons.Value(int(ni), int(di), int(CtxtGeOrig)), int(ni), int(di), int(CtxtGeOrig))
 }
 
 // InitActs initializes activation state in neuron -- called during InitWeights but otherwise not
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(ni), int(Spike), int(di))
-	Neurons.Set(0, int(ni), int(Spiked), int(di))
-	Neurons.Set(-1, int(ni), int(ISI), int(di))
-	Neurons.Set(-1, int(ni), int(ISIAvg), int(di))
-	Neurons.Set(ac.Init.Act, int(ni), int(Act), int(di))
-	Neurons.Set(ac.Init.Act, int(ni), int(ActInt), int(di))
-	Neurons.Set(NeuronAvgs.Value(int(ni), int(GeBase)), int(ni), int(GeSyn), int(di))
-	Neurons.Set(NeuronAvgs.Value(int(ni), int(GeBase)), int(ni), int(Ge), int(di))
-	Neurons.Set(NeuronAvgs.Value(int(ni), int(GiBase)), int(ni), int(Gi), int(di))
-	Neurons.Set(0, int(ni), int(Gk), int(di))
-	Neurons.Set(0, int(ni), int(Inet), int(di))
-	Neurons.Set(ac.Init.Vm, int(ni), int(Vm), int(di))
-	Neurons.Set(ac.Init.Vm, int(ni), int(VmDend), int(di))
-	Neurons.Set(0, int(ni), int(Target), int(di))
-	Neurons.Set(0, int(ni), int(Ext), int(di))
+	Neurons.Set(0, int(ni), int(di), int(Spike))
+	Neurons.Set(0, int(ni), int(di), int(Spiked))
+	Neurons.Set(-1, int(ni), int(di), int(ISI))
+	Neurons.Set(-1, int(ni), int(di), int(ISIAvg))
+	Neurons.Set(ac.Init.Act, int(ni), int(di), int(Act))
+	Neurons.Set(ac.Init.Act, int(ni), int(di), int(ActInt))
+	Neurons.Set(NeuronAvgs.Value(int(ni), int(GeBase)), int(ni), int(di), int(GeSyn))
+	Neurons.Set(NeuronAvgs.Value(int(ni), int(GeBase)), int(ni), int(di), int(Ge))
+	Neurons.Set(NeuronAvgs.Value(int(ni), int(GiBase)), int(ni), int(di), int(Gi))
+	Neurons.Set(0, int(ni), int(di), int(Gk))
+	Neurons.Set(0, int(ni), int(di), int(Inet))
+	Neurons.Set(ac.Init.Vm, int(ni), int(di), int(Vm))
+	Neurons.Set(ac.Init.Vm, int(ni), int(di), int(VmDend))
+	Neurons.Set(0, int(ni), int(di), int(Target))
+	Neurons.Set(0, int(ni), int(di), int(Ext))
 
-	Neurons.Set(0, int(ni), int(SpkMaxCa), int(di))
-	Neurons.Set(0, int(ni), int(SpkMax), int(di))
-	Neurons.Set(1, int(ni), int(RLRate), int(di))
+	Neurons.Set(0, int(ni), int(di), int(SpkMaxCa))
+	Neurons.Set(0, int(ni), int(di), int(SpkMax))
+	Neurons.Set(1, int(ni), int(di), int(RLRate))
 
-	Neurons.Set(1, int(ni), int(GeNoiseP), int(di))
-	Neurons.Set(0, int(ni), int(GeNoise), int(di))
-	Neurons.Set(1, int(ni), int(GiNoiseP), int(di))
-	Neurons.Set(0, int(ni), int(GiNoise), int(di))
-	Neurons.Set(0, int(ni), int(GiSyn), int(di))
-	Neurons.Set(1, int(ni), int(SMaintP), int(di))
+	Neurons.Set(1, int(ni), int(di), int(GeNoiseP))
+	Neurons.Set(0, int(ni), int(di), int(GeNoise))
+	Neurons.Set(1, int(ni), int(di), int(GiNoiseP))
+	Neurons.Set(0, int(ni), int(di), int(GiNoise))
+	Neurons.Set(0, int(ni), int(di), int(GiSyn))
+	Neurons.Set(1, int(ni), int(di), int(SMaintP))
 
-	Neurons.Set(0, int(ni), int(GeInt), int(di))
-	Neurons.Set(0, int(ni), int(GeIntNorm), int(di))
-	Neurons.Set(0, int(ni), int(GiInt), int(di))
+	Neurons.Set(0, int(ni), int(di), int(GeInt))
+	Neurons.Set(0, int(ni), int(di), int(GeIntNorm))
+	Neurons.Set(0, int(ni), int(di), int(GiInt))
 
-	Neurons.Set(0, int(ni), int(MahpN), int(di))
-	Neurons.Set(0, int(ni), int(Gmahp), int(di))
-	Neurons.Set(0, int(ni), int(SahpCa), int(di))
-	Neurons.Set(0, int(ni), int(SahpN), int(di))
-	Neurons.Set(0, int(ni), int(Gsahp), int(di))
-	Neurons.Set(0, int(ni), int(GknaMed), int(di))
-	Neurons.Set(0, int(ni), int(GknaSlow), int(di))
-	Neurons.Set(ac.Kir.Mrest, int(ni), int(KirM), int(di))
-	Neurons.Set(0, int(ni), int(Gkir), int(di))
+	Neurons.Set(0, int(ni), int(di), int(MahpN))
+	Neurons.Set(0, int(ni), int(di), int(Gmahp))
+	Neurons.Set(0, int(ni), int(di), int(SahpCa))
+	Neurons.Set(0, int(ni), int(di), int(SahpN))
+	Neurons.Set(0, int(ni), int(di), int(Gsahp))
+	Neurons.Set(0, int(ni), int(di), int(GknaMed))
+	Neurons.Set(0, int(ni), int(di), int(GknaSlow))
+	Neurons.Set(ac.Kir.Mrest, int(ni), int(di), int(KirM))
+	Neurons.Set(0, int(ni), int(di), int(Gkir))
 
-	Neurons.Set(0, int(ni), int(GnmdaSyn), int(di))
-	Neurons.Set(0, int(ni), int(Gnmda), int(di))
-	Neurons.Set(0, int(ni), int(GnmdaMaint), int(di))
-	Neurons.Set(0, int(ni), int(GnmdaLrn), int(di))
-	Neurons.Set(0, int(ni), int(NmdaCa), int(di))
+	Neurons.Set(0, int(ni), int(di), int(GnmdaSyn))
+	Neurons.Set(0, int(ni), int(di), int(Gnmda))
+	Neurons.Set(0, int(ni), int(di), int(GnmdaMaint))
+	Neurons.Set(0, int(ni), int(di), int(GnmdaLrn))
+	Neurons.Set(0, int(ni), int(di), int(NmdaCa))
 
-	Neurons.Set(0, int(ni), int(GgabaB), int(di))
-	Neurons.Set(0, int(ni), int(GABAB), int(di))
-	Neurons.Set(0, int(ni), int(GABABx), int(di))
+	Neurons.Set(0, int(ni), int(di), int(GgabaB))
+	Neurons.Set(0, int(ni), int(di), int(GABAB))
+	Neurons.Set(0, int(ni), int(di), int(GABABx))
 
-	Neurons.Set(0, int(ni), int(Gvgcc), int(di))
-	Neurons.Set(0, int(ni), int(VgccM), int(di))
-	Neurons.Set(0, int(ni), int(VgccH), int(di))
-	Neurons.Set(0, int(ni), int(Gak), int(di))
-	Neurons.Set(0, int(ni), int(VgccCaInt), int(di))
+	Neurons.Set(0, int(ni), int(di), int(Gvgcc))
+	Neurons.Set(0, int(ni), int(di), int(VgccM))
+	Neurons.Set(0, int(ni), int(di), int(VgccH))
+	Neurons.Set(0, int(ni), int(di), int(Gak))
+	Neurons.Set(0, int(ni), int(di), int(VgccCaInt))
 
-	Neurons.Set(1, int(ni), int(SKCaIn), int(di))
-	Neurons.Set(0, int(ni), int(SKCaR), int(di))
-	Neurons.Set(0, int(ni), int(SKCaM), int(di))
-	Neurons.Set(0, int(ni), int(Gsk), int(di))
+	Neurons.Set(1, int(ni), int(di), int(SKCaIn))
+	Neurons.Set(0, int(ni), int(di), int(SKCaR))
+	Neurons.Set(0, int(ni), int(di), int(SKCaM))
+	Neurons.Set(0, int(ni), int(di), int(Gsk))
 
-	Neurons.Set(0, int(ni), int(GeExt), int(di))
-	Neurons.Set(0, int(ni), int(GeRaw), int(di))
-	Neurons.Set(0, int(ni), int(GiRaw), int(di))
-	Neurons.Set(0, int(ni), int(GModRaw), int(di))
-	Neurons.Set(0, int(ni), int(GModSyn), int(di))
-	Neurons.Set(0, int(ni), int(GMaintRaw), int(di))
-	Neurons.Set(0, int(ni), int(GMaintSyn), int(di))
+	Neurons.Set(0, int(ni), int(di), int(GeExt))
+	Neurons.Set(0, int(ni), int(di), int(GeRaw))
+	Neurons.Set(0, int(ni), int(di), int(GiRaw))
+	Neurons.Set(0, int(ni), int(di), int(GModRaw))
+	Neurons.Set(0, int(ni), int(di), int(GModSyn))
+	Neurons.Set(0, int(ni), int(di), int(GMaintRaw))
+	Neurons.Set(0, int(ni), int(di), int(GMaintSyn))
 
-	Neurons.Set(0, int(ni), int(SSGiDend), int(di))
+	Neurons.Set(0, int(ni), int(di), int(SSGiDend))
 
-	Neurons.Set(0, int(ni), int(Burst), int(di))
-	Neurons.Set(0, int(ni), int(BurstPrv), int(di))
+	Neurons.Set(0, int(ni), int(di), int(Burst))
+	Neurons.Set(0, int(ni), int(di), int(BurstPrv))
 
-	Neurons.Set(0, int(ni), int(CtxtGe), int(di))
-	Neurons.Set(0, int(ni), int(CtxtGeRaw), int(di))
-	Neurons.Set(0, int(ni), int(CtxtGeOrig), int(di))
+	Neurons.Set(0, int(ni), int(di), int(CtxtGe))
+	Neurons.Set(0, int(ni), int(di), int(CtxtGeRaw))
+	Neurons.Set(0, int(ni), int(di), int(CtxtGeOrig))
 
 	for i := range 8 {
-		Neurons.Set(0.0, int(ni), int(SpkBin0+NeuronVars(i)), int(di))
+		Neurons.Set(0.0, int(ni), int(di), int(SpkBin0+NeuronVars(i)))
 	}
 
 	ac.InitLongActs(ctx, ni, di)
@@ -1052,11 +1052,11 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 // but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(ni), int(SpkPrv), int(di))
-	Neurons.Set(0, int(ni), int(SpkSt1), int(di))
-	Neurons.Set(0, int(ni), int(SpkSt2), int(di))
-	Neurons.Set(0, int(ni), int(ActM), int(di))
-	Neurons.Set(0, int(ni), int(ActP), int(di))
+	Neurons.Set(0, int(ni), int(di), int(SpkPrv))
+	Neurons.Set(0, int(ni), int(di), int(SpkSt1))
+	Neurons.Set(0, int(ni), int(di), int(SpkSt2))
+	Neurons.Set(0, int(ni), int(di), int(ActM))
+	Neurons.Set(0, int(ni), int(di), int(ActP))
 }
 
 ////////  Cycle
@@ -1068,8 +1068,8 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 		return
 	}
 	geT := max(geTot, 0.0)
-	Neurons.Set(ac.NMDA.NMDASyn(Neurons.Value(int(ni), int(GnmdaSyn), int(di)), geT), int(ni), int(GnmdaSyn), int(di))
-	Neurons.Set(ac.NMDA.Gnmda(Neurons.Value(int(ni), int(GnmdaSyn), int(di)), Neurons.Value(int(ni), int(VmDend), int(di))), int(ni), int(Gnmda), int(di))
+	Neurons.Set(ac.NMDA.NMDASyn(Neurons.Value(int(ni), int(di), int(GnmdaSyn)), geT), int(ni), int(di), int(GnmdaSyn))
+	Neurons.Set(ac.NMDA.Gnmda(Neurons.Value(int(ni), int(di), int(GnmdaSyn)), Neurons.Value(int(ni), int(di), int(VmDend))), int(ni), int(di), int(Gnmda))
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
 
@@ -1082,26 +1082,26 @@ func (ac *ActParams) MaintNMDAFromRaw(ctx *Context, ni, di uint32) {
 	if ac.SMaint.On.IsTrue() {
 		ac.SMaintFromISI(ctx, ni, di)
 	}
-	Neurons.Set(ac.MaintNMDA.NMDASyn(Neurons.Value(int(ni), int(GMaintSyn), int(di)), Neurons.Value(int(ni), int(GMaintRaw), int(di))), int(ni), int(GMaintSyn), int(di))
-	Neurons.Set(ac.MaintNMDA.Gnmda(Neurons.Value(int(ni), int(GMaintSyn), int(di)), Neurons.Value(int(ni), int(VmDend), int(di))), int(ni), int(GnmdaMaint), int(di))
+	Neurons.Set(ac.MaintNMDA.NMDASyn(Neurons.Value(int(ni), int(di), int(GMaintSyn)), Neurons.Value(int(ni), int(di), int(GMaintRaw))), int(ni), int(di), int(GMaintSyn))
+	Neurons.Set(ac.MaintNMDA.Gnmda(Neurons.Value(int(ni), int(di), int(GMaintSyn)), Neurons.Value(int(ni), int(di), int(VmDend))), int(ni), int(di), int(GnmdaMaint))
 }
 
 // SMaintFromISI updates the SMaint self-maintenance current into GMaintRaw
 func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
 	nix := GetNetworkIxs(0)
-	isi := Neurons.Value(int(ni), int(ISIAvg), int(di))
+	isi := Neurons.Value(int(ni), int(di), int(ISIAvg))
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
 	ndi := di*nix.NNeurons + ni
-	smp := Neurons.Value(int(ni), int(SMaintP), int(di))
+	smp := Neurons.Value(int(ni), int(di), int(SMaintP))
 	smp *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)
 	if smp <= trg {
 		smp = 1
-		Neurons.SetAdd(ac.SMaint.Gbar, int(ni), int(GMaintRaw), int(di))
+		Neurons.SetAdd(ac.SMaint.Gbar, int(ni), int(di), int(GMaintRaw))
 	}
-	Neurons.Set(smp, int(ni), int(SMaintP), int(di))
+	Neurons.Set(smp, int(ni), int(di), int(SMaintP))
 }
 
 // GvgccFromVm updates all the VGCC voltage-gated calcium channel variables
@@ -1110,53 +1110,53 @@ func (ac *ActParams) GvgccFromVm(ctx *Context, ni, di uint32) {
 	if ac.VGCC.Gbar == 0 {
 		return
 	}
-	Neurons.Set(ac.VGCC.Gvgcc(Neurons.Value(int(ni), int(VmDend), int(di)), Neurons.Value(int(ni), int(VgccM), int(di)), Neurons.Value(int(ni), int(VgccH), int(di))), int(ni), int(Gvgcc), int(di))
+	Neurons.Set(ac.VGCC.Gvgcc(Neurons.Value(int(ni), int(di), int(VmDend)), Neurons.Value(int(ni), int(di), int(VgccM)), Neurons.Value(int(ni), int(di), int(VgccH))), int(ni), int(di), int(Gvgcc))
 	var dm, dh float32
-	ac.VGCC.DMHFromV(Neurons.Value(int(ni), int(VmDend), int(di)), Neurons.Value(int(ni), int(VgccM), int(di)), Neurons.Value(int(ni), int(VgccH), int(di)), &dm, &dh)
-	Neurons.SetAdd(dm, int(ni), int(VgccM), int(di))
-	Neurons.SetAdd(dh, int(ni), int(VgccH), int(di))
+	ac.VGCC.DMHFromV(Neurons.Value(int(ni), int(di), int(VmDend)), Neurons.Value(int(ni), int(di), int(VgccM)), Neurons.Value(int(ni), int(di), int(VgccH)), &dm, &dh)
+	Neurons.SetAdd(dm, int(ni), int(di), int(VgccM))
+	Neurons.SetAdd(dh, int(ni), int(di), int(VgccH))
 	// note: may be overwritten!
-	Neurons.Set(ac.VGCC.CaFromG(Neurons.Value(int(ni), int(VmDend), int(di)), Neurons.Value(int(ni), int(Gvgcc), int(di)), Neurons.Value(int(ni), int(VgccCa), int(di))), int(ni), int(VgccCa), int(di))
+	Neurons.Set(ac.VGCC.CaFromG(Neurons.Value(int(ni), int(di), int(VmDend)), Neurons.Value(int(ni), int(di), int(Gvgcc)), Neurons.Value(int(ni), int(di), int(VgccCa))), int(ni), int(di), int(VgccCa))
 }
 
 // GkFromVm updates all the Gk-based conductances: Mahp, KNa, Gak
 func (ac *ActParams) GkFromVm(ctx *Context, ni, di uint32) {
-	vm := Neurons.Value(int(ni), int(Vm), int(di))
-	vmd := Neurons.Value(int(ni), int(VmDend), int(di))
-	mahpN := Neurons.Value(int(ni), int(MahpN), int(di))
+	vm := Neurons.Value(int(ni), int(di), int(Vm))
+	vmd := Neurons.Value(int(ni), int(di), int(VmDend))
+	mahpN := Neurons.Value(int(ni), int(di), int(MahpN))
 	gmahp := ac.Mahp.GmAHP(vm, &mahpN)
-	Neurons.Set(gmahp, int(ni), int(Gmahp), int(di))
-	Neurons.Set(mahpN, int(ni), int(MahpN), int(di))
+	Neurons.Set(gmahp, int(ni), int(di), int(Gmahp))
+	Neurons.Set(mahpN, int(ni), int(di), int(MahpN))
 
-	gsahp := Neurons.Value(int(ni), int(Gsahp), int(di))
+	gsahp := Neurons.Value(int(ni), int(di), int(Gsahp))
 
 	gak := ac.AK.Gak(vmd)
-	Neurons.Set(gak, int(ni), int(Gak), int(di))
+	Neurons.Set(gak, int(ni), int(di), int(Gak))
 
-	nkirM := Neurons.Value(int(ni), int(KirM), int(di))
+	nkirM := Neurons.Value(int(ni), int(di), int(KirM))
 	gkir := ac.Kir.Gkir(vm, nkirM)
-	Neurons.Set(gkir, int(ni), int(Gkir), int(di))
+	Neurons.Set(gkir, int(ni), int(di), int(Gkir))
 	nkirM += ac.Kir.DM(chans.VToBio(vm), nkirM)
-	Neurons.Set(nkirM, int(ni), int(KirM), int(di))
+	Neurons.Set(nkirM, int(ni), int(di), int(KirM))
 
 	gktot := gmahp + gsahp + gak + gkir
 
 	if ac.KNa.On.IsTrue() {
-		gknaMed := Neurons.Value(int(ni), int(GknaMed), int(di))
-		gknaSlow := Neurons.Value(int(ni), int(GknaSlow), int(di))
-		ac.KNa.GcFromSpike(&gknaMed, &gknaSlow, Neurons.Value(int(ni), int(Spike), int(di)) > .5)
-		Neurons.Set(gknaMed, int(ni), int(GknaMed), int(di))
-		Neurons.Set(gknaSlow, int(ni), int(GknaSlow), int(di))
+		gknaMed := Neurons.Value(int(ni), int(di), int(GknaMed))
+		gknaSlow := Neurons.Value(int(ni), int(di), int(GknaSlow))
+		ac.KNa.GcFromSpike(&gknaMed, &gknaSlow, Neurons.Value(int(ni), int(di), int(Spike)) > .5)
+		Neurons.Set(gknaMed, int(ni), int(di), int(GknaMed))
+		Neurons.Set(gknaSlow, int(ni), int(di), int(GknaSlow))
 		gktot += gknaMed + gknaSlow
 	}
 
-	Neurons.Set(gktot, int(ni), int(Gk), int(di))
+	Neurons.Set(gktot, int(ni), int(di), int(Gk))
 }
 
 // KNaNewState does TrialSlow version of KNa during NewState if option is set
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
-		Neurons.SetAdd(ac.KNa.Slow.Max*Neurons.Value(int(ni), int(SpkPrv), int(di)), int(ni), int(GknaSlow), int(di))
+		Neurons.SetAdd(ac.KNa.Slow.Max*Neurons.Value(int(ni), int(di), int(SpkPrv)), int(ni), int(di), int(GknaSlow))
 	}
 }
 
@@ -1165,36 +1165,36 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 	if ac.SKCa.Gbar == 0 {
 		return
 	}
-	skcar := Neurons.Value(int(ni), int(SKCaR), int(di))
-	skcain := Neurons.Value(int(ni), int(SKCaIn), int(di))
-	Neurons.Set(ac.SKCa.MFromCa(skcar, Neurons.Value(int(ni), int(SKCaM), int(di))), int(ni), int(SKCaM), int(di))
-	ac.SKCa.CaInRFromSpike(Neurons.Value(int(ni), int(Spike), int(di)), Neurons.Value(int(ni), int(CaSpkD), int(di)), &skcain, &skcar)
-	Neurons.Set(skcar, int(ni), int(SKCaR), int(di))
-	Neurons.Set(skcain, int(ni), int(SKCaIn), int(di))
-	Neurons.Set(ac.SKCa.Gbar*Neurons.Value(int(ni), int(SKCaM), int(di)), int(ni), int(Gsk), int(di))
-	Neurons.SetAdd(Neurons.Value(int(ni), int(Gsk), int(di)), int(ni), int(Gk), int(di))
+	skcar := Neurons.Value(int(ni), int(di), int(SKCaR))
+	skcain := Neurons.Value(int(ni), int(di), int(SKCaIn))
+	Neurons.Set(ac.SKCa.MFromCa(skcar, Neurons.Value(int(ni), int(di), int(SKCaM))), int(ni), int(di), int(SKCaM))
+	ac.SKCa.CaInRFromSpike(Neurons.Value(int(ni), int(di), int(Spike)), Neurons.Value(int(ni), int(di), int(CaSpkD)), &skcain, &skcar)
+	Neurons.Set(skcar, int(ni), int(di), int(SKCaR))
+	Neurons.Set(skcain, int(ni), int(di), int(SKCaIn))
+	Neurons.Set(ac.SKCa.Gbar*Neurons.Value(int(ni), int(di), int(SKCaM)), int(ni), int(di), int(Gsk))
+	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(Gsk)), int(ni), int(di), int(Gk))
 }
 
 // GeFromSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
-	Neurons.Set(0.0, int(ni), int(GeExt), int(di))
+	Neurons.Set(0.0, int(ni), int(di), int(GeExt))
 	geS := geSyn
 	geE := geExt
 	if ac.Clamp.Add.IsTrue() && NeuronHasFlag(NeuronHasExt, ni, di) {
-		Neurons.Set(Neurons.Value(int(ni), int(Ext), int(di))*ac.Clamp.Ge, int(ni), int(GeExt), int(di))
-		geS += Neurons.Value(int(ni), int(GeExt), int(di))
+		Neurons.Set(Neurons.Value(int(ni), int(di), int(Ext))*ac.Clamp.Ge, int(ni), int(di), int(GeExt))
+		geS += Neurons.Value(int(ni), int(di), int(GeExt))
 	}
 
 	if ac.Clamp.Add.IsFalse() && NeuronHasFlag(NeuronHasExt, ni, di) {
-		geS = Neurons.Value(int(ni), int(Ext), int(di)) * ac.Clamp.Ge
-		Neurons.Set(geS, int(ni), int(GeExt), int(di))
+		geS = Neurons.Value(int(ni), int(di), int(Ext)) * ac.Clamp.Ge
+		Neurons.Set(geS, int(ni), int(di), int(GeExt))
 		geE = 0 // no extra in this case
 	}
 
-	Neurons.Set(geS+geE, int(ni), int(Ge), int(di))
-	if Neurons.Value(int(ni), int(Ge), int(di)) < 0.0 {
-		Neurons.Set(0.0, int(ni), int(Ge), int(di))
+	Neurons.Set(geS+geE, int(ni), int(di), int(Ge))
+	if Neurons.Value(int(ni), int(di), int(Ge)) < 0.0 {
+		Neurons.Set(0.0, int(ni), int(di), int(Ge))
 	}
 	ac.AddGeNoise(ctx, ni, di)
 }
@@ -1204,11 +1204,11 @@ func (ac *ActParams) AddGeNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
-	p := Neurons.Value(int(ni), int(GeNoiseP), int(di))
+	p := Neurons.Value(int(ni), int(di), int(GeNoiseP))
 	ge := ac.Noise.PGe(ctx, &p, ni, di)
-	Neurons.Set(p, int(ni), int(GeNoiseP), int(di))
-	Neurons.Set(ac.Dt.GeSynFromRaw(Neurons.Value(int(ni), int(GeNoise), int(di)), ge), int(ni), int(GeNoise), int(di))
-	Neurons.SetAdd(Neurons.Value(int(ni), int(GeNoise), int(di)), int(ni), int(Ge), int(di))
+	Neurons.Set(p, int(ni), int(di), int(GeNoiseP))
+	Neurons.Set(ac.Dt.GeSynFromRaw(Neurons.Value(int(ni), int(di), int(GeNoise)), ge), int(ni), int(di), int(GeNoise))
+	Neurons.SetAdd(Neurons.Value(int(ni), int(di), int(GeNoise)), int(ni), int(di), int(Ge))
 }
 
 // AddGiNoise updates nrn.GiNoise if active
@@ -1216,10 +1216,10 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
-	p := Neurons.Value(int(ni), int(GiNoiseP), int(di))
+	p := Neurons.Value(int(ni), int(di), int(GiNoiseP))
 	gi := ac.Noise.PGi(ctx, &p, ni, di)
-	Neurons.Set(p, int(ni), int(GiNoiseP), int(di))
-	Neurons.Set(ac.Dt.GiSynFromRaw(Neurons.Value(int(ni), int(GiNoise), int(di)), gi), int(ni), int(GiNoise), int(di))
+	Neurons.Set(p, int(ni), int(di), int(GiNoiseP))
+	Neurons.Set(ac.Dt.GiSynFromRaw(Neurons.Value(int(ni), int(di), int(GiNoise)), gi), int(ni), int(di), int(GiNoise))
 }
 
 // GiFromSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
@@ -1264,20 +1264,20 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 	updtVm := true
 	// note: nrn.ISI has NOT yet been updated at this point: 0 right after spike, etc
 	// so it takes a full 3 time steps after spiking for Tr period
-	isi := Neurons.Value(int(ni), int(ISI), int(di))
+	isi := Neurons.Value(int(ni), int(di), int(ISI))
 	if ac.Spikes.Tr > 0 && isi >= 0 && isi < float32(ac.Spikes.Tr) {
 		updtVm = false // don't update the spiking vm during refract
 	}
 
-	ge := Neurons.Value(int(ni), int(Ge), int(di)) * ac.Gbar.E
-	gi := Neurons.Value(int(ni), int(Gi), int(di)) * ac.Gbar.I
-	gk := Neurons.Value(int(ni), int(Gk), int(di)) * ac.Gbar.K
+	ge := Neurons.Value(int(ni), int(di), int(Ge)) * ac.Gbar.E
+	gi := Neurons.Value(int(ni), int(di), int(Gi)) * ac.Gbar.I
+	gk := Neurons.Value(int(ni), int(di), int(Gk)) * ac.Gbar.K
 	var nvm, inet, expi float32
 	if updtVm {
-		ac.VmInteg(Neurons.Value(int(ni), int(Vm), int(di)), ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
+		ac.VmInteg(Neurons.Value(int(ni), int(di), int(Vm)), ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
 		if updtVm && ac.Spikes.Exp.IsTrue() { // add spike current if relevant
 			var exVm float32
-			exVm = 0.5 * (nvm + Neurons.Value(int(ni), int(Vm), int(di))) // midpoint for this
+			exVm = 0.5 * (nvm + Neurons.Value(int(ni), int(di), int(Vm))) // midpoint for this
 			expi = ac.Gbar.L * ac.Spikes.ExpSlope *
 				math32.FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope)
 			if expi > ac.Dt.VmTau {
@@ -1286,17 +1286,17 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 			inet += expi
 			nvm = ac.VmFromInet(nvm, ac.Dt.VmDt, expi)
 		}
-		Neurons.Set(nvm, int(ni), int(Vm), int(di))
-		Neurons.Set(inet, int(ni), int(Inet), int(di))
+		Neurons.Set(nvm, int(ni), int(di), int(Vm))
+		Neurons.Set(inet, int(ni), int(di), int(Inet))
 	} else { // decay back to VmR
 		var dvm float32
 		if int32(isi) == ac.Spikes.Tr-1 {
-			dvm = ac.Spikes.VmR - Neurons.Value(int(ni), int(Vm), int(di))
+			dvm = ac.Spikes.VmR - Neurons.Value(int(ni), int(di), int(Vm))
 		} else {
-			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons.Value(int(ni), int(Vm), int(di)))
+			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons.Value(int(ni), int(di), int(Vm)))
 		}
-		Neurons.SetAdd(dvm, int(ni), int(Vm), int(di))
-		Neurons.Set(dvm*ac.Dt.VmTau, int(ni), int(Inet), int(di))
+		Neurons.SetAdd(dvm, int(ni), int(di), int(Vm))
+		Neurons.Set(dvm*ac.Dt.VmTau, int(ni), int(di), int(Inet))
 	}
 
 	glEff := float32(1)
@@ -1304,12 +1304,12 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 		glEff += ac.Dend.GbarR
 	}
 	var giEff float32
-	giEff = gi + ac.Gbar.I*Neurons.Value(int(ni), int(SSGiDend), int(di))
-	ac.VmInteg(Neurons.Value(int(ni), int(VmDend), int(di)), ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
+	giEff = gi + ac.Gbar.I*Neurons.Value(int(ni), int(di), int(SSGiDend))
+	ac.VmInteg(Neurons.Value(int(ni), int(di), int(VmDend)), ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
 	if updtVm {
 		nvm = ac.VmFromInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
 	}
-	Neurons.Set(nvm, int(ni), int(VmDend), int(di))
+	Neurons.Set(nvm, int(ni), int(di), int(VmDend))
 }
 
 // SpikeFromVmVars computes Spike from Vm and ISI-based activation, using pointers to variables
@@ -1360,18 +1360,18 @@ func (ac *ActParams) SpikeFromVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrn
 
 // SpikeFromVm computes Spike from Vm and ISI-based activation
 func (ac *ActParams) SpikeFromVm(ctx *Context, ni, di uint32) {
-	nrnISI := Neurons.Value(int(ni), int(ISI), int(di))
-	nrnISIAvg := Neurons.Value(int(ni), int(ISIAvg), int(di))
-	nrnSpike := Neurons.Value(int(ni), int(Spike), int(di))
-	nrnSpiked := Neurons.Value(int(ni), int(Spiked), int(di))
-	nrnAct := Neurons.Value(int(ni), int(Act), int(di))
-	nrnVm := Neurons.Value(int(ni), int(Vm), int(di))
+	nrnISI := Neurons.Value(int(ni), int(di), int(ISI))
+	nrnISIAvg := Neurons.Value(int(ni), int(di), int(ISIAvg))
+	nrnSpike := Neurons.Value(int(ni), int(di), int(Spike))
+	nrnSpiked := Neurons.Value(int(ni), int(di), int(Spiked))
+	nrnAct := Neurons.Value(int(ni), int(di), int(Act))
+	nrnVm := Neurons.Value(int(ni), int(di), int(Vm))
 	ac.SpikeFromVmVars(&nrnISI, &nrnISIAvg, &nrnSpike, &nrnSpiked, &nrnAct, nrnVm)
-	Neurons.Set(nrnISI, int(ni), int(ISI), int(di))
-	Neurons.Set(nrnISIAvg, int(ni), int(ISIAvg), int(di))
-	Neurons.Set(nrnSpike, int(ni), int(Spike), int(di))
-	Neurons.Set(nrnSpiked, int(ni), int(Spiked), int(di))
-	Neurons.Set(nrnAct, int(ni), int(Act), int(di))
+	Neurons.Set(nrnISI, int(ni), int(di), int(ISI))
+	Neurons.Set(nrnISIAvg, int(ni), int(di), int(ISIAvg))
+	Neurons.Set(nrnSpike, int(ni), int(di), int(Spike))
+	Neurons.Set(nrnSpiked, int(ni), int(di), int(Spiked))
+	Neurons.Set(nrnAct, int(ni), int(di), int(Act))
 }
 
 //gosl:end

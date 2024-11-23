@@ -23,15 +23,15 @@ import (
 
 // NeuronHasFlag
 func NeuronHasFlag(flag NeuronFlags, ni, di uint32) bool {
-	return (NeuronFlags(math.Float32bits(Neurons[ni, NeurFlags, di])) & flag) > 0 // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(math.Float32bits(Neurons[ni, di, NeurFlags])) & flag) > 0 // weird: != 0 does NOT work on GPU
 }
 
 func NeuronSetFlag(flag NeuronFlags, ni, di uint32) {
-	Neurons[ni, NeurFlags, di] = math.Float32frombits(math.Float32bits(Neurons[ni, NeurFlags, di]) | uint32(flag))
+	Neurons[ni, di, NeurFlags] = math.Float32frombits(math.Float32bits(Neurons[ni, di, NeurFlags]) | uint32(flag))
 }
 
 func NeuronClearFlag(flag NeuronFlags, ni, di uint32) {
-	Neurons[ni, NeurFlags, di] = math.Float32frombits(math.Float32bits(Neurons[ni, NeurFlags, di]) &^ uint32(flag))
+	Neurons[ni, di, NeurFlags] = math.Float32frombits(math.Float32bits(Neurons[ni, di, NeurFlags]) &^ uint32(flag))
 }
 
 // NeuronIsOff returns true if the neuron has been turned off (lesioned)
@@ -845,41 +845,41 @@ func (ac *ActParams) Update() {
 // of the decay parameter that then has impacts on learning rates etc.
 // see Act.Decay.LearnCa param controlling this
 func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
-	Neurons[ni, GnmdaLrn, di] -= decay * Neurons[ni, GnmdaLrn, di]
-	Neurons[ni, NmdaCa, di] -= decay * Neurons[ni, NmdaCa, di]
+	Neurons[ni, di, GnmdaLrn] -= decay * Neurons[ni, di, GnmdaLrn]
+	Neurons[ni, di, NmdaCa] -= decay * Neurons[ni, di, NmdaCa]
 
-	Neurons[ni, VgccCa, di] -= decay * Neurons[ni, VgccCa, di]
-	Neurons[ni, VgccCaInt, di] -= decay * Neurons[ni, VgccCaInt, di]
+	Neurons[ni, di, VgccCa] -= decay * Neurons[ni, di, VgccCa]
+	Neurons[ni, di, VgccCaInt] -= decay * Neurons[ni, di, VgccCaInt]
 
-	Neurons[ni, CaLrn, di] -= decay * Neurons[ni, CaLrn, di]
+	Neurons[ni, di, CaLrn] -= decay * Neurons[ni, di, CaLrn]
 
-	Neurons[ni, CaSpkM, di] -= decay * Neurons[ni, CaSpkM, di]
-	Neurons[ni, CaSpkP, di] -= decay * Neurons[ni, CaSpkP, di]
-	Neurons[ni, CaSpkD, di] -= decay * Neurons[ni, CaSpkD, di]
+	Neurons[ni, di, CaSpkM] -= decay * Neurons[ni, di, CaSpkM]
+	Neurons[ni, di, CaSpkP] -= decay * Neurons[ni, di, CaSpkP]
+	Neurons[ni, di, CaSpkD] -= decay * Neurons[ni, di, CaSpkD]
 
-	Neurons[ni, NrnCaM, di] -= decay * Neurons[ni, NrnCaM, di]
-	Neurons[ni, NrnCaP, di] -= decay * Neurons[ni, NrnCaP, di]
-	Neurons[ni, NrnCaD, di] -= decay * Neurons[ni, NrnCaD, di]
+	Neurons[ni, di, NrnCaM] -= decay * Neurons[ni, di, NrnCaM]
+	Neurons[ni, di, NrnCaP] -= decay * Neurons[ni, di, NrnCaP]
+	Neurons[ni, di, NrnCaD] -= decay * Neurons[ni, di, NrnCaD]
 
 	// recovers
-	Neurons[ni, SKCaIn, di] += decay * (1.0 - Neurons[ni, SKCaIn, di])
-	Neurons[ni, SKCaR, di] -= decay * Neurons[ni, SKCaR, di]
-	Neurons[ni, SKCaM, di] -= decay * Neurons[ni, SKCaM, di]
+	Neurons[ni, di, SKCaIn] += decay * (1.0 - Neurons[ni, di, SKCaIn])
+	Neurons[ni, di, SKCaR] -= decay * Neurons[ni, di, SKCaR]
+	Neurons[ni, di, SKCaM] -= decay * Neurons[ni, di, SKCaM]
 }
 
 // DecayAHP decays after-hyperpolarization variables
 // by given factor (typically Decay.AHP)
 func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
-	Neurons[ni, MahpN, di] -= decay * Neurons[ni, MahpN, di]
-	Neurons[ni, Gmahp, di] -= decay * Neurons[ni, Gmahp, di]
-	Neurons[ni, SahpCa, di] -= decay * Neurons[ni, SahpCa, di]
-	Neurons[ni, SahpN, di] -= decay * Neurons[ni, SahpN, di]
-	Neurons[ni, Gsahp, di] -= decay * Neurons[ni, Gsahp, di]
-	Neurons[ni, GknaMed, di] -= decay * Neurons[ni, GknaMed, di]
-	Neurons[ni, GknaSlow, di] -= decay * Neurons[ni, GknaSlow, di]
+	Neurons[ni, di, MahpN] -= decay * Neurons[ni, di, MahpN]
+	Neurons[ni, di, Gmahp] -= decay * Neurons[ni, di, Gmahp]
+	Neurons[ni, di, SahpCa] -= decay * Neurons[ni, di, SahpCa]
+	Neurons[ni, di, SahpN] -= decay * Neurons[ni, di, SahpN]
+	Neurons[ni, di, Gsahp] -= decay * Neurons[ni, di, Gsahp]
+	Neurons[ni, di, GknaMed] -= decay * Neurons[ni, di, GknaMed]
+	Neurons[ni, di, GknaSlow] -= decay * Neurons[ni, di, GknaSlow]
 	kirMrest := ac.Kir.Mrest
-	Neurons[ni, KirM, di] += decay * (kirMrest - Neurons[ni, KirM, di])
-	Neurons[ni, Gkir, di] -= decay * Neurons[ni, Gkir, di]
+	Neurons[ni, di, KirM] += decay * (kirMrest - Neurons[ni, di, KirM])
+	Neurons[ni, di, Gkir] -= decay * Neurons[ni, di, Gkir]
 }
 
 // DecayState decays the activation state toward initial values
@@ -889,156 +889,156 @@ func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	Neurons[ni, ISIAvg, di] = -1.0
-	Neurons[ni, ActInt, di] = ac.Init.Act
-	Neurons[ni, Spiked, di] = 0.0
+	Neurons[ni, di, ISIAvg] = -1.0
+	Neurons[ni, di, ActInt] = ac.Init.Act
+	Neurons[ni, di, Spiked] = 0.0
 	for i := range 8 {
-		Neurons[ni, SpkBin0+NeuronVars(i), di] = 0.0
+		Neurons[ni, di, SpkBin0+NeuronVars(i)] = 0.0
 	}
 
 	if decay > 0 { // no-op for most, but not all..
-		Neurons[ni, Spike, di] = 0.0
-		Neurons[ni, Act, di] -= decay * (Neurons[ni, Act, di] - ac.Init.Act)
-		Neurons[ni, ActInt, di] -= decay * (Neurons[ni, ActInt, di] - ac.Init.Act)
-		Neurons[ni, GeSyn, di] -= decay * (Neurons[ni, GeSyn, di] - NeuronAvgs[ni, GeBase])
-		Neurons[ni, Ge, di] -= decay * (Neurons[ni, Ge, di] - NeuronAvgs[ni, GeBase])
-		Neurons[ni, Gi, di] -= decay * (Neurons[ni, Gi, di] - NeuronAvgs[ni, GiBase])
-		Neurons[ni, Gk, di] -= decay * Neurons[ni, Gk, di]
+		Neurons[ni, di, Spike] = 0.0
+		Neurons[ni, di, Act] -= decay * (Neurons[ni, di, Act] - ac.Init.Act)
+		Neurons[ni, di, ActInt] -= decay * (Neurons[ni, di, ActInt] - ac.Init.Act)
+		Neurons[ni, di, GeSyn] -= decay * (Neurons[ni, di, GeSyn] - NeuronAvgs[ni, GeBase])
+		Neurons[ni, di, Ge] -= decay * (Neurons[ni, di, Ge] - NeuronAvgs[ni, GeBase])
+		Neurons[ni, di, Gi] -= decay * (Neurons[ni, di, Gi] - NeuronAvgs[ni, GiBase])
+		Neurons[ni, di, Gk] -= decay * Neurons[ni, di, Gk]
 
-		Neurons[ni, Vm, di] -= decay * (Neurons[ni, Vm, di] - ac.Init.Vm)
+		Neurons[ni, di, Vm] -= decay * (Neurons[ni, di, Vm] - ac.Init.Vm)
 
-		Neurons[ni, GeNoise, di] -= decay * Neurons[ni, GeNoise, di]
-		Neurons[ni, GiNoise, di] -= decay * Neurons[ni, GiNoise, di]
+		Neurons[ni, di, GeNoise] -= decay * Neurons[ni, di, GeNoise]
+		Neurons[ni, di, GiNoise] -= decay * Neurons[ni, di, GiNoise]
 
-		Neurons[ni, GiSyn, di] -= decay * Neurons[ni, GiSyn, di]
+		Neurons[ni, di, GiSyn] -= decay * Neurons[ni, di, GiSyn]
 
-		Neurons[ni, GeInt, di] -= decay * Neurons[ni, GeInt, di]
-		Neurons[ni, GiInt, di] -= decay * Neurons[ni, GiInt, di]
-		Neurons[ni, GeIntNorm, di] -= decay * Neurons[ni, GeIntNorm, di]
+		Neurons[ni, di, GeInt] -= decay * Neurons[ni, di, GeInt]
+		Neurons[ni, di, GiInt] -= decay * Neurons[ni, di, GiInt]
+		Neurons[ni, di, GeIntNorm] -= decay * Neurons[ni, di, GeIntNorm]
 	}
 
-	Neurons[ni, VmDend, di] -= glong * (Neurons[ni, VmDend, di] - ac.Init.Vm)
+	Neurons[ni, di, VmDend] -= glong * (Neurons[ni, di, VmDend] - ac.Init.Vm)
 
 	if ahp > 0 {
 		ac.DecayAHP(ctx, ni, di, ahp)
 	}
-	Neurons[ni, GgabaB, di] -= glong * Neurons[ni, GgabaB, di]
-	Neurons[ni, GABAB, di] -= glong * Neurons[ni, GABAB, di]
-	Neurons[ni, GABABx, di] -= glong * Neurons[ni, GABABx, di]
+	Neurons[ni, di, GgabaB] -= glong * Neurons[ni, di, GgabaB]
+	Neurons[ni, di, GABAB] -= glong * Neurons[ni, di, GABAB]
+	Neurons[ni, di, GABABx] -= glong * Neurons[ni, di, GABABx]
 
-	Neurons[ni, GnmdaSyn, di] -= glong * Neurons[ni, GnmdaSyn, di]
-	Neurons[ni, Gnmda, di] -= glong * Neurons[ni, Gnmda, di]
-	Neurons[ni, GMaintSyn, di] -= glong * Neurons[ni, GMaintSyn, di]
-	Neurons[ni, GnmdaMaint, di] -= glong * Neurons[ni, GnmdaMaint, di]
+	Neurons[ni, di, GnmdaSyn] -= glong * Neurons[ni, di, GnmdaSyn]
+	Neurons[ni, di, Gnmda] -= glong * Neurons[ni, di, Gnmda]
+	Neurons[ni, di, GMaintSyn] -= glong * Neurons[ni, di, GMaintSyn]
+	Neurons[ni, di, GnmdaMaint] -= glong * Neurons[ni, di, GnmdaMaint]
 
-	Neurons[ni, Gvgcc, di] -= glong * Neurons[ni, Gvgcc, di]
-	Neurons[ni, VgccM, di] -= glong * Neurons[ni, VgccM, di]
-	Neurons[ni, VgccH, di] -= glong * Neurons[ni, VgccH, di]
-	Neurons[ni, Gak, di] -= glong * Neurons[ni, Gak, di]
+	Neurons[ni, di, Gvgcc] -= glong * Neurons[ni, di, Gvgcc]
+	Neurons[ni, di, VgccM] -= glong * Neurons[ni, di, VgccM]
+	Neurons[ni, di, VgccH] -= glong * Neurons[ni, di, VgccH]
+	Neurons[ni, di, Gak] -= glong * Neurons[ni, di, Gak]
 
 	// don't mess with SKCa -- longer time scale
-	Neurons[ni, Gsk, di] -= glong * Neurons[ni, Gsk, di]
+	Neurons[ni, di, Gsk] -= glong * Neurons[ni, di, Gsk]
 
 	if ac.Decay.LearnCa > 0 { // learning-based Ca values -- not usual
 		ac.DecayLearnCa(ctx, ni, di, ac.Decay.LearnCa)
 	}
 
-	Neurons[ni, Inet, di] = 0.0
-	Neurons[ni, GeRaw, di] = 0.0
-	Neurons[ni, GiRaw, di] = 0.0
-	Neurons[ni, GModRaw, di] = 0.0
-	Neurons[ni, GModSyn, di] = 0.0
-	Neurons[ni, GMaintRaw, di] = 0.0
-	Neurons[ni, SSGiDend, di] = 0.0
-	Neurons[ni, GeExt, di] = 0.0
+	Neurons[ni, di, Inet] = 0.0
+	Neurons[ni, di, GeRaw] = 0.0
+	Neurons[ni, di, GiRaw] = 0.0
+	Neurons[ni, di, GModRaw] = 0.0
+	Neurons[ni, di, GModSyn] = 0.0
+	Neurons[ni, di, GMaintRaw] = 0.0
+	Neurons[ni, di, SSGiDend] = 0.0
+	Neurons[ni, di, GeExt] = 0.0
 
-	Neurons[ni, CtxtGeOrig, di] -= glong * Neurons[ni, CtxtGeOrig, di]
+	Neurons[ni, di, CtxtGeOrig] -= glong * Neurons[ni, di, CtxtGeOrig]
 }
 
 // InitActs initializes activation state in neuron -- called during InitWeights but otherwise not
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
-	Neurons[ni, Spike, di] = 0
-	Neurons[ni, Spiked, di] = 0
-	Neurons[ni, ISI, di] = -1
-	Neurons[ni, ISIAvg, di] = -1
-	Neurons[ni, Act, di] = ac.Init.Act
-	Neurons[ni, ActInt, di] = ac.Init.Act
-	Neurons[ni, GeSyn, di] = NeuronAvgs[ni, GeBase]
-	Neurons[ni, Ge, di] = NeuronAvgs[ni, GeBase]
-	Neurons[ni, Gi, di] = NeuronAvgs[ni, GiBase]
-	Neurons[ni, Gk, di] = 0
-	Neurons[ni, Inet, di] = 0
-	Neurons[ni, Vm, di] = ac.Init.Vm
-	Neurons[ni, VmDend, di] = ac.Init.Vm
-	Neurons[ni, Target, di] = 0
-	Neurons[ni, Ext, di] = 0
+	Neurons[ni, di, Spike] = 0
+	Neurons[ni, di, Spiked] = 0
+	Neurons[ni, di, ISI] = -1
+	Neurons[ni, di, ISIAvg] = -1
+	Neurons[ni, di, Act] = ac.Init.Act
+	Neurons[ni, di, ActInt] = ac.Init.Act
+	Neurons[ni, di, GeSyn] = NeuronAvgs[ni, GeBase]
+	Neurons[ni, di, Ge] = NeuronAvgs[ni, GeBase]
+	Neurons[ni, di, Gi] = NeuronAvgs[ni, GiBase]
+	Neurons[ni, di, Gk] = 0
+	Neurons[ni, di, Inet] = 0
+	Neurons[ni, di, Vm] = ac.Init.Vm
+	Neurons[ni, di, VmDend] = ac.Init.Vm
+	Neurons[ni, di, Target] = 0
+	Neurons[ni, di, Ext] = 0
 
-	Neurons[ni, SpkMaxCa, di] = 0
-	Neurons[ni, SpkMax, di] = 0
-	Neurons[ni, RLRate, di] = 1
+	Neurons[ni, di, SpkMaxCa] = 0
+	Neurons[ni, di, SpkMax] = 0
+	Neurons[ni, di, RLRate] = 1
 
-	Neurons[ni, GeNoiseP, di] = 1
-	Neurons[ni, GeNoise, di] = 0
-	Neurons[ni, GiNoiseP, di] = 1
-	Neurons[ni, GiNoise, di] = 0
-	Neurons[ni, GiSyn, di] = 0
-	Neurons[ni, SMaintP, di] = 1
+	Neurons[ni, di, GeNoiseP] = 1
+	Neurons[ni, di, GeNoise] = 0
+	Neurons[ni, di, GiNoiseP] = 1
+	Neurons[ni, di, GiNoise] = 0
+	Neurons[ni, di, GiSyn] = 0
+	Neurons[ni, di, SMaintP] = 1
 
-	Neurons[ni, GeInt, di] = 0
-	Neurons[ni, GeIntNorm, di] = 0
-	Neurons[ni, GiInt, di] = 0
+	Neurons[ni, di, GeInt] = 0
+	Neurons[ni, di, GeIntNorm] = 0
+	Neurons[ni, di, GiInt] = 0
 
-	Neurons[ni, MahpN, di] = 0
-	Neurons[ni, Gmahp, di] = 0
-	Neurons[ni, SahpCa, di] = 0
-	Neurons[ni, SahpN, di] = 0
-	Neurons[ni, Gsahp, di] = 0
-	Neurons[ni, GknaMed, di] = 0
-	Neurons[ni, GknaSlow, di] = 0
-	Neurons[ni, KirM, di] = ac.Kir.Mrest
-	Neurons[ni, Gkir, di] = 0
+	Neurons[ni, di, MahpN] = 0
+	Neurons[ni, di, Gmahp] = 0
+	Neurons[ni, di, SahpCa] = 0
+	Neurons[ni, di, SahpN] = 0
+	Neurons[ni, di, Gsahp] = 0
+	Neurons[ni, di, GknaMed] = 0
+	Neurons[ni, di, GknaSlow] = 0
+	Neurons[ni, di, KirM] = ac.Kir.Mrest
+	Neurons[ni, di, Gkir] = 0
 
-	Neurons[ni, GnmdaSyn, di] = 0
-	Neurons[ni, Gnmda, di] = 0
-	Neurons[ni, GnmdaMaint, di] = 0
-	Neurons[ni, GnmdaLrn, di] = 0
-	Neurons[ni, NmdaCa, di] = 0
+	Neurons[ni, di, GnmdaSyn] = 0
+	Neurons[ni, di, Gnmda] = 0
+	Neurons[ni, di, GnmdaMaint] = 0
+	Neurons[ni, di, GnmdaLrn] = 0
+	Neurons[ni, di, NmdaCa] = 0
 
-	Neurons[ni, GgabaB, di] = 0
-	Neurons[ni, GABAB, di] = 0
-	Neurons[ni, GABABx, di] = 0
+	Neurons[ni, di, GgabaB] = 0
+	Neurons[ni, di, GABAB] = 0
+	Neurons[ni, di, GABABx] = 0
 
-	Neurons[ni, Gvgcc, di] = 0
-	Neurons[ni, VgccM, di] = 0
-	Neurons[ni, VgccH, di] = 0
-	Neurons[ni, Gak, di] = 0
-	Neurons[ni, VgccCaInt, di] = 0
+	Neurons[ni, di, Gvgcc] = 0
+	Neurons[ni, di, VgccM] = 0
+	Neurons[ni, di, VgccH] = 0
+	Neurons[ni, di, Gak] = 0
+	Neurons[ni, di, VgccCaInt] = 0
 
-	Neurons[ni, SKCaIn, di] = 1
-	Neurons[ni, SKCaR, di] = 0
-	Neurons[ni, SKCaM, di] = 0
-	Neurons[ni, Gsk, di] = 0
+	Neurons[ni, di, SKCaIn] = 1
+	Neurons[ni, di, SKCaR] = 0
+	Neurons[ni, di, SKCaM] = 0
+	Neurons[ni, di, Gsk] = 0
 
-	Neurons[ni, GeExt, di] = 0
-	Neurons[ni, GeRaw, di] = 0
-	Neurons[ni, GiRaw, di] = 0
-	Neurons[ni, GModRaw, di] = 0
-	Neurons[ni, GModSyn, di] = 0
-	Neurons[ni, GMaintRaw, di] = 0
-	Neurons[ni, GMaintSyn, di] = 0
+	Neurons[ni, di, GeExt] = 0
+	Neurons[ni, di, GeRaw] = 0
+	Neurons[ni, di, GiRaw] = 0
+	Neurons[ni, di, GModRaw] = 0
+	Neurons[ni, di, GModSyn] = 0
+	Neurons[ni, di, GMaintRaw] = 0
+	Neurons[ni, di, GMaintSyn] = 0
 
-	Neurons[ni, SSGiDend, di] = 0
+	Neurons[ni, di, SSGiDend] = 0
 
-	Neurons[ni, Burst, di] = 0
-	Neurons[ni, BurstPrv, di] = 0
+	Neurons[ni, di, Burst] = 0
+	Neurons[ni, di, BurstPrv] = 0
 
-	Neurons[ni, CtxtGe, di] = 0
-	Neurons[ni, CtxtGeRaw, di] = 0
-	Neurons[ni, CtxtGeOrig, di] = 0
+	Neurons[ni, di, CtxtGe] = 0
+	Neurons[ni, di, CtxtGeRaw] = 0
+	Neurons[ni, di, CtxtGeOrig] = 0
 
 	for i := range 8 {
-		Neurons[ni, SpkBin0+NeuronVars(i), di] = 0.0
+		Neurons[ni, di, SpkBin0+NeuronVars(i)] = 0.0
 	}
 
 	ac.InitLongActs(ctx, ni, di)
@@ -1050,11 +1050,11 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 // but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
-	Neurons[ni, SpkPrv, di] = 0
-	Neurons[ni, SpkSt1, di] = 0
-	Neurons[ni, SpkSt2, di] = 0
-	Neurons[ni, ActM, di] = 0
-	Neurons[ni, ActP, di] = 0
+	Neurons[ni, di, SpkPrv] = 0
+	Neurons[ni, di, SpkSt1] = 0
+	Neurons[ni, di, SpkSt2] = 0
+	Neurons[ni, di, ActM] = 0
+	Neurons[ni, di, ActP] = 0
 }
 
 ////////  Cycle
@@ -1066,8 +1066,8 @@ func (ac *ActParams) NMDAFromRaw(ctx *Context, ni, di uint32, geTot float32) {
 		return
 	}
 	geT := max(geTot, 0.0)
-	Neurons[ni, GnmdaSyn, di] = ac.NMDA.NMDASyn(Neurons[ni, GnmdaSyn, di], geT)
-	Neurons[ni, Gnmda, di] = ac.NMDA.Gnmda(Neurons[ni, GnmdaSyn, di], Neurons[ni, VmDend, di])
+	Neurons[ni, di, GnmdaSyn] = ac.NMDA.NMDASyn(Neurons[ni, di, GnmdaSyn], geT)
+	Neurons[ni, di, Gnmda] = ac.NMDA.Gnmda(Neurons[ni, di, GnmdaSyn], Neurons[ni, di, VmDend])
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
 
@@ -1080,26 +1080,26 @@ func (ac *ActParams) MaintNMDAFromRaw(ctx *Context, ni, di uint32) {
 	if ac.SMaint.On.IsTrue() {
 		ac.SMaintFromISI(ctx, ni, di)
 	}
-	Neurons[ni, GMaintSyn, di] = ac.MaintNMDA.NMDASyn(Neurons[ni, GMaintSyn, di], Neurons[ni, GMaintRaw, di])
-	Neurons[ni, GnmdaMaint, di] = ac.MaintNMDA.Gnmda(Neurons[ni, GMaintSyn, di], Neurons[ni, VmDend, di])
+	Neurons[ni, di, GMaintSyn] = ac.MaintNMDA.NMDASyn(Neurons[ni, di, GMaintSyn], Neurons[ni, di, GMaintRaw])
+	Neurons[ni, di, GnmdaMaint] = ac.MaintNMDA.Gnmda(Neurons[ni, di, GMaintSyn], Neurons[ni, di, VmDend])
 }
 
 // SMaintFromISI updates the SMaint self-maintenance current into GMaintRaw
 func (ac *ActParams) SMaintFromISI(ctx *Context, ni, di uint32) {
 	nix := GetNetworkIxs(0)
-	isi := Neurons[ni, ISIAvg, di]
+	isi := Neurons[ni, di, ISIAvg]
 	if isi < ac.SMaint.ISI.Min || isi > ac.SMaint.ISI.Max {
 		return
 	}
 	ndi := di*nix.NNeurons + ni
-	smp := Neurons[ni, SMaintP, di]
+	smp := Neurons[ni, di, SMaintP]
 	smp *= GetRandomNumber(ndi, ctx.RandCounter.Counter, RandFunActSMaintP)
 	trg := ac.SMaint.ExpInt(isi)
 	if smp <= trg {
 		smp = 1
-		Neurons[ni, GMaintRaw, di] += ac.SMaint.Gbar
+		Neurons[ni, di, GMaintRaw] += ac.SMaint.Gbar
 	}
-	Neurons[ni, SMaintP, di] = smp
+	Neurons[ni, di, SMaintP] = smp
 }
 
 // GvgccFromVm updates all the VGCC voltage-gated calcium channel variables
@@ -1108,53 +1108,53 @@ func (ac *ActParams) GvgccFromVm(ctx *Context, ni, di uint32) {
 	if ac.VGCC.Gbar == 0 {
 		return
 	}
-	Neurons[ni, Gvgcc, di] = ac.VGCC.Gvgcc(Neurons[ni, VmDend, di], Neurons[ni, VgccM, di], Neurons[ni, VgccH, di])
+	Neurons[ni, di, Gvgcc] = ac.VGCC.Gvgcc(Neurons[ni, di, VmDend], Neurons[ni, di, VgccM], Neurons[ni, di, VgccH])
 	var dm, dh float32
-	ac.VGCC.DMHFromV(Neurons[ni, VmDend, di], Neurons[ni, VgccM, di], Neurons[ni, VgccH, di], &dm, &dh)
-	Neurons[ni, VgccM, di] += dm
-	Neurons[ni, VgccH, di] += dh
+	ac.VGCC.DMHFromV(Neurons[ni, di, VmDend], Neurons[ni, di, VgccM], Neurons[ni, di, VgccH], &dm, &dh)
+	Neurons[ni, di, VgccM] += dm
+	Neurons[ni, di, VgccH] += dh
 	// note: may be overwritten!
-	Neurons[ni, VgccCa, di] = ac.VGCC.CaFromG(Neurons[ni, VmDend, di], Neurons[ni, Gvgcc, di], Neurons[ni, VgccCa, di])
+	Neurons[ni, di, VgccCa] = ac.VGCC.CaFromG(Neurons[ni, di, VmDend], Neurons[ni, di, Gvgcc], Neurons[ni, di, VgccCa])
 }
 
 // GkFromVm updates all the Gk-based conductances: Mahp, KNa, Gak
 func (ac *ActParams) GkFromVm(ctx *Context, ni, di uint32) {
-	vm := Neurons[ni, Vm, di]
-	vmd := Neurons[ni, VmDend, di]
-	mahpN := Neurons[ni, MahpN, di]
+	vm := Neurons[ni, di, Vm]
+	vmd := Neurons[ni, di, VmDend]
+	mahpN := Neurons[ni, di, MahpN]
 	gmahp := ac.Mahp.GmAHP(vm, &mahpN)
-	Neurons[ni, Gmahp, di] = gmahp
-	Neurons[ni, MahpN, di] = mahpN
+	Neurons[ni, di, Gmahp] = gmahp
+	Neurons[ni, di, MahpN] = mahpN
 
-	gsahp := Neurons[ni, Gsahp, di]
+	gsahp := Neurons[ni, di, Gsahp]
 
 	gak := ac.AK.Gak(vmd)
-	Neurons[ni, Gak, di] = gak
+	Neurons[ni, di, Gak] = gak
 
-	nkirM := Neurons[ni, KirM, di]
+	nkirM := Neurons[ni, di, KirM]
 	gkir := ac.Kir.Gkir(vm, nkirM)
-	Neurons[ni, Gkir, di] = gkir
+	Neurons[ni, di, Gkir] = gkir
 	nkirM += ac.Kir.DM(chans.VToBio(vm), nkirM)
-	Neurons[ni, KirM, di] = nkirM
+	Neurons[ni, di, KirM] = nkirM
 
 	gktot := gmahp + gsahp + gak + gkir
 
 	if ac.KNa.On.IsTrue() {
-		gknaMed := Neurons[ni, GknaMed, di]
-		gknaSlow := Neurons[ni, GknaSlow, di]
-		ac.KNa.GcFromSpike(&gknaMed, &gknaSlow, Neurons[ni, Spike, di] > .5)
-		Neurons[ni, GknaMed, di] = gknaMed
-		Neurons[ni, GknaSlow, di] = gknaSlow
+		gknaMed := Neurons[ni, di, GknaMed]
+		gknaSlow := Neurons[ni, di, GknaSlow]
+		ac.KNa.GcFromSpike(&gknaMed, &gknaSlow, Neurons[ni, di, Spike] > .5)
+		Neurons[ni, di, GknaMed] = gknaMed
+		Neurons[ni, di, GknaSlow] = gknaSlow
 		gktot += gknaMed + gknaSlow
 	}
 
-	Neurons[ni, Gk, di] = gktot
+	Neurons[ni, di, Gk] = gktot
 }
 
 // KNaNewState does TrialSlow version of KNa during NewState if option is set
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
-		Neurons[ni, GknaSlow, di] += ac.KNa.Slow.Max * Neurons[ni, SpkPrv, di]
+		Neurons[ni, di, GknaSlow] += ac.KNa.Slow.Max * Neurons[ni, di, SpkPrv]
 	}
 }
 
@@ -1163,36 +1163,36 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 	if ac.SKCa.Gbar == 0 {
 		return
 	}
-	skcar := Neurons[ni, SKCaR, di]
-	skcain := Neurons[ni, SKCaIn, di]
-	Neurons[ni, SKCaM, di] = ac.SKCa.MFromCa(skcar, Neurons[ni, SKCaM, di])
-	ac.SKCa.CaInRFromSpike(Neurons[ni, Spike, di], Neurons[ni, CaSpkD, di], &skcain, &skcar)
-	Neurons[ni, SKCaR, di] = skcar
-	Neurons[ni, SKCaIn, di] = skcain
-	Neurons[ni, Gsk, di] = ac.SKCa.Gbar * Neurons[ni, SKCaM, di]
-	Neurons[ni, Gk, di] += Neurons[ni, Gsk, di]
+	skcar := Neurons[ni, di, SKCaR]
+	skcain := Neurons[ni, di, SKCaIn]
+	Neurons[ni, di, SKCaM] = ac.SKCa.MFromCa(skcar, Neurons[ni, di, SKCaM])
+	ac.SKCa.CaInRFromSpike(Neurons[ni, di, Spike], Neurons[ni, di, CaSpkD], &skcain, &skcar)
+	Neurons[ni, di, SKCaR] = skcar
+	Neurons[ni, di, SKCaIn] = skcain
+	Neurons[ni, di, Gsk] = ac.SKCa.Gbar * Neurons[ni, di, SKCaM]
+	Neurons[ni, di, Gk] += Neurons[ni, di, Gsk]
 }
 
 // GeFromSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFromSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
-	Neurons[ni, GeExt, di] = 0.0
+	Neurons[ni, di, GeExt] = 0.0
 	geS := geSyn
 	geE := geExt
 	if ac.Clamp.Add.IsTrue() && NeuronHasFlag(NeuronHasExt, ni, di) {
-		Neurons[ni, GeExt, di] = Neurons[ni, Ext, di] * ac.Clamp.Ge
-		geS += Neurons[ni, GeExt, di]
+		Neurons[ni, di, GeExt] = Neurons[ni, di, Ext] * ac.Clamp.Ge
+		geS += Neurons[ni, di, GeExt]
 	}
 
 	if ac.Clamp.Add.IsFalse() && NeuronHasFlag(NeuronHasExt, ni, di) {
-		geS = Neurons[ni, Ext, di] * ac.Clamp.Ge
-		Neurons[ni, GeExt, di] = geS
+		geS = Neurons[ni, di, Ext] * ac.Clamp.Ge
+		Neurons[ni, di, GeExt] = geS
 		geE = 0 // no extra in this case
 	}
 
-	Neurons[ni, Ge, di] = geS + geE
-	if Neurons[ni, Ge, di] < 0.0 {
-		Neurons[ni, Ge, di] = 0.0
+	Neurons[ni, di, Ge] = geS + geE
+	if Neurons[ni, di, Ge] < 0.0 {
+		Neurons[ni, di, Ge] = 0.0
 	}
 	ac.AddGeNoise(ctx, ni, di)
 }
@@ -1202,11 +1202,11 @@ func (ac *ActParams) AddGeNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
-	p := Neurons[ni, GeNoiseP, di]
+	p := Neurons[ni, di, GeNoiseP]
 	ge := ac.Noise.PGe(ctx, &p, ni, di)
-	Neurons[ni, GeNoiseP, di] = p
-	Neurons[ni, GeNoise, di] = ac.Dt.GeSynFromRaw(Neurons[ni, GeNoise, di], ge)
-	Neurons[ni, Ge, di] += Neurons[ni, GeNoise, di]
+	Neurons[ni, di, GeNoiseP] = p
+	Neurons[ni, di, GeNoise] = ac.Dt.GeSynFromRaw(Neurons[ni, di, GeNoise], ge)
+	Neurons[ni, di, Ge] += Neurons[ni, di, GeNoise]
 }
 
 // AddGiNoise updates nrn.GiNoise if active
@@ -1214,10 +1214,10 @@ func (ac *ActParams) AddGiNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
-	p := Neurons[ni, GiNoiseP, di]
+	p := Neurons[ni, di, GiNoiseP]
 	gi := ac.Noise.PGi(ctx, &p, ni, di)
-	Neurons[ni, GiNoiseP, di] = p
-	Neurons[ni, GiNoise, di] = ac.Dt.GiSynFromRaw(Neurons[ni, GiNoise, di], gi)
+	Neurons[ni, di, GiNoiseP] = p
+	Neurons[ni, di, GiNoise] = ac.Dt.GiSynFromRaw(Neurons[ni, di, GiNoise], gi)
 }
 
 // GiFromSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
@@ -1262,20 +1262,20 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 	updtVm := true
 	// note: nrn.ISI has NOT yet been updated at this point: 0 right after spike, etc
 	// so it takes a full 3 time steps after spiking for Tr period
-	isi := Neurons[ni, ISI, di]
+	isi := Neurons[ni, di, ISI]
 	if ac.Spikes.Tr > 0 && isi >= 0 && isi < float32(ac.Spikes.Tr) {
 		updtVm = false // don't update the spiking vm during refract
 	}
 
-	ge := Neurons[ni, Ge, di] * ac.Gbar.E
-	gi := Neurons[ni, Gi, di] * ac.Gbar.I
-	gk := Neurons[ni, Gk, di] * ac.Gbar.K
+	ge := Neurons[ni, di, Ge] * ac.Gbar.E
+	gi := Neurons[ni, di, Gi] * ac.Gbar.I
+	gk := Neurons[ni, di, Gk] * ac.Gbar.K
 	var nvm, inet, expi float32
 	if updtVm {
-		ac.VmInteg(Neurons[ni, Vm, di], ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
+		ac.VmInteg(Neurons[ni, di, Vm], ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
 		if updtVm && ac.Spikes.Exp.IsTrue() { // add spike current if relevant
 			var exVm float32
-			exVm = 0.5 * (nvm + Neurons[ni, Vm, di]) // midpoint for this
+			exVm = 0.5 * (nvm + Neurons[ni, di, Vm]) // midpoint for this
 			expi = ac.Gbar.L * ac.Spikes.ExpSlope *
 				math32.FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope)
 			if expi > ac.Dt.VmTau {
@@ -1284,17 +1284,17 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 			inet += expi
 			nvm = ac.VmFromInet(nvm, ac.Dt.VmDt, expi)
 		}
-		Neurons[ni, Vm, di] = nvm
-		Neurons[ni, Inet, di] = inet
+		Neurons[ni, di, Vm] = nvm
+		Neurons[ni, di, Inet] = inet
 	} else { // decay back to VmR
 		var dvm float32
 		if int32(isi) == ac.Spikes.Tr-1 {
-			dvm = ac.Spikes.VmR - Neurons[ni, Vm, di]
+			dvm = ac.Spikes.VmR - Neurons[ni, di, Vm]
 		} else {
-			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons[ni, Vm, di])
+			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - Neurons[ni, di, Vm])
 		}
-		Neurons[ni, Vm, di] += dvm
-		Neurons[ni, Inet, di] = dvm * ac.Dt.VmTau
+		Neurons[ni, di, Vm] += dvm
+		Neurons[ni, di, Inet] = dvm * ac.Dt.VmTau
 	}
 
 	glEff := float32(1)
@@ -1302,12 +1302,12 @@ func (ac *ActParams) VmFromG(ctx *Context, ni, di uint32) {
 		glEff += ac.Dend.GbarR
 	}
 	var giEff float32
-	giEff = gi + ac.Gbar.I*Neurons[ni, SSGiDend, di]
-	ac.VmInteg(Neurons[ni, VmDend, di], ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
+	giEff = gi + ac.Gbar.I*Neurons[ni, di, SSGiDend]
+	ac.VmInteg(Neurons[ni, di, VmDend], ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
 	if updtVm {
 		nvm = ac.VmFromInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
 	}
-	Neurons[ni, VmDend, di] = nvm
+	Neurons[ni, di, VmDend] = nvm
 }
 
 // SpikeFromVmVars computes Spike from Vm and ISI-based activation, using pointers to variables
@@ -1358,18 +1358,18 @@ func (ac *ActParams) SpikeFromVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrn
 
 // SpikeFromVm computes Spike from Vm and ISI-based activation
 func (ac *ActParams) SpikeFromVm(ctx *Context, ni, di uint32) {
-	nrnISI := Neurons[ni, ISI, di]
-	nrnISIAvg := Neurons[ni, ISIAvg, di]
-	nrnSpike := Neurons[ni, Spike, di]
-	nrnSpiked := Neurons[ni, Spiked, di]
-	nrnAct := Neurons[ni, Act, di]
-	nrnVm := Neurons[ni, Vm, di]
+	nrnISI := Neurons[ni, di, ISI]
+	nrnISIAvg := Neurons[ni, di, ISIAvg]
+	nrnSpike := Neurons[ni, di, Spike]
+	nrnSpiked := Neurons[ni, di, Spiked]
+	nrnAct := Neurons[ni, di, Act]
+	nrnVm := Neurons[ni, di, Vm]
 	ac.SpikeFromVmVars(&nrnISI, &nrnISIAvg, &nrnSpike, &nrnSpiked, &nrnAct, nrnVm)
-	Neurons[ni, ISI, di] = nrnISI
-	Neurons[ni, ISIAvg, di] = nrnISIAvg
-	Neurons[ni, Spike, di] = nrnSpike
-	Neurons[ni, Spiked, di] = nrnSpiked
-	Neurons[ni, Act, di] = nrnAct
+	Neurons[ni, di, ISI] = nrnISI
+	Neurons[ni, di, ISIAvg] = nrnISIAvg
+	Neurons[ni, di, Spike] = nrnSpike
+	Neurons[ni, di, Spiked] = nrnSpiked
+	Neurons[ni, di, Act] = nrnAct
 }
 
 //gosl:end

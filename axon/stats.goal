@@ -33,15 +33,15 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 			}
 			trg := false
 			if ly.Type == CompareLayer || ly.Type == TargetLayer {
-				if Neurons[ni, Target, di] > thr {
+				if Neurons[ni, di, Target] > thr {
 					trg = true
 				}
 			} else {
-				if Neurons[ni, ActP, di] > thr {
+				if Neurons[ni, di, ActP] > thr {
 					trg = true
 				}
 			}
-			if Neurons[ni, ActM, di] > thr {
+			if Neurons[ni, di, ActM] > thr {
 				if !trg {
 					wrong++
 				}
@@ -77,8 +77,8 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < ydim; yi++ {
 				lni := uint32(yi*xdim + xi)
 				ni := ly.NeurStIndex + lni
-				sumM += Neurons[ni, ActM, di]
-				sumP += Neurons[ni, ActP, di]
+				sumM += Neurons[ni, di, ActM]
+				sumP += Neurons[ni, di, ActP]
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -114,8 +114,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIndex, plusIndex 
 			for yi := 0; yi < nun; yi++ {
 				lni := uint32(xi*nun + yi)
 				ni := ly.NeurStIndex + lni
-				sumM += Neurons[ni, ActM, di]
-				sumP += Neurons[ni, ActP, di]
+				sumM += Neurons[ni, di, ActM]
+				sumP += Neurons[ni, di, ActP]
 			}
 			if sumM > maxM {
 				mIndex = xi
@@ -179,8 +179,8 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 			if NeuronIsOff(ni) {
 				continue
 			}
-			ap := Neurons[ni, ActP, di] - avgP // zero mean = correl
-			am := Neurons[ni, ActM, di] - avgM
+			ap := Neurons[ni, di, ActP] - avgP // zero mean = correl
+			am := Neurons[ni, di, ActM] - avgM
 			cosv += ap * am
 			ssm += am * am
 			ssp += ap * ap

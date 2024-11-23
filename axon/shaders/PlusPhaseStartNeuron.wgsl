@@ -83,12 +83,12 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 ///////////// import: "act-layer.go"
 fn LayerParams_PlusPhaseStartNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
 	if (NeuronHasFlag(NeuronHasTarg, ni, di)) { // will be clamped in plus phase
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Ext),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Target),u32(di))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ext))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Target))];
 		NeuronSetFlag(NeuronHasExt, ni, di);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ISI),u32(di))] = -1.0;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ISI))] = -1.0;
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2],
-		u32(ni),u32(ISIAvg),u32(di))] = -1.0;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActInt),u32(di))] = (*ly).Acts.Init.Act;
+		u32(ni),u32(di),u32(ISIAvg))] = -1.0;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] = (*ly).Acts.Init.Act;
 	}
 }
 
@@ -124,10 +124,10 @@ struct PathScaleParams {
 
 ///////////// import: "act.go"
 fn NeuronHasFlag(flag: NeuronFlags, ni: u32,di: u32) -> bool {
-	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NeurFlags),u32(di))])) & flag) > 0; // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NeurFlags))])) & flag) > 0; // weird: != 0 does NOT work on GPU
 }
 fn NeuronSetFlag(flag: NeuronFlags, ni: u32,di: u32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NeurFlags),u32(di))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NeurFlags),u32(di))]) | u32(flag));
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NeurFlags))] = bitcast<f32>(bitcast<u32>(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NeurFlags))]) | u32(flag));
 }
 struct SpikeParams {
 	Thr: f32,

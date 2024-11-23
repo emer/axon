@@ -487,7 +487,7 @@ func (ly *Layer) UnitValue1D(varIndex int, idx, di int) float32 {
 	} else if NeuronVars(varIndex) >= NeuronVarsN {
 		return NeuronAvgs.Value(int(ni), int(NeuronVars(varIndex)-NeuronVarsN))
 	} else {
-		return Neurons.Value(int(ni), int(varIndex), int(di))
+		return Neurons.Value(int(ni), int(di), int(varIndex))
 	}
 	return math32.NaN()
 }
@@ -600,12 +600,12 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 	}
 	nvar := vidx
 
-	v0 := Neurons.Value(int(ly.NeurStIndex), int(nvar), int(0))
+	v0 := Neurons.Value(int(ly.NeurStIndex), int(0), int(nvar))
 	min = v0
 	max = v0
 	for lni := uint32(1); lni < nn; lni++ {
 		ni := ly.NeurStIndex + lni
-		vl := Neurons.Value(int(ni), int(nvar), int(0))
+		vl := Neurons.Value(int(ni), int(0), int(nvar))
 		if vl < min {
 			min = vl
 		}

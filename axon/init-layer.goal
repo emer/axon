@@ -307,9 +307,9 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 		if ahp == 1 {
 			lt := ly.Type
 			if lt == PTMaintLayer {
-				Neurons[ni, CtxtGe, di] = 0
-				Neurons[ni, CtxtGeRaw, di] = 0
-				Neurons[ni, CtxtGeOrig, di] = 0
+				Neurons[ni, di, CtxtGe] = 0
+				Neurons[ni, di, CtxtGeRaw] = 0
+				Neurons[ni, di, CtxtGeOrig] = 0
 			}
 		}
 	}

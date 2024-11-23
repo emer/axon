@@ -82,10 +82,10 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 
 ///////////// import: "act-layer.go"
 fn LayerParams_NewStateNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(BurstPrv),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Burst),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SpkPrv),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkD),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SpkMax),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SpkMaxCa),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(BurstPrv))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Burst))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkPrv))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkD))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkMax))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkMaxCa))] = 0.0;
 	ActParams_DecayState(&(*ly).Acts, ctx, ni, di, (*ly).Acts.Decay.Act, (*ly).Acts.Decay.Glong, (*ly).Acts.Decay.AHP);
 	ActParams_KNaNewState(&(*ly).Acts, ctx, ni, di);
 }
@@ -245,88 +245,88 @@ struct ActParams {
 	PopCode: PopCodeParams,
 }
 fn ActParams_DecayLearnCa(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32, decay: f32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GnmdaLrn),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GnmdaLrn),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NmdaCa),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NmdaCa),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccCa),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccCa),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccCaInt),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccCaInt),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaLrn),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaLrn),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkM),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkM),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkP),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkP),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkD),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkD),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NrnCaM),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NrnCaM),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NrnCaP),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NrnCaP),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NrnCaD),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(NrnCaD),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SKCaIn),u32(di))] += decay * (1.0 - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SKCaIn),u32(di))]);
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SKCaR),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SKCaR),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SKCaM),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SKCaM),u32(di))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaLrn))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaLrn))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NmdaCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NmdaCa))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCa))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCaInt))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCaInt))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaLrn))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaLrn))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkM))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkM))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkP))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkP))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkD))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkD))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NrnCaM))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NrnCaM))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NrnCaP))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NrnCaP))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NrnCaD))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NrnCaD))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaIn))] += decay * (1.0 - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaIn))]);
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaR))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaR))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaM))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaM))];
 }
 fn ActParams_DecayAHP(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32, decay: f32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(MahpN),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(MahpN),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gmahp),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gmahp),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpCa),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpCa),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpN),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpN),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gsahp),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gsahp),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GknaMed),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GknaMed),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GknaSlow),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GknaSlow),u32(di))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(MahpN))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(MahpN))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gmahp))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gmahp))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpCa))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpN))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpN))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsahp))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsahp))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaMed))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaMed))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaSlow))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaSlow))];
 	var kirMrest = (*ac).Kir.Mrest;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(KirM),u32(di))] += decay * (kirMrest - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(KirM),u32(di))]);
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gkir),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gkir),u32(di))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(KirM))] += decay * (kirMrest - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(KirM))]);
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gkir))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gkir))];
 }
 fn ActParams_DecayState(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32, decay: f32,glong: f32,ahp: f32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ISIAvg),u32(di))] = -1.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActInt),u32(di))] = (*ac).Init.Act;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Spiked),u32(di))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ISIAvg))] = -1.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] = (*ac).Init.Act;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Spiked))] = 0.0;
 	for (var i=0; i<8; i++) {
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SpkBin0 + NeuronVars(i)),u32(di))] = 0.0;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkBin0 + NeuronVars(i)))] = 0.0;
 	}
 	if (decay > 0) { // no-op for most, but not all..
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Spike),u32(di))] = 0.0;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Act),u32(di))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Act),u32(di))] - (*ac).Init.Act);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActInt),u32(di))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActInt),u32(di))] - (*ac).Init.Act);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeSyn),u32(di))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeSyn),u32(di))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))]);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Ge),u32(di))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Ge),u32(di))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))]);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gi),u32(di))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gi),u32(di))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GiBase))]);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gk),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gk),u32(di))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Vm),u32(di))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Vm),u32(di))] - (*ac).Init.Vm);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeNoise),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeNoise),u32(di))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiNoise),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiNoise),u32(di))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiSyn),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiSyn),u32(di))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeInt),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeInt),u32(di))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiInt),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiInt),u32(di))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeIntNorm),u32(di))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeIntNorm),u32(di))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Spike))] = 0.0;
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] - (*ac).Init.Act);
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] - (*ac).Init.Act);
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeSyn))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeSyn))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))]);
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ge))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ge))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))]);
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gi))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gi))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GiBase))]);
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gk))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gk))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Vm))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Vm))] - (*ac).Init.Vm);
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeNoise))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeNoise))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiNoise))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiNoise))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeInt))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeInt))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiInt))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiInt))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeIntNorm))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeIntNorm))];
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VmDend),u32(di))] -= glong * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VmDend),u32(di))] - (*ac).Init.Vm);
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VmDend))] -= glong * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VmDend))] - (*ac).Init.Vm);
 	if (ahp > 0) {
 		ActParams_DecayAHP(ac, ctx, ni, di, ahp);
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GgabaB),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GgabaB),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GABAB),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GABAB),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GABABx),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GABABx),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GnmdaSyn),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GnmdaSyn),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gnmda),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gnmda),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GMaintSyn),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GMaintSyn),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GnmdaMaint),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GnmdaMaint),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gvgcc),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gvgcc),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccM),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccM),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccH),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(VgccH),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gak),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gak),u32(di))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gsk),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gsk),u32(di))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GgabaB))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GgabaB))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABAB))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABAB))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABABx))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABABx))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaSyn))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaSyn))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gnmda))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gnmda))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GMaintSyn))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GMaintSyn))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaMaint))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaMaint))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gvgcc))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gvgcc))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccM))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccM))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccH))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccH))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gak))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gak))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsk))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsk))];
 	if ((*ac).Decay.LearnCa > 0) { // learning-based Ca values -- not usual
 		ActParams_DecayLearnCa(ac, ctx, ni, di, (*ac).Decay.LearnCa);
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Inet),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeRaw),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GiRaw),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GModRaw),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GModSyn),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GMaintRaw),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SSGiDend),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GeExt),u32(di))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CtxtGeOrig),u32(di))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CtxtGeOrig),u32(di))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Inet))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeRaw))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiRaw))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GModRaw))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GModSyn))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GMaintRaw))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SSGiDend))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeExt))] = 0.0;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CtxtGeOrig))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CtxtGeOrig))];
 }
 fn ActParams_KNaNewState(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
 	if ((*ac).KNa.On == 1 && (*ac).KNa.TrialSlow == 1) {
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(GknaSlow),u32(di))] += (*ac).KNa.Slow.Max * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SpkPrv),u32(di))];
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaSlow))] += (*ac).KNa.Slow.Max * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkPrv))];
 	}
 }
 

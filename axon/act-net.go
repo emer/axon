@@ -393,7 +393,7 @@ func GPUTestWrite(i uint32) { //gosl:kernel
 	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
 	for vi := Spike; vi < NeuronVarsN; vi++ {
-		Neurons.Set(float32(ni*1000+uint32(vi)), int(ni), int(vi), int(di))
+		Neurons.Set(float32(ni*1000+uint32(vi)), int(ni), int(di), int(vi))
 	}
 }
 

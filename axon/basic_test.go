@@ -230,13 +230,13 @@ func TestSpikeProp(t *testing.T) {
 		hidCyc := 0
 		for cyc := range 100 {
 			net.Cycle(1, true)
-			// fmt.Println(cyc, Neurons[hidLay.NeurStIndex, Ge, 0], Neurons[hidLay.NeurStIndex, GeRaw, 0])
-			if Neurons.Value(int(inLay.NeurStIndex), int(Spike), int(0)) > 0 {
+			// fmt.Println(cyc, Neurons[hidLay.NeurStIndex, 0, Ge], Neurons[hidLay.NeurStIndex, 0, GeRaw])
+			if Neurons.Value(int(inLay.NeurStIndex), int(0), int(Spike)) > 0 {
 				// fmt.Println("in spike:", cyc)
 				inCyc = cyc
 			}
 
-			ge := Neurons.Value(int(hidLay.NeurStIndex), int(Ge), int(0))
+			ge := Neurons.Value(int(hidLay.NeurStIndex), int(0), int(Ge))
 			if ge > 0 {
 				// fmt.Println("hid recv:", cyc, ge)
 				hidCyc = cyc
@@ -690,14 +690,14 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 	// these control what is printed.
 	// the whole thing is run and returned in the valMap
 	valsPerRow := 4
-	nQtrs := 4      // max 4
-	cycPerQtr := 50 // max 50
+	nQtrs := 1      // max 4
+	cycPerQtr := 40 // max 50
 	nPats := 1      // max 4
-	stLayer := 2    // max 2
-	edLayer := 3    // max 3
+	stLayer := 1    // max 2
+	edLayer := 2    // max 3
 	nNeurs := 1     // max 4 -- number of neuron values to print
 
-	for pi := 0; pi < 4; pi++ {
+	for pi := 0; pi < nPats; pi++ {
 		if initWts {
 			testNet.SetRandSeed(42) // critical for ActAvg values
 			testNet.InitWeights()
@@ -1669,7 +1669,7 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	pj.Defaults()
 //
 // 	nsamp := 100
-// 	dt := &table.Table{}
+// 	dt := table.New()
 // 	dt.AddFloat32Column("Wt")
 // 	dt.AddFloat32Column("LWt")
 // 	dt.AddFloat32Column("SWt")

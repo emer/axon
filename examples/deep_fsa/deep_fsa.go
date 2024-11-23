@@ -451,7 +451,7 @@ func (ss *Sim) TrialStats(di int) {
 	ss.Stats.SetFloat("PhaseDiff", float64(inp.Values[di].PhaseDiff.Cor))
 	_, minusIndexes, _ := inp.LocalistErr4D(ctx)
 	minusIndex := minusIndexes[di]
-	trgExt := axon.Neurons[axon.Ext, trg.NeurStIndex+uint32(minusIndex), di]
+	trgExt := axon.Neurons[trg.NeurStIndex+uint32(minusIndex), di, axon.Ext]
 	err := true
 	if trgExt > 0.5 {
 		err = false

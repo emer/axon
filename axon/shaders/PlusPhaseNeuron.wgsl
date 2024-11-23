@@ -84,9 +84,9 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
 	var pi = LayerParams_PoolIndex(ly, NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnSubPool))]);
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActP),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(ActInt),u32(di))];
-	var nrnCaSpkP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkP),u32(di))];
-	var nrnCaSpkD = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(CaSpkD),u32(di))];
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActP))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
+	var nrnCaSpkP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkP))];
+	var nrnCaSpkD = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaSpkD))];
 	var da = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvDA),u32(di))];
 	var ach = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvACh),u32(di))];
 	var mlr = RLRateParams_RLRateSigDeriv(&(*ly).Learn.RLRate, nrnCaSpkD, PoolAvgMax(AMCaSpkD, AMCycle, Max, lpi, di));
@@ -96,7 +96,7 @@ fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 	switch ((*ly).Type) {
 	case BLALayer: {
 		dlr = RLRateParams_RLRateDiff(&(*ly).Learn.RLRate, nrnCaSpkP, Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // delta on previous trial
-		2], u32(ni),u32(SpkPrv),u32(di))]);
+		2], u32(ni),u32(di),u32(SpkPrv))]);
 		if (!NeuroModParams_IsBLAExt(&(*ly).Learn.NeuroMod) && PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurSt),u32(0))] == 0) { // first pool
 			dlr = f32(0); // first pool is novelty / curiosity -- no learn
 		}
@@ -106,7 +106,7 @@ fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 		1], u32(GvVSPatchPosRPE),u32(di))];
 		modlr = NeuroModParams_LRMod(&(*ly).Learn.NeuroMod, da, ach);
 		mlr = RLRateParams_RLRateSigDeriv(&(*ly).Learn.RLRate, Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], // note: don't have proper max here
-		u32(ni),u32(SpkPrv),u32(di))], f32(f32(1)));
+		u32(ni),u32(di),u32(SpkPrv))], f32(f32(1)));
 	}
 	case MatrixLayer: {
 		if (hasRew) { // reward time
@@ -119,15 +119,15 @@ fn LayerParams_PlusPhaseNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 		dlr = RLRateParams_RLRateDiff(&(*ly).Learn.RLRate, nrnCaSpkP, nrnCaSpkD);
 	}
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(RLRate),u32(di))] = mlr * dlr * modlr;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(RLRate))] = mlr * dlr * modlr;
 	var tau: f32;
-	var sahpN = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpN),u32(di))];
-	var nrnSaphCa = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpCa),u32(di))];
+	var sahpN = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpN))];
+	var nrnSaphCa = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpCa))];
 	SahpParams_NinfTauFromCa(&(*ly).Acts.Sahp, nrnSaphCa, &sahpN, &tau);
 	nrnSaphCa = SahpParams_CaInt(&(*ly).Acts.Sahp, nrnSaphCa, nrnCaSpkD);
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpN),u32(di))] = sahpN;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(SahpCa),u32(di))] = nrnSaphCa;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(Gsahp),u32(di))] = SahpParams_GsAHP(&(*ly).Acts.Sahp, sahpN);
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpN))] = sahpN;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpCa))] = nrnSaphCa;
+	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsahp))] = SahpParams_GsAHP(&(*ly).Acts.Sahp, sahpN);
 }
 
 ///////////// import: "act-net.go"
