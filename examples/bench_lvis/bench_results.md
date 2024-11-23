@@ -16,11 +16,15 @@ and performance is roughly similar.
 
 # V2.0.0-dev0.2.2 webgpu initial
 
-Currently, can only handle -hiddenNeurs=4 due to memory limits!
+Currently, can only handle -hiddenNeurs=4 due to memory limits! wgpu issues need fixed.
 
 ```
 go test -gpu -hiddenNeurs=4 -verbose=false -ndata=1 -bench=. -run not 
 ```
+
+* 2.7 with ndata = 1 on GPU, with ndata=1  di still inner-most.
+* 9.7 on CPU = 3.6x speedup for GPU; CPU is sig slower due to atomic sendspikes.
+
 
 # v2.0.0-dev0.2.1 vgpu final 09/02/24 (linear SynCa approx)
 
