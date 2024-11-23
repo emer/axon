@@ -90,7 +90,7 @@ fn PlusPhasePool(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
 	var pi = Context_ItemIndex(&ctx, i);
-	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolLayerIdx),u32(di))];
+	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolLayerIdx))];
 	var layers=Layers[li]; LayerParams_PlusPhasePool(&layers, &ctx, pi, di);
 	Ctx[0] = ctx;
 }
@@ -1135,8 +1135,8 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 }
 fn PoolCycleToPlus(pi: u32,di: u32) {
 	for (var vr=0; vr<AMAvgDif; vr++) { // don't do AvgDif
-		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMPlus, Avg)),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMCycle, Avg)),u32(di))];
-		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMPlus, Max)),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMCycle, Max)),u32(di))];
+		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMPlus, Avg)))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMCycle, Avg)))];
+		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMPlus, Max)))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMCycle, Max)))];
 	}
 }
 

@@ -22,7 +22,9 @@ Currently, can only handle -hiddenNeurs=4 due to memory limits! wgpu issues need
 go test -gpu -hiddenNeurs=4 -verbose=false -ndata=1 -bench=. -run not 
 ```
 
-* 2.7 with ndata = 1 on GPU, with ndata=1  di still inner-most.
+* Indexing: Neurons[ni, di, var] is just slightly faster than Neurons[ni, var, di]: 2.69-70 vs. 2.71-2. And cycPerStep = 50 vs. 10 is about .1 faster.
+
+* 2.71 with ndata = 1 on GPU, with ndata=1  di still inner-most.
 * 9.7 on CPU = 3.6x speedup for GPU; CPU is sig slower due to atomic sendspikes.
 
 

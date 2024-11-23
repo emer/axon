@@ -128,7 +128,7 @@ fn LayerParams_SpecialPreGs(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 	var saveVal = f32(0); // sometimes we need to use a value computed here, for the post Gs step
 	var pil = pi - (*ly).PoolSt;
 	var pnn = u32(PoolNNeurons(pi));
-	var pni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnNeurIndex))] - u32(PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurSt),u32(di))]);
+	var pni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnNeurIndex))] - u32(PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolNeurSt))]);
 	var nrnCtxtGe = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CtxtGe))];
 	var nrnGeRaw = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeRaw))];
 	var hasRew = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvHasRew),u32(di))] > 0;
@@ -331,9 +331,9 @@ fn LayerParams_GFromRawSyn(ly: ptr<function,LayerParams>, ctx: ptr<function,Cont
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))] = ActParams_GiFromSyn(&(*ly).Acts, ctx, ni, di, Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))]);
 }
 fn LayerParams_GiInteg(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,ni: u32,di: u32) {
-	var giMult = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerGiMult),u32(di))];
-	var gi = giMult*Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))] + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))] + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiNoise))] + NeuroModParams_GiFromACh(&(*ly).Learn.NeuroMod, GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvACh),u32(di))]);
-	var ssgi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSGi),u32(di))];
+	var giMult = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerGiMult))];
+	var gi = giMult*Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))] + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))] + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiNoise))] + NeuroModParams_GiFromACh(&(*ly).Learn.NeuroMod, GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvACh),u32(di))]);
+	var ssgi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSGi))];
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gi))] = gi;
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SSGiDend))] = 0.0;
 	if ((*ctx).PlusPhase == 1 && (*ly).Type == PulvinarLayer) {
@@ -2063,11 +2063,11 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, phase, am)),u32(di))];
+	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolNNeurons(pi: u32) -> i32 {
-	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurEd),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-	2], u32(pi),u32(PoolNeurSt),u32(0))];
+	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(0),u32(PoolNeurEd))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
+	2], u32(pi),u32(0),u32(PoolNeurSt))];
 }
 
 ///////////// import: "rand.go"

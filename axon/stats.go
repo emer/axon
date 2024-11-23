@@ -147,8 +147,8 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		return am
 	}
 	pi := ly.Params.PoolIndex(uint32(poolIndex))
-	nsi := PoolsInt.Value(int(pi), int(PoolNeurSt), int(di))
-	nei := PoolsInt.Value(int(pi), int(PoolNeurEd), int(di))
+	nsi := PoolsInt.Value(int(pi), int(di), int(PoolNeurSt))
+	nei := PoolsInt.Value(int(pi), int(di), int(PoolNeurEd))
 	am.Init()
 	for lni := nsi; lni < nei; lni++ {
 		ni := ly.NeurStIndex + uint32(lni)
@@ -191,11 +191,11 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 		if dist != 0 {
 			cosv /= dist
 		}
-		LayerStates.Set(1-cosv, int(li), int(LayerPhaseDiff), int(di))
-		avg := LayerStates.Value(int(li), int(LayerPhaseDiffAvg), int(di))
-		vr := LayerStates.Value(int(li), int(LayerPhaseDiffVar), int(di))
+		LayerStates.Set(1-cosv, int(li), int(di), int(LayerPhaseDiff))
+		avg := LayerStates.Value(int(li), int(di), int(LayerPhaseDiffAvg))
+		vr := LayerStates.Value(int(li), int(di), int(LayerPhaseDiffVar))
 		ly.Params.Acts.Dt.AvgVarUpdate(&avg, &vr, 1-cosv)
-		LayerStates.Set(avg, int(li), int(LayerPhaseDiffAvg), int(di))
-		LayerStates.Set(vr, int(li), int(LayerPhaseDiffVar), int(di))
+		LayerStates.Set(avg, int(li), int(di), int(LayerPhaseDiffAvg))
+		LayerStates.Set(vr, int(li), int(di), int(LayerPhaseDiffVar))
 	}
 }

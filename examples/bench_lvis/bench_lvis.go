@@ -231,7 +231,7 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 			}
 			net.PlusPhase()
 			net.DWtToWt()
-			phasedif := axon.LayerStates.Value(int(outLay.Index), int(axon.LayerPhaseDiff), int(0))
+			phasedif := axon.LayerStates.Value(int(outLay.Index), int(0), int(axon.LayerPhaseDiff))
 			outPhaseDiff += 1.0 - phasedif
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE

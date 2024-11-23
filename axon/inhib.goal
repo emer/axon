@@ -127,22 +127,22 @@ func PoolInhib(fb *fsfffb.GiParams, pi, di uint32, gimult float32) {
 		PoolInhibZero(pi, di)
 		return
 	}
-	Pools[pi, fsfffb.FFAvg, di] += fb.FFAvgDt * (Pools[pi, fsfffb.FFs, di] - Pools[pi, fsfffb.FFAvg, di])
+	Pools[pi, di, fsfffb.FFAvg] += fb.FFAvgDt * (Pools[pi, di, fsfffb.FFs] - Pools[pi, di, fsfffb.FFAvg])
 
-	fsi := Pools[pi, fsfffb.FSi, di]
-	fsi = fb.FSiFromFFs(fsi, Pools[pi, fsfffb.FFs, di], Pools[pi, fsfffb.FBs, di])
-	Pools[pi, fsfffb.FSi, di] = fsi
-	clamped := PoolsInt[pi, Clamped, di] > 0
-	Pools[pi, fsfffb.FSGi, di] = fb.Gi * fb.FS(fsi, Pools[pi, fsfffb.GeExts, di], clamped)
+	fsi := Pools[pi, di, fsfffb.FSi]
+	fsi = fb.FSiFromFFs(fsi, Pools[pi, di, fsfffb.FFs], Pools[pi, di, fsfffb.FBs])
+	Pools[pi, di, fsfffb.FSi] = fsi
+	clamped := PoolsInt[pi, di, Clamped] > 0
+	Pools[pi, di, fsfffb.FSGi] = fb.Gi * fb.FS(fsi, Pools[pi, di, fsfffb.GeExts], clamped)
 
-	ssf := Pools[pi, fsfffb.SSf, di]
-	ssi := Pools[pi, fsfffb.SSi, di]
-	fb.SSFromFBs(&ssf, &ssi, Pools[pi, fsfffb.FBs, di])
-	Pools[pi, fsfffb.SSGi, di] = fb.Gi * fb.SS * ssi
-	Pools[pi, fsfffb.SSf, di] = ssf
-	Pools[pi, fsfffb.SSi, di] = ssi
+	ssf := Pools[pi, di, fsfffb.SSf]
+	ssi := Pools[pi, di, fsfffb.SSi]
+	fb.SSFromFBs(&ssf, &ssi, Pools[pi, di, fsfffb.FBs])
+	Pools[pi, di, fsfffb.SSGi] = fb.Gi * fb.SS * ssi
+	Pools[pi, di, fsfffb.SSf] = ssf
+	Pools[pi, di, fsfffb.SSi] = ssi
 
-	Pools[pi, fsfffb.TotalGi, di] = PoolInhibGiFromFSSS(pi, di) + fb.FFPrv*Pools[pi, fsfffb.FFAvgPrv, di]
+	Pools[pi, di, fsfffb.TotalGi] = PoolInhibGiFromFSSS(pi, di) + fb.FFPrv*Pools[pi, di, fsfffb.FFAvgPrv]
 	PoolInhibSaveOrig(pi, di)
 }
 
@@ -153,79 +153,79 @@ func PoolInhibInit(pi, di uint32) {
 
 // PoolInhibInitRaw clears raw spike counters -- done every cycle prior to accumulating
 func PoolInhibInitRaw(pi, di uint32) {
-	Pools[pi, fsfffb.FFsRaw, di] = 0.0
-	Pools[pi, fsfffb.FBsRaw, di] = 0.0
-	Pools[pi, fsfffb.GeExtRaw, di] = 0.0
+	Pools[pi, di, fsfffb.FFsRaw] = 0.0
+	Pools[pi, di, fsfffb.FBsRaw] = 0.0
+	Pools[pi, di, fsfffb.GeExtRaw] = 0.0
 
-	PoolsInt[pi, FFsRawInt, di] = 0
-	PoolsInt[pi, FBsRawInt, di] = 0
-	PoolsInt[pi, GeExtRawInt, di] = 0
+	PoolsInt[pi, di, FFsRawInt] = 0
+	PoolsInt[pi, di, FBsRawInt] = 0
+	PoolsInt[pi, di, GeExtRawInt] = 0
 }
 
 // PoolInhibZero resets all accumulating inhibition factors to 0
 func PoolInhibZero(pi, di uint32) {
-	Pools[pi, fsfffb.FFs, di] = 0.0
-	Pools[pi, fsfffb.FBs, di] = 0.0
-	Pools[pi, fsfffb.GeExts, di] = 0.0
-	Pools[pi, fsfffb.FSi, di] = 0.0
-	Pools[pi, fsfffb.SSi, di] = 0.0
-	Pools[pi, fsfffb.SSf, di] = 0.0
-	Pools[pi, fsfffb.FSGi, di] = 0.0
-	Pools[pi, fsfffb.SSGi, di] = 0.0
-	Pools[pi, fsfffb.TotalGi, di] = 0.0
-	Pools[pi, fsfffb.FFAvg, di] = 0.0
-	Pools[pi, fsfffb.FFAvgPrv, di] = 0.0
-	Pools[pi, fsfffb.GiOrig, di] = 0.0
-	Pools[pi, fsfffb.LayGi, di] = 0.0
-	PoolsInt[pi, Clamped, di] = 0
+	Pools[pi, di, fsfffb.FFs] = 0.0
+	Pools[pi, di, fsfffb.FBs] = 0.0
+	Pools[pi, di, fsfffb.GeExts] = 0.0
+	Pools[pi, di, fsfffb.FSi] = 0.0
+	Pools[pi, di, fsfffb.SSi] = 0.0
+	Pools[pi, di, fsfffb.SSf] = 0.0
+	Pools[pi, di, fsfffb.FSGi] = 0.0
+	Pools[pi, di, fsfffb.SSGi] = 0.0
+	Pools[pi, di, fsfffb.TotalGi] = 0.0
+	Pools[pi, di, fsfffb.FFAvg] = 0.0
+	Pools[pi, di, fsfffb.FFAvgPrv] = 0.0
+	Pools[pi, di, fsfffb.GiOrig] = 0.0
+	Pools[pi, di, fsfffb.LayGi] = 0.0
+	PoolsInt[pi, di, Clamped] = 0
 }
 
 // Decay reduces inhibition values by given decay proportion
 func PoolInhibDecay(pi, di uint32, decay float32) {
-	Pools[pi, fsfffb.FFAvgPrv, di] = Pools[pi, fsfffb.FFAvg, di] // capture prior to decay
+	Pools[pi, di, fsfffb.FFAvgPrv] = Pools[pi, di, fsfffb.FFAvg] // capture prior to decay
 
-	Pools[pi, fsfffb.FFs, di] -= decay * Pools[pi, fsfffb.FFs, di]
-	Pools[pi, fsfffb.FBs, di] -= decay * Pools[pi, fsfffb.FBs, di]
-	Pools[pi, fsfffb.GeExts, di] -= decay * Pools[pi, fsfffb.GeExts, di]
-	Pools[pi, fsfffb.FSi, di] -= decay * Pools[pi, fsfffb.FSi, di]
-	Pools[pi, fsfffb.SSi, di] -= decay * Pools[pi, fsfffb.SSi, di]
-	Pools[pi, fsfffb.SSf, di] -= decay * Pools[pi, fsfffb.SSf, di]
-	Pools[pi, fsfffb.FSGi, di] -= decay * Pools[pi, fsfffb.FSGi, di]
-	Pools[pi, fsfffb.SSGi, di] -= decay * Pools[pi, fsfffb.SSGi, di]
-	Pools[pi, fsfffb.TotalGi, di] -= decay * Pools[pi, fsfffb.TotalGi, di]
-	Pools[pi, fsfffb.FFAvg, di] -= decay * Pools[pi, fsfffb.FFAvg, di]
+	Pools[pi, di, fsfffb.FFs] -= decay * Pools[pi, di, fsfffb.FFs]
+	Pools[pi, di, fsfffb.FBs] -= decay * Pools[pi, di, fsfffb.FBs]
+	Pools[pi, di, fsfffb.GeExts] -= decay * Pools[pi, di, fsfffb.GeExts]
+	Pools[pi, di, fsfffb.FSi] -= decay * Pools[pi, di, fsfffb.FSi]
+	Pools[pi, di, fsfffb.SSi] -= decay * Pools[pi, di, fsfffb.SSi]
+	Pools[pi, di, fsfffb.SSf] -= decay * Pools[pi, di, fsfffb.SSf]
+	Pools[pi, di, fsfffb.FSGi] -= decay * Pools[pi, di, fsfffb.FSGi]
+	Pools[pi, di, fsfffb.SSGi] -= decay * Pools[pi, di, fsfffb.SSGi]
+	Pools[pi, di, fsfffb.TotalGi] -= decay * Pools[pi, di, fsfffb.TotalGi]
+	Pools[pi, di, fsfffb.FFAvg] -= decay * Pools[pi, di, fsfffb.FFAvg]
 }
 
 // SpikesFromRaw updates spike values from raw, dividing by given number in pool
 func PoolInhibSpikesFromRaw(pi, di uint32) {
 	fnn := float32(PoolNNeurons(pi))
-	Pools[pi, fsfffb.FBs, di] = Pools[pi, fsfffb.FBsRaw, di] / fnn
-	Pools[pi, fsfffb.FFs, di] = Pools[pi, fsfffb.FFsRaw, di]
-	Pools[pi, fsfffb.GeExts, di] = Pools[pi, fsfffb.GeExtRaw, di]
+	Pools[pi, di, fsfffb.FBs] = Pools[pi, di, fsfffb.FBsRaw] / fnn
+	Pools[pi, di, fsfffb.FFs] = Pools[pi, di, fsfffb.FFsRaw]
+	Pools[pi, di, fsfffb.GeExts] = Pools[pi, di, fsfffb.GeExtRaw]
 	PoolInhibInitRaw(pi, di)
 }
 
 // SaveOrig saves the current Gi values as original values
 func PoolInhibSaveOrig(pi, di uint32) {
-	Pools[pi, fsfffb.GiOrig, di] = Pools[pi, fsfffb.TotalGi, di]
+	Pools[pi, di, fsfffb.GiOrig] = Pools[pi, di, fsfffb.TotalGi]
 }
 
 // GiFromFSSS returns the sum of FSGi and SSGi as overall inhibition
 func PoolInhibGiFromFSSS(pi, di uint32) float32 {
-	return Pools[pi, fsfffb.FSGi, di] + Pools[pi, fsfffb.SSGi, di]
+	return Pools[pi, di, fsfffb.FSGi] + Pools[pi, di, fsfffb.SSGi]
 }
 
 // LayerMax updates given pool-level inhib values from given layer-level Gi
 // with resulting value being the Max of either
 func PoolInhibLayerMax(pi, di uint32, liGi float32) {
-	Pools[pi, fsfffb.LayGi, di] = liGi
-	Pools[pi, fsfffb.TotalGi, di] = math32.Max(Pools[pi, fsfffb.TotalGi, di], liGi)
+	Pools[pi, di, fsfffb.LayGi] = liGi
+	Pools[pi, di, fsfffb.TotalGi] = math32.Max(Pools[pi, di, fsfffb.TotalGi], liGi)
 }
 
 // PoolMax updates given layer-level inhib values from given pool-level
 // with resulting value being the Max of either
 func PoolInhibPoolMax(pi, di uint32, piGi float32) {
-	Pools[pi, fsfffb.TotalGi, di] = math32.Max(Pools[pi, fsfffb.TotalGi, di], piGi)
+	Pools[pi, di, fsfffb.TotalGi] = math32.Max(Pools[pi, di, fsfffb.TotalGi], piGi)
 }
 
 //////// atomic int safe accumulation
@@ -235,17 +235,17 @@ func PoolInhibPoolMax(pi, di uint32, piGi float32) {
 func PoolInhibRawIncrInt(pi, di uint32, spike, geRaw, geExt float32) {
 	floatToInt := float32(uint32(1) << 24)
 	fnn := float32(PoolNNeurons(pi))
-	atomic.AddInt32(&PoolsInt[pi, FBsRawInt, di], int32(spike))
-	atomic.AddInt32(&PoolsInt[pi, FFsRawInt, di], int32((geRaw/fnn)*floatToInt))
-	atomic.AddInt32(&PoolsInt[pi, GeExtRawInt, di], int32((geExt/fnn)*floatToInt))
+	atomic.AddInt32(&PoolsInt[pi, di, FBsRawInt], int32(spike))
+	atomic.AddInt32(&PoolsInt[pi, di, FFsRawInt], int32((geRaw/fnn)*floatToInt))
+	atomic.AddInt32(&PoolsInt[pi, di, GeExtRawInt], int32((geExt/fnn)*floatToInt))
 }
 
 // IntToRaw computes int values into float32 raw values
 func PoolInhibIntToRaw(pi, di uint32) {
 	floatFromInt := 1.0 / float32(uint32(1)<<24)
-	fbs := PoolsInt[pi, FBsRawInt, di]
-	ffs := PoolsInt[pi, FFsRawInt, di]
-	geExt := PoolsInt[pi, GeExtRawInt, di]
+	fbs := PoolsInt[pi, di, FBsRawInt]
+	ffs := PoolsInt[pi, di, FFsRawInt]
+	geExt := PoolsInt[pi, di, GeExtRawInt]
 	//gosl:end
 	floatToInt := int32(1) << 24
 	if ffs < 0 {
@@ -257,9 +257,9 @@ func PoolInhibIntToRaw(pi, di uint32) {
 		geExt = floatToInt
 	}
 	//gosl:start
-	Pools[pi, fsfffb.FBsRaw, di] = float32(fbs)
-	Pools[pi, fsfffb.FFsRaw, di] = float32(ffs) * floatFromInt
-	Pools[pi, fsfffb.GeExtRaw, di] = float32(geExt) * floatFromInt
+	Pools[pi, di, fsfffb.FBsRaw] = float32(fbs)
+	Pools[pi, di, fsfffb.FFsRaw] = float32(ffs) * floatFromInt
+	Pools[pi, di, fsfffb.GeExtRaw] = float32(geExt) * floatFromInt
 }
 
 //gosl:end

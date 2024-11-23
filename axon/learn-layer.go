@@ -19,8 +19,8 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 		np := ly.NPools
 		for spi := uint32(1); spi < np; spi++ {
 			pi := ly.Params.PoolIndex(spi) // only for idxs
-			nsi := PoolsInt.Value(int(pi), int(PoolNeurSt), int(0))
-			nei := PoolsInt.Value(int(pi), int(PoolNeurEd), int(0))
+			nsi := PoolsInt.Value(int(pi), int(0), int(PoolNeurSt))
+			nei := PoolsInt.Value(int(pi), int(0), int(PoolNeurEd))
 			nn := 0
 			avg := float32(0)
 			for lni := nsi; lni < nei; lni++ {
@@ -112,10 +112,10 @@ func (ly *Layer) AdaptInhib(ctx *Context) {
 		return
 	}
 	for di := uint32(0); di < ctx.NData; di++ {
-		giMult := LayerStates.Value(int(ly.Index), int(LayerGiMult), int(di))
-		avg := LayerStates.Value(int(ly.Index), int(LayerActMAvg), int(di))
+		giMult := LayerStates.Value(int(ly.Index), int(di), int(LayerGiMult))
+		avg := LayerStates.Value(int(ly.Index), int(di), int(LayerActMAvg))
 		ly.Params.Inhib.ActAvg.Adapt(&giMult, avg)
-		LayerStates.Set(giMult, int(ly.Index), int(LayerGiMult), int(di))
+		LayerStates.Set(giMult, int(ly.Index), int(di), int(LayerGiMult))
 	}
 }
 
@@ -129,8 +129,8 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 	np := ly.NPools
 	for spi := sp; spi < np; spi++ {
 		pi := ly.Params.PoolIndex(spi)
-		nsi := PoolsInt.Value(int(pi), int(PoolNeurSt), int(0))
-		nei := PoolsInt.Value(int(pi), int(PoolNeurEd), int(0))
+		nsi := PoolsInt.Value(int(pi), int(0), int(PoolNeurSt))
+		nei := PoolsInt.Value(int(pi), int(0), int(PoolNeurEd))
 		plavg := float32(0)
 		nn := 0
 		for lni := nsi; lni < nei; lni++ {
@@ -162,15 +162,15 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		}
 		PoolAvgDifCalc(pi, 0)
 		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
-			Pools.Set(Pools.Value(int(pi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)), int(0)), int(pi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)), int(di))
-			Pools.Set(Pools.Value(int(pi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)), int(0)), int(pi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)), int(di))
+			Pools.Set(Pools.Value(int(pi), int(0), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg))), int(pi), int(di), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))
+			Pools.Set(Pools.Value(int(pi), int(0), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max))), int(pi), int(di), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))
 		}
 	}
 	if sp == 1 { // update layer pool
 		lpi := ly.Params.PoolIndex(0)
 		PoolAvgDifInit(lpi, 0)
-		nsi := PoolsInt.Value(int(lpi), int(PoolNeurSt), int(0))
-		nei := PoolsInt.Value(int(lpi), int(PoolNeurEd), int(0))
+		nsi := PoolsInt.Value(int(lpi), int(0), int(PoolNeurSt))
+		nei := PoolsInt.Value(int(lpi), int(0), int(PoolNeurEd))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
 			if NeuronIsOff(ni) {
@@ -181,8 +181,8 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		PoolAvgDifCalc(lpi, 0)
 
 		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
-			Pools.Set(Pools.Value(int(lpi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)), int(0)), int(lpi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)), int(di))
-			Pools.Set(Pools.Value(int(lpi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)), int(0)), int(lpi), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)), int(di))
+			Pools.Set(Pools.Value(int(lpi), int(0), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg))), int(lpi), int(di), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))
+			Pools.Set(Pools.Value(int(lpi), int(0), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max))), int(lpi), int(di), int(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))
 		}
 	}
 }

@@ -96,7 +96,7 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 	var li = (*ly).Index;
 	var pil = pi - (*ly).PoolSt; // 0-n pool index
 	var pnn = u32(PoolNNeurons(pi));
-	var pni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnNeurIndex))] - u32(PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurSt),u32(di))]);
+	var pni = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnNeurIndex))] - u32(PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolNeurSt))]);
 	var hasRew = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvHasRew),u32(di))] > 0;
 	switch ((*ly).Type) {
 	case SuperLayer: {
@@ -197,9 +197,9 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 	case RWPredLayer: {
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] = F32_ClipValue(&(*ly).RWPred.PredRange, Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ge))]);
 		if (pni == 0) {
-			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(LayerRewPredPos),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
+			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(di),u32(LayerRewPredPos))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
 		} else {
-			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(LayerRewPredNeg),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
+			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(di),u32(LayerRewPredNeg))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
 		}
 	}
 	case RWDaLayer: {
@@ -208,9 +208,9 @@ fn LayerParams_PostSpikeSpecial(ly: ptr<function,LayerParams>, ctx: ptr<function
 	case TDPredLayer: {
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ge))];
 		if (pni == 0) {
-			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(LayerRewPredPos),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
+			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(di),u32(LayerRewPredPos))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
 		} else {
-			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(LayerRewPredNeg),u32(di))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
+			LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32(li),u32(di),u32(LayerRewPredNeg))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))];
 		}
 	}
 	case TDIntegLayer: {
@@ -299,7 +299,7 @@ fn PathParams_SendSpike(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 		var npti = npst + (ri - recvNeurSt);
 		var deli = SynComParams_WriteOff(&(*pt).Com, (*ctx).CyclesTotal);
 		var sv = i32(sendVal * Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(Wt))]);
-		atomicAdd(&PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(deli),u32(di))], sv);
+		atomicAdd(&PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(di),u32(deli))], sv);
 	}
 }
 
@@ -1380,11 +1380,11 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, phase, am)),u32(di))];
+	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolNNeurons(pi: u32) -> i32 {
-	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurEd),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-	2], u32(pi),u32(PoolNeurSt),u32(0))];
+	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(0),u32(PoolNeurEd))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
+	2], u32(pi),u32(0),u32(PoolNeurSt))];
 }
 
 ///////////// import: "rand.go"

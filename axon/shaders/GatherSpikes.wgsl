@@ -108,7 +108,7 @@ fn LayerParams_GiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 	var geExt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeExt))];
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt);
 	PoolAvgMaxUpdate(pi, di, ni);
-	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolIsLayer),u32(di))] == 0) { // also update layer pool if I am a subpool
+	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolIsLayer))] == 0) { // also update layer pool if I am a subpool
 		var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt);
 		PoolAvgMaxUpdate(lpi, di, ni);
@@ -162,8 +162,8 @@ struct PathScaleParams {
 fn PathParams_GatherSpikes(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,di: u32,lni: u32) {
 	var deli = SynComParams_ReadOff(&(*pt).Com, (*ctx).CyclesTotal);
 	var npti = (*pt).Indexes.NPathNeurSt + lni;
-	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(deli),u32(di))]);
-	PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(deli),u32(di))] = 0;
+	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(di),u32(deli))]);
+	PathGBuf[IndexI323D(PathGBuf[0], PathGBuf[1], PathGBuf[2], u32(npti),u32(di),u32(deli))] = 0;
 	var gsyn = PathGSyns[IndexF322D(PathGSyns[0], PathGSyns[1], u32(npti),u32(di))];
 	PathParams_GatherSpikesGSyn(pt, ctx, ly, ni, di, gRaw, &gsyn);
 	PathGSyns[IndexF322D(PathGSyns[0], PathGSyns[
@@ -675,9 +675,9 @@ struct InhibParams {
 fn PoolInhibRawIncrInt(pi: u32,di: u32, spike: f32,geRaw: f32,geExt: f32) {
 	var floatToInt = f32(u32(1) << 24);
 	var fnn = f32(PoolNNeurons(pi));
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FBsRawInt),u32(di))], i32(spike));
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(FFsRawInt),u32(di))], i32((geRaw/fnn)*floatToInt));
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(GeExtRawInt),u32(di))], i32((geExt/fnn)*floatToInt));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FBsRawInt))], i32(spike));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FFsRawInt))], i32((geRaw/fnn)*floatToInt));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(GeExtRawInt))], i32((geExt/fnn)*floatToInt));
 }
 
 ///////////// import: "kinase-params.go"
@@ -1230,16 +1230,16 @@ const  PoolVarsN = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
 const avgMaxToNeuron = array(CaSpkP, CaSpkD, SpkMax, Act, GeInt, GiInt);
 fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 { return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am); }
-fn PoolNNeurons(pi: u32) -> i32 { return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolNeurEd),u32(0))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-2], u32(pi),u32(PoolNeurSt),u32(0))]; }
+fn PoolNNeurons(pi: u32) -> i32 { return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(0),u32(PoolNeurEd))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
+2], u32(pi),u32(0),u32(PoolNeurSt))]; }
 fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	var n = f32(PoolNNeurons(pi));
 	var floatToInt = f32(u32(1) << 20);
 	var floatToSum = floatToInt / n;
 	var vis = AvgMaxIntVarIndex(vr, Avg);
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vis),u32(di))], i32(val*floatToSum));
-	atomicMax(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(vim),u32(di))], i32(val*floatToInt));
+	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(vis))], i32(val*floatToSum));
+	atomicMax(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(vim))], i32(val*floatToInt));
 }
 fn PoolAvgMaxUpdate(pi: u32,di: u32,ni: u32) {
 	PoolAvgMaxUpdateVar(AMCaSpkP, pi, di, abs(Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(avgMaxToNeuron[AMCaSpkP]))]));

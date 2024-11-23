@@ -253,11 +253,11 @@ func TestSpikeProp(t *testing.T) {
 func poolValues(pi uint32, di int, vals map[string]float32, key string) {
 	for i := range uint32(PoolVarsN) {
 		kk := key + fmt.Sprintf("\t%s", PoolVarName(i))
-		vals[kk] = Pools.Value(int(pi), int(i), int(di))
+		vals[kk] = Pools.Value(int(pi), int(di), int(i))
 	}
 	for i := range uint32(PoolIntVarsTot) {
 		kk := key + fmt.Sprintf("\t%s", PoolIntVarName(i))
-		vals[kk] = float32(PoolsInt.Value(int(pi), int(i), int(di)))
+		vals[kk] = float32(PoolsInt.Value(int(pi), int(di), int(i)))
 	}
 }
 
@@ -265,7 +265,7 @@ func poolValues(pi uint32, di int, vals map[string]float32, key string) {
 func layerStates(li, di int, vals map[string]float32, key string) {
 	for i := range uint32(LayerVarsN) {
 		kk := key + fmt.Sprintf("\t%s", LayerVars(i).String())
-		vals[kk] = LayerStates.Value(int(li), int(i), int(di))
+		vals[kk] = LayerStates.Value(int(li), int(di), int(i))
 	}
 }
 

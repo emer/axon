@@ -739,9 +739,9 @@ func (nt *Network) Build() error { //types:add
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
 	nt.LayParams = make([]LayerParams, nLayers)
-	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, int(LayerVarsN), maxData)
-	sltensor.SetShapeSizes(&nt.Pools, totPools, int(PoolVarsN), maxData)
-	sltensor.SetShapeSizes(&nt.PoolsInt, totPools, int(PoolIntVarsTot), maxData)
+	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, maxData, int(LayerVarsN))
+	sltensor.SetShapeSizes(&nt.Pools, totPools, maxData, int(PoolVarsN))
+	sltensor.SetShapeSizes(&nt.PoolsInt, totPools, maxData, int(PoolIntVarsTot))
 	sltensor.SetShapeSizes(&nt.Neurons, totNeurons, maxData, int(NeuronVarsN))
 	sltensor.SetShapeSizes(&nt.NeuronAvgs, totNeurons, int(NeuronAvgVarsN))
 	sltensor.SetShapeSizes(&nt.NeuronIxs, totNeurons, int(NeuronIndexVarsN))
@@ -794,7 +794,7 @@ func (nt *Network) Build() error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				nt.PoolsInt.Set(int32(li), int(poolIndex+pi), int(PoolLayerIdx), int(di))
+				nt.PoolsInt.Set(int32(li), int(poolIndex+pi), int(di), int(PoolLayerIdx))
 			}
 		}
 		if ly.Type.IsExt() {
@@ -1004,7 +1004,7 @@ func (nt *Network) BuildPathGBuf() {
 	}
 	nix.MaxDelay = maxDel
 	mxlen := maxDel + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, int(nptneur), int(mxlen), int(maxData))
+	sltensor.SetShapeSizes(&nt.PathGBuf, int(nptneur), int(maxData), int(mxlen))
 	sltensor.SetShapeSizes(&nt.PathGSyns, int(nptneur), int(maxData))
 
 	npti := uint32(0)

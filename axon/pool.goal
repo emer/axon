@@ -145,13 +145,13 @@ func AvgMaxIntVarIndex(vr AvgMaxVars, am AvgMax) uint32 {
 // PoolAvgMax returns an AvgMax value for given variable, phase,
 // and Avg or Max, for given pool index and data index.
 func PoolAvgMax(vr AvgMaxVars, phase AvgMaxPhases, am AvgMax, pi, di uint32) float32 {
-	return Pools[pi, AvgMaxVarIndex(vr, phase, am), di]	
+	return Pools[pi, di, AvgMaxVarIndex(vr, phase, am)]	
 }
 
 // PoolNNeurons returns the number of neurons in the given pool.
 // pi = global pool index.
 func PoolNNeurons(pi uint32) int32 {
-	return PoolsInt[pi, PoolNeurEd, 0] - PoolsInt[pi, PoolNeurSt, 0]
+	return PoolsInt[pi, 0, PoolNeurEd] - PoolsInt[pi, 0, PoolNeurSt]
 }
 
 // PoolAvgMaxInit initializes the AvgMax Int accumulators for Cycle vals
@@ -159,8 +159,8 @@ func PoolNNeurons(pi uint32) int32 {
 // pi = global pool index.
 func PoolAvgMaxInit(pi, di uint32) {
 	for vr := range AMAvgDif {
-		PoolsInt[pi, AvgMaxIntVarIndex(vr, Avg), di] = 0
-		PoolsInt[pi, AvgMaxIntVarIndex(vr, Max), di] = 0
+		PoolsInt[pi, di, AvgMaxIntVarIndex(vr, Avg)] = 0
+		PoolsInt[pi, di, AvgMaxIntVarIndex(vr, Max)] = 0
 	}
 }
 
@@ -170,8 +170,8 @@ func PoolAvgMaxZero(pi, di uint32) {
 	PoolAvgMaxInit(pi, di)
 	for vr := range AMAvgDif {
 		for ph := range AvgMaxPhasesN {
-			Pools[pi, AvgMaxVarIndex(vr, ph, Avg), di] = 0
-			Pools[pi, AvgMaxVarIndex(vr, ph, Max), di] = 0
+			Pools[pi, di, AvgMaxVarIndex(vr, ph, Avg)] = 0
+			Pools[pi, di, AvgMaxVarIndex(vr, ph, Max)] = 0
 		}
 	}
 }
@@ -184,8 +184,8 @@ func PoolAvgMaxUpdateVar(vr AvgMaxVars, pi, di uint32, val float32) {
 	floatToSum := floatToInt / n
 	vis := AvgMaxIntVarIndex(vr, Avg)
 	vim := AvgMaxIntVarIndex(vr, Max)
-	atomic.AddInt32(&PoolsInt[pi, vis, di], int32(val * floatToSum))
-	atomicx.MaxInt32(&PoolsInt[pi, vim, di], int32(val * floatToInt))
+	atomic.AddInt32(&PoolsInt[pi, di, vis], int32(val * floatToSum))
+	atomicx.MaxInt32(&PoolsInt[pi, di, vim], int32(val * floatToInt))
 }
 
 // PoolAvgMaxUpdate updates the AvgMax values based on current neuron values.
@@ -203,25 +203,25 @@ func PoolAvgMaxUpdate(pi, di, ni uint32) {
 func PoolAvgMaxCalcVar(vr AvgMaxVars, pi, di uint32) {
 	floatFromInt := float32(1.0) / float32(uint32(1) << 20)
 	vis := AvgMaxIntVarIndex(vr, Avg)
-	sum := PoolsInt[pi, vis, di] 
+	sum := PoolsInt[pi, di, vis] 
 	if sum < 0 {
 		//gosl:end
 		log.Println("PoolAvgMaxCalc overflow in Sum", "pi:", pi, "di:", di, "sum:", sum)
 		//gosl:start
 		sum = int32(uint32(1) << 20)
 	}
-	Pools[pi, AvgMaxVarIndex(vr, AMCycle, Avg), di] = float32(sum) * floatFromInt
-	PoolsInt[pi, vis, di] = 0 
+	Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Avg)] = float32(sum) * floatFromInt
+	PoolsInt[pi, di, vis] = 0 
 	vim := AvgMaxIntVarIndex(vr, Max)	
-	mx := PoolsInt[pi, vim, di] 
+	mx := PoolsInt[pi, di, vim] 
 	if mx < 0 {
 		//gosl:end
 		log.Println("PoolAvgMaxCalc overflow in Max", "pi:", pi, "di:", di, "max:", mx)
 		//gosl:start
 		mx = int32(uint32(1) << 20)
 	}
-	PoolsInt[pi, vim, di] = 0 
-	Pools[pi, AvgMaxVarIndex(vr, AMCycle, Max), di] = float32(mx) * floatFromInt
+	PoolsInt[pi, di, vim] = 0 
+	Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Max)] = float32(mx) * floatFromInt
 }
 
 // PoolAvgMaxCalc does Calc on Cycle level, and re-inits
@@ -235,8 +235,8 @@ func PoolAvgMaxCalc(pi, di uint32) {
 // for update start. always left init'd so generally unnecessary.
 // pi = global pool index.
 func PoolAvgDifInit(pi, di uint32) {
-	PoolsInt[pi, AvgMaxIntVarIndex(AMAvgDif, Avg), di] = 0
-	PoolsInt[pi, AvgMaxIntVarIndex(AMAvgDif, Max), di] = 0
+	PoolsInt[pi, di, AvgMaxIntVarIndex(AMAvgDif, Avg)] = 0
+	PoolsInt[pi, di, AvgMaxIntVarIndex(AMAvgDif, Max)] = 0
 }
 
 // PoolAvgDifUpdate updates the AvgMax values for AvgDif Var.
@@ -254,39 +254,39 @@ func PoolAvgDifCalc(pi, di uint32) {
 // and Plus values into Prev.
 func PoolCycleToMinus(pi, di uint32) {
 	for vr := range AMAvgDif { // don't do AvgDif
-		Pools[pi, AvgMaxVarIndex(vr, AMMinus, Avg), di] = Pools[pi, AvgMaxVarIndex(vr, AMCycle, Avg), di] 
-		Pools[pi, AvgMaxVarIndex(vr, AMMinus, Max), di] = Pools[pi, AvgMaxVarIndex(vr, AMCycle, Max), di] 
+		Pools[pi, di, AvgMaxVarIndex(vr, AMMinus, Avg)] = Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Avg)] 
+		Pools[pi, di, AvgMaxVarIndex(vr, AMMinus, Max)] = Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Max)] 
 
-		Pools[pi, AvgMaxVarIndex(vr, AMPrev, Avg), di] = Pools[pi, AvgMaxVarIndex(vr, AMPlus, Avg), di] 
-		Pools[pi, AvgMaxVarIndex(vr, AMPrev, Max), di] = Pools[pi, AvgMaxVarIndex(vr, AMPlus, Max), di] 
+		Pools[pi, di, AvgMaxVarIndex(vr, AMPrev, Avg)] = Pools[pi, di, AvgMaxVarIndex(vr, AMPlus, Avg)] 
+		Pools[pi, di, AvgMaxVarIndex(vr, AMPrev, Max)] = Pools[pi, di, AvgMaxVarIndex(vr, AMPlus, Max)] 
 	}
 }
 
 // PoolCycleToPlus grabs current Cycle values into the Plus phase values.
 func PoolCycleToPlus(pi, di uint32) {
 	for vr := range AMAvgDif { // don't do AvgDif
-		Pools[pi, AvgMaxVarIndex(vr, AMPlus, Avg), di] = Pools[pi, AvgMaxVarIndex(vr, AMCycle, Avg), di] 
-		Pools[pi, AvgMaxVarIndex(vr, AMPlus, Max), di] = Pools[pi, AvgMaxVarIndex(vr, AMCycle, Max), di] 
+		Pools[pi, di, AvgMaxVarIndex(vr, AMPlus, Avg)] = Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Avg)] 
+		Pools[pi, di, AvgMaxVarIndex(vr, AMPlus, Max)] = Pools[pi, di, AvgMaxVarIndex(vr, AMCycle, Max)] 
 	}
 }
 
 // PoolInit is callled during InitActs
 func PoolInit(pi, di uint32) {
 	PoolInhibInit(pi, di)
-	PoolsInt[pi, PoolGated, di] = 0
+	PoolsInt[pi, di, PoolGated] = 0
 	PoolAvgMaxZero(pi, di)
 }
 
 // PoolPoolGi computes the total inhibitory conductance for the pool.
 func PoolPoolGi(ctx *Context, pi, di uint32) {
-	if PoolsInt[pi, PoolIsLayer, di] > 0 {
+	if PoolsInt[pi, di, PoolIsLayer] > 0 {
 		return
 	}
-	li := PoolsInt[pi, PoolLayerIdx, di]
+	li := PoolsInt[pi, di, PoolLayerIdx]
 	PoolAvgMaxCalc(pi, di)
 	PoolInhibIntToRaw(pi, di)
 	ly := GetLayers(uint32(li))
-	giMult := LayerStates[li, LayerGiMult, di]
+	giMult := LayerStates[li, di, LayerGiMult]
 	lyIsOn := (ly.Inhib.Layer.On == 1)
 	lpi := ly.PoolIndex(uint32(0))
 	ly.SubPoolGiFromSpikes(ctx, lpi, pi, di, lyIsOn, giMult)

@@ -114,7 +114,7 @@ fn LayerParams_NewStateLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Co
 		actPlusAvg += PoolAvgMax(AMAct, AMPlus, Avg, lpi, di);
 		(*ly).Acts.Clamp.IsInput = i32(LayerParams_IsInput(ly));
 		(*ly).Acts.Clamp.IsTarget = i32(LayerParams_IsTarget(ly));
-		LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerRT),u32(di))] = -1.0;
+		LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerRT))] = -1.0;
 		for (var spi = u32(0); spi < np; spi++) {
 			var pi = LayerParams_PoolIndex(ly, spi);
 			LayerParams_NewStatePool(ly, ctx, pi, di); // also calls DecayState on pool
@@ -128,21 +128,21 @@ fn LayerParams_NewStateLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Co
 	}
 }
 fn LayerParams_NewStateLayerActAvg(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32, actMinusAvg: f32,actPlusAvg: f32) {
-	var mavg = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerActMAvg),u32(di))];
-	var pavg = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerActPAvg),u32(di))];
+	var mavg = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerActMAvg))];
+	var pavg = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerActPAvg))];
 	ActAvgParams_AvgFromAct(&(*ly).Inhib.ActAvg, &mavg, actMinusAvg, (*ly).Acts.Dt.LongAvgDt);
 	ActAvgParams_AvgFromAct(&(*ly).Inhib.ActAvg, &pavg, actPlusAvg, (*ly).Acts.Dt.LongAvgDt);
-	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerActMAvg),u32(di))] = mavg;
-	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerActPAvg),u32(di))] = pavg;
+	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerActMAvg))] = mavg;
+	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerActPAvg))] = pavg;
 }
 fn LayerParams_NewStatePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32) {
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(Clamped),u32(di))] = 0;
+	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(Clamped))] = 0;
 	if ((*ly).Acts.Clamp.Add == 0 && (*ly).Acts.Clamp.IsInput == 1) {
-		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(Clamped),u32(di))] = 1;
+		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(Clamped))] = 1;
 	}
 	PoolInhibDecay(pi, di, (*ly).Acts.Decay.Act);
 	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2],
-	u32(pi),u32(PoolGated),u32(di))] = 0;
+	u32(pi),u32(di),u32(PoolGated))] = 0;
 }
 
 ///////////// import: "act-net.go"
@@ -641,17 +641,17 @@ struct InhibParams {
 	Pool: GiParams,
 }
 fn PoolInhibDecay(pi: u32,di: u32, decay: f32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvgPrv),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvg),u32(di))]; // capture prior to decay
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFs),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFs),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBs),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FBs),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExts),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(GeExts),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSi),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSi),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSf),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSf),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSGi),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FSGi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSGi),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(SSGi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(TotalGi),u32(di))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvg),u32(di))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(FFAvg),u32(di))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvgPrv))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))]; // capture prior to decay
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFs))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFs))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBs))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBs))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExts))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExts))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSi))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSi))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSi))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSi))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSf))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSf))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSGi))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSGi))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSGi))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSGi))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))];
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))];
 }
 
 ///////////// import: "kinase-params.go"
@@ -1207,7 +1207,7 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, phase, am)),u32(di))];
+	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 
 ///////////// import: "rand.go"

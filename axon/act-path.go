@@ -237,8 +237,8 @@ func (pt *PathParams) SynSendLayerIndex(syni uint32) uint32 {
 func (pt *PathParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di, lni uint32) {
 	deli := pt.Com.ReadOff(ctx.CyclesTotal)
 	npti := pt.Indexes.NPathNeurSt + lni
-	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value(int(npti), int(deli), int(di)))
-	PathGBuf.Set(0, int(npti), int(deli), int(di))
+	gRaw := pt.Com.FloatFromGBuf(PathGBuf.Value(int(npti), int(di), int(deli)))
+	PathGBuf.Set(0, int(npti), int(di), int(deli))
 	gsyn := PathGSyns.Value(int(npti), int(di))
 	pt.GatherSpikesGSyn(ctx, ly, ni, di, gRaw, &gsyn)
 	PathGSyns.Set(gsyn, int(npti), int(di))
@@ -298,7 +298,7 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 		npti := npst + (ri - recvNeurSt)
 		deli := pt.Com.WriteOff(ctx.CyclesTotal)
 		sv := int32(sendVal * Synapses.Value(int(syni), int(Wt)))
-		atomic.AddInt32(PathGBuf.ValuePtr(int(npti), int(deli), int(di)), sv)
+		atomic.AddInt32(PathGBuf.ValuePtr(int(npti), int(di), int(deli)), sv)
 	}
 }
 
@@ -312,15 +312,11 @@ func (pt *PathParams) InitGBuffs(ctx *Context) {
 	mdel := nix.MaxDelay + 1
 	rnn := pt.Indexes.RecvNeurN
 	npst := pt.Indexes.NPathNeurSt
-	for dl := uint32(0); dl < mdel; dl++ {
-		for ri := uint32(0); ri < rnn; ri++ {
-			for di := uint32(0); di < maxd; di++ {
-				PathGBuf.Set(0, int(npst+ri), int(dl), int(di))
-			}
-		}
-	}
 	for ri := uint32(0); ri < rnn; ri++ {
 		for di := uint32(0); di < maxd; di++ {
+			for dl := uint32(0); dl < mdel; dl++ {
+				PathGBuf.Set(0, int(npst+ri), int(di), int(dl))
+			}
 			PathGSyns.Set(0.0, int(npst+ri), int(di))
 		}
 	}

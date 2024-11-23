@@ -83,12 +83,12 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 ///////////// import: "act-layer.go"
 fn LayerParams_BetweenGi(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
-	var maxGi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(lpi),u32(TotalGi),u32(di))];
+	var maxGi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(lpi),u32(di),u32(TotalGi))];
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index1);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index2);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index3);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index4);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(lpi),u32(TotalGi),u32(di))] = maxGi; // our inhib is max of us and everyone in the layer pool
+	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(lpi),u32(di),u32(TotalGi))] = maxGi; // our inhib is max of us and everyone in the layer pool
 }
 fn LayerParams_BetweenLayerGiMax(ly: ptr<function,LayerParams>, di: u32, maxGi: f32, layIndex: i32) -> f32 {
 	if (layIndex < 0) {
@@ -96,7 +96,7 @@ fn LayerParams_BetweenLayerGiMax(ly: ptr<function,LayerParams>, di: u32, maxGi: 
 	}
 	var oly = Layers[u32(layIndex)];
 	var opi = LayerParams_PoolIndex(&oly, u32(u32(0)));
-	var ogi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(opi),u32(TotalGi),u32(di))];
+	var ogi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(opi),u32(di),u32(TotalGi))];
 	if (ogi > maxGi) {
 		return ogi;
 	}return maxGi;

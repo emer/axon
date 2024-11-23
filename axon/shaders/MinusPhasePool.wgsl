@@ -84,9 +84,9 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 fn LayerParams_MinusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32) {
 	PoolCycleToMinus(pi, di);
 	if ((*ly).Acts.Clamp.Add == 0 && (*ly).Acts.Clamp.IsTarget == 1) {
-		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(Clamped),u32(di))] = 1;
+		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(Clamped))] = 1;
 	}
-	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolIsLayer),u32(di))] == 0) {
+	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolIsLayer))] == 0) {
 		return;
 	}
 	var geIntMinusMax = f32(0);
@@ -100,12 +100,12 @@ fn LayerParams_MinusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 	}
 }
 fn LayerParams_AvgGeM(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32, geIntMinusMax: f32,giIntMinusMax: f32) {
-	var gem = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerAvgMaxGeM),u32(di))];
-	var gim = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerAvgMaxGiM),u32(di))];
+	var gem = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerAvgMaxGeM))];
+	var gim = LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerAvgMaxGiM))];
 	gem += (*ly).Acts.Dt.LongAvgDt * (geIntMinusMax - gem);
 	gim += (*ly).Acts.Dt.LongAvgDt * (giIntMinusMax - gim);
-	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerAvgMaxGeM),u32(di))] = gem;
-	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(LayerAvgMaxGiM),u32(di))] = gim;
+	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerAvgMaxGeM))] = gem;
+	LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[2], u32((*ly).Index),u32(di),u32(LayerAvgMaxGiM))] = gim;
 }
 
 ///////////// import: "act-net.go"
@@ -113,7 +113,7 @@ fn MinusPhasePool(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
 	var pi = Context_ItemIndex(&ctx, i);
-	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(PoolLayerIdx),u32(di))];
+	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolLayerIdx))];
 	var layers=Layers[li]; LayerParams_MinusPhasePool(&layers, &ctx, pi, di);
 	Ctx[0] = ctx;
 }
@@ -1157,14 +1157,14 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, phase, am)),u32(di))];
+	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 fn PoolCycleToMinus(pi: u32,di: u32) {
 	for (var vr=0; vr<AMAvgDif; vr++) { // don't do AvgDif
-		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMMinus, Avg)),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMCycle, Avg)),u32(di))];
-		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMMinus, Max)),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMCycle, Max)),u32(di))];
-		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMPrev, Avg)),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMPlus, Avg)),u32(di))];
-		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMPrev, Max)),u32(di))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(AvgMaxVarIndex(vr, AMPlus, Max)),u32(di))];
+		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMMinus, Avg)))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMCycle, Avg)))];
+		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMMinus, Max)))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMCycle, Max)))];
+		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMPrev, Avg)))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMPlus, Avg)))];
+		Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMPrev, Max)))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMPlus, Max)))];
 	}
 }
 

@@ -336,7 +336,7 @@ func MinusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
-	li := PoolsInt[pi, PoolLayerIdx, di]
+	li := PoolsInt[pi, di, PoolLayerIdx]
 	Layers[li].MinusPhasePool(ctx, pi, di)
 }
 
@@ -366,7 +366,7 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
-	li := PoolsInt[pi, PoolLayerIdx, di]
+	li := PoolsInt[pi, di, PoolLayerIdx]
 	Layers[li].PlusPhasePool(ctx, pi, di)
 }
 

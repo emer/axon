@@ -184,7 +184,7 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 	geExt := Neurons[ni, di, GeExt]
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt)
 	PoolAvgMaxUpdate(pi, di, ni)
-	if PoolsInt[pi, PoolIsLayer, di] == 0 { // also update layer pool if I am a subpool
+	if PoolsInt[pi, di, PoolIsLayer] == 0 { // also update layer pool if I am a subpool
 		lpi := ly.PoolIndex(0)
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt)
 		PoolAvgMaxUpdate(lpi, di, ni)
@@ -202,12 +202,12 @@ func (ly *LayerParams) LayerGi(ctx *Context, li, di uint32) {
 // BetweenGi computes inhibition Gi between layers.
 func (ly *LayerParams) BetweenGi(ctx *Context, di uint32) {
 	lpi := ly.PoolIndex(0)
-	maxGi := Pools[lpi, fsfffb.TotalGi, di]
+	maxGi := Pools[lpi, di, fsfffb.TotalGi]
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index1)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index2)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index3)
 	maxGi = ly.BetweenLayerGiMax(di, maxGi, ly.LayInhib.Index4)
-	Pools[lpi, fsfffb.TotalGi, di] = maxGi // our inhib is max of us and everyone in the layer pool
+	Pools[lpi, di, fsfffb.TotalGi] = maxGi // our inhib is max of us and everyone in the layer pool
 }
 
 // BetweenLayerGiMax returns max gi value for input maxGi vs
@@ -218,7 +218,7 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 	}
 	oly := GetLayers(uint32(layIndex))
 	opi := oly.PoolIndex(0)
-	ogi := Pools[opi, fsfffb.TotalGi, di]
+	ogi := Pools[opi, di, fsfffb.TotalGi]
 	if ogi > maxGi {
 		return ogi
 	}
@@ -228,7 +228,7 @@ func (ly *LayerParams) BetweenLayerGiMax(di uint32, maxGi float32, layIndex int3
 // LayPoolGiFromSpikes computes inhibition Gi from Spikes for layer-level pool.
 func (ly *LayerParams) LayPoolGiFromSpikes(ctx *Context, lpi, di uint32) {
 	PoolInhibSpikesFromRaw(lpi, di)
-	PoolInhib(&ly.Inhib.Layer, lpi, di, LayerStates[ly.Index, LayerGiMult, di])
+	PoolInhib(&ly.Inhib.Layer, lpi, di, LayerStates[ly.Index, di, LayerGiMult])
 }
 
 // SubPoolGiFromSpikes computes inhibition Gi from Spikes within a sub-pool
@@ -237,9 +237,9 @@ func (ly *LayerParams) SubPoolGiFromSpikes(ctx *Context, lpi, pi, di uint32, lyI
 	PoolInhibSpikesFromRaw(pi, di)
 	PoolInhib(&ly.Inhib.Pool, pi, di, giMult)
 	if lyInhib {
-		PoolInhibLayerMax(pi, di, Pools[lpi, fsfffb.TotalGi, di]) // note: this requires lpl inhib to have been computed before!
+		PoolInhibLayerMax(pi, di, Pools[lpi, di, fsfffb.TotalGi]) // note: this requires lpl inhib to have been computed before!
 	} else {
-		PoolInhibPoolMax(pi, di, Pools[pi, fsfffb.TotalGi, di]) // display only
+		PoolInhibPoolMax(pi, di, Pools[pi, di, fsfffb.TotalGi]) // display only
 		PoolInhibSaveOrig(lpi, di) // effective GiOrig
 	}
 }
@@ -292,7 +292,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 	saveVal := float32(0)               // sometimes we need to use a value computed here, for the post Gs step
 	pil := pi - ly.PoolSt
 	pnn := uint32(PoolNNeurons(pi))
-	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolsInt[pi, PoolNeurSt, di])
+	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolsInt[pi, di, PoolNeurSt])
 	nrnCtxtGe := Neurons[ni, di, CtxtGe]
 	nrnGeRaw := Neurons[ni, di, GeRaw]
 	hasRew := GlobalScalars[GvHasRew, di] > 0
@@ -486,9 +486,9 @@ func (ly *LayerParams) GFromRawSyn(ctx *Context, ni, di uint32) {
 // GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ctx *Context, pi, ni, di uint32) {
-	giMult := LayerStates[ly.Index, LayerGiMult, di]
-	gi := giMult*Pools[pi, fsfffb.TotalGi, di] + Neurons[ni, di, GiSyn] + Neurons[ni, di, GiNoise] + ly.Learn.NeuroMod.GiFromACh(GlobalScalars[GvACh, di])
-	ssgi := Pools[pi, fsfffb.SSGi, di]
+	giMult := LayerStates[ly.Index, di, LayerGiMult]
+	gi := giMult*Pools[pi, di, fsfffb.TotalGi] + Neurons[ni, di, GiSyn] + Neurons[ni, di, GiNoise] + ly.Learn.NeuroMod.GiFromACh(GlobalScalars[GvACh, di])
+	ssgi := Pools[pi, di, fsfffb.SSGi]
 	Neurons[ni, di, Gi] = gi
 	Neurons[ni, di, SSGiDend] = 0.0
 	if ctx.PlusPhase.IsTrue() && ly.Type == PulvinarLayer {
@@ -568,7 +568,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	li := ly.Index
 	pil := pi - ly.PoolSt // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
-	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolsInt[pi, PoolNeurSt, di])
+	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolsInt[pi, di, PoolNeurSt])
 	hasRew := GlobalScalars[GvHasRew, di] > 0
 	switch ly.Type {
 	case SuperLayer:
@@ -663,9 +663,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 		// clipped linear
 		Neurons[ni, di, Act] = ly.RWPred.PredRange.ClipValue(Neurons[ni, di, Ge])
 		if pni == 0 {
-			LayerStates[li, LayerRewPredPos, di] = Neurons[ni, di, ActInt] 
+			LayerStates[li, di, LayerRewPredPos] = Neurons[ni, di, ActInt] 
 		} else {
-			LayerStates[li, LayerRewPredNeg, di] = Neurons[ni, di, ActInt]
+			LayerStates[li, di, LayerRewPredNeg] = Neurons[ni, di, ActInt]
 		}
 	case RWDaLayer:
 		// I set this in CyclePost
@@ -674,9 +674,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 		// linear
 		Neurons[ni, di, Act] = Neurons[ni, di, Ge]
 		if pni == 0 {
-			LayerStates[li, LayerRewPredPos, di] = Neurons[ni, di, ActInt]
+			LayerStates[li, di, LayerRewPredPos] = Neurons[ni, di, ActInt]
 		} else {
-			LayerStates[li, LayerRewPredNeg, di] = Neurons[ni, di, ActInt]
+			LayerStates[li, di, LayerRewPredNeg] = Neurons[ni, di, ActInt]
 		}
 	case TDIntegLayer:
 		Neurons[ni, di, Act] = GlobalScalars[GvRewPred, di]
@@ -746,8 +746,8 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 func (ly *LayerParams) CyclePostLayer(ctx *Context, lpi, di uint32) {
 	casp := PoolAvgMax(AMCaSpkP, AMCycle, Max, lpi, di)
 	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart && casp > 0.5 { // todo: param
-		if LayerStates[ly.Index, LayerRT, di] <= 0 {
-			LayerStates[ly.Index, LayerRT, di] = float32(ctx.Cycle)
+		if LayerStates[ly.Index, di, LayerRT] <= 0 {
+			LayerStates[ly.Index, di, LayerRT] = float32(ctx.Cycle)
 		}
 	}
 }
@@ -780,7 +780,7 @@ func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, srcLay1Act, sr
 
 func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, di uint32) {
 	pli := uint32(ly.RWDa.RWPredLayIndex)
-	pred := LayerStates[pli, LayerRewPredPos, di] - LayerStates[pli, LayerRewPredNeg, di]
+	pred := LayerStates[pli, di, LayerRewPredPos] - LayerStates[pli, di, LayerRewPredNeg]
 	GlobalScalars[GvRewPred, di] = pred // record
 	da := float32(0)
 	if GlobalScalars[GvHasRew, di] > 0 {
@@ -793,7 +793,7 @@ func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, di uint32) {
 	if ctx.PlusPhase.IsFalse() {
 		return
 	}
-	pred := LayerStates[ly.Index, LayerRewPredPos, di] - LayerStates[ly.Index, LayerRewPredNeg, di]
+	pred := LayerStates[ly.Index, di, LayerRewPredPos] - LayerStates[ly.Index, di, LayerRewPredNeg]
 	GlobalScalars[GvPrevPred, di] = pred
 }
 
@@ -805,19 +805,19 @@ func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, di uint32) {
 	rpval := float32(0)
 	if ctx.PlusPhase.IsTrue() {
 		pli := uint32(ly.TDInteg.TDPredLayIndex)
-		pred := LayerStates[pli, LayerRewPredPos, di] - LayerStates[pli, LayerRewPredNeg, di]
+		pred := LayerStates[pli, di, LayerRewPredPos] - LayerStates[pli, di, LayerRewPredNeg]
 		rpval = rew + ly.TDInteg.Discount*ly.TDInteg.PredGain*pred
-		LayerStates[ly.Index, LayerRewPredPos, di] = rpval // our plus phase = new integrated value
+		LayerStates[ly.Index, di, LayerRewPredPos] = rpval // our plus phase = new integrated value
 	} else {
 		rpval = ly.TDInteg.PredGain * GlobalScalars[GvPrevPred, di]
-		LayerStates[ly.Index, LayerRewPredNeg, di] = rpval // our minus phase = prior integrated value
+		LayerStates[ly.Index, di, LayerRewPredNeg] = rpval // our minus phase = prior integrated value
 	}
 	GlobalScalars[GvRewPred, di] = rpval // global value will be copied to layers next cycle
 }
 
 func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, di uint32) {
 	ili := uint32(ly.TDDa.TDIntegLayIndex)
-	da := LayerStates[ili, LayerRewPredPos, di] - LayerStates[ili, LayerRewPredNeg, di]
+	da := LayerStates[ili, di, LayerRewPredPos] - LayerStates[ili, di, LayerRewPredNeg]
 	if ctx.PlusPhase.IsFalse() {
 		da = 0
 	}
@@ -863,7 +863,7 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 
 		ly.Acts.Clamp.IsInput.SetBool(ly.IsInput())
 		ly.Acts.Clamp.IsTarget.SetBool(ly.IsTarget())
-		LayerStates[ly.Index, LayerRT, di] = -1.0
+		LayerStates[ly.Index, di, LayerRT] = -1.0
 
 		for spi := uint32(0); spi < np; spi++ {
 			pi := ly.PoolIndex(spi)
@@ -884,21 +884,21 @@ func (ly *LayerParams) NewStateLayer(ctx *Context) {
 // NewStateLayerActAvg updates ActAvg.ActMAvg and ActPAvg based on current values
 // that have been averaged across NData already.
 func (ly *LayerParams) NewStateLayerActAvg(ctx *Context, di uint32, actMinusAvg, actPlusAvg float32) {
-	mavg := LayerStates[ly.Index, LayerActMAvg, di]
-	pavg := LayerStates[ly.Index, LayerActPAvg, di]
+	mavg := LayerStates[ly.Index, di, LayerActMAvg]
+	pavg := LayerStates[ly.Index, di, LayerActPAvg]
 	ly.Inhib.ActAvg.AvgFromAct(&mavg, actMinusAvg, ly.Acts.Dt.LongAvgDt)
 	ly.Inhib.ActAvg.AvgFromAct(&pavg, actPlusAvg, ly.Acts.Dt.LongAvgDt)
-	LayerStates[ly.Index, LayerActMAvg, di] = mavg
-	LayerStates[ly.Index, LayerActPAvg, di] = pavg
+	LayerStates[ly.Index, di, LayerActMAvg] = mavg
+	LayerStates[ly.Index, di, LayerActPAvg] = pavg
 }
 
 func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
-	PoolsInt[pi, Clamped, di] = 0
+	PoolsInt[pi, di, Clamped] = 0
 	if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsInput.IsTrue() {
-		PoolsInt[pi, Clamped, di] = 1
+		PoolsInt[pi, di, Clamped] = 1
 	}
 	PoolInhibDecay(pi, di, ly.Acts.Decay.Act)
-	PoolsInt[pi, PoolGated, di] = 0
+	PoolsInt[pi, di, PoolGated] = 0
 }
 
 // NewStateNeuron handles all initialization at start of new input pattern.
@@ -916,9 +916,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) MinusPhasePool(ctx *Context, pi, di uint32) {
 	PoolCycleToMinus(pi, di)
 	if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsTarget.IsTrue() {
-		PoolsInt[pi, Clamped, di] = 1
+		PoolsInt[pi, di, Clamped] = 1
 	}
-	if PoolsInt[pi, PoolIsLayer, di] == 0 {
+	if PoolsInt[pi, di, PoolIsLayer] == 0 {
 		return
 	}
 	geIntMinusMax := float32(0)
@@ -936,12 +936,12 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pi, di uint32) {
 // (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase,
 // using values that already max across NData.
 func (ly *LayerParams) AvgGeM(ctx *Context, di uint32, geIntMinusMax, giIntMinusMax float32) {
-	gem := LayerStates[ly.Index, LayerAvgMaxGeM, di]
-	gim := LayerStates[ly.Index, LayerAvgMaxGiM, di]
+	gem := LayerStates[ly.Index, di, LayerAvgMaxGeM]
+	gim := LayerStates[ly.Index, di, LayerAvgMaxGiM]
 	gem += ly.Acts.Dt.LongAvgDt * (geIntMinusMax - gem)
 	gim += ly.Acts.Dt.LongAvgDt * (giIntMinusMax - gim)
-	LayerStates[ly.Index, LayerAvgMaxGeM, di] = gem
-	LayerStates[ly.Index, LayerAvgMaxGiM, di] = gim
+	LayerStates[ly.Index, di, LayerAvgMaxGeM] = gem
+	LayerStates[ly.Index, di, LayerAvgMaxGiM] = gim
 }
 
 // MinusPhaseNeuron does neuron level minus-phase updating
@@ -985,7 +985,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	switch ly.Type {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaSpkP, Neurons[ni, di, SpkPrv]) // delta on previous trial
-		if !ly.Learn.NeuroMod.IsBLAExt() && PoolsInt[pi, PoolNeurSt, 0] == 0 { // first pool
+		if !ly.Learn.NeuroMod.IsBLAExt() && PoolsInt[pi, 0, PoolNeurSt] == 0 { // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case VSPatchLayer:
