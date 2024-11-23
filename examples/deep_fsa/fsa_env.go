@@ -136,7 +136,7 @@ func (ev *FSAEnv) Init(run int) {
 	ev.Trial.Init()
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
 	ev.AState.Cur = 0
-	ev.AState.Prv = -1
+	ev.AState.Prev = -1
 }
 
 // NextState sets NextStates including randomly chosen one at start
@@ -167,7 +167,7 @@ func (ev *FSAEnv) Step() bool {
 	ev.NextState()
 	ev.Trial.Incr()
 	ev.Tick.Incr()
-	if ev.AState.Prv == 0 {
+	if ev.AState.Prev == 0 {
 		ev.Tick.Init()
 		ev.Seq.Incr()
 	}

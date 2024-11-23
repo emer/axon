@@ -154,21 +154,25 @@ var ViewTimeCycles = []int{1, 10, 25, 50, 100, 150, 200}
 // Use one of these for each mode you want to control separately.
 type NetViewUpdate struct {
 
-	// toggles update of display on
+	// On toggles update of display on
 	On bool
 
-	// Time scale to update the network view.
+	// Time scale to update the network view (Cycle to Trial timescales).
 	Time ViewTimes
+
+	// CounterFunc returns the counter string showing current counters etc.
+	CounterFunc func(mode, level enums.Enum) string `display:"-"`
 
 	// View is the network view.
 	View *netview.NetView `display:"-"`
 }
 
-// Config configures for given NetView and time.
-func (vu *NetViewUpdate) Config(nv *netview.NetView, tm ViewTimes) {
+// Config configures for given NetView, time and counter func.
+func (vu *NetViewUpdate) Config(nv *netview.NetView, tm ViewTimes, fun func(mode, level enums.Enum) string) {
 	vu.View = nv
 	vu.On = true
 	vu.Time = tm
+	vu.CounterFunc = fun
 }
 
 // ShouldUpdate returns true if the view is On,
@@ -196,10 +200,11 @@ func (vu *NetViewUpdate) GoUpdate(counters string) {
 // including recording new data and driving update of display.
 // This version is only for calling from the main event loop
 // (see also GoUpdate).
-func (vu *NetViewUpdate) Update(counters string) {
+func (vu *NetViewUpdate) Update(mode, level enums.Enum) {
 	if !vu.ShouldUpdate() {
 		return
 	}
+	counters := vu.CounterFunc(mode, level)
 	vu.View.Record(counters, -1) // -1 = default incrementing raster
 	vu.View.UpdateView()
 }
@@ -209,12 +214,13 @@ func (vu *NetViewUpdate) Update(counters string) {
 // This has different logic for the raster view vs. regular.
 // This is only for calling from a separate goroutine,
 // not the main event loop.
-func (vu *NetViewUpdate) UpdateWhenStopped() {
+func (vu *NetViewUpdate) UpdateWhenStopped(mode, level enums.Enum) {
 	if !vu.ShouldUpdate() {
 		return
 	}
 	if !vu.View.Options.Raster.On { // always record when not in raster mode
-		vu.View.Record("", -1) // -1 = use a dummy counter
+		counters := vu.CounterFunc(mode, level)
+		vu.View.Record(counters, -1) // -1 = use a dummy counter
 	}
 	vu.View.GoUpdateView()
 }

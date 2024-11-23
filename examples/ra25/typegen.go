@@ -24,4 +24,4 @@ var _ = types.AddType(&types.Type{Name: "main.Sim", IDName: "sim", Doc: "Sim enc
 
 var _ = types.AddFunc(&types.Func{Name: "main.main"})
 
-var _ = types.AddFunc(&types.Func{Name: "main.RunSim", Doc: "RunSim runs the simulation.", Directives: []types.Directive{{Tool: "cli", Directive: "cmd", Args: []string{"-root"}}}, Args: []string{"cfg"}, Returns: []string{"error"}})
+var _ = types.AddFunc(&types.Func{Name: "main.RunSim", Doc: "RunSim runs the simulation.", Args: []string{"cfg"}, Returns: []string{"error"}})
