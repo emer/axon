@@ -303,9 +303,9 @@ func (ss *Sim) New() {
 	ss.Defaults()
 	ss.Net = axon.NewNetwork("")
 	ss.Test = AttnSize
-	ss.TstTrlLog = &table.Table{}
-	ss.TstRunLog = &table.Table{}
-	ss.TstStats = &table.Table{}
+	ss.TstTrlLog = table.New()
+	ss.TstRunLog = table.New()
+	ss.TstStats = table.New()
 	ss.Params = ParamSets
 	ss.ViewOn = true
 	ss.ViewUpdate = axon.AlphaCycle // axon.Cycle // axon.FastSpike

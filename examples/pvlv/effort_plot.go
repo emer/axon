@@ -79,9 +79,9 @@ func (ss *DrEffPlot) Config() {
 	ss.USTime.Set(2, 20)
 	ss.Effort.Set(0.5, 1.5)
 	ss.Update()
-	ss.Table = &table.Table{}
+	ss.Table = table.New()
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &table.Table{}
+	ss.TimeTable = table.New()
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 

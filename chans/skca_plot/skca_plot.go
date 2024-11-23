@@ -78,9 +78,9 @@ func (ss *Sim) Config() {
 	ss.NoSpikeThr = 0.5
 	ss.SpikeFreq = 100
 	ss.Update()
-	ss.Table = &table.Table{}
+	ss.Table = table.New()
 	ss.ConfigTable(ss.Table)
-	ss.TimeTable = &table.Table{}
+	ss.TimeTable = table.New()
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 

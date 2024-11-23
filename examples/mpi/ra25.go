@@ -230,7 +230,7 @@ func (ss *Sim) New() {
 	ss.Net = axon.NewNetwork("RA25 MPI")
 	ss.Params.Config(ParamSets, ss.Config.Params.Sheet, ss.Config.Params.Tag, ss.Net)
 	ss.Stats.Init()
-	ss.Pats = &table.Table{}
+	ss.Pats = table.New()
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	ss.Context.Defaults()

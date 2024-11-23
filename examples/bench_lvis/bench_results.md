@@ -14,6 +14,14 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
+# V2.0.0-dev0.2.2 webgpu initial
+
+Currently, can only handle -hiddenNeurs=4 due to memory limits!
+
+```
+go test -gpu -hiddenNeurs=4 -verbose=false -ndata=1 -bench=. -run not 
+```
+
 # v2.0.0-dev0.2.1 vgpu final 09/02/24 (linear SynCa approx)
 
 ## MacBook Pro M3

@@ -1657,7 +1657,7 @@ func TestRubiconGiveUp(t *testing.T) {
 // 	pj.Defaults()
 // 
 // 	nsamp := 100
-// 	dt := &table.Table{}
+// 	dt := table.New()
 // 	dt.AddFloat32Column("Wt")
 // 	dt.AddFloat32Column("LWt")
 // 	dt.AddFloat32Column("SWt")

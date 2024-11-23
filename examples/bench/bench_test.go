@@ -52,10 +52,10 @@ func BenchmarkBenchNetFull(b *testing.B) {
 		log.Println(net.SizeReport(false))
 	}
 
-	pats := &table.Table{}
+	pats := table.New()
 	ConfigPats(pats, *numPats, *numUnits)
 
-	epcLog := &table.Table{}
+	epcLog := table.New()
 	ConfigEpcLog(epcLog)
 
 	TrainNet(net, ctx, pats, epcLog, *numEpochs, *verbose, *gpu)

@@ -137,14 +137,14 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 
 	ss.PoolVocab = patgen.Vocab{}
-	ss.TrainAB = &table.Table{}
-	ss.TrainAC = &table.Table{}
-	ss.TestAB = &table.Table{}
-	ss.TestAC = &table.Table{}
-	ss.PreTrainLure = &table.Table{}
-	ss.TestLure = &table.Table{}
-	ss.TrainAll = &table.Table{}
-	ss.TestABAC = &table.Table{}
+	ss.TrainAB = table.New()
+	ss.TrainAC = table.New()
+	ss.TestAB = table.New()
+	ss.TestAC = table.New()
+	ss.PreTrainLure = table.New()
+	ss.TestLure = table.New()
+	ss.TrainAll = table.New()
+	ss.TestABAC = table.New()
 	ss.PretrainMode = false
 
 	ss.RandSeeds.Init(100) // max 100 runs

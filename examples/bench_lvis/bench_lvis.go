@@ -15,6 +15,7 @@ import (
 
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
@@ -60,7 +61,7 @@ var PathParams = axon.PathSheets{
 }
 
 func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim, threads, maxData int, verbose bool) {
-	net.SetMaxData(ctx, maxData)
+	net.SetMaxData(maxData)
 
 	/*
 	 * v1m6 ---> v2m16 <--> v4f16 <--> output
@@ -122,9 +123,7 @@ func ConfigNet(ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pat
 		panic(err)
 	}
 	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets["Base"], false); err != nil {
-		panic(err)
-	}
+	axon.ApplyParamSheets(net, LayerParams["Base"], PathParams["Base"])
 
 	if threads == 0 {
 		if verbose {
@@ -159,20 +158,22 @@ func ConfigEpcLog(dt *table.Table) {
 	dt.AddFloat32Column("CountErr")
 	dt.AddFloat32Column("PctErr")
 	dt.AddFloat32Column("PctCor")
-	dt.AddFloat32Column("Hid1ActAvg")
-	dt.AddFloat32Column("Hid2ActAvg")
+	dt.AddFloat32Column("V2ActAvg")
+	dt.AddFloat32Column("V4ActAvg")
+	dt.AddFloat32Column("TEActAvg")
 	dt.AddFloat32Column("OutActAvg")
 }
 
-func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, gpu bool) {
-	net.InitWeights()
-	np := pats.NumRows()
-	porder := rand.Perm(np) // randomly permuted order of ints
-
-	if gpu {
+func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, useGPU bool) {
+	if useGPU {
+		gpu.Debug = true
 		axon.GPUInit()
 		axon.UseGPU = true
 	}
+
+	net.InitWeights()
+	np := pats.NumRows()
+	porder := rand.Perm(np) // randomly permuted order of ints
 
 	epcLog.SetNumRows(epcs)
 
@@ -192,6 +193,7 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 	outPats := pats.Column("Output")
 
 	cycPerQtr := 50
+	cycPerStep := 50
 
 	tmr := timer.Time{}
 	tmr.Start()
@@ -218,8 +220,8 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					net.Cycle(1, false) // todo: 10, or 50
-					ctx.CycleInc()
+					net.Cycle(cycPerStep, false)
+					cyc += cycPerStep - 1
 				}
 				if qtr == 2 {
 					net.MinusPhase()
@@ -228,9 +230,9 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 				}
 			}
 			net.PlusPhase()
-			net.DWt()
-			net.WtFromDWt()
-			outPhaseDiff += outLay.Values[0].PhaseDiff.Cor
+			net.DWtToWt()
+			phasedif := axon.LayerStates.Value(int(outLay.Index), int(axon.LayerPhaseDiff), int(0))
+			outPhaseDiff += 1.0 - phasedif
 			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
 			if pSSE != 0 {
@@ -245,20 +247,19 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tPhaseDiff: %v \tAvgPhaseDiff: %v \tTime:%v\n", epc, outPhaseDiff, outLay.Values[0].PhaseDiff.Avg, t)
+			fmt.Printf("epc: %v  \tPhaseDiff: %v \tTime:%v\n", epc, outPhaseDiff, t)
 		}
 
-		// epcLog.SetFloat("Epoch", epc, float64(epc))
-		// epcLog.SetFloat("PhaseDiff", epc, float64(outPhaseDiff))
-		// epcLog.SetFloat("AvgPhaseDiff", epc, float64(outLay.Values[0].PhaseDiff.Avg))
-		// epcLog.SetFloat("SSE", epc, sse)
-		// epcLog.SetFloat("CountErr", epc, float64(cntErr))
-		// epcLog.SetFloat("PctErr", epc, pctErr)
-		// epcLog.SetFloat("PctCor", epc, pctCor)
-		// epcLog.SetFloat("V2ActAvg", epc, float64(v2.Values[0].ActAvg.ActMAvg))
-		// epcLog.SetFloat("V4ActAvg", epc, float64(v4.Values[0].ActAvg.ActMAvg))
-		// epcLog.SetFloat("TEActAvg", epc, float64(te.Values[0].ActAvg.ActMAvg))
-		// epcLog.SetFloat("OutActAvg", epc, float64(outLay.Values[0].ActAvg.ActMAvg))
+		epcLog.Column("Epoch").SetFloat1D(float64(epc), epc)
+		epcLog.Column("PhaseDiff").SetFloat1D(float64(outPhaseDiff), epc)
+		epcLog.Column("SSE").SetFloat1D(sse, epc)
+		epcLog.Column("CountErr").SetFloat1D(float64(cntErr), epc)
+		epcLog.Column("PctErr").SetFloat1D(pctErr, epc)
+		epcLog.Column("PctCor").SetFloat1D(pctCor, epc)
+		epcLog.Column("V2ActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, v2.Params.PoolIndex(0), 0)), epc)
+		epcLog.Column("V4ActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, v4.Params.PoolIndex(0), 0)), epc)
+		epcLog.Column("TEActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, te.Params.PoolIndex(0), 0)), epc)
+		epcLog.Column("OutActAvg").SetFloat1D(float64(axon.PoolAvgMax(axon.AMAct, axon.AMMinus, axon.Avg, outLay.Params.PoolIndex(0), 0)), epc)
 	}
 	tmr.Stop()
 	if verbose {
@@ -269,5 +270,5 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 		net.TimerReport()
 	}
 
-	net.GPU.Destroy()
+	axon.GPURelease()
 }

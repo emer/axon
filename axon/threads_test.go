@@ -311,7 +311,7 @@ func generateRandomPatterns(nPats int, seed int64) *table.Table {
 
 	rand.Seed(seed)
 
-	pats := &table.Table{}
+	pats := table.New()
 	pats.AddStringColumn("Name")
 	pats.AddFloat32TensorColumn("Input", shape, "Y", "X")
 	pats.AddFloat32TensorColumn("Output", shape, "Y", "X")

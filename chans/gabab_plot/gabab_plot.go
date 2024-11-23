@@ -117,13 +117,13 @@ func (ss *Sim) Config() {
 	ss.TimeInc = .001
 	ss.Update()
 
-	ss.VGTable = &table.Table{}
+	ss.VGTable = table.New()
 	ss.ConfigVGTable(ss.VGTable)
 
-	ss.SGTable = &table.Table{}
+	ss.SGTable = table.New()
 	ss.ConfigSGTable(ss.SGTable)
 
-	ss.TimeTable = &table.Table{}
+	ss.TimeTable = table.New()
 	ss.ConfigTimeTable(ss.TimeTable)
 }
 
