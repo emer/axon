@@ -70,112 +70,120 @@ const (
 
 // see params.go for params
 
-// ParamConfig has config parameters related to sim params
+// ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
 
-	// size of hidden layer -- can use emer.LaySize for 4D layers
+	// Hidden1Size is the size of hidden 1 layer.
 	Hidden1Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
-	// size of hidden layer -- can use emer.LaySize for 4D layers
+	// Hidden2Size is the size of hidden 2 layer.
 	Hidden2Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
-	// Extra Param Sheet name(s) to use (space separated if multiple) -- must be valid name as listed in compiled-in params or loaded params
+	// Sheet is the extra params sheet name(s) to use (space separated
+	// if multiple). Must be valid name as listed in compiled-in params
+	// or loaded params.
 	Sheet string
 
-	// extra tag to add to file names and logs saved from this run
+	// Tag is an extra tag to add to file names and logs saved from this run.
 	Tag string
 
-	// user note -- describe the run params etc -- like a git commit message for the run
+	// Note is additional info to describe the run params etc,
+	// like a git commit message for the run.
 	Note string
 
-	// Name of the JSON file to input saved parameters from.
-	File string `nest:"+"`
-
-	// Save a snapshot of all current param and config settings in a directory named params_<datestamp> (or _good if Good is true), then quit -- useful for comparing to later changes and seeing multiple views of current params
+	// SaveAll will save a snapshot of all current param and config settings
+	// in a directory named params_<datestamp> (or _good if Good is true),
+	// then quit. Useful for comparing to later changes and seeing multiple
+	// views of current params.
 	SaveAll bool `nest:"+"`
 
-	// for SaveAll, save to params_good for a known good params state.  This can be done prior to making a new release after all tests are passing -- add results to git to provide a full diff record of all params over level.
+	// Good is for SaveAll, save to params_good for a known good params state.
+	// This can be done prior to making a new release after all tests are passing.
+	// Add results to git to provide a full diff record of all params over level.
 	Good bool `nest:"+"`
 }
 
-// RunConfig has config parameters related to running the sim
+// RunConfig has config parameters related to running the sim.
 type RunConfig struct {
 
-	// use the GPU for computation -- generally faster even for small models if NData ~16
+	// GPU uses the GPU for computation, generally faster than CPU even for
+	// small models if NData ~16.
 	GPU bool `default:"true"`
 
-	// number of data-parallel items to process in parallel per trial -- works (and is significantly faster) for both CPU and GPU.  Results in an effective mini-batch of learning.
+	// NData is the number of data-parallel items to process in parallel per trial.
+	// Is significantly faster for both CPU and GPU.  Results in an effective
+	// mini-batch of learning.
 	NData int `default:"16" min:"1"`
 
-	// number of parallel threads for CPU computation -- 0 = use default
+	// NThreads is the number of parallel threads for CPU computation;
+	// 0 = use default.
 	NThreads int `default:"0"`
 
-	// starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1
+	// Run is the _starting_ run number, which determines the random seed.
+	// NRuns counts up from there. Can do all runs in parallel by launching
+	// separate jobs with each starting Run, NRuns = 1.
 	Run int `default:"0"`
 
-	// total number of runs to do when running Train
+	// NRuns is the total number of runs to do when running Train,
+	// starting from Run.
 	NRuns int `default:"5" min:"1"`
 
-	// total number of epochs per run
+	// NEpochs is the total number of epochs per run.
 	NEpochs int `default:"100"`
 
-	// stop run after this number of perfect, zero-error epochs
+	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`
 
-	// total number of trials per epoch.  Should be an even multiple of NData.
+	// NTrials is the total number of trials per epoch.
+	// Should be an even multiple of NData.
 	NTrials int `default:"32"`
 
-	// how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing
+	// TestInterval is how often (in epochs) to run through all the test patterns,
+	// in terms of training epochs. Can use 0 or -1 for no testing.
 	TestInterval int `default:"5"`
 
-	// how frequently (in epochs) to compute PCA on hidden representations to measure variance?
+	// PCAInterval is how often (in epochs) to compute PCA on hidden
+	// representations to measure variance.
 	PCAInterval int `default:"5"`
 
-	// if non-empty, is the name of weights file to load at start of first run -- for testing
+	// StartWts is the name of weights file to load at start of first run.
 	StartWts string
 }
 
-// LogConfig has config parameters related to logging data
+// LogConfig has config parameters related to logging data.
 type LogConfig struct {
 
-	// if true, save final weights after each run
+	// SaveWeights will save final weights after each run.
 	SaveWeights bool
 
-	// if true, save train epoch log to file, as .epc.tsv typically
-	Epoch bool `default:"true" nest:"+"`
+	// Train has the list of Train mode levels to save log files for.
+	Train []string `default:"['Run', 'Epoch']" nest:"+"`
 
-	// if true, save run log to file, as .run.tsv typically
-	Run bool `default:"true" nest:"+"`
-
-	// if true, save train trial log to file, as .trl.tsv typically. May be large.
-	Trial bool `default:"false" nest:"+"`
-
-	// if true, save testing epoch log to file, as .tst_epc.tsv typically.  In general it is better to copy testing items over to the training epoch log and record there.
-	TestEpoch bool `default:"false" nest:"+"`
-
-	// if true, save testing trial log to file, as .tst_trl.tsv typically. May be large.
-	TestTrial bool `default:"false" nest:"+"`
+	// Test has the list of Test mode levels to save log files for.
+	Test []string `nest:"+"`
 }
 
 // Config is a standard Sim config -- use as a starting point.
 type Config struct {
 
-	// specify include files here, and after configuration, it contains list of include files added
+	// Includes has a list of additional config files to include.
+	// After configuration, it contains list of include files added.
 	Includes []string
 
-	// open the GUI -- does not automatically run -- if false, then runs automatically and quits
+	// GUI means open the GUI. Otherwise it runs automatically and quits,
+	// saving results to log files.
 	GUI bool `default:"true"`
 
-	// log debugging information
+	// Debug reports debugging information.
 	Debug bool
 
-	// parameter related configuration options
+	// Params has parameter related configuration options.
 	Params ParamConfig `display:"add-fields"`
 
-	// sim running related configuration options
+	// Run has sim running related configuration options.
 	Run RunConfig `display:"add-fields"`
 
-	// data logging related configuration options
+	// Log has data logging related configuration options.
 	Log LogConfig `display:"add-fields"`
 }
 
@@ -356,11 +364,9 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.ApplyParams()
-	// ss.Net.GPU.SyncParamsToGPU()
 	ss.InitStats()
 	ss.NewRun()
 	ss.TrainUpdate.RecordSyns()
-	// todo: need to pass the counters function here, instead of calling each time.
 	ss.TrainUpdate.Update(Train, Trial)
 }
 
@@ -769,11 +775,10 @@ func (ss *Sim) ConfigStats() {
 		pcaFunc(mode, level, phase == Start, trnEpc)
 	})
 
-	// ss.Logs.AddCopyFromFloatItems(Train, []Times{Epoch, Run}, Test, Epoch, "Tst", "PhaseDiff", "UnitErr", "PctCor", "PctErr")
-	//
-	// axon.LogInputLayer(&ss.Logs, ss.Net, Train)
-	//
-	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", Test, Trial, "InputLayer", "TargetLayer")
+	stateFunc := axon.StatLayerState(ss.Stats, net, Test, Trial, true, "ActM", "Input", "Output")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		stateFunc(mode, level, phase == Start)
+	})
 }
 
 // StatCounters returns counters string to show at bottom of netview.
@@ -790,10 +795,13 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", tensorfs.Value[string](curModeDir, "TrialName").String1D(di))
-	if level == Cycle || curModeDir.Node("UnitErr") == nil {
+	statNames := []string{"CorSim", "UnitErr", "Err"}
+	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
-	counters += fmt.Sprintf(" UnitErr: %g", tensorfs.Value[float64](curModeDir, "UnitErr").Float1D(di))
+	for _, name := range statNames {
+		counters += fmt.Sprintf(" %s: %.4g", name, tensorfs.Value[float64](curModeDir, name).Float1D(di))
+	}
 	return counters
 }
 
@@ -823,31 +831,11 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.UpdateFiles()
 	ss.InitStats()
 	ss.GUI.FinalizeGUI(false)
-
-	//	if ss.Config.Run.GPU {
-	//		// vgpu.Debug = ss.Config.Debug // when debugging GPU..
-	//		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
-	//		core.TheApp.AddQuitCleanFunc(func() {
-	//			ss.Net.GPU.Destroy()
-	//		})
-	//	}
 }
 
 // todo: persistent run log
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
-
-	tree.Add(p, func(w *core.Separator) {})
-	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
-		Label:   "Reset RunLog",
-		Icon:    icons.Reset,
-		Tooltip: "Reset the accumulated log of all Runs, which are tagged with the ParamSet used",
-		Active:  egui.ActiveAlways,
-		Func: func() {
-			// ss.Logs.ResetLog(Train, Run)
-			// ss.GUI.UpdatePlot(Train, Run)
-		},
-	})
 
 	tree.Add(p, func(w *core.Separator) {})
 	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
@@ -888,9 +876,8 @@ func (ss *Sim) RunNoGUI() {
 
 	runName := ss.SetRunName()
 	netName := ss.Net.Name
-
 	cfg := &ss.Config.Log
-	axon.OpenLogFiles(ss.Loops, ss.Stats, netName, runName, cfg.Run, cfg.Epoch, cfg.Trial, false, cfg.TestEpoch, cfg.TestTrial)
+	axon.OpenLogFiles(ss.Loops, ss.Stats, netName, runName, [][]string{cfg.Train, cfg.Test})
 
 	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
 	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)

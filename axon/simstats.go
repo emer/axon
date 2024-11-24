@@ -42,23 +42,29 @@ func OpenLogFile(on bool, dt *table.Table, netName, runName, logName string) {
 	dt.OpenLog(fnm, tensor.Tab)
 }
 
-// OpenLogFiles opens the log files for each mode and level of the looper,
-// using the given bools in order to determine which logs to open.
+// OpenLogFiles opens the log files for modes and levels of the looper,
+// based on the lists of level names, ordered by modes in numerical order.
 // The netName and runName are used for naming the file, along with
 // the mode_level in lower case.
-func OpenLogFiles(ls *looper.Stacks, statsDir *tensorfs.Node, netName, runName string, on ...bool) {
-	non := len(on)
-	idx := 0
-	for mode, st := range ls.Stacks {
+func OpenLogFiles(ls *looper.Stacks, statsDir *tensorfs.Node, netName, runName string, modeLevels [][]string) {
+	modes := ls.Modes()
+	for i, mode := range modes {
+		if i >= len(modeLevels) {
+			return
+		}
+		levels := modeLevels[i]
+		st := ls.Stacks[mode]
 		for _, level := range st.Order {
-			if idx >= non {
+			on := false
+			for _, lev := range levels {
+				if lev == level.String() {
+					on = true
+					break
+				}
+			}
+			if !on {
 				continue
 			}
-			if !on[idx] {
-				idx++
-				continue
-			}
-			idx++
 			logName := strings.ToLower(mode.String() + "_" + level.String())
 			dt := tensorfs.DirTable(StatsNode(statsDir, mode, level), nil)
 			fnm := LogFilename(netName, runName, logName)
@@ -261,7 +267,7 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, statName string, trainMode enums.
 // of parameter tuning to ensure everything is in an appropriate dynamic range.
 // It only runs for given trainMode at given trialLevel and above,
 // with higher levels computing the Mean of lower levels.
-func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode enums.Enum, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
 	statNames := []string{"ActMAvg", "ActMMax", "MaxGeM"}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool) {
@@ -308,6 +314,41 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode enums.Enum,
 					stat := stats.StatMean.Call(subd.Value(name))
 					tsr.AppendRow(stat)
 				}
+			}
+		}
+	}
+}
+
+// StatLayerState returns a Stats function that records layer state
+// It runs for given mode and level, recording given variable
+// for given layer names. if isTrialLevel is true, the level is a
+// trial level that needs iterating over NData.
+func StatLayerState(statsDir *tensorfs.Node, net *Network, smode, slevel enums.Enum, isTrialLevel bool, variable string, layerNames ...string) func(mode, level enums.Enum, start bool) {
+	return func(mode, level enums.Enum, start bool) {
+		if mode.Int64() != smode.Int64() || level.Int64() != slevel.Int64() {
+			return
+		}
+		modeDir := statsDir.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		ndata := int(net.Context().NData)
+		if !isTrialLevel {
+			ndata = 1
+		}
+		for _, lnm := range layerNames {
+			ly := net.LayerByName(lnm)
+			name := lnm + "_" + variable
+			sizes := []int{ndata}
+			sizes = append(sizes, ly.GetSampleShape().Sizes...)
+			tsr := tensorfs.Value[float64](levelDir, name, sizes...)
+			if start {
+				tsr.SetNumRows(0)
+				continue
+			}
+			for di := range ndata {
+				row := tsr.DimSize(0)
+				tsr.SetNumRows(row + 1)
+				rtsr := tsr.RowTensor(row)
+				ly.UnitValuesSampleTensor(rtsr, variable, di)
 			}
 		}
 	}
