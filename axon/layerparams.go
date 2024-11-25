@@ -112,7 +112,7 @@ type LayerParams struct {
 	Pulv PulvParams `display:"inline"`
 
 	// Matrix has parameters for BG Striatum Matrix MSN layers, which are
-	// the main Go / NoGo gating units in BG.
+	// the main Go / NoGo gating units in BG. GateThr also used in BGThal.
 	Matrix MatrixParams `display:"inline"`
 
 	// GP has params for GP (globus pallidus) of the BG layers.
@@ -232,7 +232,7 @@ func (ly *LayerParams) ShouldDisplay(field string) bool {
 	case "Pulv":
 		return ly.Type == PulvinarLayer
 	case "Matrix":
-		return ly.Type == MatrixLayer
+		return ly.Type == MatrixLayer || ly.Type == BGThalLayer
 	case "GP":
 		return ly.Type == GPLayer
 	case "LDT":
@@ -276,7 +276,7 @@ func (ly *LayerParams) AllParams() string {
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
 		str += "Pulv:    {\n " + JsonToParams(b)
 
-	case MatrixLayer:
+	case MatrixLayer, BGThalLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
 		str += "Matrix:  {\n " + JsonToParams(b)
 	case GPLayer:

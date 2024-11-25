@@ -24,13 +24,16 @@ import (
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
 
-	// threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated
+	// GateThr is the threshold on layer Avg SpkMax for Matrix Go and BG Thal
+	// layers to count as having gated.
 	GateThr float32 `default:"0.05"`
 
-	// is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the Global state, and used for updating effort and other factors.
+	// IsVS is this a ventral striatum (VS) matrix layer? If true, the gating
+	// status of this layer is recorded in the Global state,
+	// and used for updating effort and other factors.
 	IsVS slbool.Bool
 
-	// index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName
+	// index of other matrix (Go if we are NoGo and vice-versa). Set during Build from BuildConfig OtherMatrixName
 	OtherMatrixIndex int32 `edit:"-"`
 
 	// index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used
@@ -95,56 +98,57 @@ func (gp *GPParams) Defaults() {
 func (gp *GPParams) Update() {
 }
 
-//gosl:end
-
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
 // downloaded from GPU, to set Gated flag based on SpkMax activity
-func (ly *Layer) MatrixGated(ctx *Context) {
-	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
-		lpi := ly.Params.PoolIndex(0)
-		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIndex)]
-		opi := oly.Params.PoolIndex(0)
+func (ly *LayerParams) MatrixGated(ctx *Context) {
+	lpi := ly.PoolIndex(0)
+	if ly.Learn.NeuroMod.DAMod != D1Mod {
+		oly := Layers[ly.Matrix.OtherMatrixIndex]
+		olpi := oly.PoolSt
 		// note: NoGo layers don't track gating at the sub-pool level!
 		for di := uint32(0); di < ctx.NData; di++ {
-			PoolsInt.Set(PoolsInt.Value(int(opi), int(di), int(PoolGated)), int(lpi), int(di), int(PoolGated))
+			PoolsInt.Set(PoolsInt.Value(int(olpi), int(di), int(PoolGated)), int(lpi), int(di), int(PoolGated))
 		}
 		return
 	}
-	// todo: Context requires data parallel state!
-
 	for di := uint32(0); di < ctx.NData; di++ {
-		mtxGated, poolIndex := ly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-
+		mtxGated := PoolsInt.Value(int(lpi), int(di), int(PoolGated)) > 0
 		thalGated := false
-		if ly.Params.Matrix.ThalLay1Index >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Index)]
-			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-			thalGated = thalGated || gt
+		if ly.Matrix.ThalLay1Index >= 0 {
+			tly := Layers[ly.Matrix.ThalLay1Index]
+			tlpi := tly.PoolSt
+			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			thalGated = thalGated || gt > 0
 		}
-		if ly.Params.Matrix.ThalLay2Index >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Index)]
-			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-			thalGated = thalGated || gt
+		if ly.Matrix.ThalLay2Index >= 0 {
+			tly := Layers[ly.Matrix.ThalLay2Index]
+			tlpi := tly.PoolSt
+			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			thalGated = thalGated || gt > 0
 		}
-		if ly.Params.Matrix.ThalLay3Index >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Index)]
-			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-			thalGated = thalGated || gt
+		if ly.Matrix.ThalLay3Index >= 0 {
+			tly := Layers[ly.Matrix.ThalLay3Index]
+			tlpi := tly.PoolSt
+			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			thalGated = thalGated || gt > 0
 		}
-		if ly.Params.Matrix.ThalLay4Index >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Index)]
-			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-			thalGated = thalGated || gt
+		if ly.Matrix.ThalLay4Index >= 0 {
+			tly := Layers[ly.Matrix.ThalLay4Index]
+			tlpi := tly.PoolSt
+			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			thalGated = thalGated || gt > 0
 		}
-		if ly.Params.Matrix.ThalLay5Index >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Index)]
-			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-			thalGated = thalGated || gt
+		if ly.Matrix.ThalLay5Index >= 0 {
+			tly := Layers[ly.Matrix.ThalLay5Index]
+			tlpi := tly.PoolSt
+			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			thalGated = thalGated || gt > 0
 		}
-		if ly.Params.Matrix.ThalLay6Index >= 0 {
-			tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Index)]
-			gt, _ := tly.GatedFromSpkMax(di, ly.Params.Matrix.GateThr)
-			thalGated = thalGated || gt
+		if ly.Matrix.ThalLay6Index >= 0 {
+			tly := Layers[ly.Matrix.ThalLay6Index]
+			tlpi := tly.PoolSt
+			gt := PoolsInt.Value(int(tlpi), int(di), int(PoolGated))
+			thalGated = thalGated || gt > 0
 		}
 
 		mtxGated = mtxGated && thalGated
@@ -156,15 +160,24 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 		// that this will make sense and not doing yet..
 
 		if !mtxGated { // nobody did if thal didn't
-			for spi := uint32(0); spi < ly.NPools; spi++ {
-				pi := ly.Params.PoolIndex(spi)
+			for spi := uint32(0); spi < ly.Indexes.NPools; spi++ {
+				pi := ly.PoolIndex(spi)
 				PoolsInt.Set(0, int(pi), int(di), int(PoolGated))
 			}
 		}
-		if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
+		if ctx.PlusPhase.IsTrue() && ly.Matrix.IsVS.IsTrue() {
 			GlobalScalars.Set(num.FromBool[float32](mtxGated), int(GvVSMatrixJustGated), int(di))
 			if mtxGated {
-				GlobalVectors.Set(1, int(GvVSMatrixPoolGated), int(poolIndex), int(di))
+				poolIndex := int32(-1)
+				for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
+					pi := ly.PoolIndex(spi)
+					if poolIndex < 0 && PoolsInt.Value(int(pi), int(di), int(PoolGated)) > 0 {
+						poolIndex = int32(pi)
+					}
+				}
+				if poolIndex > 0 {
+					GlobalVectors.Set(float32(1.0), int(GvVSMatrixPoolGated), int(poolIndex), int(di))
+				}
 			}
 		}
 	}
@@ -172,21 +185,17 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 
 // GatedFromSpkMax updates the Gated state in Pools of given layer,
 // based on Avg SpkMax being above given threshold.
-// returns true if any gated, and the pool index if 4D layer (0 = first).
-func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
+func (ly *LayerParams) GatedFromSpkMax(ctx *Context, di uint32) {
 	anyGated := false
-	poolIndex := -1
-	lpi := ly.Params.PoolIndex(0)
-	if ly.Is4D() {
-		for spi := uint32(1); spi < ly.NPools; spi++ {
-			pi := ly.Params.PoolIndex(spi)
+	lpi := ly.PoolIndex(0)
+	thr := ly.Matrix.GateThr
+	if ly.Indexes.NPools > 1 {
+		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
+			pi := ly.PoolIndex(spi)
 			spkavg := PoolAvgMax(AMSpkMax, AMCycle, Avg, pi, di)
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
-				if poolIndex < 0 {
-					poolIndex = int(spi) - 1
-				}
 				PoolsInt.Set(1, int(pi), int(di), int(PoolGated))
 			} else {
 				PoolsInt.Set(0, int(pi), int(di), int(PoolGated))
@@ -203,15 +212,16 @@ func (ly *Layer) GatedFromSpkMax(di uint32, thr float32) (bool, int) {
 	} else {
 		PoolsInt.Set(0, int(lpi), int(di), int(PoolGated))
 	}
-	return anyGated, poolIndex
 }
 
 // AnyGated returns true if the layer-level pool Gated flag is true,
 // which indicates if any of the layers gated.
-func (ly *Layer) AnyGated(di uint32) bool {
-	lpi := ly.Params.PoolIndex(0)
+func (ly *LayerParams) AnyGated(di uint32) bool {
+	lpi := ly.PoolIndex(0)
 	return PoolsInt.Value(int(lpi), int(di), int(PoolGated)) > 0
 }
+
+//gosl:end
 
 func (ly *Layer) MatrixDefaults() {
 	ly.Params.Acts.Decay.Act = 1

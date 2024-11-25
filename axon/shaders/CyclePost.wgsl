@@ -85,6 +85,9 @@ fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	LayerParams_CyclePostLayer(ly, ctx, lpi, di);
 	switch ((*ly).Type) {
+	case MatrixLayer, BGThalLayer: {
+		LayerParams_GatedFromSpkMax(ly, ctx, di);
+	}
 	case CeMLayer: {
 		LayerParams_CyclePostCeMLayer(ly, ctx, lpi, di);
 	}
@@ -1217,6 +1220,34 @@ struct GPParams {
 	pad: u32,
 	pad1: u32,
 	pad2: u32,
+}
+fn LayerParams_GatedFromSpkMax(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
+	var anyGated = false;
+	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
+	var thr = (*ly).Matrix.GateThr;
+	if ((*ly).Indexes.NPools > 1) {
+		for (var spi = u32(1); spi < (*ly).Indexes.NPools; spi++) {
+			var pi = LayerParams_PoolIndex(ly, spi);
+			var spkavg = PoolAvgMax(AMSpkMax, AMCycle, Avg, pi, di);
+			var gthr = spkavg > thr;
+			if (gthr) {
+				anyGated = true;
+				PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolGated))] = 1;
+			} else {
+				PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolGated))] = 0;
+			}
+		}
+	} else {
+		var spkavg = PoolAvgMax(AMSpkMax, AMCycle, Avg, lpi, di);
+		if (spkavg > thr) {
+			anyGated = true;
+		}
+	}
+	if (anyGated) {
+		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(lpi),u32(di),u32(PoolGated))] = 1;
+	} else {
+		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(lpi),u32(di),u32(PoolGated))] = 0;
+	}
 }
 
 ///////////// import: "pcore-path.go"

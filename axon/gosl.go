@@ -75,6 +75,7 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/LayerGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhasePool.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/MinusPhasePost.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateLayer.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseNeuron.wgsl", sy)
@@ -743,6 +744,48 @@ func RunOneMinusPhasePool(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunMinusPhasePoolCPU(n)
+	}
+}
+// RunMinusPhasePost runs the MinusPhasePost kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneMinusPhasePost call does Run and Done for a
+// single run-and-sync case.
+func RunMinusPhasePost(n int) {
+	if UseGPU {
+		RunMinusPhasePostGPU(n)
+	} else {
+		RunMinusPhasePostCPU(n)
+	}
+}
+
+// RunMinusPhasePostGPU runs the MinusPhasePost kernel on the GPU. See [RunMinusPhasePost] for more info.
+func RunMinusPhasePostGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["MinusPhasePost"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunMinusPhasePostCPU runs the MinusPhasePost kernel on the CPU.
+func RunMinusPhasePostCPU(n int) {
+	gpu.VectorizeFunc(0, n, MinusPhasePost)
+}
+
+// RunOneMinusPhasePost runs the MinusPhasePost kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneMinusPhasePost(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunMinusPhasePostGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunMinusPhasePostCPU(n)
 	}
 }
 // RunNewStateLayer runs the NewStateLayer kernel with given number of elements,

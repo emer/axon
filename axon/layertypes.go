@@ -39,8 +39,7 @@ const (
 	// or learning directly.  It is rarely used in axon.
 	CompareLayer
 
-	/////////////
-	// Deep
+	//////// Deep
 
 	// CT are layer 6 corticothalamic projecting neurons,
 	// which drive "top down" predictions in Pulvinar layers.
@@ -85,8 +84,7 @@ const (
 	// prediction layers, and other layers that require predictive dynamic
 	PTPredLayer
 
-	/////////////////////////////
-	// PCORE Basal Ganglia (BG)
+	//////// PCORE Basal Ganglia (BG)
 
 	// MatrixLayer represents the matrisome medium spiny neurons (MSNs)
 	// that are the main Go / NoGo gating units in BG.
@@ -120,8 +118,7 @@ const (
 	// For visualization and / or motor action signaling.
 	VSGatedLayer
 
-	/////////////
-	// Rubicon
+	//////// Rubicon
 
 	// BLALayer represents a basolateral amygdala layer
 	// which learns to associate arbitrary stimuli (CSs)
@@ -185,8 +182,7 @@ const (
 	// vial Global state values to all layers.
 	VTALayer
 
-	/////////////
-	// RL
+	//////// RL
 
 	// RewLayer represents positive (first unit) or negative (second unit)
 	// reward values, showing spiking rates for each, and Act always represents

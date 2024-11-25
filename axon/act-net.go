@@ -35,8 +35,6 @@ func (nt *Network) Cycle(ncyc int, getNeurons bool) {
 
 	if getNeurons {
 		RunDoneLayersNeurons()
-	} else {
-		RunDoneLayers()
 	}
 
 	// todo: fix this:
@@ -105,7 +103,6 @@ func (nt *Network) ApplyExts() {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	RunApplyExtsNeuron(nd)
-	// note: not completed until cycle is run
 }
 
 // MinusPhase does updating after end of minus phase.
@@ -116,22 +113,7 @@ func (nt *Network) MinusPhase() {
 	pd := int(nix.NPools * ctx.NData)
 	RunMinusPhasePool(pd)
 	RunMinusPhaseNeuron(nd)
-	RunDoneLayersNeurons()
-	nt.MinusPhasePost()
-	ToGPULayersNeurons()
-	// todo:
-	// nt.GPU.SyncStateToGPU()
-}
-
-// MinusPhasePost does special CPU post processing.
-func (nt *Network) MinusPhasePost() {
-	ctx := nt.Context()
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.MinusPhasePost(ctx)
-	}
+	RunMinusPhasePost(int(nix.NLayers))
 }
 
 // PlusPhaseStart does updating at the start of the plus phase:
@@ -141,7 +123,6 @@ func (nt *Network) PlusPhaseStart() {
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
 	RunPlusPhaseStartNeuron(nd)
-	RunDone()
 }
 
 // PlusPhase does updating after end of plus phase
@@ -355,6 +336,12 @@ func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	ni := ctx.ItemIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].MinusPhaseNeuron(ctx, ni, di)
+}
+
+// MinusPhasePost does special algorithm post processing.
+func MinusPhasePost(li uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	Layers[li].MinusPhasePost(ctx)
 }
 
 // PlusPhaseStartNeuron is the kernel over Neurons * Data to

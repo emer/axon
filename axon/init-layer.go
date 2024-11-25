@@ -345,21 +345,3 @@ func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float3
 		PoolInhibDecay(pi, di, decay)
 	}
 }
-
-// DecayStateNeuronsAll decays neural activation state by given proportion
-// (default decay values are ly.Params.Acts.Decay.Act, Glong, AHP)
-// for all data parallel indexes. Does not decay pool or layer state.
-// This is used for minus phase of Pulvinar layers to clear state in prep
-// for driver plus phase.
-func (ly *Layer) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp float32) {
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NeuronIsOff(ni) {
-			continue
-		}
-		for di := uint32(0); di < ctx.NData; di++ {
-			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
-		}
-	}
-}

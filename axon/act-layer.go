@@ -715,6 +715,8 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 	lpi := ly.PoolIndex(0)
 	ly.CyclePostLayer(ctx, lpi, di)
 	switch ly.Type {
+	case MatrixLayer, BGThalLayer:
+		ly.GatedFromSpkMax(ctx, di)
 	case CeMLayer:
 		ly.CyclePostCeMLayer(ctx, lpi, di)
 	case VSPatchLayer:
@@ -850,6 +852,24 @@ func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi, di uint32, spi in
 
 ////////  Phase timescale
 
+// DecayStateNeuronsAll decays neural activation state by given proportion
+// (default decay values are ly.Params.Acts.Decay.Act, Glong, AHP)
+// for all data parallel indexes. Does not decay pool or layer state.
+// This is used for minus phase of Pulvinar layers to clear state in prep
+// for driver plus phase.
+func (ly *LayerParams) DecayStateNeuronsAll(ctx *Context, decay, glong, ahp float32) {
+	nn := ly.Indexes.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.Indexes.NeurSt + lni
+		if NeuronIsOff(ni) {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			ly.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
+		}
+	}
+}
+
 // NewStateLayer does NewState at the layer level, called
 func (ly *LayerParams) NewStateLayer(ctx *Context) {
 	actMinusAvg := float32(0)
@@ -949,6 +969,17 @@ func (ly *LayerParams) AvgGeM(ctx *Context, di uint32, geIntMinusMax, giIntMinus
 func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(ActInt)), int(ni), int(di), int(ActM))
 	Neurons.Set(Neurons.Value(int(ni), int(di), int(CaSpkP)), int(ni), int(di), int(CaSpkPM))
+}
+
+// MinusPhasePost does special algorithm processing at end of minus
+func (ly *LayerParams) MinusPhasePost(ctx *Context) {
+	switch ly.Type {
+	case MatrixLayer:
+		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
+	case PulvinarLayer:
+		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
+	default:
+	}
 }
 
 // PlusPhaseStartNeuron does neuron level plus-phase start:
@@ -1196,16 +1227,6 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 	}
 }
 
-// MinusPhasePost does special algorithm processing at end of minus
-func (ly *Layer) MinusPhasePost(ctx *Context) {
-	switch ly.Type {
-	case MatrixLayer:
-		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
-	case PulvinarLayer:
-		ly.DecayStateNeuronsAll(ctx, 1, 1, 0)
-	}
-}
-
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.PlusPhaseActAvg(ctx)
@@ -1236,7 +1257,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	}
 	switch ly.Type {
 	case MatrixLayer:
-		ly.MatrixGated(ctx)
+		ly.Params.MatrixGated(ctx)
 	}
 }
 
