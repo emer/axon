@@ -124,19 +124,18 @@ type RunConfig struct {
 	// separate jobs with each starting Run, NRuns = 1.
 	Run int `default:"0"`
 
-	// NRuns is the total number of runs to do when running Train,
-	// starting from Run.
-	NRuns int `default:"5" min:"1"`
+	// Runs is the total number of runs to do when running Train, starting from Run.
+	Runs int `default:"5" min:"1"`
 
-	// NEpochs is the total number of epochs per run.
-	NEpochs int `default:"100"`
+	// Epochs is the total number of epochs per run.
+	Epochs int `default:"100"`
+
+	// Trials is the total number of trials per epoch.
+	// Should be an even multiple of NData.
+	Trials int `default:"32"`
 
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`
-
-	// NTrials is the total number of trials per epoch.
-	// Should be an even multiple of NData.
-	NTrials int `default:"32"`
 
 	// TestInterval is how often (in epochs) to run through all the test patterns,
 	// in terms of training epochs. Can use 0 or -1 for no testing.
@@ -396,13 +395,13 @@ func (ss *Sim) NetViewUpdater(mode enums.Enum) *axon.NetViewUpdate {
 func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
-	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.NTrials), float32(ss.Config.Run.NData)))
+	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
 	cycles := 200
 	plusPhase := 50
 
 	ls.AddStack(Train, Trial).
-		AddLevel(Run, ss.Config.Run.NRuns).
-		AddLevel(Epoch, ss.Config.Run.NEpochs).
+		AddLevel(Run, ss.Config.Run.Runs).
+		AddLevel(Epoch, ss.Config.Run.Epochs).
 		AddLevelIncr(Trial, trials, ss.Config.Run.NData).
 		AddLevel(Cycle, cycles)
 
@@ -879,8 +878,8 @@ func (ss *Sim) RunNoGUI() {
 	cfg := &ss.Config.Log
 	axon.OpenLogFiles(ss.Loops, ss.Stats, netName, runName, [][]string{cfg.Train, cfg.Test})
 
-	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.NRuns, ss.Config.Run.Run)
-	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.NRuns)
+	mpi.Printf("Running %d Runs starting at %d\n", ss.Config.Run.Runs, ss.Config.Run.Run)
+	ss.Loops.Loop(Train, Run).Counter.SetCurMaxPlusN(ss.Config.Run.Run, ss.Config.Run.Runs)
 
 	ss.Loops.Run(Train)
 
