@@ -1064,8 +1064,8 @@ func (ly *LayerParams) PlusPhasePost(ctx *Context) {
 			hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
 			giveUp := (GlobalScalars.Value(int(GvGiveUp), int(di)) > 0)
 			if hasRew || giveUp {
-				ly.DecayState(ctx, di, 1, 1, 1)         // note: GPU will get, and GBuf are auto-cleared in NewState
-				for spi := uint32(0); spi < np; spi++ { // also clear the pool stats: GoalMaint depends on these..
+				ly.DecayState(ctx, di, 1, 1, 1)
+				for spi := uint32(0); spi < np; spi++ {
 					pi := ly.PoolIndex(spi)
 					PoolAvgMaxZero(pi, di)
 				}

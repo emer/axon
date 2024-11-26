@@ -557,7 +557,10 @@ func (nt *Network) AddOFCpos(ctx *Context, nUSs, nY, ofcY, ofcX int, space float
 	ofcPT.AddDefaultParams(func(ly *LayerParams) { ly.Inhib.ActAvg.Nominal = 0.02 })
 	ofcPT.AddDefaultParams(func(ly *LayerParams) { ly.Inhib.Pool.On.SetBool(true) })
 	// ofcPT.AddDefaultParams(func(ly *LayerParams) { ly.Inhib.Pool.Gi = 2.0 })
-	ofcPT.AddDefaultParams(func(ly *LayerParams) { ly.Acts.Dend.ModACh.SetBool(true) })
+	ofcPT.AddDefaultParams(func(ly *LayerParams) {
+		ly.Acts.Dend.ModACh.SetBool(true)
+		ly.CT.OFCposPT.SetBool(true)
+	})
 	ofcPTp.AddDefaultParams(func(ly *LayerParams) { ly.Inhib.Pool.Gi = 1.0 })
 	ofcPTp.AddDefaultParams(func(ly *LayerParams) { ly.Inhib.ActAvg.Nominal = 0.1 })
 

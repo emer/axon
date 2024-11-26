@@ -45,6 +45,7 @@ func (nt *Network) DWtToWt() {
 	RunDWtSubMeanPath(int(nix.NPaths))
 	RunWtFromDWtSyn(int(nix.NSyns))
 	RunDoneSynapses()
+	// RunDone()  // sig faster
 	if ctx.SlowInc() {
 		nt.SlowAdapt()
 		ToGPUSynapses()
