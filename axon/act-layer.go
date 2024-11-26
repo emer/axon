@@ -1044,9 +1044,60 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	Neurons.Set(ly.Acts.Sahp.GsAHP(sahpN), int(ni), int(di), int(Gsahp))
 }
 
-//gosl:end
+// PlusPhasePost does special algorithm processing at end of plus
+func (ly *LayerParams) PlusPhasePost(ctx *Context) {
+	ly.PlusPhaseActAvg(ctx)
+	ly.PhaseDiffFromActs(ctx) // GPU syncs down the state before this
+	np := ly.Indexes.NPools
+	if ly.Type == PTMaintLayer && ly.CT.OFCposPT.IsTrue() {
+		for spi := uint32(1); spi < np; spi++ {
+			for di := uint32(0); di < ctx.NData; di++ {
+				pi := ly.PoolIndex(spi)
+				val := PoolAvgMax(AMCaSpkD, AMCycle, Avg, pi, di)
+				GlobalVectors.Set(val, int(GvOFCposPTMaint), int(uint32(pi-1)), int(di))
+			}
+		}
+	}
 
-// todo: determine how much of this can go directly into layerparams / gosl
+	if ly.Acts.Decay.OnRew.IsTrue() {
+		for di := uint32(0); di < ctx.NData; di++ {
+			hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
+			giveUp := (GlobalScalars.Value(int(GvGiveUp), int(di)) > 0)
+			if hasRew || giveUp {
+				ly.DecayState(ctx, di, 1, 1, 1)         // note: GPU will get, and GBuf are auto-cleared in NewState
+				for spi := uint32(0); spi < np; spi++ { // also clear the pool stats: GoalMaint depends on these..
+					pi := ly.PoolIndex(spi)
+					PoolAvgMaxZero(pi, di)
+				}
+			}
+		}
+	}
+	if ly.Type == MatrixLayer {
+		ly.MatrixGated(ctx)
+	}
+}
+
+// PlusPhaseActAvg updates ActAvg and DTrgAvg at the plus phase
+// Note: could be done on GPU but not worth it at this point..
+func (ly *LayerParams) PlusPhaseActAvg(ctx *Context) {
+	nn := ly.Indexes.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.Indexes.NeurSt + lni
+		if NeuronIsOff(ni) {
+			continue
+		}
+		dTrgSum := float32(0)
+		avgSum := float32(0)
+		for di := uint32(0); di < ctx.NData; di++ {
+			dTrgSum += ly.LearnTrgAvgErrLRate() * (Neurons.Value(int(ni), int(di), int(CaSpkP)) - Neurons.Value(int(ni), int(di), int(CaSpkD)))
+			avgSum += ly.Acts.Dt.LongAvgDt * (Neurons.Value(int(ni), int(di), int(ActM)) - NeuronAvgs.Value(int(ni), int(ActAvg)))
+		}
+		NeuronAvgs.SetAdd(dTrgSum, int(ni), int(DTrgAvg))
+		NeuronAvgs.SetAdd(avgSum, int(ni), int(ActAvg))
+	}
+}
+
+//gosl:end
 
 // InitExt initializes external input state.
 // Should be called prior to ApplyExt on all layers receiving Ext input.
@@ -1224,60 +1275,6 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 			NeuronClearFlag(clearMask, ni, di)
 			NeuronSetFlag(setMask, ni, di)
 		}
-	}
-}
-
-// PlusPhasePost does special algorithm processing at end of plus
-func (ly *Layer) PlusPhasePost(ctx *Context) {
-	ly.PlusPhaseActAvg(ctx)
-	ly.PhaseDiffFromActs(ctx) // GPU syncs down the state before this
-	np := ly.NPools
-	if ly.Type == PTMaintLayer && ly.Name == "OFCposPT" {
-		for spi := uint32(1); spi < np; spi++ {
-			for di := uint32(0); di < ctx.NData; di++ {
-				pi := ly.Params.PoolIndex(spi)
-				val := PoolAvgMax(AMCaSpkD, AMCycle, Avg, pi, di)
-				GlobalVectors.Set(val, int(GvOFCposPTMaint), int(uint32(pi-1)), int(di))
-			}
-		}
-	}
-
-	if ly.Params.Acts.Decay.OnRew.IsTrue() {
-		for di := uint32(0); di < ctx.NData; di++ {
-			hasRew := (GlobalScalars.Value(int(GvHasRew), int(di)) > 0)
-			giveUp := (GlobalScalars.Value(int(GvGiveUp), int(di)) > 0)
-			if hasRew || giveUp {
-				ly.DecayState(ctx, di, 1, 1, 1)         // note: GPU will get, and GBuf are auto-cleared in NewState
-				for spi := uint32(0); spi < np; spi++ { // also clear the pool stats: GoalMaint depends on these..
-					pi := ly.Params.PoolIndex(spi)
-					PoolAvgMaxZero(pi, di)
-				}
-			}
-		}
-	}
-	switch ly.Type {
-	case MatrixLayer:
-		ly.Params.MatrixGated(ctx)
-	}
-}
-
-// PlusPhaseActAvg updates ActAvg and DTrgAvg at the plus phase
-// Note: could be done on GPU but not worth it at this point..
-func (ly *Layer) PlusPhaseActAvg(ctx *Context) {
-	nn := ly.NNeurons
-	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
-		if NeuronIsOff(ni) {
-			continue
-		}
-		dTrgSum := float32(0)
-		avgSum := float32(0)
-		for di := uint32(0); di < ctx.NData; di++ {
-			dTrgSum += ly.Params.LearnTrgAvgErrLRate() * (Neurons.Value(int(ni), int(di), int(CaSpkP)) - Neurons.Value(int(ni), int(di), int(CaSpkD)))
-			avgSum += ly.Params.Acts.Dt.LongAvgDt * (Neurons.Value(int(ni), int(di), int(ActM)) - NeuronAvgs.Value(int(ni), int(ActAvg)))
-		}
-		NeuronAvgs.SetAdd(dTrgSum, int(ni), int(DTrgAvg))
-		NeuronAvgs.SetAdd(avgSum, int(ni), int(ActAvg))
 	}
 }
 

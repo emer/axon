@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"cogentcore.org/core/goal/gosl/slbool"
 	"cogentcore.org/core/math32"
 )
 
@@ -14,10 +15,16 @@ import (
 // CaSpkP integrated spiking values in Super layers -- thresholded.
 type BurstParams struct {
 
-	// Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds.
+	// Relative component of threshold on superficial activation value,
+	// below which it does not drive Burst (and above which, Burst = CaSpkP).
+	// This is the distance between the average and maximum activation values
+	// within layer (e.g., 0 = average, 1 = max).  Overall effective threshold
+	// is MAX of relative and absolute thresholds.
 	ThrRel float32 `max:"1" default:"0.1"`
 
-	// Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = CaSpkP).  Overall effective threshold is MAX of relative and absolute thresholds.
+	// Absolute component of threshold on superficial activation value,
+	// below which it does not drive Burst (and above which, Burst = CaSpkP).
+	// Overall effective threshold is MAX of relative and absolute thresholds.
 	ThrAbs float32 `min:"0" max:"1" default:"0.1"`
 
 	pad, pad1 float32
@@ -47,10 +54,12 @@ type CTParams struct {
 	// decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50 (80 for 280 cycles)
 	DecayTau float32 `default:"0,50,70"`
 
+	// OFCposPT is set for the OFCposPT PTMaintLayer, which sets the
+	// GvOFCposPTMaint global variable.
+	OFCposPT slbool.Bool
+
 	// 1 / tau
 	DecayDt float32 `display:"-" json:"-" xml:"-"`
-
-	pad float32
 }
 
 func (cp *CTParams) Update() {

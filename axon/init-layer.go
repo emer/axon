@@ -284,35 +284,25 @@ func (ly *Layer) InitGScale(ctx *Context) {
 	}
 }
 
-// NewStateNeurons only calls the neurons part of new state -- for misbehaving GPU
-func (ly *Layer) NewStateNeurons(ctx *Context) {
-	nn := ly.NNeurons
-	for di := uint32(0); di < ctx.NData; di++ {
-		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
-			// note: this calls the basic neuron-level DecayState
-			ly.Params.NewStateNeuron(ctx, ni, di)
-		}
-	}
-}
+//gosl:start
 
 // DecayState decays activation state by given proportion
 // (default decay values are ly.Params.Acts.Decay.Act, Glong)
-func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) {
-	nn := ly.NNeurons
+func (ly *LayerParams) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) {
+	nn := ly.Indexes.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
+		ni := ly.Indexes.NeurSt + lni
 		if NeuronIsOff(ni) {
 			continue
 		}
-		ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
+		ly.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		// Note: synapse-level Ca decay happens in DWt
 		if ahp == 1 {
 			lt := ly.Type
 			if lt == PTMaintLayer {
-				Neurons.Set(0, int(ni), int(di), int(CtxtGe))
-				Neurons.Set(0, int(ni), int(di), int(CtxtGeRaw))
-				Neurons.Set(0, int(ni), int(di), int(CtxtGeOrig))
+				Neurons.Set(0.0, int(ni), int(di), int(CtxtGe))
+				Neurons.Set(0.0, int(ni), int(di), int(CtxtGeRaw))
+				Neurons.Set(0.0, int(ni), int(di), int(CtxtGeOrig))
 			}
 		}
 	}
@@ -320,28 +310,30 @@ func (ly *Layer) DecayState(ctx *Context, di uint32, decay, glong, ahp float32) 
 }
 
 // DecayStateLayer does layer-level decay, but not neuron level
-func (ly *Layer) DecayStateLayer(ctx *Context, di uint32, decay, glong, ahp float32) {
-	np := ly.NPools
+func (ly *LayerParams) DecayStateLayer(ctx *Context, di uint32, decay, glong, ahp float32) {
+	np := ly.Indexes.NPools
 	for spi := uint32(0); spi < np; spi++ {
-		pi := ly.Params.PoolIndex(spi)
+		pi := ly.PoolIndex(spi)
 		PoolInhibDecay(pi, di, decay)
 	}
 }
 
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
-func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float32) {
+func (ly *LayerParams) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float32) {
 	spi := uint32(pool + 1) // 1 based
 	for di := uint32(0); di < ctx.NData; di++ {
-		pi := ly.Params.PoolIndex(spi)
+		pi := ly.PoolIndex(spi)
 		nsi := PoolsInt.Value(int(pi), int(di), int(PoolNeurSt))
 		nei := PoolsInt.Value(int(pi), int(di), int(PoolNeurEd))
 		for lni := nsi; lni < nei; lni++ {
-			ni := ly.NeurStIndex + uint32(lni)
+			ni := ly.Indexes.NeurSt + uint32(lni)
 			if NeuronIsOff(ni) {
 				continue
 			}
-			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
+			ly.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		}
 		PoolInhibDecay(pi, di, decay)
 	}
 }
+
+//gosl:end

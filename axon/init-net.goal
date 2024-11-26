@@ -117,7 +117,7 @@ func (nt *Network) DecayState(decay, glong, ahp float32) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			ly.DecayState(ctx, di, decay, glong, ahp)
+			ly.Params.DecayState(ctx, di, decay, glong, ahp)
 		}
 	}
 	ToGPULayersNeurons()
@@ -145,24 +145,20 @@ func (nt *Network) DecayStateByClass(decay, glong, ahp float32, classes ...strin
 // to zero the GBuf values which otherwise will persist spikes in flight.
 func (nt *Network) DecayStateLayers(decay, glong, ahp float32, layers ...string) {
 	ctx := nt.Context()
-	// todo: move to gpu
-	// nt.GPU.SyncStateFromGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, lynm := range layers {
 		ly := nt.LayerByName(lynm)
 		if ly.Off {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			ly.DecayState(ctx, di, decay, glong, ahp)
+			ly.Params.DecayState(ctx, di, decay, glong, ahp)
 		}
 	}
 	ToGPULayersNeurons()
-	// nt.GPU.SyncStateToGPU()
 }
 
 // InitActs fully initializes activation state -- not automatically called
 func (nt *Network) InitActs() { //types:add
-	// todo: move to gpu
 	ctx := nt.Context()
 	for _, ly := range nt.Layers {
 		if ly.Off {
@@ -172,8 +168,6 @@ func (nt *Network) InitActs() { //types:add
 	}
 	ToGPULayersNeurons()
 	ToGPU(PathGBufVar, PathGSynsVar)
-	// nt.GPU.SyncStateToGPU() // todo:
-	// nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
 // UpdateExtFlags updates the neuron flags for external input based on current

@@ -456,8 +456,8 @@ struct BurstParams {
 struct CTParams {
 	GeGain: f32,
 	DecayTau: f32,
+	OFCposPT: i32,
 	DecayDt: f32,
-	pad: f32,
 }
 struct PulvParams {
 	DriveScale: f32,
@@ -653,6 +653,8 @@ fn PoolInhibDecay(pi: u32,di: u32, decay: f32) {
 	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))];
 	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))] -= decay * Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))];
 }
+
+///////////// import: "init-layer.go"
 
 ///////////// import: "kinase-params.go"
 struct CaDtParams { //types:add
@@ -1275,6 +1277,8 @@ struct BLAPathParams {
 }
 
 ///////////// import: "rubicon.go"
+
+///////////// import: "stats.go"
 
 ///////////// import: "synapse.go"
 alias SynapseVars = i32; //enums:enum

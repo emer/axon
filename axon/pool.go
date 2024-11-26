@@ -172,8 +172,8 @@ func PoolAvgMaxZero(pi, di uint32) {
 	PoolAvgMaxInit(pi, di)
 	for vr := range AMAvgDif {
 		for ph := range AvgMaxPhasesN {
-			Pools.Set(0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Avg)))
-			Pools.Set(0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Max)))
+			Pools.Set(0.0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Avg)))
+			Pools.Set(0.0, int(pi), int(di), int(AvgMaxVarIndex(vr, ph, Max)))
 		}
 	}
 }

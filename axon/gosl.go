@@ -80,6 +80,7 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/NewStateNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhasePool.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhasePost.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseStartNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PoolGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/SendSpike.wgsl", sy)
@@ -954,6 +955,48 @@ func RunOnePlusPhasePool(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunPlusPhasePoolCPU(n)
+	}
+}
+// RunPlusPhasePost runs the PlusPhasePost kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOnePlusPhasePost call does Run and Done for a
+// single run-and-sync case.
+func RunPlusPhasePost(n int) {
+	if UseGPU {
+		RunPlusPhasePostGPU(n)
+	} else {
+		RunPlusPhasePostCPU(n)
+	}
+}
+
+// RunPlusPhasePostGPU runs the PlusPhasePost kernel on the GPU. See [RunPlusPhasePost] for more info.
+func RunPlusPhasePostGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["PlusPhasePost"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunPlusPhasePostCPU runs the PlusPhasePost kernel on the CPU.
+func RunPlusPhasePostCPU(n int) {
+	gpu.VectorizeFunc(0, n, PlusPhasePost)
+}
+
+// RunOnePlusPhasePost runs the PlusPhasePost kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOnePlusPhasePost(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunPlusPhasePostGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunPlusPhasePostCPU(n)
 	}
 }
 // RunPlusPhaseStartNeuron runs the PlusPhaseStartNeuron kernel with given number of elements,

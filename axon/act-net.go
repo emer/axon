@@ -133,22 +133,8 @@ func (nt *Network) PlusPhase() {
 	pd := int(nix.NPools * ctx.NData)
 	RunPlusPhasePool(pd)
 	RunPlusPhaseNeuron(nd)
+	RunPlusPhasePost(int(nix.NLayers))
 	RunDoneLayersNeurons()
-	nt.PlusPhasePost()
-	ToGPULayersNeurons()
-	// todo:
-	// nt.GPU.SyncStateToGPU()
-}
-
-// PlusPhasePost happens on the CPU always.
-func (nt *Network) PlusPhasePost() {
-	ctx := nt.Context()
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.PlusPhasePost(ctx)
-	}
 }
 
 // TargToExt sets external input Ext from target values Target
@@ -372,6 +358,12 @@ func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	ni := ctx.ItemIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseNeuron(ctx, ni, di)
+}
+
+// PlusPhasePost does special algorithm post processing.
+func PlusPhasePost(li uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	Layers[li].PlusPhasePost(ctx)
 }
 
 // GPUTestWrite is the kernel over Neurons * Data for testing

@@ -494,8 +494,8 @@ struct BurstParams {
 struct CTParams {
 	GeGain: f32,
 	DecayTau: f32,
+	OFCposPT: i32,
 	DecayDt: f32,
-	pad: f32,
 }
 struct PulvParams {
 	DriveScale: f32,
@@ -679,6 +679,8 @@ fn PoolInhibRawIncrInt(pi: u32,di: u32, spike: f32,geRaw: f32,geExt: f32) {
 	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FFsRawInt))], i32((geRaw/fnn)*floatToInt));
 	atomicAdd(&PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(GeExtRawInt))], i32((geExt/fnn)*floatToInt));
 }
+
+///////////// import: "init-layer.go"
 
 ///////////// import: "kinase-params.go"
 struct CaDtParams { //types:add
@@ -1315,6 +1317,8 @@ struct BLAPathParams {
 }
 
 ///////////// import: "rubicon.go"
+
+///////////// import: "stats.go"
 
 ///////////// import: "synapse.go"
 alias SynapseVars = i32; //enums:enum

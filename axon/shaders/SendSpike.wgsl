@@ -632,8 +632,8 @@ fn BurstParams_ThrFromAvgMax(bp: ptr<function,BurstParams>, avg: f32,mx: f32) ->
 struct CTParams {
 	GeGain: f32,
 	DecayTau: f32,
+	OFCposPT: i32,
 	DecayDt: f32,
-	pad: f32,
 }
 struct PulvParams {
 	DriveScale: f32,
@@ -810,6 +810,8 @@ struct InhibParams {
 	Layer: GiParams,
 	Pool: GiParams,
 }
+
+///////////// import: "init-layer.go"
 
 ///////////// import: "kinase-params.go"
 struct CaDtParams { //types:add
@@ -1475,6 +1477,8 @@ fn RubiconUSStimValue(di: u32, usIndex: u32, valence: ValenceTypes) -> f32 {
 	}
 	}return us;
 }
+
+///////////// import: "stats.go"
 
 ///////////// import: "synapse.go"
 alias SynapseVars = i32; //enums:enum

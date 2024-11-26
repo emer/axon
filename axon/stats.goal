@@ -160,22 +160,24 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 	return am
 }
 
+//gosl:start
+
 // PhaseDiffFromActs computes the phase-wise difference in the
 // activity state between the minus [ActM] and plus [ActP] phases,
 // measured using 1 minus the correlation (centered cosine aka
 // normalized dot product).  0 = no difference, 2 = maximum difference.
-func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
+func (ly *LayerParams) PhaseDiffFromActs(ctx *Context) {
 	li := ly.Index
 	for di := uint32(0); di < ctx.NData; di++ {
-		lpi := ly.Params.PoolIndex(0)
+		lpi := ly.PoolIndex(0)
 		avgM := PoolAvgMax(AMAct, AMMinus, Avg, lpi, di)
 		avgP := PoolAvgMax(AMAct, AMPlus, Avg, lpi, di)
 		cosv := float32(0)
 		ssm := float32(0)
 		ssp := float32(0)
-		nn := ly.NNeurons
+		nn := ly.Indexes.NNeurons
 		for lni := uint32(0); lni < nn; lni++ {
-			ni := ly.NeurStIndex + lni
+			ni := ly.Indexes.NeurSt + lni
 			if NeuronIsOff(ni) {
 				continue
 			}
@@ -192,8 +194,10 @@ func (ly *Layer) PhaseDiffFromActs(ctx *Context) {
 		LayerStates[li, di, LayerPhaseDiff] = 1 - cosv
 		avg := LayerStates[li, di, LayerPhaseDiffAvg]
 		vr := LayerStates[li, di, LayerPhaseDiffVar]
-		ly.Params.Acts.Dt.AvgVarUpdate(&avg, &vr, 1-cosv)
+		ly.Acts.Dt.AvgVarUpdate(&avg, &vr, 1-cosv)
 		LayerStates[li, di, LayerPhaseDiffAvg] = avg
 		LayerStates[li, di, LayerPhaseDiffVar] = vr
 	}
 }
+
+//gosl:end
