@@ -813,6 +813,8 @@ const  LayerRT: LayerVars = 8;
 const  LayerRewPredPos: LayerVars = 9;
 const  LayerRewPredNeg: LayerVars = 10;
 
+///////////// import: "learn-layer.go"
+
 ///////////// import: "learn-net.go"
 
 ///////////// import: "learn-path.go"

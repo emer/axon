@@ -84,6 +84,7 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseStartNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PoolGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/SendSpike.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/WtFromDWtLayer.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/WtFromDWtSyn.wgsl", sy)
 		vars := sy.Vars()
 		{
@@ -1123,6 +1124,48 @@ func RunOneSendSpike(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunSendSpikeCPU(n)
+	}
+}
+// RunWtFromDWtLayer runs the WtFromDWtLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneWtFromDWtLayer call does Run and Done for a
+// single run-and-sync case.
+func RunWtFromDWtLayer(n int) {
+	if UseGPU {
+		RunWtFromDWtLayerGPU(n)
+	} else {
+		RunWtFromDWtLayerCPU(n)
+	}
+}
+
+// RunWtFromDWtLayerGPU runs the WtFromDWtLayer kernel on the GPU. See [RunWtFromDWtLayer] for more info.
+func RunWtFromDWtLayerGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["WtFromDWtLayer"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunWtFromDWtLayerCPU runs the WtFromDWtLayer kernel on the CPU.
+func RunWtFromDWtLayerCPU(n int) {
+	gpu.VectorizeFunc(0, n, WtFromDWtLayer)
+}
+
+// RunOneWtFromDWtLayer runs the WtFromDWtLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneWtFromDWtLayer(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunWtFromDWtLayerGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunWtFromDWtLayerCPU(n)
 	}
 }
 // RunWtFromDWtSyn runs the WtFromDWtSyn kernel with given number of elements,

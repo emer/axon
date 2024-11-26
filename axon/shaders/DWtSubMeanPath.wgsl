@@ -704,6 +704,8 @@ const  LayerRT: LayerVars = 8;
 const  LayerRewPredPos: LayerVars = 9;
 const  LayerRewPredNeg: LayerVars = 10;
 
+///////////// import: "learn-layer.go"
+
 ///////////// import: "learn-net.go"
 fn DWtSubMeanPath(pti: u32) { //gosl:kernel
 	var ctx = Ctx[0];

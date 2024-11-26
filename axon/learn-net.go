@@ -24,6 +24,7 @@ func (nt *Network) DWt() {
 func (nt *Network) WtFromDWt() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
+	RunWtFromDWtLayer(int(nix.NLayers))
 	RunDWtSubMeanPath(int(nix.NPaths))
 	RunWtFromDWtSyn(int(nix.NSyns))
 	RunDoneSynapses()
@@ -33,8 +34,8 @@ func (nt *Network) WtFromDWt() {
 }
 
 // DWtToWt computes the weight change (learning) based on current
-// running-average activation values, and then WtFromDWt, syncing
-// back only the synapses (not SynapseTraces).
+// running-average activation values, and then WtFromDWt,
+// without syncing any synapse-level state.
 // This should be used when not viewing the weights.
 func (nt *Network) DWtToWt() {
 	nix := nt.NetIxs()
@@ -53,14 +54,8 @@ func (nt *Network) DWtToWt() {
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-// and adapting inhibition
+// and adapting inhibition.
 func (nt *Network) SlowAdapt() {
-	// note: for now doing all this slow stuff CPU-side
-	// These Sync calls always check if GPU is On
-	// nt.GPU.SyncAllFromGPU() // todo:
-
-	// todo: convert this to GPU mode
-
 	ctx := nt.Context()
 	for _, ly := range nt.Layers {
 		if ly.Off {
@@ -71,11 +66,6 @@ func (nt *Network) SlowAdapt() {
 	for _, pt := range nt.Paths {
 		pt.SlowAdapt(ctx)
 	}
-	// nt.LayerMapSeq(func(ly *Layer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
-	// nt.PathMapSeq(func(pj *Path) { pj.SlowAdapt(ctx) }, "SlowAdapt")
-
-	// nt.GPU.SyncAllToGPU()
-	// nt.GPU.SyncSynCaToGPU() // was cleared
 }
 
 // LRateMod sets the LRate modulation parameter for Paths, which is
@@ -247,6 +237,13 @@ func DWtFromDiSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
 	Paths[pti].DWtFromDi(ctx, syni)
+}
+
+// WtFromDWtLayer is the kernel over Layers for layer-level Wt update.
+// Does TrgAvg updating.
+func WtFromDWtLayer(li uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	Layers[li].WtFromDWtLayer(ctx)
 }
 
 // DWtSubMeanPath is the kernel over Paths to

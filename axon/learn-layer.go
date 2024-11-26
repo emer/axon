@@ -8,23 +8,25 @@ package axon
 
 import "cogentcore.org/core/math32"
 
+//gosl:start
+
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFromD
-func (ly *Layer) DTrgSubMean(ctx *Context) {
-	submean := ly.Params.Learn.TrgAvgAct.SubMean
+func (ly *LayerParams) DTrgSubMean(ctx *Context) {
+	submean := ly.Learn.TrgAvgAct.SubMean
 	if submean == 0 {
 		return
 	}
-	if ly.Params.HasPoolInhib() && ly.Params.Learn.TrgAvgAct.Pool.IsTrue() {
-		np := ly.NPools
+	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool.IsTrue() {
+		np := ly.Indexes.NPools
 		for spi := uint32(1); spi < np; spi++ {
-			pi := ly.Params.PoolIndex(spi) // only for idxs
+			pi := ly.PoolIndex(spi)
 			nsi := PoolsInt.Value(int(pi), int(0), int(PoolNeurSt))
 			nei := PoolsInt.Value(int(pi), int(0), int(PoolNeurEd))
 			nn := 0
 			avg := float32(0)
 			for lni := nsi; lni < nei; lni++ {
-				ni := ly.NeurStIndex + uint32(lni)
+				ni := ly.Indexes.NeurSt + uint32(lni)
 				if NeuronIsOff(ni) {
 					continue
 				}
@@ -37,7 +39,7 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 			avg /= float32(nn)
 			avg *= submean
 			for lni := nsi; lni < nei; lni++ {
-				ni := ly.NeurStIndex + uint32(lni)
+				ni := ly.Indexes.NeurSt + uint32(lni)
 				if NeuronIsOff(ni) {
 					continue
 				}
@@ -47,8 +49,9 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 	} else {
 		nn := 0
 		avg := float32(0)
-		for lni := uint32(0); lni < ly.NNeurons; lni++ {
-			ni := ly.NeurStIndex + lni
+		tn := ly.Indexes.NNeurons
+		for lni := uint32(0); lni < tn; lni++ {
+			ni := ly.Indexes.NeurSt + lni
 			if NeuronIsOff(ni) {
 				continue
 			}
@@ -60,8 +63,8 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 		}
 		avg /= float32(nn)
 		avg *= submean
-		for lni := uint32(0); lni < ly.NNeurons; lni++ {
-			ni := ly.NeurStIndex + lni
+		for lni := uint32(0); lni < tn; lni++ {
+			ni := ly.Indexes.NeurSt + lni
 			if NeuronIsOff(ni) {
 				continue
 			}
@@ -71,31 +74,33 @@ func (ly *Layer) DTrgSubMean(ctx *Context) {
 }
 
 // TrgAvgFromD updates TrgAvg from DTrgAvg -- called in PlusPhasePost
-func (ly *Layer) TrgAvgFromD(ctx *Context) {
-	lr := ly.Params.LearnTrgAvgErrLRate()
+func (ly *LayerParams) TrgAvgFromD(ctx *Context) {
+	lr := ly.LearnTrgAvgErrLRate()
 	if lr == 0 {
 		return
 	}
 	ly.DTrgSubMean(ctx)
-	nn := ly.NNeurons
+	nn := ly.Indexes.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
-		ni := ly.NeurStIndex + lni
+		ni := ly.Indexes.NeurSt + lni
 		if NeuronIsOff(ni) {
 			continue
 		}
 		ntrg := NeuronAvgs.Value(int(ni), int(TrgAvg)) + NeuronAvgs.Value(int(ni), int(DTrgAvg))
-		ntrg = ly.Params.Learn.TrgAvgAct.TrgRange.ClipValue(ntrg)
+		ntrg = ly.Learn.TrgAvgAct.TrgRange.ClipValue(ntrg)
 		NeuronAvgs.Set(ntrg, int(ni), int(TrgAvg))
-		NeuronAvgs.Set(0, int(ni), int(DTrgAvg))
+		NeuronAvgs.Set(0.0, int(ni), int(DTrgAvg))
 	}
 }
 
 // WtFromDWtLayer does weight update at the layer level.
 // does NOT call main pathway-level WtFromDWt method.
 // in base, only calls TrgAvgFromD
-func (ly *Layer) WtFromDWtLayer(ctx *Context) {
+func (ly *LayerParams) WtFromDWtLayer(ctx *Context) {
 	ly.TrgAvgFromD(ctx)
 }
+
+//gosl:end
 
 // SlowAdapt is the layer-level slow adaptation functions.
 // Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.

@@ -118,7 +118,8 @@ func (nt *Network) PlusPhaseStart() {
 	RunPlusPhaseStartNeuron(nd)
 }
 
-// PlusPhase does updating after end of plus phase
+// PlusPhase does updating after end of plus phase.
+// On GPU this is when we finally sync back Layers and Neurons.
 func (nt *Network) PlusPhase() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
