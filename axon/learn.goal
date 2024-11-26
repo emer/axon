@@ -543,19 +543,19 @@ func (sp *SWtParams) SigFromLinWt(lw float32) float32 {
 // wt is centered at 1, and normed in range +/- 1 around that,
 // return value is in 0-1 range, centered at .5
 func (sp *SWtParams) LinFromSigWt(wt float32) float32 {
-	wt *= 0.5
-	if wt < 0 {
-		wt = 0
-	} else if wt > 1 {
-		wt = 1
+	wte := wt * 0.5
+	if wte < 0 {
+		wte = 0
+	} else if wte > 1 {
+		wte = 1
 	}
 	if sp.Adapt.SigGain == 1 {
-		return wt
+		return wte
 	}
 	if sp.Adapt.SigGain == 6 {
-		return SigInvFun61(wt)
+		return SigInvFun61(wte)
 	}
-	return SigInvFun(wt, sp.Adapt.SigGain, 1)
+	return SigInvFun(wte, sp.Adapt.SigGain, 1)
 }
 
 // LWtFromWts returns linear, learning LWt from wt and swt.
@@ -801,7 +801,7 @@ type LearnSynParams struct {
 	Trace TraceParams `display:"inline"`
 
 	// kinase calcium Ca integration parameters: using linear regression parameters
-	KinaseCa kinase.SynCaLinear `display:"inline"`
+	KinaseCa kinase.SynCaLinear `display:"no-inline"`
 
 	// hebbian learning option, which overrides the default learning rules
 	Hebb HebbParams `display:"inline"`

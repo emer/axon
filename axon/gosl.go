@@ -67,7 +67,7 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/CyclePost.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/DWtFromDiSyn.wgsl", sy)
-		gpu.NewComputePipelineShaderFS(shaders, "shaders/DWtSubMeanPath.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/DWtSubMeanNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/DWtSyn.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/GPUTestWrite.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/GatherSpikes.wgsl", sy)
@@ -84,6 +84,8 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PlusPhaseStartNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/PoolGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/SendSpike.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/SlowAdaptLayer.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/SlowAdaptNeuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/WtFromDWtLayer.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/WtFromDWtSyn.wgsl", sy)
 		vars := sy.Vars()
@@ -412,46 +414,46 @@ func RunOneDWtFromDiSyn(n int, syncVars ...GPUVars) {
 		RunDWtFromDiSynCPU(n)
 	}
 }
-// RunDWtSubMeanPath runs the DWtSubMeanPath kernel with given number of elements,
+// RunDWtSubMeanNeuron runs the DWtSubMeanNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
 // in the same command submission on the GPU, which is by far the most efficient.
 // MUST call RunDone (with optional vars to sync) after all Run calls.
-// Alternatively, a single-shot RunOneDWtSubMeanPath call does Run and Done for a
+// Alternatively, a single-shot RunOneDWtSubMeanNeuron call does Run and Done for a
 // single run-and-sync case.
-func RunDWtSubMeanPath(n int) {
+func RunDWtSubMeanNeuron(n int) {
 	if UseGPU {
-		RunDWtSubMeanPathGPU(n)
+		RunDWtSubMeanNeuronGPU(n)
 	} else {
-		RunDWtSubMeanPathCPU(n)
+		RunDWtSubMeanNeuronCPU(n)
 	}
 }
 
-// RunDWtSubMeanPathGPU runs the DWtSubMeanPath kernel on the GPU. See [RunDWtSubMeanPath] for more info.
-func RunDWtSubMeanPathGPU(n int) {
+// RunDWtSubMeanNeuronGPU runs the DWtSubMeanNeuron kernel on the GPU. See [RunDWtSubMeanNeuron] for more info.
+func RunDWtSubMeanNeuronGPU(n int) {
 	sy := GPUSystem
-	pl := sy.ComputePipelines["DWtSubMeanPath"]
+	pl := sy.ComputePipelines["DWtSubMeanNeuron"]
 	ce, _ := sy.BeginComputePass()
 	pl.Dispatch1D(ce, n, 64)
 }
 
-// RunDWtSubMeanPathCPU runs the DWtSubMeanPath kernel on the CPU.
-func RunDWtSubMeanPathCPU(n int) {
-	gpu.VectorizeFunc(0, n, DWtSubMeanPath)
+// RunDWtSubMeanNeuronCPU runs the DWtSubMeanNeuron kernel on the CPU.
+func RunDWtSubMeanNeuronCPU(n int) {
+	gpu.VectorizeFunc(0, n, DWtSubMeanNeuron)
 }
 
-// RunOneDWtSubMeanPath runs the DWtSubMeanPath kernel with given number of elements,
+// RunOneDWtSubMeanNeuron runs the DWtSubMeanNeuron kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // This version then calls RunDone with the given variables to sync
 // after the Run, for a single-shot Run-and-Done call. If multiple kernels
 // can be run in sequence, it is much more efficient to do multiple Run*
 // calls followed by a RunDone call.
-func RunOneDWtSubMeanPath(n int, syncVars ...GPUVars) {
+func RunOneDWtSubMeanNeuron(n int, syncVars ...GPUVars) {
 	if UseGPU {
-		RunDWtSubMeanPathGPU(n)
+		RunDWtSubMeanNeuronGPU(n)
 		RunDone(syncVars...)
 	} else {
-		RunDWtSubMeanPathCPU(n)
+		RunDWtSubMeanNeuronCPU(n)
 	}
 }
 // RunDWtSyn runs the DWtSyn kernel with given number of elements,
@@ -1124,6 +1126,90 @@ func RunOneSendSpike(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunSendSpikeCPU(n)
+	}
+}
+// RunSlowAdaptLayer runs the SlowAdaptLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneSlowAdaptLayer call does Run and Done for a
+// single run-and-sync case.
+func RunSlowAdaptLayer(n int) {
+	if UseGPU {
+		RunSlowAdaptLayerGPU(n)
+	} else {
+		RunSlowAdaptLayerCPU(n)
+	}
+}
+
+// RunSlowAdaptLayerGPU runs the SlowAdaptLayer kernel on the GPU. See [RunSlowAdaptLayer] for more info.
+func RunSlowAdaptLayerGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["SlowAdaptLayer"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunSlowAdaptLayerCPU runs the SlowAdaptLayer kernel on the CPU.
+func RunSlowAdaptLayerCPU(n int) {
+	gpu.VectorizeFunc(0, n, SlowAdaptLayer)
+}
+
+// RunOneSlowAdaptLayer runs the SlowAdaptLayer kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneSlowAdaptLayer(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunSlowAdaptLayerGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunSlowAdaptLayerCPU(n)
+	}
+}
+// RunSlowAdaptNeuron runs the SlowAdaptNeuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneSlowAdaptNeuron call does Run and Done for a
+// single run-and-sync case.
+func RunSlowAdaptNeuron(n int) {
+	if UseGPU {
+		RunSlowAdaptNeuronGPU(n)
+	} else {
+		RunSlowAdaptNeuronCPU(n)
+	}
+}
+
+// RunSlowAdaptNeuronGPU runs the SlowAdaptNeuron kernel on the GPU. See [RunSlowAdaptNeuron] for more info.
+func RunSlowAdaptNeuronGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["SlowAdaptNeuron"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunSlowAdaptNeuronCPU runs the SlowAdaptNeuron kernel on the CPU.
+func RunSlowAdaptNeuronCPU(n int) {
+	gpu.VectorizeFunc(0, n, SlowAdaptNeuron)
+}
+
+// RunOneSlowAdaptNeuron runs the SlowAdaptNeuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneSlowAdaptNeuron(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunSlowAdaptNeuronGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunSlowAdaptNeuronCPU(n)
 	}
 }
 // RunWtFromDWtLayer runs the WtFromDWtLayer kernel with given number of elements,

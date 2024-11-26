@@ -10,7 +10,7 @@ import "cogentcore.org/core/math32"
 
 //gosl:start
 
-// DTrgSubMean subtracts the mean from DTrgAvg values
+// DTrgSubMean subtracts the mean from DTrgAvg values.
 // Called by TrgAvgFromD
 func (ly *LayerParams) DTrgSubMean(ctx *Context) {
 	submean := ly.Learn.TrgAvgAct.SubMean
@@ -73,7 +73,7 @@ func (ly *LayerParams) DTrgSubMean(ctx *Context) {
 	}
 }
 
-// TrgAvgFromD updates TrgAvg from DTrgAvg -- called in PlusPhasePost
+// TrgAvgFromD updates TrgAvg from DTrgAvg, called in PlusPhasePost.
 func (ly *LayerParams) TrgAvgFromD(ctx *Context) {
 	lr := ly.LearnTrgAvgErrLRate()
 	if lr == 0 {
@@ -100,46 +100,55 @@ func (ly *LayerParams) WtFromDWtLayer(ctx *Context) {
 	ly.TrgAvgFromD(ctx)
 }
 
-//gosl:end
-
-// SlowAdapt is the layer-level slow adaptation functions.
-// Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
-// Does NOT call pathway-level methods.
-func (ly *Layer) SlowAdapt(ctx *Context) {
-	ly.AdaptInhib(ctx)
-	ly.AvgDifFromTrgAvg(ctx)
-	// note: path level call happens at network level
+// DWtSubMean subtracts the mean DWt for each recv neuron.
+func (ly *LayerParams) DWtSubMean(ctx *Context, ri uint32) {
+	lni := ri - ly.Indexes.NeurSt
+	rn := ly.Indexes.RecvN
+	for pi := uint32(0); pi < rn; pi++ {
+		pti := RecvPathIxs.Value(int(ly.Indexes.RecvSt + pi))
+		Paths[pti].DWtSubMean(ctx, pti, ri, lni)
+	}
 }
 
-// AdaptInhib adapts inhibition
-func (ly *Layer) AdaptInhib(ctx *Context) {
-	if ly.Params.Inhib.ActAvg.AdaptGi.IsFalse() || ly.Params.IsInput() {
+//////// SlowAdapt
+
+// SlowAdaptLayer is the layer-level slow adaptation functions.
+// Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
+// Does NOT call pathway-level methods.
+func (ly *LayerParams) SlowAdaptLayer(ctx *Context) {
+	ly.AdaptInhib(ctx)
+	ly.AvgDifFromTrgAvg(ctx)
+}
+
+// AdaptInhib adapts inhibition.
+func (ly *LayerParams) AdaptInhib(ctx *Context) {
+	if ly.Inhib.ActAvg.AdaptGi.IsFalse() || ly.IsInput() {
 		return
 	}
 	for di := uint32(0); di < ctx.NData; di++ {
 		giMult := LayerStates.Value(int(ly.Index), int(di), int(LayerGiMult))
 		avg := LayerStates.Value(int(ly.Index), int(di), int(LayerActMAvg))
-		ly.Params.Inhib.ActAvg.Adapt(&giMult, avg)
+		ly.Inhib.ActAvg.Adapt(&giMult, avg)
 		LayerStates.Set(giMult, int(ly.Index), int(di), int(LayerGiMult))
 	}
 }
 
 // AvgDifFromTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
 // which is then used for synaptic scaling of LWt values in Path SynScale.
-func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
+func (ly *LayerParams) AvgDifFromTrgAvg(ctx *Context) {
 	sp := uint32(0)
-	if ly.NPools > 1 {
+	if ly.Indexes.NPools > 1 {
 		sp = 1
 	}
-	np := ly.NPools
+	np := ly.Indexes.NPools
 	for spi := sp; spi < np; spi++ {
-		pi := ly.Params.PoolIndex(spi)
+		pi := ly.PoolIndex(spi)
 		nsi := PoolsInt.Value(int(pi), int(0), int(PoolNeurSt))
 		nei := PoolsInt.Value(int(pi), int(0), int(PoolNeurEd))
 		plavg := float32(0)
 		nn := 0
 		for lni := nsi; lni < nei; lni++ {
-			ni := ly.NeurStIndex + uint32(lni)
+			ni := ly.Indexes.NeurSt + uint32(lni)
 			if NeuronIsOff(ni) {
 				continue
 			}
@@ -155,7 +164,7 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		}
 		PoolAvgDifInit(pi, 0)
 		for lni := nsi; lni < nei; lni++ {
-			ni := ly.NeurStIndex + uint32(lni)
+			ni := ly.Indexes.NeurSt + uint32(lni)
 			if NeuronIsOff(ni) {
 				continue
 			}
@@ -172,12 +181,12 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		}
 	}
 	if sp == 1 { // update layer pool
-		lpi := ly.Params.PoolIndex(0)
+		lpi := ly.PoolIndex(0)
 		PoolAvgDifInit(lpi, 0)
 		nsi := PoolsInt.Value(int(lpi), int(0), int(PoolNeurSt))
 		nei := PoolsInt.Value(int(lpi), int(0), int(PoolNeurEd))
 		for lni := nsi; lni < nei; lni++ {
-			ni := ly.NeurStIndex + uint32(lni)
+			ni := ly.Indexes.NeurSt + uint32(lni)
 			if NeuronIsOff(ni) {
 				continue
 			}
@@ -191,6 +200,19 @@ func (ly *Layer) AvgDifFromTrgAvg(ctx *Context) {
 		}
 	}
 }
+
+// SlowAdaptNeuron does path & synapse level slow adaptation on SWt and
+// overall synaptic scaling, per each receiving neuron ri.
+func (ly *LayerParams) SlowAdaptNeuron(ctx *Context, ri uint32) {
+	lni := ri - ly.Indexes.NeurSt
+	rn := ly.Indexes.RecvN
+	for pi := uint32(0); pi < rn; pi++ {
+		pti := RecvPathIxs.Value(int(ly.Indexes.RecvSt + pi))
+		Paths[pti].SlowAdapt(ctx, ly, pti, ri, lni)
+	}
+}
+
+//gosl:end
 
 // LRateMod sets the LRate modulation parameter for Paths, which is
 // for dynamic modulation of learning rate (see also LRateSched).

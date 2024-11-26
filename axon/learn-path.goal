@@ -4,7 +4,9 @@
 
 package axon
 
-import "cogentcore.org/core/math32"
+import (
+	"cogentcore.org/core/math32"
+)
 
 //gosl:start
 
@@ -366,9 +368,10 @@ func (pt *PathParams) DWtFromDi(ctx *Context, syni uint32) {
 	Synapses[syni, DWt] += dwt
 }
 
-// DWtSubMean subtracts the mean from any pathways that have SubMean > 0.
+// DWtSubMean subtracts the mean for given recv neuron ri,
+// for pathways that have SubMean > 0.
 // This is called on *receiving* pathways, prior to WtFromDwt.
-func (pt *PathParams) DWtSubMean(ctx *Context, pti uint32) {
+func (pt *PathParams) DWtSubMean(ctx *Context, pti, ri, lni uint32) {
 	if pt.Learn.Learn.IsFalse() {
 		return
 	}
@@ -376,18 +379,18 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti uint32) {
 	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
 		return
 	}
-	ri := pt.Indexes.RecvLayer
-	lni := ri - pt.Indexes.RecvNeurSt
 	cni := pt.Indexes.RecvConSt + lni
-	synn := int(pt.Indexes.RecvSynSt + PathRecvCon[StartNN, cni])
+	synn := PathRecvCon[cni, Nitems]
+
 	if synn < 1 {
 		return
 	}
-	synst := pt.Indexes.RecvSynSt + PathRecvCon[StartOff, cni]
+	synst := pt.Indexes.RecvSynSt + PathRecvCon[cni, StartOff]
+
 	sumDWt := float32(0)
 	nnz := 0 // non-zero
-	for ci := range synn {
-		syni := RecvSynIxs.Value(int(synst) + ci)
+	for ci := uint32(0); ci < synn; ci++ {
+		syni := RecvSynIxs.Value(int(synst + ci))
 		dw := Synapses[syni, DWt]
 		if dw != 0 {
 			sumDWt += dw
@@ -398,8 +401,8 @@ func (pt *PathParams) DWtSubMean(ctx *Context, pti uint32) {
 		return
 	}
 	sumDWt /= float32(nnz)
-	for ci := range synn {
-		syni := RecvSynIxs.Value(int(synst) + ci)
+	for ci := uint32(0); ci < synn; ci++ {
+		syni := RecvSynIxs.Value(int(synst + ci))
 		if Synapses[syni, DWt] != 0 {
 			Synapses[syni, DWt] += -sm * sumDWt
 		}
@@ -450,106 +453,96 @@ func (pt *PathParams) WtFromDWtSynNoLimits(ctx *Context, syni uint32) {
 	Synapses[syni, DWt] = 0.0
 }
 
-//gosl:end
-
-// todo: rewrite below for PathParams target
-
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
-func (pj *Path) SlowAdapt(ctx *Context) {
-	pj.SWtFromWt(ctx)
-	pj.SynScale(ctx)
+func (pt *PathParams) SlowAdapt(ctx *Context, rlay *LayerParams, pti, ri, lni uint32) {
+	pt.SWtFromWt(ctx, rlay, pti, ri, lni)
+	pt.SynScale(ctx, rlay, pti, ri, lni)
 }
 
 // SWtFromWt updates structural, slowly adapting SWt value based on
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
-func (pj *Path) SWtFromWt(ctx *Context) {
-	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWts.Adapt.On.IsFalse() {
+func (pt *PathParams) SWtFromWt(ctx *Context, rlay *LayerParams, pti, ri, lni uint32) {
+	if pt.Learn.Learn.IsFalse() || pt.SWts.Adapt.On.IsFalse() {
 		return
 	}
-	rlay := pj.Recv
-	if rlay.Params.IsTarget() {
+	if rlay.IsTarget() {
 		return
 	}
-	mx := pj.Params.SWts.Limit.Max
-	mn := pj.Params.SWts.Limit.Min
-	lr := pj.Params.SWts.Adapt.LRate
-	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
-		syIndexes := pj.RecvSynIxs(lni)
-		nCons := len(syIndexes)
-		if nCons < 1 {
-			continue
+	mx := pt.SWts.Limit.Max
+	mn := pt.SWts.Limit.Min
+	lr := pt.SWts.Adapt.LRate
+
+	cni := pt.Indexes.RecvConSt + lni
+	synn := PathRecvCon[cni, Nitems]
+	synst := pt.Indexes.RecvSynSt + PathRecvCon[cni, StartOff]
+
+	avgDWt := float32(0)
+	for ci := uint32(0); ci < synn; ci++ {
+		syni := RecvSynIxs.Value(int(synst + ci))
+		swt := Synapses[syni, SWt]
+		// softbound for SWt
+		if Synapses[syni, DSWt] >= 0 {
+			Synapses[syni, DSWt] *= (mx - swt)
+		} else {
+			Synapses[syni, DSWt] *= (swt - mn)
 		}
-		avgDWt := float32(0)
-		for _, syi := range syIndexes {
-			syni := pj.SynStIndex + syi
-			swt := Synapses[syni, SWt]
-			// softbound for SWt
-			if Synapses[syni, DSWt] >= 0 {
-				Synapses[syni, DSWt] *= (mx - swt)
-			} else {
-				Synapses[syni, DSWt] *= (swt - mn)
-			}
-			avgDWt += Synapses[syni, DSWt]
-		}
-		avgDWt /= float32(nCons)
-		avgDWt *= pj.Params.SWts.Adapt.SubMean
-		for _, syi := range syIndexes {
-			syni := pj.SynStIndex + syi
-			Synapses[syni, SWt] += lr * (Synapses[syni, DSWt] - avgDWt)
-			swt := Synapses[syni, SWt]
-			Synapses[syni, DSWt] = 0
-			Synapses[syni, LWt] = pj.Params.SWts.LWtFromWts(Synapses[syni, Wt], swt)
-			Synapses[syni, Wt] = pj.Params.SWts.WtValue(swt, Synapses[syni, LWt])
-		}
+		avgDWt += Synapses[syni, DSWt]
+	}
+	avgDWt /= float32(synn)
+	avgDWt *= pt.SWts.Adapt.SubMean
+	for ci := uint32(0); ci < synn; ci++ {
+		syni := RecvSynIxs.Value(int(synst + ci))
+		Synapses[syni, SWt] += lr * (Synapses[syni, DSWt] - avgDWt)
+		swt := Synapses[syni, SWt]
+		Synapses[syni, DSWt] = 0.0
+		Synapses[syni, LWt] = pt.SWts.LWtFromWts(Synapses[syni, Wt], swt)
+		Synapses[syni, Wt] = pt.SWts.WtValue(swt, Synapses[syni, LWt])
 	}
 }
 
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFromTrgAvg function must be called first.
-func (pj *Path) SynScale(ctx *Context) {
-	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
+func (pt *PathParams) SynScale(ctx *Context, rlay *LayerParams, pti, ri, lni uint32) {
+	if pt.Learn.Learn.IsFalse() || pt.IsInhib() {
 		return
 	}
-	rlay := pj.Recv
-	if !rlay.Params.IsLearnTrgAvg() {
+	if !rlay.IsLearnTrgAvg() {
 		return
 	}
-	tp := &rlay.Params.Learn.TrgAvgAct
-	lr := tp.SynScaleRate
-	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
-		ri := rlay.NeurStIndex + lni
-		if NeuronIsOff(ri) {
-			continue
+	lr := rlay.Learn.TrgAvgAct.SynScaleRate
+
+	cni := pt.Indexes.RecvConSt + lni
+	synn := PathRecvCon[cni, Nitems]
+	synst := pt.Indexes.RecvSynSt + PathRecvCon[cni, StartOff]
+	adif := -lr * NeuronAvgs[ri, AvgDif]
+	for ci := uint32(0); ci < synn; ci++ {
+		syni := RecvSynIxs.Value(int(synst + ci))
+		lwt := Synapses[syni, LWt]
+		swt := Synapses[syni, SWt]
+		if adif >= 0 { // key to have soft bounding on lwt here!
+			Synapses[syni, LWt] += (1 - lwt) * adif * swt
+		} else {
+			Synapses[syni, LWt] += lwt * adif * swt
 		}
-		adif := -lr * NeuronAvgs[ri, AvgDif]
-		syIndexes := pj.RecvSynIxs(lni)
-		for _, syi := range syIndexes {
-			syni := pj.SynStIndex + syi
-			lwt := Synapses[syni, LWt]
-			swt := Synapses[syni, SWt]
-			if adif >= 0 { // key to have soft bounding on lwt here!
-				Synapses[syni, LWt] += (1 - lwt) * adif * swt
-			} else {
-				Synapses[syni, LWt] += lwt * adif * swt
-			}
-			Synapses[syni, Wt] = pj.Params.SWts.WtValue(swt, Synapses[syni, LWt])
-		}
+		Synapses[syni, Wt] = pt.SWts.WtValue(swt, Synapses[syni, LWt])
 	}
 }
+
+//gosl:end
 
 // LRateMod sets the LRate modulation parameter for Paths, which is
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
-func (pj *Path) LRateMod(mod float32) {
-	pj.Params.Learn.LRate.Mod = mod
-	pj.Params.Learn.LRate.Update()
+func (pt *Path) LRateMod(mod float32) {
+	pt.Params.Learn.LRate.Mod = mod
+	pt.Params.Learn.LRate.Update()
 }
 
 // LRateSched sets the schedule-based learning rate multiplier.
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
-func (pj *Path) LRateSched(sched float32) {
-	pj.Params.Learn.LRate.Sched = sched
-	pj.Params.Learn.LRate.Update()
+func (pt *Path) LRateSched(sched float32) {
+	pt.Params.Learn.LRate.Sched = sched
+	pt.Params.Learn.LRate.Update()
 }
