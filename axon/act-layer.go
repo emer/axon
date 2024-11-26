@@ -934,19 +934,21 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	ly.Acts.KNaNewState(ctx, ni, di)
 }
 
-func (ly *LayerParams) MinusPhasePool(ctx *Context, pi, di uint32) {
-	PoolCycleToMinus(pi, di)
-	if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsTarget.IsTrue() {
-		PoolsInt.Set(1, int(pi), int(di), int(Clamped))
+func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		PoolCycleToMinus(pi, di)
+		if ly.Acts.Clamp.Add.IsFalse() && ly.Acts.Clamp.IsTarget.IsTrue() {
+			PoolsInt.Set(1, int(pi), int(di), int(Clamped))
+		}
 	}
-	if PoolsInt.Value(int(pi), int(di), int(PoolIsLayer)) == 0 {
+	if PoolsInt.Value(int(pi), int(0), int(PoolIsLayer)) == 0 {
 		return
 	}
 	geIntMinusMax := float32(0)
 	giIntMinusMax := float32(0)
 	for di := uint32(0); di < ctx.NData; di++ {
 		geIntMinusMax = math32.Max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di))
-		giIntMinusMax = math32.Max(giIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di))
+		giIntMinusMax = math32.Max(giIntMinusMax, PoolAvgMax(AMGiInt, AMMinus, Max, pi, di))
 	}
 	for di := uint32(0); di < ctx.NData; di++ {
 		ly.AvgGeM(ctx, di, geIntMinusMax, giIntMinusMax)

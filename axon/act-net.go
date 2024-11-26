@@ -110,8 +110,7 @@ func (nt *Network) MinusPhase() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
-	pd := int(nix.NPools * ctx.NData)
-	RunMinusPhasePool(pd)
+	RunMinusPhasePool(int(nix.NPools))
 	RunMinusPhaseNeuron(nd)
 	RunMinusPhasePost(int(nix.NLayers))
 }
@@ -304,14 +303,12 @@ func InitGBuffsPath(pti uint32) { //gosl:kernel
 	Paths[pti].InitGBuffs(ctx)
 }
 
-// MinusPhasePool is the kernel over Pools * Data to
+// MinusPhasePool is the kernel over Pools to
 // do pool-level updating after end of minus phase.
-func MinusPhasePool(i uint32) { //gosl:kernel
+func MinusPhasePool(pi uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
-	pi := ctx.ItemIndex(i)
-	li := PoolsInt.Value(int(pi), int(di), int(PoolLayerIdx))
-	Layers[li].MinusPhasePool(ctx, pi, di)
+	li := PoolsInt.Value(int(pi), int(0), int(PoolLayerIdx))
+	Layers[li].MinusPhasePool(ctx, pi)
 }
 
 // MinusPhaseNeuron is the kernel over Neurons * Data to

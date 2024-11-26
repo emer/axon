@@ -17,6 +17,7 @@ import (
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tensor"
+	"github.com/emer/emergent/v2/emer"
 	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/paths"
 	"github.com/stretchr/testify/assert"
@@ -200,6 +201,19 @@ func CompareFloats(tolerance float32, out, cor []float32, msg string, t *testing
 		}
 		fmt.Printf("}\n")
 	}
+}
+
+func TestNewNetwork(t *testing.T) {
+	testNet := NewNetwork("testNet")
+	assert.Equal(t, "testNet", testNet.Name)
+	assert.Equal(t, 0, testNet.NumLayers())
+	assert.IsType(t, &Network{}, testNet)
+}
+
+func TestInterfaceType(t *testing.T) {
+	testNet := NewNetwork("testNet")
+	_, ok := testNet.EmerNetwork.(emer.Network)
+	assert.True(t, ok)
 }
 
 func TestSpikeProp(t *testing.T) {
@@ -1301,7 +1315,7 @@ func TestDebugLearn(t *testing.T) {
 func TestNDataLearn(t *testing.T) {
 	nd1Values := NetDebugLearn(t, false, false, 1, 1, true, false, false)
 	nd4Values := NetDebugLearn(t, false, false, 4, 4, true, false, false)
-	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg", "LayerAvgMaxGeM", "LayerAvgMaxGiM") // todo: LayerAvgMaxGeM and GiM need further investigation
+	ReportValDiffs(t, Tol7, nd1Values, nd4Values, "nData = 1", "nData = 4", "DWt", "ActAvg", "DTrgAvg")
 }
 
 func TestNDataMaxDataLearn(t *testing.T) {

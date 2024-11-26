@@ -81,19 +81,21 @@ fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
 ///////////// import: "vars.go"
 
 ///////////// import: "act-layer.go"
-fn LayerParams_MinusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32) {
-	PoolCycleToMinus(pi, di);
-	if ((*ly).Acts.Clamp.Add == 0 && (*ly).Acts.Clamp.IsTarget == 1) {
-		PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(Clamped))] = 1;
+fn LayerParams_MinusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32) {
+	for (var di = u32(0); di < (*ctx).NData; di++) {
+		PoolCycleToMinus(pi, di);
+		if ((*ly).Acts.Clamp.Add == 0 && (*ly).Acts.Clamp.IsTarget == 1) {
+			PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(Clamped))] = 1;
+		}
 	}
-	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolIsLayer))] == 0) {
+	if (PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(0),u32(PoolIsLayer))] == 0) {
 		return;
 	}
 	var geIntMinusMax = f32(0);
 	var giIntMinusMax = f32(0);
 	for (var di = u32(0); di < (*ctx).NData; di++) {
 		geIntMinusMax = max(geIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di));
-		giIntMinusMax = max(giIntMinusMax, PoolAvgMax(AMGeInt, AMMinus, Max, pi, di));
+		giIntMinusMax = max(giIntMinusMax, PoolAvgMax(AMGiInt, AMMinus, Max, pi, di));
 	}
 	for (var di = u32(0); di < (*ctx).NData; di++) {
 		LayerParams_AvgGeM(ly, ctx, di, geIntMinusMax, giIntMinusMax);
@@ -109,12 +111,10 @@ fn LayerParams_AvgGeM(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>,
 }
 
 ///////////// import: "act-net.go"
-fn MinusPhasePool(i: u32) { //gosl:kernel
+fn MinusPhasePool(pi: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
-	var pi = Context_ItemIndex(&ctx, i);
-	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(PoolLayerIdx))];
-	var layers=Layers[li]; LayerParams_MinusPhasePool(&layers, &ctx, pi, di);
+	var li = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(0),u32(PoolLayerIdx))];
+	var layers=Layers[li]; LayerParams_MinusPhasePool(&layers, &ctx, pi);
 	Ctx[0] = ctx;
 }
 
@@ -410,12 +410,6 @@ struct Context {
 	pad: i32,
 	pad1: i32,
 	RandCounter: RandCounter,
-}
-fn Context_ItemIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx / (*ctx).NData;
-}
-fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
-	return idx % (*ctx).NData;
 }
 
 ///////////// import: "deep-layer.go"
