@@ -140,7 +140,7 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 				modeDir := statsDir.RecycleDir(mode.String())
 				curModeDir := currentDir.RecycleDir(mode.String())
 				levelDir := modeDir.RecycleDir(level.String())
-				tsr := tensorfs.Value[int](levelDir, name)
+				tsr := levelDir.Int(name)
 				if start {
 					tsr.SetNumRows(0)
 					if ps := plot.GetStylersFrom(tsr); ps == nil {
@@ -151,7 +151,7 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 					}
 					if level.Int64() == trialLevel.Int64() {
 						for di := range ndata {
-							tensorfs.Value[int](curModeDir, name, ndata).SetInt1D(0, di)
+							curModeDir.Int(name, ndata).SetInt1D(0, di)
 						}
 					}
 					continue
@@ -159,14 +159,14 @@ func StatLoopCounters(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, ne
 				ctr := st.Loops[lev].Counter.Cur
 				if level.Int64() == trialLevel.Int64() {
 					for di := range ndata {
-						tensorfs.Value[int](curModeDir, name, ndata).SetInt1D(ctr, di)
+						curModeDir.Int(name, ndata).SetInt1D(ctr, di)
 						tsr.AppendRowInt(ctr)
 						if lev.Int64() == trialLevel.Int64() {
 							ctr++
 						}
 					}
 				} else {
-					tensorfs.Scalar[int](curModeDir, name).SetInt1D(ctr, 0)
+					curModeDir.Int(name, 1).SetInt1D(ctr, 0)
 					tsr.AppendRowInt(ctr)
 				}
 			}
@@ -193,9 +193,9 @@ func StatRunName(statsDir, currentDir *tensorfs.Node, ls *looper.Stacks, net *Ne
 		name := "RunName"
 		modeDir := statsDir.RecycleDir(mode.String())
 		levelDir := modeDir.RecycleDir(level.String())
-		tsr := tensorfs.Value[string](levelDir, name)
+		tsr := levelDir.StringValue(name)
 		ndata := int(net.Context().NData)
-		runNm := tensorfs.Scalar[string](currentDir, name).String1D(0)
+		runNm := currentDir.StringValue(name, 1).String1D(0)
 
 		if start {
 			tsr.SetNumRows(0)
@@ -234,7 +234,7 @@ func StatPerTrialMSec(statsDir *tensorfs.Node, statName string, trainMode enums.
 		name := "PerTrialMSec"
 		modeDir := statsDir.RecycleDir(mode.String())
 		levelDir := modeDir.RecycleDir(level.String())
-		tsr := tensorfs.Value[float64](levelDir, name)
+		tsr := levelDir.Float64(name)
 		if start {
 			tsr.SetNumRows(0)
 			if ps := plot.GetStylersFrom(tsr); ps == nil {
@@ -284,7 +284,7 @@ func StatLayerActGe(statsDir *tensorfs.Node, net *Network, trainMode, trialLevel
 				ly := net.LayerByName(lnm)
 				lpi := ly.Params.PoolIndex(0)
 				name := lnm + "_" + statName
-				tsr := tensorfs.Value[float64](levelDir, name)
+				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
 					if ps := plot.GetStylersFrom(tsr); ps == nil {
@@ -339,7 +339,7 @@ func StatLayerState(statsDir *tensorfs.Node, net *Network, smode, slevel enums.E
 			name := lnm + "_" + variable
 			sizes := []int{ndata}
 			sizes = append(sizes, ly.GetSampleShape().Sizes...)
-			tsr := tensorfs.Value[float64](levelDir, name, sizes...)
+			tsr := levelDir.Float64(name, sizes...)
 			if start {
 				tsr.SetNumRows(0)
 				continue
@@ -384,11 +384,11 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			ly := net.LayerByName(lnm)
 			sizes := []int{ndata}
 			sizes = append(sizes, ly.GetSampleShape().Sizes...)
-			vtsr := tensorfs.Value[float64](pcaDir, lnm, sizes...)
-			vecs := tensorfs.Value[float64](curModeDir, "PCA_Vecs_"+lnm).(*tensor.Float64)
-			vals := tensorfs.Value[float64](curModeDir, "PCA_Vals_"+lnm).(*tensor.Float64)
+			vtsr := pcaDir.Float64(lnm, sizes...)
+			vecs := curModeDir.Float64("PCA_Vecs_" + lnm)
+			vals := curModeDir.Float64("PCA_Vals_" + lnm)
 			if levi == 0 {
-				ltsr := tensorfs.Value[float64](curModeDir, "PCA_ActM_"+lnm, ly.GetSampleShape().Sizes...)
+				ltsr := curModeDir.Float64("PCA_ActM_"+lnm, ly.GetSampleShape().Sizes...)
 				if start {
 					vtsr.SetNumRows(0)
 				} else {
@@ -404,7 +404,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			if !start && levi == 1 {
 				if interval > 0 && epc%interval == 0 {
 					hasNew = true
-					covar := tensorfs.Value[float64](curModeDir, "PCA_Covar_"+lnm)
+					covar := curModeDir.Float64("PCA_Covar_" + lnm)
 					metric.CovarianceMatrixOut(metric.Covariance, vtsr, covar)
 					matrix.SVDOut(covar, vecs, vals)
 					ln := vals.Len()
@@ -433,7 +433,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			}
 			for si, statName := range statNames {
 				name := lnm + "_" + statName
-				tsr := tensorfs.Value[float64](levelDir, name)
+				tsr := levelDir.Float64(name)
 				if start {
 					tsr.SetNumRows(0)
 					if ps := plot.GetStylersFrom(tsr); ps == nil {

@@ -10,7 +10,6 @@ import (
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 )
 
 // FSAEnv generates states in a finite state automaton (FSA) which is a
@@ -29,7 +28,7 @@ type FSAEnv struct {
 	Labels tensor.String
 
 	// automaton state within FSA that we're in.
-	AState env.CurPrvInt
+	AState env.CurPrev[int]
 
 	// number of next states in current state output (scalar).
 	NNext tensor.Int
@@ -62,19 +61,19 @@ type FSAEnv struct {
 
 // InitTMat initializes matrix and labels to given size
 func (ev *FSAEnv) InitTMat(nst int) {
-	ev.TMat.SetShape([]int{nst, nst}, "cur", "next")
-	ev.Labels.SetShape([]int{nst, nst}, "cur", "next")
+	ev.TMat.SetShapeSizes(nst, nst)
+	ev.Labels.SetShapeSizes(nst, nst)
 	ev.TMat.SetZeros()
 	ev.Labels.SetZeros()
-	ev.NNext.SetShape([]int{1})
-	ev.NextStates.SetShape([]int{nst})
-	ev.NextLabels.SetShape([]int{nst})
+	ev.NNext.SetShapeSizes(1)
+	ev.NextStates.SetShapeSizes(nst)
+	ev.NextLabels.SetShapeSizes(nst)
 }
 
 // SetTMat sets given transition matrix probability and label
 func (ev *FSAEnv) SetTMat(fm, to int, p float64, lbl string) {
-	ev.TMat.Set([]int{fm, to}, p)
-	ev.Labels.Set([]int{fm, to}, lbl)
+	ev.TMat.Set(p, fm, to)
+	ev.Labels.Set(lbl, fm, to)
 }
 
 // TMatReber sets the transition matrix to the standard Reber grammar FSA
@@ -104,7 +103,7 @@ func (ev *FSAEnv) Validate() error {
 
 func (ev *FSAEnv) Label() string { return ev.Name }
 
-func (ev *FSAEnv) State(element string) tensor.Tensor {
+func (ev *FSAEnv) State(element string) tensor.Values {
 	switch element {
 	case "NNext":
 		return &ev.NNext
@@ -113,10 +112,6 @@ func (ev *FSAEnv) State(element string) tensor.Tensor {
 	case "NextLabels":
 		return &ev.NextLabels
 	}
-	return nil
-}
-
-func (ev *FSAEnv) Actions() env.Elements {
 	return nil
 }
 
@@ -129,8 +124,6 @@ func (ev *FSAEnv) String() string {
 
 func (ev *FSAEnv) Init(run int) {
 	ev.Rand.NewRand(ev.RandSeed)
-	ev.Tick.Scale = etime.Tick
-	ev.Trial.Scale = etime.Trial
 	ev.Seq.Init()
 	ev.Tick.Init()
 	ev.Trial.Init()
@@ -149,17 +142,17 @@ func (ev *FSAEnv) NextState() {
 	ps := ev.TMat.Values[ri : ri+nst]
 	ls := ev.Labels.Values[ri : ri+nst]
 	nxt := randx.PChoose64(ps, &ev.Rand) // next state chosen at random
-	ev.NextStates.Set1D(0, nxt)
-	ev.NextLabels.Set1D(0, ls[nxt])
+	ev.NextStates.Set1D(nxt, 0)
+	ev.NextLabels.Set1D(ls[nxt], 0)
 	idx := 1
 	for i, p := range ps {
 		if i != nxt && p > 0 {
-			ev.NextStates.Set1D(idx, i)
-			ev.NextLabels.Set1D(idx, ls[i])
+			ev.NextStates.Set1D(i, idx)
+			ev.NextLabels.Set1D(ls[i], idx)
 			idx++
 		}
 	}
-	ev.NNext.Set1D(0, idx)
+	ev.NNext.Set1D(idx, 0)
 	ev.AState.Set(nxt)
 }
 
@@ -174,7 +167,7 @@ func (ev *FSAEnv) Step() bool {
 	return true
 }
 
-func (ev *FSAEnv) Action(element string, input tensor.Tensor) {
+func (ev *FSAEnv) Action(element string, input tensor.Values) {
 	// nop
 }
 

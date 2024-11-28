@@ -1,4 +1,4 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2024, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -471,7 +471,7 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	net.InitExt()
 	for di := range ndata {
 		ev.Step()
-		tensorfs.Value[string](curModeDir, "TrialName", ndata).SetString1D(ev.String(), di)
+		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
 			st := ev.State(ly.Name)
@@ -576,14 +576,14 @@ func (ss *Sim) RunStats(mode Modes, level Levels, phase StatsPhase) {
 // based on params extra sheets and tag, and starting run number (for distributed runs).
 func (ss *Sim) SetRunName() string {
 	runName := ss.Params.RunName(ss.Config.Run.Run)
-	tensorfs.Scalar[string](ss.Current, "RunName").SetString1D(runName, 0)
+	ss.Current.StringValue("RunName", 1).SetString1D(runName, 0)
 	return runName
 }
 
 // RunName returns the overall run name, used for naming output logs and weight files
 // based on params extra sheets and tag, and starting run number (for distributed runs).
 func (ss *Sim) RunName() string {
-	return tensorfs.Scalar[string](ss.Current, "RunName").String1D(0)
+	return ss.Current.StringValue("RunName", 1).String1D(0)
 }
 
 // InitStats initializes all the stats by calling Start across all modes and levels.
@@ -634,7 +634,7 @@ func (ss *Sim) ConfigStats() {
 		modeDir := ss.Stats.RecycleDir(mode.String())
 		curModeDir := ss.Current.RecycleDir(mode.String())
 		levelDir := modeDir.RecycleDir(level.String())
-		tsr := tensorfs.Value[string](levelDir, name)
+		tsr := levelDir.StringValue(name)
 		ndata := int(ss.Net.Context().NData)
 		if phase == Start {
 			tsr.SetNumRows(0)
@@ -648,7 +648,7 @@ func (ss *Sim) ConfigStats() {
 		}
 		for di := range ndata {
 			// saved in apply inputs
-			trlNm := tensorfs.Value[string](curModeDir, name, ndata).String1D(di)
+			trlNm := curModeDir.StringValue(name, ndata).String1D(di)
 			tsr.AppendRowString(trlNm)
 		}
 	})
@@ -665,7 +665,7 @@ func (ss *Sim) ConfigStats() {
 			curModeDir := ss.Current.RecycleDir(mode.String())
 			levelDir := modeDir.RecycleDir(level.String())
 			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
-			tsr := tensorfs.Value[float64](levelDir, name)
+			tsr := levelDir.Float64(name)
 			ndata := int(ss.Net.Context().NData)
 			var stat float64
 			if phase == Start {
@@ -688,11 +688,11 @@ func (ss *Sim) ConfigStats() {
 				switch name {
 				case "NZero":
 					if level == Epoch {
-						tensorfs.Scalar[float64](curModeDir, name).SetFloat1D(0, 0)
+						curModeDir.Float64(name, 1).SetFloat1D(0, 0)
 					}
 				case "FirstZero", "LastZero":
 					if level == Epoch {
-						tensorfs.Scalar[float64](curModeDir, name).SetFloat1D(-1, 0)
+						curModeDir.Float64(name, 1).SetFloat1D(-1, 0)
 					}
 				}
 				continue
@@ -708,39 +708,39 @@ func (ss *Sim) ConfigStats() {
 					case "UnitErr":
 						stat = out.PctUnitErr(ss.Net.Context())[di]
 					case "Err":
-						uniterr := tensorfs.Value[float64](curModeDir, "UnitErr", ndata).Float1D(di)
+						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
 						stat = 1.0
 						if uniterr == 0 {
 							stat = 0
 						}
 					}
-					tensorfs.Value[float64](curModeDir, name, ndata).SetFloat1D(stat, di)
+					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
 				}
 			case Epoch:
-				nz := tensorfs.Scalar[float64](curModeDir, "NZero").Float1D(0)
+				nz := curModeDir.Float64("NZero", 1).Float1D(0)
 				switch name {
 				case "NZero":
 					err := stats.StatSum.Call(subDir.Value("Err")).Float1D(0)
-					stat = tensorfs.Scalar[float64](curModeDir, name).Float1D(0)
+					stat = curModeDir.Float64(name, 1).Float1D(0)
 					if err == 0 {
 						stat++
 					} else {
 						stat = 0
 					}
-					tensorfs.Scalar[float64](curModeDir, name).SetFloat1D(stat, 0)
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
 				case "FirstZero":
-					stat = tensorfs.Scalar[float64](curModeDir, name).Float1D(0)
+					stat = curModeDir.Float64(name, 1).Float1D(0)
 					if stat < 0 && nz == 1 {
-						stat = tensorfs.Scalar[float64](curModeDir, "Epoch").Float1D(0)
+						stat = curModeDir.Int("Epoch", 1).Float1D(0)
 					}
-					tensorfs.Scalar[float64](curModeDir, name).SetFloat1D(stat, 0)
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
 				case "LastZero":
-					stat = tensorfs.Scalar[float64](curModeDir, name).Float1D(0)
+					stat = curModeDir.Float64(name, 1).Float1D(0)
 					if stat < 0 && nz >= float64(ss.Config.Run.NZero) {
-						stat = tensorfs.Scalar[float64](curModeDir, "Epoch").Float1D(0)
+						stat = curModeDir.Int("Epoch", 1).Float1D(0)
 					}
-					tensorfs.Scalar[float64](curModeDir, name).SetFloat1D(stat, 0)
+					curModeDir.Float64(name, 1).SetFloat1D(stat, 0)
 				default:
 					stat = stats.StatMean.Call(subDir.Value(name)).Float1D(0)
 				}
@@ -793,13 +793,13 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 	if curModeDir.Node("TrialName") == nil {
 		return counters
 	}
-	counters += fmt.Sprintf(" TrialName: %s", tensorfs.Value[string](curModeDir, "TrialName").String1D(di))
+	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
 	statNames := []string{"CorSim", "UnitErr", "Err"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
 	for _, name := range statNames {
-		counters += fmt.Sprintf(" %s: %.4g", name, tensorfs.Value[float64](curModeDir, name).Float1D(di))
+		counters += fmt.Sprintf(" %s: %.4g", name, curModeDir.Float64(name).Float1D(di))
 	}
 	return counters
 }

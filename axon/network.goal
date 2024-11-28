@@ -331,7 +331,7 @@ func (nt *Network) UpdateLayerMaps() {
 	nt.UpdateLayerNameMap()
 	nt.LayerClassMap = make(map[string][]string)
 	for _, ly := range nt.Layers {
-		cs := ly.Type.String() + ly.Class
+		cs := ly.Type.String() + " " + ly.Class
 		cls := strings.Split(cs, " ")
 		for _, cl := range cls {
 			if cl == "" {
