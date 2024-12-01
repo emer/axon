@@ -135,6 +135,12 @@ type RunConfig struct {
 	// Should be an even multiple of NData.
 	Trials int `default:"32"`
 
+	// Cycles is the total number of cycles per trial: at least 200.
+	Cycles int `default:"200"`
+
+	// PlusCycles is the total number of plus-phase cycles per trial. For Cycles=300, use 100.
+	PlusCycles int `default:"50"`
+
 	// NZero is how many perfect, zero-error epochs before stopping a Run.
 	NZero int `default:"2"`
 
@@ -146,8 +152,8 @@ type RunConfig struct {
 	// representations to measure variance.
 	PCAInterval int `default:"5"`
 
-	// StartWts is the name of weights file to load at start of first run.
-	StartWts string
+	// StartWeights is the name of weights file to load at start of first run.
+	StartWeights string
 }
 
 // LogConfig has config parameters related to logging data.
@@ -163,7 +169,7 @@ type LogConfig struct {
 	Test []string `nest:"+"`
 }
 
-// Config is a standard Sim config -- use as a starting point.
+// Config has the overall Sim configuration options.
 type Config struct {
 
 	// Name is the short name of the sim.
@@ -261,6 +267,7 @@ func RunSim(cfg *Config) error {
 
 func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
+	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
 	ss.RandSeeds.Init(100) // max 100 runs
@@ -409,8 +416,8 @@ func (ss *Sim) ConfigLoops() {
 	ls := looper.NewStacks()
 
 	trials := int(math32.IntMultipleGE(float32(ss.Config.Run.Trials), float32(ss.Config.Run.NData)))
-	cycles := 200
-	plusPhase := 50
+	cycles := ss.Config.Run.Cycles
+	plusPhase := ss.Config.Run.PlusCycles
 
 	ls.AddStack(Train, Trial).
 		AddLevel(Run, ss.Config.Run.Runs).
@@ -504,9 +511,9 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(Test).Init(0)
 	ctx.Reset()
 	ss.Net.InitWeights()
-	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
-		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
-		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
+	if ss.Config.Run.StartWeights != "" {
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
+		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
 	}
 }
 

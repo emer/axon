@@ -125,21 +125,21 @@ func (ev *MoveEnv) Config(unper int) {
 	ev.NRotAngles = (360 / ev.AngInc) + 1
 
 	ev.World = &tensor.Int{}
-	ev.World.SetShape([]int{ev.Size.Y, ev.Size.X}, "Y", "X")
+	ev.World.SetShapeSizes(ev.Size.Y, ev.Size.X)
 
 	ev.CurStates = make(map[string]*tensor.Float32)
 	ev.NextStates = make(map[string]*tensor.Float32)
 
-	dv := tensor.NewFloat32([]int{1, ev.NFOVRays, ev.DepthSize, 1}, "1", "Angle", "Depth", "1")
+	dv := tensor.NewFloat32(1, ev.NFOVRays, ev.DepthSize, 1)
 	ev.NextStates["Depth"] = dv
 
 	ev.Depths = make([]float32, ev.NFOVRays)
 	ev.DepthLogs = make([]float32, ev.NFOVRays)
 
-	hd := tensor.NewFloat32([]int{1, ev.DepthSize}, "1", "Pop")
+	hd := tensor.NewFloat32(1, ev.DepthSize)
 	ev.NextStates["HeadDir"] = hd
 
-	av := tensor.NewFloat32([]int{ev.UnitsPer, len(ev.Acts)}, "NUnits", "Acts")
+	av := tensor.NewFloat32(ev.UnitsPer, len(ev.Acts))
 	ev.NextStates["Action"] = av
 
 	ev.CopyNextToCur() // get CurStates from NextStates
@@ -159,7 +159,7 @@ func (ev *MoveEnv) Validate() error {
 	return nil
 }
 
-func (ev *MoveEnv) State(element string) tensor.Tensor {
+func (ev *MoveEnv) State(element string) tensor.Values {
 	return ev.CurStates[element]
 }
 
@@ -178,12 +178,12 @@ func (ev *MoveEnv) Init(run int) {
 
 // SetWorld sets given mat at given point coord in world
 func (ev *MoveEnv) SetWorld(p vecint.Vector2i, mat int) {
-	ev.World.Set([]int{p.Y, p.X}, mat)
+	ev.World.Set(mat, p.Y, p.X)
 }
 
 // GetWorld returns mat at given point coord in world
 func (ev *MoveEnv) GetWorld(p vecint.Vector2i) int {
-	return ev.World.Value([]int{p.Y, p.X})
+	return ev.World.Value(p.Y, p.X)
 }
 
 // AngMod returns angle modulo within 360 degrees
@@ -296,7 +296,7 @@ func (ev *MoveEnv) TakeAct(act int) {
 func (ev *MoveEnv) RenderView() {
 	dv := ev.NextStates["Depth"]
 	for i := 0; i < ev.NFOVRays; i++ {
-		sv := dv.SubSpace([]int{0, i}).(*tensor.Float32)
+		sv := dv.SubSpace(0, i).(*tensor.Float32)
 		ev.DepthCode.Encode(&sv.Values, ev.DepthLogs[i], ev.DepthSize, popcode.Set)
 	}
 }
@@ -313,7 +313,7 @@ func (ev *MoveEnv) RenderAction() {
 	av := ev.NextStates["Action"]
 	av.SetZeros()
 	for yi := 0; yi < ev.UnitsPer; yi++ {
-		av.Set([]int{yi, ev.Act}, 1)
+		av.Set(1, yi, ev.Act)
 	}
 }
 
@@ -357,7 +357,7 @@ func (ev *MoveEnv) Step() bool {
 	return true
 }
 
-func (ev *MoveEnv) Action(action string, nop tensor.Tensor) {
+func (ev *MoveEnv) Action(action string, nop tensor.Values) {
 	a, ok := ev.ActMap[action]
 	if !ok {
 		fmt.Printf("Action not recognized: %s\n", action)
@@ -378,7 +378,7 @@ func (ev *MoveEnv) WorldLineHoriz(st, ed vecint.Vector2i, mat int) {
 	sx := min(st.X, ed.X)
 	ex := max(st.X, ed.X)
 	for x := sx; x <= ex; x++ {
-		ev.World.Set([]int{st.Y, x}, mat)
+		ev.World.Set(mat, st.Y, x)
 	}
 }
 
@@ -387,7 +387,7 @@ func (ev *MoveEnv) WorldLineVert(st, ed vecint.Vector2i, mat int) {
 	sy := min(st.Y, ed.Y)
 	ey := max(st.Y, ed.Y)
 	for y := sy; y <= ey; y++ {
-		ev.World.Set([]int{y, st.X}, mat)
+		ev.World.Set(mat, y, st.X)
 	}
 }
 

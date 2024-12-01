@@ -4,17 +4,16 @@
 
 package main
 
-import "cogentcore.org/core/math32/vecint"
-
 // EnvConfig has config params for environment
 // note: only adding fields for key Env params that matter for both Network and Env
 // other params are set via the Env map data mechanism.
 type EnvConfig struct {
 
-	// env parameters -- can set any field/subfield on Env struct, using standard TOML formatting
+	// Env parameters: can set any field/subfield on Env struct,
+	// using standard TOML formatting.
 	Env map[string]any
 
-	// number of units per localist output unit -- 1 works better than 5 here
+	// UnitsPer is the number of units per localist output unit. 1 works better than 5 here
 	UnitsPer int `default:"1"`
 
 	// InputNames are names of input letters.
@@ -37,12 +36,6 @@ func (cfg *EnvConfig) InitNameMap() {
 
 // ParamConfig has config parameters related to sim params.
 type ParamConfig struct {
-
-	// Hidden1Size is the size of hidden 1 layer.
-	Hidden1Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
-
-	// Hidden2Size is the size of hidden 2 layer.
-	Hidden2Size vecint.Vector2i `default:"{'X':10,'Y':10}" nest:"+"`
 
 	// Sheet is the extra params sheet name(s) to use (space separated
 	// if multiple). Must be valid name as listed in compiled-in params
@@ -116,8 +109,8 @@ type RunConfig struct {
 	// representations to measure variance.
 	PCAInterval int `default:"5"`
 
-	// StartWts is the name of weights file to load at start of first run.
-	StartWts string
+	// StartWeights is the name of weights file to load at start of first run.
+	StartWeights string
 }
 
 // LogConfig has config parameters related to logging data.
@@ -133,7 +126,7 @@ type LogConfig struct {
 	Test []string `nest:"+"`
 }
 
-// Config is a standard Sim config -- use as a starting point.
+// Config has the overall Sim configuration options.
 type Config struct {
 
 	// Name is the short name of the sim.

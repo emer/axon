@@ -14,6 +14,7 @@ import (
 
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/enums"
@@ -125,6 +126,7 @@ func RunSim(cfg *Config) error {
 
 func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
+	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
 	ss.RandSeeds.Init(100) // max 100 runs
@@ -169,18 +171,18 @@ func (ss *Sim) ConfigEnv() {
 		trn.Seq.Max = 25 // 25 sequences per epoch training
 		trn.RandSeed = 73 + int64(di)*73
 		trn.TMatReber()
-		// if ss.Config.Env.Env != nil {
-		// 	params.ApplyMap(trn, ss.Config.Env.Env, ss.Config.Debug)
-		// }
+		if ss.Config.Env.Env != nil {
+			reflectx.SetFieldsFromMap(trn, ss.Config.Env.Env)
+		}
 		trn.Validate()
 
 		tst.Name = env.ModeDi(Test, di)
 		tst.Seq.Max = 10
 		tst.RandSeed = 181 + int64(di)*181
 		tst.TMatReber() // todo: random
-		// if ss.Config.Env.Env != nil {
-		// 	params.ApplyMap(tst, ss.Config.Env.Env, ss.Config.Debug)
-		// }
+		if ss.Config.Env.Env != nil {
+			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
+		}
 		tst.Validate()
 
 		trn.Init(0)
@@ -393,9 +395,9 @@ func (ss *Sim) NewRun() {
 	}
 	ctx.Reset()
 	ss.Net.InitWeights()
-	if ss.Config.Run.StartWts != "" { // this is just for testing -- not usually needed
-		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWts))
-		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWts)
+	if ss.Config.Run.StartWeights != "" { // this is just for testing -- not usually needed
+		ss.Net.OpenWeightsJSON(core.Filename(ss.Config.Run.StartWeights))
+		mpi.Printf("Starting with initial weights from: %s\n", ss.Config.Run.StartWeights)
 	}
 }
 
