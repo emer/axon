@@ -175,6 +175,9 @@ func (vu *NetViewUpdate) GoUpdate(counters string) {
 	if !vu.ShouldUpdate() {
 		return
 	}
+	if vu.IsCycleUpdating() && vu.View.Options.Raster.On { // no update for raster
+		return
+	}
 	vu.View.Record(counters, -1) // -1 = default incrementing raster
 	vu.View.GoUpdateView()
 }
@@ -274,23 +277,3 @@ func (vu *NetViewUpdate) RecordSyns() {
 	}
 	vu.View.RecordSyns()
 }
-
-// // LooperUpdatePlots adds plot update calls at each time level
-// func LooperUpdatePlots(ls *looper.Stacks, gui *egui.GUI) {
-// 	for _, st := range ls.Stacks {
-// 		for t, loop := range st.Loops {
-// 			curTime := t
-// 			if curTime == etime.Cycle {
-// 				loop.OnEnd.Add("GUI:UpdatePlot", func() {
-// 					cyc := loop.Counter.Cur
-// 					_ = cyc
-// 					// gui.GoUpdateCyclePlot(m, cyc) // todo:
-// 				})
-// 			} else {
-// 				loop.OnEnd.Add("GUI:UpdatePlot", func() {
-// 					// gui.GoUpdatePlot(m, curTime) // todo:
-// 				})
-// 			}
-// 		}
-// 	}
-// }

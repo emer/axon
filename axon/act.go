@@ -894,9 +894,6 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	Neurons.Set(-1.0, int(ni), int(di), int(ISIAvg))
 	Neurons.Set(ac.Init.Act, int(ni), int(di), int(ActInt))
 	Neurons.Set(0.0, int(ni), int(di), int(Spiked))
-	for i := range 8 {
-		Neurons.Set(0.0, int(ni), int(di), int(SpkBin0+NeuronVars(i)))
-	}
 
 	if decay > 0 { // no-op for most, but not all..
 		Neurons.Set(0.0, int(ni), int(di), int(Spike))

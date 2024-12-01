@@ -892,9 +892,6 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	Neurons[ni, di, ISIAvg] = -1.0
 	Neurons[ni, di, ActInt] = ac.Init.Act
 	Neurons[ni, di, Spiked] = 0.0
-	for i := range 8 {
-		Neurons[ni, di, SpkBin0+NeuronVars(i)] = 0.0
-	}
 
 	if decay > 0 { // no-op for most, but not all..
 		Neurons[ni, di, Spike] = 0.0

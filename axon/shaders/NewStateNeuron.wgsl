@@ -88,6 +88,9 @@ fn LayerParams_NewStateNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkMaxCa))] = 0.0;
 	ActParams_DecayState(&(*ly).Acts, ctx, ni, di, (*ly).Acts.Decay.Act, (*ly).Acts.Decay.Glong, (*ly).Acts.Decay.AHP);
 	ActParams_KNaNewState(&(*ly).Acts, ctx, ni, di);
+	for (var i=0; i<8; i++) {
+		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkBin0 + NeuronVars(i)))] = 0.0;
+	}
 }
 
 ///////////// import: "act-net.go"
@@ -276,9 +279,6 @@ fn ActParams_DecayState(ac: ptr<function,ActParams>, ctx: ptr<function,Context>,
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ISIAvg))] = -1.0;
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] = (*ac).Init.Act;
 	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Spiked))] = 0.0;
-	for (var i=0; i<8; i++) {
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpkBin0 + NeuronVars(i)))] = 0.0;
-	}
 	if (decay > 0) { // no-op for most, but not all..
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Spike))] = 0.0;
 		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] - (*ac).Init.Act);

@@ -932,6 +932,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
+	for i := range 8 {
+		Neurons.Set(0.0, int(ni), int(di), int(SpkBin0+NeuronVars(i)))
+	}
 }
 
 // Beta1Neuron does neuron level Beta1 updating.
