@@ -525,7 +525,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *armaze.Env, di int) armaze.Actions {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaSpkD", di) // was "Act"
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaD", di) // was "Act"
 	return armaze.Actions(ss.SoftMaxChoose(ev, vt))
 }
 
@@ -951,7 +951,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 			drv := axon.GlbUSposV(ctx, diu, axon.GvDrives, i)
 			us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
 			ofcP := ofcPosUS.Pool(i+1, diu)
-			ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
+			ofc := ofcP.AvgMax.CaD.Plus.Avg * ofcmul
 			dp.SetFloat("Drive", int(i), float64(drv))
 			dp.SetFloat("USin", int(i), float64(us))
 			dp.SetFloat("OFC", int(i), float64(ofc))
@@ -961,7 +961,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		for i := uint32(0); i < nn; i++ {
 			us := axon.GlbUSneg(ctx, diu, axon.GvUSneg, i)
 			ofcP := ofcNegUS.Pool(i+1, diu)
-			ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
+			ofc := ofcP.AvgMax.CaD.Plus.Avg * ofcmul
 			dn.SetFloat("USin", int(i), float64(us))
 			dn.SetFloat("OFC", int(i), float64(ofc))
 		}

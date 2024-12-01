@@ -206,7 +206,7 @@ There is a hard max storage buffer limit of 4 GiB (uint32), and `MaxStorageBuffe
     + `Layer.Act.` -> `Layer.Acts.`
     + `Layer.Acts.GABAB.` -> `Layer.Acts.GabaB.`
     + `Layer.Acts.Spike.` -> `Layer.Acts.Spikes.`
-    + `Layer.Learn.CaLrn.` -> `Layer.Learn.CaLearn.`
+    + `Layer.Learn.LearnCa.` -> `Layer.Learn.CaLearn.`
     
     
 

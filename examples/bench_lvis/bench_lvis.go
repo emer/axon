@@ -225,7 +225,6 @@ func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, p
 				}
 				if qtr == 2 {
 					net.MinusPhase()
-					ctx.NewPhase(true)
 					net.PlusPhaseStart()
 				}
 			}

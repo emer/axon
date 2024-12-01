@@ -37,7 +37,7 @@ const (
 	CTCtxtPath
 
 	// RWPath does dopamine-modulated learning for reward prediction:
-	// Da * Send.CaSpkP (integrated current spiking activity).
+	// Da * Send.CaP (integrated current spiking activity).
 	// Uses RLPredPath parameters.
 	// Use in RWPredLayer typically to generate reward predictions.
 	// If the Da sign is positive, the first recv unit learns fully;

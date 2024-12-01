@@ -41,7 +41,7 @@ type SKCaParams struct {
 	// SKCaR released calcium decay time constant
 	CaRDecayTau float32 `default:"150,200"`
 
-	// level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge.
+	// level of time-integrated spiking activity (CaD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge.
 	CaInThr float32 `default:"0.01"`
 
 	// time constant in msec for storing CaIn when activity is below CaInThr

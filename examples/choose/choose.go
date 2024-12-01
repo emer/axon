@@ -602,7 +602,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *armaze.Env, di int) armaze.Actions {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaSpkP", di) // was "Act"
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaP", di) // was "Act"
 	return ev.DecodeAct(vt)
 }
 
@@ -789,7 +789,7 @@ func (ss *Sim) TrialStats(di int) {
 		axon.GlobalScalars[axon.GvPVnegVar, diu] = nan
 	}
 
-	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
+	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaD.Cycle.Max)
 
 	var allGood float64
 	agN := 0
@@ -1304,7 +1304,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 		drv := axon.GlbUSposV(ctx, diu, axon.GvDrives, i)
 		us := axon.GlbUSposV(ctx, diu, axon.GvUSpos, i)
 		ofcP := ofcPosUS.Pool(i+1, diu)
-		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
+		ofc := ofcP.AvgMax.CaD.Plus.Avg * ofcmul
 		dp.SetFloat("Drive", int(i), float64(drv))
 		dp.SetFloat("USin", int(i), float64(us))
 		dp.SetFloat("OFC", int(i), float64(ofc))
@@ -1315,7 +1315,7 @@ func (ss *Sim) UpdateEnvGUI(mode etime.Modes) {
 	for i := uint32(0); i < nn; i++ {
 		us := axon.GlbUSnegV(ctx, diu, axon.GvUSneg, i)
 		ofcP := ofcNegUS.Pool(i+1, diu)
-		ofc := ofcP.AvgMax.CaSpkD.Plus.Avg * ofcmul
+		ofc := ofcP.AvgMax.CaD.Plus.Avg * ofcmul
 		dn.SetFloat("USin", int(i), float64(us))
 		dn.SetFloat("OFC", int(i), float64(ofc))
 	}

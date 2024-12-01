@@ -18,29 +18,29 @@ import (
 //gosl:start
 //gosl:import "github.com/emer/axon/v2/kinase"
 
-// CaLrnParams parameterizes the neuron-level calcium signals driving learning:
-// CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or
+// LearnCaParams parameterizes the neuron-level calcium signals driving learning:
+// LearnCa = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or
 // use the more complex and dynamic VGCC channel directly.
-// CaLrn is then integrated in a cascading manner at multiple time scales:
+// LearnCa is then integrated in a cascading manner at multiple time scales:
 // CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
-type CaLrnParams struct {
+type LearnCaParams struct {
 
-	// denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance
+	// denomenator used for normalizing LearnCa, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance
 	Norm float32 `default:"80"`
 
 	// use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike
 	SpkVGCC slbool.Bool `default:"true"`
 
-	// multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode
+	// multiplier on spike for computing Ca contribution to LearnCa in SpkVGCC mode
 	SpkVgccCa float32 `default:"35"`
 
-	// time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn
+	// time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in LearnCa
 	VgccTau float32 `default:"10"`
 
-	// time constants for integrating CaLrn across M, P and D cascading levels
+	// time constants for integrating LearnCa across M, P and D cascading levels
 	Dt kinase.CaDtParams `display:"inline"`
 
-	// Threshold on CaSpkP CaSpkD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default.
+	// Threshold on CaP CaD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default.
 	UpdateThr float32 `default:"0.01,0.02,0.5"`
 
 	// rate = 1 / tau
@@ -52,7 +52,7 @@ type CaLrnParams struct {
 	pad int32
 }
 
-func (np *CaLrnParams) Defaults() {
+func (np *LearnCaParams) Defaults() {
 	np.Norm = 80
 	np.SpkVGCC.SetBool(true)
 	np.SpkVgccCa = 35
@@ -63,7 +63,7 @@ func (np *CaLrnParams) Defaults() {
 	np.Update()
 }
 
-func (np *CaLrnParams) Update() {
+func (np *LearnCaParams) Update() {
 	np.Dt.Update()
 	np.VgccDt = 1 / np.VgccTau
 	np.NormInv = 1 / np.Norm
@@ -71,7 +71,7 @@ func (np *CaLrnParams) Update() {
 
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
 // and performs time-integration of VgccCa
-func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
+func (np *LearnCaParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 	if np.SpkVGCC.IsTrue() {
 		Neurons[ni, di, VgccCa] = np.SpkVgccCa * Neurons[ni, di, Spike]
 	}
@@ -79,16 +79,16 @@ func (np *CaLrnParams) VgccCaFromSpike(ctx *Context, ni, di uint32) {
 	// Dt only affects decay, not rise time
 }
 
-// CaLrns updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
+// LearnCas updates the LearnCa value and its cascaded values, based on NMDA, VGCC Ca
 // it first calls VgccCa to update the spike-driven version of that variable, and
 // perform its time-integration.
-func (np *CaLrnParams) CaLrns(ctx *Context, ni, di uint32) {
+func (np *LearnCaParams) LearnCas(ctx *Context, ni, di uint32) {
 	np.VgccCaFromSpike(ctx, ni, di)
-	Neurons[ni, di, CaLrn] = np.NormInv * (Neurons[ni, di, NmdaCa] + Neurons[ni, di, VgccCaInt])
-	Neurons[ni, di, NrnCaM] += np.Dt.MDt * (Neurons[ni, di, CaLrn] - Neurons[ni, di, NrnCaM])
-	Neurons[ni, di, NrnCaP] += np.Dt.PDt * (Neurons[ni, di, NrnCaM] - Neurons[ni, di, NrnCaP])
-	Neurons[ni, di, NrnCaD] += np.Dt.DDt * (Neurons[ni, di, NrnCaP] - Neurons[ni, di, NrnCaD])
-	Neurons[ni, di, CaDiff] = Neurons[ni, di, NrnCaP] - Neurons[ni, di, NrnCaD]
+	Neurons[ni, di, LearnCa] = np.NormInv * (Neurons[ni, di, NmdaCa] + Neurons[ni, di, VgccCaInt])
+	Neurons[ni, di, LearnCaM] += np.Dt.MDt * (Neurons[ni, di, LearnCa] - Neurons[ni, di, LearnCaM])
+	Neurons[ni, di, LearnCaP] += np.Dt.PDt * (Neurons[ni, di, LearnCaM] - Neurons[ni, di, LearnCaP])
+	Neurons[ni, di, LearnCaD] += np.Dt.DDt * (Neurons[ni, di, LearnCaP] - Neurons[ni, di, LearnCaD])
+	Neurons[ni, di, CaDiff] = Neurons[ni, di, LearnCaP] - Neurons[ni, di, LearnCaD]
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -155,7 +155,7 @@ func (ta *TrgAvgActParams) ShouldDisplay(field string) bool {
 //  RLRateParams
 
 // RLRateParams are recv neuron learning rate modulation parameters.
-// Has two factors: the derivative of the sigmoid based on CaSpkD
+// Has two factors: the derivative of the sigmoid based on CaD
 // activity levels, and based on the phase-wise differences in activity (Diff).
 type RLRateParams struct {
 
@@ -174,11 +174,11 @@ type RLRateParams struct {
 	// modulate learning rate as a function of plus - minus differences
 	Diff slbool.Bool
 
-	// threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies.
+	// threshold on Max(CaP, CaD) below which Min lrate applies.
 	// must be > 0 to prevent div by zero.
 	SpkThr float32 `default:"0.1"`
 
-	// threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value
+	// threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value
 	DiffThr float32 `default:"0.02"`
 
 	// for Diff component, minimum learning rate value when below ActDiffThr
@@ -216,7 +216,7 @@ func (rl *RLRateParams) ShouldDisplay(field string) bool {
 // factor as a function of spiking activity, with mid-range values having
 // full learning and extreme values a reduced learning rate:
 // deriv = 4*act*(1-act) or linear: if act > .5: 2*(1-act); else 2*act
-// The activity should be CaSpkP and the layer maximum is used
+// The activity should be CaP and the layer maximum is used
 // to normalize that to a 0-1 range.
 func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 	if rl.On.IsFalse() || laymax == 0 {
@@ -240,7 +240,7 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 }
 
 // RLRateDiff returns the learning rate as a function of difference between
-// CaSpkP and CaSpkD values
+// CaP and CaD values
 func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 	if rl.On.IsFalse() || rl.Diff.IsFalse() {
 		return 1.0
@@ -260,8 +260,8 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
 
-	// parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
-	CaLearn CaLrnParams `display:"inline"`
+	// parameterizes the neuron-level calcium signals driving learning: LearnCa = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  LearnCa is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
+	CaLearn LearnCaParams `display:"inline"`
 
 	// parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdateThr and RLRate as a proxy for the activation (spiking) based learning signal.
 	CaSpk kinase.NeurCaParams `display:"inline"`
@@ -272,7 +272,7 @@ type LearnNeurParams struct {
 	// synaptic scaling parameters for regulating overall average activity compared to neuron's own target level
 	TrgAvgAct TrgAvgActParams `display:"inline"`
 
-	// recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |CaSpkP - CaSpkD| / Max(CaSpkP, CaSpkD)
+	// recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |CaP - CaD| / Max(CaP, CaD)
 	RLRate RLRateParams `display:"inline"`
 
 	// neuromodulation effects on learning rate and activity, as a function of layer-level DA and ACh values, which are updated from global Context values, and computed from reinforcement learning algorithms
@@ -299,7 +299,7 @@ func (ln *LearnNeurParams) Defaults() {
 	ln.NeuroMod.Defaults()
 }
 
-// InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.
+// InitLearnCaSpk initializes the neuron-level calcium learning and spking variables.
 // Called by InitWeights (at start of learning).
 func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, GnmdaLrn] = 0
@@ -308,16 +308,15 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, VgccCa] = 0
 	Neurons[ni, di, VgccCaInt] = 0
 
-	Neurons[ni, di, CaLrn] = 0
+	Neurons[ni, di, LearnCa] = 0
 
-	Neurons[ni, di, CaSpkM] = 0
-	Neurons[ni, di, CaSpkP] = 0
-	Neurons[ni, di, CaSpkD] = 0
-	Neurons[ni, di, CaSpkPM] = 0
+	Neurons[ni, di, CaM] = 0
+	Neurons[ni, di, CaP] = 0
+	Neurons[ni, di, CaD] = 0
 
-	Neurons[ni, di, NrnCaM] = 0
-	Neurons[ni, di, NrnCaP] = 0
-	Neurons[ni, di, NrnCaD] = 0
+	Neurons[ni, di, LearnCaM] = 0
+	Neurons[ni, di, LearnCaP] = 0
+	Neurons[ni, di, LearnCaD] = 0
 	Neurons[ni, di, CaDiff] = 0
 }
 
@@ -333,19 +332,19 @@ func (ln *LearnNeurParams) LrnNMDAFromRaw(ctx *Context, ni, di uint32, geTot flo
 	Neurons[ni, di, NmdaCa] = float32(gnmda * ln.LrnNMDA.CaFromV(vmd))
 }
 
-// CaFromSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
+// CaFromSpike updates all spike-driven calcium variables, including LearnCa and CaSpk.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFromSpike(ctx *Context, ni, di uint32) {
 	var caSyn float32
-	caSpkM := Neurons[ni, di, CaSpkM]
-	caSpkP := Neurons[ni, di, CaSpkP]
-	caSpkD := Neurons[ni, di, CaSpkD]
+	caSpkM := Neurons[ni, di, CaM]
+	caSpkP := Neurons[ni, di, CaP]
+	caSpkD := Neurons[ni, di, CaD]
 	ln.CaSpk.CaFromSpike(Neurons[ni, di, Spike], &caSyn, &caSpkM, &caSpkP, &caSpkD)
-	Neurons[ni, di, CaSpkM] = caSpkM
-	Neurons[ni, di, CaSpkP] = caSpkP
-	Neurons[ni, di, CaSpkD] = caSpkD
+	Neurons[ni, di, CaM] = caSpkM
+	Neurons[ni, di, CaP] = caSpkP
+	Neurons[ni, di, CaD] = caSpkD
 
-	ln.CaLearn.CaLrns(ctx, ni, di)
+	ln.CaLearn.LearnCas(ctx, ni, di)
 }
 
 ///////////////////////////////////////////////////////////////////////

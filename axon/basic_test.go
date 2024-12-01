@@ -288,7 +288,6 @@ func TestInitWeights(t *testing.T) {
 	nData := 3
 	testNet := newTestNet(nData)
 	inPats := newInPats()
-	ctx := testNet.Context()
 
 	valMapA := make(map[string]float32)
 	valMapB := make(map[string]float32)
@@ -346,7 +345,6 @@ func TestInitWeights(t *testing.T) {
 				}
 				if qtr == 2 {
 					testNet.MinusPhase()
-					ctx.NewPhase(false)
 					testNet.PlusPhaseStart()
 				}
 			}
@@ -401,7 +399,11 @@ func TestGPUState(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	NetActTest(t, Tol7, false)
+	NetActTest(t, Tol7, false, false) // gpu, chunked
+}
+
+func TestNetActChunked(t *testing.T) {
+	NetActTest(t, Tol7, false, true)
 }
 
 func TestNetActShort(t *testing.T) {
@@ -420,14 +422,13 @@ func TestGPUAct(t *testing.T) {
 // for key values relative to known standards.
 // Note: use NetDebugAct for printf debugging of all values --
 // "this is only a test"
-func NetActTest(t *testing.T, tol float32, gpu bool) {
+func NetActTest(t *testing.T, tol float32, gpu, chunked bool) {
 	if gpu {
 		GPUInit()
 		UseGPU = true
 	}
 
 	testNet := newTestNet(1)
-	ctx := testNet.Context()
 	testNet.InitExt()
 	inPats := newInPats()
 
@@ -483,13 +484,16 @@ func NetActTest(t *testing.T, tol float32, gpu bool) {
 		testNet.ApplyExts() // key now for GPU
 
 		for qtr := range 4 {
-			for cyc := range cycPerQtr {
-				_ = cyc
-				testNet.Cycle(1, true)
+			if chunked {
+				testNet.Cycle(cycPerQtr, true)
+			} else {
+				for cyc := range cycPerQtr {
+					_ = cyc
+					testNet.Cycle(1, true)
+				}
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
-				ctx.NewPhase(false)
 				testNet.PlusPhaseStart()
 			}
 
@@ -553,7 +557,6 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 	}
 
 	testNet := newTestNet(1)
-	ctx := testNet.Context()
 	testNet.InitExt()
 	inPats := newInPats()
 
@@ -603,7 +606,6 @@ func NetActTestShort(t *testing.T, tol float32, gpu bool) {
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
-				ctx.NewPhase(false)
 				testNet.PlusPhaseStart()
 			}
 
@@ -774,7 +776,6 @@ func RunDebugAct(t *testing.T, testNet *Network, printValues bool, gpu bool, ini
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
-				ctx.NewPhase(false)
 				testNet.PlusPhaseStart()
 			}
 		}
@@ -911,12 +912,12 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 				hidLay.UnitValues(&hidAct, "Act", 0)
 				hidLay.UnitValues(&hidGes, "Ge", 0)
 				hidLay.UnitValues(&hidGis, "Gi", 0)
-				hidLay.UnitValues(&hidCaM, "NrnCaM", 0)
-				hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
-				hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
+				hidLay.UnitValues(&hidCaM, "LearnCaM", 0)
+				hidLay.UnitValues(&hidCaP, "LearnCaP", 0)
+				hidLay.UnitValues(&hidCaD, "LearnCaD", 0)
 
-				outLay.UnitValues(&outCaP, "NrnCaP", 0)
-				outLay.UnitValues(&outCaD, "NrnCaD", 0)
+				outLay.UnitValues(&outCaP, "LearnCaP", 0)
+				outLay.UnitValues(&outCaD, "LearnCaD", 0)
 
 				if printCycs {
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -924,15 +925,14 @@ func NetTestLearn(t *testing.T, tol float32, gpu bool) {
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
-				ctx.NewPhase(false)
 				testNet.PlusPhaseStart()
 			}
 
-			hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
-			hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
+			hidLay.UnitValues(&hidCaP, "LearnCaP", 0)
+			hidLay.UnitValues(&hidCaD, "LearnCaD", 0)
 
-			outLay.UnitValues(&outCaP, "NrnCaP", 0)
-			outLay.UnitValues(&outCaD, "NrnCaD", 0)
+			outLay.UnitValues(&outCaP, "LearnCaP", 0)
+			outLay.UnitValues(&outCaD, "LearnCaD", 0)
 
 			if qtr == 3 {
 				didx := pi
@@ -1065,12 +1065,12 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 				hidLay.UnitValues(&hidAct, "Act", 0)
 				hidLay.UnitValues(&hidGes, "Ge", 0)
 				hidLay.UnitValues(&hidGis, "Gi", 0)
-				hidLay.UnitValues(&hidCaM, "NrnCaM", 0)
-				hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
-				hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
+				hidLay.UnitValues(&hidCaM, "LearnCaM", 0)
+				hidLay.UnitValues(&hidCaP, "LearnCaP", 0)
+				hidLay.UnitValues(&hidCaD, "LearnCaD", 0)
 
-				outLay.UnitValues(&outCaP, "NrnCaP", 0)
-				outLay.UnitValues(&outCaD, "NrnCaD", 0)
+				outLay.UnitValues(&outCaP, "LearnCaP", 0)
+				outLay.UnitValues(&outCaD, "LearnCaD", 0)
 
 				if printCycs {
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -1078,15 +1078,14 @@ func NetTestRLRate(t *testing.T, tol float32, gpu bool) {
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
-				ctx.NewPhase(false)
 				testNet.PlusPhaseStart()
 			}
 
-			hidLay.UnitValues(&hidCaP, "NrnCaP", 0)
-			hidLay.UnitValues(&hidCaD, "NrnCaD", 0)
+			hidLay.UnitValues(&hidCaP, "LearnCaP", 0)
+			hidLay.UnitValues(&hidCaD, "LearnCaD", 0)
 
-			outLay.UnitValues(&outCaP, "NrnCaP", 0)
-			outLay.UnitValues(&outCaD, "NrnCaD", 0)
+			outLay.UnitValues(&outCaP, "LearnCaP", 0)
+			outLay.UnitValues(&outCaD, "LearnCaD", 0)
 
 			if qtr == 3 {
 				didx := pi
@@ -1223,7 +1222,6 @@ func RunDebugLearn(t *testing.T, testNet *Network, printValues bool, gpu bool, i
 			}
 			if qtr == 2 {
 				testNet.MinusPhase()
-				ctx.NewPhase(false)
 				testNet.PlusPhaseStart()
 			}
 		}
@@ -1469,7 +1467,6 @@ func TestInhibAct(t *testing.T) {
 			}
 			if qtr == 2 {
 				inhibNet.MinusPhase()
-				ctx.NewPhase(false)
 				inhibNet.PlusPhaseStart()
 			}
 

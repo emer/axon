@@ -12,18 +12,18 @@ import (
 //gosl:start deep_layers
 
 // BurstParams determine how the 5IB Burst activation is computed from
-// CaSpkP integrated spiking values in Super layers -- thresholded.
+// CaP integrated spiking values in Super layers -- thresholded.
 type BurstParams struct {
 
 	// Relative component of threshold on superficial activation value,
-	// below which it does not drive Burst (and above which, Burst = CaSpkP).
+	// below which it does not drive Burst (and above which, Burst = CaP).
 	// This is the distance between the average and maximum activation values
 	// within layer (e.g., 0 = average, 1 = max).  Overall effective threshold
 	// is MAX of relative and absolute thresholds.
 	ThrRel float32 `max:"1" default:"0.1"`
 
 	// Absolute component of threshold on superficial activation value,
-	// below which it does not drive Burst (and above which, Burst = CaSpkP).
+	// below which it does not drive Burst (and above which, Burst = CaP).
 	// Overall effective threshold is MAX of relative and absolute thresholds.
 	ThrAbs float32 `min:"0" max:"1" default:"0.1"`
 
@@ -78,13 +78,13 @@ func (cp *CTParams) Defaults() {
 
 // PulvParams provides parameters for how the plus-phase (outcome)
 // state of Pulvinar thalamic relay cell neurons is computed from
-// the corresponding driver neuron Burst activation (or CaSpkP if not Super)
+// the corresponding driver neuron Burst activation (or CaP if not Super)
 type PulvParams struct {
 
-	// multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit.
+	// multiplier on driver input strength, multiplies CaP from driver layer to produce Ge excitatory input to Pulv unit.
 	DriveScale float32 `default:"0.1" min:"0.0"`
 
-	// Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning.
+	// Level of Max driver layer CaP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning.
 	FullDriveAct float32 `default:"0.6" min:"0.01"`
 
 	// index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting

@@ -740,7 +740,7 @@ type ActParams struct {
 	// M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes
 	Mahp chans.MahpParams `display:"inline"`
 
-	// slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron
+	// slow time-scale afterhyperpolarization sAHP current -- integrates CaD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron
 	Sahp chans.SahpParams `display:"inline"`
 
 	// sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)
@@ -853,15 +853,15 @@ func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
 	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(VgccCa)), int(ni), int(di), int(VgccCa))
 	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(VgccCaInt)), int(ni), int(di), int(VgccCaInt))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaLrn)), int(ni), int(di), int(CaLrn))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(LearnCa)), int(ni), int(di), int(LearnCa))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaSpkM)), int(ni), int(di), int(CaSpkM))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaSpkP)), int(ni), int(di), int(CaSpkP))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaSpkD)), int(ni), int(di), int(CaSpkD))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaM)), int(ni), int(di), int(CaM))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaP)), int(ni), int(di), int(CaP))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(CaD)), int(ni), int(di), int(CaD))
 
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NrnCaM)), int(ni), int(di), int(NrnCaM))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NrnCaP)), int(ni), int(di), int(NrnCaP))
-	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(NrnCaD)), int(ni), int(di), int(NrnCaD))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(LearnCaM)), int(ni), int(di), int(LearnCaM))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(LearnCaP)), int(ni), int(di), int(LearnCaP))
+	Neurons.SetSub(decay*Neurons.Value(int(ni), int(di), int(LearnCaD)), int(ni), int(di), int(LearnCaD))
 
 	// recovers
 	Neurons.SetAdd(decay*(1.0-Neurons.Value(int(ni), int(di), int(SKCaIn))), int(ni), int(di), int(SKCaIn))
@@ -1053,8 +1053,8 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(SpkPrv))
-	Neurons.Set(0, int(ni), int(di), int(SpkSt1))
-	Neurons.Set(0, int(ni), int(di), int(SpkSt2))
+	Neurons.Set(0, int(ni), int(di), int(Beta1))
+	Neurons.Set(0, int(ni), int(di), int(Beta2))
 	Neurons.Set(0, int(ni), int(di), int(ActM))
 	Neurons.Set(0, int(ni), int(di), int(ActP))
 }
@@ -1168,7 +1168,7 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 	skcar := Neurons.Value(int(ni), int(di), int(SKCaR))
 	skcain := Neurons.Value(int(ni), int(di), int(SKCaIn))
 	Neurons.Set(ac.SKCa.MFromCa(skcar, Neurons.Value(int(ni), int(di), int(SKCaM))), int(ni), int(di), int(SKCaM))
-	ac.SKCa.CaInRFromSpike(Neurons.Value(int(ni), int(di), int(Spike)), Neurons.Value(int(ni), int(di), int(CaSpkD)), &skcain, &skcar)
+	ac.SKCa.CaInRFromSpike(Neurons.Value(int(ni), int(di), int(Spike)), Neurons.Value(int(ni), int(di), int(CaD)), &skcain, &skcar)
 	Neurons.Set(skcar, int(ni), int(di), int(SKCaR))
 	Neurons.Set(skcain, int(ni), int(di), int(SKCaIn))
 	Neurons.Set(ac.SKCa.Gbar*Neurons.Value(int(ni), int(di), int(SKCaM)), int(ni), int(di), int(Gsk))

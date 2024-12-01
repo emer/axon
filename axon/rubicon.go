@@ -904,7 +904,7 @@ func (rp *Rubicon) Step(di uint32, rnd randx.Rand) {
 }
 
 // SetGoalMaintFromLayer sets the GoalMaint global state variable
-// from the average activity (CaSpkD) of the given layer name.
+// from the average activity (CaD) of the given layer name.
 // GoalMaint is normalized 0-1 based on the given max activity level,
 // with anything out of range clamped to 0-1 range.
 // Returns (and logs) an error if layer name not found.
@@ -916,7 +916,7 @@ func (rp *Rubicon) SetGoalMaintFromLayer(di uint32, net *Network, layName string
 		return err
 	}
 	lpi := ly.Params.PoolIndex(0)
-	act := PoolAvgMax(AMCaSpkD, AMCycle, Avg, lpi, di)
+	act := PoolAvgMax(AMCaD, AMCycle, Avg, lpi, di)
 	gm := float32(0)
 	if act > maxAct {
 		gm = 1
@@ -927,7 +927,7 @@ func (rp *Rubicon) SetGoalMaintFromLayer(di uint32, net *Network, layName string
 	return nil
 }
 
-// DecodeFromLayer decodes value and variance from the average activity (CaSpkD)
+// DecodeFromLayer decodes value and variance from the average activity (CaD)
 // of the given layer name.  Use for decoding PVposEst and Var, and PVnegEst and Var
 func (rp *Rubicon) DecodeFromLayer(di uint32, net *Network, layName string) (val, vr float32, err error) {
 	ly := net.LayerByName(layName)
@@ -936,7 +936,7 @@ func (rp *Rubicon) DecodeFromLayer(di uint32, net *Network, layName string) (val
 		slog.Error(err.Error())
 		return
 	}
-	ly.UnitValues(&rp.decodeActs, "CaSpkD", int(di))
+	ly.UnitValues(&rp.decodeActs, "CaD", int(di))
 	val = ly.Params.Acts.PopCode.Decode(rp.decodeActs)
 	vr = ly.Params.Acts.PopCode.Uncertainty(val, rp.decodeActs)
 	return

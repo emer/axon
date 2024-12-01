@@ -738,7 +738,7 @@ type ActParams struct {
 	// M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes
 	Mahp chans.MahpParams `display:"inline"`
 
-	// slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron
+	// slow time-scale afterhyperpolarization sAHP current -- integrates CaD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron
 	Sahp chans.SahpParams `display:"inline"`
 
 	// sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)
@@ -851,15 +851,15 @@ func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
 	Neurons[ni, di, VgccCa] -= decay * Neurons[ni, di, VgccCa]
 	Neurons[ni, di, VgccCaInt] -= decay * Neurons[ni, di, VgccCaInt]
 
-	Neurons[ni, di, CaLrn] -= decay * Neurons[ni, di, CaLrn]
+	Neurons[ni, di, LearnCa] -= decay * Neurons[ni, di, LearnCa]
 
-	Neurons[ni, di, CaSpkM] -= decay * Neurons[ni, di, CaSpkM]
-	Neurons[ni, di, CaSpkP] -= decay * Neurons[ni, di, CaSpkP]
-	Neurons[ni, di, CaSpkD] -= decay * Neurons[ni, di, CaSpkD]
+	Neurons[ni, di, CaM] -= decay * Neurons[ni, di, CaM]
+	Neurons[ni, di, CaP] -= decay * Neurons[ni, di, CaP]
+	Neurons[ni, di, CaD] -= decay * Neurons[ni, di, CaD]
 
-	Neurons[ni, di, NrnCaM] -= decay * Neurons[ni, di, NrnCaM]
-	Neurons[ni, di, NrnCaP] -= decay * Neurons[ni, di, NrnCaP]
-	Neurons[ni, di, NrnCaD] -= decay * Neurons[ni, di, NrnCaD]
+	Neurons[ni, di, LearnCaM] -= decay * Neurons[ni, di, LearnCaM]
+	Neurons[ni, di, LearnCaP] -= decay * Neurons[ni, di, LearnCaP]
+	Neurons[ni, di, LearnCaD] -= decay * Neurons[ni, di, LearnCaD]
 
 	// recovers
 	Neurons[ni, di, SKCaIn] += decay * (1.0 - Neurons[ni, di, SKCaIn])
@@ -1051,8 +1051,8 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, SpkPrv] = 0
-	Neurons[ni, di, SpkSt1] = 0
-	Neurons[ni, di, SpkSt2] = 0
+	Neurons[ni, di, Beta1] = 0
+	Neurons[ni, di, Beta2] = 0
 	Neurons[ni, di, ActM] = 0
 	Neurons[ni, di, ActP] = 0
 }
@@ -1166,7 +1166,7 @@ func (ac *ActParams) GSkCaFromCa(ctx *Context, ni, di uint32) {
 	skcar := Neurons[ni, di, SKCaR]
 	skcain := Neurons[ni, di, SKCaIn]
 	Neurons[ni, di, SKCaM] = ac.SKCa.MFromCa(skcar, Neurons[ni, di, SKCaM])
-	ac.SKCa.CaInRFromSpike(Neurons[ni, di, Spike], Neurons[ni, di, CaSpkD], &skcain, &skcar)
+	ac.SKCa.CaInRFromSpike(Neurons[ni, di, Spike], Neurons[ni, di, CaD], &skcain, &skcar)
 	Neurons[ni, di, SKCaR] = skcar
 	Neurons[ni, di, SKCaIn] = skcain
 	Neurons[ni, di, Gsk] = ac.SKCa.Gbar * Neurons[ni, di, SKCaM]

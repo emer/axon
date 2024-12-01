@@ -82,7 +82,7 @@ var LayerParams = axon.LayerSheets{
 				ly.Acts.Decay.Act = 0.0
 				ly.Acts.Decay.Glong = 0.0        // clear long
 				ly.Acts.Decay.AHP = 0.0          // clear ahp
-				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > 0.05 with CaSpkD as var
+				ly.Learn.RLRate.SigmoidMin = 1.0 // 1 > 0.05 with CaD as var
 			}},
 	},
 }

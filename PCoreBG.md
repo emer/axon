@@ -88,7 +88,7 @@ The key challenge in BG learning is that the `da` term typically comes significa
 
 * `Tr += sn.Act * rn.Act`
 
-(we actually use `sn.CaSpkD` and `rn.GeIntMax` which are spiking Ca variables, and GeIntMax captures the max activity over the trial because MSN firing is transient).
+(we actually use `sn.CaD` and `rn.GeIntMax` which are spiking Ca variables, and GeIntMax captures the max activity over the trial because MSN firing is transient).
 
 And then we leverage the _reward salience_ firing properties of cholinergic interneurons (CINs, AKA TANs = tonically active neurons) to provide a later "learn now" signal by firing in proportion to the non-discounted, positive rectified US or CS value (i.e., whenever any kind of reward or punishment signal arrives, or is indicated by a CS).  Thus, at the point of high ACh firing, which coincides with DA release, we get:
 
@@ -100,7 +100,7 @@ and the trace is effectively reset by a decay factor:
 
 One further wrinkle is that the BG will become permanently stuck if there is no gating at all -- trial and error learning requires "trials" of activity to learn!  Thus, we introduce a slow "NoGate" learning case on trials where no neurons gated within the layer:
 
-* `Tr += -NoGateLRate * ACh * rn.SpkMax * sn.CaSpkD`
+* `Tr += -NoGateLRate * ACh * rn.SpkMax * sn.CaD`
 
 
 # Other models

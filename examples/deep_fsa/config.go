@@ -97,7 +97,7 @@ type RunConfig struct {
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"32"`
+	Trials int `default:"196"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`
@@ -135,6 +135,18 @@ type LogConfig struct {
 
 // Config is a standard Sim config -- use as a starting point.
 type Config struct {
+
+	// Name is the short name of the sim.
+	Name string `default:"DeepFSA"`
+
+	// Title is the longer title of the sim.
+	Title string `default:"DeepAxon Finite State Automaton"`
+
+	// URL is a link to the online README or other documentation for this sim.
+	URL string `default:"https://github.com/emer/axon/blob/main/examples/deep_fsa/README.md"`
+
+	// Doc is brief documentation of the sim.
+	Doc string `default:"This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g., the Reber grammar). The network learns the underlying grammar that generates partially ambiguous observable state tokens, strictly through errors in predicting the sequences of these tokens."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.

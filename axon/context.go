@@ -108,12 +108,6 @@ func (ctx *Context) DataIndex(idx uint32) uint32 {
 	return idx % ctx.NData
 }
 
-// NewPhase resets PhaseCycle = 0 and sets the plus phase as specified
-func (ctx *Context) NewPhase(plusPhase bool) {
-	ctx.PhaseCycle = 0
-	ctx.PlusPhase.SetBool(plusPhase)
-}
-
 // CycleInc increments at the cycle level
 func (ctx *Context) CycleInc() {
 	ctx.PhaseCycle++
@@ -132,6 +126,12 @@ func (ctx *Context) SlowInc() bool {
 	}
 	ctx.SlowCounter = 0
 	return true
+}
+
+// PlusPhaseStart resets PhaseCycle = 0 and sets the plus phase to true.
+func (ctx *Context) PlusPhaseStart() {
+	ctx.PhaseCycle = 0
+	ctx.PlusPhase.SetBool(true)
 }
 
 //gosl:end

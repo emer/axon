@@ -417,7 +417,7 @@ const ViewTimesN: ViewTimes = 7;
 const DAModTypesN: DAModTypes = 4;
 const ValenceTypesN: ValenceTypes = 3;
 const NeuronFlagsN: NeuronFlags = 9;
-const NeuronVarsN: NeuronVars = 90;
+const NeuronVarsN: NeuronVars = 89;
 const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
@@ -823,8 +823,8 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(NrnCaP))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // hiddens: recv NMDA Ca drives error signal w/ trace credit
-		2], u32(ri),u32(di),u32(NrnCaD))]);
+		err = tr * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(LearnCaP))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // hiddens: recv NMDA Ca drives error signal w/ trace credit
+		2], u32(ri),u32(di),u32(LearnCaD))]);
 	}
 	var lwt = Synapses[IndexF322D(Synapses[0], Synapses[ // linear weight
 	1], u32(syni),u32(LWt))];
@@ -840,11 +840,11 @@ fn PathParams_DWtSynCortex(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 	}
 }
 fn PathParams_DWtSynHebb(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32) {
-	var rNrnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(NrnCaP))];
-	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(NrnCaP))];
+	var rLearnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(LearnCaP))];
+	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(LearnCaP))];
 	var lwt = Synapses[IndexF322D(Synapses[0], Synapses[ // linear weight
 	1], u32(syni),u32(LWt))];
-	var hebb = rNrnCaP * ((*pt).Learn.Hebb.Up*sNrnCap*(1-lwt) - (*pt).Learn.Hebb.Down*(1-sNrnCap)*lwt);
+	var hebb = rLearnCaP * ((*pt).Learn.Hebb.Up*sNrnCap*(1-lwt) - (*pt).Learn.Hebb.Down*(1-sNrnCap)*lwt);
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(syni),u32(DiDWt),u32(di))] = (*pt).Learn.LRate.Eff * hebb;
 }
 fn PathParams_DWtSynHip(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, syni: u32,si: u32,ri: u32,lpi: u32,pi: u32,di: u32, isTarget: bool) {
@@ -861,13 +861,13 @@ fn PathParams_DWtSynHip(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	if (Synapses[IndexF322D(Synapses[0], Synapses[1], u32(syni),u32(Wt))] == 0) {
 		return;
 	}
-	var rNrnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(NrnCaP))];
-	var rNrnCaD = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(NrnCaD))];
+	var rLearnCaP = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(LearnCaP))];
+	var rLearnCaD = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(LearnCaD))];
 	var err: f32;
 	if (isTarget) {
 		err = syCaP - syCaD; // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (rNrnCaP - rNrnCaD); // hiddens: recv NMDA Ca drives error signal w/ trace credit
+		err = tr * (rLearnCaP - rLearnCaD); // hiddens: recv NMDA Ca drives error signal w/ trace credit
 	}
 	var lwt = Synapses[IndexF322D(Synapses[0], Synapses[ // linear weight
 	1], u32(syni),u32(LWt))];
@@ -876,10 +876,10 @@ fn PathParams_DWtSynHip(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	} else {
 		err *= lwt;
 	}
-	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(NrnCaP))];
+	var sNrnCap = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(LearnCaP))];
 	var savg = 0.5 + (*pt).Hip.SAvgCor*((*pt).Hip.SNominal-0.5);
 	savg = 0.5 / max((*pt).Hip.SAvgThr, savg); // keep this Sending Average Correction term within bounds (SAvgThr)
-	var hebb = rNrnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt);
+	var hebb = rLearnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt);
 	var dwt = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(RLRate))] * (*pt).Learn.LRate.Eff * ((*pt).Hip.Hebb*hebb + (*pt).Hip.Err*err);
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1],
 	SynapseTraces[2], u32(syni),u32(DiDWt),u32(di))] = dwt;
@@ -889,14 +889,14 @@ fn PathParams_DWtSynBLA(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	var ach = GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[1], u32(GvACh),u32(di))];
 	if (GlobalScalars[IndexF322D(GlobalScalars[0], GlobalScalars[ // learn and reset
 	1], u32(GvHasRew),u32(di))] > 0) {
-		var ract = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaSpkD))];
+		var ract = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaD))];
 		if (ract < (*pt).Learn.Trace.LearnThr) {
 			ract = f32(0);
 		}
 		var tr = SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(syni),u32(Tr),u32(di))];
 		var ustr = (*pt).BLA.USTrace;
 		tr = ustr*Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(Burst))] + (1.0-ustr)*tr;
-		var delta = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaSpkP))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(SpkPrv))];
+		var delta = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaP))] - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(SpkPrv))];
 		if (delta < 0) { // neg delta learns slower in Acq, not Ext
 			delta *= (*pt).BLA.NegDeltaLRate;
 		}
@@ -946,7 +946,7 @@ fn PathParams_DWtSynRWPred(pt: ptr<function,PathParams>, ctx: ptr<function,Conte
 		}
 	}
 	var dwt = da * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[ // no recv unit activation
-	2], u32(si),u32(di),u32(CaSpkP))];
+	2], u32(si),u32(di),u32(CaP))];
 	SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[
 	2], u32(syni),u32(DiDWt),u32(di))] = eff_lr * dwt;
 }
@@ -978,9 +978,9 @@ fn PathParams_DWtSynVSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Con
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(syni),u32(DTr),u32(di))] = 0.0;return;
 	}
 	var rlr = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(RLRate))];
-	var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaSpkP))];
-	var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaSpkD))];
-	var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(CaSpkD))];
+	var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaP))];
+	var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaD))];
+	var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(CaD))];
 	var dtr = ach * ((*pt).Matrix.Delta * sact * (rplus - rminus));
 	if (rminus > (*pt).Learn.Trace.LearnThr) { // key: prevents learning if < threshold
 		dtr += ach * ((*pt).Matrix.Credit * sact * rminus);
@@ -1012,9 +1012,9 @@ fn PathParams_DWtSynDSMatrix(pt: ptr<function,PathParams>, ctx: ptr<function,Con
 		SynapseTraces[IndexF323D(SynapseTraces[0], SynapseTraces[1], SynapseTraces[2], u32(syni),u32(DTr),u32(di))] = 0.0;
 	} else {
 		var pfmod = (*pt).Matrix.BasePF + Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(GModSyn))];
-		var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaSpkP))];
-		var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaSpkD))];
-		var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(CaSpkD))];
+		var rplus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaP))];
+		var rminus = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ri),u32(di),u32(CaD))];
+		var sact = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(si),u32(di),u32(CaD))];
 		var dtr = rlr * ((*pt).Matrix.Delta * sact * (rplus - rminus));
 		if (rminus > (*pt).Learn.Trace.LearnThr) { // key: prevents learning if < threshold
 			dtr += rlr * ((*pt).Matrix.Credit * pfmod * sact * rminus);
@@ -1038,7 +1038,7 @@ fn PathParams_DWtSynVSPatch(pt: ptr<function,PathParams>, ctx: ptr<function,Cont
 }
 
 ///////////// import: "learn.go"
-struct CaLrnParams {
+struct LearnCaParams {
 	Norm: f32,
 	SpkVGCC: i32,
 	SpkVgccCa: f32,
@@ -1071,7 +1071,7 @@ struct RLRateParams {
 	pad: i32,
 }
 struct LearnNeurParams {
-	CaLearn: CaLrnParams,
+	CaLearn: LearnCaParams,
 	CaSpk: NeurCaParams,
 	LrnNMDA: NMDAParams,
 	TrgAvgAct: TrgAvgActParams,
@@ -1230,82 +1230,81 @@ const  ISI: NeuronVars = 10;
 const  ISIAvg: NeuronVars = 11;
 const  Ext: NeuronVars = 12;
 const  Target: NeuronVars = 13;
-const  CaSpkM: NeuronVars = 14;
-const  CaSpkP: NeuronVars = 15;
-const  CaSpkD: NeuronVars = 16;
-const  CaSpkPM: NeuronVars = 17;
-const  CaLrn: NeuronVars = 18;
-const  NrnCaM: NeuronVars = 19;
-const  NrnCaP: NeuronVars = 20;
-const  NrnCaD: NeuronVars = 21;
-const  CaDiff: NeuronVars = 22;
-const  RLRate: NeuronVars = 23;
-const  GnmdaSyn: NeuronVars = 24;
-const  Gnmda: NeuronVars = 25;
-const  GnmdaLrn: NeuronVars = 26;
-const  GnmdaMaint: NeuronVars = 27;
-const  NmdaCa: NeuronVars = 28;
-const  Gvgcc: NeuronVars = 29;
-const  VgccM: NeuronVars = 30;
-const  VgccH: NeuronVars = 31;
-const  VgccCa: NeuronVars = 32;
-const  VgccCaInt: NeuronVars = 33;
-const  Burst: NeuronVars = 34;
-const  BurstPrv: NeuronVars = 35;
-const  CtxtGe: NeuronVars = 36;
-const  CtxtGeRaw: NeuronVars = 37;
-const  CtxtGeOrig: NeuronVars = 38;
-const  GgabaB: NeuronVars = 39;
-const  GABAB: NeuronVars = 40;
-const  GABABx: NeuronVars = 41;
-const  Gak: NeuronVars = 42;
-const  SSGiDend: NeuronVars = 43;
-const  GknaMed: NeuronVars = 44;
-const  GknaSlow: NeuronVars = 45;
-const  Gkir: NeuronVars = 46;
-const  KirM: NeuronVars = 47;
-const  Gsk: NeuronVars = 48;
-const  SKCaIn: NeuronVars = 49;
-const  SKCaR: NeuronVars = 50;
-const  SKCaM: NeuronVars = 51;
-const  Gmahp: NeuronVars = 52;
-const  MahpN: NeuronVars = 53;
-const  Gsahp: NeuronVars = 54;
-const  SahpCa: NeuronVars = 55;
-const  SahpN: NeuronVars = 56;
-const  ActM: NeuronVars = 57;
-const  ActP: NeuronVars = 58;
-const  SpkSt1: NeuronVars = 59;
-const  SpkSt2: NeuronVars = 60;
-const  SpkMax: NeuronVars = 61;
-const  SpkMaxCa: NeuronVars = 62;
-const  SpkBin0: NeuronVars = 63;
-const  SpkBin1: NeuronVars = 64;
-const  SpkBin2: NeuronVars = 65;
-const  SpkBin3: NeuronVars = 66;
-const  SpkBin4: NeuronVars = 67;
-const  SpkBin5: NeuronVars = 68;
-const  SpkBin6: NeuronVars = 69;
-const  SpkBin7: NeuronVars = 70;
-const  SpkPrv: NeuronVars = 71;
-const  GeNoise: NeuronVars = 72;
-const  GeNoiseP: NeuronVars = 73;
-const  GiNoise: NeuronVars = 74;
-const  GiNoiseP: NeuronVars = 75;
-const  GeExt: NeuronVars = 76;
-const  GeRaw: NeuronVars = 77;
-const  GeSyn: NeuronVars = 78;
-const  GiRaw: NeuronVars = 79;
-const  GiSyn: NeuronVars = 80;
-const  GeInt: NeuronVars = 81;
-const  GeIntNorm: NeuronVars = 82;
-const  GiInt: NeuronVars = 83;
-const  GModRaw: NeuronVars = 84;
-const  GModSyn: NeuronVars = 85;
-const  SMaintP: NeuronVars = 86;
-const  GMaintRaw: NeuronVars = 87;
-const  GMaintSyn: NeuronVars = 88;
-const  NeurFlags: NeuronVars = 89;
+const  CaM: NeuronVars = 14;
+const  CaP: NeuronVars = 15;
+const  CaD: NeuronVars = 16;
+const  LearnCa: NeuronVars = 17;
+const  LearnCaM: NeuronVars = 18;
+const  LearnCaP: NeuronVars = 19;
+const  LearnCaD: NeuronVars = 20;
+const  CaDiff: NeuronVars = 21;
+const  RLRate: NeuronVars = 22;
+const  GnmdaSyn: NeuronVars = 23;
+const  Gnmda: NeuronVars = 24;
+const  GnmdaLrn: NeuronVars = 25;
+const  GnmdaMaint: NeuronVars = 26;
+const  NmdaCa: NeuronVars = 27;
+const  Gvgcc: NeuronVars = 28;
+const  VgccM: NeuronVars = 29;
+const  VgccH: NeuronVars = 30;
+const  VgccCa: NeuronVars = 31;
+const  VgccCaInt: NeuronVars = 32;
+const  Burst: NeuronVars = 33;
+const  BurstPrv: NeuronVars = 34;
+const  CtxtGe: NeuronVars = 35;
+const  CtxtGeRaw: NeuronVars = 36;
+const  CtxtGeOrig: NeuronVars = 37;
+const  GgabaB: NeuronVars = 38;
+const  GABAB: NeuronVars = 39;
+const  GABABx: NeuronVars = 40;
+const  Gak: NeuronVars = 41;
+const  SSGiDend: NeuronVars = 42;
+const  GknaMed: NeuronVars = 43;
+const  GknaSlow: NeuronVars = 44;
+const  Gkir: NeuronVars = 45;
+const  KirM: NeuronVars = 46;
+const  Gsk: NeuronVars = 47;
+const  SKCaIn: NeuronVars = 48;
+const  SKCaR: NeuronVars = 49;
+const  SKCaM: NeuronVars = 50;
+const  Gmahp: NeuronVars = 51;
+const  MahpN: NeuronVars = 52;
+const  Gsahp: NeuronVars = 53;
+const  SahpCa: NeuronVars = 54;
+const  SahpN: NeuronVars = 55;
+const  ActM: NeuronVars = 56;
+const  ActP: NeuronVars = 57;
+const  Beta1: NeuronVars = 58;
+const  Beta2: NeuronVars = 59;
+const  SpkMax: NeuronVars = 60;
+const  SpkMaxCa: NeuronVars = 61;
+const  SpkBin0: NeuronVars = 62;
+const  SpkBin1: NeuronVars = 63;
+const  SpkBin2: NeuronVars = 64;
+const  SpkBin3: NeuronVars = 65;
+const  SpkBin4: NeuronVars = 66;
+const  SpkBin5: NeuronVars = 67;
+const  SpkBin6: NeuronVars = 68;
+const  SpkBin7: NeuronVars = 69;
+const  SpkPrv: NeuronVars = 70;
+const  GeNoise: NeuronVars = 71;
+const  GeNoiseP: NeuronVars = 72;
+const  GiNoise: NeuronVars = 73;
+const  GiNoiseP: NeuronVars = 74;
+const  GeExt: NeuronVars = 75;
+const  GeRaw: NeuronVars = 76;
+const  GeSyn: NeuronVars = 77;
+const  GiRaw: NeuronVars = 78;
+const  GiSyn: NeuronVars = 79;
+const  GeInt: NeuronVars = 80;
+const  GeIntNorm: NeuronVars = 81;
+const  GiInt: NeuronVars = 82;
+const  GModRaw: NeuronVars = 83;
+const  GModSyn: NeuronVars = 84;
+const  SMaintP: NeuronVars = 85;
+const  GMaintRaw: NeuronVars = 86;
+const  GMaintSyn: NeuronVars = 87;
+const  NeurFlags: NeuronVars = 88;
 alias NeuronAvgVars = i32; //enums:enum
 const  ActAvg: NeuronAvgVars = 0;
 const  AvgPct: NeuronAvgVars = 1;
@@ -1436,8 +1435,8 @@ const  AMMinus: AvgMaxPhases = 1;
 const  AMPlus: AvgMaxPhases = 2;
 const  AMPrev: AvgMaxPhases = 3;
 alias AvgMaxVars = i32; //enums:enum -trim-prefix AM
-const  AMCaSpkP: AvgMaxVars = 0;
-const  AMCaSpkD: AvgMaxVars = 1;
+const  AMCaP: AvgMaxVars = 0;
+const  AMCaD: AvgMaxVars = 1;
 const  AMSpkMax: AvgMaxVars = 2;
 const  AMAct: AvgMaxVars = 3;
 const  AMGeInt: AvgMaxVars = 4;
@@ -1446,7 +1445,7 @@ const  AMAvgDif: AvgMaxVars = 6;
 const  poolFloatAvgMaxStart = InhibVarsN;
 const  PoolVarsN = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN)*i32(AvgMaxPhasesN));
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
-const avgMaxToNeuron = array(CaSpkP, CaSpkD, SpkMax, Act, GeInt, GiInt);
+const avgMaxToNeuron = array(CaP, CaD, SpkMax, Act, GeInt, GiInt);
 
 ///////////// import: "rand.go"
 alias RandFunIndex = u32;

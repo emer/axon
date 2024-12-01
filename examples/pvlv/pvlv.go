@@ -515,7 +515,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("Gated", axon.GlobalScalars[axon.GvVSMatrixJustGated), diu]
 	ss.Stats.SetFloat32("Time", axon.GlobalScalars[axon.GvTime), diu]
 	ss.Stats.SetFloat32("GiveUp", axon.GlobalScalars[axon.GvGiveUp), diu]
-	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaSpkD.Cycle.Max)
+	ss.Stats.SetFloat32("SC", ss.Net.LayerByName("SC").Pool(0, 0).AvgMax.CaD.Cycle.Max)
 }
 
 //////////////////////////////////////////////////////////////////////////////

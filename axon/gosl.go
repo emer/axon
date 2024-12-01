@@ -62,6 +62,8 @@ func GPUInit() {
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/ApplyExtsNeuron.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/Beta1Neuron.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/Beta2Neuron.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/BetweenGi.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleInc.wgsl", sy)
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleNeuron.wgsl", sy)
@@ -202,6 +204,90 @@ func RunOneApplyExtsNeuron(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunApplyExtsNeuronCPU(n)
+	}
+}
+// RunBeta1Neuron runs the Beta1Neuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneBeta1Neuron call does Run and Done for a
+// single run-and-sync case.
+func RunBeta1Neuron(n int) {
+	if UseGPU {
+		RunBeta1NeuronGPU(n)
+	} else {
+		RunBeta1NeuronCPU(n)
+	}
+}
+
+// RunBeta1NeuronGPU runs the Beta1Neuron kernel on the GPU. See [RunBeta1Neuron] for more info.
+func RunBeta1NeuronGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["Beta1Neuron"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunBeta1NeuronCPU runs the Beta1Neuron kernel on the CPU.
+func RunBeta1NeuronCPU(n int) {
+	gpu.VectorizeFunc(0, n, Beta1Neuron)
+}
+
+// RunOneBeta1Neuron runs the Beta1Neuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneBeta1Neuron(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunBeta1NeuronGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunBeta1NeuronCPU(n)
+	}
+}
+// RunBeta2Neuron runs the Beta2Neuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneBeta2Neuron call does Run and Done for a
+// single run-and-sync case.
+func RunBeta2Neuron(n int) {
+	if UseGPU {
+		RunBeta2NeuronGPU(n)
+	} else {
+		RunBeta2NeuronCPU(n)
+	}
+}
+
+// RunBeta2NeuronGPU runs the Beta2Neuron kernel on the GPU. See [RunBeta2Neuron] for more info.
+func RunBeta2NeuronGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["Beta2Neuron"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunBeta2NeuronCPU runs the Beta2Neuron kernel on the CPU.
+func RunBeta2NeuronCPU(n int) {
+	gpu.VectorizeFunc(0, n, Beta2Neuron)
+}
+
+// RunOneBeta2Neuron runs the Beta2Neuron kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneBeta2Neuron(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunBeta2NeuronGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunBeta2NeuronCPU(n)
 	}
 }
 // RunBetweenGi runs the BetweenGi kernel with given number of elements,

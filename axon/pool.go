@@ -94,15 +94,15 @@ const (
 type AvgMaxVars int32 //enums:enum -trim-prefix AM
 
 const (
-	// CaSpkP is the primary variable for tracking overall pool activity
+	// CaP is the primary variable for tracking overall pool activity
 	// over a recent timescale, integrated at roughly 40 msec time constant.
-	AMCaSpkP AvgMaxVars = iota
+	AMCaP AvgMaxVars = iota
 
-	// CaSpkD is a slower moving activation signal, capable of reflecting
+	// CaD is a slower moving activation signal, capable of reflecting
 	// activity over the entire trial.
-	AMCaSpkD
+	AMCaD
 
-	// SpkMax is the maximum CaSpkP over the trial of processing.
+	// SpkMax is the maximum CaP over the trial of processing.
 	AMSpkMax
 
 	// Act is the computed rate-code equivalent of current spike rate.
@@ -129,7 +129,7 @@ const (
 )
 
 // avgMaxToNeuron is the mapping from AvgMaxVars to neuron vars.
-var avgMaxToNeuron = [AMAvgDif]NeuronVars{CaSpkP, CaSpkD, SpkMax, Act, GeInt, GiInt}
+var avgMaxToNeuron = [AMAvgDif]NeuronVars{CaP, CaD, SpkMax, Act, GeInt, GiInt}
 
 // AvgMaxVarIndex returns the variable index for accessing
 // [Pools] AvgMax float32 variables.
@@ -193,8 +193,8 @@ func PoolAvgMaxUpdateVar(vr AvgMaxVars, pi, di uint32, val float32) {
 // PoolAvgMaxUpdate updates the AvgMax values based on current neuron values.
 // pi = global pool index.
 func PoolAvgMaxUpdate(pi, di, ni uint32) {
-	PoolAvgMaxUpdateVar(AMCaSpkP, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaSpkP]))))
-	PoolAvgMaxUpdateVar(AMCaSpkD, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaSpkD]))))
+	PoolAvgMaxUpdateVar(AMCaP, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaP]))))
+	PoolAvgMaxUpdateVar(AMCaD, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaD]))))
 	PoolAvgMaxUpdateVar(AMSpkMax, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMSpkMax]))))
 	PoolAvgMaxUpdateVar(AMAct, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMAct]))))
 	PoolAvgMaxUpdateVar(AMGeInt, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMGeInt]))))
@@ -330,8 +330,8 @@ func PoolIntVarName(vi uint32) string {
 	return vr.String() + "_" + am.String()
 }
 
-// TestValues returns a map of CaSpkD.Avg, which provides an
+// TestValues returns a map of CaD.Avg, which provides an
 // integrated summary of pool activity for testing
 func PoolTestValues(pi, di uint32, layKey string, vals map[string]float32) {
-	vals[layKey+" CaSpkD Avg"] = PoolAvgMax(AMCaSpkD, AMCycle, Avg, pi, di)
+	vals[layKey+" CaD Avg"] = PoolAvgMax(AMCaD, AMCycle, Avg, pi, di)
 }

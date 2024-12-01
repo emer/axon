@@ -104,7 +104,7 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (Neurons[ri, di, NrnCaP] - Neurons[ri, di, NrnCaD]) // hiddens: recv NMDA Ca drives error signal w/ trace credit
+		err = tr * (Neurons[ri, di, LearnCaP] - Neurons[ri, di, LearnCaD]) // hiddens: recv NMDA Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum.
@@ -126,10 +126,10 @@ func (pt *PathParams) DWtSynCortex(ctx *Context, syni, si, ri, lpi, pi, di uint3
 // Uses synaptically integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pt *PathParams) DWtSynHebb(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
-	rNrnCaP := Neurons[ri, di, NrnCaP]
-	sNrnCap := Neurons[si, di, NrnCaP]
+	rLearnCaP := Neurons[ri, di, LearnCaP]
+	sNrnCap := Neurons[si, di, LearnCaP]
 	lwt := Synapses[syni, LWt] // linear weight
-	hebb := rNrnCaP * (pt.Learn.Hebb.Up*sNrnCap*(1-lwt) - pt.Learn.Hebb.Down*(1-sNrnCap)*lwt)
+	hebb := rLearnCaP * (pt.Learn.Hebb.Up*sNrnCap*(1-lwt) - pt.Learn.Hebb.Down*(1-sNrnCap)*lwt)
 	// not: Neurons[ri, di, RLRate]*
 	SynapseTraces[syni, DiDWt, di] = pt.Learn.LRate.Eff * hebb
 }
@@ -154,13 +154,13 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	}
 
 	// error-driven learning part
-	rNrnCaP := Neurons[ri, di, NrnCaP]
-	rNrnCaD := Neurons[ri, di, NrnCaD]
+	rLearnCaP := Neurons[ri, di, LearnCaP]
+	rLearnCaD := Neurons[ri, di, LearnCaD]
 	var err float32
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (rNrnCaP - rNrnCaD) // hiddens: recv NMDA Ca drives error signal w/ trace credit
+		err = tr * (rLearnCaP - rLearnCaD) // hiddens: recv NMDA Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum.
@@ -173,10 +173,10 @@ func (pt *PathParams) DWtSynHip(ctx *Context, syni, si, ri, lpi, pi, di uint32, 
 	}
 
 	// hebbian-learning part
-	sNrnCap := Neurons[si, di, NrnCaP]
+	sNrnCap := Neurons[si, di, LearnCaP]
 	savg := 0.5 + pt.Hip.SAvgCor*(pt.Hip.SNominal-0.5)
 	savg = 0.5 / math32.Max(pt.Hip.SAvgThr, savg) // keep this Sending Average Correction term within bounds (SAvgThr)
-	hebb := rNrnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
+	hebb := rLearnCaP * (sNrnCap*(savg-lwt) - (1-sNrnCap)*lwt)
 
 	// setting delta weight (note: impossible to be CTCtxtPath)
 	dwt := Neurons[ri, di, RLRate] * pt.Learn.LRate.Eff * (pt.Hip.Hebb*hebb + pt.Hip.Err*err)
@@ -191,14 +191,14 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, lpi, pi, di uint32) 
 	dwt := float32(0)
 	ach := GlobalScalars[GvACh, di]
 	if GlobalScalars[GvHasRew, di] > 0 { // learn and reset
-		ract := Neurons[ri, di, CaSpkD]
+		ract := Neurons[ri, di, CaD]
 		if ract < pt.Learn.Trace.LearnThr {
 			ract = 0
 		}
 		tr := SynapseTraces[syni, Tr, di]
 		ustr := pt.BLA.USTrace
 		tr = ustr*Neurons[si, di, Burst] + (1.0-ustr)*tr
-		delta := Neurons[ri, di, CaSpkP] - Neurons[ri, di, SpkPrv]
+		delta := Neurons[ri, di, CaP] - Neurons[ri, di, SpkPrv]
 		if delta < 0 { // neg delta learns slower in Acq, not Ext
 			delta *= pt.BLA.NegDeltaLRate
 		}
@@ -253,7 +253,7 @@ func (pt *PathParams) DWtSynRWPred(ctx *Context, syni, si, ri, lpi, pi, di uint3
 		}
 	}
 
-	dwt := da * Neurons[si, di, CaSpkP] // no recv unit activation
+	dwt := da * Neurons[si, di, CaP] // no recv unit activation
 	SynapseTraces[syni, DiDWt, di] = eff_lr * dwt
 }
 
@@ -294,9 +294,9 @@ func (pt *PathParams) DWtSynVSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 	}
 	rlr := Neurons[ri, di, RLRate]
 
-	rplus := Neurons[ri, di, CaSpkP]
-	rminus := Neurons[ri, di, CaSpkD]
-	sact := Neurons[si, di, CaSpkD]
+	rplus := Neurons[ri, di, CaP]
+	rminus := Neurons[ri, di, CaD]
+	sact := Neurons[si, di, CaD]
 	dtr := ach * (pt.Matrix.Delta * sact * (rplus - rminus))
 	if rminus > pt.Learn.Trace.LearnThr { // key: prevents learning if < threshold
 		dtr += ach * (pt.Matrix.Credit * sact * rminus)
@@ -331,9 +331,9 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 		SynapseTraces[syni, DTr, di] = 0.0
 	} else {
 		pfmod := pt.Matrix.BasePF + Neurons[ri, di, GModSyn]
-		rplus := Neurons[ri, di, CaSpkP]
-		rminus := Neurons[ri, di, CaSpkD]
-		sact := Neurons[si, di, CaSpkD]
+		rplus := Neurons[ri, di, CaP]
+		rminus := Neurons[ri, di, CaD]
+		sact := Neurons[si, di, CaD]
 		dtr := rlr * (pt.Matrix.Delta * sact * (rplus - rminus))
 		if rminus > pt.Learn.Trace.LearnThr { // key: prevents learning if < threshold
 			dtr += rlr * (pt.Matrix.Credit * pfmod * sact * rminus)

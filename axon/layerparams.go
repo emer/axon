@@ -98,7 +98,7 @@ type LayerParams struct {
 	Learn LearnNeurParams `display:"add-fields"`
 
 	// Bursts has [BurstParams] that determine how the 5IB Burst activation
-	// is computed from CaSpkP integrated spiking values in Super layers.
+	// is computed from CaP integrated spiking values in Super layers.
 	Bursts BurstParams `display:"inline"`
 
 	// CT has params for the CT corticothalamic layer and PTPred layer that
@@ -108,7 +108,7 @@ type LayerParams struct {
 
 	// Pulv has parameters for how the plus-phase (outcome) state of Pulvinar
 	// thalamic relay cell neurons is computed from the corresponding driver
-	// neuron Burst activation (or CaSpkP if not Super).
+	// neuron Burst activation (or CaP if not Super).
 	Pulv PulvParams `display:"inline"`
 
 	// Matrix has parameters for BG Striatum Matrix MSN layers, which are

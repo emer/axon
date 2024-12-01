@@ -38,9 +38,10 @@ import (
 )
 
 func main() {
-	opts := cli.DefaultOptions("ra25", "Random associator.")
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cfg := &Config{}
+	cli.SetFromDefaults(cfg)
+	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
+	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cli.Run(opts, cfg, RunSim)
 }
 
@@ -165,6 +166,18 @@ type LogConfig struct {
 // Config is a standard Sim config -- use as a starting point.
 type Config struct {
 
+	// Name is the short name of the sim.
+	Name string `default:"RA25"`
+
+	// Title is the longer title of the sim.
+	Title string `default:"Axon random associator"`
+
+	// URL is a link to the online README or other documentation for this sim.
+	URL string `default:"https://github.com/emer/axon/blob/main/examples/ra25/README.md"`
+
+	// Doc is brief documentation of the sim.
+	Doc string `width:"60" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers (i.e., 25 units)."`
+
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.
 	Includes []string
@@ -248,7 +261,7 @@ func RunSim(cfg *Config) error {
 
 func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
-	ss.Net = axon.NewNetwork("RA25")
+	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
@@ -808,8 +821,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Axon Random Associator"
-	ss.GUI.MakeBody(ss, "ra25", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.FS = ss.Root
 	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
@@ -821,7 +833,7 @@ func (ss *Sim) ConfigGUI() {
 	ss.TestUpdate.Config(nv, axon.Phase, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
-		vu.UpdateWhenStopped(mode, level) // todo: carry this all the way through
+		vu.UpdateWhenStopped(mode, level)
 	}
 
 	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
@@ -832,7 +844,6 @@ func (ss *Sim) ConfigGUI() {
 	ss.GUI.FinalizeGUI(false)
 }
 
-// todo: persistent run log
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
@@ -852,7 +863,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/ra25/README.md")
+			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
 }

@@ -8,8 +8,6 @@ package axon
 
 import "cogentcore.org/core/enums"
 
-// todo: don't even need layer-level ultimately.
-
 // Cycle runs n cycles of activation updating.
 // If getNeurons is true, then neuron state is synced back
 // from the GPU (for cycle-level display etc). Otherwise only
@@ -21,7 +19,7 @@ func (nt *Network) Cycle(ncyc int, getNeurons bool) {
 	ld := int(nix.NLayers * ctx.NData)
 	pd := int(nix.NPools * ctx.NData)
 
-	ToGPUCtxGlobal()
+	ToGPUCtxGlobal() // this is not a significant speed factor
 	for range ncyc {
 		RunGatherSpikes(nd)
 		RunLayerGi(ld)
@@ -105,6 +103,22 @@ func (nt *Network) ApplyExts() {
 	RunApplyExtsNeuron(nd)
 }
 
+// Beta1 does updating at Beta1 timescale.
+func (nt *Network) Beta1() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	RunBeta1Neuron(nd)
+}
+
+// Beta2 does updating at Beta1 timescale.
+func (nt *Network) Beta2() {
+	nix := nt.NetIxs()
+	ctx := nt.Context()
+	nd := int(nix.NNeurons * ctx.NData)
+	RunBeta2Neuron(nd)
+}
+
 // MinusPhase does updating after end of minus phase.
 func (nt *Network) MinusPhase() {
 	nix := nt.NetIxs()
@@ -121,6 +135,8 @@ func (nt *Network) PlusPhaseStart() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
+
+	ctx.PlusPhaseStart()
 	RunPlusPhaseStartNeuron(nd)
 }
 
@@ -159,28 +175,6 @@ func (nt *Network) ClearTargExt() {
 			continue
 		}
 		ly.ClearTargExt(ctx)
-	}
-}
-
-// SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
-func (nt *Network) SpkSt1() {
-	ctx := nt.Context()
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.SpkSt1(ctx)
-	}
-}
-
-// SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
-func (nt *Network) SpkSt2() {
-	ctx := nt.Context()
-	for _, ly := range nt.Layers {
-		if ly.Off {
-			continue
-		}
-		ly.SpkSt2(ctx)
 	}
 }
 
@@ -303,6 +297,28 @@ func InitGBuffsPath(pti uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	Paths[pti].InitGBuffs(ctx)
 }
+
+// Beta1Neuron is the kernel over Neurons * Data to
+// do neuron-level updating at Beta1.
+func Beta1Neuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	Layers[li].Beta1Neuron(ctx, ni, di)
+}
+
+// Beta2Neuron is the kernel over Neurons * Data to
+// do neuron-level updating at Beta1.
+func Beta2Neuron(i uint32) { //gosl:kernel
+	ctx := GetCtx(0)
+	di := ctx.DataIndex(i)
+	ni := ctx.ItemIndex(i)
+	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
+	Layers[li].Beta2Neuron(ctx, ni, di)
+}
+
+////////  Minus Phase
 
 // MinusPhasePool is the kernel over Pools to
 // do pool-level updating after end of minus phase.

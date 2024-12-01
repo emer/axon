@@ -240,7 +240,7 @@ func (ly *Layer) LDTDefaults() {
 	lp.Inhib.Pool.On.SetBool(false)
 	lp.Acts.Decay.Act = 1
 	lp.Acts.Decay.Glong = 1
-	lp.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
+	lp.Acts.Decay.LearnCa = 1 // uses CaD as a readout!
 	lp.Learn.TrgAvgAct.RescaleOn.SetBool(false)
 	// lp.Rubicon.Thr = 0.2
 	// lp.Rubicon.Gain = 2
@@ -254,7 +254,7 @@ func (ly *Layer) LDTDefaults() {
 func (ly *LayerParams) VSPatchDefaults() {
 	ly.Acts.Decay.Act = 1
 	ly.Acts.Decay.Glong = 1
-	ly.Acts.Decay.LearnCa = 1 // uses CaSpkD as a readout!
+	ly.Acts.Decay.LearnCa = 1 // uses CaD as a readout!
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5

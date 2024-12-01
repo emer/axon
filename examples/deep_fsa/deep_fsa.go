@@ -27,13 +27,15 @@ import (
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
 	"github.com/emer/emergent/v2/looper"
+	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
 )
 
 func main() {
-	opts := cli.DefaultOptions("deep_fsa", "Deep FSA")
-	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cfg := &Config{}
+	cli.SetFromDefaults(cfg)
+	opts := cli.DefaultOptions(cfg.Name, cfg.Title)
+	opts.DefaultFiles = append(opts.DefaultFiles, "config.toml")
 	cli.Run(opts, cfg, RunSim)
 }
 
@@ -123,7 +125,7 @@ func RunSim(cfg *Config) error {
 
 func (ss *Sim) Run() {
 	ss.Root, _ = tensorfs.NewDir("Root")
-	ss.Net = axon.NewNetwork("RA25")
+	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
@@ -532,7 +534,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
+	statNames := []string{"CorSim", "UnitErr", "Err", "Output", "NZero", "FirstZero", "LastZero"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			if name == "NZero" && (mode != Train || level == Trial) {
@@ -543,7 +545,8 @@ func (ss *Sim) ConfigStats() {
 			levelDir := modeDir.RecycleDir(level.String())
 			subDir := modeDir.RecycleDir((level - 1).String()) // note: will fail for Cycle
 			tsr := levelDir.Float64(name)
-			ndata := int(ss.Net.Context().NData)
+			ctx := ss.Net.Context()
+			ndata := int(ctx.NData)
 			var stat float64
 			if phase == Start {
 				tsr.SetNumRows(0)
@@ -552,7 +555,7 @@ func (ss *Sim) ConfigStats() {
 						s.Range.SetMin(0).SetMax(1)
 						s.On = true
 						switch name {
-						case "NZero":
+						case "NZero", "UnitErr", "Output":
 							s.On = false
 						case "FirstZero", "LastZero":
 							if level < Run {
@@ -577,19 +580,25 @@ func (ss *Sim) ConfigStats() {
 			switch level {
 			case Trial:
 				out := ss.Net.LayerByName("InputP")
+				trg := ss.Net.LayerByName("Targets")
 				for di := range ndata {
 					var stat float64
 					switch name {
 					case "CorSim":
 						stat = 1.0 - float64(axon.LayerStates.Value(int(out.Index), int(di), int(axon.LayerPhaseDiff)))
 					case "UnitErr":
-						stat = out.PctUnitErr(ss.Net.Context())[di]
+						stat = out.PctUnitErr(ctx)[di]
 					case "Err":
-						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
+						_, minusIndexes, _ := out.LocalistErr4D(ctx)
+						minusIndex := minusIndexes[di]
+						trgExt := axon.Neurons.Value(int(trg.NeurStIndex+uint32(minusIndex)), di, int(axon.Ext))
+						curModeDir.Float64("Output", ndata).SetFloat1D(float64(minusIndex), di)
 						stat = 1.0
-						if uniterr == 0 {
+						if trgExt > 0.5 {
 							stat = 0
 						}
+					case "Output":
+						stat = curModeDir.Float64("Output", ndata).Float1D(di)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
@@ -683,10 +692,27 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 
 //////// GUI
 
+func (ss *Sim) ConfigNetView(nv *netview.NetView) {
+	// nv.ViewDefaults()
+	// nv.Scene().Camera.Pose.Pos.Set(0, 1.5, 3.0) // more "head on" than default which is more "top down"
+	// nv.Scene().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+
+	nv.ConfigLabels(ss.Config.Env.InputNames)
+
+	ly := nv.LayerByName("Targets")
+	for li, lnm := range ss.Config.Env.InputNames {
+		lbl := nv.LabelByName(lnm)
+		lbl.Pose = ly.Pose
+		lbl.Pose.Pos.Y += .2
+		lbl.Pose.Pos.Z += .02
+		lbl.Pose.Pos.X += 0.05 + float32(li)*.06
+		lbl.Pose.Scale.SetMul(math32.Vec3(0.6, 0.4, 0.5))
+	}
+}
+
 // ConfigGUI configures the Cogent Core GUI interface for this simulation.
 func (ss *Sim) ConfigGUI() {
-	title := "Axon Random Associator"
-	ss.GUI.MakeBody(ss, "ra25", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	ss.GUI.MakeBody(ss, ss.Config.Name, ss.Config.Title, ss.Config.Doc)
 	ss.GUI.FS = ss.Root
 	ss.GUI.DataRoot = "Root"
 	ss.GUI.CycleUpdateInterval = 10
@@ -698,18 +724,15 @@ func (ss *Sim) ConfigGUI() {
 	ss.TestUpdate.Config(nv, axon.Phase, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
-		vu.UpdateWhenStopped(mode, level) // todo: carry this all the way through
+		vu.UpdateWhenStopped(mode, level)
 	}
-
-	nv.SceneXYZ().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	nv.SceneXYZ().Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
+	ss.ConfigNetView(nv)
 
 	ss.GUI.UpdateFiles()
 	ss.InitStats()
 	ss.GUI.FinalizeGUI(false)
 }
 
-// todo: persistent run log
 func (ss *Sim) MakeToolbar(p *tree.Plan) {
 	ss.GUI.AddLooperCtrl(p, ss.Loops)
 
@@ -729,7 +752,7 @@ func (ss *Sim) MakeToolbar(p *tree.Plan) {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			core.TheApp.OpenURL("https://github.com/emer/axon/blob/main/examples/ra25/README.md")
+			core.TheApp.OpenURL(ss.Config.URL)
 		},
 	})
 }

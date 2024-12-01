@@ -44,7 +44,7 @@ const (
 	LayerPhaseDiffVar
 
 	// LayerRT is the reaction time for this layer in cycles, which is -1 until the
-	// Max CaSpkP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold.
+	// Max CaP level (after MaxCycStart) exceeds the Act.Attn.RTThr threshold.
 	LayerRT
 
 	// LayerRewPredPos is the positive-valued Reward Prediction value, for

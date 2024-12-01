@@ -127,180 +127,6 @@ func LogAddGlobals(lg *elog.Logs, ctx *Context, mode etime.Modes, times ...etime
 	}
 }
 
-// LogAddDiagnosticItems adds standard Axon diagnostic statistics to given logs,
-// across the given time levels, in higher to lower order, e.g., Epoch, Trial
-// These are useful for tuning and diagnosing the behavior of the network.
-func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes, times ...etime.Times) {
-	ntimes := len(times)
-	for _, lnm := range layerNames {
-		clnm := lnm
-		itm := lg.AddItem(&elog.Item{
-			Name:   clnm + "_ActMAvg",
-			Type:   reflect.Float64,
-			FixMax: false,
-			Range:  minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Avg)
-				}}})
-		lg.AddStdAggs(itm, mode, times...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name:   clnm + "_ActMMax",
-			Type:   reflect.Float64,
-			FixMax: false,
-			Range:  minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.Act.Minus.Max)
-				}}})
-		lg.AddStdAggs(itm, mode, times...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name:  clnm + "_MaxGeM",
-			Type:  reflect.Float64,
-			Range: minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.GeInt.Minus.Max)
-				}, etime.Scope(mode, times[ntimes-2]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.AvgMaxGeM)
-				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name:  clnm + "_CorDiff",
-			Type:  reflect.Float64,
-			Range: minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(1.0 - ly.LayerValues(uint32(ctx.Di)).PhaseDiff.Cor)
-				}}})
-		lg.AddStdAggs(itm, mode, times...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name:  clnm + "_GiMult",
-			Type:  reflect.Float64,
-			Range: minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.GiMult)
-				}}})
-		lg.AddStdAggs(itm, mode, times...)
-	}
-}
-
-func LogInputLayer(lg *elog.Logs, net *Network, mode etime.Modes) {
-	// input layer average activity -- important for tuning
-	layerNames := net.LayersByType(InputLayer)
-	for _, lnm := range layerNames {
-		clnm := lnm
-		lg.AddItem(&elog.Item{
-			Name:   clnm + "_ActAvg",
-			Type:   reflect.Float64,
-			FixMax: true,
-			Range:  minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.LayerValues(uint32(ctx.Di)).ActAvg.ActMAvg)
-				}}})
-	}
-}
-
-// LogAddPCAItems adds PCA statistics to log for Hidden and Target layers
-// across the given time levels, in higher to lower order, e.g., Run, Epoch, Trial
-// These are useful for diagnosing the behavior of the network.
-func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etime.Times) {
-	ntimes := len(times)
-	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer)
-	for _, lnm := range layers {
-		clnm := lnm
-		cly := net.LayerByName(clnm)
-		lg.AddItem(&elog.Item{
-			Name:      clnm + "_ActM",
-			Type:      reflect.Float64,
-			CellShape: cly.GetSampleShape().Sizes,
-			FixMax:    true,
-			Range:     minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Analyze, times[ntimes-1]): func(ctx *elog.Context) {
-					ctx.SetLayerSampleTensor(clnm, "ActM")
-				}, etime.Scope(etime.Test, times[ntimes-1]): func(ctx *elog.Context) {
-					ctx.SetLayerSampleTensor(clnm, "ActM")
-				}}})
-		itm := lg.AddItem(&elog.Item{
-			Name: clnm + "_PCA_NStrong",
-			Type: reflect.Float64,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
-					ctx.SetStatFloat(ctx.Item.Name)
-				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name: clnm + "_PCA_Top5",
-			Type: reflect.Float64,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
-					ctx.SetStatFloat(ctx.Item.Name)
-				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name: clnm + "_PCA_Next5",
-			Type: reflect.Float64,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
-					ctx.SetStatFloat(ctx.Item.Name)
-				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
-
-		itm = lg.AddItem(&elog.Item{
-			Name: clnm + "_PCA_Rest",
-			Type: reflect.Float64,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, times[ntimes-2]): func(ctx *elog.Context) {
-					ctx.SetStatFloat(ctx.Item.Name)
-				}}})
-		lg.AddStdAggs(itm, mode, times[:ntimes-1]...)
-	}
-}
-
-// LogAddLayerGeActAvgItems adds Ge and Act average items for Hidden and Target layers
-// for given mode and time (e.g., Test, Cycle)
-// These are useful for monitoring layer activity during testing.
-func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
-	layers := net.LayersByType(SuperLayer, TargetLayer)
-	for _, lnm := range layers {
-		clnm := lnm
-		lg.AddItem(&elog.Item{
-			Name:  clnm + "_Ge.Avg",
-			Type:  reflect.Float64,
-			Range: minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(mode, etm): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.AvgMaxVarByPool(net.Context(), "Ge", 0, ctx.Di).Avg)
-				}}})
-		lg.AddItem(&elog.Item{
-			Name:  clnm + "_Act.Avg",
-			Type:  reflect.Float64,
-			Range: minmax.F32{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(mode, etm): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.AvgMaxVarByPool(net.Context(), "Act", 0, ctx.Di).Avg)
-				}}})
-	}
-}
-
 // LogAddExtraDiagnosticItems adds extra Axon diagnostic statistics to given logs,
 // across the given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
@@ -310,26 +136,26 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 	for _, lnm := range layers {
 		clnm := lnm
 		itm := lg.AddItem(&elog.Item{
-			Name:   clnm + "_CaSpkPMinusAvg",
+			Name:   clnm + "_CaPMinusAvg",
 			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[ntimes-1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Avg)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaP.Minus.Avg)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
-			Name:   clnm + "_CaSpkPMinusMax",
+			Name:   clnm + "_CaPMinusMax",
 			Type:   reflect.Float64,
 			FixMax: false,
 			Range:  minmax.F32{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(*Layer)
-					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaSpkP.Minus.Max)
+					ctx.SetFloat32(ly.Pool(0, uint32(ctx.Di)).AvgMax.CaP.Minus.Max)
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
@@ -354,11 +180,11 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 	}
 }
 
-// LogAddCaLrnDiagnosticItems adds standard Axon diagnostic statistics to given logs,
+// LogAddLearnCaDiagnosticItems adds standard Axon diagnostic statistics to given logs,
 // across the given time levels, in higher to lower order, e.g., Epoch, Trial
 // These were useful for the development of the Ca-based "trace" learning rule
 // that directly uses NMDA and VGCC-like spiking Ca
-func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, times ...etime.Times) {
+func LogAddLearnCaDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, times ...etime.Times) {
 	ntimes := len(times)
 	layers := net.LayersByType(SuperLayer, TargetLayer)
 	for _, lnm := range layers {
@@ -429,25 +255,25 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
-			Name:   clnm + "_AvgCaLrn",
+			Name:   clnm + "_AvgLearnCa",
 			Type:   reflect.Float64,
 			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerSampleTensor(clnm, "CaLrn")
+					tsr := ctx.GetLayerSampleTensor(clnm, "LearnCa")
 					ctx.SetFloat64(stats.Mean(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
-			Name:   clnm + "_MaxCaLrn",
+			Name:   clnm + "_MaxLearnCa",
 			Type:   reflect.Float64,
 			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerSampleTensor(clnm, "CaLrn")
+					tsr := ctx.GetLayerSampleTensor(clnm, "LearnCa")
 					ctx.SetFloat64(stats.Max(tsr))
 				}}})
 		lg.AddStdAggs(itm, mode, times...)
@@ -491,13 +317,13 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		lg.AddStdAggs(itm, mode, times...)
 
 		itm = lg.AddItem(&elog.Item{
-			Name:   clnm + "_AvgCaSpkD",
+			Name:   clnm + "_AvgCaD",
 			Type:   reflect.Float64,
 			Range:  minmax.F32{Max: 1},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[ntimes-1]): func(ctx *elog.Context) {
-					tsr := ctx.GetLayerSampleTensor(clnm, "CaSpkD")
+					tsr := ctx.GetLayerSampleTensor(clnm, "CaD")
 					avg := stats.Mean(tsr)
 					ctx.SetFloat64(avg)
 				}}})

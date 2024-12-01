@@ -502,7 +502,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *MotorSeqEnv, di int) int {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "MotorBS", "CaSpkPM", di)
+	vt := ss.Stats.SetLayerTensor(ss.Net, "MotorBS", "CaPM", di)
 	return ss.SoftMaxChoose4D(vt)
 	// return ss.HardChoose4D(vt)
 }

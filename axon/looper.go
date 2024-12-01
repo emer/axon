@@ -22,25 +22,12 @@ import (
 //     between these two calls if it is visible and viewing synapse variables.
 //   - netview update calls at appropriate levels (no-op if no GUI)
 func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.Enum) *NetViewUpdate, fastNCycles, plusStart, plusEnd int, cycle, trial, trainMode enums.Enum) {
-	ls.AddOnStartToAll("SetContextMode", func(md, tm enums.Enum) {
-		ctx := net.Context()
-		ctx.Mode = int32(md.Int64())
-	})
-	ls.AddEventAllModes(cycle, "MinusPhase:Start", 0, func() {
-		ctx := net.Context()
-		ctx.PlusPhase.SetBool(false)
-		ctx.NewPhase(false)
-	})
-	ls.AddEventAllModes(cycle, "Beta1", 50, func() { net.SpkSt1() })
-	ls.AddEventAllModes(cycle, "Beta2", 100, func() { net.SpkSt2() })
+	ls.AddEventAllModes(cycle, "Beta1", 50, func() { net.Beta1() })
+	ls.AddEventAllModes(cycle, "Beta2", 100, func() { net.Beta2() })
 
 	ls.AddEventAllModes(cycle, "MinusPhase:End", plusStart, func() { net.MinusPhase() })
-	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() {
-		ctx := net.Context()
-		ctx.PlusPhase.SetBool(true)
-		ctx.NewPhase(true)
-		net.PlusPhaseStart()
-	})
+	ls.AddEventAllModes(cycle, "PlusPhase:Start", plusStart, func() { net.PlusPhaseStart() })
+
 	for mode, st := range ls.Stacks {
 		cycLoop := st.Loops[cycle]
 		cycLoop.OnStart.Add("Cycle", func() {
@@ -62,13 +49,9 @@ func LooperStandard(ls *looper.Stacks, net *Network, viewFunc func(mode enums.En
 		})
 
 		trlLoop := st.Loops[trial]
-		trlLoop.OnStart.Add("NewState", func() {
-			testing := mode.Int64() != trainMode.Int64()
-			net.NewState(mode, testing)
-		})
-		trlLoop.OnEnd.Add("PlusPhase:End", func() {
-			net.PlusPhase()
-		})
+		testing := mode.Int64() != trainMode.Int64()
+		trlLoop.OnStart.Add("NewState", func() { net.NewState(mode, testing) })
+		trlLoop.OnEnd.Add("PlusPhase:End", func() { net.PlusPhase() })
 		if mode.Int64() == trainMode.Int64() {
 			trlLoop.OnEnd.Add("UpdateWeights", func() {
 				if view := viewFunc(mode); view != nil && view.IsViewingSynapse() {

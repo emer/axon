@@ -281,7 +281,7 @@ func (pt *PathParams) SendSpike(ctx *Context, ni, di, lni uint32) {
 		if uint32(ctx.Cycle) != uint32(ctx.ThetaCycles)-1-pt.Com.DelLen {
 			return
 		}
-		sendVal *= Neurons.Value(int(ni), int(di), int(Burst)) // Burst is regular CaSpkP for all non-SuperLayer neurons
+		sendVal *= Neurons.Value(int(ni), int(di), int(Burst)) // Burst is regular CaP for all non-SuperLayer neurons
 	} else {
 		if Neurons.Value(int(ni), int(di), int(Spike)) == 0 {
 			return

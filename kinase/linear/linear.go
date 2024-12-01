@@ -141,7 +141,7 @@ type Neuron struct {
 	CaSyn float32
 
 	// neuron-level spike-driven Ca integration
-	CaSpkM, CaSpkP, CaSpkD float32
+	CaSpkM, CaP, CaD float32
 
 	TotalSpikes float32
 
@@ -154,8 +154,8 @@ func (kn *Neuron) Init() {
 	kn.SpikeP = 1
 	kn.CaSyn = 0
 	kn.CaSpkM = 0
-	kn.CaSpkP = 0
-	kn.CaSpkD = 0
+	kn.CaP = 0
+	kn.CaD = 0
 	kn.StartTrial()
 }
 
@@ -180,7 +180,7 @@ func (ls *Linear) Cycle(nr *Neuron, expInt float32, cyc int) {
 			nr.SpikeBins[bin] += 1
 		}
 	}
-	ls.Neuron.CaFromSpike(nr.Spike, &nr.CaSyn, &nr.CaSpkM, &nr.CaSpkP, &nr.CaSpkD)
+	ls.Neuron.CaFromSpike(nr.Spike, &nr.CaSyn, &nr.CaSpkM, &nr.CaP, &nr.CaD)
 }
 
 // Synapse has Synapse state

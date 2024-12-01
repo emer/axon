@@ -89,7 +89,7 @@ func TestCollectAndSetDWts(t *testing.T) {
 		}
 		net.PlusPhase(ctx)
 		// for _, ly := range net.Layers {
-		// 	fmt.Printf("ly: %s  actm: %g  actp: %g\n", ly.Name, ly.Pool(0, 0).AvgMax.CaSpkD.Minus.Max, ly.Pool(0, 0).AvgMax.CaSpkD.Plus.Max)
+		// 	fmt.Printf("ly: %s  actm: %g  actp: %g\n", ly.Name, ly.Pool(0, 0).AvgMax.CaD.Minus.Max, ly.Pool(0, 0).AvgMax.CaD.Plus.Max)
 		// }
 		net.DWt(ctx)
 	}
