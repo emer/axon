@@ -573,7 +573,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"Depth_CorSim", "HeadDir_CorSim", "Depth_}
+	statNames := []string{"DepthP_CorSim", "HeadDirP_CorSim"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			modeDir := ss.Stats.RecycleDir(mode.String())
@@ -602,9 +602,9 @@ func (ss *Sim) ConfigStats() {
 				for di := range ndata {
 					var stat float64
 					switch name {
-					case "Depth_CorSim":
+					case "DepthP_CorSim":
 						stat = 1.0 - float64(axon.LayerStates.Value(int(depth.Index), int(di), int(axon.LayerPhaseDiff)))
-					case "HeadDir_CorSim":
+					case "HeadDirP_CorSim":
 						stat = 1.0 - float64(axon.LayerStates.Value(int(headDir.Index), int(di), int(axon.LayerPhaseDiff)))
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
@@ -623,6 +623,11 @@ func (ss *Sim) ConfigStats() {
 	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "DepthP_CorSim", Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
+	})
+
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "DepthP", "HeadDirP")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		prevCorFunc(mode, level, phase == Start)
 	})
 
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
@@ -685,8 +690,8 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.TrainUpdate.Config(nv, axon.Phase, ss.StatCounters)
-	ss.TestUpdate.Config(nv, axon.Phase, ss.StatCounters)
+	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)
@@ -751,4 +756,3 @@ func (ss *Sim) RunNoGUI() {
 	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
 	axon.GPURelease()
 }
-

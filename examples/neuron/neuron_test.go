@@ -84,5 +84,5 @@ func TestNeuronGPU(t *testing.T) {
 	cpuValues := RunNeuron(t, false)
 	gpuValues := RunNeuron(t, true)
 	// On Mac, Tol7 works for most, Tol6 leaves only 2..
-	ReportValDiffs(t, Tol5, cpuValues, gpuValues, "CPU", "GPU", []string{"SpkMax", "SpkMaxCa", "GABAB", "NmdaCa"})
+	ReportValDiffs(t, Tol5, cpuValues, gpuValues, "CPU", "GPU", []string{"CaPMax", "CaPMaxCa", "GABAB", "NmdaCa"})
 }

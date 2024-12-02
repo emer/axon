@@ -452,8 +452,8 @@ func (ss *Sim) GatedAction() {
 		} else {
 			ss.Stats.SetFloat32Di("ACCPosVM_RT", di, nan)
 		}
-		ss.Stats.SetFloat32Di("ACCPosVM_ActAvg", di, vmly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
-		ss.Stats.SetFloat32Di("VMtxGo_ActAvg", di, mtxly.Pool(0, uint32(di)).AvgMax.SpkMax.Cycle.Avg)
+		ss.Stats.SetFloat32Di("ACCPosVM_ActAvg", di, vmly.Pool(0, uint32(di)).AvgMax.CaPMax.Cycle.Avg)
+		ss.Stats.SetFloat32Di("VMtxGo_ActAvg", di, mtxly.Pool(0, uint32(di)).AvgMax.CaPMax.Cycle.Avg)
 	}
 }
 

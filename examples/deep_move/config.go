@@ -114,16 +114,16 @@ type LogConfig struct {
 type Config struct {
 
 	// Name is the short name of the sim.
-	Name string `default:"DeepMove"`
+	Name string `display:"-" default:"DeepMove"`
 
 	// Title is the longer title of the sim.
-	Title string `default:"DeepAxon Move Prediction"`
+	Title string `display:"-" default:"DeepAxon Move Prediction"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `default:"https://github.com/emer/axon/blob/main/examples/deep_move/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/deep_move/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `default:"This demonstrates a basic deep predictive learning Axon model that learns to predict the effects of movement on visual inputs."`
+	Doc string `display:"-" default:"This demonstrates a basic deep predictive learning Axon model that learns to predict the effects of movement on visual inputs."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.

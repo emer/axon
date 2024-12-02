@@ -327,7 +327,7 @@ type DtParams struct {
 	// time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models
 	LongAvgTau float32 `default:"20" min:"1"`
 
-	// cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state
+	// cycle to start updating the CaPMaxCa, CaPMax values within a theta cycle -- early cycles often reflect prior state
 	MaxCycStart int32 `default:"10" min:"0"`
 
 	// nominal rate = Integ / tau
@@ -973,8 +973,8 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(Target))
 	Neurons.Set(0, int(ni), int(di), int(Ext))
 
-	Neurons.Set(0, int(ni), int(di), int(SpkMaxCa))
-	Neurons.Set(0, int(ni), int(di), int(SpkMax))
+	Neurons.Set(0, int(ni), int(di), int(CaPMaxCa))
+	Neurons.Set(0, int(ni), int(di), int(CaPMax))
 	Neurons.Set(1, int(ni), int(di), int(RLRate))
 
 	Neurons.Set(1, int(ni), int(di), int(GeNoiseP))
@@ -1037,19 +1037,19 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons.Set(0, int(ni), int(di), int(CtxtGeOrig))
 
 	for i := range 8 {
-		Neurons.Set(0.0, int(ni), int(di), int(SpkBin0+NeuronVars(i)))
+		Neurons.Set(0.0, int(ni), int(di), int(SpikeBin0+NeuronVars(i)))
 	}
 
 	ac.InitLongActs(ctx, ni, di)
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (SpkPrv, SpkSt*, ActM, ActP)
+// (CaDPrev, Beta1, Beta2, ActM, ActP)
 // Called from InitActs, which is called from InitWeights,
 // but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
-	Neurons.Set(0, int(ni), int(di), int(SpkPrv))
+	Neurons.Set(0, int(ni), int(di), int(CaDPrev))
 	Neurons.Set(0, int(ni), int(di), int(Beta1))
 	Neurons.Set(0, int(ni), int(di), int(Beta2))
 	Neurons.Set(0, int(ni), int(di), int(ActM))
@@ -1153,7 +1153,7 @@ func (ac *ActParams) GkFromVm(ctx *Context, ni, di uint32) {
 // KNaNewState does TrialSlow version of KNa during NewState if option is set
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
-		Neurons.SetAdd(ac.KNa.Slow.Max*Neurons.Value(int(ni), int(di), int(SpkPrv)), int(ni), int(di), int(GknaSlow))
+		Neurons.SetAdd(ac.KNa.Slow.Max*Neurons.Value(int(ni), int(di), int(CaDPrev)), int(ni), int(di), int(GknaSlow))
 	}
 }
 

@@ -534,7 +534,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		hasGated := axon.GlbV(ctx, diu, axon.GvVSMatrixHasGated) > 0
 		ev.InstinctAct(justGated, hasGated)
 		csGated := (justGated && !rp.HasPosUS(ctx, diu))
-		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.SpkMax.Cycle.Max > threshold) // give it time
+		deciding := !csGated && !hasGated && (axon.GlbV(ctx, diu, axon.GvACh) > threshold && mtxLy.Pool(0, diu).AvgMax.CaPMax.Cycle.Max > threshold) // give it time
 		wasDeciding := num.ToBool(ss.Stats.Float32Di("Deciding", di))
 		if wasDeciding {
 			deciding = false // can't keep deciding!
@@ -837,12 +837,12 @@ func (ss *Sim) ActionStatsDi(di int) {
 	ss.Stats.SetInt("TraceStateInt", ss.Stats.IntDi("TraceStateInt", di))
 }
 
-// MaxPoolSpkMax returns the maximum across pools of the SpkMax.Plus.Avg stat
-func (ss *Sim) MaxPoolSpkMax(ly *axon.Layer, diu uint32) float32 {
+// MaxPoolCaPMax returns the maximum across pools of the CaPMax.Plus.Avg stat
+func (ss *Sim) MaxPoolCaPMax(ly *axon.Layer, diu uint32) float32 {
 	np := ly.NPools
 	mx := float32(0)
 	for pi := uint32(1); pi < np; pi++ {
-		v := ly.Pool(pi, diu).AvgMax.SpkMax.Plus.Avg
+		v := ly.Pool(pi, diu).AvgMax.CaPMax.Plus.Avg
 		if v > mx {
 			mx = v
 		}
@@ -892,21 +892,21 @@ func (ss *Sim) GatedStats(di int) {
 			ss.Stats.SetFloat32("BadCSGate", armIsBad)
 			vsgo := net.LayerByName("VMtxGo")
 			vsno := net.LayerByName("VMtxNo")
-			goact := ss.MaxPoolSpkMax(vsgo, diu)
-			noact := ss.MaxPoolSpkMax(vsno, diu)
+			goact := ss.MaxPoolCaPMax(vsgo, diu)
+			noact := ss.MaxPoolCaPMax(vsno, diu)
 			ss.Stats.SetFloat32("GateVMtxGo", goact)
 			ss.Stats.SetFloat32("GateVMtxNo", noact)
 			ss.Stats.SetFloat32("GateVMtxGoNo", goact-noact)
 			bla := net.LayerByName("BLAposAcqD1")
 			ble := net.LayerByName("BLAposExtD2")
-			blaact := ss.MaxPoolSpkMax(bla, diu)
-			bleact := ss.MaxPoolSpkMax(ble, diu)
+			blaact := ss.MaxPoolCaPMax(bla, diu)
+			bleact := ss.MaxPoolCaPMax(ble, diu)
 			ss.Stats.SetFloat32("GateBLAposAcq", blaact)
 			ss.Stats.SetFloat32("GateBLAposExt", bleact)
 			ss.Stats.SetFloat32("GateBLAposAcqExt", blaact-bleact)
 
 			blanov := net.LayerByName("BLANovelCS")
-			blanovact := blanov.Pool(0, diu).AvgMax.SpkMax.Plus.Avg
+			blanovact := blanov.Pool(0, diu).AvgMax.CaPMax.Plus.Avg
 			ss.Stats.SetFloat32("GateBLANovelCS", blanovact)
 		}
 	}

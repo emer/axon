@@ -102,8 +102,8 @@ const (
 	// activity over the entire trial.
 	AMCaD
 
-	// SpkMax is the maximum CaP over the trial of processing.
-	AMSpkMax
+	// CaPMax is the maximum CaP over the trial of processing.
+	AMCaPMax
 
 	// Act is the computed rate-code equivalent of current spike rate.
 	AMAct
@@ -129,7 +129,7 @@ const (
 )
 
 // avgMaxToNeuron is the mapping from AvgMaxVars to neuron vars.
-var avgMaxToNeuron = [AMAvgDif]NeuronVars{CaP, CaD, SpkMax, Act, GeInt, GiInt}
+var avgMaxToNeuron = [AMAvgDif]NeuronVars{CaP, CaD, CaPMax, Act, GeInt, GiInt}
 
 // AvgMaxVarIndex returns the variable index for accessing
 // [Pools] AvgMax float32 variables.
@@ -195,7 +195,7 @@ func PoolAvgMaxUpdateVar(vr AvgMaxVars, pi, di uint32, val float32) {
 func PoolAvgMaxUpdate(pi, di, ni uint32) {
 	PoolAvgMaxUpdateVar(AMCaP, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaP]))))
 	PoolAvgMaxUpdateVar(AMCaD, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaD]))))
-	PoolAvgMaxUpdateVar(AMSpkMax, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMSpkMax]))))
+	PoolAvgMaxUpdateVar(AMCaPMax, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMCaPMax]))))
 	PoolAvgMaxUpdateVar(AMAct, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMAct]))))
 	PoolAvgMaxUpdateVar(AMGeInt, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMGeInt]))))
 	PoolAvgMaxUpdateVar(AMGiInt, pi, di, math32.Abs(Neurons.Value(int(ni), int(di), int(avgMaxToNeuron[AMGiInt]))))

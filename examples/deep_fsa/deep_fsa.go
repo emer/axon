@@ -650,6 +650,11 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
+	prevCorFunc := axon.StatPrevCorSim(ss.Stats, ss.Current, net, Trial, "InputP")
+	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
+		prevCorFunc(mode, level, phase == Start)
+	})
+
 	lays := net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	actGeFunc := axon.StatLayerActGe(ss.Stats, net, Train, Trial, lays...)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
@@ -682,7 +687,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"CorSim", "UnitErr", "Err"}
+	statNames := []string{"CorSim", "Err"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
@@ -722,8 +727,8 @@ func (ss *Sim) ConfigGUI() {
 	nv := ss.GUI.AddNetView("Network")
 	nv.Options.MaxRecs = 300
 	nv.SetNet(ss.Net)
-	ss.TrainUpdate.Config(nv, axon.Phase, ss.StatCounters)
-	ss.TestUpdate.Config(nv, axon.Phase, ss.StatCounters)
+	ss.TrainUpdate.Config(nv, axon.Theta, ss.StatCounters)
+	ss.TestUpdate.Config(nv, axon.Theta, ss.StatCounters)
 	ss.GUI.OnStop = func(mode, level enums.Enum) {
 		vu := ss.NetViewUpdater(mode)
 		vu.UpdateWhenStopped(mode, level)

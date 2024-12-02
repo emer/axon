@@ -325,7 +325,7 @@ type DtParams struct {
 	// time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models
 	LongAvgTau float32 `default:"20" min:"1"`
 
-	// cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state
+	// cycle to start updating the CaPMaxCa, CaPMax values within a theta cycle -- early cycles often reflect prior state
 	MaxCycStart int32 `default:"10" min:"0"`
 
 	// nominal rate = Integ / tau
@@ -971,8 +971,8 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, Target] = 0
 	Neurons[ni, di, Ext] = 0
 
-	Neurons[ni, di, SpkMaxCa] = 0
-	Neurons[ni, di, SpkMax] = 0
+	Neurons[ni, di, CaPMaxCa] = 0
+	Neurons[ni, di, CaPMax] = 0
 	Neurons[ni, di, RLRate] = 1
 
 	Neurons[ni, di, GeNoiseP] = 1
@@ -1035,19 +1035,19 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, CtxtGeOrig] = 0
 
 	for i := range 8 {
-		Neurons[ni, di, SpkBin0+NeuronVars(i)] = 0.0
+		Neurons[ni, di, SpikeBin0+NeuronVars(i)] = 0.0
 	}
 
 	ac.InitLongActs(ctx, ni, di)
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (SpkPrv, SpkSt*, ActM, ActP)
+// (CaDPrev, Beta1, Beta2, ActM, ActP)
 // Called from InitActs, which is called from InitWeights,
 // but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
-	Neurons[ni, di, SpkPrv] = 0
+	Neurons[ni, di, CaDPrev] = 0
 	Neurons[ni, di, Beta1] = 0
 	Neurons[ni, di, Beta2] = 0
 	Neurons[ni, di, ActM] = 0
@@ -1151,7 +1151,7 @@ func (ac *ActParams) GkFromVm(ctx *Context, ni, di uint32) {
 // KNaNewState does TrialSlow version of KNa during NewState if option is set
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
-		Neurons[ni, di, GknaSlow] += ac.KNa.Slow.Max * Neurons[ni, di, SpkPrv]
+		Neurons[ni, di, GknaSlow] += ac.KNa.Slow.Max * Neurons[ni, di, CaDPrev]
 	}
 }
 

@@ -8,7 +8,7 @@ package axon
 
 // BLAPathParams has parameters for basolateral amygdala learning.
 // Learning is driven by the Tr trace as function of ACh * Send Act
-// recorded prior to US, and at US, recv unit delta: CaP - SpkPrv
+// recorded prior to US, and at US, recv unit delta: CaP - CaDPrev
 // times normalized GeIntNorm for recv unit credit assignment.
 // The Learn.Trace.Tau time constant determines trace updating over trials
 // when ACh is above threshold -- this determines strength of second-order

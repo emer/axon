@@ -532,17 +532,17 @@ func (ly *LayerParams) SpikeFromG(ctx *Context, lpi, ni, di uint32) {
 		Neurons[ni, di, GeIntNorm] = Neurons[ni, di, GeInt]
 	}
 	if ctx.Cycle >= ly.Acts.Dt.MaxCycStart {
-		Neurons[ni, di, SpkMaxCa] += ly.Learn.CaSpk.Dt.PDt * (Neurons[ni, di, CaM] - Neurons[ni, di, SpkMaxCa])
-		spkmax := Neurons[ni, di, SpkMaxCa]
-		if spkmax > Neurons[ni, di, SpkMax] {
-			Neurons[ni, di, SpkMax] = spkmax
+		Neurons[ni, di, CaPMaxCa] += ly.Learn.CaSpk.Dt.PDt * (Neurons[ni, di, CaM] - Neurons[ni, di, CaPMaxCa])
+		spkmax := Neurons[ni, di, CaPMaxCa]
+		if spkmax > Neurons[ni, di, CaPMax] {
+			Neurons[ni, di, CaPMax] = spkmax
 		}
 	}
 	spk := Neurons[ni, di, Spike]
 	if spk > 0 {
 		spksper := ctx.ThetaCycles / 8
 		bin := min(ctx.Cycle / spksper, 7)
-		Neurons[ni, di, SpkBin0 + NeuronVars(bin)] += spk
+		Neurons[ni, di, SpikeBin0 + NeuronVars(bin)] += spk
 	}
 }
 
@@ -714,7 +714,7 @@ func (ly *LayerParams) CyclePost(ctx *Context, di uint32) {
 	ly.CyclePostLayer(ctx, lpi, di)
 	switch ly.Type {
 	case MatrixLayer, BGThalLayer:
-		ly.GatedFromSpkMax(ctx, di)
+		ly.GatedFromCaPMax(ctx, di)
 	case CeMLayer:
 		ly.CyclePostCeMLayer(ctx, lpi, di)
 	case VSPatchLayer:
@@ -925,14 +925,14 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pi, di uint32) {
 // Should already have presented the external input to the network at this point.
 func (ly *LayerParams) NewStateNeuron(ctx *Context, ni, di uint32) {
 	Neurons[ni, di, BurstPrv] = Neurons[ni, di, Burst]
-	Neurons[ni, di, SpkPrv] = Neurons[ni, di, CaD]
-	Neurons[ni, di, SpkMax] = 0.0
-	Neurons[ni, di, SpkMaxCa] = 0.0
+	Neurons[ni, di, CaDPrev] = Neurons[ni, di, CaD]
+	Neurons[ni, di, CaPMax] = 0.0
+	Neurons[ni, di, CaPMaxCa] = 0.0
 	ly.Acts.DecayState(ctx, ni, di, ly.Acts.Decay.Act, ly.Acts.Decay.Glong, ly.Acts.Decay.AHP)
 	// Note: synapse-level Ca decay happens in DWt
 	ly.Acts.KNaNewState(ctx, ni, di)
 	for i := range 8 {
-		Neurons[ni, di, SpkBin0+NeuronVars(i)] = 0.0
+		Neurons[ni, di, SpikeBin0+NeuronVars(i)] = 0.0
 	}
 }
 
@@ -1031,14 +1031,14 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 
 	switch ly.Type {
 	case BLALayer:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons[ni, di, SpkPrv]) // delta on previous trial
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons[ni, di, CaDPrev]) // delta on previous trial
 		if !ly.Learn.NeuroMod.IsBLAExt() && PoolsInt[pi, 0, PoolNeurSt] == 0 { // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case VSPatchLayer:
 		da = GlobalScalars[GvVSPatchPosRPE, di] // our own personal
 		modlr = ly.Learn.NeuroMod.LRMod(da, ach)
-		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons[ni, di, SpkPrv], 1) // note: don't have proper max here
+		mlr = ly.Learn.RLRate.RLRateSigDeriv(Neurons[ni, di, CaDPrev], 1) // note: don't have proper max here
 	case MatrixLayer:
 		if hasRew { // reward time
 			mlr = 1 // don't use dig deriv

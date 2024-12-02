@@ -100,7 +100,7 @@ and the trace is effectively reset by a decay factor:
 
 One further wrinkle is that the BG will become permanently stuck if there is no gating at all -- trial and error learning requires "trials" of activity to learn!  Thus, we introduce a slow "NoGate" learning case on trials where no neurons gated within the layer:
 
-* `Tr += -NoGateLRate * ACh * rn.SpkMax * sn.CaD`
+* `Tr += -NoGateLRate * ACh * rn.CaPMax * sn.CaD`
 
 
 # Other models

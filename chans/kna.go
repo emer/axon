@@ -72,18 +72,20 @@ func (ka *KNaParams) GcFromSpike(gKNa *float32, spike bool) {
 // Slick (medium) and Slack (slow)
 type KNaMedSlow struct {
 
-	// if On, apply K-Na adaptation
+	// On means apply K-Na adaptation.
 	On slbool.Bool
 
-	// engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation
+	// TrialSlow engages an optional version of Slow that discretely turns on at
+	// the start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.CaDPrev.
+	// This achieves a strong form of adaptation.
 	TrialSlow slbool.Bool
 
 	pad, pad1 int32
 
-	// medium time-scale adaptation
+	// Med is medium time-scale adaptation.
 	Med KNaParams `display:"inline"`
 
-	// slow time-scale adaptation
+	// Slow is slow time-scale adaptation.
 	Slow KNaParams `display:"inline"`
 }
 

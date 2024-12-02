@@ -130,16 +130,16 @@ type LogConfig struct {
 type Config struct {
 
 	// Name is the short name of the sim.
-	Name string `default:"DeepFSA"`
+	Name string `display:"-" default:"DeepFSA"`
 
 	// Title is the longer title of the sim.
-	Title string `default:"DeepAxon Finite State Automaton"`
+	Title string `display:"-" default:"DeepAxon Finite State Automaton"`
 
 	// URL is a link to the online README or other documentation for this sim.
-	URL string `default:"https://github.com/emer/axon/blob/main/examples/deep_fsa/README.md"`
+	URL string `display:"-" default:"https://github.com/emer/axon/blob/main/examples/deep_fsa/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `default:"This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g., the Reber grammar). The network learns the underlying grammar that generates partially ambiguous observable state tokens, strictly through errors in predicting the sequences of these tokens."`
+	Doc string `display:"-" default:"This demonstrates a basic deep predictive learning Axon model on the Finite State Automaton problem (e.g., the Reber grammar). The network learns the underlying grammar that generates partially ambiguous observable state tokens, strictly through errors in predicting the sequences of these tokens."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.

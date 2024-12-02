@@ -50,22 +50,22 @@ func (pt *PathParams) DWtSyn(ctx *Context, rlay *LayerParams, syni, si, ri, di u
 // SynCa gets the synaptic calcium P (potentiation) and D (depression)
 // values, using optimized computation.
 func (pt *PathParams) SynCa(ctx *Context, si, ri, di uint32, syCaP, syCaD *float32) {
-	rb0 := Neurons.Value(int(ri), int(di), int(SpkBin0))
-	sb0 := Neurons.Value(int(si), int(di), int(SpkBin0))
-	rb1 := Neurons.Value(int(ri), int(di), int(SpkBin1))
-	sb1 := Neurons.Value(int(si), int(di), int(SpkBin1))
-	rb2 := Neurons.Value(int(ri), int(di), int(SpkBin2))
-	sb2 := Neurons.Value(int(si), int(di), int(SpkBin2))
-	rb3 := Neurons.Value(int(ri), int(di), int(SpkBin3))
-	sb3 := Neurons.Value(int(si), int(di), int(SpkBin3))
-	rb4 := Neurons.Value(int(ri), int(di), int(SpkBin4))
-	sb4 := Neurons.Value(int(si), int(di), int(SpkBin4))
-	rb5 := Neurons.Value(int(ri), int(di), int(SpkBin5))
-	sb5 := Neurons.Value(int(si), int(di), int(SpkBin5))
-	rb6 := Neurons.Value(int(ri), int(di), int(SpkBin6))
-	sb6 := Neurons.Value(int(si), int(di), int(SpkBin6))
-	rb7 := Neurons.Value(int(ri), int(di), int(SpkBin7))
-	sb7 := Neurons.Value(int(si), int(di), int(SpkBin7))
+	rb0 := Neurons.Value(int(ri), int(di), int(SpikeBin0))
+	sb0 := Neurons.Value(int(si), int(di), int(SpikeBin0))
+	rb1 := Neurons.Value(int(ri), int(di), int(SpikeBin1))
+	sb1 := Neurons.Value(int(si), int(di), int(SpikeBin1))
+	rb2 := Neurons.Value(int(ri), int(di), int(SpikeBin2))
+	sb2 := Neurons.Value(int(si), int(di), int(SpikeBin2))
+	rb3 := Neurons.Value(int(ri), int(di), int(SpikeBin3))
+	sb3 := Neurons.Value(int(si), int(di), int(SpikeBin3))
+	rb4 := Neurons.Value(int(ri), int(di), int(SpikeBin4))
+	sb4 := Neurons.Value(int(si), int(di), int(SpikeBin4))
+	rb5 := Neurons.Value(int(ri), int(di), int(SpikeBin5))
+	sb5 := Neurons.Value(int(si), int(di), int(SpikeBin5))
+	rb6 := Neurons.Value(int(ri), int(di), int(SpikeBin6))
+	sb6 := Neurons.Value(int(si), int(di), int(SpikeBin6))
+	rb7 := Neurons.Value(int(ri), int(di), int(SpikeBin7))
+	sb7 := Neurons.Value(int(si), int(di), int(SpikeBin7))
 
 	b0 := 0.1 * (rb0 * sb0)
 	b1 := 0.1 * (rb1 * sb1)
@@ -200,7 +200,7 @@ func (pt *PathParams) DWtSynBLA(ctx *Context, syni, si, ri, lpi, pi, di uint32) 
 		tr := SynapseTraces.Value(int(syni), int(Tr), int(di))
 		ustr := pt.BLA.USTrace
 		tr = ustr*Neurons.Value(int(si), int(di), int(Burst)) + (1.0-ustr)*tr
-		delta := Neurons.Value(int(ri), int(di), int(CaP)) - Neurons.Value(int(ri), int(di), int(SpkPrv))
+		delta := Neurons.Value(int(ri), int(di), int(CaP)) - Neurons.Value(int(ri), int(di), int(CaDPrev))
 		if delta < 0 { // neg delta learns slower in Acq, not Ext
 			delta *= pt.BLA.NegDeltaLRate
 		}
@@ -279,7 +279,7 @@ func (pt *PathParams) DWtSynTDPred(ctx *Context, syni, si, ri, lpi, pi, di uint3
 		}
 	}
 
-	dwt := da * Neurons.Value(int(si), int(di), int(SpkPrv)) // no recv unit activation, prior trial act
+	dwt := da * Neurons.Value(int(si), int(di), int(CaDPrev)) // no recv unit activation, prior trial act
 	SynapseTraces.Set(eff_lr*dwt, int(syni), int(DiDWt), int(di))
 }
 
@@ -348,13 +348,13 @@ func (pt *PathParams) DWtSynDSMatrix(ctx *Context, syni, si, ri, lpi, pi, di uin
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPath type.
 func (pt *PathParams) DWtSynVSPatch(ctx *Context, syni, si, ri, lpi, pi, di uint32) {
-	ract := Neurons.Value(int(ri), int(di), int(SpkPrv)) // t-1
+	ract := Neurons.Value(int(ri), int(di), int(CaDPrev)) // t-1
 	if ract < pt.Learn.Trace.LearnThr {
 		ract = 0
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.
-	sact := Neurons.Value(int(si), int(di), int(SpkPrv)) // t-1
+	sact := Neurons.Value(int(si), int(di), int(CaDPrev)) // t-1
 	dwt := Neurons.Value(int(ri), int(di), int(RLRate)) * pt.Learn.LRate.Eff * sact * ract
 	SynapseTraces.Set(dwt, int(syni), int(DiDWt), int(di))
 }

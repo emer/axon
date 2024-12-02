@@ -385,7 +385,7 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 			sizes = append(sizes, ly.GetSampleShape().Sizes...)
 			vtsr := pcaDir.Float64(lnm, sizes...)
 			if levi == 0 {
-				ltsr := curModeDir.Float64("PCA_ActM_"+lnm, ly.GetSampleShape().Sizes...)
+				ltsr := curModeDir.Float64(lnm+"_ActM", ly.GetSampleShape().Sizes...)
 				if start {
 					vtsr.SetNumRows(0)
 				} else {
@@ -466,8 +466,8 @@ func StatPCA(statsDir, currentDir *tensorfs.Node, net *Network, interval int, tr
 // StatPrevCorSim returns a Stats function that compute correlations
 // between previous trial activity state and current minus phase and
 // plus phase state. This is important for predictive learning.
-func StatPrevCorSim(statsDir *tensorfs.Node, net *Network, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
-	statNames := []string{"PrevMCorSim", "PrevPCorSim"}
+func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLevel enums.Enum, layerNames ...string) func(mode, level enums.Enum, start bool) {
+	statNames := []string{"PrevToMCorSim", "PrevToPCorSim"}
 	levels := make([]enums.Enum, 10) // should be enough
 	return func(mode, level enums.Enum, start bool) {
 		levi := int(level.Int64() - trialLevel.Int64())
@@ -476,8 +476,9 @@ func StatPrevCorSim(statsDir *tensorfs.Node, net *Network, trialLevel enums.Enum
 		}
 		levels[levi] = level
 		modeDir := statsDir.RecycleDir(mode.String())
+		curModeDir := currentDir.RecycleDir(mode.String())
 		levelDir := modeDir.RecycleDir(level.String())
-		ndata := net.Context().NData
+		ndata := int(net.Context().NData)
 		for _, lnm := range layerNames {
 			for si, statName := range statNames {
 				ly := net.LayerByName(lnm)
@@ -495,13 +496,26 @@ func StatPrevCorSim(statsDir *tensorfs.Node, net *Network, trialLevel enums.Enum
 				}
 				switch levi {
 				case 0:
+					// note: current lnm + _var is standard reusable unit vals buffer
+					actM := curModeDir.Float64(lnm+"_ActM", ly.GetSampleShape().Sizes...)
+					actP := curModeDir.Float64(lnm+"_ActP", ly.GetSampleShape().Sizes...)
+					// note: CaD is sufficiently stable that it is fine to compare with ActM and ActP
+					prev := curModeDir.Float64(lnm+"_CaDPrev", ly.GetSampleShape().Sizes...)
 					for di := range ndata {
+						ly.UnitValuesSampleTensor(prev, "CaDPrev", di)
+						prev.SetShapeSizes(prev.Len()) // set to 1D -- inexpensive and faster for computation
 						var stat float64
 						switch si {
 						case 0:
-							stat = 1.0 - float64(LayerStates.Value(int(ly.Index), int(di), int(LayerPhaseDiff)))
+							ly.UnitValuesSampleTensor(actM, "ActM", di)
+							actM.SetShapeSizes(actM.Len())
+							cov := metric.Correlation(actM, prev)
+							stat = cov.Float1D(0)
 						case 1:
-							stat = 1.0 - float64(LayerStates.Value(int(ly.Index), int(di), int(LayerPhaseDiff)))
+							ly.UnitValuesSampleTensor(actP, "ActP", di)
+							actP.SetShapeSizes(actP.Len())
+							cov := metric.Correlation(actP, prev)
+							stat = cov.Float1D(0)
 						}
 						tsr.AppendRowFloat(stat)
 					}

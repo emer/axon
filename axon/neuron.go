@@ -134,6 +134,11 @@ const (
 	// as a representation of trial-level activity.
 	CaD
 
+	// CaDPrev is the final [CaD] activation state at the end of previous theta cycle.
+	// This is used for specialized learning mechanisms that operate on delayed
+	// sending activations.
+	CaDPrev
+
 	//////// Calcium for learning
 
 	// LearnCa is the receiving neuron calcium signal, which is integrated up to
@@ -143,7 +148,7 @@ const (
 	// sources (vs. CaM which only reflects a simple spiking component).
 	// The NMDA signal reflects both sending and receiving activity, while the
 	// VGCC signal is purely receiver spiking, and a balance of both works best.
-	// The synaptic-level trace factor computed from the SpkBin variables on both
+	// The synaptic-level trace factor computed from the SpikeBin variables on both
 	// sender and receiver provides the credit assignment factor, reflecting coincident
 	// activity, which can be integrated over longer multi-trial timescales.
 	LearnCa
@@ -337,33 +342,28 @@ const (
 	// Used for example in hippocampus for CA3, CA1 learning.
 	Beta2
 
-	// SpkMax is the maximum [CaP] across one theta cycle time window
-	// (max of SpkMaxCa). It is used for specialized algorithms that have more
+	// CaPMax is the maximum [CaP] across one theta cycle time window
+	// (max of CaPMaxCa). It is used for specialized algorithms that have more
 	// phasic behavior within a single trial, e.g., BG Matrix layer gating.
 	// Also useful for visualization of peak activity of neurons.
-	SpkMax
+	CaPMax
 
-	// SpkMaxCa is the Ca integrated like [CaP] but only starting at
+	// CaPMaxCa is the Ca integrated like [CaP] but only starting at
 	// the MaxCycStart cycle, to prevent inclusion of carryover spiking from
 	// prior theta cycle trial. The PTau time constant otherwise results in
-	// significant carryover.  This is the input to SpkMax.
-	SpkMaxCa
+	// significant carryover. This is the input to CaPMax.
+	CaPMaxCa
 
-	// SpkBin has aggregated spikes within 50 msec bins across the theta
+	// SpikeBin has aggregated spikes within 50 msec bins across the theta
 	// cycle, for computing synaptic calcium efficiently.
-	SpkBin0
-	SpkBin1
-	SpkBin2
-	SpkBin3
-	SpkBin4
-	SpkBin5
-	SpkBin6
-	SpkBin7
-
-	// SpkPrv is the final [CaD] activation state at end of previous theta cycle.
-	// This is used for specialized learning mechanisms that operate on delayed
-	// sending activations.
-	SpkPrv
+	SpikeBin0
+	SpikeBin1
+	SpikeBin2
+	SpikeBin3
+	SpikeBin4
+	SpikeBin5
+	SpikeBin6
+	SpikeBin7
 
 	//////// Noise
 
@@ -553,6 +553,7 @@ var NeuronVarProps = map[string]string{
 	"CaM":      `cat:"Learn"`,
 	"CaP":      `cat:"Learn"`,
 	"CaD":      `cat:"Learn"`,
+	"CaDPrev":  `cat:"Learn"`,
 	"LearnCa":  `cat:"Learn"`,
 	"LearnCaM": `cat:"Learn"`,
 	"LearnCaP": `cat:"Learn"`,
@@ -621,19 +622,17 @@ var NeuronVarProps = map[string]string{
 	"ActP":     `cat:"Stats"`,
 	"Beta1":    `cat:"Stats"`,
 	"Beta2":    `cat:"Stats"`,
-	"SpkMax":   `cat:"Stats"`,
-	"SpkMaxCa": `cat:"Stats"`,
+	"CaPMax":   `cat:"Stats"`,
+	"CaPMaxCa": `cat:"Stats"`,
 
-	"SpkBin0": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin1": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin2": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin3": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin4": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin5": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin6": `cat:"Stats" min:"0" max:"10"`,
-	"SpkBin7": `cat:"Stats" min:"0" max:"10"`,
-
-	"SpkPrv": `cat:"Stats"`,
+	"SpikeBin0": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin1": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin2": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin3": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin4": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin5": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin6": `cat:"Stats" min:"0" max:"10"`,
+	"SpikeBin7": `cat:"Stats" min:"0" max:"10"`,
 
 	//////// Noise
 

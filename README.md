@@ -360,9 +360,9 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 
 #### Stats, aggregate values
 
-* `SpkMaxCa` = Ca smoothed like `CaP` but only starting at `MaxCycStart` cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the `PTau` time constant otherwise results in significant carryover.  This is the input to `SpkMax`.
-* `SpkMax` = maximum `CaP` across one theta cycle time window (max of `SpkMaxCa`) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., basal ganglia matrix layer gating.  Also useful for visualization of peak activity of neurons.
-* `SpkPrv` = final `CaD` activation state at end of previous theta cycle.  Used for specialized learning mechanisms that operate on delayed sending activations.
+* `CaPMaxCa` = Ca smoothed like `CaP` but only starting at `MaxCycStart` cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the `PTau` time constant otherwise results in significant carryover.  This is the input to `CaPMax`.
+* `CaPMax` = maximum `CaP` across one theta cycle time window (max of `CaPMaxCa`) -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., basal ganglia matrix layer gating.  Also useful for visualization of peak activity of neurons.
+* `CaDPrev` = final `CaD` activation state at end of previous theta cycle.  Used for specialized learning mechanisms that operate on delayed sending activations.
 * `Beta1` = the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by `Beta1()` function.  Used for example in hippocampus for CA3, CA1 learning.
 * `Beta2` = the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by `Beta2()` function.  Used for example in hippocampus for CA3, CA1 learning.
 

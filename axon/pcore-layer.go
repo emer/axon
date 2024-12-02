@@ -24,7 +24,7 @@ import (
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
 
-	// GateThr is the threshold on layer Avg SpkMax for Matrix Go and BG Thal
+	// GateThr is the threshold on layer Avg CaPMax for Matrix Go and BG Thal
 	// layers to count as having gated.
 	GateThr float32 `default:"0.05"`
 
@@ -99,7 +99,7 @@ func (gp *GPParams) Update() {
 }
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
-// downloaded from GPU, to set Gated flag based on SpkMax activity
+// downloaded from GPU, to set Gated flag based on CaPMax activity
 func (ly *LayerParams) MatrixGated(ctx *Context) {
 	lpi := ly.PoolIndex(0)
 	if ly.Learn.NeuroMod.DAMod != D1Mod {
@@ -183,16 +183,16 @@ func (ly *LayerParams) MatrixGated(ctx *Context) {
 	}
 }
 
-// GatedFromSpkMax updates the Gated state in Pools of given layer,
-// based on Avg SpkMax being above given threshold.
-func (ly *LayerParams) GatedFromSpkMax(ctx *Context, di uint32) {
+// GatedFromCaPMax updates the Gated state in Pools of given layer,
+// based on Avg CaPMax being above given threshold.
+func (ly *LayerParams) GatedFromCaPMax(ctx *Context, di uint32) {
 	anyGated := false
 	lpi := ly.PoolIndex(0)
 	thr := ly.Matrix.GateThr
 	if ly.Indexes.NPools > 1 {
 		for spi := uint32(1); spi < ly.Indexes.NPools; spi++ {
 			pi := ly.PoolIndex(spi)
-			spkavg := PoolAvgMax(AMSpkMax, AMCycle, Avg, pi, di)
+			spkavg := PoolAvgMax(AMCaPMax, AMCycle, Avg, pi, di)
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
@@ -202,7 +202,7 @@ func (ly *LayerParams) GatedFromSpkMax(ctx *Context, di uint32) {
 			}
 		}
 	} else {
-		spkavg := PoolAvgMax(AMSpkMax, AMCycle, Avg, lpi, di)
+		spkavg := PoolAvgMax(AMCaPMax, AMCycle, Avg, lpi, di)
 		if spkavg > thr {
 			anyGated = true
 		}

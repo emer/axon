@@ -46,7 +46,7 @@ const (
 	RWPath
 
 	// TDPredPath does dopamine-modulated learning for reward prediction:
-	// DWt = Da * Send.SpkPrv (activity on *previous* timestep)
+	// DWt = Da * Send.CaDPrev (activity on *previous* timestep)
 	// Uses RLPredPath parameters.
 	// Use in TDPredLayer typically to generate reward predictions.
 	// If the Da sign is positive, the first recv unit learns fully;
