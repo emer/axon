@@ -182,7 +182,7 @@ type Config struct {
 	URL string `default:"https://github.com/emer/axon/blob/main/examples/ra25/README.md"`
 
 	// Doc is brief documentation of the sim.
-	Doc string `width:"60" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers (i.e., 25 units)."`
+	Doc string `width:"60" default:"This demonstrates a basic Axon model and provides a template for creating new models. It has a random-associator four-layer axon network that uses the standard supervised learning paradigm to learn mappings between 25 random input / output patterns defined over 5x5 input / output layers."`
 
 	// Includes has a list of additional config files to include.
 	// After configuration, it contains list of include files added.

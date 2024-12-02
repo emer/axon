@@ -29,6 +29,7 @@ import (
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/goal/gosl/sltensor"
+	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/texteditor"
@@ -1043,6 +1044,7 @@ func (nt *Network) SetAsCurrent() {
 	PathGSyns = &nt.PathGSyns
 	Synapses = &nt.Synapses
 	SynapseTraces = &nt.SynapseTraces
+	gpu.NumThreads = nt.NThreads
 }
 
 // DeleteAll deletes all layers, prepares network for re-configuring and building

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"cogentcore.org/core/base/timer"
+	"cogentcore.org/core/gpu"
 )
 
 // SetNThreads sets number of threads to use for CPU parallel processing.
@@ -28,6 +29,7 @@ func (nt *Network) SetNThreads(nthr int) {
 		}
 	}
 	nt.NThreads = min(maxProcs, nthr)
+	gpu.NumThreads = nt.NThreads
 }
 
 //////////////////////////////////////////////////////////////

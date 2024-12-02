@@ -27,7 +27,6 @@ import (
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/egui"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/emergent/v2/looper"
 	"github.com/emer/emergent/v2/netview"
 	"github.com/emer/emergent/v2/paths"
@@ -130,6 +129,9 @@ func (ss *Sim) Run() {
 	tensorfs.CurRoot = ss.Root
 	ss.Net = axon.NewNetwork(ss.Config.Name)
 	ss.Params.Config(LayerParams, PathParams, ss.Config.Params.Sheet, ss.Config.Params.Tag)
+	if ss.Config.Params.Hid2 {
+		ss.Params.ExtraSheets = "Hid2"
+	}
 	ss.RandSeeds.Init(100) // max 100 runs
 	ss.InitRandSeed(0)
 	if ss.Config.Run.GPU {
@@ -162,13 +164,13 @@ func (ss *Sim) ConfigEnv() {
 			trn = &MoveEnv{}
 			tst = &MoveEnv{}
 		} else {
-			trn = ss.Envs.ByModeDi(etime.Train, di).(*MoveEnv)
-			tst = ss.Envs.ByModeDi(etime.Test, di).(*MoveEnv)
+			trn = ss.Envs.ByModeDi(Train, di).(*MoveEnv)
+			tst = ss.Envs.ByModeDi(Test, di).(*MoveEnv)
 		}
 
 		// note: names must be standard here!
 		trn.Defaults()
-		trn.Name = env.ModeDi(etime.Train, di)
+		trn.Name = env.ModeDi(Train, di)
 		trn.Debug = false
 		trn.RandSeed = 73 + int64(di)*73
 		if ss.Config.Env.Env != nil {
@@ -178,7 +180,7 @@ func (ss *Sim) ConfigEnv() {
 		trn.Validate()
 
 		tst.Defaults()
-		tst.Name = env.ModeDi(etime.Test, di)
+		tst.Name = env.ModeDi(Test, di)
 		tst.RandSeed = 181 + int64(di)*181
 		if ss.Config.Env.Env != nil {
 			reflectx.SetFieldsFromMap(tst, ss.Config.Env.Env)
@@ -198,7 +200,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.SetMaxData(ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
 
-	ev := ss.Envs.ByModeDi(etime.Train, 0).(*MoveEnv)
+	ev := ss.Envs.ByModeDi(Train, 0).(*MoveEnv)
 
 	net.SetMaxData(ss.Config.Run.NData)
 	net.SetRandSeed(ss.RandSeeds[0]) // init new separate random seed, using run = 0
@@ -571,7 +573,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"Depth_CorSim", "HeadDir_CorSim"}
+	statNames := []string{"Depth_CorSim", "HeadDir_CorSim", "Depth_}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			modeDir := ss.Stats.RecycleDir(mode.String())
@@ -618,7 +620,7 @@ func (ss *Sim) ConfigStats() {
 		}
 	})
 
-	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "Depth_CorSim", Train, Trial)
+	perTrlFunc := axon.StatPerTrialMSec(ss.Stats, "DepthP_CorSim", Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		perTrlFunc(mode, level, phase == Start)
 	})
@@ -655,7 +657,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"CorSim", "UnitErr", "Err"}
+	statNames := []string{"Depth_CorSim", "HeadDir_CorSim"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}
@@ -749,3 +751,4 @@ func (ss *Sim) RunNoGUI() {
 	axon.CloseLogFiles(ss.Loops, ss.Stats, Cycle)
 	axon.GPURelease()
 }
+
