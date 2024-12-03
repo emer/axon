@@ -6,6 +6,7 @@ import (
 	"embed"
 	"unsafe"
 	"cogentcore.org/core/gpu"
+	"cogentcore.org/core/tensor"
 )
 
 //go:embed shaders/*.wgsl
@@ -48,6 +49,9 @@ const (
 	SynapsesVar GPUVars = 20
 	SynapseTracesVar GPUVars = 21
 )
+
+// Tensor stride variables
+var TensorStrides tensor.Uint32
 
 // GPUInit initializes the GPU compute system,
 // configuring system(s), variables and kernels.
@@ -95,6 +99,8 @@ func GPUInit() {
 			sgp := vars.AddGroup(gpu.Storage)
 			var vr *gpu.Var
 			_ = vr
+			vr = sgp.Add("TensorStrides", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
 			vr = sgp.AddStruct("Layers", int(unsafe.Sizeof(LayerParams{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
 			vr = sgp.AddStruct("Paths", int(unsafe.Sizeof(PathParams{})), 1, gpu.ComputeShader)
@@ -1475,6 +1481,59 @@ func ToGPU(vars ...GPUVars) {
 			gpu.SetValueFrom(v, SynapseTraces.Values)
 		}
 	}
+}
+
+// ToGPUTensorStrides gets tensor strides and starts copying to the GPU.
+func ToGPUTensorStrides() {
+	if !UseGPU {
+		return
+	}
+	sy := GPUSystem
+	syVars := sy.Vars()
+	TensorStrides.SetShapeSizes(180)
+	TensorStrides.SetInt1D(NeuronIxs.Shape().Strides[0], 0)
+	TensorStrides.SetInt1D(NeuronIxs.Shape().Strides[1], 1)
+	TensorStrides.SetInt1D(SynapseIxs.Shape().Strides[0], 10)
+	TensorStrides.SetInt1D(SynapseIxs.Shape().Strides[1], 11)
+	TensorStrides.SetInt1D(PathSendCon.Shape().Strides[0], 20)
+	TensorStrides.SetInt1D(PathSendCon.Shape().Strides[1], 21)
+	TensorStrides.SetInt1D(RecvPathIxs.Shape().Strides[0], 30)
+	TensorStrides.SetInt1D(PathRecvCon.Shape().Strides[0], 40)
+	TensorStrides.SetInt1D(PathRecvCon.Shape().Strides[1], 41)
+	TensorStrides.SetInt1D(RecvSynIxs.Shape().Strides[0], 50)
+	TensorStrides.SetInt1D(Neurons.Shape().Strides[0], 60)
+	TensorStrides.SetInt1D(Neurons.Shape().Strides[1], 61)
+	TensorStrides.SetInt1D(Neurons.Shape().Strides[2], 62)
+	TensorStrides.SetInt1D(NeuronAvgs.Shape().Strides[0], 70)
+	TensorStrides.SetInt1D(NeuronAvgs.Shape().Strides[1], 71)
+	TensorStrides.SetInt1D(LayerStates.Shape().Strides[0], 80)
+	TensorStrides.SetInt1D(LayerStates.Shape().Strides[1], 81)
+	TensorStrides.SetInt1D(LayerStates.Shape().Strides[2], 82)
+	TensorStrides.SetInt1D(GlobalScalars.Shape().Strides[0], 90)
+	TensorStrides.SetInt1D(GlobalScalars.Shape().Strides[1], 91)
+	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[0], 100)
+	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[1], 101)
+	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[2], 102)
+	TensorStrides.SetInt1D(Exts.Shape().Strides[0], 110)
+	TensorStrides.SetInt1D(Exts.Shape().Strides[1], 111)
+	TensorStrides.SetInt1D(Pools.Shape().Strides[0], 120)
+	TensorStrides.SetInt1D(Pools.Shape().Strides[1], 121)
+	TensorStrides.SetInt1D(Pools.Shape().Strides[2], 122)
+	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[0], 130)
+	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[1], 131)
+	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[2], 132)
+	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[0], 140)
+	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[1], 141)
+	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[2], 142)
+	TensorStrides.SetInt1D(PathGSyns.Shape().Strides[0], 150)
+	TensorStrides.SetInt1D(PathGSyns.Shape().Strides[1], 151)
+	TensorStrides.SetInt1D(Synapses.Shape().Strides[0], 160)
+	TensorStrides.SetInt1D(Synapses.Shape().Strides[1], 161)
+	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[0], 170)
+	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[1], 171)
+	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[2], 172)
+	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
+	gpu.SetValueFrom(v, TensorStrides.Values)
 }
 
 // ReadFromGPU starts the process of copying vars to the GPU.

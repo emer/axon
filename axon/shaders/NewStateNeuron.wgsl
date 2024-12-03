@@ -3,24 +3,26 @@
 
 // // Layers are all the layer parameters. 
 @group(0) @binding(0)
-var<storage, read_write> Layers: array<LayerParams>;
+var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read_write> Paths: array<PathParams>;
+var<storage, read> Layers: array<LayerParams>;
+@group(0) @binding(2)
+var<storage, read> Paths: array<PathParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
 @group(1) @binding(0)
-var<storage, read_write> NetworkIxs: array<NetworkIndexes>;
+var<storage, read> NetworkIxs: array<NetworkIndexes>;
 @group(1) @binding(1)
-var<storage, read_write> NeuronIxs: array<u32>;
+var<storage, read> NeuronIxs: array<u32>;
 @group(1) @binding(2)
-var<storage, read_write> SynapseIxs: array<u32>;
+var<storage, read> SynapseIxs: array<u32>;
 @group(1) @binding(3)
-var<storage, read_write> PathSendCon: array<u32>;
+var<storage, read> PathSendCon: array<u32>;
 @group(1) @binding(4)
-var<storage, read_write> RecvPathIxs: array<u32>;
+var<storage, read> RecvPathIxs: array<u32>;
 @group(1) @binding(5)
-var<storage, read_write> PathRecvCon: array<u32>;
+var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(6)
-var<storage, read_write> RecvSynIxs: array<u32>;
+var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
@@ -57,53 +59,45 @@ fn main(@builtin(global_invocation_id) idx: vec3<u32>) {
 	NewStateNeuron(idx.x);
 }
 
-fn IndexU322D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
-	return u32(2) + s0 * i0 + s1 * i1;
+fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
+	return s0 * i0 + s1 * i1;
 }
 
-fn IndexU321D(s0: u32, i0: u32) -> u32 {
-	return u32(1) + s0 * i0;
+fn Index1D(s0: u32, i0: u32) -> u32 {
+	return s0 * i0;
 }
 
-fn IndexF323D(s0: f32, s1: f32, s2: f32, i0: u32, i1: u32, i2: u32) -> u32 {
-	return u32(3) + bitcast<u32>(s0) * i0 + bitcast<u32>(s1) * i1 + bitcast<u32>(s2) * i2;
-}
-
-fn IndexF322D(s0: f32, s1: f32, i0: u32, i1: u32) -> u32 {
-	return u32(2) + bitcast<u32>(s0) * i0 + bitcast<u32>(s1) * i1;
-}
-
-fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
-	return u32(3) + u32(s0) * i0 + u32(s1) * i1 + u32(s2) * i2;
+fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
+	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
 
-///////////// import: "vars.go"
+//////// import: "vars.go"
 
-///////////// import: "act-layer.go"
+//////// import: "act-layer.go"
 fn LayerParams_NewStateNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(BurstPrv))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Burst))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaDPrev))] = Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaD))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaPMax))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaPMaxCa))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(BurstPrv))] = Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Burst))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaDPrev))] = Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaD))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaPMax))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaPMaxCa))] = 0.0;
 	ActParams_DecayState(&(*ly).Acts, ctx, ni, di, (*ly).Acts.Decay.Act, (*ly).Acts.Decay.Glong, (*ly).Acts.Decay.AHP);
 	ActParams_KNaNewState(&(*ly).Acts, ctx, ni, di);
 	for (var i=0; i<8; i++) {
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SpikeBin0 + NeuronVars(i)))] = 0.0;
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SpikeBin0 + NeuronVars(i)))] = 0.0;
 	}
 }
 
-///////////// import: "act-net.go"
+//////// import: "act-net.go"
 fn NewStateNeuron(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
-	var li = NeuronIxs[IndexU322D(NeuronIxs[0], NeuronIxs[1], u32(ni),u32(NrnLayIndex))];
+	var li = NeuronIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_NewStateNeuron(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;
 }
 
-///////////// import: "act-path.go"
+//////// import: "act-path.go"
 alias PathGTypes = i32; //enums:enum
 const  ExcitatoryG: PathGTypes = 0;
 const  InhibitoryG: PathGTypes = 1;
@@ -123,7 +117,7 @@ struct PathScaleParams {
 	pad1: f32,
 }
 
-///////////// import: "act.go"
+//////// import: "act.go"
 struct SpikeParams {
 	Thr: f32,
 	VmR: f32,
@@ -248,89 +242,90 @@ struct ActParams {
 	PopCode: PopCodeParams,
 }
 fn ActParams_DecayLearnCa(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32, decay: f32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaLrn))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaLrn))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NmdaCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(NmdaCa))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCa))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCaInt))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccCaInt))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCa))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaM))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaM))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaP))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaP))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaD))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaD))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCaM))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCaM))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCaP))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCaP))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCaD))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(LearnCaD))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaIn))] += decay * (1.0 - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaIn))]);
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaR))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaR))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaM))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SKCaM))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GnmdaLrn))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GnmdaLrn))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(NmdaCa))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(NmdaCa))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccCa))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccCa))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccCaInt))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccCaInt))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCa))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCa))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaM))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaM))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaP))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaP))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaD))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaD))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCaM))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCaM))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCaP))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCaP))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCaD))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(LearnCaD))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SKCaIn))] += decay * (1.0 - Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SKCaIn))]);
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SKCaR))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SKCaR))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SKCaM))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SKCaM))];
 }
 fn ActParams_DecayAHP(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32, decay: f32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(MahpN))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(MahpN))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gmahp))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gmahp))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpCa))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpCa))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpN))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SahpN))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsahp))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsahp))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaMed))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaMed))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaSlow))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaSlow))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(MahpN))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(MahpN))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gmahp))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gmahp))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SahpCa))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SahpCa))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SahpN))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SahpN))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gsahp))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gsahp))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GknaMed))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GknaMed))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GknaSlow))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GknaSlow))];
 	var kirMrest = (*ac).Kir.Mrest;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(KirM))] += decay * (kirMrest - Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(KirM))]);
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gkir))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gkir))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(KirM))] += decay * (kirMrest - Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(KirM))]);
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gkir))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gkir))];
 }
 fn ActParams_DecayState(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32, decay: f32,glong: f32,ahp: f32) {
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ISIAvg))] = -1.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] = (*ac).Init.Act;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Spiked))] = 0.0;
-	if (decay > 0) { // no-op for most, but not all..
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Spike))] = 0.0;
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Act))] - (*ac).Init.Act);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(ActInt))] - (*ac).Init.Act);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeSyn))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeSyn))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))]);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ge))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Ge))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GeBase))]);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gi))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gi))] - NeuronAvgs[IndexF322D(NeuronAvgs[0], NeuronAvgs[1], u32(ni),u32(GiBase))]);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gk))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gk))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Vm))] -= decay * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Vm))] - (*ac).Init.Vm);
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeNoise))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeNoise))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiNoise))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiNoise))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiSyn))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeInt))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeInt))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiInt))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiInt))];
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeIntNorm))] -= decay * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeIntNorm))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(ISIAvg))] = -1.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(ActInt))] = (*ac).Init.Act;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(ni), u32(di), u32(Spiked))] = 0.0;
+	if (decay > 0) {
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Spike))] = 0.0;
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Act))] -= decay * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Act))] - (*ac).Init.Act);
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(ActInt))] -= decay * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(ActInt))] - (*ac).Init.Act);
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeSyn))] -= decay * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeSyn))] - NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(GeBase))]);
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Ge))] -= decay * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Ge))] - NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(GeBase))]);
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gi))] -= decay * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gi))] - NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(GiBase))]);
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gk))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gk))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Vm))] -= decay * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Vm))] - (*ac).Init.Vm);
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeNoise))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeNoise))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiNoise))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiNoise))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiSyn))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiSyn))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeInt))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeInt))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiInt))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiInt))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeIntNorm))] -= decay * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeIntNorm))];
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VmDend))] -= glong * (Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VmDend))] - (*ac).Init.Vm);
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VmDend))] -= glong * (Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VmDend))] - (*ac).Init.Vm);
 	if (ahp > 0) {
 		ActParams_DecayAHP(ac, ctx, ni, di, ahp);
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GgabaB))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GgabaB))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABAB))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABAB))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABABx))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GABABx))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaSyn))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaSyn))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gnmda))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gnmda))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GMaintSyn))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GMaintSyn))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaMaint))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GnmdaMaint))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gvgcc))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gvgcc))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccM))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccM))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccH))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(VgccH))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gak))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gak))];
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsk))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Gsk))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GgabaB))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GgabaB))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GABAB))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GABAB))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GABABx))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GABABx))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GnmdaSyn))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GnmdaSyn))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gnmda))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gnmda))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GMaintSyn))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GMaintSyn))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GnmdaMaint))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GnmdaMaint))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gvgcc))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gvgcc))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccM))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccM))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccH))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(VgccH))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gak))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gak))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gsk))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Gsk))];
 	if ((*ac).Decay.LearnCa > 0) { // learning-based Ca values -- not usual
 		ActParams_DecayLearnCa(ac, ctx, ni, di, (*ac).Decay.LearnCa);
 	}
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(Inet))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeRaw))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GiRaw))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GModRaw))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GModSyn))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GMaintRaw))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(SSGiDend))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GeExt))] = 0.0;
-	Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CtxtGeOrig))] -= glong * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CtxtGeOrig))];
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Inet))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GModRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GModSyn))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GMaintRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(SSGiDend))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeExt))] = 0.0;
+	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CtxtGeOrig))] -= glong * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CtxtGeOrig))];
 }
 fn ActParams_KNaNewState(ac: ptr<function,ActParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
 	if ((*ac).KNa.On == 1 && (*ac).KNa.TrialSlow == 1) {
-		Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(GknaSlow))] += (*ac).KNa.Slow.Max * Neurons[IndexF323D(Neurons[0], Neurons[1], Neurons[2], u32(ni),u32(di),u32(CaDPrev))];
+		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GknaSlow))] += (*ac).KNa.Slow.Max * Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CaDPrev))];
 	}
 }
 
-///////////// import: "chans-ak.go"
+//////// import: "chans-ak.go"
 struct AKsParams {
 	Gbar: f32,
 	Hf: f32,
@@ -342,7 +337,7 @@ struct AKsParams {
 	pad2: i32,
 }
 
-///////////// import: "chans-chans.go"
+//////// import: "chans-chans.go"
 struct Chans {
 	E: f32,
 	L: f32,
@@ -350,7 +345,7 @@ struct Chans {
 	K: f32,
 }
 
-///////////// import: "chans-gabab.go"
+//////// import: "chans-gabab.go"
 struct GABABParams {
 	Gbar: f32,
 	RiseTau: f32,
@@ -366,7 +361,7 @@ struct GABABParams {
 	pad2: f32,
 }
 
-///////////// import: "chans-kir.go"
+//////// import: "chans-kir.go"
 struct KirParams {
 	Gbar: f32,
 	MinfOff: f32,
@@ -378,7 +373,7 @@ struct KirParams {
 	Mrest: f32,
 }
 
-///////////// import: "chans-kna.go"
+//////// import: "chans-kna.go"
 struct KNaParams {
 	On: i32,
 	Rise: f32,
@@ -398,7 +393,7 @@ struct KNaMedSlow {
 	Slow: KNaParams,
 }
 
-///////////// import: "chans-mahp.go"
+//////// import: "chans-mahp.go"
 struct MahpParams {
 	Gbar: f32,
 	Voff: f32,
@@ -410,7 +405,7 @@ struct MahpParams {
 	pad2: i32,
 }
 
-///////////// import: "chans-nmda.go"
+//////// import: "chans-nmda.go"
 struct NMDAParams {
 	Gbar: f32,
 	Tau: f32,
@@ -422,7 +417,7 @@ struct NMDAParams {
 	MgFact: f32,
 }
 
-///////////// import: "chans-sahp.go"
+//////// import: "chans-sahp.go"
 struct SahpParams {
 	Gbar: f32,
 	CaTau: f32,
@@ -434,7 +429,7 @@ struct SahpParams {
 	pad: i32,
 }
 
-///////////// import: "chans-skca.go"
+//////// import: "chans-skca.go"
 struct SKCaParams {
 	Gbar: f32,
 	C50: f32,
@@ -450,7 +445,7 @@ struct SKCaParams {
 	CaInDt: f32,
 }
 
-///////////// import: "chans-vgcc.go"
+//////// import: "chans-vgcc.go"
 struct VGCCParams {
 	Gbar: f32,
 	Ca: f32,
@@ -458,7 +453,7 @@ struct VGCCParams {
 	pad1: i32,
 }
 
-///////////// import: "context.go"
+//////// import: "context.go"
 struct Context {
 	NData: u32,
 	Mode: i32,
@@ -485,7 +480,7 @@ fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
 	return idx % (*ctx).NData;
 }
 
-///////////// import: "deep-layer.go"
+//////// import: "deep-layer.go"
 struct BurstParams {
 	ThrRel: f32,
 	ThrAbs: f32,
@@ -505,9 +500,9 @@ struct PulvParams {
 	pad: f32,
 }
 
-///////////// import: "deep-path.go"
+//////// import: "deep-path.go"
 
-///////////// import: "enumgen.go"
+//////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
@@ -531,10 +526,10 @@ const SynapseVarsN: SynapseVars = 5;
 const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
-///////////// import: "fsfffb-enumgen.go"
+//////// import: "fsfffb-enumgen.go"
 const InhibVarsN: InhibVars = 16;
 
-///////////// import: "fsfffb-fsfffb.go"
+//////// import: "fsfffb-fsfffb.go"
 struct GiParams {
 	On: i32,
 	Gi: f32,
@@ -554,7 +549,7 @@ struct GiParams {
 	pad: f32,
 }
 
-///////////// import: "fsfffb-inhib.go"
+//////// import: "fsfffb-inhib.go"
 alias InhibVars = i32; //enums:enum
 const  FFsRaw: InhibVars = 0;
 const  FBsRaw: InhibVars = 1;
@@ -573,7 +568,7 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 
-///////////// import: "globals.go"
+//////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
 const  GvRew: GlobalScalarVars = 0;
 const  GvHasRew: GlobalScalarVars = 1;
@@ -645,7 +640,7 @@ const  GvVSPatchD2: GlobalVectorVars = 7;
 const  GvOFCposPTMaint: GlobalVectorVars = 8;
 const  GvVSMatrixPoolGated: GlobalVectorVars = 9;
 
-///////////// import: "hip_paths.go"
+//////// import: "hip_paths.go"
 struct HipPathParams {
 	Hebb: f32,
 	Err: f32,
@@ -657,7 +652,7 @@ struct HipPathParams {
 	pad2: f32,
 }
 
-///////////// import: "inhib.go"
+//////// import: "inhib.go"
 struct ActAvgParams {
 	Nominal: f32,
 	AdaptGi: i32,
@@ -674,9 +669,9 @@ struct InhibParams {
 	Pool: GiParams,
 }
 
-///////////// import: "init-layer.go"
+//////// import: "init-layer.go"
 
-///////////// import: "kinase-params.go"
+//////// import: "kinase-params.go"
 struct CaDtParams { //types:add
 	MTau: f32,
 	PTau: f32,
@@ -720,7 +715,7 @@ struct SynCaLinear { //types:add
 	pad2: f32,
 }
 
-///////////// import: "layerparams.go"
+//////// import: "layerparams.go"
 struct LayerIndexes {
 	NPools: u32,
 	NeurSt: u32,
@@ -764,7 +759,7 @@ struct LayerParams {
 	Indexes: LayerIndexes,
 }
 
-///////////// import: "layertypes.go"
+//////// import: "layertypes.go"
 alias LayerTypes = i32; //enums:enum
 const  SuperLayer: LayerTypes = 0;
 const  InputLayer: LayerTypes = 1;
@@ -797,7 +792,7 @@ const  TDPredLayer: LayerTypes = 27;
 const  TDIntegLayer: LayerTypes = 28;
 const  TDDaLayer: LayerTypes = 29;
 
-///////////// import: "layervars.go"
+//////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
 const  LayerActMAvg: LayerVars = 0;
 const  LayerActPAvg: LayerVars = 1;
@@ -811,13 +806,13 @@ const  LayerRT: LayerVars = 8;
 const  LayerRewPredPos: LayerVars = 9;
 const  LayerRewPredNeg: LayerVars = 10;
 
-///////////// import: "learn-layer.go"
+//////// import: "learn-layer.go"
 
-///////////// import: "learn-net.go"
+//////// import: "learn-net.go"
 
-///////////// import: "learn-path.go"
+//////// import: "learn-path.go"
 
-///////////// import: "learn.go"
+//////// import: "learn.go"
 struct LearnCaParams {
 	Norm: f32,
 	SpkVGCC: i32,
@@ -911,7 +906,7 @@ struct LearnSynParams {
 	Hebb: HebbParams,
 }
 
-///////////// import: "looper.go"
+//////// import: "looper.go"
 alias ViewTimes = i32; //enums:enum
 const  Cycle: ViewTimes = 0;
 const  FastSpike: ViewTimes = 1;
@@ -921,9 +916,9 @@ const  Alpha: ViewTimes = 4;
 const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
-///////////// import: "math32-fastexp.go"
+//////// import: "math32-fastexp.go"
 
-///////////// import: "minmax-avgmax.go"
+//////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
 const  MinFloat32: f32 = 1.175494351e-38;
 struct AvgMax32 {
@@ -937,7 +932,7 @@ struct AvgMax32 {
 	pad2: i32,
 }
 
-///////////// import: "minmax-minmax32.go"
+//////// import: "minmax-minmax32.go"
 struct F32 {
 	Min: f32,
 	Max: f32,
@@ -945,7 +940,7 @@ struct F32 {
 	pad1: i32, // for gpu use
 }
 
-///////////// import: "network.go"
+//////// import: "network.go"
 struct NetworkIndexes {
 	MaxData: u32,
 	MaxDelay: u32,
@@ -961,7 +956,7 @@ struct NetworkIndexes {
 	GPUSynCaBanks: u32,
 }
 
-///////////// import: "neuromod.go"
+//////// import: "neuromod.go"
 alias DAModTypes = i32; //enums:enum
 const  NoDAMod: DAModTypes = 0;
 const  D1Mod: DAModTypes = 1;
@@ -986,7 +981,7 @@ struct NeuroModParams {
 	pad2: f32,
 }
 
-///////////// import: "neuron.go"
+//////// import: "neuron.go"
 alias NeuronFlags = i32; //enums:enum
 const  NeuronOff: NeuronFlags = 1;
 const  NeuronHasExt: NeuronFlags = 2;
@@ -1095,7 +1090,7 @@ const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
 
-///////////// import: "pathparams.go"
+//////// import: "pathparams.go"
 const  StartOff: i32 = 0;
 const  Nitems: i32 = 1;
 const  StartNN: i32 = 2;
@@ -1142,7 +1137,7 @@ struct PathParams {
 	Hip: HipPathParams,
 }
 
-///////////// import: "pathtypes.go"
+//////// import: "pathtypes.go"
 alias PathTypes = i32; //enums:enum
 const  ForwardPath: PathTypes = 0;
 const  BackPath: PathTypes = 1;
@@ -1157,7 +1152,7 @@ const  VSPatchPath: PathTypes = 9;
 const  VSMatrixPath: PathTypes = 10;
 const  DSMatrixPath: PathTypes = 11;
 
-///////////// import: "pcore-layer.go"
+//////// import: "pcore-layer.go"
 struct MatrixParams {
 	GateThr: f32,
 	IsVS: i32,
@@ -1183,7 +1178,7 @@ struct GPParams {
 	pad2: u32,
 }
 
-///////////// import: "pcore-path.go"
+//////// import: "pcore-path.go"
 struct MatrixPathParams {
 	Credit: f32,
 	BasePF: f32,
@@ -1191,7 +1186,7 @@ struct MatrixPathParams {
 	VSRewLearn: i32,
 }
 
-///////////// import: "pool.go"
+//////// import: "pool.go"
 alias PoolIntVars = i32; //enums:enum
 const  PoolNeurSt: PoolIntVars = 0;
 const  PoolNeurEd: PoolIntVars = 1;
@@ -1224,14 +1219,14 @@ const  PoolVarsN = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
 const avgMaxToNeuron = array(CaP, CaD, CaPMax, Act, GeInt, GiInt);
 
-///////////// import: "rand.go"
+//////// import: "rand.go"
 alias RandFunIndex = u32;
 const  RandFunActPGe: RandFunIndex = 0;
 const  RandFunActPGi: RandFunIndex = 1;
 const  RandFunActSMaintP: RandFunIndex = 2;
 const  RandFunIndexN: RandFunIndex = 3;
 
-///////////// import: "rl-layer.go"
+//////// import: "rl-layer.go"
 struct RWPredParams {
 	PredRange: F32,
 }
@@ -1254,7 +1249,7 @@ struct TDDaParams {
 	pad1: u32,
 }
 
-///////////// import: "rl-path.go"
+//////// import: "rl-path.go"
 struct RLPredPathParams {
 	OppSignLRate: f32,
 	DaTol: f32,
@@ -1262,7 +1257,7 @@ struct RLPredPathParams {
 	pad1: f32,
 }
 
-///////////// import: "rubicon-layer.go"
+//////// import: "rubicon-layer.go"
 struct LDTParams {
 	SrcThr: f32,
 	Rew: i32,
@@ -1280,7 +1275,7 @@ struct VTAParams {
 	pad: f32,
 }
 
-///////////// import: "rubicon-path.go"
+//////// import: "rubicon-path.go"
 struct BLAPathParams {
 	NegDeltaLRate: f32,
 	AChThr: f32,
@@ -1288,11 +1283,11 @@ struct BLAPathParams {
 	pad: f32,
 }
 
-///////////// import: "rubicon.go"
+//////// import: "rubicon.go"
 
-///////////// import: "stats.go"
+//////// import: "stats.go"
 
-///////////// import: "synapse.go"
+//////// import: "synapse.go"
 alias SynapseVars = i32; //enums:enum
 const  Wt: SynapseVars = 0;
 const  LWt: SynapseVars = 1;
@@ -1308,7 +1303,7 @@ const  SynRecvIndex: SynapseIndexVars = 0;
 const  SynSendIndex: SynapseIndexVars = 1;
 const  SynPathIndex: SynapseIndexVars = 2;
 
-///////////// import: "slrand.wgsl"
+//////// import: "slrand.wgsl"
 fn Philox2x32round(counter: su64, key: u32) -> su64 {
 	let mul = Uint32Mul64(u32(0xD256D193), counter.x);
 	var ctr: su64;
@@ -1398,7 +1393,7 @@ fn RandCounter_Add(ct: ptr<function,RandCounter>, inc: u32) {
 	(*ct).Counter = Uint64Add32((*ct).Counter, inc);
 }
 
-///////////// import: "sltype.wgsl"
+//////// import: "sltype.wgsl"
 alias su64 = vec2<u32>;
 fn Uint32Mul64(a: u32, b: u32) -> su64 {
 	let LOMASK = (((u32(1))<<16)-1);

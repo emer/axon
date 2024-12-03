@@ -3,24 +3,26 @@
 
 // // Layers are all the layer parameters. 
 @group(0) @binding(0)
-var<storage, read_write> Layers: array<LayerParams>;
+var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read_write> Paths: array<PathParams>;
+var<storage, read> Layers: array<LayerParams>;
+@group(0) @binding(2)
+var<storage, read> Paths: array<PathParams>;
 // // NetworkIxs have indexes and sizes for entire network (one only). 
 @group(1) @binding(0)
-var<storage, read_write> NetworkIxs: array<NetworkIndexes>;
+var<storage, read> NetworkIxs: array<NetworkIndexes>;
 @group(1) @binding(1)
-var<storage, read_write> NeuronIxs: array<u32>;
+var<storage, read> NeuronIxs: array<u32>;
 @group(1) @binding(2)
-var<storage, read_write> SynapseIxs: array<u32>;
+var<storage, read> SynapseIxs: array<u32>;
 @group(1) @binding(3)
-var<storage, read_write> PathSendCon: array<u32>;
+var<storage, read> PathSendCon: array<u32>;
 @group(1) @binding(4)
-var<storage, read_write> RecvPathIxs: array<u32>;
+var<storage, read> RecvPathIxs: array<u32>;
 @group(1) @binding(5)
-var<storage, read_write> PathRecvCon: array<u32>;
+var<storage, read> PathRecvCon: array<u32>;
 @group(1) @binding(6)
-var<storage, read_write> RecvSynIxs: array<u32>;
+var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
 var<storage, read_write> Ctx: array<Context>;
@@ -57,30 +59,22 @@ fn main(@builtin(global_invocation_id) idx: vec3<u32>) {
 	LayerGi(idx.x);
 }
 
-fn IndexU322D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
-	return u32(2) + s0 * i0 + s1 * i1;
+fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
+	return s0 * i0 + s1 * i1;
 }
 
-fn IndexU321D(s0: u32, i0: u32) -> u32 {
-	return u32(1) + s0 * i0;
+fn Index1D(s0: u32, i0: u32) -> u32 {
+	return s0 * i0;
 }
 
-fn IndexF323D(s0: f32, s1: f32, s2: f32, i0: u32, i1: u32, i2: u32) -> u32 {
-	return u32(3) + bitcast<u32>(s0) * i0 + bitcast<u32>(s1) * i1 + bitcast<u32>(s2) * i2;
-}
-
-fn IndexF322D(s0: f32, s1: f32, i0: u32, i1: u32) -> u32 {
-	return u32(2) + bitcast<u32>(s0) * i0 + bitcast<u32>(s1) * i1;
-}
-
-fn IndexI323D(s0: i32, s1: i32, s2: i32, i0: u32, i1: u32, i2: u32) -> u32 {
-	return u32(3) + u32(s0) * i0 + u32(s1) * i1 + u32(s2) * i2;
+fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
+	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
 
-///////////// import: "vars.go"
+//////// import: "vars.go"
 
-///////////// import: "act-layer.go"
+//////// import: "act-layer.go"
 fn LayerParams_LayerGi(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, li: u32,di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 	PoolAvgMaxCalc(lpi, di);
@@ -89,11 +83,11 @@ fn LayerParams_LayerGi(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>
 }
 fn LayerParams_LayPoolGiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
 	PoolInhibSpikesFromRaw(lpi, di);
-	PoolInhib(&(*ly).Inhib.Layer, lpi, di, LayerStates[IndexF323D(LayerStates[0], LayerStates[1], LayerStates[
-	2], u32((*ly).Index),u32(di),u32(LayerGiMult))]);
+	PoolInhib(&(*ly).Inhib.Layer, lpi, di, LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82],
+	u32((*ly).Index), u32(di), u32(LayerGiMult))]);
 }
 
-///////////// import: "act-net.go"
+//////// import: "act-net.go"
 fn LayerGi(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
@@ -102,7 +96,7 @@ fn LayerGi(i: u32) { //gosl:kernel
 	Ctx[0] = ctx;
 }
 
-///////////// import: "act-path.go"
+//////// import: "act-path.go"
 alias PathGTypes = i32; //enums:enum
 const  ExcitatoryG: PathGTypes = 0;
 const  InhibitoryG: PathGTypes = 1;
@@ -122,7 +116,7 @@ struct PathScaleParams {
 	pad1: f32,
 }
 
-///////////// import: "act.go"
+//////// import: "act.go"
 struct SpikeParams {
 	Thr: f32,
 	VmR: f32,
@@ -247,7 +241,7 @@ struct ActParams {
 	PopCode: PopCodeParams,
 }
 
-///////////// import: "chans-ak.go"
+//////// import: "chans-ak.go"
 struct AKsParams {
 	Gbar: f32,
 	Hf: f32,
@@ -259,7 +253,7 @@ struct AKsParams {
 	pad2: i32,
 }
 
-///////////// import: "chans-chans.go"
+//////// import: "chans-chans.go"
 struct Chans {
 	E: f32,
 	L: f32,
@@ -267,7 +261,7 @@ struct Chans {
 	K: f32,
 }
 
-///////////// import: "chans-gabab.go"
+//////// import: "chans-gabab.go"
 struct GABABParams {
 	Gbar: f32,
 	RiseTau: f32,
@@ -283,7 +277,7 @@ struct GABABParams {
 	pad2: f32,
 }
 
-///////////// import: "chans-kir.go"
+//////// import: "chans-kir.go"
 struct KirParams {
 	Gbar: f32,
 	MinfOff: f32,
@@ -295,7 +289,7 @@ struct KirParams {
 	Mrest: f32,
 }
 
-///////////// import: "chans-kna.go"
+//////// import: "chans-kna.go"
 struct KNaParams {
 	On: i32,
 	Rise: f32,
@@ -315,7 +309,7 @@ struct KNaMedSlow {
 	Slow: KNaParams,
 }
 
-///////////// import: "chans-mahp.go"
+//////// import: "chans-mahp.go"
 struct MahpParams {
 	Gbar: f32,
 	Voff: f32,
@@ -327,7 +321,7 @@ struct MahpParams {
 	pad2: i32,
 }
 
-///////////// import: "chans-nmda.go"
+//////// import: "chans-nmda.go"
 struct NMDAParams {
 	Gbar: f32,
 	Tau: f32,
@@ -339,7 +333,7 @@ struct NMDAParams {
 	MgFact: f32,
 }
 
-///////////// import: "chans-sahp.go"
+//////// import: "chans-sahp.go"
 struct SahpParams {
 	Gbar: f32,
 	CaTau: f32,
@@ -351,7 +345,7 @@ struct SahpParams {
 	pad: i32,
 }
 
-///////////// import: "chans-skca.go"
+//////// import: "chans-skca.go"
 struct SKCaParams {
 	Gbar: f32,
 	C50: f32,
@@ -367,7 +361,7 @@ struct SKCaParams {
 	CaInDt: f32,
 }
 
-///////////// import: "chans-vgcc.go"
+//////// import: "chans-vgcc.go"
 struct VGCCParams {
 	Gbar: f32,
 	Ca: f32,
@@ -375,7 +369,7 @@ struct VGCCParams {
 	pad1: i32,
 }
 
-///////////// import: "context.go"
+//////// import: "context.go"
 struct Context {
 	NData: u32,
 	Mode: i32,
@@ -402,7 +396,7 @@ fn Context_DataIndex(ctx: ptr<function,Context>, idx: u32) -> u32 {
 	return idx % (*ctx).NData;
 }
 
-///////////// import: "deep-layer.go"
+//////// import: "deep-layer.go"
 struct BurstParams {
 	ThrRel: f32,
 	ThrAbs: f32,
@@ -422,9 +416,9 @@ struct PulvParams {
 	pad: f32,
 }
 
-///////////// import: "deep-path.go"
+//////// import: "deep-path.go"
 
-///////////// import: "enumgen.go"
+//////// import: "enumgen.go"
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
@@ -448,10 +442,10 @@ const SynapseVarsN: SynapseVars = 5;
 const SynapseTraceVarsN: SynapseTraceVars = 3;
 const SynapseIndexVarsN: SynapseIndexVars = 3;
 
-///////////// import: "fsfffb-enumgen.go"
+//////// import: "fsfffb-enumgen.go"
 const InhibVarsN: InhibVars = 16;
 
-///////////// import: "fsfffb-fsfffb.go"
+//////// import: "fsfffb-fsfffb.go"
 struct GiParams {
 	On: i32,
 	Gi: f32,
@@ -486,7 +480,7 @@ fn GiParams_SSFromFBs(fb: ptr<function,GiParams>, ssf: ptr<function,f32>,ssi: pt
 	*ssf += fbs*(1-*ssf) - (*fb).SSfDt**ssf;
 }
 
-///////////// import: "fsfffb-inhib.go"
+//////// import: "fsfffb-inhib.go"
 alias InhibVars = i32; //enums:enum
 const  FFsRaw: InhibVars = 0;
 const  FBsRaw: InhibVars = 1;
@@ -505,7 +499,7 @@ const  LayGi: InhibVars = 13;
 const  FFAvg: InhibVars = 14;
 const  FFAvgPrv: InhibVars = 15;
 
-///////////// import: "globals.go"
+//////// import: "globals.go"
 alias GlobalScalarVars = i32; //enums:enum
 const  GvRew: GlobalScalarVars = 0;
 const  GvHasRew: GlobalScalarVars = 1;
@@ -577,7 +571,7 @@ const  GvVSPatchD2: GlobalVectorVars = 7;
 const  GvOFCposPTMaint: GlobalVectorVars = 8;
 const  GvVSMatrixPoolGated: GlobalVectorVars = 9;
 
-///////////// import: "hip_paths.go"
+//////// import: "hip_paths.go"
 struct HipPathParams {
 	Hebb: f32,
 	Err: f32,
@@ -589,7 +583,7 @@ struct HipPathParams {
 	pad2: f32,
 }
 
-///////////// import: "inhib.go"
+//////// import: "inhib.go"
 struct ActAvgParams {
 	Nominal: f32,
 	AdaptGi: i32,
@@ -609,73 +603,74 @@ fn PoolInhib(fb: ptr<function,GiParams>, pi: u32,di: u32, gimult: f32) {
 	if ((*fb).On == 0) {
 		PoolInhibZero(pi, di);return;
 	}
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))] += (*fb).FFAvgDt * (Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFs))] - Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))]);
-	var fsi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSi))];
-	fsi = GiParams_FSiFromFFs(fb, fsi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFs))], Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBs))]);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSi))] = fsi;
-	var clamped = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(Clamped))] > 0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSGi))] = (*fb).Gi * GiParams_FS(fb, fsi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExts))], clamped);
-	var ssf = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSf))];
-	var ssi = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSi))];
-	GiParams_SSFromFBs(fb, &ssf, &ssi, Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBs))]);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSGi))] = (*fb).Gi * (*fb).SS * ssi;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSf))] = ssf;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSi))] = ssi;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))] = PoolInhibGiFromFSSS(pi, di) + (*fb).FFPrv*Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvgPrv))];
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFAvg))] += (*fb).FFAvgDt * (Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFs))] - Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFAvg))]);
+	var fsi = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FSi))];
+	fsi = GiParams_FSiFromFFs(fb, fsi, Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFs))], Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBs))]);
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FSi))] = fsi;
+	var clamped = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(Clamped))] > 0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FSGi))] = (*fb).Gi * GiParams_FS(fb, fsi, Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GeExts))], clamped);
+	var ssf = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSf))];
+	var ssi = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSi))];
+	GiParams_SSFromFBs(fb, &ssf, &ssi, Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBs))]);
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSGi))] = (*fb).Gi * (*fb).SS * ssi;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSf))] = ssf;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSi))] = ssi;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(TotalGi))] = PoolInhibGiFromFSSS(pi, di) + (*fb).FFPrv*Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFAvgPrv))];
 	PoolInhibSaveOrig(pi, di);
 }
 fn PoolInhibInitRaw(pi: u32,di: u32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFsRaw))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBsRaw))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExtRaw))] = 0.0;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FFsRawInt))] = 0;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FBsRawInt))] = 0;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2],
-	u32(pi),u32(di),u32(GeExtRawInt))] = 0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFsRaw))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBsRaw))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GeExtRaw))] = 0.0;
+	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFsRawInt))] = 0;
+	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBsRawInt))] = 0;
+	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
+	u32(pi), u32(di), u32(GeExtRawInt))] = 0;
 }
 fn PoolInhibZero(pi: u32,di: u32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFs))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBs))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExts))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSi))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSi))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSf))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSGi))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSGi))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvg))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFAvgPrv))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GiOrig))] = 0.0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(LayGi))] = 0.0;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-	2], u32(pi),u32(di),u32(Clamped))] = 0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFs))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBs))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GeExts))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FSi))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSi))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSf))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FSGi))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(SSGi))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(TotalGi))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFAvg))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFAvgPrv))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GiOrig))] = 0.0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(LayGi))] = 0.0;
+	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131],
+	TensorStrides[132], u32(pi), u32(di), u32(Clamped))] = 0;
 }
 fn PoolInhibSpikesFromRaw(pi: u32,di: u32) {
 	var fnn = f32(PoolNNeurons(pi));
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBs))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBsRaw))] / fnn;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFs))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFsRaw))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExts))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExtRaw))];
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBs))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBsRaw))] / fnn;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFs))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFsRaw))];
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GeExts))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GeExtRaw))];
 	PoolInhibInitRaw(pi, di);
 }
 fn PoolInhibSaveOrig(pi: u32,di: u32) {
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GiOrig))] = Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(TotalGi))];
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GiOrig))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(TotalGi))];
 }
 fn PoolInhibGiFromFSSS(pi: u32,di: u32) -> f32 {
-	return Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FSGi))] + Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(SSGi))];
+	return Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FSGi))] + Pools[Index3D(TensorStrides[120], TensorStrides[121],
+	TensorStrides[122], u32(pi), u32(di), u32(SSGi))];
 }
 fn PoolInhibIntToRaw(pi: u32,di: u32) {
 	var floatFromInt = 1.0 / f32(u32(1)<<24);
-	var fbs = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FBsRawInt))];
-	var ffs = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(FFsRawInt))];
-	var geExt = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(GeExtRawInt))];
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FBsRaw))] = f32(fbs);
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(FFsRaw))] = f32(ffs) * floatFromInt;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(GeExtRaw))] = f32(geExt) * floatFromInt;
+	var fbs = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBsRawInt))];
+	var ffs = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFsRawInt))];
+	var geExt = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExtRawInt))];
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FBsRaw))] = f32(fbs);
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(FFsRaw))] = f32(ffs) * floatFromInt;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(GeExtRaw))] = f32(geExt) * floatFromInt;
 }
 
-///////////// import: "init-layer.go"
+//////// import: "init-layer.go"
 
-///////////// import: "kinase-params.go"
+//////// import: "kinase-params.go"
 struct CaDtParams { //types:add
 	MTau: f32,
 	PTau: f32,
@@ -719,7 +714,7 @@ struct SynCaLinear { //types:add
 	pad2: f32,
 }
 
-///////////// import: "layerparams.go"
+//////// import: "layerparams.go"
 struct LayerIndexes {
 	NPools: u32,
 	NeurSt: u32,
@@ -766,7 +761,7 @@ fn LayerParams_PoolIndex(ly: ptr<function,LayerParams>, pi: u32) -> u32 {
 	return (*ly).PoolSt + pi;
 }
 
-///////////// import: "layertypes.go"
+//////// import: "layertypes.go"
 alias LayerTypes = i32; //enums:enum
 const  SuperLayer: LayerTypes = 0;
 const  InputLayer: LayerTypes = 1;
@@ -799,7 +794,7 @@ const  TDPredLayer: LayerTypes = 27;
 const  TDIntegLayer: LayerTypes = 28;
 const  TDDaLayer: LayerTypes = 29;
 
-///////////// import: "layervars.go"
+//////// import: "layervars.go"
 alias LayerVars = i32; //enums:enum
 const  LayerActMAvg: LayerVars = 0;
 const  LayerActPAvg: LayerVars = 1;
@@ -813,13 +808,13 @@ const  LayerRT: LayerVars = 8;
 const  LayerRewPredPos: LayerVars = 9;
 const  LayerRewPredNeg: LayerVars = 10;
 
-///////////// import: "learn-layer.go"
+//////// import: "learn-layer.go"
 
-///////////// import: "learn-net.go"
+//////// import: "learn-net.go"
 
-///////////// import: "learn-path.go"
+//////// import: "learn-path.go"
 
-///////////// import: "learn.go"
+//////// import: "learn.go"
 struct LearnCaParams {
 	Norm: f32,
 	SpkVGCC: i32,
@@ -913,7 +908,7 @@ struct LearnSynParams {
 	Hebb: HebbParams,
 }
 
-///////////// import: "looper.go"
+//////// import: "looper.go"
 alias ViewTimes = i32; //enums:enum
 const  Cycle: ViewTimes = 0;
 const  FastSpike: ViewTimes = 1;
@@ -923,9 +918,9 @@ const  Alpha: ViewTimes = 4;
 const  Phase: ViewTimes = 5;
 const  Theta: ViewTimes = 6;
 
-///////////// import: "math32-fastexp.go"
+//////// import: "math32-fastexp.go"
 
-///////////// import: "minmax-avgmax.go"
+//////// import: "minmax-avgmax.go"
 const  MaxFloat32: f32 = 3.402823466e+38;
 const  MinFloat32: f32 = 1.175494351e-38;
 struct AvgMax32 {
@@ -939,7 +934,7 @@ struct AvgMax32 {
 	pad2: i32,
 }
 
-///////////// import: "minmax-minmax32.go"
+//////// import: "minmax-minmax32.go"
 struct F32 {
 	Min: f32,
 	Max: f32,
@@ -947,7 +942,7 @@ struct F32 {
 	pad1: i32, // for gpu use
 }
 
-///////////// import: "network.go"
+//////// import: "network.go"
 struct NetworkIndexes {
 	MaxData: u32,
 	MaxDelay: u32,
@@ -963,7 +958,7 @@ struct NetworkIndexes {
 	GPUSynCaBanks: u32,
 }
 
-///////////// import: "neuromod.go"
+//////// import: "neuromod.go"
 alias DAModTypes = i32; //enums:enum
 const  NoDAMod: DAModTypes = 0;
 const  D1Mod: DAModTypes = 1;
@@ -988,7 +983,7 @@ struct NeuroModParams {
 	pad2: f32,
 }
 
-///////////// import: "neuron.go"
+//////// import: "neuron.go"
 alias NeuronFlags = i32; //enums:enum
 const  NeuronOff: NeuronFlags = 1;
 const  NeuronHasExt: NeuronFlags = 2;
@@ -1097,7 +1092,7 @@ const  NrnNeurIndex: NeuronIndexVars = 0;
 const  NrnLayIndex: NeuronIndexVars = 1;
 const  NrnSubPool: NeuronIndexVars = 2;
 
-///////////// import: "pathparams.go"
+//////// import: "pathparams.go"
 const  StartOff: i32 = 0;
 const  Nitems: i32 = 1;
 const  StartNN: i32 = 2;
@@ -1144,7 +1139,7 @@ struct PathParams {
 	Hip: HipPathParams,
 }
 
-///////////// import: "pathtypes.go"
+//////// import: "pathtypes.go"
 alias PathTypes = i32; //enums:enum
 const  ForwardPath: PathTypes = 0;
 const  BackPath: PathTypes = 1;
@@ -1159,7 +1154,7 @@ const  VSPatchPath: PathTypes = 9;
 const  VSMatrixPath: PathTypes = 10;
 const  DSMatrixPath: PathTypes = 11;
 
-///////////// import: "pcore-layer.go"
+//////// import: "pcore-layer.go"
 struct MatrixParams {
 	GateThr: f32,
 	IsVS: i32,
@@ -1185,7 +1180,7 @@ struct GPParams {
 	pad2: u32,
 }
 
-///////////// import: "pcore-path.go"
+//////// import: "pcore-path.go"
 struct MatrixPathParams {
 	Credit: f32,
 	BasePF: f32,
@@ -1193,7 +1188,7 @@ struct MatrixPathParams {
 	VSRewLearn: i32,
 }
 
-///////////// import: "pool.go"
+//////// import: "pool.go"
 alias PoolIntVars = i32; //enums:enum
 const  PoolNeurSt: PoolIntVars = 0;
 const  PoolNeurEd: PoolIntVars = 1;
@@ -1232,25 +1227,25 @@ fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 {
 	return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am);
 }
 fn PoolNNeurons(pi: u32) -> i32 {
-	return PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(0),u32(PoolNeurEd))] - PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[
-	2], u32(pi),u32(0),u32(PoolNeurSt))];
+	return PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(PoolNeurEd))] - PoolsInt[Index3D(TensorStrides[130], TensorStrides[131],
+	TensorStrides[132], u32(pi), u32(0), u32(PoolNeurSt))];
 }
 fn PoolAvgMaxCalcVar(vr: AvgMaxVars, pi: u32,di: u32) {
 	var floatFromInt = f32(1.0) / f32(u32(1)<<20);
 	var vis = AvgMaxIntVarIndex(vr, Avg);
-	var sum = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(vis))];
+	var sum = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vis))];
 	if (sum < 0) {
 		sum = i32(u32(1) << 20);
 	}
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMCycle, Avg)))] = f32(sum) * floatFromInt;
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(vis))] = 0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, AMCycle, Avg)))] = f32(sum) * floatFromInt;
+	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vis))] = 0;
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	var mx = PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(vim))];
+	var mx = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vim))];
 	if (mx < 0) {
 		mx = i32(u32(1) << 20);
 	}
-	PoolsInt[IndexI323D(PoolsInt[0], PoolsInt[1], PoolsInt[2], u32(pi),u32(di),u32(vim))] = 0;
-	Pools[IndexF323D(Pools[0], Pools[1], Pools[2], u32(pi),u32(di),u32(AvgMaxVarIndex(vr, AMCycle, Max)))] = f32(mx) * floatFromInt;
+	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vim))] = 0;
+	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, AMCycle, Max)))] = f32(mx) * floatFromInt;
 }
 fn PoolAvgMaxCalc(pi: u32,di: u32) {
 	for (var vr=0; vr<AMAvgDif; vr++) { // don't do AvgDif
@@ -1258,14 +1253,14 @@ fn PoolAvgMaxCalc(pi: u32,di: u32) {
 	}
 }
 
-///////////// import: "rand.go"
+//////// import: "rand.go"
 alias RandFunIndex = u32;
 const  RandFunActPGe: RandFunIndex = 0;
 const  RandFunActPGi: RandFunIndex = 1;
 const  RandFunActSMaintP: RandFunIndex = 2;
 const  RandFunIndexN: RandFunIndex = 3;
 
-///////////// import: "rl-layer.go"
+//////// import: "rl-layer.go"
 struct RWPredParams {
 	PredRange: F32,
 }
@@ -1288,7 +1283,7 @@ struct TDDaParams {
 	pad1: u32,
 }
 
-///////////// import: "rl-path.go"
+//////// import: "rl-path.go"
 struct RLPredPathParams {
 	OppSignLRate: f32,
 	DaTol: f32,
@@ -1296,7 +1291,7 @@ struct RLPredPathParams {
 	pad1: f32,
 }
 
-///////////// import: "rubicon-layer.go"
+//////// import: "rubicon-layer.go"
 struct LDTParams {
 	SrcThr: f32,
 	Rew: i32,
@@ -1314,7 +1309,7 @@ struct VTAParams {
 	pad: f32,
 }
 
-///////////// import: "rubicon-path.go"
+//////// import: "rubicon-path.go"
 struct BLAPathParams {
 	NegDeltaLRate: f32,
 	AChThr: f32,
@@ -1322,11 +1317,11 @@ struct BLAPathParams {
 	pad: f32,
 }
 
-///////////// import: "rubicon.go"
+//////// import: "rubicon.go"
 
-///////////// import: "stats.go"
+//////// import: "stats.go"
 
-///////////// import: "synapse.go"
+//////// import: "synapse.go"
 alias SynapseVars = i32; //enums:enum
 const  Wt: SynapseVars = 0;
 const  LWt: SynapseVars = 1;
@@ -1342,7 +1337,7 @@ const  SynRecvIndex: SynapseIndexVars = 0;
 const  SynSendIndex: SynapseIndexVars = 1;
 const  SynPathIndex: SynapseIndexVars = 2;
 
-///////////// import: "slrand.wgsl"
+//////// import: "slrand.wgsl"
 fn Philox2x32round(counter: su64, key: u32) -> su64 {
 	let mul = Uint32Mul64(u32(0xD256D193), counter.x);
 	var ctr: su64;
@@ -1432,7 +1427,7 @@ fn RandCounter_Add(ct: ptr<function,RandCounter>, inc: u32) {
 	(*ct).Counter = Uint64Add32((*ct).Counter, inc);
 }
 
-///////////// import: "sltype.wgsl"
+//////// import: "sltype.wgsl"
 alias su64 = vec2<u32>;
 fn Uint32Mul64(a: u32, b: u32) -> su64 {
 	let LOMASK = (((u32(1))<<16)-1);

@@ -26,7 +26,6 @@ import (
 	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/goal/gosl/sltensor"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tensor"
@@ -737,18 +736,18 @@ func (nt *Network) Build() error { //types:add
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
 	nt.LayParams = make([]LayerParams, nLayers)
-	sltensor.SetShapeSizes(&nt.LayerStates, nLayers, maxData, int(LayerVarsN))
-	sltensor.SetShapeSizes(&nt.Pools, totPools, maxData, int(PoolVarsN))
-	sltensor.SetShapeSizes(&nt.PoolsInt, totPools, maxData, int(PoolIntVarsTot))
-	sltensor.SetShapeSizes(&nt.Neurons, totNeurons, maxData, int(NeuronVarsN))
-	sltensor.SetShapeSizes(&nt.NeuronAvgs, totNeurons, int(NeuronAvgVarsN))
-	sltensor.SetShapeSizes(&nt.NeuronIxs, totNeurons, int(NeuronIndexVarsN))
 	nt.Paths = make([]*Path, totPaths)
 	nt.PathParams = make([]PathParams, totPaths)
-	sltensor.SetShapeSizes(&nt.Exts, totExts, maxData)
 
-	sltensor.SetShapeSizes(&nt.GlobalScalars, int(GlobalScalarVarsN), maxData)
-	sltensor.SetShapeSizes(&nt.GlobalVectors, int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
+	nt.LayerStates.SetShapeSizes(nLayers, maxData, int(LayerVarsN))
+	nt.Pools.SetShapeSizes(totPools, maxData, int(PoolVarsN))
+	nt.PoolsInt.SetShapeSizes(totPools, maxData, int(PoolIntVarsTot))
+	nt.Neurons.SetShapeSizes(totNeurons, maxData, int(NeuronVarsN))
+	nt.NeuronAvgs.SetShapeSizes(totNeurons, int(NeuronAvgVarsN))
+	nt.NeuronIxs.SetShapeSizes(totNeurons, int(NeuronIndexVarsN))
+	nt.Exts.SetShapeSizes(totExts, maxData)
+	nt.GlobalScalars.SetShapeSizes(int(GlobalScalarVarsN), maxData)
+	nt.GlobalVectors.SetShapeSizes(int(GlobalVectorVarsN), int(MaxGlobalVecN), maxData)
 
 	nt.SetAsCurrent()
 
@@ -832,13 +831,13 @@ func (nt *Network) Build() error { //types:add
 	}
 
 	nt.NetworkIxs[0].NSyns = uint32(totSynapses)
-	sltensor.SetShapeSizes(&nt.Synapses, totSynapses, int(SynapseVarsN))
-	sltensor.SetShapeSizes(&nt.SynapseTraces, totSynapses, int(SynapseTraceVarsN), maxData)
-	sltensor.SetShapeSizes(&nt.SynapseIxs, totSynapses, int(SynapseIndexVarsN))
-	sltensor.SetShapeSizes(&nt.PathSendCon, totSendCon, 2)
-	sltensor.SetShapeSizes(&nt.PathRecvCon, totRecvCon, 2)
-	sltensor.SetShapeSizes(&nt.RecvPathIxs, rpathIndex)
-	sltensor.SetShapeSizes(&nt.RecvSynIxs, totSynapses)
+	nt.Synapses.SetShapeSizes(totSynapses, int(SynapseVarsN))
+	nt.SynapseTraces.SetShapeSizes(totSynapses, int(SynapseTraceVarsN), maxData)
+	nt.SynapseIxs.SetShapeSizes(totSynapses, int(SynapseIndexVarsN))
+	nt.PathSendCon.SetShapeSizes(totSendCon, 2)
+	nt.PathRecvCon.SetShapeSizes(totRecvCon, 2)
+	nt.RecvPathIxs.SetShapeSizes(rpathIndex)
+	nt.RecvSynIxs.SetShapeSizes(totSynapses)
 
 	// distribute synapses, send
 	syIndex := 0
@@ -951,6 +950,7 @@ func ToGPUSynapses() {
 
 // ToGPUAll copies all state up to the GPU. Only for InitWeights.
 func ToGPUAll() {
+	ToGPUTensorStrides()
 	ToGPUIndexes()
 	ToGPUParams()
 	ToGPULayersNeurons()
@@ -1002,8 +1002,8 @@ func (nt *Network) BuildPathGBuf() {
 	}
 	nix.MaxDelay = maxDel
 	mxlen := maxDel + 1
-	sltensor.SetShapeSizes(&nt.PathGBuf, int(nptneur), int(maxData), int(mxlen))
-	sltensor.SetShapeSizes(&nt.PathGSyns, int(nptneur), int(maxData))
+	nt.PathGBuf.SetShapeSizes(int(nptneur), int(maxData), int(mxlen))
+	nt.PathGSyns.SetShapeSizes(int(nptneur), int(maxData))
 
 	npti := uint32(0)
 	for _, ly := range nt.Layers {
