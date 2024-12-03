@@ -11,7 +11,9 @@ package main
 //go:generate core generate -add-types -add-funcs
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
@@ -36,6 +38,9 @@ import (
 	"github.com/emer/emergent/v2/patgen"
 	"github.com/emer/emergent/v2/paths"
 )
+
+//go:embed random_5x5_25.tsv
+var content embed.FS
 
 func main() {
 	cfg := &Config{}
@@ -276,8 +281,8 @@ func (ss *Sim) Run() {
 		axon.GPUInit()
 		axon.UseGPU = true
 	}
-	// ss.ConfigPats()
-	ss.OpenPats()
+	// ss.ConfigInputs()
+	ss.OpenInputs()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLoops()
@@ -305,24 +310,24 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(Test).(*env.FixedTable)
 	}
 
-	pats := tensorfs.DirTable(ss.Root.RecycleDir("Pats"), nil)
+	inputs := tensorfs.DirTable(ss.Root.RecycleDir("Inputs/Train"), nil)
 
 	// this logic can be used to create train-test splits of a set of patterns:
-	// n := pats.NumRows()
+	// n := inputs.NumRows()
 	// order := rand.Perm(n)
 	// ntrn := int(0.85 * float64(n))
-	// trnEnv := table.NewView(pats)
-	// tstEnv := table.NewView(pats)
+	// trnEnv := table.NewView(inputs)
+	// tstEnv := table.NewView(inputs)
 	// trnEnv.Indexes = order[:ntrn]
 	// tstEnv.Indexes = order[ntrn:]
 
 	// note: names must be standard here!
 	trn.Name = Train.String()
-	trn.Config(table.NewView(pats))
+	trn.Config(table.NewView(inputs))
 	trn.Validate()
 
 	tst.Name = Test.String()
-	tst.Config(table.NewView(pats))
+	tst.Config(table.NewView(inputs))
 	tst.Sequential = true
 	tst.Validate()
 
@@ -524,12 +529,12 @@ func (ss *Sim) TestAll() {
 	ss.Loops.Mode = Train // important because this is called from Train Run: go back.
 }
 
-////////  Patterns
+////////  Inputs
 
-func (ss *Sim) ConfigPats() {
+func (ss *Sim) ConfigInputs() {
 	dt := table.New()
-	metadata.SetName(dt, "TrainPats")
-	metadata.SetDoc(dt, "Training patterns")
+	metadata.SetName(dt, "Train")
+	metadata.SetDoc(dt, "Training inputs")
 	dt.AddStringColumn("Name")
 	dt.AddFloat32Column("Input", 5, 5)
 	dt.AddFloat32Column("Output", 5, 5)
@@ -539,15 +544,26 @@ func (ss *Sim) ConfigPats() {
 	patgen.PermutedBinaryMinDiff(dt.ColumnByIndex(2).Tensor.(*tensor.Float32), 6, 1, 0, 3)
 	dt.SaveCSV("random_5x5_25_gen.tsv", tensor.Tab, table.Headers)
 
-	tensorfs.DirFromTable(ss.Root.RecycleDir("Pats"), dt)
+	tensorfs.DirFromTable(ss.Root.RecycleDir("Inputs/Train"), dt)
 }
 
-func (ss *Sim) OpenPats() {
+// OpenTable opens a [table.Table] from embedded content, storing
+// the data in the given tensorfs directory.
+func (ss *Sim) OpenTable(dir *tensorfs.Node, fsys fs.FS, fnm, name, docs string) (*table.Table, error) {
 	dt := table.New()
-	metadata.SetName(dt, "TrainPats")
-	metadata.SetDoc(dt, "Training patterns")
-	errors.Log(dt.OpenCSV("random_5x5_25.tsv", tensor.Tab))
-	tensorfs.DirFromTable(ss.Root.RecycleDir("Pats"), dt)
+	metadata.SetName(dt, name)
+	metadata.SetDoc(dt, docs)
+	err := dt.OpenFS(content, fnm, tensor.Tab)
+	if errors.Log(err) != nil {
+		return dt, err
+	}
+	tensorfs.DirFromTable(dir.RecycleDir(name), dt)
+	return dt, err
+}
+
+func (ss *Sim) OpenInputs() {
+	dir := ss.Root.RecycleDir("Inputs")
+	ss.OpenTable(dir, content, "random_5x5_25.tsv", "Train", "Training inputs")
 }
 
 //////// Stats
