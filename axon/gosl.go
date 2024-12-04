@@ -97,7 +97,7 @@ func GPUInit() {
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/WtFromDWtSyn.wgsl", sy)
 		vars := sy.Vars()
 		{
-			sgp := vars.AddGroup(gpu.Storage)
+			sgp := vars.AddGroup(gpu.Storage, "Params")
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("TensorStrides", gpu.Uint32, 1, gpu.ComputeShader)
@@ -115,7 +115,7 @@ func GPUInit() {
 			sgp.SetNValues(1)
 		}
 		{
-			sgp := vars.AddGroup(gpu.Storage)
+			sgp := vars.AddGroup(gpu.Storage, "Indexes")
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("SynapseIxs", gpu.Uint32, 1, gpu.ComputeShader)
@@ -131,7 +131,7 @@ func GPUInit() {
 			sgp.SetNValues(1)
 		}
 		{
-			sgp := vars.AddGroup(gpu.Storage)
+			sgp := vars.AddGroup(gpu.Storage, "Neurons")
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, gpu.ComputeShader)
@@ -144,7 +144,7 @@ func GPUInit() {
 			sgp.SetNValues(1)
 		}
 		{
-			sgp := vars.AddGroup(gpu.Storage)
+			sgp := vars.AddGroup(gpu.Storage, "Synapse")
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("Pools", gpu.Float32, 1, gpu.ComputeShader)

@@ -15,7 +15,6 @@ import (
 
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/timer"
-	"cogentcore.org/core/gpu"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/axon/v2/axon"
 	"github.com/emer/emergent/v2/etime"
@@ -166,12 +165,17 @@ func ConfigEpcLog(dt *table.Table) {
 
 func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, useGPU bool) {
 	if useGPU {
-		gpu.Debug = true
+		// gpu.Debug = true
 		axon.GPUInit()
 		axon.UseGPU = true
 	}
 
 	net.InitWeights()
+
+	if useGPU {
+		fmt.Println(axon.GPUSystem.Vars().StringDoc())
+	}
+
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 

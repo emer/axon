@@ -289,6 +289,9 @@ func (ss *Sim) Run() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLoops()
 	ss.ConfigStats()
+	// if ss.Config.Run.GPU {
+	// 	fmt.Println(axon.GPUSystem.Vars().StringDoc())
+	// }
 	if ss.Config.Params.SaveAll {
 		ss.Config.Params.SaveAll = false
 		ss.Net.SaveParamsSnapshot(&ss.Config, ss.Config.Params.Good)
