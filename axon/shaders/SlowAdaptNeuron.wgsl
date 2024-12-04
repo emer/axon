@@ -8,20 +8,22 @@ var<storage, read> TensorStrides: array<u32>;
 var<storage, read> Layers: array<LayerParams>;
 @group(0) @binding(2)
 var<storage, read> Paths: array<PathParams>;
-// // NetworkIxs have indexes and sizes for entire network (one only). 
-@group(1) @binding(0)
+@group(0) @binding(3)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
+@group(0) @binding(4)
+var<storage, read> PoolIxs: array<u32>;
+@group(0) @binding(5)
 var<storage, read> NeuronIxs: array<u32>;
-@group(1) @binding(2)
+// // SynapseIxs have index values for each synapse: // providing index into recv, send neurons, path. // [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns] 
+@group(1) @binding(0)
 var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(3)
+@group(1) @binding(1)
 var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(4)
+@group(1) @binding(2)
 var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(5)
+@group(1) @binding(3)
 var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(6)
+@group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
@@ -38,7 +40,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][Data][PoolVars+AvgMax] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -416,7 +418,7 @@ struct PulvParams {
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
-const GPUVarsN: GPUVars = 22;
+const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
 const LayerVarsN: LayerVars = 11;
 const ViewTimesN: ViewTimes = 7;
@@ -428,7 +430,8 @@ const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
 const GPLayerTypesN: GPLayerTypes = 3;
-const PoolIntVarsN: PoolIntVars = 10;
+const PoolIndexVarsN: PoolIndexVars = 4;
+const PoolIntVarsN: PoolIntVars = 6;
 const AvgMaxN: AvgMax = 2;
 const AvgMaxPhasesN: AvgMaxPhases = 4;
 const AvgMaxVarsN: AvgMaxVars = 7;
@@ -721,7 +724,7 @@ fn LayerParams_SlowAdaptNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 	var lni = ri - (*ly).Indexes.NeurSt;
 	var rn = (*ly).Indexes.RecvN;
 	for (var pi = u32(0); pi < rn; pi++) {
-		var pti = RecvPathIxs[Index1D(TensorStrides[30], u32((*ly).Indexes.RecvSt + pi))];
+		var pti = RecvPathIxs[Index1D(TensorStrides[40], u32((*ly).Indexes.RecvSt + pi))];
 		var paths=Paths[pti]; PathParams_SlowAdapt(&paths, ctx, ly, pti, ri, lni);
 	}
 }
@@ -729,7 +732,7 @@ fn LayerParams_SlowAdaptNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 //////// import: "learn-net.go"
 fn SlowAdaptNeuron(ni: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var li = NeuronIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(ni), u32(NrnLayIndex))];
+	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_SlowAdaptNeuron(&layers, &ctx, ni);
 	Ctx[0] = ctx;
 }
@@ -750,29 +753,29 @@ fn PathParams_SWtFromWt(pt: ptr<function,PathParams>, ctx: ptr<function,Context>
 	var mn = (*pt).SWts.Limit.Min;
 	var lr = (*pt).SWts.Adapt.LRate;
 	var cni = (*pt).Indexes.RecvConSt + lni;
-	var synn = PathRecvCon[Index2D(TensorStrides[40], TensorStrides[41], u32(cni), u32(Nitems))];
-	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[40], TensorStrides[41], u32(cni), u32(StartOff))];
+	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
+	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
 	var avgDWt = f32(0);
 	for (var ci = u32(0); ci < synn; ci++) {
-		var syni = RecvSynIxs[Index1D(TensorStrides[50], u32(synst + ci))];
-		var swt = Synapses[Index2D(TensorStrides[160], TensorStrides[161],
+		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
+		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
 		u32(syni), u32(SWt))];
-		if (Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(DSWt))] >= 0) {
-			Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(DSWt))] *= (mx - swt);
+		if (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] >= 0) {
+			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] *= (mx - swt);
 		} else {
-			Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(DSWt))] *= (swt - mn);
+			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] *= (swt - mn);
 		}
-		avgDWt += Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(DSWt))];
+		avgDWt += Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))];
 	}
 	avgDWt /= f32(synn);
 	avgDWt *= (*pt).SWts.Adapt.SubMean;
 	for (var ci = u32(0); ci < synn; ci++) {
-		var syni = RecvSynIxs[Index1D(TensorStrides[50], u32(synst + ci))];
-		Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(SWt))] += lr * (Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(DSWt))] - avgDWt);
-		var swt = Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(SWt))];
-		Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(DSWt))] = 0.0;
-		Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(LWt))] = SWtParams_LWtFromWts(&(*pt).SWts, Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(Wt))], swt);
-		Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(Wt))] = SWtParams_WtValue(&(*pt).SWts, swt, Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(LWt))]);
+		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))] += lr * (Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] - avgDWt);
+		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(SWt))];
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(DSWt))] = 0.0;
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] = SWtParams_LWtFromWts(&(*pt).SWts, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))], swt);
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(&(*pt).SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
 	}
 }
 fn PathParams_SynScale(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, rlay: ptr<function,LayerParams>, pti: u32,ri: u32,lni: u32) {
@@ -784,20 +787,20 @@ fn PathParams_SynScale(pt: ptr<function,PathParams>, ctx: ptr<function,Context>,
 	}
 	var lr = (*rlay).Learn.TrgAvgAct.SynScaleRate;
 	var cni = (*pt).Indexes.RecvConSt + lni;
-	var synn = PathRecvCon[Index2D(TensorStrides[40], TensorStrides[41], u32(cni), u32(Nitems))];
-	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[40], TensorStrides[41], u32(cni), u32(StartOff))];
-	var adif = -lr * NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ri), u32(AvgDif))];
+	var synn = PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(Nitems))];
+	var synst = (*pt).Indexes.RecvSynSt + PathRecvCon[Index2D(TensorStrides[50], TensorStrides[51], u32(cni), u32(StartOff))];
+	var adif = -lr * NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ri), u32(AvgDif))];
 	for (var ci = u32(0); ci < synn; ci++) {
-		var syni = RecvSynIxs[Index1D(TensorStrides[50], u32(synst + ci))];
-		var lwt = Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(LWt))];
-		var swt = Synapses[Index2D(TensorStrides[160], TensorStrides[161],
+		var syni = RecvSynIxs[Index1D(TensorStrides[60], u32(synst + ci))];
+		var lwt = Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))];
+		var swt = Synapses[Index2D(TensorStrides[170], TensorStrides[171],
 		u32(syni), u32(SWt))];
 		if (adif >= 0) {
-			Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(LWt))] += (1 - lwt) * adif * swt;
+			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] += (1 - lwt) * adif * swt;
 		} else {
-			Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(LWt))] += lwt * adif * swt;
+			Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))] += lwt * adif * swt;
 		}
-		Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(Wt))] = SWtParams_WtValue(&(*pt).SWts, swt, Synapses[Index2D(TensorStrides[160], TensorStrides[161], u32(syni), u32(LWt))]);
+		Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(Wt))] = SWtParams_WtValue(&(*pt).SWts, swt, Synapses[Index2D(TensorStrides[170], TensorStrides[171], u32(syni), u32(LWt))]);
 	}
 }
 
@@ -1243,17 +1246,18 @@ struct MatrixPathParams {
 }
 
 //////// import: "pool.go"
+alias PoolIndexVars = i32; //enums:enum
+const  PoolNeurSt: PoolIndexVars = 0;
+const  PoolNeurEd: PoolIndexVars = 1;
+const  PoolLayerIdx: PoolIndexVars = 2;
+const  PoolIsLayer: PoolIndexVars = 3;
 alias PoolIntVars = i32; //enums:enum
-const  PoolNeurSt: PoolIntVars = 0;
-const  PoolNeurEd: PoolIntVars = 1;
-const  PoolLayerIdx: PoolIntVars = 2;
-const  PoolIsLayer: PoolIntVars = 3;
-const  Clamped: PoolIntVars = 4;
-const  PoolGated: PoolIntVars = 5;
-const  FFsRawInt: PoolIntVars = 6;
-const  FBsRawInt: PoolIntVars = 7;
-const  GeExtRawInt: PoolIntVars = 8;
-const  PoolIntAvgMaxStart: PoolIntVars = 9;
+const  Clamped: PoolIntVars = 0;
+const  PoolGated: PoolIntVars = 1;
+const  FFsRawInt: PoolIntVars = 2;
+const  FBsRawInt: PoolIntVars = 3;
+const  GeExtRawInt: PoolIntVars = 4;
+const  PoolIntAvgMaxStart: PoolIntVars = 5;
 alias AvgMax = i32; //enums:enum
 const  Avg: AvgMax = 0;
 const  Max: AvgMax = 1;

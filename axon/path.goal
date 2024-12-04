@@ -375,7 +375,7 @@ func (pt *Path) SynValue1D(varIndex int, synIndex int) float32 {
 	if varIndex < int(SynapseVarsN) {
 		return Synapses[syni, SynapseVars(varIndex)]
 	} else {
-		return SynapseTraces[syni, SynapseTraceVars(varIndex-int(SynapseVarsN)), 0]
+		return SynapseTraces[syni, 0, SynapseTraceVars(varIndex-int(SynapseVarsN))]
 	}
 }
 
@@ -421,7 +421,7 @@ func (pt *Path) SynVal1DDi(varIndex int, synIndex int, di int) float32 {
 	if varIndex < int(SynapseVarsN) {
 		return Synapses[syni, SynapseVars(varIndex)]
 	} else {
-		return SynapseTraces[syni, SynapseTraceVars(varIndex-int(SynapseVarsN)), di]
+		return SynapseTraces[syni, di, SynapseTraceVars(varIndex-int(SynapseVarsN))]
 	}
 }
 
@@ -564,7 +564,7 @@ func (pt *Path) SetSynValue(varNm string, sidx, ridx int, val float32) error {
 		Synapses[syni, SynapseVars(vidx)] = val
 	} else {
 		for di := uint32(0); di < pt.Recv.MaxData; di++ {
-			SynapseTraces[syni, SynapseTraceVars(vidx-int(SynapseVarsN)), di] = val
+			SynapseTraces[syni, di, SynapseTraceVars(vidx-int(SynapseVarsN))] = val
 		}
 	}
 	if varNm == "Wt" {

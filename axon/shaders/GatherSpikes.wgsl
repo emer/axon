@@ -8,20 +8,22 @@ var<storage, read> TensorStrides: array<u32>;
 var<storage, read> Layers: array<LayerParams>;
 @group(0) @binding(2)
 var<storage, read> Paths: array<PathParams>;
-// // NetworkIxs have indexes and sizes for entire network (one only). 
-@group(1) @binding(0)
+@group(0) @binding(3)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
+@group(0) @binding(4)
+var<storage, read> PoolIxs: array<u32>;
+@group(0) @binding(5)
 var<storage, read> NeuronIxs: array<u32>;
-@group(1) @binding(2)
+// // SynapseIxs have index values for each synapse: // providing index into recv, send neurons, path. // [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns] 
+@group(1) @binding(0)
 var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(3)
+@group(1) @binding(1)
 var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(4)
+@group(1) @binding(2)
 var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(5)
+@group(1) @binding(3)
 var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(6)
+@group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
@@ -38,7 +40,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][Data][PoolVars+AvgMax] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -79,31 +81,31 @@ fn LayerParams_GatherSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Con
 	var lni = ni - (*ly).Indexes.NeurSt;
 	LayerParams_GatherSpikesInit(ly, ctx, ni, di);
 	for (var pti = u32(0); pti < (*ly).Indexes.RecvN; pti++) {
-		var npti = RecvPathIxs[Index1D(TensorStrides[30], u32((*ly).Indexes.RecvSt + pti))];
+		var npti = RecvPathIxs[Index1D(TensorStrides[40], u32((*ly).Indexes.RecvSt + pti))];
 		var pt = Paths[npti];
 		PathParams_GatherSpikes(&pt, ctx, ly, ni, di, lni);
 	}
 	LayerParams_GiFromSpikes(ly, ctx, ni, di);
 }
 fn LayerParams_GatherSpikesInit(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeRaw))] = 0.0;
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiRaw))] = 0.0;
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GModRaw))] = 0.0;
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GModSyn))] = 0.0;
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GMaintRaw))] = 0.0;
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CtxtGeRaw))] = 0.0;
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeSyn))] = NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(GeBase))];
-	Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiSyn))] = NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(GiBase))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModSyn))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GMaintRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeRaw))] = 0.0;
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GeBase))];
+	Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(GiBase))];
 }
 fn LayerParams_GiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, ni: u32,di: u32) {
-	var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(ni), u32(NrnSubPool))]);
-	var spk = Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(Spike))];
-	var geRaw = Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeRaw))];
-	var geExt = Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeExt))];
+	var pi = LayerParams_PoolIndex(ly, NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnSubPool))]);
+	var spk = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(Spike))];
+	var geRaw = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))];
+	var geExt = Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeExt))];
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt);
 	PoolAvgMaxUpdate(pi, di, ni);
-	if (PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], // also update layer pool if I am a subpool
-	u32(pi), u32(di), u32(PoolIsLayer))] == 0) {
+	if (PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], // also update layer pool if I am a subpool
+	u32(pi), u32(PoolIsLayer))] == 0) {
 		var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt);
 		PoolAvgMaxUpdate(lpi, di, ni);
@@ -115,7 +117,7 @@ fn GatherSpikes(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
 	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
-	var li = NeuronIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(ni), u32(NrnLayIndex))];
+	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_GatherSpikes(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;
 }
@@ -157,37 +159,37 @@ struct PathScaleParams {
 fn PathParams_GatherSpikes(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,di: u32,lni: u32) {
 	var deli = SynComParams_ReadOff(&(*pt).Com, (*ctx).CyclesTotal);
 	var npti = (*pt).Indexes.NPathNeurSt + lni;
-	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(npti), u32(di), u32(deli))]);
-	PathGBuf[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(npti), u32(di), u32(deli))] = 0;
-	var gsyn = PathGSyns[Index2D(TensorStrides[150], TensorStrides[151], u32(npti), u32(di))];
+	var gRaw = SynComParams_FloatFromGBuf(&(*pt).Com, PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npti), u32(di), u32(deli))]);
+	PathGBuf[Index3D(TensorStrides[150], TensorStrides[151], TensorStrides[152], u32(npti), u32(di), u32(deli))] = 0;
+	var gsyn = PathGSyns[Index2D(TensorStrides[160], TensorStrides[161], u32(npti), u32(di))];
 	PathParams_GatherSpikesGSyn(pt, ctx, ly, ni, di, gRaw, &gsyn);
-	PathGSyns[Index2D(TensorStrides[150], TensorStrides[151],
+	PathGSyns[Index2D(TensorStrides[160], TensorStrides[161],
 	u32(npti), u32(di))] = gsyn;
 }
 fn PathParams_GatherSpikesGSyn(pt: ptr<function,PathParams>, ctx: ptr<function,Context>, ly: ptr<function,LayerParams>, ni: u32,di: u32, gRaw: f32, gSyn: ptr<function,f32>) {
 	switch ((*pt).Com.GType) {
 	case ExcitatoryG: {
 		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeRaw))] += gRaw;
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GeSyn))] += *gSyn;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeRaw))] += gRaw;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GeSyn))] += *gSyn;
 	}
 	case InhibitoryG: {
 		*gSyn = DtParams_GiSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiRaw))] += gRaw;
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GiSyn))] += *gSyn;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiRaw))] += gRaw;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GiSyn))] += *gSyn;
 	}
 	case ModulatoryG: {
 		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GModRaw))] += gRaw;
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(GModSyn))] += *gSyn;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModRaw))] += gRaw;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(GModSyn))] += *gSyn;
 	}
 	case MaintG: {
 		*gSyn = DtParams_GeSynFromRaw(&(*ly).Acts.Dt, *gSyn, gRaw);
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 		u32(ni), u32(di), u32(GMaintRaw))] += gRaw;
 	}
 	case ContextG: {
-		Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(CtxtGeRaw))] += gRaw;
+		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(CtxtGeRaw))] += gRaw;
 	}
 	default: {
 	}
@@ -506,7 +508,7 @@ struct PulvParams {
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
-const GPUVarsN: GPUVars = 22;
+const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
 const LayerVarsN: LayerVars = 11;
 const ViewTimesN: ViewTimes = 7;
@@ -518,7 +520,8 @@ const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
 const GPLayerTypesN: GPLayerTypes = 3;
-const PoolIntVarsN: PoolIntVars = 10;
+const PoolIndexVarsN: PoolIndexVars = 4;
+const PoolIntVarsN: PoolIntVars = 6;
 const AvgMaxN: AvgMax = 2;
 const AvgMaxPhasesN: AvgMaxPhases = 4;
 const AvgMaxVarsN: AvgMaxVars = 7;
@@ -671,9 +674,9 @@ struct InhibParams {
 fn PoolInhibRawIncrInt(pi: u32,di: u32, spike: f32,geRaw: f32,geExt: f32) {
 	var floatToInt = f32(u32(1) << 24);
 	var fnn = f32(PoolNNeurons(pi));
-	atomicAdd(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FBsRawInt))], i32(spike));
-	atomicAdd(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(FFsRawInt))], i32((geRaw/fnn)*floatToInt));
-	atomicAdd(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(GeExtRawInt))], i32((geExt/fnn)*floatToInt));
+	atomicAdd(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(FBsRawInt))], i32(spike));
+	atomicAdd(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(FFsRawInt))], i32((geRaw/fnn)*floatToInt));
+	atomicAdd(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(GeExtRawInt))], i32((geExt/fnn)*floatToInt));
 }
 
 //////// import: "init-layer.go"
@@ -1197,17 +1200,18 @@ struct MatrixPathParams {
 }
 
 //////// import: "pool.go"
+alias PoolIndexVars = i32; //enums:enum
+const  PoolNeurSt: PoolIndexVars = 0;
+const  PoolNeurEd: PoolIndexVars = 1;
+const  PoolLayerIdx: PoolIndexVars = 2;
+const  PoolIsLayer: PoolIndexVars = 3;
 alias PoolIntVars = i32; //enums:enum
-const  PoolNeurSt: PoolIntVars = 0;
-const  PoolNeurEd: PoolIntVars = 1;
-const  PoolLayerIdx: PoolIntVars = 2;
-const  PoolIsLayer: PoolIntVars = 3;
-const  Clamped: PoolIntVars = 4;
-const  PoolGated: PoolIntVars = 5;
-const  FFsRawInt: PoolIntVars = 6;
-const  FBsRawInt: PoolIntVars = 7;
-const  GeExtRawInt: PoolIntVars = 8;
-const  PoolIntAvgMaxStart: PoolIntVars = 9;
+const  Clamped: PoolIntVars = 0;
+const  PoolGated: PoolIntVars = 1;
+const  FFsRawInt: PoolIntVars = 2;
+const  FBsRawInt: PoolIntVars = 3;
+const  GeExtRawInt: PoolIntVars = 4;
+const  PoolIntAvgMaxStart: PoolIntVars = 5;
 alias AvgMax = i32; //enums:enum
 const  Avg: AvgMax = 0;
 const  Max: AvgMax = 1;
@@ -1229,25 +1233,25 @@ const  PoolVarsN = poolFloatAvgMaxStart + InhibVars(i32(AvgMaxVarsN)*i32(AvgMaxN
 const  PoolIntVarsTot = PoolIntAvgMaxStart + PoolIntVars(i32(AvgMaxVarsN)*i32(AvgMaxN));
 const avgMaxToNeuron = array(CaP, CaD, CaPMax, Act, GeInt, GiInt);
 fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 { return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am); }
-fn PoolNNeurons(pi: u32) -> i32 { return PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(PoolNeurEd))] - PoolsInt[Index3D(TensorStrides[130], TensorStrides[131],
-TensorStrides[132], u32(pi), u32(0), u32(PoolNeurSt))]; }
+fn PoolNNeurons(pi: u32) -> i32 { return i32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))] - PoolIxs[Index2D(TensorStrides[0], TensorStrides[1],
+u32(pi), u32(PoolNeurSt))]); }
 fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	var n = f32(PoolNNeurons(pi));
 	var floatToInt = f32(u32(1) << 20);
 	var floatToSum = floatToInt / n;
 	var vis = AvgMaxIntVarIndex(vr, Avg);
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	atomicAdd(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vis))], i32(val*floatToSum));
-	atomicMax(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
+	atomicAdd(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vis))], i32(val*floatToSum));
+	atomicMax(&PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142],
 	u32(pi), u32(di), u32(vim))], i32(val*floatToInt));
 }
 fn PoolAvgMaxUpdate(pi: u32,di: u32,ni: u32) {
-	PoolAvgMaxUpdateVar(AMCaP, pi, di, abs(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaP]))]));
-	PoolAvgMaxUpdateVar(AMCaD, pi, di, abs(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaD]))]));
-	PoolAvgMaxUpdateVar(AMCaPMax, pi, di, abs(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaPMax]))]));
-	PoolAvgMaxUpdateVar(AMAct, pi, di, abs(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(avgMaxToNeuron[AMAct]))]));
-	PoolAvgMaxUpdateVar(AMGeInt, pi, di, abs(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(ni), u32(di), u32(avgMaxToNeuron[AMGeInt]))]));
-	PoolAvgMaxUpdateVar(AMGiInt, pi, di, abs(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	PoolAvgMaxUpdateVar(AMCaP, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaP]))]));
+	PoolAvgMaxUpdateVar(AMCaD, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaD]))]));
+	PoolAvgMaxUpdateVar(AMCaPMax, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(avgMaxToNeuron[AMCaPMax]))]));
+	PoolAvgMaxUpdateVar(AMAct, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(avgMaxToNeuron[AMAct]))]));
+	PoolAvgMaxUpdateVar(AMGeInt, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(avgMaxToNeuron[AMGeInt]))]));
+	PoolAvgMaxUpdateVar(AMGiInt, pi, di, abs(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72],
 	u32(ni), u32(di), u32(avgMaxToNeuron[AMGiInt]))]));
 }
 

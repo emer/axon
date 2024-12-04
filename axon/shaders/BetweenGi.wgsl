@@ -8,20 +8,22 @@ var<storage, read> TensorStrides: array<u32>;
 var<storage, read> Layers: array<LayerParams>;
 @group(0) @binding(2)
 var<storage, read> Paths: array<PathParams>;
-// // NetworkIxs have indexes and sizes for entire network (one only). 
-@group(1) @binding(0)
+@group(0) @binding(3)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
+@group(0) @binding(4)
+var<storage, read> PoolIxs: array<u32>;
+@group(0) @binding(5)
 var<storage, read> NeuronIxs: array<u32>;
-@group(1) @binding(2)
+// // SynapseIxs have index values for each synapse: // providing index into recv, send neurons, path. // [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns] 
+@group(1) @binding(0)
 var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(3)
+@group(1) @binding(1)
 var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(4)
+@group(1) @binding(2)
 var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(5)
+@group(1) @binding(3)
 var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(6)
+@group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
@@ -38,7 +40,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][Data][PoolVars+AvgMax] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -77,13 +79,13 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "act-layer.go"
 fn LayerParams_BetweenGi(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
-	var maxGi = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(lpi), u32(di), u32(TotalGi))];
+	var maxGi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))];
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index1);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index2);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index3);
 	maxGi = LayerParams_BetweenLayerGiMax(ly, di, maxGi, (*ly).LayInhib.Index4);
-	Pools[Index3D(TensorStrides[120], TensorStrides[121], // our inhib is max of us and everyone in the layer pool
-	TensorStrides[122], u32(lpi), u32(di), u32(TotalGi))] = maxGi;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], // our inhib is max of us and everyone in the layer pool
+	TensorStrides[132], u32(lpi), u32(di), u32(TotalGi))] = maxGi;
 }
 fn LayerParams_BetweenLayerGiMax(ly: ptr<function,LayerParams>, di: u32, maxGi: f32, layIndex: i32) -> f32 {
 	if (layIndex < 0) {
@@ -91,7 +93,7 @@ fn LayerParams_BetweenLayerGiMax(ly: ptr<function,LayerParams>, di: u32, maxGi: 
 	}
 	var oly = Layers[u32(layIndex)];
 	var opi = LayerParams_PoolIndex(&oly, u32(u32(0)));
-	var ogi = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(opi), u32(di), u32(TotalGi))];
+	var ogi = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(opi), u32(di), u32(TotalGi))];
 	if (ogi > maxGi) {
 		return ogi;
 	}return maxGi;
@@ -432,7 +434,7 @@ struct PulvParams {
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
-const GPUVarsN: GPUVars = 22;
+const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
 const LayerVarsN: LayerVars = 11;
 const ViewTimesN: ViewTimes = 7;
@@ -444,7 +446,8 @@ const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
 const GPLayerTypesN: GPLayerTypes = 3;
-const PoolIntVarsN: PoolIntVars = 10;
+const PoolIndexVarsN: PoolIndexVars = 4;
+const PoolIntVarsN: PoolIntVars = 6;
 const AvgMaxN: AvgMax = 2;
 const AvgMaxPhasesN: AvgMaxPhases = 4;
 const AvgMaxVarsN: AvgMaxVars = 7;
@@ -1116,17 +1119,18 @@ struct MatrixPathParams {
 }
 
 //////// import: "pool.go"
+alias PoolIndexVars = i32; //enums:enum
+const  PoolNeurSt: PoolIndexVars = 0;
+const  PoolNeurEd: PoolIndexVars = 1;
+const  PoolLayerIdx: PoolIndexVars = 2;
+const  PoolIsLayer: PoolIndexVars = 3;
 alias PoolIntVars = i32; //enums:enum
-const  PoolNeurSt: PoolIntVars = 0;
-const  PoolNeurEd: PoolIntVars = 1;
-const  PoolLayerIdx: PoolIntVars = 2;
-const  PoolIsLayer: PoolIntVars = 3;
-const  Clamped: PoolIntVars = 4;
-const  PoolGated: PoolIntVars = 5;
-const  FFsRawInt: PoolIntVars = 6;
-const  FBsRawInt: PoolIntVars = 7;
-const  GeExtRawInt: PoolIntVars = 8;
-const  PoolIntAvgMaxStart: PoolIntVars = 9;
+const  Clamped: PoolIntVars = 0;
+const  PoolGated: PoolIntVars = 1;
+const  FFsRawInt: PoolIntVars = 2;
+const  FBsRawInt: PoolIntVars = 3;
+const  GeExtRawInt: PoolIntVars = 4;
+const  PoolIntAvgMaxStart: PoolIntVars = 5;
 alias AvgMax = i32; //enums:enum
 const  Avg: AvgMax = 0;
 const  Max: AvgMax = 1;

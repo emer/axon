@@ -184,7 +184,7 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 	geExt := Neurons[ni, di, GeExt]
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt)
 	PoolAvgMaxUpdate(pi, di, ni)
-	if PoolsInt[pi, di, PoolIsLayer] == 0 { // also update layer pool if I am a subpool
+	if PoolIxs[pi, PoolIsLayer] == 0 { // also update layer pool if I am a subpool
 		lpi := ly.PoolIndex(0)
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt)
 		PoolAvgMaxUpdate(lpi, di, ni)
@@ -292,7 +292,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 	saveVal := float32(0)               // sometimes we need to use a value computed here, for the post Gs step
 	pil := pi - ly.PoolSt
 	pnn := uint32(PoolNNeurons(pi))
-	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolsInt[pi, di, PoolNeurSt])
+	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolIxs[pi, PoolNeurSt])
 	nrnCtxtGe := Neurons[ni, di, CtxtGe]
 	nrnGeRaw := Neurons[ni, di, GeRaw]
 	hasRew := GlobalScalars[GvHasRew, di] > 0
@@ -568,7 +568,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	li := ly.Index
 	pil := pi - ly.PoolSt // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
-	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolsInt[pi, di, PoolNeurSt])
+	pni := NeuronIxs[ni, NrnNeurIndex] - uint32(PoolIxs[pi, PoolNeurSt])
 	hasRew := GlobalScalars[GvHasRew, di] > 0
 	switch ly.Type {
 	case SuperLayer:
@@ -955,7 +955,7 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
 			PoolsInt[pi, di, Clamped] = 1
 		}
 	}
-	if PoolsInt[pi, 0, PoolIsLayer] == 0 {
+	if PoolIxs[pi, PoolIsLayer] == 0 {
 		return
 	}
 	geIntMinusMax := float32(0)
@@ -1032,7 +1032,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 	switch ly.Type {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons[ni, di, CaDPrev]) // delta on previous trial
-		if !ly.Learn.NeuroMod.IsBLAExt() && PoolsInt[pi, 0, PoolNeurSt] == 0 { // first pool
+		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs[pi, PoolNeurSt] == 0 { // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case VSPatchLayer:

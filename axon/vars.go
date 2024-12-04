@@ -19,7 +19,7 @@ var CurrentNetwork *Network
 //
 //gosl:vars
 var (
-	//////////////////// Params
+	//////// Params
 
 	// Layers are all the layer parameters.
 	//gosl:group Params
@@ -30,12 +30,17 @@ var (
 	//gosl:read-only
 	Paths []PathParams
 
-	//////////////////// Indexes
+	//////// Indexes
 
 	// NetworkIxs have indexes and sizes for entire network (one only).
-	//gosl:group Indexes
 	//gosl:read-only
 	NetworkIxs []NetworkIndexes
+
+	// PoolIxs have index values for each Pool.
+	// [Layer * Pools][PoolIndexVars]
+	//gosl:read-only
+	//gosl:dims 2
+	PoolIxs *tensor.Uint32
 
 	// NeuronIxs have index values for each neuron: index into layer, pools.
 	// [Neurons][Indexes]
@@ -46,6 +51,7 @@ var (
 	// SynapseIxs have index values for each synapse:
 	// providing index into recv, send neurons, path.
 	// [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	//gosl:group Indexes
 	//gosl:read-only
 	//gosl:dims 2
 	SynapseIxs *tensor.Uint32
@@ -77,14 +83,14 @@ var (
 	//gosl:dims 1
 	RecvSynIxs *tensor.Uint32
 
-	//////////////////// Neuron+ State
+	//////// Neuron+ State
 
 	// Ctx is the current context state (one only).
 	//gosl:group Neurons
 	Ctx []Context
 
 	// Neurons are all the neuron state variables.
-	// [Neurons][Vars][Data]
+	// [Neurons][Data][Vars]
 	//gosl:dims 3
 	Neurons *tensor.Float32
 
@@ -96,7 +102,7 @@ var (
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
-	// [Layer][LayerVarsN][Data]
+	// [Layer][Data][LayerVarsN]
 	//gosl:dims 3
 	LayerStates *tensor.Float32
 
@@ -117,27 +123,25 @@ var (
 	//gosl:dims 2
 	Exts *tensor.Float32
 
-	//////////////////// Pool and Synapse State
+	//////// Pool and Synapse State
 
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
-	// [Layer * Pools][PoolVars+AvgMax][Data]
+	// [Layer * Pools][Data][PoolVars+AvgMax]
 	//gosl:group Synapse
 	//gosl:dims 3
 	Pools *tensor.Float32
 
-	// todo: following should be read-only
-
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
 	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
-	// [Layer * Pools][PoolIntVars+AvgMax][Data]
+	// [Layer * Pools][Data][PoolIntVars+AvgMax]
 	//gosl:dims 3
 	PoolsInt *tensor.Int32
 
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
-	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
+	// [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	//gosl:dims 3
 	PathGBuf *tensor.Int32
 
@@ -154,13 +158,13 @@ var (
 	//gosl:dims 2
 	Synapses *tensor.Float32
 
-	//////////////////// SynapseTraces
+	//////// SynapseTraces
 
 	// SynapseTraces are synaptic variables that depend on the data
 	// parallel index, for accumulating learning traces and weight changes per data.
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
-	// [NSyns][Vars][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	// [NSyns][Data][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	//gosl:dims 3
 	SynapseTraces *tensor.Float32
 )

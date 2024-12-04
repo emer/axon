@@ -29,25 +29,26 @@ const (
 	LayersVar GPUVars = 0
 	PathsVar GPUVars = 1
 	NetworkIxsVar GPUVars = 2
-	NeuronIxsVar GPUVars = 3
-	SynapseIxsVar GPUVars = 4
-	PathSendConVar GPUVars = 5
-	RecvPathIxsVar GPUVars = 6
-	PathRecvConVar GPUVars = 7
-	RecvSynIxsVar GPUVars = 8
-	CtxVar GPUVars = 9
-	NeuronsVar GPUVars = 10
-	NeuronAvgsVar GPUVars = 11
-	LayerStatesVar GPUVars = 12
-	GlobalScalarsVar GPUVars = 13
-	GlobalVectorsVar GPUVars = 14
-	ExtsVar GPUVars = 15
-	PoolsVar GPUVars = 16
-	PoolsIntVar GPUVars = 17
-	PathGBufVar GPUVars = 18
-	PathGSynsVar GPUVars = 19
-	SynapsesVar GPUVars = 20
-	SynapseTracesVar GPUVars = 21
+	PoolIxsVar GPUVars = 3
+	NeuronIxsVar GPUVars = 4
+	SynapseIxsVar GPUVars = 5
+	PathSendConVar GPUVars = 6
+	RecvPathIxsVar GPUVars = 7
+	PathRecvConVar GPUVars = 8
+	RecvSynIxsVar GPUVars = 9
+	CtxVar GPUVars = 10
+	NeuronsVar GPUVars = 11
+	NeuronAvgsVar GPUVars = 12
+	LayerStatesVar GPUVars = 13
+	GlobalScalarsVar GPUVars = 14
+	GlobalVectorsVar GPUVars = 15
+	ExtsVar GPUVars = 16
+	PoolsVar GPUVars = 17
+	PoolsIntVar GPUVars = 18
+	PathGBufVar GPUVars = 19
+	PathGSynsVar GPUVars = 20
+	SynapsesVar GPUVars = 21
+	SynapseTracesVar GPUVars = 22
 )
 
 // Tensor stride variables
@@ -105,16 +106,18 @@ func GPUInit() {
 			vr.ReadOnly = true
 			vr = sgp.AddStruct("Paths", int(unsafe.Sizeof(PathParams{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
+			vr = sgp.AddStruct("NetworkIxs", int(unsafe.Sizeof(NetworkIndexes{})), 1, gpu.ComputeShader)
+			vr.ReadOnly = true
+			vr = sgp.Add("PoolIxs", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
+			vr = sgp.Add("NeuronIxs", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
 			sgp.SetNValues(1)
 		}
 		{
 			sgp := vars.AddGroup(gpu.Storage)
 			var vr *gpu.Var
 			_ = vr
-			vr = sgp.AddStruct("NetworkIxs", int(unsafe.Sizeof(NetworkIndexes{})), 1, gpu.ComputeShader)
-			vr.ReadOnly = true
-			vr = sgp.Add("NeuronIxs", gpu.Uint32, 1, gpu.ComputeShader)
-			vr.ReadOnly = true
 			vr = sgp.Add("SynapseIxs", gpu.Uint32, 1, gpu.ComputeShader)
 			vr.ReadOnly = true
 			vr = sgp.Add("PathSendCon", gpu.Uint32, 1, gpu.ComputeShader)
@@ -1420,10 +1423,13 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Paths", 0)
 			gpu.SetValueFrom(v, Paths)
 		case NetworkIxsVar:
-			v, _ := syVars.ValueByIndex(1, "NetworkIxs", 0)
+			v, _ := syVars.ValueByIndex(0, "NetworkIxs", 0)
 			gpu.SetValueFrom(v, NetworkIxs)
+		case PoolIxsVar:
+			v, _ := syVars.ValueByIndex(0, "PoolIxs", 0)
+			gpu.SetValueFrom(v, PoolIxs.Values)
 		case NeuronIxsVar:
-			v, _ := syVars.ValueByIndex(1, "NeuronIxs", 0)
+			v, _ := syVars.ValueByIndex(0, "NeuronIxs", 0)
 			gpu.SetValueFrom(v, NeuronIxs.Values)
 		case SynapseIxsVar:
 			v, _ := syVars.ValueByIndex(1, "SynapseIxs", 0)
@@ -1490,48 +1496,50 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(180)
-	TensorStrides.SetInt1D(NeuronIxs.Shape().Strides[0], 0)
-	TensorStrides.SetInt1D(NeuronIxs.Shape().Strides[1], 1)
-	TensorStrides.SetInt1D(SynapseIxs.Shape().Strides[0], 10)
-	TensorStrides.SetInt1D(SynapseIxs.Shape().Strides[1], 11)
-	TensorStrides.SetInt1D(PathSendCon.Shape().Strides[0], 20)
-	TensorStrides.SetInt1D(PathSendCon.Shape().Strides[1], 21)
-	TensorStrides.SetInt1D(RecvPathIxs.Shape().Strides[0], 30)
-	TensorStrides.SetInt1D(PathRecvCon.Shape().Strides[0], 40)
-	TensorStrides.SetInt1D(PathRecvCon.Shape().Strides[1], 41)
-	TensorStrides.SetInt1D(RecvSynIxs.Shape().Strides[0], 50)
-	TensorStrides.SetInt1D(Neurons.Shape().Strides[0], 60)
-	TensorStrides.SetInt1D(Neurons.Shape().Strides[1], 61)
-	TensorStrides.SetInt1D(Neurons.Shape().Strides[2], 62)
-	TensorStrides.SetInt1D(NeuronAvgs.Shape().Strides[0], 70)
-	TensorStrides.SetInt1D(NeuronAvgs.Shape().Strides[1], 71)
-	TensorStrides.SetInt1D(LayerStates.Shape().Strides[0], 80)
-	TensorStrides.SetInt1D(LayerStates.Shape().Strides[1], 81)
-	TensorStrides.SetInt1D(LayerStates.Shape().Strides[2], 82)
-	TensorStrides.SetInt1D(GlobalScalars.Shape().Strides[0], 90)
-	TensorStrides.SetInt1D(GlobalScalars.Shape().Strides[1], 91)
-	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[0], 100)
-	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[1], 101)
-	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[2], 102)
-	TensorStrides.SetInt1D(Exts.Shape().Strides[0], 110)
-	TensorStrides.SetInt1D(Exts.Shape().Strides[1], 111)
-	TensorStrides.SetInt1D(Pools.Shape().Strides[0], 120)
-	TensorStrides.SetInt1D(Pools.Shape().Strides[1], 121)
-	TensorStrides.SetInt1D(Pools.Shape().Strides[2], 122)
-	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[0], 130)
-	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[1], 131)
-	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[2], 132)
-	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[0], 140)
-	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[1], 141)
-	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[2], 142)
-	TensorStrides.SetInt1D(PathGSyns.Shape().Strides[0], 150)
-	TensorStrides.SetInt1D(PathGSyns.Shape().Strides[1], 151)
-	TensorStrides.SetInt1D(Synapses.Shape().Strides[0], 160)
-	TensorStrides.SetInt1D(Synapses.Shape().Strides[1], 161)
-	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[0], 170)
-	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[1], 171)
-	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[2], 172)
+	TensorStrides.SetShapeSizes(190)
+	TensorStrides.SetInt1D(PoolIxs.Shape().Strides[0], 0)
+	TensorStrides.SetInt1D(PoolIxs.Shape().Strides[1], 1)
+	TensorStrides.SetInt1D(NeuronIxs.Shape().Strides[0], 10)
+	TensorStrides.SetInt1D(NeuronIxs.Shape().Strides[1], 11)
+	TensorStrides.SetInt1D(SynapseIxs.Shape().Strides[0], 20)
+	TensorStrides.SetInt1D(SynapseIxs.Shape().Strides[1], 21)
+	TensorStrides.SetInt1D(PathSendCon.Shape().Strides[0], 30)
+	TensorStrides.SetInt1D(PathSendCon.Shape().Strides[1], 31)
+	TensorStrides.SetInt1D(RecvPathIxs.Shape().Strides[0], 40)
+	TensorStrides.SetInt1D(PathRecvCon.Shape().Strides[0], 50)
+	TensorStrides.SetInt1D(PathRecvCon.Shape().Strides[1], 51)
+	TensorStrides.SetInt1D(RecvSynIxs.Shape().Strides[0], 60)
+	TensorStrides.SetInt1D(Neurons.Shape().Strides[0], 70)
+	TensorStrides.SetInt1D(Neurons.Shape().Strides[1], 71)
+	TensorStrides.SetInt1D(Neurons.Shape().Strides[2], 72)
+	TensorStrides.SetInt1D(NeuronAvgs.Shape().Strides[0], 80)
+	TensorStrides.SetInt1D(NeuronAvgs.Shape().Strides[1], 81)
+	TensorStrides.SetInt1D(LayerStates.Shape().Strides[0], 90)
+	TensorStrides.SetInt1D(LayerStates.Shape().Strides[1], 91)
+	TensorStrides.SetInt1D(LayerStates.Shape().Strides[2], 92)
+	TensorStrides.SetInt1D(GlobalScalars.Shape().Strides[0], 100)
+	TensorStrides.SetInt1D(GlobalScalars.Shape().Strides[1], 101)
+	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[0], 110)
+	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[1], 111)
+	TensorStrides.SetInt1D(GlobalVectors.Shape().Strides[2], 112)
+	TensorStrides.SetInt1D(Exts.Shape().Strides[0], 120)
+	TensorStrides.SetInt1D(Exts.Shape().Strides[1], 121)
+	TensorStrides.SetInt1D(Pools.Shape().Strides[0], 130)
+	TensorStrides.SetInt1D(Pools.Shape().Strides[1], 131)
+	TensorStrides.SetInt1D(Pools.Shape().Strides[2], 132)
+	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[0], 140)
+	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[1], 141)
+	TensorStrides.SetInt1D(PoolsInt.Shape().Strides[2], 142)
+	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[0], 150)
+	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[1], 151)
+	TensorStrides.SetInt1D(PathGBuf.Shape().Strides[2], 152)
+	TensorStrides.SetInt1D(PathGSyns.Shape().Strides[0], 160)
+	TensorStrides.SetInt1D(PathGSyns.Shape().Strides[1], 161)
+	TensorStrides.SetInt1D(Synapses.Shape().Strides[0], 170)
+	TensorStrides.SetInt1D(Synapses.Shape().Strides[1], 171)
+	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[0], 180)
+	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[1], 181)
+	TensorStrides.SetInt1D(SynapseTraces.Shape().Strides[2], 182)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -1549,10 +1557,13 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Paths", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case NetworkIxsVar:
-			v, _ := syVars.ValueByIndex(1, "NetworkIxs", 0)
+			v, _ := syVars.ValueByIndex(0, "NetworkIxs", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case PoolIxsVar:
+			v, _ := syVars.ValueByIndex(0, "PoolIxs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case NeuronIxsVar:
-			v, _ := syVars.ValueByIndex(1, "NeuronIxs", 0)
+			v, _ := syVars.ValueByIndex(0, "NeuronIxs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case SynapseIxsVar:
 			v, _ := syVars.ValueByIndex(1, "SynapseIxs", 0)
@@ -1627,11 +1638,15 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Paths)
 		case NetworkIxsVar:
-			v, _ := syVars.ValueByIndex(1, "NetworkIxs", 0)
+			v, _ := syVars.ValueByIndex(0, "NetworkIxs", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, NetworkIxs)
+		case PoolIxsVar:
+			v, _ := syVars.ValueByIndex(0, "PoolIxs", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, PoolIxs.Values)
 		case NeuronIxsVar:
-			v, _ := syVars.ValueByIndex(1, "NeuronIxs", 0)
+			v, _ := syVars.ValueByIndex(0, "NeuronIxs", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, NeuronIxs.Values)
 		case SynapseIxsVar:

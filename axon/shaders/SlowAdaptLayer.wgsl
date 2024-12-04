@@ -8,20 +8,22 @@ var<storage, read> TensorStrides: array<u32>;
 var<storage, read> Layers: array<LayerParams>;
 @group(0) @binding(2)
 var<storage, read> Paths: array<PathParams>;
-// // NetworkIxs have indexes and sizes for entire network (one only). 
-@group(1) @binding(0)
+@group(0) @binding(3)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
+@group(0) @binding(4)
+var<storage, read> PoolIxs: array<u32>;
+@group(0) @binding(5)
 var<storage, read> NeuronIxs: array<u32>;
-@group(1) @binding(2)
+// // SynapseIxs have index values for each synapse: // providing index into recv, send neurons, path. // [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns] 
+@group(1) @binding(0)
 var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(3)
+@group(1) @binding(1)
 var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(4)
+@group(1) @binding(2)
 var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(5)
+@group(1) @binding(3)
 var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(6)
+@group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
@@ -38,11 +40,11 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][Data][PoolVars+AvgMax] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
-var<storage, read_write> PoolsInt: array<atomic<i32>>;
+var<storage, read_write> PoolsInt: array<i32>;
 @group(3) @binding(2)
 var<storage, read_write> PathGBuf: array<i32>;
 @group(3) @binding(3)
@@ -110,7 +112,7 @@ struct PathScaleParams {
 
 //////// import: "act.go"
 fn NeuronHasFlag(flag: NeuronFlags, ni: u32,di: u32) -> bool {
-	return (NeuronFlags(bitcast<u32>(Neurons[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], // weird: != 0 does NOT work on GPU
+	return (NeuronFlags(bitcast<u32>(Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], // weird: != 0 does NOT work on GPU
 	u32(ni), u32(di), u32(NeurFlags))])) & flag) > 0;
 }
 fn NeuronIsOff(ni: u32) -> bool {
@@ -415,7 +417,7 @@ struct PulvParams {
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
-const GPUVarsN: GPUVars = 22;
+const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
 const LayerVarsN: LayerVars = 11;
 const ViewTimesN: ViewTimes = 7;
@@ -427,7 +429,8 @@ const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
 const GPLayerTypesN: GPLayerTypes = 3;
-const PoolIntVarsN: PoolIntVars = 10;
+const PoolIndexVarsN: PoolIndexVars = 4;
+const PoolIntVarsN: PoolIntVars = 6;
 const AvgMaxN: AvgMax = 2;
 const AvgMaxPhasesN: AvgMaxPhases = 4;
 const AvgMaxVarsN: AvgMaxVars = 7;
@@ -735,10 +738,10 @@ fn LayerParams_AdaptInhib(ly: ptr<function,LayerParams>, ctx: ptr<function,Conte
 		return;
 	}
 	for (var di = u32(0); di < (*ctx).NData; di++) {
-		var giMult = LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32((*ly).Index), u32(di), u32(LayerGiMult))];
-		var avg = LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32((*ly).Index), u32(di), u32(LayerActMAvg))];
+		var giMult = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerGiMult))];
+		var avg = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerActMAvg))];
 		ActAvgParams_Adapt(&(*ly).Inhib.ActAvg, &giMult, avg);
-		LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82],
+		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92],
 		u32((*ly).Index), u32(di), u32(LayerGiMult))] = giMult;
 	}
 }
@@ -750,8 +753,8 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 	var np = (*ly).Indexes.NPools;
 	for (var spi = sp; spi < np; spi++) {
 		var pi = LayerParams_PoolIndex(ly, spi);
-		var nsi = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(PoolNeurSt))];
-		var nei = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(PoolNeurEd))];
+		var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurSt))];
+		var nei = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))];
 		var plavg = f32(0);
 		var nn = 0;
 		for (var lni = nsi; lni < nei; lni++) {
@@ -759,7 +762,7 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
-			plavg += NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(ActAvg))];
+			plavg += NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(ActAvg))];
 			nn++;
 		}
 		if (nn == 0) {
@@ -775,34 +778,34 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
-			var apct = NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(ActAvg))] / plavg;
-			var adif = apct - NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(TrgAvg))];
-			NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(AvgPct))] = apct;
-			NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(AvgDif))] = adif;
+			var apct = NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(ActAvg))] / plavg;
+			var adif = apct - NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(TrgAvg))];
+			NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(AvgPct))] = apct;
+			NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(AvgDif))] = adif;
 			PoolAvgDifUpdate(pi, u32(u32(0)), abs(adif));
 		}
 		PoolAvgDifCalc(pi, u32(u32(0)));
 		for (var di = u32(1); di < (*ctx).NData; di++) { // copy to other datas
-			Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
-			Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
+			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
+			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
 		}
 	}
 	if (sp == 1) { // update layer pool
 		var lpi = LayerParams_PoolIndex(ly, u32(u32(0)));
 		PoolAvgDifInit(lpi, u32(u32(0)));
-		var nsi = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(PoolNeurSt))];
-		var nei = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(PoolNeurEd))];
+		var nsi = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(lpi), u32(PoolNeurSt))];
+		var nei = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(lpi), u32(PoolNeurEd))];
 		for (var lni = nsi; lni < nei; lni++) {
 			var ni = (*ly).Indexes.NeurSt + u32(lni);
 			if (NeuronIsOff(ni)) {
 				continue;
 			}
-			PoolAvgDifUpdate(lpi, u32(u32(0)), abs(NeuronAvgs[Index2D(TensorStrides[70], TensorStrides[71], u32(ni), u32(AvgDif))]));
+			PoolAvgDifUpdate(lpi, u32(u32(0)), abs(NeuronAvgs[Index2D(TensorStrides[80], TensorStrides[81], u32(ni), u32(AvgDif))]));
 		}
 		PoolAvgDifCalc(lpi, u32(u32(0)));
 		for (var di = u32(1); di < (*ctx).NData; di++) { // copy to other datas
-			Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
-			Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
+			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Avg)))];
+			Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))] = Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(0), u32(AvgMaxVarIndex(AMAvgDif, AMCycle, Max)))];
 		}
 	}
 }
@@ -1191,17 +1194,18 @@ struct MatrixPathParams {
 }
 
 //////// import: "pool.go"
+alias PoolIndexVars = i32; //enums:enum
+const  PoolNeurSt: PoolIndexVars = 0;
+const  PoolNeurEd: PoolIndexVars = 1;
+const  PoolLayerIdx: PoolIndexVars = 2;
+const  PoolIsLayer: PoolIndexVars = 3;
 alias PoolIntVars = i32; //enums:enum
-const  PoolNeurSt: PoolIntVars = 0;
-const  PoolNeurEd: PoolIntVars = 1;
-const  PoolLayerIdx: PoolIntVars = 2;
-const  PoolIsLayer: PoolIntVars = 3;
-const  Clamped: PoolIntVars = 4;
-const  PoolGated: PoolIntVars = 5;
-const  FFsRawInt: PoolIntVars = 6;
-const  FBsRawInt: PoolIntVars = 7;
-const  GeExtRawInt: PoolIntVars = 8;
-const  PoolIntAvgMaxStart: PoolIntVars = 9;
+const  Clamped: PoolIntVars = 0;
+const  PoolGated: PoolIntVars = 1;
+const  FFsRawInt: PoolIntVars = 2;
+const  FBsRawInt: PoolIntVars = 3;
+const  GeExtRawInt: PoolIntVars = 4;
+const  PoolIntAvgMaxStart: PoolIntVars = 5;
 alias AvgMax = i32; //enums:enum
 const  Avg: AvgMax = 0;
 const  Max: AvgMax = 1;
@@ -1229,42 +1233,41 @@ fn AvgMaxIntVarIndex(vr: AvgMaxVars, am: AvgMax) -> u32 {
 	return u32(PoolIntAvgMaxStart) + u32(vr)*u32(AvgMaxN) + u32(am);
 }
 fn PoolNNeurons(pi: u32) -> i32 {
-	return PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(0), u32(PoolNeurEd))] - PoolsInt[Index3D(TensorStrides[130], TensorStrides[131],
-	TensorStrides[132], u32(pi), u32(0), u32(PoolNeurSt))];
+	return i32(PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolNeurEd))] - PoolIxs[Index2D(TensorStrides[0], TensorStrides[1],
+	u32(pi), u32(PoolNeurSt))]);
 }
-fn PoolAvgMaxUpdateVar(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
+fn PoolAvgMaxUpdateVarNonAtomic(vr: AvgMaxVars, pi: u32,di: u32, val: f32) {
 	var n = f32(PoolNNeurons(pi));
 	var floatToInt = f32(u32(1) << 20);
 	var floatToSum = floatToInt / n;
 	var vis = AvgMaxIntVarIndex(vr, Avg);
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	atomicAdd(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vis))], i32(val*floatToSum));
-	atomicMax(&PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
-	u32(pi), u32(di), u32(vim))], i32(val*floatToInt));
+	PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vis))] += i32(val * floatToSum);
+	PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vim))] = max(PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vim))], i32(val*floatToInt));
 }
 fn PoolAvgMaxCalcVar(vr: AvgMaxVars, pi: u32,di: u32) {
 	var floatFromInt = f32(1.0) / f32(u32(1)<<20);
 	var vis = AvgMaxIntVarIndex(vr, Avg);
-	var sum = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vis))];
+	var sum = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vis))];
 	if (sum < 0) {
 		sum = i32(u32(1) << 20);
 	}
-	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, AMCycle, Avg)))] = f32(sum) * floatFromInt;
-	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vis))] = 0;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, AMCycle, Avg)))] = f32(sum) * floatFromInt;
+	PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vis))] = 0;
 	var vim = AvgMaxIntVarIndex(vr, Max);
-	var mx = PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vim))];
+	var mx = PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vim))];
 	if (mx < 0) {
 		mx = i32(u32(1) << 20);
 	}
-	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(vim))] = 0;
-	Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, AMCycle, Max)))] = f32(mx) * floatFromInt;
+	PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(vim))] = 0;
+	Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxVarIndex(vr, AMCycle, Max)))] = f32(mx) * floatFromInt;
 }
 fn PoolAvgDifInit(pi: u32,di: u32) {
-	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxIntVarIndex(AMAvgDif, Avg)))] = 0;
-	PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(AvgMaxIntVarIndex(AMAvgDif, Max)))] = 0;
+	PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(AvgMaxIntVarIndex(AMAvgDif, Avg)))] = 0;
+	PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(AvgMaxIntVarIndex(AMAvgDif, Max)))] = 0;
 }
 fn PoolAvgDifUpdate(pi: u32,di: u32, avdif: f32) {
-	PoolAvgMaxUpdateVar(AMAvgDif, pi, di, avdif);
+	PoolAvgMaxUpdateVarNonAtomic(AMAvgDif, pi, di, avdif);
 }
 fn PoolAvgDifCalc(pi: u32,di: u32) {
 	PoolAvgMaxCalcVar(AMAvgDif, pi, di);

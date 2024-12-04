@@ -327,16 +327,14 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 	spi := uint32(1)
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
-			soff := int32(ly.Shape.IndexTo1D(py, px, 0, 0))
-			eoff := int32(ly.Shape.IndexTo1D(py, px, sh[2] - 1, sh[3] - 1) + 1)
-			for di := uint32(0); di < ly.MaxData; di++ {
-				pi := ly.Params.PoolIndex(spi)
-				PoolsInt[pi, di, PoolNeurSt] = soff
-				PoolsInt[pi, di, PoolNeurEd] = eoff
-			}
+			soff := uint32(ly.Shape.IndexTo1D(py, px, 0, 0))
+			eoff := uint32(ly.Shape.IndexTo1D(py, px, sh[2] - 1, sh[3] - 1) + 1)
+			pi := ly.Params.PoolIndex(spi)
+			PoolIxs[pi, PoolNeurSt] = soff
+			PoolIxs[pi, PoolNeurEd] = eoff
 			for lni := soff; lni < eoff; lni++ {
-				ni := ly.NeurStIndex + uint32(lni)
-				NeuronIxs[ni, NrnSubPool] = uint32(spi)
+				ni := ly.NeurStIndex + lni
+				NeuronIxs[ni, NrnSubPool] = spi
 			}
 			spi++
 		}
@@ -348,9 +346,9 @@ func (ly *Layer) BuildPools(ctx *Context, nn uint32) error {
 	np := 1 + ly.NumPools()
 	for di := uint32(0); di < ly.MaxData; di++ {
 		lpi := ly.Params.PoolIndex(0)
-		PoolsInt[lpi, di, PoolNeurSt] = 0
- 		PoolsInt[lpi, di, PoolNeurEd] = int32(nn)
- 		PoolsInt[lpi, di, PoolIsLayer] = 1
+		PoolIxs[lpi, PoolNeurSt] = 0
+ 		PoolIxs[lpi, PoolNeurEd] = nn
+ 		PoolIxs[lpi, PoolIsLayer] = 1
 	}
 	if np > 1 {
 		ly.BuildSubPools(ctx)

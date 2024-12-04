@@ -8,20 +8,22 @@ var<storage, read> TensorStrides: array<u32>;
 var<storage, read> Layers: array<LayerParams>;
 @group(0) @binding(2)
 var<storage, read> Paths: array<PathParams>;
-// // NetworkIxs have indexes and sizes for entire network (one only). 
-@group(1) @binding(0)
+@group(0) @binding(3)
 var<storage, read> NetworkIxs: array<NetworkIndexes>;
-@group(1) @binding(1)
+@group(0) @binding(4)
+var<storage, read> PoolIxs: array<u32>;
+@group(0) @binding(5)
 var<storage, read> NeuronIxs: array<u32>;
-@group(1) @binding(2)
+// // SynapseIxs have index values for each synapse: // providing index into recv, send neurons, path. // [Indexes][NSyns]; NSyns = [Layer][SendPaths][SendNeurons][Syns] 
+@group(1) @binding(0)
 var<storage, read> SynapseIxs: array<u32>;
-@group(1) @binding(3)
+@group(1) @binding(1)
 var<storage, read> PathSendCon: array<u32>;
-@group(1) @binding(4)
+@group(1) @binding(2)
 var<storage, read> RecvPathIxs: array<u32>;
-@group(1) @binding(5)
+@group(1) @binding(3)
 var<storage, read> PathRecvCon: array<u32>;
-@group(1) @binding(6)
+@group(1) @binding(4)
 var<storage, read> RecvSynIxs: array<u32>;
 // // Ctx is the current context state (one only). 
 @group(2) @binding(0)
@@ -38,7 +40,7 @@ var<storage, read_write> GlobalScalars: array<f32>;
 var<storage, read_write> GlobalVectors: array<f32>;
 @group(2) @binding(6)
 var<storage, read_write> Exts: array<f32>;
-// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][PoolVars+AvgMax][Data] 
+// // Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition, // Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex]. // [Layer * Pools][Data][PoolVars+AvgMax] 
 @group(3) @binding(0)
 var<storage, read_write> Pools: array<f32>;
 @group(3) @binding(1)
@@ -120,8 +122,8 @@ fn LayerParams_CyclePost(ly: ptr<function,LayerParams>, ctx: ptr<function,Contex
 fn LayerParams_CyclePostLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
 	var casp = PoolAvgMax(AMCaP, AMCycle, Max, lpi, di);
 	if ((*ctx).Cycle >= (*ly).Acts.Dt.MaxCycStart && casp > 0.5) { // todo: param
-		if (LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32((*ly).Index), u32(di), u32(LayerRT))] <= 0) {
-			LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32((*ly).Index), u32(di), u32(LayerRT))] = f32((*ctx).Cycle);
+		if (LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] <= 0) {
+			LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRT))] = f32((*ctx).Cycle);
 		}
 	}
 }
@@ -134,80 +136,80 @@ fn LayerParams_LDTSrcLayAct(ly: ptr<function,LayerParams>, layIndex: i32, di: u3
 }
 fn LayerParams_CyclePostLDTLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32, srcLay1Act: f32,srcLay2Act: f32,srcLay3Act: f32,srcLay4Act: f32) {
 	var ach = LDTParams_ACh(&(*ly).LDT, ctx, di, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvAChRaw), u32(di))] = ach;
-	if (ach > GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // instant up
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvAChRaw), u32(di))] = ach;
+	if (ach > GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // instant up
 	u32(GvACh), u32(di))]) {
-		GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvACh), u32(di))] = ach;
+		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))] = ach;
 	} else {
-		GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvACh), u32(di))] += (*ly).Acts.Dt.IntDt * (ach - GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvACh), u32(di))]);
+		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))] += (*ly).Acts.Dt.IntDt * (ach - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))]);
 	}
 }
 fn LayerParams_CyclePostRWDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var pli = u32((*ly).RWDa.RWPredLayIndex);
-	var pred = LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32(pli), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32(pli), u32(di), u32(LayerRewPredNeg))];
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // record
+	var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredNeg))];
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // record
 	u32(GvRewPred), u32(di))] = pred;
 	var da = f32(0);
-	if (GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvHasRew), u32(di))] > 0) {
-		da = GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvRew), u32(di))] - pred;
+	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0) {
+		da = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvRew), u32(di))] - pred;
 	}
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // updates global value that will be copied to layers next cycle.
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // updates global value that will be copied to layers next cycle.
 	u32(GvDA), u32(di))] = da;
 }
 fn LayerParams_CyclePostTDPredLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	if ((*ctx).PlusPhase == 0) {
 		return;
 	}
-	var pred = LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32((*ly).Index), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32((*ly).Index), u32(di), u32(LayerRewPredNeg))];
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvPrevPred), u32(di))] = pred;
+	var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32((*ly).Index), u32(di), u32(LayerRewPredNeg))];
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPrevPred), u32(di))] = pred;
 }
 fn LayerParams_CyclePostTDIntegLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var rew = f32(0);
-	if (GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvHasRew), u32(di))] > 0) {
-		rew = GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvRew), u32(di))];
+	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0) {
+		rew = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvRew), u32(di))];
 	}
 	var rpval = f32(0);
 	if ((*ctx).PlusPhase == 1) {
 		var pli = u32((*ly).TDInteg.TDPredLayIndex);
-		var pred = LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32(pli), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32(pli), u32(di), u32(LayerRewPredNeg))];
+		var pred = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(pli), u32(di), u32(LayerRewPredNeg))];
 		rpval = rew + (*ly).TDInteg.Discount*(*ly).TDInteg.PredGain*pred;
-		LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], // our plus phase = new integrated value
+		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], // our plus phase = new integrated value
 		u32((*ly).Index), u32(di), u32(LayerRewPredPos))] = rpval;
 	} else {
-		rpval = (*ly).TDInteg.PredGain * GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvPrevPred), u32(di))];
-		LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], // our minus phase = prior integrated value
+		rpval = (*ly).TDInteg.PredGain * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvPrevPred), u32(di))];
+		LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], // our minus phase = prior integrated value
 		u32((*ly).Index), u32(di), u32(LayerRewPredNeg))] = rpval;
 	}
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // global value will be copied to layers next cycle
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // global value will be copied to layers next cycle
 	u32(GvRewPred), u32(di))] = rpval;
 }
 fn LayerParams_CyclePostTDDaLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
 	var ili = u32((*ly).TDDa.TDIntegLayIndex);
-	var da = LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32(ili), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[80], TensorStrides[81], TensorStrides[82], u32(ili), u32(di), u32(LayerRewPredNeg))];
+	var da = LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ili), u32(di), u32(LayerRewPredPos))] - LayerStates[Index3D(TensorStrides[90], TensorStrides[91], TensorStrides[92], u32(ili), u32(di), u32(LayerRewPredNeg))];
 	if ((*ctx).PlusPhase == 0) {
 		da = f32(0);
 	}
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // updates global value that will be copied to layers next cycle.
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // updates global value that will be copied to layers next cycle.
 	u32(GvDA), u32(di))] = da;
 }
 fn LayerParams_CyclePostCeMLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, lpi: u32,di: u32) {
 	var casd = PoolAvgMax(AMCaD, AMCycle, Max, lpi, di);
 	if ((*ly).Learn.NeuroMod.Valence == Positive) {
-		GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvCeMpos), u32(di))] = casd;
+		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMpos), u32(di))] = casd;
 	} else {
-		GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvCeMneg), u32(di))] = casd;
+		GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMneg), u32(di))] = casd;
 	}
 }
 fn LayerParams_CyclePostVTALayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, di: u32) {
-	VTAParams_VTADA(&(*ly).VTA, ctx, di, GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvACh), u32(di))], (GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91],
+	VTAParams_VTADA(&(*ly).VTA, ctx, di, GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvACh), u32(di))], (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101],
 	u32(GvHasRew), u32(di))] > 0));
 }
 fn LayerParams_CyclePostVSPatchLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,Context>, pi: u32,di: u32, spi: i32) {
 	var casd = PoolAvgMax(AMCaD, AMCycle, Avg, pi, di);
 	if ((*ly).Learn.NeuroMod.DAMod == D1Mod) {
-		GlobalVectors[Index3D(TensorStrides[100], TensorStrides[101], TensorStrides[102], u32(GvVSPatchD1), u32(u32(pi - 1)), u32(di))] = casd;
+		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112], u32(GvVSPatchD1), u32(u32(pi - 1)), u32(di))] = casd;
 	} else {
-		GlobalVectors[Index3D(TensorStrides[100], TensorStrides[101], TensorStrides[102],
+		GlobalVectors[Index3D(TensorStrides[110], TensorStrides[111], TensorStrides[112],
 		u32(GvVSPatchD2), u32(u32(pi - 1)), u32(di))] = casd;
 	}
 }
@@ -547,7 +549,7 @@ struct PulvParams {
 const PathGTypesN: PathGTypes = 5;
 const GlobalScalarVarsN: GlobalScalarVars = 57;
 const GlobalVectorVarsN: GlobalVectorVars = 10;
-const GPUVarsN: GPUVars = 22;
+const GPUVarsN: GPUVars = 23;
 const LayerTypesN: LayerTypes = 30;
 const LayerVarsN: LayerVars = 11;
 const ViewTimesN: ViewTimes = 7;
@@ -559,7 +561,8 @@ const NeuronAvgVarsN: NeuronAvgVars = 7;
 const NeuronIndexVarsN: NeuronIndexVars = 3;
 const PathTypesN: PathTypes = 12;
 const GPLayerTypesN: GPLayerTypes = 3;
-const PoolIntVarsN: PoolIntVars = 10;
+const PoolIndexVarsN: PoolIndexVars = 4;
+const PoolIntVarsN: PoolIntVars = 6;
 const AvgMaxN: AvgMax = 2;
 const AvgMaxPhasesN: AvgMaxPhases = 4;
 const AvgMaxVarsN: AvgMaxVars = 7;
@@ -1232,9 +1235,9 @@ fn LayerParams_GatedFromCaPMax(ly: ptr<function,LayerParams>, ctx: ptr<function,
 			var gthr = spkavg > thr;
 			if (gthr) {
 				anyGated = true;
-				PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(PoolGated))] = 1;
+				PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(PoolGated))] = 1;
 			} else {
-				PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(pi), u32(di), u32(PoolGated))] = 0;
+				PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(pi), u32(di), u32(PoolGated))] = 0;
 			}
 		}
 	} else {
@@ -1244,9 +1247,9 @@ fn LayerParams_GatedFromCaPMax(ly: ptr<function,LayerParams>, ctx: ptr<function,
 		}
 	}
 	if (anyGated) {
-		PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132], u32(lpi), u32(di), u32(PoolGated))] = 1;
+		PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142], u32(lpi), u32(di), u32(PoolGated))] = 1;
 	} else {
-		PoolsInt[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
+		PoolsInt[Index3D(TensorStrides[140], TensorStrides[141], TensorStrides[142],
 		u32(lpi), u32(di), u32(PoolGated))] = 0;
 	}
 }
@@ -1260,17 +1263,18 @@ struct MatrixPathParams {
 }
 
 //////// import: "pool.go"
+alias PoolIndexVars = i32; //enums:enum
+const  PoolNeurSt: PoolIndexVars = 0;
+const  PoolNeurEd: PoolIndexVars = 1;
+const  PoolLayerIdx: PoolIndexVars = 2;
+const  PoolIsLayer: PoolIndexVars = 3;
 alias PoolIntVars = i32; //enums:enum
-const  PoolNeurSt: PoolIntVars = 0;
-const  PoolNeurEd: PoolIntVars = 1;
-const  PoolLayerIdx: PoolIntVars = 2;
-const  PoolIsLayer: PoolIntVars = 3;
-const  Clamped: PoolIntVars = 4;
-const  PoolGated: PoolIntVars = 5;
-const  FFsRawInt: PoolIntVars = 6;
-const  FBsRawInt: PoolIntVars = 7;
-const  GeExtRawInt: PoolIntVars = 8;
-const  PoolIntAvgMaxStart: PoolIntVars = 9;
+const  Clamped: PoolIntVars = 0;
+const  PoolGated: PoolIntVars = 1;
+const  FFsRawInt: PoolIntVars = 2;
+const  FBsRawInt: PoolIntVars = 3;
+const  GeExtRawInt: PoolIntVars = 4;
+const  PoolIntAvgMaxStart: PoolIntVars = 5;
 alias AvgMax = i32; //enums:enum
 const  Avg: AvgMax = 0;
 const  Max: AvgMax = 1;
@@ -1295,7 +1299,7 @@ fn AvgMaxVarIndex(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax) -> u32 {
 	return u32(poolFloatAvgMaxStart) + u32(vr)*u32(AvgMaxN)*u32(AvgMaxPhasesN) + u32(phase)*u32(AvgMaxN) + u32(am);
 }
 fn PoolAvgMax(vr: AvgMaxVars, phase: AvgMaxPhases, am: AvgMax, pi: u32,di: u32) -> f32 {
-	return Pools[Index3D(TensorStrides[120], TensorStrides[121], TensorStrides[122],
+	return Pools[Index3D(TensorStrides[130], TensorStrides[131], TensorStrides[132],
 	u32(pi), u32(di), u32(AvgMaxVarIndex(vr, phase, am)))];
 }
 
@@ -1367,14 +1371,14 @@ fn LDTParams_ACh(lp: ptr<function,LDTParams>, ctx: ptr<function,Context>, di: u3
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay2Act);
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay3Act);
 	maxSrcAct = LDTParams_MaxSrcAct(lp, maxSrcAct, srcLay4Act);
-	var maintInh = (*lp).MaintInhib * GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvGoalMaint), u32(di))];
+	var maintInh = (*lp).MaintInhib * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvGoalMaint), u32(di))];
 	maintInh = min(1.0, maintInh);
 	maxSrcAct *= (1.0 - maintInh);
 	var ach = maxSrcAct;
-	if (GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvHasRew), u32(di))] > 0) {
+	if (GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvHasRew), u32(di))] > 0) {
 		ach = f32(1);
 	} else {
-		ach = max(ach, GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvUrgency), u32(di))]);
+		ach = max(ach, GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvUrgency), u32(di))]);
 	}return ach;
 }
 struct VTAParams {
@@ -1384,13 +1388,13 @@ struct VTAParams {
 	pad: f32,
 }
 fn VTAParams_VTADA(vt: ptr<function,VTAParams>, ctx: ptr<function,Context>, di: u32, ach: f32, hasRew: bool) {
-	var pvDA = (*vt).LHbGain * GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvLHbPVDA), u32(di))];
-	var csNet = GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvCeMpos), u32(di))] - GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], u32(GvCeMneg), u32(di))];
+	var pvDA = (*vt).LHbGain * GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvLHbPVDA), u32(di))];
+	var csNet = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMpos), u32(di))] - GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], u32(GvCeMneg), u32(di))];
 	var achMod = f32(0);
 	if (ach >= (*vt).AChThr) {
 		achMod = ach;
 	}
-	var vsPatch = GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // note: critical to use thresholded version
+	var vsPatch = GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // note: critical to use thresholded version
 	u32(GvVSPatchPosThr), u32(di))];
 	if (csNet > 0) {
 		csNet = max(0.0, csNet-vsPatch); // vspatch can shunt positive CS DA, but no dipping!  that is lhb
@@ -1402,9 +1406,9 @@ fn VTAParams_VTADA(vt: ptr<function,VTAParams>, ctx: ptr<function,Context>, di: 
 	} else {
 		netDA = csDA;
 	}
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // note: keeping this separately just for semantics
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // note: keeping this separately just for semantics
 	u32(GvVtaDA), u32(di))] = netDA;
-	GlobalScalars[Index2D(TensorStrides[90], TensorStrides[91], // general neuromod DA
+	GlobalScalars[Index2D(TensorStrides[100], TensorStrides[101], // general neuromod DA
 	u32(GvDA), u32(di))] = netDA;
 }
 

@@ -186,7 +186,7 @@ func (ly *LayerParams) GiFromSpikes(ctx *Context, ni, di uint32) {
 	geExt := Neurons.Value(int(ni), int(di), int(GeExt))
 	PoolInhibRawIncrInt(pi, di, spk, geRaw, geExt)
 	PoolAvgMaxUpdate(pi, di, ni)
-	if PoolsInt.Value(int(pi), int(di), int(PoolIsLayer)) == 0 { // also update layer pool if I am a subpool
+	if PoolIxs.Value(int(pi), int(PoolIsLayer)) == 0 { // also update layer pool if I am a subpool
 		lpi := ly.PoolIndex(0)
 		PoolInhibRawIncrInt(lpi, di, spk, geRaw, geExt)
 		PoolAvgMaxUpdate(lpi, di, ni)
@@ -294,7 +294,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, pi, ni, di uint32, drvGe float
 	saveVal := float32(0) // sometimes we need to use a value computed here, for the post Gs step
 	pil := pi - ly.PoolSt
 	pnn := uint32(PoolNNeurons(pi))
-	pni := NeuronIxs.Value(int(ni), int(NrnNeurIndex)) - uint32(PoolsInt.Value(int(pi), int(di), int(PoolNeurSt)))
+	pni := NeuronIxs.Value(int(ni), int(NrnNeurIndex)) - uint32(PoolIxs.Value(int(pi), int(PoolNeurSt)))
 	nrnCtxtGe := Neurons.Value(int(ni), int(di), int(CtxtGe))
 	nrnGeRaw := Neurons.Value(int(ni), int(di), int(GeRaw))
 	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
@@ -570,7 +570,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, lpi, pi, ni, di uint32) {
 	li := ly.Index
 	pil := pi - ly.PoolSt // 0-n pool index
 	pnn := uint32(PoolNNeurons(pi))
-	pni := NeuronIxs.Value(int(ni), int(NrnNeurIndex)) - uint32(PoolsInt.Value(int(pi), int(di), int(PoolNeurSt)))
+	pni := NeuronIxs.Value(int(ni), int(NrnNeurIndex)) - uint32(PoolIxs.Value(int(pi), int(PoolNeurSt)))
 	hasRew := GlobalScalars.Value(int(GvHasRew), int(di)) > 0
 	switch ly.Type {
 	case SuperLayer:
@@ -956,7 +956,7 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pi uint32) {
 			PoolsInt.Set(1, int(pi), int(di), int(Clamped))
 		}
 	}
-	if PoolsInt.Value(int(pi), int(0), int(PoolIsLayer)) == 0 {
+	if PoolIxs.Value(int(pi), int(PoolIsLayer)) == 0 {
 		return
 	}
 	geIntMinusMax := float32(0)
@@ -1032,8 +1032,8 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32) {
 
 	switch ly.Type {
 	case BLALayer:
-		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev)))     // delta on previous trial
-		if !ly.Learn.NeuroMod.IsBLAExt() && PoolsInt.Value(int(pi), int(0), int(PoolNeurSt)) == 0 { // first pool
+		dlr = ly.Learn.RLRate.RLRateDiff(nrnCaP, Neurons.Value(int(ni), int(di), int(CaDPrev))) // delta on previous trial
+		if !ly.Learn.NeuroMod.IsBLAExt() && PoolIxs.Value(int(pi), int(PoolNeurSt)) == 0 {      // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case VSPatchLayer:

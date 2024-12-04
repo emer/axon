@@ -131,10 +131,8 @@ type Network struct {
 
 	//////// Params
 
-	// todo: rename LayParams -> LayerParams
-
-	// LayParams are all the layer parameters. [NLayers]
-	LayParams []LayerParams `display:"-"`
+	// LayerParams are all the layer parameters. [NLayers]
+	LayerParams []LayerParams `display:"-"`
 
 	// PathParams are all the path parameters, in sending order. [NPaths]
 	PathParams []PathParams `display:"-"`
@@ -143,6 +141,10 @@ type Network struct {
 
 	// NetworkIxs have indexes and sizes for entire network (one only).
 	NetworkIxs []NetworkIndexes
+
+	// PoolIxs have index values for each Pool.
+	// [Layer * Pools][PoolIndexVars]
+	PoolIxs tensor.Uint32 `display:"-"`
 
 	// NeuronIxs have index values for each neuron: index into layer, pools.
 	// [Neurons][Indexes]
@@ -182,7 +184,7 @@ type Network struct {
 	Ctx []Context `display:"-"`
 
 	// Neurons are all the neuron state variables.
-	// [Neurons][Vars][Data]
+	// [Neurons][Data][Vars]
 	Neurons tensor.Float32 `display:"-"`
 
 	// NeuronAvgs are variables with averages over the
@@ -192,17 +194,17 @@ type Network struct {
 
 	// Pools are the [PoolVars] float32 state values for layer and sub-pool inhibition,
 	// Including the float32 AvgMax values by Phase and variable: use [AvgMaxVarIndex].
-	// [Layer * Pools][PoolVars+AvgMax][Data]
+	// [Layer * Pools][Data][PoolVars+AvgMax]
 	Pools tensor.Float32
 
 	// PoolsInt are the [PoolIntVars] int32 state values for layer and sub-pool
 	// inhibition, AvgMax atomic integration, and other vars: use [AvgMaxIntVarIndex]
-	// [Layer * Pools][PoolIntVars+AvgMax][Data]
+	// [Layer * Pools][Data][PoolIntVars+AvgMax]
 	PoolsInt tensor.Int32
 
 	// LayerStates holds layer-level state values, with variables defined in
 	// [LayerVars], for each layer and Data parallel index.
-	// [Layer][LayerVarsN][Data]
+	// [Layer][Data][LayerVarsN]
 	LayerStates tensor.Float32 `display:"-"`
 
 	// GlobalScalars are the global scalar state variables.
@@ -224,7 +226,7 @@ type Network struct {
 	// PathGBuf is the conductance buffer for accumulating spikes.
 	// Subslices are allocated to each pathway.
 	// Uses int-encoded values for faster GPU atomic integration.
-	// [NPathNeur][MaxDel+1][Data]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
+	// [NPathNeur][Data][MaxDel+1]; NPathNeur = [Layer][RecvPaths][RecvNeurons]
 	PathGBuf tensor.Int32 `display:"-"`
 
 	// PathGSyns are synaptic conductance integrated over time per pathway
@@ -245,14 +247,11 @@ type Network struct {
 	// parallel index, for accumulating learning traces and weight changes per data.
 	// This is the largest data size, so multiple instances are used
 	// to handle larger networks.
-	// [NSyns][Vars][Data]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
+	// [NSyns][Data][Vars]; NSyns = [Layer][SendPaths][SendNeurons][Syns]
 	SynapseTraces tensor.Float32 `display:"-"`
 
-	// SynapseTraces1 is an overflow buffer fro SynapseTraces.
-	SynapseTraces1 tensor.Float32 `display:"-"`
-
-	// SynapseTraces2 is an overflow buffer fro SynapseTraces.
-	SynapseTraces2 tensor.Float32 `display:"-"`
+	// SynapseTraces1 is an overflow buffer for SynapseTraces. // todo
+	// SynapseTraces1 tensor.Float32 `display:"-"`
 }
 
 // Context gets the network context state.
@@ -738,12 +737,13 @@ func (nt *Network) Build() error { //types:add
 	nix.RubiconNPosUSs = nt.Rubicon.NPosUSs
 	nix.RubiconNNegUSs = nt.Rubicon.NNegUSs
 
-	nt.LayParams = make([]LayerParams, nLayers)
+	nt.LayerParams = make([]LayerParams, nLayers)
 	nt.Paths = make([]*Path, totPaths)
 	nt.PathParams = make([]PathParams, totPaths)
 
 	nt.LayerStates.SetShapeSizes(nLayers, maxData, int(LayerVarsN))
 	nt.Pools.SetShapeSizes(totPools, maxData, int(PoolVarsN))
+	nt.PoolIxs.SetShapeSizes(totPools, int(PoolIndexVarsN))
 	nt.PoolsInt.SetShapeSizes(totPools, maxData, int(PoolIntVarsTot))
 	nt.Neurons.SetShapeSizes(totNeurons, maxData, int(NeuronVarsN))
 	nt.NeuronAvgs.SetShapeSizes(totNeurons, int(NeuronAvgVarsN))
@@ -763,7 +763,7 @@ func (nt *Network) Build() error { //types:add
 	poolIndex := 0
 	extIndex := 0
 	for li, ly := range nt.Layers {
-		ly.Params = &nt.LayParams[li]
+		ly.Params = &nt.LayerParams[li]
 		ly.Params.Type = ly.Type
 		if ly.Off {
 			continue
@@ -794,7 +794,7 @@ func (nt *Network) Build() error { //types:add
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < maxData; di++ {
-				nt.PoolsInt.Set(int32(li), int(poolIndex+pi), int(di), int(PoolLayerIdx))
+				nt.PoolIxs.Set(uint32(li), int(poolIndex+pi), int(PoolLayerIdx))
 			}
 		}
 		if ly.Type.IsExt() {
@@ -835,7 +835,7 @@ func (nt *Network) Build() error { //types:add
 
 	nt.NetworkIxs[0].NSyns = uint32(totSynapses)
 	nt.Synapses.SetShapeSizes(totSynapses, int(SynapseVarsN))
-	nt.SynapseTraces.SetShapeSizes(totSynapses, int(SynapseTraceVarsN), maxData)
+	nt.SynapseTraces.SetShapeSizes(totSynapses, maxData, int(SynapseTraceVarsN))
 	nt.SynapseIxs.SetShapeSizes(totSynapses, int(SynapseIndexVarsN))
 	nt.PathSendCon.SetShapeSizes(totSendCon, 2)
 	nt.PathRecvCon.SetShapeSizes(totRecvCon, 2)
@@ -920,7 +920,7 @@ func ToGPUParams() {
 
 // ToGPUIndexes copies indexes to the GPU.
 func ToGPUIndexes() {
-	ToGPU(NetworkIxsVar, NeuronIxsVar, SynapseIxsVar, PathSendConVar, RecvPathIxsVar, PathRecvConVar, RecvSynIxsVar)
+	ToGPU(NetworkIxsVar, PoolIxsVar, NeuronIxsVar, SynapseIxsVar, PathSendConVar, RecvPathIxsVar, PathRecvConVar, RecvSynIxsVar)
 }
 
 // ToGPUCtxGlobal copies Context and Global vars to the GPU.
@@ -958,6 +958,8 @@ func ToGPUAll() {
 	ToGPUParams()
 	ToGPULayersNeurons()
 	ToGPUSynapses()
+	ToGPU(SynapseTracesVar)          // only time we call this
+	ToGPU(PathGBufVar, PathGSynsVar) // and this
 }
 
 // note: RunDone can only be run once, so all vars need to be present in the one call.
@@ -1022,9 +1024,10 @@ func (nt *Network) BuildPathGBuf() {
 // that are then processed in the code.
 func (nt *Network) SetAsCurrent() {
 	CurrentNetwork = nt
-	Layers = nt.LayParams
+	Layers = nt.LayerParams
 	Paths = nt.PathParams
 	NetworkIxs = nt.NetworkIxs
+	PoolIxs = &nt.PoolIxs
 	NeuronIxs = &nt.NeuronIxs
 	SynapseIxs = &nt.SynapseIxs
 	PathSendCon = &nt.PathSendCon
@@ -1053,7 +1056,7 @@ func (nt *Network) DeleteAll() {
 	nt.Paths = nil
 	nt.FunTimes = nil
 
-	nt.LayParams = nil
+	nt.LayerParams = nil
 	nt.PathParams = nil
 }
 
@@ -1268,8 +1271,8 @@ func (nt *Network) DiffFrom(ctx *Context, on *Network, maxDiff int) string {
 	for di := uint32(0); di < ctx.NData; di++ {
 		for si := uint32(0); si < nix.NSyns; si++ {
 			for svar := Tr; svar < SynapseTraceVarsN; svar++ {
-				sv := nt.SynapseTraces.Value(int(si), int(svar), int(di))
-				ov := on.SynapseTraces.Value(int(si), int(svar), int(di))
+				sv := nt.SynapseTraces.Value(int(si), int(di), int(svar))
+				ov := on.SynapseTraces.Value(int(si), int(di), int(svar))
 				if sv != ov {
 					diffs += fmt.Sprintf("SynapseTraces: di: %d, si: %d\tvar: %s\tval: %g\toth: %g\n", di, si, svar.String(), sv, ov)
 					ndif++

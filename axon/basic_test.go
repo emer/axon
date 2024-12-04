@@ -373,8 +373,8 @@ func TestGPUState(t *testing.T) {
 	RunDone(CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar, NeuronsVar, NeuronAvgsVar, SynapsesVar, SynapseTracesVar, PathGBufVar, PathGSynsVar)
 	// note: the following requires turning off read-only in vars.go
 	// RunDone(LayersVar, PathsVar, NetworkIxsVar, NeuronIxsVar, SynapseIxsVar, PathSendConVar, RecvPathIxsVar, PathRecvConVar, RecvSynIxsVar, CtxVar, GlobalScalarsVar, GlobalVectorsVar, LayerStatesVar, PoolsVar, PoolsIntVar, NeuronsVar, NeuronAvgsVar, SynapsesVar, SynapseTracesVar, PathGBufVar, PathGSynsVar)
-	// assert.Equal(t, testNetA.LayParams, testNetB.LayParams)
-	// assert.Equal(t, testNetA.LayParams, Layers)
+	// assert.Equal(t, testNetA.LayerParams, testNetB.LayerParams)
+	// assert.Equal(t, testNetA.LayerParams, Layers)
 	// assert.Equal(t, testNetA.PathParams, testNetB.PathParams)
 	// assert.Equal(t, testNetA.NetworkIxs, testNetB.NetworkIxs)
 	// assert.Equal(t, testNetA.NeuronIxs.Values, testNetB.NeuronIxs.Values)

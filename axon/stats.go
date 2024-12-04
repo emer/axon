@@ -147,8 +147,8 @@ func (ly *Layer) AvgMaxVarByPool(ctx *Context, varNm string, poolIndex, di int) 
 		return am
 	}
 	pi := ly.Params.PoolIndex(uint32(poolIndex))
-	nsi := PoolsInt.Value(int(pi), int(di), int(PoolNeurSt))
-	nei := PoolsInt.Value(int(pi), int(di), int(PoolNeurEd))
+	nsi := PoolIxs.Value(int(pi), int(PoolNeurSt))
+	nei := PoolIxs.Value(int(pi), int(PoolNeurEd))
 	am.Init()
 	for lni := nsi; lni < nei; lni++ {
 		ni := ly.NeurStIndex + uint32(lni)

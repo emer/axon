@@ -50,8 +50,6 @@ func (nt *Network) InitWeights() { //types:add
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
 	ToGPUAll()
-	ToGPU(SynapseTracesVar)          // only time we call this
-	ToGPU(PathGBufVar, PathGSynsVar) // and this
 }
 
 // InitTopoSWts initializes SWt structural weight parameters from

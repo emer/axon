@@ -324,7 +324,7 @@ func Beta2Neuron(i uint32) { //gosl:kernel
 // do pool-level updating after end of minus phase.
 func MinusPhasePool(pi uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	li := PoolsInt.Value(int(pi), int(0), int(PoolLayerIdx))
+	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
 	Layers[li].MinusPhasePool(ctx, pi)
 }
 
@@ -360,7 +360,7 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
-	li := PoolsInt.Value(int(pi), int(di), int(PoolLayerIdx))
+	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
 	Layers[li].PlusPhasePool(ctx, pi, di)
 }
 

@@ -17,17 +17,14 @@ import (
 //gosl:start
 //gosl:import "github.com/emer/axon/v2/fsfffb"
 
-// PoolIntVars are int32 pool variables, for computing fsfffb inhibition etc.
-// Note that we use int32 instead of uint32 so that overflow errors can be detected.
-// See [PoolVars] for float32 variables.
-type PoolIntVars int32 //enums:enum
+type PoolIndexVars int32 //enums:enum
 
 const (
 	// PoolNeurSt is the starting layer-wise index within the list
 	// of neurons in this pool.
 	// Add layer starting neuron index (NeurSt) to get index into global
 	// network neurons list.
-	PoolNeurSt PoolIntVars = iota
+	PoolNeurSt PoolIndexVars = iota
 
 	// PoolNeurEd is the ending (exclusive) layer-wise index within the list
 	// of neurons in this pool.
@@ -41,10 +38,17 @@ const (
 	// PoolIsLayer is true (> 0) if this pool represents the entire layer,
 	// which is always the first pool in the list of pools for a layer.
 	PoolIsLayer
+)
 
+// PoolIntVars are int32 pool variables, for computing fsfffb inhibition etc.
+// Note that we use int32 instead of uint32 so that overflow errors can be detected.
+// See [PoolVars] for float32 variables.
+type PoolIntVars int32 //enums:enum
+
+const (
 	// Clamped if true (!=0), this layer is hard-clamped and should
 	// use GeExts exclusively for PV.
-	Clamped
+	Clamped PoolIntVars = iota
 
 	// PoolGated is true (> 0) if this pool gated (for [MatrixLayer], [BGThalLayer])
 	PoolGated
@@ -153,7 +157,7 @@ func PoolAvgMax(vr AvgMaxVars, phase AvgMaxPhases, am AvgMax, pi, di uint32) flo
 // PoolNNeurons returns the number of neurons in the given pool.
 // pi = global pool index.
 func PoolNNeurons(pi uint32) int32 {
-	return PoolsInt.Value(int(pi), int(0), int(PoolNeurEd)) - PoolsInt.Value(int(pi), int(0), int(PoolNeurSt))
+	return int32(PoolIxs.Value(int(pi), int(PoolNeurEd)) - PoolIxs.Value(int(pi), int(PoolNeurSt)))
 }
 
 // PoolAvgMaxInit initializes the AvgMax Int accumulators for Cycle vals
@@ -188,6 +192,19 @@ func PoolAvgMaxUpdateVar(vr AvgMaxVars, pi, di uint32, val float32) {
 	vim := AvgMaxIntVarIndex(vr, Max)
 	atomic.AddInt32(PoolsInt.ValuePtr(int(pi), int(di), int(vis)), int32(val*floatToSum))
 	atomicx.MaxInt32(PoolsInt.ValuePtr(int(pi), int(di), int(vim)), int32(val*floatToInt))
+}
+
+// PoolAvgMaxUpdateVarNonAtomic updates the AvgMax value based on given value.
+// non-atomic version: only when explicitly looping over neurons.
+// pi = global pool index.
+func PoolAvgMaxUpdateVarNonAtomic(vr AvgMaxVars, pi, di uint32, val float32) {
+	n := float32(PoolNNeurons(pi))
+	floatToInt := float32(uint32(1) << 20)
+	floatToSum := floatToInt / n
+	vis := AvgMaxIntVarIndex(vr, Avg)
+	vim := AvgMaxIntVarIndex(vr, Max)
+	PoolsInt.SetAdd(int32(val*floatToSum), int(pi), int(di), int(vis))
+	PoolsInt.Set(max(PoolsInt.Value(int(pi), int(di), int(vim)), int32(val*floatToInt)), int(pi), int(di), int(vim))
 }
 
 // PoolAvgMaxUpdate updates the AvgMax values based on current neuron values.
@@ -244,7 +261,7 @@ func PoolAvgDifInit(pi, di uint32) {
 // PoolAvgDifUpdate updates the AvgMax values for AvgDif Var.
 // pi = global pool index.
 func PoolAvgDifUpdate(pi, di uint32, avdif float32) {
-	PoolAvgMaxUpdateVar(AMAvgDif, pi, di, avdif)
+	PoolAvgMaxUpdateVarNonAtomic(AMAvgDif, pi, di, avdif)
 }
 
 // PoolAvgDifCalc does Calc on Cycle level, and re-inits
@@ -281,10 +298,10 @@ func PoolInit(pi, di uint32) {
 
 // PoolPoolGi computes the total inhibitory conductance for the pool.
 func PoolPoolGi(ctx *Context, pi, di uint32) {
-	if PoolsInt.Value(int(pi), int(di), int(PoolIsLayer)) > 0 {
+	if PoolIxs.Value(int(pi), int(PoolIsLayer)) > 0 {
 		return
 	}
-	li := PoolsInt.Value(int(pi), int(di), int(PoolLayerIdx))
+	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
 	PoolAvgMaxCalc(pi, di)
 	PoolInhibIntToRaw(pi, di)
 	ly := GetLayers(uint32(li))

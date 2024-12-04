@@ -133,8 +133,8 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 			randx.PermuteInts(porder, &ly.Network.Rand)
 		}
 		pi := ly.Params.PoolIndex(spi) // only using for idxs
-		nsi := PoolsInt.Value(int(pi), int(0), int(PoolNeurSt))
-		nei := PoolsInt.Value(int(pi), int(0), int(PoolNeurEd))
+		nsi := PoolIxs.Value(int(pi), int(PoolNeurSt))
+		nei := PoolIxs.Value(int(pi), int(PoolNeurEd))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.NeurStIndex + uint32(lni)
 			if NeuronIsOff(ni) {
@@ -323,8 +323,8 @@ func (ly *LayerParams) DecayStatePool(ctx *Context, pool int, decay, glong, ahp 
 	spi := uint32(pool + 1) // 1 based
 	for di := uint32(0); di < ctx.NData; di++ {
 		pi := ly.PoolIndex(spi)
-		nsi := PoolsInt.Value(int(pi), int(di), int(PoolNeurSt))
-		nei := PoolsInt.Value(int(pi), int(di), int(PoolNeurEd))
+		nsi := PoolIxs.Value(int(pi), int(PoolNeurSt))
+		nei := PoolIxs.Value(int(pi), int(PoolNeurEd))
 		for lni := nsi; lni < nei; lni++ {
 			ni := ly.Indexes.NeurSt + uint32(lni)
 			if NeuronIsOff(ni) {

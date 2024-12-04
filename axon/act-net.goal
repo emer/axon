@@ -129,7 +129,7 @@ func (nt *Network) PlusPhaseStart() {
 	nix := nt.NetIxs()
 	ctx := nt.Context()
 	nd := int(nix.NNeurons * ctx.NData)
-	
+
 	ctx.PlusPhaseStart()
 	RunPlusPhaseStartNeuron(nd)
 }
@@ -318,7 +318,7 @@ func Beta2Neuron(i uint32) { //gosl:kernel
 // do pool-level updating after end of minus phase.
 func MinusPhasePool(pi uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	li := PoolsInt[pi, 0, PoolLayerIdx]
+	li := PoolIxs[pi, PoolLayerIdx]
 	Layers[li].MinusPhasePool(ctx, pi)
 }
 
@@ -354,7 +354,7 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
 	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
-	li := PoolsInt[pi, di, PoolLayerIdx]
+	li := PoolIxs[pi, PoolLayerIdx]
 	Layers[li].PlusPhasePool(ctx, pi, di)
 }
 

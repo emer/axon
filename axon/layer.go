@@ -329,16 +329,14 @@ func (ly *Layer) BuildSubPools(ctx *Context) {
 	spi := uint32(1)
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
-			soff := int32(ly.Shape.IndexTo1D(py, px, 0, 0))
-			eoff := int32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
-			for di := uint32(0); di < ly.MaxData; di++ {
-				pi := ly.Params.PoolIndex(spi)
-				PoolsInt.Set(soff, int(pi), int(di), int(PoolNeurSt))
-				PoolsInt.Set(eoff, int(pi), int(di), int(PoolNeurEd))
-			}
+			soff := uint32(ly.Shape.IndexTo1D(py, px, 0, 0))
+			eoff := uint32(ly.Shape.IndexTo1D(py, px, sh[2]-1, sh[3]-1) + 1)
+			pi := ly.Params.PoolIndex(spi)
+			PoolIxs.Set(soff, int(pi), int(PoolNeurSt))
+			PoolIxs.Set(eoff, int(pi), int(PoolNeurEd))
 			for lni := soff; lni < eoff; lni++ {
-				ni := ly.NeurStIndex + uint32(lni)
-				NeuronIxs.Set(uint32(spi), int(ni), int(NrnSubPool))
+				ni := ly.NeurStIndex + lni
+				NeuronIxs.Set(spi, int(ni), int(NrnSubPool))
 			}
 			spi++
 		}
@@ -350,9 +348,9 @@ func (ly *Layer) BuildPools(ctx *Context, nn uint32) error {
 	np := 1 + ly.NumPools()
 	for di := uint32(0); di < ly.MaxData; di++ {
 		lpi := ly.Params.PoolIndex(0)
-		PoolsInt.Set(0, int(lpi), int(di), int(PoolNeurSt))
-		PoolsInt.Set(int32(nn), int(lpi), int(di), int(PoolNeurEd))
-		PoolsInt.Set(1, int(lpi), int(di), int(PoolIsLayer))
+		PoolIxs.Set(0, int(lpi), int(PoolNeurSt))
+		PoolIxs.Set(nn, int(lpi), int(PoolNeurEd))
+		PoolIxs.Set(1, int(lpi), int(PoolIsLayer))
 	}
 	if np > 1 {
 		ly.BuildSubPools(ctx)
