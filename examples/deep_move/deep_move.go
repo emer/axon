@@ -662,7 +662,7 @@ func (ss *Sim) StatCounters(mode, level enums.Enum) string {
 		return counters
 	}
 	counters += fmt.Sprintf(" TrialName: %s", curModeDir.StringValue("TrialName").String1D(di))
-	statNames := []string{"Depth_CorSim", "HeadDir_CorSim"}
+	statNames := []string{"DepthP_CorSim", "HeadDirP_CorSim"}
 	if level == Cycle || curModeDir.Node(statNames[0]) == nil {
 		return counters
 	}

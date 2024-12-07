@@ -14,7 +14,6 @@ import (
 	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/tensor/table"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
@@ -59,7 +58,7 @@ type MusicEnv struct {
 	NNotes int
 
 	// the song encoded into 200 msec increments, with columns as tracks
-	Song table.Table
+	Song *table.Table `display:"-"`
 
 	// current time step
 	Time env.Counter `display:"inline"`
@@ -108,6 +107,7 @@ func (ev *MusicEnv) TrackInfo(track smf.Track) (name string, ticks int, bpm floa
 }
 
 func (ev *MusicEnv) LoadSong(fname string) error {
+	ev.Song = table.New()
 	data, err := os.ReadFile(fname)
 	if err != nil {
 		fmt.Println(err)
@@ -177,7 +177,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 					fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 				}
 				for ri := lastOnRow + 1; ri <= row; ri++ {
-					ev.Song.SetFloatIndex(ti, ri, float64(note))
+					ev.Song.ColumnByIndex(ti).SetFloat1D(float64(note), ri)
 				}
 			case msg.GetNoteOn(&channel, &note, &vel):
 				if ti == ev.Track {
@@ -188,12 +188,12 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 						fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 					}
 					for ri := lastOnRow + 1; ri <= row; ri++ {
-						ev.Song.SetFloatIndex(ti, ri, float64(note))
+						ev.Song.ColumnByIndex(ti).SetFloat1D(float64(note), ri)
 					}
 					lastOnRow = -1
 				} else {
 					lastOnRow = row
-					ev.Song.SetFloatIndex(ti, row, float64(note))
+					ev.Song.ColumnByIndex(ti).SetFloat1D(float64(note), row)
 					if ev.Debug && row < 20 {
 						fmt.Printf("%d\t%d\tnote on:\t%d\n", tick, row, note)
 					}
@@ -204,7 +204,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 	return nil
 }
 
-func (ev *MusicEnv) State(element string) tensor.Tensor {
+func (ev *MusicEnv) State(element string) tensor.Values {
 	switch element {
 	case "Note":
 		return &ev.Note
@@ -244,40 +244,41 @@ func (ev *MusicEnv) Config(fname string, track, maxRows, unitsper int) {
 	if ev.WrapNotes {
 		ev.NNotes = 12
 	}
-	ev.Note.SetShape([]int{1, ev.NNotes, ev.UnitsPer, 1})
+	ev.Note.SetShapeSizes(1, ev.NNotes, ev.UnitsPer, 1)
 	if ev.Play {
 		ev.ConfigPlay()
 	}
 }
 
 func (ev *MusicEnv) ConfigNData(ndata int) {
-	ev.DiOffset = ev.Song.Rows / (ndata + 1)
+	ev.DiOffset = ev.Song.NumRows() / (ndata + 1)
 	if ev.DiOffset < 2 {
 		ev.DiOffset = 2
 	}
 }
 
 func (ev *MusicEnv) Init(run int) {
-	ev.Time.Scale = etime.Trial
 	ev.Time.Init()
 }
 
 func (ev *MusicEnv) Step() bool {
 	ev.Time.Incr()
 	tm := ev.Time.Cur
-	if tm > ev.Song.Rows {
+	if tm >= ev.Song.NumRows() {
 		ev.Time.Set(0)
 		tm = 0
 	}
-	note := int(ev.Song.FloatIndex(ev.Track, tm))
+	// fmt.Println(ev.Song.NumRows(), ev.Song.NumColumns(), ev.Track)
+	// fmt.Println(ev.Song.ColumnByIndex(ev.Track))
+	note := int(ev.Song.ColumnByIndex(ev.Track).Float1D(tm))
 	ev.RenderNote(note)
 	return true
 }
 
 // StepDi is data parallel version sampling different offsets from current timestep
 func (ev *MusicEnv) StepDi(di int) bool {
-	tm := (ev.Time.Cur + di*ev.DiOffset) % ev.Song.Rows
-	note := int(ev.Song.FloatIndex(ev.Track, tm))
+	tm := (ev.Time.Cur + di*ev.DiOffset) % ev.Song.NumRows()
+	note := int(ev.Song.ColumnByIndex(ev.Track).Float1D(tm))
 	ev.RenderNote(note)
 	return true
 }
@@ -294,7 +295,7 @@ func (ev *MusicEnv) RenderNote(note int) {
 		noteidx = (note - 9) % 12 // A = 0, etc.
 	}
 	for ni := 0; ni < ev.UnitsPer; ni++ {
-		ev.Note.Set([]int{0, noteidx, ni, 0}, 1)
+		ev.Note.Set(1, 0, noteidx, ni, 0)
 	}
 }
 
@@ -315,7 +316,7 @@ func (ev *MusicEnv) PlayNote(noteIndex int) {
 
 }
 
-func (ev *MusicEnv) Action(element string, input tensor.Tensor) {
+func (ev *MusicEnv) Action(element string, input tensor.Values) {
 	// nop
 }
 
