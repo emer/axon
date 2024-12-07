@@ -1,93 +1,98 @@
 package main
 
-import (
-	"github.com/emer/emergent/v2/params"
-)
+import "github.com/emer/axon/v2/axon"
 
-// ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
-// selected to apply on top of that
-var ParamSets = params.Sets{
+// LayerParams sets the minimal non-default params.
+// Base is always applied, and others can be optionally selected to apply on top of that.
+var LayerParams = axon.LayerSheets{
 	"Base": {
 		{Sel: "Layer", Doc: "needs some special inhibition and learning params",
-			Params: params.Params{
-				ly.Acts.Decay.Act =               "0.0",    // 0 > .2 -- highly sensitive
-				ly.Acts.Decay.Glong =             "0.6",    // 0.6 def > 0.5, .7 -- highly sensitive
-				ly.Acts.NMDA.MgC =                "1.4",    // 1.4, 5 > 1.2, 0
-				ly.Acts.NMDA.Voff =               "0",      // see above
-				ly.Acts.NMDA.Gbar =               "0.006",  // 0.006 > 7 or higher
-				ly.Acts.GabaB.Gbar =              "0.015",  // 0.015 > lower; higher not better
-				ly.Learn.CaSpk.SpikeG =           "12",     // 12 > 8 > 15 (too high) -- 12 makes everything work!
-				ly.Learn.TrgAvgAct.SynScaleRate = "0.0002", // 0.0002 > others -- 0.005 sig worse
-				ly.Learn.LrnNMDA.MgC =            "1.4",    // 1.4, 5 > 1.2, 0
-				ly.Learn.LrnNMDA.Voff =           "0",      // see above
-				ly.Learn.LrnNMDA.Tau =            "100",    // 100 def
-				ly.Learn.LrnNMDA.Gbar =           "0.006",
-				ly.Learn.RLRate.SigmoidLinear =   "true", // true > false later; more stable
-				ly.Learn.CaLearn.Norm =           "80",   // 80 works
-				ly.Learn.CaLearn.SpkVGCC =        "true", // sig better..
-				ly.Learn.CaLearn.SpkVgccCa =      "35",   // 70 / 5 or 35 / 10 both work
-				ly.Learn.CaLearn.VgccTau =        "10",   // 10 > 5 ?
-				ly.Learn.CaLearn.Dt.MTau =        "2",    // 2 > 4 even with more ncycles
-				ly.Learn.CaSpk.Dt.MTau =          "5",    // 5 > 10 even with more ncycles
+			Set: func(ly *axon.LayerParams) {
+				ly.Acts.Decay.Act = 0.0                  // 0 > .2 -- highly sensitive
+				ly.Acts.Decay.Glong = 0.6                // 0.6 def > 0.5, .7 -- highly sensitive
+				ly.Acts.NMDA.MgC = 1.4                   // 1.4, 5 > 1.2, 0
+				ly.Acts.NMDA.Voff = 0                    // see above
+				ly.Acts.NMDA.Gbar = 0.006                // 0.006 > 7 or higher
+				ly.Acts.GabaB.Gbar = 0.015               // 0.015 > lower; higher not better
+				ly.Learn.CaSpk.SpikeG = 12               // 12 > 8 > 15 (too high) -- 12 makes everything work!
+				ly.Learn.TrgAvgAct.SynScaleRate = 0.0002 // 0.0002 > others -- 0.005 sig worse
+				ly.Learn.LrnNMDA.MgC = 1.4               // 1.4, 5 > 1.2, 0
+				ly.Learn.LrnNMDA.Voff = 0                // see above
+				ly.Learn.LrnNMDA.Tau = 100               // 100 def
+				ly.Learn.LrnNMDA.Gbar = 0.006
+				ly.Learn.RLRate.SigmoidLinear.SetBool(true) // true > false later; more stable
+				ly.Learn.CaLearn.Norm = 80                  // 80 works
+				ly.Learn.CaLearn.SpkVGCC.SetBool(true)      // sig better..
+				ly.Learn.CaLearn.SpkVgccCa = 35             // 70 / 5 or 35 / 10 both work
+				ly.Learn.CaLearn.VgccTau = 10               // 10 > 5 ?
+				ly.Learn.CaLearn.Dt.MTau = 2                // 2 > 4 even with more ncycles
+				ly.Learn.CaSpk.Dt.MTau = 5                  // 5 > 10 even with more ncycles
 				// now automatic:
-				// ly.Learn.CaLearn.Dt.PTau =        "40",   // 60 for 300 cyc, 40 for 200 (scales linearly)
-				// ly.Learn.CaLearn.Dt.DTau =        "40",   // "
-				// ly.Learn.CaSpk.Dt.PTau =          "40",   // "
-				// ly.Learn.CaSpk.Dt.DTau =          "40",   // "
+				// ly.Learn.CaLearn.Dt.PTau =        40   // 60 for 300 cyc, 40 for 200 (scales linearly)
+				// ly.Learn.CaLearn.Dt.DTau =        40   // "
+				// ly.Learn.CaSpk.Dt.PTau =          40   // "
+				// ly.Learn.CaSpk.Dt.DTau =          40   // "
 			}},
 		{Sel: "#V1", Doc: "pool inhib (not used), initial activity",
-			Params: params.Params{
-				ly.Inhib.ActAvg.Nominal = "0.08", // 0.08 == 0.9 just noisier
-				ly.Inhib.Pool.On =        "true",
-				ly.Inhib.Layer.Gi =       "0.9", // 0.9 def
-				ly.Inhib.Pool.Gi =        "0.9", // 0.9 def
-				ly.Inhib.Layer.FB =       "1",
-				ly.Inhib.Pool.FB =        "1",
-				ly.Acts.Clamp.Ge =        "1.5", // 1.5 for fsffffb
-				ly.Acts.Decay.Act =       "1",   // 1 = slightly beneficial
-				ly.Acts.Decay.Glong =     "1",
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.08 // 0.08 == 0.9 just noisier
+				ly.Inhib.Pool.On.SetBool(true)
+				ly.Inhib.Layer.Gi = 0.9 // 0.9 def
+				ly.Inhib.Pool.Gi = 0.9  // 0.9 def
+				ly.Inhib.Layer.FB = 1
+				ly.Inhib.Pool.FB = 1
+				ly.Acts.Clamp.Ge = 1.5 // 1.5 for fsffffb
+				ly.Acts.Decay.Act = 1  // 1 = slightly beneficial
+				ly.Acts.Decay.Glong = 1
 			}},
 		{Sel: "#V4", Doc: "pool inhib, sparse activity",
-			Params: params.Params{
-				ly.Inhib.ActAvg.Nominal = "0.03", // 0.03 > .04 > 0.025
-				ly.Inhib.ActAvg.AdaptGi = "true",
-				ly.Inhib.Layer.FB =       "1",    // 1.1 FB1 >> 4!
-				ly.Inhib.Pool.FB =        "4",    // 4
-				ly.Inhib.Layer.SS =       "30",   // 30 best
-				ly.Inhib.Pool.SS =        "30",   // 0 works here..
-				ly.Inhib.Layer.Gi =       "1.0",  // 1.1 > 1.0 -- def 1.1, 1.0 > 1.0, 1.1!
-				ly.Inhib.Pool.Gi =        "0.9",  // 0.9
-				ly.Inhib.Pool.On =        "true", // needs pool-level
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.03 // 0.03 > .04 > 0.025
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Layer.FB = 1          // 1.1 FB1 >> 4!
+				ly.Inhib.Pool.FB = 4           // 4
+				ly.Inhib.Layer.SS = 30         // 30 best
+				ly.Inhib.Pool.SS = 30          // 0 works here..
+				ly.Inhib.Layer.Gi = 1.0        // 1.1 > 1.0 -- def 1.1, 1.0 > 1.0, 1.1!
+				ly.Inhib.Pool.Gi = 0.9         // 0.9
+				ly.Inhib.Pool.On.SetBool(true) // needs pool-level
 			}},
 		{Sel: "#IT", Doc: "initial activity",
-			Params: params.Params{
-				ly.Inhib.ActAvg.Nominal = "0.04", // 0.04 -- 0.05 actual at end, but starts low
-				ly.Inhib.ActAvg.AdaptGi = "true",
-				ly.Inhib.Layer.Gi =       "1.1", // 1.1 > 1.05 1.6.15 adapt
-				ly.Inhib.Layer.FB =       "4",   // 4
+			Set: func(ly *axon.LayerParams) {
+				ly.Inhib.ActAvg.Nominal = 0.04 // 0.04 -- 0.05 actual at end, but starts low
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true)
+				ly.Inhib.Layer.Gi = 1.1 // 1.1 > 1.05 1.6.15 adapt
+				ly.Inhib.Layer.FB = 4   // 4
 			}},
 		{Sel: "#Output", Doc: "high inhib for one-hot output",
-			Params: params.Params{
-				// ly.Acts.Decay.Act =     "0.0",  // 0.2 with glong .6 best in lvis, slows learning here
-				// ly.Acts.Decay.Glong =   "0.6",  // 0.6 def
-				ly.Inhib.ActAvg.Nominal = "0.05",   // 0.05 nominal
-				ly.Inhib.ActAvg.Offset =  "-0.005", //
-				ly.Inhib.ActAvg.AdaptGi = "true",   //
-				ly.Inhib.Layer.Gi =       "1.2",    // 1.2 FB1 > 1.1 FB4
-				ly.Inhib.Layer.FB =       "1",      //
-				ly.Acts.Clamp.Ge =        "0.8",    // 0.8 > 1.0 > 0.6 1.6.4
+			Set: func(ly *axon.LayerParams) {
+				// ly.Acts.Decay.Act =     0.0  // 0.2 with glong .6 best in lvis, slows learning here
+				// ly.Acts.Decay.Glong =   0.6  // 0.6 def
+				ly.Inhib.ActAvg.Nominal = 0.05        // 0.05 nominal
+				ly.Inhib.ActAvg.Offset = -0.005       //
+				ly.Inhib.ActAvg.AdaptGi.SetBool(true) //
+				ly.Inhib.Layer.Gi = 1.2               // 1.2 FB1 > 1.1 FB4
+				ly.Inhib.Layer.FB = 1                 //
+				ly.Acts.Clamp.Ge = 0.8                // 0.8 > 1.0 > 0.6 1.6.4
 			}},
+	},
+}
+
+// PathParams sets the minimal non-default params.
+// Base is always applied, and others can be optionally selected to apply on top of that.
+var PathParams = axon.PathSheets{
+	"Base": {
 		{Sel: "Path", Doc: "yes extra learning factors",
-			Params: params.Params{
-				pt.Learn.LRate.Base =      "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-				pt.Learn.Trace.SubMean =   "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
-				pt.SWts.Adapt.LRate =      "0.0001", // 0.005 == .1 == .01
-				pt.SWts.Init.SPct =        "1",      // 1 >= lower (trace-v11)
-				pt.Learn.KinaseCa.CaGain = "1.0",    // 1 > higher
+			Set: func(pt *axon.PathParams) {
+				pt.Learn.LRate.Base = 0.2      // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
+				pt.Learn.Trace.SubMean = 1     // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
+				pt.SWts.Adapt.LRate = 0.0001   // 0.005 == .1 == .01
+				pt.SWts.Init.SPct = 1          // 1 >= lower (trace-v11)
+				pt.Learn.KinaseCa.CaGain = 1.0 // 1 > higher
 			}},
 		{Sel: ".BackPath", Doc: "top-down back-pathways MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
-			Params: params.Params{
-				pt.PathScale.Rel = "0.2", // .2 >= .3 > .15 > .1 > .05 @176
+			Set: func(pt *axon.PathParams) {
+				pt.PathScale.Rel = 0.2 // .2 >= .3 > .15 > .1 > .05 @176
 			}},
 	},
 }

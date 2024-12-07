@@ -1,4 +1,4 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2024, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -91,7 +91,7 @@ func (vi *Vis) Defaults() {
 	vi.ImgSize = image.Point{40, 40}
 	vi.V1sGabor.ToTensor(&vi.V1sGaborTsr)
 	// vi.ImgTsr.SetMetaData("image", "+")
-	vi.ImgTsr.SetMetaData("grid-fill", "1")
+	// vi.ImgTsr.SetMetaData("grid-fill", "1")
 }
 
 // SetImage sets current image for processing
@@ -138,8 +138,7 @@ func (vi *Vis) V1All() {
 	nx := vi.V1sPoolTsr.DimSize(1)
 	nang := vi.V1sPoolTsr.DimSize(3)
 	nrows := 5
-	oshp := []int{ny, nx, nrows, nang}
-	vi.V1AllTsr.SetShape(oshp, "Y", "X", "Polarity", "Angle")
+	vi.V1AllTsr.SetShapeSizes(ny, nx, nrows, nang)
 	// 1 length-sum
 	vfilter.FeatAgg([]int{0}, 0, &vi.V1cLenSumTsr, &vi.V1AllTsr)
 	// 2 end-stop

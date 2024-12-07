@@ -1,4 +1,4 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2024, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,7 +10,6 @@ import (
 
 	"cogentcore.org/core/tensor"
 	"github.com/emer/emergent/v2/env"
-	"github.com/emer/emergent/v2/etime"
 	"github.com/emer/vision/v2/vfilter"
 	"github.com/emer/vision/v2/vxform"
 )
@@ -62,19 +61,7 @@ type LEDEnv struct {
 
 func (ev *LEDEnv) Label() string { return ev.Name }
 
-func (ev *LEDEnv) States() env.Elements {
-	isz := ev.Draw.ImgSize
-	sz := ev.Vis.V1AllTsr.Shape().Sizes
-	nms := ev.Vis.V1AllTsr.Shape().Names
-	els := env.Elements{
-		{"Image", []int{isz.Y, isz.X}, []string{"Y", "X"}},
-		{"V1", sz, nms},
-		{"Output", []int{4, 5}, []string{"Y", "X"}},
-	}
-	return els
-}
-
-func (ev *LEDEnv) State(element string) tensor.Tensor {
+func (ev *LEDEnv) State(element string) tensor.Values {
 	switch element {
 	case "Image":
 		vfilter.RGBToGrey(ev.Draw.Image, &ev.OrigImg, 0, false) // pad for filt, bot zero
@@ -84,10 +71,6 @@ func (ev *LEDEnv) State(element string) tensor.Tensor {
 	case "Output":
 		return &ev.Output
 	}
-	return nil
-}
-
-func (ev *LEDEnv) Actions() env.Elements {
 	return nil
 }
 
@@ -103,10 +86,9 @@ func (ev *LEDEnv) Defaults() {
 
 func (ev *LEDEnv) Init(run int) {
 	ev.Draw.Init()
-	ev.Trial.Scale = etime.Trial
 	ev.Trial.Init()
 	ev.Trial.Cur = -1 // init state -- key so that first Step() = 0
-	ev.Output.SetShape([]int{4, 5, ev.NOutPer, 1}, "Y", "X", "N", "1")
+	ev.Output.SetShapeSizes(4, 5, ev.NOutPer, 1)
 }
 
 func (ev *LEDEnv) Step() bool {
@@ -124,7 +106,7 @@ func (ev *LEDEnv) DoObject(objno int) {
 	ev.FilterImg()
 }
 
-func (ev *LEDEnv) Action(element string, input tensor.Tensor) {
+func (ev *LEDEnv) Action(element string, input tensor.Values) {
 	// nop
 }
 
@@ -141,7 +123,7 @@ func (ev *LEDEnv) SetOutput(out int) {
 	ev.Output.SetZeros()
 	si := ev.NOutPer * out
 	for i := 0; i < ev.NOutPer; i++ {
-		ev.Output.SetFloat1D(si+i, 1)
+		ev.Output.SetFloat1D(1, si+i)
 	}
 }
 
