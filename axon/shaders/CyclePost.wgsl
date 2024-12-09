@@ -218,8 +218,11 @@ fn LayerParams_CyclePostVSPatchLayer(ly: ptr<function,LayerParams>, ctx: ptr<fun
 //////// import: "act-net.go"
 fn CyclePost(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var li = Context_ItemIndex(&ctx, i);
+	if (li >= NetworkIxs[0].NLayers) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var layers=Layers[li]; LayerParams_CyclePost(&layers, &ctx, di);
 	Ctx[0] = ctx;
 }

@@ -715,6 +715,9 @@ fn LayerParams_DWtSubMean(ly: ptr<function,LayerParams>, ctx: ptr<function,Conte
 //////// import: "learn-net.go"
 fn DWtSubMeanNeuron(ni: u32) { //gosl:kernel
 	var ctx = Ctx[0];
+	if (ni >= NetworkIxs[0].NNeurons) {
+		return;
+	}
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_DWtSubMean(&layers, &ctx, ni);
 	Ctx[0] = ctx;

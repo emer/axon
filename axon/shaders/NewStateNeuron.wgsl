@@ -93,8 +93,11 @@ fn LayerParams_NewStateNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 //////// import: "act-net.go"
 fn NewStateNeuron(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
+	if (ni >= NetworkIxs[0].NNeurons) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_NewStateNeuron(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;

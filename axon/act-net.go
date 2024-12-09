@@ -195,8 +195,11 @@ func (nt *Network) GPUTestWrite() {
 // spike inputs sent on the previous cycle.
 func GatherSpikes(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].GatherSpikes(ctx, ni, di)
 }
@@ -204,8 +207,11 @@ func GatherSpikes(i uint32) { //gosl:kernel
 // LayerGi is the kernel over Layers * Data for updating Gi inhibition.
 func LayerGi(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	li := ctx.ItemIndex(i)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
+	di := ctx.DataIndex(i)
 	Layers[li].LayerGi(ctx, li, di)
 }
 
@@ -213,16 +219,22 @@ func LayerGi(i uint32) { //gosl:kernel
 // inhibition between layers.
 func BetweenGi(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	li := ctx.ItemIndex(i)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
+	di := ctx.DataIndex(i)
 	Layers[li].BetweenGi(ctx, di)
 }
 
 // PoolGi is the kernel over Pools * Data for updating Gi inhibition.
 func PoolGi(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
+	if pi >= NetworkIxs[0].NPools {
+		return
+	}
+	di := ctx.DataIndex(i)
 	PoolPoolGi(ctx, pi, di)
 }
 
@@ -230,8 +242,11 @@ func PoolGi(i uint32) { //gosl:kernel
 // one cycle (msec) of updating at the neuron level.
 func CycleNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].CycleNeuron(ctx, ni, di)
 }
@@ -240,8 +255,11 @@ func CycleNeuron(i uint32) { //gosl:kernel
 // send spike signal for neurons over threshold.
 func SendSpike(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].SendSpike(ctx, ni, di)
 }
@@ -250,8 +268,11 @@ func SendSpike(i uint32) { //gosl:kernel
 // update state after each Cycle of updating.
 func CyclePost(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	li := ctx.ItemIndex(i)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
+	di := ctx.DataIndex(i)
 	Layers[li].CyclePost(ctx, di)
 }
 
@@ -268,8 +289,11 @@ func CycleInc(i uint32) { //gosl:kernel
 // apply Ext external input to the neurons receiving inputs.
 func ApplyExtsNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].ApplyExtsNeuron(ni, di)
 }
@@ -285,8 +309,11 @@ func NewStateLayer(li uint32) { //gosl:kernel
 // do new state on neurons (decay).
 func NewStateNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].NewStateNeuron(ctx, ni, di)
 }
@@ -302,8 +329,11 @@ func InitGBuffsPath(pti uint32) { //gosl:kernel
 // do neuron-level updating at Beta1.
 func Beta1Neuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].Beta1Neuron(ctx, ni, di)
 }
@@ -312,8 +342,11 @@ func Beta1Neuron(i uint32) { //gosl:kernel
 // do neuron-level updating at Beta1.
 func Beta2Neuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].Beta2Neuron(ctx, ni, di)
 }
@@ -332,8 +365,11 @@ func MinusPhasePool(pi uint32) { //gosl:kernel
 // do neuron-level updating after end of minus phase.
 func MinusPhaseNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].MinusPhaseNeuron(ctx, ni, di)
 }
@@ -348,8 +384,11 @@ func MinusPhasePost(li uint32) { //gosl:kernel
 // do neuron-level updating at start of plus phase.
 func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseStartNeuron(ctx, ni, di)
 }
@@ -358,8 +397,11 @@ func PlusPhaseStartNeuron(i uint32) { //gosl:kernel
 // do pool-level updating after end of plus phase.
 func PlusPhasePool(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	pi := ctx.ItemIndex(i)
+	if pi >= NetworkIxs[0].NPools {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := PoolIxs.Value(int(pi), int(PoolLayerIdx))
 	Layers[li].PlusPhasePool(ctx, pi, di)
 }
@@ -368,8 +410,11 @@ func PlusPhasePool(i uint32) { //gosl:kernel
 // do neuron-level updating after end of plus phase.
 func PlusPhaseNeuron(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].PlusPhaseNeuron(ctx, ni, di)
 }
@@ -384,8 +429,11 @@ func PlusPhasePost(li uint32) { //gosl:kernel
 // the unique writing of data on GPU.
 func GPUTestWrite(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	ni := ctx.ItemIndex(i)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
+	di := ctx.DataIndex(i)
 	for vi := Spike; vi < NeuronVarsN; vi++ {
 		Neurons.Set(float32(ni*1000+uint32(vi)), int(ni), int(di), int(vi))
 	}

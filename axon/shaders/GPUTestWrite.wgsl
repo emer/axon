@@ -82,8 +82,11 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "act-net.go"
 fn GPUTestWrite(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
+	if (ni >= NetworkIxs[0].NNeurons) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	for (var vi = Spike; vi < NeuronVarsN; vi++) {
 		Neurons[Index3D(TensorStrides[70], TensorStrides[71], TensorStrides[72], u32(ni), u32(di), u32(vi))] = f32(ni*1000 + u32(vi));
 	}

@@ -733,6 +733,9 @@ fn LayerParams_SlowAdaptNeuron(ly: ptr<function,LayerParams>, ctx: ptr<function,
 //////// import: "learn-net.go"
 fn SlowAdaptNeuron(ni: u32) { //gosl:kernel
 	var ctx = Ctx[0];
+	if (ni >= NetworkIxs[0].NNeurons) {
+		return;
+	}
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_SlowAdaptNeuron(&layers, &ctx, ni);
 	Ctx[0] = ctx;

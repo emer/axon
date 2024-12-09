@@ -85,8 +85,11 @@ fn LayerParams_PlusPhasePool(ly: ptr<function,LayerParams>, ctx: ptr<function,Co
 //////// import: "act-net.go"
 fn PlusPhasePool(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var pi = Context_ItemIndex(&ctx, i);
+	if (pi >= NetworkIxs[0].NPools) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var li = PoolIxs[Index2D(TensorStrides[0], TensorStrides[1], u32(pi), u32(PoolLayerIdx))];
 	var layers=Layers[li]; LayerParams_PlusPhasePool(&layers, &ctx, pi, di);
 	Ctx[0] = ctx;

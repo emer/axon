@@ -94,8 +94,11 @@ fn LayerParams_SubPoolGiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<funct
 //////// import: "act-net.go"
 fn PoolGi(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var pi = Context_ItemIndex(&ctx, i);
+	if (pi >= NetworkIxs[0].NPools) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	PoolPoolGi(&ctx, pi, di);
 	Ctx[0] = ctx;
 }

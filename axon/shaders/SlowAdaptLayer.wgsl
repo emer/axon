@@ -814,6 +814,9 @@ fn LayerParams_AvgDifFromTrgAvg(ly: ptr<function,LayerParams>, ctx: ptr<function
 //////// import: "learn-net.go"
 fn SlowAdaptLayer(li: u32) { //gosl:kernel
 	var ctx = Ctx[0];
+	if (li >= NetworkIxs[0].NLayers) {
+		return;
+	}
 	var layers=Layers[li]; LayerParams_SlowAdaptLayer(&layers, &ctx);
 	Ctx[0] = ctx;
 }

@@ -85,11 +85,11 @@ type RunConfig struct {
 	Runs int `default:"5" min:"1"`
 
 	// Epochs is the total number of epochs per run.
-	Epochs int `default:"100"`
+	Epochs int `default:"200"`
 
 	// Trials is the total number of trials per epoch.
 	// Should be an even multiple of NData.
-	Trials int `default:"32"`
+	Trials int `default:"128"`
 
 	// Cycles is the total number of cycles per trial: at least 200.
 	Cycles int `default:"200"`

@@ -707,6 +707,9 @@ const  LayerRewPredNeg: LayerVars = 10;
 //////// import: "learn-net.go"
 fn DWtFromDiSyn(syni: u32) { //gosl:kernel
 	var ctx = Ctx[0];
+	if (syni >= NetworkIxs[0].NSyns) {
+		return;
+	}
 	var pti = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynPathIndex))];
 	var paths=Paths[pti]; PathParams_DWtFromDi(&paths, &ctx, syni);
 	Ctx[0] = ctx;

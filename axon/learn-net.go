@@ -215,8 +215,11 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 // compute weight changes (learning).
 func DWtSyn(i uint32) { //gosl:kernel
 	ctx := GetCtx(0)
-	di := ctx.DataIndex(i)
 	syni := ctx.ItemIndex(i)
+	if syni >= NetworkIxs[0].NSyns {
+		return
+	}
+	di := ctx.DataIndex(i)
 	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
 	si := SynapseIxs.Value(int(syni), int(SynSendIndex))
 	ri := SynapseIxs.Value(int(syni), int(SynRecvIndex))
@@ -227,6 +230,9 @@ func DWtSyn(i uint32) { //gosl:kernel
 // integrate DWt over Di data parallel values.
 func DWtFromDiSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if syni >= NetworkIxs[0].NSyns {
+		return
+	}
 	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
 	Paths[pti].DWtFromDi(ctx, syni)
 }
@@ -235,6 +241,9 @@ func DWtFromDiSyn(syni uint32) { //gosl:kernel
 // Does TrgAvg updating.
 func WtFromDWtLayer(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
 	Layers[li].WtFromDWtLayer(ctx)
 }
 
@@ -242,6 +251,9 @@ func WtFromDWtLayer(li uint32) { //gosl:kernel
 // compute DWt - mean(DWt) for each recv neuron.
 func DWtSubMeanNeuron(ni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].DWtSubMean(ctx, ni)
 }
@@ -250,6 +262,9 @@ func DWtSubMeanNeuron(ni uint32) { //gosl:kernel
 // compute Wt from DWt weight changes.
 func WtFromDWtSyn(syni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if syni >= NetworkIxs[0].NSyns {
+		return
+	}
 	pti := SynapseIxs.Value(int(syni), int(SynPathIndex))
 	Paths[pti].WtFromDWtSyn(ctx, syni)
 }
@@ -259,6 +274,9 @@ func WtFromDWtSyn(syni uint32) { //gosl:kernel
 // Calls AdaptInhib and AvgDifFromTrgAvg for Synaptic Scaling.
 func SlowAdaptLayer(li uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if li >= NetworkIxs[0].NLayers {
+		return
+	}
 	Layers[li].SlowAdaptLayer(ctx)
 }
 
@@ -266,6 +284,9 @@ func SlowAdaptLayer(li uint32) { //gosl:kernel
 // compute slow adaptation in receiving pathways.
 func SlowAdaptNeuron(ni uint32) { //gosl:kernel
 	ctx := GetCtx(0)
+	if ni >= NetworkIxs[0].NNeurons {
+		return
+	}
 	li := NeuronIxs.Value(int(ni), int(NrnLayIndex))
 	Layers[li].SlowAdaptNeuron(ctx, ni)
 }

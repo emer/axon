@@ -812,6 +812,9 @@ fn LayerParams_WtFromDWtLayer(ly: ptr<function,LayerParams>, ctx: ptr<function,C
 //////// import: "learn-net.go"
 fn WtFromDWtLayer(li: u32) { //gosl:kernel
 	var ctx = Ctx[0];
+	if (li >= NetworkIxs[0].NLayers) {
+		return;
+	}
 	var layers=Layers[li]; LayerParams_WtFromDWtLayer(&layers, &ctx);
 	Ctx[0] = ctx;
 }

@@ -239,7 +239,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inPulv.AddClass("InLay")
 
 	var hidp, hid2, hid2ct *axon.Layer
-	hid, hidct := net.AddSuperCT2D("Hidden", "", 10, nUnits, space, one2one) // one2one learn > full
+	hid, hidct := net.AddSuperCT2D("Hidden", "", 20, nUnits, space, one2one) // one2one learn > full
 	_ = hidp
 	if ss.Config.Params.Hid2 {
 		// hidp -> hid2 doesn't actually help at all..

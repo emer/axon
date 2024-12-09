@@ -723,8 +723,11 @@ const  LayerRewPredNeg: LayerVars = 10;
 //////// import: "learn-net.go"
 fn DWtSyn(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var syni = Context_ItemIndex(&ctx, i);
+	if (syni >= NetworkIxs[0].NSyns) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var pti = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynPathIndex))];
 	var si = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynSendIndex))];
 	var ri = SynapseIxs[Index2D(TensorStrides[20], TensorStrides[21], u32(syni), u32(SynRecvIndex))];

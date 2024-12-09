@@ -391,8 +391,11 @@ fn LayerParams_SpikeFromG(ly: ptr<function,LayerParams>, ctx: ptr<function,Conte
 //////// import: "act-net.go"
 fn CycleNeuron(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
+	if (ni >= NetworkIxs[0].NNeurons) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_CycleNeuron(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;

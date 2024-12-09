@@ -93,8 +93,11 @@ fn LayerParams_LayPoolGiFromSpikes(ly: ptr<function,LayerParams>, ctx: ptr<funct
 //////// import: "act-net.go"
 fn LayerGi(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var li = Context_ItemIndex(&ctx, i);
+	if (li >= NetworkIxs[0].NLayers) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var layers=Layers[li]; LayerParams_LayerGi(&layers, &ctx, li, di);
 	Ctx[0] = ctx;
 }

@@ -92,8 +92,11 @@ fn LayerParams_PlusPhaseStartNeuron(ly: ptr<function,LayerParams>, ctx: ptr<func
 //////// import: "act-net.go"
 fn PlusPhaseStartNeuron(i: u32) { //gosl:kernel
 	var ctx = Ctx[0];
-	var di = Context_DataIndex(&ctx, i);
 	var ni = Context_ItemIndex(&ctx, i);
+	if (ni >= NetworkIxs[0].NNeurons) {
+		return;
+	}
+	var di = Context_DataIndex(&ctx, i);
 	var li = NeuronIxs[Index2D(TensorStrides[10], TensorStrides[11], u32(ni), u32(NrnLayIndex))];
 	var layers=Layers[li]; LayerParams_PlusPhaseStartNeuron(&layers, &ctx, ni, di);
 	Ctx[0] = ctx;

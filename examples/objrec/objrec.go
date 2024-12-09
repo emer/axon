@@ -372,12 +372,13 @@ func (ss *Sim) ApplyInputs(mode Modes) {
 	net := ss.Net
 	ndata := int(net.Context().NData)
 	curModeDir := ss.Current.RecycleDir(mode.String())
-	ev := ss.Envs.ByMode(mode)
+	ev := ss.Envs.ByMode(mode).(*LEDEnv)
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	net.InitExt()
 	for di := range ndata {
 		ev.Step()
 		curModeDir.StringValue("TrialName", ndata).SetString1D(ev.String(), di)
+		curModeDir.Int("Cat", ndata).SetInt1D(ev.CurLED, di)
 		for _, lnm := range lays {
 			ly := ss.Net.LayerByName(lnm)
 			st := ev.State(ly.Name)
@@ -535,7 +536,7 @@ func (ss *Sim) ConfigStats() {
 
 	// up to a point, it is good to use loops over stats in one function,
 	// to reduce repetition of boilerplate.
-	statNames := []string{"CorSim", "UnitErr", "Err", "NZero", "FirstZero", "LastZero"}
+	statNames := []string{"CorSim", "UnitErr", "Err", "Err2", "Resp", "NZero", "FirstZero", "LastZero"}
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
 		for _, name := range statNames {
 			if name == "NZero" && (mode != Train || level == Trial) {
@@ -555,7 +556,7 @@ func (ss *Sim) ConfigStats() {
 						s.Range.SetMin(0).SetMax(1)
 						s.On = true
 						switch name {
-						case "NZero":
+						case "UnitErr", "Resp", "NZero":
 							s.On = false
 						case "FirstZero", "LastZero":
 							if level < Run {
@@ -580,6 +581,8 @@ func (ss *Sim) ConfigStats() {
 			switch level {
 			case Trial:
 				out := ss.Net.LayerByName("Output")
+				ltsr := curModeDir.Float64(out.Name+"_ActM", out.Shape.Sizes...)
+				ev := ss.Envs.ByMode(ss.CurrentMode()).(*LEDEnv)
 				for di := range ndata {
 					var stat float64
 					switch name {
@@ -588,11 +591,16 @@ func (ss *Sim) ConfigStats() {
 					case "UnitErr":
 						stat = out.PctUnitErr(ss.Net.Context())[di]
 					case "Err":
-						uniterr := curModeDir.Float64("UnitErr", ndata).Float1D(di)
-						stat = 1.0
-						if uniterr == 0 {
-							stat = 0
-						}
+						out.UnitValuesSampleTensor(ltsr, "ActM", di)
+						cat := curModeDir.Int("Cat", ndata).Int1D(di)
+						rsp, trlErr, trlErr2 := ev.OutErr(ltsr, cat)
+						curModeDir.Float64("Resp", ndata).SetInt1D(rsp, di)
+						curModeDir.Float64("Err2", ndata).SetFloat1D(trlErr2, di)
+						stat = trlErr
+					case "Err2":
+						stat = curModeDir.Float64(name, ndata).Float1D(di)
+					case "Resp":
+						stat = curModeDir.Float64(name, ndata).Float1D(di)
 					}
 					curModeDir.Float64(name, ndata).SetFloat1D(stat, di)
 					tsr.AppendRowFloat(stat)
