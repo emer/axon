@@ -415,7 +415,7 @@ func TestGPUAct(t *testing.T) {
 	//		t.Skip("Set TEST_GPU env var to run GPU tests")
 	//	}
 	NetActTestShort(t, Tol6, true)
-	// NetActTest(t, Tol6, true)
+	// NetActTest(t, Tol6, true, true)
 }
 
 // NetActTest runs an activation test on the network and checks
