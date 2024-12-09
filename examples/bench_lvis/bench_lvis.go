@@ -165,7 +165,7 @@ func ConfigEpcLog(dt *table.Table) {
 
 func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *table.Table, pathways, epcs int, verbose, useGPU bool) {
 	if useGPU {
-		// gpu.Debug = true
+		// gpu.SetDebug(true)
 		axon.GPUInit()
 		axon.UseGPU = true
 	}

@@ -14,21 +14,45 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
+
+# V2.0.0-dev0.2.2 webgpu 23.pr441 epochs=5
+
+```
+go test -gpu -verbose=false -epochs=5 -ndata=1 -bench=. -run not 
+```
+
+* ndata=1: 16.5 vs. 10.57 for dev0.2.1 vgpu final vulkan
+
+consistent with the shorter epochs=1 results overall, suggesting not a major
+overhead issue. 
+
+This result with v23 pre-release (pr441) is already 4 seconds faster than v22, so hopefully things can be made even faster.  Will open a discussion about further routes for improvement.
+
 # V2.0.0-dev0.2.2 webgpu initial
 
-Currently, can only handle -hiddenNeurs=4 due to memory limits! wgpu issues need fixed.
+## MacBook Pro M3
+
+### GPU
 
 ```
-go test -gpu -hiddenNeurs=4 -verbose=false -ndata=1 -bench=. -run not 
+go test -gpu -verbose=false -ndata=1 -bench=. -run not 
 ```
 
-* Indexing: Neurons[ni, di, var] is just slightly faster than Neurons[ni, var, di]: 2.69-70 vs. 2.71-2. And cycPerStep = 50 vs. 10 is about .1 faster.
+* ndata=1: 3.4
+* ndata=2: 4.4
+* ndata=4: 5.7
+* ndata=8: 9.5
 
-* 2.71 with ndata = 1 on GPU, with ndata=1  di still inner-most.
-* 9.7 on CPU = 3.6x speedup for GPU; CPU is sig slower due to atomic sendspikes.
+### CPU
 
+In general GPU is much worse due to use of atomic ops (necessary on GPU) that were previously avoided. At some point CPU path can implement a workaround.
+
+* ndata=1: 14.5
+* ndata=2: 24 
 
 # v2.0.0-dev0.2.1 vgpu final 09/02/24 (linear SynCa approx)
+
+git hash: 13e73bd9
 
 ## MacBook Pro M3
 
