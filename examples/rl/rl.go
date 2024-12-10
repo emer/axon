@@ -12,7 +12,6 @@ package main
 import (
 	"fmt"
 
-	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/mpi"
 	"cogentcore.org/core/base/randx"
 	"cogentcore.org/core/base/reflectx"
@@ -506,27 +505,9 @@ func (ss *Sim) ConfigStats() {
 		perTrlFunc(mode, level, phase == Start)
 	})
 
+	trlAllFunc := axon.StatLevelAll(ss.Stats, Train, Trial)
 	ss.AddStat(func(mode Modes, level Levels, phase StatsPhase) {
-		if level != Trial {
-			return
-		}
-		modeDir := ss.Stats.RecycleDir(mode.String())
-		levelDir := modeDir.RecycleDir(level.String())
-		allDir := modeDir.RecycleDir("TrialAll")
-		cols := levelDir.NodesFunc(nil)
-		for _, cl := range cols {
-			clv := cl.Tensor.(tensor.Values)
-			if phase == Start {
-				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.Shape().Sizes...)
-				if trg.Len() == 0 {
-					metadata.CopyFrom(trg, clv)
-					trg.SetNumRows(0)
-				}
-			} else {
-				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType())
-				trg.AppendRow(clv.RowTensor(clv.DimSize(0) - 1))
-			}
-		}
+		trlAllFunc(mode, level, phase == Start)
 	})
 }
 

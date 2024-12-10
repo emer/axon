@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/timer"
 	"cogentcore.org/core/enums"
 	"cogentcore.org/core/plot"
@@ -524,6 +525,34 @@ func StatPrevCorSim(statsDir, currentDir *tensorfs.Node, net *Network, trialLeve
 					stat := stats.StatMean.Call(subd.Value(name))
 					tsr.AppendRow(stat)
 				}
+			}
+		}
+	}
+}
+
+// StatLevelAll returns a Stats function that copies stats from given mode
+// and level, without resetting at the start, to accumulate all rows
+// over time until reset manually.
+func StatLevelAll(statsDir *tensorfs.Node, srcMode, srcLevel enums.Enum) func(mode, level enums.Enum, start bool) {
+	return func(mode, level enums.Enum, start bool) {
+		if srcMode.Int64() != mode.Int64() || srcLevel.Int64() != level.Int64() {
+			return
+		}
+		modeDir := statsDir.RecycleDir(mode.String())
+		levelDir := modeDir.RecycleDir(level.String())
+		allDir := modeDir.RecycleDir(level.String() + "All")
+		cols := levelDir.NodesFunc(nil) // all nodes
+		for _, cl := range cols {
+			clv := cl.Tensor.(tensor.Values)
+			if start {
+				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType(), clv.Shape().Sizes...)
+				if trg.Len() == 0 {
+					metadata.CopyFrom(trg, clv)
+					trg.SetNumRows(0)
+				}
+			} else {
+				trg := tensorfs.ValueType(allDir, cl.Name(), clv.DataType())
+				trg.AppendRow(clv.RowTensor(clv.DimSize(0) - 1))
 			}
 		}
 	}
